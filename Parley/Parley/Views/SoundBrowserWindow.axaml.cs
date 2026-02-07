@@ -34,13 +34,13 @@ namespace DialogEditor.Views
 
         public string? SelectedSound => _selectedSound;
 
-        // Theme-aware brush helpers
+        // Theme-aware brush helpers via BrushManager
         private IBrush ForegroundBrush => GetResourceBrush("SystemControlForegroundBaseHighBrush") ?? Brushes.White;
         private IBrush SecondaryBrush => GetResourceBrush("SystemControlForegroundBaseMediumBrush") ?? Brushes.Gray;
-        private static IBrush WarningBrush => new SolidColorBrush(Color.Parse("#FFA500"));
-        private static IBrush ErrorBrush => new SolidColorBrush(Color.Parse("#FF4444"));
-        private static IBrush SuccessBrush => new SolidColorBrush(Color.Parse("#44AA44"));
-        private static IBrush HakBrush => new SolidColorBrush(Color.Parse("#6699FF"));
+        private IBrush WarningBrush => BrushManager.GetWarningBrush(this);
+        private IBrush ErrorBrush => BrushManager.GetErrorBrush(this);
+        private IBrush SuccessBrush => BrushManager.GetSuccessBrush(this);
+        private IBrush HakBrush => BrushManager.GetInfoBrush(this);
 
         private IBrush? GetResourceBrush(string key)
         {
@@ -198,7 +198,7 @@ namespace DialogEditor.Views
                 if (includeHakFiles || includeBifFiles)
                 {
                     FileCountLabel.Text = "Checking module resources...";
-                    LoadSoundsFromGameDataService();
+                    LoadSoundsFromGameDataService(includeHakFiles, includeBifFiles);
                 }
 
                 if (_allSounds.Count == 0)
@@ -327,7 +327,7 @@ namespace DialogEditor.Views
         /// Load sounds from IGameDataService (module-aware resolution).
         /// Adds any sounds from module HAKs not already found by direct scanning.
         /// </summary>
-        private void LoadSoundsFromGameDataService()
+        private void LoadSoundsFromGameDataService(bool includeHak, bool includeBif)
         {
             if (_gameDataService == null || !_gameDataService.IsConfigured)
                 return;
@@ -345,9 +345,13 @@ namespace DialogEditor.Views
                     if (existingResRefs.Contains(resource.ResRef))
                         continue;
 
+                    // Filter by source type based on checkbox state (#1240)
+                    if (resource.Source == GameResourceSource.Hak && !includeHak)
+                        continue;
+                    if (resource.Source == GameResourceSource.Bif && !includeBif)
+                        continue;
+
                     // Create SoundFileInfo for this resource
-                    // Note: IsFromHak/IsFromBif are computed properties based on HakPath+ErfEntry/BifInfo
-                    // For IGameDataService resources, we set HakPath without ErfEntry (extraction via service)
                     var soundInfo = new SoundFileInfo
                     {
                         FileName = resource.ResRef + ".wav",
@@ -355,9 +359,9 @@ namespace DialogEditor.Views
                         IsMono = true, // Assume mono (NWN standard), will validate on selection
                         ChannelUnknown = true, // Haven't validated yet
                         Source = GetSourceLabel(resource.Source),
-                        // For HAK/BIF sounds from IGameDataService, store path for reference
-                        // but don't set ErfEntry/BifInfo (extraction handled differently)
-                        HakPath = resource.Source == GameResourceSource.Hak ? resource.SourcePath : null
+                        HakPath = resource.Source == GameResourceSource.Hak ? resource.SourcePath : null,
+                        // Mark as GameDataService-sourced for playback path (#1240)
+                        IsFromGameDataService = true
                     };
 
                     _allSounds.Add(soundInfo);
@@ -438,13 +442,21 @@ namespace DialogEditor.Views
                 var channelHint = sound.ChannelUnknown ? " [?ch]" : "";
                 return ($"○ {baseName}{sourceInfo}{channelHint}", ForegroundBrush);
             }
+            // GameDataService sounds that lack BifInfo/ErfEntry (#1240)
+            if (sound.IsFromGameDataService)
+            {
+                var channelHint = sound.ChannelUnknown ? " [?ch]" : "";
+                var icon = sound.Source?.Contains("BIF") == true ? "○" : "☐";
+                var brush = sound.Source?.Contains("BIF") == true ? ForegroundBrush : HakBrush;
+                return ($"{icon} {baseName}{sourceInfo}{channelHint}", brush);
+            }
             return ($"{baseName}{sourceInfo}", ForegroundBrush);
         }
 
         private void UpdateFileCountLabel(int count, bool monoOnly)
         {
-            var hakCount = _filteredSounds.Count(s => s.IsFromHak);
-            var bifCount = _filteredSounds.Count(s => s.IsFromBif);
+            var hakCount = _filteredSounds.Count(s => s.IsFromHak || (s.IsFromGameDataService && s.Source?.Contains("HAK") == true));
+            var bifCount = _filteredSounds.Count(s => s.IsFromBif || (s.IsFromGameDataService && s.Source?.Contains("BIF") == true));
             var stereoCount = _filteredSounds.Count(s => !s.IsMono && !s.ChannelUnknown);
             var unknownChannelCount = _filteredSounds.Count(s => s.ChannelUnknown);
             var invalidCount = _filteredSounds.Count(s => !s.IsValidWav);
@@ -477,9 +489,12 @@ namespace DialogEditor.Views
             if (soundInfo != null)
             {
                 _selectedSound = soundInfo.FileName;
-                SelectedSoundLabel.Text = soundInfo.IsFromHak ? $"{soundInfo.FileName} ☐"
-                    : soundInfo.IsFromBif ? $"{soundInfo.FileName} ○"
-                    : soundInfo.FileName;
+                var selIcon = soundInfo.IsFromHak ? " ☐"
+                    : soundInfo.IsFromBif ? " ○"
+                    : soundInfo.IsFromGameDataService && soundInfo.Source?.Contains("BIF") == true ? " ○"
+                    : soundInfo.IsFromGameDataService && soundInfo.Source?.Contains("HAK") == true ? " ☐"
+                    : "";
+                SelectedSoundLabel.Text = $"{soundInfo.FileName}{selIcon}";
                 PlayButton.IsEnabled = true;
 
                 FileCountLabel.Text = "Validating...";
@@ -526,6 +541,35 @@ namespace DialogEditor.Views
                     {
                         var result = _extractor.ValidateBifSound(soundInfo);
                         DisplayValidationResult(result);
+                    }
+                }
+                else if (soundInfo.IsFromGameDataService)
+                {
+                    // GameDataService sounds - extract to temp for validation (#1240)
+                    var tempPath = ExtractGameDataSoundToTemp(soundInfo);
+                    if (tempPath != null)
+                    {
+                        var validation = SoundValidator.Validate(tempPath, isVoiceOrSfx: true);
+                        var icon = soundInfo.Source?.Contains("BIF") == true ? "○" : "☐";
+                        if (validation.HasIssues)
+                        {
+                            var issues = string.Join(", ", validation.Errors.Concat(validation.Warnings));
+                            FileCountLabel.Text = validation.IsValid ? $"⚠ {icon} {issues}" : $"❌ {icon} {issues}";
+                            FileCountLabel.Foreground = validation.IsValid ? WarningBrush : ErrorBrush;
+                        }
+                        else
+                        {
+                            FileCountLabel.Text = $"✓ {icon} {soundInfo.Source}: {validation.FormatInfo}";
+                            FileCountLabel.Foreground = SuccessBrush;
+                        }
+                        // Update channel info from validation
+                        soundInfo.ChannelUnknown = false;
+                        soundInfo.IsMono = validation.IsMono;
+                    }
+                    else
+                    {
+                        FileCountLabel.Text = $"⚠ Could not extract from {soundInfo.Source}";
+                        FileCountLabel.Foreground = WarningBrush;
                     }
                 }
                 else
@@ -633,6 +677,18 @@ namespace DialogEditor.Views
                         return;
                     }
                 }
+                else if (_selectedSoundInfo.IsFromGameDataService)
+                {
+                    // Sounds loaded via IGameDataService lack BifInfo/ErfEntry (#1240)
+                    // Extract via IGameDataService.FindResource()
+                    pathToPlay = ExtractGameDataSoundToTemp(_selectedSoundInfo);
+                    if (pathToPlay == null)
+                    {
+                        CurrentSoundLabel.Text = "❌ Failed to extract from game data";
+                        CurrentSoundLabel.Foreground = ErrorBrush;
+                        return;
+                    }
+                }
                 else
                 {
                     pathToPlay = _selectedSoundInfo.FullPath;
@@ -647,7 +703,9 @@ namespace DialogEditor.Views
 
                 var invalidWarning = !_selectedSoundInfo.IsValidWav ? " ⚠️ (invalid format)" : "";
                 var sourceLabel = _selectedSoundInfo.IsFromHak ? " (from HAK)"
-                    : _selectedSoundInfo.IsFromBif ? " (from BIF)" : "";
+                    : _selectedSoundInfo.IsFromBif ? " (from BIF)"
+                    : _selectedSoundInfo.IsFromGameDataService ? $" (from {_selectedSoundInfo.Source})"
+                    : "";
 
                 _audioService.Play(pathToPlay);
                 CurrentSoundLabel.Text = $"Playing: {_selectedSound}{sourceLabel}{invalidWarning}";
@@ -678,6 +736,35 @@ namespace DialogEditor.Views
             catch (Exception ex)
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to stop sound: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Extracts a sound loaded via IGameDataService to a temp file for playback (#1240).
+        /// </summary>
+        private string? ExtractGameDataSoundToTemp(SoundFileInfo soundInfo)
+        {
+            if (_gameDataService == null)
+                return null;
+
+            try
+            {
+                var resRef = Path.GetFileNameWithoutExtension(soundInfo.FileName);
+                var soundData = _gameDataService.FindResource(resRef, ResourceTypes.Wav);
+                if (soundData == null)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Sound not found in IGameDataService: {resRef}");
+                    return null;
+                }
+
+                var tempPath = Path.Combine(Path.GetTempPath(), $"ps_gds_{resRef}.wav");
+                File.WriteAllBytes(tempPath, soundData);
+                return tempPath;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to extract game data sound: {ex.Message}");
+                return null;
             }
         }
 

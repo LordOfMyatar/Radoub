@@ -61,5 +61,11 @@ namespace DialogEditor.Models.Sound
         /// True if this is an archive sound that needs extraction to determine channels.
         /// </summary>
         public bool IsFromArchive => IsFromHak || IsFromBif;
+
+        /// <summary>
+        /// True if loaded via IGameDataService rather than direct HAK/BIF scanning.
+        /// These sounds use IGameDataService.FindResource() for extraction (#1240).
+        /// </summary>
+        public bool IsFromGameDataService { get; set; }
     }
 }
