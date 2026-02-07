@@ -12,7 +12,7 @@ using DialogEditor.Parsers;
 
 namespace DialogEditor.Services
 {
-    public class ScriptService
+    public class ScriptService : IScriptService
     {
         public static ScriptService Instance { get; } = new ScriptService();
 

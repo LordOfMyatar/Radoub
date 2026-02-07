@@ -21,7 +21,7 @@ namespace DialogEditor.Services
         public string? Shape { get; set; } // Store as string for JSON serialization
     }
 
-    public class SettingsService : INotifyPropertyChanged
+    public class SettingsService : ISettingsService
     {
         public static SettingsService Instance { get; } = new SettingsService();
 
