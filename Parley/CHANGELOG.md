@@ -13,6 +13,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.134-alpha] - 2026-02-07
+**Branch**: `parley/issue-1224` | **PR**: #TBD
+
+### Sprint 1.5: Extract Menu Handlers to MainWindow.MenuHandlers.cs (#1224)
+
+- Extract non-delegated menu handlers from `MainWindow.axaml.cs` into `MainWindow.MenuHandlers.cs` partial file
+
+---
+
 ## [0.1.133-alpha] - 2026-02-07
 **Branch**: `parley/issue-1223` | **PR**: #1243
 
