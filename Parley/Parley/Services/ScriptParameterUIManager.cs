@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using DialogEditor.Models;
 using DialogEditor.Utils;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using Radoub.Formats.Logging;
 
@@ -41,7 +42,8 @@ namespace DialogEditor.Services
             _getSelectedNode = getSelectedNode ?? throw new ArgumentNullException(nameof(getSelectedNode));
 
             _validationService = new ParameterValidationService(setStatusMessage);
-            _persistenceService = new ParameterPersistenceService(findControl, _validationService);
+            var parameterCache = Program.Services.GetRequiredService<ParameterCacheService>();
+            _persistenceService = new ParameterPersistenceService(findControl, _validationService, parameterCache);
         }
 
         /// <summary>

@@ -28,6 +28,8 @@ namespace Parley.Views.Helpers
     {
         private readonly Window _window;
         private readonly SafeControlFinder _controls;
+        private readonly ISettingsService _settings;
+        private readonly IJournalService _journalService;
         private readonly Func<MainViewModel> _getViewModel;
         private readonly Func<TreeViewSafeNode?> _getSelectedNode;
         private readonly Func<bool> _isPopulatingProperties;
@@ -37,6 +39,8 @@ namespace Parley.Views.Helpers
         public QuestUIController(
             Window window,
             SafeControlFinder controls,
+            ISettingsService settings,
+            IJournalService journalService,
             Func<MainViewModel> getViewModel,
             Func<TreeViewSafeNode?> getSelectedNode,
             Func<bool> isPopulatingProperties,
@@ -45,6 +49,8 @@ namespace Parley.Views.Helpers
         {
             _window = window ?? throw new ArgumentNullException(nameof(window));
             _controls = controls ?? throw new ArgumentNullException(nameof(controls));
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            _journalService = journalService ?? throw new ArgumentNullException(nameof(journalService));
             _getViewModel = getViewModel ?? throw new ArgumentNullException(nameof(getViewModel));
             _getSelectedNode = getSelectedNode ?? throw new ArgumentNullException(nameof(getSelectedNode));
             _isPopulatingProperties = isPopulatingProperties ?? throw new ArgumentNullException(nameof(isPopulatingProperties));
@@ -160,7 +166,7 @@ namespace Parley.Views.Helpers
             }
 
             // Look up quest in journal
-            var category = JournalService.Instance.GetCategory(questTag);
+            var category = _journalService.GetCategory(questTag);
             if (category != null)
             {
                 var questName = category.Name?.GetDefault();
@@ -192,7 +198,7 @@ namespace Parley.Views.Helpers
             }
 
             // Look up entry in journal
-            var entries = JournalService.Instance.GetEntriesForQuest(questTag);
+            var entries = _journalService.GetEntriesForQuest(questTag);
             var entry = entries.FirstOrDefault(e => e.ID == entryId);
 
             if (entry != null)
@@ -456,7 +462,7 @@ namespace Parley.Views.Helpers
                 // Fallback to settings if no file loaded
                 if (string.IsNullOrEmpty(modulePath))
                 {
-                    modulePath = SettingsService.Instance.CurrentModulePath;
+                    modulePath = _settings.CurrentModulePath;
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Using module path from settings: {UnifiedLogger.SanitizePath(modulePath)}");
                 }
 
@@ -474,7 +480,7 @@ namespace Parley.Views.Helpers
                 }
 
                 // Parse and cache journal file for on-demand lookups
-                var categories = await JournalService.Instance.ParseJournalFileAsync(journalPath);
+                var categories = await _journalService.ParseJournalFileAsync(journalPath);
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {categories.Count} quest categories from journal");
             }
             catch (Exception ex)

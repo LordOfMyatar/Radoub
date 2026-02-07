@@ -18,10 +18,12 @@ namespace Parley.Views.Helpers
     public class QuestPropertiesPopulator
     {
         private readonly Window _window;
+        private readonly IJournalService _journalService;
 
-        public QuestPropertiesPopulator(Window window)
+        public QuestPropertiesPopulator(Window window, IJournalService journalService)
         {
             _window = window ?? throw new System.ArgumentNullException(nameof(window));
+            _journalService = journalService ?? throw new System.ArgumentNullException(nameof(journalService));
         }
 
         /// <summary>
@@ -43,7 +45,7 @@ namespace Parley.Views.Helpers
             {
                 if (!string.IsNullOrEmpty(dialogNode.Quest))
                 {
-                    var category = JournalService.Instance.GetCategory(dialogNode.Quest);
+                    var category = _journalService.GetCategory(dialogNode.Quest);
                     if (category != null)
                     {
                         var questName = category.Name?.GetDefault();
@@ -77,7 +79,7 @@ namespace Parley.Views.Helpers
 
             if (dialogNode.QuestEntry != uint.MaxValue && !string.IsNullOrEmpty(dialogNode.Quest))
             {
-                var entries = JournalService.Instance.GetEntriesForQuest(dialogNode.Quest);
+                var entries = _journalService.GetEntriesForQuest(dialogNode.Quest);
                 var matchingEntry = entries.FirstOrDefault(e => e.ID == dialogNode.QuestEntry);
 
                 if (matchingEntry != null)

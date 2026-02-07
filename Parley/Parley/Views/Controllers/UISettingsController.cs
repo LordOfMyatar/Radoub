@@ -18,16 +18,20 @@ namespace DialogEditor.Views.Controllers
     {
         private readonly Window _window;
         private readonly Func<bool> _isInitializing;
+        private readonly ISettingsService _settings;
+        private readonly DictionarySettingsService _dictionarySettings;
 
-        public UISettingsController(Window window, Func<bool> isInitializing)
+        public UISettingsController(Window window, Func<bool> isInitializing, ISettingsService settings, DictionarySettingsService dictionarySettings)
         {
             _window = window;
             _isInitializing = isInitializing;
+            _settings = settings;
+            _dictionarySettings = dictionarySettings;
         }
 
         public void LoadSettings()
         {
-            var settings = SettingsService.Instance;
+            var settings = _settings;
 
             var fontSizeSlider = _window.FindControl<Slider>("FontSizeSlider");
             var fontSizeLabel = _window.FindControl<TextBlock>("FontSizeLabel");
@@ -66,7 +70,7 @@ namespace DialogEditor.Views.Controllers
             var spellCheckEnabledCheckBox = _window.FindControl<CheckBox>("SpellCheckEnabledCheckBox");
             if (spellCheckEnabledCheckBox != null)
             {
-                spellCheckEnabledCheckBox.IsChecked = DictionarySettingsService.Instance.SpellCheckEnabled;
+                spellCheckEnabledCheckBox.IsChecked = _dictionarySettings.SpellCheckEnabled;
             }
 
             // Flowchart node max lines (#813)
@@ -91,7 +95,7 @@ namespace DialogEditor.Views.Controllers
 
         public void ApplySettings()
         {
-            var settings = SettingsService.Instance;
+            var settings = _settings;
 
             var fontSizeSlider = _window.FindControl<Slider>("FontSizeSlider");
             var externalEditorPathTextBox = _window.FindControl<TextBox>("ExternalEditorPathTextBox");
@@ -155,7 +159,7 @@ namespace DialogEditor.Views.Controllers
             var checkbox = sender as CheckBox;
             if (checkbox != null)
             {
-                SettingsService.Instance.AllowScrollbarAutoHide = checkbox.IsChecked == true;
+                _settings.AllowScrollbarAutoHide = checkbox.IsChecked == true;
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Scrollbar auto-hide preference: {checkbox.IsChecked}");
             }
         }
@@ -167,7 +171,7 @@ namespace DialogEditor.Views.Controllers
             var checkbox = sender as CheckBox;
             if (checkbox != null)
             {
-                SettingsService.Instance.EnableNpcTagColoring = checkbox.IsChecked == true;
+                _settings.EnableNpcTagColoring = checkbox.IsChecked == true;
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"NPC tag coloring: {(checkbox.IsChecked == true ? "enabled" : "disabled")}");
             }
         }
@@ -179,7 +183,7 @@ namespace DialogEditor.Views.Controllers
             var checkbox = sender as CheckBox;
             if (checkbox != null)
             {
-                SettingsService.Instance.SimulatorShowWarnings = checkbox.IsChecked == true;
+                _settings.SimulatorShowWarnings = checkbox.IsChecked == true;
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Dialog warnings: {(checkbox.IsChecked == true ? "enabled" : "disabled")}");
             }
         }
@@ -191,7 +195,7 @@ namespace DialogEditor.Views.Controllers
             var checkbox = sender as CheckBox;
             if (checkbox != null)
             {
-                DictionarySettingsService.Instance.SpellCheckEnabled = checkbox.IsChecked == true;
+                _dictionarySettings.SpellCheckEnabled = checkbox.IsChecked == true;
             }
         }
 
@@ -206,7 +210,7 @@ namespace DialogEditor.Views.Controllers
 
             if (!_isInitializing() && sender is Slider s)
             {
-                SettingsService.Instance.FlowchartNodeMaxLines = (int)s.Value;
+                _settings.FlowchartNodeMaxLines = (int)s.Value;
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Flowchart node max lines: {(int)s.Value}");
             }
         }

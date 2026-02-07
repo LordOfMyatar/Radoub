@@ -16,9 +16,9 @@ namespace DialogEditor.Services
         private readonly SoundCache _cache;
         private string? _tempExtractedPath;
 
-        public SoundExtractor()
+        public SoundExtractor(SoundCache cache)
         {
-            _cache = SoundCache.Instance;
+            _cache = cache ?? throw new ArgumentNullException(nameof(cache));
         }
 
         /// <summary>

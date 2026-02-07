@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Radoub.Formats.Logging;
 using DialogEditor.Utils;
 
@@ -18,6 +19,7 @@ namespace DialogEditor.ViewModels
     /// </summary>
     public class ConversationSimulatorViewModel : INotifyPropertyChanged
     {
+        private readonly ISettingsService _settings;
         private readonly ConversationManager _conversationManager;
         private readonly Dialog _dialog;
         private readonly string _filePath;
@@ -72,11 +74,12 @@ namespace DialogEditor.ViewModels
 
         public ConversationSimulatorViewModel(Dialog dialog, string filePath)
         {
+            _settings = Program.Services.GetRequiredService<ISettingsService>();
             _dialog = dialog ?? throw new ArgumentNullException(nameof(dialog));
             _filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
             _conversationManager = new ConversationManager(dialog, new AlwaysTrueScriptEngine());
-            _coverageTracker = CoverageTracker.Instance;
-            _ttsService = TtsServiceFactory.Instance;
+            _coverageTracker = Program.Services.GetRequiredService<CoverageTracker>();
+            _ttsService = Program.Services.GetRequiredService<ITtsService>();
 
             Replies = new ObservableCollection<ReplyOption>();
             VoiceNames = new ObservableCollection<string>();
@@ -285,12 +288,12 @@ namespace DialogEditor.ViewModels
         /// </summary>
         public bool ShowWarnings
         {
-            get => SettingsService.Instance.SimulatorShowWarnings;
+            get => _settings.SimulatorShowWarnings;
             set
             {
-                if (SettingsService.Instance.SimulatorShowWarnings != value)
+                if (_settings.SimulatorShowWarnings != value)
                 {
-                    SettingsService.Instance.SimulatorShowWarnings = value;
+                    _settings.SimulatorShowWarnings = value;
                     OnPropertyChanged(nameof(ShowWarnings));
                 }
             }

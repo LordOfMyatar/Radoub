@@ -149,7 +149,7 @@ namespace DialogEditor.Views
 
             // Check if delete confirmation is enabled (Issue #14)
             bool confirmed = true;
-            if (SettingsService.Instance.ShowDeleteConfirmation)
+            if (_services.Settings.ShowDeleteConfirmation)
             {
                 // Confirm deletion with "Don't show this again" option
                 confirmed = await _services.Dialog.ShowConfirmDialogAsync(

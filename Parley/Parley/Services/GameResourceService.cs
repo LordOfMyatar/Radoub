@@ -15,32 +15,18 @@ namespace DialogEditor.Services;
 /// </summary>
 public class GameResourceService : IDisposable
 {
-    private static GameResourceService? _instance;
     private static readonly object _lock = new();
 
+    private readonly ISettingsService _settings;
     private GameResourceResolver? _resolver;
     private GameResourceConfig? _currentConfig;
     private bool _disposed;
 
-    public static GameResourceService Instance
+    public GameResourceService(ISettingsService settings)
     {
-        get
-        {
-            if (_instance == null)
-            {
-                lock (_lock)
-                {
-                    _instance ??= new GameResourceService();
-                }
-            }
-            return _instance;
-        }
-    }
-
-    private GameResourceService()
-    {
+        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         // Subscribe to settings changes to reinitialize resolver
-        SettingsService.Instance.PropertyChanged += OnSettingsChanged;
+        _settings.PropertyChanged += OnSettingsChanged;
     }
 
     private void OnSettingsChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -120,7 +106,7 @@ public class GameResourceService : IDisposable
 
     private GameResourceConfig? BuildConfig()
     {
-        var settings = SettingsService.Instance;
+        var settings = _settings;
 
         // Try BaseGameInstallPath first (explicit setting)
         var gameDataPath = settings.BaseGameInstallPath;
@@ -387,7 +373,7 @@ public class GameResourceService : IDisposable
         if (_disposed)
             return;
 
-        SettingsService.Instance.PropertyChanged -= OnSettingsChanged;
+        _settings.PropertyChanged -= OnSettingsChanged;
         _resolver?.Dispose();
         _resolver = null;
         _disposed = true;

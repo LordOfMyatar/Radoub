@@ -10,9 +10,6 @@ namespace DialogEditor.Services
     /// </summary>
     public class DialogContextService : IDialogContextService
     {
-        private static DialogContextService? _instance;
-        public static DialogContextService Instance => _instance ??= new DialogContextService();
-
         private Dialog? _currentDialog;
         private string? _currentFileName;
         private string? _currentFilePath;
@@ -266,7 +263,7 @@ namespace DialogEditor.Services
             }
         }
 
-        private DialogContextService() { }
+        public DialogContextService() { }
     }
 
     /// <summary>

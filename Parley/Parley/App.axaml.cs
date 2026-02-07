@@ -11,6 +11,7 @@ using DialogEditor.ViewModels;
 using DialogEditor.Views;
 using DialogEditor.Services;
 using System.ComponentModel;
+using Microsoft.Extensions.DependencyInjection;
 using Radoub.Formats.Logging;
 using Radoub.UI.Services;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
@@ -21,9 +22,14 @@ namespace DialogEditor;
 
 public partial class App : Application
 {
+    private ISettingsService _settings = null!;
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+
+        // #1233: Resolve settings from DI container
+        _settings = Program.Services.GetRequiredService<ISettingsService>();
 
         // Register this tool's path in shared Radoub settings for cross-tool discovery
         RegisterToolPath();
@@ -59,7 +65,7 @@ public partial class App : Application
         }
         else
         {
-            themeId = SettingsService.Instance.CurrentThemeId;
+            themeId = _settings.CurrentThemeId;
             if (string.IsNullOrEmpty(themeId))
             {
                 themeId = "org.parley.theme.light"; // Default if not set
@@ -81,15 +87,15 @@ public partial class App : Application
         }
         else
         {
-            ApplyFontSize(SettingsService.Instance.FontSize);
-            ApplyFontFamily(SettingsService.Instance.FontFamily);
+            ApplyFontSize(_settings.FontSize);
+            ApplyFontFamily(_settings.FontFamily);
         }
 
         // Apply scrollbar auto-hide preference (Issue #63)
-        ApplyScrollbarAutoHide(SettingsService.Instance.AllowScrollbarAutoHide);
+        ApplyScrollbarAutoHide(_settings.AllowScrollbarAutoHide);
 
         // Subscribe to settings changes
-        SettingsService.Instance.PropertyChanged += OnSettingsPropertyChanged;
+        _settings.PropertyChanged += OnSettingsPropertyChanged;
     }
 
     /// <summary>
@@ -98,15 +104,15 @@ public partial class App : Application
     private void ApplySafeModeDefaults()
     {
         // Reset theme to light
-        SettingsService.Instance.CurrentThemeId = "org.parley.theme.light";
+        _settings.CurrentThemeId = "org.parley.theme.light";
 
         // Reset fonts to system defaults
-        SettingsService.Instance.FontSize = SafeModeService.DefaultFontSize;
-        SettingsService.Instance.FontFamily = SafeModeService.DefaultFontFamily;
+        _settings.FontSize = SafeModeService.DefaultFontSize;
+        _settings.FontFamily = SafeModeService.DefaultFontFamily;
 
         // Disable FlowView (can cause issues)
-        SettingsService.Instance.FlowchartVisible = false;
-        SettingsService.Instance.FlowchartWindowOpen = false;
+        _settings.FlowchartVisible = false;
+        _settings.FlowchartWindowOpen = false;
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode: Reset theme to light, fonts to default, FlowView disabled");
     }
@@ -157,16 +163,16 @@ public partial class App : Application
     {
         if (e.PropertyName == nameof(SettingsService.FontSize))
         {
-            ApplyFontSize(SettingsService.Instance.FontSize);
+            ApplyFontSize(_settings.FontSize);
         }
         else if (e.PropertyName == nameof(SettingsService.FontFamily))
         {
-            ApplyFontFamily(SettingsService.Instance.FontFamily);
+            ApplyFontFamily(_settings.FontFamily);
         }
         else if (e.PropertyName == nameof(SettingsService.CurrentThemeId))
         {
             // Theme changed - apply new theme
-            var themeId = SettingsService.Instance.CurrentThemeId;
+            var themeId = _settings.CurrentThemeId;
             if (!string.IsNullOrEmpty(themeId))
             {
                 ThemeManager.Instance.ApplyTheme(themeId);
@@ -174,7 +180,7 @@ public partial class App : Application
         }
         else if (e.PropertyName == nameof(SettingsService.AllowScrollbarAutoHide))
         {
-            ApplyScrollbarAutoHide(SettingsService.Instance.AllowScrollbarAutoHide);
+            ApplyScrollbarAutoHide(_settings.AllowScrollbarAutoHide);
         }
     }
 

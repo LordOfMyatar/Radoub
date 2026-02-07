@@ -14,15 +14,12 @@ namespace DialogEditor.Services
     /// </summary>
     public class SoundCache
     {
-        private static readonly Lazy<SoundCache> _instance = new(() => new SoundCache());
-        public static SoundCache Instance => _instance.Value;
-
         private readonly object _lock = new();
         private readonly Dictionary<string, HakCacheEntry> _hakCache = new();
         private readonly Dictionary<string, KeyCacheEntry> _keyCache = new();
         private readonly Dictionary<string, BifFile> _bifCache = new();
 
-        private SoundCache() { }
+        public SoundCache() { }
 
         /// <summary>
         /// Gets cached HAK entry if valid (file unchanged), otherwise returns null.

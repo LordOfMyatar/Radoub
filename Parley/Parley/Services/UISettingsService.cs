@@ -13,8 +13,6 @@ namespace DialogEditor.Services
     /// </summary>
     public class UISettingsService : INotifyPropertyChanged
     {
-        public static UISettingsService Instance { get; } = new UISettingsService();
-
         // Font settings
         private double _fontSize = 14;
         private string _fontFamily = ""; // Empty string = use system default
@@ -45,7 +43,7 @@ namespace DialogEditor.Services
         /// </summary>
         public event Action? SettingsChanged;
 
-        private UISettingsService()
+        public UISettingsService()
         {
             // Initialized by SettingsService.LoadSettings()
         }

@@ -14,8 +14,6 @@ namespace DialogEditor.Services
     /// </summary>
     public class RecentFilesService : INotifyPropertyChanged
     {
-        public static RecentFilesService Instance { get; } = new RecentFilesService();
-
         private const int DefaultMaxRecentFiles = 10;
 
         private List<string> _recentFiles = new List<string>();
@@ -28,7 +26,7 @@ namespace DialogEditor.Services
         /// </summary>
         public event Action? SettingsChanged;
 
-        private RecentFilesService()
+        public RecentFilesService()
         {
             // Initialized by SettingsService.LoadSettings()
         }

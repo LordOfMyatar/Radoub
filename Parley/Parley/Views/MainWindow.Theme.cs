@@ -4,7 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Styling;
-using DialogEditor.Services;
+
 using Radoub.Formats.Logging;
 using Radoub.UI.Services;
 
@@ -22,7 +22,7 @@ namespace DialogEditor.Views
             {
                 if (Application.Current != null)
                 {
-                    bool isDark = SettingsService.Instance.IsDarkTheme;
+                    bool isDark = _services.Settings.IsDarkTheme;
                     Application.Current.RequestedThemeVariant = isDark ? ThemeVariant.Dark : ThemeVariant.Light;
                     UpdateThemeMenuChecks(isDark);
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"Applied saved theme: {(isDark ? "Dark" : "Light")}");
@@ -41,7 +41,7 @@ namespace DialogEditor.Views
                 if (Application.Current != null)
                 {
                     Application.Current.RequestedThemeVariant = ThemeVariant.Light;
-                    SettingsService.Instance.IsDarkTheme = false;
+                    _services.Settings.IsDarkTheme = false;
                     _viewModel.StatusMessage = "Light theme applied";
                     UpdateThemeMenuChecks(false);
                 }
@@ -59,7 +59,7 @@ namespace DialogEditor.Views
                 if (Application.Current != null)
                 {
                     Application.Current.RequestedThemeVariant = ThemeVariant.Dark;
-                    SettingsService.Instance.IsDarkTheme = true;
+                    _services.Settings.IsDarkTheme = true;
                     _viewModel.StatusMessage = "Dark theme applied";
                     UpdateThemeMenuChecks(true);
                 }

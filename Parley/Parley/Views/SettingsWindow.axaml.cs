@@ -12,12 +12,16 @@ using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using DialogEditor.Services;
 using DialogEditor.Views.Controllers;
+using Microsoft.Extensions.DependencyInjection;
+using Radoub.Dictionary;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 
 namespace DialogEditor.Views
 {
     public partial class SettingsWindow : Window
     {
+        private readonly ISettingsService _settings;
         private bool _isInitializing = true;
 
         // Controllers for section-specific logic
@@ -36,6 +40,7 @@ namespace DialogEditor.Views
 
         public SettingsWindow(int initialTab = 0)
         {
+            _settings = Program.Services.GetRequiredService<ISettingsService>();
             InitializeComponent();
             InitializeControllers();
             LoadSettings();
@@ -72,26 +77,30 @@ namespace DialogEditor.Views
 
         private void InitializeControllers()
         {
+            var parameterCache = Program.Services.GetRequiredService<ParameterCacheService>();
+            var dictionarySettings = DictionarySettingsService.Instance;
+
             _resourcePathsController = new ResourcePathsController(
-                this, () => _isInitializing, GetErrorBrush, GetSuccessBrush);
+                this, () => _isInitializing, GetErrorBrush, GetSuccessBrush, _settings);
 
             _themeSettingsController = new ThemeSettingsController(
-                this, () => _isInitializing, GetErrorBrush);
+                this, () => _isInitializing, GetErrorBrush, _settings,
+                ThemeManager.Instance, EasterEggService.Instance);
 
             _dictionarySettingsController = new DictionarySettingsController(
-                this, () => _isInitializing);
+                this, () => _isInitializing, dictionarySettings);
 
             _uiSettingsController = new UISettingsController(
-                this, () => _isInitializing);
+                this, () => _isInitializing, _settings, dictionarySettings);
 
             _loggingSettingsController = new LoggingSettingsController(
-                this, () => _isInitializing);
+                this, () => _isInitializing, _settings);
 
             _autoSaveSettingsController = new AutoSaveSettingsController(
-                this, () => _isInitializing);
+                this, () => _isInitializing, _settings);
 
             _parameterCacheController = new ParameterCacheController(
-                this, () => _isInitializing);
+                this, () => _isInitializing, _settings, parameterCache);
         }
 
         private void LoadSettings()
@@ -140,14 +149,14 @@ namespace DialogEditor.Views
             if (tlkLanguageComboBox?.SelectedItem is ComboBoxItem selectedItem)
             {
                 var langCode = selectedItem.Tag as string ?? "";
-                var oldValue = SettingsService.Instance.TlkLanguage;
+                var oldValue = _settings.TlkLanguage;
 
                 if (langCode != oldValue)
                 {
-                    SettingsService.Instance.TlkLanguage = langCode;
+                    _settings.TlkLanguage = langCode;
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"TLK language changed from '{oldValue}' to '{langCode}'");
 
-                    GameResourceService.Instance.InvalidateResolver();
+                    Program.Services.GetRequiredService<GameResourceService>().InvalidateResolver();
 
                     _resourcePathsController?.UpdateTlkLanguageStatus();
                     await PromptReloadDialog();
@@ -163,14 +172,14 @@ namespace DialogEditor.Views
             if (tlkUseFemaleCheckBox != null)
             {
                 var useFemale = tlkUseFemaleCheckBox.IsChecked ?? false;
-                var oldValue = SettingsService.Instance.TlkUseFemale;
+                var oldValue = _settings.TlkUseFemale;
 
                 if (useFemale != oldValue)
                 {
-                    SettingsService.Instance.TlkUseFemale = useFemale;
+                    _settings.TlkUseFemale = useFemale;
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"TLK female variant changed from {oldValue} to {useFemale}");
 
-                    GameResourceService.Instance.InvalidateResolver();
+                    Program.Services.GetRequiredService<GameResourceService>().InvalidateResolver();
 
                     _resourcePathsController?.UpdateTlkLanguageStatus();
                     await PromptReloadDialog();

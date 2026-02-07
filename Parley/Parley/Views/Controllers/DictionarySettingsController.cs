@@ -22,12 +22,14 @@ namespace DialogEditor.Views.Controllers
     {
         private readonly Window _window;
         private readonly Func<bool> _isInitializing;
+        private readonly DictionarySettingsService _dictionarySettings;
         private DictionaryDiscovery? _dictionaryDiscovery;
 
-        public DictionarySettingsController(Window window, Func<bool> isInitializing)
+        public DictionarySettingsController(Window window, Func<bool> isInitializing, DictionarySettingsService dictionarySettings)
         {
             _window = window;
             _isInitializing = isInitializing;
+            _dictionarySettings = dictionarySettings;
         }
 
         public void LoadSettings()
@@ -46,7 +48,7 @@ namespace DialogEditor.Views.Controllers
                 return;
 
             var languages = _dictionaryDiscovery.GetAvailableLanguages();
-            var currentLanguage = DictionarySettingsService.Instance.PrimaryLanguage;
+            var currentLanguage = _dictionarySettings.PrimaryLanguage;
 
             // Create display items
             var items = languages.Select(lang => new LanguageListItem
@@ -78,7 +80,7 @@ namespace DialogEditor.Views.Controllers
                 return;
 
             var customDictionaries = _dictionaryDiscovery.GetAvailableCustomDictionaries();
-            var dictSettings = DictionarySettingsService.Instance;
+            var dictSettings = _dictionarySettings;
             var dictionaryItems = new List<Control>();
 
             foreach (var dict in customDictionaries)
@@ -190,7 +192,7 @@ namespace DialogEditor.Views.Controllers
 
             if (selectedItem != null)
             {
-                DictionarySettingsService.Instance.PrimaryLanguage = selectedItem.Id;
+                _dictionarySettings.PrimaryLanguage = selectedItem.Id;
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Primary language changed to {selectedItem.Id}");
             }
         }
@@ -199,7 +201,7 @@ namespace DialogEditor.Views.Controllers
         {
             if (_isInitializing()) return;
 
-            DictionarySettingsService.Instance.SetCustomDictionaryEnabled(dictionaryId, enabled);
+            _dictionarySettings.SetCustomDictionaryEnabled(dictionaryId, enabled);
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Dictionary {dictionaryId} {(enabled ? "enabled" : "disabled")}");
         }
 

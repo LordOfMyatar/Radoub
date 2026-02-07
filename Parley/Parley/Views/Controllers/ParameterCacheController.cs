@@ -18,16 +18,20 @@ namespace DialogEditor.Views.Controllers
     {
         private readonly Window _window;
         private readonly Func<bool> _isInitializing;
+        private readonly ISettingsService _settings;
+        private readonly ParameterCacheService _parameterCache;
 
-        public ParameterCacheController(Window window, Func<bool> isInitializing)
+        public ParameterCacheController(Window window, Func<bool> isInitializing, ISettingsService settings, ParameterCacheService parameterCache)
         {
             _window = window;
             _isInitializing = isInitializing;
+            _settings = settings;
+            _parameterCache = parameterCache;
         }
 
         public void LoadSettings()
         {
-            var settings = SettingsService.Instance;
+            var settings = _settings;
 
             var enableParameterCacheCheckBox = _window.FindControl<CheckBox>("EnableParameterCacheCheckBox");
             var maxCachedValuesSlider = _window.FindControl<Slider>("MaxCachedValuesSlider");
@@ -70,7 +74,7 @@ namespace DialogEditor.Views.Controllers
             var checkbox = sender as CheckBox;
             if (checkbox != null)
             {
-                SettingsService.Instance.EnableParameterCache = checkbox.IsChecked ?? true;
+                _settings.EnableParameterCache = checkbox.IsChecked ?? true;
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Parameter cache {(checkbox.IsChecked == true ? "enabled" : "disabled")}");
             }
         }
@@ -86,7 +90,7 @@ namespace DialogEditor.Views.Controllers
             {
                 int value = (int)slider.Value;
                 label.Text = $"{value} values";
-                SettingsService.Instance.MaxCachedValuesPerParameter = value;
+                _settings.MaxCachedValuesPerParameter = value;
             }
         }
 
@@ -101,7 +105,7 @@ namespace DialogEditor.Views.Controllers
             {
                 int value = (int)slider.Value;
                 label.Text = $"{value} scripts";
-                SettingsService.Instance.MaxCachedScripts = value;
+                _settings.MaxCachedScripts = value;
             }
         }
 
@@ -109,7 +113,7 @@ namespace DialogEditor.Views.Controllers
         {
             try
             {
-                var stats = ParameterCacheService.Instance.GetStats();
+                var stats = _parameterCache.GetStats();
                 var statsText = _window.FindControl<TextBlock>("CacheStatsText");
 
                 if (statsText != null)
@@ -134,7 +138,7 @@ namespace DialogEditor.Views.Controllers
 
                 if (result)
                 {
-                    ParameterCacheService.Instance.ClearAllCache();
+                    _parameterCache.ClearAllCache();
                     UpdateCacheStats();
                     UnifiedLogger.LogApplication(LogLevel.INFO, "Parameter cache cleared");
                 }

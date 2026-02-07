@@ -26,12 +26,12 @@ namespace Parley.Views.Helpers
         private readonly ScriptPropertiesPopulator _scriptPopulator;
         private readonly QuestPropertiesPopulator _questPopulator;
 
-        public PropertyPanelPopulator(Window window)
+        public PropertyPanelPopulator(Window window, ISettingsService settings, IJournalService journalService)
         {
             _basicPopulator = new BasicPropertiesPopulator(window);
-            _speakerPopulator = new SpeakerPropertiesPopulator(window);
+            _speakerPopulator = new SpeakerPropertiesPopulator(window, settings);
             _scriptPopulator = new ScriptPropertiesPopulator(window);
-            _questPopulator = new QuestPropertiesPopulator(window);
+            _questPopulator = new QuestPropertiesPopulator(window, journalService);
         }
 
         public BasicPropertiesPopulator BasicPopulator => _basicPopulator;

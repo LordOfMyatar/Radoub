@@ -21,9 +21,6 @@ namespace DialogEditor.Services
     /// </summary>
     public class JournalService : IJournalService
     {
-        private static readonly Lazy<JournalService> _instance = new Lazy<JournalService>(() => new JournalService());
-        public static JournalService Instance => _instance.Value;
-
         private List<JournalCategory>? _cachedCategories;
         private string? _cachedFilePath;
 

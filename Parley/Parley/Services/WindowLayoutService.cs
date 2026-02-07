@@ -12,8 +12,6 @@ namespace DialogEditor.Services
     /// </summary>
     public class WindowLayoutService : INotifyPropertyChanged
     {
-        public static WindowLayoutService Instance { get; } = new WindowLayoutService();
-
         // Main window settings
         private double _windowLeft = 100;
         private double _windowTop = 100;
@@ -45,7 +43,7 @@ namespace DialogEditor.Services
         /// </summary>
         public event Action? SettingsChanged;
 
-        private WindowLayoutService()
+        public WindowLayoutService()
         {
             // Initialized by SettingsService.LoadSettings()
         }

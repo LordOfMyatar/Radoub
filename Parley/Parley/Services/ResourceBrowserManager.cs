@@ -23,6 +23,7 @@ namespace DialogEditor.Services
     /// </summary>
     public class ResourceBrowserManager
     {
+        private readonly ISettingsService _settings;
         private readonly AudioService _audioService;
         private readonly CreatureService _creatureService;
         private readonly IGameDataService? _gameDataService;
@@ -38,6 +39,7 @@ namespace DialogEditor.Services
         public ResourceBrowserManager(
             AudioService audioService,
             CreatureService creatureService,
+            ISettingsService settings,
             Func<string, Control?> findControl,
             Action<string> setStatusMessage,
             Action<string> autoSaveProperty,
@@ -47,6 +49,7 @@ namespace DialogEditor.Services
         {
             _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
             _creatureService = creatureService ?? throw new ArgumentNullException(nameof(creatureService));
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _findControl = findControl ?? throw new ArgumentNullException(nameof(findControl));
             _setStatusMessage = setStatusMessage ?? throw new ArgumentNullException(nameof(setStatusMessage));
             _autoSaveProperty = autoSaveProperty ?? throw new ArgumentNullException(nameof(autoSaveProperty));
@@ -250,10 +253,9 @@ namespace DialogEditor.Services
         /// Gets the game data path for 2DA file lookups.
         /// Searches for data folder containing 2DA files.
         /// </summary>
-        private static string? GetGameDataPath()
+        private string? GetGameDataPath()
         {
-            var settings = SettingsService.Instance;
-            var basePath = settings.BaseGameInstallPath;
+            var basePath = _settings.BaseGameInstallPath;
 
             if (string.IsNullOrEmpty(basePath) || !Directory.Exists(basePath))
                 return null;

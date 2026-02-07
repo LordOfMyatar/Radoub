@@ -9,6 +9,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Radoub.Formats.Logging;
 
 namespace DialogEditor.Views
@@ -39,6 +40,8 @@ namespace DialogEditor.Views
     /// </summary>
     public partial class QuestBrowserWindow : Window
     {
+        private readonly ISettingsService _settings;
+        private readonly IJournalService _journalService;
         private List<JournalCategory> _allCategories;
         private List<JournalCategory> _filteredCategories;
         private JournalCategory? _selectedCategory;
@@ -75,6 +78,8 @@ namespace DialogEditor.Views
         /// <param name="initialEntryId">Pre-select this entry ID if found</param>
         public QuestBrowserWindow(string? dialogFilePath, string? initialQuestTag = null, uint? initialEntryId = null)
         {
+            _settings = Program.Services.GetRequiredService<ISettingsService>();
+            _journalService = Program.Services.GetRequiredService<IJournalService>();
             InitializeComponent();
             _allCategories = new List<JournalCategory>();
             _filteredCategories = new List<JournalCategory>();
@@ -109,7 +114,7 @@ namespace DialogEditor.Views
                 }
 
                 // Load from JournalService (uses cache)
-                _allCategories = await JournalService.Instance.ParseJournalFileAsync(journalPath);
+                _allCategories = await _journalService.ParseJournalFileAsync(journalPath);
                 UpdateQuestList();
 
                 // Pre-select initial quest if provided
@@ -335,9 +340,9 @@ namespace DialogEditor.Views
                 _manifestProcess = Process.Start(startInfo);
 
                 // Save the path if it wasn't already set (auto-detection success)
-                if (string.IsNullOrEmpty(SettingsService.Instance.ManifestPath))
+                if (string.IsNullOrEmpty(_settings.ManifestPath))
                 {
-                    SettingsService.Instance.ManifestPath = manifestPath;
+                    _settings.ManifestPath = manifestPath;
                 }
             }
             catch (Exception ex)
@@ -360,7 +365,7 @@ namespace DialogEditor.Views
             }
 
             // Second: Check Parley-specific settings (legacy or manual override)
-            var settingsPath = SettingsService.Instance.ManifestPath;
+            var settingsPath = _settings.ManifestPath;
             if (!string.IsNullOrEmpty(settingsPath) && File.Exists(settingsPath))
             {
                 return settingsPath;

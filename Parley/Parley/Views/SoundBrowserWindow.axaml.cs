@@ -10,6 +10,7 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using DialogEditor.Models.Sound;
 using DialogEditor.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
@@ -19,6 +20,7 @@ namespace DialogEditor.Views
 {
     public partial class SoundBrowserWindow : Window
     {
+        private readonly ISettingsService _settings;
         private readonly SoundService _soundService;
         private readonly AudioService _audioService;
         private readonly SoundScanner _scanner;
@@ -53,20 +55,23 @@ namespace DialogEditor.Views
 
         public SoundBrowserWindow(string? dialogFilePath, IGameDataService? gameDataService = null)
         {
+            _settings = Program.Services.GetRequiredService<ISettingsService>();
+            var concreteSettings = Program.Services.GetRequiredService<SettingsService>();
             InitializeComponent();
-            _soundService = new SoundService(SettingsService.Instance);
+            _soundService = new SoundService(concreteSettings);
             _audioService = new AudioService();
-            _scanner = new SoundScanner(SettingsService.Instance);
-            _extractor = new SoundExtractor();
+            var soundCache = Program.Services.GetRequiredService<SoundCache>();
+            _scanner = new SoundScanner(concreteSettings, soundCache);
+            _extractor = new SoundExtractor(soundCache);
             _gameDataService = gameDataService;
             _allSounds = new List<SoundFileInfo>();
             _filteredSounds = new List<SoundFileInfo>();
             _dialogFilePath = dialogFilePath;
 
             _isInitializing = true;
-            IncludeGameResourcesCheckBox.IsChecked = SettingsService.Instance.SoundBrowserIncludeGameResources;
-            IncludeHakFolderCheckBox.IsChecked = SettingsService.Instance.SoundBrowserIncludeHakFiles;
-            IncludeBifFilesCheckBox.IsChecked = SettingsService.Instance.SoundBrowserIncludeBifFiles;
+            IncludeGameResourcesCheckBox.IsChecked = _settings.SoundBrowserIncludeGameResources;
+            IncludeHakFolderCheckBox.IsChecked = _settings.SoundBrowserIncludeHakFiles;
+            IncludeBifFilesCheckBox.IsChecked = _settings.SoundBrowserIncludeBifFiles;
             _isInitializing = false;
 
             _audioService.PlaybackStopped += OnPlaybackStopped;
@@ -94,9 +99,9 @@ namespace DialogEditor.Views
         {
             if (_isInitializing) return;
 
-            SettingsService.Instance.SoundBrowserIncludeGameResources = IncludeGameResourcesCheckBox?.IsChecked == true;
-            SettingsService.Instance.SoundBrowserIncludeHakFiles = IncludeHakFolderCheckBox?.IsChecked == true;
-            SettingsService.Instance.SoundBrowserIncludeBifFiles = IncludeBifFilesCheckBox?.IsChecked == true;
+            _settings.SoundBrowserIncludeGameResources = IncludeGameResourcesCheckBox?.IsChecked == true;
+            _settings.SoundBrowserIncludeHakFiles = IncludeHakFolderCheckBox?.IsChecked == true;
+            _settings.SoundBrowserIncludeBifFiles = IncludeBifFilesCheckBox?.IsChecked == true;
 
             LoadSounds();
         }
@@ -120,7 +125,7 @@ namespace DialogEditor.Views
             try
             {
                 IStorageFolder? suggestedStart = null;
-                var basePath = SettingsService.Instance.BaseGameInstallPath;
+                var basePath = _settings.BaseGameInstallPath;
                 if (!string.IsNullOrEmpty(basePath) && Directory.Exists(basePath))
                     suggestedStart = await StorageProvider.TryGetFolderFromPathAsync(basePath);
 
@@ -170,7 +175,7 @@ namespace DialogEditor.Views
                     return;
                 }
 
-                var settings = SettingsService.Instance;
+                var settings = _settings;
 
                 // 1. Override folder and loose files (highest priority)
                 if (includeGameResources)
@@ -218,7 +223,7 @@ namespace DialogEditor.Views
             }
         }
 
-        private async Task ScanGameResourcesAsync(SettingsService settings)
+        private async Task ScanGameResourcesAsync(ISettingsService settings)
         {
             var basePath = settings.BaseGameInstallPath;
             if (string.IsNullOrEmpty(basePath) || !Directory.Exists(basePath))
@@ -258,7 +263,7 @@ namespace DialogEditor.Views
             await Task.CompletedTask;
         }
 
-        private async Task ScanHakFilesAsync(SettingsService settings)
+        private async Task ScanHakFilesAsync(ISettingsService settings)
         {
             if (!string.IsNullOrEmpty(_dialogFilePath))
             {
@@ -311,7 +316,7 @@ namespace DialogEditor.Views
             }
         }
 
-        private async Task ScanBifArchivesAsync(SettingsService settings)
+        private async Task ScanBifArchivesAsync(ISettingsService settings)
         {
             var basePath = settings.BaseGameInstallPath;
             if (!string.IsNullOrEmpty(basePath) && Directory.Exists(basePath))
@@ -386,7 +391,7 @@ namespace DialogEditor.Views
             };
         }
 
-        private static string GetNoSoundsMessage(bool includeGameResources, bool includeOtherLocation, SettingsService settings)
+        private static string GetNoSoundsMessage(bool includeGameResources, bool includeOtherLocation, ISettingsService settings)
         {
             if (!includeGameResources && string.IsNullOrEmpty(settings.BaseGameInstallPath))
                 return "Configure game path in Settings, or use Other location";

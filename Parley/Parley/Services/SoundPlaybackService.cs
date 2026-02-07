@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using DialogEditor.Models.Sound;
+using Microsoft.Extensions.DependencyInjection;
 using Radoub.Formats.Logging;
 using Radoub.UI.Services;
 
@@ -19,18 +20,19 @@ namespace DialogEditor.Services
         private readonly AudioService _audioService;
         private readonly SoundScanner _scanner;
         private readonly SoundExtractor _extractor;
-        private readonly SettingsService _settings;
+        private readonly ISettingsService _settings;
 
         // Cache of scanned sounds (populated on first use or when settings change)
         private List<SoundFileInfo>? _soundCache;
         private string? _lastScannedPath;
 
-        public SoundPlaybackService(AudioService audioService)
+        public SoundPlaybackService(AudioService audioService, ISettingsService settings)
         {
             _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
-            _settings = SettingsService.Instance;
-            _scanner = new SoundScanner(_settings);
-            _extractor = new SoundExtractor();
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            var soundCache = Program.Services.GetRequiredService<SoundCache>();
+            _scanner = new SoundScanner(_settings, soundCache);
+            _extractor = new SoundExtractor(soundCache);
         }
 
         /// <summary>

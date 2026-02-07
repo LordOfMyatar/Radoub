@@ -15,9 +15,6 @@ namespace DialogEditor.Services
     /// </summary>
     public class PortraitService : IPortraitService
     {
-        private static PortraitService? _instance;
-        public static PortraitService Instance => _instance ??= new PortraitService();
-
         private readonly Dictionary<string, Bitmap?> _portraitCache = new();
         private string? _gameDataPath;
         private string? _moduleOverridePath;

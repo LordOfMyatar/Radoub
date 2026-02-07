@@ -14,9 +14,6 @@ namespace DialogEditor.Services
     /// </summary>
     public class ParameterCacheService
     {
-        private static readonly Lazy<ParameterCacheService> _instance = new Lazy<ParameterCacheService>(() => new ParameterCacheService());
-        public static ParameterCacheService Instance => _instance.Value;
-
         private const string CacheFileName = "parameter_cache.json";
         private const int DefaultMaxValuesPerParameter = 10;
         private const int DefaultMaxScriptsInCache = 1000;
@@ -28,7 +25,7 @@ namespace DialogEditor.Services
         public int MaxScriptsInCache { get; set; } = DefaultMaxScriptsInCache;
         public bool EnableCaching { get; set; } = true;
 
-        private ParameterCacheService()
+        public ParameterCacheService()
         {
             // Determine platform-specific cache path
             _cacheFilePath = GetCacheFilePath();

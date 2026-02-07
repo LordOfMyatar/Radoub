@@ -23,12 +23,13 @@ namespace Parley.Views.Helpers
         public IGameDataService GameData { get; }
         public IImageService ImageService { get; }
 
-        // DI-resolved services (#1232)
+        // DI-resolved services (#1232, #1233)
         public ISettingsService Settings { get; }
         public IDialogContextService DialogContext { get; }
         public IScriptService Script { get; }
         public IPortraitService Portrait { get; }
         public IJournalService Journal { get; }
+        public UISettingsService UISettings { get; }
 
         // Property services
         public PropertyPanelPopulator PropertyPopulator { get; set; } = null!;
@@ -57,10 +58,11 @@ namespace Parley.Views.Helpers
             Script = serviceProvider.GetRequiredService<IScriptService>();
             Portrait = serviceProvider.GetRequiredService<IPortraitService>();
             Journal = serviceProvider.GetRequiredService<IJournalService>();
+            UISettings = serviceProvider.GetRequiredService<UISettingsService>();
 
             // Services with no dependencies (not yet in DI container)
             Audio = new AudioService();
-            SoundPlayback = new SoundPlaybackService(Audio);
+            SoundPlayback = new SoundPlaybackService(Audio, Settings);
             Creature = new CreatureService();
             KeyboardShortcuts = new KeyboardShortcutManager();
             DragDrop = new TreeViewDragDropService();

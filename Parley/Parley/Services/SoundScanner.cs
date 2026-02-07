@@ -16,11 +16,11 @@ namespace DialogEditor.Services
     public class SoundScanner
     {
         private readonly SoundCache _cache;
-        private readonly SettingsService _settings;
+        private readonly ISettingsService _settings;
 
-        public SoundScanner(SettingsService settings)
+        public SoundScanner(ISettingsService settings, SoundCache cache)
         {
-            _cache = SoundCache.Instance;
+            _cache = cache ?? throw new ArgumentNullException(nameof(cache));
             _settings = settings;
         }
 

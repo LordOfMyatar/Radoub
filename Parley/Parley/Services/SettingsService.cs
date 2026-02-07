@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Runtime.CompilerServices;
 using DialogEditor.Utils;
+using Microsoft.Extensions.DependencyInjection;
 using Radoub.Formats.Settings;
 using SharedPathHelper = Radoub.Formats.Common.PathHelper;
 using Radoub.Formats.Logging;
@@ -23,7 +24,18 @@ namespace DialogEditor.Services
 
     public class SettingsService : ISettingsService
     {
-        public static SettingsService Instance { get; } = new SettingsService();
+        /// <summary>
+        /// Static accessor for XAML x:Static bindings.
+        /// Resolves from DI container. Must only be called after DI is configured.
+        /// </summary>
+        public static SettingsService Instance => Program.Services.GetRequiredService<SettingsService>();
+
+        // #1233: Sub-services injected via constructor (DI-managed singletons)
+        private readonly RecentFilesService _recentFiles;
+        private readonly UISettingsService _uiSettings;
+        private readonly WindowLayoutService _windowLayout;
+        private readonly SpeakerPreferencesService _speakerPreferences;
+        private readonly ParameterCacheService _parameterCache;
 
         // Lazy initialization to avoid static field initialization timing issues
         private static string? _settingsDirectory;
@@ -127,12 +139,23 @@ namespace DialogEditor.Services
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        private SettingsService()
+        public SettingsService(
+            RecentFilesService recentFiles,
+            UISettingsService uiSettings,
+            WindowLayoutService windowLayout,
+            SpeakerPreferencesService speakerPreferences,
+            ParameterCacheService parameterCache)
         {
+            _recentFiles = recentFiles;
+            _uiSettings = uiSettings;
+            _windowLayout = windowLayout;
+            _speakerPreferences = speakerPreferences;
+            _parameterCache = parameterCache;
+
             // Subscribe to delegated services for save notifications (#719)
-            RecentFilesService.Instance.SettingsChanged += SaveSettings;
-            UISettingsService.Instance.SettingsChanged += SaveSettings;
-            WindowLayoutService.Instance.SettingsChanged += SaveSettings;
+            _recentFiles.SettingsChanged += SaveSettings;
+            _uiSettings.SettingsChanged += SaveSettings;
+            _windowLayout.SettingsChanged += SaveSettings;
 
             // Migrate from legacy ~/Parley to new ~/Radoub/Parley location (#472)
             MigrateLegacySettingsFolder();
@@ -342,69 +365,69 @@ namespace DialogEditor.Services
         }
 
         // Recent files - DELEGATED to RecentFilesService (#719)
-        public List<string> RecentFiles => RecentFilesService.Instance.RecentFiles;
+        public List<string> RecentFiles => _recentFiles.RecentFiles;
 
         public int MaxRecentFiles
         {
-            get => RecentFilesService.Instance.MaxRecentFiles;
-            set => RecentFilesService.Instance.MaxRecentFiles = value;
+            get => _recentFiles.MaxRecentFiles;
+            set => _recentFiles.MaxRecentFiles = value;
         }
         
         // Window properties - DELEGATED to WindowLayoutService (#719)
         public double WindowLeft
         {
-            get => WindowLayoutService.Instance.WindowLeft;
-            set => WindowLayoutService.Instance.WindowLeft = value;
+            get => _windowLayout.WindowLeft;
+            set => _windowLayout.WindowLeft = value;
         }
 
         public double WindowTop
         {
-            get => WindowLayoutService.Instance.WindowTop;
-            set => WindowLayoutService.Instance.WindowTop = value;
+            get => _windowLayout.WindowTop;
+            set => _windowLayout.WindowTop = value;
         }
 
         public double WindowWidth
         {
-            get => WindowLayoutService.Instance.WindowWidth;
-            set => WindowLayoutService.Instance.WindowWidth = value;
+            get => _windowLayout.WindowWidth;
+            set => _windowLayout.WindowWidth = value;
         }
 
         public double WindowHeight
         {
-            get => WindowLayoutService.Instance.WindowHeight;
-            set => WindowLayoutService.Instance.WindowHeight = value;
+            get => _windowLayout.WindowHeight;
+            set => _windowLayout.WindowHeight = value;
         }
 
         public bool WindowMaximized
         {
-            get => WindowLayoutService.Instance.WindowMaximized;
-            set => WindowLayoutService.Instance.WindowMaximized = value;
+            get => _windowLayout.WindowMaximized;
+            set => _windowLayout.WindowMaximized = value;
         }
 
         // Panel layout properties - DELEGATED to WindowLayoutService (#719)
         public double LeftPanelWidth
         {
-            get => WindowLayoutService.Instance.LeftPanelWidth;
-            set => WindowLayoutService.Instance.LeftPanelWidth = value;
+            get => _windowLayout.LeftPanelWidth;
+            set => _windowLayout.LeftPanelWidth = value;
         }
 
         public double TopLeftPanelHeight
         {
-            get => WindowLayoutService.Instance.TopLeftPanelHeight;
-            set => WindowLayoutService.Instance.TopLeftPanelHeight = value;
+            get => _windowLayout.TopLeftPanelHeight;
+            set => _windowLayout.TopLeftPanelHeight = value;
         }
 
         // UI properties - DELEGATED to UISettingsService (#719)
         public double FontSize
         {
-            get => UISettingsService.Instance.FontSize;
-            set => UISettingsService.Instance.FontSize = value;
+            get => _uiSettings.FontSize;
+            set => _uiSettings.FontSize = value;
         }
 
         public string FontFamily
         {
-            get => UISettingsService.Instance.FontFamily;
-            set => UISettingsService.Instance.FontFamily = value;
+            get => _uiSettings.FontFamily;
+            set => _uiSettings.FontFamily = value;
         }
 
         /// <summary>
@@ -412,8 +435,8 @@ namespace DialogEditor.Services
         /// </summary>
         public bool IsDarkTheme
         {
-            get => UISettingsService.Instance.IsDarkTheme;
-            set => UISettingsService.Instance.IsDarkTheme = value;
+            get => _uiSettings.IsDarkTheme;
+            set => _uiSettings.IsDarkTheme = value;
         }
 
         /// <summary>
@@ -421,8 +444,8 @@ namespace DialogEditor.Services
         /// </summary>
         public string CurrentThemeId
         {
-            get => UISettingsService.Instance.CurrentThemeId;
-            set => UISettingsService.Instance.CurrentThemeId = value;
+            get => _uiSettings.CurrentThemeId;
+            set => _uiSettings.CurrentThemeId = value;
         }
 
         /// <summary>
@@ -430,64 +453,64 @@ namespace DialogEditor.Services
         /// </summary>
         public string FlowchartLayout
         {
-            get => UISettingsService.Instance.FlowchartLayout;
-            set => UISettingsService.Instance.FlowchartLayout = value;
+            get => _uiSettings.FlowchartLayout;
+            set => _uiSettings.FlowchartLayout = value;
         }
 
         // Flowchart Window Properties - DELEGATED to WindowLayoutService (#719)
         public double FlowchartWindowLeft
         {
-            get => WindowLayoutService.Instance.FlowchartWindowLeft;
-            set => WindowLayoutService.Instance.FlowchartWindowLeft = value;
+            get => _windowLayout.FlowchartWindowLeft;
+            set => _windowLayout.FlowchartWindowLeft = value;
         }
 
         public double FlowchartWindowTop
         {
-            get => WindowLayoutService.Instance.FlowchartWindowTop;
-            set => WindowLayoutService.Instance.FlowchartWindowTop = value;
+            get => _windowLayout.FlowchartWindowTop;
+            set => _windowLayout.FlowchartWindowTop = value;
         }
 
         public double FlowchartWindowWidth
         {
-            get => WindowLayoutService.Instance.FlowchartWindowWidth;
-            set => WindowLayoutService.Instance.FlowchartWindowWidth = value;
+            get => _windowLayout.FlowchartWindowWidth;
+            set => _windowLayout.FlowchartWindowWidth = value;
         }
 
         public double FlowchartWindowHeight
         {
-            get => WindowLayoutService.Instance.FlowchartWindowHeight;
-            set => WindowLayoutService.Instance.FlowchartWindowHeight = value;
+            get => _windowLayout.FlowchartWindowHeight;
+            set => _windowLayout.FlowchartWindowHeight = value;
         }
 
         public bool FlowchartWindowOpen
         {
-            get => WindowLayoutService.Instance.FlowchartWindowOpen;
-            set => WindowLayoutService.Instance.FlowchartWindowOpen = value;
+            get => _windowLayout.FlowchartWindowOpen;
+            set => _windowLayout.FlowchartWindowOpen = value;
         }
 
         public double FlowchartPanelWidth
         {
-            get => WindowLayoutService.Instance.FlowchartPanelWidth;
-            set => WindowLayoutService.Instance.FlowchartPanelWidth = value;
+            get => _windowLayout.FlowchartPanelWidth;
+            set => _windowLayout.FlowchartPanelWidth = value;
         }
 
         public bool FlowchartVisible
         {
-            get => WindowLayoutService.Instance.FlowchartVisible;
-            set => WindowLayoutService.Instance.FlowchartVisible = value;
+            get => _windowLayout.FlowchartVisible;
+            set => _windowLayout.FlowchartVisible = value;
         }
 
         // Dialog Browser Panel Properties - DELEGATED to WindowLayoutService (#1143)
         public double DialogBrowserPanelWidth
         {
-            get => WindowLayoutService.Instance.DialogBrowserPanelWidth;
-            set => WindowLayoutService.Instance.DialogBrowserPanelWidth = value;
+            get => _windowLayout.DialogBrowserPanelWidth;
+            set => _windowLayout.DialogBrowserPanelWidth = value;
         }
 
         public bool DialogBrowserPanelVisible
         {
-            get => WindowLayoutService.Instance.DialogBrowserPanelVisible;
-            set => WindowLayoutService.Instance.DialogBrowserPanelVisible = value;
+            get => _windowLayout.DialogBrowserPanelVisible;
+            set => _windowLayout.DialogBrowserPanelVisible = value;
         }
 
         // Game Settings Properties - DELEGATED to shared RadoubSettings (#412)
@@ -736,8 +759,8 @@ namespace DialogEditor.Services
         // UI Settings Properties (Issue #63) - DELEGATED to UISettingsService (#719)
         public bool AllowScrollbarAutoHide
         {
-            get => UISettingsService.Instance.AllowScrollbarAutoHide;
-            set => UISettingsService.Instance.AllowScrollbarAutoHide = value;
+            get => _uiSettings.AllowScrollbarAutoHide;
+            set => _uiSettings.AllowScrollbarAutoHide = value;
         }
 
         /// <summary>
@@ -746,8 +769,8 @@ namespace DialogEditor.Services
         /// </summary>
         public int FlowchartNodeMaxLines
         {
-            get => UISettingsService.Instance.FlowchartNodeMaxLines;
-            set => UISettingsService.Instance.FlowchartNodeMaxLines = value;
+            get => _uiSettings.FlowchartNodeMaxLines;
+            set => _uiSettings.FlowchartNodeMaxLines = value;
         }
 
         /// <summary>
@@ -756,20 +779,20 @@ namespace DialogEditor.Services
         /// </summary>
         public bool TreeViewWordWrap
         {
-            get => UISettingsService.Instance.TreeViewWordWrap;
-            set => UISettingsService.Instance.TreeViewWordWrap = value;
+            get => _uiSettings.TreeViewWordWrap;
+            set => _uiSettings.TreeViewWordWrap = value;
         }
 
         // NPC Speaker Visual Preferences (Issue #16, #36, #179)
         // Now delegates to SpeakerPreferencesService for storage in separate file
         public Dictionary<string, SpeakerPreferences> NpcSpeakerPreferences
         {
-            get => SpeakerPreferencesService.Instance.Preferences;
+            get => _speakerPreferences.Preferences;
         }
 
         public void SetSpeakerPreference(string speakerTag, string? color, SpeakerVisualHelper.SpeakerShape? shape)
         {
-            SpeakerPreferencesService.Instance.SetPreference(speakerTag, color, shape);
+            _speakerPreferences.SetPreference(speakerTag, color, shape);
             OnPropertyChanged(nameof(NpcSpeakerPreferences));
         }
 
@@ -779,7 +802,7 @@ namespace DialogEditor.Services
             if (!_enableNpcTagColoring)
                 return (null, null);
 
-            return SpeakerPreferencesService.Instance.GetPreference(speakerTag);
+            return _speakerPreferences.GetPreference(speakerTag);
         }
 
         public bool EnableNpcTagColoring
@@ -855,7 +878,7 @@ namespace DialogEditor.Services
             {
                 if (SetProperty(ref _enableParameterCache, value))
                 {
-                    ParameterCacheService.Instance.EnableCaching = value;
+                    _parameterCache.EnableCaching = value;
                     SaveSettings();
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"Parameter cache {(value ? "enabled" : "disabled")}");
                 }
@@ -870,7 +893,7 @@ namespace DialogEditor.Services
                 // Clamp between 5-50 values
                 if (SetProperty(ref _maxCachedValuesPerParameter, Math.Max(5, Math.Min(50, value))))
                 {
-                    ParameterCacheService.Instance.MaxValuesPerParameter = value;
+                    _parameterCache.MaxValuesPerParameter = value;
                     SaveSettings();
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"Max cached values per parameter set to {value}");
                 }
@@ -885,7 +908,7 @@ namespace DialogEditor.Services
                 // Clamp between 100-10000 scripts
                 if (SetProperty(ref _maxCachedScripts, Math.Max(100, Math.Min(10000, value))))
                 {
-                    ParameterCacheService.Instance.MaxScriptsInCache = value;
+                    _parameterCache.MaxScriptsInCache = value;
                     SaveSettings();
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"Max cached scripts set to {value}");
                 }
@@ -946,12 +969,12 @@ namespace DialogEditor.Services
                     if (settings != null)
                     {
                         // Initialize RecentFilesService (#719)
-                        RecentFilesService.Instance.Initialize(
+                        _recentFiles.Initialize(
                             SharedPathHelper.ExpandPaths(settings.RecentFiles?.ToList() ?? new List<string>()),
                             settings.MaxRecentFiles);
 
                         // Initialize WindowLayoutService (#719)
-                        WindowLayoutService.Instance.Initialize(
+                        _windowLayout.Initialize(
                             settings.WindowLeft,
                             settings.WindowTop,
                             settings.WindowWidth,
@@ -970,7 +993,7 @@ namespace DialogEditor.Services
                             settings.DialogBrowserPanelVisible);
 
                         // Initialize UISettingsService (#719)
-                        UISettingsService.Instance.Initialize(
+                        _uiSettings.Initialize(
                             settings.FontSize,
                             settings.FontFamily ?? "",
                             settings.IsDarkTheme,
@@ -985,7 +1008,7 @@ namespace DialogEditor.Services
                         _legacyNpcSpeakerPreferences = settings.NpcSpeakerPreferences;
                         if (_legacyNpcSpeakerPreferences != null && _legacyNpcSpeakerPreferences.Count > 0)
                         {
-                            SpeakerPreferencesService.Instance.MigrateFromSettingsData(_legacyNpcSpeakerPreferences);
+                            _speakerPreferences.MigrateFromSettingsData(_legacyNpcSpeakerPreferences);
                             _legacyNpcSpeakerPreferences = null; // Clear after migration
                         }
 
@@ -1030,9 +1053,9 @@ namespace DialogEditor.Services
                         _maxCachedScripts = Math.Max(100, Math.Min(10000, settings.MaxCachedScripts));
 
                         // Apply parameter cache settings
-                        ParameterCacheService.Instance.EnableCaching = _enableParameterCache;
-                        ParameterCacheService.Instance.MaxValuesPerParameter = _maxCachedValuesPerParameter;
-                        ParameterCacheService.Instance.MaxScriptsInCache = _maxCachedScripts;
+                        _parameterCache.EnableCaching = _enableParameterCache;
+                        _parameterCache.MaxValuesPerParameter = _maxCachedValuesPerParameter;
+                        _parameterCache.MaxScriptsInCache = _maxCachedScripts;
 
                         // Load Sound Browser settings (#220)
                         _soundBrowserIncludeGameResources = settings.SoundBrowserIncludeGameResources;
@@ -1049,7 +1072,7 @@ namespace DialogEditor.Services
                         _externalEditorPath = SharedPathHelper.ExpandPath(settings.ExternalEditorPath ?? "");
                         _scriptSearchPaths = SharedPathHelper.ExpandPaths(settings.ScriptSearchPaths?.ToList() ?? new List<string>());
 
-                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {RecentFilesService.Instance.RecentFiles.Count} recent files, max={RecentFilesService.Instance.MaxRecentFiles}, theme={(UISettingsService.Instance.IsDarkTheme ? "dark" : "light")}, logLevel={_logLevel}, retention={_logRetentionSessions} sessions, autoSave={_autoSaveEnabled}, delay={_autoSaveDelayMs}ms, paramCache={_enableParameterCache}");
+                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {_recentFiles.RecentFiles.Count} recent files, max={_recentFiles.MaxRecentFiles}, theme={(_uiSettings.IsDarkTheme ? "dark" : "light")}, logLevel={_logLevel}, retention={_logRetentionSessions} sessions, autoSave={_autoSaveEnabled}, delay={_autoSaveDelayMs}ms, paramCache={_enableParameterCache}");
                     }
                     else
                     {
@@ -1073,7 +1096,7 @@ namespace DialogEditor.Services
             {
                 var settings = new SettingsData
                 {
-                    RecentFiles = SharedPathHelper.ContractPaths(RecentFilesService.Instance.RecentFiles), // Use ~ for home directory
+                    RecentFiles = SharedPathHelper.ContractPaths(_recentFiles.RecentFiles), // Use ~ for home directory
                     MaxRecentFiles = MaxRecentFiles,
                     WindowLeft = WindowLeft,
                     WindowTop = WindowTop,
@@ -1153,10 +1176,10 @@ namespace DialogEditor.Services
         }
 
         // Recent file methods - DELEGATED to RecentFilesService (#719)
-        public void AddRecentFile(string filePath) => RecentFilesService.Instance.AddRecentFile(filePath);
-        public void RemoveRecentFile(string filePath) => RecentFilesService.Instance.RemoveRecentFile(filePath);
-        public void ClearRecentFiles() => RecentFilesService.Instance.ClearRecentFiles();
-        public void CleanupRecentFiles() => RecentFilesService.Instance.CleanupRecentFiles();
+        public void AddRecentFile(string filePath) => _recentFiles.AddRecentFile(filePath);
+        public void RemoveRecentFile(string filePath) => _recentFiles.RemoveRecentFile(filePath);
+        public void ClearRecentFiles() => _recentFiles.ClearRecentFiles();
+        public void CleanupRecentFiles() => _recentFiles.CleanupRecentFiles();
 
         private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {

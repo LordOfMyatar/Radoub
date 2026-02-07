@@ -53,7 +53,7 @@ sealed class Program
     /// DI service provider - available to App and MainWindow for resolving services.
     /// #1231: Sprint 3.2 - Dependency injection container.
     /// </summary>
-    public static IServiceProvider Services { get; private set; } = null!;
+    public static IServiceProvider Services { get; set; } = null!;
 
     /// <summary>
     /// Attach to parent console for CLI output on Windows
@@ -146,20 +146,38 @@ sealed class Program
 
     /// <summary>
     /// Configure the DI container with service registrations.
-    /// Currently registers existing singleton instances; Sprint 3.4 will
-    /// transition to constructor-based creation by removing static Instance properties.
+    /// #1233: Sprint 3.4 - All services created by DI container, no static Instance access.
     /// </summary>
     private static IServiceProvider ConfigureServices()
     {
         var services = new ServiceCollection();
 
-        // Register services using existing singleton instances.
-        // These will be transitioned to proper DI-managed singletons in Sprint 3.4.
-        services.AddSingleton<ISettingsService>(SettingsService.Instance);
-        services.AddSingleton<IDialogContextService>(DialogContextService.Instance);
-        services.AddSingleton<IScriptService>(ScriptService.Instance);
-        services.AddSingleton<IPortraitService>(PortraitService.Instance);
-        services.AddSingleton<IJournalService>(JournalService.Instance);
+        // Sub-services used internally by SettingsService
+        services.AddSingleton<RecentFilesService>();
+        services.AddSingleton<UISettingsService>();
+        services.AddSingleton<WindowLayoutService>();
+        services.AddSingleton<SpeakerPreferencesService>();
+        services.AddSingleton<ParameterCacheService>();
+
+        // Core services - DI creates instances via constructor injection
+        services.AddSingleton<SettingsService>();
+        services.AddSingleton<ISettingsService>(sp => sp.GetRequiredService<SettingsService>());
+        services.AddSingleton<DialogContextService>();
+        services.AddSingleton<IDialogContextService>(sp => sp.GetRequiredService<DialogContextService>());
+        services.AddSingleton<ScriptService>();
+        services.AddSingleton<IScriptService>(sp => sp.GetRequiredService<ScriptService>());
+        services.AddSingleton<PortraitService>();
+        services.AddSingleton<IPortraitService>(sp => sp.GetRequiredService<PortraitService>());
+        services.AddSingleton<JournalService>();
+        services.AddSingleton<IJournalService>(sp => sp.GetRequiredService<JournalService>());
+
+        // Services that were previously accessed via .Instance (#1233)
+        services.AddSingleton<GameResourceService>();
+        services.AddSingleton<ExternalEditorService>();
+        services.AddSingleton<DialogEditor.Services.SpellCheckService>();
+        services.AddSingleton<SoundCache>();
+        services.AddSingleton<CoverageTracker>();
+        services.AddSingleton<ITtsService>(sp => TtsServiceFactory.Create());
 
         return services.BuildServiceProvider();
     }

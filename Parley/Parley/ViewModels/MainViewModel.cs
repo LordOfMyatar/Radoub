@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Radoub.Formats.Logging;
 using Radoub.UI.Utils;
 using Parley.Models;
@@ -42,6 +43,8 @@ namespace DialogEditor.ViewModels
 
         #region Services
 
+        private readonly ISettingsService _settings;
+        private readonly IDialogContextService _dialogContext;
         private readonly UndoRedoService _undoRedoService = new(50); // Undo/redo service with 50 state history
         private readonly ScrapManager _scrapManager = new(); // Manages deleted/cut nodes
         private readonly DialogEditorService _editorService = new(); // Service for node editing operations
@@ -68,7 +71,7 @@ namespace DialogEditor.ViewModels
                 {
                     OnPropertyChanged(nameof(CanRestoreFromScrap));
                     // Sync with DialogContextService for plugin access (#227)
-                    DialogContextService.Instance.CurrentDialog = value;
+                    _dialogContext.CurrentDialog = value;
                 }
             }
         }
@@ -89,8 +92,8 @@ namespace DialogEditor.ViewModels
                     OnPropertyChanged(nameof(ScrapTabHeader));
 
                     // Sync with DialogContextService for plugin access (#227)
-                    DialogContextService.Instance.CurrentFileName = value;
-                    DialogContextService.Instance.CurrentFilePath = value;
+                    _dialogContext.CurrentFileName = value;
+                    _dialogContext.CurrentFilePath = value;
                 }
             }
         }
@@ -168,7 +171,7 @@ namespace DialogEditor.ViewModels
         /// <summary>
         /// Issue #484: Expose warning visibility setting for tree view binding
         /// </summary>
-        public bool ShowDialogWarnings => SettingsService.Instance.SimulatorShowWarnings;
+        public bool ShowDialogWarnings => _settings.SimulatorShowWarnings;
 
         public ObservableCollection<ScrapEntry> ScrapEntries => _scrapManager.ScrapEntries;
 
@@ -257,6 +260,8 @@ namespace DialogEditor.ViewModels
 
         public MainViewModel()
         {
+            _settings = Program.Services.GetRequiredService<ISettingsService>();
+            _dialogContext = Program.Services.GetRequiredService<IDialogContextService>();
             UnifiedLogger.LogApplication(LogLevel.INFO, "Parley MainViewModel initialized");
 
             // Initialize NodeOperationsManager with required dependencies
@@ -274,7 +279,7 @@ namespace DialogEditor.ViewModels
             };
 
             // Issue #484: Subscribe to settings changes to refresh tree when warning visibility changes
-            SettingsService.Instance.PropertyChanged += OnSettingsPropertyChanged;
+            _settings.PropertyChanged += OnSettingsPropertyChanged;
         }
 
         #endregion

@@ -37,6 +37,7 @@ namespace Parley.Views.Helpers
         private readonly Action _saveCurrentNodeProperties;
         private readonly Func<bool> _getIsSettingSelectionProgrammatically;
         private readonly Action<bool> _setIsSettingSelectionProgrammatically;
+        private readonly ISettingsService _settings;
         private readonly KeyboardShortcutManager _shortcutManager; // #809: For FlowView keyboard parity
         private readonly Action<FlowchartContextMenuEventArgs>? _onContextMenuAction; // #461: Context menu parity
 
@@ -48,6 +49,7 @@ namespace Parley.Views.Helpers
             Window window,
             SafeControlFinder controls,
             WindowLifecycleManager windows,
+            ISettingsService settings,
             Func<MainViewModel> getViewModel,
             Func<TreeViewSafeNode?> getSelectedNode,
             Action<TreeViewSafeNode> setSelectedNode,
@@ -61,6 +63,7 @@ namespace Parley.Views.Helpers
             _window = window;
             _controls = controls;
             _windows = windows;
+            _settings = settings;
             _getViewModel = getViewModel;
             _getSelectedNode = getSelectedNode;
             _setSelectedNode = setSelectedNode;
@@ -99,8 +102,8 @@ namespace Parley.Views.Helpers
                 flowchart.UpdateDialog(ViewModel.CurrentDialog, ViewModel.CurrentFileName);
 
                 // Mark flowchart as open (#377)
-                SettingsService.Instance.FlowchartWindowOpen = true;
-                SettingsService.Instance.FlowchartVisible = true;
+                _settings.FlowchartWindowOpen = true;
+                _settings.FlowchartVisible = true;
 
                 ViewModel.StatusMessage = "Flowchart view opened";
             }
@@ -116,7 +119,7 @@ namespace Parley.Views.Helpers
         /// </summary>
         public void ApplyLayout(string layoutValue)
         {
-            SettingsService.Instance.FlowchartLayout = layoutValue;
+            _settings.FlowchartLayout = layoutValue;
             UpdateLayoutMenuChecks();
             ApplyLayoutInternal();
             ViewModel.StatusMessage = $"Flowchart layout set to {layoutValue}";
@@ -127,7 +130,7 @@ namespace Parley.Views.Helpers
         /// </summary>
         public void UpdateLayoutMenuChecks()
         {
-            var currentLayout = SettingsService.Instance.FlowchartLayout;
+            var currentLayout = _settings.FlowchartLayout;
 
             var floatingItem = _window.FindControl<MenuItem>("FlowchartLayoutFloating");
             var sideBySideItem = _window.FindControl<MenuItem>("FlowchartLayoutSideBySide");
@@ -146,7 +149,7 @@ namespace Parley.Views.Helpers
         /// </summary>
         private void ApplyLayoutInternal()
         {
-            var layout = SettingsService.Instance.FlowchartLayout;
+            var layout = _settings.FlowchartLayout;
 
             // Close existing floating window if switching to embedded mode
             if (layout != "Floating")
@@ -186,7 +189,7 @@ namespace Parley.Views.Helpers
 
                     // Show columns (indices 3 and 4 are the splitter and panel columns)
                     // Use saved width or default (#377)
-                    var savedWidth = SettingsService.Instance.FlowchartPanelWidth;
+                    var savedWidth = _settings.FlowchartPanelWidth;
                     grid.ColumnDefinitions[3].Width = new GridLength(5);
                     grid.ColumnDefinitions[4].Width = new GridLength(savedWidth, GridUnitType.Pixel);
                     grid.ColumnDefinitions[4].MinWidth = 200;
@@ -214,7 +217,7 @@ namespace Parley.Views.Helpers
             if (success)
             {
                 // Mark flowchart as visible (#377)
-                SettingsService.Instance.FlowchartVisible = true;
+                _settings.FlowchartVisible = true;
                 UnifiedLogger.LogUI(LogLevel.INFO, "Side-by-side flowchart panel shown");
             }
             else
@@ -254,7 +257,7 @@ namespace Parley.Views.Helpers
             if (success)
             {
                 // Mark flowchart as visible (#377)
-                SettingsService.Instance.FlowchartVisible = true;
+                _settings.FlowchartVisible = true;
                 UnifiedLogger.LogUI(LogLevel.INFO, "Tabbed flowchart panel shown");
             }
             else
@@ -305,7 +308,7 @@ namespace Parley.Views.Helpers
             HideSideBySideFlowchart();
             HideTabbedFlowchart();
             // Mark flowchart as not visible (#377)
-            SettingsService.Instance.FlowchartVisible = false;
+            _settings.FlowchartVisible = false;
             UnifiedLogger.LogUI(LogLevel.INFO, "All embedded flowchart panels hidden");
         }
 
@@ -314,7 +317,7 @@ namespace Parley.Views.Helpers
         /// </summary>
         public void RestoreOnStartup()
         {
-            var layout = SettingsService.Instance.FlowchartLayout;
+            var layout = _settings.FlowchartLayout;
             UnifiedLogger.LogUI(LogLevel.INFO, $"Restoring flowchart on startup: layout={layout}");
 
             switch (layout)
@@ -335,7 +338,7 @@ namespace Parley.Views.Helpers
         {
             if (e.Property.Name == "Width" && sender is ColumnDefinition colDef && colDef.Width.IsAbsolute)
             {
-                SettingsService.Instance.FlowchartPanelWidth = colDef.Width.Value;
+                _settings.FlowchartPanelWidth = colDef.Width.Value;
             }
         }
 
@@ -379,7 +382,7 @@ namespace Parley.Views.Helpers
         /// </summary>
         public void UpdateAfterLoad()
         {
-            var layout = SettingsService.Instance.FlowchartLayout;
+            var layout = _settings.FlowchartLayout;
             var embeddedBorder = _window.FindControl<Border>("EmbeddedFlowchartBorder");
             var embeddedPanel = _window.FindControl<FlowchartPanel>("EmbeddedFlowchartPanel");
             var flowchartTab = _window.FindControl<TabItem>("FlowchartTab");
@@ -541,7 +544,7 @@ namespace Parley.Views.Helpers
         /// </summary>
         public FlowchartPanel? GetActivePanel()
         {
-            var layout = SettingsService.Instance.FlowchartLayout;
+            var layout = _settings.FlowchartLayout;
             var embeddedBorder = _window.FindControl<Border>("EmbeddedFlowchartBorder");
             var embeddedPanel = _window.FindControl<FlowchartPanel>("EmbeddedFlowchartPanel");
             var flowchartTab = _window.FindControl<TabItem>("FlowchartTab");

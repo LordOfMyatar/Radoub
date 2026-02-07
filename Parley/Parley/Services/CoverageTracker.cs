@@ -15,16 +15,13 @@ namespace DialogEditor.Services
     /// </summary>
     public class CoverageTracker
     {
-        private static CoverageTracker? _instance;
-        public static CoverageTracker Instance => _instance ??= new CoverageTracker();
-
         private readonly string _coverageFilePath;
         private CoverageData _coverageData;
         private readonly JsonSerializerOptions _jsonOptions;
 
         public event EventHandler<CoverageChangedEventArgs>? CoverageChanged;
 
-        private CoverageTracker()
+        public CoverageTracker()
         {
             var cachePath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
