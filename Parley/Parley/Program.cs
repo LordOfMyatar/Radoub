@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using DialogEditor.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
 using Radoub.UI.Services;
@@ -47,6 +48,12 @@ sealed class Program
     /// SafeMode service instance - available to App.axaml.cs for applying resets
     /// </summary>
     public static SafeModeService? SafeMode { get; private set; }
+
+    /// <summary>
+    /// DI service provider - available to App and MainWindow for resolving services.
+    /// #1231: Sprint 3.2 - Dependency injection container.
+    /// </summary>
+    public static IServiceProvider Services { get; private set; } = null!;
 
     /// <summary>
     /// Attach to parent console for CLI output on Windows
@@ -129,9 +136,32 @@ sealed class Program
             RetainSessions = sharedSettings.SharedLogRetentionSessions
         });
 
+        // Configure dependency injection container (#1231)
+        Services = ConfigureServices();
+
         // Start GUI application
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         return 0;
+    }
+
+    /// <summary>
+    /// Configure the DI container with service registrations.
+    /// Currently registers existing singleton instances; Sprint 3.4 will
+    /// transition to constructor-based creation by removing static Instance properties.
+    /// </summary>
+    private static IServiceProvider ConfigureServices()
+    {
+        var services = new ServiceCollection();
+
+        // Register services using existing singleton instances.
+        // These will be transitioned to proper DI-managed singletons in Sprint 3.4.
+        services.AddSingleton<ISettingsService>(SettingsService.Instance);
+        services.AddSingleton<IDialogContextService>(DialogContextService.Instance);
+        services.AddSingleton<IScriptService>(ScriptService.Instance);
+        services.AddSingleton<IPortraitService>(PortraitService.Instance);
+        services.AddSingleton<IJournalService>(JournalService.Instance);
+
+        return services.BuildServiceProvider();
     }
 
     // Avalonia configuration, don't remove; also used by visual designer.
