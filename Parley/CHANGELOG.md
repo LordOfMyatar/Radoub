@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.140-alpha] - 2026-02-07
-**Branch**: `parley/issue-1230` | **PR**: #TBD
+**Branch**: `parley/issue-1230` | **PR**: #1252
 
 ### Sprint 3.1: Define Service Interfaces (#1230)
 
