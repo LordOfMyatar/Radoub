@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.133-alpha] - 2026-02-07
-**Branch**: `parley/issue-1223` | **PR**: #TBD
+**Branch**: `parley/issue-1223` | **PR**: #1243
 
 ### Sprint 1.4: Extract Speaker Visual Controller (#1223)
 
