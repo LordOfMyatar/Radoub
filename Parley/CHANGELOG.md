@@ -13,6 +13,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.138-alpha] - 2026-02-07
+**Branch**: `parley/issue-1228` | **PR**: #1250
+
+### Sprint 2.3: Extract QuestPropertiesPopulator (#1228)
+
+- Extract quest field population logic from `PropertyPanelPopulator.cs` into `QuestPropertiesPopulator.cs`
+
+---
+
 ## [0.1.137-alpha] - 2026-02-07
 **Branch**: `parley/issue-1227` | **PR**: #1249
 

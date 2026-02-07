@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using Avalonia.Controls;
 using DialogEditor.Models;
 using DialogEditor.Services;
@@ -23,18 +22,21 @@ namespace Parley.Views.Helpers
     ///
     /// Speaker/portrait/soundset population delegated to SpeakerPropertiesPopulator (Epic #1219, Sprint 2.1 #1226).
     /// Script/parameter population delegated to ScriptPropertiesPopulator (Epic #1219, Sprint 2.2 #1227).
+    /// Quest population delegated to QuestPropertiesPopulator (Epic #1219, Sprint 2.3 #1228).
     /// </summary>
     public class PropertyPanelPopulator
     {
         private readonly Window _window;
         private readonly SpeakerPropertiesPopulator _speakerPopulator;
         private readonly ScriptPropertiesPopulator _scriptPopulator;
+        private readonly QuestPropertiesPopulator _questPopulator;
 
         public PropertyPanelPopulator(Window window)
         {
             _window = window;
             _speakerPopulator = new SpeakerPropertiesPopulator(window);
             _scriptPopulator = new ScriptPropertiesPopulator(window);
+            _questPopulator = new QuestPropertiesPopulator(window);
         }
 
         /// <summary>
@@ -46,6 +48,11 @@ namespace Parley.Views.Helpers
         /// Gets the script properties populator for direct access from MainWindow (#1227).
         /// </summary>
         public ScriptPropertiesPopulator ScriptPopulator => _scriptPopulator;
+
+        /// <summary>
+        /// Gets the quest properties populator for direct access from MainWindow (#1228).
+        /// </summary>
+        public QuestPropertiesPopulator QuestPopulator => _questPopulator;
 
         /// <summary>
         /// Sets the image service for loading portraits from BIF archives (#916).
@@ -264,109 +271,20 @@ namespace Parley.Views.Helpers
 
         /// <summary>
         /// Populates quest-related fields (tag, entry, preview).
-        /// Issue #166: Updated for TextBox-based quest selection.
+        /// Delegates to QuestPropertiesPopulator (#1228).
         /// </summary>
         public void PopulateQuest(DialogNode dialogNode)
         {
-            // Populate quest tag TextBox
-            var questTagTextBox = _window.FindControl<TextBox>("QuestTagTextBox");
-            if (questTagTextBox != null)
-            {
-                questTagTextBox.Text = dialogNode.Quest ?? "";
-            }
-
-            // Populate quest name display by looking up in journal
-            var questNameTextBlock = _window.FindControl<TextBlock>("QuestNameTextBlock");
-            if (questNameTextBlock != null)
-            {
-                if (!string.IsNullOrEmpty(dialogNode.Quest))
-                {
-                    var category = JournalService.Instance.GetCategory(dialogNode.Quest);
-                    if (category != null)
-                    {
-                        var questName = category.Name?.GetDefault();
-                        questNameTextBlock.Text = string.IsNullOrEmpty(questName)
-                            ? ""
-                            : $"Quest: {questName}";
-                    }
-                    else
-                    {
-                        questNameTextBlock.Text = "(quest not found in journal)";
-                    }
-                }
-                else
-                {
-                    questNameTextBlock.Text = "";
-                }
-            }
-
-            // Populate quest entry TextBox
-            var questEntryTextBox = _window.FindControl<TextBox>("QuestEntryTextBox");
-            if (questEntryTextBox != null)
-            {
-                questEntryTextBox.Text = dialogNode.QuestEntry != uint.MaxValue
-                    ? dialogNode.QuestEntry.ToString()
-                    : "";
-            }
-
-            // Populate entry preview and end status
-            var questEntryPreviewTextBlock = _window.FindControl<TextBlock>("QuestEntryPreviewTextBlock");
-            var questEntryEndTextBlock = _window.FindControl<TextBlock>("QuestEntryEndTextBlock");
-
-            if (dialogNode.QuestEntry != uint.MaxValue && !string.IsNullOrEmpty(dialogNode.Quest))
-            {
-                var entries = JournalService.Instance.GetEntriesForQuest(dialogNode.Quest);
-                var matchingEntry = entries.FirstOrDefault(e => e.ID == dialogNode.QuestEntry);
-
-                if (matchingEntry != null)
-                {
-                    if (questEntryPreviewTextBlock != null)
-                        questEntryPreviewTextBlock.Text = matchingEntry.TextPreview;
-                    if (questEntryEndTextBlock != null)
-                        questEntryEndTextBlock.Text = matchingEntry.End ? "✓ Quest Complete" : "";
-                }
-                else
-                {
-                    if (questEntryPreviewTextBlock != null)
-                        questEntryPreviewTextBlock.Text = "(entry not found)";
-                    if (questEntryEndTextBlock != null)
-                        questEntryEndTextBlock.Text = "";
-                }
-            }
-            else
-            {
-                if (questEntryPreviewTextBlock != null)
-                    questEntryPreviewTextBlock.Text = "";
-                if (questEntryEndTextBlock != null)
-                    questEntryEndTextBlock.Text = "";
-            }
+            _questPopulator.PopulateQuest(dialogNode);
         }
 
         /// <summary>
         /// Clears quest selection fields.
-        /// Issue #166: Updated for TextBox-based quest selection.
+        /// Delegates to QuestPropertiesPopulator (#1228).
         /// </summary>
         public void ClearQuest()
         {
-            var questTagTextBox = _window.FindControl<TextBox>("QuestTagTextBox");
-            if (questTagTextBox != null)
-                questTagTextBox.Text = "";
-
-            var questNameTextBlock = _window.FindControl<TextBlock>("QuestNameTextBlock");
-            if (questNameTextBlock != null)
-                questNameTextBlock.Text = "";
-
-            var questEntryTextBox = _window.FindControl<TextBox>("QuestEntryTextBox");
-            if (questEntryTextBox != null)
-                questEntryTextBox.Text = "";
-
-            var questEntryPreviewTextBlock = _window.FindControl<TextBlock>("QuestEntryPreviewTextBlock");
-            if (questEntryPreviewTextBlock != null)
-                questEntryPreviewTextBlock.Text = "";
-
-            var questEntryEndTextBlock = _window.FindControl<TextBlock>("QuestEntryEndTextBlock");
-            if (questEntryEndTextBlock != null)
-                questEntryEndTextBlock.Text = "";
+            _questPopulator.ClearQuestFields();
         }
 
         /// <summary>
