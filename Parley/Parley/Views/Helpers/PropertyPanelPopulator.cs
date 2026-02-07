@@ -6,7 +6,6 @@ using DialogEditor.Models;
 using DialogEditor.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
-using DialogEditor.Utils;
 using Parley.Models;
 
 namespace Parley.Views.Helpers
@@ -23,22 +22,30 @@ namespace Parley.Views.Helpers
     /// 5. Clearing/disabling controls when no selection
     ///
     /// Speaker/portrait/soundset population delegated to SpeakerPropertiesPopulator (Epic #1219, Sprint 2.1 #1226).
+    /// Script/parameter population delegated to ScriptPropertiesPopulator (Epic #1219, Sprint 2.2 #1227).
     /// </summary>
     public class PropertyPanelPopulator
     {
         private readonly Window _window;
         private readonly SpeakerPropertiesPopulator _speakerPopulator;
+        private readonly ScriptPropertiesPopulator _scriptPopulator;
 
         public PropertyPanelPopulator(Window window)
         {
             _window = window;
             _speakerPopulator = new SpeakerPropertiesPopulator(window);
+            _scriptPopulator = new ScriptPropertiesPopulator(window);
         }
 
         /// <summary>
         /// Gets the speaker properties populator for direct access from MainWindow (#1226).
         /// </summary>
         public SpeakerPropertiesPopulator SpeakerPopulator => _speakerPopulator;
+
+        /// <summary>
+        /// Gets the script properties populator for direct access from MainWindow (#1227).
+        /// </summary>
+        public ScriptPropertiesPopulator ScriptPopulator => _scriptPopulator;
 
         /// <summary>
         /// Sets the image service for loading portraits from BIF archives (#916).
@@ -245,63 +252,14 @@ namespace Parley.Views.Helpers
 
         /// <summary>
         /// Populates script fields with callbacks for parameter loading.
+        /// Delegates to ScriptPropertiesPopulator (#1227).
         /// </summary>
         public void PopulateScripts(DialogNode dialogNode, TreeViewSafeNode node,
             System.Action<string, bool> loadParameterDeclarations,
             System.Action<string, bool> loadScriptPreview,
             System.Action<bool> clearScriptPreview)
         {
-            // Action script
-            var scriptTextBox = _window.FindControl<TextBox>("ScriptActionTextBox");
-            if (scriptTextBox != null)
-            {
-                scriptTextBox.Text = dialogNode.ScriptAction ?? "";
-                scriptTextBox.IsReadOnly = false;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"PopulateProperties: Set Script Action field to '{dialogNode.ScriptAction}' for node '{dialogNode.DisplayText}'");
-
-                if (!string.IsNullOrWhiteSpace(dialogNode.ScriptAction))
-                {
-                    loadParameterDeclarations(dialogNode.ScriptAction, false);
-                    loadScriptPreview(dialogNode.ScriptAction, false);
-                }
-                else
-                {
-                    clearScriptPreview(false);
-                }
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, "PopulateProperties: ScriptActionTextBox control NOT FOUND!");
-            }
-
-            // Conditional script (from DialogPtr)
-            var scriptAppearsTextBox = _window.FindControl<TextBox>("ScriptAppearsTextBox");
-            if (scriptAppearsTextBox != null)
-            {
-                if (node.SourcePointer != null)
-                {
-                    scriptAppearsTextBox.Text = node.SourcePointer.ScriptAppears ?? "";
-                    scriptAppearsTextBox.IsReadOnly = false;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"PopulateProperties: Set Conditional Script to '{node.SourcePointer.ScriptAppears}' from SourcePointer");
-
-                    if (!string.IsNullOrWhiteSpace(node.SourcePointer.ScriptAppears))
-                    {
-                        loadParameterDeclarations(node.SourcePointer.ScriptAppears, true);
-                        loadScriptPreview(node.SourcePointer.ScriptAppears, true);
-                    }
-                    else
-                    {
-                        clearScriptPreview(true);
-                    }
-                }
-                else
-                {
-                    scriptAppearsTextBox.Text = "(No pointer context - root level entry)";
-                    scriptAppearsTextBox.IsReadOnly = true;
-                    clearScriptPreview(true);
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "PopulateProperties: No SourcePointer for conditional script");
-                }
-            }
+            _scriptPopulator.PopulateScripts(dialogNode, node, loadParameterDeclarations, loadScriptPreview, clearScriptPreview);
         }
 
         /// <summary>
@@ -413,30 +371,11 @@ namespace Parley.Views.Helpers
 
         /// <summary>
         /// Populates script parameter grids.
+        /// Delegates to ScriptPropertiesPopulator (#1227).
         /// </summary>
         public void PopulateParameterGrids(DialogNode node, DialogPtr? ptr, System.Action<StackPanel, string, string, bool> addParameterRow)
         {
-            var conditionsPanel = _window.FindControl<StackPanel>("ConditionsParametersPanel");
-            var actionsPanel = _window.FindControl<StackPanel>("ActionsParametersPanel");
-
-            conditionsPanel?.Children.Clear();
-            actionsPanel?.Children.Clear();
-
-            if (ptr != null && ptr.ConditionParams.Count > 0)
-            {
-                foreach (var kvp in ptr.ConditionParams)
-                {
-                    addParameterRow(conditionsPanel!, kvp.Key, kvp.Value, true);
-                }
-            }
-
-            if (node.ActionParams.Count > 0)
-            {
-                foreach (var kvp in node.ActionParams)
-                {
-                    addParameterRow(actionsPanel!, kvp.Key, kvp.Value, false);
-                }
-            }
+            _scriptPopulator.PopulateParameterGrids(node, ptr, addParameterRow);
         }
 
         /// <summary>
@@ -468,24 +407,8 @@ namespace Parley.Views.Helpers
                 soundTextBox.IsReadOnly = true;
             }
 
-            var scriptTextBox = _window.FindControl<TextBox>("ScriptActionTextBox");
-            if (scriptTextBox != null)
-            {
-                scriptTextBox.Clear();
-                scriptTextBox.IsReadOnly = true;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "ClearProperties: Cleared Script field");
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, "ClearProperties: ScriptActionTextBox control NOT FOUND!");
-            }
-
-            var scriptAppearsTextBox = _window.FindControl<TextBox>("ScriptAppearsTextBox");
-            if (scriptAppearsTextBox != null)
-            {
-                scriptAppearsTextBox.Clear();
-                scriptAppearsTextBox.IsReadOnly = true;
-            }
+            // Script fields cleared by ScriptPropertiesPopulator (#1227)
+            _scriptPopulator.ClearScriptFields();
 
             var commentTextBox = _window.FindControl<TextBox>("CommentTextBox");
             if (commentTextBox != null)
@@ -517,27 +440,12 @@ namespace Parley.Views.Helpers
 
             ClearQuest();
 
-            var conditionsPanel = _window.FindControl<StackPanel>("ConditionsParametersPanel");
-            conditionsPanel?.Children.Clear();
-
-            var actionsPanel = _window.FindControl<StackPanel>("ActionsParametersPanel");
-            actionsPanel?.Children.Clear();
-
             var isChildTextBlock = _window.FindControl<TextBlock>("IsChildTextBlock");
             if (isChildTextBlock != null)
                 isChildTextBlock.Text = "";
 
             // Issue #786, #915: Clear soundset info and portrait (#1226)
             _speakerPopulator.ClearSpeakerFields();
-
-            // Issue #178: Clear script preview TextBoxes
-            var conditionalPreview = _window.FindControl<TextBox>("ConditionalScriptPreviewTextBox");
-            if (conditionalPreview != null)
-                conditionalPreview.Text = "// Conditional script preview will appear here";
-
-            var actionPreview = _window.FindControl<TextBox>("ActionScriptPreviewTextBox");
-            if (actionPreview != null)
-                actionPreview.Text = "// Action script preview will appear here";
         }
 
     }

@@ -13,6 +13,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.137-alpha] - 2026-02-07
+**Branch**: `parley/issue-1227` | **PR**: #1249
+
+### Sprint 2.2: Extract ScriptPropertiesPopulator (#1227)
+
+- Extract script and parameter population logic from `PropertyPanelPopulator.cs` into `ScriptPropertiesPopulator.cs`
+
+---
+
 ## [0.1.136-alpha] - 2026-02-07
 **Branch**: `parley/issue-1226` | **PR**: #1248
 
