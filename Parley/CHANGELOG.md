@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.145-alpha] - 2026-02-07
-**Branch**: `parley/issue-1235` | **PR**: #TBD
+**Branch**: `parley/issue-1235` | **PR**: #1263
 
 ### Sprint 4.2: Add Unit Tests for Controllers (#1235)
 
