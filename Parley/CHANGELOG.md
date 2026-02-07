@@ -13,6 +13,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.145-alpha] - 2026-02-07
+**Branch**: `parley/issue-1235` | **PR**: #1263
+
+### Sprint 4.2: Add Unit Tests for Controllers (#1235)
+
+- Create test classes for each controller (FileMenu, EditMenu, SpeakerVisual, TreeViewUI, QuestUI)
+- Test happy paths for all public methods
+- Test error paths (null inputs, invalid state)
+- Test edge cases specific to dialog editing
+- Target: 80%+ coverage on controller business logic
+
+---
+
 ## [0.1.144-alpha] - 2026-02-07
 **Branch**: `parley/issue-1234` | **PR**: #1258
 
