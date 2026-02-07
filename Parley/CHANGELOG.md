@@ -13,6 +13,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.141-alpha] - 2026-02-07
+**Branch**: `parley/issue-1231` | **PR**: #TBD
+
+### Sprint 3.2: Add DI Container in Program.cs (#1231)
+
+- Add `Microsoft.Extensions.DependencyInjection` package
+- Configure service registrations in Program.cs
+- Determine correct lifetimes (Singleton vs Transient vs Scoped)
+- Make IServiceProvider accessible to MainWindow
+- Verify all services resolve correctly at startup
+
+---
+
 ## [0.1.140-alpha] - 2026-02-07
 **Branch**: `parley/issue-1230` | **PR**: #1252
 
