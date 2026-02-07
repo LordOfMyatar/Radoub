@@ -13,6 +13,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.135-alpha] - 2026-02-07
+**Branch**: `parley/issue-1225` | **PR**: #1247
+
+### Sprint 1.6: Consolidate MainWindow.axaml.cs (#1225)
+
+- Consolidate `MainWindow.axaml.cs` from 1,127 lines to 409 lines (core responsibilities only)
+- Create `MainWindow.FileHandlers.cs` for file menu operations (new/open/save/rename/creature scanning)
+- Move flowchart, conversation simulator, script browser, and edit menu handlers to `MainWindow.MenuHandlers.cs`
+- Move parameter, resource browser, token insertion, quest, and speaker visual handlers to `MainWindow.Properties.cs`
+- Move selection, drag-drop, tree navigation, and ViewModel property handlers to `MainWindow.NodeHandlers.cs`
+- Clean up unused `using` statements across all partial files
+
+---
+
 ## [0.1.134-alpha] - 2026-02-07
 **Branch**: `parley/issue-1224` | **PR**: #1246
 

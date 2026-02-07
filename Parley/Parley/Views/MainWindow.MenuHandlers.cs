@@ -4,6 +4,7 @@ using Avalonia.Interactivity;
 using DialogEditor.Models;
 using DialogEditor.Services;
 using DialogEditor.Utils;
+using Parley.Views.Helpers;
 using Radoub.Formats.Logging;
 using Radoub.UI.Utils;
 using Radoub.UI.Views;
@@ -11,12 +12,46 @@ using Radoub.UI.Views;
 namespace DialogEditor.Views
 {
     /// <summary>
-    /// MainWindow partial class for menu event handlers (View, Scrap, Help, Settings).
-    /// Extracted from MainWindow.axaml.cs (#1224).
+    /// MainWindow partial class for menu event handlers (View, Flowchart, Scrap, Help, Settings).
+    /// Extracted from MainWindow.axaml.cs (#1224, #1225).
     /// </summary>
     public partial class MainWindow
     {
         #region View Menu Handlers
+
+        private void HideDebugConsoleByDefault()
+        {
+            try
+            {
+                var debugTab = this.FindControl<TabItem>("DebugTab");
+                if (debugTab != null)
+                {
+                    // Set visibility from settings (default: false)
+                    debugTab.IsVisible = SettingsService.Instance.DebugWindowVisible;
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error setting debug console visibility: {ex.Message}");
+            }
+        }
+
+        // Conversation Simulator handler - Issue #478
+        private void OnConversationSimulatorClick(object? sender, RoutedEventArgs e)
+        {
+            var dialog = DialogContextService.Instance.CurrentDialog;
+            var filePath = DialogContextService.Instance.CurrentFilePath;
+
+            if (dialog == null || string.IsNullOrEmpty(filePath))
+            {
+                _viewModel.StatusMessage = "No dialog loaded. Open a dialog file first.";
+                return;
+            }
+
+            _windows.ShowOrActivate(
+                WindowKeys.ConversationSimulator,
+                () => new ConversationSimulatorWindow(dialog, filePath));
+        }
 
         private void OnClearDebugClick(object? sender, RoutedEventArgs e)
         {
@@ -214,5 +249,132 @@ namespace DialogEditor.Views
         }
 
         #endregion
+
+        #region Flowchart Menu Handlers
+
+        private void OnFlowchartClick(object? sender, RoutedEventArgs e) => _controllers.Flowchart.OpenFloatingFlowchart();
+
+        private void OnFlowchartLayoutClick(object? sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && menuItem.Tag is string layoutValue)
+            {
+                _controllers.Flowchart.ApplyLayout(layoutValue);
+            }
+        }
+
+        private async void OnExportFlowchartPngClick(object? sender, RoutedEventArgs e) => await _controllers.Flowchart.ExportToPngAsync();
+
+        private async void OnExportFlowchartSvgClick(object? sender, RoutedEventArgs e) => await _controllers.Flowchart.ExportToSvgAsync();
+
+        private void UpdateEmbeddedFlowchartAfterLoad() => _controllers.Flowchart.UpdateAfterLoad();
+
+        /// <summary>
+        /// Handles context menu actions from FlowchartPanel (#461).
+        /// Routes actions to the appropriate existing handlers.
+        /// </summary>
+        private void OnFlowchartContextMenuAction(FlowchartContextMenuEventArgs e)
+        {
+            UnifiedLogger.LogUI(LogLevel.DEBUG, $"MainWindow handling flowchart context action: {e.Action}");
+
+            switch (e.Action)
+            {
+                case "AddNode":
+                    OnAddSmartNodeClick(null, null!);
+                    break;
+                case "AddSiblingNode":
+                    OnAddSiblingNodeClick(null, null!);
+                    break;
+                case "DeleteNode":
+                    OnDeleteNodeClick(null, null!);
+                    break;
+                case "CutNode":
+                    OnCutNodeClick(null, null!);
+                    break;
+                case "CopyNode":
+                    OnCopyNodeClick(null, null!);
+                    break;
+                case "PasteNode":
+                    OnPasteAsDuplicateClick(null, null!);
+                    break;
+                case "PasteAsLink":
+                    OnPasteAsLinkClick(null, null!);
+                    break;
+                case "ExpandSubnodes":
+                    OnExpandSubnodesClick(null, null!);
+                    break;
+                case "CollapseSubnodes":
+                    OnCollapseSubnodesClick(null, null!);
+                    break;
+                case "MoveUp":
+                    OnMoveNodeUpClick(null, null!);
+                    break;
+                case "MoveDown":
+                    OnMoveNodeDownClick(null, null!);
+                    break;
+                case "GoToLinkTarget":
+                case "GoToParent":
+                    OnGoToParentNodeClick(null, null!);
+                    break;
+                default:
+                    UnifiedLogger.LogUI(LogLevel.WARN, $"Unknown flowchart context action: {e.Action}");
+                    break;
+            }
+        }
+
+        #endregion
+
+        #region Script Browser Handlers
+
+        private void OnBrowseConversationScriptClick(object? sender, RoutedEventArgs e)
+        {
+            if (sender is not Button button) return;
+            _controllers.ScriptBrowser.OnBrowseConversationScriptClick(button.Tag?.ToString());
+        }
+
+        private void OnBrowseConditionalScriptClick(object? sender, RoutedEventArgs e)
+            => _controllers.ScriptBrowser.OnBrowseConditionalScriptClick();
+
+        private void OnBrowseActionScriptClick(object? sender, RoutedEventArgs e)
+            => _controllers.ScriptBrowser.OnBrowseActionScriptClick();
+
+        private void OnEditConditionalScriptClick(object? sender, RoutedEventArgs e)
+            => _controllers.ScriptBrowser.OnEditConditionalScriptClick();
+
+        private void OnEditActionScriptClick(object? sender, RoutedEventArgs e)
+            => _controllers.ScriptBrowser.OnEditActionScriptClick();
+
+        #endregion
+
+        #region Edit Menu Handlers
+
+        private void OnCopyNodeTextClick(object? sender, RoutedEventArgs e)
+            => _controllers.EditMenu.OnCopyNodeTextClick(sender, e);
+
+        private void OnCopyNodePropertiesClick(object? sender, RoutedEventArgs e)
+            => _controllers.EditMenu.OnCopyNodePropertiesClick(sender, e);
+
+        private void OnCopyTreeStructureClick(object? sender, RoutedEventArgs e)
+            => _controllers.EditMenu.OnCopyTreeStructureClick(sender, e);
+
+        private void OnUndoClick(object? sender, RoutedEventArgs e)
+            => _controllers.EditMenu.OnUndoClick(sender, e);
+
+        private void OnRedoClick(object? sender, RoutedEventArgs e)
+            => _controllers.EditMenu.OnRedoClick(sender, e);
+
+        private void OnCutNodeClick(object? sender, RoutedEventArgs e)
+            => _controllers.EditMenu.OnCutNodeClick(sender, e);
+
+        private void OnCopyNodeClick(object? sender, RoutedEventArgs e)
+            => _controllers.EditMenu.OnCopyNodeClick(sender, e);
+
+        private void OnPasteAsDuplicateClick(object? sender, RoutedEventArgs e)
+            => _controllers.EditMenu.OnPasteAsDuplicateClick(sender, e);
+
+        private void OnPasteAsLinkClick(object? sender, RoutedEventArgs e)
+            => _controllers.EditMenu.OnPasteAsLinkClick(sender, e);
+
+        #endregion
     }
 }
+

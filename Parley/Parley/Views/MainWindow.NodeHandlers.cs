@@ -1,8 +1,11 @@
 using System;
+using System.ComponentModel;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using DialogEditor.ViewModels;
 using Radoub.Formats.Logging;
 
 namespace DialogEditor.Views
@@ -196,5 +199,108 @@ namespace DialogEditor.Views
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Calling MoveNodeDown for: {selectedNode.DisplayText}");
             _viewModel.MoveNodeDown(selectedNode);
         }
+
+        #region Selection and Drag-Drop
+
+        private TreeViewSafeNode? GetSelectedTreeNode()
+        {
+            var treeView = this.FindControl<TreeView>("DialogTreeView");
+            return treeView?.SelectedItem as TreeViewSafeNode;
+        }
+
+        /// <summary>
+        /// Handles completion of a TreeView drag-drop operation (#450).
+        /// </summary>
+        private void OnDragDropCompleted(TreeViewSafeNode draggedNode, DialogNode? newParent, DropPosition position, int insertIndex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"OnDragDropCompleted: Moving '{draggedNode.DisplayText}' to {(newParent?.DisplayText ?? "ROOT")}, position={position}, index={insertIndex}");
+
+            // Perform the move operation
+            _viewModel.MoveNodeToPosition(draggedNode, newParent, insertIndex);
+        }
+
+        // Issue #463: Delegated to TreeViewUIController
+        private void OnDialogTreeViewSelectionChanged(object? sender, SelectionChangedEventArgs e)
+            => _controllers.TreeView.OnDialogTreeViewSelectionChanged(sender, e);
+
+        // Issue #463: Delegated to TreeViewUIController
+        private void OnTreeViewItemDoubleTapped(object? sender, Avalonia.Input.TappedEventArgs e)
+            => _controllers.TreeView.OnTreeViewItemDoubleTapped(sender, e);
+
+        // Issue #463: Expand/Collapse/Navigate delegated to TreeViewUIController
+        private void OnExpandSubnodesClick(object? sender, RoutedEventArgs e)
+            => _controllers.TreeView.OnExpandSubnodesClick(sender, e);
+
+        private void OnCollapseSubnodesClick(object? sender, RoutedEventArgs e)
+            => _controllers.TreeView.OnCollapseSubnodesClick(sender, e);
+
+        private void OnGoToParentNodeClick(object? sender, RoutedEventArgs e)
+            => _controllers.TreeView.OnGoToParentNodeClick(sender, e);
+
+        #endregion
+
+        #region ViewModel Property Changed
+
+        private async void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            // Load journal when file is loaded (CurrentFileName is set AFTER CurrentDialog)
+            if (e.PropertyName == nameof(MainViewModel.CurrentFileName))
+            {
+                if (!string.IsNullOrEmpty(_viewModel.CurrentFileName))
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"CurrentFileName changed to: {UnifiedLogger.SanitizePath(_viewModel.CurrentFileName)} - loading journal");
+                    await _controllers.Quest.LoadJournalForCurrentModuleAsync();
+                }
+            }
+
+            // Watch for node selection requests - ViewModel finds the node, View sets TreeView.SelectedItem
+            // This is needed because TreeView binding doesn't work well with lazily-populated children
+            if (e.PropertyName == nameof(MainViewModel.SelectedTreeNode))
+            {
+                var selectedNode = _viewModel.SelectedTreeNode;
+                // Only handle non-ROOT programmatic selection
+                // Skip if selection came from TreeView (flag set by respective handler)
+                if (selectedNode != null && !(selectedNode is TreeViewRootNode) &&
+                    !_uiState.IsSettingSelectionProgrammatically)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"View: SelectedTreeNode changed to '{selectedNode.DisplayText}', scheduling selection");
+
+                    // Defer selection to allow visual tree to render expanded children
+                    // Use Background priority (lower than Loaded) to run AFTER layout has completed
+                    global::Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+                    {
+                        var treeView = this.FindControl<TreeView>("DialogTreeView");
+                        if (treeView != null)
+                        {
+                            // Small delay to ensure TreeView has rendered expanded children
+                            await Task.Delay(50);
+
+                            // Expand ALL ancestors to ensure node is visible in visual tree
+                            _services.NodeCreation.ExpandToNode(treeView, selectedNode);
+                            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                                $"View: Expanded ancestors for '{selectedNode.DisplayText}'");
+
+                            // Set flag to prevent feedback loop when setting SelectedItem
+                            _uiState.IsSettingSelectionProgrammatically = true;
+                            try
+                            {
+                                // Force set TreeView selection (binding alone doesn't work for lazy-loaded children)
+                                treeView.SelectedItem = selectedNode;
+                                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                                    $"View: Set TreeView.SelectedItem to '{selectedNode.DisplayText}'");
+                            }
+                            finally
+                            {
+                                _uiState.IsSettingSelectionProgrammatically = false;
+                            }
+                        }
+                    }, global::Avalonia.Threading.DispatcherPriority.Background);
+                }
+            }
+        }
+
+        #endregion
     }
 }
