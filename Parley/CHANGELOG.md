@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.135-alpha] - 2026-02-07
-**Branch**: `parley/issue-1225` | **PR**: #TBD
+**Branch**: `parley/issue-1225` | **PR**: #1247
 
 ### Sprint 1.6: Consolidate MainWindow.axaml.cs (#1225)
 
