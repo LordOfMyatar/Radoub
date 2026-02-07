@@ -13,6 +13,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.140-alpha] - 2026-02-07
+**Branch**: `parley/issue-1230` | **PR**: #TBD
+
+### Sprint 3.1: Define Service Interfaces (#1230)
+
+- Identify all service classes that need interfaces
+- Extract interfaces from each service (public API only)
+- Place interfaces in `Services/Interfaces/` directory
+- Update service classes to implement their interfaces
+- Verify build succeeds with no behavior change
+
+---
+
 ## [0.1.139-alpha] - 2026-02-07
 **Branch**: `parley/issue-1229` | **PR**: #1251
 
