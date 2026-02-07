@@ -330,7 +330,7 @@ namespace DialogEditor.Views
             _controllers.Flowchart.UpdateLayoutMenuChecks();
 
             // Initialize NPC speaker visual preference ComboBoxes (Issue #16, #36)
-            InitializeSpeakerVisualComboBoxes();
+            _controllers.SpeakerVisual.InitializeComboBoxes();
 
             // #1158: Set up TreeView width tracking for word wrap
             SetupTreeViewWidthTracking();
