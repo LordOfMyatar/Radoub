@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.131-alpha] - 2026-02-07
-**Branch**: `parley/issue-1221` | **PR**: #TBD
+**Branch**: `parley/issue-1221` | **PR**: #1238
 
 ### Sprint 1.2: Extract Sound Handlers to MainWindow.SoundHandlers.cs (#1221)
 
