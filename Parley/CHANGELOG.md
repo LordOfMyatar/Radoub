@@ -13,6 +13,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.139-alpha] - 2026-02-07
+**Branch**: `parley/issue-1229` | **PR**: #1251
+
+### Sprint 2.4: Refactor PropertyPanelPopulator as Coordinator (#1229)
+
+- Wire up three sub-populators in PropertyPanelPopulator constructor
+- Replace direct logic with delegation calls
+- Remove extracted methods from PropertyPanelPopulator
+- Eliminate remaining `FindControl` calls
+- Clean up unused `using` statements
+- Verify coordinator ≤ 300 lines
+
+---
+
 ## [0.1.138-alpha] - 2026-02-07
 **Branch**: `parley/issue-1228` | **PR**: #1250
 
