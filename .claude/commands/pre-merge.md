@@ -184,6 +184,8 @@ Flag if >30 days old and code changed.
 
 ### Status
 **Ready**: ✅ / ⚠️ [N] warnings / ❌ Blocked
+
+**PR**: https://github.com/LordOfMyatar/Radoub/pull/[number]
 ```
 
 ### Step 7: Update PR (batched gh commands)
