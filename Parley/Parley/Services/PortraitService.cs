@@ -13,7 +13,7 @@ namespace DialogEditor.Services
     /// Supports loading from loose files and base game data.
     /// #915: NPC portrait display in Node Properties.
     /// </summary>
-    public class PortraitService
+    public class PortraitService : IPortraitService
     {
         private static PortraitService? _instance;
         public static PortraitService Instance => _instance ??= new PortraitService();

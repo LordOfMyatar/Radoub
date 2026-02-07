@@ -19,7 +19,7 @@ namespace DialogEditor.Services
     /// Service for parsing and caching NWN module.jrl (journal/quest) files.
     /// 2025-12-14: Updated to use Radoub.Formats.Jrl shared library (Sprint #398)
     /// </summary>
-    public class JournalService
+    public class JournalService : IJournalService
     {
         private static readonly Lazy<JournalService> _instance = new Lazy<JournalService>(() => new JournalService());
         public static JournalService Instance => _instance.Value;

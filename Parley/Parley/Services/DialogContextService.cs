@@ -8,7 +8,7 @@ namespace DialogEditor.Services
     /// Singleton service providing access to the current dialog context.
     /// Used by services to query dialog state without direct ViewModel coupling.
     /// </summary>
-    public class DialogContextService
+    public class DialogContextService : IDialogContextService
     {
         private static DialogContextService? _instance;
         public static DialogContextService Instance => _instance ??= new DialogContextService();
