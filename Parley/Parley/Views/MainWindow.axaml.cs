@@ -15,6 +15,7 @@ using ThemeManager = Radoub.UI.Services.ThemeManager;
 using Parley.Services;
 using Parley.Views.Helpers;
 using Radoub.Formats.Ssf;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DialogEditor.Views
 {
@@ -59,7 +60,7 @@ namespace DialogEditor.Views
         // Node selection state (shared across partial files)
         private TreeViewSafeNode? _selectedNode;
 
-        public MainWindow()
+        public MainWindow(IServiceProvider serviceProvider)
         {
             InitializeComponent();
 
@@ -68,7 +69,7 @@ namespace DialogEditor.Views
 
             _controls = new SafeControlFinder(this);
             _windows = new WindowLifecycleManager();
-            _services = new MainWindowServices();
+            _services = new MainWindowServices(serviceProvider);
             _controllers = new MainWindowControllers();
 
             _viewModel.SelectedTreeNode = null;
@@ -230,8 +231,8 @@ namespace DialogEditor.Views
             UnifiedLogger.SetLogLevel(LogLevel.DEBUG);
             UnifiedLogger.LogApplication(LogLevel.INFO, "Parley MainWindow initialized");
 
-            // Cleanup old log sessions on startup
-            var retentionCount = SettingsService.Instance.LogRetentionSessions;
+            // Cleanup old log sessions on startup (#1232: use DI-resolved settings)
+            var retentionCount = _services.Settings.LogRetentionSessions;
             UnifiedLogger.CleanupOldSessions(retentionCount);
         }
 
@@ -244,7 +245,8 @@ namespace DialogEditor.Views
             ThemeManager.Instance.ThemeApplied += OnThemeApplied;
 
             // Subscribe to NPC tag coloring setting changes (Issue #134)
-            SettingsService.Instance.PropertyChanged += OnSettingsPropertyChanged;
+            // #1232: Use DI-resolved settings
+            _services.Settings.PropertyChanged += OnSettingsPropertyChanged;
 
             // Subscribe to dialog change events for FlowView synchronization (#436, #451)
             DialogChangeEventBus.Instance.DialogChanged += OnDialogChanged;
