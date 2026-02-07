@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.144-alpha] - 2026-02-07
-**Branch**: `parley/issue-1234` | **PR**: #TBD
+**Branch**: `parley/issue-1234` | **PR**: #1258
 
 ### Sprint 4.1: Create Mock Service Implementations (#1234)
 
