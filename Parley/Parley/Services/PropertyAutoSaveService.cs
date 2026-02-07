@@ -95,6 +95,9 @@ namespace DialogEditor.Services
             {
                 node.OriginalNode.Speaker = control.Text ?? "";
                 _refreshTreeDisplay(); // Update tree to show new speaker name
+
+                // Notify FlowView of speaker change (#1223)
+                DialogChangeEventBus.Instance.PublishNodeModified(node.OriginalNode, "SpeakerChanged");
             }
         }
 
