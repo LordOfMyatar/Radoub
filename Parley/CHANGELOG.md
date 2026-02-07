@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.143-alpha] - 2026-02-07
-**Branch**: `parley/issue-1233` | **PR**: #TBD
+**Branch**: `parley/issue-1233` | **PR**: #1255
 
 ### Sprint 3.4: Remove Singleton Pattern (#1233)
 
