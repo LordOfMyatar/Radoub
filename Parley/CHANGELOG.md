@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.130-alpha] - 2026-02-07
-**Branch**: `parley/issue-1220` | **PR**: #TBD
+**Branch**: `parley/issue-1220` | **PR**: #1237
 
 ### Sprint 1.1: Extract Lifecycle Methods to MainWindow.Lifecycle.cs (#1220)
 
