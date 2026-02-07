@@ -283,7 +283,7 @@ namespace DialogEditor.Views
         /// </summary>
         private void OnSettingsPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            // Refresh tree when NPC tag coloring or speaker preferences change (#134, #1223)
+            // Refresh tree and flowchart when NPC tag coloring or speaker preferences change (#134, #1223)
             if (e.PropertyName == nameof(SettingsService.EnableNpcTagColoring) ||
                 e.PropertyName == nameof(SettingsService.NpcSpeakerPreferences))
             {
@@ -292,7 +292,9 @@ namespace DialogEditor.Views
                     global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                     {
                         _viewModel.RefreshTreeViewColors();
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Tree view refreshed after {e.PropertyName} change");
+                        // Update all flowchart panels - same path used by OnDialogChanged (#1223)
+                        _controllers.Flowchart.UpdateAllPanels();
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Tree + flowchart refreshed after {e.PropertyName} change");
                     });
                 }
             }

@@ -14,10 +14,6 @@ namespace Parley.Views.Helpers
     /// 1. ComboBox initialization for speaker shapes and colors
     /// 2. Shape selection change events
     /// 3. Color selection change events
-    ///
-    /// Refresh strategy (#1223): Setting a preference via SettingsService fires PropertyChanged,
-    /// which both MainWindow (tree view) and FlowchartPanel (flowchart) listen to independently.
-    /// This eliminates competing refresh paths that caused the flowchart to not update.
     /// </summary>
     public class SpeakerVisualController
     {
@@ -80,11 +76,9 @@ namespace Parley.Views.Helpers
                     var speakerTag = speakerTextBox.Text.Trim();
                     if (Enum.TryParse<SpeakerVisualHelper.SpeakerShape>(comboBox.SelectedItem.ToString(), out var shape))
                     {
-                        // Save preference - triggers PropertyChanged which refreshes
-                        // both tree view (MainWindow.OnSettingsPropertyChanged) and
-                        // flowchart (FlowchartPanel.OnSettingsChanged) (#1223)
+                        // SetSpeakerPreference fires PropertyChanged("NpcSpeakerPreferences")
+                        // MainWindow.OnSettingsPropertyChanged handles both tree + flowchart refresh (#1223)
                         SettingsService.Instance.SetSpeakerPreference(speakerTag, null, shape);
-
                         UnifiedLogger.LogApplication(LogLevel.INFO, $"Set speaker '{speakerTag}' shape to {shape}");
                     }
                 }
@@ -114,11 +108,9 @@ namespace Parley.Views.Helpers
                     var color = item.Tag as string;
                     if (!string.IsNullOrEmpty(color))
                     {
-                        // Save preference - triggers PropertyChanged which refreshes
-                        // both tree view (MainWindow.OnSettingsPropertyChanged) and
-                        // flowchart (FlowchartPanel.OnSettingsChanged) (#1223)
+                        // SetSpeakerPreference fires PropertyChanged("NpcSpeakerPreferences")
+                        // MainWindow.OnSettingsPropertyChanged handles both tree + flowchart refresh (#1223)
                         SettingsService.Instance.SetSpeakerPreference(speakerTag, color, null);
-
                         UnifiedLogger.LogApplication(LogLevel.INFO, $"Set speaker '{speakerTag}' color to {color}");
                     }
                 }
