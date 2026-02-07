@@ -120,7 +120,8 @@ public partial class App : Application
             DisableAvaloniaDataAnnotationValidation();
 
             // Don't set DataContext here - MainWindow sets its own ViewModel in constructor
-            var mainWindow = new MainWindow();
+            // #1232: Pass DI service provider to MainWindow
+            var mainWindow = new MainWindow(Program.Services);
             desktop.MainWindow = mainWindow;
 
             // Check if SafeMode is active - show dialog after main window is set

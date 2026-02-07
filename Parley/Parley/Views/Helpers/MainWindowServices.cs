@@ -1,5 +1,6 @@
 using System;
 using DialogEditor.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Parley.Services;
 using Radoub.Formats.Services;
 using Radoub.UI.Services;
@@ -9,6 +10,7 @@ namespace Parley.Views.Helpers
     /// <summary>
     /// Container for MainWindow's service dependencies.
     /// Reduces field count and provides organized access to services.
+    /// #1232: Accepts IServiceProvider to resolve DI-registered services.
     /// </summary>
     public class MainWindowServices : IDisposable
     {
@@ -20,6 +22,13 @@ namespace Parley.Views.Helpers
         // Game data services for BIF/TLK lookups (#916)
         public IGameDataService GameData { get; }
         public IImageService ImageService { get; }
+
+        // DI-resolved services (#1232)
+        public ISettingsService Settings { get; }
+        public IDialogContextService DialogContext { get; }
+        public IScriptService Script { get; }
+        public IPortraitService Portrait { get; }
+        public IJournalService Journal { get; }
 
         // Property services
         public PropertyPanelPopulator PropertyPopulator { get; set; } = null!;
@@ -40,9 +49,16 @@ namespace Parley.Views.Helpers
         public TreeViewDragDropService DragDrop { get; }
         public DialogFactory Dialog { get; set; } = null!;
 
-        public MainWindowServices()
+        public MainWindowServices(IServiceProvider serviceProvider)
         {
-            // Services with no dependencies
+            // Resolve DI-registered services (#1232)
+            Settings = serviceProvider.GetRequiredService<ISettingsService>();
+            DialogContext = serviceProvider.GetRequiredService<IDialogContextService>();
+            Script = serviceProvider.GetRequiredService<IScriptService>();
+            Portrait = serviceProvider.GetRequiredService<IPortraitService>();
+            Journal = serviceProvider.GetRequiredService<IJournalService>();
+
+            // Services with no dependencies (not yet in DI container)
             Audio = new AudioService();
             SoundPlayback = new SoundPlaybackService(Audio);
             Creature = new CreatureService();
