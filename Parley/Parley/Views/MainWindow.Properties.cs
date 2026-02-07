@@ -5,7 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using DialogEditor.Models;
-using DialogEditor.Services;
+
 using Radoub.Formats.Logging;
 using DialogEditor.ViewModels;
 
@@ -383,7 +383,7 @@ namespace DialogEditor.Views
         private void TriggerDebouncedAutoSave()
         {
             // Phase 1 Step 6: Check if auto-save is enabled
-            if (!SettingsService.Instance.AutoSaveEnabled)
+            if (!_services.Settings.AutoSaveEnabled)
             {
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, "Auto-save is disabled - skipping");
                 return;
@@ -394,14 +394,14 @@ namespace DialogEditor.Views
             _autoSaveTimer?.Dispose();
 
             // Create new timer that fires after configured delay (Issue #62)
-            var delayMs = SettingsService.Instance.EffectiveAutoSaveIntervalMs;
+            var delayMs = _services.Settings.EffectiveAutoSaveIntervalMs;
             _autoSaveTimer = new System.Timers.Timer(delayMs);
             _autoSaveTimer.AutoReset = false; // Only fire once
             _autoSaveTimer.Elapsed += async (s, e) => await AutoSaveToFileAsync();
             _autoSaveTimer.Start();
 
-            var intervalDesc = SettingsService.Instance.AutoSaveIntervalMinutes > 0
-                ? $"{SettingsService.Instance.AutoSaveIntervalMinutes} minute(s)"
+            var intervalDesc = _services.Settings.AutoSaveIntervalMinutes > 0
+                ? $"{_services.Settings.AutoSaveIntervalMinutes} minute(s)"
                 : $"{delayMs}ms (fast debounce)";
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Debounced auto-save scheduled in {intervalDesc}");
         }

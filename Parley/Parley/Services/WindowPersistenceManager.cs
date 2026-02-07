@@ -21,14 +21,17 @@ namespace DialogEditor.Services
     {
         private readonly Window _window;
         private readonly Func<string, Control?> _findControl;
+        private readonly ISettingsService _settings;
         private bool _isRestoringPosition = false;
 
         public WindowPersistenceManager(
             Window window,
-            Func<string, Control?> findControl)
+            Func<string, Control?> findControl,
+            ISettingsService settings)
         {
             _window = window ?? throw new ArgumentNullException(nameof(window));
             _findControl = findControl ?? throw new ArgumentNullException(nameof(findControl));
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         }
 
         /// <summary>
@@ -57,7 +60,7 @@ namespace DialogEditor.Services
         public async Task RestoreWindowPositionAsync()
         {
             _isRestoringPosition = true;
-            var settings = SettingsService.Instance;
+            var settings = _settings;
             UnifiedLogger.LogApplication(LogLevel.DEBUG,
                 $"Restoring window position: Left={settings.WindowLeft}, Top={settings.WindowTop}, Current={_window.Position.X},{_window.Position.Y}");
 
@@ -96,7 +99,7 @@ namespace DialogEditor.Services
                 return;
             }
 
-            var settings = SettingsService.Instance;
+            var settings = _settings;
             if (_window.Position.X >= 0 && _window.Position.Y >= 0)
             {
                 settings.WindowLeft = _window.Position.X;
@@ -147,7 +150,7 @@ namespace DialogEditor.Services
         /// </summary>
         public void RestorePanelSizes()
         {
-            var settings = SettingsService.Instance;
+            var settings = _settings;
             var mainContentGrid = _findControl("MainContentGrid") as Grid;
 
             if (mainContentGrid != null && mainContentGrid.ColumnDefinitions.Count > 0 && mainContentGrid.RowDefinitions.Count > 0)
@@ -171,7 +174,7 @@ namespace DialogEditor.Services
         /// </summary>
         public void RestoreDialogBrowserPanel()
         {
-            var settings = SettingsService.Instance;
+            var settings = _settings;
             var outerContentGrid = _findControl("OuterContentGrid") as Grid;
             var dialogBrowserPanel = _findControl("DialogBrowserPanel") as Control;
             var dialogBrowserSplitter = _findControl("DialogBrowserSplitter") as Control;
@@ -223,7 +226,7 @@ namespace DialogEditor.Services
 
                 if (dialogBrowserColumn.Width.IsAbsolute && dialogBrowserColumn.Width.Value > 0)
                 {
-                    SettingsService.Instance.DialogBrowserPanelWidth = dialogBrowserColumn.Width.Value;
+                    _settings.DialogBrowserPanelWidth = dialogBrowserColumn.Width.Value;
                 }
             }
         }
@@ -233,7 +236,7 @@ namespace DialogEditor.Services
         /// </summary>
         public void SetDialogBrowserPanelVisible(bool visible)
         {
-            var settings = SettingsService.Instance;
+            var settings = _settings;
             settings.DialogBrowserPanelVisible = visible;
 
             var outerContentGrid = _findControl("OuterContentGrid") as Grid;
@@ -284,12 +287,12 @@ namespace DialogEditor.Services
 
                 if (leftPanelColumn.Width.IsAbsolute)
                 {
-                    SettingsService.Instance.LeftPanelWidth = leftPanelColumn.Width.Value;
+                    _settings.LeftPanelWidth = leftPanelColumn.Width.Value;
                 }
 
                 if (topLeftPanelRow.Height.IsAbsolute)
                 {
-                    SettingsService.Instance.TopLeftPanelHeight = topLeftPanelRow.Height.Value;
+                    _settings.TopLeftPanelHeight = topLeftPanelRow.Height.Value;
                 }
             }
         }
@@ -300,7 +303,7 @@ namespace DialogEditor.Services
         public void RestoreDebugSettings()
         {
             // Initialize log level filter from saved settings
-            var savedFilterLevel = SettingsService.Instance.DebugLogFilterLevel;
+            var savedFilterLevel = _settings.DebugLogFilterLevel;
             DebugLogger.SetLogLevelFilter(savedFilterLevel);
 
             // Set ComboBox to match saved filter level
@@ -323,7 +326,7 @@ namespace DialogEditor.Services
             var debugTab = _findControl("DebugTab") as TabItem;
             if (debugTab != null)
             {
-                var savedVisibility = SettingsService.Instance.DebugWindowVisible;
+                var savedVisibility = _settings.DebugWindowVisible;
                 debugTab.IsVisible = savedVisibility;
 
                 // Update menu item text to match visibility state

@@ -43,7 +43,7 @@ namespace DialogEditor.Views
                 }
             }
 
-            if (SettingsService.Instance.FlowchartVisible)
+            if (_services.Settings.FlowchartVisible)
             {
                 _controllers.Flowchart.RestoreOnStartup();
             }
@@ -95,7 +95,7 @@ namespace DialogEditor.Views
         /// </summary>
         private void InitializePortraitService()
         {
-            var settings = SettingsService.Instance;
+            var settings = _services.Settings;
             var basePath = settings.BaseGameInstallPath;
 
             if (!string.IsNullOrEmpty(basePath) && Directory.Exists(basePath))
@@ -103,7 +103,7 @@ namespace DialogEditor.Views
                 var dataPath = Path.Combine(basePath, "data");
                 if (Directory.Exists(dataPath))
                 {
-                    PortraitService.Instance.SetGameDataPath(dataPath);
+                    _services.Portrait.SetGameDataPath(dataPath);
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait service initialized with game data path");
                 }
             }
@@ -122,7 +122,7 @@ namespace DialogEditor.Views
             }
 
             // Create context for HAK file discovery
-            var context = new ParleyScriptBrowserContext(_viewModel.CurrentFilePath, _services.GameData);
+            var context = new ParleyScriptBrowserContext(_viewModel.CurrentFilePath, _services.Settings, _services.GameData);
 
             // Set initial module path from RadoubSettings
             var modulePath = Radoub.Formats.Settings.RadoubSettings.Instance.CurrentModulePath;
@@ -273,7 +273,7 @@ namespace DialogEditor.Views
         /// </summary>
         private void OnToggleDialogBrowserClick(object? sender, RoutedEventArgs e)
         {
-            var settings = SettingsService.Instance;
+            var settings = _services.Settings;
             _services.WindowPersistence.SetDialogBrowserPanelVisible(!settings.DialogBrowserPanelVisible);
             UpdateDialogBrowserMenuState();
         }
@@ -286,7 +286,7 @@ namespace DialogEditor.Views
             var menuItem = this.FindControl<MenuItem>("DialogBrowserMenuItem");
             if (menuItem != null)
             {
-                var isVisible = SettingsService.Instance.DialogBrowserPanelVisible;
+                var isVisible = _services.Settings.DialogBrowserPanelVisible;
                 menuItem.Icon = isVisible ? new TextBlock { Text = "✓" } : null;
             }
         }
@@ -377,11 +377,11 @@ namespace DialogEditor.Views
             var textWidth = containerWidth - fixedOverhead;
             if (textWidth > 0)
             {
-                var previousWidth = UISettingsService.Instance.TreeViewTextMaxWidth;
-                UISettingsService.Instance.TreeViewTextMaxWidth = textWidth;
+                var previousWidth = _services.UISettings.TreeViewTextMaxWidth;
+                _services.UISettings.TreeViewTextMaxWidth = textWidth;
 
                 // Only refresh if word wrap is enabled and width changed significantly
-                if (SettingsService.Instance.TreeViewWordWrap && Math.Abs(textWidth - previousWidth) > 10)
+                if (_services.Settings.TreeViewWordWrap && Math.Abs(textWidth - previousWidth) > 10)
                 {
                     // Refresh tree to apply new width
                     _viewModel.RefreshTreeViewColors();

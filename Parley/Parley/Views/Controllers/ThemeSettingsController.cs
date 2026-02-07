@@ -23,27 +23,36 @@ namespace DialogEditor.Views.Controllers
         private readonly Window _window;
         private readonly Func<bool> _isInitializing;
         private readonly Func<IBrush> _getErrorBrush;
+        private readonly ISettingsService _settings;
+        private readonly ThemeManager _themeManager;
+        private readonly EasterEggService _easterEggService;
         private bool _easterEggActivated = false;
 
         public ThemeSettingsController(
             Window window,
             Func<bool> isInitializing,
-            Func<IBrush> getErrorBrush)
+            Func<IBrush> getErrorBrush,
+            ISettingsService settings,
+            ThemeManager themeManager,
+            EasterEggService easterEggService)
         {
             _window = window;
             _isInitializing = isInitializing;
             _getErrorBrush = getErrorBrush;
+            _settings = settings;
+            _themeManager = themeManager;
+            _easterEggService = easterEggService;
         }
 
         public void LoadSettings()
         {
-            var settings = SettingsService.Instance;
+            var settings = _settings;
             var themeComboBox = _window.FindControl<ComboBox>("ThemeComboBox");
 
             if (themeComboBox != null)
             {
                 // Check if Sea-Sick easter egg is unlocked (all 3 tools launched)
-                var easterEggUnlocked = EasterEggService.Instance.IsSeaSickUnlocked();
+                var easterEggUnlocked = _easterEggService.IsSeaSickUnlocked();
 
                 // Populate theme list (show easter eggs if unlocked)
                 PopulateThemeList(themeComboBox, includeEasterEggs: easterEggUnlocked);
@@ -72,13 +81,13 @@ namespace DialogEditor.Views.Controllers
             if (comboBox?.SelectedItem is ThemeManifest theme)
             {
                 // Apply theme immediately
-                ThemeManager.Instance.ApplyTheme(theme);
+                _themeManager.ApplyTheme(theme);
 
                 // Update theme description panel
                 UpdateThemeDescription(theme);
 
                 // Save to settings
-                SettingsService.Instance.CurrentThemeId = theme.Plugin.Id;
+                _settings.CurrentThemeId = theme.Plugin.Id;
 
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Theme changed to: {theme.Plugin.Name}");
             }
@@ -110,10 +119,10 @@ namespace DialogEditor.Views.Controllers
             var hint = _window.FindControl<TextBlock>("EasterEggHint");
 
             // Check if easter egg is unlocked
-            if (!EasterEggService.Instance.IsSeaSickUnlocked())
+            if (!_easterEggService.IsSeaSickUnlocked())
             {
                 // Show hint about what's needed
-                var missing = EasterEggService.Instance.GetMissingTools();
+                var missing = _easterEggService.GetMissingTools();
                 if (hint != null && missing.Count > 0)
                 {
                     hint.Text = $"🔒 Still missing: {string.Join(", ", missing)}";
@@ -190,7 +199,7 @@ namespace DialogEditor.Views.Controllers
 
         private void PopulateThemeList(ComboBox comboBox, bool includeEasterEggs)
         {
-            var themes = ThemeManager.Instance.AvailableThemes;
+            var themes = _themeManager.AvailableThemes;
 
             if (!includeEasterEggs)
             {

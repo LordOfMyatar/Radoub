@@ -24,6 +24,11 @@
 
   </PropertyGroup>
 
+  <!-- Allow test project to access internal types (Program.Services) -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Parley.Tests" />
+  </ItemGroup>
+
   <ItemGroup>
     <Folder Include="Models\" />
     <AvaloniaResource Include="Assets\**" />

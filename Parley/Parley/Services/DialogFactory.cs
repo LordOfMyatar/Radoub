@@ -1,3 +1,4 @@
+using System;
 using Avalonia.Controls;
 using Radoub.UI.Services;
 using System.Threading.Tasks;
@@ -11,10 +12,12 @@ namespace DialogEditor.Services
     public class DialogFactory
     {
         private readonly Window _owner;
+        private readonly ISettingsService _settings;
 
-        public DialogFactory(Window owner)
+        public DialogFactory(Window owner, ISettingsService settings)
         {
             _owner = owner;
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         }
 
         /// <summary>
@@ -31,7 +34,7 @@ namespace DialogEditor.Services
                 title,
                 message,
                 showDontAskAgain,
-                onDontAskAgain: () => SettingsService.Instance.ShowDeleteConfirmation = false
+                onDontAskAgain: () => _settings.ShowDeleteConfirmation = false
             );
         }
 

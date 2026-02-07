@@ -14,16 +14,18 @@ namespace DialogEditor.Views.Controllers
     {
         private readonly Window _window;
         private readonly Func<bool> _isInitializing;
+        private readonly ISettingsService _settings;
 
-        public AutoSaveSettingsController(Window window, Func<bool> isInitializing)
+        public AutoSaveSettingsController(Window window, Func<bool> isInitializing, ISettingsService settings)
         {
             _window = window;
             _isInitializing = isInitializing;
+            _settings = settings;
         }
 
         public void LoadSettings()
         {
-            var settings = SettingsService.Instance;
+            var settings = _settings;
 
             var autoSaveEnabledCheckBox = _window.FindControl<CheckBox>("AutoSaveEnabledCheckBox");
             var autoSaveIntervalSlider = _window.FindControl<Slider>("AutoSaveIntervalSlider");
@@ -48,7 +50,7 @@ namespace DialogEditor.Views.Controllers
 
         public void ApplySettings()
         {
-            var settings = SettingsService.Instance;
+            var settings = _settings;
 
             var autoSaveEnabledCheckBox = _window.FindControl<CheckBox>("AutoSaveEnabledCheckBox");
             var autoSaveIntervalSlider = _window.FindControl<Slider>("AutoSaveIntervalSlider");

@@ -30,6 +30,8 @@ namespace Parley.Views.Helpers
         private readonly Func<TreeViewSafeNode?> _getSelectedNode;
         private readonly Action<string> _autoSaveProperty;
         private readonly IGameDataService? _gameDataService;
+        private readonly ISettingsService _settings;
+        private readonly ExternalEditorService _externalEditorService;
 
         // Track active script browser window
         private ScriptBrowserWindow? _activeScriptBrowserWindow;
@@ -40,6 +42,8 @@ namespace Parley.Views.Helpers
             Func<MainViewModel> getViewModel,
             Func<TreeViewSafeNode?> getSelectedNode,
             Action<string> autoSaveProperty,
+            ISettingsService settings,
+            ExternalEditorService externalEditorService,
             IGameDataService? gameDataService = null)
         {
             _window = window ?? throw new ArgumentNullException(nameof(window));
@@ -47,6 +51,8 @@ namespace Parley.Views.Helpers
             _getViewModel = getViewModel ?? throw new ArgumentNullException(nameof(getViewModel));
             _getSelectedNode = getSelectedNode ?? throw new ArgumentNullException(nameof(getSelectedNode));
             _autoSaveProperty = autoSaveProperty ?? throw new ArgumentNullException(nameof(autoSaveProperty));
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            _externalEditorService = externalEditorService ?? throw new ArgumentNullException(nameof(externalEditorService));
             _gameDataService = gameDataService;
         }
 
@@ -86,7 +92,7 @@ namespace Parley.Views.Helpers
                 CloseActiveScriptBrowser();
 
                 // Create and show modeless browser window (Issue #20)
-                var context = new ParleyScriptBrowserContext(ViewModel.CurrentFileName, _gameDataService);
+                var context = new ParleyScriptBrowserContext(ViewModel.CurrentFileName, _settings, _gameDataService);
                 var scriptBrowser = new ScriptBrowserWindow(context);
 
                 // Track the window and handle cleanup when it closes
@@ -142,7 +148,7 @@ namespace Parley.Views.Helpers
                 CloseActiveScriptBrowser();
 
                 // Create and show modeless browser window (Issue #20)
-                var context = new ParleyScriptBrowserContext(ViewModel.CurrentFileName, _gameDataService);
+                var context = new ParleyScriptBrowserContext(ViewModel.CurrentFileName, _settings, _gameDataService);
                 var scriptBrowser = new ScriptBrowserWindow(context);
 
                 // Track the window and handle cleanup when it closes
@@ -189,7 +195,7 @@ namespace Parley.Views.Helpers
                 return;
             }
 
-            bool success = ExternalEditorService.Instance.OpenScript(scriptName, ViewModel.CurrentFileName);
+            bool success = _externalEditorService.OpenScript(scriptName, ViewModel.CurrentFileName);
 
             if (success)
             {
@@ -215,7 +221,7 @@ namespace Parley.Views.Helpers
                 return;
             }
 
-            bool success = ExternalEditorService.Instance.OpenScript(scriptName, ViewModel.CurrentFileName);
+            bool success = _externalEditorService.OpenScript(scriptName, ViewModel.CurrentFileName);
 
             if (success)
             {
@@ -248,7 +254,7 @@ namespace Parley.Views.Helpers
             {
                 CloseActiveScriptBrowser();
 
-                var context = new ParleyScriptBrowserContext(ViewModel.CurrentFileName, _gameDataService);
+                var context = new ParleyScriptBrowserContext(ViewModel.CurrentFileName, _settings, _gameDataService);
                 var scriptBrowser = new ScriptBrowserWindow(context);
 
                 _activeScriptBrowserWindow = scriptBrowser;

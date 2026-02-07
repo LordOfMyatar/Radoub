@@ -8,11 +8,24 @@ namespace Parley.Tests
 {
     public class ScriptServiceCacheTests
     {
+        private static ScriptService CreateTestService()
+        {
+            var settings = new SettingsService(
+                new RecentFilesService(),
+                new UISettingsService(),
+                new WindowLayoutService(),
+                new SpeakerPreferencesService(),
+                new ParameterCacheService());
+            var gameResource = new GameResourceService(settings);
+            var dialogContext = new DialogContextService();
+            return new ScriptService(settings, gameResource, dialogContext);
+        }
+
         [Fact]
         public async Task GetParameterDeclarations_CachesResults()
         {
             // Arrange
-            var service = ScriptService.Instance;
+            var service = CreateTestService();
             service.ClearCache();
 
             var scriptName = "test_script_cache"; // Test script name (doesn't need to exist)
@@ -37,7 +50,7 @@ namespace Parley.Tests
         public async Task GetScriptContent_CachesResults()
         {
             // Arrange
-            var service = ScriptService.Instance;
+            var service = CreateTestService();
             service.ClearCache();
 
             var scriptName = "sc_base_item";
@@ -63,7 +76,7 @@ namespace Parley.Tests
         public void ClearCache_RemovesAllCachedData()
         {
             // Arrange
-            var service = ScriptService.Instance;
+            var service = CreateTestService();
 
             // Act
             service.ClearCache();
@@ -78,7 +91,7 @@ namespace Parley.Tests
         public void GetCacheStats_ReturnsCorrectCounts()
         {
             // Arrange
-            var service = ScriptService.Instance;
+            var service = CreateTestService();
             service.ClearCache();
 
             // Act
@@ -93,7 +106,7 @@ namespace Parley.Tests
         public async Task GetParameterDeclarations_NonexistentScript_ReturnsEmpty()
         {
             // Arrange
-            var service = ScriptService.Instance;
+            var service = CreateTestService();
             service.ClearCache();
 
             // Act
@@ -111,7 +124,7 @@ namespace Parley.Tests
         public async Task GetScriptContent_NullOrEmpty_ReturnsNull()
         {
             // Arrange
-            var service = ScriptService.Instance;
+            var service = CreateTestService();
 
             // Act
             var nullResult = await service.GetScriptContentAsync(null!);

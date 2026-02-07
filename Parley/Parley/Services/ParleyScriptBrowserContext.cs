@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using DialogEditor.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Radoub.Formats.Common;
 using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
@@ -16,10 +18,12 @@ public class ParleyScriptBrowserContext : IScriptBrowserContext
 {
     private readonly string? _dialogFilePath;
     private readonly IGameDataService? _gameDataService;
+    private readonly ISettingsService _settings;
 
-    public ParleyScriptBrowserContext(string? dialogFilePath, IGameDataService? gameDataService = null)
+    public ParleyScriptBrowserContext(string? dialogFilePath, ISettingsService settings, IGameDataService? gameDataService = null)
     {
         _dialogFilePath = dialogFilePath;
+        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _gameDataService = gameDataService;
     }
 
@@ -88,12 +92,12 @@ public class ParleyScriptBrowserContext : IScriptBrowserContext
         return null;
     }
 
-    public string? NeverwinterNightsPath => SettingsService.Instance.NeverwinterNightsPath;
+    public string? NeverwinterNightsPath => _settings.NeverwinterNightsPath;
 
-    public string? ExternalEditorPath => SettingsService.Instance.ExternalEditorPath;
+    public string? ExternalEditorPath => _settings.ExternalEditorPath;
 
     public bool GameResourcesAvailable =>
-        _gameDataService?.IsConfigured ?? GameResourceService.Instance.IsAvailable;
+        _gameDataService?.IsConfigured ?? Program.Services.GetRequiredService<GameResourceService>().IsAvailable;
 
     public IEnumerable<(string ResRef, string SourcePath)> ListBuiltInScripts()
     {
@@ -109,7 +113,7 @@ public class ParleyScriptBrowserContext : IScriptBrowserContext
         }
 
         // Fallback to legacy GameResourceService
-        var legacyResources = GameResourceService.Instance.ListBuiltInScripts();
+        var legacyResources = Program.Services.GetRequiredService<GameResourceService>().ListBuiltInScripts();
         foreach (var resource in legacyResources)
         {
             yield return (resource.ResRef, resource.SourcePath);
@@ -125,6 +129,6 @@ public class ParleyScriptBrowserContext : IScriptBrowserContext
         }
 
         // Fallback to legacy GameResourceService
-        return GameResourceService.Instance.FindResource(resRef, resourceType);
+        return Program.Services.GetRequiredService<GameResourceService>().FindResource(resRef, resourceType);
     }
 }

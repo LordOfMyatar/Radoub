@@ -4,6 +4,7 @@ using Avalonia;
 using Avalonia.Controls;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Radoub.Formats.Logging;
 using DialogEditor.Utils;
 
@@ -15,6 +16,7 @@ namespace DialogEditor.Views
     /// </summary>
     public partial class FlowchartWindow : Window
     {
+        private readonly ISettingsService _settings;
         private bool _isRestoringPosition = false;
 
         /// <summary>
@@ -30,6 +32,7 @@ namespace DialogEditor.Views
 
         public FlowchartWindow()
         {
+            _settings = Program.Services.GetRequiredService<ISettingsService>();
             InitializeComponent();
 
             // Forward node click events from the panel
@@ -53,7 +56,7 @@ namespace DialogEditor.Views
         private async Task RestoreWindowPositionAsync()
         {
             _isRestoringPosition = true;
-            var settings = SettingsService.Instance;
+            var settings = _settings;
 
             UnifiedLogger.LogUI(LogLevel.DEBUG,
                 $"Restoring flowchart position: Left={settings.FlowchartWindowLeft}, Top={settings.FlowchartWindowTop}");
@@ -123,7 +126,7 @@ namespace DialogEditor.Views
 
         private void SaveWindowPosition()
         {
-            var settings = SettingsService.Instance;
+            var settings = _settings;
             if (Position.X >= 0 && Position.Y >= 0)
             {
                 settings.FlowchartWindowLeft = Position.X;
@@ -141,7 +144,7 @@ namespace DialogEditor.Views
         private void OnWindowClosed(object? sender, EventArgs e)
         {
             // Mark flowchart as closed (#377)
-            SettingsService.Instance.FlowchartWindowOpen = false;
+            _settings.FlowchartWindowOpen = false;
             UnifiedLogger.LogUI(LogLevel.DEBUG, "Flowchart window closed, FlowchartWindowOpen = false");
         }
 

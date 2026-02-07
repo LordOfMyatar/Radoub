@@ -16,16 +16,18 @@ namespace DialogEditor.Views.Controllers
     {
         private readonly Window _window;
         private readonly Func<bool> _isInitializing;
+        private readonly ISettingsService _settings;
 
-        public LoggingSettingsController(Window window, Func<bool> isInitializing)
+        public LoggingSettingsController(Window window, Func<bool> isInitializing, ISettingsService settings)
         {
             _window = window;
             _isInitializing = isInitializing;
+            _settings = settings;
         }
 
         public void LoadSettings()
         {
-            var settings = SettingsService.Instance;
+            var settings = _settings;
 
             var showDebugPanelCheckBox = _window.FindControl<CheckBox>("ShowDebugPanelCheckBox");
 
@@ -37,7 +39,7 @@ namespace DialogEditor.Views.Controllers
 
         public void ApplySettings()
         {
-            var settings = SettingsService.Instance;
+            var settings = _settings;
 
             var showDebugPanelCheckBox = _window.FindControl<CheckBox>("ShowDebugPanelCheckBox");
 
@@ -55,7 +57,7 @@ namespace DialogEditor.Views.Controllers
             if (showDebugPanelCheckBox != null)
             {
                 bool isVisible = showDebugPanelCheckBox.IsChecked ?? false;
-                SettingsService.Instance.DebugWindowVisible = isVisible;
+                _settings.DebugWindowVisible = isVisible;
 
                 if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
                 {

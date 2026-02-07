@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Avalonia.Threading;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Radoub.Formats.Logging;
 
 namespace DialogEditor.ViewModels
@@ -22,7 +23,7 @@ namespace DialogEditor.ViewModels
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Loading dialog from: {UnifiedLogger.SanitizePath(filePath)}");
 
                 // Ensure GameResourceService is initialized before parsing (for TLK StrRef resolution)
-                _ = GameResourceService.Instance.IsAvailable;
+                _ = Program.Services.GetRequiredService<GameResourceService>().IsAvailable;
 
                 // Phase 4 Refactoring: Use DialogFileService facade instead of DialogParser directly
                 var dialogService = new DialogFileService();
@@ -48,7 +49,7 @@ namespace DialogEditor.ViewModels
                     StatusMessage = $"Dialog loaded successfully: {CurrentDialog.Entries.Count} entries, {CurrentDialog.Replies.Count} replies";
 
                     // Add to recent files
-                    SettingsService.Instance.AddRecentFile(filePath);
+                    _settings.AddRecentFile(filePath);
 
                     // Populate the dialog nodes for the tree view (must run on UI thread)
                     await Dispatcher.UIThread.InvokeAsync(() =>
@@ -191,7 +192,7 @@ namespace DialogEditor.ViewModels
             var filePath = CurrentFileName;
 
             // Invalidate the resolver to force TLK reload with new settings
-            GameResourceService.Instance.InvalidateResolver();
+            Program.Services.GetRequiredService<GameResourceService>().InvalidateResolver();
 
             await LoadDialogAsync(filePath);
         }

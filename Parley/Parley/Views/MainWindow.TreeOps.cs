@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
 using DialogEditor.Models;
-using DialogEditor.Services;
+
 using Radoub.Formats.Logging;
 using DialogEditor.ViewModels;
 
@@ -57,7 +57,7 @@ namespace DialogEditor.Views
         {
             // Refresh tree view to apply new word wrap setting
             _viewModel.RefreshTreeViewColors();
-            var enabled = SettingsService.Instance.TreeViewWordWrap;
+            var enabled = _services.Settings.TreeViewWordWrap;
             _viewModel.StatusMessage = enabled ? "Word wrap enabled" : "Word wrap disabled";
             UnifiedLogger.LogUI(LogLevel.INFO, $"TreeView word wrap toggled: {enabled}");
         }

@@ -27,6 +27,7 @@ namespace Parley.Views.Helpers
         private readonly Func<MainViewModel> _getViewModel;
         private readonly Func<TreeViewSafeNode?> _getSelectedNode;
         private readonly ScriptParameterUIManager _parameterUIManager;
+        private readonly IScriptService _scriptService;
 
         // Track active browser window
         private ParameterBrowserWindow? _activeParameterBrowserWindow;
@@ -39,12 +40,14 @@ namespace Parley.Views.Helpers
             SafeControlFinder controls,
             Func<MainViewModel> getViewModel,
             Func<TreeViewSafeNode?> getSelectedNode,
-            ScriptParameterUIManager parameterUIManager)
+            ScriptParameterUIManager parameterUIManager,
+            IScriptService scriptService)
         {
             _controls = controls ?? throw new ArgumentNullException(nameof(controls));
             _getViewModel = getViewModel ?? throw new ArgumentNullException(nameof(getViewModel));
             _getSelectedNode = getSelectedNode ?? throw new ArgumentNullException(nameof(getSelectedNode));
             _parameterUIManager = parameterUIManager ?? throw new ArgumentNullException(nameof(parameterUIManager));
+            _scriptService = scriptService ?? throw new ArgumentNullException(nameof(scriptService));
         }
 
         private MainViewModel ViewModel => _getViewModel();
@@ -260,7 +263,7 @@ namespace Parley.Views.Helpers
 
             try
             {
-                var declarations = await ScriptService.Instance.GetParameterDeclarationsAsync(scriptName);
+                var declarations = await _scriptService.GetParameterDeclarationsAsync(scriptName);
 
                 if (isCondition)
                 {

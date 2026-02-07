@@ -19,13 +19,16 @@ namespace DialogEditor.Services
     {
         private readonly Func<string, Control?> _findControl;
         private readonly ParameterValidationService _validationService;
+        private readonly ParameterCacheService _parameterCache;
 
         public ParameterPersistenceService(
             Func<string, Control?> findControl,
-            ParameterValidationService validationService)
+            ParameterValidationService validationService,
+            ParameterCacheService parameterCache)
         {
             _findControl = findControl ?? throw new ArgumentNullException(nameof(findControl));
             _validationService = validationService ?? throw new ArgumentNullException(nameof(validationService));
+            _parameterCache = parameterCache ?? throw new ArgumentNullException(nameof(parameterCache));
         }
 
         /// <summary>
@@ -174,7 +177,7 @@ namespace DialogEditor.Services
                             // Cache parameter value if script name is known
                             if (!string.IsNullOrWhiteSpace(scriptName) && !string.IsNullOrWhiteSpace(value))
                             {
-                                ParameterCacheService.Instance.AddValue(scriptName, key, value);
+                                _parameterCache.AddValue(scriptName, key, value);
                             }
                         }
                         else

@@ -27,7 +27,7 @@ namespace DialogEditor.Views
                 if (debugTab != null)
                 {
                     // Set visibility from settings (default: false)
-                    debugTab.IsVisible = SettingsService.Instance.DebugWindowVisible;
+                    debugTab.IsVisible = _services.Settings.DebugWindowVisible;
                 }
             }
             catch (Exception ex)
@@ -39,8 +39,8 @@ namespace DialogEditor.Views
         // Conversation Simulator handler - Issue #478
         private void OnConversationSimulatorClick(object? sender, RoutedEventArgs e)
         {
-            var dialog = DialogContextService.Instance.CurrentDialog;
-            var filePath = DialogContextService.Instance.CurrentFilePath;
+            var dialog = _services.DialogContext.CurrentDialog;
+            var filePath = _services.DialogContext.CurrentFilePath;
 
             if (dialog == null || string.IsNullOrEmpty(filePath))
             {
@@ -64,6 +64,10 @@ namespace DialogEditor.Views
             if (comboBox == null)
                 return;
 
+            // Guard: handler fires during InitializeComponent before _services is assigned
+            if (_services == null)
+                return;
+
             var selectedIndex = comboBox.SelectedIndex;
             var filterLevel = selectedIndex switch
             {
@@ -78,7 +82,7 @@ namespace DialogEditor.Views
             DebugLogger.SetLogLevelFilter(filterLevel);
 
             // Save the filter level to settings
-            SettingsService.Instance.DebugLogFilterLevel = filterLevel;
+            _services.Settings.DebugLogFilterLevel = filterLevel;
         }
 
         private void OnOpenLogFolderClick(object? sender, RoutedEventArgs e)
@@ -244,7 +248,7 @@ namespace DialogEditor.Views
 
         private void OnRefreshScriptCacheClick(object? sender, RoutedEventArgs e)
         {
-            ScriptService.Instance.ClearCache();
+            _services.Script.ClearCache();
             _viewModel.StatusMessage = "Script cache refreshed";
         }
 

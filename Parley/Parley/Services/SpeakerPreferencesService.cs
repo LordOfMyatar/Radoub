@@ -17,8 +17,6 @@ namespace DialogEditor.Services
     /// </summary>
     public class SpeakerPreferencesService : INotifyPropertyChanged
     {
-        public static SpeakerPreferencesService Instance { get; } = new SpeakerPreferencesService();
-
         private static string? _settingsDirectory;
         private static string SettingsDirectory
         {
@@ -41,7 +39,7 @@ namespace DialogEditor.Services
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        private SpeakerPreferencesService()
+        public SpeakerPreferencesService()
         {
             // Don't load in constructor - wait for explicit Load() or first access
             // This allows migration to happen first

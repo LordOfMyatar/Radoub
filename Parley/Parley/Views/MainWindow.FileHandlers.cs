@@ -6,7 +6,7 @@ using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using DialogEditor.Models;
-using DialogEditor.Services;
+
 using Radoub.Formats.Logging;
 using Radoub.UI.Views;
 
@@ -213,7 +213,7 @@ namespace DialogEditor.Views
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Scanning creatures for portrait/soundset lookup: {UnifiedLogger.SanitizePath(moduleDirectory)}");
 
                 // Get game data path for 2DA lookups
-                var settings = SettingsService.Instance;
+                var settings = _services.Settings;
                 string? gameDataPath = null;
                 var basePath = settings.BaseGameInstallPath;
                 if (!string.IsNullOrEmpty(basePath) && Directory.Exists(basePath))

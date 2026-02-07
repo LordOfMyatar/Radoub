@@ -13,10 +13,12 @@ namespace DialogEditor.Services
     public class ScriptPreviewService
     {
         private readonly SafeControlFinder _controls;
+        private readonly IScriptService _scriptService;
 
-        public ScriptPreviewService(SafeControlFinder controls)
+        public ScriptPreviewService(SafeControlFinder controls, IScriptService scriptService)
         {
             _controls = controls ?? throw new ArgumentNullException(nameof(controls));
+            _scriptService = scriptService ?? throw new ArgumentNullException(nameof(scriptService));
         }
 
         /// <summary>
@@ -45,7 +47,7 @@ namespace DialogEditor.Services
 
                 previewTextBox.Text = "Loading...";
 
-                var scriptContent = await ScriptService.Instance.GetScriptContentAsync(scriptName);
+                var scriptContent = await _scriptService.GetScriptContentAsync(scriptName);
 
                 if (!string.IsNullOrEmpty(scriptContent))
                 {

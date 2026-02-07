@@ -88,7 +88,7 @@ namespace DialogEditor.Views
         private void InitializeServices()
         {
             // Property services
-            _services.PropertyPopulator = new PropertyPanelPopulator(this);
+            _services.PropertyPopulator = new PropertyPanelPopulator(this, _services.Settings, _services.Journal);
             _services.PropertyPopulator.SetImageService(_services.ImageService);
             _services.PropertyPopulator.SetGameDataService(_services.GameData);
             _services.PropertyPopulator.SetCurrentSoundsetId = id => _currentSoundsetId = id;
@@ -115,6 +115,7 @@ namespace DialogEditor.Views
             _services.ResourceBrowser = new ResourceBrowserManager(
                 audioService: _services.Audio,
                 creatureService: _services.Creature,
+                settings: _services.Settings,
                 findControl: this.FindControl<Control>,
                 setStatusMessage: msg => _viewModel.StatusMessage = msg,
                 autoSaveProperty: AutoSaveProperty,
@@ -131,11 +132,12 @@ namespace DialogEditor.Views
                 setStatusMessage: msg => _viewModel.StatusMessage = msg);
             _services.WindowPersistence = new WindowPersistenceManager(
                 window: this,
-                findControl: this.FindControl<Control>);
+                findControl: this.FindControl<Control>,
+                settings: _services.Settings);
 
             // TreeView and dialog services
             _services.DragDrop.DropCompleted += OnDragDropCompleted;
-            _services.Dialog = new DialogFactory(this);
+            _services.Dialog = new DialogFactory(this, _services.Settings);
 
             // Sound playback - Issue #895
             _services.SoundPlayback.PlaybackStopped += OnSoundPlaybackStopped;
@@ -150,6 +152,7 @@ namespace DialogEditor.Views
                 window: this,
                 controls: _controls,
                 windows: _windows,
+                settings: _services.Settings,
                 getViewModel: () => _viewModel,
                 getSelectedNode: () => _selectedNode,
                 setSelectedNode: node => _selectedNode = node,
@@ -179,19 +182,24 @@ namespace DialogEditor.Views
                 getViewModel: () => _viewModel,
                 getSelectedNode: () => _selectedNode,
                 autoSaveProperty: AutoSaveProperty,
+                settings: _services.Settings,
+                externalEditorService: Program.Services.GetRequiredService<ExternalEditorService>(),
                 gameDataService: _services.GameData);
 
             _controllers.ParameterBrowser = new ParameterBrowserController(
                 controls: _controls,
                 getViewModel: () => _viewModel,
                 getSelectedNode: () => _selectedNode,
-                parameterUIManager: _services.ParameterUI);
+                parameterUIManager: _services.ParameterUI,
+                scriptService: _services.Script);
 
-            _services.ScriptPreview = new ScriptPreviewService(_controls);
+            _services.ScriptPreview = new ScriptPreviewService(_controls, _services.Script);
 
             _controllers.Quest = new QuestUIController(
                 window: this,
                 controls: _controls,
+                settings: _services.Settings,
+                journalService: _services.Journal,
                 getViewModel: () => _viewModel,
                 getSelectedNode: () => _selectedNode,
                 isPopulatingProperties: () => _uiState.IsPopulatingProperties,
@@ -201,6 +209,7 @@ namespace DialogEditor.Views
             _controllers.FileMenu = new FileMenuController(
                 window: this,
                 controls: _controls,
+                settings: _services.Settings,
                 getViewModel: () => _viewModel,
                 saveCurrentNodeProperties: SaveCurrentNodeProperties,
                 clearPropertiesPanel: () => _services.PropertyPopulator.ClearAllFields(),
@@ -219,6 +228,7 @@ namespace DialogEditor.Views
 
             _controllers.SpeakerVisual = new SpeakerVisualController(
                 window: this,
+                settings: _services.Settings,
                 isPopulatingProperties: () => _uiState.IsPopulatingProperties);
         }
 

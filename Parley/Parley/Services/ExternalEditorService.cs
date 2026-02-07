@@ -11,8 +11,12 @@ namespace DialogEditor.Services
     /// </summary>
     public class ExternalEditorService
     {
-        private static readonly Lazy<ExternalEditorService> _instance = new Lazy<ExternalEditorService>(() => new ExternalEditorService());
-        public static ExternalEditorService Instance => _instance.Value;
+        private readonly ISettingsService _settings;
+
+        public ExternalEditorService(ISettingsService settings)
+        {
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        }
 
         /// <summary>
         /// Opens a script file in the configured external editor
@@ -41,7 +45,7 @@ namespace DialogEditor.Services
             try
             {
                 // Get configured editor or detect default
-                var settings = SettingsService.Instance;
+                var settings = _settings;
                 string? editorPath = settings.ExternalEditorPath;
 
                 if (string.IsNullOrWhiteSpace(editorPath))
@@ -92,7 +96,7 @@ namespace DialogEditor.Services
             // Remove .nss extension if present
             scriptName = scriptName.Replace(".nss", "", StringComparison.OrdinalIgnoreCase);
 
-            var settings = SettingsService.Instance;
+            var settings = _settings;
 
             // 1. Check same directory as dialog file
             if (!string.IsNullOrWhiteSpace(dialogFilePath))

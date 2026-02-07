@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using DialogEditor.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Radoub.Formats.Dlg;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
@@ -12,12 +13,28 @@ namespace DialogEditor.Services
     /// Parley's models have UI-specific features (LinkRegistry, node pooling, bidirectional refs)
     /// while Radoub.Formats models are simple POCOs for file I/O.
     ///
-    /// TLK Resolution: Uses GameResourceService.Instance to resolve StrRef values to
+    /// TLK Resolution: Uses GetGameResourceService() to resolve StrRef values to
     /// actual text from the game's TLK files. This is essential for displaying dialog
     /// text that references the TLK rather than containing inline text.
     /// </summary>
     public static class DlgAdapter
     {
+        /// <summary>
+        /// Safely resolves GameResourceService from DI. Returns null in test environments
+        /// where Program.Services is not configured.
+        /// </summary>
+        private static GameResourceService? GetGameResourceService()
+        {
+            try
+            {
+                return Program.Services?.GetRequiredService<GameResourceService>();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         #region DlgFile -> Dialog (Reading)
 
         /// <summary>
@@ -198,7 +215,7 @@ namespace DialogEditor.Services
             if (cexo.LocalizedStrings.Count == 0 && cexo.StrRef != 0xFFFFFFFF)
             {
                 // No inline text but valid StrRef - resolve from TLK
-                var tlkText = GameResourceService.Instance.GetTlkString(cexo.StrRef);
+                var tlkText = GetGameResourceService()?.GetTlkString(cexo.StrRef);
                 if (tlkText != null)
                 {
                     locString.Strings[0] = tlkText;
@@ -226,7 +243,7 @@ namespace DialogEditor.Services
                     var strRefText = firstText.Substring(8, firstText.Length - 9);
                     if (uint.TryParse(strRefText, out var embeddedStrRef))
                     {
-                        var tlkText = GameResourceService.Instance.GetTlkString(embeddedStrRef);
+                        var tlkText = GetGameResourceService()?.GetTlkString(embeddedStrRef);
                         if (tlkText != null)
                         {
                             locString.Strings[0] = tlkText;

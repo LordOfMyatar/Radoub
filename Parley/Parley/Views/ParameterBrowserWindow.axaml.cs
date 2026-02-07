@@ -9,12 +9,17 @@ using Avalonia.Interactivity;
 using DialogEditor.Models;
 using DialogEditor.Parsers;
 using DialogEditor.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Radoub.Formats.Logging;
 
 namespace DialogEditor.Views
 {
     public partial class ParameterBrowserWindow : Window
     {
+        private readonly ISettingsService _settings;
+        private readonly ParameterCacheService _parameterCache;
+        private readonly IJournalService _journalService;
+        private readonly IScriptService _scriptService;
         private ScriptParameterDeclarations? _declarations;
         private string? _selectedKey;
         private string? _selectedValue;
@@ -27,6 +32,10 @@ namespace DialogEditor.Views
 
         public ParameterBrowserWindow()
         {
+            _settings = Program.Services.GetRequiredService<ISettingsService>();
+            _parameterCache = Program.Services.GetRequiredService<ParameterCacheService>();
+            _journalService = Program.Services.GetRequiredService<IJournalService>();
+            _scriptService = Program.Services.GetRequiredService<IScriptService>();
             InitializeComponent();
             DataContext = this;
 
@@ -38,7 +47,7 @@ namespace DialogEditor.Views
             var enableCacheCheckBox = this.FindControl<CheckBox>("EnableCacheCheckBox");
             if (enableCacheCheckBox != null)
             {
-                enableCacheCheckBox.IsChecked = ParameterCacheService.Instance.EnableCaching;
+                enableCacheCheckBox.IsChecked = _parameterCache.EnableCaching;
             }
         }
 
@@ -86,7 +95,7 @@ namespace DialogEditor.Views
             // Add keys from cache
             if (!string.IsNullOrWhiteSpace(scriptName))
             {
-                var cachedKeys = ParameterCacheService.Instance.GetParameterKeys(scriptName);
+                var cachedKeys = _parameterCache.GetParameterKeys(scriptName);
                 foreach (var key in cachedKeys)
                 {
                     allKeys.Add(key);
@@ -144,7 +153,7 @@ namespace DialogEditor.Views
                     var declCount = 0;
                     if (!string.IsNullOrWhiteSpace(_currentScriptName))
                     {
-                        cachedCount = ParameterCacheService.Instance.GetValues(_currentScriptName, selectedKey).Count;
+                        cachedCount = _parameterCache.GetValues(_currentScriptName, selectedKey).Count;
                     }
                     var declValues = _declarations?.GetValuesForKey(selectedKey) ?? new List<string>();
                     declCount = declValues.Count;
@@ -206,7 +215,7 @@ namespace DialogEditor.Views
                         $"ParameterBrowserWindow: Resolving journal entries for quest '{questTag}'");
 
                     // Get entries specific to this quest from journal cache
-                    var entries = JournalService.Instance.GetEntriesForQuest(questTag);
+                    var entries = _journalService.GetEntriesForQuest(questTag);
                     var entryIds = entries.Select(e => e.ID.ToString()).Distinct().OrderBy(id => int.Parse(id)).ToList();
 
                     UnifiedLogger.LogApplication(LogLevel.INFO,
@@ -224,9 +233,9 @@ namespace DialogEditor.Views
 
             // Get cached values for this script and parameter (MRU order)
             var cachedValues = new List<string>();
-            if (!string.IsNullOrWhiteSpace(_currentScriptName) && ParameterCacheService.Instance.EnableCaching)
+            if (!string.IsNullOrWhiteSpace(_currentScriptName) && _parameterCache.EnableCaching)
             {
-                cachedValues = ParameterCacheService.Instance.GetValues(_currentScriptName, key);
+                cachedValues = _parameterCache.GetValues(_currentScriptName, key);
                 UnifiedLogger.LogApplication(LogLevel.DEBUG,
                     $"ParameterBrowserWindow: Found {cachedValues.Count} cached values for '{_currentScriptName}.{key}'");
             }
@@ -346,11 +355,10 @@ namespace DialogEditor.Views
                 UnifiedLogger.LogApplication(LogLevel.INFO, "Refreshing journal cache...");
 
                 // Clear journal cache
-                JournalService.Instance.ClearCache();
+                _journalService.ClearCache();
 
                 // Find module.jrl file in current dialog's directory
-                var settingsService = SettingsService.Instance;
-                var modulePath = settingsService.CurrentModulePath;
+                var modulePath = _settings.CurrentModulePath;
 
                 if (string.IsNullOrWhiteSpace(modulePath))
                 {
@@ -366,14 +374,13 @@ namespace DialogEditor.Views
                 }
 
                 // Re-parse journal file (this will write new cache)
-                await JournalService.Instance.ParseJournalFileAsync(jrlPath);
+                await _journalService.ParseJournalFileAsync(jrlPath);
 
                 // Reload current script's parameters
                 if (_currentScriptName != null)
                 {
                     var parser = new ScriptParameterParser();
-                    var scriptService = ScriptService.Instance;
-                    var scriptContent = await scriptService.GetScriptContentAsync(_currentScriptName);
+                    var scriptContent = await _scriptService.GetScriptContentAsync(_currentScriptName);
 
                     if (!string.IsNullOrEmpty(scriptContent))
                     {
@@ -463,7 +470,7 @@ namespace DialogEditor.Views
         {
             if (sender is CheckBox checkBox && checkBox.IsChecked.HasValue)
             {
-                ParameterCacheService.Instance.EnableCaching = checkBox.IsChecked.Value;
+                _parameterCache.EnableCaching = checkBox.IsChecked.Value;
                 UnifiedLogger.LogApplication(LogLevel.INFO,
                     $"Parameter caching {(checkBox.IsChecked.Value ? "enabled" : "disabled")} from browser");
 
@@ -496,9 +503,9 @@ namespace DialogEditor.Views
             }
 
             // Add keys from cache (only if caching enabled)
-            if (!string.IsNullOrWhiteSpace(_currentScriptName) && ParameterCacheService.Instance.EnableCaching)
+            if (!string.IsNullOrWhiteSpace(_currentScriptName) && _parameterCache.EnableCaching)
             {
-                var cachedKeys = ParameterCacheService.Instance.GetParameterKeys(_currentScriptName);
+                var cachedKeys = _parameterCache.GetParameterKeys(_currentScriptName);
                 foreach (var key in cachedKeys)
                 {
                     allKeys.Add(key);
@@ -529,9 +536,9 @@ namespace DialogEditor.Views
             // Update header with counts
             var cachedCount = 0;
             var declCount = 0;
-            if (!string.IsNullOrWhiteSpace(_currentScriptName) && ParameterCacheService.Instance.EnableCaching)
+            if (!string.IsNullOrWhiteSpace(_currentScriptName) && _parameterCache.EnableCaching)
             {
-                cachedCount = ParameterCacheService.Instance.GetValues(_currentScriptName, _selectedKey).Count;
+                cachedCount = _parameterCache.GetValues(_currentScriptName, _selectedKey).Count;
             }
             var declValues = _declarations?.GetValuesForKey(_selectedKey) ?? new List<string>();
             declCount = declValues.Count;
@@ -559,7 +566,7 @@ namespace DialogEditor.Views
         {
             if (!string.IsNullOrWhiteSpace(_currentScriptName))
             {
-                ParameterCacheService.Instance.ClearScriptCache(_currentScriptName);
+                _parameterCache.ClearScriptCache(_currentScriptName);
                 UnifiedLogger.LogApplication(LogLevel.INFO,
                     $"Cleared parameter cache for script: {_currentScriptName}");
 

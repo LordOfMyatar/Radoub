@@ -14,8 +14,6 @@ namespace DialogEditor.Services
 {
     public class ScriptService : IScriptService
     {
-        public static ScriptService Instance { get; } = new ScriptService();
-
         /// <summary>
         /// Cache entry for script content with file modification tracking.
         /// </summary>
@@ -50,9 +48,15 @@ namespace DialogEditor.Services
         private Dictionary<string, ScriptCacheEntry> _scriptCache = new Dictionary<string, ScriptCacheEntry>();
         private Dictionary<string, CacheEntry<ScriptParameterDeclarations>> _parameterCache = new Dictionary<string, CacheEntry<ScriptParameterDeclarations>>();
         private readonly ScriptParameterParser _parameterParser = new ScriptParameterParser();
+        private readonly ISettingsService _settings;
+        private readonly GameResourceService _gameResourceService;
+        private readonly IDialogContextService _dialogContextService;
 
-        private ScriptService()
+        public ScriptService(ISettingsService settings, GameResourceService gameResourceService, IDialogContextService dialogContextService)
         {
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            _gameResourceService = gameResourceService ?? throw new ArgumentNullException(nameof(gameResourceService));
+            _dialogContextService = dialogContextService ?? throw new ArgumentNullException(nameof(dialogContextService));
             UnifiedLogger.LogApplication(LogLevel.INFO, "ScriptService initialized");
         }
 
@@ -251,7 +255,7 @@ namespace DialogEditor.Services
             try
             {
                 // Check if GameResourceService is available
-                if (!GameResourceService.Instance.IsAvailable)
+                if (!_gameResourceService.IsAvailable)
                 {
                     UnifiedLogger.LogApplication(LogLevel.DEBUG,
                         $"LoadBuiltInScriptAsync: GameResourceService not available for '{scriptName}'");
@@ -265,7 +269,7 @@ namespace DialogEditor.Services
 
                 // Try to find the .nss source file in game BIFs
                 var scriptData = await Task.Run(() =>
-                    GameResourceService.Instance.FindResource(resRef, ResourceTypes.Nss));
+                    _gameResourceService.FindResource(resRef, ResourceTypes.Nss));
 
                 if (scriptData == null || scriptData.Length == 0)
                 {
@@ -303,7 +307,7 @@ namespace DialogEditor.Services
             var paths = new List<string>();
 
             // Add current dialog file's directory first (highest priority - matches Script Browser behavior)
-            var currentFilePath = DialogContextService.Instance.CurrentFilePath;
+            var currentFilePath = _dialogContextService.CurrentFilePath;
             if (!string.IsNullOrEmpty(currentFilePath))
             {
                 var dialogDir = Path.GetDirectoryName(currentFilePath);
@@ -314,7 +318,7 @@ namespace DialogEditor.Services
             }
 
             // Add Neverwinter Nights installation path
-            var nwnPath = SettingsService.Instance.NeverwinterNightsPath;
+            var nwnPath = _settings.NeverwinterNightsPath;
             if (!string.IsNullOrEmpty(nwnPath) && Directory.Exists(nwnPath))
             {
                 // Add common NWN script directories
@@ -324,7 +328,7 @@ namespace DialogEditor.Services
             }
 
             // Add current module path
-            var currentModulePath = SettingsService.Instance.CurrentModulePath;
+            var currentModulePath = _settings.CurrentModulePath;
             if (!string.IsNullOrEmpty(currentModulePath) && Directory.Exists(currentModulePath))
             {
                 paths.Add(currentModulePath);
@@ -336,7 +340,7 @@ namespace DialogEditor.Services
             }
 
             // Add all configured module paths
-            foreach (var modulePath in SettingsService.Instance.ModulePaths)
+            foreach (var modulePath in _settings.ModulePaths)
             {
                 if (!string.IsNullOrEmpty(modulePath) && Directory.Exists(modulePath))
                 {

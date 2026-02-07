@@ -21,9 +21,7 @@ namespace DialogEditor.Services
     /// </remarks>
     public class SpellCheckService : IDisposable
     {
-        private static SpellCheckService? _instance;
-        public static SpellCheckService Instance => _instance ??= new SpellCheckService();
-
+        private readonly ISettingsService _settings;
         private DictionaryManager _dictionaryManager;
         private SpellChecker? _spellChecker;
         private DictionaryDiscovery? _discovery;
@@ -46,7 +44,7 @@ namespace DialogEditor.Services
         /// Whether spell-checking is available and loaded.
         /// Also checks if spell-check is enabled in settings.
         /// </summary>
-        public bool IsReady => _isInitialized && _spellChecker != null && SettingsService.Instance.SpellCheckEnabled && !_isReloading;
+        public bool IsReady => _isInitialized && _spellChecker != null && _settings.SpellCheckEnabled && !_isReloading;
 
         /// <summary>
         /// Event raised when spell-check is ready for use.
@@ -58,8 +56,9 @@ namespace DialogEditor.Services
         /// </summary>
         public event EventHandler? DictionariesReloaded;
 
-        private SpellCheckService()
+        public SpellCheckService(ISettingsService settings)
         {
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _dictionaryManager = new DictionaryManager();
 
             // Setup custom dictionary path: ~/Radoub/Dictionaries/custom.dic

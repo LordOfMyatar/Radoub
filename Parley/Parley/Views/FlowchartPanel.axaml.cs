@@ -9,6 +9,7 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Radoub.Formats.Logging;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
 using DialogEditor.ViewModels;
@@ -37,6 +38,8 @@ namespace DialogEditor.Views
     /// </summary>
     public partial class FlowchartPanel : UserControl
     {
+        private readonly ISettingsService _settings;
+        private readonly UISettingsService _uiSettings;
         private FlowchartPanelViewModel _viewModel;
         private double _currentZoom = 1.0;
         private const double ZoomStep = 0.1;
@@ -80,6 +83,8 @@ namespace DialogEditor.Views
 
         public FlowchartPanel()
         {
+            _settings = Program.Services.GetRequiredService<ISettingsService>();
+            _uiSettings = Program.Services.GetRequiredService<UISettingsService>();
             InitializeComponent();
             _viewModel = new FlowchartPanelViewModel();
             DataContext = _viewModel;
@@ -99,10 +104,10 @@ namespace DialogEditor.Views
             KeyDown += OnKeyDown;
 
             // Listen for settings changes to refresh colors (#340)
-            SettingsService.Instance.PropertyChanged += OnSettingsChanged;
+            _settings.PropertyChanged += OnSettingsChanged;
 
             // Listen for UI settings changes (#813: FlowchartNodeMaxLines)
-            UISettingsService.Instance.PropertyChanged += OnUISettingsChanged;
+            _uiSettings.PropertyChanged += OnUISettingsChanged;
 
             // Listen for theme changes to refresh colors (#141)
             ThemeManager.Instance.ThemeApplied += OnThemeApplied;

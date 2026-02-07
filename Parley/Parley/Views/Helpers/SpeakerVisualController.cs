@@ -18,13 +18,16 @@ namespace Parley.Views.Helpers
     public class SpeakerVisualController
     {
         private readonly Window _window;
+        private readonly ISettingsService _settings;
         private readonly Func<bool> _isPopulatingProperties;
 
         public SpeakerVisualController(
             Window window,
+            ISettingsService settings,
             Func<bool> isPopulatingProperties)
         {
             _window = window ?? throw new ArgumentNullException(nameof(window));
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _isPopulatingProperties = isPopulatingProperties ?? throw new ArgumentNullException(nameof(isPopulatingProperties));
         }
 
@@ -78,7 +81,7 @@ namespace Parley.Views.Helpers
                     {
                         // SetSpeakerPreference fires PropertyChanged("NpcSpeakerPreferences")
                         // MainWindow.OnSettingsPropertyChanged handles both tree + flowchart refresh (#1223)
-                        SettingsService.Instance.SetSpeakerPreference(speakerTag, null, shape);
+                        _settings.SetSpeakerPreference(speakerTag, null, shape);
                         UnifiedLogger.LogApplication(LogLevel.INFO, $"Set speaker '{speakerTag}' shape to {shape}");
                     }
                 }
@@ -110,7 +113,7 @@ namespace Parley.Views.Helpers
                     {
                         // SetSpeakerPreference fires PropertyChanged("NpcSpeakerPreferences")
                         // MainWindow.OnSettingsPropertyChanged handles both tree + flowchart refresh (#1223)
-                        SettingsService.Instance.SetSpeakerPreference(speakerTag, color, null);
+                        _settings.SetSpeakerPreference(speakerTag, color, null);
                         UnifiedLogger.LogApplication(LogLevel.INFO, $"Set speaker '{speakerTag}' color to {color}");
                     }
                 }

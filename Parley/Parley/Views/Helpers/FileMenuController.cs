@@ -35,6 +35,7 @@ namespace Parley.Views.Helpers
         private const int MaxAuroraFilenameLength = 16;
         private readonly Window _window;
         private readonly SafeControlFinder _controls;
+        private readonly ISettingsService _settings;
         private readonly Func<MainViewModel> _getViewModel;
         private readonly Action _saveCurrentNodeProperties;
         private readonly Action _clearPropertiesPanel;
@@ -49,6 +50,7 @@ namespace Parley.Views.Helpers
         public FileMenuController(
             Window window,
             SafeControlFinder controls,
+            ISettingsService settings,
             Func<MainViewModel> getViewModel,
             Action saveCurrentNodeProperties,
             Action clearPropertiesPanel,
@@ -62,6 +64,7 @@ namespace Parley.Views.Helpers
         {
             _window = window ?? throw new ArgumentNullException(nameof(window));
             _controls = controls ?? throw new ArgumentNullException(nameof(controls));
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _getViewModel = getViewModel ?? throw new ArgumentNullException(nameof(getViewModel));
             _saveCurrentNodeProperties = saveCurrentNodeProperties ?? throw new ArgumentNullException(nameof(saveCurrentNodeProperties));
             _clearPropertiesPanel = clearPropertiesPanel ?? throw new ArgumentNullException(nameof(clearPropertiesPanel));
@@ -162,7 +165,7 @@ namespace Parley.Views.Helpers
             try
             {
                 // Create context for dialog browser - uses current file's directory
-                var context = new ParleyScriptBrowserContext(ViewModel.CurrentFileName);
+                var context = new ParleyScriptBrowserContext(ViewModel.CurrentFileName, _settings);
 
                 var browser = new DialogBrowserWindow(context);
                 await browser.ShowDialog(_window);
@@ -319,7 +322,7 @@ namespace Parley.Views.Helpers
 
                         if (shouldRemove)
                         {
-                            SettingsService.Instance.RemoveRecentFile(filePath);
+                            _settings.RemoveRecentFile(filePath);
                             _populateRecentFilesMenu();
                         }
                         return;
@@ -372,7 +375,7 @@ namespace Parley.Views.Helpers
                 }
 
                 var menuItems = new System.Collections.Generic.List<object>();
-                var recentFiles = SettingsService.Instance.RecentFiles;
+                var recentFiles = _settings.RecentFiles;
 
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"PopulateRecentFilesMenu: {recentFiles.Count} recent files from settings");
 
@@ -403,7 +406,7 @@ namespace Parley.Views.Helpers
                     var clearItem = new MenuItem { Header = "Clear Recent Files" };
                     clearItem.Click += (s, args) =>
                     {
-                        SettingsService.Instance.ClearRecentFiles();
+                        _settings.ClearRecentFiles();
                         PopulateRecentFilesMenu();
                     };
                     menuItems.Add(clearItem);

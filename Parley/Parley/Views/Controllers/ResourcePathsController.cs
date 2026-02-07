@@ -22,22 +22,25 @@ namespace DialogEditor.Views.Controllers
         private readonly Func<bool> _isInitializing;
         private readonly Func<IBrush> _getErrorBrush;
         private readonly Func<IBrush> _getSuccessBrush;
+        private readonly ISettingsService _settings;
 
         public ResourcePathsController(
             Window window,
             Func<bool> isInitializing,
             Func<IBrush> getErrorBrush,
-            Func<IBrush> getSuccessBrush)
+            Func<IBrush> getSuccessBrush,
+            ISettingsService settings)
         {
             _window = window;
             _isInitializing = isInitializing;
             _getErrorBrush = getErrorBrush;
             _getSuccessBrush = getSuccessBrush;
+            _settings = settings;
         }
 
         public void LoadSettings()
         {
-            var settings = SettingsService.Instance;
+            var settings = _settings;
 
             // Game Path (User Data Directory)
             var gamePathTextBox = _window.FindControl<TextBox>("GamePathTextBox");
@@ -92,7 +95,7 @@ namespace DialogEditor.Views.Controllers
 
         public void ApplySettings()
         {
-            var settings = SettingsService.Instance;
+            var settings = _settings;
 
             var gamePathTextBox = _window.FindControl<TextBox>("GamePathTextBox");
             var baseGamePathTextBox = _window.FindControl<TextBox>("BaseGamePathTextBox");
@@ -136,7 +139,7 @@ namespace DialogEditor.Views.Controllers
 
         private void LoadTlkLanguageSettings()
         {
-            var settings = SettingsService.Instance;
+            var settings = _settings;
             var tlkLanguageComboBox = _window.FindControl<ComboBox>("TlkLanguageComboBox");
             var tlkUseFemaleCheckBox = _window.FindControl<CheckBox>("TlkUseFemaleCheckBox");
 
@@ -166,7 +169,7 @@ namespace DialogEditor.Views.Controllers
             var tlkLanguageStatus = _window.FindControl<TextBlock>("TlkLanguageStatus");
             if (tlkLanguageStatus == null) return;
 
-            var settings = SettingsService.Instance;
+            var settings = _settings;
 
             if (string.IsNullOrEmpty(settings.BaseGameInstallPath))
             {
@@ -404,13 +407,13 @@ namespace DialogEditor.Views.Controllers
         public void OnClearRecentModulesClick(object? sender, RoutedEventArgs e)
         {
             UnifiedLogger.LogApplication(LogLevel.DEBUG, "Clear Recent Modules clicked");
-            SettingsService.Instance.ClearModulePaths();
+            _settings.ClearModulePaths();
 
             var recentModulesListBox = _window.FindControl<ListBox>("RecentModulesListBox");
             if (recentModulesListBox != null)
             {
                 recentModulesListBox.ItemsSource = null;
-                recentModulesListBox.ItemsSource = SettingsService.Instance.ModulePaths;
+                recentModulesListBox.ItemsSource = _settings.ModulePaths;
             }
         }
 

@@ -27,6 +27,7 @@ namespace Parley.Views.Helpers
     public class SpeakerPropertiesPopulator
     {
         private readonly Window _window;
+        private readonly ISettingsService _settings;
         private IImageService? _imageService;
         private IGameDataService? _gameDataService;
 
@@ -35,9 +36,10 @@ namespace Parley.Views.Helpers
         /// </summary>
         public Action<ushort>? SetCurrentSoundsetId { get; set; }
 
-        public SpeakerPropertiesPopulator(Window window)
+        public SpeakerPropertiesPopulator(Window window, ISettingsService settings)
         {
             _window = window ?? throw new ArgumentNullException(nameof(window));
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         }
 
         /// <summary>
@@ -121,7 +123,7 @@ namespace Parley.Views.Helpers
                 shapeComboBox.IsEnabled = enableControls;
                 if (enableControls)
                 {
-                    var (_, prefShape) = SettingsService.Instance.GetSpeakerPreference(dialogNode.Speaker);
+                    var (_, prefShape) = _settings.GetSpeakerPreference(dialogNode.Speaker);
                     if (prefShape.HasValue)
                     {
                         // Set to preference
@@ -145,7 +147,7 @@ namespace Parley.Views.Helpers
                 colorComboBox.IsEnabled = enableControls;
                 if (enableControls)
                 {
-                    var (prefColor, _) = SettingsService.Instance.GetSpeakerPreference(dialogNode.Speaker);
+                    var (prefColor, _) = _settings.GetSpeakerPreference(dialogNode.Speaker);
                     if (!string.IsNullOrEmpty(prefColor))
                     {
                         // Set to preference

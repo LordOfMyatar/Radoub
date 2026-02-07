@@ -5,6 +5,7 @@ using AvaloniaGraphControl;
 using CommunityToolkit.Mvvm.ComponentModel;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Radoub.Formats.Logging;
 
 namespace DialogEditor.ViewModels
@@ -44,7 +45,7 @@ namespace DialogEditor.ViewModels
         /// Maximum lines to display in flowchart nodes before truncation (#813).
         /// Bound from UISettingsService for XAML data binding.
         /// </summary>
-        public int NodeMaxLines => UISettingsService.Instance.FlowchartNodeMaxLines;
+        public int NodeMaxLines => Program.Services.GetRequiredService<UISettingsService>().FlowchartNodeMaxLines;
 
         /// <summary>
         /// Notifies that a property has changed. Used by FlowchartPanel to trigger refresh on settings change.

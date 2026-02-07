@@ -3,6 +3,7 @@ using System.Globalization;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
 using DialogEditor.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DialogEditor.Models
 {
@@ -61,7 +62,7 @@ namespace DialogEditor.Models
             if (value is bool boolValue && boolValue)
             {
                 // #1158: Use dynamic width from UISettingsService instead of fixed value
-                return UISettingsService.Instance.TreeViewTextMaxWidth;
+                return Program.Services.GetRequiredService<UISettingsService>().TreeViewTextMaxWidth;
             }
             return double.PositiveInfinity;
         }

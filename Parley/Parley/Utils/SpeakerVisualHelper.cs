@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using DialogEditor.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DialogEditor.Utils
 {
@@ -72,8 +73,9 @@ namespace DialogEditor.Utils
         /// </summary>
         /// <param name="speaker">The speaker tag/name (empty for Owner)</param>
         /// <param name="isPC">True if this is a PC (Player Character) reply node</param>
+        /// <param name="settings">Settings service for speaker preferences</param>
         /// <returns>A shape from the SpeakerShape enum</returns>
-        public static SpeakerShape GetSpeakerShape(string speaker, bool isPC)
+        public static SpeakerShape GetSpeakerShape(string speaker, bool isPC, ISettingsService? settings = null)
         {
             // PC always gets circle
             if (isPC)
@@ -83,13 +85,16 @@ namespace DialogEditor.Utils
             if (string.IsNullOrEmpty(speaker))
                 return SpeakerShape.Square;
 
+            // Fallback to DI container if no settings provided (transitional)
+            var svc = settings ?? Program.Services.GetRequiredService<ISettingsService>();
+
             // Check for user preference (Issue #16, #36)
-            var (_, prefShape) = SettingsService.Instance.GetSpeakerPreference(speaker);
+            var (_, prefShape) = svc.GetSpeakerPreference(speaker);
             if (prefShape.HasValue)
                 return prefShape.Value;
 
             // If NPC tag coloring disabled, use default Owner shape (Issue #134)
-            if (!SettingsService.Instance.EnableNpcTagColoring)
+            if (!svc.EnableNpcTagColoring)
                 return SpeakerShape.Square;
 
             // Other NPCs get shapes based on hash
@@ -105,8 +110,9 @@ namespace DialogEditor.Utils
         /// </summary>
         /// <param name="speaker">The speaker tag/name (empty for Owner)</param>
         /// <param name="isPC">True if this is a PC (Player Character) reply node</param>
+        /// <param name="settings">Settings service for speaker preferences</param>
         /// <returns>Hex color string (e.g., "#4FC3F7")</returns>
-        public static string GetSpeakerColor(string speaker, bool isPC)
+        public static string GetSpeakerColor(string speaker, bool isPC, ISettingsService? settings = null)
         {
             // Check for theme overrides from Application resources
             var app = Avalonia.Application.Current;
@@ -146,13 +152,16 @@ namespace DialogEditor.Utils
                 return ColorPalette.Orange;
             }
 
+            // Fallback to DI container if no settings provided (transitional)
+            var svc = settings ?? Program.Services.GetRequiredService<ISettingsService>();
+
             // Check for user preference (Issue #16, #36)
-            var (prefColor, _) = SettingsService.Instance.GetSpeakerPreference(speaker);
+            var (prefColor, _) = svc.GetSpeakerPreference(speaker);
             if (!string.IsNullOrEmpty(prefColor))
                 return prefColor;
 
             // If NPC tag coloring disabled, use default Owner color from theme (Issue #134)
-            if (!SettingsService.Instance.EnableNpcTagColoring)
+            if (!svc.EnableNpcTagColoring)
             {
                 if (app?.Resources.TryGetResource("ThemeOwnerColor", app.ActualThemeVariant, out var ownerColorObj2) == true
                     && ownerColorObj2 is string ownerColor2)
@@ -178,10 +187,11 @@ namespace DialogEditor.Utils
         /// </summary>
         /// <param name="speaker">The speaker tag/name (empty for Owner)</param>
         /// <param name="isPC">True if this is a PC (Player Character) reply node</param>
+        /// <param name="settings">Settings service for speaker preferences</param>
         /// <returns>Tuple of (shape, color) for the speaker</returns>
-        public static (SpeakerShape shape, string color) GetSpeakerVisuals(string speaker, bool isPC)
+        public static (SpeakerShape shape, string color) GetSpeakerVisuals(string speaker, bool isPC, ISettingsService? settings = null)
         {
-            return (GetSpeakerShape(speaker, isPC), GetSpeakerColor(speaker, isPC));
+            return (GetSpeakerShape(speaker, isPC, settings), GetSpeakerColor(speaker, isPC, settings));
         }
 
         /// <summary>
