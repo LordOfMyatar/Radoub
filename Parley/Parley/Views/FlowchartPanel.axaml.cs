@@ -226,13 +226,19 @@ namespace DialogEditor.Views
             if (e.PropertyName == nameof(SettingsService.NpcSpeakerPreferences) ||
                 e.PropertyName == nameof(SettingsService.EnableNpcTagColoring))
             {
-                // Ensure we're on the UI thread
+                // Force complete visual refresh by toggling visibility (#1223)
+                // Same pattern as OnThemeApplied - Avalonia needs visual tree recreation
+                // to re-evaluate converters with updated speaker colors
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
-                    // Force re-render by refreshing the Graph binding
-                    // This triggers DataTemplate re-evaluation with updated colors
+                    FlowchartScrollViewer.IsVisible = false;
                     _viewModel.RefreshGraph();
-                    UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart colors refreshed due to {e.PropertyName} change");
+
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        FlowchartScrollViewer.IsVisible = true;
+                        UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart colors refreshed due to {e.PropertyName} change");
+                    }, Avalonia.Threading.DispatcherPriority.Background);
                 });
             }
         }

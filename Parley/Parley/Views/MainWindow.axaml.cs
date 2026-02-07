@@ -215,6 +215,10 @@ namespace DialogEditor.Views
                 window: this,
                 getViewModel: () => _viewModel,
                 getSelectedNode: GetSelectedTreeNode);
+
+            _controllers.SpeakerVisual = new SpeakerVisualController(
+                window: this,
+                isPopulatingProperties: () => _uiState.IsPopulatingProperties);
         }
 
         /// <summary>
@@ -270,31 +274,7 @@ namespace DialogEditor.Views
 
         // Lifecycle methods extracted to MainWindow.Lifecycle.cs (#1220)
 
-        private void InitializeSpeakerVisualComboBoxes()
-        {
-            // Populate Shape ComboBox with NPC shapes (Triangle, Diamond, Pentagon, Star)
-            var shapeComboBox = this.FindControl<ComboBox>("SpeakerShapeComboBox");
-            if (shapeComboBox != null)
-            {
-                shapeComboBox.Items.Clear();
-                shapeComboBox.Items.Add(SpeakerVisualHelper.SpeakerShape.Triangle);
-                shapeComboBox.Items.Add(SpeakerVisualHelper.SpeakerShape.Diamond);
-                shapeComboBox.Items.Add(SpeakerVisualHelper.SpeakerShape.Pentagon);
-                shapeComboBox.Items.Add(SpeakerVisualHelper.SpeakerShape.Star);
-            }
-
-            // Populate Color ComboBox with color-blind friendly palette
-            var colorComboBox = this.FindControl<ComboBox>("SpeakerColorComboBox");
-            if (colorComboBox != null)
-            {
-                colorComboBox.Items.Clear();
-                colorComboBox.Items.Add(new ComboBoxItem { Content = "Orange", Tag = SpeakerVisualHelper.ColorPalette.Orange });
-                colorComboBox.Items.Add(new ComboBoxItem { Content = "Purple", Tag = SpeakerVisualHelper.ColorPalette.Purple });
-                colorComboBox.Items.Add(new ComboBoxItem { Content = "Teal", Tag = SpeakerVisualHelper.ColorPalette.Teal });
-                colorComboBox.Items.Add(new ComboBoxItem { Content = "Amber", Tag = SpeakerVisualHelper.ColorPalette.Amber });
-                colorComboBox.Items.Add(new ComboBoxItem { Content = "Pink", Tag = SpeakerVisualHelper.ColorPalette.Pink });
-            }
-        }
+        // Speaker visual combo box initialization extracted to SpeakerVisualController (#1223)
 
         // OnThemeApplied moved to MainWindow.Theme.cs
 
@@ -303,15 +283,18 @@ namespace DialogEditor.Views
         /// </summary>
         private void OnSettingsPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            // Refresh tree when NPC tag coloring setting changes
-            if (e.PropertyName == nameof(SettingsService.EnableNpcTagColoring))
+            // Refresh tree and flowchart when NPC tag coloring or speaker preferences change (#134, #1223)
+            if (e.PropertyName == nameof(SettingsService.EnableNpcTagColoring) ||
+                e.PropertyName == nameof(SettingsService.NpcSpeakerPreferences))
             {
                 if (_viewModel.CurrentDialog != null)
                 {
                     global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                     {
                         _viewModel.RefreshTreeViewColors();
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, "Tree view refreshed after NPC tag coloring setting change");
+                        // Update all flowchart panels - same path used by OnDialogChanged (#1223)
+                        _controllers.Flowchart.UpdateAllPanels();
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Tree + flowchart refreshed after {e.PropertyName} change");
                     });
                 }
             }
@@ -1101,81 +1084,12 @@ namespace DialogEditor.Views
             }
         }
 
-        // NPC Speaker Visual Preferences (Issue #16, #36)
+        // Speaker visual event handlers - delegates to SpeakerVisualController (#1223)
         private void OnSpeakerShapeChanged(object? sender, SelectionChangedEventArgs e)
-        {
-            try
-            {
-                // Don't trigger during property population
-                if (_uiState.IsPopulatingProperties) return;
-
-                var comboBox = sender as ComboBox;
-                var speakerTextBox = this.FindControl<TextBox>("SpeakerTextBox");
-
-                if (comboBox?.SelectedItem != null && speakerTextBox != null && !string.IsNullOrEmpty(speakerTextBox.Text))
-                {
-                    var speakerTag = speakerTextBox.Text.Trim();
-                    if (Enum.TryParse<SpeakerVisualHelper.SpeakerShape>(comboBox.SelectedItem.ToString(), out var shape))
-                    {
-                        SettingsService.Instance.SetSpeakerPreference(speakerTag, null, shape);
-
-                        // Refresh tree and restore selection (Issue #134)
-                        if (_selectedNode?.OriginalNode != null)
-                        {
-                            _viewModel.RefreshTreeViewColors(_selectedNode.OriginalNode);
-                        }
-                        else
-                        {
-                            _viewModel.RefreshTreeViewColors();
-                        }
-
-                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Set speaker '{speakerTag}' shape to {shape}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error setting speaker shape: {ex.Message}");
-            }
-        }
+            => _controllers.SpeakerVisual.OnSpeakerShapeChanged(sender, e);
 
         private void OnSpeakerColorChanged(object? sender, SelectionChangedEventArgs e)
-        {
-            try
-            {
-                // Don't trigger during property population
-                if (_uiState.IsPopulatingProperties) return;
-
-                var comboBox = sender as ComboBox;
-                var speakerTextBox = this.FindControl<TextBox>("SpeakerTextBox");
-
-                if (comboBox?.SelectedItem is ComboBoxItem item && speakerTextBox != null && !string.IsNullOrEmpty(speakerTextBox.Text))
-                {
-                    var speakerTag = speakerTextBox.Text.Trim();
-                    var color = item.Tag as string;
-                    if (!string.IsNullOrEmpty(color))
-                    {
-                        SettingsService.Instance.SetSpeakerPreference(speakerTag, color, null);
-
-                        // Refresh tree and restore selection (Issue #134)
-                        if (_selectedNode?.OriginalNode != null)
-                        {
-                            _viewModel.RefreshTreeViewColors(_selectedNode.OriginalNode);
-                        }
-                        else
-                        {
-                            _viewModel.RefreshTreeViewColors();
-                        }
-
-                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Set speaker '{speakerTag}' color to {color}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error setting speaker color: {ex.Message}");
-            }
-        }
+            => _controllers.SpeakerVisual.OnSpeakerColorChanged(sender, e);
 
         // Issue #5: LoadCreaturesFromModuleDirectory removed - creature loading now done lazily
         // in ResourceBrowserManager.BrowseCreatureAsync when user opens the creature picker

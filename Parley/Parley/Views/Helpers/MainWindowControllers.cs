@@ -13,5 +13,6 @@ namespace Parley.Views.Helpers
         public QuestUIController Quest { get; set; } = null!;
         public FileMenuController FileMenu { get; set; } = null!;
         public EditMenuController EditMenu { get; set; } = null!;
+        public SpeakerVisualController SpeakerVisual { get; set; } = null!;
     }
 }
