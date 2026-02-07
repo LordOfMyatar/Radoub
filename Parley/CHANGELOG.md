@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.134-alpha] - 2026-02-07
-**Branch**: `parley/issue-1224` | **PR**: #TBD
+**Branch**: `parley/issue-1224` | **PR**: #1246
 
 ### Sprint 1.5: Extract Menu Handlers to MainWindow.MenuHandlers.cs (#1224)
 
