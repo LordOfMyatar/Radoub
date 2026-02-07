@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.142-alpha] - 2026-02-07
-**Branch**: `parley/issue-1232` | **PR**: #TBD
+**Branch**: `parley/issue-1232` | **PR**: #1254
 
 ### Sprint 3.3: Refactor MainWindow Constructor for DI (#1232)
 
