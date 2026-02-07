@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.136-alpha] - 2026-02-07
-**Branch**: `parley/issue-1226` | **PR**: #TBD
+**Branch**: `parley/issue-1226` | **PR**: #1248
 
 ### Sprint 2.1: Extract SpeakerPropertiesPopulator (#1226)
 
