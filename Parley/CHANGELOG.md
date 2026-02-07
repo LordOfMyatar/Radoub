@@ -13,6 +13,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.130-alpha] - 2026-02-07
+**Branch**: `parley/issue-1220` | **PR**: #1237
+
+### Sprint 1.1: Extract Lifecycle Methods to MainWindow.Lifecycle.cs (#1220)
+
+- Extract window lifecycle methods from `MainWindow.axaml.cs` into `MainWindow.Lifecycle.cs` partial file
+
+---
+
 ## [0.1.129-alpha] - 2026-02-01
 **Branch**: `radoub/sprint-1175-1166-1167` | **PR**: #1195
 
