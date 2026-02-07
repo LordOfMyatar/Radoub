@@ -218,8 +218,6 @@ namespace DialogEditor.Views
 
             _controllers.SpeakerVisual = new SpeakerVisualController(
                 window: this,
-                getViewModel: () => _viewModel,
-                getSelectedNode: () => _selectedNode,
                 isPopulatingProperties: () => _uiState.IsPopulatingProperties);
         }
 
@@ -285,15 +283,16 @@ namespace DialogEditor.Views
         /// </summary>
         private void OnSettingsPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            // Refresh tree when NPC tag coloring setting changes
-            if (e.PropertyName == nameof(SettingsService.EnableNpcTagColoring))
+            // Refresh tree when NPC tag coloring or speaker preferences change (#134, #1223)
+            if (e.PropertyName == nameof(SettingsService.EnableNpcTagColoring) ||
+                e.PropertyName == nameof(SettingsService.NpcSpeakerPreferences))
             {
                 if (_viewModel.CurrentDialog != null)
                 {
                     global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                     {
                         _viewModel.RefreshTreeViewColors();
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, "Tree view refreshed after NPC tag coloring setting change");
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Tree view refreshed after {e.PropertyName} change");
                     });
                 }
             }
