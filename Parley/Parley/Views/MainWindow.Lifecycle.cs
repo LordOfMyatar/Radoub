@@ -32,6 +32,16 @@ namespace DialogEditor.Views
             {
                 _controllers.FileMenu.InitializeModuleInfoFromSettings();
             }
+            else
+            {
+                // Scan creatures for portrait/soundset display after startup file load
+                // FileMenuController handles this for File > Open, but startup path needs it too
+                var moduleDir = Path.GetDirectoryName(_viewModel.CurrentFilePath);
+                if (!string.IsNullOrEmpty(moduleDir))
+                {
+                    await ScanCreaturesForModuleAsync(moduleDir);
+                }
+            }
 
             if (SettingsService.Instance.FlowchartVisible)
             {
@@ -239,6 +249,13 @@ namespace DialogEditor.Views
 
             // Update flowchart after loading (same as File menu pattern)
             UpdateEmbeddedFlowchartAfterLoad();
+
+            // Scan creatures for portrait/soundset display (same as File menu pattern)
+            var moduleDir = Path.GetDirectoryName(filePath);
+            if (!string.IsNullOrEmpty(moduleDir))
+            {
+                await ScanCreaturesForModuleAsync(moduleDir);
+            }
 
             // Update the current file highlight in the browser panel
             var dialogBrowserPanel = this.FindControl<DialogBrowserPanel>("DialogBrowserPanel");
