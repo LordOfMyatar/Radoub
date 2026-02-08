@@ -14,5 +14,6 @@ namespace Parley.Views.Helpers
         public FileMenuController FileMenu { get; set; } = null!;
         public EditMenuController EditMenu { get; set; } = null!;
         public SpeakerVisualController SpeakerVisual { get; set; } = null!;
+        public DialogBrowserController DialogBrowser { get; set; } = null!;
     }
 }

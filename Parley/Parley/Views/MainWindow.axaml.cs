@@ -219,7 +219,7 @@ namespace DialogEditor.Views
                 getParameterUIManager: () => _services.ParameterUI,
                 showSaveAsDialogAsync: ShowSaveAsDialogAsync,
                 scanCreaturesForModule: ScanCreaturesForModuleAsync,
-                updateDialogBrowserCurrentFile: UpdateDialogBrowserCurrentFile);
+                updateDialogBrowserCurrentFile: filePath => _controllers.DialogBrowser.UpdateCurrentFile(filePath));
 
             _controllers.EditMenu = new EditMenuController(
                 window: this,
@@ -230,6 +230,14 @@ namespace DialogEditor.Views
                 window: this,
                 settings: _services.Settings,
                 isPopulatingProperties: () => _uiState.IsPopulatingProperties);
+
+            _controllers.DialogBrowser = new DialogBrowserController(
+                window: this,
+                viewModel: _viewModel,
+                services: _services,
+                updateEmbeddedFlowchartAfterLoad: UpdateEmbeddedFlowchartAfterLoad,
+                scanCreaturesForModuleAsync: ScanCreaturesForModuleAsync,
+                populateRecentFilesMenu: PopulateRecentFilesMenu);
         }
 
         /// <summary>
@@ -355,7 +363,7 @@ namespace DialogEditor.Views
         void IKeyboardShortcutHandler.OnGoToParentNode() => _controllers.TreeView.OnGoToParentNodeClick(null, null!);
 
         // View operations - Issue #1143: F4 to toggle dialog browser
-        void IKeyboardShortcutHandler.OnToggleDialogBrowser() => OnToggleDialogBrowserClick(null, null!);
+        void IKeyboardShortcutHandler.OnToggleDialogBrowser() => _controllers.DialogBrowser.OnToggleClick(null, null!);
 
         // View operations - Issue #339: F5 to open flowchart
         void IKeyboardShortcutHandler.OnOpenFlowchart() => OnFlowchartClick(null, null!);
