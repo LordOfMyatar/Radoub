@@ -15,6 +15,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.61] - 2026-02-07
+**Branch**: `radoub/issue-1262` | **PR**: #TBD
+
+### Sprint: Theme Overhaul (#1262)
+
+- [ ] #1199 - Consolidate themes to single shared location (40 files → 8)
+- [ ] #1198 - Continue theme refinement and polish
+- [ ] #1197 - [Trebuchet] Add new theme properties to Theme Editor
+
+---
+
 ## [0.9.60] - 2026-02-07
 **Branch**: `radoub/issue-1257` | **PR**: #1265
 
