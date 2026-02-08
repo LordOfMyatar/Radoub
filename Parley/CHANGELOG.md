@@ -13,6 +13,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.147-alpha] - 2026-02-08
+**Branch**: `parley/issue-1267` | **PR**: #TBD
+
+### Refactor: MainWindow Decomposition (#1267)
+
+- Extract DialogBrowserController from Lifecycle.cs
+- Consolidate tree utilities into TreeViewUIController
+- Extract FieldUndoTracker and PropertySaveCoordinator from Properties.cs
+- Extract TokenAndCreatureHandler from Properties.cs
+
+---
+
 ## [0.1.146-alpha] - 2026-02-07
 **Branch**: `parley/issue-1236` | **PR**: #1264
 
