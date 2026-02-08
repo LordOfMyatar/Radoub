@@ -708,29 +708,33 @@ public class ThemeManager
         }
 
         // Button colors - apply theme-defined button colors to Fluent theme resources (#1089)
-        // button_primary = action buttons (Save, OK, Apply) - blue in most themes
+        // button_primary = accent/primary action buttons (Save, OK, Apply) - blue in most themes
         // button_secondary = neutral/cancel buttons - gray in most themes
+        // IMPORTANT: Do NOT set ButtonBackground globally - regular buttons (nav buttons,
+        // transparent buttons, header bar buttons) must use FluentTheme defaults.
+        // Only set AccentButton backgrounds for explicit primary/accent-styled buttons.
         if (!string.IsNullOrEmpty(colors.ButtonPrimary))
         {
             var btnPrimaryColor = Color.Parse(colors.ButtonPrimary);
             var btnPrimaryBrush = new SolidColorBrush(btnPrimaryColor);
 
-            // Standard button background - most buttons are action buttons
-            resources["ButtonBackground"] = btnPrimaryBrush;
-            resources["ButtonBackgroundDisabled"] = btnPrimaryBrush;
-            // Accent buttons use the same color
+            // Accent buttons only - explicit primary action buttons
             resources["AccentButtonBackground"] = btnPrimaryBrush;
             resources["AccentButtonBackgroundPointerOver"] = btnPrimaryBrush;
             resources["AccentButtonBackgroundPressed"] = btnPrimaryBrush;
+
+            // App-level primary button brush for explicit use in XAML
+            resources["ThemeButtonPrimary"] = btnPrimaryBrush;
         }
 
         // Button foreground - use explicit button_text from theme
+        // IMPORTANT: Only set AccentButton foreground and ThemeAccentForeground here.
+        // Do NOT set ButtonForeground - regular buttons (nav buttons, transparent buttons)
+        // should inherit text color from the theme variant. Setting ButtonForeground to
+        // white breaks any button that doesn't have a colored background.
         if (!string.IsNullOrEmpty(colors.ButtonText))
         {
             var btnTextBrush = new SolidColorBrush(Color.Parse(colors.ButtonText));
-            resources["ButtonForeground"] = btnTextBrush;
-            resources["ButtonForegroundPointerOver"] = btnTextBrush;
-            resources["ButtonForegroundPressed"] = btnTextBrush;
             resources["AccentButtonForeground"] = btnTextBrush;
             resources["AccentButtonForegroundPointerOver"] = btnTextBrush;
             resources["AccentButtonForegroundPressed"] = btnTextBrush;
