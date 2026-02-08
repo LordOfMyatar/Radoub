@@ -1,10 +1,10 @@
 {
   "manifest_version": "1.0",
   "plugin": {
-    "id": "org.parley.theme.protanopia",
+    "id": "org.radoub.theme.protanopia",
     "name": "Protanopia (Red Colorblind)",
     "version": "1.0.0",
-    "author": "Parley Team",
+    "author": "Radoub Team",
     "description": "Accessibility theme for protanopia (red colorblindness). Uses sky blue/orange palette.",
     "type": "theme",
     "tags": ["official", "accessibility", "colorblind", "protanopia"]
@@ -28,6 +28,7 @@
     "warning": "#996600",
     "success": "#007799",
     "info": "#0099CC",
+    "disabled": "#707070",
     "tree_entry": "#B35900",
     "tree_reply": "#007799",
     "tree_link": "#6600CC",

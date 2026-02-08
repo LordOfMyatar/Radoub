@@ -20,7 +20,7 @@ public class SafeModeService
     public bool SafeModeActive { get; private set; }
 
     /// <summary>
-    /// Default theme ID for the tool (e.g., "org.parley.theme.light")
+    /// Default theme ID for the tool (e.g., "org.radoub.theme.light")
     /// </summary>
     public string DefaultThemeId { get; }
 

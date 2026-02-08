@@ -1,7 +1,7 @@
 {
   "manifest_version": "1.0",
   "plugin": {
-    "id": "org.manifest.theme.light",
+    "id": "org.radoub.theme.light",
     "name": "Light",
     "version": "1.0.0",
     "author": "Radoub Team",
@@ -27,6 +27,7 @@
     "warning": "#F57C00",
     "success": "#388E3C",
     "info": "#1976D2",
+    "disabled": "#757575",
     "tree_entry": "#FF8A65",
     "tree_reply": "#4FC3F7",
     "tree_link": "#757575",
@@ -35,7 +36,18 @@
     "button_primary": "#0078D4",
     "button_secondary": "#757575",
     "button_hover": "#005A9E",
-    "button_text": "#FFFFFF"
+    "button_text": "#FFFFFF",
+    "edit_mode_border": "#4FC3F7",
+    "edit_mode_unsaved": "#FFB74D",
+    "edit_mode_saved": "#81C784",
+    "auto_trim_border": "#42A5F5",
+    "spelling_error": "#D32F2F",
+    "speaker_1": "#1565C0",
+    "speaker_2": "#6A1B9A",
+    "speaker_3": "#C62828",
+    "speaker_4": "#2E7D32",
+    "speaker_5": "#EF6C00",
+    "speaker_6": "#AD1457"
   },
   "fonts": {
     "primary": "$Default",

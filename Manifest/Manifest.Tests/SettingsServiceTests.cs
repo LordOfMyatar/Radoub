@@ -92,7 +92,7 @@ public class SettingsServiceTests : IDisposable
         service.WindowHeight = 800;
         service.WindowMaximized = true;
         service.TreePanelWidth = 350;
-        service.CurrentThemeId = "org.manifest.theme.dark";
+        service.CurrentThemeId = "org.radoub.theme.dark";
         service.LogRetentionSessions = 5;
         service.CurrentLogLevel = LogLevel.DEBUG;
         service.SpellCheckEnabled = false;
@@ -107,7 +107,7 @@ public class SettingsServiceTests : IDisposable
         Assert.Equal(800, reloaded.WindowHeight);
         Assert.True(reloaded.WindowMaximized);
         Assert.Equal(350, reloaded.TreePanelWidth);
-        Assert.Equal("org.manifest.theme.dark", reloaded.CurrentThemeId);
+        Assert.Equal("org.radoub.theme.dark", reloaded.CurrentThemeId);
         Assert.Equal(5, reloaded.LogRetentionSessions);
         Assert.Equal(LogLevel.DEBUG, reloaded.CurrentLogLevel);
         Assert.False(reloaded.SpellCheckEnabled);

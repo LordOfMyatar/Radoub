@@ -25,9 +25,9 @@
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
 
-  <!-- Copy theme files to output directory (preserves Themes\ folder structure) -->
+  <!-- Shared themes from Radoub.UI (#1199) -->
   <ItemGroup>
-    <Content Include="Themes\*.json">
+    <Content Include="..\..\Radoub.UI\Radoub.UI\Themes\*.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>Themes\%(Filename)%(Extension)</Link>
     </Content>

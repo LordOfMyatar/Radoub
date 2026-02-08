@@ -1,10 +1,10 @@
 {
   "manifest_version": "1.0",
   "plugin": {
-    "id": "org.parley.theme.tritanopia",
+    "id": "org.radoub.theme.tritanopia",
     "name": "Tritanopia (Blue-Yellow Colorblind)",
     "version": "1.0.0",
-    "author": "Parley Team",
+    "author": "Radoub Team",
     "description": "Accessibility theme for tritanopia (blue-yellow colorblindness). Uses red/magenta vs dark teal palette.",
     "type": "theme",
     "tags": ["official", "accessibility", "colorblind", "tritanopia"]
@@ -28,6 +28,7 @@
     "warning": "#994400",
     "success": "#2D6659",
     "info": "#2D6659",
+    "disabled": "#808080",
     "tree_entry": "#B30059",
     "tree_reply": "#2D6659",
     "tree_link": "#663399",

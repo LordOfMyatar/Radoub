@@ -91,7 +91,7 @@ namespace Manifest.Services
         // UI settings
         private double _fontSize = 14;
         private string _fontFamily = "";  // Empty = use theme default
-        private string _currentThemeId = "org.manifest.theme.light";
+        private string _currentThemeId = "org.radoub.theme.light";
 
         // Logging settings - using shared LoggingSettings
         private readonly LoggingSettings _loggingSettings = new();
@@ -165,7 +165,7 @@ namespace Manifest.Services
         public string CurrentThemeId
         {
             get => _currentThemeId;
-            set { if (SetProperty(ref _currentThemeId, value ?? "org.manifest.theme.light")) SaveSettings(); }
+            set { if (SetProperty(ref _currentThemeId, value ?? "org.radoub.theme.light")) SaveSettings(); }
         }
 
         // Logging Settings Properties - delegate to shared LoggingSettings
@@ -298,7 +298,7 @@ namespace Manifest.Services
                         _fontFamily = settings.FontFamily ?? "";
                         _currentThemeId = !string.IsNullOrEmpty(settings.CurrentThemeId)
                             ? settings.CurrentThemeId
-                            : "org.manifest.theme.light";
+                            : "org.radoub.theme.light";
 
                         // Load logging settings from shared model
                         _loggingSettings.LogRetentionSessions = settings.LogRetentionSessions;
@@ -393,7 +393,7 @@ namespace Manifest.Services
             // UI settings
             public double FontSize { get; set; } = 14;
             public string FontFamily { get; set; } = "";
-            public string CurrentThemeId { get; set; } = "org.manifest.theme.light";
+            public string CurrentThemeId { get; set; } = "org.radoub.theme.light";
 
             // Logging settings
             public int LogRetentionSessions { get; set; } = 3;

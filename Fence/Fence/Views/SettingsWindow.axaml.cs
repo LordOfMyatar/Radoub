@@ -111,8 +111,7 @@ public partial class SettingsWindow : Window
     {
         var themes = ThemeManager.Instance.AvailableThemes;
 
-        // Deduplicate by name: prefer shared themes (org.radoub.*) over tool-specific
-        // This prevents "Dark" appearing twice when both org.radoub.theme.dark and org.fence.theme.dark exist
+        // Deduplicate by name: prefer shared themes (org.radoub.*) over any user overrides
         var deduplicatedThemes = themes
             .GroupBy(t => t.Plugin.Name)
             .Select(g => g.OrderByDescending(t => t.Plugin.Id.StartsWith("org.radoub.")).First())

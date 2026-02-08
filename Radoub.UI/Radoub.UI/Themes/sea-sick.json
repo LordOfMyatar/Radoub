@@ -2,7 +2,7 @@
   "manifest_version": "1.0",
   "plugin": {
     "id": "org.radoub.theme.sea-sick",
-    "name": "🤢 Sea-Sick 🌊",
+    "name": "\ud83e\udd22 Sea-Sick \ud83c\udf0a",
     "version": "1.0.0",
     "author": "Radoub Team (with deep regret)",
     "description": "The worst color combination ever conceived. Use at your own risk. Side effects may include headaches, spontaneous laughter, and questioning your life choices. This theme violates every design principle known to humanity.",
@@ -13,7 +13,7 @@
   "accessibility": {
     "type": "nightmare",
     "contrast_level": "LOL",
-    "warning": "⚠️ This theme violates every design principle. Accessibility? Never heard of her. WCAG? More like WCA-GOODBYE. Use of this theme may cause: eye strain, confusion, regret, and an overwhelming desire to apologize to your monitor."
+    "warning": "\u26a0\ufe0f This theme violates every design principle. Accessibility? Never heard of her. WCAG? More like WCA-GOODBYE. Use of this theme may cause: eye strain, confusion, regret, and an overwhelming desire to apologize to your monitor."
   },
   "colors": {
     "background": "#FF00FF",
@@ -29,12 +29,26 @@
     "success": "#FF0000",
     "info": "#FF00FF",
     "disabled": "#FFFF00",
+    "tree_entry": "#FFFF00",
+    "tree_reply": "#00FFFF",
+    "tree_link": "#FF00FF",
     "title_bar": "#FF6600",
     "title_bar_foreground": "#00FF00",
     "button_primary": "#FF6600",
     "button_secondary": "#00FF00",
     "button_hover": "#FF0099",
-    "button_text": "#00FF00"
+    "button_text": "#00FF00",
+    "edit_mode_border": "#00FFFF",
+    "edit_mode_unsaved": "#FF6600",
+    "edit_mode_saved": "#00FF00",
+    "auto_trim_border": "#FF00FF",
+    "spelling_error": "#00FF00",
+    "speaker_1": "#FF00FF",
+    "speaker_2": "#00FFFF",
+    "speaker_3": "#FFFF00",
+    "speaker_4": "#FF0099",
+    "speaker_5": "#00FF00",
+    "speaker_6": "#FF6600"
   },
   "fonts": {
     "primary": "Comic Sans MS",
@@ -46,6 +60,7 @@
     "control_padding": 12,
     "control_margin": 8,
     "panel_spacing": 16,
-    "min_control_height": 36
+    "min_control_height": 36,
+    "tree_indent": 24
   }
 }
