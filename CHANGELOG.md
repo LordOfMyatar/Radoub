@@ -32,6 +32,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Replaced hardcoded `#2D2D30`/`#F0F0F0` with `ThemeBackgroundAlt`
   - Converted Trebuchet converters and view models to use BrushManager
   - Fixed `Brushes.White`/`Brushes.Gray` patterns in Parley and Quartermaster dialogs
+  - Stripped ~120 per-control-state overrides from ThemeManager; Fluent derives from Tier 1 primitives
+  - Added Tier 1B brush overrides for same-variant theme switching (Light→colorblind Light)
+  - Async Dispatcher variant toggle forces Fluent re-derivation on theme switch
+  - Fixed `BaseMediumLowBrush` (285 uses) — was 50% text opacity, now uses Border color
+  - Fixed `BaseMediumBrush` (172 uses) — now uses TextMuted directly
+  - Added `ThemeBackgroundBrush` alias (used by QM/Fence SettingsWindows)
+  - Colorblind themes switched from grey to white (#FFFFFF) backgrounds
+  - Bumped font size scale: XSmall=base-2, Small=base-1
+  - TokenTextBlock forces re-render on Inlines change (fixes Manifest preview)
+  - Added themed title bars to Quartermaster, Manifest, Trebuchet
+  - Removed Trebuchet accent header bar, replaced with standard toolbar
+  - ToolCardControl badge uses DynamicResourceExtension for theme reactivity
 - [x] #1197 - [Trebuchet] Add new theme properties to Theme Editor
   - Added Text Muted color picker (Core Colors section)
   - Added Input Background color picker (Core Colors section)
