@@ -20,6 +20,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Chore: Scan NuGet Packages for Known Vulnerabilities (#1257)
 
+- Ran `dotnet list package --vulnerable --include-transitive` against all projects
+- Found 1 vulnerability: `System.Drawing.Common` 5.0.2 (Critical, CVE-2021-24112 RCE) — transitive via FlaUI 4.0.0 in `Radoub.IntegrationTests` only
+- Upgraded FlaUI.Core and FlaUI.UIA3 from 4.0.0 → 5.0.0, resolving the vulnerable transitive dependency
+- All other projects (Parley, Manifest, Quartermaster, Fence, Trebuchet, Radoub.Formats, Radoub.UI) are clean
+
 ---
 
 ## [0.9.59] - 2026-02-02
