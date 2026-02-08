@@ -20,9 +20,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Theme Overhaul (#1262)
 
-- [ ] #1199 - Consolidate themes to single shared location (40 files → 8)
-- [ ] #1198 - Continue theme refinement and polish
-- [ ] #1197 - [Trebuchet] Add new theme properties to Theme Editor
+- [x] #1199 - Consolidate themes to single shared location (40 files → 8)
+  - Created 8 unified theme files in `Radoub.UI/Themes/` with `org.radoub.theme.*` IDs
+  - All 5 tools now reference shared themes via .csproj Content includes
+  - Deleted 40 per-tool theme JSON files
+  - Updated all App.axaml.cs, SettingsService, and settings window files
+- [x] #1198 - Continue theme refinement and polish
+  - Added `ThemeDisabled` resource mapping to ThemeManager
+  - Replaced hardcoded colors in `FileBrowserPanelBase` (affects all tools)
+  - Replaced hardcoded `Foreground="White"` in Trebuchet AXAML with `ThemeAccentForeground`
+  - Replaced hardcoded `#2D2D30`/`#F0F0F0` with `ThemeBackgroundAlt`
+  - Converted Trebuchet converters and view models to use BrushManager
+  - Fixed `Brushes.White`/`Brushes.Gray` patterns in Parley and Quartermaster dialogs
+- [x] #1197 - [Trebuchet] Add new theme properties to Theme Editor
+  - Added Text Muted color picker (Core Colors section)
+  - Added Input Background color picker (Core Colors section)
+  - Added Button Text color picker (new Button Colors section)
+  - Updated preview panel with muted text, input field, and theme-aware button
 
 ---
 
