@@ -34,9 +34,14 @@ public class ThemeEditorViewModel : INotifyPropertyChanged
     private string _backgroundColor = "#1E1E1E";
     private string _sidebarColor = "#252526";
     private string _textColor = "#D4D4D4";
+    private string _textMutedColor = "#969696";
     private string _accentColor = "#007ACC";
     private string _selectionColor = "#264F78";
     private string _borderColor = "#3C3C3C";
+    private string _inputBackgroundColor = "#3C3C3C";
+
+    // Button Colors
+    private string _buttonTextColor = "#FFFFFF";
 
     // Status Colors
     private string _successColor = "#4CAF50";
@@ -113,16 +118,22 @@ public class ThemeEditorViewModel : INotifyPropertyChanged
                     BackgroundColor = "#FFFFFF";
                     SidebarColor = "#F3F3F3";
                     TextColor = "#1E1E1E";
+                    TextMutedColor = "#757575";
                     SelectionColor = "#ADD6FF";
                     BorderColor = "#CCCCCC";
+                    InputBackgroundColor = "#F3F3F3";
+                    ButtonTextColor = "#FFFFFF";
                 }
                 else if (value == "Dark" && _backgroundColor == "#FFFFFF")
                 {
                     BackgroundColor = "#1E1E1E";
                     SidebarColor = "#252526";
                     TextColor = "#D4D4D4";
+                    TextMutedColor = "#969696";
                     SelectionColor = "#264F78";
                     BorderColor = "#3C3C3C";
+                    InputBackgroundColor = "#3C3C3C";
+                    ButtonTextColor = "#FFFFFF";
                 }
             }
         }
@@ -179,6 +190,16 @@ public class ThemeEditorViewModel : INotifyPropertyChanged
         }
     }
 
+    public string TextMutedColor
+    {
+        get => _textMutedColor;
+        set
+        {
+            if (SetProperty(ref _textMutedColor, value))
+                OnPropertyChanged(nameof(TextMutedBrush));
+        }
+    }
+
     public string AccentColor
     {
         get => _accentColor;
@@ -215,6 +236,30 @@ public class ThemeEditorViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(BorderColorBrush));
                 OnPropertyChanged(nameof(PreviewBorderBrush));
             }
+        }
+    }
+
+    public string InputBackgroundColor
+    {
+        get => _inputBackgroundColor;
+        set
+        {
+            if (SetProperty(ref _inputBackgroundColor, value))
+                OnPropertyChanged(nameof(InputBackgroundBrush));
+        }
+    }
+
+    #endregion
+
+    #region Button Color Properties
+
+    public string ButtonTextColor
+    {
+        get => _buttonTextColor;
+        set
+        {
+            if (SetProperty(ref _buttonTextColor, value))
+                OnPropertyChanged(nameof(ButtonTextBrush));
         }
     }
 
@@ -291,9 +336,12 @@ public class ThemeEditorViewModel : INotifyPropertyChanged
     public IBrush BackgroundBrush => ParseBrush(_backgroundColor, Colors.Gray);
     public IBrush SidebarBrush => ParseBrush(_sidebarColor, Colors.DarkGray);
     public IBrush TextBrush => ParseBrush(_textColor, Colors.White);
+    public IBrush TextMutedBrush => ParseBrush(_textMutedColor, Colors.Gray);
     public IBrush AccentBrush => ParseBrush(_accentColor, Colors.DodgerBlue);
     public IBrush SelectionBrush => ParseBrush(_selectionColor, Colors.SteelBlue);
     public IBrush BorderColorBrush => ParseBrush(_borderColor, Colors.DimGray);
+    public IBrush InputBackgroundBrush => ParseBrush(_inputBackgroundColor, Colors.DimGray);
+    public IBrush ButtonTextBrush => ParseBrush(_buttonTextColor, Colors.White);
     public IBrush SuccessBrush => ParseBrush(_successColor, Colors.Green);
     public IBrush WarningBrush => ParseBrush(_warningColor, Colors.Orange);
     public IBrush ErrorBrush => ParseBrush(_errorColor, Colors.Red);
@@ -367,9 +415,12 @@ public class ThemeEditorViewModel : INotifyPropertyChanged
             BackgroundColor = _selectedPreset.Colors.Background ?? _backgroundColor;
             SidebarColor = _selectedPreset.Colors.Sidebar ?? _sidebarColor;
             TextColor = _selectedPreset.Colors.Text ?? _textColor;
+            TextMutedColor = _selectedPreset.Colors.TextMuted ?? _textMutedColor;
             AccentColor = _selectedPreset.Colors.Accent ?? _accentColor;
             SelectionColor = _selectedPreset.Colors.Selection ?? _selectionColor;
             BorderColor = _selectedPreset.Colors.Border ?? _borderColor;
+            InputBackgroundColor = _selectedPreset.Colors.InputBackground ?? _inputBackgroundColor;
+            ButtonTextColor = _selectedPreset.Colors.ButtonText ?? _buttonTextColor;
             SuccessColor = _selectedPreset.Colors.Success ?? _successColor;
             WarningColor = _selectedPreset.Colors.Warning ?? _warningColor;
             ErrorColor = _selectedPreset.Colors.Error ?? _errorColor;
@@ -439,9 +490,12 @@ public class ThemeEditorViewModel : INotifyPropertyChanged
                 Background = _backgroundColor,
                 Sidebar = _sidebarColor,
                 Text = _textColor,
+                TextMuted = _textMutedColor,
                 Accent = _accentColor,
                 Selection = _selectionColor,
                 Border = _borderColor,
+                InputBackground = _inputBackgroundColor,
+                ButtonText = _buttonTextColor,
                 Success = _successColor,
                 Warning = _warningColor,
                 Error = _errorColor,

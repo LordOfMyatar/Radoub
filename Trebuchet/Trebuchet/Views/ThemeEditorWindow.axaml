@@ -84,7 +84,7 @@
                                    FontSize="{DynamicResource FontSizeLarge}"
                                    FontWeight="SemiBold"/>
 
-                        <Grid ColumnDefinitions="120,120,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" Margin="0,8,0,0">
+                        <Grid ColumnDefinitions="120,120,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="0,8,0,0">
                             <!-- Background -->
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Background:" VerticalAlignment="Center"/>
                             <Border Grid.Row="0" Grid.Column="1" Background="{Binding BackgroundBrush}" Width="80" Height="24" CornerRadius="4" Margin="8,2"/>
@@ -100,20 +100,44 @@
                             <Border Grid.Row="2" Grid.Column="1" Background="{Binding TextBrush}" Width="80" Height="24" CornerRadius="4" Margin="8,2"/>
                             <TextBox Grid.Row="2" Grid.Column="2" Text="{Binding TextColor}" Watermark="#RRGGBB" Margin="0,2"/>
 
+                            <!-- Text Muted -->
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Text Muted:" VerticalAlignment="Center"/>
+                            <Border Grid.Row="3" Grid.Column="1" Background="{Binding TextMutedBrush}" Width="80" Height="24" CornerRadius="4" Margin="8,2"/>
+                            <TextBox Grid.Row="3" Grid.Column="2" Text="{Binding TextMutedColor}" Watermark="#RRGGBB" Margin="0,2"/>
+
                             <!-- Accent -->
-                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Accent:" VerticalAlignment="Center"/>
-                            <Border Grid.Row="3" Grid.Column="1" Background="{Binding AccentBrush}" Width="80" Height="24" CornerRadius="4" Margin="8,2"/>
-                            <TextBox Grid.Row="3" Grid.Column="2" Text="{Binding AccentColor}" Watermark="#RRGGBB" Margin="0,2"/>
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Accent:" VerticalAlignment="Center"/>
+                            <Border Grid.Row="4" Grid.Column="1" Background="{Binding AccentBrush}" Width="80" Height="24" CornerRadius="4" Margin="8,2"/>
+                            <TextBox Grid.Row="4" Grid.Column="2" Text="{Binding AccentColor}" Watermark="#RRGGBB" Margin="0,2"/>
 
                             <!-- Selection -->
-                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Selection:" VerticalAlignment="Center"/>
-                            <Border Grid.Row="4" Grid.Column="1" Background="{Binding SelectionBrush}" Width="80" Height="24" CornerRadius="4" Margin="8,2"/>
-                            <TextBox Grid.Row="4" Grid.Column="2" Text="{Binding SelectionColor}" Watermark="#RRGGBB" Margin="0,2"/>
+                            <TextBlock Grid.Row="5" Grid.Column="0" Text="Selection:" VerticalAlignment="Center"/>
+                            <Border Grid.Row="5" Grid.Column="1" Background="{Binding SelectionBrush}" Width="80" Height="24" CornerRadius="4" Margin="8,2"/>
+                            <TextBox Grid.Row="5" Grid.Column="2" Text="{Binding SelectionColor}" Watermark="#RRGGBB" Margin="0,2"/>
 
                             <!-- Border -->
-                            <TextBlock Grid.Row="5" Grid.Column="0" Text="Border:" VerticalAlignment="Center"/>
-                            <Border Grid.Row="5" Grid.Column="1" Background="{Binding BorderColorBrush}" Width="80" Height="24" CornerRadius="4" Margin="8,2"/>
-                            <TextBox Grid.Row="5" Grid.Column="2" Text="{Binding BorderColor}" Watermark="#RRGGBB" Margin="0,2"/>
+                            <TextBlock Grid.Row="6" Grid.Column="0" Text="Border:" VerticalAlignment="Center"/>
+                            <Border Grid.Row="6" Grid.Column="1" Background="{Binding BorderColorBrush}" Width="80" Height="24" CornerRadius="4" Margin="8,2"/>
+                            <TextBox Grid.Row="6" Grid.Column="2" Text="{Binding BorderColor}" Watermark="#RRGGBB" Margin="0,2"/>
+
+                            <!-- Input Background -->
+                            <TextBlock Grid.Row="7" Grid.Column="0" Text="Input Bg:" VerticalAlignment="Center"/>
+                            <Border Grid.Row="7" Grid.Column="1" Background="{Binding InputBackgroundBrush}" Width="80" Height="24" CornerRadius="4" Margin="8,2"/>
+                            <TextBox Grid.Row="7" Grid.Column="2" Text="{Binding InputBackgroundColor}" Watermark="#RRGGBB" Margin="0,2"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Button Colors Section -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Button Colors"
+                                   FontSize="{DynamicResource FontSizeLarge}"
+                                   FontWeight="SemiBold"/>
+
+                        <Grid ColumnDefinitions="120,120,*" RowDefinitions="Auto" Margin="0,8,0,0">
+                            <!-- Button Text -->
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Button Text:" VerticalAlignment="Center"/>
+                            <Border Grid.Row="0" Grid.Column="1" Background="{Binding ButtonTextBrush}" Width="80" Height="24" CornerRadius="4" Margin="8,2"/>
+                            <TextBox Grid.Row="0" Grid.Column="2" Text="{Binding ButtonTextColor}" Watermark="#RRGGBB" Margin="0,2"/>
                         </Grid>
                     </StackPanel>
 
@@ -206,9 +230,21 @@
                     <!-- Preview Button -->
                     <Button Content="Accent Button"
                             Background="{Binding PreviewAccentBrush}"
-                            Foreground="White"
+                            Foreground="{Binding ButtonTextBrush}"
                             HorizontalAlignment="Left"
                             Padding="12,6"/>
+
+                    <!-- Muted Text + Input Preview -->
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Muted/secondary text"
+                                   Foreground="{Binding TextMutedBrush}"/>
+                        <Border Background="{Binding InputBackgroundBrush}"
+                                CornerRadius="4"
+                                Padding="8,4">
+                            <TextBlock Text="Input field background"
+                                       Foreground="{Binding PreviewTextBrush}"/>
+                        </Border>
+                    </StackPanel>
 
                     <!-- Status Messages -->
                     <StackPanel Spacing="4">
