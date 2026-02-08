@@ -1,8 +1,10 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 using RadoubLauncher.ViewModels;
 using RadoubLauncher.Services;
 using System.ComponentModel;
-using Avalonia;
 
 namespace RadoubLauncher.Views;
 
@@ -66,4 +68,23 @@ public partial class MainWindow : Window
             settings.WindowHeight = Height;
         }
     }
+
+    #region Title Bar Handlers
+
+    private void OnTitleBarPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        {
+            BeginMoveDrag(e);
+        }
+    }
+
+    private void OnTitleBarDoubleTapped(object? sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState == WindowState.Maximized
+            ? WindowState.Normal
+            : WindowState.Maximized;
+    }
+
+    #endregion
 }

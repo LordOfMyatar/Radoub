@@ -3,7 +3,9 @@ using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Data;
 using Avalonia.Interactivity;
+using Avalonia.Markup.Xaml.MarkupExtensions;
 using RadoubLauncher.Services;
 using ToolTipService = Avalonia.Controls.ToolTip;
 
@@ -35,6 +37,18 @@ public partial class ToolCardControl : UserControl
 
         // Wire up main button click to launch tool
         MainToolButton.Click += OnMainButtonClick;
+
+        // Bind status badge background via DynamicResource based on availability
+        DataContextChanged += OnDataContextChanged;
+    }
+
+    private void OnDataContextChanged(object? sender, EventArgs e)
+    {
+        if (DataContext is ToolInfo tool)
+        {
+            var resourceKey = tool.IsAvailable ? "ThemeSuccess" : "ThemeDisabled";
+            StatusBadge[!Border.BackgroundProperty] = new DynamicResourceExtension(resourceKey);
+        }
     }
 
     private void OnMainButtonClick(object? sender, RoutedEventArgs e)

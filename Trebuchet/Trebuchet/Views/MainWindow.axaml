@@ -10,75 +10,98 @@
         Title="Trebuchet - Radoub Toolset (Alpha)"
         Width="900" Height="600"
         MinWidth="700" MinHeight="500"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="PreferSystemChrome"
+        ExtendClientAreaTitleBarHeightHint="30">
 
     <Design.DataContext>
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
+    <Window.Styles>
+        <!-- Buttons on accent header bar: semi-transparent white background -->
+        <Style Selector="Border.AccentBar Button">
+            <Setter Property="Background" Value="#33FFFFFF"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeAccentForeground}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style Selector="Border.AccentBar Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#55FFFFFF"/>
+        </Style>
+        <Style Selector="Border.AccentBar Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#22FFFFFF"/>
+        </Style>
+    </Window.Styles>
+
     <DockPanel>
-        <!-- Header Bar -->
+        <!-- Custom Title Bar -->
+        <Border DockPanel.Dock="Top" Background="{DynamicResource ThemeTitleBar}"
+                Height="30"
+                x:Name="TitleBar"
+                PointerPressed="OnTitleBarPointerPressed"
+                DoubleTapped="OnTitleBarDoubleTapped">
+            <StackPanel Orientation="Horizontal"
+                        VerticalAlignment="Center"
+                        Margin="8,0,0,0"
+                        IsHitTestVisible="False">
+                <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource ThemeTitleBarForeground}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Toolbar -->
         <Border DockPanel.Dock="Top"
-                Background="{DynamicResource ThemeAccentBrush}"
-                Padding="16,12">
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="8,6">
             <Grid ColumnDefinitions="*,Auto">
                 <!-- Module Info -->
-                <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBlock Text="Module:"
-                                   FontWeight="SemiBold"
-                                   FontSize="16"
-                                   Foreground="{DynamicResource ThemeAccentForeground}"
-                                   VerticalAlignment="Center"/>
-                        <Border Background="{DynamicResource ThemeBackgroundAlt}"
-                                CornerRadius="4"
-                                Padding="12,6"
-                                MinWidth="150"
-                                VerticalAlignment="Center">
-                            <TextBlock x:Name="ModuleNameText"
-                                       Text="{Binding CurrentModuleName, FallbackValue='(No module)'}"
-                                       FontSize="16"
-                                       FontWeight="SemiBold"
-                                       VerticalAlignment="Center"
-                                       TextTrimming="CharacterEllipsis"/>
-                        </Border>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button Content="Open..."
-                                Command="{Binding OpenModuleCommand}"
-                                Padding="8,4"/>
-                        <Button Content="Edit..."
-                                Command="{Binding OpenModuleEditorCommand}"
-                                IsEnabled="{Binding CanEditModule}"
-                                Padding="8,4"
-                                ToolTip.Tip="Edit module settings (IFO)"/>
-                        <Button Content="Build"
-                                Command="{Binding BuildModuleCommand}"
-                                IsEnabled="{Binding CanBuildModule}"
-                                Padding="8,4"
-                                ToolTip.Tip="Pack working directory into .mod file"/>
-                        <CheckBox Content="Compile"
-                                  IsChecked="{Binding CompileScriptsEnabled}"
-                                  IsEnabled="{Binding IsCompilerAvailable}"
-                                  Foreground="{DynamicResource ThemeAccentForeground}"
-                                  VerticalAlignment="Center"
-                                  ToolTip.Tip="Compile NWScript files before building"/>
-                        <Button Content="View Log"
-                                Command="{Binding OpenBuildLogCommand}"
-                                IsVisible="{Binding HasBuildLog}"
-                                Padding="8,4"
-                                ToolTip.Tip="Open compilation error log"/>
-                    </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="Module:"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"/>
+                    <TextBlock x:Name="ModuleNameText"
+                               Text="{Binding CurrentModuleName, FallbackValue='(No module)'}"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"
+                               MaxWidth="250"/>
+                    <Separator Width="1" Margin="4,0" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                    <Button Content="Open..."
+                            Command="{Binding OpenModuleCommand}"
+                            Padding="8,4"/>
+                    <Button Content="Edit..."
+                            Command="{Binding OpenModuleEditorCommand}"
+                            IsEnabled="{Binding CanEditModule}"
+                            Padding="8,4"
+                            ToolTip.Tip="Edit module settings (IFO)"/>
+                    <Button Content="Build"
+                            Command="{Binding BuildModuleCommand}"
+                            IsEnabled="{Binding CanBuildModule}"
+                            Padding="8,4"
+                            ToolTip.Tip="Pack working directory into .mod file"/>
+                    <CheckBox Content="Compile"
+                              IsChecked="{Binding CompileScriptsEnabled}"
+                              IsEnabled="{Binding IsCompilerAvailable}"
+                              VerticalAlignment="Center"
+                              ToolTip.Tip="Compile NWScript files before building"/>
+                    <Button Content="View Log"
+                            Command="{Binding OpenBuildLogCommand}"
+                            IsVisible="{Binding HasBuildLog}"
+                            Padding="8,4"
+                            ToolTip.Tip="Open compilation error log"/>
                 </StackPanel>
 
                 <!-- Settings and Help Buttons -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
                     <Button Content="About"
                             Command="{Binding OpenAboutCommand}"
-                            Padding="12,4"/>
+                            Padding="8,4"/>
                     <Button Content="Settings"
                             Command="{Binding OpenSettingsCommand}"
-                            Padding="12,4"/>
+                            Padding="8,4"/>
                 </StackPanel>
             </Grid>
         </Border>

@@ -68,7 +68,6 @@ public partial class FeatsPanel
 
         // Get theme-aware font sizes
         var smallFontSize = this.FindResource("FontSizeSmall") as double? ?? 12;
-        var xsmallFontSize = this.FindResource("FontSizeXSmall") as double? ?? 10;
 
         // Group feats by their source
         var racialFeats = new List<ushort>();
@@ -133,7 +132,7 @@ public partial class FeatsPanel
                 var featText = new TextBlock
                 {
                     Text = $"  {featName}",
-                    FontSize = xsmallFontSize,
+                    FontSize = smallFontSize,
                     Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? GetDisabledBrush(),
                     Margin = new Thickness(0, 2, 0, 0)
                 };
@@ -170,7 +169,7 @@ public partial class FeatsPanel
                 var featText = new TextBlock
                 {
                     Text = $"  {featName}",
-                    FontSize = xsmallFontSize,
+                    FontSize = smallFontSize,
                     Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? GetDisabledBrush(),
                     Margin = new Thickness(0, 2, 0, 0)
                 };
@@ -201,7 +200,7 @@ public partial class FeatsPanel
                 var featText = new TextBlock
                 {
                     Text = $"  {featName}",
-                    FontSize = xsmallFontSize,
+                    FontSize = smallFontSize,
                     Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? GetDisabledBrush(),
                     Margin = new Thickness(0, 2, 0, 0)
                 };

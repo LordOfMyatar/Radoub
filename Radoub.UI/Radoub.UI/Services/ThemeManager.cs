@@ -5,10 +5,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using Radoub.UI.Models;
 
 namespace Radoub.UI.Services;
@@ -225,7 +227,6 @@ public class ThemeManager
                 return false;
             }
 
-            // Apply Avalonia base theme variant (Light/Dark) first
             var targetVariant = theme.BaseTheme.ToLower() switch
             {
                 "dark" => ThemeVariant.Dark,
@@ -233,22 +234,48 @@ public class ThemeManager
                 _ => ThemeVariant.Light
             };
 
-            // Only change if different to avoid flickering
-            if (app.RequestedThemeVariant != targetVariant)
+            // Step 1: Set opposite variant to force Fluent to fully re-derive
+            // its internal resource dictionaries. This ensures controls like
+            // Button, CheckBox, TabItem pick up the new colors.
+            var oppositeVariant = targetVariant == ThemeVariant.Light
+                ? ThemeVariant.Dark
+                : ThemeVariant.Light;
+            app.RequestedThemeVariant = oppositeVariant;
+
+            // Step 2: Yield to the UI thread so Avalonia processes the variant
+            // change (style detach/reattach, resource re-derivation). Then set
+            // the real variant and apply our color overrides.
+            var capturedTheme = theme;
+            Dispatcher.UIThread.Post(() =>
             {
                 app.RequestedThemeVariant = targetVariant;
-            }
+                ApplyThemeResources(app, capturedTheme);
+            }, DispatcherPriority.Send);
 
-            // Apply custom colors AFTER theme variant loads
+            return true;
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"[{_toolName}] Failed to apply theme {theme.Plugin.Name}: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Apply theme resources (colors, fonts, spacing) after variant change.
+    /// </summary>
+    private void ApplyThemeResources(Application app, ThemeManifest theme)
+    {
+        try
+        {
             if (theme.Colors != null)
             {
                 ApplyColors(app.Resources, theme.Colors, theme.BaseTheme);
             }
 
-            // Apply font sizes (with defaults if not specified in theme)
             ApplyFonts(app.Resources, theme.Fonts ?? new ThemeFonts());
 
-            // Apply custom spacing to resource dictionary
             if (theme.Spacing != null)
             {
                 ApplySpacing(app.Resources, theme.Spacing);
@@ -259,16 +286,12 @@ public class ThemeManager
             UnifiedLogger.LogApplication(LogLevel.INFO,
                 $"[{_toolName}] Applied theme: {theme.Plugin.Name} ({theme.Plugin.Id})");
 
-            // Notify subscribers that theme has changed
             ThemeApplied?.Invoke(this, EventArgs.Empty);
-
-            return true;
         }
         catch (Exception ex)
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR,
-                $"[{_toolName}] Failed to apply theme {theme.Plugin.Name}: {ex.Message}");
-            return false;
+                $"[{_toolName}] Failed to apply theme resources: {ex.Message}");
         }
     }
 
@@ -354,6 +377,65 @@ public class ThemeManager
         }
 
         // =================================================================
+        // TIER 1B: SystemControl*Brush overrides
+        // Fluent derives these internally from its Light/Dark color tables,
+        // NOT from our System*Color overrides above. When switching between
+        // themes with the same base variant (e.g., Light → colorblind Light),
+        // Fluent doesn't re-derive, so AXAML referencing these brushes gets
+        // stale values. We must set them explicitly.
+        // Only the brushes actually referenced in our AXAML are listed here.
+        // =================================================================
+
+        // Background brushes (used by panels, flowchart, toolbars)
+        if (!string.IsNullOrEmpty(colors.Background))
+        {
+            var bgBrush = new SolidColorBrush(Color.Parse(colors.Background));
+            resources["SystemControlBackgroundChromeMediumBrush"] = bgBrush;
+            resources["SystemControlBackgroundChromeMediumLowBrush"] = bgBrush;
+        }
+        if (!string.IsNullOrEmpty(colors.Sidebar))
+        {
+            var sidebarBrush = new SolidColorBrush(Color.Parse(colors.Sidebar));
+            resources["SystemControlBackgroundAltHighBrush"] = sidebarBrush;
+        }
+
+        // Foreground brushes (used for text, borders, separators)
+        // BaseMediumBrush (172 uses): muted text, toolbar separators — use TextMuted color
+        // BaseMediumLowBrush (285 uses): borders, dividers, de-emphasized text — use Border color
+        if (!string.IsNullOrEmpty(colors.Text))
+        {
+            var textColor = Color.Parse(colors.Text);
+            var mutedTextColor = !string.IsNullOrEmpty(colors.TextMuted)
+                ? Color.Parse(colors.TextMuted)
+                : Color.FromArgb((byte)(textColor.A * 0.7), textColor.R, textColor.G, textColor.B);
+
+            resources["SystemControlForegroundBaseHighBrush"] = new SolidColorBrush(textColor);
+            resources["SystemControlForegroundBaseMediumHighBrush"] = new SolidColorBrush(textColor);
+            resources["SystemControlForegroundBaseMediumBrush"] = new SolidColorBrush(mutedTextColor);
+
+            // BaseMediumLow: primarily borders/separators (285 uses). Use Border color if available,
+            // otherwise fall back to muted text. This prevents borders from being invisible or
+            // text-on-borders from being unreadable across themes.
+            var borderColor = !string.IsNullOrEmpty(colors.Border)
+                ? Color.Parse(colors.Border)
+                : mutedTextColor;
+            resources["SystemControlForegroundBaseMediumLowBrush"] = new SolidColorBrush(borderColor);
+        }
+
+        // Selection/highlight brush
+        if (!string.IsNullOrEmpty(colors.Selection))
+        {
+            resources["SystemControlHighlightListLowBrush"] = new SolidColorBrush(Color.Parse(colors.Selection));
+        }
+
+        // Border/low-emphasis brush
+        if (!string.IsNullOrEmpty(colors.Border))
+        {
+            resources["SystemControlBackgroundBaseLowBrush"] = new SolidColorBrush(Color.Parse(colors.Border));
+            resources["SystemControlForegroundBaseLowBrush"] = new SolidColorBrush(Color.Parse(colors.Border));
+        }
+
+        // =================================================================
         // TIER 2: Custom Theme* resources
         // Our AXAML binds to these directly via {DynamicResource Theme*}.
         // These are Radoub's own namespace — Fluent doesn't know about them.
@@ -364,6 +446,7 @@ public class ThemeManager
         {
             var bgBrush = new SolidColorBrush(Color.Parse(colors.Background));
             resources["ThemeBackground"] = bgBrush;
+            resources["ThemeBackgroundBrush"] = bgBrush; // Alias (used by QM/Fence SettingsWindow)
         }
         if (!string.IsNullOrEmpty(colors.Sidebar))
         {
@@ -496,8 +579,8 @@ public class ThemeManager
         resources["GlobalFontSize"] = baseSize;
 
         // Derived font sizes for UI hierarchy (all scale with base size)
-        resources["FontSizeXSmall"] = Math.Max(8, baseSize - 4);   // 10 @ base 14
-        resources["FontSizeSmall"] = Math.Max(9, baseSize - 3);    // 11 @ base 14
+        resources["FontSizeXSmall"] = Math.Max(10, baseSize - 2);  // 12 @ base 14
+        resources["FontSizeSmall"] = Math.Max(11, baseSize - 1);   // 13 @ base 14
         resources["FontSizeNormal"] = baseSize;                     // 14 @ base 14
         resources["FontSizeMedium"] = baseSize + 2;                 // 16 @ base 14
         resources["FontSizeLarge"] = baseSize + 4;                  // 18 @ base 14
