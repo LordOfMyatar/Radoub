@@ -47,7 +47,7 @@ public partial class App : Application
         if (isSafeMode)
         {
             // SafeMode forces light theme
-            themeId = "org.quartermaster.theme.light";
+            themeId = "org.radoub.theme.light";
         }
         else
         {
@@ -58,7 +58,7 @@ public partial class App : Application
         if (!ThemeManager.Instance.ApplyEffectiveTheme(themeId))
         {
             // Fallback to light theme
-            ThemeManager.Instance.ApplyTheme("org.quartermaster.theme.light");
+            ThemeManager.Instance.ApplyTheme("org.radoub.theme.light");
         }
 
         // Apply font overrides from settings
@@ -88,7 +88,7 @@ public partial class App : Application
     private void ApplySafeModeDefaults()
     {
         // Reset theme to light
-        SettingsService.Instance.CurrentThemeId = "org.quartermaster.theme.light";
+        SettingsService.Instance.CurrentThemeId = "org.radoub.theme.light";
 
         // Reset fonts to system defaults
         SettingsService.Instance.FontSize = SafeModeService.DefaultFontSize;
@@ -107,8 +107,8 @@ public partial class App : Application
             var baseSize = SafeModeService.DefaultFontSize;
 
             Resources["GlobalFontSize"] = baseSize;
-            Resources["FontSizeXSmall"] = Math.Max(8, baseSize - 4);
-            Resources["FontSizeSmall"] = Math.Max(9, baseSize - 3);
+            Resources["FontSizeXSmall"] = Math.Max(10, baseSize - 2);
+            Resources["FontSizeSmall"] = Math.Max(11, baseSize - 1);
             Resources["FontSizeNormal"] = baseSize;
             Resources["FontSizeMedium"] = baseSize + 2;
             Resources["FontSizeLarge"] = baseSize + 4;
@@ -163,8 +163,8 @@ public partial class App : Application
             Resources["GlobalFontSize"] = baseSize;
 
             // Update derived font sizes (must match ThemeManager.ApplyFontSettings logic)
-            Resources["FontSizeXSmall"] = Math.Max(8, baseSize - 4);   // 10 @ base 14
-            Resources["FontSizeSmall"] = Math.Max(9, baseSize - 3);    // 11 @ base 14
+            Resources["FontSizeXSmall"] = Math.Max(10, baseSize - 2);  // 12 @ base 14
+            Resources["FontSizeSmall"] = Math.Max(11, baseSize - 1);   // 13 @ base 14
             Resources["FontSizeNormal"] = baseSize;                     // 14 @ base 14
             Resources["FontSizeMedium"] = baseSize + 2;                 // 16 @ base 14
             Resources["FontSizeLarge"] = baseSize + 4;                  // 18 @ base 14

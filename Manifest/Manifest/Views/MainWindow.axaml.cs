@@ -1333,6 +1333,25 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     }
 
     #endregion
+
+    #region Title Bar Handlers
+
+    private void OnTitleBarPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        {
+            BeginMoveDrag(e);
+        }
+    }
+
+    private void OnTitleBarDoubleTapped(object? sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState == WindowState.Maximized
+            ? WindowState.Normal
+            : WindowState.Maximized;
+    }
+
+    #endregion
 }
 
 #region Tree Item Models

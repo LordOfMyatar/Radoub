@@ -440,7 +440,7 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
-        /// Current theme plugin ID (e.g., "org.parley.theme.light")
+        /// Current theme plugin ID (e.g., "org.radoub.theme.light")
         /// </summary>
         public string CurrentThemeId
         {
@@ -1216,7 +1216,7 @@ namespace DialogEditor.Services
             public double FontSize { get; set; } = 14;
             public string FontFamily { get; set; } = "";
             public bool IsDarkTheme { get; set; } = false; // DEPRECATED: For backwards compatibility
-            public string? CurrentThemeId { get; set; } = "org.parley.theme.light";
+            public string? CurrentThemeId { get; set; } = "org.radoub.theme.light";
             public string FlowchartLayout { get; set; } = "Floating"; // #329: Flowchart layout
             // Flowchart window settings (#377)
             public double FlowchartWindowLeft { get; set; } = 100;

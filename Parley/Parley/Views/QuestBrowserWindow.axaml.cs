@@ -225,14 +225,14 @@ namespace DialogEditor.Views
                 // Show entry preview
                 var fullText = entry.Text?.GetDefault() ?? "(no text)";
                 EntryPreviewTextBlock.Text = fullText;
-                EntryPreviewTextBlock.Foreground = Avalonia.Media.Brushes.White;
+                EntryPreviewTextBlock.ClearValue(Avalonia.Controls.TextBlock.ForegroundProperty);
                 EntryPreviewTextBlock.FontStyle = Avalonia.Media.FontStyle.Normal;
             }
             else
             {
                 _selectedEntry = null;
                 EntryPreviewTextBlock.Text = "Select an entry to preview its text";
-                EntryPreviewTextBlock.Foreground = Avalonia.Media.Brushes.Gray;
+                EntryPreviewTextBlock.Foreground = Radoub.UI.Services.BrushManager.GetDisabledBrush(this);
                 EntryPreviewTextBlock.FontStyle = Avalonia.Media.FontStyle.Italic;
             }
 

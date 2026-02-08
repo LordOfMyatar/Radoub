@@ -61,14 +61,14 @@ public partial class App : Application
         if (isSafeMode)
         {
             // SafeMode forces light theme
-            themeId = "org.parley.theme.light";
+            themeId = "org.radoub.theme.light";
         }
         else
         {
             themeId = _settings.CurrentThemeId;
             if (string.IsNullOrEmpty(themeId))
             {
-                themeId = "org.parley.theme.light"; // Default if not set
+                themeId = "org.radoub.theme.light"; // Default if not set
             }
         }
 
@@ -76,7 +76,7 @@ public partial class App : Application
         if (!ThemeManager.Instance.ApplyEffectiveTheme(themeId))
         {
             // If preferred theme fails, try default light theme
-            ThemeManager.Instance.ApplyTheme("org.parley.theme.light");
+            ThemeManager.Instance.ApplyTheme("org.radoub.theme.light");
         }
 
         // Apply font size and family from settings (or defaults if SafeMode)
@@ -104,7 +104,7 @@ public partial class App : Application
     private void ApplySafeModeDefaults()
     {
         // Reset theme to light
-        _settings.CurrentThemeId = "org.parley.theme.light";
+        _settings.CurrentThemeId = "org.radoub.theme.light";
 
         // Reset fonts to system defaults
         _settings.FontSize = SafeModeService.DefaultFontSize;

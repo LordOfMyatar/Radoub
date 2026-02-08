@@ -34,22 +34,22 @@ public class BoolToBrushConverter : IValueConverter
 
 /// <summary>
 /// Converts module validity to foreground color.
-/// True = White (valid), False = Warning (invalid)
+/// True = Theme accent foreground (valid), False = Warning (invalid)
 /// Uses theme resources for colorblind accessibility.
 /// </summary>
 public class ModuleValidityToForegroundConverter : IValueConverter
 {
     public static readonly ModuleValidityToForegroundConverter Instance = new();
 
-    private static readonly IBrush ValidBrush = new SolidColorBrush(Colors.White);
-
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is bool isValid)
         {
-            return isValid ? ValidBrush : BrushManager.GetWarningBrush();
+            // Valid: use info brush (readable on any theme background)
+            // Invalid: use warning brush for visual alert
+            return isValid ? BrushManager.GetInfoBrush() : BrushManager.GetWarningBrush();
         }
-        return ValidBrush;
+        return BrushManager.GetInfoBrush();
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -60,24 +60,20 @@ public class ModuleValidityToForegroundConverter : IValueConverter
 
 /// <summary>
 /// Converts module validity to background color for the module name badge.
-/// True = Semi-transparent dark (valid), False = Theme warning (invalid)
+/// True = Theme background alt (valid), False = Theme warning (invalid)
 /// Uses theme resources for colorblind accessibility.
 /// </summary>
 public class ModuleValidityToBgConverter : IValueConverter
 {
     public static readonly ModuleValidityToBgConverter Instance = new();
 
-    // Semi-transparent black (50% opacity) for valid state badge background
-    // Provides contrast against accent header color without being too dark
-    private static readonly IBrush ValidBrush = new SolidColorBrush(Color.Parse("#80000000"));
-
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is bool isValid)
         {
-            return isValid ? ValidBrush : BrushManager.GetWarningBrush();
+            return isValid ? BrushManager.GetDisabledBrush() : BrushManager.GetWarningBrush();
         }
-        return ValidBrush;
+        return BrushManager.GetDisabledBrush();
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)

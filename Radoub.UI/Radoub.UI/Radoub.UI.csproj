@@ -38,4 +38,12 @@
     <AvaloniaResource Include="Styles\*.axaml" />
   </ItemGroup>
 
+  <!-- Shared theme files (#1199) - single source of truth for all Radoub tools -->
+  <ItemGroup>
+    <Content Include="Themes\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Themes\%(Filename)%(Extension)</Link>
+    </Content>
+  </ItemGroup>
+
 </Project>

@@ -109,7 +109,7 @@ public class SettingsService : INotifyPropertyChanged
     // UI settings
     private double _fontSize = 14;
     private string _fontFamily = "";
-    private string _currentThemeId = "org.fence.theme.light";
+    private string _currentThemeId = "org.radoub.theme.light";
 
     // Logging settings - using shared LoggingSettings
     private readonly LoggingSettings _loggingSettings = new();
@@ -199,7 +199,7 @@ public class SettingsService : INotifyPropertyChanged
     public string CurrentThemeId
     {
         get => _currentThemeId;
-        set { if (SetProperty(ref _currentThemeId, value ?? "org.fence.theme.light")) SaveSettings(); }
+        set { if (SetProperty(ref _currentThemeId, value ?? "org.radoub.theme.light")) SaveSettings(); }
     }
 
     // Logging properties - delegate to shared LoggingSettings
@@ -343,7 +343,7 @@ public class SettingsService : INotifyPropertyChanged
                     _fontFamily = settings.FontFamily ?? "";
                     _currentThemeId = !string.IsNullOrEmpty(settings.CurrentThemeId)
                         ? settings.CurrentThemeId
-                        : "org.fence.theme.light";
+                        : "org.radoub.theme.light";
 
                     // Load logging settings from shared model
                     _loggingSettings.LogRetentionSessions = settings.LogRetentionSessions;
@@ -443,7 +443,7 @@ public class SettingsService : INotifyPropertyChanged
 
         public double FontSize { get; set; } = 14;
         public string FontFamily { get; set; } = "";
-        public string CurrentThemeId { get; set; } = "org.fence.theme.light";
+        public string CurrentThemeId { get; set; } = "org.radoub.theme.light";
 
         public int LogRetentionSessions { get; set; } = 3;
         public LogLevel LogLevel { get; set; } = LogLevel.INFO;

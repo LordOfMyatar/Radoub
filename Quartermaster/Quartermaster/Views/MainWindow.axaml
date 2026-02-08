@@ -12,7 +12,10 @@
         Icon="avares://Quartermaster/Assets/Quartermaster.ico"
         Width="1200" Height="800"
         MinWidth="800" MinHeight="600"
-        KeyDown="OnWindowKeyDown">
+        KeyDown="OnWindowKeyDown"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="PreferSystemChrome"
+        ExtendClientAreaTitleBarHeightHint="30">
 
     <Window.Styles>
         <!-- Navigation Button Style -->
@@ -29,7 +32,7 @@
         </Style>
         <Style Selector="Button.NavButton.Selected">
             <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeAccentForeground}"/>
         </Style>
         <!-- Emoji icons should not inherit foreground color changes -->
         <Style Selector="Button.NavButton TextBlock.NavIcon">
@@ -38,6 +41,26 @@
     </Window.Styles>
 
     <DockPanel>
+        <!-- Custom Title Bar -->
+        <Border DockPanel.Dock="Top" Background="{DynamicResource ThemeTitleBar}"
+                Height="30"
+                x:Name="TitleBar"
+                PointerPressed="OnTitleBarPointerPressed"
+                DoubleTapped="OnTitleBarDoubleTapped">
+            <StackPanel Orientation="Horizontal"
+                        VerticalAlignment="Center"
+                        Margin="8,0,0,0"
+                        IsHitTestVisible="False">
+                <Image Source="avares://Quartermaster/Assets/Quartermaster.ico"
+                       Width="{DynamicResource GlobalFontSize}"
+                       Height="{DynamicResource GlobalFontSize}"
+                       Margin="0,0,8,0"/>
+                <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource ThemeTitleBarForeground}"/>
+            </StackPanel>
+        </Border>
+
         <!-- Menu Bar -->
         <Menu DockPanel.Dock="Top" AutomationProperties.AutomationId="MainMenu">
             <MenuItem Header="_File">

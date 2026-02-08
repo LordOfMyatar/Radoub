@@ -366,7 +366,6 @@ public partial class SkillsPanel : BasePanelControl
             // Get theme font sizes
             var normalFontSize = this.FindResource("FontSizeNormal") as double? ?? 14;
             var smallFontSize = this.FindResource("FontSizeSmall") as double? ?? 12;
-            var xsmallFontSize = this.FindResource("FontSizeXSmall") as double? ?? 10;
 
             var classLabel = new TextBlock
             {
@@ -380,7 +379,7 @@ public partial class SkillsPanel : BasePanelControl
             var pointsLabel = new TextBlock
             {
                 Text = $"{skillPointBase}+INT = {pointsPerLevel}/lvl",
-                FontSize = xsmallFontSize,
+                FontSize = smallFontSize,
                 Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush ?? GetDisabledBrush(),
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
             };
@@ -392,7 +391,6 @@ public partial class SkillsPanel : BasePanelControl
         // Get theme font sizes for remaining elements
         var normalSize = this.FindResource("FontSizeNormal") as double? ?? 14;
         var smallSize = this.FindResource("FontSizeSmall") as double? ?? 12;
-        var xsmallSize = this.FindResource("FontSizeXSmall") as double? ?? 10;
 
         // Add separator
         var separator = new Border
@@ -421,7 +419,7 @@ public partial class SkillsPanel : BasePanelControl
         var noteRow = new TextBlock
         {
             Text = "(Estimate - excludes race/feat bonuses)",
-            FontSize = xsmallSize,
+            FontSize = smallSize,
             FontStyle = Avalonia.Media.FontStyle.Italic,
             Foreground = this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush ?? GetDisabledBrush(),
             Margin = new Avalonia.Thickness(0, 4, 0, 0)

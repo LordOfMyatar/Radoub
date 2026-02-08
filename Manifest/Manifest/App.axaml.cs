@@ -47,7 +47,7 @@ public partial class App : Application
         if (isSafeMode)
         {
             // SafeMode forces light theme
-            themeId = "org.manifest.theme.light";
+            themeId = "org.radoub.theme.light";
         }
         else
         {
@@ -58,7 +58,7 @@ public partial class App : Application
         if (!ThemeManager.Instance.ApplyEffectiveTheme(themeId))
         {
             // Fallback to light theme
-            ThemeManager.Instance.ApplyTheme("org.manifest.theme.light");
+            ThemeManager.Instance.ApplyTheme("org.radoub.theme.light");
         }
 
         // Apply font overrides from settings (after theme)
@@ -87,7 +87,7 @@ public partial class App : Application
     private void ApplySafeModeDefaults()
     {
         // Reset theme to light
-        SettingsService.Instance.CurrentThemeId = "org.manifest.theme.light";
+        SettingsService.Instance.CurrentThemeId = "org.radoub.theme.light";
 
         // Reset fonts to system defaults
         SettingsService.Instance.FontSize = SafeModeService.DefaultFontSize;

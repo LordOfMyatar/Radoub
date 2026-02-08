@@ -11,9 +11,32 @@
         Icon="avares://Manifest/Assets/manifest.ico"
         Width="1000" Height="700"
         MinWidth="600" MinHeight="400"
-        KeyDown="OnWindowKeyDown">
+        KeyDown="OnWindowKeyDown"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="PreferSystemChrome"
+        ExtendClientAreaTitleBarHeightHint="30">
 
     <DockPanel>
+        <!-- Custom Title Bar -->
+        <Border DockPanel.Dock="Top" Background="{DynamicResource ThemeTitleBar}"
+                Height="30"
+                x:Name="TitleBar"
+                PointerPressed="OnTitleBarPointerPressed"
+                DoubleTapped="OnTitleBarDoubleTapped">
+            <StackPanel Orientation="Horizontal"
+                        VerticalAlignment="Center"
+                        Margin="8,0,0,0"
+                        IsHitTestVisible="False">
+                <Image Source="avares://Manifest/Assets/manifest.ico"
+                       Width="{DynamicResource GlobalFontSize}"
+                       Height="{DynamicResource GlobalFontSize}"
+                       Margin="0,0,8,0"/>
+                <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource ThemeTitleBarForeground}"/>
+            </StackPanel>
+        </Border>
+
         <!-- Menu Bar -->
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">

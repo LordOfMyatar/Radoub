@@ -155,7 +155,7 @@ public partial class ClassBrowserWindow : Window
         _classStatsPanel.IsVisible = false;
         _prerequisitesPanel.IsVisible = false;
         _descriptionTextBlock.Text = "Select a class to view its description.";
-        _descriptionTextBlock.Foreground = Avalonia.Media.Brushes.Gray;
+        _descriptionTextBlock.Foreground = Radoub.UI.Services.BrushManager.GetDisabledBrush(this);
         _selectedClassLabel.Text = "(none)";
         _okButton.IsEnabled = false;
     }
@@ -194,12 +194,12 @@ public partial class ClassBrowserWindow : Window
         if (!string.IsNullOrWhiteSpace(item.Description))
         {
             _descriptionTextBlock.Text = item.Description;
-            _descriptionTextBlock.Foreground = Avalonia.Media.Brushes.White;
+            _descriptionTextBlock.ClearValue(Avalonia.Controls.TextBlock.ForegroundProperty);
         }
         else
         {
             _descriptionTextBlock.Text = "(No description available)";
-            _descriptionTextBlock.Foreground = Avalonia.Media.Brushes.Gray;
+            _descriptionTextBlock.Foreground = Radoub.UI.Services.BrushManager.GetDisabledBrush(this);
         }
 
         // Selection status

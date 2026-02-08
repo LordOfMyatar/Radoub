@@ -27,6 +27,7 @@
     "warning": "#CCA700",
     "success": "#89D185",
     "info": "#75BEFF",
+    "disabled": "#6E6E6E",
     "tree_entry": "#CE9178",
     "tree_reply": "#9CDCFE",
     "tree_link": "#858585",
@@ -58,6 +59,7 @@
     "control_padding": 8,
     "control_margin": 4,
     "panel_spacing": 8,
-    "min_control_height": 28
+    "min_control_height": 28,
+    "tree_indent": 16
   }
 }

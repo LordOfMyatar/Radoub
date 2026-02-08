@@ -163,6 +163,10 @@ namespace DialogEditor.Controls
                 // Fallback to plain text if parsing fails
                 Inlines.Add(new Run(text));
             }
+
+            // Force re-render — Inlines changes alone may not trigger layout
+            InvalidateMeasure();
+            InvalidateVisual();
         }
 
         private Run CreateRunForSegment(TokenSegment segment)

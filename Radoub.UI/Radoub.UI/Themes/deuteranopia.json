@@ -16,25 +16,26 @@
     "contrast_level": "AAA"
   },
   "colors": {
-    "background": "#DDDDDD",
-    "sidebar": "#AAAAAA",
-    "text": "#000000",
+    "background": "#FFFFFF",
+    "sidebar": "#F5F5F5",
+    "text": "#1A1A1A",
     "text_muted": "#757575",
     "selection": "#0066CC",
-    "border": "#999999",
+    "border": "#D0D0D0",
     "input_background": "#FFFFFF",
     "accent": "#0066CC",
     "error": "#CC3300",
     "warning": "#996600",
     "success": "#006699",
     "info": "#0066CC",
+    "disabled": "#757575",
     "tree_entry": "#B35900",
     "tree_reply": "#0066CC",
     "tree_link": "#9933CC",
-    "title_bar": "#CCCCCC",
-    "title_bar_foreground": "#000000",
+    "title_bar": "#E0E0E0",
+    "title_bar_foreground": "#1A1A1A",
     "button_primary": "#0066CC",
-    "button_secondary": "#666666",
+    "button_secondary": "#757575",
     "button_hover": "#004C99",
     "button_text": "#FFFFFF",
     "edit_mode_border": "#0066CC",
@@ -59,6 +60,7 @@
     "control_padding": 8,
     "control_margin": 4,
     "panel_spacing": 8,
-    "min_control_height": 28
+    "min_control_height": 28,
+    "tree_indent": 16
   }
 }

@@ -19,7 +19,7 @@ namespace DialogEditor.Services
 
         // Theme settings
         private bool _isDarkTheme = false; // DEPRECATED: Use CurrentThemeId instead
-        private string _currentThemeId = "org.parley.theme.light"; // Default theme
+        private string _currentThemeId = "org.radoub.theme.light"; // Default theme
 
         // Layout settings
         private string _flowchartLayout = "Floating"; // "Floating", "SideBySide", "Tabbed"
@@ -75,7 +75,7 @@ namespace DialogEditor.Services
             {
                 // Old settings file - migrate
                 _isDarkTheme = isDarkTheme;
-                _currentThemeId = _isDarkTheme ? "org.parley.theme.dark" : "org.parley.theme.light";
+                _currentThemeId = _isDarkTheme ? "org.radoub.theme.dark" : "org.radoub.theme.light";
             }
 
             _flowchartLayout = flowchartLayout ?? "Floating";
@@ -115,7 +115,7 @@ namespace DialogEditor.Services
                 if (SetProperty(ref _isDarkTheme, value))
                 {
                     // Auto-migrate to new theme system
-                    _currentThemeId = value ? "org.parley.theme.dark" : "org.parley.theme.light";
+                    _currentThemeId = value ? "org.radoub.theme.dark" : "org.radoub.theme.light";
                     OnPropertyChanged(nameof(CurrentThemeId));
                     SettingsChanged?.Invoke();
                 }
@@ -123,7 +123,7 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
-        /// Current theme plugin ID (e.g., "org.parley.theme.light")
+        /// Current theme plugin ID (e.g., "org.radoub.theme.light")
         /// </summary>
         public string CurrentThemeId
         {

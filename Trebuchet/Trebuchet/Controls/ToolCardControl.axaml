@@ -44,15 +44,15 @@
                                HorizontalAlignment="Center"
                                Margin="0,2,0,0"/>
 
-                    <!-- Status -->
-                    <Border CornerRadius="4"
+                    <!-- Status Badge - background set in code-behind via resource observable for theme reactivity -->
+                    <Border x:Name="StatusBadge"
+                            CornerRadius="4"
                             Padding="8,2"
                             Margin="0,12,0,0"
-                            HorizontalAlignment="Center"
-                            Background="{Binding IsAvailable, Converter={x:Static vm:BoolToBrushConverter.Instance}}">
+                            HorizontalAlignment="Center">
                         <TextBlock Text="{Binding StatusText}"
                                    FontSize="{DynamicResource FontSizeXSmall}"
-                                   Foreground="White"/>
+                                   Foreground="{DynamicResource ThemeAccentForeground}"/>
                     </Border>
                 </StackPanel>
             </Border>

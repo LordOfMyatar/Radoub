@@ -7,6 +7,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 
 namespace Radoub.UI.Controls;
 
@@ -294,8 +295,8 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
 
         CountLabel.Text = FormatCountLabel(moduleCount, hakCount, totalCount);
         CountLabel.Foreground = totalCount == 0
-            ? new SolidColorBrush(Colors.Orange)
-            : new SolidColorBrush(Colors.White);
+            ? BrushManager.GetWarningBrush(this)
+            : BrushManager.GetInfoBrush(this);
 
         // Restore current file highlight
         HighlightCurrentFile();
@@ -348,7 +349,7 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
     protected void ShowError(string message)
     {
         CountLabel.Text = message;
-        CountLabel.Foreground = new SolidColorBrush(Colors.Red);
+        CountLabel.Foreground = BrushManager.GetErrorBrush(this);
     }
 
     /// <summary>
