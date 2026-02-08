@@ -52,7 +52,7 @@
                             Background="{Binding IsAvailable, Converter={x:Static vm:BoolToBrushConverter.Instance}}">
                         <TextBlock Text="{Binding StatusText}"
                                    FontSize="{DynamicResource FontSizeXSmall}"
-                                   Foreground="White"/>
+                                   Foreground="{DynamicResource ThemeAccentForeground}"/>
                     </Border>
                 </StackPanel>
             </Border>

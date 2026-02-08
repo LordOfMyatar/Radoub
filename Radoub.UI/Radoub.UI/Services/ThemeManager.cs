@@ -702,6 +702,10 @@ public class ThemeManager
             resources["ThemeInfo"] = infoBrush;
             resources["ThemeInfoBrush"] = infoBrush; // Alias for Trebuchet
         }
+        if (!string.IsNullOrEmpty(colors.Disabled))
+        {
+            resources["ThemeDisabled"] = new SolidColorBrush(Color.Parse(colors.Disabled));
+        }
 
         // Button colors - apply theme-defined button colors to Fluent theme resources (#1089)
         // button_primary = action buttons (Save, OK, Apply) - blue in most themes

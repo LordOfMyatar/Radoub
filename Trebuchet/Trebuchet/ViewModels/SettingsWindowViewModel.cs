@@ -20,8 +20,8 @@ public partial class SettingsWindowViewModel : ObservableObject
 {
     private readonly Window _window;
     private readonly string? _originalThemeId;
-    private static readonly IBrush SuccessBrush = new SolidColorBrush(Color.Parse("#4CAF50"));
-    private static readonly IBrush ErrorBrush = new SolidColorBrush(Color.Parse("#F44336"));
+    private static IBrush SuccessBrush => BrushManager.GetSuccessBrush();
+    private static IBrush ErrorBrush => BrushManager.GetErrorBrush();
 
     [ObservableProperty]
     private string _gameInstallPath = "";

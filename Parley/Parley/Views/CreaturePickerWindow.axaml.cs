@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Avalonia.Media;
 using DialogEditor.Models;
 using DialogEditor.Services;
 using Radoub.Formats.Logging;
@@ -43,7 +42,7 @@ namespace DialogEditor.Views
                 if (_allCreatures.Count == 0)
                 {
                     CreatureCountLabel.Text = "⚠ No creatures loaded. Load a module with UTC files first.";
-                    CreatureCountLabel.Foreground = new SolidColorBrush(Colors.Orange);
+                    CreatureCountLabel.Foreground = Radoub.UI.Services.BrushManager.GetWarningBrush(this);
                     UnifiedLogger.LogApplication(LogLevel.WARN, "Creature Picker: No creatures available");
                     return;
                 }
@@ -54,7 +53,7 @@ namespace DialogEditor.Views
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load creatures: {ex.Message}");
                 CreatureCountLabel.Text = $"❌ Error loading creatures: {ex.Message}";
-                CreatureCountLabel.Foreground = new SolidColorBrush(Colors.Red);
+                CreatureCountLabel.Foreground = Radoub.UI.Services.BrushManager.GetErrorBrush(this);
             }
         }
 
@@ -70,7 +69,7 @@ namespace DialogEditor.Views
                     {
                         Content = "(no recent tags)",
                         IsEnabled = false,
-                        Foreground = new SolidColorBrush(Colors.Gray)
+                        Foreground = Radoub.UI.Services.BrushManager.GetDisabledBrush(this)
                     });
                     return;
                 }

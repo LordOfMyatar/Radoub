@@ -434,12 +434,12 @@ public partial class LevelUpWizardWindow : Window
         if (!string.IsNullOrWhiteSpace(item.Description))
         {
             _classDescriptionLabel.Text = item.Description;
-            _classDescriptionLabel.Foreground = Avalonia.Media.Brushes.White;
+            _classDescriptionLabel.ClearValue(Avalonia.Controls.TextBlock.ForegroundProperty);
         }
         else
         {
             _classDescriptionLabel.Text = "(No description available)";
-            _classDescriptionLabel.Foreground = Avalonia.Media.Brushes.Gray;
+            _classDescriptionLabel.Foreground = Radoub.UI.Services.BrushManager.GetDisabledBrush(this);
         }
     }
 
@@ -449,7 +449,7 @@ public partial class LevelUpWizardWindow : Window
         _classStatsPanel.IsVisible = false;
         _classPrereqPanel.IsVisible = false;
         _classDescriptionLabel.Text = "Select a class to see its description.";
-        _classDescriptionLabel.Foreground = Avalonia.Media.Brushes.Gray;
+        _classDescriptionLabel.Foreground = Radoub.UI.Services.BrushManager.GetDisabledBrush(this);
     }
 
     private List<PrereqDisplayItem> BuildPrereqDisplay(ClassPrereqResult result)

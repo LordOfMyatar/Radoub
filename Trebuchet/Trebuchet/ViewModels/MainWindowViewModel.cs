@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
-using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Radoub.Formats.Common;
@@ -36,9 +35,6 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isModuleValid = true;
-
-    private static readonly IBrush WarningBrush = new SolidColorBrush(Color.Parse("#FFCC00"));
-    private static readonly IBrush NormalBrush = new SolidColorBrush(Colors.White);
 
     [ObservableProperty]
     private string _gameStatusText = "Game: Not configured";

@@ -30,7 +30,7 @@
                                    FontSize="16"
                                    Foreground="{DynamicResource ThemeAccentForeground}"
                                    VerticalAlignment="Center"/>
-                        <Border Background="#2D2D30"
+                        <Border Background="{DynamicResource ThemeBackgroundAlt}"
                                 CornerRadius="4"
                                 Padding="12,6"
                                 MinWidth="150"
@@ -39,7 +39,6 @@
                                        Text="{Binding CurrentModuleName, FallbackValue='(No module)'}"
                                        FontSize="16"
                                        FontWeight="SemiBold"
-                                       Foreground="#F0F0F0"
                                        VerticalAlignment="Center"
                                        TextTrimming="CharacterEllipsis"/>
                         </Border>
@@ -130,7 +129,7 @@
                             IsVisible="{Binding UpdateAvailable}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <TextBlock Text="{Binding UpdateStatusText}"
-                                       Foreground="White"
+                                       Foreground="{DynamicResource ThemeAccentForeground}"
                                        FontWeight="SemiBold"
                                        VerticalAlignment="Center"/>
                             <Button Content="Download"
