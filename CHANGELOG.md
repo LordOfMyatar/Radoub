@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.60] - 2026-02-07
-**Branch**: `radoub/issue-1257` | **PR**: #TBD
+**Branch**: `radoub/issue-1257` | **PR**: #1265
 
 ### Chore: Scan NuGet Packages for Known Vulnerabilities (#1257)
 
