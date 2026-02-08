@@ -60,6 +60,7 @@
                         <CheckBox Content="Compile"
                                   IsChecked="{Binding CompileScriptsEnabled}"
                                   IsEnabled="{Binding IsCompilerAvailable}"
+                                  Foreground="{DynamicResource ThemeAccentForeground}"
                                   VerticalAlignment="Center"
                                   ToolTip.Tip="Compile NWScript files before building"/>
                         <Button Content="View Log"

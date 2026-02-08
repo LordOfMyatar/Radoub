@@ -29,7 +29,7 @@
         </Style>
         <Style Selector="Button.NavButton.Selected">
             <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeAccentForeground}"/>
         </Style>
         <!-- Emoji icons should not inherit foreground color changes -->
         <Style Selector="Button.NavButton TextBlock.NavIcon">
