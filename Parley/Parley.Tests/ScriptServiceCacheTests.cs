@@ -10,12 +10,16 @@ namespace Parley.Tests
     {
         private static ScriptService CreateTestService()
         {
+            var parameterCache = new ParameterCacheService();
             var settings = new SettingsService(
                 new RecentFilesService(),
                 new UISettingsService(),
                 new WindowLayoutService(),
                 new SpeakerPreferencesService(),
-                new ParameterCacheService());
+                parameterCache,
+                new LoggingSettingsService(),
+                new ModulePathsService(),
+                new EditorPreferencesService(parameterCache));
             var gameResource = new GameResourceService(settings);
             var dialogContext = new DialogContextService();
             return new ScriptService(settings, gameResource, dialogContext);

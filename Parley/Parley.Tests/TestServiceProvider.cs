@@ -27,6 +27,9 @@ namespace Parley.Tests
             services.AddSingleton<WindowLayoutService>();
             services.AddSingleton<SpeakerPreferencesService>();
             services.AddSingleton<ParameterCacheService>();
+            services.AddSingleton<LoggingSettingsService>();
+            services.AddSingleton<ModulePathsService>();
+            services.AddSingleton<EditorPreferencesService>();
 
             // Core services
             services.AddSingleton<SettingsService>();

@@ -37,6 +37,11 @@ namespace DialogEditor.Services
         private readonly SpeakerPreferencesService _speakerPreferences;
         private readonly ParameterCacheService _parameterCache;
 
+        // #1269: Additional sub-services extracted for single responsibility
+        private readonly LoggingSettingsService _loggingSettings;
+        private readonly ModulePathsService _modulePaths;
+        private readonly EditorPreferencesService _editorPreferences;
+
         // Lazy initialization to avoid static field initialization timing issues
         private static string? _settingsDirectory;
         private static string SettingsDirectory
@@ -78,64 +83,16 @@ namespace DialogEditor.Services
         private static string LegacySettingsFilePath => Path.Combine(LegacySettingsDirectory, "ParleySettings.json");
         private const int DefaultMaxRecentFiles = 10;
 
-        // Window settings - DELEGATED to WindowLayoutService (#719)
-        // Panel layout settings - DELEGATED to WindowLayoutService (#719)
-        // Flowchart window settings - DELEGATED to WindowLayoutService (#719)
-
-        // Game settings - DELEGATED to shared RadoubSettings (#412)
-        // These properties now delegate to RadoubSettings.Instance for cross-tool sharing
-        // Only _modulePaths remains Parley-specific (recent module history)
-        private List<string> _modulePaths = new List<string>();
+        // NPC Speaker Visual Preferences (Issue #16, #36)
+        // NOTE: Speaker preferences are now stored in SpeakerPreferencesService (Issue #179)
+        // This field is only used for migration from old settings files
+        private Dictionary<string, SpeakerPreferences>? _legacyNpcSpeakerPreferences = null;
 
         /// <summary>
         /// Shared settings instance for game paths and TLK configuration.
         /// Changes here are shared with other Radoub tools (Manifest, etc.).
         /// </summary>
         public static RadoubSettings SharedSettings => RadoubSettings.Instance;
-
-        // Logging settings
-        private int _logRetentionSessions = 3; // Default: keep 3 most recent sessions
-        private LogLevel _logLevel = LogLevel.INFO;
-        private LogLevel _debugLogFilterLevel = LogLevel.INFO; // Debug window filter level
-        private bool _debugWindowVisible = false; // Debug window visibility
-
-        // Auto-save settings - Phase 1 Step 6
-        private bool _autoSaveEnabled = true; // Default: ON
-        private int _autoSaveDelayMs = 2000; // Default: 2 seconds (fast debounce)
-        private int _autoSaveIntervalMinutes = 0; // Default: 0 = use AutoSaveDelayMs instead (Issue #62)
-
-        // NPC speaker visual preferences (Issue #16, #36)
-        // NOTE: Speaker preferences are now stored in SpeakerPreferencesService (Issue #179)
-        // This field is only used for migration from old settings files
-        private Dictionary<string, SpeakerPreferences>? _legacyNpcSpeakerPreferences = null;
-        private bool _enableNpcTagColoring = true; // Default: ON (use shape/color per tag)
-
-        // Confirmation dialog settings (Issue #14)
-        private bool _showDeleteConfirmation = true; // Default: ON (show delete confirmation dialog)
-
-        // Conversation Simulator settings (#484)
-        private bool _simulatorShowWarnings = true; // Default: ON (show unreachable sibling warnings)
-
-        // Script editor settings
-        private string _externalEditorPath = ""; // Path to external text editor (VS Code, Notepad++, etc.)
-        private List<string> _scriptSearchPaths = new List<string>(); // Additional directories to search for scripts
-
-        // Radoub tool integration settings (#416)
-        private string _manifestPath = ""; // Path to Manifest.exe (journal editor)
-
-        // Parameter cache settings
-        private bool _enableParameterCache = true; // Default: ON
-        private int _maxCachedValuesPerParameter = 10; // Default: 10 MRU values
-        private int _maxCachedScripts = 1000; // Default: 1000 scripts
-
-        // Sound Browser settings (#220)
-        // Default to OFF - user must explicitly enable sources to scan
-        private bool _soundBrowserIncludeGameResources = false;
-        private bool _soundBrowserIncludeHakFiles = false;
-        private bool _soundBrowserIncludeBifFiles = false;
-
-        // Spell Check settings (#505)
-        private bool _spellCheckEnabled = true; // Default: ON
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -144,18 +101,27 @@ namespace DialogEditor.Services
             UISettingsService uiSettings,
             WindowLayoutService windowLayout,
             SpeakerPreferencesService speakerPreferences,
-            ParameterCacheService parameterCache)
+            ParameterCacheService parameterCache,
+            LoggingSettingsService loggingSettings,
+            ModulePathsService modulePaths,
+            EditorPreferencesService editorPreferences)
         {
             _recentFiles = recentFiles;
             _uiSettings = uiSettings;
             _windowLayout = windowLayout;
             _speakerPreferences = speakerPreferences;
             _parameterCache = parameterCache;
+            _loggingSettings = loggingSettings;
+            _modulePaths = modulePaths;
+            _editorPreferences = editorPreferences;
 
-            // Subscribe to delegated services for save notifications (#719)
+            // Subscribe to delegated services for save notifications (#719, #1269)
             _recentFiles.SettingsChanged += SaveSettings;
             _uiSettings.SettingsChanged += SaveSettings;
             _windowLayout.SettingsChanged += SaveSettings;
+            _loggingSettings.SettingsChanged += SaveSettings;
+            _modulePaths.SettingsChanged += SaveSettings;
+            _editorPreferences.SettingsChanged += SaveSettings;
 
             // Migrate from legacy ~/Parley to new ~/Radoub/Parley location (#472)
             MigrateLegacySettingsFolder();
@@ -372,7 +338,7 @@ namespace DialogEditor.Services
             get => _recentFiles.MaxRecentFiles;
             set => _recentFiles.MaxRecentFiles = value;
         }
-        
+
         // Window properties - DELEGATED to WindowLayoutService (#719)
         public double WindowLeft
         {
@@ -514,13 +480,6 @@ namespace DialogEditor.Services
         }
 
         // Game Settings Properties - DELEGATED to shared RadoubSettings (#412)
-        // Changes here are automatically persisted to ~/Radoub/RadoubSettings.json
-        // and shared with other Radoub tools (Manifest, etc.)
-
-        /// <summary>
-        /// User documents path (contains modules, override, etc.).
-        /// SHARED: Changes apply to all Radoub tools.
-        /// </summary>
         public string NeverwinterNightsPath
         {
             get => SharedSettings.NeverwinterNightsPath;
@@ -534,10 +493,6 @@ namespace DialogEditor.Services
             }
         }
 
-        /// <summary>
-        /// Base game installation path (Steam/GOG - contains data\ folder).
-        /// SHARED: Changes apply to all Radoub tools.
-        /// </summary>
         public string BaseGameInstallPath
         {
             get => SharedSettings.BaseGameInstallPath;
@@ -551,10 +506,6 @@ namespace DialogEditor.Services
             }
         }
 
-        /// <summary>
-        /// Currently active module path.
-        /// SHARED: Changes apply to all Radoub tools.
-        /// </summary>
         public string CurrentModulePath
         {
             get => SharedSettings.CurrentModulePath;
@@ -568,10 +519,6 @@ namespace DialogEditor.Services
             }
         }
 
-        /// <summary>
-        /// TLK language preference. Empty = auto-detect.
-        /// SHARED: Changes apply to all Radoub tools.
-        /// </summary>
         public string TlkLanguage
         {
             get => SharedSettings.TlkLanguage;
@@ -585,10 +532,6 @@ namespace DialogEditor.Services
             }
         }
 
-        /// <summary>
-        /// Use female TLK variant (dialogf.tlk) instead of default (dialog.tlk).
-        /// SHARED: Changes apply to all Radoub tools.
-        /// </summary>
         public bool TlkUseFemale
         {
             get => SharedSettings.TlkUseFemale;
@@ -602,193 +545,79 @@ namespace DialogEditor.Services
             }
         }
 
-        public List<string> ModulePaths
-        {
-            get => _modulePaths.ToList(); // Return a copy to prevent external modification
-        }
+        // Module paths - DELEGATED to ModulePathsService (#1269)
+        public List<string> ModulePaths => _modulePaths.ModulePaths;
+        public void AddModulePath(string path) => _modulePaths.AddModulePath(path);
+        public void RemoveModulePath(string path) => _modulePaths.RemoveModulePath(path);
+        public void ClearModulePaths() => _modulePaths.ClearModulePaths();
 
-        public void AddModulePath(string path)
-        {
-            if (!string.IsNullOrWhiteSpace(path) && !_modulePaths.Contains(path))
-            {
-                _modulePaths.Add(path);
-                OnPropertyChanged(nameof(ModulePaths));
-                SaveSettings();
-            }
-        }
-
-        public void RemoveModulePath(string path)
-        {
-            if (_modulePaths.Remove(path))
-            {
-                OnPropertyChanged(nameof(ModulePaths));
-                SaveSettings();
-            }
-        }
-
-        public void ClearModulePaths()
-        {
-            if (_modulePaths.Count > 0)
-            {
-                _modulePaths.Clear();
-                OnPropertyChanged(nameof(ModulePaths));
-                SaveSettings();
-                UnifiedLogger.LogApplication(LogLevel.INFO, "Cleared all recent module paths");
-            }
-        }
-
-        // Logging Settings Properties
+        // Logging Settings - DELEGATED to LoggingSettingsService (#1269)
         public int LogRetentionSessions
         {
-            get => _logRetentionSessions;
-            set
-            {
-                if (SetProperty(ref _logRetentionSessions, Math.Max(1, Math.Min(10, value))))
-                {
-                    SaveSettings();
-                    UnifiedLogger.LogSettings(LogLevel.INFO, $"Log retention set to {value} sessions");
-                }
-            }
+            get => _loggingSettings.LogRetentionSessions;
+            set => _loggingSettings.LogRetentionSessions = value;
         }
 
         public LogLevel CurrentLogLevel
         {
-            get => _logLevel;
-            set
-            {
-                if (SetProperty(ref _logLevel, value))
-                {
-                    UnifiedLogger.SetLogLevel(value);
-                    SaveSettings();
-                }
-            }
+            get => _loggingSettings.CurrentLogLevel;
+            set => _loggingSettings.CurrentLogLevel = value;
         }
 
         public LogLevel DebugLogFilterLevel
         {
-            get => _debugLogFilterLevel;
-            set
-            {
-                if (SetProperty(ref _debugLogFilterLevel, value))
-                {
-                    SaveSettings();
-                    UnifiedLogger.LogSettings(LogLevel.DEBUG, $"Debug log filter level set to {value}");
-                }
-            }
+            get => _loggingSettings.DebugLogFilterLevel;
+            set => _loggingSettings.DebugLogFilterLevel = value;
         }
 
         public bool DebugWindowVisible
         {
-            get => _debugWindowVisible;
-            set
-            {
-                if (SetProperty(ref _debugWindowVisible, value))
-                {
-                    SaveSettings();
-                    UnifiedLogger.LogSettings(LogLevel.DEBUG, $"Debug window visibility set to {value}");
-                }
-            }
+            get => _loggingSettings.DebugWindowVisible;
+            set => _loggingSettings.DebugWindowVisible = value;
         }
 
-        // Auto-Save Settings Properties - Phase 1 Step 6
+        // Auto-Save Settings - DELEGATED to EditorPreferencesService (#1269)
         public bool AutoSaveEnabled
         {
-            get => _autoSaveEnabled;
-            set
-            {
-                if (SetProperty(ref _autoSaveEnabled, value))
-                {
-                    SaveSettings();
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Auto-save {(value ? "enabled" : "disabled")}");
-                }
-            }
+            get => _editorPreferences.AutoSaveEnabled;
+            set => _editorPreferences.AutoSaveEnabled = value;
         }
 
         public int AutoSaveDelayMs
         {
-            get => _autoSaveDelayMs;
-            set
-            {
-                // Clamp between 1-10 seconds (1000-10000 ms)
-                if (SetProperty(ref _autoSaveDelayMs, Math.Max(1000, Math.Min(10000, value))))
-                {
-                    SaveSettings();
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Auto-save delay set to {value}ms");
-                }
-            }
+            get => _editorPreferences.AutoSaveDelayMs;
+            set => _editorPreferences.AutoSaveDelayMs = value;
         }
 
-        /// <summary>
-        /// Auto-save interval in minutes (Issue #62).
-        /// 0 = use AutoSaveDelayMs (fast debounce, default).
-        /// 1-60 = timer-based autosave every N minutes.
-        /// </summary>
         public int AutoSaveIntervalMinutes
         {
-            get => _autoSaveIntervalMinutes;
-            set
-            {
-                // Clamp to reasonable bounds (0-60 minutes, 0 = disabled/use fast debounce)
-                var clampedValue = Math.Max(0, Math.Min(60, value));
-                if (SetProperty(ref _autoSaveIntervalMinutes, clampedValue))
-                {
-                    SaveSettings();
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Auto-save interval set to {clampedValue} minutes");
-                }
-            }
+            get => _editorPreferences.AutoSaveIntervalMinutes;
+            set => _editorPreferences.AutoSaveIntervalMinutes = value;
         }
 
-        /// <summary>
-        /// Gets the effective autosave interval in milliseconds based on configuration.
-        /// If AutoSaveIntervalMinutes > 0, converts to milliseconds.
-        /// Otherwise, uses AutoSaveDelayMs (fast debounce).
-        /// </summary>
-        public int EffectiveAutoSaveIntervalMs
-        {
-            get
-            {
-                if (_autoSaveIntervalMinutes > 0)
-                {
-                    // Convert minutes to milliseconds
-                    return _autoSaveIntervalMinutes * 60 * 1000;
-                }
-                return _autoSaveDelayMs; // Default: fast debounce
-            }
-        }
+        public int EffectiveAutoSaveIntervalMs => _editorPreferences.EffectiveAutoSaveIntervalMs;
 
-        // UI Settings Properties (Issue #63) - DELEGATED to UISettingsService (#719)
+        // UI Settings Properties - DELEGATED to UISettingsService (#719)
         public bool AllowScrollbarAutoHide
         {
             get => _uiSettings.AllowScrollbarAutoHide;
             set => _uiSettings.AllowScrollbarAutoHide = value;
         }
 
-        /// <summary>
-        /// Maximum lines to display in flowchart nodes before truncation (#813).
-        /// Range: 1-6 lines, default 3.
-        /// </summary>
         public int FlowchartNodeMaxLines
         {
             get => _uiSettings.FlowchartNodeMaxLines;
             set => _uiSettings.FlowchartNodeMaxLines = value;
         }
 
-        /// <summary>
-        /// Enable word wrap in TreeView dialog text (#903).
-        /// When enabled, long dialog lines wrap within a constrained width.
-        /// </summary>
         public bool TreeViewWordWrap
         {
             get => _uiSettings.TreeViewWordWrap;
             set => _uiSettings.TreeViewWordWrap = value;
         }
 
-        // NPC Speaker Visual Preferences (Issue #16, #36, #179)
-        // Now delegates to SpeakerPreferencesService for storage in separate file
-        public Dictionary<string, SpeakerPreferences> NpcSpeakerPreferences
-        {
-            get => _speakerPreferences.Preferences;
-        }
+        // NPC Speaker Visual Preferences - DELEGATED to SpeakerPreferencesService (#719)
+        public Dictionary<string, SpeakerPreferences> NpcSpeakerPreferences => _speakerPreferences.Preferences;
 
         public void SetSpeakerPreference(string speakerTag, string? color, SpeakerVisualHelper.SpeakerShape? shape)
         {
@@ -799,153 +628,89 @@ namespace DialogEditor.Services
         public (string? color, SpeakerVisualHelper.SpeakerShape? shape) GetSpeakerPreference(string speakerTag)
         {
             // If NPC tag coloring disabled, return null (use theme defaults only)
-            if (!_enableNpcTagColoring)
+            if (!_editorPreferences.EnableNpcTagColoring)
                 return (null, null);
 
             return _speakerPreferences.GetPreference(speakerTag);
         }
 
+        // Editor Preferences - DELEGATED to EditorPreferencesService (#1269)
         public bool EnableNpcTagColoring
         {
-            get => _enableNpcTagColoring;
-            set
-            {
-                if (SetProperty(ref _enableNpcTagColoring, value))
-                {
-                    SaveSettings();
-                    OnPropertyChanged(nameof(EnableNpcTagColoring));
-                }
-            }
+            get => _editorPreferences.EnableNpcTagColoring;
+            set => _editorPreferences.EnableNpcTagColoring = value;
         }
 
         public bool ShowDeleteConfirmation
         {
-            get => _showDeleteConfirmation;
-            set
-            {
-                if (SetProperty(ref _showDeleteConfirmation, value))
-                {
-                    SaveSettings();
-                }
-            }
+            get => _editorPreferences.ShowDeleteConfirmation;
+            set => _editorPreferences.ShowDeleteConfirmation = value;
         }
 
-        /// <summary>
-        /// Issue #484: Show warnings in Conversation Simulator (unreachable siblings, etc.)
-        /// </summary>
         public bool SimulatorShowWarnings
         {
-            get => _simulatorShowWarnings;
-            set
-            {
-                if (SetProperty(ref _simulatorShowWarnings, value))
-                {
-                    SaveSettings();
-                }
-            }
+            get => _editorPreferences.SimulatorShowWarnings;
+            set => _editorPreferences.SimulatorShowWarnings = value;
         }
 
-        // Script Editor Settings Properties
         public string ExternalEditorPath
         {
-            get => _externalEditorPath;
-            set { if (SetProperty(ref _externalEditorPath, value ?? "")) SaveSettings(); }
+            get => _editorPreferences.ExternalEditorPath;
+            set => _editorPreferences.ExternalEditorPath = value;
         }
 
         public List<string> ScriptSearchPaths
         {
-            get => _scriptSearchPaths;
-            set
-            {
-                _scriptSearchPaths = value ?? new List<string>();
-                OnPropertyChanged(nameof(ScriptSearchPaths));
-                SaveSettings();
-            }
+            get => _editorPreferences.ScriptSearchPaths;
+            set => _editorPreferences.ScriptSearchPaths = value;
         }
 
-        // Radoub Tool Integration Properties (#416)
         public string ManifestPath
         {
-            get => _manifestPath;
-            set { if (SetProperty(ref _manifestPath, value ?? "")) SaveSettings(); }
+            get => _editorPreferences.ManifestPath;
+            set => _editorPreferences.ManifestPath = value;
         }
 
-        // Parameter Cache Settings Properties
         public bool EnableParameterCache
         {
-            get => _enableParameterCache;
-            set
-            {
-                if (SetProperty(ref _enableParameterCache, value))
-                {
-                    _parameterCache.EnableCaching = value;
-                    SaveSettings();
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Parameter cache {(value ? "enabled" : "disabled")}");
-                }
-            }
+            get => _editorPreferences.EnableParameterCache;
+            set => _editorPreferences.EnableParameterCache = value;
         }
 
         public int MaxCachedValuesPerParameter
         {
-            get => _maxCachedValuesPerParameter;
-            set
-            {
-                // Clamp between 5-50 values
-                if (SetProperty(ref _maxCachedValuesPerParameter, Math.Max(5, Math.Min(50, value))))
-                {
-                    _parameterCache.MaxValuesPerParameter = value;
-                    SaveSettings();
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Max cached values per parameter set to {value}");
-                }
-            }
+            get => _editorPreferences.MaxCachedValuesPerParameter;
+            set => _editorPreferences.MaxCachedValuesPerParameter = value;
         }
 
         public int MaxCachedScripts
         {
-            get => _maxCachedScripts;
-            set
-            {
-                // Clamp between 100-10000 scripts
-                if (SetProperty(ref _maxCachedScripts, Math.Max(100, Math.Min(10000, value))))
-                {
-                    _parameterCache.MaxScriptsInCache = value;
-                    SaveSettings();
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Max cached scripts set to {value}");
-                }
-            }
+            get => _editorPreferences.MaxCachedScripts;
+            set => _editorPreferences.MaxCachedScripts = value;
         }
 
-        // Sound Browser Settings Properties (#220)
         public bool SoundBrowserIncludeGameResources
         {
-            get => _soundBrowserIncludeGameResources;
-            set { if (SetProperty(ref _soundBrowserIncludeGameResources, value)) SaveSettings(); }
+            get => _editorPreferences.SoundBrowserIncludeGameResources;
+            set => _editorPreferences.SoundBrowserIncludeGameResources = value;
         }
 
         public bool SoundBrowserIncludeHakFiles
         {
-            get => _soundBrowserIncludeHakFiles;
-            set { if (SetProperty(ref _soundBrowserIncludeHakFiles, value)) SaveSettings(); }
+            get => _editorPreferences.SoundBrowserIncludeHakFiles;
+            set => _editorPreferences.SoundBrowserIncludeHakFiles = value;
         }
 
         public bool SoundBrowserIncludeBifFiles
         {
-            get => _soundBrowserIncludeBifFiles;
-            set { if (SetProperty(ref _soundBrowserIncludeBifFiles, value)) SaveSettings(); }
+            get => _editorPreferences.SoundBrowserIncludeBifFiles;
+            set => _editorPreferences.SoundBrowserIncludeBifFiles = value;
         }
 
-        // Spell Check Settings (#505)
         public bool SpellCheckEnabled
         {
-            get => _spellCheckEnabled;
-            set
-            {
-                if (SetProperty(ref _spellCheckEnabled, value))
-                {
-                    SaveSettings();
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Spell check {(value ? "enabled" : "disabled")}");
-                }
-            }
+            get => _editorPreferences.SpellCheckEnabled;
+            set => _editorPreferences.SpellCheckEnabled = value;
         }
 
         private void LoadSettings()
@@ -965,7 +730,7 @@ namespace DialogEditor.Services
                 {
                     var json = File.ReadAllText(SettingsFilePath);
                     var settings = JsonSerializer.Deserialize<SettingsData>(json);
-                    
+
                     if (settings != null)
                     {
                         // Initialize RecentFilesService (#719)
@@ -1004,75 +769,47 @@ namespace DialogEditor.Services
                             settings.TreeViewWordWrap);
 
                         // Issue #179: Migrate speaker preferences to separate file
-                        // Store temporarily for migration, then clear from main settings
                         _legacyNpcSpeakerPreferences = settings.NpcSpeakerPreferences;
                         if (_legacyNpcSpeakerPreferences != null && _legacyNpcSpeakerPreferences.Count > 0)
                         {
                             _speakerPreferences.MigrateFromSettingsData(_legacyNpcSpeakerPreferences);
-                            _legacyNpcSpeakerPreferences = null; // Clear after migration
+                            _legacyNpcSpeakerPreferences = null;
                         }
-
-                        _enableNpcTagColoring = settings.EnableNpcTagColoring; // Issue #16, #36
-                        _showDeleteConfirmation = settings.ShowDeleteConfirmation; // Issue #14
-                        _simulatorShowWarnings = settings.SimulatorShowWarnings; // Issue #484
 
                         // Issue #412: Migrate game paths from ParleySettings to shared RadoubSettings
-                        // Only migrate if RadoubSettings doesn't already have values (first run after update)
                         MigrateGamePathsToSharedSettings(settings);
 
-                        // Load Parley-specific module paths (recent module history)
-                        _modulePaths = SharedPathHelper.ExpandPaths(settings.ModulePaths?.ToList() ?? new List<string>());
+                        // Initialize ModulePathsService (#1269)
+                        _modulePaths.Initialize(
+                            SharedPathHelper.ExpandPaths(settings.ModulePaths?.ToList() ?? new List<string>()));
 
-                        // Load logging settings (backwards compatible with old LogRetentionDays)
-                        if (settings.LogRetentionSessions > 0)
-                        {
-                            _logRetentionSessions = Math.Max(1, Math.Min(10, settings.LogRetentionSessions));
-                        }
-                        else
-                        {
-                            // Backwards compatibility: convert old days setting to sessions (rough estimate)
-                            _logRetentionSessions = 3; // Default
-                        }
-                        _logLevel = settings.LogLevel;
-                        // Only set log level if it hasn't been explicitly set already
-                        // (MainWindow may have set DEBUG for development)
-                        // UnifiedLogger.SetLogLevel(_logLevel); // Commented out - don't override
+                        // Initialize LoggingSettingsService (#1269)
+                        _loggingSettings.Initialize(
+                            settings.LogRetentionSessions,
+                            settings.LogLevel,
+                            settings.DebugLogFilterLevel,
+                            settings.DebugWindowVisible);
 
-                        // Load debug window settings
-                        _debugLogFilterLevel = settings.DebugLogFilterLevel;
-                        _debugWindowVisible = settings.DebugWindowVisible;
+                        // Initialize EditorPreferencesService (#1269)
+                        _editorPreferences.Initialize(
+                            settings.AutoSaveEnabled,
+                            settings.AutoSaveDelayMs,
+                            settings.AutoSaveIntervalMinutes,
+                            settings.EnableNpcTagColoring,
+                            settings.ShowDeleteConfirmation,
+                            settings.SimulatorShowWarnings,
+                            SharedPathHelper.ExpandPath(settings.ExternalEditorPath ?? ""),
+                            SharedPathHelper.ExpandPaths(settings.ScriptSearchPaths?.ToList() ?? new List<string>()),
+                            SharedPathHelper.ExpandPath(settings.ManifestPath ?? ""),
+                            settings.EnableParameterCache,
+                            settings.MaxCachedValuesPerParameter,
+                            settings.MaxCachedScripts,
+                            settings.SoundBrowserIncludeGameResources,
+                            settings.SoundBrowserIncludeHakFiles,
+                            settings.SoundBrowserIncludeBifFiles,
+                            settings.SpellCheckEnabled);
 
-                        // Load auto-save settings - Phase 1 Step 6 + Issue #62
-                        _autoSaveEnabled = settings.AutoSaveEnabled;
-                        _autoSaveDelayMs = Math.Max(1000, Math.Min(10000, settings.AutoSaveDelayMs));
-                        _autoSaveIntervalMinutes = Math.Max(0, Math.Min(60, settings.AutoSaveIntervalMinutes));
-
-                        // Load parameter cache settings
-                        _enableParameterCache = settings.EnableParameterCache;
-                        _maxCachedValuesPerParameter = Math.Max(5, Math.Min(50, settings.MaxCachedValuesPerParameter));
-                        _maxCachedScripts = Math.Max(100, Math.Min(10000, settings.MaxCachedScripts));
-
-                        // Apply parameter cache settings
-                        _parameterCache.EnableCaching = _enableParameterCache;
-                        _parameterCache.MaxValuesPerParameter = _maxCachedValuesPerParameter;
-                        _parameterCache.MaxScriptsInCache = _maxCachedScripts;
-
-                        // Load Sound Browser settings (#220)
-                        _soundBrowserIncludeGameResources = settings.SoundBrowserIncludeGameResources;
-                        _soundBrowserIncludeHakFiles = settings.SoundBrowserIncludeHakFiles;
-                        _soundBrowserIncludeBifFiles = settings.SoundBrowserIncludeBifFiles;
-
-                        // Load Spell Check settings (#505)
-                        _spellCheckEnabled = settings.SpellCheckEnabled;
-
-                        // Load Radoub tool integration settings (#416)
-                        _manifestPath = SharedPathHelper.ExpandPath(settings.ManifestPath ?? "");
-
-                        // Load script editor settings (#718)
-                        _externalEditorPath = SharedPathHelper.ExpandPath(settings.ExternalEditorPath ?? "");
-                        _scriptSearchPaths = SharedPathHelper.ExpandPaths(settings.ScriptSearchPaths?.ToList() ?? new List<string>());
-
-                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {_recentFiles.RecentFiles.Count} recent files, max={_recentFiles.MaxRecentFiles}, theme={(_uiSettings.IsDarkTheme ? "dark" : "light")}, logLevel={_logLevel}, retention={_logRetentionSessions} sessions, autoSave={_autoSaveEnabled}, delay={_autoSaveDelayMs}ms, paramCache={_enableParameterCache}");
+                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {_recentFiles.RecentFiles.Count} recent files, max={_recentFiles.MaxRecentFiles}, theme={(_uiSettings.IsDarkTheme ? "dark" : "light")}, logLevel={_loggingSettings.CurrentLogLevel}, retention={_loggingSettings.LogRetentionSessions} sessions, autoSave={_editorPreferences.AutoSaveEnabled}, delay={_editorPreferences.AutoSaveDelayMs}ms, paramCache={_editorPreferences.EnableParameterCache}");
                     }
                     else
                     {
@@ -1096,7 +833,7 @@ namespace DialogEditor.Services
             {
                 var settings = new SettingsData
                 {
-                    RecentFiles = SharedPathHelper.ContractPaths(_recentFiles.RecentFiles), // Use ~ for home directory
+                    RecentFiles = SharedPathHelper.ContractPaths(_recentFiles.RecentFiles),
                     MaxRecentFiles = MaxRecentFiles,
                     WindowLeft = WindowLeft,
                     WindowTop = WindowTop,
@@ -1107,10 +844,9 @@ namespace DialogEditor.Services
                     TopLeftPanelHeight = TopLeftPanelHeight,
                     FontSize = FontSize,
                     FontFamily = FontFamily,
-                    IsDarkTheme = IsDarkTheme, // Keep for backwards compatibility
+                    IsDarkTheme = IsDarkTheme,
                     CurrentThemeId = CurrentThemeId,
-                    FlowchartLayout = FlowchartLayout, // #329: Flowchart layout
-                    // Flowchart window settings (#377)
+                    FlowchartLayout = FlowchartLayout,
                     FlowchartWindowLeft = FlowchartWindowLeft,
                     FlowchartWindowTop = FlowchartWindowTop,
                     FlowchartWindowWidth = FlowchartWindowWidth,
@@ -1118,26 +854,22 @@ namespace DialogEditor.Services
                     FlowchartWindowOpen = FlowchartWindowOpen,
                     FlowchartPanelWidth = FlowchartPanelWidth,
                     FlowchartVisible = FlowchartVisible,
-                    // Dialog browser panel settings (#1143)
                     DialogBrowserPanelWidth = DialogBrowserPanelWidth,
                     DialogBrowserPanelVisible = DialogBrowserPanelVisible,
-                    AllowScrollbarAutoHide = AllowScrollbarAutoHide, // Issue #63
-                    FlowchartNodeMaxLines = FlowchartNodeMaxLines, // Issue #813
-                    TreeViewWordWrap = TreeViewWordWrap, // Issue #903
+                    AllowScrollbarAutoHide = AllowScrollbarAutoHide,
+                    FlowchartNodeMaxLines = FlowchartNodeMaxLines,
+                    TreeViewWordWrap = TreeViewWordWrap,
                     // Issue #179: NpcSpeakerPreferences moved to SpeakerPreferences.json
-                    // Keep NpcSpeakerPreferences = null to avoid saving back to main settings
-                    EnableNpcTagColoring = EnableNpcTagColoring, // Issue #16, #36
-                    ShowDeleteConfirmation = ShowDeleteConfirmation, // Issue #14
-                    SimulatorShowWarnings = SimulatorShowWarnings, // Issue #484
+                    EnableNpcTagColoring = EnableNpcTagColoring,
+                    ShowDeleteConfirmation = ShowDeleteConfirmation,
+                    SimulatorShowWarnings = SimulatorShowWarnings,
                     // Issue #412: Game paths now stored in shared RadoubSettings
-                    // Keep empty values here for backwards compatibility (old versions will see empty)
-                    // Don't save game paths to ParleySettings anymore - they go to RadoubSettings
-                    NeverwinterNightsPath = "", // DEPRECATED: Use RadoubSettings
-                    BaseGameInstallPath = "", // DEPRECATED: Use RadoubSettings
-                    CurrentModulePath = "", // DEPRECATED: Use RadoubSettings
-                    ModulePaths = SharedPathHelper.ContractPaths(_modulePaths), // Parley-specific: recent module history
-                    TlkLanguage = "", // DEPRECATED: Use RadoubSettings
-                    TlkUseFemale = false, // DEPRECATED: Use RadoubSettings
+                    NeverwinterNightsPath = "",
+                    BaseGameInstallPath = "",
+                    CurrentModulePath = "",
+                    ModulePaths = SharedPathHelper.ContractPaths(_modulePaths.ModulePathsInternal),
+                    TlkLanguage = "",
+                    TlkUseFemale = false,
                     LogRetentionSessions = LogRetentionSessions,
                     LogLevel = CurrentLogLevel,
                     DebugLogFilterLevel = DebugLogFilterLevel,
@@ -1148,17 +880,13 @@ namespace DialogEditor.Services
                     EnableParameterCache = EnableParameterCache,
                     MaxCachedValuesPerParameter = MaxCachedValuesPerParameter,
                     MaxCachedScripts = MaxCachedScripts,
-                    // Sound Browser settings (#220)
                     SoundBrowserIncludeGameResources = SoundBrowserIncludeGameResources,
                     SoundBrowserIncludeHakFiles = SoundBrowserIncludeHakFiles,
                     SoundBrowserIncludeBifFiles = SoundBrowserIncludeBifFiles,
-                    // Spell Check settings (#505)
                     SpellCheckEnabled = SpellCheckEnabled,
-                    // Radoub tool integration (#416)
                     ManifestPath = SharedPathHelper.ContractPath(ManifestPath),
-                    // Script editor settings (#718)
                     ExternalEditorPath = SharedPathHelper.ContractPath(ExternalEditorPath),
-                    ScriptSearchPaths = SharedPathHelper.ContractPaths(_scriptSearchPaths)
+                    ScriptSearchPaths = SharedPathHelper.ContractPaths(_editorPreferences.ScriptSearchPathsInternal)
                 };
 
                 var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
@@ -1186,21 +914,11 @@ namespace DialogEditor.Services
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        private bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
-        {
-            if (EqualityComparer<T>.Default.Equals(field, value))
-                return false;
-
-            field = value;
-            OnPropertyChanged(propertyName);
-            return true;
-        }
-
         private class SettingsData
         {
             public List<string> RecentFiles { get; set; } = new List<string>();
             public int MaxRecentFiles { get; set; } = DefaultMaxRecentFiles;
-            
+
             // Window settings
             public double WindowLeft { get; set; } = 100;
             public double WindowTop { get; set; } = 100;
@@ -1215,10 +933,9 @@ namespace DialogEditor.Services
             // UI settings
             public double FontSize { get; set; } = 14;
             public string FontFamily { get; set; } = "";
-            public bool IsDarkTheme { get; set; } = false; // DEPRECATED: For backwards compatibility
+            public bool IsDarkTheme { get; set; } = false;
             public string? CurrentThemeId { get; set; } = "org.radoub.theme.light";
-            public string FlowchartLayout { get; set; } = "Floating"; // #329: Flowchart layout
-            // Flowchart window settings (#377)
+            public string FlowchartLayout { get; set; } = "Floating";
             public double FlowchartWindowLeft { get; set; } = 100;
             public double FlowchartWindowTop { get; set; } = 100;
             public double FlowchartWindowWidth { get; set; } = 800;
@@ -1226,55 +943,54 @@ namespace DialogEditor.Services
             public bool FlowchartWindowOpen { get; set; } = false;
             public double FlowchartPanelWidth { get; set; } = 400;
             public bool FlowchartVisible { get; set; } = false;
-            // Dialog browser panel settings (#1143)
             public double DialogBrowserPanelWidth { get; set; } = 200;
             public bool DialogBrowserPanelVisible { get; set; } = true;
-            public bool AllowScrollbarAutoHide { get; set; } = false; // Issue #63: Default always visible
-            public int FlowchartNodeMaxLines { get; set; } = 3; // Issue #813: 1-6 lines, default 3
-            public bool TreeViewWordWrap { get; set; } = false; // Issue #903: Default OFF
-            public Dictionary<string, SpeakerPreferences>? NpcSpeakerPreferences { get; set; } // Issue #16, #36
-            public bool EnableNpcTagColoring { get; set; } = true; // Issue #16, #36: Default ON
-            public bool ShowDeleteConfirmation { get; set; } = true; // Issue #14: Default ON
+            public bool AllowScrollbarAutoHide { get; set; } = false;
+            public int FlowchartNodeMaxLines { get; set; } = 3;
+            public bool TreeViewWordWrap { get; set; } = false;
+            public Dictionary<string, SpeakerPreferences>? NpcSpeakerPreferences { get; set; }
+            public bool EnableNpcTagColoring { get; set; } = true;
+            public bool ShowDeleteConfirmation { get; set; } = true;
 
             // Game settings
             public string NeverwinterNightsPath { get; set; } = "";
-            public string BaseGameInstallPath { get; set; } = ""; // Phase 2: Base game installation
+            public string BaseGameInstallPath { get; set; } = "";
             public string CurrentModulePath { get; set; } = "";
             public List<string> ModulePaths { get; set; } = new List<string>();
-            public string TlkLanguage { get; set; } = ""; // TLK language: "", "en", "de", "fr", "es", "it", "pl"
-            public bool TlkUseFemale { get; set; } = false; // Use dialogf.tlk (female) instead of dialog.tlk
+            public string TlkLanguage { get; set; } = "";
+            public bool TlkUseFemale { get; set; } = false;
 
             // Logging settings
-            public int LogRetentionSessions { get; set; } = 3; // Keep 3 most recent sessions
+            public int LogRetentionSessions { get; set; } = 3;
             public LogLevel LogLevel { get; set; } = LogLevel.INFO;
-            public LogLevel DebugLogFilterLevel { get; set; } = LogLevel.INFO; // Debug window filter
-            public bool DebugWindowVisible { get; set; } = false; // Debug window visibility
+            public LogLevel DebugLogFilterLevel { get; set; } = LogLevel.INFO;
+            public bool DebugWindowVisible { get; set; } = false;
 
-            // Auto-save settings - Phase 1 Step 6 + Issue #62
+            // Auto-save settings
             public bool AutoSaveEnabled { get; set; } = true;
             public int AutoSaveDelayMs { get; set; } = 2000;
-            public int AutoSaveIntervalMinutes { get; set; } = 0; // 0 = use fast debounce
+            public int AutoSaveIntervalMinutes { get; set; } = 0;
 
             // Parameter cache settings
             public bool EnableParameterCache { get; set; } = true;
             public int MaxCachedValuesPerParameter { get; set; } = 10;
             public int MaxCachedScripts { get; set; } = 1000;
 
-            // Sound Browser settings (#220) - default OFF until user enables
+            // Sound Browser settings
             public bool SoundBrowserIncludeGameResources { get; set; } = false;
             public bool SoundBrowserIncludeHakFiles { get; set; } = false;
             public bool SoundBrowserIncludeBifFiles { get; set; } = false;
 
-            // Spell Check settings (#505)
-            public bool SpellCheckEnabled { get; set; } = true; // Default: ON
+            // Spell Check settings
+            public bool SpellCheckEnabled { get; set; } = true;
 
-            // Conversation Simulator settings (#484)
-            public bool SimulatorShowWarnings { get; set; } = true; // Show unreachable sibling warnings
+            // Conversation Simulator settings
+            public bool SimulatorShowWarnings { get; set; } = true;
 
-            // Radoub tool integration settings (#416)
+            // Radoub tool integration settings
             public string ManifestPath { get; set; } = "";
 
-            // Script editor settings (#718)
+            // Script editor settings
             public string ExternalEditorPath { get; set; } = "";
             public List<string> ScriptSearchPaths { get; set; } = new List<string>();
         }
