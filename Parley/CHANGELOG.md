@@ -18,6 +18,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Refactor: Decompose SettingsService (#1269)
 
+- Extract LoggingSettingsService (log retention, log level, debug window visibility)
+- Extract ModulePathsService (module paths MRU list)
+- Extract EditorPreferencesService (auto-save, NPC coloring, confirmations, simulator, script editor, sound browser, spell check, parameter cache config)
+- Update SettingsService to delegate to new sub-services
+- Register new services in DI container
+- Update test DI container and direct constructor calls
+
 ---
 
 ## [0.1.147-alpha] - 2026-02-08
