@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.149-alpha] - 2026-02-08
-**Branch**: `parley/issue-1271` | **PR**: #TBD
+**Branch**: `parley/issue-1271` | **PR**: #1272
 
 ### Refactor: Decompose ScrapManager.cs (#1271)
 
