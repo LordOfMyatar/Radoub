@@ -40,6 +40,7 @@
 
   <!-- Shared theme files (#1199) - single source of truth for all Radoub tools -->
   <ItemGroup>
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.2" />
     <Content Include="Themes\*.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>Themes\%(Filename)%(Extension)</Link>
