@@ -175,8 +175,16 @@ namespace DialogEditor.Models
 
             // Links and Root nodes are slightly translucent to indicate they're special
             // Use higher opacity in dark themes for better readability
-            var app = Application.Current;
-            bool isDark = app?.ActualThemeVariant == ThemeVariant.Dark;
+            bool isDark = false;
+            try
+            {
+                var app = Application.Current;
+                isDark = app?.ActualThemeVariant == ThemeVariant.Dark;
+            }
+            catch (InvalidOperationException)
+            {
+                // ActualThemeVariant throws when accessed from non-UI thread (e.g., unit tests on Linux)
+            }
 
             // Root nodes get slightly less opacity than regular nodes
             if (nodeType == FlowchartNodeType.Root)
