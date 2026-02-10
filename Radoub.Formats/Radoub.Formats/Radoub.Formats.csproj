@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <!-- Pfim for TGA/DDS decoding - pure managed, cross-platform -->
-    <PackageReference Include="Pfim" Version="0.11.4" />
+    <PackageReference Include="Pfim" />
   </ItemGroup>
 
 </Project>

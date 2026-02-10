@@ -15,16 +15,16 @@
 
   <ItemGroup>
     <!-- Avalonia packages - match version used by Parley (11.3.11) -->
-    <PackageReference Include="Avalonia" Version="11.3.11" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.11" />
-    <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.11" />
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-    <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="11.3.9.2" />
-    <PackageReference Include="SkiaSharp" Version="3.119.2" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.2" />
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Svg.Controls.Skia.Avalonia" />
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" />
 
     <!-- NAudio for cross-platform audio playback -->
-    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="NAudio" />
   </ItemGroup>
 
   <ItemGroup>
