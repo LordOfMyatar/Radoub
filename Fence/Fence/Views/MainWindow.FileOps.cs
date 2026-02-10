@@ -59,16 +59,24 @@ public partial class MainWindow
 
     private async void OnOpenClick(object? sender, RoutedEventArgs e)
     {
-        // Use custom StoreBrowserWindow for consistent UX (#1084)
-        var context = new FenceScriptBrowserContext(_currentFilePath, _gameDataService);
-        var browser = new StoreBrowserWindow(context);
-        await browser.ShowDialog(this);
-
-        // Check if user selected a store
-        var selectedEntry = browser.SelectedEntry;
-        if (selectedEntry?.FilePath != null)
+        try
         {
-            LoadFile(selectedEntry.FilePath);
+            // Use custom StoreBrowserWindow for consistent UX (#1084)
+            var context = new FenceScriptBrowserContext(_currentFilePath, _gameDataService);
+            var browser = new StoreBrowserWindow(context);
+            await browser.ShowDialog(this);
+
+            // Check if user selected a store
+            var selectedEntry = browser.SelectedEntry;
+            if (selectedEntry?.FilePath != null)
+            {
+                LoadFile(selectedEntry.FilePath);
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error opening file: {ex.Message}");
+            ShowError($"Failed to open file: {ex.Message}");
         }
     }
 

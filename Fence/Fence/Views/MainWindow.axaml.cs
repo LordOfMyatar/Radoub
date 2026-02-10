@@ -291,39 +291,47 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     /// </summary>
     private async void OnStoreBrowserFileSelected(object? sender, FileSelectedEventArgs e)
     {
-        // Only load on single click (per issue requirements)
-        if (e.Entry.IsFromHak)
+        try
         {
-            // HAK files can't be edited directly - show info
-            UpdateStatusBar($"HAK stores are read-only: {e.Entry.Name}");
-            return;
-        }
+            // Only load on single click (per issue requirements)
+            if (e.Entry.IsFromHak)
+            {
+                // HAK files can't be edited directly - show info
+                UpdateStatusBar($"HAK stores are read-only: {e.Entry.Name}");
+                return;
+            }
 
-        if (string.IsNullOrEmpty(e.Entry.FilePath))
+            if (string.IsNullOrEmpty(e.Entry.FilePath))
+            {
+                UnifiedLogger.LogUI(LogLevel.WARN, $"StoreBrowserPanel: No file path for {e.Entry.Name}");
+                return;
+            }
+
+            // Skip if this is already the loaded file
+            if (string.Equals(_currentFilePath, e.Entry.FilePath, StringComparison.OrdinalIgnoreCase))
+            {
+                UnifiedLogger.LogUI(LogLevel.DEBUG, $"StoreBrowserPanel: File already loaded: {e.Entry.Name}");
+                return;
+            }
+
+            // Auto-save if dirty
+            if (_isDirty && _currentStore != null && !string.IsNullOrEmpty(_currentFilePath))
+            {
+                UpdateStatusBar("Auto-saving...");
+                await SaveFileAsync(_currentFilePath);
+            }
+
+            // Load the selected file
+            LoadFile(e.Entry.FilePath);
+
+            // Update the current file highlight
+            UpdateStoreBrowserCurrentFile(e.Entry.FilePath);
+        }
+        catch (Exception ex)
         {
-            UnifiedLogger.LogUI(LogLevel.WARN, $"StoreBrowserPanel: No file path for {e.Entry.Name}");
-            return;
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error loading store from browser: {ex.Message}");
+            UpdateStatusBar($"Error: {ex.Message}");
         }
-
-        // Skip if this is already the loaded file
-        if (string.Equals(_currentFilePath, e.Entry.FilePath, StringComparison.OrdinalIgnoreCase))
-        {
-            UnifiedLogger.LogUI(LogLevel.DEBUG, $"StoreBrowserPanel: File already loaded: {e.Entry.Name}");
-            return;
-        }
-
-        // Auto-save if dirty
-        if (_isDirty && _currentStore != null && !string.IsNullOrEmpty(_currentFilePath))
-        {
-            UpdateStatusBar("Auto-saving...");
-            await SaveFileAsync(_currentFilePath);
-        }
-
-        // Load the selected file
-        LoadFile(e.Entry.FilePath);
-
-        // Update the current file highlight
-        UpdateStoreBrowserCurrentFile(e.Entry.FilePath);
     }
 
     /// <summary>
@@ -363,37 +371,45 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private async System.Threading.Tasks.Task InitializeAndLoadAsync()
     {
-        // Initialize services on background thread - this is the expensive part
-        await InitializeServicesAsync();
-
-        // Load store categories on background thread (triggers KEY cache + BIF metadata load)
-        // Then update UI on main thread
-        var categories = await System.Threading.Tasks.Task.Run(() =>
+        try
         {
-            if (_gameDataService?.IsConfigured != true)
-                return new List<PaletteCategory>();
+            // Initialize services on background thread - this is the expensive part
+            await InitializeServicesAsync();
 
-            return _gameDataService.GetPaletteCategories(Radoub.Formats.Common.ResourceTypes.Utm).ToList();
-        });
+            // Load store categories on background thread (triggers KEY cache + BIF metadata load)
+            // Then update UI on main thread
+            var categories = await System.Threading.Tasks.Task.Run(() =>
+            {
+                if (_gameDataService?.IsConfigured != true)
+                    return new List<PaletteCategory>();
 
-        // Now populate UI with pre-loaded categories (fast - no I/O)
-        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-        {
-            PopulateCategoryDropdownFromList(categories);
-        });
+                return _gameDataService.GetPaletteCategories(Radoub.Formats.Common.ResourceTypes.Utm).ToList();
+            });
 
-        // Start background loading tasks in parallel (fire-and-forget)
-        _ = LoadBaseItemTypesAsync();
-        StartItemPaletteLoad();
-
-        // Handle command line file
-        var options = CommandLineService.Options;
-        if (!string.IsNullOrEmpty(options.FilePath) && File.Exists(options.FilePath))
-        {
+            // Now populate UI with pre-loaded categories (fast - no I/O)
             await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
-                LoadFile(options.FilePath);
+                PopulateCategoryDropdownFromList(categories);
             });
+
+            // Start background loading tasks in parallel (fire-and-forget)
+            _ = LoadBaseItemTypesAsync();
+            StartItemPaletteLoad();
+
+            // Handle command line file
+            var options = CommandLineService.Options;
+            if (!string.IsNullOrEmpty(options.FilePath) && File.Exists(options.FilePath))
+            {
+                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    LoadFile(options.FilePath);
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Initialization failed: {ex.Message}");
+            UpdateStatusBar("Initialization failed - some features may be unavailable");
         }
     }
 
@@ -524,27 +540,34 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (_baseItemTypeService == null) return;
 
-        // Load base item types on background thread and create view models there too
-        var viewModels = await System.Threading.Tasks.Task.Run(() =>
+        try
         {
-            var types = _baseItemTypeService.GetBaseItemTypes();
-            return types.Select(t => new SelectableBaseItemTypeViewModel(t.BaseItemIndex, t.DisplayName)).ToList();
-        });
-
-        // Update UI on main thread - batch update to avoid 575 individual collection changes
-        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-        {
-            SelectableBaseItemTypes.Clear();
-            foreach (var vm in viewModels)
+            // Load base item types on background thread and create view models there too
+            var viewModels = await System.Threading.Tasks.Task.Run(() =>
             {
-                SelectableBaseItemTypes.Add(vm);
-            }
-            ItemTypeCheckboxes.ItemsSource = SelectableBaseItemTypes;
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {SelectableBaseItemTypes.Count} base item types for buy restrictions");
+                var types = _baseItemTypeService.GetBaseItemTypes();
+                return types.Select(t => new SelectableBaseItemTypeViewModel(t.BaseItemIndex, t.DisplayName)).ToList();
+            });
 
-            // Populate type filter after base items loaded
-            PopulateTypeFilter();
-        });
+            // Update UI on main thread - batch update to avoid 575 individual collection changes
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                SelectableBaseItemTypes.Clear();
+                foreach (var vm in viewModels)
+                {
+                    SelectableBaseItemTypes.Add(vm);
+                }
+                ItemTypeCheckboxes.ItemsSource = SelectableBaseItemTypes;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {SelectableBaseItemTypes.Count} base item types for buy restrictions");
+
+                // Populate type filter after base items loaded
+                PopulateTypeFilter();
+            });
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load base item types: {ex.Message}");
+        }
 
         // Don't update status here - let palette loading control the status
         // UpdateStatusBar("Ready") is called when palette loading completes
