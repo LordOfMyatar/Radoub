@@ -20,9 +20,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Tech Debt Phase 2 - Dispose Patterns & Async Safety (#1297)
 
-- [ ] #1283 - Complete IDisposable implementations across all tools
-- [ ] #1284 - Add error handling to fire-and-forget async calls
-- [ ] #1293 - Fix Parley StreamWriter leak, timer leak, and dispose cascade
+- [x] #1283 - Complete IDisposable implementations across all tools
+- [x] #1284 - Add error handling to fire-and-forget async calls
+- [x] #1293 - Fix Parley StreamWriter leak, timer leak, and dispose cascade
 
 ---
 
