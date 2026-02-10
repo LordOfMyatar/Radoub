@@ -189,9 +189,9 @@ public class GameDataCacheService<T> where T : class
                 };
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore errors reading cache info
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Failed to read cache info for '{_cacheName}': {ex.Message}");
         }
 
         return null;

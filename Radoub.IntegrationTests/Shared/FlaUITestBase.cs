@@ -231,7 +231,7 @@ public abstract class FlaUITestBase : IDisposable
         FlaUI.Core.AutomationElements.AutomationElement? menu = null;
         for (int attempt = 0; attempt < maxRetries; attempt++)
         {
-            menu = MainWindow.FindFirstDescendant(cf => cf.ByName(menuPath[0]));
+            menu = MainWindow?.FindFirstDescendant(cf => cf.ByName(menuPath[0]));
             if (menu != null) break;
             Thread.Sleep(retryDelayMs);
             // Refresh window reference in case UI hasn't fully loaded

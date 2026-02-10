@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Radoub.Dictionary.Models;
+using Radoub.Formats.Logging;
 
 namespace Radoub.Dictionary;
 
@@ -40,6 +41,7 @@ public class UserDictionaryService
     }
 
     private readonly HashSet<string> _userWords = new(StringComparer.OrdinalIgnoreCase);
+    private readonly object _wordsLock = new();
     private readonly string _dictionaryPath;
     private readonly string _textFilePath;
 
@@ -51,12 +53,25 @@ public class UserDictionaryService
     /// <summary>
     /// Gets the number of user words.
     /// </summary>
-    public int WordCount => _userWords.Count;
+    public int WordCount
+    {
+        get { lock (_wordsLock) { return _userWords.Count; } }
+    }
 
     /// <summary>
     /// Gets all user words in alphabetical order.
+    /// Returns a snapshot; safe to enumerate without holding the lock.
     /// </summary>
-    public IEnumerable<string> Words => _userWords.OrderBy(w => w, StringComparer.OrdinalIgnoreCase);
+    public IEnumerable<string> Words
+    {
+        get
+        {
+            lock (_wordsLock)
+            {
+                return _userWords.OrderBy(w => w, StringComparer.OrdinalIgnoreCase).ToList();
+            }
+        }
+    }
 
     private UserDictionaryService()
     {
@@ -85,7 +100,13 @@ public class UserDictionaryService
     /// </summary>
     public bool Contains(string word)
     {
-        return !string.IsNullOrWhiteSpace(word) && _userWords.Contains(word.Trim());
+        if (string.IsNullOrWhiteSpace(word))
+            return false;
+
+        lock (_wordsLock)
+        {
+            return _userWords.Contains(word.Trim());
+        }
     }
 
     /// <summary>
@@ -99,7 +120,13 @@ public class UserDictionaryService
             return;
 
         var trimmedWord = word.Trim();
-        if (_userWords.Add(trimmedWord))
+        bool added;
+        lock (_wordsLock)
+        {
+            added = _userWords.Add(trimmedWord);
+        }
+
+        if (added)
         {
             WordAdded?.Invoke(this, trimmedWord);
 
@@ -116,16 +143,27 @@ public class UserDictionaryService
     public void AddWords(IEnumerable<string> words, bool autoSave = true)
     {
         bool anyAdded = false;
-        foreach (var word in words)
+        var addedWords = new List<string>();
+
+        lock (_wordsLock)
         {
-            if (!string.IsNullOrWhiteSpace(word))
+            foreach (var word in words)
             {
-                if (_userWords.Add(word.Trim()))
+                if (!string.IsNullOrWhiteSpace(word))
                 {
-                    anyAdded = true;
-                    WordAdded?.Invoke(this, word.Trim());
+                    var trimmed = word.Trim();
+                    if (_userWords.Add(trimmed))
+                    {
+                        anyAdded = true;
+                        addedWords.Add(trimmed);
+                    }
                 }
             }
+        }
+
+        foreach (var added in addedWords)
+        {
+            WordAdded?.Invoke(this, added);
         }
 
         if (anyAdded && autoSave)
@@ -142,7 +180,12 @@ public class UserDictionaryService
         if (string.IsNullOrWhiteSpace(word))
             return false;
 
-        var removed = _userWords.Remove(word.Trim());
+        bool removed;
+        lock (_wordsLock)
+        {
+            removed = _userWords.Remove(word.Trim());
+        }
+
         if (removed && autoSave)
         {
             Save();
@@ -155,7 +198,11 @@ public class UserDictionaryService
     /// </summary>
     public void Clear(bool autoSave = true)
     {
-        _userWords.Clear();
+        lock (_wordsLock)
+        {
+            _userWords.Clear();
+        }
+
         if (autoSave)
         {
             Save();
@@ -168,7 +215,10 @@ public class UserDictionaryService
     /// </summary>
     public void Load()
     {
-        _userWords.Clear();
+        lock (_wordsLock)
+        {
+            _userWords.Clear();
+        }
 
         // Load JSON format (custom.dic)
         if (File.Exists(_dictionaryPath))
@@ -193,18 +243,21 @@ public class UserDictionaryService
 
             if (dict != null)
             {
-                foreach (var word in dict.AllWords)
+                lock (_wordsLock)
                 {
-                    if (!string.IsNullOrWhiteSpace(word))
+                    foreach (var word in dict.AllWords)
                     {
-                        _userWords.Add(word.Trim());
+                        if (!string.IsNullOrWhiteSpace(word))
+                        {
+                            _userWords.Add(word.Trim());
+                        }
                     }
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore errors - file may be corrupted
+            UnifiedLogger.Log(LogLevel.WARN, $"Failed to load JSON dictionary: {ex.Message}", "UserDictionaryService", "Dictionary");
         }
     }
 
@@ -213,19 +266,22 @@ public class UserDictionaryService
         try
         {
             var lines = File.ReadAllLines(_textFilePath);
-            foreach (var line in lines)
+            lock (_wordsLock)
             {
-                // Skip empty lines and comments
-                var trimmed = line.Trim();
-                if (!string.IsNullOrEmpty(trimmed) && !trimmed.StartsWith("#") && !trimmed.StartsWith("//"))
+                foreach (var line in lines)
                 {
-                    _userWords.Add(trimmed);
+                    // Skip empty lines and comments
+                    var trimmed = line.Trim();
+                    if (!string.IsNullOrEmpty(trimmed) && !trimmed.StartsWith("#") && !trimmed.StartsWith("//"))
+                    {
+                        _userWords.Add(trimmed);
+                    }
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore errors - file may be corrupted
+            UnifiedLogger.Log(LogLevel.WARN, $"Failed to load text dictionary: {ex.Message}", "UserDictionaryService", "Dictionary");
         }
     }
 
@@ -236,11 +292,17 @@ public class UserDictionaryService
     {
         try
         {
+            List<string> snapshot;
+            lock (_wordsLock)
+            {
+                snapshot = _userWords.OrderBy(w => w, StringComparer.OrdinalIgnoreCase).ToList();
+            }
+
             var dict = new CustomDictionary
             {
                 Source = "Radoub User Dictionary",
                 Description = "Custom words added by the user (shared across all Radoub tools)",
-                Words = _userWords.OrderBy(w => w, StringComparer.OrdinalIgnoreCase).ToList()
+                Words = snapshot
             };
 
             var options = new JsonSerializerOptions
@@ -251,9 +313,9 @@ public class UserDictionaryService
             var json = JsonSerializer.Serialize(dict, options);
             File.WriteAllText(_dictionaryPath, json);
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore errors - user may not have write access
+            UnifiedLogger.Log(LogLevel.WARN, $"Failed to save user dictionary: {ex.Message}", "UserDictionaryService", "Dictionary");
         }
     }
 
@@ -271,12 +333,17 @@ public class UserDictionaryService
                 "# Add words below, one per line. Lines starting with # are comments.",
                 ""
             };
-            lines.AddRange(_userWords.OrderBy(w => w, StringComparer.OrdinalIgnoreCase));
+
+            lock (_wordsLock)
+            {
+                lines.AddRange(_userWords.OrderBy(w => w, StringComparer.OrdinalIgnoreCase));
+            }
+
             File.WriteAllLines(targetPath, lines);
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore errors
+            UnifiedLogger.Log(LogLevel.WARN, $"Failed to export text dictionary: {ex.Message}", "UserDictionaryService", "Dictionary");
         }
     }
 
@@ -335,9 +402,9 @@ public class UserDictionaryService
         {
             File.WriteAllLines(_textFilePath, sampleWords);
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore errors
+            UnifiedLogger.Log(LogLevel.DEBUG, $"Failed to create sample dictionary: {ex.Message}", "UserDictionaryService", "Dictionary");
         }
     }
 

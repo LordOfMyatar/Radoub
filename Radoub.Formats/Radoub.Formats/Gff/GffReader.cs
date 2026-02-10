@@ -1,4 +1,5 @@
 using System.Text;
+using Radoub.Formats.Logging;
 
 namespace Radoub.Formats.Gff;
 
@@ -378,7 +379,10 @@ public static class GffReader
             if (!result.Contains('\uFFFD'))
                 return result.TrimEnd('\0');
         }
-        catch { }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogParser(LogLevel.DEBUG, $"UTF-8 decode failed, falling back to Windows-1252: {ex.Message}");
+        }
 
         // Fall back to Windows-1252
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);

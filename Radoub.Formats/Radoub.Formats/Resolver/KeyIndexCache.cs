@@ -248,9 +248,9 @@ public class KeyIndexCache
                 UnifiedLogger.Log(LogLevel.DEBUG, "Cleaned up old JSON KEY cache", "KeyIndexCache", "Resolver");
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore cleanup failures
+            UnifiedLogger.Log(LogLevel.DEBUG, $"JSON cache cleanup failed: {ex.Message}", "KeyIndexCache", "Resolver");
         }
     }
 }

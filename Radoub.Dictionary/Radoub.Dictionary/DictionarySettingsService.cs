@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Radoub.Formats.Logging;
 
 namespace Radoub.Dictionary;
 
@@ -9,7 +10,25 @@ namespace Radoub.Dictionary;
 public class DictionarySettingsService
 {
     private static DictionarySettingsService? _instance;
-    public static DictionarySettingsService Instance => _instance ??= new DictionarySettingsService();
+    private static readonly object _lock = new();
+
+    /// <summary>
+    /// Singleton instance of the dictionary settings service.
+    /// </summary>
+    public static DictionarySettingsService Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                lock (_lock)
+                {
+                    _instance ??= new DictionarySettingsService();
+                }
+            }
+            return _instance;
+        }
+    }
 
     private readonly string _settingsPath;
     private DictionarySettingsData _settings = new();
@@ -56,8 +75,9 @@ public class DictionarySettingsService
                 var json = File.ReadAllText(_settingsPath);
                 _settings = JsonSerializer.Deserialize<DictionarySettingsData>(json) ?? new();
             }
-            catch
+            catch (Exception ex)
             {
+                UnifiedLogger.Log(LogLevel.WARN, $"Failed to load dictionary settings: {ex.Message}", "DictionarySettingsService", "Dictionary");
                 _settings = new();
             }
         }
@@ -71,9 +91,9 @@ public class DictionarySettingsService
             var json = JsonSerializer.Serialize(_settings, options);
             File.WriteAllText(_settingsPath, json);
         }
-        catch
+        catch (Exception ex)
         {
-            // Silently fail - settings will be lost but app continues
+            UnifiedLogger.Log(LogLevel.WARN, $"Failed to save dictionary settings: {ex.Message}", "DictionarySettingsService", "Dictionary");
         }
     }
 
