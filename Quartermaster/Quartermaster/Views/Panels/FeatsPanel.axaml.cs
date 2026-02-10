@@ -80,6 +80,10 @@ public partial class FeatsPanel : UserControl
 
         // Subscribe to theme changes to refresh color-dependent view models
         SettingsService.Instance.PropertyChanged += OnSettingsPropertyChanged;
+
+        // Unsubscribe when control is detached to prevent memory leaks (#1282)
+        DetachedFromVisualTree += (_, _) =>
+            SettingsService.Instance.PropertyChanged -= OnSettingsPropertyChanged;
     }
 
     private void OnSettingsPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)

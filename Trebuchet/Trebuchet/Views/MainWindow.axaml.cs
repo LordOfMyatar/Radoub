@@ -51,6 +51,7 @@ public partial class MainWindow : Window
     private void OnWindowClosing(object? sender, WindowClosingEventArgs e)
     {
         SaveWindowState();
+        (DataContext as MainWindowViewModel)?.Cleanup();
     }
 
     private void SaveWindowState()
