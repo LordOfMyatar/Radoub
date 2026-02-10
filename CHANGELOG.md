@@ -20,9 +20,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Tech Debt Phase 1b - Resource Leaks & Event Handlers (#1296)
 
-- [ ] #1279 - Fix Process handle leaks in Trebuchet launcher services
-- [ ] #1280 - Fix AudioService file handle leak and unbounded HakScriptScanner cache
-- [ ] #1282 - Fix event handler leaks on singleton services across all tools
+- [x] #1279 - Fix Process handle leaks in Trebuchet launcher services (6 calls → all disposed)
+- [x] #1280 - Fix AudioService file handle leak and unbounded HakScriptScanner cache (bounded to 64 entries)
+- [x] #1282 - Fix event handler leaks on singleton services across all tools (12 subscriptions → all unsubscribed)
 
 ---
 
