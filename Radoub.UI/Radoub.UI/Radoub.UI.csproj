@@ -20,7 +20,8 @@
     <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.11" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="11.3.9.2" />
-    <PackageReference Include="SkiaSharp" Version="3.119.1" />
+    <PackageReference Include="SkiaSharp" Version="3.119.2" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.2" />
 
     <!-- NAudio for cross-platform audio playback -->
     <PackageReference Include="NAudio" Version="2.2.1" />
