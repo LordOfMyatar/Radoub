@@ -259,8 +259,16 @@ internal class WindowsAudioPlayer : IAudioPlayer
         // BMU files are MP3 with an 8-byte "BMU V1.0" header
         // Skip the header and treat as MP3
         var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-        stream.Seek(8, SeekOrigin.Begin); // Skip "BMU V1.0" header
-        return new NAudio.Wave.Mp3FileReader(stream);
+        try
+        {
+            stream.Seek(8, SeekOrigin.Begin); // Skip "BMU V1.0" header
+            return new NAudio.Wave.Mp3FileReader(stream);
+        }
+        catch
+        {
+            stream.Dispose();
+            throw;
+        }
     }
 
     private void OnPlaybackStopped(object? sender, NAudio.Wave.StoppedEventArgs e)
