@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Radoub.Formats.Logging;
 
 namespace Radoub.Formats.Tokens;
 
@@ -56,8 +57,9 @@ public static class UserColorConfigLoader
 
             return ConvertFromFile(fileConfig);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            UnifiedLogger.Log(LogLevel.WARN, $"Failed to load user color config: {ex.Message}", "UserColorConfigLoader", "Tokens");
             return null;
         }
     }

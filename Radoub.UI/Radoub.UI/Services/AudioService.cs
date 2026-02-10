@@ -214,7 +214,10 @@ internal class WindowsAudioPlayer : IAudioPlayer
                     $"File header [{Path.GetFileName(filePath)}]: {hex} | {ascii}");
             }
         }
-        catch { /* Ignore logging errors */ }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Audio header logging failed: {ex.Message}");
+        }
     }
 
     private static byte[] ReadFirstBytes(string filePath, int count)

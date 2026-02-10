@@ -1,3 +1,5 @@
+using Radoub.Formats.Logging;
+
 namespace Radoub.Formats.Common;
 
 /// <summary>
@@ -64,8 +66,9 @@ public static class PathHelper
 
             return path;
         }
-        catch
+        catch (Exception ex)
         {
+            UnifiedLogger.Log(LogLevel.DEBUG, $"Path sanitization failed: {ex.Message}", "PathHelper", "Common");
             return path;
         }
     }

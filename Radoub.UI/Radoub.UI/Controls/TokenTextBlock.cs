@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Media;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Tokens;
 
 namespace Radoub.UI.Controls
@@ -157,9 +158,9 @@ namespace Radoub.UI.Controls
                     Inlines.Add(run);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Fallback to plain text if parsing fails
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Token parsing failed, falling back to plain text: {ex.Message}");
                 Inlines.Add(new Run(text));
             }
 

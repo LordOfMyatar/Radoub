@@ -4,6 +4,7 @@ using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Tokens;
 
 namespace Radoub.UI.Views
@@ -43,9 +44,9 @@ namespace Radoub.UI.Views
                 _userColorConfig = UserColorConfigLoader.LoadOrCreateDefault();
                 LoadColorList();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // If config fails, create default
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to load color config, using defaults: {ex.Message}");
                 _userColorConfig = UserColorConfig.CreateDefault();
                 LoadColorList();
             }

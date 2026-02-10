@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Radoub.Dictionary.Models;
+using Radoub.Formats.Logging;
 
 namespace Radoub.Dictionary;
 
@@ -202,9 +203,9 @@ public class UserDictionaryService
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore errors - file may be corrupted
+            UnifiedLogger.Log(LogLevel.WARN, $"Failed to load JSON dictionary: {ex.Message}", "UserDictionaryService", "Dictionary");
         }
     }
 
@@ -223,9 +224,9 @@ public class UserDictionaryService
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore errors - file may be corrupted
+            UnifiedLogger.Log(LogLevel.WARN, $"Failed to load text dictionary: {ex.Message}", "UserDictionaryService", "Dictionary");
         }
     }
 
@@ -251,9 +252,9 @@ public class UserDictionaryService
             var json = JsonSerializer.Serialize(dict, options);
             File.WriteAllText(_dictionaryPath, json);
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore errors - user may not have write access
+            UnifiedLogger.Log(LogLevel.WARN, $"Failed to save user dictionary: {ex.Message}", "UserDictionaryService", "Dictionary");
         }
     }
 
@@ -274,9 +275,9 @@ public class UserDictionaryService
             lines.AddRange(_userWords.OrderBy(w => w, StringComparer.OrdinalIgnoreCase));
             File.WriteAllLines(targetPath, lines);
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore errors
+            UnifiedLogger.Log(LogLevel.WARN, $"Failed to export text dictionary: {ex.Message}", "UserDictionaryService", "Dictionary");
         }
     }
 
@@ -335,9 +336,9 @@ public class UserDictionaryService
         {
             File.WriteAllLines(_textFilePath, sampleWords);
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore errors
+            UnifiedLogger.Log(LogLevel.DEBUG, $"Failed to create sample dictionary: {ex.Message}", "UserDictionaryService", "Dictionary");
         }
     }
 

@@ -1,4 +1,5 @@
 using Radoub.Formats.Common;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Resolver;
 using Radoub.Formats.Tlk;
 using Radoub.Formats.TwoDA;
@@ -268,8 +269,9 @@ public class ItemPropertyResolver : IDisposable
             _twoDACache[resRef] = twoDA;
             return twoDA;
         }
-        catch
+        catch (Exception ex)
         {
+            UnifiedLogger.Log(LogLevel.WARN, $"Failed to read 2DA '{resRef}': {ex.Message}", "ItemPropertyResolver", "Uti");
             return null;
         }
     }

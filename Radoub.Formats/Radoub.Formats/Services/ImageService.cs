@@ -41,8 +41,9 @@ public class ImageService : IImageService
                 _ => DecodeTga(data) // Default to TGA
             };
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            UnifiedLogger.Log(LogLevel.WARN, $"Failed to decode {format} image: {ex.Message}", "ImageService", "Image");
             return null;
         }
     }
@@ -288,8 +289,9 @@ public class ImageService : IImageService
             byte[] pixels = ConvertPfimToRgba(image);
             return new ImageData(image.Width, image.Height, pixels);
         }
-        catch
+        catch (Exception ex)
         {
+            UnifiedLogger.Log(LogLevel.WARN, $"Pfim decode failed: {ex.Message}", "ImageService", "Image");
             return null;
         }
     }
@@ -381,8 +383,9 @@ public class ImageService : IImageService
             byte[] pixels = PltReader.Render(plt, palettes, colorIndices);
             return new ImageData(plt.Width, plt.Height, pixels);
         }
-        catch
+        catch (Exception ex)
         {
+            UnifiedLogger.Log(LogLevel.WARN, $"PLT decode failed: {ex.Message}", "ImageService", "Image");
             return null;
         }
     }
@@ -407,8 +410,9 @@ public class ImageService : IImageService
             _paletteCache.TryAdd(layerId, palette);
             return palette;
         }
-        catch
+        catch (Exception ex)
         {
+            UnifiedLogger.Log(LogLevel.WARN, $"Failed to load palette for layer {layerId}: {ex.Message}", "ImageService", "Image");
             _paletteCache.TryAdd(layerId, null);
             return null;
         }
