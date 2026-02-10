@@ -342,6 +342,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private async Task LoadFile(string filePath)
     {
+        await Task.CompletedTask; // Async signature preserved for future async I/O
         try
         {
             _currentJrl = JrlReader.Read(filePath);
@@ -396,6 +397,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private async Task SaveFile()
     {
+        await Task.CompletedTask; // Async signature preserved for future async I/O
         if (_currentJrl == null || string.IsNullOrEmpty(_currentFilePath)) return;
 
         try

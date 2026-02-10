@@ -252,7 +252,7 @@ namespace Parley.Tests
         }
 
         [Fact]
-        public void DialogFileService_LoadsAndSaves()
+        public async Task DialogFileService_LoadsAndSaves()
         {
             // Arrange
             var service = new DialogFileService();
@@ -272,11 +272,11 @@ namespace Parley.Tests
             var tempPath = Path.Combine(Path.GetTempPath(), $"test_new_parser_{Guid.NewGuid()}.dlg");
             try
             {
-                var saveResult = service.SaveToFileAsync(dialog, tempPath).Result;
+                var saveResult = await service.SaveToFileAsync(dialog, tempPath);
                 Assert.True(saveResult, "Save should succeed");
 
                 // Load with new parser
-                var loaded = service.LoadFromFileAsync(tempPath).Result;
+                var loaded = await service.LoadFromFileAsync(tempPath);
 
                 // Assert
                 Assert.NotNull(loaded);
