@@ -15,6 +15,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.62] - 2026-02-09
+**Branch**: `radoub/issue-1295` | **PR**: #TBD
+
+### Sprint: Tech Debt Phase 1a - Bare Catches, Versions & Thread Safety (#1295)
+
+- [ ] #1276 - Fix bare catch blocks across all shared libraries
+- [ ] #1277 - Centralize NuGet package versions with Directory.Packages.props
+- [ ] #1278 - Fix thread-unsafe singletons in Radoub.Dictionary
+- [ ] #1281 - Fix build warnings in Radoub.sln
+
+---
+
 ## [0.9.61] - 2026-02-07
 **Branch**: `radoub/issue-1262` | **PR**: #1266
 
