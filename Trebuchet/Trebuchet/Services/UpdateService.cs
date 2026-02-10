@@ -16,7 +16,7 @@ namespace RadoubLauncher.Services;
 /// <summary>
 /// Service for checking and applying updates from GitHub releases.
 /// </summary>
-public class UpdateService : INotifyPropertyChanged
+public class UpdateService : INotifyPropertyChanged, IDisposable
 {
     private static UpdateService? _instance;
     public static UpdateService Instance => _instance ??= new UpdateService();
@@ -358,6 +358,11 @@ public class UpdateService : INotifyPropertyChanged
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to download update: {ex.Message}");
             return null;
         }
+    }
+
+    public void Dispose()
+    {
+        _httpClient.Dispose();
     }
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
