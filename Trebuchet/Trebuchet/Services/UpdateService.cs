@@ -303,7 +303,7 @@ public class UpdateService : INotifyPropertyChanged
             {
                 FileName = ReleaseUrl,
                 UseShellExecute = true
-            });
+            })?.Dispose();
         }
         catch (Exception ex)
         {

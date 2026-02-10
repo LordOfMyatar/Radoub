@@ -128,7 +128,7 @@ public class GameLauncherService
                 WorkingDirectory = gameDir ?? ""
             };
 
-            Process.Start(startInfo);
+            Process.Start(startInfo)?.Dispose();
 
             var logMessage = string.IsNullOrEmpty(arguments)
                 ? "Launched NWN:EE"

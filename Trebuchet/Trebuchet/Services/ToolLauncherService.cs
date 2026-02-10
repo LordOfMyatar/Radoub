@@ -150,7 +150,7 @@ public class ToolLauncherService
                 WorkingDirectory = toolDir ?? ""
             };
 
-            Process.Start(startInfo);
+            Process.Start(startInfo)?.Dispose();
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Launched {tool.Name}: {UnifiedLogger.SanitizePath(tool.ExecutablePath!)}");
             return true;
         }

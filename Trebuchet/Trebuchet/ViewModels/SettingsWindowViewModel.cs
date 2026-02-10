@@ -381,7 +381,7 @@ public partial class SettingsWindowViewModel : ObservableObject
                 {
                     FileName = radoubFolder,
                     UseShellExecute = true
-                });
+                })?.Dispose();
             }
         }
         catch (Exception ex)

@@ -867,7 +867,7 @@ public partial class MainWindowViewModel : ObservableObject
                 FileName = _lastBuildLogPath,
                 UseShellExecute = true
             };
-            System.Diagnostics.Process.Start(startInfo);
+            System.Diagnostics.Process.Start(startInfo)?.Dispose();
         }
         catch (Exception ex)
         {
