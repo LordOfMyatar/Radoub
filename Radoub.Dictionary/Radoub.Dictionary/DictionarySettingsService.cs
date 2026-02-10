@@ -10,7 +10,25 @@ namespace Radoub.Dictionary;
 public class DictionarySettingsService
 {
     private static DictionarySettingsService? _instance;
-    public static DictionarySettingsService Instance => _instance ??= new DictionarySettingsService();
+    private static readonly object _lock = new();
+
+    /// <summary>
+    /// Singleton instance of the dictionary settings service.
+    /// </summary>
+    public static DictionarySettingsService Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                lock (_lock)
+                {
+                    _instance ??= new DictionarySettingsService();
+                }
+            }
+            return _instance;
+        }
+    }
 
     private readonly string _settingsPath;
     private DictionarySettingsData _settings = new();
