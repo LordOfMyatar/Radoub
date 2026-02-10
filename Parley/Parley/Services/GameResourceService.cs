@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using Radoub.Formats.Logging;
 using System.Collections.Generic;
 using System.IO;
@@ -48,12 +49,24 @@ public class GameResourceService : IDisposable
     /// </summary>
     public void InvalidateResolver()
     {
-        lock (_lock)
+        bool lockTaken = false;
+        try
         {
+            Monitor.TryEnter(_lock, TimeSpan.FromSeconds(10), ref lockTaken);
+            if (!lockTaken)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, "GameResourceResolver invalidate lock timeout");
+                return;
+            }
+
             _resolver?.Dispose();
             _resolver = null;
             _currentConfig = null;
             UnifiedLogger.LogApplication(LogLevel.DEBUG, "GameResourceResolver invalidated");
+        }
+        finally
+        {
+            if (lockTaken) Monitor.Exit(_lock);
         }
     }
 
@@ -65,8 +78,16 @@ public class GameResourceService : IDisposable
         if (_resolver != null)
             return _resolver;
 
-        lock (_lock)
+        bool lockTaken = false;
+        try
         {
+            Monitor.TryEnter(_lock, TimeSpan.FromSeconds(10), ref lockTaken);
+            if (!lockTaken)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, "GameResourceResolver lock timeout - another initialization in progress");
+                return null;
+            }
+
             if (_resolver != null)
                 return _resolver;
 
@@ -101,6 +122,10 @@ public class GameResourceService : IDisposable
             }
 
             return _resolver;
+        }
+        finally
+        {
+            if (lockTaken) Monitor.Exit(_lock);
         }
     }
 
