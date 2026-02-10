@@ -15,6 +15,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.63] - 2026-02-09
+**Branch**: `radoub/issue-1296` | **PR**: #TBD
+
+### Sprint: Tech Debt Phase 1b - Resource Leaks & Event Handlers (#1296)
+
+- [ ] #1279 - Fix Process handle leaks in Trebuchet launcher services
+- [ ] #1280 - Fix AudioService file handle leak and unbounded HakScriptScanner cache
+- [ ] #1282 - Fix event handler leaks on singleton services across all tools
+
+---
+
 ## [0.9.62] - 2026-02-09
 **Branch**: `radoub/issue-1295` | **PR**: #1301
 
