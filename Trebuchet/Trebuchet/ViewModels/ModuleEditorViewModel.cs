@@ -890,7 +890,7 @@ public partial class ModuleEditorViewModel : ObservableObject
                 FileName = scriptPath,
                 UseShellExecute = true
             };
-            Process.Start(psi);
+            Process.Start(psi)?.Dispose();
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Opened script in editor: {UnifiedLogger.SanitizePath(scriptPath)}");
             StatusText = $"Opened {scriptName}.nss in editor";
         }

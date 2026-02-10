@@ -5,7 +5,9 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using DialogEditor.Services;
 using Radoub.Formats.Logging;
+using ThemeManager = Radoub.UI.Services.ThemeManager;
 
 namespace DialogEditor.Views
 {
@@ -297,6 +299,11 @@ namespace DialogEditor.Views
         {
             _autoSaveTimer?.Stop();
             _autoSaveTimer?.Dispose();
+
+            // Unsubscribe from singleton events to prevent memory leaks (#1282)
+            ThemeManager.Instance.ThemeApplied -= OnThemeApplied;
+            _services.Settings.PropertyChanged -= OnSettingsPropertyChanged;
+            DialogChangeEventBus.Instance.DialogChanged -= OnDialogChanged;
 
             // Unsubscribe from events
             _services.SoundPlayback.PlaybackStopped -= OnSoundPlaybackStopped;

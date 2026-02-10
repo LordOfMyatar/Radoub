@@ -123,6 +123,10 @@ public partial class App : Application
         {
             DisableAvaloniaDataAnnotationValidation();
             desktop.MainWindow = new MainWindow();
+
+            // Unsubscribe from singleton events on app exit (#1282)
+            desktop.Exit += (_, _) =>
+                SettingsService.Instance.PropertyChanged -= OnSettingsPropertyChanged;
         }
 
         base.OnFrameworkInitializationCompleted();

@@ -119,6 +119,15 @@ namespace DialogEditor.Views
             FlowchartScrollViewer.PropertyChanged += OnScrollViewerPropertyChanged;
 
             // Context menu click handlers are attached via XAML Click events (#461)
+
+            // Unsubscribe from singleton events when control is detached (#1282)
+            DetachedFromVisualTree += OnDetachedFromVisualTree;
+        }
+
+        private void OnDetachedFromVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
+        {
+            ThemeManager.Instance.ThemeApplied -= OnThemeApplied;
+            DialogChangeEventBus.Instance.DialogChanged -= OnDialogChanged;
         }
 
         // Track the current node for context menu actions

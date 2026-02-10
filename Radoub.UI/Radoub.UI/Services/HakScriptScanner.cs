@@ -26,7 +26,9 @@ internal class ScriptHakCacheEntry
 public class HakScriptScanner
 {
     // Static cache for HAK file contents - persists across scanner instances
+    // Bounded to prevent unbounded memory growth when scanning many HAK files
     private static readonly Dictionary<string, ScriptHakCacheEntry> _hakCache = new();
+    private const int MaxCacheEntries = 64;
 
     /// <summary>
     /// Scans multiple HAK files for scripts, respecting module override priority.
@@ -125,6 +127,15 @@ public class HakScriptScanner
                 {
                     hakScripts.Add(scriptEntry);
                 }
+            }
+
+            // Evict oldest entry if cache is full
+            if (_hakCache.Count >= MaxCacheEntries && !_hakCache.ContainsKey(hakPath))
+            {
+                var oldest = _hakCache.OrderBy(kvp => kvp.Value.LastModified).First().Key;
+                _hakCache.Remove(oldest);
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"HakScriptScanner: Evicted cache entry for {Path.GetFileName(oldest)}");
             }
 
             // Update cache

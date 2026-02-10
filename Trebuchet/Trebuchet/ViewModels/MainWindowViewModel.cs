@@ -182,6 +182,16 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Unsubscribe from singleton events to prevent memory leaks (#1282).
+    /// Called from MainWindow.OnWindowClosing.
+    /// </summary>
+    public void Cleanup()
+    {
+        RadoubSettings.Instance.PropertyChanged -= OnSharedSettingsChanged;
+        SettingsService.Instance.PropertyChanged -= OnLocalSettingsChanged;
+    }
+
     private void LoadVersionInfo()
     {
         try
@@ -867,7 +877,7 @@ public partial class MainWindowViewModel : ObservableObject
                 FileName = _lastBuildLogPath,
                 UseShellExecute = true
             };
-            System.Diagnostics.Process.Start(startInfo);
+            System.Diagnostics.Process.Start(startInfo)?.Dispose();
         }
         catch (Exception ex)
         {
