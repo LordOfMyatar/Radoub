@@ -76,6 +76,7 @@ namespace Parley.Views.Helpers
         {
             SoundPlayback?.Dispose();
             Audio?.Dispose();
+            GameData?.Dispose();
         }
     }
 }

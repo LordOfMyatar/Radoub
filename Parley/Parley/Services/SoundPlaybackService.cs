@@ -236,6 +236,7 @@ namespace DialogEditor.Services
 
         public void Dispose()
         {
+            Stop();
             _extractor.CleanupTempFile();
         }
     }

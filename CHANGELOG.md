@@ -15,6 +15,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.64] - 2026-02-09
+**Branch**: `radoub/issue-1297` | **PR**: #1304
+
+### Sprint: Tech Debt Phase 2 - Dispose Patterns & Async Safety (#1297)
+
+- [x] #1283 - Complete IDisposable implementations across all tools
+- [x] #1284 - Add error handling to fire-and-forget async calls
+- [x] #1293 - Fix Parley StreamWriter leak, timer leak, and dispose cascade
+
+---
+
 ## [0.9.63] - 2026-02-09
 **Branch**: `radoub/issue-1296` | **PR**: #1302
 
