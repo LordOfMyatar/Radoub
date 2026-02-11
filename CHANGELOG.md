@@ -20,10 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Tech Debt Phase 3b - Validation & Format Safety (#1299)
 
-- [ ] #1288 - Add input validation (path traversal, ResRef limits)
-- [ ] #1289 - Fix Fence DataGrid O(n²) refresh and add file backup on save
-- [ ] #1290 - Fix Quartermaster null assertions and modal dialog violations
-- [ ] #1291 - Fix silent buffer breaks and unsafe casts in BIF/ERF readers
+- [x] #1288 - Add input validation (path traversal, ResRef limits)
+- [x] #1289 - Fix Fence DataGrid O(n²) refresh and add file backup on save
+- [x] #1290 - Fix Quartermaster null assertions and modal dialog violations
+- [x] #1291 - Fix silent buffer breaks and unsafe casts in BIF/ERF readers
 
 ---
 
