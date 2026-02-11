@@ -66,23 +66,32 @@ public static class BifReader
         var fixedResourceCount = BitConverter.ToUInt32(header, 12);
         var variableTableOffset = BitConverter.ToUInt32(header, 16);
 
+        // Validate table sizes before casting (use long to detect overflow)
+        long variableTableSizeLong = (long)variableResourceCount * VariableResourceEntrySize;
+        if (variableTableSizeLong > int.MaxValue)
+            throw new InvalidDataException($"Variable resource table size {variableTableSizeLong} exceeds maximum supported value ({variableResourceCount} entries * {VariableResourceEntrySize} bytes)");
+
         // Fixed table follows variable table
         var fixedTableOffset = variableTableOffset + (variableResourceCount * VariableResourceEntrySize);
 
         // Read variable resource table
-        var variableTableSize = variableResourceCount * VariableResourceEntrySize;
+        var variableTableSize = (int)variableTableSizeLong;
         stream.Seek(variableTableOffset, SeekOrigin.Begin);
         var variableBuffer = new byte[variableTableSize];
-        stream.ReadExactly(variableBuffer, 0, (int)variableTableSize);
+        stream.ReadExactly(variableBuffer, 0, variableTableSize);
         ReadVariableResourcesFromBuffer(variableBuffer, bif, variableResourceCount);
 
         // Read fixed resource table
         if (fixedResourceCount > 0)
         {
-            var fixedTableSize = fixedResourceCount * FixedResourceEntrySize;
+            long fixedTableSizeLong = (long)fixedResourceCount * FixedResourceEntrySize;
+            if (fixedTableSizeLong > int.MaxValue)
+                throw new InvalidDataException($"Fixed resource table size {fixedTableSizeLong} exceeds maximum supported value ({fixedResourceCount} entries * {FixedResourceEntrySize} bytes)");
+
+            var fixedTableSize = (int)fixedTableSizeLong;
             stream.Seek(fixedTableOffset, SeekOrigin.Begin);
             var fixedBuffer = new byte[fixedTableSize];
-            stream.ReadExactly(fixedBuffer, 0, (int)fixedTableSize);
+            stream.ReadExactly(fixedBuffer, 0, fixedTableSize);
             ReadFixedResourcesFromBuffer(fixedBuffer, bif, fixedResourceCount);
         }
 
@@ -96,7 +105,7 @@ public static class BifReader
             var entryOffset = (int)(i * VariableResourceEntrySize);
 
             if (entryOffset + VariableResourceEntrySize > buffer.Length)
-                break;
+                throw new InvalidDataException($"Variable resource entry {i} extends beyond buffer boundary (offset {entryOffset}, buffer size {buffer.Length})");
 
             var entry = new BifVariableResource
             {
@@ -117,7 +126,7 @@ public static class BifReader
             var entryOffset = (int)(i * FixedResourceEntrySize);
 
             if (entryOffset + FixedResourceEntrySize > buffer.Length)
-                break;
+                throw new InvalidDataException($"Fixed resource entry {i} extends beyond buffer boundary (offset {entryOffset}, buffer size {buffer.Length})");
 
             var entry = new BifFixedResource
             {
