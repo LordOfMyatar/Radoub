@@ -962,10 +962,33 @@ public partial class ModuleEditorViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Allowed script property names for reflection-based access.
+    /// Prevents arbitrary property modification via SetScriptProperty/GetScriptProperty.
+    /// </summary>
+    private static readonly HashSet<string> AllowedScriptProperties = new(StringComparer.Ordinal)
+    {
+        nameof(OnModuleLoad), nameof(OnClientEnter), nameof(OnClientLeave),
+        nameof(OnHeartbeat), nameof(OnAcquireItem), nameof(OnActivateItem),
+        nameof(OnUnacquireItem), nameof(OnPlayerDeath), nameof(OnPlayerDying),
+        nameof(OnPlayerRest), nameof(OnPlayerEquipItem), nameof(OnPlayerUnequipItem),
+        nameof(OnPlayerLevelUp), nameof(OnUserDefined), nameof(OnSpawnButtonDown),
+        nameof(OnCutsceneAbort), nameof(OnModuleStart), nameof(OnPlayerChat),
+        nameof(OnPlayerTarget), nameof(OnPlayerGuiEvent), nameof(OnPlayerTileAction),
+        nameof(OnNuiEvent)
+    };
+
+    /// <summary>
     /// Set a script property by name using reflection.
+    /// Only allows properties in the AllowedScriptProperties whitelist.
     /// </summary>
     private void SetScriptProperty(string propertyName, string value)
     {
+        if (!AllowedScriptProperties.Contains(propertyName))
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Rejected attempt to set non-script property: {propertyName}");
+            return;
+        }
+
         var property = GetType().GetProperty(propertyName);
         if (property != null && property.CanWrite)
         {
@@ -975,9 +998,16 @@ public partial class ModuleEditorViewModel : ObservableObject
 
     /// <summary>
     /// Get a script property value by name using reflection.
+    /// Only allows properties in the AllowedScriptProperties whitelist.
     /// </summary>
     private string? GetScriptProperty(string propertyName)
     {
+        if (!AllowedScriptProperties.Contains(propertyName))
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Rejected attempt to read non-script property: {propertyName}");
+            return null;
+        }
+
         var property = GetType().GetProperty(propertyName);
         return property?.GetValue(this) as string;
     }

@@ -756,7 +756,17 @@ public partial class MainWindow
             await SaveFile();
         }
 
-        var newFilePath = Path.Combine(directory, newName + extension);
+        var newFilePath = Path.GetFullPath(Path.Combine(directory, newName + extension));
+
+        // Validate path stays within the original directory (prevent traversal)
+        var resolvedDirectory = Path.GetFullPath(directory);
+        if (!newFilePath.StartsWith(resolvedDirectory, StringComparison.OrdinalIgnoreCase))
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, "Path traversal attempt detected in rename");
+            DialogHelper.ShowMessageDialog(this, "Invalid Name",
+                "The filename contains invalid path characters.");
+            return;
+        }
 
         try
         {
