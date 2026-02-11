@@ -240,9 +240,41 @@ public partial class MainWindow
             var resRef = Path.GetFileNameWithoutExtension(filePath).ToLowerInvariant();
             _currentStore.ResRef = resRef;
 
-            // Write file on background thread to keep UI responsive
+            // Create backup before overwriting (if file exists)
+            if (File.Exists(filePath))
+            {
+                var bakPath = filePath + ".bak";
+                try
+                {
+                    File.Copy(filePath, bakPath, overwrite: true);
+                }
+                catch (IOException ex)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to create backup: {ex.Message}");
+                }
+            }
+
+            // Write to temp file first, then atomic replace
+            var tempPath = filePath + ".tmp";
             var store = _currentStore;
-            await System.Threading.Tasks.Task.Run(() => UtmWriter.Write(store, filePath));
+            try
+            {
+                await System.Threading.Tasks.Task.Run(() => UtmWriter.Write(store, tempPath));
+
+                // Replace original with temp (atomic on same volume)
+                if (File.Exists(filePath))
+                    File.Delete(filePath);
+                File.Move(tempPath, filePath);
+            }
+            finally
+            {
+                // Clean up temp file if it still exists (write failed)
+                if (File.Exists(tempPath))
+                {
+                    try { File.Delete(tempPath); }
+                    catch { /* temp cleanup is best-effort */ }
+                }
+            }
 
             _currentFilePath = filePath;
             _isDirty = false;
