@@ -15,6 +15,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.66] - 2026-02-10
+**Branch**: `radoub/issue-1299` | **PR**: #1306
+
+### Sprint: Tech Debt Phase 3b - Validation & Format Safety (#1299)
+
+- [x] #1288 - Add input validation (path traversal, ResRef limits)
+- [x] #1289 - Fix Fence DataGrid O(n²) refresh and add file backup on save
+- [x] #1290 - Fix Quartermaster null assertions and modal dialog violations
+- [x] #1291 - Fix silent buffer breaks and unsafe casts in BIF/ERF readers
+
+---
+
 ## [0.9.65] - 2026-02-10
 **Branch**: `radoub/issue-1298` | **PR**: #1305
 

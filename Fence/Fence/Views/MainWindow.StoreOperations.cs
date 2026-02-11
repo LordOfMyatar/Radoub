@@ -119,10 +119,6 @@ public partial class MainWindow
 
         _isDirty = true;
         UpdateTitle();
-
-        // Refresh grid
-        StoreInventoryGrid.ItemsSource = null;
-        StoreInventoryGrid.ItemsSource = StoreItems;
     }
 
     private void SetInfiniteFlag(bool value)
@@ -138,8 +134,6 @@ public partial class MainWindow
 
         _isDirty = true;
         UpdateTitle();
-        StoreInventoryGrid.ItemsSource = null;
-        StoreInventoryGrid.ItemsSource = StoreItems;
     }
 
     private void OnInfiniteCellClicked(object? sender, Avalonia.Input.PointerPressedEventArgs e)
@@ -150,10 +144,6 @@ public partial class MainWindow
             item.Infinite = !item.Infinite;
             _isDirty = true;
             UpdateTitle();
-
-            // Refresh the grid to show updated symbol
-            StoreInventoryGrid.ItemsSource = null;
-            StoreInventoryGrid.ItemsSource = StoreItems;
         }
     }
 

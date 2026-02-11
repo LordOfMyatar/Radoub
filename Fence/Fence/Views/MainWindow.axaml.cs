@@ -826,6 +826,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             return false;
         }
 
+        // Check length (Aurora Engine limit: 16 characters)
+        if (resRef.Length > 16)
+        {
+            warning = $"Warning: ResRef is too long ({resRef.Length} characters, max 16)";
+            return false;
+        }
+
         // Check for invalid characters
         if (!ValidResRefPattern.IsMatch(resRef))
         {

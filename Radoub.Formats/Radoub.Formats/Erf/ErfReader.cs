@@ -77,9 +77,14 @@ public static class ErfReader
             ReadLocalizedStringsFromBuffer(localizedBuffer, erf, languageCount);
         }
 
-        // Calculate size needed for key list and resource list
-        var keyListSize = entryCount * KeyEntrySize;
-        var resourceListSize = entryCount * ResourceEntrySize;
+        // Calculate size needed for key list and resource list (use long to detect overflow)
+        long keyListSize = (long)entryCount * KeyEntrySize;
+        long resourceListSize = (long)entryCount * ResourceEntrySize;
+
+        if (keyListSize > int.MaxValue)
+            throw new InvalidDataException($"Key list size {keyListSize} exceeds maximum supported value ({entryCount} entries * {KeyEntrySize} bytes)");
+        if (resourceListSize > int.MaxValue)
+            throw new InvalidDataException($"Resource list size {resourceListSize} exceeds maximum supported value ({entryCount} entries * {ResourceEntrySize} bytes)");
 
         // Read key list
         stream.Seek(offsetToKeyList, SeekOrigin.Begin);
@@ -104,15 +109,18 @@ public static class ErfReader
         for (uint i = 0; i < count; i++)
         {
             if (currentOffset + 8 > buffer.Length)
-                break;
+                throw new InvalidDataException($"Localized string entry {i} header extends beyond buffer boundary (offset {currentOffset}, buffer size {buffer.Length})");
 
             var languageId = BitConverter.ToUInt32(buffer, currentOffset);
             var stringSize = BitConverter.ToUInt32(buffer, currentOffset + 4);
             currentOffset += 8;
 
             var text = string.Empty;
-            if (stringSize > 0 && currentOffset + (int)stringSize <= buffer.Length)
+            if (stringSize > 0)
             {
+                if (currentOffset + (int)stringSize > buffer.Length)
+                    throw new InvalidDataException($"Localized string entry {i} data extends beyond buffer boundary (offset {currentOffset}, size {stringSize}, buffer size {buffer.Length})");
+
                 text = Encoding.UTF8.GetString(buffer, currentOffset, (int)stringSize).TrimEnd('\0');
                 currentOffset += (int)stringSize;
             }
@@ -133,9 +141,9 @@ public static class ErfReader
             var resOffset = (int)(i * ResourceEntrySize);
 
             if (keyOffset + KeyEntrySize > keyListBuffer.Length)
-                break;
+                throw new InvalidDataException($"Key entry {i} extends beyond key list boundary (offset {keyOffset}, buffer size {keyListBuffer.Length})");
             if (resOffset + ResourceEntrySize > resourceListBuffer.Length)
-                break;
+                throw new InvalidDataException($"Resource entry {i} extends beyond resource list boundary (offset {resOffset}, buffer size {resourceListBuffer.Length})");
 
             // Read key entry - trim nulls and spaces (some tools use space-padding)
             var rawResRef = Encoding.ASCII.GetString(keyListBuffer, keyOffset, 16);

@@ -38,16 +38,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private Button? _selectedNavButton;
 
     // Services initialized in InitializeServicesAsync, awaited before any use.
-    // SAFETY: null! is intentional - services are guaranteed initialized before:
-    // - InitializePanels() is called (awaits InitializeServicesAsync first)
-    // - Any file operations occur (panels receive services in InitializePanels)
-    // - UI events fire (Opened handler completes setup before user interaction)
-    private IGameDataService _gameDataService = null!;
-    private CreatureDisplayService _creatureDisplayService = null!;
-    private ItemViewModelFactory _itemViewModelFactory = null!;
-    private ItemIconService _itemIconService = null!;
-    private AudioService _audioService = null!;
+    // Access via GameData/DisplayService/etc. properties which throw if not yet initialized.
+    private IGameDataService? _gameDataService;
+    private CreatureDisplayService? _creatureDisplayService;
+    private ItemViewModelFactory? _itemViewModelFactory;
+    private ItemIconService? _itemIconService;
+    private AudioService? _audioService;
     private bool _servicesInitialized;
+
+    // Service accessors with null guards - throw clear error instead of NullReferenceException
+    private IGameDataService GameData => _gameDataService ?? throw new InvalidOperationException("GameDataService not initialized - services must be initialized before use");
+    private CreatureDisplayService DisplayService => _creatureDisplayService ?? throw new InvalidOperationException("CreatureDisplayService not initialized");
+    private ItemViewModelFactory ItemFactory => _itemViewModelFactory ?? throw new InvalidOperationException("ItemViewModelFactory not initialized");
+    private ItemIconService IconService => _itemIconService ?? throw new InvalidOperationException("ItemIconService not initialized");
+    private AudioService Audio => _audioService ?? throw new InvalidOperationException("AudioService not initialized");
 
     // Cancellation token for async operations - cancelled on window close
     private CancellationTokenSource? _windowCts;
@@ -103,7 +107,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void InitializePanels()
     {
         // Initialize stats panel with display service
-        StatsPanelContent.SetDisplayService(_creatureDisplayService);
+        StatsPanelContent.SetDisplayService(DisplayService);
         StatsPanelContent.CRAdjustChanged += (s, e) => MarkDirty();
         StatsPanelContent.AbilityScoresChanged += (s, e) => MarkDirty();
         StatsPanelContent.HitPointsChanged += (s, e) => MarkDirty();
@@ -111,44 +115,44 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         StatsPanelContent.SavingThrowsChanged += (s, e) => MarkDirty();
 
         // Initialize character panel with display service
-        CharacterPanelContent.SetDisplayService(_creatureDisplayService);
-        CharacterPanelContent.SetGameDataService(_gameDataService);
-        CharacterPanelContent.SetItemIconService(_itemIconService);
-        CharacterPanelContent.SetAudioService(_audioService);
+        CharacterPanelContent.SetDisplayService(DisplayService);
+        CharacterPanelContent.SetGameDataService(GameData);
+        CharacterPanelContent.SetItemIconService(IconService);
+        CharacterPanelContent.SetAudioService(Audio);
         CharacterPanelContent.CharacterChanged += (s, e) => MarkDirty();
         CharacterPanelContent.PortraitChanged += (s, e) => UpdateCharacterHeader();
 
         // Initialize classes panel with display service for 2DA/TLK lookups
-        ClassesPanelContent.SetDisplayService(_creatureDisplayService);
+        ClassesPanelContent.SetDisplayService(DisplayService);
         ClassesPanelContent.AlignmentChanged += (s, e) => MarkDirty();
         ClassesPanelContent.PackageChanged += (s, e) => MarkDirty();
         ClassesPanelContent.ClassesChanged += OnClassesChanged;
 
         // Initialize feats panel with display service for 2DA/TLK lookups
-        FeatsPanelContent.SetDisplayService(_creatureDisplayService);
-        FeatsPanelContent.SetIconService(_itemIconService);
+        FeatsPanelContent.SetDisplayService(DisplayService);
+        FeatsPanelContent.SetIconService(IconService);
         FeatsPanelContent.FeatsChanged += (s, e) => MarkDirty();
         FeatsPanelContent.SpecialAbilitiesChanged += (s, e) => MarkDirty();
 
         // Initialize skills panel with display service for 2DA/TLK lookups
-        SkillsPanelContent.SetDisplayService(_creatureDisplayService);
-        SkillsPanelContent.SetIconService(_itemIconService);
+        SkillsPanelContent.SetDisplayService(DisplayService);
+        SkillsPanelContent.SetIconService(IconService);
         SkillsPanelContent.SkillsChanged += (s, e) => MarkDirty();
 
         // Initialize spells panel with display service for 2DA/TLK lookups
-        SpellsPanelContent.SetDisplayService(_creatureDisplayService);
-        SpellsPanelContent.SetIconService(_itemIconService);
+        SpellsPanelContent.SetDisplayService(DisplayService);
+        SpellsPanelContent.SetIconService(IconService);
         SpellsPanelContent.SpellsChanged += (s, e) => MarkDirty();
 
         // Initialize appearance panel with display service, palette colors, model service, and texture service
-        AppearancePanelContent.SetDisplayService(_creatureDisplayService);
-        AppearancePanelContent.SetPaletteColorService(new PaletteColorService(_gameDataService));
-        AppearancePanelContent.SetModelService(new ModelService(_gameDataService));
-        AppearancePanelContent.SetTextureService(new TextureService(_gameDataService));
+        AppearancePanelContent.SetDisplayService(DisplayService);
+        AppearancePanelContent.SetPaletteColorService(new PaletteColorService(GameData));
+        AppearancePanelContent.SetModelService(new ModelService(GameData));
+        AppearancePanelContent.SetTextureService(new TextureService(GameData));
         AppearancePanelContent.AppearanceChanged += (s, e) => MarkDirty();
 
         // Initialize advanced panel with display service
-        AdvancedPanelContent.SetDisplayService(_creatureDisplayService);
+        AdvancedPanelContent.SetDisplayService(DisplayService);
         AdvancedPanelContent.TagChanged += (s, e) => MarkDirty();
         AdvancedPanelContent.CommentChanged += (s, e) => MarkDirty();
         AdvancedPanelContent.FlagsChanged += (s, e) => MarkDirty();
@@ -158,12 +162,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         AdvancedPanelContent.RenameRequested += OnRenameRequested;
 
         // Initialize scripts panel with game data service
-        ScriptsPanelContent.SetGameDataService(_gameDataService);
+        ScriptsPanelContent.SetGameDataService(GameData);
         ScriptsPanelContent.ScriptsChanged += (s, e) => MarkDirty();
 
         // Initialize inventory panel with shared equipment slots and game data
         InventoryPanelContent.InitializeSlots(_equipmentSlots);
-        InventoryPanelContent.SetGameDataService(_gameDataService);
+        InventoryPanelContent.SetGameDataService(GameData);
 
         // Subscribe to inventory panel events
         InventoryPanelContent.InventoryChanged += (s, e) => { _inventoryModified = true; MarkDirty(); };
@@ -632,13 +636,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private async Task InitializeCachesAsync(CancellationToken token)
     {
-        if (_gameDataService.IsConfigured)
+        if (GameData.IsConfigured)
         {
             UpdateStatus("Loading game data caches...");
             try
             {
                 token.ThrowIfCancellationRequested();
-                await _creatureDisplayService.InitializeCachesAsync();
+                await DisplayService.InitializeCachesAsync();
                 UnifiedLogger.LogApplication(LogLevel.INFO, "Game data caches initialized");
             }
             catch (OperationCanceledException)
@@ -740,8 +744,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _windowCts?.Dispose();
 
             SaveWindowPosition();
-            _audioService.Dispose();
-            _gameDataService.Dispose();
+            _audioService?.Dispose();
+            _gameDataService?.Dispose();
         }
     }
 
@@ -819,7 +823,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
             // Build race/class summary using display service
             UnifiedLogger.LogApplication(LogLevel.DEBUG, "UpdateCharacterHeader: Setting summary");
-            CharacterSummaryText.Text = _creatureDisplayService.GetCreatureSummary(_currentCreature);
+            CharacterSummaryText.Text = DisplayService.GetCreatureSummary(_currentCreature);
 
             // Load portrait image (#916)
             if (portraitImage != null && portraitPlaceholder != null)
@@ -829,7 +833,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 string? portraitResRef;
                 if (_currentCreature.PortraitId > 0)
                 {
-                    portraitResRef = _creatureDisplayService.GetPortraitResRef(_currentCreature.PortraitId);
+                    portraitResRef = DisplayService.GetPortraitResRef(_currentCreature.PortraitId);
                 }
                 else if (!string.IsNullOrEmpty(_currentCreature.Portrait))
                 {
@@ -845,7 +849,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 {
                     // ImageService.GetPortrait handles size suffix internally (tries m, l, s)
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateCharacterHeader: Loading portrait {portraitResRef}");
-                    var portrait = _itemIconService.GetPortrait(portraitResRef);
+                    var portrait = IconService.GetPortrait(portraitResRef);
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateCharacterHeader: GetPortrait returned {(portrait != null ? "bitmap" : "null")}");
                     if (portrait != null)
                     {
@@ -1085,7 +1089,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (_currentCreature == null)
             return;
 
-        var wizard = new LevelUpWizardWindow(_creatureDisplayService, _currentCreature);
+        var wizard = new LevelUpWizardWindow(DisplayService, _currentCreature);
         await wizard.ShowDialog(this);
 
         if (wizard.Confirmed)
@@ -1112,9 +1116,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         var formatted = LevelHistoryService.FormatForDisplay(
             history,
-            _creatureDisplayService.GetClassName,
-            _creatureDisplayService.GetFeatName,
-            _creatureDisplayService.GetSkillName);
+            DisplayService.GetClassName,
+            DisplayService.GetFeatName,
+            DisplayService.GetSkillName);
 
         DialogHelper.ShowMessageDialog(this, $"Level History ({history.Count} levels)", formatted);
     }
@@ -1132,7 +1136,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         var firstClass = _currentCreature.ClassList.FirstOrDefault();
-        var className = firstClass != null ? _creatureDisplayService.GetClassName(firstClass.Class) : "Unknown";
+        var className = firstClass != null ? DisplayService.GetClassName(firstClass.Class) : "Unknown";
 
         var confirmed = await DialogHelper.ShowConfirmationDialog(
             this,
@@ -1178,7 +1182,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         var firstClass = _currentCreature.ClassList.FirstOrDefault();
-        var className = firstClass != null ? _creatureDisplayService.GetClassName(firstClass.Class) : "Unknown";
+        var className = firstClass != null ? DisplayService.GetClassName(firstClass.Class) : "Unknown";
         var originalName = CreatureDisplayService.GetCreatureFullName(_currentCreature);
 
         var confirmed = await DialogHelper.ShowConfirmationDialog(
@@ -1267,14 +1271,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var featsToKeep = new HashSet<ushort>();
 
         // Racial feats
-        var racialFeats = _creatureDisplayService.Feats.GetRaceGrantedFeatIds(creature.Race);
+        var racialFeats = DisplayService.Feats.GetRaceGrantedFeatIds(creature.Race);
         foreach (var f in racialFeats)
             featsToKeep.Add((ushort)f);
 
         // Class granted feats at level 1
         if (creature.ClassList.Count > 0)
         {
-            var classGrantedFeats = _creatureDisplayService.Feats.GetClassGrantedFeatIds(creature.ClassList[0].Class);
+            var classGrantedFeats = DisplayService.Feats.GetClassGrantedFeatIds(creature.ClassList[0].Class);
             foreach (var f in classGrantedFeats)
                 featsToKeep.Add((ushort)f);
         }

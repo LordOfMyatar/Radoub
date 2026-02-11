@@ -115,7 +115,7 @@ public partial class MainWindow
 
             var nextPos = GetNextBackpackPosition();
 
-            var backpackItem = _itemViewModelFactory.CreateBackpackItem(
+            var backpackItem = ItemFactory.CreateBackpackItem(
                 utiFile,
                 nextPos.x, nextPos.y,
                 isDropable: false,  // Default to not droppable for game balance
@@ -140,7 +140,7 @@ public partial class MainWindow
 
         try
         {
-            var utiData = _gameDataService.FindResource(resRef, ResourceTypes.Uti);
+            var utiData = GameData.FindResource(resRef, ResourceTypes.Uti);
             if (utiData != null)
             {
                 return UtiReader.Read(utiData);
@@ -169,7 +169,7 @@ public partial class MainWindow
     {
         UnifiedLogger.LogInventory(LogLevel.INFO, $"OnEquipItemsRequested: {items.Length} items selected");
 
-        var validator = new Radoub.UI.Services.EquipmentSlotValidator(_gameDataService);
+        var validator = new Radoub.UI.Services.EquipmentSlotValidator(GameData);
 
         // Only consider standard slots (not natural/creature slots) when equipping from palette
         // Natural slots (Claw1-3, Skin) are creature-only and should be edited directly
@@ -242,7 +242,7 @@ public partial class MainWindow
                 continue;
             }
 
-            var equippedItem = _itemViewModelFactory.Create(utiFile, paletteItem.Source);
+            var equippedItem = ItemFactory.Create(utiFile, paletteItem.Source);
             SetupLazyIconLoading(equippedItem);
             targetSlot.EquippedItem = equippedItem;
             UnifiedLogger.LogInventory(LogLevel.INFO, $"Equipped {equippedItem.Name} to {targetSlot.Name} (slot flag 0x{targetSlot.SlotFlag:X})");
@@ -270,7 +270,7 @@ public partial class MainWindow
         }
 
         var nextPos = GetNextBackpackPosition();
-        var backpackItem = _itemViewModelFactory.CreateBackpackItem(
+        var backpackItem = ItemFactory.CreateBackpackItem(
             utiFile,
             nextPos.x, nextPos.y,
             isDropable: false,  // Default to not droppable for game balance

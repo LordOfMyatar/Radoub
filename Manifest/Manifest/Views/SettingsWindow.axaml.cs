@@ -239,7 +239,8 @@ public partial class SettingsWindow : Window
     {
         if (_isLoading) return;
 
-        var path = GamePathTextBox.Text ?? "";
+        var rawPath = GamePathTextBox.Text ?? "";
+        var path = string.IsNullOrWhiteSpace(rawPath) ? "" : Path.GetFullPath(rawPath);
         RadoubSettings.Instance.BaseGameInstallPath = path;
         UpdateGamePathValidation();
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Game path changed to: {SanitizePath(path)}");
@@ -259,7 +260,7 @@ public partial class SettingsWindow : Window
         var result = await storageProvider.OpenFolderPickerAsync(options);
         if (result.Count > 0)
         {
-            var path = result[0].Path.LocalPath;
+            var path = Path.GetFullPath(result[0].Path.LocalPath);
             GamePathTextBox.Text = path;
             RadoubSettings.Instance.BaseGameInstallPath = path;
             UpdateGamePathValidation();

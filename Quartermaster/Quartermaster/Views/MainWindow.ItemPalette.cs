@@ -40,7 +40,7 @@ public partial class MainWindow
     /// </summary>
     public void StartGameItemsLoad(CancellationToken windowToken)
     {
-        if (!_gameDataService.IsConfigured)
+        if (!GameData.IsConfigured)
         {
             UnifiedLogger.LogInventory(LogLevel.WARN, "Item palette unavailable - GameDataService not configured");
             return;
@@ -180,7 +180,7 @@ public partial class MainWindow
         var cacheItems = new List<CachedPaletteItem>();
         var existingResRefs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        var gameResources = _gameDataService.ListResources(ResourceTypes.Uti)
+        var gameResources = GameData.ListResources(ResourceTypes.Uti)
             .Where(r => r.Source == source)
             .ToList();
 
@@ -196,12 +196,12 @@ public partial class MainWindow
 
             try
             {
-                var utiData = _gameDataService.FindResource(resourceInfo.ResRef, ResourceTypes.Uti);
+                var utiData = GameData.FindResource(resourceInfo.ResRef, ResourceTypes.Uti);
                 if (utiData != null)
                 {
                     var item = UtiReader.Read(utiData);
-                    var displayName = _itemViewModelFactory.GetItemDisplayName(item);
-                    var baseItemTypeName = _itemViewModelFactory.GetBaseItemTypeName(item.BaseItem);
+                    var displayName = ItemFactory.GetItemDisplayName(item);
+                    var baseItemTypeName = ItemFactory.GetBaseItemTypeName(item.BaseItem);
 
                     cacheItems.Add(new CachedPaletteItem
                     {
@@ -331,7 +331,7 @@ public partial class MainWindow
                 try
                 {
                     var item = UtiReader.Read(utiPath);
-                    var viewModel = _itemViewModelFactory.Create(item, GameResourceSource.Module);
+                    var viewModel = ItemFactory.Create(item, GameResourceSource.Module);
                     SetupLazyIconLoading(viewModel);
 
                     if (!InventoryPanelContent.PaletteItems.Any(p => p.ResRef.Equals(viewModel.ResRef, StringComparison.OrdinalIgnoreCase)))
@@ -407,9 +407,9 @@ public partial class MainWindow
     /// </summary>
     private void SetupLazyIconLoading(ItemViewModel itemVm)
     {
-        if (!_itemIconService.IsGameDataAvailable)
+        if (!IconService.IsGameDataAvailable)
             return;
 
-        itemVm.SetIconLoader(item => _itemIconService.GetItemIcon(item));
+        itemVm.SetIconLoader(item => IconService.GetItemIcon(item));
     }
 }
