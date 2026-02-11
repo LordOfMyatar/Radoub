@@ -20,9 +20,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Tech Debt Phase 3a - Code Consolidation & Race Conditions (#1298)
 
-- [ ] #1285 - Extract CommandLineService to shared library
-- [ ] #1286 - Consolidate TlkService implementations
-- [ ] #1287 - Fix race conditions in shared services
+- [x] #1285 - Extract CommandLineService to shared library
+- [x] #1286 - Consolidate TlkService implementations
+- [x] #1287 - Fix race conditions in shared services
 
 ---
 
