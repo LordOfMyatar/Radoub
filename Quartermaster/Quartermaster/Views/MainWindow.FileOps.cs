@@ -163,7 +163,7 @@ public partial class MainWindow
 
         try
         {
-            var sheetService = new CharacterSheetService(_creatureDisplayService);
+            var sheetService = new CharacterSheetService(DisplayService);
             var content = isMarkdown
                 ? sheetService.GenerateMarkdownSheet(_currentCreature, _currentFilePath)
                 : sheetService.GenerateTextSheet(_currentCreature, _currentFilePath);
@@ -335,7 +335,7 @@ public partial class MainWindow
     private async Task OpenFile()
     {
         // Use custom CreatureBrowserWindow for consistent UX (#1083)
-        var context = new QuartermasterScriptBrowserContext(_currentFilePath, _gameDataService);
+        var context = new QuartermasterScriptBrowserContext(_currentFilePath, GameData);
         var browser = new CreatureBrowserWindow(context);
         await browser.ShowDialog(this);
 
@@ -504,7 +504,7 @@ public partial class MainWindow
                 // Look up the PortraitId from portraits.2da using the Portrait string
                 if (_currentCreature.PortraitId == 0 && !string.IsNullOrEmpty(_currentCreature.Portrait))
                 {
-                    var foundId = _creatureDisplayService.FindPortraitIdByResRef(_currentCreature.Portrait);
+                    var foundId = DisplayService.FindPortraitIdByResRef(_currentCreature.Portrait);
                     if (foundId.HasValue)
                     {
                         _currentCreature.PortraitId = foundId.Value;
@@ -609,7 +609,7 @@ public partial class MainWindow
         // Check if any class is a playable class (PlayerClass = 1 in classes.2da)
         var hasPlayableClass = creature.ClassList.Any(c =>
         {
-            var playerClass = _gameDataService.Get2DAValue("classes", c.Class, "PlayerClass");
+            var playerClass = GameData.Get2DAValue("classes", c.Class, "PlayerClass");
             return playerClass == "1";
         });
 
@@ -617,7 +617,7 @@ public partial class MainWindow
         {
             // Get the class names for the error message
             var classNames = creature.ClassList
-                .Select(c => _creatureDisplayService.GetClassName(c.Class))
+                .Select(c => DisplayService.GetClassName(c.Class))
                 .ToList();
             var classList = string.Join(", ", classNames);
 

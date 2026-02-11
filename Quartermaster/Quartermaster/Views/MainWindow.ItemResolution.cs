@@ -43,7 +43,7 @@ public partial class MainWindow
             );
         }
 
-        var viewModel = _itemViewModelFactory.CreateBackpackItem(
+        var viewModel = ItemFactory.CreateBackpackItem(
             item,
             invItem.Repos_PosX, invItem.Repos_PosY,
             invItem.Dropable, invItem.Pickpocketable,
@@ -79,7 +79,7 @@ public partial class MainWindow
             );
         }
 
-        var viewModel = _itemViewModelFactory.Create(item, source);
+        var viewModel = ItemFactory.Create(item, source);
         SetupLazyIconLoading(viewModel);
         return viewModel;
     }
@@ -116,11 +116,11 @@ public partial class MainWindow
         }
 
         // 2. Try GameDataService (Override → HAK → BIF) if not found in module
-        if (item == null && _gameDataService.IsConfigured)
+        if (item == null && GameData.IsConfigured)
         {
             try
             {
-                var utiData = _gameDataService.FindResource(resRef, ResourceTypes.Uti);
+                var utiData = GameData.FindResource(resRef, ResourceTypes.Uti);
                 if (utiData != null)
                 {
                     item = UtiReader.Read(utiData);
