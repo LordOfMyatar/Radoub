@@ -43,7 +43,7 @@ public class ThemeManager
     /// <summary>
     /// Available themes discovered from theme directories
     /// </summary>
-    public IReadOnlyList<ThemeManifest> AvailableThemes => _themes.Values.ToList();
+    public IReadOnlyList<ThemeManifest> AvailableThemes { get { lock (_lock) { return _themes.Values.ToList(); } } }
 
     /// <summary>
     /// Currently active theme
@@ -143,11 +143,13 @@ public class ThemeManager
     }
 
     /// <summary>
-    /// Discover all available themes from theme directories
+    /// Discover all available themes from theme directories.
+    /// Thread-safe: locks _themes during mutation.
     /// </summary>
     public void DiscoverThemes()
     {
-        _themes.Clear();
+        // Load manifests from disk outside the lock (I/O can be slow)
+        var discovered = new Dictionary<string, ThemeManifest>();
 
         foreach (var directory in _themeDirectories)
         {
@@ -161,7 +163,7 @@ public class ThemeManager
                     var manifest = LoadThemeManifest(themeFile);
                     if (manifest != null)
                     {
-                        _themes[manifest.Plugin.Id] = manifest;
+                        discovered[manifest.Plugin.Id] = manifest;
                         UnifiedLogger.LogApplication(LogLevel.DEBUG,
                             $"[{_toolName}] Discovered theme: {manifest.Plugin.Name} ({manifest.Plugin.Id})");
                     }
@@ -171,6 +173,16 @@ public class ThemeManager
                     UnifiedLogger.LogApplication(LogLevel.WARN,
                         $"[{_toolName}] Failed to load theme: {ex.Message}");
                 }
+            }
+        }
+
+        // Swap atomically under lock
+        lock (_lock)
+        {
+            _themes.Clear();
+            foreach (var kvp in discovered)
+            {
+                _themes[kvp.Key] = kvp.Value;
             }
         }
 
@@ -204,10 +216,14 @@ public class ThemeManager
     /// </summary>
     public bool ApplyTheme(string themeId)
     {
-        if (!_themes.TryGetValue(themeId, out var theme))
+        ThemeManifest? theme;
+        lock (_lock)
         {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"[{_toolName}] Theme not found: {themeId}");
-            return false;
+            if (!_themes.TryGetValue(themeId, out theme))
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"[{_toolName}] Theme not found: {themeId}");
+                return false;
+            }
         }
 
         return ApplyTheme(theme);
@@ -632,7 +648,10 @@ public class ThemeManager
     /// </summary>
     public ThemeManifest? GetTheme(string themeId)
     {
-        return _themes.TryGetValue(themeId, out var theme) ? theme : null;
+        lock (_lock)
+        {
+            return _themes.TryGetValue(themeId, out var theme) ? theme : null;
+        }
     }
 
     /// <summary>
@@ -655,7 +674,12 @@ public class ThemeManager
         if (_useSharedTheme && RadoubSettings.Instance.HasSharedTheme)
         {
             var sharedThemeId = RadoubSettings.Instance.SharedThemeId;
-            if (_themes.ContainsKey(sharedThemeId))
+            bool found;
+            lock (_lock)
+            {
+                found = _themes.ContainsKey(sharedThemeId);
+            }
+            if (found)
             {
                 UnifiedLogger.LogApplication(LogLevel.DEBUG,
                     $"[{_toolName}] Using shared theme: {sharedThemeId}");

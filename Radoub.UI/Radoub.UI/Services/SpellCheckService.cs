@@ -3,6 +3,7 @@ using Radoub.Formats.Logging;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Media;
@@ -23,14 +24,29 @@ namespace Radoub.UI.Services;
 public class SpellCheckService : IDisposable
 {
     private static SpellCheckService? _instance;
-    public static SpellCheckService Instance => _instance ??= new SpellCheckService();
+    private static readonly object _singletonLock = new();
+    public static SpellCheckService Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                lock (_singletonLock)
+                {
+                    _instance ??= new SpellCheckService();
+                }
+            }
+            return _instance;
+        }
+    }
 
     private DictionaryManager _dictionaryManager;
     private SpellChecker? _spellChecker;
     private DictionaryDiscovery? _discovery;
     private bool _disposed;
-    private bool _isInitialized;
-    private bool _isReloading;
+    private volatile bool _isInitialized;
+    private volatile bool _isReloading;
+    private readonly SemaphoreSlim _initLock = new(1, 1);
 
     /// <summary>
     /// Tracks words added by the user (separate from loaded dictionaries).
@@ -82,14 +98,18 @@ public class SpellCheckService : IDisposable
 
     /// <summary>
     /// Initialize spell-checking with selected language and enabled dictionaries.
-    /// Call this once at app startup.
+    /// Call this once at app startup. Thread-safe via SemaphoreSlim.
     /// </summary>
     public async Task InitializeAsync()
     {
         if (_isInitialized) return;
 
+        await _initLock.WaitAsync();
         try
         {
+            // Double-check after acquiring lock
+            if (_isInitialized) return;
+
             _discovery = new DictionaryDiscovery(DictionaryDiscovery.GetDefaultUserDictionaryPath());
             await LoadDictionariesAsync();
 
@@ -100,6 +120,10 @@ public class SpellCheckService : IDisposable
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to initialize spell-check: {ex.Message}");
             _isInitialized = false;
+        }
+        finally
+        {
+            _initLock.Release();
         }
     }
 
@@ -209,21 +233,23 @@ public class SpellCheckService : IDisposable
 
     /// <summary>
     /// Reload all dictionaries (hot-swap). Called when settings change.
+    /// Thread-safe via SemaphoreSlim to prevent concurrent reloads.
     /// </summary>
     public async Task ReloadDictionariesAsync()
     {
         if (!_isInitialized) return;
 
-        _isReloading = true;
-
+        await _initLock.WaitAsync();
         try
         {
+            _isReloading = true;
             await LoadDictionariesAsync();
             DictionariesReloaded?.Invoke(this, EventArgs.Empty);
         }
         finally
         {
             _isReloading = false;
+            _initLock.Release();
         }
     }
 
@@ -465,6 +491,7 @@ public class SpellCheckService : IDisposable
 
             _spellChecker?.Dispose();
             _spellChecker = null;
+            _initLock.Dispose();
             _disposed = true;
         }
     }

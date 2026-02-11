@@ -1,51 +1,60 @@
 using System;
-using System.Linq;
+using Radoub.UI.Services;
 
 namespace RadoubLauncher.Services;
 
 /// <summary>
+/// Trebuchet-specific command line options.
+/// </summary>
+public class TrebuchetOptions : CommandLineOptions
+{
+    public string? ModulePath { get; set; }
+}
+
+/// <summary>
 /// Parses command line arguments for Trebuchet.
+/// Delegates common flag parsing to shared CommandLineParser.
 /// </summary>
 public static class CommandLineService
 {
+    /// <summary>
+    /// Backwards-compatible Options type alias.
+    /// </summary>
     public class Options
     {
         public bool ShowHelp { get; set; }
         public bool SafeMode { get; set; }
         public string? ModulePath { get; set; }
+
+        internal static Options FromParsed(TrebuchetOptions parsed) => new()
+        {
+            ShowHelp = parsed.ShowHelp,
+            SafeMode = parsed.SafeMode,
+            ModulePath = parsed.ModulePath
+        };
     }
 
     public static Options Parse(string[] args)
     {
-        var options = new Options();
+        var parsed = CommandLineParser.Parse<TrebuchetOptions>(args, HandleCustomFlag);
+        return Options.FromParsed(parsed);
+    }
 
-        for (int i = 0; i < args.Length; i++)
+    private static int HandleCustomFlag(string flag, string[] args, int currentIndex, CommandLineOptions options)
+    {
+        switch (flag.ToLowerInvariant())
         {
-            var arg = args[i].ToLowerInvariant();
-
-            switch (arg)
-            {
-                case "-h":
-                case "--help":
-                    options.ShowHelp = true;
-                    break;
-
-                case "--safemode":
-                case "--safe-mode":
-                    options.SafeMode = true;
-                    break;
-
-                case "-m":
-                case "--module":
-                    if (i + 1 < args.Length)
-                    {
-                        options.ModulePath = args[++i];
-                    }
-                    break;
-            }
+            case "-m":
+            case "--module":
+                if (currentIndex + 1 < args.Length)
+                {
+                    ((TrebuchetOptions)options).ModulePath = args[currentIndex + 1];
+                    return 1;
+                }
+                return 0;
+            default:
+                return 0;
         }
-
-        return options;
     }
 
     public static void PrintHelp()

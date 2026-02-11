@@ -43,7 +43,7 @@ public class GameDataService : IGameDataService
 
     #region IGameDataService Implementation
 
-    public bool IsConfigured => _resolver != null;
+    public bool IsConfigured { get { lock (_lock) { return _resolver != null; } } }
 
     public TwoDAFile? Get2DA(string name)
     {
@@ -73,19 +73,22 @@ public class GameDataService : IGameDataService
 
     public bool Has2DA(string name)
     {
-        if (string.IsNullOrEmpty(name) || _resolver == null)
+        if (string.IsNullOrEmpty(name))
             return false;
 
-        // Check cache first
         lock (_lock)
         {
+            if (_resolver == null)
+                return false;
+
+            // Check cache first
             if (_twoDACache.TryGetValue(name, out var cached))
                 return cached != null;
-        }
 
-        // Check if resource exists without loading
-        var data = _resolver.FindResource(name, ResourceTypes.TwoDA);
-        return data != null;
+            // Check if resource exists without loading
+            var data = _resolver.FindResource(name, ResourceTypes.TwoDA);
+            return data != null;
+        }
     }
 
     public void ClearCache()
@@ -137,32 +140,40 @@ public class GameDataService : IGameDataService
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        if (_resolver == null)
+        lock (_lock)
         {
-            UnifiedLogger.Log(LogLevel.DEBUG, $"FindResource({resRef}, {resourceType}): resolver is null", "GameDataService", "GameData");
-            return null;
-        }
+            if (_resolver == null)
+            {
+                UnifiedLogger.Log(LogLevel.DEBUG, $"FindResource({resRef}, {resourceType}): resolver is null", "GameDataService", "GameData");
+                return null;
+            }
 
-        var result = _resolver.FindResource(resRef, resourceType);
-        UnifiedLogger.Log(LogLevel.DEBUG, $"FindResource({resRef}, {resourceType}): {(result != null ? $"{result.Length} bytes" : "not found")}", "GameDataService", "GameData");
-        return result;
+            var result = _resolver.FindResource(resRef, resourceType);
+            UnifiedLogger.Log(LogLevel.DEBUG, $"FindResource({resRef}, {resourceType}): {(result != null ? $"{result.Length} bytes" : "not found")}", "GameDataService", "GameData");
+            return result;
+        }
     }
 
     public IEnumerable<GameResourceInfo> ListResources(ushort resourceType)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        if (_resolver == null)
-            return Enumerable.Empty<GameResourceInfo>();
+        lock (_lock)
+        {
+            if (_resolver == null)
+                return Enumerable.Empty<GameResourceInfo>();
 
-        return _resolver.ListResources(resourceType)
-            .Select(r => new GameResourceInfo
-            {
-                ResRef = r.ResRef,
-                ResourceType = r.ResourceType,
-                Source = MapSource(r.Source),
-                SourcePath = r.SourcePath
-            });
+            // Materialize to list inside lock to avoid deferred execution after lock release
+            return _resolver.ListResources(resourceType)
+                .Select(r => new GameResourceInfo
+                {
+                    ResRef = r.ResRef,
+                    ResourceType = r.ResourceType,
+                    Source = MapSource(r.Source),
+                    SourcePath = r.SourcePath
+                })
+                .ToList();
+        }
     }
 
     public void ReloadConfiguration()

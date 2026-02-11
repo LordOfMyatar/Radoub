@@ -1,18 +1,14 @@
 using System;
-using System.IO;
+using Radoub.UI.Services;
 
 namespace Manifest.Services;
 
 /// <summary>
-/// Command line options for Manifest
+/// Manifest-specific command line options.
+/// Extends shared CommandLineOptions with quest/entry navigation for cross-tool integration.
 /// </summary>
-public class CommandLineOptions
+public class ManifestCommandLineOptions : CommandLineOptions
 {
-    /// <summary>
-    /// JRL file path to open on startup
-    /// </summary>
-    public string? FilePath { get; set; }
-
     /// <summary>
     /// Quest tag to navigate to after opening
     /// </summary>
@@ -22,79 +18,61 @@ public class CommandLineOptions
     /// Entry ID to select (requires QuestTag)
     /// </summary>
     public uint? EntryId { get; set; }
-
-    /// <summary>
-    /// Show help and exit
-    /// </summary>
-    public bool ShowHelp { get; set; }
-
-    /// <summary>
-    /// Start in SafeMode - reset visual settings to defaults
-    /// </summary>
-    public bool SafeMode { get; set; }
 }
 
 /// <summary>
 /// Service for handling command line arguments.
 /// Enables cross-tool integration (e.g., Parley's "Open in Manifest" feature).
+/// Delegates common flag parsing to shared CommandLineParser.
 /// </summary>
 public static class CommandLineService
 {
-    private static CommandLineOptions? _options;
+    private static ManifestCommandLineOptions? _options;
 
     /// <summary>
     /// Parsed command line options
     /// </summary>
-    public static CommandLineOptions Options => _options ?? new CommandLineOptions();
+    public static ManifestCommandLineOptions Options => _options ?? new ManifestCommandLineOptions();
 
     /// <summary>
     /// Parse command line arguments
     /// </summary>
-    public static CommandLineOptions Parse(string[] args)
+    public static ManifestCommandLineOptions Parse(string[] args)
     {
-        var options = new CommandLineOptions();
+        _options = CommandLineParser.Parse<ManifestCommandLineOptions>(args, HandleCustomFlag, ".jrl");
+        return _options;
+    }
 
-        for (int i = 0; i < args.Length; i++)
+    private static int HandleCustomFlag(string flag, string[] args, int currentIndex, CommandLineOptions options)
+    {
+        var manifestOptions = (ManifestCommandLineOptions)options;
+
+        switch (flag.ToLowerInvariant())
         {
-            var arg = args[i];
-
-            if (arg == "--help" || arg == "-h" || arg == "/?")
-            {
-                options.ShowHelp = true;
-            }
-            else if (arg == "--safemode" || arg == "-s" || arg == "--safe-mode")
-            {
-                options.SafeMode = true;
-            }
-            else if ((arg == "--file" || arg == "-f") && i + 1 < args.Length)
-            {
-                options.FilePath = args[++i];
-            }
-            else if ((arg == "--quest" || arg == "-q") && i + 1 < args.Length)
-            {
-                options.QuestTag = args[++i];
-            }
-            else if ((arg == "--entry" || arg == "-e") && i + 1 < args.Length)
-            {
-                if (uint.TryParse(args[++i], out var entryId))
+            case "--quest":
+            case "-q":
+                if (currentIndex + 1 < args.Length)
                 {
-                    options.EntryId = entryId;
+                    manifestOptions.QuestTag = args[currentIndex + 1];
+                    return 1;
                 }
-            }
-            else if (!arg.StartsWith("-") && arg.EndsWith(".jrl", StringComparison.OrdinalIgnoreCase))
-            {
-                // Positional argument: file path ending in .jrl
-                options.FilePath = arg;
-            }
-            else if (!arg.StartsWith("-") && File.Exists(arg))
-            {
-                // Positional argument: existing file path
-                options.FilePath = arg;
-            }
-        }
+                return 0;
 
-        _options = options;
-        return options;
+            case "--entry":
+            case "-e":
+                if (currentIndex + 1 < args.Length)
+                {
+                    if (uint.TryParse(args[currentIndex + 1], out var entryId))
+                    {
+                        manifestOptions.EntryId = entryId;
+                    }
+                    return 1;
+                }
+                return 0;
+
+            default:
+                return 0;
+        }
     }
 
     /// <summary>
