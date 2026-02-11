@@ -4,33 +4,20 @@ using System.Threading.Tasks;
 using DialogEditor.Models;
 using DialogEditor.Services;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 
 namespace DialogEditor.Services
 {
     /// <summary>
-    /// Command line options for Parley
+    /// Parley-specific command line options.
+    /// Extends shared CommandLineOptions with screenplay export flags.
     /// </summary>
-    public class CommandLineOptions
+    public class ParleyCommandLineOptions : CommandLineOptions
     {
-        /// <summary>
-        /// DLG file path to open on startup
-        /// </summary>
-        public string? FilePath { get; set; }
-
-        /// <summary>
-        /// Safe mode - disable themes and plugins
-        /// </summary>
-        public bool SafeMode { get; set; }
-
         /// <summary>
         /// Export screenplay to stdout and exit
         /// </summary>
         public bool ExportScreenplay { get; set; }
-
-        /// <summary>
-        /// Show help and exit
-        /// </summary>
-        public bool ShowHelp { get; set; }
 
         /// <summary>
         /// Output file for screenplay export (optional, defaults to stdout)
@@ -39,57 +26,49 @@ namespace DialogEditor.Services
     }
 
     /// <summary>
-    /// Service for handling command line arguments
+    /// Service for handling command line arguments.
+    /// Delegates common flag parsing to shared CommandLineParser.
     /// </summary>
     public static class CommandLineService
     {
-        private static CommandLineOptions? _options;
+        private static ParleyCommandLineOptions? _options;
 
         /// <summary>
         /// Parsed command line options
         /// </summary>
-        public static CommandLineOptions Options => _options ?? new CommandLineOptions();
+        public static ParleyCommandLineOptions Options => _options ?? new ParleyCommandLineOptions();
 
         /// <summary>
         /// Parse command line arguments
         /// </summary>
-        public static CommandLineOptions Parse(string[] args)
+        public static ParleyCommandLineOptions Parse(string[] args)
         {
-            var options = new CommandLineOptions();
+            _options = CommandLineParser.Parse<ParleyCommandLineOptions>(args, HandleCustomFlag, ".dlg");
+            return _options;
+        }
 
-            for (int i = 0; i < args.Length; i++)
+        private static int HandleCustomFlag(string flag, string[] args, int currentIndex, CommandLineOptions options)
+        {
+            var parleyOptions = (ParleyCommandLineOptions)options;
+
+            switch (flag.ToLowerInvariant())
             {
-                var arg = args[i];
+                case "--screenplay":
+                    parleyOptions.ExportScreenplay = true;
+                    return 0;
 
-                if (arg == "--help" || arg == "-h" || arg == "/?")
-                {
-                    options.ShowHelp = true;
-                }
-                else if (arg == "--safe-mode" || arg == "--safemode" || arg == "-s")
-                {
-                    options.SafeMode = true;
-                }
-                else if (arg == "--screenplay")
-                {
-                    options.ExportScreenplay = true;
-                }
-                else if ((arg == "--output" || arg == "-o") && i + 1 < args.Length)
-                {
-                    options.OutputFile = args[++i];
-                }
-                else if (!arg.StartsWith("-") && arg.EndsWith(".dlg", StringComparison.OrdinalIgnoreCase))
-                {
-                    options.FilePath = arg;
-                }
-                else if (!arg.StartsWith("-") && File.Exists(arg))
-                {
-                    // Also accept file paths that exist even without .dlg extension
-                    options.FilePath = arg;
-                }
+                case "--output":
+                case "-o":
+                    if (currentIndex + 1 < args.Length)
+                    {
+                        parleyOptions.OutputFile = args[currentIndex + 1];
+                        return 1;
+                    }
+                    return 0;
+
+                default:
+                    return 0;
             }
-
-            _options = options;
-            return options;
         }
 
         /// <summary>
