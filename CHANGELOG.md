@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.66] - 2026-02-10
-**Branch**: `radoub/issue-1299` | **PR**: #TBD
+**Branch**: `radoub/issue-1299` | **PR**: #1306
 
 ### Sprint: Tech Debt Phase 3b - Validation & Format Safety (#1299)
 
