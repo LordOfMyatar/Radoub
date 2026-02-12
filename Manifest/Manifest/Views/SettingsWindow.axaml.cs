@@ -211,9 +211,9 @@ public partial class SettingsWindow : Window
             {
                 FontPreviewText.FontFamily = new FontFamily(fontFamily);
             }
-            catch
+            catch (ArgumentException ex)
             {
-                // Invalid font family - use default
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Invalid font family '{fontFamily}': {ex.Message}");
             }
         }
     }
@@ -326,7 +326,8 @@ public partial class SettingsWindow : Window
     {
         if (_isLoading) return;
 
-        var path = UserPathTextBox.Text ?? "";
+        var rawPath = UserPathTextBox.Text ?? "";
+        var path = string.IsNullOrWhiteSpace(rawPath) ? "" : Path.GetFullPath(rawPath);
         RadoubSettings.Instance.NeverwinterNightsPath = path;
         UpdateUserPathValidation();
         UnifiedLogger.LogApplication(LogLevel.INFO, $"User path changed to: {SanitizePath(path)}");
@@ -346,7 +347,7 @@ public partial class SettingsWindow : Window
         var result = await storageProvider.OpenFolderPickerAsync(options);
         if (result.Count > 0)
         {
-            var path = result[0].Path.LocalPath;
+            var path = Path.GetFullPath(result[0].Path.LocalPath);
             UserPathTextBox.Text = path;
             RadoubSettings.Instance.NeverwinterNightsPath = path;
             UpdateUserPathValidation();
