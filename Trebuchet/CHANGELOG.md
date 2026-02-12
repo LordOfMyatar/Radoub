@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.8.0-alpha] - 2026-02-11
+**Branch**: `trebuchet/issue-1260` | **PR**: #TBD
+
+### Sprint: Quick Wins + Manifest Integration (#1260)
+
+- [ ] #1245 - Show subproject status indicators (Alpha, Beta, In Development)
+- [ ] #1161 - Add module dirty flag with reminder to build before test
+- [ ] #1079 - [Manifest] Review file picker behavior with Trebuchet module management
+
+---
+
 ## [1.7.2-alpha] - 2026-02-11
 **Branch**: `trebuchet/issue-1292` | **PR**: #1307
 

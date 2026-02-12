@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.15.0-alpha] - 2026-02-11
+**Branch**: `trebuchet/issue-1260` | **PR**: #TBD
+
+### Sprint: Trebuchet Module Management Integration (#1260)
+
+- [ ] #1079 - Review file picker behavior with Trebuchet module management
+
+---
+
 ## [0.14.2-alpha] - 2026-02-01
 **Branch**: `radoub/issue-1151` | **PR**: #1180
 
