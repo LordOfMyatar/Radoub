@@ -339,7 +339,8 @@ public partial class MainWindow
                         BaseItemIndex = resolved.BaseItemType,
                         BaseValue = resolved.BaseCost,
                         Tag = resolved.Tag,
-                        IsStandard = false
+                        IsStandard = false,
+                        IsModuleItem = true
                     });
                     existingResRefs.Add(resRef);
                     moduleItemCount++;
@@ -363,28 +364,7 @@ public partial class MainWindow
     /// </summary>
     private void ClearModuleItems()
     {
-        // Module items are !IsStandard - but so are Override/HAK items.
-        // We can't distinguish them by IsStandard alone. Instead, remove items
-        // whose ResRef corresponds to a .uti file in _lastModuleDirectory.
-        if (string.IsNullOrEmpty(_lastModuleDirectory) || !Directory.Exists(_lastModuleDirectory))
-            return;
-
-        var moduleResRefs = new HashSet<string>(
-            Directory.GetFiles(_lastModuleDirectory, "*.uti", SearchOption.TopDirectoryOnly)
-                .Select(f => Path.GetFileNameWithoutExtension(f)),
-            StringComparer.OrdinalIgnoreCase);
-
-        // Only remove items that came from the module directory and aren't also in game data
-        var gameResRefs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (_cachedPaletteData != null)
-        {
-            foreach (var cached in _cachedPaletteData)
-                gameResRefs.Add(cached.ResRef);
-        }
-
-        var toRemove = PaletteItems
-            .Where(p => moduleResRefs.Contains(p.ResRef) && !gameResRefs.Contains(p.ResRef))
-            .ToList();
+        var toRemove = PaletteItems.Where(p => p.IsModuleItem).ToList();
 
         foreach (var item in toRemove)
             PaletteItems.Remove(item);
