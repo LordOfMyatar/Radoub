@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.15.1-alpha] - 2026-02-11
+**Branch**: `radoub/issue-1300` | **PR**: #1310
+
+### Sprint: Tech Debt Phase 3c - Trebuchet & Manifest Cleanup (#1300)
+
+- [x] #1294 - Fix settings persistence, command line race, and TLK log levels
+  - Replaced bare catch in font handling with specific `ArgumentException` + logging
+  - TLK log levels already correct after #1286 shared TlkService consolidation
+  - CommandLineService.Options now throws if Parse() not called (guards against race)
+  - Added `IsParsed` property for defensive checking
+  - Settings persistence verified correct (all settings auto-save on change)
+  - Added `Path.GetFullPath()` traversal prevention to user path handlers
+
+---
+
 ## [0.15.0-alpha] - 2026-02-11
 **Branch**: `trebuchet/issue-1260` | **PR**: #1308
 

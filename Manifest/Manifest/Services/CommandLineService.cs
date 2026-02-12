@@ -30,9 +30,15 @@ public static class CommandLineService
     private static ManifestCommandLineOptions? _options;
 
     /// <summary>
-    /// Parsed command line options
+    /// Whether Parse() has been called. Guards against accessing Options before parsing.
     /// </summary>
-    public static ManifestCommandLineOptions Options => _options ?? new ManifestCommandLineOptions();
+    public static bool IsParsed => _options != null;
+
+    /// <summary>
+    /// Parsed command line options. Must call Parse() first.
+    /// </summary>
+    public static ManifestCommandLineOptions Options =>
+        _options ?? throw new InvalidOperationException("CommandLineService.Parse() must be called before accessing Options.");
 
     /// <summary>
     /// Parse command line arguments
