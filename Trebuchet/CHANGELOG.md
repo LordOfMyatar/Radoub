@@ -15,9 +15,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Quick Wins + Manifest Integration (#1260)
 
-- [ ] #1245 - Show subproject status indicators (Alpha, Beta, In Development)
-- [ ] #1161 - Add module dirty flag with reminder to build before test
-- [ ] #1079 - [Manifest] Review file picker behavior with Trebuchet module management
+- [x] #1245 - Show subproject status indicators (Alpha, Beta, In Development)
+  - Each tool card displays maturity badge (Alpha/Beta/Stable/In Development) with color coding
+  - Parley and Manifest: Beta (blue), Quartermaster and Fence: Alpha (yellow)
+- [x] #1161 - Add module dirty flag with reminder to build before test
+  - Compares working directory file timestamps against .mod file
+  - Detects stale scripts (.nss newer than .ncs)
+  - Shows warning indicator next to Save Module button
+  - Prompts Build First / Test Anyway / Cancel before game launch
+  - Renamed "Build" button to "Save Module"
+- [x] #1079 - [Manifest] Auto-load journal from Trebuchet's current module
+  - Manifest auto-detects and loads the module's .jrl when launched from Trebuchet
+  - Skips auto-load when multiple journals exist or no module selected
 
 ---
 

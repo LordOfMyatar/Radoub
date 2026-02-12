@@ -15,7 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Trebuchet Module Management Integration (#1260)
 
-- [ ] #1079 - Review file picker behavior with Trebuchet module management
+- [x] #1079 - Auto-load journal from Trebuchet's current module
+  - When launched without --file, auto-detects and loads the single .jrl from module directory
+  - Uses ManifestBrowserContext to resolve module path from RadoubSettings
+  - Skips auto-load when multiple journals exist or no module is selected
 
 ---
 
