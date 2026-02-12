@@ -320,10 +320,19 @@ public partial class MainWindow
 
     /// <summary>
     /// Handles equip request for a single backpack item via context menu.
+    /// Equips the item and removes it from backpack (move, not copy).
     /// </summary>
     private void OnEquipFromBackpackRequested(object? sender, ItemViewModel item)
     {
+        var previousSlotStates = _equipmentSlots.ToDictionary(s => s, s => s.EquippedItem);
         OnEquipItemsRequested(sender, new[] { item });
+
+        // If an equipment slot changed, the item was equipped - remove from backpack
+        var equipped = _equipmentSlots.Any(s => s.EquippedItem != previousSlotStates[s]);
+        if (equipped)
+        {
+            InventoryPanelContent.RemoveFromBackpack(item);
+        }
     }
 
     /// <summary>

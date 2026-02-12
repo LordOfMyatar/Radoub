@@ -314,6 +314,9 @@ public partial class MainWindow
             ? null
             : Path.GetDirectoryName(_currentFilePath);
 
+        UnifiedLogger.LogInventory(LogLevel.INFO,
+            $"PopulateItemPalette: scanning directory '{(newModuleDir != null ? UnifiedLogger.SanitizePath(newModuleDir) : "(null)")}' for module UTIs");
+
         // Clear old module items if directory changed
         if (_lastModuleDirectory != newModuleDir)
         {
@@ -326,6 +329,7 @@ public partial class MainWindow
         if (!string.IsNullOrEmpty(newModuleDir) && Directory.Exists(newModuleDir))
         {
             var utiFiles = Directory.GetFiles(newModuleDir, "*.uti", SearchOption.TopDirectoryOnly);
+            UnifiedLogger.LogInventory(LogLevel.INFO, $"Found {utiFiles.Length} .uti files in module directory");
             foreach (var utiPath in utiFiles)
             {
                 try
