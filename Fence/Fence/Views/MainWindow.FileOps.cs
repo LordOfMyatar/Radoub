@@ -106,6 +106,9 @@ public partial class MainWindow
             // Update store browser panel (#1144)
             UpdateStoreBrowserCurrentFile(filePath);
 
+            // Scan module directory for loose .uti files
+            PopulateModuleItems();
+
             // Load inventory async to avoid blocking UI during item resolution
             _ = PopulateStoreInventoryAsync(filePath);
         }

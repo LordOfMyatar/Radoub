@@ -531,10 +531,13 @@ public class EquipmentSlotDropEventArgs : EventArgs
 
     /// <summary>
     /// The drag data object (IDataObject for Contains/Get support).
+    /// IDataTransfer replacement lacks Contains/Get methods needed for format detection.
     /// </summary>
+#pragma warning disable CS0618 // IDataObject is obsolete but IDataTransfer lacks Contains/Get
     public IDataObject DataObject { get; }
 
     public EquipmentSlotDropEventArgs(EquipmentSlotViewModel targetSlot, IDataObject dataObject)
+#pragma warning restore CS0618
     {
         TargetSlot = targetSlot;
         DataObject = dataObject;

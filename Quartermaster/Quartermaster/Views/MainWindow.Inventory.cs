@@ -324,7 +324,31 @@ public partial class MainWindow
     /// </summary>
     private void OnEquipFromBackpackRequested(object? sender, ItemViewModel item)
     {
+        // Snapshot which slots have items before equipping
         var previousSlotStates = _equipmentSlots.ToDictionary(s => s, s => s.EquippedItem);
+
+        // Find which slot will be targeted so we can swap if occupied
+        var validator = new Radoub.UI.Services.EquipmentSlotValidator(GameData);
+        var validSlotsBitmask = validator.GetEquipableSlots(item.BaseItem);
+        if (validSlotsBitmask != null && validSlotsBitmask != 0)
+        {
+            const int StandardSlotsMask = 0x3FFF;
+            var standardBits = validSlotsBitmask.Value & StandardSlotsMask;
+            var standardSlots = _equipmentSlots.Where(s => s.IsStandard).ToList();
+
+            // Find the slot that OnEquipItemsRequested will target (same logic: empty first, then first match)
+            var targetSlot = standardSlots.FirstOrDefault(s => (standardBits & s.SlotFlag) != 0 && !s.HasItem)
+                          ?? standardSlots.FirstOrDefault(s => (standardBits & s.SlotFlag) != 0);
+
+            // If the target slot has an existing item, unequip it to backpack first (swap)
+            if (targetSlot?.HasItem == true)
+            {
+                UnifiedLogger.LogInventory(LogLevel.INFO,
+                    $"Swapping: moving {targetSlot.EquippedItem!.Name} from {targetSlot.Name} to backpack");
+                UnequipToBackpack(targetSlot);
+            }
+        }
+
         OnEquipItemsRequested(sender, new[] { item });
 
         // If an equipment slot changed, the item was equipped - remove from backpack
