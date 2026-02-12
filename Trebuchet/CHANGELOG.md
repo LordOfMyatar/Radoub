@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.8.0-alpha] - 2026-02-11
-**Branch**: `trebuchet/issue-1260` | **PR**: #TBD
+**Branch**: `trebuchet/issue-1260` | **PR**: #1308
 
 ### Sprint: Quick Wins + Manifest Integration (#1260)
 
