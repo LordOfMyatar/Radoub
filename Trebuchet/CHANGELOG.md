@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.7.2-alpha] - 2026-02-11
-**Branch**: `trebuchet/issue-1292` | **PR**: #TBD
+**Branch**: `trebuchet/issue-1292` | **PR**: #1307
 
 ### Tech Debt: Fix silent theme distribution failure and HttpClient lifecycle (#1292)
 
