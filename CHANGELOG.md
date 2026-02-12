@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.67] - 2026-02-11
-**Branch**: `radoub/issue-1259` | **PR**: #TBD
+**Branch**: `radoub/issue-1259` | **PR**: #1311
 
 ### Sprint: Cross-Tool Inventory Unification (#1259)
 
