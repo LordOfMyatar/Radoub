@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.7.2-alpha] - 2026-02-11
+**Branch**: `trebuchet/issue-1292` | **PR**: #TBD
+
+### Tech Debt: Fix silent theme distribution failure and HttpClient lifecycle (#1292)
+
+- Theme distribution: Log at WARN/ERROR level, add user notification on failure
+- HttpClient: Use static/singleton HttpClient or IHttpClientFactory pattern
+- Fire-and-forget: Add CancellationToken propagation, wire to app shutdown
+
+---
+
 ## [1.7.1-alpha] - 2026-02-01
 **Branch**: `radoub/issue-1185` | **PR**: #1187
 
