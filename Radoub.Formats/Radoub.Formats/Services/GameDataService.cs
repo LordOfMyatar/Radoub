@@ -249,13 +249,14 @@ public class GameDataService : IGameDataService
             }
         }
 
-        // HAK paths - include default hak folder and any additional configured paths
-        // GetAllHakSearchPaths includes ~/Documents/Neverwinter Nights/hak/ plus user-added paths
-        var allHakPaths = settings.GetAllHakSearchPaths().ToList();
-        if (allHakPaths.Count > 0)
+        // HAK paths - only scan explicitly configured additional paths (not default hak folder)
+        // Scanning all HAKs (80+) takes 15+ seconds and hangs the UI
+        // Future: Read module.ifo HakList to scan only module-required HAKs (#1314)
+        var additionalHakPaths = settings.HakSearchPaths;
+        if (additionalHakPaths.Count > 0)
         {
             config.EnableHakScanning = true;
-            foreach (var hakSearchPath in allHakPaths)
+            foreach (var hakSearchPath in additionalHakPaths)
             {
                 if (Directory.Exists(hakSearchPath))
                 {
