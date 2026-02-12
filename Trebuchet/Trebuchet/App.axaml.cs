@@ -58,8 +58,11 @@ public partial class App : Application
 
         if (!ThemeManager.Instance.ApplyTheme(themeId))
         {
-            // Fallback to light theme
-            ThemeManager.Instance.ApplyTheme("org.radoub.theme.light");
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Theme '{themeId}' failed to apply, falling back to light theme");
+            if (!ThemeManager.Instance.ApplyTheme("org.radoub.theme.light"))
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, "Light theme fallback also failed - UI may render with default Avalonia theme");
+            }
         }
 
         // Apply font overrides from settings
@@ -124,9 +127,12 @@ public partial class App : Application
             DisableAvaloniaDataAnnotationValidation();
             desktop.MainWindow = new MainWindow();
 
-            // Unsubscribe from singleton events on app exit (#1282)
+            // Unsubscribe from singleton events and dispose services on app exit (#1282, #1292)
             desktop.Exit += (_, _) =>
+            {
                 SettingsService.Instance.PropertyChanged -= OnSettingsPropertyChanged;
+                UpdateService.Instance.Dispose();
+            };
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -137,7 +143,11 @@ public partial class App : Application
         switch (e.PropertyName)
         {
             case nameof(SettingsService.CurrentThemeId):
-                ThemeManager.Instance.ApplyTheme(SettingsService.Instance.CurrentThemeId);
+                if (!ThemeManager.Instance.ApplyTheme(SettingsService.Instance.CurrentThemeId))
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN,
+                        $"Failed to apply theme '{SettingsService.Instance.CurrentThemeId}' on settings change");
+                }
                 ApplyFontSettings();
                 break;
             case nameof(SettingsService.FontSize):
@@ -183,7 +193,7 @@ public partial class App : Application
                 {
                     // Invalid font family - fall back to system default
                     Resources["GlobalFontFamily"] = FontFamily.Default;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font family: System Default (fallback due to: {ex.Message})");
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Font family fallback to System Default: {ex.Message}");
                 }
             }
             else
@@ -260,7 +270,7 @@ public partial class App : Application
                 }
                 catch (Exception ex)
                 {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not copy theme {Path.GetFileName(themeFile)}: {ex.Message}");
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Could not copy theme {Path.GetFileName(themeFile)}: {ex.Message}");
                 }
             }
 

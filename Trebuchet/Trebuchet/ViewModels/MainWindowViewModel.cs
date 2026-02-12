@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -22,6 +23,7 @@ public partial class MainWindowViewModel : ObservableObject
 {
     private readonly ToolLauncherService _toolLauncher;
     private readonly GameLauncherService _gameLauncher;
+    private readonly CancellationTokenSource _cts = new();
     private Window? _parentWindow;
 
     [ObservableProperty]
@@ -173,12 +175,12 @@ public partial class MainWindowViewModel : ObservableObject
         SettingsService.Instance.PropertyChanged += OnLocalSettingsChanged;
 
         // Check for updates on startup (fire and forget)
-        _ = CheckForUpdatesAsync();
+        _ = CheckForUpdatesAsync(_cts.Token);
 
         // Scan for BIC files if a module is already selected at startup
         if (!string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath))
         {
-            _ = ReadModuleDefaultBicAsync();
+            _ = ReadModuleDefaultBicAsync(_cts.Token);
         }
     }
 
@@ -188,6 +190,8 @@ public partial class MainWindowViewModel : ObservableObject
     /// </summary>
     public void Cleanup()
     {
+        _cts.Cancel();
+        _cts.Dispose();
         RadoubSettings.Instance.PropertyChanged -= OnSharedSettingsChanged;
         SettingsService.Instance.PropertyChanged -= OnLocalSettingsChanged;
     }
@@ -278,7 +282,7 @@ public partial class MainWindowViewModel : ObservableObject
         if (e.PropertyName == nameof(RadoubSettings.CurrentModulePath))
         {
             // Read DefaultBic from the module's IFO to correctly enable/disable Load Module button
-            _ = ReadModuleDefaultBicAsync();
+            _ = ReadModuleDefaultBicAsync(_cts.Token);
 
             OnPropertyChanged(nameof(CanEditModule));
             OnPropertyChanged(nameof(CanTestModule));
@@ -454,14 +458,16 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task CheckForUpdatesAsync()
+    private Task CheckForUpdatesAsync() => CheckForUpdatesAsync(_cts.Token);
+
+    private async Task CheckForUpdatesAsync(CancellationToken cancellationToken)
     {
         IsCheckingForUpdates = true;
         UpdateStatusText = "Checking for updates...";
 
         try
         {
-            var hasUpdate = await UpdateService.Instance.CheckForUpdatesAsync();
+            var hasUpdate = await UpdateService.Instance.CheckForUpdatesAsync(cancellationToken);
             UpdateAvailable = hasUpdate;
 
             if (hasUpdate)
@@ -472,6 +478,10 @@ public partial class MainWindowViewModel : ObservableObject
             {
                 UpdateStatusText = "Up to date";
             }
+        }
+        catch (OperationCanceledException)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Update check cancelled");
         }
         catch (Exception ex)
         {
@@ -494,7 +504,7 @@ public partial class MainWindowViewModel : ObservableObject
     /// Read the DefaultBic value from the current module's IFO file and scan for available BIC files.
     /// Called when module changes to correctly enable/disable Load Module button.
     /// </summary>
-    private async Task ReadModuleDefaultBicAsync()
+    private async Task ReadModuleDefaultBicAsync(CancellationToken cancellationToken = default)
     {
         var modulePath = RadoubSettings.Instance.CurrentModulePath;
         if (string.IsNullOrEmpty(modulePath))
@@ -511,7 +521,9 @@ public partial class MainWindowViewModel : ObservableObject
 
         try
         {
-            var (defaultBic, bicFiles) = await Task.Run(() => ReadDefaultBicAndScanFiles(modulePath));
+            var (defaultBic, bicFiles) = await Task.Run(() => ReadDefaultBicAndScanFiles(modulePath), cancellationToken);
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             // Update available BIC files
             AvailableBicFiles.Clear();
@@ -542,6 +554,10 @@ public partial class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(NoBicFilesMessage));
             OnPropertyChanged(nameof(IsDefaultBicDropdownEnabled));
             OnPropertyChanged(nameof(LoadModuleTooltip));
+        }
+        catch (OperationCanceledException)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "DefaultBic read cancelled");
         }
         catch (Exception ex)
         {
@@ -897,7 +913,7 @@ public partial class MainWindowViewModel : ObservableObject
         {
             // Clear DefaultBic when unchecked
             SelectedDefaultBic = string.Empty;
-            _ = SaveDefaultBicToModuleAsync(string.Empty);
+            _ = SaveDefaultBicToModuleAsync(string.Empty, _cts.Token);
         }
         else if (AvailableBicFiles.Count > 0 && string.IsNullOrEmpty(SelectedDefaultBic))
         {
@@ -911,14 +927,14 @@ public partial class MainWindowViewModel : ObservableObject
         // Save to module IFO when selection changes
         if (UseDefaultBic && !string.IsNullOrEmpty(value))
         {
-            _ = SaveDefaultBicToModuleAsync(value);
+            _ = SaveDefaultBicToModuleAsync(value, _cts.Token);
         }
     }
 
     /// <summary>
     /// Save the DefaultBic value to the current module's IFO file.
     /// </summary>
-    private async Task SaveDefaultBicToModuleAsync(string defaultBic)
+    private async Task SaveDefaultBicToModuleAsync(string defaultBic, CancellationToken cancellationToken = default)
     {
         var workingDir = GetWorkingDirectoryPath();
         if (string.IsNullOrEmpty(workingDir))
@@ -941,7 +957,7 @@ public partial class MainWindowViewModel : ObservableObject
                 var ifoFile = Radoub.Formats.Ifo.IfoReader.Read(ifoPath);
                 ifoFile.DefaultBic = defaultBic;
                 Radoub.Formats.Ifo.IfoWriter.Write(ifoFile, ifoPath);
-            });
+            }, cancellationToken);
 
             // Update RadoubSettings
             RadoubSettings.Instance.CurrentModuleDefaultBic = defaultBic;
@@ -956,6 +972,10 @@ public partial class MainWindowViewModel : ObservableObject
             {
                 UnifiedLogger.LogApplication(LogLevel.INFO, "Cleared DefaultBic");
             }
+        }
+        catch (OperationCanceledException)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "DefaultBic save cancelled");
         }
         catch (Exception ex)
         {
