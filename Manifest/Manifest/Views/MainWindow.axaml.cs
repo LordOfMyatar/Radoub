@@ -65,29 +65,67 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     /// <summary>
     /// Handle command line arguments for file loading and navigation.
     /// Enables cross-tool integration (e.g., Parley's "Open in Manifest" feature).
+    /// If no file is specified, auto-detect journal from Trebuchet's current module.
     /// </summary>
     private async Task HandleStartupFileAsync()
     {
         var options = CommandLineService.Options;
 
-        if (string.IsNullOrEmpty(options.FilePath))
-            return;
-
-        if (!File.Exists(options.FilePath))
+        if (!string.IsNullOrEmpty(options.FilePath))
         {
-            UnifiedLogger.LogApplication(LogLevel.WARN, $"Command line file not found: {UnifiedLogger.SanitizePath(options.FilePath)}");
-            UpdateStatus($"File not found: {Path.GetFileName(options.FilePath)}");
+            if (!File.Exists(options.FilePath))
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Command line file not found: {UnifiedLogger.SanitizePath(options.FilePath)}");
+                UpdateStatus($"File not found: {Path.GetFileName(options.FilePath)}");
+                return;
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Loading file from command line: {UnifiedLogger.SanitizePath(options.FilePath)}");
+            await LoadFile(options.FilePath);
+
+            if (!string.IsNullOrEmpty(options.QuestTag))
+            {
+                NavigateToQuest(options.QuestTag, options.EntryId);
+            }
             return;
         }
 
-        // Load the file
-        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loading file from command line: {UnifiedLogger.SanitizePath(options.FilePath)}");
-        await LoadFile(options.FilePath);
+        // No --file specified: try to auto-detect journal from Trebuchet's current module
+        await TryAutoLoadModuleJournalAsync();
+    }
 
-        // Navigate to quest if specified
-        if (!string.IsNullOrEmpty(options.QuestTag))
+    /// <summary>
+    /// Auto-detect and load the journal file from Trebuchet's currently selected module.
+    /// Modules typically have exactly one .jrl file.
+    /// </summary>
+    private async Task TryAutoLoadModuleJournalAsync()
+    {
+        var context = new ManifestBrowserContext(null);
+        var moduleDir = context.CurrentFileDirectory;
+
+        if (string.IsNullOrEmpty(moduleDir) || !Directory.Exists(moduleDir))
+            return;
+
+        try
         {
-            NavigateToQuest(options.QuestTag, options.EntryId);
+            var jrlFiles = Directory.GetFiles(moduleDir, "*.jrl", SearchOption.TopDirectoryOnly);
+
+            if (jrlFiles.Length == 1)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Auto-loading journal from module: {UnifiedLogger.SanitizePath(jrlFiles[0])}");
+                UpdateStatus("Loading module journal...");
+                await LoadFile(jrlFiles[0]);
+            }
+            else if (jrlFiles.Length > 1)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"Multiple .jrl files in module directory ({jrlFiles.Length}), skipping auto-load");
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Auto-load journal failed: {ex.Message}");
         }
     }
 

@@ -77,11 +77,19 @@
                             IsEnabled="{Binding CanEditModule}"
                             Padding="8,4"
                             ToolTip.Tip="Edit module settings (IFO)"/>
-                    <Button Content="Build"
+                    <Button Content="Save Module"
                             Command="{Binding BuildModuleCommand}"
                             IsEnabled="{Binding CanBuildModule}"
                             Padding="8,4"
                             ToolTip.Tip="Pack working directory into .mod file"/>
+                    <!-- Build warning indicator -->
+                    <TextBlock Text="⚠"
+                               Foreground="{DynamicResource ThemeWarning}"
+                               VerticalAlignment="Center"
+                               FontSize="16"
+                               Margin="-4,0,0,0"
+                               IsVisible="{Binding NeedsBuildWarning}"
+                               ToolTip.Tip="{Binding BuildWarningText}"/>
                     <CheckBox Content="Compile"
                               IsChecked="{Binding CompileScriptsEnabled}"
                               IsEnabled="{Binding IsCompilerAvailable}"

@@ -9,6 +9,17 @@ using Radoub.Formats.Settings;
 namespace RadoubLauncher.Services;
 
 /// <summary>
+/// Maturity level for a Radoub tool.
+/// </summary>
+public enum ToolMaturity
+{
+    InDevelopment,
+    Alpha,
+    Beta,
+    Stable
+}
+
+/// <summary>
 /// Information about a Radoub tool.
 /// </summary>
 public class ToolInfo
@@ -16,9 +27,19 @@ public class ToolInfo
     public required string Name { get; init; }
     public required string Description { get; init; }
     public required string FileTypes { get; init; }
+    public required ToolMaturity Maturity { get; init; }
     public string? ExecutablePath { get; set; }
     public bool IsAvailable => !string.IsNullOrEmpty(ExecutablePath) && File.Exists(ExecutablePath);
     public string StatusText => IsAvailable ? "Ready" : "Not Found";
+
+    public string MaturityText => Maturity switch
+    {
+        ToolMaturity.InDevelopment => "In Development",
+        ToolMaturity.Alpha => "Alpha",
+        ToolMaturity.Beta => "Beta",
+        ToolMaturity.Stable => "Stable",
+        _ => "Unknown"
+    };
 }
 
 /// <summary>
@@ -64,25 +85,29 @@ public class ToolLauncherService
             {
                 Name = "Parley",
                 Description = "Dialog Editor",
-                FileTypes = ".dlg"
+                FileTypes = ".dlg",
+                Maturity = ToolMaturity.Beta
             },
             new ToolInfo
             {
                 Name = "Manifest",
                 Description = "Journal Editor",
-                FileTypes = ".jrl"
+                FileTypes = ".jrl",
+                Maturity = ToolMaturity.Beta
             },
             new ToolInfo
             {
                 Name = "Quartermaster",
                 Description = "Creature Editor",
-                FileTypes = ".utc, .bic"
+                FileTypes = ".utc, .bic",
+                Maturity = ToolMaturity.Alpha
             },
             new ToolInfo
             {
                 Name = "Fence",
                 Description = "Merchant Editor",
-                FileTypes = ".utm"
+                FileTypes = ".utm",
+                Maturity = ToolMaturity.Alpha
             }
         };
 

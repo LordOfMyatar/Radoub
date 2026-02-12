@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.15.0-alpha] - 2026-02-11
+**Branch**: `trebuchet/issue-1260` | **PR**: #1308
+
+### Sprint: Trebuchet Module Management Integration (#1260)
+
+- [x] #1079 - Auto-load journal from Trebuchet's current module
+  - When launched without --file, auto-detects and loads the single .jrl from module directory
+  - Uses ManifestBrowserContext to resolve module path from RadoubSettings
+  - Skips auto-load when multiple journals exist or no module is selected
+
+---
+
 ## [0.14.2-alpha] - 2026-02-01
 **Branch**: `radoub/issue-1151` | **PR**: #1180
 

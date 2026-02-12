@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -121,6 +122,54 @@ public partial class MainWindowViewModel : ObservableObject
     /// </summary>
     public bool CanBuildModule => IsModuleValid && !string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath);
 
+    /// <summary>
+    /// True when module IFO has been modified since the last build.
+    /// Changes via DefaultBic or Module Editor mark this dirty; Build clears it.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NeedsBuildWarning))]
+    [NotifyPropertyChangedFor(nameof(BuildWarningText))]
+    private bool _isModuleDirty;
+
+    /// <summary>
+    /// True when the module needs building before testing.
+    /// Checks if any file in the working directory is newer than the .mod file,
+    /// or if there are stale scripts (.nss newer than .ncs).
+    /// </summary>
+    public bool NeedsBuildWarning => IsModuleDirty || HasNewerWorkingFiles || StaleScriptCount > 0;
+
+    /// <summary>
+    /// True when files in the working directory are newer than the packed .mod file.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NeedsBuildWarning))]
+    [NotifyPropertyChangedFor(nameof(BuildWarningText))]
+    private bool _hasNewerWorkingFiles;
+
+    /// <summary>
+    /// Number of files in the working directory newer than the .mod file.
+    /// </summary>
+    [ObservableProperty]
+    private int _newerFileCount;
+
+    /// <summary>
+    /// Describes why a build is recommended before testing.
+    /// </summary>
+    public string BuildWarningText
+    {
+        get
+        {
+            var reasons = new List<string>();
+            if (HasNewerWorkingFiles)
+                reasons.Add($"{NewerFileCount} file(s) modified since last build");
+            if (StaleScriptCount > 0)
+                reasons.Add($"{StaleScriptCount} script(s) need recompiling");
+            return reasons.Count > 0
+                ? $"Build recommended: {string.Join(", ", reasons)}"
+                : "";
+        }
+    }
+
     [ObservableProperty]
     private bool _isBuilding;
 
@@ -131,6 +180,8 @@ public partial class MainWindowViewModel : ObservableObject
     private bool _hasBuildLog;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NeedsBuildWarning))]
+    [NotifyPropertyChangedFor(nameof(BuildWarningText))]
     private int _staleScriptCount;
 
     /// <summary>
@@ -281,6 +332,10 @@ public partial class MainWindowViewModel : ObservableObject
         // Update module-dependent properties when module changes
         if (e.PropertyName == nameof(RadoubSettings.CurrentModulePath))
         {
+            // New module selected - reset manual dirty state, check file timestamps
+            IsModuleDirty = false;
+            RefreshBuildStatus();
+
             // Read DefaultBic from the module's IFO to correctly enable/disable Load Module button
             _ = ReadModuleDefaultBicAsync(_cts.Token);
 
@@ -421,6 +476,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "Opening module editor");
         var editorWindow = new ModuleEditorWindow();
+        editorWindow.Closed += (_, _) => RefreshBuildStatus();
         editorWindow.Show(_parentWindow);  // Non-modal editor window
     }
 
@@ -677,7 +733,7 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void LaunchTestModule()
+    private async Task LaunchTestModuleAsync()
     {
         var moduleName = GameLauncherService.GetModuleNameFromPath(RadoubSettings.Instance.CurrentModulePath);
         if (string.IsNullOrEmpty(moduleName))
@@ -686,12 +742,18 @@ public partial class MainWindowViewModel : ObservableObject
             return;
         }
 
+        // Refresh checks right before launch to catch any changes made outside Trebuchet
+        RefreshBuildStatus();
+
+        if (NeedsBuildWarning && !await ConfirmLaunchWithDirtyModuleAsync())
+            return;
+
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Launching NWN:EE with +TestNewModule \"{moduleName}\"");
         _gameLauncher.LaunchWithModule(moduleName, testMode: true);
     }
 
     [RelayCommand]
-    private void LaunchLoadModule()
+    private async Task LaunchLoadModuleAsync()
     {
         var moduleName = GameLauncherService.GetModuleNameFromPath(RadoubSettings.Instance.CurrentModulePath);
         if (string.IsNullOrEmpty(moduleName))
@@ -700,8 +762,81 @@ public partial class MainWindowViewModel : ObservableObject
             return;
         }
 
+        // Refresh checks right before launch to catch any changes made outside Trebuchet
+        RefreshBuildStatus();
+
+        if (NeedsBuildWarning && !await ConfirmLaunchWithDirtyModuleAsync())
+            return;
+
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Launching NWN:EE with +LoadNewModule \"{moduleName}\"");
         _gameLauncher.LaunchWithModule(moduleName, testMode: false);
+    }
+
+    /// <summary>
+    /// Show a confirmation dialog when launching with a dirty module.
+    /// Returns true if the user wants to proceed (Build or Test Anyway).
+    /// </summary>
+    private async Task<bool> ConfirmLaunchWithDirtyModuleAsync()
+    {
+        if (_parentWindow == null)
+            return true;
+
+        var dialog = new Window
+        {
+            Title = "Module Has Unsaved Changes",
+            Width = 420,
+            Height = 200,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false,
+            SystemDecorations = SystemDecorations.BorderOnly
+        };
+
+        var result = false;
+        var built = false;
+
+        var messageText = BuildWarningText;
+        var message = new Avalonia.Controls.TextBlock
+        {
+            Text = messageText + "\n\nThe game will load the .mod file, which may not include your latest changes.",
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+            Margin = new Thickness(20, 20, 20, 0)
+        };
+
+        var buildBtn = new Button { Content = "Build First", Margin = new Thickness(0, 0, 8, 0), Padding = new Thickness(16, 8) };
+        var testBtn = new Button { Content = "Test Anyway", Margin = new Thickness(0, 0, 8, 0), Padding = new Thickness(16, 8) };
+        var cancelBtn = new Button { Content = "Cancel", Padding = new Thickness(16, 8) };
+
+        buildBtn.Click += (_, _) => { built = true; result = true; dialog.Close(); };
+        testBtn.Click += (_, _) => { result = true; dialog.Close(); };
+        cancelBtn.Click += (_, _) => { dialog.Close(); };
+
+        var buttonPanel = new StackPanel
+        {
+            Orientation = Avalonia.Layout.Orientation.Horizontal,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+            Margin = new Thickness(20)
+        };
+        buttonPanel.Children.Add(buildBtn);
+        buttonPanel.Children.Add(testBtn);
+        buttonPanel.Children.Add(cancelBtn);
+
+        var panel = new DockPanel();
+        DockPanel.SetDock(buttonPanel, Avalonia.Controls.Dock.Bottom);
+        panel.Children.Add(buttonPanel);
+        panel.Children.Add(message);
+
+        dialog.Content = panel;
+
+        await dialog.ShowDialog(_parentWindow);
+
+        if (built)
+        {
+            await BuildModuleAsync();
+            // If build failed, don't launch
+            return !IsBuilding && !HasBuildLog;
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -860,7 +995,10 @@ public partial class MainWindowViewModel : ObservableObject
             BuildStatusText = $"Built {resourceCount} files to {Path.GetFileName(modFilePath)}";
             _lastBuildLogPath = null;
             HasBuildLog = false;
-            StaleScriptCount = 0;  // Reset stale count after successful build
+            StaleScriptCount = 0;
+            IsModuleDirty = false;
+            HasNewerWorkingFiles = false;
+            NewerFileCount = 0;
         }
         catch (Exception ex)
         {
@@ -964,6 +1102,9 @@ public partial class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(CanLoadModule));
             OnPropertyChanged(nameof(LoadModuleTooltip));
 
+            // IFO was modified - mark module dirty so user knows to rebuild
+            IsModuleDirty = true;
+
             if (!string.IsNullOrEmpty(defaultBic))
             {
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Saved DefaultBic: {defaultBic}");
@@ -984,8 +1125,17 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Refresh all build-related checks: stale scripts and newer working files.
+    /// Called on module load, after Module Editor closes, and before launch.
+    /// </summary>
+    public void RefreshBuildStatus()
+    {
+        CheckStaleScripts();
+        CheckNewerWorkingFiles();
+    }
+
+    /// <summary>
     /// Check for stale scripts in the current module's working directory.
-    /// Called when module changes or before build.
     /// </summary>
     public void CheckStaleScripts()
     {
@@ -998,6 +1148,38 @@ public partial class MainWindowViewModel : ObservableObject
 
         var staleScripts = ScriptCompilerService.Instance.FindStaleScripts(workingDir);
         StaleScriptCount = staleScripts.Count;
+    }
+
+    /// <summary>
+    /// Check if any files in the working directory are newer than the .mod file.
+    /// </summary>
+    private void CheckNewerWorkingFiles()
+    {
+        var workingDir = GetWorkingDirectoryPath();
+        var modPath = GetModFilePath();
+
+        if (string.IsNullOrEmpty(workingDir) || string.IsNullOrEmpty(modPath) || !File.Exists(modPath))
+        {
+            HasNewerWorkingFiles = false;
+            NewerFileCount = 0;
+            return;
+        }
+
+        try
+        {
+            var modWriteTime = File.GetLastWriteTimeUtc(modPath);
+            var newerFiles = Directory.GetFiles(workingDir)
+                .Count(f => File.GetLastWriteTimeUtc(f) > modWriteTime);
+
+            NewerFileCount = newerFiles;
+            HasNewerWorkingFiles = newerFiles > 0;
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not check working directory timestamps: {ex.Message}");
+            HasNewerWorkingFiles = false;
+            NewerFileCount = 0;
+        }
     }
 
     /// <summary>

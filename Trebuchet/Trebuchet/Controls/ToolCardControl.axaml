@@ -44,16 +44,29 @@
                                HorizontalAlignment="Center"
                                Margin="0,2,0,0"/>
 
-                    <!-- Status Badge - background set in code-behind via resource observable for theme reactivity -->
-                    <Border x:Name="StatusBadge"
-                            CornerRadius="4"
-                            Padding="8,2"
-                            Margin="0,12,0,0"
-                            HorizontalAlignment="Center">
-                        <TextBlock Text="{Binding StatusText}"
-                                   FontSize="{DynamicResource FontSizeXSmall}"
-                                   Foreground="{DynamicResource ThemeAccentForeground}"/>
-                    </Border>
+                    <!-- Status Badges -->
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Center"
+                                Spacing="4"
+                                Margin="0,12,0,0">
+                        <!-- Availability Badge - background set in code-behind -->
+                        <Border x:Name="StatusBadge"
+                                CornerRadius="4"
+                                Padding="8,2">
+                            <TextBlock Text="{Binding StatusText}"
+                                       FontSize="{DynamicResource FontSizeXSmall}"
+                                       Foreground="{DynamicResource ThemeAccentForeground}"/>
+                        </Border>
+
+                        <!-- Maturity Badge - background set in code-behind -->
+                        <Border x:Name="MaturityBadge"
+                                CornerRadius="4"
+                                Padding="8,2">
+                            <TextBlock Text="{Binding MaturityText}"
+                                       FontSize="{DynamicResource FontSizeXSmall}"
+                                       Foreground="{DynamicResource ThemeAccentForeground}"/>
+                        </Border>
+                    </StackPanel>
                 </StackPanel>
             </Border>
         </Button>
