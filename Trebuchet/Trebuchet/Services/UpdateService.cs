@@ -8,6 +8,7 @@ using System.Net.Http.Json;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 using Radoub.Formats.Logging;
 
@@ -135,7 +136,7 @@ public class UpdateService : INotifyPropertyChanged, IDisposable
     /// <summary>
     /// Check for updates from GitHub releases.
     /// </summary>
-    public async Task<bool> CheckForUpdatesAsync()
+    public async Task<bool> CheckForUpdatesAsync(CancellationToken cancellationToken = default)
     {
         if (IsChecking) return false;
 
@@ -146,7 +147,7 @@ public class UpdateService : INotifyPropertyChanged, IDisposable
         {
             UnifiedLogger.LogApplication(LogLevel.INFO, "Checking for updates...");
 
-            var response = await _httpClient.GetAsync(ReleasesApiUrl);
+            var response = await _httpClient.GetAsync(ReleasesApiUrl, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -154,7 +155,7 @@ public class UpdateService : INotifyPropertyChanged, IDisposable
                 return false;
             }
 
-            var release = await response.Content.ReadFromJsonAsync<GitHubRelease>();
+            var release = await response.Content.ReadFromJsonAsync<GitHubRelease>(cancellationToken);
             if (release == null)
             {
                 UnifiedLogger.LogApplication(LogLevel.WARN, "Failed to parse release response");
@@ -181,6 +182,11 @@ public class UpdateService : INotifyPropertyChanged, IDisposable
             }
 
             UnifiedLogger.LogApplication(LogLevel.INFO, $"No update available (current: {CurrentVersion}, latest: {LatestVersion})");
+            return false;
+        }
+        catch (OperationCanceledException)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Update check cancelled");
             return false;
         }
         catch (HttpRequestException ex)
@@ -314,7 +320,7 @@ public class UpdateService : INotifyPropertyChanged, IDisposable
     /// <summary>
     /// Download the update to a temporary location.
     /// </summary>
-    public async Task<string?> DownloadUpdateAsync(IProgress<double>? progress = null)
+    public async Task<string?> DownloadUpdateAsync(IProgress<double>? progress = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(DownloadUrl))
         {
@@ -326,22 +332,23 @@ public class UpdateService : INotifyPropertyChanged, IDisposable
         {
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Downloading update from: {DownloadUrl}");
 
-            var response = await _httpClient.GetAsync(DownloadUrl, HttpCompletionOption.ResponseHeadersRead);
+            using var request = new HttpRequestMessage(HttpMethod.Get, DownloadUrl);
+            var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             response.EnsureSuccessStatusCode();
 
             var totalBytes = response.Content.Headers.ContentLength ?? -1;
             var tempPath = Path.Combine(Path.GetTempPath(), $"Trebuchet-{LatestVersion}.zip");
 
-            await using var contentStream = await response.Content.ReadAsStreamAsync();
+            await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
             await using var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None);
 
             var buffer = new byte[8192];
             var totalBytesRead = 0L;
             int bytesRead;
 
-            while ((bytesRead = await contentStream.ReadAsync(buffer)) > 0)
+            while ((bytesRead = await contentStream.ReadAsync(buffer, cancellationToken)) > 0)
             {
-                await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead));
+                await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken);
                 totalBytesRead += bytesRead;
 
                 if (totalBytes > 0)
@@ -352,6 +359,11 @@ public class UpdateService : INotifyPropertyChanged, IDisposable
 
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Update downloaded to: {tempPath}");
             return tempPath;
+        }
+        catch (OperationCanceledException)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Update download cancelled");
+            return null;
         }
         catch (Exception ex)
         {
