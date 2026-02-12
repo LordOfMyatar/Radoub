@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.15.1-alpha] - 2026-02-11
-**Branch**: `radoub/issue-1300` | **PR**: #TBD
+**Branch**: `radoub/issue-1300` | **PR**: #1310
 
 ### Sprint: Tech Debt Phase 3c - Trebuchet & Manifest Cleanup (#1300)
 
