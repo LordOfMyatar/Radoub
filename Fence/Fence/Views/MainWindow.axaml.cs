@@ -903,6 +903,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     OnToggleItemDetailsPanelClick(null, e);
                     e.Handled = true;
                     return;
+                case Key.Delete:
+                    if (HasSelection)
+                    {
+                        OnDeleteClick(null, e);
+                        e.Handled = true;
+                    }
+                    return;
             }
         }
         // Handle Ctrl shortcuts - don't interfere with normal text input

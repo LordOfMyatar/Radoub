@@ -249,14 +249,13 @@ public class GameDataService : IGameDataService
             }
         }
 
-        // HAK paths - scan all configured search paths
-        // Only scan additional configured paths (not default hak folder) for performance
-        // Users who want HAK scanning should add paths in Trebuchet settings
-        var additionalHakPaths = settings.HakSearchPaths;
-        if (additionalHakPaths.Count > 0)
+        // HAK paths - include default hak folder and any additional configured paths
+        // GetAllHakSearchPaths includes ~/Documents/Neverwinter Nights/hak/ plus user-added paths
+        var allHakPaths = settings.GetAllHakSearchPaths().ToList();
+        if (allHakPaths.Count > 0)
         {
             config.EnableHakScanning = true;
-            foreach (var hakSearchPath in additionalHakPaths)
+            foreach (var hakSearchPath in allHakPaths)
             {
                 if (Directory.Exists(hakSearchPath))
                 {

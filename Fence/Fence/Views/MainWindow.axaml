@@ -512,6 +512,7 @@
                                 <DataGridTextColumn Header="Type" Width="100" Binding="{Binding BaseItemType}"/>
                                 <DataGridTextColumn Header="Value" Width="60" Binding="{Binding BaseValue}"/>
                                 <DataGridTextColumn Header="ResRef" Width="120" Binding="{Binding ResRef}"/>
+                                <DataGridTextColumn Header="Tag" Width="120" Binding="{Binding Tag}"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </DockPanel>
