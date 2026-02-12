@@ -40,6 +40,7 @@
             </MenuItem>
             <MenuItem Header="_View">
                 <MenuItem x:Name="StoreBrowserMenuItem" Header="_Store Browser" Click="OnToggleStoreBrowserClick" InputGesture="F4"/>
+                <MenuItem x:Name="ItemDetailsPanelMenuItem" Header="_Item Details" Click="OnToggleItemDetailsPanelClick" InputGesture="F5"/>
                 <Separator/>
                 <MenuItem Header="_Settings..." Click="OnSettingsClick"/>
             </MenuItem>
@@ -337,7 +338,7 @@
                 </Expander>
             </Grid>
 
-            <!-- Store Inventory and Item Palette -->
+            <!-- Store Inventory, Item Palette, and Item Details -->
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
                     <!-- Store Inventory -->
@@ -345,6 +346,9 @@
                     <ColumnDefinition Width="5"/>
                     <!-- Item Palette -->
                     <ColumnDefinition Width="*" MinWidth="300"/>
+                    <ColumnDefinition Width="5"/>
+                    <!-- Item Details -->
+                    <ColumnDefinition Width="250" MinWidth="180"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Store Inventory Panel -->
@@ -389,7 +393,20 @@
                                   IsReadOnly="False"
                                   SelectionMode="Extended"
                                   GridLinesVisibility="Horizontal"
+                                  SelectionChanged="OnStoreInventorySelectionChanged"
                                   AutomationProperties.AutomationId="StoreInventoryGrid">
+                            <DataGrid.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Toggle ∞" Click="OnContextToggleInfinite"/>
+                                    <Separator/>
+                                    <MenuItem Header="Copy ResRef" Click="OnContextCopyStoreResRef"/>
+                                    <MenuItem Header="Copy Name" Click="OnContextCopyStoreName"/>
+                                    <Separator/>
+                                    <MenuItem Header="Remove from Store" Click="OnRemoveFromStore"/>
+                                    <Separator/>
+                                    <MenuItem Header="Select All" Click="OnSelectAllStoreItems"/>
+                                </ContextMenu>
+                            </DataGrid.ContextMenu>
                             <DataGrid.Columns>
                                 <DataGridTemplateColumn Header="∞" Width="45" CanUserSort="True" SortMemberPath="Infinite">
                                     <DataGridTemplateColumn.HeaderTemplate>
@@ -477,7 +494,16 @@
                                   IsReadOnly="True"
                                   SelectionMode="Extended"
                                   GridLinesVisibility="Horizontal"
+                                  SelectionChanged="OnPaletteSelectionChanged"
                                   AutomationProperties.AutomationId="ItemPaletteGrid">
+                            <DataGrid.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Add to Store" Click="OnAddToStore"/>
+                                    <Separator/>
+                                    <MenuItem Header="Copy ResRef" Click="OnContextCopyPaletteResRef"/>
+                                    <MenuItem Header="Copy Name" Click="OnContextCopyPaletteName"/>
+                                </ContextMenu>
+                            </DataGrid.ContextMenu>
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Name" Width="*" Binding="{Binding DisplayName}"/>
                                 <DataGridTextColumn Header="Type" Width="100" Binding="{Binding BaseItemType}"/>
@@ -485,6 +511,132 @@
                                 <DataGridTextColumn Header="ResRef" Width="120" Binding="{Binding ResRef}"/>
                             </DataGrid.Columns>
                         </DataGrid>
+                    </DockPanel>
+                </Border>
+
+                <!-- Details Splitter -->
+                <GridSplitter Grid.Column="3" Width="5" HorizontalAlignment="Stretch"
+                              Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                              AutomationProperties.AutomationId="DetailsSplitter"/>
+
+                <!-- Item Details Panel -->
+                <Border Grid.Column="4" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" CornerRadius="4"
+                        AutomationProperties.AutomationId="ItemDetailsPanel">
+                    <DockPanel>
+                        <!-- Header -->
+                        <Border DockPanel.Dock="Top" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" Padding="8">
+                            <TextBlock Text="Item Details" FontWeight="Bold"/>
+                        </Border>
+
+                        <!-- No Selection Message -->
+                        <TextBlock x:Name="NoSelectionText"
+                                   Text="Select an item to view details"
+                                   FontStyle="Italic"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center"
+                                   AutomationProperties.AutomationId="NoSelectionText"/>
+
+                        <!-- Item Details Content (overlays NoSelectionText when visible) -->
+                        <ScrollViewer x:Name="ItemDetailsScroll"
+                                      VerticalScrollBarVisibility="Auto"
+                                      IsVisible="False">
+                            <StackPanel x:Name="ItemDetailsContent" Spacing="8" Margin="10">
+                                <!-- Item Name -->
+                                <TextBlock x:Name="DetailItemName"
+                                           Text=""
+                                           FontWeight="SemiBold"
+                                           FontSize="14"
+                                           TextWrapping="Wrap"
+                                           HorizontalAlignment="Center"
+                                           AutomationProperties.AutomationId="DetailItemName"/>
+
+                                <!-- Base Item Type -->
+                                <TextBlock x:Name="DetailItemType"
+                                           Text=""
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           HorizontalAlignment="Center"
+                                           AutomationProperties.AutomationId="DetailItemType"/>
+
+                                <!-- Separator -->
+                                <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                        BorderThickness="0,1,0,0"
+                                        Padding="0,8,0,0"
+                                        Margin="0,4,0,0">
+                                    <StackPanel Spacing="6">
+                                        <!-- ResRef -->
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <TextBlock Grid.Column="0" Text="ResRef:"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                       Margin="0,0,8,0"/>
+                                            <TextBlock Grid.Column="1" x:Name="DetailResRef"
+                                                       Text="" FontFamily="Consolas"
+                                                       AutomationProperties.AutomationId="DetailResRef"/>
+                                        </Grid>
+
+                                        <!-- Tag -->
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <TextBlock Grid.Column="0" Text="Tag:"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                       Margin="0,0,8,0"/>
+                                            <TextBlock Grid.Column="1" x:Name="DetailTag"
+                                                       Text="" FontFamily="Consolas"
+                                                       AutomationProperties.AutomationId="DetailTag"/>
+                                        </Grid>
+
+                                        <!-- Value -->
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <TextBlock Grid.Column="0" Text="Value:"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                       Margin="0,0,8,0"/>
+                                            <TextBlock Grid.Column="1" x:Name="DetailValue"
+                                                       Text=""
+                                                       AutomationProperties.AutomationId="DetailValue"/>
+                                        </Grid>
+
+                                        <!-- Sell Price -->
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <TextBlock Grid.Column="0" Text="Sell:"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                       Margin="0,0,8,0"/>
+                                            <TextBlock Grid.Column="1" x:Name="DetailSellPrice"
+                                                       Text=""
+                                                       AutomationProperties.AutomationId="DetailSellPrice"/>
+                                        </Grid>
+
+                                        <!-- Buy Price -->
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <TextBlock Grid.Column="0" Text="Buy:"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                       Margin="0,0,8,0"/>
+                                            <TextBlock Grid.Column="1" x:Name="DetailBuyPrice"
+                                                       Text=""
+                                                       AutomationProperties.AutomationId="DetailBuyPrice"/>
+                                        </Grid>
+
+                                        <!-- Infinite -->
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <TextBlock Grid.Column="0" Text="Infinite:"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                       Margin="0,0,8,0"/>
+                                            <TextBlock Grid.Column="1" x:Name="DetailInfinite"
+                                                       Text=""
+                                                       AutomationProperties.AutomationId="DetailInfinite"/>
+                                        </Grid>
+
+                                        <!-- Store Panel -->
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <TextBlock Grid.Column="0" Text="Panel:"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                       Margin="0,0,8,0"/>
+                                            <TextBlock Grid.Column="1" x:Name="DetailStorePanel"
+                                                       Text=""
+                                                       AutomationProperties.AutomationId="DetailStorePanel"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
                     </DockPanel>
                 </Border>
             </Grid>
