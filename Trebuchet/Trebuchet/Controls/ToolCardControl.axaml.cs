@@ -46,8 +46,18 @@ public partial class ToolCardControl : UserControl
     {
         if (DataContext is ToolInfo tool)
         {
-            var resourceKey = tool.IsAvailable ? "ThemeSuccess" : "ThemeDisabled";
-            StatusBadge[!Border.BackgroundProperty] = new DynamicResourceExtension(resourceKey);
+            var statusKey = tool.IsAvailable ? "ThemeSuccess" : "ThemeDisabled";
+            StatusBadge[!Border.BackgroundProperty] = new DynamicResourceExtension(statusKey);
+
+            var maturityKey = tool.Maturity switch
+            {
+                ToolMaturity.Stable => "ThemeSuccess",
+                ToolMaturity.Beta => "ThemeInfo",
+                ToolMaturity.Alpha => "ThemeWarning",
+                ToolMaturity.InDevelopment => "ThemeDisabled",
+                _ => "ThemeDisabled"
+            };
+            MaturityBadge[!Border.BackgroundProperty] = new DynamicResourceExtension(maturityKey);
         }
     }
 
