@@ -249,9 +249,9 @@ public class GameDataService : IGameDataService
             }
         }
 
-        // HAK paths - scan all configured search paths
-        // Only scan additional configured paths (not default hak folder) for performance
-        // Users who want HAK scanning should add paths in Trebuchet settings
+        // HAK paths - only scan explicitly configured additional paths (not default hak folder)
+        // Scanning all HAKs (80+) takes 15+ seconds and hangs the UI
+        // Future: Read module.ifo HakList to scan only module-required HAKs (#1314)
         var additionalHakPaths = settings.HakSearchPaths;
         if (additionalHakPaths.Count > 0)
         {

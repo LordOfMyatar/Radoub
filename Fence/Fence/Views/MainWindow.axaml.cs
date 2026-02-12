@@ -532,7 +532,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Unsubscribe to prevent multiple calls
         Loaded -= OnWindowLoaded;
 
-        // Loaded event fires before Opened - just log, heavy work is in OnWindowOpened
+        // Restore panel visibility states
+        RestoreItemDetailsPanelState();
+
         UnifiedLogger.LogApplication(LogLevel.DEBUG, "Window loaded");
     }
 
@@ -598,6 +600,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         SaveWindowPosition();
         SaveStoreBrowserPanelSize();
+        SaveItemDetailsPanelSize();
     }
 
     private void ShowUnsavedChangesWarning()
@@ -894,6 +897,18 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     // Toggle store browser panel (#1144)
                     OnToggleStoreBrowserClick(null, e);
                     e.Handled = true;
+                    return;
+                case Key.F5:
+                    // Toggle item details panel (#1259)
+                    OnToggleItemDetailsPanelClick(null, e);
+                    e.Handled = true;
+                    return;
+                case Key.Delete:
+                    if (HasSelection)
+                    {
+                        OnDeleteClick(null, e);
+                        e.Handled = true;
+                    }
                     return;
             }
         }

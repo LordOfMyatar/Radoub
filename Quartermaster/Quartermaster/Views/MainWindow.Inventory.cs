@@ -78,6 +78,72 @@ public partial class MainWindow
     #region Inventory Operations
 
     /// <summary>
+    /// Handles item dropped on an equipment slot.
+    /// Supports drops from backpack (BackpackItem format) and palette (PaletteItem/ItemViewModels format).
+    /// </summary>
+    private void OnEquipmentSlotItemDropped(object? sender, Radoub.UI.Controls.EquipmentSlotDropEventArgs e)
+    {
+        var slot = e.TargetSlot;
+        ItemViewModel? droppedItem = null;
+
+        // Try BackpackItem format first
+        if (e.DataObject.Contains("BackpackItem"))
+        {
+            var data = e.DataObject.Get("BackpackItem");
+            if (data is System.Collections.Generic.IReadOnlyList<ItemViewModel> items && items.Count > 0)
+                droppedItem = items[0];
+            else if (data is ItemViewModel single)
+                droppedItem = single;
+        }
+        // Try PaletteItem format
+        else if (e.DataObject.Contains("PaletteItem"))
+        {
+            var data = e.DataObject.Get("PaletteItem");
+            if (data is System.Collections.Generic.IReadOnlyList<ItemViewModel> items && items.Count > 0)
+                droppedItem = items[0];
+            else if (data is ItemViewModel single)
+                droppedItem = single;
+        }
+        // Try generic ItemViewModels format
+        else if (e.DataObject.Contains("ItemViewModels"))
+        {
+            var data = e.DataObject.Get("ItemViewModels");
+            if (data is System.Collections.Generic.IReadOnlyList<ItemViewModel> items && items.Count > 0)
+                droppedItem = items[0];
+            else if (data is ItemViewModel single)
+                droppedItem = single;
+        }
+
+        if (droppedItem == null)
+        {
+            UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Drop on {slot.Name}: no recognized data format");
+            return;
+        }
+
+        // Load UtiFile on demand
+        var utiFile = droppedItem.Item ?? LoadItemFromResRef(droppedItem.ResRef, droppedItem.Source);
+        if (utiFile == null)
+        {
+            UnifiedLogger.LogInventory(LogLevel.WARN, $"Cannot equip dropped item: Failed to load {droppedItem.ResRef}");
+            return;
+        }
+
+        var equippedItem = ItemFactory.Create(utiFile, droppedItem.Source);
+        SetupLazyIconLoading(equippedItem);
+        slot.EquippedItem = equippedItem;
+
+        // If dragged from backpack, remove from backpack
+        if (e.DataObject.Contains("BackpackItem"))
+        {
+            InventoryPanelContent.RemoveFromBackpack(droppedItem);
+        }
+
+        _inventoryModified = true;
+        MarkDirty();
+        UnifiedLogger.LogInventory(LogLevel.INFO, $"Dropped {equippedItem.Name} onto {slot.Name}");
+    }
+
+    /// <summary>
     /// Handles item dropped on backpack list.
     /// </summary>
     private void OnBackpackItemDropped(object? sender, Radoub.UI.Controls.ItemDropEventArgs e)
@@ -248,6 +314,57 @@ public partial class MainWindow
             UnifiedLogger.LogInventory(LogLevel.INFO, $"Equipped {equippedItem.Name} to {targetSlot.Name} (slot flag 0x{targetSlot.SlotFlag:X})");
         }
 
+        _inventoryModified = true;
+        MarkDirty();
+    }
+
+    /// <summary>
+    /// Handles equip request for a single backpack item via context menu.
+    /// Equips the item and removes it from backpack (move, not copy).
+    /// </summary>
+    private void OnEquipFromBackpackRequested(object? sender, ItemViewModel item)
+    {
+        // Snapshot which slots have items before equipping
+        var previousSlotStates = _equipmentSlots.ToDictionary(s => s, s => s.EquippedItem);
+
+        // Find which slot will be targeted so we can swap if occupied
+        var validator = new Radoub.UI.Services.EquipmentSlotValidator(GameData);
+        var validSlotsBitmask = validator.GetEquipableSlots(item.BaseItem);
+        if (validSlotsBitmask != null && validSlotsBitmask != 0)
+        {
+            const int StandardSlotsMask = 0x3FFF;
+            var standardBits = validSlotsBitmask.Value & StandardSlotsMask;
+            var standardSlots = _equipmentSlots.Where(s => s.IsStandard).ToList();
+
+            // Find the slot that OnEquipItemsRequested will target (same logic: empty first, then first match)
+            var targetSlot = standardSlots.FirstOrDefault(s => (standardBits & s.SlotFlag) != 0 && !s.HasItem)
+                          ?? standardSlots.FirstOrDefault(s => (standardBits & s.SlotFlag) != 0);
+
+            // If the target slot has an existing item, unequip it to backpack first (swap)
+            if (targetSlot?.HasItem == true)
+            {
+                UnifiedLogger.LogInventory(LogLevel.INFO,
+                    $"Swapping: moving {targetSlot.EquippedItem!.Name} from {targetSlot.Name} to backpack");
+                UnequipToBackpack(targetSlot);
+            }
+        }
+
+        OnEquipItemsRequested(sender, new[] { item });
+
+        // If an equipment slot changed, the item was equipped - remove from backpack
+        var equipped = _equipmentSlots.Any(s => s.EquippedItem != previousSlotStates[s]);
+        if (equipped)
+        {
+            InventoryPanelContent.RemoveFromBackpack(item);
+        }
+    }
+
+    /// <summary>
+    /// Handles delete request for a backpack item via context menu.
+    /// </summary>
+    private void OnDeleteFromBackpackRequested(object? sender, ItemViewModel item)
+    {
+        InventoryPanelContent.RemoveFromBackpack(item);
         _inventoryModified = true;
         MarkDirty();
     }

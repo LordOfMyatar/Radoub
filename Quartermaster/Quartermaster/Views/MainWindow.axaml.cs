@@ -184,14 +184,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 UnequipToBackpack(slot);
             }
         };
-        InventoryPanelContent.EquipmentSlotItemDropped += (s, e) =>
-        {
-            UnifiedLogger.LogUI(LogLevel.DEBUG, $"Item dropped on slot: {e.TargetSlot.Name}");
-            MarkDirty();
-        };
+        InventoryPanelContent.EquipmentSlotItemDropped += OnEquipmentSlotItemDropped;
         InventoryPanelContent.BackpackItemDropped += OnBackpackItemDropped;
         InventoryPanelContent.AddToBackpackRequested += OnAddToBackpackRequested;
         InventoryPanelContent.EquipItemsRequested += OnEquipItemsRequested;
+        InventoryPanelContent.UnequipToBackpackRequested += (s, slot) => UnequipToBackpack(slot);
+        InventoryPanelContent.EquipFromBackpackRequested += OnEquipFromBackpackRequested;
+        InventoryPanelContent.DeleteFromBackpackRequested += OnDeleteFromBackpackRequested;
     }
 
     #region Navigation
@@ -755,11 +754,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnDeleteClick(object? sender, RoutedEventArgs e)
     {
-        // Delegate to inventory panel if on inventory section
         if (_currentSection == "Inventory")
         {
-            // The inventory panel handles its own deletion
-            UnifiedLogger.LogUI(LogLevel.DEBUG, "Delete clicked on inventory section");
+            InventoryPanelContent.DeleteSelectedBackpackItems();
+            _inventoryModified = true;
+            MarkDirty();
         }
     }
 

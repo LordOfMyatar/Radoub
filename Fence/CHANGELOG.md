@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.12-alpha] - 2026-02-11
+**Branch**: `radoub/issue-1259` | **PR**: #1311
+
+### Sprint: Cross-Tool Inventory Unification (#1259)
+
+Shared inventory patterns with Quartermaster, context menus, consistent interaction model.
+
+---
+
 ## [0.1.11-alpha] - 2026-02-01
 **Branch**: `fence/issue-1178` | **PR**: #1194
 

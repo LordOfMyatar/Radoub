@@ -8,10 +8,10 @@
     <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
 
     <!-- Version Configuration -->
-    <Version>0.1.11-alpha</Version>
-    <AssemblyVersion>0.1.11.0</AssemblyVersion>
-    <FileVersion>0.1.11.0</FileVersion>
-    <InformationalVersion>0.1.11-alpha</InformationalVersion>
+    <Version>0.1.12-alpha</Version>
+    <AssemblyVersion>0.1.12.0</AssemblyVersion>
+    <FileVersion>0.1.12.0</FileVersion>
+    <InformationalVersion>0.1.12-alpha</InformationalVersion>
 
     <!-- Product Information -->
     <Product>Fence - Merchant Editor for Neverwinter Nights</Product>

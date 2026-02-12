@@ -13,7 +13,9 @@ public class PaletteItemViewModel : INotifyPropertyChanged
     private string _baseItemType = string.Empty;
     private int _baseItemIndex;
     private int _baseValue;
+    private string _tag = string.Empty;
     private bool _isStandard = true;
+    private bool _isModuleItem;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -47,6 +49,12 @@ public class PaletteItemViewModel : INotifyPropertyChanged
         set { if (_baseValue != value) { _baseValue = value; OnPropertyChanged(); } }
     }
 
+    public string Tag
+    {
+        get => _tag;
+        set { if (_tag != value) { _tag = value; OnPropertyChanged(); } }
+    }
+
     /// <summary>
     /// True if this is a standard/base game item, false if custom content.
     /// </summary>
@@ -54,6 +62,16 @@ public class PaletteItemViewModel : INotifyPropertyChanged
     {
         get => _isStandard;
         set { if (_isStandard != value) { _isStandard = value; OnPropertyChanged(); } }
+    }
+
+    /// <summary>
+    /// True if this item came from the module directory (loose .uti file).
+    /// Module items bypass the Standard/Custom source filter.
+    /// </summary>
+    public bool IsModuleItem
+    {
+        get => _isModuleItem;
+        set { if (_isModuleItem != value) { _isModuleItem = value; OnPropertyChanged(); } }
     }
 
     protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)

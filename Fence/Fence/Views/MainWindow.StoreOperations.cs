@@ -400,11 +400,11 @@ public partial class MainWindow
             );
         }
 
-        // Apply source filter
+        // Apply source filter (module items always visible)
         if (!showStandard || !showCustom)
         {
             filtered = filtered.Where(item =>
-                (showStandard && item.IsStandard) || (showCustom && !item.IsStandard)
+                item.IsModuleItem || (showStandard && item.IsStandard) || (showCustom && !item.IsStandard)
             );
         }
 

@@ -15,6 +15,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.67] - 2026-02-11
+**Branch**: `radoub/issue-1259` | **PR**: #1311
+
+### Sprint: Cross-Tool Inventory Unification (#1259)
+
+**Parent Epic**: #546 (Shared Inventory UI Components)
+
+- [ ] #1218 - Unify inventory management patterns between QM and Fence
+- [ ] #1217 - Add right-click context menus for inventory operations
+- [ ] #1216 - Allow moving items from backpack to equipment slots
+- [ ] #1212 - Equipment display improvements - layout, sizing, window resize
+
+---
+
 ## [0.9.66] - 2026-02-10
 **Branch**: `radoub/issue-1299` | **PR**: #1306
 

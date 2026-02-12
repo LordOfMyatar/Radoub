@@ -7,9 +7,11 @@ using MerchantEditor.ViewModels;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
+using Radoub.Formats.Uti;
 using Radoub.UI.Services;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,6 +41,7 @@ public partial class MainWindow
     private readonly HashSet<string> _loadedItemTypes = new(StringComparer.OrdinalIgnoreCase);
     private bool _allItemsLoaded;
     private List<CachedPaletteItem>? _cachedPaletteData;
+    private string? _lastModuleDirectory;
 
     #region Item Palette
 
@@ -131,6 +134,7 @@ public partial class MainWindow
                             BaseItemType = resolved.BaseItemTypeName,
                             BaseItemIndex = resolved.BaseItemType,
                             BaseValue = resolved.BaseCost,
+                            Tag = resolved.Tag,
                             IsStandard = resourceInfo.Source == GameResourceSource.Bif
                         });
                         existingResRefs.Add(resourceInfo.ResRef);
@@ -198,6 +202,7 @@ public partial class MainWindow
                         BaseItemType = cached.BaseItemType,
                         BaseItemIndex = cached.BaseItemIndex,
                         BaseValue = cached.BaseValue,
+                        Tag = cached.Tag,
                         IsStandard = cached.IsStandard
                     });
                 }
@@ -285,6 +290,88 @@ public partial class MainWindow
     /// Get cache info for display in Settings.
     /// </summary>
     public CacheInfo? GetPaletteCacheInfo() => _paletteCacheService.GetCacheInfo();
+
+    /// <summary>
+    /// Scan the module directory (sibling folder of opened .utm file) for loose .uti files
+    /// and add them to the palette. Module items are NOT cached - scanned fresh each time.
+    /// </summary>
+    private void PopulateModuleItems()
+    {
+        var newModuleDir = string.IsNullOrEmpty(_currentFilePath)
+            ? null
+            : Path.GetDirectoryName(_currentFilePath);
+
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"PopulateModuleItems: scanning '{(newModuleDir != null ? UnifiedLogger.SanitizePath(newModuleDir) : "(null)")}' for module UTIs");
+
+        // Clear old module items if directory changed
+        if (_lastModuleDirectory != newModuleDir)
+        {
+            ClearModuleItems();
+            _lastModuleDirectory = newModuleDir;
+        }
+
+        if (string.IsNullOrEmpty(newModuleDir) || !Directory.Exists(newModuleDir))
+            return;
+
+        var utiFiles = Directory.GetFiles(newModuleDir, "*.uti", SearchOption.TopDirectoryOnly);
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Found {utiFiles.Length} .uti files in module directory");
+
+        var existingResRefs = new HashSet<string>(PaletteItems.Select(p => p.ResRef), StringComparer.OrdinalIgnoreCase);
+        var moduleItemCount = 0;
+
+        foreach (var utiPath in utiFiles)
+        {
+            try
+            {
+                var resRef = Path.GetFileNameWithoutExtension(utiPath);
+                if (existingResRefs.Contains(resRef))
+                    continue;
+
+                var resolved = _itemResolutionService?.ResolveItem(resRef);
+                if (resolved != null && !ExcludedBaseItemTypes.Contains(resolved.BaseItemType))
+                {
+                    PaletteItems.Add(new PaletteItemViewModel
+                    {
+                        ResRef = resolved.ResRef,
+                        DisplayName = resolved.DisplayName,
+                        BaseItemType = resolved.BaseItemTypeName,
+                        BaseItemIndex = resolved.BaseItemType,
+                        BaseValue = resolved.BaseCost,
+                        Tag = resolved.Tag,
+                        IsStandard = false,
+                        IsModuleItem = true
+                    });
+                    existingResRefs.Add(resRef);
+                    moduleItemCount++;
+                }
+            }
+            catch (Exception ex)
+            {
+                var fileName = Path.GetFileName(utiPath);
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to load UTI {fileName}: {ex.Message}");
+            }
+        }
+
+        if (moduleItemCount > 0)
+        {
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Added {moduleItemCount} module items to palette");
+        }
+    }
+
+    /// <summary>
+    /// Clear module items from the palette (when switching to a different module folder).
+    /// </summary>
+    private void ClearModuleItems()
+    {
+        var toRemove = PaletteItems.Where(p => p.IsModuleItem).ToList();
+
+        foreach (var item in toRemove)
+            PaletteItems.Remove(item);
+
+        if (toRemove.Count > 0)
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Cleared {toRemove.Count} module items from palette");
+    }
 
     #endregion
 }

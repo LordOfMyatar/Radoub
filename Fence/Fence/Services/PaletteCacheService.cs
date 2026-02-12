@@ -54,5 +54,6 @@ public class CachedPaletteItem
     public string BaseItemType { get; set; } = string.Empty;
     public int BaseItemIndex { get; set; }
     public int BaseValue { get; set; }
+    public string Tag { get; set; } = string.Empty;
     public bool IsStandard { get; set; }
 }
