@@ -54,6 +54,21 @@ public partial class EquipmentSlotsPanel : UserControl
     /// </summary>
     public event EventHandler<EquipmentSlotDropEventArgs>? ItemDropped;
 
+    /// <summary>
+    /// Event raised when "Unequip to Backpack" is requested from context menu.
+    /// </summary>
+    public event EventHandler<EquipmentSlotViewModel>? UnequipRequested;
+
+    /// <summary>
+    /// Event raised when "Remove" (delete) is requested from context menu.
+    /// </summary>
+    public event EventHandler<EquipmentSlotViewModel>? RemoveRequested;
+
+    /// <summary>
+    /// Event raised when "Copy ResRef" is requested from context menu.
+    /// </summary>
+    public event EventHandler<EquipmentSlotViewModel>? CopyResRefRequested;
+
     // Slot controls mapped by slot ID
     private readonly Dictionary<int, EquipmentSlotControl> _slotControls = new();
 
@@ -139,6 +154,9 @@ public partial class EquipmentSlotsPanel : UserControl
             slotControl.SlotDoubleClicked += OnSlotControlDoubleClicked;
             slotControl.DragStarting += OnSlotDragStarting;
             slotControl.ItemDropped += OnSlotItemDropped;
+            slotControl.UnequipRequested += OnSlotUnequipRequested;
+            slotControl.RemoveRequested += OnSlotRemoveRequested;
+            slotControl.CopyResRefRequested += OnSlotCopyResRefRequested;
 
             placeholder.Content = slotControl;
             _slotControls[slotId] = slotControl;
@@ -215,6 +233,21 @@ public partial class EquipmentSlotsPanel : UserControl
         ItemDropped?.Invoke(this, e);
     }
 
+    private void OnSlotUnequipRequested(object? sender, EquipmentSlotViewModel slot)
+    {
+        UnequipRequested?.Invoke(this, slot);
+    }
+
+    private void OnSlotRemoveRequested(object? sender, EquipmentSlotViewModel slot)
+    {
+        RemoveRequested?.Invoke(this, slot);
+    }
+
+    private void OnSlotCopyResRefRequested(object? sender, EquipmentSlotViewModel slot)
+    {
+        CopyResRefRequested?.Invoke(this, slot);
+    }
+
     /// <summary>
     /// Clears all equipped items from slots.
     /// </summary>
@@ -275,6 +308,21 @@ public class EquipmentSlotControl : TemplatedControl
     /// </summary>
     public event EventHandler<EquipmentSlotDropEventArgs>? ItemDropped;
 
+    /// <summary>
+    /// Event raised when "Unequip to Backpack" is selected from context menu.
+    /// </summary>
+    public event EventHandler<EquipmentSlotViewModel>? UnequipRequested;
+
+    /// <summary>
+    /// Event raised when "Remove" is selected from context menu.
+    /// </summary>
+    public event EventHandler<EquipmentSlotViewModel>? RemoveRequested;
+
+    /// <summary>
+    /// Event raised when "Copy ResRef" is selected from context menu.
+    /// </summary>
+    public event EventHandler<EquipmentSlotViewModel>? CopyResRefRequested;
+
     // Drag state
     private Point _dragStartPoint;
     private bool _potentialDrag;
@@ -289,6 +337,52 @@ public class EquipmentSlotControl : TemplatedControl
 
         // Handle double-tap via event
         DoubleTapped += OnDoubleTapped;
+
+        // Build context menu
+        BuildContextMenu();
+    }
+
+    private void BuildContextMenu()
+    {
+        var menu = new ContextMenu();
+
+        var unequipItem = new MenuItem { Header = "Unequip to Backpack" };
+        unequipItem.Click += (_, _) =>
+        {
+            if (Slot?.HasItem == true)
+                UnequipRequested?.Invoke(this, Slot);
+        };
+
+        var removeItem = new MenuItem { Header = "Remove" };
+        removeItem.Click += (_, _) =>
+        {
+            if (Slot?.HasItem == true)
+                RemoveRequested?.Invoke(this, Slot);
+        };
+
+        var copyResRefItem = new MenuItem { Header = "Copy ResRef" };
+        copyResRefItem.Click += (_, _) =>
+        {
+            if (Slot?.HasItem == true)
+                CopyResRefRequested?.Invoke(this, Slot);
+        };
+
+        menu.Items.Add(unequipItem);
+        menu.Items.Add(new Separator());
+        menu.Items.Add(copyResRefItem);
+        menu.Items.Add(new Separator());
+        menu.Items.Add(removeItem);
+
+        menu.Opening += (_, _) =>
+        {
+            // Only show menu items that apply
+            var hasItem = Slot?.HasItem == true;
+            unequipItem.IsEnabled = hasItem;
+            removeItem.IsEnabled = hasItem;
+            copyResRefItem.IsEnabled = hasItem;
+        };
+
+        ContextMenu = menu;
     }
 
     /// <summary>

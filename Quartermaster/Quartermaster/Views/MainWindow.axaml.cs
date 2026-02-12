@@ -192,6 +192,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         InventoryPanelContent.BackpackItemDropped += OnBackpackItemDropped;
         InventoryPanelContent.AddToBackpackRequested += OnAddToBackpackRequested;
         InventoryPanelContent.EquipItemsRequested += OnEquipItemsRequested;
+        InventoryPanelContent.UnequipToBackpackRequested += (s, slot) => UnequipToBackpack(slot);
+        InventoryPanelContent.EquipFromBackpackRequested += OnEquipFromBackpackRequested;
+        InventoryPanelContent.DeleteFromBackpackRequested += OnDeleteFromBackpackRequested;
     }
 
     #region Navigation

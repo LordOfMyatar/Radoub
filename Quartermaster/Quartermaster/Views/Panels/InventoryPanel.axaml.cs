@@ -56,6 +56,9 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
     public event EventHandler<ItemDropEventArgs>? BackpackItemDropped;
     public event EventHandler<ItemViewModel[]>? AddToBackpackRequested;
     public event EventHandler<ItemViewModel[]>? EquipItemsRequested;
+    public event EventHandler<EquipmentSlotViewModel>? UnequipToBackpackRequested;
+    public event EventHandler<ItemViewModel>? EquipFromBackpackRequested;
+    public event EventHandler<ItemViewModel>? DeleteFromBackpackRequested;
 
     public bool HasBackpackSelection
     {
@@ -141,6 +144,9 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
             _equipmentPanel.SlotDoubleClicked += OnEquipmentSlotDoubleClicked;
             _equipmentPanel.DragStarting += OnEquipmentDragStarting;
             _equipmentPanel.ItemDropped += OnEquipmentSlotItemDropped;
+            _equipmentPanel.UnequipRequested += OnEquipmentUnequipRequested;
+            _equipmentPanel.RemoveRequested += OnEquipmentRemoveRequested;
+            _equipmentPanel.CopyResRefRequested += OnEquipmentCopyResRefRequested;
         }
 
         // Set up backpack list
@@ -150,6 +156,8 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
             _backpackList.SelectionChanged += OnBackpackSelectionChanged;
             _backpackList.DragStarting += OnBackpackDragStarting;
             _backpackList.ItemDropped += OnBackpackItemDropped;
+            _backpackList.EquipRequested += OnBackpackEquipRequested;
+            _backpackList.DeleteRequested += OnBackpackDeleteRequested;
         }
 
         // Set up palette filter and list
@@ -163,6 +171,8 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
             _paletteList.Items = _filteredPaletteItems;
             _paletteList.SelectionChanged += OnPaletteSelectionChanged;
             _paletteList.DragStarting += OnPaletteDragStarting;
+            _paletteList.AddToBackpackRequested += OnPaletteAddToBackpackRequested;
+            _paletteList.EquipRequested += OnPaletteEquipRequested;
         }
 
         // Wire up bulk property checkboxes
@@ -228,6 +238,31 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
         EquipmentSlotItemDropped?.Invoke(this, e);
     }
 
+    private void OnEquipmentUnequipRequested(object? sender, EquipmentSlotViewModel slot)
+    {
+        UnequipToBackpackRequested?.Invoke(this, slot);
+    }
+
+    private void OnEquipmentRemoveRequested(object? sender, EquipmentSlotViewModel slot)
+    {
+        if (slot.HasItem)
+        {
+            slot.EquippedItem = null;
+            slot.ValidationWarning = null;
+            InventoryChanged?.Invoke(this, EventArgs.Empty);
+            UnifiedLogger.LogInventory(LogLevel.INFO, $"Removed equipped item from {slot.Name}");
+        }
+    }
+
+    private async void OnEquipmentCopyResRefRequested(object? sender, EquipmentSlotViewModel slot)
+    {
+        if (slot.EquippedItem != null && Avalonia.Controls.TopLevel.GetTopLevel(this) is { Clipboard: { } clipboard })
+        {
+            await clipboard.SetTextAsync(slot.EquippedItem.ResRef);
+            UnifiedLogger.LogUI(LogLevel.DEBUG, $"Copied ResRef: {slot.EquippedItem.ResRef}");
+        }
+    }
+
     #endregion
 
     #region Backpack Events
@@ -274,6 +309,16 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
     {
         BackpackItemDropped?.Invoke(this, e);
         UnifiedLogger.LogUI(LogLevel.DEBUG, "Item dropped on backpack");
+    }
+
+    private void OnBackpackEquipRequested(object? sender, ItemViewModel item)
+    {
+        EquipFromBackpackRequested?.Invoke(this, item);
+    }
+
+    private void OnBackpackDeleteRequested(object? sender, ItemViewModel item)
+    {
+        DeleteFromBackpackRequested?.Invoke(this, item);
     }
 
     private void OnDeleteSelectedClick(object? sender, RoutedEventArgs e)
@@ -354,6 +399,16 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
         e.Data = e.Items;
         e.DataFormat = "PaletteItem";
         UnifiedLogger.LogUI(LogLevel.DEBUG, $"Palette drag starting: {e.Items.Count} items");
+    }
+
+    private void OnPaletteAddToBackpackRequested(object? sender, ItemViewModel item)
+    {
+        AddToBackpackRequested?.Invoke(this, new[] { item });
+    }
+
+    private void OnPaletteEquipRequested(object? sender, ItemViewModel item)
+    {
+        EquipItemsRequested?.Invoke(this, new[] { item });
     }
 
     private void OnAddToBackpackClick(object? sender, RoutedEventArgs e)

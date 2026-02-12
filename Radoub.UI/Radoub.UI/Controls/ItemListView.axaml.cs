@@ -81,6 +81,24 @@ public partial class ItemListView : UserControl
     /// </summary>
     public event EventHandler<ItemDropEventArgs>? ItemDropped;
 
+    /// <summary>
+    /// Event raised when "Equip" is selected from context menu.
+    /// Available when ContextKey is "Backpack" or "Palette".
+    /// </summary>
+    public event EventHandler<ItemViewModel>? EquipRequested;
+
+    /// <summary>
+    /// Event raised when "Add to Backpack" is selected from context menu.
+    /// Available when ContextKey is "Palette".
+    /// </summary>
+    public event EventHandler<ItemViewModel>? AddToBackpackRequested;
+
+    /// <summary>
+    /// Event raised when "Delete" is selected from context menu.
+    /// Available when ContextKey is "Backpack".
+    /// </summary>
+    public event EventHandler<ItemViewModel>? DeleteRequested;
+
     // Column keys for persistence
     private static readonly string[] ColumnKeys = { "Check", "Icon", "Name", "ResRef", "Tag", "Type", "Value", "Properties" };
 
@@ -123,6 +141,64 @@ public partial class ItemListView : UserControl
             ItemsGrid.ItemsSource = Items;
             UpdateSelectionCount();
         }
+
+        // Add context-specific menu items based on ContextKey
+        BuildContextSpecificMenuItems();
+    }
+
+    private void BuildContextSpecificMenuItems()
+    {
+        if (RowContextMenu == null) return;
+
+        var contextKey = ContextKey;
+
+        if (contextKey == "Backpack")
+        {
+            // Insert "Equip" and "Delete" before the separator/copy items
+            var equipItem = new MenuItem { Header = "Equip" };
+            equipItem.Click += OnContextMenuEquip;
+
+            var deleteItem = new MenuItem { Header = "Delete" };
+            deleteItem.Click += OnContextMenuDelete;
+
+            // Insert at position 2 (after Open/Edit)
+            RowContextMenu.Items.Insert(2, new Separator());
+            RowContextMenu.Items.Insert(3, equipItem);
+            RowContextMenu.Items.Insert(4, deleteItem);
+        }
+        else if (contextKey == "Palette")
+        {
+            var addToBackpackItem = new MenuItem { Header = "Add to Backpack" };
+            addToBackpackItem.Click += OnContextMenuAddToBackpack;
+
+            var equipItem = new MenuItem { Header = "Equip" };
+            equipItem.Click += OnContextMenuEquip;
+
+            RowContextMenu.Items.Insert(2, new Separator());
+            RowContextMenu.Items.Insert(3, addToBackpackItem);
+            RowContextMenu.Items.Insert(4, equipItem);
+        }
+    }
+
+    private void OnContextMenuEquip(object? sender, RoutedEventArgs e)
+    {
+        var selected = ItemsGrid.SelectedItem as ItemViewModel;
+        if (selected != null)
+            EquipRequested?.Invoke(this, selected);
+    }
+
+    private void OnContextMenuDelete(object? sender, RoutedEventArgs e)
+    {
+        var selected = ItemsGrid.SelectedItem as ItemViewModel;
+        if (selected != null)
+            DeleteRequested?.Invoke(this, selected);
+    }
+
+    private void OnContextMenuAddToBackpack(object? sender, RoutedEventArgs e)
+    {
+        var selected = ItemsGrid.SelectedItem as ItemViewModel;
+        if (selected != null)
+            AddToBackpackRequested?.Invoke(this, selected);
     }
 
     private void OnUnloaded(object? sender, RoutedEventArgs e)

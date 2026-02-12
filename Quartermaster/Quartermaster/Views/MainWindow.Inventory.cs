@@ -253,6 +253,24 @@ public partial class MainWindow
     }
 
     /// <summary>
+    /// Handles equip request for a single backpack item via context menu.
+    /// </summary>
+    private void OnEquipFromBackpackRequested(object? sender, ItemViewModel item)
+    {
+        OnEquipItemsRequested(sender, new[] { item });
+    }
+
+    /// <summary>
+    /// Handles delete request for a backpack item via context menu.
+    /// </summary>
+    private void OnDeleteFromBackpackRequested(object? sender, ItemViewModel item)
+    {
+        InventoryPanelContent.RemoveFromBackpack(item);
+        _inventoryModified = true;
+        MarkDirty();
+    }
+
+    /// <summary>
     /// Unequips an item from a slot and adds it to backpack.
     /// </summary>
     public void UnequipToBackpack(EquipmentSlotViewModel slot)
