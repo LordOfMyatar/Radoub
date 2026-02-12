@@ -475,6 +475,15 @@ public partial class ItemListView : UserControl
         }
     }
 
+    private async void OnContextMenuCopyName(object? sender, RoutedEventArgs e)
+    {
+        var selected = ItemsGrid.SelectedItem as ItemViewModel;
+        if (selected != null && TopLevel.GetTopLevel(this) is { Clipboard: { } clipboard })
+        {
+            await clipboard.SetTextAsync(selected.Name);
+        }
+    }
+
     #endregion
 
     #region Drag Source

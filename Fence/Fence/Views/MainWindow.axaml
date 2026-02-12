@@ -400,6 +400,7 @@
                                     <MenuItem Header="Toggle ∞" Click="OnContextToggleInfinite"/>
                                     <Separator/>
                                     <MenuItem Header="Copy ResRef" Click="OnContextCopyStoreResRef"/>
+                                    <MenuItem Header="Copy Tag" Click="OnContextCopyStoreTag"/>
                                     <MenuItem Header="Copy Name" Click="OnContextCopyStoreName"/>
                                     <Separator/>
                                     <MenuItem Header="Remove from Store" Click="OnRemoveFromStore"/>
@@ -432,6 +433,7 @@
                                 <DataGridTextColumn Header="Sell" Width="60" Binding="{Binding SellPrice}" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="Buy" Width="60" Binding="{Binding BuyPrice}" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="ResRef" Width="120" Binding="{Binding ResRef}"/>
+                                <DataGridTextColumn Header="Tag" Width="120" Binding="{Binding Tag}" IsReadOnly="True"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </DockPanel>
@@ -501,6 +503,7 @@
                                     <MenuItem Header="Add to Store" Click="OnAddToStore"/>
                                     <Separator/>
                                     <MenuItem Header="Copy ResRef" Click="OnContextCopyPaletteResRef"/>
+                                    <MenuItem Header="Copy Tag" Click="OnContextCopyPaletteTag"/>
                                     <MenuItem Header="Copy Name" Click="OnContextCopyPaletteName"/>
                                 </ContextMenu>
                             </DataGrid.ContextMenu>

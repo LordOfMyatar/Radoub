@@ -367,9 +367,25 @@ public class EquipmentSlotControl : TemplatedControl
                 CopyResRefRequested?.Invoke(this, Slot);
         };
 
+        var copyTagItem = new MenuItem { Header = "Copy Tag" };
+        copyTagItem.Click += async (_, _) =>
+        {
+            if (Slot?.EquippedItem != null && TopLevel.GetTopLevel(this) is { Clipboard: { } clipboard })
+                await clipboard.SetTextAsync(Slot.EquippedItem.Tag);
+        };
+
+        var copyNameItem = new MenuItem { Header = "Copy Name" };
+        copyNameItem.Click += async (_, _) =>
+        {
+            if (Slot?.EquippedItem != null && TopLevel.GetTopLevel(this) is { Clipboard: { } clipboard })
+                await clipboard.SetTextAsync(Slot.EquippedItem.Name);
+        };
+
         menu.Items.Add(unequipItem);
         menu.Items.Add(new Separator());
         menu.Items.Add(copyResRefItem);
+        menu.Items.Add(copyTagItem);
+        menu.Items.Add(copyNameItem);
         menu.Items.Add(new Separator());
         menu.Items.Add(removeItem);
 
@@ -380,6 +396,8 @@ public class EquipmentSlotControl : TemplatedControl
             unequipItem.IsEnabled = hasItem;
             removeItem.IsEnabled = hasItem;
             copyResRefItem.IsEnabled = hasItem;
+            copyTagItem.IsEnabled = hasItem;
+            copyNameItem.IsEnabled = hasItem;
         };
 
         ContextMenu = menu;
@@ -468,7 +486,9 @@ public class EquipmentSlotControl : TemplatedControl
     {
         if (Slot == null) return;
 
-        var args = new EquipmentSlotDropEventArgs(Slot, e.DataTransfer);
+#pragma warning disable CS0618 // e.Data is obsolete but IDataObject has Contains/Get methods we need
+        var args = new EquipmentSlotDropEventArgs(Slot, e.Data);
+#pragma warning restore CS0618
         ItemDropped?.Invoke(this, args);
     }
 }
@@ -510,13 +530,13 @@ public class EquipmentSlotDropEventArgs : EventArgs
     public EquipmentSlotViewModel TargetSlot { get; }
 
     /// <summary>
-    /// The drag data transfer object.
+    /// The drag data object (IDataObject for Contains/Get support).
     /// </summary>
-    public IDataTransfer DataTransfer { get; }
+    public IDataObject DataObject { get; }
 
-    public EquipmentSlotDropEventArgs(EquipmentSlotViewModel targetSlot, IDataTransfer dataTransfer)
+    public EquipmentSlotDropEventArgs(EquipmentSlotViewModel targetSlot, IDataObject dataObject)
     {
         TargetSlot = targetSlot;
-        DataTransfer = dataTransfer;
+        DataObject = dataObject;
     }
 }

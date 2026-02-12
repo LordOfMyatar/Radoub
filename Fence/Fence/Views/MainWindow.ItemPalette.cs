@@ -131,6 +131,7 @@ public partial class MainWindow
                             BaseItemType = resolved.BaseItemTypeName,
                             BaseItemIndex = resolved.BaseItemType,
                             BaseValue = resolved.BaseCost,
+                            Tag = resolved.Tag,
                             IsStandard = resourceInfo.Source == GameResourceSource.Bif
                         });
                         existingResRefs.Add(resourceInfo.ResRef);
@@ -198,6 +199,7 @@ public partial class MainWindow
                         BaseItemType = cached.BaseItemType,
                         BaseItemIndex = cached.BaseItemIndex,
                         BaseValue = cached.BaseValue,
+                        Tag = cached.Tag,
                         IsStandard = cached.IsStandard
                     });
                 }

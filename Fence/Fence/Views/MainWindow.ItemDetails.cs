@@ -223,6 +223,16 @@ public partial class MainWindow
         }
     }
 
+    private async void OnContextCopyStoreTag(object? sender, RoutedEventArgs e)
+    {
+        var selected = StoreInventoryGrid.SelectedItem as StoreItemViewModel;
+        if (selected != null && TopLevel.GetTopLevel(this) is { Clipboard: { } clipboard })
+        {
+            await clipboard.SetTextAsync(selected.Tag);
+            UpdateStatusBar($"Copied Tag: {selected.Tag}");
+        }
+    }
+
     private async void OnContextCopyStoreName(object? sender, RoutedEventArgs e)
     {
         var selected = StoreInventoryGrid.SelectedItem as StoreItemViewModel;
@@ -240,6 +250,16 @@ public partial class MainWindow
         {
             await clipboard.SetTextAsync(selected.ResRef);
             UpdateStatusBar($"Copied ResRef: {selected.ResRef}");
+        }
+    }
+
+    private async void OnContextCopyPaletteTag(object? sender, RoutedEventArgs e)
+    {
+        var selected = ItemPaletteGrid.SelectedItem as PaletteItemViewModel;
+        if (selected != null && TopLevel.GetTopLevel(this) is { Clipboard: { } clipboard })
+        {
+            await clipboard.SetTextAsync(selected.Tag);
+            UpdateStatusBar($"Copied Tag: {selected.Tag}");
         }
     }
 

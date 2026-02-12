@@ -13,6 +13,7 @@ public class PaletteItemViewModel : INotifyPropertyChanged
     private string _baseItemType = string.Empty;
     private int _baseItemIndex;
     private int _baseValue;
+    private string _tag = string.Empty;
     private bool _isStandard = true;
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -45,6 +46,12 @@ public class PaletteItemViewModel : INotifyPropertyChanged
     {
         get => _baseValue;
         set { if (_baseValue != value) { _baseValue = value; OnPropertyChanged(); } }
+    }
+
+    public string Tag
+    {
+        get => _tag;
+        set { if (_tag != value) { _tag = value; OnPropertyChanged(); } }
     }
 
     /// <summary>

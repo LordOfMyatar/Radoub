@@ -78,6 +78,72 @@ public partial class MainWindow
     #region Inventory Operations
 
     /// <summary>
+    /// Handles item dropped on an equipment slot.
+    /// Supports drops from backpack (BackpackItem format) and palette (PaletteItem/ItemViewModels format).
+    /// </summary>
+    private void OnEquipmentSlotItemDropped(object? sender, Radoub.UI.Controls.EquipmentSlotDropEventArgs e)
+    {
+        var slot = e.TargetSlot;
+        ItemViewModel? droppedItem = null;
+
+        // Try BackpackItem format first
+        if (e.DataObject.Contains("BackpackItem"))
+        {
+            var data = e.DataObject.Get("BackpackItem");
+            if (data is System.Collections.Generic.IReadOnlyList<ItemViewModel> items && items.Count > 0)
+                droppedItem = items[0];
+            else if (data is ItemViewModel single)
+                droppedItem = single;
+        }
+        // Try PaletteItem format
+        else if (e.DataObject.Contains("PaletteItem"))
+        {
+            var data = e.DataObject.Get("PaletteItem");
+            if (data is System.Collections.Generic.IReadOnlyList<ItemViewModel> items && items.Count > 0)
+                droppedItem = items[0];
+            else if (data is ItemViewModel single)
+                droppedItem = single;
+        }
+        // Try generic ItemViewModels format
+        else if (e.DataObject.Contains("ItemViewModels"))
+        {
+            var data = e.DataObject.Get("ItemViewModels");
+            if (data is System.Collections.Generic.IReadOnlyList<ItemViewModel> items && items.Count > 0)
+                droppedItem = items[0];
+            else if (data is ItemViewModel single)
+                droppedItem = single;
+        }
+
+        if (droppedItem == null)
+        {
+            UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Drop on {slot.Name}: no recognized data format");
+            return;
+        }
+
+        // Load UtiFile on demand
+        var utiFile = droppedItem.Item ?? LoadItemFromResRef(droppedItem.ResRef, droppedItem.Source);
+        if (utiFile == null)
+        {
+            UnifiedLogger.LogInventory(LogLevel.WARN, $"Cannot equip dropped item: Failed to load {droppedItem.ResRef}");
+            return;
+        }
+
+        var equippedItem = ItemFactory.Create(utiFile, droppedItem.Source);
+        SetupLazyIconLoading(equippedItem);
+        slot.EquippedItem = equippedItem;
+
+        // If dragged from backpack, remove from backpack
+        if (e.DataObject.Contains("BackpackItem"))
+        {
+            InventoryPanelContent.RemoveFromBackpack(droppedItem);
+        }
+
+        _inventoryModified = true;
+        MarkDirty();
+        UnifiedLogger.LogInventory(LogLevel.INFO, $"Dropped {equippedItem.Name} onto {slot.Name}");
+    }
+
+    /// <summary>
     /// Handles item dropped on backpack list.
     /// </summary>
     private void OnBackpackItemDropped(object? sender, Radoub.UI.Controls.ItemDropEventArgs e)

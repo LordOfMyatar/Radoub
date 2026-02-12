@@ -323,6 +323,14 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
 
     private void OnDeleteSelectedClick(object? sender, RoutedEventArgs e)
     {
+        DeleteSelectedBackpackItems();
+    }
+
+    /// <summary>
+    /// Deletes checked or selected backpack items. Called by button and Delete key.
+    /// </summary>
+    public void DeleteSelectedBackpackItems()
+    {
         if (_backpackList == null) return;
 
         var toDelete = _backpackList.CheckedItems.Count > 0
@@ -385,11 +393,10 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
         HasPaletteSelection = _paletteList?.SelectedItems.Count > 0;
         UnifiedLogger.LogUI(LogLevel.DEBUG, $"Palette selection changed: {_paletteList?.SelectedItems.Count ?? 0} items");
 
-        // Update item details - prefer backpack selection, fall back to palette
-        var backpackSelected = _backpackList?.SelectedItems.FirstOrDefault();
-        if (backpackSelected == null)
+        // Show palette item details when user clicks in palette
+        var paletteSelected = _paletteList?.SelectedItems.FirstOrDefault();
+        if (paletteSelected != null)
         {
-            var paletteSelected = _paletteList?.SelectedItems.FirstOrDefault();
             UpdateItemDetails(paletteSelected);
         }
     }
