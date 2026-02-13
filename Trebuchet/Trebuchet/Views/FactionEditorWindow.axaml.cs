@@ -136,35 +136,7 @@ public partial class FactionEditorWindow : Window
     {
         var converter = ReputationColorConverter.Instance;
 
-        if (cell.IsDiagonal)
-        {
-            // Diagonal: non-editable, show "---"
-            var border = new Border
-            {
-                BorderBrush = Brushes.Transparent,
-                BorderThickness = new Thickness(1),
-                Margin = new Thickness(1),
-                MinHeight = 32,
-                [!Border.BackgroundProperty] = new Binding(nameof(cell.ReputationValue))
-                {
-                    Source = cell,
-                    Converter = converter
-                }
-            };
-
-            var text = new TextBlock
-            {
-                Text = "---",
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-                Opacity = 0.3
-            };
-
-            border.Child = text;
-            return border;
-        }
-
-        // Editable cell: Border with TextBox
+        // All cells are editable - NWN allows self-reputation (factions can be hostile to themselves)
         var cellBorder = new Border
         {
             BorderBrush = new SolidColorBrush(Color.FromArgb(40, 128, 128, 128)),
