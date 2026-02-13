@@ -13,25 +13,27 @@
     </Design.DataContext>
 
     <DockPanel>
-        <!-- Header -->
+        <!-- Toolbar -->
         <Border DockPanel.Dock="Top"
-                Background="{DynamicResource ThemeAccentBrush}"
-                Padding="16,12">
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="12,8">
             <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Text="Faction Editor"
-                           FontSize="18"
-                           FontWeight="SemiBold"
-                           Foreground="{DynamicResource ThemeAccentForeground}"
-                           VerticalAlignment="Center"/>
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="Faction Editor"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
                     <Button Content="Save"
                             Command="{Binding SaveCommand}"
                             IsEnabled="{Binding HasUnsavedChanges}"
-                            Padding="16,6"/>
+                            Padding="12,6"/>
                     <Button Content="Discard"
                             Command="{Binding DiscardChangesCommand}"
                             IsEnabled="{Binding HasUnsavedChanges}"
-                            Padding="16,6"/>
+                            Padding="12,6"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -57,7 +59,7 @@
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                 <ProgressBar IsIndeterminate="True" Width="200"/>
                 <TextBlock Text="Loading factions..."
-                           Foreground="{DynamicResource ThemeAccentForeground}"
+                           Foreground="White"
                            HorizontalAlignment="Center"
                            Margin="0,8,0,0"/>
             </StackPanel>

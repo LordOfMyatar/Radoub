@@ -135,7 +135,6 @@ public partial class FactionEditorWindow : Window
     private Control CreateCellControl(MatrixCellViewModel cell)
     {
         var converter = ReputationColorConverter.Instance;
-        var fgConverter = ReputationForegroundConverter.Instance;
 
         if (cell.IsDiagonal)
         {
@@ -190,12 +189,12 @@ public partial class FactionEditorWindow : Window
             BorderThickness = new Thickness(0),
             Background = Brushes.Transparent,
             Padding = new Thickness(2),
-            Text = cell.ReputationValue.ToString(),
             Tag = cell,
-            [!TextBox.ForegroundProperty] = new Binding(nameof(cell.ReputationValue))
+            [!TextBox.TextProperty] = new Binding(nameof(cell.ReputationText))
             {
                 Source = cell,
-                Converter = fgConverter
+                Mode = BindingMode.TwoWay,
+                UpdateSourceTrigger = UpdateSourceTrigger.LostFocus
             }
         };
 
@@ -204,36 +203,25 @@ public partial class FactionEditorWindow : Window
         var perceived = _viewModel.Factions.ElementAtOrDefault(cell.Col);
         if (perceiver != null && perceived != null)
         {
-            var repLabel = cell.ReputationValue <= 10 ? "Hostile"
-                : cell.ReputationValue >= 90 ? "Friendly"
-                : "Neutral";
             ToolTip.SetTip(cellBorder,
-                $"{perceiver.Name} sees {perceived.Name} as {cell.ReputationValue} ({repLabel})");
+                $"{perceiver.Name} sees {perceived.Name}");
         }
 
-        textBox.LostFocus += OnCellTextBoxLostFocus;
         textBox.KeyDown += OnCellTextBoxKeyDown;
 
         cellBorder.Child = textBox;
         return cellBorder;
     }
 
-    private void OnCellTextBoxLostFocus(object? sender, RoutedEventArgs e)
-    {
-        if (sender is TextBox textBox && textBox.Tag is MatrixCellViewModel cell)
-        {
-            ApplyCellValue(textBox, cell);
-        }
-    }
-
     private void OnCellTextBoxKeyDown(object? sender, KeyEventArgs e)
     {
         if (e.Key == Key.Enter && sender is TextBox textBox && textBox.Tag is MatrixCellViewModel cell)
         {
-            ApplyCellValue(textBox, cell);
+            // Force binding update on Enter
+            cell.ReputationText = textBox.Text ?? "0";
             e.Handled = true;
 
-            // Move to next cell (Tab-like behavior)
+            // Move to next cell
             var nextCol = cell.Col + 1;
             var nextRow = cell.Row;
             if (nextCol >= _viewModel.FactionCount)
@@ -257,7 +245,6 @@ public partial class FactionEditorWindow : Window
     {
         if (row >= _viewModel.FactionCount) return;
 
-        // Find the TextBox in the grid at position (row+1, col+1)
         foreach (var child in MatrixContainer.Children)
         {
             if (Grid.GetRow(child) == row + 1 && Grid.GetColumn(child) == col + 1
@@ -267,21 +254,6 @@ public partial class FactionEditorWindow : Window
                 tb.SelectAll();
                 break;
             }
-        }
-    }
-
-    private static void ApplyCellValue(TextBox textBox, MatrixCellViewModel cell)
-    {
-        if (uint.TryParse(textBox.Text, out uint value))
-        {
-            if (value > 100) value = 100;
-            cell.ReputationValue = value;
-            textBox.Text = value.ToString();
-        }
-        else
-        {
-            // Revert to current value
-            textBox.Text = cell.ReputationValue.ToString();
         }
     }
 

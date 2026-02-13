@@ -85,13 +85,41 @@ public partial class MatrixCellViewModel : ObservableObject
     public bool IsDiagonal { get; }
     public bool IsEditable => !IsDiagonal;
 
-    [ObservableProperty]
     private uint _reputationValue;
 
-    partial void OnReputationValueChanged(uint value)
+    public uint ReputationValue
     {
-        if (value > 100) ReputationValue = 100;
-        else _parent.OnCellValueChanged(Row, Col, value);
+        get => _reputationValue;
+        set
+        {
+            if (value > 100) value = 100;
+            if (SetProperty(ref _reputationValue, value))
+            {
+                OnPropertyChanged(nameof(ReputationText));
+                _parent.OnCellValueChanged(Row, Col, value);
+            }
+        }
+    }
+
+    public string ReputationText
+    {
+        get => _reputationValue.ToString();
+        set
+        {
+            if (uint.TryParse(value, out uint parsed))
+                ReputationValue = parsed;
+        }
+    }
+
+    /// <summary>
+    /// Sets the initial value without triggering dirty tracking.
+    /// </summary>
+    internal void SetInitialValue(uint value)
+    {
+        if (value > 100) value = 100;
+        _reputationValue = value;
+        OnPropertyChanged(nameof(ReputationValue));
+        OnPropertyChanged(nameof(ReputationText));
     }
 }
 
@@ -304,14 +332,14 @@ public partial class FactionEditorViewModel : ObservableObject
             }
         }
 
-        // Populate from RepList
+        // Populate from RepList (use SetInitialValue to avoid dirty tracking)
         foreach (var rep in _facFile.RepList)
         {
             int perceived = (int)rep.FactionID1;
             int perceiver = (int)rep.FactionID2;
             if (perceived < n && perceiver < n)
             {
-                _matrix[perceiver, perceived].ReputationValue = rep.FactionRep;
+                _matrix[perceiver, perceived].SetInitialValue(rep.FactionRep);
             }
         }
 

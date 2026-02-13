@@ -60,38 +60,3 @@ public class ReputationColorConverter : IValueConverter
         throw new NotImplementedException();
     }
 }
-
-/// <summary>
-/// Converts a reputation value (0-100) to a contrasting foreground color.
-/// Ensures text is readable on the reputation-colored background.
-/// </summary>
-public class ReputationForegroundConverter : IValueConverter
-{
-    public static readonly ReputationForegroundConverter Instance = new();
-
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        // Since we use semi-transparent backgrounds, the underlying theme text color
-        // should work in most cases. Only override for very strong colors.
-        uint rep = value switch
-        {
-            uint u => u,
-            int i => (uint)Math.Max(0, i),
-            _ => 50u
-        };
-
-        if (rep > 100) rep = 100;
-
-        // At extremes (near 0 or 100), the background is stronger - use white for contrast
-        if (rep <= 10 || rep >= 90)
-            return new SolidColorBrush(Colors.White);
-
-        // For mid-range values, let the theme text color work
-        return null; // Falls through to default foreground
-    }
-
-    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        throw new NotImplementedException();
-    }
-}
