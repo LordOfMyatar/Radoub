@@ -1,0 +1,171 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:RadoubLauncher.ViewModels"
+        x:Class="RadoubLauncher.Views.FactionEditorWindow"
+        x:DataType="vm:FactionEditorViewModel"
+        Title="Faction Editor - Trebuchet"
+        Width="900" Height="650"
+        MinWidth="700" MinHeight="500"
+        WindowStartupLocation="CenterOwner">
+
+    <Design.DataContext>
+        <vm:FactionEditorViewModel/>
+    </Design.DataContext>
+
+    <DockPanel>
+        <!-- Header -->
+        <Border DockPanel.Dock="Top"
+                Background="{DynamicResource ThemeAccentBrush}"
+                Padding="16,12">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="Faction Editor"
+                           FontSize="18"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource ThemeAccentForeground}"
+                           VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Button Content="Save"
+                            Command="{Binding SaveCommand}"
+                            IsEnabled="{Binding HasUnsavedChanges}"
+                            Padding="16,6"/>
+                    <Button Content="Discard"
+                            Command="{Binding DiscardChangesCommand}"
+                            IsEnabled="{Binding HasUnsavedChanges}"
+                            Padding="16,6"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Status Bar -->
+        <Border DockPanel.Dock="Bottom"
+                Background="{DynamicResource ThemeBackgroundAlt}"
+                Padding="12,8">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="{Binding StatusText}"
+                           Opacity="0.8"/>
+                <TextBlock Grid.Column="1"
+                           Text="Row perceives Column"
+                           Opacity="0.5"
+                           FontStyle="Italic"/>
+            </Grid>
+        </Border>
+
+        <!-- Loading Overlay -->
+        <Border IsVisible="{Binding IsLoading}"
+                Background="#80000000"
+                ZIndex="100">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <ProgressBar IsIndeterminate="True" Width="200"/>
+                <TextBlock Text="Loading factions..."
+                           Foreground="{DynamicResource ThemeAccentForeground}"
+                           HorizontalAlignment="Center"
+                           Margin="0,8,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content: Left panel + Right matrix -->
+        <Grid ColumnDefinitions="220,*">
+            <!-- Left Panel: Faction List + Properties -->
+            <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                    BorderThickness="0,0,1,0">
+                <DockPanel>
+                    <!-- Faction List Header -->
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="Factions"
+                               FontWeight="SemiBold"
+                               Margin="12,12,12,8"/>
+
+                    <!-- Add/Remove Buttons -->
+                    <StackPanel DockPanel.Dock="Top"
+                                Orientation="Horizontal"
+                                Spacing="8"
+                                Margin="12,0,12,8">
+                        <Button Content="Add..."
+                                x:Name="AddFactionButton"
+                                Click="OnAddFactionClick"
+                                Padding="12,4"/>
+                        <Button Content="Remove"
+                                x:Name="RemoveFactionButton"
+                                Click="OnRemoveFactionClick"
+                                Padding="12,4"/>
+                    </StackPanel>
+
+                    <!-- Properties Panel (Bottom) -->
+                    <Border DockPanel.Dock="Bottom"
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                            BorderThickness="0,1,0,0"
+                            Padding="12,8"
+                            IsVisible="{Binding SelectedFaction, Converter={x:Static ObjectConverters.IsNotNull}}">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Properties"
+                                       FontWeight="SemiBold"/>
+
+                            <!-- Name -->
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Name" FontSize="{DynamicResource FontSizeSmall}" Opacity="0.7"/>
+                                <TextBox x:Name="FactionNameTextBox"
+                                         Text="{Binding SelectedFaction.Name}"
+                                         IsReadOnly="{Binding SelectedFaction.IsDefault}"/>
+                            </StackPanel>
+
+                            <!-- Index -->
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Index" FontSize="{DynamicResource FontSizeSmall}" Opacity="0.7"/>
+                                <TextBlock Text="{Binding SelectedFaction.Index}"
+                                           Margin="4,0"/>
+                            </StackPanel>
+
+                            <!-- Parent -->
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Parent" FontSize="{DynamicResource FontSizeSmall}" Opacity="0.7"/>
+                                <ComboBox x:Name="ParentComboBox"
+                                          IsEnabled="{Binding !SelectedFaction.IsDefault}"
+                                          HorizontalAlignment="Stretch"
+                                          SelectionChanged="OnParentSelectionChanged"/>
+                            </StackPanel>
+
+                            <!-- Global Effect -->
+                            <CheckBox Content="Global Effect"
+                                      IsChecked="{Binding SelectedFaction.IsGlobal}"
+                                      IsEnabled="{Binding !SelectedFaction.IsDefault}"
+                                      ToolTip.Tip="When enabled, all faction members change standings together. When disabled, each member maintains individual standings."/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Faction ListBox -->
+                    <ListBox ItemsSource="{Binding Factions}"
+                             SelectedItem="{Binding SelectedFaction}"
+                             Margin="0,0,0,0"
+                             SelectionChanged="OnFactionSelectionChanged">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:FactionViewModel">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="{Binding Index}"
+                                               Opacity="0.4"
+                                               Width="20"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Name}"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Text="G"
+                                               FontSize="10"
+                                               Opacity="0.5"
+                                               VerticalAlignment="Center"
+                                               IsVisible="{Binding IsGlobal}"
+                                               ToolTip.Tip="Global Effect"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <!-- Right Panel: Reputation Matrix -->
+            <ScrollViewer Grid.Column="1"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto">
+                <Grid x:Name="MatrixContainer"
+                      Margin="12"/>
+            </ScrollViewer>
+        </Grid>
+    </DockPanel>
+</Window>

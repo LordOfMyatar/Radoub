@@ -77,6 +77,11 @@
                             IsEnabled="{Binding CanEditModule}"
                             Padding="8,4"
                             ToolTip.Tip="Edit module settings (IFO)"/>
+                    <Button Content="Factions..."
+                            Command="{Binding OpenFactionEditorCommand}"
+                            IsEnabled="{Binding CanEditModule}"
+                            Padding="8,4"
+                            ToolTip.Tip="Edit faction relationships (repute.fac)"/>
                     <Button Content="Save Module"
                             Command="{Binding BuildModuleCommand}"
                             IsEnabled="{Binding CanBuildModule}"
