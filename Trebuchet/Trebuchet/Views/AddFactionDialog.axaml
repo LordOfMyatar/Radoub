@@ -1,0 +1,56 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="RadoubLauncher.Views.AddFactionDialog"
+        Title="Add Faction"
+        Width="350" Height="280"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        SystemDecorations="BorderOnly">
+
+    <Border Padding="16">
+        <StackPanel Spacing="12">
+            <TextBlock Text="Add New Faction"
+                       FontSize="16"
+                       FontWeight="SemiBold"/>
+
+            <!-- Name -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Faction Name"/>
+                <TextBox x:Name="NameTextBox"
+                         Watermark="Enter faction name..."
+                         MaxLength="32"/>
+            </StackPanel>
+
+            <!-- Parent -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Parent Faction"/>
+                <ComboBox x:Name="ParentComboBox"
+                          HorizontalAlignment="Stretch"/>
+            </StackPanel>
+
+            <!-- Global Effect -->
+            <CheckBox x:Name="GlobalCheckBox"
+                      Content="Global Effect"
+                      IsChecked="True"
+                      ToolTip.Tip="When enabled, all faction members change standings together when one member's standing changes."/>
+
+            <!-- Buttons -->
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Spacing="8"
+                        Margin="0,8,0,0">
+                <Button Content="OK"
+                        x:Name="OkButton"
+                        Click="OnOkClick"
+                        IsEnabled="False"
+                        IsDefault="True"
+                        Padding="24,6"/>
+                <Button Content="Cancel"
+                        Click="OnCancelClick"
+                        IsCancel="True"
+                        Padding="24,6"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

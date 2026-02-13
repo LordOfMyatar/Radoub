@@ -10,6 +10,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.9.0-alpha] - 2026-02-12
+**Branch**: `trebuchet/issue-950` | **PR**: #1315
+
+### Feature: Faction Editor - Visual faction relationship management (#950)
+
+---
+
 ## [1.8.0-alpha] - 2026-02-11
 **Branch**: `trebuchet/issue-1260` | **PR**: #1308
 

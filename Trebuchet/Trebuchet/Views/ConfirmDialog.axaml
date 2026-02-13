@@ -1,0 +1,40 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="RadoubLauncher.Views.ConfirmDialog"
+        Title="Confirm"
+        Width="350" Height="180"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        SystemDecorations="BorderOnly">
+
+    <Border Padding="16">
+        <DockPanel>
+            <!-- Buttons -->
+            <StackPanel DockPanel.Dock="Bottom"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Spacing="8"
+                        Margin="0,12,0,0">
+                <Button Content="Yes"
+                        Click="OnYesClick"
+                        IsDefault="True"
+                        Padding="24,6"/>
+                <Button Content="No"
+                        Click="OnNoClick"
+                        IsCancel="True"
+                        Padding="24,6"/>
+            </StackPanel>
+
+            <!-- Message -->
+            <StackPanel Spacing="8" VerticalAlignment="Center">
+                <TextBlock x:Name="TitleText"
+                           FontSize="16"
+                           FontWeight="SemiBold"/>
+                <TextBlock x:Name="MessageText"
+                           TextWrapping="Wrap"
+                           Opacity="0.8"/>
+            </StackPanel>
+        </DockPanel>
+    </Border>
+</Window>
