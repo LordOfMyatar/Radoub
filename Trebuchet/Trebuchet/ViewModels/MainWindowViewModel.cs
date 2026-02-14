@@ -27,6 +27,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly CancellationTokenSource _cts = new();
     private Window? _parentWindow;
     private ModuleEditorViewModel? _moduleEditorViewModel;
+    private FactionEditorViewModel? _factionEditorViewModel;
 
     [ObservableProperty]
     private ObservableCollection<ToolInfo> _tools;
@@ -139,7 +140,7 @@ public partial class MainWindowViewModel : ObservableObject
     /// Checks if any file in the working directory is newer than the .mod file,
     /// or if there are stale scripts (.nss newer than .ncs).
     /// </summary>
-    public bool NeedsBuildWarning => IsModuleDirty || HasNewerWorkingFiles || StaleScriptCount > 0 || HasUnsavedModuleEditorChanges;
+    public bool NeedsBuildWarning => IsModuleDirty || HasNewerWorkingFiles || StaleScriptCount > 0 || HasUnsavedModuleEditorChanges || HasUnsavedFactionEditorChanges;
 
     /// <summary>
     /// True when files in the working directory are newer than the packed .mod file.
@@ -165,6 +166,8 @@ public partial class MainWindowViewModel : ObservableObject
             var reasons = new List<string>();
             if (HasUnsavedModuleEditorChanges)
                 reasons.Add("Module editor has unsaved IFO changes");
+            if (HasUnsavedFactionEditorChanges)
+                reasons.Add("Faction editor has unsaved changes");
             if (HasNewerWorkingFiles)
                 reasons.Add($"{NewerFileCount} file(s) modified since last build");
             if (StaleScriptCount > 0)
@@ -260,9 +263,33 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Set the embedded faction editor ViewModel reference.
+    /// Called by MainWindow after initializing the FactionEditorPanel.
+    /// </summary>
+    public void SetFactionEditorViewModel(FactionEditorViewModel viewModel)
+    {
+        _factionEditorViewModel = viewModel;
+
+        // Forward HasUnsavedChanges from faction editor to build warning
+        viewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(FactionEditorViewModel.HasUnsavedChanges))
+            {
+                OnPropertyChanged(nameof(NeedsBuildWarning));
+                OnPropertyChanged(nameof(BuildWarningText));
+            }
+        };
+    }
+
+    /// <summary>
     /// Whether the embedded module editor has unsaved IFO changes.
     /// </summary>
     public bool HasUnsavedModuleEditorChanges => _moduleEditorViewModel?.HasUnsavedChanges == true;
+
+    /// <summary>
+    /// Whether the embedded faction editor has unsaved changes.
+    /// </summary>
+    public bool HasUnsavedFactionEditorChanges => _factionEditorViewModel?.HasUnsavedChanges == true;
 
     /// <summary>
     /// Unsubscribe from singleton events to prevent memory leaks (#1282).
@@ -370,6 +397,9 @@ public partial class MainWindowViewModel : ObservableObject
 
             // Reload the embedded module editor with the new module
             _ = ReloadModuleEditorAsync();
+
+            // Reload the embedded faction editor with the new module
+            _ = ReloadFactionEditorAsync();
 
             OnPropertyChanged(nameof(HasModule));
             OnPropertyChanged(nameof(CanEditModule));
@@ -504,6 +534,16 @@ public partial class MainWindowViewModel : ObservableObject
         {
             await _moduleEditorViewModel.LoadModuleAsync(currentPath);
         }
+    }
+
+    /// <summary>
+    /// Reload the embedded faction editor when the current module changes.
+    /// </summary>
+    private async Task ReloadFactionEditorAsync()
+    {
+        if (_factionEditorViewModel == null) return;
+
+        await _factionEditorViewModel.LoadFacFileAsync();
     }
 
     [RelayCommand]

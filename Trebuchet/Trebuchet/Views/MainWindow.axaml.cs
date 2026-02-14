@@ -29,6 +29,15 @@ public partial class MainWindow : Window
             _viewModel.SetModuleEditorViewModel(moduleEditorVm);
         }
 
+        // Initialize the embedded faction editor panel
+        var factionEditorPanel = this.FindControl<Controls.FactionEditorPanel>("FactionEditorPanel");
+        if (factionEditorPanel != null)
+        {
+            var factionEditorVm = new FactionEditorViewModel();
+            factionEditorPanel.Initialize(factionEditorVm, this);
+            _viewModel.SetFactionEditorViewModel(factionEditorVm);
+        }
+
         // Restore window position from settings
         RestoreWindowState();
 
@@ -52,6 +61,13 @@ public partial class MainWindow : Window
         if (moduleEditorPanel != null && _viewModel?.HasModule == true)
         {
             await moduleEditorPanel.LoadModuleAsync();
+        }
+
+        // Auto-load factions if a module is already selected
+        var factionEditorPanel = this.FindControl<Controls.FactionEditorPanel>("FactionEditorPanel");
+        if (factionEditorPanel != null && _viewModel?.HasModule == true)
+        {
+            await factionEditorPanel.LoadFacFileAsync();
         }
     }
 
