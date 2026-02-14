@@ -15,11 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint 2: Embed Module Editor as Workspace Tab (#1329)
 
-- [ ] Extract ModuleEditorPanel UserControl from ModuleEditorWindow
-- [ ] Embed in workspace Module tab with auto-load IFO
-- [ ] Route dialog operations (script/TLK browsers) through MainWindow
-- [ ] Wire Save to toolbar for IFO + module packing
-- [ ] Remove separate ModuleEditorWindow
+- [x] Extract ModuleEditorPanel UserControl from ModuleEditorWindow
+- [x] Embed in workspace Module tab with auto-load IFO
+- [x] Route dialog operations (script/TLK browsers) through MainWindow
+- [x] Wire Save to toolbar for IFO + module packing
+- [x] Remove separate ModuleEditorWindow
 
 ---
 
