@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.10.0-alpha] - 2026-02-14
+**Branch**: `trebuchet/issue-1328` | **PR**: #TBD
+
+### Sprint 1: Dashboard Layout Shell (#1328)
+
+- [ ] Create left sidebar panel (tool cards + recent modules)
+- [ ] Create workspace TabControl (Dashboard, Module, Factions, Launch & Test)
+- [ ] Simplify toolbar (remove Edit/Factions buttons)
+- [ ] No-module empty state
+- [ ] UI/Theme consistency (BrushManager, DynamicResource)
+
+---
+
 ## [1.9.0-alpha] - 2026-02-12
 **Branch**: `trebuchet/issue-950` | **PR**: #1315
 
