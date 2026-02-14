@@ -48,6 +48,13 @@ public partial class MainWindow : Window
         // Keyboard navigation (Ctrl+1/2/3 tab switching)
         KeyDown += OnKeyDown;
 
+        // Tab change updates title and status bar context
+        var workspaceTabs = this.FindControl<TabControl>("WorkspaceTabs");
+        if (workspaceTabs != null)
+        {
+            workspaceTabs.SelectionChanged += OnWorkspaceTabChanged;
+        }
+
         // Save window state on close
         Closing += OnWindowClosing;
 
@@ -62,6 +69,8 @@ public partial class MainWindow : Window
 
         if (_viewModel != null)
             UpdateModuleNameColor(_viewModel);
+
+        UpdateWindowTitle();
 
         // Auto-load module if one is already selected
         var moduleEditorPanel = this.FindControl<Controls.ModuleEditorPanel>("ModuleEditorPanel");
@@ -129,7 +138,13 @@ public partial class MainWindow : Window
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(MainWindowViewModel.CurrentModuleName) && sender is MainWindowViewModel vm)
+        {
             UpdateModuleNameColor(vm);
+            UpdateWindowTitle();
+        }
+
+        if (e.PropertyName == nameof(MainWindowViewModel.HasModule))
+            UpdateWindowTitle();
     }
 
     private void UpdateModuleNameColor(MainWindowViewModel vm)
@@ -141,6 +156,38 @@ public partial class MainWindow : Window
         moduleNameText.Foreground = hasModule
             ? BrushManager.GetInfoBrush(this)
             : BrushManager.GetWarningBrush(this);
+    }
+
+    #endregion
+
+    #region Window Title & Status Context
+
+    private void OnWorkspaceTabChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not TabControl tabControl) return;
+        UpdateWindowTitle(tabControl);
+    }
+
+    private void UpdateWindowTitle(TabControl? tabControl = null)
+    {
+        tabControl ??= this.FindControl<TabControl>("WorkspaceTabs");
+
+        var moduleName = _viewModel?.CurrentModuleName ?? "(No module)";
+        var baseTitle = "Trebuchet";
+
+        if (tabControl?.SelectedItem is TabItem selectedTab && _viewModel?.HasModule == true)
+        {
+            var tabName = selectedTab.Header?.ToString() ?? "";
+            Title = $"{baseTitle} - {moduleName} [{tabName}]";
+        }
+        else if (_viewModel?.HasModule == true)
+        {
+            Title = $"{baseTitle} - {moduleName}";
+        }
+        else
+        {
+            Title = $"{baseTitle} - Radoub Toolset (Alpha)";
+        }
     }
 
     #endregion
