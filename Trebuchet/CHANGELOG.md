@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.12.0-alpha] - 2026-02-14
-**Branch**: `trebuchet/issue-1330` | **PR**: #TBD
+**Branch**: `trebuchet/issue-1330` | **PR**: #1336
 
 ### Sprint 3: Embed Faction Editor as Workspace Tab (#1330)
 
