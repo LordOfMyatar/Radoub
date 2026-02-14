@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.11.0-alpha] - 2026-02-14
-**Branch**: `trebuchet/issue-1329` | **PR**: #TBD
+**Branch**: `trebuchet/issue-1329` | **PR**: #1334
 
 ### Sprint 2: Embed Module Editor as Workspace Tab (#1329)
 
