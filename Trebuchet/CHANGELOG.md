@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.10.0-alpha] - 2026-02-14
-**Branch**: `trebuchet/issue-1328` | **PR**: #TBD
+**Branch**: `trebuchet/issue-1328` | **PR**: #1332
 
 ### Sprint 1: Dashboard Layout Shell (#1328)
 
