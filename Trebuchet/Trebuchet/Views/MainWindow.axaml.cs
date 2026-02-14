@@ -38,6 +38,10 @@ public partial class MainWindow : Window
             _viewModel.SetFactionEditorViewModel(factionEditorVm);
         }
 
+        // Initialize the launch & test panel
+        var launchTestPanel = this.FindControl<Controls.LaunchTestPanel>("LaunchTestPanel");
+        launchTestPanel?.Initialize(_viewModel);
+
         // Restore window position from settings
         RestoreWindowState();
 

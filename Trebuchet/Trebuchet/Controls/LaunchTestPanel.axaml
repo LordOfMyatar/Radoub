@@ -1,0 +1,143 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RadoubLauncher.ViewModels"
+             x:Class="RadoubLauncher.Controls.LaunchTestPanel"
+             x:DataType="vm:MainWindowViewModel">
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24" Spacing="24">
+
+            <!-- Launch Game Section -->
+            <StackPanel Spacing="12">
+                <TextBlock Text="Launch Game"
+                           FontSize="{DynamicResource FontSizeLarge}"
+                           FontWeight="SemiBold"/>
+
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Button Content="Launch NWN:EE"
+                            Command="{Binding LaunchGameCommand}"
+                            IsEnabled="{Binding IsGameAvailable}"
+                            Padding="16,8"
+                            ToolTip.Tip="Launch Neverwinter Nights: Enhanced Edition"/>
+                    <Button Content="Test Module"
+                            Command="{Binding LaunchTestModuleCommand}"
+                            IsEnabled="{Binding CanTestModule}"
+                            Padding="16,8"
+                            ToolTip.Tip="Launch with current module, auto-select first character"/>
+                    <Button Content="Load Module"
+                            Command="{Binding LaunchLoadModuleCommand}"
+                            IsEnabled="{Binding CanLoadModule}"
+                            Padding="16,8"
+                            ToolTip.Tip="{Binding LoadModuleTooltip}"/>
+                </StackPanel>
+
+                <!-- DefaultBic Setting -->
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <CheckBox Content="Use Default Character"
+                              IsChecked="{Binding UseDefaultBic}"
+                              VerticalAlignment="Center"
+                              ToolTip.Tip="When enabled, new players use the selected pre-generated character. Only Test Module works with DefaultBic."/>
+                    <ComboBox ItemsSource="{Binding AvailableBicFiles}"
+                              SelectedItem="{Binding SelectedDefaultBic}"
+                              IsEnabled="{Binding IsDefaultBicDropdownEnabled}"
+                              Width="180"
+                              VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding NoBicFilesMessage}"
+                               FontSize="{DynamicResource FontSizeSmall}"
+                               Foreground="{DynamicResource ThemeWarning}"
+                               VerticalAlignment="Center"
+                               IsVisible="{Binding !HasBicFilesAvailable}"/>
+                </StackPanel>
+
+                <TextBlock Text="Game not configured - set Base Game Path in Settings"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           Opacity="0.6"
+                           IsVisible="{Binding !IsGameAvailable}"/>
+            </StackPanel>
+
+            <!-- Separator -->
+            <Border Height="1"
+                    Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+
+            <!-- Build Status Section -->
+            <StackPanel Spacing="12">
+                <TextBlock Text="Build Status"
+                           FontSize="{DynamicResource FontSizeLarge}"
+                           FontWeight="SemiBold"/>
+
+                <!-- Build warning indicator -->
+                <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="12,8"
+                        IsVisible="{Binding NeedsBuildWarning}">
+                    <StackPanel Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="⚠"
+                                       FontSize="16"
+                                       VerticalAlignment="Center"
+                                       x:Name="BuildWarningIcon"/>
+                            <TextBlock Text="{Binding BuildWarningText}"
+                                       TextWrapping="Wrap"
+                                       VerticalAlignment="Center"
+                                       x:Name="BuildWarningTextBlock"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Build Now"
+                                    Command="{Binding BuildModuleCommand}"
+                                    IsEnabled="{Binding CanBuildModule}"
+                                    Padding="12,6"/>
+                            <Button Content="View Log"
+                                    Command="{Binding OpenBuildLogCommand}"
+                                    IsVisible="{Binding HasBuildLog}"
+                                    Padding="12,6"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- No warnings - all clear -->
+                <StackPanel Orientation="Horizontal"
+                            Spacing="8"
+                            IsVisible="{Binding !NeedsBuildWarning}">
+                    <TextBlock Text="✓"
+                               FontSize="16"
+                               VerticalAlignment="Center"
+                               x:Name="BuildOkIcon"/>
+                    <TextBlock Text="Module is up to date"
+                               Opacity="0.7"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Build progress -->
+                <StackPanel IsVisible="{Binding IsBuilding}" Spacing="8">
+                    <ProgressBar IsIndeterminate="True"
+                                 Height="6"/>
+                    <TextBlock Text="{Binding BuildStatusText}"
+                               Opacity="0.7"/>
+                </StackPanel>
+
+                <!-- Compile checkbox -->
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <CheckBox Content="Compile scripts before building"
+                              IsChecked="{Binding CompileScriptsEnabled}"
+                              IsEnabled="{Binding IsCompilerAvailable}"
+                              ToolTip.Tip="Compile NWScript files before building"/>
+                    <TextBlock Text="(compiler not found)"
+                               FontSize="{DynamicResource FontSizeSmall}"
+                               Opacity="0.4"
+                               VerticalAlignment="Center"
+                               IsVisible="{Binding !IsCompilerAvailable}"/>
+                </StackPanel>
+
+                <!-- Stale script details -->
+                <TextBlock FontSize="{DynamicResource FontSizeSmall}"
+                           Opacity="0.6"
+                           x:Name="StaleScriptText"
+                           IsVisible="False"/>
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

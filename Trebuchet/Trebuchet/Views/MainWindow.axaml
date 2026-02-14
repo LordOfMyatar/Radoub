@@ -312,62 +312,6 @@
                             Classes="WorkspaceTabs"
                             IsVisible="{Binding HasModule}">
 
-                    <!-- Dashboard Tab -->
-                    <TabItem Header="Dashboard">
-                        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
-                                      VerticalScrollBarVisibility="Auto">
-                            <StackPanel Margin="24">
-                                <!-- Launch Game Section -->
-                                <TextBlock Text="Launch Game"
-                                           FontSize="{DynamicResource FontSizeLarge}"
-                                           FontWeight="SemiBold"
-                                           Margin="0,0,0,12"/>
-
-                                <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <Button Content="Launch NWN:EE"
-                                            Command="{Binding LaunchGameCommand}"
-                                            IsEnabled="{Binding IsGameAvailable}"
-                                            Padding="16,8"
-                                            ToolTip.Tip="Launch Neverwinter Nights: Enhanced Edition"/>
-                                    <Button Content="Test Module"
-                                            Command="{Binding LaunchTestModuleCommand}"
-                                            IsEnabled="{Binding CanTestModule}"
-                                            Padding="16,8"
-                                            ToolTip.Tip="Launch with current module, auto-select first character"/>
-                                    <Button Content="Load Module"
-                                            Command="{Binding LaunchLoadModuleCommand}"
-                                            IsEnabled="{Binding CanLoadModule}"
-                                            Padding="16,8"
-                                            ToolTip.Tip="{Binding LoadModuleTooltip}"/>
-                                </StackPanel>
-
-                                <!-- DefaultBic Setting -->
-                                <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,12,0,0">
-                                    <CheckBox Content="Use Default Character"
-                                              IsChecked="{Binding UseDefaultBic}"
-                                              VerticalAlignment="Center"
-                                              ToolTip.Tip="When enabled, new players use the selected pre-generated character. Only Test Module works with DefaultBic."/>
-                                    <ComboBox ItemsSource="{Binding AvailableBicFiles}"
-                                              SelectedItem="{Binding SelectedDefaultBic}"
-                                              IsEnabled="{Binding IsDefaultBicDropdownEnabled}"
-                                              Width="180"
-                                              VerticalAlignment="Center"/>
-                                    <TextBlock Text="{Binding NoBicFilesMessage}"
-                                               FontSize="{DynamicResource FontSizeSmall}"
-                                               Foreground="{DynamicResource ThemeWarning}"
-                                               VerticalAlignment="Center"
-                                               IsVisible="{Binding !HasBicFilesAvailable}"/>
-                                </StackPanel>
-
-                                <TextBlock Text="Game not configured - set Base Game Path in Settings"
-                                           FontSize="{DynamicResource FontSizeSmall}"
-                                           Opacity="0.6"
-                                           Margin="0,8,0,0"
-                                           IsVisible="{Binding !IsGameAvailable}"/>
-                            </StackPanel>
-                        </ScrollViewer>
-                    </TabItem>
-
                     <!-- Module Tab -->
                     <TabItem Header="Module">
                         <ctrl:ModuleEditorPanel x:Name="ModuleEditorPanel"/>
@@ -380,19 +324,7 @@
 
                     <!-- Launch & Test Tab -->
                     <TabItem Header="Launch &amp; Test">
-                        <StackPanel VerticalAlignment="Center"
-                                    HorizontalAlignment="Center"
-                                    Spacing="12">
-                            <TextBlock Text="Launch &amp; Test"
-                                       FontSize="20"
-                                       FontWeight="Light"
-                                       HorizontalAlignment="Center"
-                                       Opacity="0.5"/>
-                            <TextBlock Text="Advanced launch configuration coming in Sprint 4"
-                                       FontSize="{DynamicResource FontSizeSmall}"
-                                       HorizontalAlignment="Center"
-                                       Opacity="0.4"/>
-                        </StackPanel>
+                        <ctrl:LaunchTestPanel x:Name="LaunchTestPanel"/>
                     </TabItem>
                 </TabControl>
             </Grid>
