@@ -11,6 +11,7 @@ using DialogEditor.Services;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using DialogEditor.ViewModels;
+using Radoub.UI.Services;
 using Radoub.UI.Views;
 
 namespace Parley.Views.Helpers
@@ -444,9 +445,12 @@ namespace Parley.Views.Helpers
                 // Sanitize path for display
                 var displayPath = PathHelper.SanitizePathForDisplay(moduleDirectory);
 
-                // Update UI
+                // Update UI - info colors when module is active
                 _controls.WithControl<TextBlock>("ModuleNameTextBlock", tb =>
-                    tb.Text = moduleName ?? Path.GetFileName(moduleDirectory));
+                {
+                    tb.Text = moduleName ?? Path.GetFileName(moduleDirectory);
+                    tb.Foreground = BrushManager.GetInfoBrush(tb);
+                });
                 _controls.WithControl<TextBlock>("ModulePathTextBlock", tb =>
                     tb.Text = displayPath);
 
@@ -464,7 +468,11 @@ namespace Parley.Views.Helpers
         /// </summary>
         public void ClearModuleInfo()
         {
-            _controls.WithControl<TextBlock>("ModuleNameTextBlock", tb => tb.Text = "No module loaded");
+            _controls.WithControl<TextBlock>("ModuleNameTextBlock", tb =>
+            {
+                tb.Text = "No module selected";
+                tb.Foreground = BrushManager.GetWarningBrush(tb);
+            });
             _controls.WithControl<TextBlock>("ModulePathTextBlock", tb => tb.Text = "");
         }
 
@@ -478,7 +486,10 @@ namespace Parley.Views.Helpers
             {
                 var modulePath = Radoub.Formats.Settings.RadoubSettings.Instance.CurrentModulePath;
                 if (string.IsNullOrEmpty(modulePath))
+                {
+                    ClearModuleInfo();
                     return;
+                }
 
                 // Resolve to working directory if it's a .mod file
                 string? workingDir = null;
@@ -492,7 +503,10 @@ namespace Parley.Views.Helpers
                 }
 
                 if (string.IsNullOrEmpty(workingDir))
+                {
+                    ClearModuleInfo();
                     return;
+                }
 
                 // Get module name from module.ifo
                 var moduleName = ModuleInfoParser.GetModuleName(workingDir);
@@ -500,9 +514,12 @@ namespace Parley.Views.Helpers
                 // Sanitize path for display
                 var displayPath = PathHelper.SanitizePathForDisplay(workingDir);
 
-                // Update UI
+                // Update UI - info colors when module is active
                 _controls.WithControl<TextBlock>("ModuleNameTextBlock", tb =>
-                    tb.Text = moduleName ?? Path.GetFileName(workingDir));
+                {
+                    tb.Text = moduleName ?? Path.GetFileName(workingDir);
+                    tb.Foreground = BrushManager.GetInfoBrush(tb);
+                });
                 _controls.WithControl<TextBlock>("ModulePathTextBlock", tb =>
                     tb.Text = displayPath);
 
@@ -511,6 +528,7 @@ namespace Parley.Views.Helpers
             catch (Exception ex)
             {
                 UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to initialize module info from settings: {ex.Message}");
+                ClearModuleInfo();
             }
         }
 

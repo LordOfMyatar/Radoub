@@ -77,19 +77,27 @@
             </StackPanel>
         </Border>
 
-        <!-- Status Bar -->
-        <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,1,0,0" Padding="5,2">
+        <!-- Status Bar (top position for visibility, matching Fence pattern) -->
+        <Border DockPanel.Dock="Top"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="8,4"
+                Margin="8,4,8,0">
             <Grid>
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="StatusText" Grid.Column="0" Text="Ready"/>
-                <TextBlock x:Name="CountsText" Grid.Column="1" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0"/>
-                <TextBlock x:Name="TlkStatusText" Grid.Column="2" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0"/>
-                <TextBlock x:Name="FilePathText" Grid.Column="3" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0" TextTrimming="CharacterEllipsis"/>
+                <TextBlock x:Name="ModuleText" Grid.Column="0" Text="No module selected" FontWeight="Bold"/>
+                <TextBlock x:Name="StatusText" Grid.Column="1" Text="Ready" Margin="20,0,0,0"/>
+                <TextBlock x:Name="CountsText" Grid.Column="2" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0"/>
+                <TextBlock x:Name="TlkStatusText" Grid.Column="3" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0"/>
+                <TextBlock x:Name="FilePathText" Grid.Column="4" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0" TextTrimming="CharacterEllipsis"/>
             </Grid>
         </Border>
 
