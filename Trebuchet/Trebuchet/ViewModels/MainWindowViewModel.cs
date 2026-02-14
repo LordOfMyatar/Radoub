@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Avalonia;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -809,7 +808,7 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task LaunchTestModuleAsync()
+    private void LaunchTestModule()
     {
         var moduleName = GameLauncherService.GetModuleNameFromPath(RadoubSettings.Instance.CurrentModulePath);
         if (string.IsNullOrEmpty(moduleName))
@@ -818,18 +817,15 @@ public partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        // Refresh checks right before launch to catch any changes made outside Trebuchet
+        // Refresh build status so the Launch & Test tab shows current warnings
         RefreshBuildStatus();
-
-        if (NeedsBuildWarning && !await ConfirmLaunchWithDirtyModuleAsync())
-            return;
 
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Launching NWN:EE with +TestNewModule \"{moduleName}\"");
         _gameLauncher.LaunchWithModule(moduleName, testMode: true);
     }
 
     [RelayCommand]
-    private async Task LaunchLoadModuleAsync()
+    private void LaunchLoadModule()
     {
         var moduleName = GameLauncherService.GetModuleNameFromPath(RadoubSettings.Instance.CurrentModulePath);
         if (string.IsNullOrEmpty(moduleName))
@@ -838,81 +834,11 @@ public partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        // Refresh checks right before launch to catch any changes made outside Trebuchet
+        // Refresh build status so the Launch & Test tab shows current warnings
         RefreshBuildStatus();
-
-        if (NeedsBuildWarning && !await ConfirmLaunchWithDirtyModuleAsync())
-            return;
 
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Launching NWN:EE with +LoadNewModule \"{moduleName}\"");
         _gameLauncher.LaunchWithModule(moduleName, testMode: false);
-    }
-
-    /// <summary>
-    /// Show a confirmation dialog when launching with a dirty module.
-    /// Returns true if the user wants to proceed (Build or Test Anyway).
-    /// </summary>
-    private async Task<bool> ConfirmLaunchWithDirtyModuleAsync()
-    {
-        if (_parentWindow == null)
-            return true;
-
-        var dialog = new Window
-        {
-            Title = "Module Has Unsaved Changes",
-            Width = 420,
-            Height = 200,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            CanResize = false,
-            SystemDecorations = SystemDecorations.BorderOnly
-        };
-
-        var result = false;
-        var built = false;
-
-        var messageText = BuildWarningText;
-        var message = new Avalonia.Controls.TextBlock
-        {
-            Text = messageText + "\n\nThe game will load the .mod file, which may not include your latest changes.",
-            TextWrapping = Avalonia.Media.TextWrapping.Wrap,
-            Margin = new Thickness(20, 20, 20, 0)
-        };
-
-        var buildBtn = new Button { Content = "Build First", Margin = new Thickness(0, 0, 8, 0), Padding = new Thickness(16, 8) };
-        var testBtn = new Button { Content = "Test Anyway", Margin = new Thickness(0, 0, 8, 0), Padding = new Thickness(16, 8) };
-        var cancelBtn = new Button { Content = "Cancel", Padding = new Thickness(16, 8) };
-
-        buildBtn.Click += (_, _) => { built = true; result = true; dialog.Close(); };
-        testBtn.Click += (_, _) => { result = true; dialog.Close(); };
-        cancelBtn.Click += (_, _) => { dialog.Close(); };
-
-        var buttonPanel = new StackPanel
-        {
-            Orientation = Avalonia.Layout.Orientation.Horizontal,
-            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
-            Margin = new Thickness(20)
-        };
-        buttonPanel.Children.Add(buildBtn);
-        buttonPanel.Children.Add(testBtn);
-        buttonPanel.Children.Add(cancelBtn);
-
-        var panel = new DockPanel();
-        DockPanel.SetDock(buttonPanel, Avalonia.Controls.Dock.Bottom);
-        panel.Children.Add(buttonPanel);
-        panel.Children.Add(message);
-
-        dialog.Content = panel;
-
-        await dialog.ShowDialog(_parentWindow);
-
-        if (built)
-        {
-            await BuildModuleAsync();
-            // If build failed, don't launch
-            return !IsBuilding && !HasBuildLog;
-        }
-
-        return result;
     }
 
     /// <summary>
