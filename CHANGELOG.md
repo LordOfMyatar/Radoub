@@ -15,6 +15,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.68] - 2026-02-13
+**Branch**: `radoub/issue-1003` | **PR**: #TBD
+
+### Feat: Module Indicator in Status Bar (#1003)
+
+Phase 1 of module selection & resource configuration. Displays active module name in each tool's status bar using `IfoReader` + `RadoubSettings.CurrentModulePath`. Shows "No module selected" in warning colors when no module is configured.
+
+- Parley: Add warning/info colors to existing Module Info Bar
+- Quartermaster: Add ModuleText column to status bar + UpdateModuleIndicator()
+- Fence: Add ModuleText column to status bar + UpdateModuleIndicator()
+- Manifest: Add ModuleText column to status bar + UpdateModuleIndicator() + move status bar to top
+- Trebuchet: Add module name color updates via BrushManager
+
+---
+
 ## [0.9.67] - 2026-02-11
 **Branch**: `radoub/issue-1259` | **PR**: #1311
 
