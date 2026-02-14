@@ -557,16 +557,6 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void OpenFactionEditor()
-    {
-        if (_parentWindow == null) return;
-
-        UnifiedLogger.LogApplication(LogLevel.INFO, "Opening faction editor");
-        var editorWindow = new FactionEditorWindow();
-        editorWindow.Show(_parentWindow);
-    }
-
-    [RelayCommand]
     private void OpenAbout()
     {
         if (_parentWindow == null) return;
