@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Radoub.UI.Services;
 using RadoubLauncher.ViewModels;
 using RadoubLauncher.Services;
 using System.ComponentModel;
@@ -22,6 +23,10 @@ public partial class MainWindow : Window
 
         // Save window state on close
         Closing += OnWindowClosing;
+
+        // Update module name color when module changes (#1003)
+        viewModel.PropertyChanged += OnViewModelPropertyChanged;
+        Opened += (_, _) => UpdateModuleNameColor(viewModel);
     }
 
     private void RestoreWindowState()
@@ -69,6 +74,27 @@ public partial class MainWindow : Window
             settings.WindowHeight = Height;
         }
     }
+
+    #region Module Name Color (#1003)
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MainWindowViewModel.CurrentModuleName) && sender is MainWindowViewModel vm)
+            UpdateModuleNameColor(vm);
+    }
+
+    private void UpdateModuleNameColor(MainWindowViewModel vm)
+    {
+        var moduleNameText = this.FindControl<TextBlock>("ModuleNameText");
+        if (moduleNameText == null) return;
+
+        var hasModule = !string.IsNullOrEmpty(Radoub.Formats.Settings.RadoubSettings.Instance.CurrentModulePath);
+        moduleNameText.Foreground = hasModule
+            ? BrushManager.GetInfoBrush(this)
+            : BrushManager.GetWarningBrush(this);
+    }
+
+    #endregion
 
     #region Title Bar Handlers
 

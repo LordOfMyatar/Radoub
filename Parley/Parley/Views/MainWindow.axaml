@@ -172,7 +172,7 @@
         <Border Grid.Row="3" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,0,0,1" Padding="8,4">
             <StackPanel Orientation="Horizontal" Spacing="15">
                 <TextBlock x:Name="ModuleNameTextBlock"
-                           Text="No module loaded"
+                           Text="No module selected"
                            FontWeight="Bold"
                            VerticalAlignment="Center"/>
                 <TextBlock Text="|"
