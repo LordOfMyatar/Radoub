@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.12.0-alpha] - 2026-02-14
+**Branch**: `trebuchet/issue-1330` | **PR**: #TBD
+
+### Sprint 3: Embed Faction Editor as Workspace Tab (#1330)
+
+- [ ] Extract FactionEditorPanel UserControl from FactionEditorWindow
+- [ ] Adapt dialog operations to route through parent window
+- [ ] Embed in workspace Factions tab with auto-load repute.fac
+- [ ] Wire Save to toolbar for factions + IFO + module packing
+- [ ] Remove separate FactionEditorWindow
+
+---
+
 ## [1.11.0-alpha] - 2026-02-14
 **Branch**: `trebuchet/issue-1329` | **PR**: #1334
 
