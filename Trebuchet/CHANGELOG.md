@@ -15,12 +15,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint 4: Launch Tab + FlaUI Tests + Polish (#1331)
 
-- [ ] Build Launch & Test tab with game launch controls
-- [ ] Dashboard tab cleanup (resolve purpose or remove)
-- [ ] FlaUI integration tests for tabs, content, toolbar, sidebar
-- [ ] Keyboard navigation (Tab cycling, Ctrl+1/2/3/4 tab switching)
-- [ ] Polish and consistency (theme, status bar, window title)
-- [ ] Documentation updates (CHANGELOG, README, CLAUDE.md)
+- [x] Build Launch & Test tab with LaunchTestPanel control (game launch, DefaultBic, build status)
+- [x] Remove Dashboard tab — Module tab is now the default workspace tab
+- [x] FlaUI integration tests: 14 tests covering smoke, tabs, content, toolbar, sidebar
+- [x] Keyboard navigation: Ctrl+1/2/3 switches workspace tabs
+- [x] Dynamic window title: "Trebuchet - ModuleName [TabName]"
+- [x] BrushManager colors for build warning/success indicators
+- [x] Documentation updates (CHANGELOG, CLAUDE.md)
 
 ---
 
