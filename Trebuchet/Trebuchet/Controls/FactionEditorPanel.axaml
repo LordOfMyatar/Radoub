@@ -1,57 +1,14 @@
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:RadoubLauncher.ViewModels"
-        x:Class="RadoubLauncher.Views.FactionEditorWindow"
-        x:DataType="vm:FactionEditorViewModel"
-        Title="Faction Editor - Trebuchet"
-        Width="900" Height="650"
-        MinWidth="700" MinHeight="500"
-        WindowStartupLocation="CenterOwner">
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RadoubLauncher.ViewModels"
+             x:Class="RadoubLauncher.Controls.FactionEditorPanel"
+             x:DataType="vm:FactionEditorViewModel">
 
     <Design.DataContext>
         <vm:FactionEditorViewModel/>
     </Design.DataContext>
 
-    <DockPanel>
-        <!-- Toolbar -->
-        <Border DockPanel.Dock="Top"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                BorderThickness="0,0,0,1"
-                Padding="12,8">
-            <Grid ColumnDefinitions="*,Auto">
-                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <TextBlock Text="Faction Editor"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center"/>
-                </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                    <Button Content="Save"
-                            Command="{Binding SaveCommand}"
-                            IsEnabled="{Binding HasUnsavedChanges}"
-                            Padding="12,6"/>
-                    <Button Content="Discard"
-                            Command="{Binding DiscardChangesCommand}"
-                            IsEnabled="{Binding HasUnsavedChanges}"
-                            Padding="12,6"/>
-                </StackPanel>
-            </Grid>
-        </Border>
-
-        <!-- Status Bar -->
-        <Border DockPanel.Dock="Bottom"
-                Background="{DynamicResource ThemeBackgroundAlt}"
-                Padding="12,8">
-            <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Text="{Binding StatusText}"
-                           Opacity="0.8"/>
-                <TextBlock Grid.Column="1"
-                           Text="Row perceives Column"
-                           Opacity="0.5"
-                           FontStyle="Italic"/>
-            </Grid>
-        </Border>
-
+    <Grid>
         <!-- Loading Overlay -->
         <Border IsVisible="{Binding IsLoading}"
                 Background="#80000000"
@@ -65,8 +22,27 @@
             </StackPanel>
         </Border>
 
+        <!-- No module state -->
+        <StackPanel VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Spacing="12"
+                    IsVisible="{Binding !IsModuleLoaded}">
+            <TextBlock Text="No module loaded"
+                       FontSize="20"
+                       FontWeight="Light"
+                       HorizontalAlignment="Center"
+                       Opacity="0.5"
+                       IsVisible="{Binding !IsLoading}"/>
+            <TextBlock Text="Select a module to edit faction relationships"
+                       FontSize="{DynamicResource FontSizeSmall}"
+                       HorizontalAlignment="Center"
+                       Opacity="0.4"
+                       IsVisible="{Binding !IsLoading}"/>
+        </StackPanel>
+
         <!-- Main Content: Left panel + Right matrix -->
-        <Grid ColumnDefinitions="220,*">
+        <Grid ColumnDefinitions="220,*"
+              IsVisible="{Binding IsModuleLoaded}">
             <!-- Left Panel: Faction List + Properties -->
             <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                     BorderThickness="0,0,1,0">
@@ -169,5 +145,5 @@
                       Margin="12"/>
             </ScrollViewer>
         </Grid>
-    </DockPanel>
-</Window>
+    </Grid>
+</UserControl>

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
@@ -9,27 +10,40 @@ using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using RadoubLauncher.ViewModels;
+using RadoubLauncher.Views;
 
-namespace RadoubLauncher.Views;
+namespace RadoubLauncher.Controls;
 
-public partial class FactionEditorWindow : Window
+public partial class FactionEditorPanel : UserControl
 {
-    private readonly FactionEditorViewModel _viewModel;
+    private FactionEditorViewModel? _viewModel;
+    private Window? _parentWindow;
 
-    public FactionEditorWindow()
+    public FactionEditorPanel()
     {
         InitializeComponent();
-        _viewModel = new FactionEditorViewModel();
-        DataContext = _viewModel;
-
-        _viewModel.MatrixChanged += OnMatrixChanged;
-        Opened += OnWindowOpened;
     }
 
-    private async void OnWindowOpened(object? sender, EventArgs e)
+    /// <summary>
+    /// Initialize the panel with its ViewModel and parent window reference.
+    /// Called by MainWindow after embedding the panel.
+    /// </summary>
+    public void Initialize(FactionEditorViewModel viewModel, Window parentWindow)
     {
-        Opened -= OnWindowOpened;
-        _viewModel.SetParentWindow(this);
+        _viewModel = viewModel;
+        _parentWindow = parentWindow;
+        DataContext = viewModel;
+        viewModel.SetParentWindow(parentWindow);
+
+        viewModel.MatrixChanged += OnMatrixChanged;
+    }
+
+    /// <summary>
+    /// Load the current module's faction data into the panel.
+    /// </summary>
+    public async Task LoadFacFileAsync()
+    {
+        if (_viewModel == null) return;
         await _viewModel.LoadFacFileAsync();
     }
 
@@ -40,6 +54,8 @@ public partial class FactionEditorWindow : Window
 
     private void BuildMatrixGrid()
     {
+        if (_viewModel == null) return;
+
         MatrixContainer.Children.Clear();
         MatrixContainer.ColumnDefinitions.Clear();
         MatrixContainer.RowDefinitions.Clear();
@@ -48,14 +64,13 @@ public partial class FactionEditorWindow : Window
         if (n == 0) return;
 
         // Create grid: (n+1) rows and (n+1) columns (header row/col + data)
-        // Column 0: row headers. Row 0: column headers.
-        MatrixContainer.ColumnDefinitions.Add(new ColumnDefinition(100, GridUnitType.Pixel)); // Row header
+        MatrixContainer.ColumnDefinitions.Add(new ColumnDefinition(100, GridUnitType.Pixel));
         for (int col = 0; col < n; col++)
         {
             MatrixContainer.ColumnDefinitions.Add(new ColumnDefinition(70, GridUnitType.Pixel));
         }
 
-        MatrixContainer.RowDefinitions.Add(new RowDefinition(GridLength.Auto)); // Column header
+        MatrixContainer.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
         for (int row = 0; row < n; row++)
         {
             MatrixContainer.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
@@ -136,7 +151,6 @@ public partial class FactionEditorWindow : Window
     {
         var converter = ReputationColorConverter.Instance;
 
-        // All cells are editable - NWN allows self-reputation (factions can be hostile to themselves)
         var cellBorder = new Border
         {
             BorderBrush = new SolidColorBrush(Color.FromArgb(40, 128, 128, 128)),
@@ -171,7 +185,7 @@ public partial class FactionEditorWindow : Window
         };
 
         // Tooltip showing the relationship
-        var perceiver = _viewModel.Factions.ElementAtOrDefault(cell.Row);
+        var perceiver = _viewModel!.Factions.ElementAtOrDefault(cell.Row);
         var perceived = _viewModel.Factions.ElementAtOrDefault(cell.Col);
         if (perceiver != null && perceived != null)
         {
@@ -187,6 +201,8 @@ public partial class FactionEditorWindow : Window
 
     private void OnCellTextBoxKeyDown(object? sender, KeyEventArgs e)
     {
+        if (_viewModel == null) return;
+
         if (e.Key == Key.Enter && sender is TextBox textBox && textBox.Tag is MatrixCellViewModel cell)
         {
             // Force binding update on Enter
@@ -215,7 +231,7 @@ public partial class FactionEditorWindow : Window
 
     private void FocusCell(int row, int col)
     {
-        if (row >= _viewModel.FactionCount) return;
+        if (_viewModel == null || row >= _viewModel.FactionCount) return;
 
         foreach (var child in MatrixContainer.Children)
         {
@@ -237,6 +253,8 @@ public partial class FactionEditorWindow : Window
 
     private void UpdateParentComboBox()
     {
+        if (_viewModel == null) return;
+
         var selected = _viewModel.SelectedFaction;
         if (selected == null) return;
 
@@ -247,8 +265,8 @@ public partial class FactionEditorWindow : Window
 
         foreach (var f in _viewModel.Factions)
         {
-            if (f.Index == 0) continue; // PC cannot be parent
-            if (f.Index == selected.Index) continue; // Cannot be own parent
+            if (f.Index == 0) continue;
+            if (f.Index == selected.Index) continue;
             items.Add(new ParentFactionItem(f.Name, (uint)f.Index));
         }
 
@@ -259,12 +277,13 @@ public partial class FactionEditorWindow : Window
 
     private void UpdateRemoveButton()
     {
+        if (_viewModel == null) return;
         RemoveFactionButton.IsEnabled = _viewModel.CanRemoveFaction(_viewModel.SelectedFaction);
     }
 
     private void OnParentSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (_viewModel.SelectedFaction == null) return;
+        if (_viewModel?.SelectedFaction == null) return;
         if (ParentComboBox.SelectedItem is ParentFactionItem item)
         {
             _viewModel.SelectedFaction.ParentFactionId = item.Id;
@@ -273,6 +292,9 @@ public partial class FactionEditorWindow : Window
 
     private void OnAddFactionClick(object? sender, RoutedEventArgs e)
     {
+        if (_viewModel == null) return;
+
+        var parentWindow = TopLevel.GetTopLevel(this) as Window;
         var dialog = new AddFactionDialog(_viewModel.Factions.ToList());
         dialog.Closed += (_, _) =>
         {
@@ -281,18 +303,21 @@ public partial class FactionEditorWindow : Window
                 _viewModel.AddFaction(dialog.FactionName, dialog.IsGlobal, dialog.ParentId);
             }
         };
-        dialog.Show(this);
+        dialog.Show(parentWindow ?? _parentWindow!);
     }
 
     private async void OnRemoveFactionClick(object? sender, RoutedEventArgs e)
     {
+        if (_viewModel == null) return;
+
         var selected = _viewModel.SelectedFaction;
         if (selected == null || !_viewModel.CanRemoveFaction(selected)) return;
 
+        var parentWindow = TopLevel.GetTopLevel(this) as Window;
         var confirm = new ConfirmDialog(
             "Remove Faction",
             $"Remove faction \"{selected.Name}\"?\n\nThis will also remove all reputation entries for this faction.");
-        await confirm.ShowDialog(this);
+        await confirm.ShowDialog(parentWindow ?? _parentWindow!);
 
         if (confirm.Confirmed)
         {
