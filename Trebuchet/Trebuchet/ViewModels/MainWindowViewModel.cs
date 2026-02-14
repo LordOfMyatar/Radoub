@@ -1034,6 +1034,14 @@ public partial class MainWindowViewModel : ObservableObject
                 BuildStatusText = "Saving IFO changes...";
                 await _moduleEditorViewModel.SaveCommand.ExecuteAsync(null);
             }
+
+            // Save faction editor changes if dirty
+            if (_factionEditorViewModel?.HasUnsavedChanges == true)
+            {
+                BuildStatusText = "Saving faction changes...";
+                _factionEditorViewModel.SaveCommand.Execute(null);
+            }
+
             // Check for stale scripts (always check, regardless of compile setting)
             var compilerService = ScriptCompilerService.Instance;
             var staleScripts = compilerService.FindStaleScripts(workingDir);
