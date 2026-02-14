@@ -45,6 +45,9 @@ public partial class MainWindow : Window
         // Restore window position from settings
         RestoreWindowState();
 
+        // Keyboard navigation (Ctrl+1/2/3 tab switching)
+        KeyDown += OnKeyDown;
+
         // Save window state on close
         Closing += OnWindowClosing;
 
@@ -138,6 +141,34 @@ public partial class MainWindow : Window
         moduleNameText.Foreground = hasModule
             ? BrushManager.GetInfoBrush(this)
             : BrushManager.GetWarningBrush(this);
+    }
+
+    #endregion
+
+    #region Keyboard Navigation
+
+    private void OnKeyDown(object? sender, KeyEventArgs e)
+    {
+        // Ctrl+1/2/3 switches workspace tabs
+        if (e.KeyModifiers == KeyModifiers.Control)
+        {
+            var tabControl = this.FindControl<TabControl>("WorkspaceTabs");
+            if (tabControl == null || !tabControl.IsVisible) return;
+
+            int? tabIndex = e.Key switch
+            {
+                Key.D1 => 0, // Module
+                Key.D2 => 1, // Factions
+                Key.D3 => 2, // Launch & Test
+                _ => null
+            };
+
+            if (tabIndex.HasValue && tabIndex.Value < tabControl.ItemCount)
+            {
+                tabControl.SelectedIndex = tabIndex.Value;
+                e.Handled = true;
+            }
+        }
     }
 
     #endregion
