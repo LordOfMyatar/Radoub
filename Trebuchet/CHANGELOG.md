@@ -15,11 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint 3: Embed Faction Editor as Workspace Tab (#1330)
 
-- [ ] Extract FactionEditorPanel UserControl from FactionEditorWindow
-- [ ] Adapt dialog operations to route through parent window
-- [ ] Embed in workspace Factions tab with auto-load repute.fac
-- [ ] Wire Save to toolbar for factions + IFO + module packing
-- [ ] Remove separate FactionEditorWindow
+- [x] Extract FactionEditorPanel UserControl from FactionEditorWindow
+- [x] Adapt dialog operations to route through parent window
+- [x] Embed in workspace Factions tab with auto-load repute.fac
+- [x] Wire Save to toolbar for factions + IFO + module packing
+- [x] Remove separate FactionEditorWindow
 
 ---
 
