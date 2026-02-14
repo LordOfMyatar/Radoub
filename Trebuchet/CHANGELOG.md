@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.0-alpha] - 2026-02-14
+**Branch**: `trebuchet/issue-1329` | **PR**: #TBD
+
+### Sprint 2: Embed Module Editor as Workspace Tab (#1329)
+
+- [ ] Extract ModuleEditorPanel UserControl from ModuleEditorWindow
+- [ ] Embed in workspace Module tab with auto-load IFO
+- [ ] Route dialog operations (script/TLK browsers) through MainWindow
+- [ ] Wire Save to toolbar for IFO + module packing
+- [ ] Remove separate ModuleEditorWindow
+
+---
+
 ## [1.10.0-alpha] - 2026-02-14
 **Branch**: `trebuchet/issue-1328` | **PR**: #1332
 
