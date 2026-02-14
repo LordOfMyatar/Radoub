@@ -127,6 +127,33 @@ The script handles:
 - Unit tests (tool + shared if needed)
 - UI tests (if not -UnitOnly)
 
+### Step 3b: Tech Debt Issue Verification
+
+When the tech debt scan reports large files (>500 lines), **do NOT assume they are pre-existing**. For each flagged file:
+
+1. Search the GitHub issue cache for an existing tech debt issue:
+   ```bash
+   pwsh -File .claude/scripts/Get-CacheData.ps1 -View search -Query "[filename without path]"
+   ```
+
+2. **If an issue exists**: Report as tracked tech debt with issue number
+   ```
+   ⚠️ Tech debt: MainWindowViewModel.cs (1288 lines) - tracked in #1335
+   ```
+
+3. **If NO issue exists**: Flag as **untracked tech debt** and create an issue:
+   ```bash
+   gh issue create --title "[Tool] Tech Debt: Split [filename] ([N] lines)" \
+     --label "tech-debt,[Tool]" \
+     --body "..."
+   ```
+   Report in checklist:
+   ```
+   ⚠️ Tech debt: MainWindowViewModel.cs (1288 lines) - NEW issue created: #XXXX
+   ```
+
+**Rule**: A tech debt warning is only "pre-existing" if a GitHub issue tracks it. No issue = new finding that needs one.
+
 ### Step 4: CHANGELOG and Version Validation
 
 Read CHANGELOG and verify:
@@ -170,7 +197,7 @@ Flag if >30 days old and code changed.
 | Check | Status |
 |-------|--------|
 | Privacy scan | ✅/⚠️ |
-| Tech debt | ✅/⚠️ |
+| Tech debt | ✅ / ⚠️ Tracked (#N) / ⚠️ NEW issue created (#N) |
 | Unit tests | ✅ N passed / ❌ N failed |
 | UI tests | ⏭️ Skipped / 🔄 Auto-triggered / ✅ N passed / ❌ N failed |
 

@@ -11,12 +11,23 @@ namespace RadoubLauncher.Views;
 
 public partial class MainWindow : Window
 {
+    private MainWindowViewModel? _viewModel;
+
     public MainWindow()
     {
         InitializeComponent();
-        var viewModel = new MainWindowViewModel();
-        viewModel.SetParentWindow(this);
-        DataContext = viewModel;
+        _viewModel = new MainWindowViewModel();
+        _viewModel.SetParentWindow(this);
+        DataContext = _viewModel;
+
+        // Initialize the embedded module editor panel
+        var moduleEditorPanel = this.FindControl<Controls.ModuleEditorPanel>("ModuleEditorPanel");
+        if (moduleEditorPanel != null)
+        {
+            var moduleEditorVm = new ModuleEditorViewModel();
+            moduleEditorPanel.Initialize(moduleEditorVm, this);
+            _viewModel.SetModuleEditorViewModel(moduleEditorVm);
+        }
 
         // Restore window position from settings
         RestoreWindowState();
@@ -25,8 +36,23 @@ public partial class MainWindow : Window
         Closing += OnWindowClosing;
 
         // Update module name color when module changes (#1003)
-        viewModel.PropertyChanged += OnViewModelPropertyChanged;
-        Opened += (_, _) => UpdateModuleNameColor(viewModel);
+        _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+        Opened += OnWindowOpened;
+    }
+
+    private async void OnWindowOpened(object? sender, System.EventArgs e)
+    {
+        Opened -= OnWindowOpened;
+
+        if (_viewModel != null)
+            UpdateModuleNameColor(_viewModel);
+
+        // Auto-load module if one is already selected
+        var moduleEditorPanel = this.FindControl<Controls.ModuleEditorPanel>("ModuleEditorPanel");
+        if (moduleEditorPanel != null && _viewModel?.HasModule == true)
+        {
+            await moduleEditorPanel.LoadModuleAsync();
+        }
     }
 
     private void RestoreWindowState()
@@ -56,7 +82,7 @@ public partial class MainWindow : Window
     private void OnWindowClosing(object? sender, WindowClosingEventArgs e)
     {
         SaveWindowState();
-        (DataContext as MainWindowViewModel)?.Cleanup();
+        (_viewModel)?.Cleanup();
     }
 
     private void SaveWindowState()
