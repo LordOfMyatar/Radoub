@@ -147,6 +147,9 @@ public partial class FactionEditorViewModel : ObservableObject
     private bool _isLoading;
 
     [ObservableProperty]
+    private bool _isModuleLoaded;
+
+    [ObservableProperty]
     private bool _hasUnsavedChanges;
 
     [ObservableProperty]
@@ -181,6 +184,7 @@ public partial class FactionEditorViewModel : ObservableObject
             var modulePath = RadoubSettings.Instance.CurrentModulePath;
             if (string.IsNullOrEmpty(modulePath))
             {
+                IsModuleLoaded = false;
                 StatusText = "No module loaded";
                 return;
             }
@@ -205,6 +209,7 @@ public partial class FactionEditorViewModel : ObservableObject
 
             BuildViewModels();
             BuildMatrix();
+            IsModuleLoaded = true;
             IsModuleReadOnly = _isReadOnly;
             StatusText = _facFilePath != null
                 ? $"Loaded: {Path.GetFileName(_facFilePath)} ({Factions.Count} factions)"
@@ -214,6 +219,7 @@ public partial class FactionEditorViewModel : ObservableObject
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load factions: {ex.Message}");
             StatusText = $"Error: {ex.Message}";
+            IsModuleLoaded = false;
         }
         finally
         {
