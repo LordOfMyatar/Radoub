@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.13.0-alpha] - 2026-02-14
-**Branch**: `trebuchet/issue-1331` | **PR**: #TBD
+**Branch**: `trebuchet/issue-1331` | **PR**: #1339
 
 ### Sprint 4: Launch Tab + FlaUI Tests + Polish (#1331)
 
