@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.68] - 2026-02-13
-**Branch**: `radoub/issue-1003` | **PR**: #TBD
+**Branch**: `radoub/issue-1003` | **PR**: #1324
 
 ### Feat: Module Indicator in Status Bar (#1003)
 
