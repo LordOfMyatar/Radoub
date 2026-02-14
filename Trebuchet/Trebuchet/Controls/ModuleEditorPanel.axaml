@@ -1,56 +1,18 @@
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:RadoubLauncher.ViewModels"
-        x:Class="RadoubLauncher.Views.ModuleEditorWindow"
-        x:DataType="vm:ModuleEditorViewModel"
-        Title="Module Editor - Trebuchet"
-        Width="800" Height="700"
-        MinWidth="600" MinHeight="500"
-        WindowStartupLocation="CenterOwner">
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RadoubLauncher.ViewModels"
+             x:Class="RadoubLauncher.Controls.ModuleEditorPanel"
+             x:DataType="vm:ModuleEditorViewModel">
 
-    <Window.Resources>
+    <UserControl.Resources>
         <vm:BoolToErrorBrushConverter x:Key="BoolToErrorBrushConverter"/>
-    </Window.Resources>
+    </UserControl.Resources>
 
     <Design.DataContext>
         <vm:ModuleEditorViewModel/>
     </Design.DataContext>
 
-    <DockPanel>
-        <!-- Toolbar -->
-        <Border DockPanel.Dock="Top"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                BorderThickness="0,0,0,1"
-                Padding="12,8">
-            <Grid ColumnDefinitions="*,Auto">
-                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <TextBlock Text="Module Editor"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center"/>
-                </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                    <Button Content="Unpack"
-                            Command="{Binding UnpackCommand}"
-                            IsVisible="{Binding CanUnpack}"
-                            ToolTip.Tip="Extract module contents to a folder for editing"
-                            Padding="12,6"/>
-                    <Button Content="Save"
-                            Command="{Binding SaveCommand}"
-                            IsEnabled="{Binding HasUnsavedChanges}"
-                            Padding="12,6"/>
-                </StackPanel>
-            </Grid>
-        </Border>
-
-        <!-- Status Bar -->
-        <Border DockPanel.Dock="Bottom"
-                Background="{DynamicResource ThemeBackgroundAlt}"
-                Padding="12,8">
-            <TextBlock Text="{Binding StatusText}"
-                       Opacity="0.8"/>
-        </Border>
-
+    <Grid>
         <!-- Loading Overlay -->
         <Border IsVisible="{Binding IsLoading}"
                 Background="#80000000"
@@ -64,8 +26,27 @@
             </StackPanel>
         </Border>
 
+        <!-- No module state -->
+        <StackPanel VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Spacing="12"
+                    IsVisible="{Binding !IsModuleLoaded}">
+            <TextBlock Text="No module loaded"
+                       FontSize="20"
+                       FontWeight="Light"
+                       HorizontalAlignment="Center"
+                       Opacity="0.5"
+                       IsVisible="{Binding !IsLoading}"/>
+            <TextBlock Text="Select a module to edit its properties"
+                       FontSize="{DynamicResource FontSizeSmall}"
+                       HorizontalAlignment="Center"
+                       Opacity="0.4"
+                       IsVisible="{Binding !IsLoading}"/>
+        </StackPanel>
+
         <!-- Main Content (tabs) -->
-        <TabControl Margin="16" IsEnabled="{Binding IsModuleLoaded}">
+        <TabControl Margin="8" IsEnabled="{Binding IsModuleLoaded}"
+                    IsVisible="{Binding IsModuleLoaded}">
             <!-- Metadata Tab -->
             <TabItem Header="Metadata">
                 <ScrollViewer>
@@ -618,5 +599,5 @@
                 </Grid>
             </TabItem>
         </TabControl>
-    </DockPanel>
-</Window>
+    </Grid>
+</UserControl>

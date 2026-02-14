@@ -26,6 +26,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly GameLauncherService _gameLauncher;
     private readonly CancellationTokenSource _cts = new();
     private Window? _parentWindow;
+    private ModuleEditorViewModel? _moduleEditorViewModel;
 
     [ObservableProperty]
     private ObservableCollection<ToolInfo> _tools;
@@ -138,7 +139,7 @@ public partial class MainWindowViewModel : ObservableObject
     /// Checks if any file in the working directory is newer than the .mod file,
     /// or if there are stale scripts (.nss newer than .ncs).
     /// </summary>
-    public bool NeedsBuildWarning => IsModuleDirty || HasNewerWorkingFiles || StaleScriptCount > 0;
+    public bool NeedsBuildWarning => IsModuleDirty || HasNewerWorkingFiles || StaleScriptCount > 0 || HasUnsavedModuleEditorChanges;
 
     /// <summary>
     /// True when files in the working directory are newer than the packed .mod file.
@@ -162,6 +163,8 @@ public partial class MainWindowViewModel : ObservableObject
         get
         {
             var reasons = new List<string>();
+            if (HasUnsavedModuleEditorChanges)
+                reasons.Add("Module editor has unsaved IFO changes");
             if (HasNewerWorkingFiles)
                 reasons.Add($"{NewerFileCount} file(s) modified since last build");
             if (StaleScriptCount > 0)
@@ -236,6 +239,30 @@ public partial class MainWindowViewModel : ObservableObject
             _ = ReadModuleDefaultBicAsync(_cts.Token);
         }
     }
+
+    /// <summary>
+    /// Set the embedded module editor ViewModel reference.
+    /// Called by MainWindow after initializing the ModuleEditorPanel.
+    /// </summary>
+    public void SetModuleEditorViewModel(ModuleEditorViewModel viewModel)
+    {
+        _moduleEditorViewModel = viewModel;
+
+        // Forward HasUnsavedChanges from module editor to build warning
+        viewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ModuleEditorViewModel.HasUnsavedChanges))
+            {
+                OnPropertyChanged(nameof(NeedsBuildWarning));
+                OnPropertyChanged(nameof(BuildWarningText));
+            }
+        };
+    }
+
+    /// <summary>
+    /// Whether the embedded module editor has unsaved IFO changes.
+    /// </summary>
+    public bool HasUnsavedModuleEditorChanges => _moduleEditorViewModel?.HasUnsavedChanges == true;
 
     /// <summary>
     /// Unsubscribe from singleton events to prevent memory leaks (#1282).
@@ -340,6 +367,9 @@ public partial class MainWindowViewModel : ObservableObject
 
             // Read DefaultBic from the module's IFO to correctly enable/disable Load Module button
             _ = ReadModuleDefaultBicAsync(_cts.Token);
+
+            // Reload the embedded module editor with the new module
+            _ = ReloadModuleEditorAsync();
 
             OnPropertyChanged(nameof(HasModule));
             OnPropertyChanged(nameof(CanEditModule));
@@ -462,6 +492,20 @@ public partial class MainWindowViewModel : ObservableObject
         UnifiedLogger.LogApplication(LogLevel.INFO, "Cleared recent modules list");
     }
 
+    /// <summary>
+    /// Reload the embedded module editor when the current module changes.
+    /// </summary>
+    private async Task ReloadModuleEditorAsync()
+    {
+        if (_moduleEditorViewModel == null) return;
+
+        var currentPath = RadoubSettings.Instance.CurrentModulePath;
+        if (!string.IsNullOrEmpty(currentPath))
+        {
+            await _moduleEditorViewModel.LoadModuleAsync(currentPath);
+        }
+    }
+
     [RelayCommand]
     private void OpenSettings()
     {
@@ -470,17 +514,6 @@ public partial class MainWindowViewModel : ObservableObject
         UnifiedLogger.LogApplication(LogLevel.INFO, "Opening settings window");
         var settingsWindow = new SettingsWindow();
         settingsWindow.Show(_parentWindow);  // Non-modal settings window
-    }
-
-    [RelayCommand]
-    private void OpenModuleEditor()
-    {
-        if (_parentWindow == null) return;
-
-        UnifiedLogger.LogApplication(LogLevel.INFO, "Opening module editor");
-        var editorWindow = new ModuleEditorWindow();
-        editorWindow.Closed += (_, _) => RefreshBuildStatus();
-        editorWindow.Show(_parentWindow);  // Non-modal editor window
     }
 
     [RelayCommand]
@@ -955,6 +988,12 @@ public partial class MainWindowViewModel : ObservableObject
 
         try
         {
+            // Save module editor IFO changes first if dirty
+            if (_moduleEditorViewModel?.HasUnsavedChanges == true)
+            {
+                BuildStatusText = "Saving IFO changes...";
+                await _moduleEditorViewModel.SaveCommand.ExecuteAsync(null);
+            }
             // Check for stale scripts (always check, regardless of compile setting)
             var compilerService = ScriptCompilerService.Instance;
             var staleScripts = compilerService.FindStaleScripts(workingDir);
