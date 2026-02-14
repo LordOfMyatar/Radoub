@@ -64,6 +64,8 @@ public partial class MainWindowViewModel : ObservableObject
 
     public bool HasRecentModules => RecentModules.Count > 0;
 
+    public bool HasModule => !string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath);
+
     public bool CanEditModule => IsModuleValid && !string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath);
     public bool CanTestModule => IsGameAvailable && !string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath);
 
@@ -339,6 +341,7 @@ public partial class MainWindowViewModel : ObservableObject
             // Read DefaultBic from the module's IFO to correctly enable/disable Load Module button
             _ = ReadModuleDefaultBicAsync(_cts.Token);
 
+            OnPropertyChanged(nameof(HasModule));
             OnPropertyChanged(nameof(CanEditModule));
             OnPropertyChanged(nameof(CanTestModule));
             OnPropertyChanged(nameof(CanLoadModule));

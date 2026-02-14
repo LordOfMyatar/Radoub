@@ -1,0 +1,51 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:svc="using:RadoubLauncher.Services"
+             x:Class="RadoubLauncher.Controls.SidebarToolItemControl"
+             x:DataType="svc:ToolInfo">
+
+    <UserControl.Styles>
+        <Style Selector="Button.SidebarToolBtn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.SidebarToolBtn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightListLowBrush}"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Button Classes="SidebarToolBtn"
+            IsEnabled="{Binding IsAvailable}"
+            x:Name="ToolButton">
+        <Grid ColumnDefinitions="*,Auto">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="{Binding Name}"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"/>
+                    <Border x:Name="MaturityBadge"
+                            CornerRadius="3"
+                            Padding="4,1"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="{Binding MaturityText}"
+                                   FontSize="10"
+                                   Foreground="{DynamicResource ThemeAccentForeground}"/>
+                    </Border>
+                </StackPanel>
+                <TextBlock Text="{Binding Description}"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           Opacity="0.6"
+                           TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+            <Border Grid.Column="1"
+                    x:Name="StatusDot"
+                    Width="8" Height="8"
+                    CornerRadius="4"
+                    VerticalAlignment="Center"
+                    Margin="4,0,0,0"/>
+        </Grid>
+    </Button>
+</UserControl>
