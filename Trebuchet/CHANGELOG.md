@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.13.0-alpha] - 2026-02-14
+**Branch**: `trebuchet/issue-1331` | **PR**: #TBD
+
+### Sprint 4: Launch Tab + FlaUI Tests + Polish (#1331)
+
+- [ ] Build Launch & Test tab with game launch controls
+- [ ] Dashboard tab cleanup (resolve purpose or remove)
+- [ ] FlaUI integration tests for tabs, content, toolbar, sidebar
+- [ ] Keyboard navigation (Tab cycling, Ctrl+1/2/3/4 tab switching)
+- [ ] Polish and consistency (theme, status bar, window title)
+- [ ] Documentation updates (CHANGELOG, README, CLAUDE.md)
+
+---
+
 ## [1.12.0-alpha] - 2026-02-14
 **Branch**: `trebuchet/issue-1330` | **PR**: #1336
 
