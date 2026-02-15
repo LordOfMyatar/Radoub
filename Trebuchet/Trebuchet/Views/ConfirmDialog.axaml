@@ -29,7 +29,7 @@
             <!-- Message -->
             <StackPanel Spacing="8" VerticalAlignment="Center">
                 <TextBlock x:Name="TitleText"
-                           FontSize="16"
+                           FontSize="{DynamicResource FontSizeMedium}"
                            FontWeight="SemiBold"/>
                 <TextBlock x:Name="MessageText"
                            TextWrapping="Wrap"

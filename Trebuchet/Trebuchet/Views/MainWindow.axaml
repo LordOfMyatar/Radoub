@@ -95,7 +95,7 @@
                     <TextBlock Text="⚠"
                                Foreground="{DynamicResource ThemeWarning}"
                                VerticalAlignment="Center"
-                               FontSize="16"
+                               FontSize="{DynamicResource FontSizeMedium}"
                                Margin="-4,0,0,0"
                                IsVisible="{Binding NeedsBuildWarning}"
                                ToolTip.Tip="{Binding BuildWarningText}"/>
@@ -230,7 +230,7 @@
                                     Content="Clear"
                                     Command="{Binding ClearRecentModulesCommand}"
                                     Padding="4,1"
-                                    FontSize="10"
+                                    FontSize="{DynamicResource FontSizeXSmall}"
                                     Background="Transparent"
                                     BorderThickness="0"
                                     IsVisible="{Binding HasRecentModules}"
@@ -277,7 +277,7 @@
                                 HorizontalAlignment="Center"
                                 Spacing="16">
                         <TextBlock Text="Welcome to Trebuchet"
-                                   FontSize="24"
+                                   FontSize="{DynamicResource FontSizeTitle}"
                                    FontWeight="Light"
                                    HorizontalAlignment="Center"
                                    Opacity="0.6"/>

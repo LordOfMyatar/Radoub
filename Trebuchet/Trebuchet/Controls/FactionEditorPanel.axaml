@@ -28,7 +28,7 @@
                     Spacing="12"
                     IsVisible="{Binding !IsModuleLoaded}">
             <TextBlock Text="No module loaded"
-                       FontSize="20"
+                       FontSize="{DynamicResource FontSizeXLarge}"
                        FontWeight="Light"
                        HorizontalAlignment="Center"
                        Opacity="0.5"
@@ -125,7 +125,7 @@
                                     <TextBlock Text="{Binding Name}"
                                                VerticalAlignment="Center"/>
                                     <TextBlock Text="G"
-                                               FontSize="10"
+                                               FontSize="{DynamicResource FontSizeXSmall}"
                                                Opacity="0.5"
                                                VerticalAlignment="Center"
                                                IsVisible="{Binding IsGlobal}"
