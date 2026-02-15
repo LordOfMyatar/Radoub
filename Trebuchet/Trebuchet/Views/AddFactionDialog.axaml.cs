@@ -23,7 +23,7 @@ public partial class AddFactionDialog : Window
         var items = new List<ParentItem> { new("(None)", 0xFFFFFFFF) };
         foreach (var f in existingFactions)
         {
-            if (f.Index == 0) continue; // PC cannot be parent
+            if (f.Index == 0) continue; // PC faction cannot be a parent (BioWare spec)
             items.Add(new ParentItem(f.Name, (uint)f.Index));
         }
 

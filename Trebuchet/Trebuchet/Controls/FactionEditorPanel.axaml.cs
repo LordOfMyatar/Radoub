@@ -251,6 +251,8 @@ public partial class FactionEditorPanel : UserControl
         UpdateRemoveButton();
     }
 
+    private bool _isUpdatingParentComboBox;
+
     private void UpdateParentComboBox()
     {
         if (_viewModel == null) return;
@@ -265,14 +267,22 @@ public partial class FactionEditorPanel : UserControl
 
         foreach (var f in _viewModel.Factions)
         {
-            if (f.Index == 0) continue;
             if (f.Index == selected.Index) continue;
+            if (f.Index == 0) continue; // PC faction cannot be a parent (BioWare spec)
             items.Add(new ParentFactionItem(f.Name, (uint)f.Index));
         }
 
-        ParentComboBox.ItemsSource = items;
-        ParentComboBox.SelectedItem = items.FirstOrDefault(i => i.Id == selected.ParentFactionId)
-                                      ?? items[0];
+        _isUpdatingParentComboBox = true;
+        try
+        {
+            ParentComboBox.ItemsSource = items;
+            ParentComboBox.SelectedItem = items.FirstOrDefault(i => i.Id == selected.ParentFactionId)
+                                          ?? items[0];
+        }
+        finally
+        {
+            _isUpdatingParentComboBox = false;
+        }
     }
 
     private void UpdateRemoveButton()
@@ -283,6 +293,7 @@ public partial class FactionEditorPanel : UserControl
 
     private void OnParentSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
+        if (_isUpdatingParentComboBox) return;
         if (_viewModel?.SelectedFaction == null) return;
         if (ParentComboBox.SelectedItem is ParentFactionItem item)
         {

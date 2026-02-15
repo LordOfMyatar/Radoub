@@ -127,6 +127,139 @@ function Invoke-TechDebtScan {
     }
 }
 
+# Theme compatibility scan - check for hardcoded colors, fonts, brushes
+function Invoke-ThemeCompatScan {
+    Write-Host "`n=== Theme Compatibility Scan ===" -ForegroundColor Magenta
+    Write-Host "Checking for hardcoded colors, fonts, and brushes..." -ForegroundColor Yellow
+
+    # Determine directories to scan based on -Tool parameter
+    $scanDirs = @()
+    if ($Tool) {
+        $scanDirs += $Tool
+        if (-not $SkipShared) {
+            $scanDirs += @("Radoub.UI", "Radoub.Formats", "Radoub.Dictionary")
+        }
+    } else {
+        $scanDirs = @("Parley", "Manifest", "Quartermaster", "Fence", "Trebuchet", "Radoub.UI", "Radoub.Formats", "Radoub.Dictionary")
+    }
+
+    # Patterns to detect in .cs files
+    $csPatterns = @(
+        @{ Pattern = 'Brushes\.(?!Transparent)\w+'; Label = 'Brushes enum' },
+        @{ Pattern = '(?<!\.)Colors\.(?!Length|Count|Empty|None|All|Default|Values|Keys)[A-Z][a-z]\w+'; Label = 'Colors enum' },
+        @{ Pattern = 'Color\.Parse\("#'; Label = 'Hex color' },
+        @{ Pattern = 'Color\.FromRgb\('; Label = 'RGB color' }
+    )
+
+    # Patterns to detect in .axaml files
+    $axamlPatterns = @(
+        @{ Pattern = 'FontSize="[0-9]'; Label = 'Hardcoded FontSize' },
+        @{ Pattern = 'Foreground="#'; Label = 'Hardcoded Foreground' },
+        @{ Pattern = 'Background="#'; Label = 'Hardcoded Background' },
+        @{ Pattern = 'Fill="#'; Label = 'Hardcoded Fill' },
+        @{ Pattern = 'Stroke="#'; Label = 'Hardcoded Stroke' },
+        @{ Pattern = 'BorderBrush="#'; Label = 'Hardcoded BorderBrush' },
+        @{ Pattern = 'Color="#'; Label = 'Hardcoded Color' }
+    )
+
+    # File/path exclusions (theme definitions, test files, infrastructure)
+    $excludeFileNames = @('BrushManager.cs', 'ThemeManager.cs', 'ThemeEditorViewModel.cs')
+
+    $violations = @()
+
+    foreach ($dir in $scanDirs) {
+        if (-not (Test-Path $dir)) { continue }
+
+        # Scan .cs files
+        $csFiles = Get-ChildItem -Path $dir -Recurse -Include "*.cs" -ErrorAction SilentlyContinue
+        foreach ($file in $csFiles) {
+            $relativePath = $file.FullName.Replace((Get-Location).Path + "\", "")
+
+            # Skip excluded paths (themes, styles, tests, build output)
+            if ($relativePath -match '[\\/](Themes|Styles|TestData|obj|bin)[\\/]') { continue }
+            if ($relativePath -match '\.Tests[\\/]') { continue }
+
+            # Skip excluded filenames
+            if ($excludeFileNames -contains $file.Name) { continue }
+
+            $lines = Get-Content $file.FullName -ErrorAction SilentlyContinue
+            if (-not $lines) { continue }
+
+            for ($i = 0; $i -lt $lines.Count; $i++) {
+                $line = $lines[$i]
+                # Skip lines with theme-ok opt-out comment
+                if ($line -match '//\s*theme-ok') { continue }
+
+                foreach ($p in $csPatterns) {
+                    if ($line -match $p.Pattern) {
+                        $match = [regex]::Match($line, $p.Pattern).Value
+                        $violations += [PSCustomObject]@{
+                            File = $relativePath
+                            Line = $i + 1
+                            Type = $p.Label
+                            Match = $match
+                        }
+                    }
+                }
+            }
+        }
+
+        # Scan .axaml files
+        $axamlFiles = Get-ChildItem -Path $dir -Recurse -Include "*.axaml" -ErrorAction SilentlyContinue
+        foreach ($file in $axamlFiles) {
+            $relativePath = $file.FullName.Replace((Get-Location).Path + "\", "")
+
+            # Skip excluded paths (themes, styles, tests, build output)
+            if ($relativePath -match '[\\/](Themes|Styles|TestData|obj|bin)[\\/]') { continue }
+            if ($relativePath -match '\.Tests[\\/]') { continue }
+
+            # Skip App.axaml (resource dictionary defaults are expected)
+            if ($file.Name -eq "App.axaml") { continue }
+
+            $lines = Get-Content $file.FullName -ErrorAction SilentlyContinue
+            if (-not $lines) { continue }
+
+            $skipBlock = $false
+            for ($i = 0; $i -lt $lines.Count; $i++) {
+                $line = $lines[$i]
+
+                # Block-level opt-out: XML comments with theme-ok suppress until blank line
+                # (inline <!-- theme-ok --> is invalid XML on attribute lines)
+                if ($line -match '<!--.*theme-(ok|independent).*-->') { $skipBlock = $true; continue }
+                if ($skipBlock -and $line.Trim() -eq '') { $skipBlock = $false; continue }
+                if ($skipBlock) { continue }
+
+                foreach ($p in $axamlPatterns) {
+                    if ($line -match $p.Pattern) {
+                        $match = [regex]::Match($line, $p.Pattern).Value
+                        $violations += [PSCustomObject]@{
+                            File = $relativePath
+                            Line = $i + 1
+                            Type = $p.Label
+                            Match = $match
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if ($violations.Count -eq 0) {
+        Write-Host "  PASS - No hardcoded theme values found" -ForegroundColor Green
+    } else {
+        Write-Host "  WARN - Found $($violations.Count) hardcoded theme value(s):" -ForegroundColor Yellow
+        # Group by file for cleaner output
+        $grouped = $violations | Group-Object File
+        foreach ($group in $grouped | Sort-Object Name) {
+            foreach ($v in $group.Group | Sort-Object Line) {
+                Write-Host ("    {0}:{1} - {2} ({3})" -f $v.File, $v.Line, $v.Match, $v.Type) -ForegroundColor Yellow
+            }
+        }
+        Write-Host "  Use DynamicResource or BrushManager for theme compatibility" -ForegroundColor Gray
+        Write-Host "  Add '// theme-ok' (.cs) or '<!-- theme-ok -->' (.axaml) to suppress" -ForegroundColor Gray
+    }
+}
+
 # Test project definitions
 $sharedUnitTests = @(
     @{ Name = "Radoub.Formats.Tests"; Path = "Radoub.Formats\Radoub.Formats.Tests" },
@@ -231,9 +364,10 @@ if (-not $SkipPrivacy) {
     Invoke-PrivacyScan | Out-Null
 }
 
-# Run tech debt scan if requested
+# Run tech debt and theme compatibility scans if requested
 if ($TechDebt) {
     Invoke-TechDebtScan
+    Invoke-ThemeCompatScan
 }
 
 $tests = Get-TestsToRun

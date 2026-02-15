@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.15.0-alpha] - 2026-02-14
+**Branch**: `trebuchet/issue-1350` | **PR**: #1356
+
+### Sprint: Post-Sprint 4 Bug Fixes (#1350)
+
+- [x] #1333 - Fix: Build/save warning not clearing after successful build
+- [x] #1337 - Fix: Faction parent shows (None) for pre-existing and newly created factions
+- [x] #1316 - Fix: Font sizes use DynamicResource instead of hardcoded values; fonts now resize
+
+---
+
 ## [1.14.0-alpha] - 2026-02-14
 **Branch**: `trebuchet/issue-1345` | **PR**: #1349
 

@@ -31,7 +31,7 @@
                             Padding="4,1"
                             VerticalAlignment="Center">
                         <TextBlock Text="{Binding MaturityText}"
-                                   FontSize="10"
+                                   FontSize="{DynamicResource FontSizeXSmall}"
                                    Foreground="{DynamicResource ThemeAccentForeground}"/>
                     </Border>
                 </StackPanel>

@@ -78,6 +78,10 @@ public partial class App : Application
         // Subscribe to settings changes
         SettingsService.Instance.PropertyChanged += OnSettingsPropertyChanged;
 
+        // Re-apply font settings whenever theme finishes applying (theme resets font sizes
+        // via Dispatcher.Post, so our inline ApplyFontSettings above runs too early)
+        ThemeManager.Instance.ThemeApplied += (_, _) => ApplyFontSettings();
+
         // Clean up old log sessions
         UnifiedLogger.CleanupOldSessions(SettingsService.Instance.LogRetentionSessions);
     }
@@ -148,9 +152,10 @@ public partial class App : Application
                     UnifiedLogger.LogApplication(LogLevel.WARN,
                         $"Failed to apply theme '{SettingsService.Instance.CurrentThemeId}' on settings change");
                 }
-                ApplyFontSettings();
+                // Font reapplication handled by ThemeApplied event (theme applies fonts async via Dispatcher.Post)
                 break;
             case nameof(SettingsService.FontSize):
+            case nameof(SettingsService.FontSizeScale):
             case nameof(SettingsService.FontFamily):
                 ApplyFontSettings();
                 break;
@@ -163,21 +168,21 @@ public partial class App : Application
 
         if (Resources != null)
         {
-            var baseSize = (double)settings.FontSize;
+            var baseSize = (double)settings.FontSize * settings.FontSizeScale;
 
             // Update base font size
             Resources["GlobalFontSize"] = baseSize;
 
             // Update derived font sizes (must match ThemeManager.ApplyFontSettings logic)
-            Resources["FontSizeXSmall"] = Math.Max(10, baseSize - 2);  // 12 @ base 14
-            Resources["FontSizeSmall"] = Math.Max(11, baseSize - 1);   // 13 @ base 14
-            Resources["FontSizeNormal"] = baseSize;                     // 14 @ base 14
-            Resources["FontSizeMedium"] = baseSize + 2;                 // 16 @ base 14
-            Resources["FontSizeLarge"] = baseSize + 4;                  // 18 @ base 14
-            Resources["FontSizeXLarge"] = baseSize + 6;                 // 20 @ base 14
-            Resources["FontSizeTitle"] = baseSize + 10;                 // 24 @ base 14
+            Resources["FontSizeXSmall"] = Math.Max(10, baseSize - 2);
+            Resources["FontSizeSmall"] = Math.Max(11, baseSize - 1);
+            Resources["FontSizeNormal"] = baseSize;
+            Resources["FontSizeMedium"] = baseSize + 2;
+            Resources["FontSizeLarge"] = baseSize + 4;
+            Resources["FontSizeXLarge"] = baseSize + 6;
+            Resources["FontSizeTitle"] = baseSize + 10;
 
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font size: {settings.FontSize}pt (derived sizes updated)");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Applied font size: {baseSize:F0}pt (base {settings.FontSize} × {settings.FontSizeScale:P0})");
         }
 
         if (Resources != null)

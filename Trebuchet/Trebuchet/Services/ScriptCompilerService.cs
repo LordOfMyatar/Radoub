@@ -114,24 +114,32 @@ public class ScriptCompilerService
         {
             var ncsPath = Path.ChangeExtension(nssPath, ".ncs");
             var nssInfo = new FileInfo(nssPath);
+            var scriptName = Path.GetFileName(nssPath);
 
             if (!File.Exists(ncsPath))
             {
-                // No compiled file exists
-                staleScripts.Add(new StaleScriptInfo
+                // No .ncs file — flag only if the script has an uncommented entry point.
+                // Include/library scripts often have "// void main() {}" as a test stub.
+                if (HasUncommentedEntryPoint(nssPath))
                 {
-                    NssPath = nssPath,
-                    NcsPath = ncsPath,
-                    Reason = StaleReason.MissingNcs,
-                    NssModified = nssInfo.LastWriteTime
-                });
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"Stale script (MissingNcs): {scriptName} — has entry point but no .ncs");
+                    staleScripts.Add(new StaleScriptInfo
+                    {
+                        NssPath = nssPath,
+                        NcsPath = ncsPath,
+                        Reason = StaleReason.MissingNcs,
+                        NssModified = nssInfo.LastWriteTime
+                    });
+                }
             }
             else
             {
                 var ncsInfo = new FileInfo(ncsPath);
                 if (nssInfo.LastWriteTime > ncsInfo.LastWriteTime)
                 {
-                    // Source is newer than compiled
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"Stale script (SourceNewer): {scriptName} — .nss {nssInfo.LastWriteTime:HH:mm:ss} > .ncs {ncsInfo.LastWriteTime:HH:mm:ss}");
                     staleScripts.Add(new StaleScriptInfo
                     {
                         NssPath = nssPath,
@@ -144,7 +152,43 @@ public class ScriptCompilerService
             }
         }
 
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"Stale script check: {staleScripts.Count} stale of {nssFiles.Length} total .nss files");
+
         return staleScripts;
+    }
+
+    /// <summary>
+    /// Check if a .nss file has an uncommented entry point (void main or int StartingConditional).
+    /// Skips entry points inside // line comments and /* block comments */.
+    /// </summary>
+    private static bool HasUncommentedEntryPoint(string nssPath)
+    {
+        try
+        {
+            foreach (var rawLine in File.ReadLines(nssPath))
+            {
+                var line = rawLine.TrimStart();
+
+                // Skip line comments
+                if (line.StartsWith("//"))
+                    continue;
+
+                // Strip inline comments: everything after // on the line
+                var commentIdx = line.IndexOf("//", StringComparison.Ordinal);
+                if (commentIdx >= 0)
+                    line = line[..commentIdx];
+
+                if (line.Contains("void main", StringComparison.Ordinal)
+                    || line.Contains("int StartingConditional", StringComparison.Ordinal))
+                    return true;
+            }
+            return false;
+        }
+        catch
+        {
+            return true; // If we can't read it, assume it has an entry point to be safe
+        }
     }
 
     /// <summary>

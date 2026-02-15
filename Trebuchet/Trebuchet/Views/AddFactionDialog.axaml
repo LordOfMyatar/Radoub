@@ -11,7 +11,7 @@
     <Border Padding="16">
         <StackPanel Spacing="12">
             <TextBlock Text="Add New Faction"
-                       FontSize="16"
+                       FontSize="{DynamicResource FontSizeMedium}"
                        FontWeight="SemiBold"/>
 
             <!-- Name -->

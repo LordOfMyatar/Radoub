@@ -20,6 +20,7 @@ public partial class SettingsWindowViewModel : ObservableObject
 {
     private readonly Window _window;
     private readonly string? _originalThemeId;
+    private readonly double _originalFontSizeScale;
     private static IBrush SuccessBrush => BrushManager.GetSuccessBrush();
     private static IBrush ErrorBrush => BrushManager.GetErrorBrush();
 
@@ -125,8 +126,9 @@ public partial class SettingsWindowViewModel : ObservableObject
     {
         _window = window;
 
-        // Store original theme for cancel revert
+        // Store originals for cancel revert
         _originalThemeId = ThemeManager.Instance.CurrentTheme?.Plugin.Id;
+        _originalFontSizeScale = SettingsService.Instance.FontSizeScale;
 
         // Load current settings
         LoadSettings();
@@ -224,6 +226,9 @@ public partial class SettingsWindowViewModel : ObservableObject
     partial void OnFontSizeScaleChanged(double value)
     {
         OnPropertyChanged(nameof(FontSizePercentText));
+
+        // Live preview: apply font scale immediately as slider moves
+        SettingsService.Instance.FontSizeScale = value;
     }
 
     partial void OnLogRetentionSessionsChanged(int value)
@@ -387,6 +392,10 @@ public partial class SettingsWindowViewModel : ObservableObject
         {
             ThemeManager.Instance.ApplyTheme(_originalThemeId);
         }
+
+        // Revert font scale if changed
+        SettingsService.Instance.FontSizeScale = _originalFontSizeScale;
+
         _window.Close();
     }
 
