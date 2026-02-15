@@ -1,9 +1,12 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Radoub.Formats.Common;
 using Radoub.Formats.Ifo;
 using Radoub.Formats.Services;
+using Radoub.Formats.Settings;
 
 namespace RadoubLauncher.ViewModels;
 
@@ -75,6 +78,88 @@ public partial class ModuleEditorViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasUnsavedChanges))]
     private string _customTlk = string.Empty;
+
+    // TLK Language Settings (global, stored in RadoubSettings)
+
+    public ObservableCollection<string> AvailableTlkLanguages { get; } = new() { "English" };
+    public ObservableCollection<string> AvailableGenders { get; } = new() { "Male", "Female" };
+
+    /// <summary>
+    /// TLK language selection. Updates RadoubSettings globally (affects all tools).
+    /// </summary>
+    public string SelectedTlkLanguage
+    {
+        get
+        {
+            var lang = RadoubSettings.Instance.EffectiveLanguage;
+            return LanguageHelper.GetDisplayName(lang);
+        }
+        set
+        {
+            var language = DisplayNameToLanguage(value);
+            if (language == null) return;
+
+            var langCode = LanguageHelper.GetLanguageCode(language.Value);
+            if (RadoubSettings.Instance.TlkLanguage != langCode)
+            {
+                RadoubSettings.Instance.TlkLanguage = langCode;
+                OnPropertyChanged();
+                TlkLanguageChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
+    }
+
+    /// <summary>
+    /// TLK gender selection. Updates RadoubSettings globally.
+    /// </summary>
+    public string SelectedTlkGender
+    {
+        get => RadoubSettings.Instance.TlkUseFemale ? "Female" : "Male";
+        set
+        {
+            var useFemale = value == "Female";
+            if (RadoubSettings.Instance.TlkUseFemale != useFemale)
+            {
+                RadoubSettings.Instance.TlkUseFemale = useFemale;
+                OnPropertyChanged();
+                TlkLanguageChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Raised when TLK language or gender changes, so MainWindow can update status bar.
+    /// </summary>
+    public event EventHandler? TlkLanguageChanged;
+
+    /// <summary>
+    /// Populate available TLK languages from game installation.
+    /// </summary>
+    public void RefreshAvailableTlkLanguages()
+    {
+        AvailableTlkLanguages.Clear();
+        var languages = RadoubSettings.Instance.GetAvailableTlkLanguages().ToList();
+        if (languages.Count == 0)
+        {
+            AvailableTlkLanguages.Add("English");
+        }
+        else
+        {
+            foreach (var lang in languages)
+                AvailableTlkLanguages.Add(LanguageHelper.GetDisplayName(lang));
+        }
+        OnPropertyChanged(nameof(SelectedTlkLanguage));
+    }
+
+    private static Language? DisplayNameToLanguage(string displayName)
+    {
+        foreach (var lang in Enum.GetValues<Language>())
+        {
+            if (LanguageHelper.GetDisplayName(lang) == displayName)
+                return lang;
+        }
+        return null;
+    }
 
     // Version/Requirements
 

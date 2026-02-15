@@ -46,12 +46,6 @@ public partial class SettingsWindowViewModel : ObservableObject
     public bool HasNwnDocumentsValidation => !string.IsNullOrEmpty(NwnDocumentsValidation);
 
     [ObservableProperty]
-    private string _selectedLanguage = "English";
-
-    [ObservableProperty]
-    private string _selectedGender = "Male";
-
-    [ObservableProperty]
     private string _selectedTheme = "Light";
 
     [ObservableProperty]
@@ -74,16 +68,6 @@ public partial class SettingsWindowViewModel : ObservableObject
     public ObservableCollection<string> AvailableLogLevels { get; } = new()
     {
         "TRACE", "DEBUG", "INFO", "WARN", "ERROR"
-    };
-
-    public ObservableCollection<string> AvailableLanguages { get; } = new()
-    {
-        "English", "French", "German", "Italian", "Spanish", "Polish", "Korean", "Chinese Traditional", "Chinese Simplified", "Japanese"
-    };
-
-    public ObservableCollection<string> AvailableGenders { get; } = new()
-    {
-        "Male", "Female"
     };
 
     public ObservableCollection<string> AvailableThemes { get; } = new();
@@ -125,8 +109,6 @@ public partial class SettingsWindowViewModel : ObservableObject
 
         GameInstallPath = sharedSettings.BaseGameInstallPath ?? "";
         NwnDocumentsPath = sharedSettings.NeverwinterNightsPath ?? "";
-        SelectedLanguage = sharedSettings.TlkLanguage ?? "English";
-        SelectedGender = sharedSettings.TlkUseFemale ? "Female" : "Male";
         FontSizeScale = localSettings.FontSizeScale;
 
         // Logging settings
@@ -287,8 +269,6 @@ public partial class SettingsWindowViewModel : ObservableObject
 
         sharedSettings.BaseGameInstallPath = GameInstallPath;
         sharedSettings.NeverwinterNightsPath = NwnDocumentsPath;
-        sharedSettings.TlkLanguage = SelectedLanguage;
-        sharedSettings.TlkUseFemale = SelectedGender == "Female";
         localSettings.FontSizeScale = FontSizeScale;
 
         // Logging settings

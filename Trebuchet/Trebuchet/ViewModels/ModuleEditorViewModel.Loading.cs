@@ -32,6 +32,8 @@ public partial class ModuleEditorViewModel
         {
             UnifiedLogger.LogApplication(LogLevel.WARN, $"ModuleEditor: Failed to initialize GameDataService: {ex.Message}");
         }
+
+        RefreshAvailableTlkLanguages();
     }
 
     public void SetParentWindow(Window window)

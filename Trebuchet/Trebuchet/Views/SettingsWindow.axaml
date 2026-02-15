@@ -88,35 +88,6 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- TLK Settings Section -->
-                <StackPanel Spacing="8">
-                    <TextBlock Text="TLK Settings"
-                               FontSize="{DynamicResource FontSizeLarge}"
-                               FontWeight="SemiBold"/>
-
-                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" Margin="0,8,0,0">
-                        <TextBlock Grid.Row="0" Grid.Column="0"
-                                   Text="Language:"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,12,0"/>
-                        <ComboBox Grid.Row="0" Grid.Column="1"
-                                  ItemsSource="{Binding AvailableLanguages}"
-                                  SelectedItem="{Binding SelectedLanguage}"
-                                  MinWidth="200"/>
-
-                        <TextBlock Grid.Row="1" Grid.Column="0"
-                                   Text="Gender:"
-                                   VerticalAlignment="Center"
-                                   Margin="0,8,12,0"/>
-                        <ComboBox Grid.Row="1" Grid.Column="1"
-                                  ItemsSource="{Binding AvailableGenders}"
-                                  SelectedItem="{Binding SelectedGender}"
-                                  Margin="0,8,0,0"
-                                  MinWidth="200"/>
-                    </Grid>
-
-                </StackPanel>
-
                 <!-- Appearance Section -->
                 <StackPanel Spacing="8">
                     <TextBlock Text="Appearance"

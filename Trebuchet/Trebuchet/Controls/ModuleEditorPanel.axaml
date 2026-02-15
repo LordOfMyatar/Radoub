@@ -84,6 +84,29 @@
                                         Width="32"/>
                             </StackPanel>
                         </StackPanel>
+
+                        <!-- TLK Language/Gender (global setting shown alongside Custom TLK) -->
+                        <Grid ColumnDefinitions="Auto,Auto,Auto,Auto" Margin="0,8,0,0">
+                            <TextBlock Grid.Column="0"
+                                       Text="TLK Language:"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,8,0"/>
+                            <ComboBox Grid.Column="1"
+                                      ItemsSource="{Binding AvailableTlkLanguages}"
+                                      SelectedItem="{Binding SelectedTlkLanguage}"
+                                      MinWidth="150"/>
+                            <TextBlock Grid.Column="2"
+                                       Text="Gender:"
+                                       VerticalAlignment="Center"
+                                       Margin="16,0,8,0"/>
+                            <ComboBox Grid.Column="3"
+                                      ItemsSource="{Binding AvailableGenders}"
+                                      SelectedItem="{Binding SelectedTlkGender}"
+                                      MinWidth="100"/>
+                        </Grid>
+                        <TextBlock Text="Base game TLK language. Applies to all Radoub tools."
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   Opacity="0.5"/>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

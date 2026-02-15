@@ -304,6 +304,9 @@ public partial class MainWindowViewModel : ObservableObject
                 OnPropertyChanged(nameof(BuildWarningText));
             }
         };
+
+        // Update status bar when TLK language changes
+        viewModel.TlkLanguageChanged += (_, _) => UpdateStatusFromSettings();
     }
 
     /// <summary>
