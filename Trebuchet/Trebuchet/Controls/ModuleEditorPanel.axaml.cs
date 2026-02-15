@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using RadoubLauncher.ViewModels;
 
 namespace RadoubLauncher.Controls;
@@ -39,10 +40,42 @@ public partial class ModuleEditorPanel : UserControl
 
     private void OnVariableAdded(object? sender, System.EventArgs e)
     {
-        // Delay to let the DataGrid update its rows first
+        // Delay to let the DataGrid render the new row, then focus the Name field
         Dispatcher.UIThread.Post(() =>
         {
+            // Scroll to the new item and select its first cell
+            VariablesDataGrid.ScrollIntoView(VariablesDataGrid.SelectedItem, null);
             VariablesDataGrid.BeginEdit();
+
+            // Find the Name TextBox in the selected row and focus it
+            Dispatcher.UIThread.Post(() =>
+            {
+                var nameTextBox = FindNameTextBoxInSelectedRow();
+                if (nameTextBox != null)
+                {
+                    nameTextBox.Focus();
+                    nameTextBox.SelectAll();
+                }
+            }, DispatcherPriority.Background);
         }, DispatcherPriority.Background);
+    }
+
+    private TextBox? FindNameTextBoxInSelectedRow()
+    {
+        if (VariablesDataGrid.SelectedItem == null) return null;
+
+        // Find the DataGridRow matching our selected item, then grab its first TextBox
+        foreach (var descendant in VariablesDataGrid.GetVisualDescendants())
+        {
+            if (descendant is DataGridRow row && row.DataContext == VariablesDataGrid.SelectedItem)
+            {
+                foreach (var child in row.GetVisualDescendants())
+                {
+                    if (child is TextBox tb)
+                        return tb;
+                }
+            }
+        }
+        return null;
     }
 }

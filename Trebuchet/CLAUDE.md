@@ -28,9 +28,16 @@ Trebuchet/
 │   ├── Trebuchet.csproj
 │   ├── App.axaml(.cs)
 │   ├── Program.cs
+│   ├── Controls/
+│   │   ├── ModuleEditorPanel.axaml(.cs)     # IFO editor embedded panel
+│   │   ├── FactionEditorPanel.axaml(.cs)    # Faction editor embedded panel
+│   │   ├── LaunchTestPanel.axaml(.cs)       # Game launch & build status panel
+│   │   ├── SidebarToolItemControl.axaml(.cs)# Tool card in sidebar
+│   │   └── ToolCardControl.axaml(.cs)
 │   ├── Services/
 │   │   ├── CommandLineService.cs      # CLI args parsing (--help, --safemode, --module)
 │   │   ├── GameLauncherService.cs     # Launch NWN:EE with module
+│   │   ├── ScriptCompilerService.cs   # NWScript compiler wrapper
 │   │   ├── SettingsService.cs         # Tool-specific settings (window, recent modules)
 │   │   ├── ToolLauncherService.cs     # Discover and launch Radoub tools
 │   │   ├── ToolRecentFilesService.cs  # Read tool MRU from settings
@@ -38,18 +45,21 @@ Trebuchet/
 │   ├── ViewModels/
 │   │   ├── MainWindowViewModel.cs
 │   │   ├── ModuleEditorViewModel.cs   # IFO editing logic
+│   │   ├── FactionEditorViewModel.cs  # Faction editing logic
 │   │   ├── SettingsWindowViewModel.cs
 │   │   └── ThemeEditorViewModel.cs
 │   ├── Views/
-│   │   ├── MainWindow.axaml(.cs)
-│   │   ├── ModuleEditorWindow.axaml(.cs)  # Module.ifo editor
+│   │   ├── MainWindow.axaml(.cs)      # Main layout: sidebar + workspace tabs
 │   │   ├── SettingsWindow.axaml(.cs)
-│   │   └── ThemeEditorWindow.axaml(.cs)
+│   │   ├── ThemeEditorWindow.axaml(.cs)
+│   │   ├── AddFactionDialog.axaml(.cs)
+│   │   └── ConfirmDialog.axaml(.cs)
 │   ├── Themes/
 │   │   ├── light.json
 │   │   └── dark.json
 │   └── Assets/
-└── Trebuchet.Tests/  (TODO)
+├── Trebuchet.Tests/     # Unit tests (CommandLineService, SettingsService)
+└── (Radoub.IntegrationTests/Trebuchet/) # FlaUI UI tests (in root project)
 ```
 
 ### Key Design Decisions
@@ -58,6 +68,45 @@ Trebuchet/
 - **Namespace**: `RadoubLauncher` (internal, like Parley uses `ConversationEditor`)
 - **Assembly**: `Trebuchet`
 
+### Main Window Layout (Sprint 1-4, Epic #1160)
+
+```
+┌──────────────────────────────────────────────┐
+│ Title Bar: "Trebuchet - ModuleName [Tab]"    │
+├──────────────────────────────────────────────┤
+│ Toolbar: Module info | Open | Save | Build | │
+│          Compile | Test Module | Settings    │
+├────────┬─────────────────────────────────────┤
+│SIDEBAR │ Workspace Tabs                      │
+│        │ ┌────────┬──────────┬─────────────┐ │
+│ TOOLS  │ │ Module │ Factions │ Launch&Test  │ │
+│ ────── │ ├────────┴──────────┴─────────────┤ │
+│ Parley │ │                                 │ │
+│ Manif. │ │  Tab Content Panel              │ │
+│ QM     │ │  (ModuleEditorPanel /           │ │
+│ Fence  │ │   FactionEditorPanel /          │ │
+│        │ │   LaunchTestPanel)              │ │
+│ RECENT │ │                                 │ │
+│ MODULES│ │                                 │ │
+│ ────── │ │                                 │ │
+│ mod1   │ │                                 │ │
+│ mod2   │ │                                 │ │
+├────────┴─┴─────────────────────────────────┤ │
+│ Status Bar: Game | TLK | Build | Version    │
+└──────────────────────────────────────────────┘
+```
+
+**Workspace Tabs**:
+- **Module** (default): IFO metadata, version, HAKs, time, entry point, scripts, variables
+- **Factions**: Visual faction relationship editor (reputation matrix)
+- **Launch & Test**: Game launch buttons, DefaultBic, build status, compile options
+
+**Keyboard Shortcuts**:
+- Ctrl+1/2/3: Switch workspace tabs (Module/Factions/Launch & Test)
+- Ctrl+S: Save (toolbar)
+
+**Empty State**: When no module loaded, workspace shows welcome message with "Open Module..." button.
+
 ### Dependencies
 
 - `Radoub.Formats` - GFF/ERF/IFO parsers, shared settings
@@ -65,7 +114,7 @@ Trebuchet/
 
 ---
 
-## Current Features (v1.5.0-alpha)
+## Current Features (v1.13.0-alpha)
 
 ### Tool Launcher
 - Discover installed Radoub tools (Parley, Manifest, Quartermaster, Fence)

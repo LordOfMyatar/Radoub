@@ -10,6 +10,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.13.0-alpha] - 2026-02-14
+**Branch**: `trebuchet/issue-1331` | **PR**: #1339
+
+### Sprint 4: Launch Tab + FlaUI Tests + Polish (#1331)
+
+- [x] Build Build & Test tab with LaunchTestPanel control (game launch, DefaultBic, build status)
+- [x] Remove Dashboard tab — Module tab is now the default workspace tab
+- [x] Remove dirty-module popup dialog — replaced with inline "Build & Save" and "Test Anyway" buttons
+- [x] Variable creation auto-focuses Name field for immediate typing
+- [x] Toolbar cleanup: removed Compile checkbox and View Log (now in Build & Test tab)
+- [x] FlaUI integration tests: 13 tests covering smoke, tabs, content, toolbar, sidebar
+- [x] Keyboard navigation: Ctrl+1/2/3 switches workspace tabs
+- [x] Dynamic window title: "Trebuchet - ModuleName [TabName]"
+- [x] BrushManager colors for build warning/success indicators
+- [x] Documentation updates (CHANGELOG, CLAUDE.md)
+
+---
+
 ## [1.12.0-alpha] - 2026-02-14
 **Branch**: `trebuchet/issue-1330` | **PR**: #1336
 
