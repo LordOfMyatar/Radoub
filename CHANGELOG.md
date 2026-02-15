@@ -15,6 +15,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.71] - TBD
+**Branch**: `radoub/issue-1384` | **PR**: #1385
+
+### Fix: Module information not passed to child tools on Linux (#1384)
+
+- TLK paths not propagated to child tools
+- File locations not passed when launching tools from Trebuchet
+- Affects Parley, Manifest, Quartermaster, Fence
+
+---
+
 ## [0.9.70] - 2026-02-15
 **Branch**: `radoub/issue-1364` | **PR**: #1386
 
