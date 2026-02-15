@@ -57,26 +57,28 @@ public partial class MainWindowViewModel
     }
 
     /// <summary>
-    /// Reload the embedded module editor when the current module changes.
+    /// Reload module editor first (may auto-unpack .mod), then dependents that
+    /// need the unpacked directory to exist. (#1384)
     /// </summary>
-    private async Task ReloadModuleEditorAsync()
+    private async Task ReloadModuleEditorThenDependentsAsync()
     {
-        if (_moduleEditorViewModel == null) return;
-
-        var currentPath = RadoubSettings.Instance.CurrentModulePath;
-        if (!string.IsNullOrEmpty(currentPath))
+        // Module editor must finish first - it auto-unpacks .mod files
+        if (_moduleEditorViewModel != null)
         {
-            await _moduleEditorViewModel.LoadModuleAsync(currentPath);
+            var currentPath = RadoubSettings.Instance.CurrentModulePath;
+            if (!string.IsNullOrEmpty(currentPath))
+            {
+                await _moduleEditorViewModel.LoadModuleAsync(currentPath);
+            }
         }
-    }
 
-    /// <summary>
-    /// Reload the embedded faction editor when the current module changes.
-    /// </summary>
-    private async Task ReloadFactionEditorAsync()
-    {
-        if (_factionEditorViewModel == null) return;
+        // Read DefaultBic after module is loaded
+        _ = ReadModuleDefaultBicAsync(_cts.Token);
 
-        await _factionEditorViewModel.LoadFacFileAsync();
+        // Now faction editor can find the unpacked directory
+        if (_factionEditorViewModel != null)
+        {
+            await _factionEditorViewModel.LoadFacFileAsync();
+        }
     }
 }

@@ -492,14 +492,8 @@ public partial class MainWindowViewModel : ObservableObject
             _lastBuildTimeUtc = null;
             RefreshBuildStatus();
 
-            // Read DefaultBic from the module's IFO to correctly enable/disable Load Module button
-            _ = ReadModuleDefaultBicAsync(_cts.Token);
-
-            // Reload the embedded module editor with the new module
-            _ = ReloadModuleEditorAsync();
-
-            // Reload the embedded faction editor with the new module
-            _ = ReloadFactionEditorAsync();
+            // Reload module editor first (may auto-unpack .mod), then faction editor (#1384)
+            _ = ReloadModuleEditorThenDependentsAsync();
 
             OnPropertyChanged(nameof(HasModule));
             OnPropertyChanged(nameof(CanEditModule));
