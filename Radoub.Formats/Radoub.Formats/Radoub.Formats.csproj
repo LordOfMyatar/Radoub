@@ -8,7 +8,6 @@
     <AssemblyName>Radoub.Formats</AssemblyName>
     <Description>Aurora Engine file format parsers for Neverwinter Nights modding tools</Description>
     <Authors>Lord of Midnight</Authors>
-    <Version>0.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

@@ -40,8 +40,10 @@
     <!-- Spell-checking -->
     <PackageVersion Include="WeCantSpell.Hunspell" Version="7.0.1" />
 
+    <!-- Versioning -->
+    <PackageVersion Include="Nerdbank.GitVersioning" Version="3.9.50" />
+
     <!-- Misc -->
-    <PackageVersion Include="GitInfo" Version="3.6.0" />
     <PackageVersion Include="AvaloniaGraphControl" Version="0.7.0" />
 
     <!-- Testing -->

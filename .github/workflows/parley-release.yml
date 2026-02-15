@@ -52,34 +52,31 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0  # GitVersion needs full history
+        fetch-depth: 0  # NBGV needs full history
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '9.0.x'
 
-    - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v4
-      with:
-        versionSpec: '6.x'
-
     - name: Determine Version
-      id: gitversion
-      uses: gittools/actions/gitversion/execute@v4
+      uses: dotnet/nbgv@master
+      id: nbgv
+      with:
+        path: Parley
 
-    - name: Display GitVersion outputs
+    - name: Display version
       shell: bash
       run: |
-        echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
-        echo "FullSemVer: ${{ steps.gitversion.outputs.fullSemVer }}"
+        echo "SemVer2: ${{ steps.nbgv.outputs.SemVer2 }}"
+        echo "AssemblyInformationalVersion: ${{ steps.nbgv.outputs.AssemblyInformationalVersion }}"
 
     - name: Restore dependencies
       run: dotnet restore Parley/Parley.csproj -r ${{ matrix.runtime }}
       working-directory: ./Parley
 
     - name: Build project
-      run: dotnet build Parley/Parley.csproj --configuration Release --no-restore -r ${{ matrix.runtime }} -p:Version=${{ steps.gitversion.outputs.assemblySemVer }} -p:FileVersion=${{ steps.gitversion.outputs.assemblySemFileVer }} -p:InformationalVersion=${{ steps.gitversion.outputs.informationalVersion }}
+      run: dotnet build Parley/Parley.csproj --configuration Release --no-restore -r ${{ matrix.runtime }}
       working-directory: ./Parley
 
     - name: Run tests
@@ -100,23 +97,23 @@ jobs:
     # requires its .dll files to remain separate - they can't be bundled (#314)
     - name: Publish (Self-Contained, Windows)
       if: matrix.self-contained == true && matrix.os == 'windows-latest'
-      run: dotnet publish Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -p:Version=${{ steps.gitversion.outputs.assemblySemVer }} -o ./publish/${{ matrix.artifact-name }}
+      run: dotnet publish Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -o ./publish/${{ matrix.artifact-name }}
       working-directory: ./Parley
 
     - name: Publish (Framework-Dependent, Windows)
       if: matrix.self-contained == false && matrix.os == 'windows-latest'
-      run: dotnet publish Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained false -p:Version=${{ steps.gitversion.outputs.assemblySemVer }} -o ./publish/${{ matrix.artifact-name }}
+      run: dotnet publish Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained false -o ./publish/${{ matrix.artifact-name }}
       working-directory: ./Parley
 
     # macOS/Linux: Keep PublishSingleFile (no CEF subprocess issues on these platforms)
     - name: Publish (Self-Contained, macOS/Linux)
       if: matrix.self-contained == true && matrix.os != 'windows-latest'
-      run: dotnet publish Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=${{ steps.gitversion.outputs.assemblySemVer }} -o ./publish/${{ matrix.artifact-name }}
+      run: dotnet publish Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:IncludeNativeLibrariesForSelfExtract=true -o ./publish/${{ matrix.artifact-name }}
       working-directory: ./Parley
 
     - name: Publish (Framework-Dependent, macOS/Linux)
       if: matrix.self-contained == false && matrix.os != 'windows-latest'
-      run: dotnet publish Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained false -p:PublishSingleFile=true -p:Version=${{ steps.gitversion.outputs.assemblySemVer }} -o ./publish/${{ matrix.artifact-name }}
+      run: dotnet publish Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained false -p:PublishSingleFile=true -o ./publish/${{ matrix.artifact-name }}
       working-directory: ./Parley
 
     # macOS: Create .app bundle for self-contained builds
@@ -147,9 +144,9 @@ jobs:
             <key>CFBundleName</key>
             <string>Parley</string>
             <key>CFBundleVersion</key>
-            <string>${{ steps.gitversion.outputs.semVer }}</string>
+            <string>${{ steps.nbgv.outputs.SemVer2 }}</string>
             <key>CFBundleShortVersionString</key>
-            <string>${{ steps.gitversion.outputs.semVer }}</string>
+            <string>${{ steps.nbgv.outputs.SemVer2 }}</string>
             <key>CFBundlePackageType</key>
             <string>APPL</string>
             <key>NSHighResolutionCapable</key>
@@ -211,14 +208,11 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v4
-      with:
-        versionSpec: '6.x'
-
     - name: Determine Version
-      id: gitversion
-      uses: gittools/actions/gitversion/execute@v4
+      uses: dotnet/nbgv@master
+      id: nbgv
+      with:
+        path: Parley
 
     - name: Extract Changelog Highlights
       id: highlights
@@ -279,7 +273,7 @@ jobs:
           ./artifacts/**/*.zip
           ./artifacts/**/*.tar.gz
         body: |
-          # Parley ${{ steps.gitversion.outputs.semVer }}
+          # Parley ${{ steps.nbgv.outputs.SemVer2 }}
 
           Dialog editor for Neverwinter Nights `.dlg` files.
 
