@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.18.0-alpha] - 2026-02-15
-**Branch**: `trebuchet/issue-1378` | **PR**: #TBD
+**Branch**: `trebuchet/issue-1378` | **PR**: #1381
 
 ### Sprint: Build & Test Polish (#1378)
 
