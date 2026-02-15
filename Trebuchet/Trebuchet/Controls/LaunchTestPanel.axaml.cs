@@ -25,6 +25,7 @@ public partial class LaunchTestPanel : UserControl
 
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
         UpdateBuildWarningColors();
+        UpdateFailedScriptsColors();
         UpdateStaleScriptText();
     }
 
@@ -35,6 +36,9 @@ public partial class LaunchTestPanel : UserControl
 
         if (e.PropertyName == nameof(MainWindowViewModel.StaleScriptCount))
             UpdateStaleScriptText();
+
+        if (e.PropertyName == nameof(MainWindowViewModel.HasFailedScripts))
+            UpdateFailedScriptsColors();
     }
 
     private void UpdateBuildWarningColors()
@@ -53,6 +57,13 @@ public partial class LaunchTestPanel : UserControl
 
         if (okIcon != null)
             okIcon.Foreground = BrushManager.GetSuccessBrush(this);
+    }
+
+    private void UpdateFailedScriptsColors()
+    {
+        var failedIcon = this.FindControl<TextBlock>("FailedScriptsIcon");
+        if (failedIcon != null)
+            failedIcon.Foreground = BrushManager.GetErrorBrush(this);
     }
 
     private void UpdateStaleScriptText()

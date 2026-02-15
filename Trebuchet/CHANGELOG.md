@@ -15,6 +15,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Feat: Show failed scripts list with open-in-editor action (#1345)
 
+- Failed scripts listed individually with error summary after compilation failure
+- Checkboxes to select which scripts to open (all selected by default)
+- "Open in Editor" button opens selected scripts in configured code editor
+- Select All / Select None buttons for quick selection
+- Code editor path configurable in Settings > Build Settings
+- Defaults to system file association when no editor configured
+
 ---
 
 ## [1.13.0-alpha] - 2026-02-14

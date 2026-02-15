@@ -116,6 +116,7 @@ public class SettingsService : INotifyPropertyChanged
 
     // Build settings
     private bool _compileScriptsEnabled = false;
+    private string _codeEditorPath = "";
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -248,6 +249,16 @@ public class SettingsService : INotifyPropertyChanged
         set { if (SetProperty(ref _compileScriptsEnabled, value)) SaveSettings(); }
     }
 
+    /// <summary>
+    /// Path to the user's preferred code editor for opening script files.
+    /// When empty, files are opened with the system default association.
+    /// </summary>
+    public string CodeEditorPath
+    {
+        get => _codeEditorPath;
+        set { if (SetProperty(ref _codeEditorPath, value ?? "")) SaveSettings(); }
+    }
+
     public void AddRecentModule(string modulePath)
     {
         if (string.IsNullOrEmpty(modulePath))
@@ -340,6 +351,7 @@ public class SettingsService : INotifyPropertyChanged
 
                     // Build settings
                     _compileScriptsEnabled = settings.CompileScriptsEnabled;
+                    _codeEditorPath = settings.CodeEditorPath ?? "";
 
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {_recentModules.Count} recent modules");
                 }
@@ -374,7 +386,8 @@ public class SettingsService : INotifyPropertyChanged
                 LogLevel = _loggingSettings.LogLevel,
                 RecentModules = PathHelper.ContractPaths(_recentModules).ToList(),  // Use ~ for privacy
                 MaxRecentModules = MaxRecentModules,
-                CompileScriptsEnabled = CompileScriptsEnabled
+                CompileScriptsEnabled = CompileScriptsEnabled,
+                CodeEditorPath = CodeEditorPath
             };
 
             var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
@@ -427,5 +440,6 @@ public class SettingsService : INotifyPropertyChanged
 
         // Build settings
         public bool CompileScriptsEnabled { get; set; } = false;
+        public string CodeEditorPath { get; set; } = "";
     }
 }

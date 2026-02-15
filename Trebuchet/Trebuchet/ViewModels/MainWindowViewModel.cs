@@ -187,6 +187,12 @@ public partial class MainWindowViewModel : ObservableObject
     private bool _hasBuildLog;
 
     [ObservableProperty]
+    private bool _hasFailedScripts;
+
+    [ObservableProperty]
+    private ObservableCollection<FailedScriptItem> _failedScriptItems = new();
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(NeedsBuildWarning))]
     [NotifyPropertyChangedFor(nameof(BuildWarningText))]
     private int _staleScriptCount;
@@ -981,9 +987,11 @@ public partial class MainWindowViewModel : ObservableObject
                     {
                         // Write log file for failed compilation
                         var logPath = compilerService.WriteCompilationLog(compileResult, workingDir);
-                        BuildStatusText = $"Build failed: {compileResult.FailedScripts.Count} scripts failed - View Log";
+                        BuildStatusText = $"Build failed: {compileResult.FailedScripts.Count} script(s) failed";
                         _lastBuildLogPath = logPath;
+                        _lastBuildWorkingDir = workingDir;
                         HasBuildLog = true;
+                        PopulateFailedScripts(compileResult);
                         UnifiedLogger.LogApplication(LogLevel.WARN,
                             $"Compilation failed for {compileResult.FailedScripts.Count} scripts");
                         return;
@@ -1010,7 +1018,9 @@ public partial class MainWindowViewModel : ObservableObject
 
             BuildStatusText = $"Built {resourceCount} files to {Path.GetFileName(modFilePath)}";
             _lastBuildLogPath = null;
+            _lastBuildWorkingDir = null;
             HasBuildLog = false;
+            ClearFailedScripts();
             StaleScriptCount = 0;
             IsModuleDirty = false;
             HasNewerWorkingFiles = false;
@@ -1029,6 +1039,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     // Store path to last build log for "View Log" functionality
     private string? _lastBuildLogPath;
+    private string? _lastBuildWorkingDir;
 
     [RelayCommand]
     private void OpenBuildLog()
@@ -1053,6 +1064,98 @@ public partial class MainWindowViewModel : ObservableObject
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open build log: {ex.Message}");
         }
+    }
+
+    [RelayCommand]
+    private void OpenFailedScriptsInEditor()
+    {
+        var selectedScripts = FailedScriptItems.Where(s => s.IsSelected).ToList();
+        if (selectedScripts.Count == 0)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, "No scripts selected to open");
+            return;
+        }
+
+        var editorPath = SettingsService.Instance.CodeEditorPath;
+        var useCustomEditor = !string.IsNullOrEmpty(editorPath) && File.Exists(editorPath);
+
+        foreach (var script in selectedScripts)
+        {
+            try
+            {
+                var filePath = script.FullPath;
+                if (!File.Exists(filePath))
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Script file not found: {Path.GetFileName(filePath)}");
+                    continue;
+                }
+
+                System.Diagnostics.ProcessStartInfo startInfo;
+                if (useCustomEditor)
+                {
+                    startInfo = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = editorPath,
+                        Arguments = $"\"{filePath}\"",
+                        UseShellExecute = false
+                    };
+                }
+                else
+                {
+                    startInfo = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = filePath,
+                        UseShellExecute = true
+                    };
+                }
+
+                System.Diagnostics.Process.Start(startInfo)?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open {script.ScriptName}: {ex.Message}");
+            }
+        }
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Opened {selectedScripts.Count} script(s) in editor");
+    }
+
+    [RelayCommand]
+    private void SelectAllFailedScripts()
+    {
+        foreach (var item in FailedScriptItems)
+            item.IsSelected = true;
+    }
+
+    [RelayCommand]
+    private void SelectNoneFailedScripts()
+    {
+        foreach (var item in FailedScriptItems)
+            item.IsSelected = false;
+    }
+
+    private void PopulateFailedScripts(BatchCompilationResult compileResult)
+    {
+        FailedScriptItems.Clear();
+        foreach (var result in compileResult.Results.Where(r => !r.Success))
+        {
+            var scriptName = Path.GetFileName(result.ScriptPath);
+            var errorSummary = result.ErrorMessage?.Split('\n').FirstOrDefault()?.Trim() ?? "Compilation failed";
+            FailedScriptItems.Add(new FailedScriptItem
+            {
+                ScriptName = scriptName,
+                FullPath = result.ScriptPath,
+                ErrorSummary = errorSummary,
+                IsSelected = true
+            });
+        }
+        HasFailedScripts = FailedScriptItems.Count > 0;
+    }
+
+    private void ClearFailedScripts()
+    {
+        FailedScriptItems.Clear();
+        HasFailedScripts = false;
     }
 
     // Partial methods for DefaultBic property changes
