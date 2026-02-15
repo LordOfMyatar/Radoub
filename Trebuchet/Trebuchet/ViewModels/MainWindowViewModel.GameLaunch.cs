@@ -32,15 +32,17 @@ public partial class MainWindowViewModel
         {
             UnifiedLogger.LogApplication(LogLevel.INFO, "Auto-saving before test launch (AlwaysSaveBeforeTesting)");
             await BuildModuleAsync();
-
-            // If build failed (failed scripts remain), don't launch
-            if (HasFailedScripts)
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN, "Auto-save build had failures — not launching");
-                return;
-            }
         }
-        else
+
+        // Block launch if there are unresolved compilation failures
+        if (HasFailedScripts)
+        {
+            BuildStatusText = "Cannot launch: fix failed scripts first";
+            UnifiedLogger.LogApplication(LogLevel.WARN, "Test launch blocked — failed scripts present");
+            return;
+        }
+
+        if (!SettingsService.Instance.AlwaysSaveBeforeTesting)
         {
             // Refresh build status so the Launch & Test tab shows current warnings
             RefreshBuildStatus();
