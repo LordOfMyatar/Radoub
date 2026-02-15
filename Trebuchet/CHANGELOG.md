@@ -15,9 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Settings Migration Cleanup (#1351)
 
-- [ ] #1342 - Remove build settings from Trebuchet Settings window
-- [ ] #1340 - Move compiler log out of user profile path
-- [ ] #1341 - Move TLK language settings to module metadata
+- [x] #1342 - Remove build settings from Trebuchet Settings window
+- [x] #1340 - Move compiler log out of user profile path
+- [x] #1341 - Move TLK language settings to module metadata
 
 ---
 
