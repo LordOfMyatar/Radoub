@@ -7,7 +7,7 @@ namespace Radoub.IntegrationTests.Trebuchet;
 
 /// <summary>
 /// Tests for workspace tabs, tab navigation, and tab content verification.
-/// Validates the Sprint 1-4 layout: sidebar + workspace tabs (Module, Factions, Launch &amp; Test).
+/// Validates the Sprint 1-4 layout: sidebar + workspace tabs (Module, Factions, Build &amp; Test).
 /// </summary>
 [Collection("TrebuchetSequential")]
 public class WorkspaceTests : TrebuchetTestBase
@@ -30,7 +30,7 @@ public class WorkspaceTests : TrebuchetTestBase
         var factionsTab = FindTabByName("Factions");
         Assert.NotNull(factionsTab);
 
-        var launchTab = FindTabByName("Launch & Test");
+        var launchTab = FindTabByName("Build & Test");
         Assert.NotNull(launchTab);
     }
 
@@ -99,17 +99,17 @@ public class WorkspaceTests : TrebuchetTestBase
             Assert.True(factionsSelection.IsSelected, "Factions tab should be selected after clicking");
         }
 
-        // Click Launch & Test tab
-        var launchTab = FindTabByName("Launch & Test");
+        // Click Build & Test tab
+        var launchTab = FindTabByName("Build & Test");
         Assert.NotNull(launchTab);
         launchTab.Click();
         Thread.Sleep(500);
 
-        // Verify Launch & Test tab is selected
+        // Verify Build & Test tab is selected
         var launchSelection = launchTab.Patterns.SelectionItem.PatternOrDefault;
         if (launchSelection != null)
         {
-            Assert.True(launchSelection.IsSelected, "Launch & Test tab should be selected after clicking");
+            Assert.True(launchSelection.IsSelected, "Build & Test tab should be selected after clicking");
         }
 
         // Click back to Module tab
@@ -120,7 +120,7 @@ public class WorkspaceTests : TrebuchetTestBase
     }
 
     /// <summary>
-    /// Verify Launch &amp; Test tab contains game launch buttons.
+    /// Verify Build &amp; Test tab contains game launch buttons.
     /// </summary>
     [Fact]
     [Trait("Category", "Workspace")]
@@ -131,8 +131,8 @@ public class WorkspaceTests : TrebuchetTestBase
         Assert.True(ready, "Window should be ready");
         Thread.Sleep(1000);
 
-        // Navigate to Launch & Test tab
-        var launchTab = FindTabByName("Launch & Test");
+        // Navigate to Build & Test tab
+        var launchTab = FindTabByName("Build & Test");
         Assert.NotNull(launchTab);
         launchTab.Click();
         Thread.Sleep(500);
@@ -156,7 +156,7 @@ public class WorkspaceTests : TrebuchetTestBase
     }
 
     /// <summary>
-    /// Verify Launch &amp; Test tab contains build status section.
+    /// Verify Build &amp; Test tab contains build status section.
     /// </summary>
     [Fact]
     [Trait("Category", "Workspace")]
@@ -167,8 +167,8 @@ public class WorkspaceTests : TrebuchetTestBase
         Assert.True(ready, "Window should be ready");
         Thread.Sleep(1000);
 
-        // Navigate to Launch & Test tab
-        var launchTab = FindTabByName("Launch & Test");
+        // Navigate to Build & Test tab
+        var launchTab = FindTabByName("Build & Test");
         Assert.NotNull(launchTab);
         launchTab.Click();
         Thread.Sleep(500);
@@ -183,7 +183,7 @@ public class WorkspaceTests : TrebuchetTestBase
     }
 
     /// <summary>
-    /// Verify Launch &amp; Test tab contains DefaultBic controls.
+    /// Verify Build &amp; Test tab contains DefaultBic controls.
     /// </summary>
     [Fact]
     [Trait("Category", "Workspace")]
@@ -194,8 +194,8 @@ public class WorkspaceTests : TrebuchetTestBase
         Assert.True(ready, "Window should be ready");
         Thread.Sleep(1000);
 
-        // Navigate to Launch & Test tab
-        var launchTab = FindTabByName("Launch & Test");
+        // Navigate to Build & Test tab
+        var launchTab = FindTabByName("Build & Test");
         Assert.NotNull(launchTab);
         launchTab.Click();
         Thread.Sleep(500);
@@ -253,8 +253,8 @@ public class WorkspaceTests : TrebuchetTestBase
         toolbarTestButton = FindButtonByText("Test Module");
         Assert.NotNull(toolbarTestButton);
 
-        // Navigate to Launch & Test tab - toolbar should still be accessible
-        var launchTab = FindTabByName("Launch & Test");
+        // Navigate to Build & Test tab - toolbar should still be accessible
+        var launchTab = FindTabByName("Build & Test");
         Assert.NotNull(launchTab);
         launchTab.Click();
         Thread.Sleep(500);

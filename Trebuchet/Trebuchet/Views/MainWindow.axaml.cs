@@ -206,7 +206,7 @@ public partial class MainWindow : Window
             {
                 Key.D1 => 0, // Module
                 Key.D2 => 1, // Factions
-                Key.D3 => 2, // Launch & Test
+                Key.D3 => 2, // Build & Test
                 _ => null
             };
 

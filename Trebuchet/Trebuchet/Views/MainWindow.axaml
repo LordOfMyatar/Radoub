@@ -98,16 +98,6 @@
                                Margin="-4,0,0,0"
                                IsVisible="{Binding NeedsBuildWarning}"
                                ToolTip.Tip="{Binding BuildWarningText}"/>
-                    <CheckBox Content="Compile"
-                              IsChecked="{Binding CompileScriptsEnabled}"
-                              IsEnabled="{Binding IsCompilerAvailable}"
-                              VerticalAlignment="Center"
-                              ToolTip.Tip="Compile NWScript files before building"/>
-                    <Button Content="View Log"
-                            Command="{Binding OpenBuildLogCommand}"
-                            IsVisible="{Binding HasBuildLog}"
-                            Padding="8,4"
-                            ToolTip.Tip="Open compilation error log"/>
                     <Separator Width="1" Margin="4,0" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                     <Button Content="Test Module"
                             Command="{Binding LaunchTestModuleCommand}"
@@ -322,8 +312,8 @@
                         <ctrl:FactionEditorPanel x:Name="FactionEditorPanel"/>
                     </TabItem>
 
-                    <!-- Launch & Test Tab -->
-                    <TabItem Header="Launch &amp; Test">
+                    <!-- Build & Test Tab -->
+                    <TabItem Header="Build &amp; Test">
                         <ctrl:LaunchTestPanel x:Name="LaunchTestPanel"/>
                     </TabItem>
                 </TabControl>

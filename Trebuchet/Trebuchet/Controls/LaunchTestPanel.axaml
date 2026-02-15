@@ -95,10 +95,11 @@
                                     IsEnabled="{Binding CanTestModule}"
                                     Padding="12,6"
                                     ToolTip.Tip="Launch test without building — game uses the last built .mod"/>
-                            <Button Content="View Log"
+                            <Button Content="Compiler Log"
                                     Command="{Binding OpenBuildLogCommand}"
                                     IsVisible="{Binding HasBuildLog}"
-                                    Padding="12,6"/>
+                                    Padding="12,6"
+                                    ToolTip.Tip="Open compiler error log"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>
