@@ -395,6 +395,7 @@ public partial class MainWindowViewModel : ObservableObject
         {
             // New module selected - reset manual dirty state, check file timestamps
             IsModuleDirty = false;
+            _lastBuildTimeUtc = null;
             RefreshBuildStatus();
 
             // Read DefaultBic from the module's IFO to correctly enable/disable Load Module button
@@ -1016,6 +1017,7 @@ public partial class MainWindowViewModel : ObservableObject
             UnifiedLogger.LogApplication(LogLevel.INFO,
                 $"Built {resourceCount} resources to {UnifiedLogger.SanitizePath(modFilePath)}");
 
+            _lastBuildTimeUtc = DateTime.UtcNow;
             BuildStatusText = $"Built {resourceCount} files to {Path.GetFileName(modFilePath)}";
             _lastBuildLogPath = null;
             _lastBuildWorkingDir = null;
@@ -1040,6 +1042,10 @@ public partial class MainWindowViewModel : ObservableObject
     // Store path to last build log for "View Log" functionality
     private string? _lastBuildLogPath;
     private string? _lastBuildWorkingDir;
+
+    // Timestamp of last successful build to prevent false-positive "newer files" warnings
+    // caused by filesystem timestamp granularity races after packing the .mod file
+    private DateTime? _lastBuildTimeUtc;
 
     [RelayCommand]
     private void OpenBuildLog()
@@ -1287,6 +1293,12 @@ public partial class MainWindowViewModel : ObservableObject
         try
         {
             var modWriteTime = File.GetLastWriteTimeUtc(modPath);
+
+            // Use the build completion timestamp if it's newer than the .mod file's
+            // filesystem timestamp - prevents false positives from timestamp granularity
+            if (_lastBuildTimeUtc.HasValue && _lastBuildTimeUtc.Value > modWriteTime)
+                modWriteTime = _lastBuildTimeUtc.Value;
+
             var newerFiles = Directory.GetFiles(workingDir)
                 .Count(f => File.GetLastWriteTimeUtc(f) > modWriteTime);
 
