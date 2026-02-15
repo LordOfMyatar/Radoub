@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.18.0-alpha] - 2026-02-15
+**Branch**: `trebuchet/issue-1378` | **PR**: #1381
+
+### Sprint: Build & Test Polish (#1378)
+
+- [x] #1366 - Add 'Open Compiler Log' button to build status
+- [x] #1357 - Compile uncompiled scripts checkbox in Build & Test
+- [x] #1355 - Recompile selected scripts after error
+- [x] #1343 - Add 'Always save before testing' option
+
+---
+
 ## [1.17.0-alpha] - 2026-02-14
 **Branch**: `trebuchet/issue-1351` | **PR**: #1360
 

@@ -60,26 +60,40 @@ public partial class MainWindowViewModel
             // If compile scripts is enabled and compiler is available, compile first
             if (SettingsService.Instance.CompileScriptsEnabled && compilerService.IsCompilerAvailable)
             {
-                if (staleScripts.Count > 0)
+                // "Compile all" = every compilable .nss in working dir; "Only changed" = stale scripts only
+                // Both modes skip include/library files (no void main or StartingConditional)
+                List<string> scriptsToCompile;
+                if (SettingsService.Instance.BuildUncompiledScriptsEnabled)
                 {
-                    BuildStatusText = $"Compiling {staleScripts.Count} scripts...";
+                    scriptsToCompile = Directory.GetFiles(workingDir, "*.nss", SearchOption.TopDirectoryOnly)
+                        .Where(ScriptCompilerService.HasUncommentedEntryPoint)
+                        .ToList();
+                }
+                else
+                {
+                    scriptsToCompile = staleScripts.Select(s => s.NssPath).ToList();
+                }
 
-                    var compileResult = await compilerService.CompileAllScriptsAsync(
-                        workingDir,
-                        compileAll: false,
+                if (scriptsToCompile.Count > 0)
+                {
+                    BuildStatusText = $"Compiling {scriptsToCompile.Count} scripts...";
+
+                    var compileResult = await compilerService.CompileScriptsAsync(
+                        scriptsToCompile,
                         progress: (current, total, name) =>
                         {
                             BuildStatusText = $"Compiling {current}/{total}: {name}";
                         });
 
+                    // Always write a log when compilation runs
+                    var logPath = compilerService.WriteCompilationLog(compileResult, workingDir);
+                    _lastBuildLogPath = logPath;
+                    _lastBuildWorkingDir = workingDir;
+                    HasBuildLog = true;
+
                     if (!compileResult.Success)
                     {
-                        // Write log file for failed compilation
-                        var logPath = compilerService.WriteCompilationLog(compileResult, workingDir);
                         BuildStatusText = $"Build failed: {compileResult.FailedScripts.Count} script(s) failed";
-                        _lastBuildLogPath = logPath;
-                        _lastBuildWorkingDir = workingDir;
-                        HasBuildLog = true;
                         PopulateFailedScripts(compileResult);
                         UnifiedLogger.LogApplication(LogLevel.WARN,
                             $"Compilation failed for {compileResult.FailedScripts.Count} scripts");
@@ -107,9 +121,6 @@ public partial class MainWindowViewModel
 
             _lastBuildTimeUtc = DateTime.UtcNow;
             BuildStatusText = $"Built {resourceCount} files to {Path.GetFileName(modFilePath)}";
-            _lastBuildLogPath = null;
-            _lastBuildWorkingDir = null;
-            HasBuildLog = false;
             ClearFailedScripts();
             StaleScriptCount = 0;
             IsModuleDirty = false;
@@ -128,27 +139,28 @@ public partial class MainWindowViewModel
     }
 
     [RelayCommand]
-    private void OpenBuildLog()
+    private void OpenBuildLogFolder()
     {
-        if (string.IsNullOrEmpty(_lastBuildLogPath) || !File.Exists(_lastBuildLogPath))
+        var logsDir = Path.Combine(Path.GetTempPath(), "Radoub", "BuildLogs");
+
+        if (!Directory.Exists(logsDir))
         {
-            UnifiedLogger.LogApplication(LogLevel.WARN, "No build log available");
+            UnifiedLogger.LogApplication(LogLevel.WARN, "Build log folder does not exist");
             return;
         }
 
         try
         {
-            // Open log file with default text editor
             var startInfo = new System.Diagnostics.ProcessStartInfo
             {
-                FileName = _lastBuildLogPath,
+                FileName = logsDir,
                 UseShellExecute = true
             };
             System.Diagnostics.Process.Start(startInfo)?.Dispose();
         }
         catch (Exception ex)
         {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open build log: {ex.Message}");
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open build log folder: {ex.Message}");
         }
     }
 
@@ -204,6 +216,106 @@ public partial class MainWindowViewModel
         }
 
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Opened {selectedScripts.Count} script(s) in editor");
+    }
+
+    [RelayCommand]
+    private async Task RecompileSelectedScripts()
+    {
+        var selectedScripts = FailedScriptItems.Where(s => s.IsSelected).ToList();
+        if (selectedScripts.Count == 0)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, "No scripts selected to recompile");
+            return;
+        }
+
+        var compilerService = ScriptCompilerService.Instance;
+        if (!compilerService.IsCompilerAvailable)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, "Compiler not available");
+            return;
+        }
+
+        IsBuilding = true;
+
+        try
+        {
+            var scriptPaths = selectedScripts.Select(s => s.FullPath).ToList();
+            BuildStatusText = $"Recompiling {scriptPaths.Count} scripts...";
+
+            var compileResult = await compilerService.CompileScriptsAsync(
+                scriptPaths,
+                progress: (current, total, name) =>
+                {
+                    BuildStatusText = $"Recompiling {current}/{total}: {name}";
+                });
+
+            // Write updated log
+            var workingDir = _lastBuildWorkingDir ?? GetWorkingDirectoryPath() ?? "";
+            var logPath = compilerService.WriteCompilationLog(compileResult, workingDir);
+            _lastBuildLogPath = logPath;
+            _lastBuildWorkingDir = workingDir;
+            HasBuildLog = true;
+
+            // Remove successfully compiled scripts from the failed list
+            var succeededPaths = compileResult.Results
+                .Where(r => r.Success)
+                .Select(r => r.ScriptPath)
+                .ToHashSet();
+
+            var itemsToRemove = FailedScriptItems
+                .Where(item => succeededPaths.Contains(item.FullPath))
+                .ToList();
+            foreach (var item in itemsToRemove)
+                FailedScriptItems.Remove(item);
+
+            // Update error summaries for scripts that still failed
+            foreach (var result in compileResult.Results.Where(r => !r.Success))
+            {
+                var existingItem = FailedScriptItems.FirstOrDefault(i => i.FullPath == result.ScriptPath);
+                if (existingItem != null)
+                {
+                    existingItem.ErrorSummary = result.ErrorMessage?.Split('\n').FirstOrDefault()?.Trim() ?? "Compilation failed";
+                }
+            }
+
+            HasFailedScripts = FailedScriptItems.Count > 0;
+
+            if (!HasFailedScripts)
+            {
+                // All scripts compiled successfully — proceed to pack
+                BuildStatusText = "All scripts compiled — packing module...";
+                var modFilePath = GetModFilePath();
+
+                if (!string.IsNullOrEmpty(workingDir) && !string.IsNullOrEmpty(modFilePath))
+                {
+                    var resourceCount = await Task.Run(() => PackDirectoryToMod(workingDir, modFilePath));
+                    _lastBuildTimeUtc = DateTime.UtcNow;
+                    BuildStatusText = $"Built {resourceCount} files to {Path.GetFileName(modFilePath)}";
+                    StaleScriptCount = 0;
+                    IsModuleDirty = false;
+                    HasNewerWorkingFiles = false;
+                    NewerFileCount = 0;
+
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"Recompile + pack: {resourceCount} resources to {UnifiedLogger.SanitizePath(modFilePath)}");
+                }
+            }
+            else
+            {
+                BuildStatusText = $"Recompile: {succeededPaths.Count} succeeded, {FailedScriptItems.Count} still failing";
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"Recompile partial: {succeededPaths.Count} fixed, {FailedScriptItems.Count} remaining");
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Recompile failed: {ex.Message}");
+            BuildStatusText = $"Recompile failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBuilding = false;
+        }
     }
 
     [RelayCommand]
