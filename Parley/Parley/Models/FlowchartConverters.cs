@@ -70,8 +70,8 @@ namespace DialogEditor.Models
     {
         public static readonly FlowchartNodeBorderConverter Instance = new();
 
-        private static readonly IBrush LinkBorder = BrushManager.GetDisabledBrush(); // Gray
-        private static readonly IBrush RootBorder = BrushManager.GetDisabledBrush(); // Medium gray (structural, not a speaker)
+        private static readonly IBrush LinkBorder = new SolidColorBrush(Color.FromArgb(255, 0x9E, 0x9E, 0x9E)); // Gray
+        private static readonly IBrush RootBorder = new SolidColorBrush(Color.FromArgb(255, 0x75, 0x75, 0x75)); // Medium gray
 
         public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
         {
@@ -100,12 +100,15 @@ namespace DialogEditor.Models
             return CreateDefaultBrush(nodeType);
         }
 
+        private static readonly IBrush DefaultReplyBrush = new SolidColorBrush(Color.FromArgb(255, 0x21, 0x96, 0xF3)); // Blue
+        private static readonly IBrush DefaultEntryBrush = new SolidColorBrush(Color.FromArgb(255, 0xFF, 0x98, 0x00)); // Orange
+
         private static IBrush CreateDefaultBrush(FlowchartNodeType nodeType)
         {
             return nodeType switch
             {
-                FlowchartNodeType.Reply => BrushManager.GetInfoBrush(), // Blue
-                _ => BrushManager.GetWarningBrush() // Orange
+                FlowchartNodeType.Reply => DefaultReplyBrush,
+                _ => DefaultEntryBrush
             };
         }
     }
@@ -233,7 +236,7 @@ namespace DialogEditor.Models
     {
         public static readonly FlowchartNodeSelectionBrushConverter Instance = new();
 
-        private static readonly IBrush SelectionHighlight = BrushManager.GetWarningBrush(); // Amber highlight
+        private static readonly IBrush SelectionHighlight = new SolidColorBrush(Color.FromArgb(255, 0xFF, 0xC1, 0x07)); // Amber highlight
 
         public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
         {
