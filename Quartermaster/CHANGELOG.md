@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.68-alpha] - 2026-02-15
+**Branch**: `quartermaster/issue-1353` | **PR**: #TBD
+
+### Sprint: Inventory & Palette Bug Bash (#1353)
+
+- [ ] #1215 - Item palette should not be editable
+- [ ] #1214 - Items added to backpack should not default to droppable
+- [ ] #1213 - Cannot equip creature skin items from palette
+- [ ] #1211 - Item details panel only works for backpack items
+- [ ] #1210 - Consolidate selection UI - remove duplicate checkbox/highlight
+
+---
+
 ## [0.1.67-alpha] - 2026-02-11
 **Branch**: `radoub/issue-1259` | **PR**: #1311
 
