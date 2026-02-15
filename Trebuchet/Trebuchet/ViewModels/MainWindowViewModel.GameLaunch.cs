@@ -1,4 +1,5 @@
 using System.IO;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
@@ -17,7 +18,7 @@ public partial class MainWindowViewModel
     }
 
     [RelayCommand]
-    private void LaunchTestModule()
+    private async Task LaunchTestModule()
     {
         var moduleName = GameLauncherService.GetModuleNameFromPath(RadoubSettings.Instance.CurrentModulePath);
         if (string.IsNullOrEmpty(moduleName))
@@ -26,8 +27,24 @@ public partial class MainWindowViewModel
             return;
         }
 
-        // Refresh build status so the Launch & Test tab shows current warnings
-        RefreshBuildStatus();
+        // Auto-save before testing if enabled
+        if (SettingsService.Instance.AlwaysSaveBeforeTesting && CanBuildModule)
+        {
+            UnifiedLogger.LogApplication(LogLevel.INFO, "Auto-saving before test launch (AlwaysSaveBeforeTesting)");
+            await BuildModuleAsync();
+
+            // If build failed (failed scripts remain), don't launch
+            if (HasFailedScripts)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, "Auto-save build had failures — not launching");
+                return;
+            }
+        }
+        else
+        {
+            // Refresh build status so the Launch & Test tab shows current warnings
+            RefreshBuildStatus();
+        }
 
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Launching NWN:EE with +TestNewModule \"{moduleName}\"");
         _gameLauncher.LaunchWithModule(moduleName, testMode: true);

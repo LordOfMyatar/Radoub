@@ -213,6 +213,39 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Whether to also compile .nss files with no corresponding .ncs.
+    /// Only applies when CompileScriptsEnabled is true.
+    /// </summary>
+    public bool BuildUncompiledScriptsEnabled
+    {
+        get => SettingsService.Instance.BuildUncompiledScriptsEnabled;
+        set
+        {
+            if (SettingsService.Instance.BuildUncompiledScriptsEnabled != value)
+            {
+                SettingsService.Instance.BuildUncompiledScriptsEnabled = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Whether to auto-run Build &amp; Save before launching a test.
+    /// </summary>
+    public bool AlwaysSaveBeforeTesting
+    {
+        get => SettingsService.Instance.AlwaysSaveBeforeTesting;
+        set
+        {
+            if (SettingsService.Instance.AlwaysSaveBeforeTesting != value)
+            {
+                SettingsService.Instance.AlwaysSaveBeforeTesting = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    /// <summary>
     /// Whether the NWScript compiler is available.
     /// </summary>
     public bool IsCompilerAvailable => ScriptCompilerService.Instance.IsCompilerAvailable;

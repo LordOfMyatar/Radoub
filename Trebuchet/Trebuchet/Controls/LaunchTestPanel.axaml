@@ -50,6 +50,10 @@
                                IsVisible="{Binding !HasBicFilesAvailable}"/>
                 </StackPanel>
 
+                <CheckBox Content="Always save before testing"
+                          IsChecked="{Binding AlwaysSaveBeforeTesting}"
+                          ToolTip.Tip="Automatically Build &amp; Save before launching Test Module"/>
+
                 <TextBlock Text="Game not configured - set Base Game Path in Settings"
                            FontSize="{DynamicResource FontSizeSmall}"
                            Opacity="0.6"
@@ -95,11 +99,6 @@
                                     IsEnabled="{Binding CanTestModule}"
                                     Padding="12,6"
                                     ToolTip.Tip="Launch test without building — game uses the last built .mod"/>
-                            <Button Content="Compiler Log"
-                                    Command="{Binding OpenBuildLogCommand}"
-                                    IsVisible="{Binding HasBuildLog}"
-                                    Padding="12,6"
-                                    ToolTip.Tip="Open compiler error log"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>
@@ -143,6 +142,10 @@
                         </ItemsControl>
 
                         <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Recompile Selected"
+                                    Command="{Binding RecompileSelectedScriptsCommand}"
+                                    Padding="12,6"
+                                    ToolTip.Tip="Recompile only the checked scripts — successes are removed, failures updated"/>
                             <Button Content="Open in Editor"
                                     Command="{Binding OpenFailedScriptsInEditorCommand}"
                                     Padding="12,6"
@@ -172,6 +175,13 @@
                                VerticalAlignment="Center"/>
                 </StackPanel>
 
+                <!-- Compiler Log button - visible when a log exists from last build -->
+                <Button Content="Open Compiler Log"
+                        Command="{Binding OpenBuildLogCommand}"
+                        IsVisible="{Binding HasBuildLog}"
+                        Padding="12,6"
+                        ToolTip.Tip="Open the compiler log from the last build"/>
+
                 <!-- Build progress -->
                 <StackPanel IsVisible="{Binding IsBuilding}" Spacing="8">
                     <ProgressBar IsIndeterminate="True"
@@ -186,13 +196,19 @@
                         <CheckBox Content="Compile scripts before building"
                                   IsChecked="{Binding CompileScriptsEnabled}"
                                   IsEnabled="{Binding IsCompilerAvailable}"
-                                  ToolTip.Tip="Compile NWScript files before building"/>
+                                  ToolTip.Tip="Recompile NWScript files that have changed since last compile"/>
                         <TextBlock Text="(compiler not found)"
                                    FontSize="{DynamicResource FontSizeSmall}"
                                    Opacity="0.4"
                                    VerticalAlignment="Center"
                                    IsVisible="{Binding !IsCompilerAvailable}"/>
                     </StackPanel>
+
+                    <CheckBox Content="Build uncompiled scripts"
+                              IsChecked="{Binding BuildUncompiledScriptsEnabled}"
+                              IsEnabled="{Binding CompileScriptsEnabled}"
+                              Margin="24,0,0,0"
+                              ToolTip.Tip="Also compile .nss files that have no .ncs — skips include/library files"/>
 
                     <!-- Code Editor Path -->
                     <StackPanel Spacing="4">

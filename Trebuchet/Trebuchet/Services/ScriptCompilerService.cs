@@ -396,6 +396,73 @@ public class ScriptCompilerService
     }
 
     /// <summary>
+    /// Compile a specific list of scripts.
+    /// </summary>
+    /// <param name="scriptPaths">Paths to the .nss files to compile</param>
+    /// <param name="progress">Progress callback (current, total, scriptName)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Batch compilation result</returns>
+    public async Task<BatchCompilationResult> CompileScriptsAsync(
+        List<string> scriptPaths,
+        Action<int, int, string>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        var batchResult = new BatchCompilationResult();
+
+        if (!IsCompilerAvailable)
+        {
+            batchResult.ErrorMessage = "Compiler not available";
+            return batchResult;
+        }
+
+        var gamePath = PathHelper.ExpandPath(RadoubSettings.Instance.BaseGameInstallPath);
+
+        batchResult.TotalScripts = scriptPaths.Count;
+
+        if (scriptPaths.Count == 0)
+        {
+            batchResult.Success = true;
+            return batchResult;
+        }
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Compiling {scriptPaths.Count} scripts...");
+
+        for (int i = 0; i < scriptPaths.Count; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var scriptPath = scriptPaths[i];
+            var scriptName = Path.GetFileName(scriptPath);
+
+            progress?.Invoke(i + 1, scriptPaths.Count, scriptName);
+
+            var result = await CompileScriptAsync(scriptPath, gamePath, cancellationToken);
+            batchResult.Results.Add(result);
+
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Compiled {scriptName}: exit={result.ExitCode}, success={result.Success}");
+
+            if (result.Success)
+            {
+                batchResult.SuccessCount++;
+            }
+            else
+            {
+                batchResult.FailedScripts.Add(scriptName);
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"Failed to compile {scriptName}: {result.ErrorMessage}");
+            }
+        }
+
+        batchResult.Success = batchResult.FailedScripts.Count == 0;
+
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"Compilation complete: {batchResult.SuccessCount}/{batchResult.TotalScripts} succeeded");
+
+        return batchResult;
+    }
+
+    /// <summary>
     /// Write compilation results to a log file.
     /// </summary>
     public string WriteCompilationLog(BatchCompilationResult batchResult, string workingDirectory)
