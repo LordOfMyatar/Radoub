@@ -25,6 +25,31 @@
             <TabItem Header="Resource Paths">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="10" Spacing="15">
+                        <!-- Module Configuration (#1325, #1322) -->
+                        <Border BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Module Configuration" FontWeight="Bold"/>
+                                <TextBlock Text="Module selection is managed through Trebuchet (the Radoub launcher). All tools share the same active module."
+                                          TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+
+                                <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto">
+                                    <TextBlock Grid.Column="0" Text="Active Module: " VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock x:Name="CurrentModuleText" Grid.Column="1"
+                                              Text="(checking...)"
+                                              VerticalAlignment="Center"
+                                              TextTrimming="CharacterEllipsis"/>
+                                </Grid>
+
+                                <Button x:Name="ConfigureInTrebuchetButton"
+                                       Content="Configure in Trebuchet..."
+                                       Click="OnConfigureInTrebuchetClick"
+                                       HorizontalAlignment="Left" Padding="10,5"/>
+                                <TextBlock x:Name="TrebuchetStatusText"
+                                          FontSize="{DynamicResource FontSizeSmall}"
+                                          Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            </StackPanel>
+                        </Border>
+
                         <!-- Base Game Installation Path -->
                         <Border BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
