@@ -118,9 +118,20 @@ public class ScriptCompilerService
 
             if (!File.Exists(ncsPath))
             {
-                // No .ncs file — skip. Include/library scripts never produce .ncs,
-                // and many have void main() in #ifdef test stubs. If a script was
-                // meant to compile standalone, it would already have a .ncs file.
+                // No .ncs file — flag only if the script has an uncommented entry point.
+                // Include/library scripts often have "// void main() {}" as a test stub.
+                if (HasUncommentedEntryPoint(nssPath))
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"Stale script (MissingNcs): {scriptName} — has entry point but no .ncs");
+                    staleScripts.Add(new StaleScriptInfo
+                    {
+                        NssPath = nssPath,
+                        NcsPath = ncsPath,
+                        Reason = StaleReason.MissingNcs,
+                        NssModified = nssInfo.LastWriteTime
+                    });
+                }
             }
             else
             {
@@ -145,6 +156,39 @@ public class ScriptCompilerService
             $"Stale script check: {staleScripts.Count} stale of {nssFiles.Length} total .nss files");
 
         return staleScripts;
+    }
+
+    /// <summary>
+    /// Check if a .nss file has an uncommented entry point (void main or int StartingConditional).
+    /// Skips entry points inside // line comments and /* block comments */.
+    /// </summary>
+    private static bool HasUncommentedEntryPoint(string nssPath)
+    {
+        try
+        {
+            foreach (var rawLine in File.ReadLines(nssPath))
+            {
+                var line = rawLine.TrimStart();
+
+                // Skip line comments
+                if (line.StartsWith("//"))
+                    continue;
+
+                // Strip inline comments: everything after // on the line
+                var commentIdx = line.IndexOf("//", StringComparison.Ordinal);
+                if (commentIdx >= 0)
+                    line = line[..commentIdx];
+
+                if (line.Contains("void main", StringComparison.Ordinal)
+                    || line.Contains("int StartingConditional", StringComparison.Ordinal))
+                    return true;
+            }
+            return false;
+        }
+        catch
+        {
+            return true; // If we can't read it, assume it has an entry point to be safe
+        }
     }
 
     /// <summary>
