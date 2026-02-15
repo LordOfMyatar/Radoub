@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.17.0-alpha] - 2026-02-14
-**Branch**: `trebuchet/issue-1351` | **PR**: #TBD
+**Branch**: `trebuchet/issue-1351` | **PR**: #1360
 
 ### Sprint: Settings Migration Cleanup (#1351)
 
