@@ -1,0 +1,121 @@
+name: Radoub PR Checks
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: Build All Tools
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0  # NBGV needs full history
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore Radoub.sln
+
+    - name: Build solution
+      run: dotnet build Radoub.sln --configuration Release --no-restore
+
+  test:
+    name: Unit Tests
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore and build
+      run: dotnet build Radoub.sln --configuration Release
+
+    - name: Run unit tests
+      shell: bash
+      run: |
+        # Run all test projects except integration tests (require Windows display)
+        TEST_PROJECTS=$(find . -name "*.Tests.csproj" -not -path "*/IntegrationTests/*" -not -path "*/Radoub.IntegrationTests/*")
+
+        FAILED=0
+        for project in $TEST_PROJECTS; do
+          echo ""
+          echo "Testing: $project"
+          if ! dotnet test "$project" --configuration Release --no-build --verbosity normal; then
+            FAILED=1
+          fi
+        done
+
+        if [ $FAILED -eq 1 ]; then
+          echo ""
+          echo "❌ Some tests failed"
+          exit 1
+        fi
+
+        echo ""
+        echo "✅ All unit tests passed"
+
+  privacy:
+    name: Privacy Scan
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Check for hardcoded paths
+      run: |
+        echo "Scanning all tools for hardcoded user paths..."
+
+        PRIVACY_PATTERNS=(
+          'C:\\Users\\[A-Za-z]+'
+          'C:/Users/[A-Za-z]+'
+          '/Users/[A-Za-z]+/'
+          '/home/[a-z]+/'
+          'C:\\\\Users\\\\[A-Za-z]+'
+        )
+
+        # Check all source files, exclude NonPublic, test outputs, binaries, and docs
+        FILES=$(git ls-files | grep -vE '(^NonPublic/|/NonPublic/|^\.git/|\.png$|\.jpg$|\.ico$|\.dll$|\.exe$|^Documentation/|^About/)')
+
+        FOUND_ISSUES=0
+
+        for pattern in "${PRIVACY_PATTERNS[@]}"; do
+          if echo "$FILES" | xargs grep -nE "$pattern" 2>/dev/null; then
+            echo "❌ Found hardcoded path matching: $pattern"
+            FOUND_ISSUES=1
+          fi
+        done
+
+        if [ $FOUND_ISSUES -eq 1 ]; then
+          echo ""
+          echo "❌ Privacy check failed - hardcoded user paths found"
+          echo "Use Environment.GetFolderPath() or ~ instead"
+          exit 1
+        fi
+
+        echo "✅ Privacy scan passed - no hardcoded paths found"
