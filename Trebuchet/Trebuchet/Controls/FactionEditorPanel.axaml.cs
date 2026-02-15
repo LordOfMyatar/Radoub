@@ -268,6 +268,7 @@ public partial class FactionEditorPanel : UserControl
         foreach (var f in _viewModel.Factions)
         {
             if (f.Index == selected.Index) continue;
+            if (f.Index == 0) continue; // PC faction cannot be a parent (BioWare spec)
             items.Add(new ParentFactionItem(f.Name, (uint)f.Index));
         }
 
