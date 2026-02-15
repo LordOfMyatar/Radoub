@@ -78,6 +78,10 @@ public partial class App : Application
         // Subscribe to settings changes
         SettingsService.Instance.PropertyChanged += OnSettingsPropertyChanged;
 
+        // Re-apply font settings whenever theme finishes applying (theme resets font sizes
+        // via Dispatcher.Post, so our inline ApplyFontSettings above runs too early)
+        ThemeManager.Instance.ThemeApplied += (_, _) => ApplyFontSettings();
+
         // Clean up old log sessions
         UnifiedLogger.CleanupOldSessions(SettingsService.Instance.LogRetentionSessions);
     }
@@ -148,7 +152,7 @@ public partial class App : Application
                     UnifiedLogger.LogApplication(LogLevel.WARN,
                         $"Failed to apply theme '{SettingsService.Instance.CurrentThemeId}' on settings change");
                 }
-                ApplyFontSettings();
+                // Font reapplication handled by ThemeApplied event (theme applies fonts async via Dispatcher.Post)
                 break;
             case nameof(SettingsService.FontSize):
             case nameof(SettingsService.FontSizeScale):
@@ -157,11 +161,6 @@ public partial class App : Application
                 break;
         }
     }
-
-    /// <summary>
-    /// Re-apply font settings after theme changes (theme resets font sizes to defaults).
-    /// </summary>
-    public void ReapplyFontSettings() => ApplyFontSettings();
 
     private void ApplyFontSettings()
     {
@@ -183,7 +182,7 @@ public partial class App : Application
             Resources["FontSizeXLarge"] = baseSize + 6;
             Resources["FontSizeTitle"] = baseSize + 10;
 
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font size: {baseSize:F0}pt (base {settings.FontSize} × {settings.FontSizeScale:P0})");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Applied font size: {baseSize:F0}pt (base {settings.FontSize} × {settings.FontSizeScale:P0})");
         }
 
         if (Resources != null)
