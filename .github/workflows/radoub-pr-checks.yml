@@ -99,13 +99,13 @@ jobs:
           'C:\\\\Users\\\\[A-Za-z]+'
         )
 
-        # Check all source files, exclude NonPublic, test outputs, binaries, and docs
-        FILES=$(git ls-files | grep -vE '(^NonPublic/|/NonPublic/|^\.git/|\.png$|\.jpg$|\.ico$|\.dll$|\.exe$|^Documentation/|^About/)')
+        # Check all source files, exclude NonPublic, test outputs, binaries, docs, and bundled tools
+        FILES=$(git ls-files | grep -vE '(^NonPublic/|/NonPublic/|^\.git/|\.png$|\.jpg$|\.ico$|\.dll$|\.exe$|^Documentation/|^About/|/tools/)')
 
         FOUND_ISSUES=0
 
         for pattern in "${PRIVACY_PATTERNS[@]}"; do
-          if echo "$FILES" | xargs grep -nE "$pattern" 2>/dev/null; then
+          if echo "$FILES" | xargs grep -InE "$pattern" 2>/dev/null; then
             echo "❌ Found hardcoded path matching: $pattern"
             FOUND_ISSUES=1
           fi

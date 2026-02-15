@@ -649,8 +649,9 @@ public class BicReaderTests
     [Fact]
     public void CompareNames_QTestVsDana_ShowsNameStructureDifference()
     {
-        var qtestPath = @"C:\Users\Sheri\Documents\Neverwinter Nights\localvault\qtest.bic";
-        var danaPath = @"C:\Users\Sheri\Documents\Neverwinter Nights\localvault\dana.bic";
+        var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        var qtestPath = Path.Combine(docs, "Neverwinter Nights", "localvault", "qtest.bic");
+        var danaPath = Path.Combine(docs, "Neverwinter Nights", "localvault", "dana.bic");
 
         if (!File.Exists(qtestPath) || !File.Exists(danaPath))
         {

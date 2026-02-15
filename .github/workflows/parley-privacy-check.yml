@@ -44,8 +44,8 @@ jobs:
             echo ""
             echo "Checking pattern: $pattern"
 
-            # Use grep with Perl regex for better pattern matching
-            if echo "$FILES" | xargs grep -nE "$pattern" 2>/dev/null; then
+            # Use grep with -I to skip binary files
+            if echo "$FILES" | xargs grep -InE "$pattern" 2>/dev/null; then
               echo "❌ Found hardcoded path matching pattern: $pattern"
               FOUND_ISSUES=1
             fi
