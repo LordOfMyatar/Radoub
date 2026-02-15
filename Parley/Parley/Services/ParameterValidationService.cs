@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -177,7 +178,7 @@ namespace DialogEditor.Services
                 return brush;
             }
             // Fallback to standard red
-            return Brushes.Red;
+            return BrushManager.GetErrorBrush();
         }
 
         /// <summary>
@@ -194,7 +195,7 @@ namespace DialogEditor.Services
                 return brush;
             }
             // Fallback to standard green
-            return Brushes.LightGreen;
+            return BrushManager.GetSuccessBrush();
         }
 
         /// <summary>

@@ -89,7 +89,7 @@
                                  Margin="0,5"
                                  Checked="OnHighlightTypeChanged">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Action" FontWeight="Bold" Foreground="#00FF00" Width="80"/>
+                            <TextBlock Text="Action" FontWeight="Bold" Foreground="{DynamicResource ThemeSuccess}" Width="80"/>
                             <TextBlock Text="[Character actions]" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                         </StackPanel>
                     </RadioButton>
@@ -106,7 +106,7 @@
                                  Margin="0,5"
                                  Checked="OnHighlightTypeChanged">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Highlight" FontWeight="Bold" Foreground="#0080FF" Width="80"/>
+                            <TextBlock Text="Highlight" FontWeight="Bold" Foreground="{DynamicResource ThemeInfo}" Width="80"/>
                             <TextBlock Text="[Important text]" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                         </StackPanel>
                     </RadioButton>
@@ -117,7 +117,7 @@
                                  Margin="0,5"
                                  Checked="OnHighlightTypeChanged">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Skill Check" FontWeight="Bold" Foreground="#FF0000" Width="80"/>
+                            <TextBlock Text="Skill Check" FontWeight="Bold" Foreground="{DynamicResource ThemeError}" Width="80"/>
                             <ComboBox x:Name="SkillCheckComboBox" MinWidth="150" Margin="10,0,0,0"
                                       SelectionChanged="OnSkillCheckChanged">
                                 <ComboBoxItem Content="Animal Empathy"/>
@@ -160,11 +160,11 @@
                                        TextWrapping="Wrap"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                        FontFamily="Consolas"
-                                       FontSize="11"/>
+                                       FontSize="{DynamicResource FontSizeSmall}"/>
                             <TextBlock x:Name="HighlightPreviewFormatted"
                                        Text="[Chef waves]"
                                        TextWrapping="Wrap"
-                                       Foreground="#00FF00"
+                                       Foreground="{DynamicResource ThemeSuccess}"
                                        FontWeight="Medium"
                                        Margin="0,10,0,0"/>
                         </StackPanel>
@@ -183,7 +183,7 @@
 
                     <!-- Info Text -->
                     <TextBlock Grid.Row="0" TextWrapping="Wrap" Margin="0,0,0,10"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" FontSize="11">
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" FontSize="{DynamicResource FontSizeSmall}">
                         Custom color tokens require matching SetCustomToken() calls in your module scripts.
                         Configure colors in ~/Radoub/token-colors.json
                     </TextBlock>
@@ -219,7 +219,7 @@
                                                Text="{Binding OpenToken}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                                FontFamily="Consolas"
-                                               FontSize="10"
+                                               FontSize="{DynamicResource FontSizeXSmall}"
                                                VerticalAlignment="Center"/>
                                 </Grid>
                             </DataTemplate>
@@ -237,7 +237,7 @@
                                        TextWrapping="Wrap"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                        FontFamily="Consolas"
-                                       FontSize="11"/>
+                                       FontSize="{DynamicResource FontSizeSmall}"/>
                             <TextBlock x:Name="ColorPreviewSample"
                                        Text="Sample Text"
                                        TextWrapping="Wrap"

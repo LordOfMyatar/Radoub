@@ -11,6 +11,7 @@ using DialogEditor.Models;
 using DialogEditor.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 
 namespace DialogEditor.Views
 {
@@ -446,7 +447,7 @@ namespace DialogEditor.Views
             {
                 Text = "Install Manifest in the same folder as Parley for automatic detection.",
                 TextWrapping = Avalonia.Media.TextWrapping.Wrap,
-                Foreground = Avalonia.Media.Brushes.Gray,
+                Foreground = BrushManager.GetDisabledBrush(),
                 FontStyle = Avalonia.Media.FontStyle.Italic
             });
 

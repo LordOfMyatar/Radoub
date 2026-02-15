@@ -8,6 +8,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using DialogEditor.Services;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
 using ThemeManifest = Radoub.UI.Models.ThemeManifest;
 using EasterEggService = Radoub.UI.Services.EasterEggService;
@@ -126,7 +127,7 @@ namespace DialogEditor.Views.Controllers
                 if (hint != null && missing.Count > 0)
                 {
                     hint.Text = $"🔒 Still missing: {string.Join(", ", missing)}";
-                    hint.Foreground = Avalonia.Media.Brushes.Gray;
+                    hint.Foreground = BrushManager.GetDisabledBrush();
                 }
                 return;
             }
@@ -154,7 +155,7 @@ namespace DialogEditor.Views.Controllers
             if (hint != null)
             {
                 hint.Text = "🤢🌊 You found it! Enjoy the chaos...";
-                hint.Foreground = Avalonia.Media.Brushes.DarkOrange;
+                hint.Foreground = BrushManager.GetWarningBrush();
             }
 
             UnifiedLogger.LogApplication(LogLevel.DEBUG, "Easter egg theme activated!");

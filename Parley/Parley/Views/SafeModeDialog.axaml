@@ -20,7 +20,7 @@
 
         <!-- Header with info icon -->
         <TextBlock Grid.Row="0" Text="SafeMode Recovery"
-                   FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
+                   FontSize="{DynamicResource FontSizeLarge}" FontWeight="Bold" Margin="0,0,0,15"/>
 
         <!-- Status message -->
         <TextBlock Grid.Row="1" TextWrapping="Wrap" Margin="0,0,0,15">

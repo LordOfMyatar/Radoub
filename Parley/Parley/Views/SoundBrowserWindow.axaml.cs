@@ -37,8 +37,8 @@ namespace DialogEditor.Views
         public string? SelectedSound => _selectedSound;
 
         // Theme-aware brush helpers via BrushManager
-        private IBrush ForegroundBrush => GetResourceBrush("SystemControlForegroundBaseHighBrush") ?? Brushes.White;
-        private IBrush SecondaryBrush => GetResourceBrush("SystemControlForegroundBaseMediumBrush") ?? Brushes.Gray;
+        private IBrush ForegroundBrush => GetResourceBrush("SystemControlForegroundBaseHighBrush") ?? BrushManager.GetInfoBrush(this);
+        private IBrush SecondaryBrush => GetResourceBrush("SystemControlForegroundBaseMediumBrush") ?? BrushManager.GetDisabledBrush(this);
         private IBrush WarningBrush => BrushManager.GetWarningBrush(this);
         private IBrush ErrorBrush => BrushManager.GetErrorBrush(this);
         private IBrush SuccessBrush => BrushManager.GetSuccessBrush(this);

@@ -509,27 +509,9 @@ namespace DialogEditor.Views
 
         #region Theme-Aware Colors
 
-        private IBrush GetErrorBrush()
-        {
-            var app = Application.Current;
-            if (app?.Resources.TryGetResource("ThemeError", ThemeVariant.Default, out var errorBrush) == true
-                && errorBrush is IBrush brush)
-            {
-                return brush;
-            }
-            return Brushes.Red;
-        }
+        private IBrush GetErrorBrush() => BrushManager.GetErrorBrush(this);
 
-        private IBrush GetSuccessBrush()
-        {
-            var app = Application.Current;
-            if (app?.Resources.TryGetResource("ThemeSuccess", ThemeVariant.Default, out var successBrush) == true
-                && successBrush is IBrush brush)
-            {
-                return brush;
-            }
-            return Brushes.Green;
-        }
+        private IBrush GetSuccessBrush() => BrushManager.GetSuccessBrush(this);
 
         #endregion
     }

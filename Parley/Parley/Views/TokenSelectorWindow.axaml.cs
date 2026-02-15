@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Radoub.Formats.Tokens;
+using Radoub.UI.Services;
 
 namespace DialogEditor.Views
 {
@@ -173,7 +174,7 @@ namespace DialogEditor.Views
 
             string type;
             string content;
-            string color;
+            IBrush brush;
 
             if (ActionRadio.IsChecked == true)
             {
@@ -181,7 +182,7 @@ namespace DialogEditor.Views
                 content = string.IsNullOrWhiteSpace(ActionTextBox.Text)
                     ? "[Action text]"
                     : $"[{ActionTextBox.Text}]";
-                color = "#00FF00";
+                brush = BrushManager.GetSuccessBrush();
             }
             else if (HighlightRadio.IsChecked == true)
             {
@@ -189,19 +190,19 @@ namespace DialogEditor.Views
                 content = string.IsNullOrWhiteSpace(ActionTextBox.Text)
                     ? "[Highlighted text]"
                     : $"[{ActionTextBox.Text}]";
-                color = "#0080FF";
+                brush = BrushManager.GetInfoBrush();
             }
             else // Check
             {
                 type = "StartCheck";
                 var skill = (SkillCheckComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Lore";
                 content = $"[{skill}]";
-                color = "#FF0000";
+                brush = BrushManager.GetErrorBrush();
             }
 
             HighlightPreviewRaw.Text = $"<{type}>{content}</Start>";
             HighlightPreviewFormatted.Text = content;
-            HighlightPreviewFormatted.Foreground = new SolidColorBrush(Color.Parse(color));
+            HighlightPreviewFormatted.Foreground = brush;
         }
 
         private void OnColorSelected(object? sender, SelectionChangedEventArgs e)
@@ -311,6 +312,6 @@ namespace DialogEditor.Views
         public string Name { get; set; } = "";
         public string OpenToken { get; set; } = "";
         public string CloseToken { get; set; } = "";
-        public IBrush HexColor { get; set; } = Brushes.White;
+        public IBrush HexColor { get; set; } = BrushManager.GetInfoBrush();
     }
 }

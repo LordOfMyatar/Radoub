@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Media;
 using Radoub.Formats.Tokens;
+using Radoub.UI.Services;
 
 namespace DialogEditor.Controls
 {
@@ -33,35 +34,35 @@ namespace DialogEditor.Controls
         /// </summary>
         public static readonly StyledProperty<IBrush> StandardTokenBrushProperty =
             AvaloniaProperty.Register<TokenTextBlock, IBrush>(nameof(StandardTokenBrush),
-                new SolidColorBrush(Color.Parse("#00BCD4"))); // Cyan
+                BrushManager.GetInfoBrush());
 
         /// <summary>
         /// Color for CUSTOM tokens.
         /// </summary>
         public static readonly StyledProperty<IBrush> CustomTokenBrushProperty =
             AvaloniaProperty.Register<TokenTextBlock, IBrush>(nameof(CustomTokenBrush),
-                new SolidColorBrush(Color.Parse("#9C27B0"))); // Purple
+                BrushManager.GetDisabledBrush());
 
         /// <summary>
         /// Color for Action highlight tokens.
         /// </summary>
         public static readonly StyledProperty<IBrush> ActionTokenBrushProperty =
             AvaloniaProperty.Register<TokenTextBlock, IBrush>(nameof(ActionTokenBrush),
-                new SolidColorBrush(Color.Parse("#00FF00"))); // Green
+                BrushManager.GetSuccessBrush());
 
         /// <summary>
         /// Color for Check highlight tokens.
         /// </summary>
         public static readonly StyledProperty<IBrush> CheckTokenBrushProperty =
             AvaloniaProperty.Register<TokenTextBlock, IBrush>(nameof(CheckTokenBrush),
-                new SolidColorBrush(Color.Parse("#FF0000"))); // Red
+                BrushManager.GetErrorBrush());
 
         /// <summary>
         /// Color for Highlight tokens.
         /// </summary>
         public static readonly StyledProperty<IBrush> HighlightTokenBrushProperty =
             AvaloniaProperty.Register<TokenTextBlock, IBrush>(nameof(HighlightTokenBrush),
-                new SolidColorBrush(Color.Parse("#0080FF"))); // Blue
+                BrushManager.GetInfoBrush());
 
         public string? TokenText
         {
@@ -191,7 +192,7 @@ namespace DialogEditor.Controls
 
                 ColorToken color => new Run(color.DisplayText)
                 {
-                    Foreground = new SolidColorBrush(Color.FromRgb(color.Red, color.Green, color.Blue))
+                    Foreground = new SolidColorBrush(Color.FromArgb(255, color.Red, color.Green, color.Blue))
                 },
 
                 UserColorToken userColor => CreateUserColorRun(userColor),

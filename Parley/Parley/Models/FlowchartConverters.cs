@@ -7,6 +7,7 @@ using Avalonia.Data.Converters;
 using Avalonia.Media;
 using Avalonia.Styling;
 using DialogEditor.Utils;
+using Radoub.UI.Services;
 
 namespace DialogEditor.Models
 {
@@ -21,8 +22,8 @@ namespace DialogEditor.Models
         public static readonly FlowchartNodeBackgroundConverter Instance = new();
 
         // Fallback colors if theme resources aren't available
-        private static readonly Color LightBgColor = Color.Parse("#FAFAFA"); // Off-white
-        private static readonly Color DarkBgColor = Color.Parse("#2D2D2D"); // Dark gray
+        private static readonly Color LightBgColor = Color.FromArgb(255, 0xFA, 0xFA, 0xFA); // Off-white
+        private static readonly Color DarkBgColor = Color.FromArgb(255, 0x2D, 0x2D, 0x2D); // Dark gray
 
         public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
         {
@@ -69,8 +70,8 @@ namespace DialogEditor.Models
     {
         public static readonly FlowchartNodeBorderConverter Instance = new();
 
-        private static readonly IBrush LinkBorder = new SolidColorBrush(Color.Parse("#9E9E9E")); // Gray
-        private static readonly IBrush RootBorder = new SolidColorBrush(Color.Parse("#757575")); // Medium gray (structural, not a speaker)
+        private static readonly IBrush LinkBorder = BrushManager.GetDisabledBrush(); // Gray
+        private static readonly IBrush RootBorder = BrushManager.GetDisabledBrush(); // Medium gray (structural, not a speaker)
 
         public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
         {
@@ -92,22 +93,19 @@ namespace DialogEditor.Models
             bool isPC = nodeType == FlowchartNodeType.Reply;
             string hexColor = SpeakerVisualHelper.GetSpeakerColor(speaker, isPC);
 
-            try
-            {
-                return new SolidColorBrush(Color.Parse(hexColor));
-            }
-            catch
-            {
-                return CreateDefaultBrush(nodeType);
-            }
+            // Dynamic speaker color from SpeakerVisualHelper (theme-aware)
+            if (Color.TryParse(hexColor, out var speakerColor))
+                return new SolidColorBrush(speakerColor);
+
+            return CreateDefaultBrush(nodeType);
         }
 
         private static IBrush CreateDefaultBrush(FlowchartNodeType nodeType)
         {
             return nodeType switch
             {
-                FlowchartNodeType.Reply => new SolidColorBrush(Color.Parse("#2196F3")), // Blue
-                _ => new SolidColorBrush(Color.Parse("#FF9800")) // Orange
+                FlowchartNodeType.Reply => BrushManager.GetInfoBrush(), // Blue
+                _ => BrushManager.GetWarningBrush() // Orange
             };
         }
     }
@@ -235,7 +233,7 @@ namespace DialogEditor.Models
     {
         public static readonly FlowchartNodeSelectionBrushConverter Instance = new();
 
-        private static readonly IBrush SelectionHighlight = new SolidColorBrush(Color.Parse("#FFC107")); // Amber highlight
+        private static readonly IBrush SelectionHighlight = BrushManager.GetWarningBrush(); // Amber highlight
 
         public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
         {

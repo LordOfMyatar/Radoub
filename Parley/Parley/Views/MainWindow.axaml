@@ -367,7 +367,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Node Text" FontWeight="Bold"/>
                         <Button Grid.Column="2" x:Name="InsertTokenButton" Content="Token..."
-                                Padding="8,2" FontSize="11"
+                                Padding="8,2" FontSize="{DynamicResource FontSizeSmall}"
                                 Click="OnInsertTokenClick"
                                 ToolTip.Tip="Insert a game token (Ctrl+T)"/>
                     </Grid>
@@ -695,17 +695,17 @@
                                     <!-- Soundset info and preview -->
                                     <StackPanel Orientation="Vertical" VerticalAlignment="Top">
                                         <TextBlock x:Name="SoundsetInfoTextBlock"
-                                                   FontSize="12"
+                                                   FontSize="{DynamicResource FontSizeXSmall}"
                                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                                    TextWrapping="Wrap"
                                                    MaxWidth="150"
                                                    ToolTip.Tip="Soundset info from creature lookup"/>
                                         <!-- Soundset preview controls -->
                                         <StackPanel x:Name="SoundsetPreviewPanel" Orientation="Horizontal" Margin="0,8,0,0" IsVisible="False">
-                                            <ComboBox x:Name="SoundsetTypeComboBox" MinWidth="100" Height="24" FontSize="11"
+                                            <ComboBox x:Name="SoundsetTypeComboBox" MinWidth="100" Height="24" FontSize="{DynamicResource FontSizeSmall}"
                                                       ToolTip.Tip="Select sound type to preview"/>
                                             <Button x:Name="SoundsetPlayButton" Content="Play" Width="40" Height="24" Margin="4,0,0,0"
-                                                    FontSize="11" Click="OnSoundsetPlayClick"
+                                                    FontSize="{DynamicResource FontSizeSmall}" Click="OnSoundsetPlayClick"
                                                     ToolTip.Tip="Play selected soundset sound"/>
                                         </StackPanel>
                                     </StackPanel>
@@ -853,7 +853,7 @@
                             <TextBlock Text="(Auto-clears after 30 days)"
                                       VerticalAlignment="Center"
                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                      FontSize="11"
+                                      FontSize="{DynamicResource FontSizeSmall}"
                                       Margin="10,0,0,0"/>
                         </StackPanel>
 
@@ -896,12 +896,12 @@
                                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                                                     <TextBlock Text="{Binding Speaker}"
                                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                                              FontSize="11"
+                                                              FontSize="{DynamicResource FontSizeSmall}"
                                                               Margin="0,0,8,0"
                                                               IsVisible="{Binding Speaker, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
                                                     <TextBlock Text="{Binding TimeAgo}"
                                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                                              FontSize="11"
+                                                              FontSize="{DynamicResource FontSizeSmall}"
                                                               FontStyle="Italic"/>
                                                 </StackPanel>
                                             </StackPanel>
@@ -931,7 +931,7 @@
                                 <ComboBoxItem Content="Trace"/>
                             </ComboBox>
                             <TextBlock Text="(Last 1000 entries)" VerticalAlignment="Center"
-                                      Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" FontSize="11" Margin="10,0,0,0"/>
+                                      Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" FontSize="{DynamicResource FontSizeSmall}" Margin="10,0,0,0"/>
                         </StackPanel>
 
 
