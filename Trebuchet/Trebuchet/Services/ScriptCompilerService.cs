@@ -114,6 +114,7 @@ public class ScriptCompilerService
         {
             var ncsPath = Path.ChangeExtension(nssPath, ".ncs");
             var nssInfo = new FileInfo(nssPath);
+            var scriptName = Path.GetFileName(nssPath);
 
             if (!File.Exists(ncsPath))
             {
@@ -121,6 +122,8 @@ public class ScriptCompilerService
                 // Include/library scripts (no void main or int StartingConditional) never produce .ncs
                 if (HasEntryPoint(nssPath))
                 {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"Stale script (MissingNcs): {scriptName} — has entry point but no .ncs");
                     staleScripts.Add(new StaleScriptInfo
                     {
                         NssPath = nssPath,
@@ -135,7 +138,8 @@ public class ScriptCompilerService
                 var ncsInfo = new FileInfo(ncsPath);
                 if (nssInfo.LastWriteTime > ncsInfo.LastWriteTime)
                 {
-                    // Source is newer than compiled
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"Stale script (SourceNewer): {scriptName} — .nss {nssInfo.LastWriteTime:HH:mm:ss} > .ncs {ncsInfo.LastWriteTime:HH:mm:ss}");
                     staleScripts.Add(new StaleScriptInfo
                     {
                         NssPath = nssPath,
@@ -147,6 +151,9 @@ public class ScriptCompilerService
                 }
             }
         }
+
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"Stale script check: {staleScripts.Count} stale of {nssFiles.Length} total .nss files");
 
         return staleScripts;
     }
