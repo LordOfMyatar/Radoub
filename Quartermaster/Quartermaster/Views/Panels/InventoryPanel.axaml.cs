@@ -215,6 +215,9 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
     private void OnEquipmentSlotClicked(object? sender, EquipmentSlotViewModel slot)
     {
         EquipmentSlotClicked?.Invoke(this, slot);
+
+        // Show equipped item details in the details panel
+        UpdateItemDetails(slot.EquippedItem);
     }
 
     private void OnEquipmentSlotDoubleClicked(object? sender, EquipmentSlotViewModel slot)
@@ -327,16 +330,13 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Deletes checked or selected backpack items. Called by button and Delete key.
+    /// Deletes selected backpack items. Called by button and Delete key.
     /// </summary>
     public void DeleteSelectedBackpackItems()
     {
         if (_backpackList == null) return;
 
-        var toDelete = _backpackList.CheckedItems.Count > 0
-            ? _backpackList.CheckedItems
-            : _backpackList.SelectedItems;
-
+        var toDelete = _backpackList.SelectedItems;
         if (toDelete.Count == 0) return;
 
         foreach (var item in toDelete.ToArray())
@@ -393,12 +393,9 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
         HasPaletteSelection = _paletteList?.SelectedItems.Count > 0;
         UnifiedLogger.LogUI(LogLevel.DEBUG, $"Palette selection changed: {_paletteList?.SelectedItems.Count ?? 0} items");
 
-        // Show palette item details when user clicks in palette
+        // Show palette item details (or clear if nothing selected)
         var paletteSelected = _paletteList?.SelectedItems.FirstOrDefault();
-        if (paletteSelected != null)
-        {
-            UpdateItemDetails(paletteSelected);
-        }
+        UpdateItemDetails(paletteSelected);
     }
 
     private void OnPaletteDragStarting(object? sender, ItemDragEventArgs e)
