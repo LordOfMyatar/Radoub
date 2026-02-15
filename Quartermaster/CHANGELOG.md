@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.68-alpha] - 2026-02-15
-**Branch**: `quartermaster/issue-1353` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1353` | **PR**: #1379
 
 ### Sprint: Inventory & Palette Bug Bash (#1353)
 
