@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.16.0-alpha] - 2026-02-14
-**Branch**: `trebuchet/issue-1354` | **PR**: #TBD
+**Branch**: `trebuchet/issue-1354` | **PR**: #1359
 
 ### Sprint: ViewModel Tech Debt (#1354)
 
