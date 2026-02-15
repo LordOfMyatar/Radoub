@@ -131,17 +131,22 @@ The script handles:
 
 When the tech debt scan reports large files (>500 lines), **do NOT assume they are pre-existing**. For each flagged file:
 
-1. Search the GitHub issue cache for an existing tech debt issue:
+1. Search the GitHub issue cache for an existing tech debt issue (includes both open and closed):
    ```bash
    pwsh -File .claude/scripts/Get-CacheData.ps1 -View search -Query "[filename without path]"
    ```
 
-2. **If an issue exists**: Report as tracked tech debt with issue number
+2. **If an open issue exists**: Report as tracked tech debt with issue number
    ```
    ⚠️ Tech debt: MainWindowViewModel.cs (1288 lines) - tracked in #1335
    ```
 
-3. **If NO issue exists**: Flag as **untracked tech debt** and create an issue:
+3. **If a closed issue exists**: The file was previously tracked. Do NOT create a duplicate.
+   ```
+   ⚠️ Tech debt: [filename] ([N] lines) - previously tracked in #XXXX (closed)
+   ```
+
+4. **If NO issue exists** (open or closed): Flag as **untracked tech debt** and create an issue:
    ```bash
    gh issue create --title "[Tool] Tech Debt: Split [filename] ([N] lines)" \
      --label "tech-debt,[Tool]" \
@@ -152,7 +157,7 @@ When the tech debt scan reports large files (>500 lines), **do NOT assume they a
    ⚠️ Tech debt: MainWindowViewModel.cs (1288 lines) - NEW issue created: #XXXX
    ```
 
-**Rule**: A tech debt warning is only "pre-existing" if a GitHub issue tracks it. No issue = new finding that needs one.
+**Rule**: Always search the cache first. A tech debt warning is only "new" if no GitHub issue (open or closed) tracks it. Never create duplicates of existing issues.
 
 ### Step 4: CHANGELOG and Version Validation
 

@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.16.0-alpha] - 2026-02-14
+**Branch**: `trebuchet/issue-1354` | **PR**: #1359
+
+### Sprint: ViewModel Tech Debt (#1354)
+
+- [x] #1348 - Split MainWindowViewModel.cs (1367→5 partial classes)
+- [x] #1303 - Decompose ModuleEditorViewModel.cs (1676→9 files including VariableViewModel extraction)
+
+---
+
 ## [1.15.0-alpha] - 2026-02-14
 **Branch**: `trebuchet/issue-1350` | **PR**: #1356
 
