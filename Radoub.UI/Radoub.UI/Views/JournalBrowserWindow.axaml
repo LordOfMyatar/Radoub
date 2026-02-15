@@ -97,7 +97,7 @@
                     BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                     BorderThickness="1"
                     Padding="5"
-                    Background="{DynamicResource ThemeSidebar}">
+                    Background="{DynamicResource ThemeBackground}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -114,7 +114,7 @@
                     <ListBox Grid.Row="1" x:Name="JournalListBox"
                              SelectionChanged="OnJournalSelected"
                              DoubleTapped="OnJournalDoubleClicked"
-                             Background="{DynamicResource ThemeSidebar}">
+                             Background="Transparent">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding Name}"/>
