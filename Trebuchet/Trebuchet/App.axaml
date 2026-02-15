@@ -59,6 +59,11 @@
             <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
         </Style>
 
+        <Style Selector="ToolTip">
+            <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+        </Style>
+
         <!-- Scrollbar visibility - always visible -->
         <Style Selector="ScrollBar">
             <Setter Property="AllowAutoHide" Value="False"/>
