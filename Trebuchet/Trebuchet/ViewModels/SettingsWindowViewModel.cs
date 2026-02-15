@@ -46,12 +46,6 @@ public partial class SettingsWindowViewModel : ObservableObject
     public bool HasNwnDocumentsValidation => !string.IsNullOrEmpty(NwnDocumentsValidation);
 
     [ObservableProperty]
-    private string _selectedLanguage = "English";
-
-    [ObservableProperty]
-    private string _selectedGender = "Male";
-
-    [ObservableProperty]
     private string _selectedTheme = "Light";
 
     [ObservableProperty]
@@ -71,51 +65,9 @@ public partial class SettingsWindowViewModel : ObservableObject
 
     public string LogRetentionText => $"{LogRetentionSessions} session{(LogRetentionSessions == 1 ? "" : "s")}";
 
-    // Build settings
-    [ObservableProperty]
-    private bool _compileScriptsEnabled;
-
-    [ObservableProperty]
-    private string _codeEditorPath = "";
-
-    public bool IsCompilerAvailable => ScriptCompilerService.Instance.IsCompilerAvailable;
-
-    public string CompilerStatusText
-    {
-        get
-        {
-            var compilerName = GetPlatformCompilerName();
-            return IsCompilerAvailable
-                ? $"Compiler found: {compilerName}"
-                : $"Compiler not found. Place {compilerName} in Trebuchet/tools/ folder.";
-        }
-    }
-
-    private static string GetPlatformCompilerName()
-    {
-        if (OperatingSystem.IsWindows())
-            return "nwn_script_comp.exe";
-        else if (OperatingSystem.IsMacOS())
-            return "nwn_script_comp_macos";
-        else if (OperatingSystem.IsLinux())
-            return "nwn_script_comp_linux";
-        else
-            return "nwn_script_comp";
-    }
-
     public ObservableCollection<string> AvailableLogLevels { get; } = new()
     {
         "TRACE", "DEBUG", "INFO", "WARN", "ERROR"
-    };
-
-    public ObservableCollection<string> AvailableLanguages { get; } = new()
-    {
-        "English", "French", "German", "Italian", "Spanish", "Polish", "Korean", "Chinese Traditional", "Chinese Simplified", "Japanese"
-    };
-
-    public ObservableCollection<string> AvailableGenders { get; } = new()
-    {
-        "Male", "Female"
     };
 
     public ObservableCollection<string> AvailableThemes { get; } = new();
@@ -157,17 +109,11 @@ public partial class SettingsWindowViewModel : ObservableObject
 
         GameInstallPath = sharedSettings.BaseGameInstallPath ?? "";
         NwnDocumentsPath = sharedSettings.NeverwinterNightsPath ?? "";
-        SelectedLanguage = sharedSettings.TlkLanguage ?? "English";
-        SelectedGender = sharedSettings.TlkUseFemale ? "Female" : "Male";
         FontSizeScale = localSettings.FontSizeScale;
 
         // Logging settings
         LogRetentionSessions = localSettings.LogRetentionSessions;
         SelectedLogLevel = localSettings.CurrentLogLevel.ToString();
-
-        // Build settings
-        CompileScriptsEnabled = localSettings.CompileScriptsEnabled;
-        CodeEditorPath = localSettings.CodeEditorPath;
 
         // Shared theme setting
         UseSharedTheme = sharedSettings.UseSharedTheme;
@@ -316,26 +262,6 @@ public partial class SettingsWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task BrowseCodeEditorPath()
-    {
-        var files = await _window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
-        {
-            Title = "Select Code Editor Executable",
-            AllowMultiple = false,
-            FileTypeFilter = new[]
-            {
-                new FilePickerFileType("Executables") { Patterns = new[] { "*.exe" } },
-                new FilePickerFileType("All Files") { Patterns = new[] { "*" } }
-            }
-        });
-
-        if (files.Count > 0)
-        {
-            CodeEditorPath = files[0].Path.LocalPath;
-        }
-    }
-
-    [RelayCommand]
     private void Save()
     {
         var sharedSettings = RadoubSettings.Instance;
@@ -343,8 +269,6 @@ public partial class SettingsWindowViewModel : ObservableObject
 
         sharedSettings.BaseGameInstallPath = GameInstallPath;
         sharedSettings.NeverwinterNightsPath = NwnDocumentsPath;
-        sharedSettings.TlkLanguage = SelectedLanguage;
-        sharedSettings.TlkUseFemale = SelectedGender == "Female";
         localSettings.FontSizeScale = FontSizeScale;
 
         // Logging settings
@@ -353,10 +277,6 @@ public partial class SettingsWindowViewModel : ObservableObject
         {
             localSettings.CurrentLogLevel = logLevel;
         }
-
-        // Build settings
-        localSettings.CompileScriptsEnabled = CompileScriptsEnabled;
-        localSettings.CodeEditorPath = CodeEditorPath;
 
         // Shared theme setting
         sharedSettings.UseSharedTheme = UseSharedTheme;

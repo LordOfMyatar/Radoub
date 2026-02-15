@@ -400,10 +400,7 @@ public class ScriptCompilerService
     /// </summary>
     public string WriteCompilationLog(BatchCompilationResult batchResult, string workingDirectory)
     {
-        var logsDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            "Radoub", "Trebuchet", "logs");
-
+        var logsDir = Path.Combine(Path.GetTempPath(), "Radoub", "BuildLogs");
         Directory.CreateDirectory(logsDir);
 
         var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
@@ -411,7 +408,7 @@ public class ScriptCompilerService
 
         var log = new StringBuilder();
         log.AppendLine($"NWScript Compilation Log - {DateTime.Now}");
-        log.AppendLine($"Working Directory: {workingDirectory}");
+        log.AppendLine($"Working Directory: {UnifiedLogger.SanitizePath(workingDirectory)}");
         log.AppendLine($"Total Scripts: {batchResult.TotalScripts}");
         log.AppendLine($"Succeeded: {batchResult.SuccessCount}");
         log.AppendLine($"Failed: {batchResult.FailedScripts.Count}");

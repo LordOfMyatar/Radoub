@@ -88,35 +88,6 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- TLK Settings Section -->
-                <StackPanel Spacing="8">
-                    <TextBlock Text="TLK Settings"
-                               FontSize="{DynamicResource FontSizeLarge}"
-                               FontWeight="SemiBold"/>
-
-                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" Margin="0,8,0,0">
-                        <TextBlock Grid.Row="0" Grid.Column="0"
-                                   Text="Language:"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,12,0"/>
-                        <ComboBox Grid.Row="0" Grid.Column="1"
-                                  ItemsSource="{Binding AvailableLanguages}"
-                                  SelectedItem="{Binding SelectedLanguage}"
-                                  MinWidth="200"/>
-
-                        <TextBlock Grid.Row="1" Grid.Column="0"
-                                   Text="Gender:"
-                                   VerticalAlignment="Center"
-                                   Margin="0,8,12,0"/>
-                        <ComboBox Grid.Row="1" Grid.Column="1"
-                                  ItemsSource="{Binding AvailableGenders}"
-                                  SelectedItem="{Binding SelectedGender}"
-                                  Margin="0,8,0,0"
-                                  MinWidth="200"/>
-                    </Grid>
-
-                </StackPanel>
-
                 <!-- Appearance Section -->
                 <StackPanel Spacing="8">
                     <TextBlock Text="Appearance"
@@ -218,45 +189,6 @@
                                     Padding="8,4"/>
                         </StackPanel>
                     </Grid>
-                </StackPanel>
-
-                <!-- Build Settings Section -->
-                <StackPanel Spacing="8">
-                    <TextBlock Text="Build Settings"
-                               FontSize="{DynamicResource FontSizeLarge}"
-                               FontWeight="SemiBold"/>
-                    <TextBlock Text="Configure module build behavior"
-                               Opacity="0.7"
-                               FontSize="{DynamicResource FontSizeSmall}"/>
-
-                    <StackPanel Margin="0,8,0,0" Spacing="8">
-                        <CheckBox IsChecked="{Binding CompileScriptsEnabled}"
-                                  Content="Compile NWScript files before building"
-                                  IsEnabled="{Binding IsCompilerAvailable}"/>
-                        <TextBlock Text="{Binding CompilerStatusText}"
-                                   Opacity="0.7"
-                                   FontSize="{DynamicResource FontSizeSmall}"
-                                   Margin="24,0,0,0"/>
-                    </StackPanel>
-
-                    <!-- Code Editor Path -->
-                    <StackPanel Margin="0,8,0,0" Spacing="4">
-                        <TextBlock Text="Code Editor:"
-                                   FontWeight="SemiBold"/>
-                        <Grid ColumnDefinitions="*,Auto">
-                            <TextBox Grid.Column="0"
-                                     Text="{Binding CodeEditorPath}"
-                                     Watermark="Path to code editor (e.g. VS Code, Notepad++) — leave blank for system default"
-                                     Margin="0,0,8,0"/>
-                            <Button Grid.Column="1"
-                                    Content="Browse..."
-                                    Command="{Binding BrowseCodeEditorPathCommand}"
-                                    Padding="8,4"/>
-                        </Grid>
-                        <TextBlock Text="Used to open failed scripts from Build &amp; Test tab. Leave blank to use system default."
-                                   Opacity="0.5"
-                                   FontSize="{DynamicResource FontSizeSmall}"/>
-                    </StackPanel>
                 </StackPanel>
 
                 <!-- Tool Paths Section (Read-Only Info) -->
