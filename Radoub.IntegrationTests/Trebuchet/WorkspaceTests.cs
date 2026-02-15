@@ -177,8 +177,8 @@ public class WorkspaceTests : TrebuchetTestBase
         var buildHeading = FindTextBlockContaining("Build Status");
         Assert.NotNull(buildHeading);
 
-        // Should find compile scripts checkbox
-        var compileCheckbox = FindTextBlockContaining("Compile scripts");
+        // Should find compile scripts checkbox (CheckBox content, search by name)
+        var compileCheckbox = FindCheckBoxByText("Compile scripts");
         Assert.NotNull(compileCheckbox);
     }
 
@@ -200,9 +200,9 @@ public class WorkspaceTests : TrebuchetTestBase
         launchTab.Click();
         Thread.Sleep(500);
 
-        // Should find "Use Default Character" checkbox text
-        var defaultBicText = FindTextBlockContaining("Default Character");
-        Assert.NotNull(defaultBicText);
+        // Should find "Use Default Character" checkbox
+        var defaultBicCheckbox = FindCheckBoxByText("Default Character");
+        Assert.NotNull(defaultBicCheckbox);
     }
 
     /// <summary>
@@ -280,6 +280,25 @@ public class WorkspaceTests : TrebuchetTestBase
                     var textChild = button.FindFirstDescendant(cf => cf.ByControlType(ControlType.Text));
                     if (textChild?.Name?.Contains(text, StringComparison.OrdinalIgnoreCase) == true)
                         return button;
+                }
+            }
+            Thread.Sleep(300);
+            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
+        }
+        return null;
+    }
+
+    private AutomationElement? FindCheckBoxByText(string text)
+    {
+        for (int attempt = 0; attempt < 5; attempt++)
+        {
+            var checkBoxes = MainWindow?.FindAllDescendants(cf => cf.ByControlType(ControlType.CheckBox));
+            if (checkBoxes != null)
+            {
+                foreach (var cb in checkBoxes)
+                {
+                    if (cb.Name?.Contains(text, StringComparison.OrdinalIgnoreCase) == true)
+                        return cb;
                 }
             }
             Thread.Sleep(300);
