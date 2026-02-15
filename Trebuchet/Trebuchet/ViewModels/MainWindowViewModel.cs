@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Radoub.Formats.Logging;
@@ -215,6 +216,44 @@ public partial class MainWindowViewModel : ObservableObject
     /// Whether the NWScript compiler is available.
     /// </summary>
     public bool IsCompilerAvailable => ScriptCompilerService.Instance.IsCompilerAvailable;
+
+    /// <summary>
+    /// Path to code editor for opening failed scripts.
+    /// </summary>
+    public string CodeEditorPath
+    {
+        get => SettingsService.Instance.CodeEditorPath;
+        set
+        {
+            if (SettingsService.Instance.CodeEditorPath != value)
+            {
+                SettingsService.Instance.CodeEditorPath = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    [RelayCommand]
+    private async Task BrowseCodeEditorPath()
+    {
+        if (_parentWindow == null) return;
+
+        var files = await _parentWindow.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Select Code Editor Executable",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("Executables") { Patterns = new[] { "*.exe" } },
+                new FilePickerFileType("All Files") { Patterns = new[] { "*" } }
+            }
+        });
+
+        if (files.Count > 0)
+        {
+            CodeEditorPath = files[0].Path.LocalPath;
+        }
+    }
 
     public MainWindowViewModel()
     {
