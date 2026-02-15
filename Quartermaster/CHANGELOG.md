@@ -15,11 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Inventory & Palette Bug Bash (#1353)
 
-- [ ] #1215 - Item palette should not be editable
-- [ ] #1214 - Items added to backpack should not default to droppable
-- [ ] #1213 - Cannot equip creature skin items from palette
-- [ ] #1211 - Item details panel only works for backpack items
-- [ ] #1210 - Consolidate selection UI - remove duplicate checkbox/highlight
+- [x] #1215 - Item palette is now read-only (DataGrid `IsReadOnly=True`)
+- [x] #1214 - Items default to not droppable (`IsDropable` default changed from true to false)
+- [x] #1213 - Creature-only items (skins, claws) can now equip to natural slots
+- [x] #1211 - Item details panel works for equipment slots, backpack, and palette
+- [x] #1210 - Removed duplicate checkbox column; single row selection mechanism
 
 ---
 
