@@ -120,6 +120,19 @@ public partial class MainWindow
             return;
         }
 
+        // Validate slot compatibility: creature-only items only go to natural slots, standard items only to standard slots
+        var validator = new Radoub.UI.Services.EquipmentSlotValidator(GameData);
+        var validSlotsBitmask = validator.GetEquipableSlots(droppedItem.BaseItem);
+        if (validSlotsBitmask != null && validSlotsBitmask != 0)
+        {
+            if ((validSlotsBitmask.Value & slot.SlotFlag) == 0)
+            {
+                UnifiedLogger.LogInventory(LogLevel.WARN,
+                    $"Cannot equip {droppedItem.Name} to {slot.Name}: slot flag 0x{slot.SlotFlag:X} not in valid slots 0x{validSlotsBitmask.Value:X}");
+                return;
+            }
+        }
+
         // Load UtiFile on demand
         var utiFile = droppedItem.Item ?? LoadItemFromResRef(droppedItem.ResRef, droppedItem.Source);
         if (utiFile == null)

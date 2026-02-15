@@ -60,6 +60,12 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
     public event EventHandler<ItemViewModel>? EquipFromBackpackRequested;
     public event EventHandler<ItemViewModel>? DeleteFromBackpackRequested;
 
+    /// <summary>
+    /// Callback to resolve full item data for cache-loaded palette items.
+    /// Set by MainWindow to provide access to game data services.
+    /// </summary>
+    public Func<ItemViewModel, ItemViewModel?>? ItemResolver { get; set; }
+
     public bool HasBackpackSelection
     {
         get => _hasBackpackSelection;
@@ -467,6 +473,7 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
 
     /// <summary>
     /// Updates the item details panel with the selected item's information.
+    /// For cache-loaded palette items (no UtiFile), resolves full data on demand.
     /// </summary>
     private void UpdateItemDetails(ItemViewModel? item)
     {
@@ -478,6 +485,15 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
             return;
         }
 
+        // For cache-loaded items (no UtiFile backing), resolve full data on demand
+        var displayItem = item;
+        if (item.Item == null && ItemResolver != null)
+        {
+            var resolved = ItemResolver(item);
+            if (resolved != null)
+                displayItem = resolved;
+        }
+
         // Show details panel
         if (_noSelectionText != null) _noSelectionText.IsVisible = false;
         if (_itemDetailsScroll != null) _itemDetailsScroll.IsVisible = true;
@@ -485,21 +501,21 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
         // Icon - prefer game icon, fall back to placeholder
         if (_itemIcon != null)
         {
-            if (item.IconBitmap != null)
+            if (displayItem.IconBitmap != null)
             {
-                _itemIcon.Source = item.IconBitmap;
+                _itemIcon.Source = displayItem.IconBitmap;
             }
-            else if (!string.IsNullOrEmpty(item.IconPath))
+            else if (!string.IsNullOrEmpty(displayItem.IconPath))
             {
                 try
                 {
-                    var uri = new System.Uri($"avares://Radoub.UI/{item.IconPath}");
+                    var uri = new System.Uri($"avares://Radoub.UI/{displayItem.IconPath}");
                     var asset = Avalonia.Platform.AssetLoader.Open(uri);
                     _itemIcon.Source = new Avalonia.Media.Imaging.Bitmap(asset);
                 }
                 catch (Exception ex) when (ex is UriFormatException or FileNotFoundException or InvalidOperationException)
                 {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not load item icon from '{item.IconPath}': {ex.Message}");
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not load item icon from '{displayItem.IconPath}': {ex.Message}");
                     _itemIcon.Source = null;
                 }
             }
@@ -510,23 +526,23 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
         }
 
         // Basic info
-        if (_itemNameText != null) _itemNameText.Text = item.Name;
-        if (_itemTypeText != null) _itemTypeText.Text = item.BaseItemName;
-        if (_itemResRefText != null) _itemResRefText.Text = item.ResRef;
-        if (_itemTagText != null) _itemTagText.Text = item.Tag;
-        if (_itemValueText != null) _itemValueText.Text = $"{item.Value:N0} gp";
-        if (_itemSourceText != null) _itemSourceText.Text = item.Source.ToString();
+        if (_itemNameText != null) _itemNameText.Text = displayItem.Name;
+        if (_itemTypeText != null) _itemTypeText.Text = displayItem.BaseItemName;
+        if (_itemResRefText != null) _itemResRefText.Text = displayItem.ResRef;
+        if (_itemTagText != null) _itemTagText.Text = displayItem.Tag;
+        if (_itemValueText != null) _itemValueText.Text = $"{displayItem.Value:N0} gp";
+        if (_itemSourceText != null) _itemSourceText.Text = displayItem.Source.ToString();
 
         // Properties
         if (_itemPropertiesText != null)
         {
-            if (!string.IsNullOrEmpty(item.PropertiesDisplay))
+            if (!string.IsNullOrEmpty(displayItem.PropertiesDisplay))
             {
-                _itemPropertiesText.Text = item.PropertiesDisplay;
+                _itemPropertiesText.Text = displayItem.PropertiesDisplay;
             }
-            else if (item.PropertyCount > 0)
+            else if (displayItem.PropertyCount > 0)
             {
-                _itemPropertiesText.Text = $"{item.PropertyCount} properties";
+                _itemPropertiesText.Text = $"{displayItem.PropertyCount} properties";
             }
             else
             {

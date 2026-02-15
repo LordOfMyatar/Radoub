@@ -17,7 +17,7 @@ namespace Quartermaster.Services;
 /// </summary>
 public class ModularPaletteCacheService
 {
-    private const int CacheVersion = 1;
+    private const int CacheVersion = 2;  // v2: Added Tag field to CachedPaletteItem
     private readonly string _cacheDirectory;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -381,6 +381,7 @@ public class CacheStatistics
 public class CachedPaletteItem
 {
     public string ResRef { get; set; } = string.Empty;
+    public string Tag { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public string BaseItemTypeName { get; set; } = string.Empty;
     public int BaseItemType { get; set; }
