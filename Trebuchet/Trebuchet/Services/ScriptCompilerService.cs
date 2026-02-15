@@ -396,10 +396,11 @@ public class ScriptCompilerService
     }
 
     /// <summary>
-    /// Compile a specific list of scripts.
+    /// Compile a specific list of scripts using a single compiler invocation.
+    /// Uses -y (continue on error) and -j (parallel) for maximum throughput.
     /// </summary>
     /// <param name="scriptPaths">Paths to the .nss files to compile</param>
-    /// <param name="progress">Progress callback (current, total, scriptName)</param>
+    /// <param name="progress">Progress callback (current, total, scriptName) — called once before compilation starts</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Batch compilation result</returns>
     public async Task<BatchCompilationResult> CompileScriptsAsync(
@@ -415,8 +416,6 @@ public class ScriptCompilerService
             return batchResult;
         }
 
-        var gamePath = PathHelper.ExpandPath(RadoubSettings.Instance.BaseGameInstallPath);
-
         batchResult.TotalScripts = scriptPaths.Count;
 
         if (scriptPaths.Count == 0)
@@ -425,39 +424,163 @@ public class ScriptCompilerService
             return batchResult;
         }
 
-        UnifiedLogger.LogApplication(LogLevel.INFO, $"Compiling {scriptPaths.Count} scripts...");
+        // Signal start of compilation
+        progress?.Invoke(0, scriptPaths.Count, "starting...");
 
-        for (int i = 0; i < scriptPaths.Count; i++)
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Compiling {scriptPaths.Count} scripts (batch, parallel)...");
+
+        var gamePath = PathHelper.ExpandPath(RadoubSettings.Instance.BaseGameInstallPath);
+
+        // Build args: -c <files...> -y (continue on error) -j (parallel, all CPUs)
+        var args = new StringBuilder();
+        args.Append("-c");
+        foreach (var scriptPath in scriptPaths)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            args.Append($" \"{scriptPath}\"");
+        }
+        args.Append(" -y -j");
 
-            var scriptPath = scriptPaths[i];
-            var scriptName = Path.GetFileName(scriptPath);
-
-            progress?.Invoke(i + 1, scriptPaths.Count, scriptName);
-
-            var result = await CompileScriptAsync(scriptPath, gamePath, cancellationToken);
-            batchResult.Results.Add(result);
-
-            UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"Compiled {scriptName}: exit={result.ExitCode}, success={result.Success}");
-
-            if (result.Success)
-            {
-                batchResult.SuccessCount++;
-            }
-            else
-            {
-                batchResult.FailedScripts.Add(scriptName);
-                UnifiedLogger.LogApplication(LogLevel.WARN,
-                    $"Failed to compile {scriptName}: {result.ErrorMessage}");
-            }
+        // Add game path for includes if available
+        if (!string.IsNullOrEmpty(gamePath) && Directory.Exists(gamePath))
+        {
+            args.Append($" --root \"{gamePath}\"");
         }
 
-        batchResult.Success = batchResult.FailedScripts.Count == 0;
+        // Use the directory of the first script as working directory
+        var workingDir = Path.GetDirectoryName(scriptPaths[0]) ?? ".";
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = CompilerPath,
+            Arguments = args.ToString(),
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+            WorkingDirectory = workingDir
+        };
 
         UnifiedLogger.LogApplication(LogLevel.INFO,
-            $"Compilation complete: {batchResult.SuccessCount}/{batchResult.TotalScripts} succeeded");
+            $"Running: {Path.GetFileName(CompilerPath!)} -c [{scriptPaths.Count} files] -y -j (cwd: {workingDir})");
+
+        try
+        {
+            using var process = new Process { StartInfo = startInfo };
+            var output = new StringBuilder();
+            var error = new StringBuilder();
+
+            process.OutputDataReceived += (_, e) =>
+            {
+                if (e.Data != null) output.AppendLine(e.Data);
+            };
+            process.ErrorDataReceived += (_, e) =>
+            {
+                if (e.Data != null) error.AppendLine(e.Data);
+            };
+
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+
+            // Timeout: 30 seconds per script as upper bound, minimum 60 seconds
+            var timeoutMs = Math.Max(60000, scriptPaths.Count * 30000);
+            var completed = await Task.Run(() => process.WaitForExit(timeoutMs), cancellationToken);
+
+            if (!completed)
+            {
+                try { process.Kill(); } catch (Exception) { }
+                batchResult.ErrorMessage = "Compilation timed out";
+                UnifiedLogger.LogApplication(LogLevel.ERROR, "Batch compilation timed out");
+                return batchResult;
+            }
+
+            // Wait again to ensure async output handlers finish
+            await Task.Run(() => process.WaitForExit(), cancellationToken);
+
+            var outputText = output.ToString();
+            var errorText = error.ToString();
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"Batch compile: exit={process.ExitCode}, stdout={outputText.Length} chars, stderr={errorText.Length} chars");
+
+            // Parse results: check which .ncs files were created/updated
+            var scriptNameSet = scriptPaths.Select(p => Path.GetFileName(p)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            // Parse error output to find per-script failures
+            // nwn_script_comp error format: "filename.nss(line,col): Error: message"
+            // or "filename.nss: Error: message"
+            var failedScriptErrors = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var line in errorText.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var trimmed = line.Trim();
+                if (string.IsNullOrEmpty(trimmed)) continue;
+
+                // Try to extract script name from error line
+                // Pattern: "scriptname.nss(line,col): ..." or "scriptname.nss: ..."
+                var nssIdx = trimmed.IndexOf(".nss", StringComparison.OrdinalIgnoreCase);
+                if (nssIdx >= 0)
+                {
+                    // Extract everything up to and including .nss
+                    var endOfName = nssIdx + 4;
+                    var nameStart = trimmed.LastIndexOf(' ', Math.Max(0, nssIdx - 1)) + 1;
+                    if (nameStart < 0) nameStart = 0;
+                    var scriptFileName = trimmed[nameStart..endOfName];
+
+                    // Clean up: remove path prefix, keep just the filename
+                    scriptFileName = Path.GetFileName(scriptFileName);
+
+                    if (!failedScriptErrors.ContainsKey(scriptFileName))
+                        failedScriptErrors[scriptFileName] = new List<string>();
+                    failedScriptErrors[scriptFileName].Add(trimmed);
+                }
+            }
+
+            // Build per-script results
+            foreach (var scriptPath in scriptPaths)
+            {
+                var scriptName = Path.GetFileName(scriptPath);
+                var failed = failedScriptErrors.ContainsKey(scriptName);
+
+                var result = new CompilationResult
+                {
+                    ScriptPath = scriptPath,
+                    Success = !failed,
+                    ExitCode = failed ? 1 : 0
+                };
+
+                if (failed)
+                {
+                    var errors = failedScriptErrors[scriptName];
+                    result.ErrorMessage = errors.FirstOrDefault() ?? "Compilation failed";
+                    result.ErrorOutput = string.Join("\n", errors);
+                    batchResult.FailedScripts.Add(scriptName);
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed: {scriptName}: {result.ErrorMessage}");
+                }
+                else
+                {
+                    batchResult.SuccessCount++;
+                }
+
+                batchResult.Results.Add(result);
+            }
+
+            batchResult.Success = batchResult.FailedScripts.Count == 0;
+
+            // Signal completion
+            progress?.Invoke(scriptPaths.Count, scriptPaths.Count, "done");
+
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Batch compilation complete: {batchResult.SuccessCount}/{batchResult.TotalScripts} succeeded");
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            batchResult.ErrorMessage = ex.Message;
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Batch compilation error: {ex.Message}");
+        }
 
         return batchResult;
     }
