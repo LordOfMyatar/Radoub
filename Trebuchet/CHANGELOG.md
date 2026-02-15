@@ -15,9 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Post-Sprint 4 Bug Fixes (#1350)
 
-- [ ] #1333 - Fix: Build/save warning not clearing after successful build
-- [ ] #1337 - Bug: Faction parent shows (None) for pre-existing and newly created factions
-- [ ] #1316 - Font sizes use percentages instead of DynamicResource; window doesn't resize fonts
+- [x] #1333 - Fix: Build/save warning not clearing after successful build
+- [x] #1337 - Fix: Faction parent shows (None) for pre-existing and newly created factions
+- [x] #1316 - Fix: Font sizes use DynamicResource instead of hardcoded values; fonts now resize
 
 ---
 
