@@ -540,17 +540,10 @@ public partial class MainWindowViewModel : ObservableObject
 
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Launching tool: {tool.Name}");
 
-        // Pass current module path if set
-        var modulePath = RadoubSettings.Instance.CurrentModulePath;
-        string? args = null;
+        // Ensure module info is synced to RadoubSettings before launching (#1384)
+        EnsureSettingsSynced();
 
-        if (!string.IsNullOrEmpty(modulePath))
-        {
-            // Some tools may support --module argument
-            // For now, just launch without arguments - tools read RadoubSettings
-        }
-
-        _toolLauncher.LaunchTool(tool, args);
+        _toolLauncher.LaunchTool(tool);
     }
 
     [RelayCommand]
@@ -561,7 +554,28 @@ public partial class MainWindowViewModel : ObservableObject
         UnifiedLogger.LogApplication(LogLevel.INFO,
             $"Launching {launchInfo.Tool.Name} with file: {Path.GetFileName(launchInfo.FilePath)}");
 
+        // Ensure module info is synced to RadoubSettings before launching (#1384)
+        EnsureSettingsSynced();
+
         _toolLauncher.LaunchToolWithFile(launchInfo.Tool, launchInfo.FilePath);
+    }
+
+    /// <summary>
+    /// Ensure RadoubSettings is fully synced before launching a child tool.
+    /// Forces module editor to write current TLK/module state to the shared settings file
+    /// so the child process reads up-to-date values. (#1384)
+    /// </summary>
+    private void EnsureSettingsSynced()
+    {
+        _moduleEditorViewModel?.SyncToRadoubSettings();
+
+        var settings = RadoubSettings.Instance;
+        var modulePath = settings.CurrentModulePath;
+        var tlkPath = settings.CustomTlkPath;
+
+        UnifiedLogger.LogApplication(LogLevel.DEBUG,
+            $"Pre-launch settings sync - Module: {(string.IsNullOrEmpty(modulePath) ? "(none)" : UnifiedLogger.SanitizePath(modulePath))}, " +
+            $"TLK: {(string.IsNullOrEmpty(tlkPath) ? "(none)" : UnifiedLogger.SanitizePath(tlkPath))}");
     }
 
     /// <summary>

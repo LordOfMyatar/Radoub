@@ -244,9 +244,10 @@ public partial class ModuleEditorViewModel
 
     /// <summary>
     /// Sync module's custom content settings to RadoubSettings for cross-tool use.
-    /// Called after loading a module so other tools can access the custom TLK.
+    /// Called after loading a module and before launching child tools
+    /// so other tools can access the custom TLK and module paths.
     /// </summary>
-    private void SyncToRadoubSettings()
+    internal void SyncToRadoubSettings()
     {
         var settings = RadoubSettings.Instance;
 

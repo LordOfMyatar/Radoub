@@ -57,6 +57,30 @@ public class RadoubSettings : INotifyPropertyChanged
         }
     }
 
+    /// <summary>
+    /// Reset the singleton instance for testing. Clears instance and settings directory cache.
+    /// </summary>
+    public static void ResetForTesting()
+    {
+        lock (_lock)
+        {
+            _instance = null;
+            _settingsDirectory = null;
+        }
+    }
+
+    /// <summary>
+    /// Configure an isolated settings directory for testing.
+    /// Must be called before first Instance access.
+    /// </summary>
+    public static void ConfigureForTesting(string testDirectory)
+    {
+        lock (_lock)
+        {
+            _settingsDirectory = testDirectory;
+        }
+    }
+
     private static string SettingsFilePath => Path.Combine(SettingsDirectory, "RadoubSettings.json");
 
     // Game installation paths
@@ -104,6 +128,19 @@ public class RadoubSettings : INotifyPropertyChanged
         {
             AutoDetectPaths();
         }
+    }
+
+    /// <summary>
+    /// Reload settings from disk. Used when another process (e.g., Trebuchet)
+    /// may have updated RadoubSettings.json since this instance was created. (#1384)
+    /// </summary>
+    public void ReloadSettings()
+    {
+        LoadSettings();
+        UnifiedLogger.Log(LogLevel.DEBUG,
+            $"Reloaded settings - Module: {(string.IsNullOrEmpty(_currentModulePath) ? "(none)" : UnifiedLogger.SanitizePath(_currentModulePath))}, " +
+            $"TLK: {(string.IsNullOrEmpty(_customTlkPath) ? "(none)" : UnifiedLogger.SanitizePath(_customTlkPath))}",
+            "RadoubSettings", "Settings");
     }
 
     /// <summary>
@@ -640,9 +677,11 @@ public class RadoubSettings : INotifyPropertyChanged
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Use defaults on error
+            // Use defaults on error, but log so failures aren't invisible (#1384)
+            UnifiedLogger.Log(LogLevel.WARN,
+                $"Failed to load RadoubSettings: {ex.Message}", "RadoubSettings", "Settings");
         }
     }
 
@@ -688,9 +727,11 @@ public class RadoubSettings : INotifyPropertyChanged
             var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(SettingsFilePath, json);
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore save errors
+            // Log save errors so failures aren't invisible (#1384)
+            UnifiedLogger.Log(LogLevel.WARN,
+                $"Failed to save RadoubSettings: {ex.Message}", "RadoubSettings", "Settings");
         }
     }
 
