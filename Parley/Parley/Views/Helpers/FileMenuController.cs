@@ -485,7 +485,9 @@ namespace Parley.Views.Helpers
             try
             {
                 var modulePath = Radoub.Formats.Settings.RadoubSettings.Instance.CurrentModulePath;
-                if (string.IsNullOrEmpty(modulePath))
+
+                // Validate this is a real module path, not just the modules parent directory (#1327)
+                if (!Radoub.Formats.Settings.RadoubSettings.IsValidModulePath(modulePath))
                 {
                     ClearModuleInfo();
                     return;

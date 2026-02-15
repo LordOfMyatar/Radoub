@@ -449,6 +449,37 @@ public class RadoubSettings : INotifyPropertyChanged
     public bool HasGamePaths => !string.IsNullOrEmpty(_baseGameInstallPath) || !string.IsNullOrEmpty(_neverwinterNightsPath);
 
     /// <summary>
+    /// Check if CurrentModulePath points to a valid module (not just the modules parent directory).
+    /// A valid module is either a .mod file or a directory containing module.ifo.
+    /// Returns false if the path is the modules parent folder (e.g., ~/Documents/Neverwinter Nights/modules/).
+    /// </summary>
+    public bool HasValidModulePath()
+    {
+        return IsValidModulePath(_currentModulePath);
+    }
+
+    /// <summary>
+    /// Check if a path points to a valid module.
+    /// A valid module is either a .mod file or a directory containing module.ifo.
+    /// Returns false for empty paths, the modules parent folder, or nonexistent paths.
+    /// </summary>
+    public static bool IsValidModulePath(string? path)
+    {
+        if (string.IsNullOrEmpty(path))
+            return false;
+
+        // .mod file
+        if (File.Exists(path) && path.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        // Directory with module.ifo (unpacked module)
+        if (Directory.Exists(path) && File.Exists(Path.Combine(path, "module.ifo")))
+            return true;
+
+        return false;
+    }
+
+    /// <summary>
     /// Get the path to the game data folder (contains BIF files).
     /// Returns null if not configured.
     /// </summary>

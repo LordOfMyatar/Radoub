@@ -15,6 +15,7 @@ using DialogEditor.Views.Controllers;
 using Microsoft.Extensions.DependencyInjection;
 using Radoub.Dictionary;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 
 namespace DialogEditor.Views
@@ -113,6 +114,7 @@ namespace DialogEditor.Views
             _loggingSettingsController?.LoadSettings();
             _autoSaveSettingsController?.LoadSettings();
             _parameterCacheController?.LoadSettings();
+            LoadModuleConfiguration();
         }
 
         #region Resource Paths Handlers (delegated to controller)
@@ -241,6 +243,104 @@ namespace DialogEditor.Views
             await dialog.ShowDialog(this);
 
             return result;
+        }
+
+        #endregion
+
+        #region Module Configuration (#1325, #1322)
+
+        private void LoadModuleConfiguration()
+        {
+            var currentModuleText = this.FindControl<TextBlock>("CurrentModuleText");
+            var trebuchetStatusText = this.FindControl<TextBlock>("TrebuchetStatusText");
+            if (currentModuleText == null) return;
+
+            try
+            {
+                var radoubSettings = RadoubSettings.Instance;
+                var modulePath = radoubSettings.CurrentModulePath;
+
+                if (!RadoubSettings.IsValidModulePath(modulePath))
+                {
+                    currentModuleText.Text = "No module selected";
+                    currentModuleText.Foreground = BrushManager.GetWarningBrush();
+                    if (trebuchetStatusText != null)
+                        trebuchetStatusText.Text = "Use Trebuchet to select a module for all Radoub tools.";
+                    return;
+                }
+
+                // Try to get the module name from module.ifo
+                var moduleName = modulePath;
+                try
+                {
+                    var ifoPath = System.IO.Path.Combine(modulePath!, "module.ifo");
+                    if (System.IO.File.Exists(ifoPath))
+                    {
+                        var ifoData = Radoub.Formats.Ifo.IfoReader.Read(ifoPath);
+                        var name = ifoData.ModuleName.GetDefault();
+                        if (!string.IsNullOrEmpty(name))
+                            moduleName = name;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Could not read module.ifo: {ex.Message}");
+                }
+
+                currentModuleText.Text = moduleName;
+                currentModuleText.Foreground = BrushManager.GetSuccessBrush();
+                if (trebuchetStatusText != null)
+                    trebuchetStatusText.Text = "";
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error loading module configuration: {ex.Message}");
+                currentModuleText.Text = "Error loading module info";
+                currentModuleText.Foreground = BrushManager.GetErrorBrush();
+            }
+        }
+
+        private void OnConfigureInTrebuchetClick(object? sender, RoutedEventArgs e)
+        {
+            var trebuchetStatusText = this.FindControl<TextBlock>("TrebuchetStatusText");
+
+            try
+            {
+                var radoubSettings = RadoubSettings.Instance;
+                var trebuchetPath = radoubSettings.TrebuchetPath;
+
+                if (string.IsNullOrEmpty(trebuchetPath) || !System.IO.File.Exists(trebuchetPath))
+                {
+                    if (trebuchetStatusText != null)
+                    {
+                        trebuchetStatusText.Text = "Trebuchet not found. Please ensure it is installed.";
+                        trebuchetStatusText.Foreground = BrushManager.GetErrorBrush();
+                    }
+                    return;
+                }
+
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = trebuchetPath,
+                    UseShellExecute = true
+                };
+                System.Diagnostics.Process.Start(psi);
+
+                if (trebuchetStatusText != null)
+                {
+                    trebuchetStatusText.Text = "Trebuchet launched. Change module there, then reopen Settings to see updates.";
+                    trebuchetStatusText.Foreground = BrushManager.GetInfoBrush();
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error launching Trebuchet: {ex.Message}");
+                if (trebuchetStatusText != null)
+                {
+                    trebuchetStatusText.Text = $"Error launching Trebuchet: {ex.Message}";
+                    trebuchetStatusText.Foreground = BrushManager.GetErrorBrush();
+                }
+            }
         }
 
         #endregion

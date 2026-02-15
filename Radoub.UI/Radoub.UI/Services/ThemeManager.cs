@@ -468,6 +468,7 @@ public class ThemeManager
         {
             var sidebarBrush = new SolidColorBrush(Color.Parse(colors.Sidebar));
             resources["ThemeBackgroundAlt"] = sidebarBrush;
+            resources["ThemeSidebar"] = sidebarBrush; // Alias used by browser panels (#1347)
         }
 
         // Text brushes for explicit AXAML use

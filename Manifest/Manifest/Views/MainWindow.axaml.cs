@@ -144,7 +144,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         try
         {
             var modulePath = RadoubSettings.Instance.CurrentModulePath;
-            if (string.IsNullOrEmpty(modulePath))
+
+            // Validate this is a real module path, not just the modules parent directory (#1327)
+            if (!RadoubSettings.IsValidModulePath(modulePath))
             {
                 moduleText.Text = "No module selected";
                 moduleText.Foreground = Radoub.UI.Services.BrushManager.GetWarningBrush(this);

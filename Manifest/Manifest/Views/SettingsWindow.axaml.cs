@@ -36,6 +36,9 @@ public partial class SettingsWindow : Window
     {
         var settings = SettingsService.Instance;
 
+        // Load module configuration (#1325, #1322)
+        LoadModuleConfiguration();
+
         // Load game path from shared settings
         LoadGamePath();
 
@@ -564,6 +567,83 @@ public partial class SettingsWindow : Window
         public override string ToString()
         {
             return IsBundled ? DisplayName : $"{DisplayName} (installed)";
+        }
+    }
+
+    #endregion
+
+    #region Module Configuration (#1325, #1322)
+
+    private void LoadModuleConfiguration()
+    {
+        var modulePath = RadoubSettings.Instance.CurrentModulePath;
+        if (RadoubSettings.IsValidModulePath(modulePath))
+        {
+            string? workingDir = modulePath;
+            if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
+            {
+                var moduleName = Path.GetFileNameWithoutExtension(modulePath);
+                var moduleDir = Path.GetDirectoryName(modulePath);
+                if (!string.IsNullOrEmpty(moduleDir))
+                {
+                    var candidate = Path.Combine(moduleDir, moduleName);
+                    if (Directory.Exists(candidate))
+                        workingDir = candidate;
+                }
+            }
+
+            string? displayName = null;
+            if (!string.IsNullOrEmpty(workingDir) && Directory.Exists(workingDir))
+            {
+                var ifoPath = Path.Combine(workingDir, "module.ifo");
+                if (File.Exists(ifoPath))
+                {
+                    try
+                    {
+                        var ifo = Radoub.Formats.Ifo.IfoReader.Read(ifoPath);
+                        displayName = ifo.ModuleName.GetDefault();
+                    }
+                    catch { /* fall through to path-based name */ }
+                }
+            }
+
+            CurrentModuleText.Text = displayName ?? Path.GetFileName(modulePath);
+            CurrentModuleText.Foreground = BrushManager.GetInfoBrush(this);
+        }
+        else
+        {
+            CurrentModuleText.Text = "No module selected";
+            CurrentModuleText.Foreground = BrushManager.GetWarningBrush(this);
+        }
+    }
+
+    private void OnConfigureInTrebuchetClick(object? sender, RoutedEventArgs e)
+    {
+        var trebuchetPath = RadoubSettings.Instance.TrebuchetPath;
+
+        if (string.IsNullOrEmpty(trebuchetPath) || !File.Exists(trebuchetPath))
+        {
+            TrebuchetStatusText.Text = "Trebuchet not found. Launch Trebuchet once to register its path.";
+            TrebuchetStatusText.Foreground = BrushManager.GetWarningBrush(this);
+            return;
+        }
+
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = trebuchetPath,
+                UseShellExecute = true
+            });
+
+            TrebuchetStatusText.Text = "Trebuchet launched. Restart this tool after changing module.";
+            TrebuchetStatusText.Foreground = BrushManager.GetInfoBrush(this);
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to launch Trebuchet: {ex.Message}");
+            TrebuchetStatusText.Text = $"Failed to launch Trebuchet: {ex.Message}";
+            TrebuchetStatusText.Foreground = BrushManager.GetErrorBrush(this);
         }
     }
 

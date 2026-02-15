@@ -15,6 +15,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.69] - 2026-02-14
+**Branch**: `radoub/issue-1352` | **PR**: #1365
+
+### Sprint: Cross-Tool Module Config Polish (#1352)
+
+- [x] #1347 - Fix dialog list panel theme brush styling across tools
+- [x] #1327 - Bug: Module indicator shows "modules" folder when no module configured
+- [x] #1326 - Bug: Dialog browser lists all unpacked modules when no module configured
+- [x] #1325 - Settings UI: "Configure in Trebuchet" button for module selection
+- [x] #1322 - Allow opening RadoubSettings from individual tool Settings dialogs
+
+---
+
 ## [0.9.68] - 2026-02-13
 **Branch**: `radoub/issue-1003` | **PR**: #1324
 

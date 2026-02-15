@@ -318,19 +318,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Set initial module path from RadoubSettings (set by Trebuchet)
         var modulePath = RadoubSettings.Instance.CurrentModulePath;
-        if (!string.IsNullOrEmpty(modulePath))
+        if (RadoubSettings.IsValidModulePath(modulePath))
         {
             // If it's a .mod file, find the working directory
             if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
             {
                 modulePath = FindWorkingDirectory(modulePath);
             }
-        }
 
-        if (!string.IsNullOrEmpty(modulePath) && Directory.Exists(modulePath))
-        {
-            creatureBrowserPanel.ModulePath = modulePath;
-            UnifiedLogger.LogUI(LogLevel.INFO, "CreatureBrowserPanel initialized with module path from Trebuchet");
+            if (!string.IsNullOrEmpty(modulePath) && Directory.Exists(modulePath))
+            {
+                creatureBrowserPanel.ModulePath = modulePath;
+                UnifiedLogger.LogUI(LogLevel.INFO, "CreatureBrowserPanel initialized with module path from Trebuchet");
+            }
         }
 
         // Subscribe to file selection events
@@ -389,7 +389,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         try
         {
             var modulePath = RadoubSettings.Instance.CurrentModulePath;
-            if (string.IsNullOrEmpty(modulePath))
+
+            // Validate this is a real module path, not just the modules parent directory (#1327)
+            if (!RadoubSettings.IsValidModulePath(modulePath))
             {
                 moduleText.Text = "No module selected";
                 moduleText.Foreground = BrushManager.GetWarningBrush(this);
