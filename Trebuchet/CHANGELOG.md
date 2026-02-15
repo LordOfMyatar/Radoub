@@ -15,8 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: ViewModel Tech Debt (#1354)
 
-- [ ] #1348 - Split MainWindowViewModel.cs (1077 lines)
-- [ ] #1303 - Decompose ModuleEditorViewModel.cs (1389 lines)
+- [x] #1348 - Split MainWindowViewModel.cs (1367→5 partial classes)
+- [x] #1303 - Decompose ModuleEditorViewModel.cs (1676→9 files including VariableViewModel extraction)
 
 ---
 
