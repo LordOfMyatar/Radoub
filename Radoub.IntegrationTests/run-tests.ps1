@@ -219,10 +219,15 @@ function Invoke-ThemeCompatScan {
             $lines = Get-Content $file.FullName -ErrorAction SilentlyContinue
             if (-not $lines) { continue }
 
+            $skipBlock = $false
             for ($i = 0; $i -lt $lines.Count; $i++) {
                 $line = $lines[$i]
-                # Skip lines with theme-ok opt-out comment
-                if ($line -match '<!--\s*theme-ok\s*-->') { continue }
+
+                # Block-level opt-out: XML comments with theme-ok suppress until blank line
+                # (inline <!-- theme-ok --> is invalid XML on attribute lines)
+                if ($line -match '<!--.*theme-(ok|independent).*-->') { $skipBlock = $true; continue }
+                if ($skipBlock -and $line.Trim() -eq '') { $skipBlock = $false; continue }
+                if ($skipBlock) { continue }
 
                 foreach ($p in $axamlPatterns) {
                     if ($line -match $p.Pattern) {
@@ -251,7 +256,7 @@ function Invoke-ThemeCompatScan {
             }
         }
         Write-Host "  Use DynamicResource or BrushManager for theme compatibility" -ForegroundColor Gray
-        Write-Host "  Add '// theme-ok' comment to suppress intentional hardcodes" -ForegroundColor Gray
+        Write-Host "  Add '// theme-ok' (.cs) or '<!-- theme-ok -->' (.axaml) to suppress" -ForegroundColor Gray
     }
 }
 

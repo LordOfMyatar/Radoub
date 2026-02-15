@@ -15,12 +15,12 @@
     <Grid>
         <!-- Loading Overlay (theme-independent: always dims background with white text) -->
         <Border IsVisible="{Binding IsLoading}"
-                Background="#80000000" <!-- theme-ok -->
+                Background="#80000000"
                 ZIndex="100">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                 <ProgressBar IsIndeterminate="True" Width="200"/>
                 <TextBlock Text="Loading..."
-                           Foreground="White" <!-- theme-ok -->
+                           Foreground="White"
                            HorizontalAlignment="Center"
                            Margin="0,8,0,0"/>
             </StackPanel>
