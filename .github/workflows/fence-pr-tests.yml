@@ -1,0 +1,77 @@
+name: Fence PR Tests
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'Fence/**'
+      - 'Radoub.Formats/**'
+      - 'Radoub.UI/**'
+      - '.github/workflows/fence-pr-tests.yml'
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0  # NBGV needs full history
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore and build
+      run: dotnet build Fence/Fence.Tests/Fence.Tests.csproj --configuration Release
+
+    - name: Run Fence.Tests
+      id: fence-tests
+      shell: bash
+      run: |
+        dotnet test Fence/Fence.Tests/Fence.Tests.csproj \
+          --configuration Release \
+          --no-build \
+          --verbosity normal \
+          --logger "trx;LogFileName=fence-results.trx" \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./TestResults/Fence
+      continue-on-error: true
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: fence-test-results-${{ matrix.os }}
+        path: ./TestResults
+        retention-days: 30
+
+    - name: Test Report
+      uses: dorny/test-reporter@v2
+      if: always()
+      with:
+        name: Fence Test Results (${{ matrix.os }})
+        path: './TestResults/Fence/fence-results.trx'
+        reporter: dotnet-trx
+        fail-on-error: false
+
+    - name: Report test results
+      if: always()
+      shell: bash
+      run: |
+        if [ "${{ steps.fence-tests.outcome }}" = "success" ]; then
+          echo "✅ Fence tests passed (${{ matrix.os }})"
+        else
+          echo "❌ Fence tests failed (${{ matrix.os }})"
+          exit 1
+        fi

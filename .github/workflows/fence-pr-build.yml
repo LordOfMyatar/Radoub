@@ -1,0 +1,48 @@
+name: Fence PR Build Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'Fence/**'
+      - 'Radoub.Formats/**'
+      - 'Radoub.UI/**'
+      - '.github/workflows/fence-pr-build.yml'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0  # NBGV needs full history
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore Fence/Fence/Fence.csproj
+
+    - name: Build Fence
+      id: build
+      run: dotnet build Fence/Fence/Fence.csproj --configuration Release --no-restore
+      continue-on-error: true
+
+    - name: Report status
+      if: always()
+      shell: bash
+      run: |
+        if [ "${{ steps.build.outcome }}" = "success" ]; then
+          echo "✅ Fence build successful (${{ matrix.os }})"
+        else
+          echo "❌ Fence build failed (${{ matrix.os }})"
+          exit 1
+        fi
