@@ -161,8 +161,9 @@ public class ScriptCompilerService
     /// <summary>
     /// Check if a .nss file has an uncommented entry point (void main or int StartingConditional).
     /// Skips entry points inside // line comments and /* block comments */.
+    /// Scripts without an entry point are include/library files and cannot be compiled standalone.
     /// </summary>
-    private static bool HasUncommentedEntryPoint(string nssPath)
+    public static bool HasUncommentedEntryPoint(string nssPath)
     {
         try
         {
@@ -431,14 +432,16 @@ public class ScriptCompilerService
 
         var gamePath = PathHelper.ExpandPath(RadoubSettings.Instance.BaseGameInstallPath);
 
-        // Build args: -c <files...> -y (continue on error) -j (parallel, all CPUs)
+        // Build args: -c <files...> -y (continue on error) -j N (parallel)
+        // -j requires an explicit thread count; omitting it causes the next flag to be parsed as the integer
+        var threadCount = Math.Max(1, Environment.ProcessorCount);
         var args = new StringBuilder();
         args.Append("-c");
         foreach (var scriptPath in scriptPaths)
         {
             args.Append($" \"{scriptPath}\"");
         }
-        args.Append(" -y -j");
+        args.Append($" -y -j {threadCount}");
 
         // Add game path for includes if available
         if (!string.IsNullOrEmpty(gamePath) && Directory.Exists(gamePath))
