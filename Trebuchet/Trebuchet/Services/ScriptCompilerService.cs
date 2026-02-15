@@ -122,7 +122,7 @@ public class ScriptCompilerService
                 // Include/library scripts (no void main or int StartingConditional) never produce .ncs
                 if (HasEntryPoint(nssPath))
                 {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
                         $"Stale script (MissingNcs): {scriptName} — has entry point but no .ncs");
                     staleScripts.Add(new StaleScriptInfo
                     {
@@ -138,7 +138,7 @@ public class ScriptCompilerService
                 var ncsInfo = new FileInfo(ncsPath);
                 if (nssInfo.LastWriteTime > ncsInfo.LastWriteTime)
                 {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
                         $"Stale script (SourceNewer): {scriptName} — .nss {nssInfo.LastWriteTime:HH:mm:ss} > .ncs {ncsInfo.LastWriteTime:HH:mm:ss}");
                     staleScripts.Add(new StaleScriptInfo
                     {
