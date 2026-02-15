@@ -397,32 +397,45 @@ New tools must integrate with Trebuchet (the Radoub launcher):
 | Custom TLK loading | Use shared ITlkService |
 | Custom portrait browser | Use shared PortraitBrowserWindow |
 
-### Versioning
+### Versioning (NBGV)
 
-**Version Location**: Set in `.csproj` file PropertyGroup:
+**Version Source**: Nerdbank.GitVersioning (NBGV) via per-tool `version.json` files.
 
-```xml
-<!-- Version Configuration -->
-<Version>0.1.0-alpha</Version>
-<AssemblyVersion>0.1.0.0</AssemblyVersion>
-<FileVersion>0.1.0.0</FileVersion>
-<InformationalVersion>0.1.0-alpha</InformationalVersion>
+**How it works**:
+- Each tool has a `version.json` in its directory (e.g., `Parley/version.json`)
+- NBGV computes the patch version from git commit height since `version.json` last changed its major.minor
+- No version properties in `.csproj` files — NBGV injects them at build time via MSBuild
+- `VersionHelper.GetVersion()` reads the NBGV-injected `InformationalVersion` at runtime
+
+**Version file structure**:
+```json
+{
+  "inherit": true,
+  "version": "0.2-alpha",
+  "pathFilters": ["."]
+}
 ```
 
-**Initial Version**: New tools start at `0.1.0-alpha`
+- `inherit: true` — inherits `publicReleaseRefSpec`, `cloudBuild`, etc. from root `version.json`
+- `pathFilters: ["."]` — only commits touching this tool's directory increment the patch version
+- Root `version.json` has shared settings (public release ref spec, cloud build config)
+
+**New tools**: Create a `version.json` in the tool directory with `"version": "0.1-alpha"`.
+
+**Version bumps**: To bump a tool's minor version, edit its `version.json` and change the `"version"` field (e.g., `"0.2-alpha"` → `"0.3-alpha"`). The patch resets to 0 automatically.
+
+**Checking computed versions**:
+```bash
+dotnet nbgv get-version --project [ToolDir]
+```
 
 **Semantic Versioning Rules**:
 | Version | When to Bump |
 |---------|--------------|
 | **Major** (1.0.0) | Breaking changes, major rewrites, stable release |
-| **Minor** (0.2.0) | New features, significant enhancements |
-| **Patch** (0.1.1) | Bug fixes, small improvements |
-| **Prerelease** (-alpha, -beta) | Development builds before stable |
-
-**Version Coordination**:
-- CHANGELOG version sections must match `.csproj` version
-- Update both when preparing a release
-- GitHub releases use the same version tag (e.g., `v0.1.0-alpha`)
+| **Minor** (0.2.0) | New features, significant enhancements — edit `version.json` |
+| **Patch** (0.1.1) | Automatic — increments with each commit to the tool's directory |
+| **Prerelease** (-alpha, -beta) | Set in `version.json` `"version"` field suffix |
 
 **Alpha vs Beta vs Stable**:
 - `alpha`: Active development, features incomplete, may have bugs
@@ -439,7 +452,7 @@ New tools must integrate with Trebuchet (the Radoub launcher):
 | Settings in app folder | Store in `~/Radoub/ToolName/settings.json` |
 | Missing SafeMode support | Always implement `--safemode` flag |
 | Skipping unit tests | Create ToolName.Tests from day 1 |
-| Missing version in .csproj | Set Version, AssemblyVersion, FileVersion |
+| Hardcoding version in .csproj | Use NBGV `version.json` — no version properties in .csproj |
 
 ---
 
