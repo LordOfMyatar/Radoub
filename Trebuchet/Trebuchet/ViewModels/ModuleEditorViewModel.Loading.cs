@@ -87,9 +87,19 @@ public partial class ModuleEditorViewModel
                 }
                 else
                 {
-                    // No unpacked directory - load from .mod file (read-only)
-                    await LoadFromModFileAsync(path);
-                    _isReadOnly = true;
+                    // No unpacked directory - auto-unpack the .mod file (#1384)
+                    var targetDir = Path.Combine(moduleDir!, moduleName);
+                    StatusText = "Unpacking module...";
+
+                    var resourceCount = await Task.Run(() => UnpackModuleToDirectory(path, targetDir));
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"Auto-unpacked {resourceCount} resources to {UnifiedLogger.SanitizePath(targetDir)}");
+
+                    _workingDirectoryPath = targetDir;
+                    _modFilePath = path;
+                    _modulePath = targetDir;
+                    await LoadFromDirectoryAsync(targetDir);
+                    _isReadOnly = false;
                 }
             }
             else if (Directory.Exists(path))
