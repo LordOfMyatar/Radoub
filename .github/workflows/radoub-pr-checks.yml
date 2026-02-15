@@ -24,6 +24,13 @@ jobs:
       with:
         dotnet-version: '9.0.x'
 
+    - name: Exclude Windows-only projects
+      if: matrix.os != 'windows-latest'
+      shell: bash
+      run: |
+        # IntegrationTests targets net9.0-windows (FlaUI) - can't build on Linux/macOS
+        dotnet sln Radoub.sln remove Radoub.IntegrationTests/Radoub.IntegrationTests.csproj 2>/dev/null || true
+
     - name: Restore dependencies
       run: dotnet restore Radoub.sln
 
@@ -49,6 +56,12 @@ jobs:
       uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '9.0.x'
+
+    - name: Exclude Windows-only projects
+      if: matrix.os != 'windows-latest'
+      shell: bash
+      run: |
+        dotnet sln Radoub.sln remove Radoub.IntegrationTests/Radoub.IntegrationTests.csproj 2>/dev/null || true
 
     - name: Restore and build
       run: dotnet build Radoub.sln --configuration Release
