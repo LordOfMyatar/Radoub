@@ -10,6 +10,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.14.0-alpha] - 2026-02-14
+**Branch**: `trebuchet/issue-1345` | **PR**: #TBD
+
+### Feat: Show failed scripts list with open-in-editor action (#1345)
+
+---
+
 ## [1.13.0-alpha] - 2026-02-14
 **Branch**: `trebuchet/issue-1331` | **PR**: #1339
 
