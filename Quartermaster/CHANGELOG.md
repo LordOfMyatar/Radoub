@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.68-alpha] - 2026-02-15
+**Branch**: `quartermaster/issue-1353` | **PR**: #1379
+
+### Sprint: Inventory & Palette Bug Bash (#1353)
+
+- [x] #1215 - Item palette is now read-only (DataGrid `IsReadOnly=True`)
+- [x] #1214 - Items default to not droppable (`IsDropable` default changed from true to false)
+- [x] #1213 - Creature-only items (skins, claws) can now equip to natural slots
+- [x] #1211 - Item details panel works for equipment slots, backpack, and palette
+- [x] #1210 - Removed duplicate checkbox column; single row selection mechanism
+
+---
+
 ## [0.1.67-alpha] - 2026-02-11
 **Branch**: `radoub/issue-1259` | **PR**: #1311
 

@@ -174,6 +174,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         InventoryPanelContent.InitializeSlots(_equipmentSlots);
         InventoryPanelContent.SetGameDataService(GameData);
 
+        // Provide item resolver for cache-loaded palette items needing full details
+        InventoryPanelContent.ItemResolver = ResolveItemForDetails;
+
         // Subscribe to inventory panel events
         InventoryPanelContent.InventoryChanged += (s, e) => { _inventoryModified = true; MarkDirty(); };
         InventoryPanelContent.EquipmentSlotClicked += (s, slot) =>

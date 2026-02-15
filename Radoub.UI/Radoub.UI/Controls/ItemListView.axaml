@@ -13,22 +13,15 @@
     </Style>
   </UserControl.Styles>
 
-  <Grid RowDefinitions="Auto,*">
-    <!-- Toolbar row for Select All / Select None -->
-    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="4" Spacing="8">
-      <Button x:Name="SelectAllButton" Content="Select All" Click="OnSelectAllClick"/>
-      <Button x:Name="SelectNoneButton" Content="Select None" Click="OnSelectNoneClick"/>
-      <TextBlock x:Name="SelectionCountText" VerticalAlignment="Center" Margin="8,0,0,0"/>
-    </StackPanel>
-
+  <Grid RowDefinitions="*">
     <!-- DataGrid -->
-    <DataGrid Grid.Row="1"
+    <DataGrid Grid.Row="0"
               x:Name="ItemsGrid"
               AutoGenerateColumns="False"
               CanUserReorderColumns="True"
               CanUserResizeColumns="True"
               CanUserSortColumns="True"
-              IsReadOnly="False"
+              IsReadOnly="True"
               SelectionMode="Extended"
               GridLinesVisibility="Horizontal"
               HeadersVisibility="Column"
@@ -44,24 +37,10 @@
           <MenuItem x:Name="MenuCopy" Header="Copy ResRef" Click="OnContextMenuCopyResRef"/>
           <MenuItem x:Name="MenuCopyTag" Header="Copy Tag" Click="OnContextMenuCopyTag"/>
           <MenuItem x:Name="MenuCopyName" Header="Copy Name" Click="OnContextMenuCopyName"/>
-          <Separator/>
-          <MenuItem x:Name="MenuSelectAll" Header="Select All" Click="OnSelectAllClick"/>
-          <MenuItem x:Name="MenuSelectNone" Header="Select None" Click="OnSelectNoneClick"/>
         </ContextMenu>
       </DataGrid.ContextMenu>
 
       <DataGrid.Columns>
-        <!-- Checkbox column for bulk selection -->
-        <DataGridTemplateColumn Header="☐" Width="40" CanUserResize="False" CanUserSort="False">
-          <DataGridTemplateColumn.CellTemplate>
-            <DataTemplate>
-              <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"/>
-            </DataTemplate>
-          </DataGridTemplateColumn.CellTemplate>
-        </DataGridTemplateColumn>
-
         <!-- Icon column -->
         <DataGridTemplateColumn Header="" Width="32" CanUserResize="False" CanUserSort="False">
           <DataGridTemplateColumn.CellTemplate>

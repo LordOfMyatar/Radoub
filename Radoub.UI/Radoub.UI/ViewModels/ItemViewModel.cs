@@ -255,10 +255,10 @@ public partial class ItemViewModel : ObservableObject
     private ushort _gridPositionY;
 
     /// <summary>
-    /// If true, creature drops this item on death. Default true.
+    /// If true, creature drops this item on death. Default false for game balance.
     /// </summary>
     [ObservableProperty]
-    private bool _isDropable = true;
+    private bool _isDropable;
 
     /// <summary>
     /// If true, item can be pickpocketed from creature.

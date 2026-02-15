@@ -85,6 +85,24 @@ public partial class MainWindow
     }
 
     /// <summary>
+    /// Resolves a cache-loaded palette item into a fully-loaded ItemViewModel with icon and properties.
+    /// Used by the item details panel when viewing palette items.
+    /// </summary>
+    private ItemViewModel? ResolveItemForDetails(ItemViewModel cacheItem)
+    {
+        if (cacheItem.Item != null)
+            return cacheItem; // Already fully loaded
+
+        var utiFile = LoadItemFromResRef(cacheItem.ResRef, cacheItem.Source);
+        if (utiFile == null)
+            return null;
+
+        var resolved = ItemFactory.Create(utiFile, cacheItem.Source);
+        SetupLazyIconLoading(resolved);
+        return resolved;
+    }
+
+    /// <summary>
     /// Resolves a UTI file from ResRef, checking module directory first, then game data.
     /// </summary>
     private (UtiFile? item, GameResourceSource source) ResolveUtiFile(string resRef)

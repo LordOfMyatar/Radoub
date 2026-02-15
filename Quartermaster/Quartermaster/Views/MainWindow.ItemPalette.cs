@@ -206,6 +206,7 @@ public partial class MainWindow
                     cacheItems.Add(new CachedPaletteItem
                     {
                         ResRef = resourceInfo.ResRef,
+                        Tag = item.Tag ?? string.Empty,
                         DisplayName = displayName,
                         BaseItemTypeName = baseItemTypeName,
                         BaseItemType = item.BaseItem,
@@ -276,7 +277,7 @@ public partial class MainWindow
                         BaseItemName = cached.BaseItemTypeName,
                         BaseItem = cached.BaseItemType,
                         Value = cached.BaseValue,
-                        Tag = cached.ResRef,
+                        Tag = !string.IsNullOrEmpty(cached.Tag) ? cached.Tag : cached.ResRef,
                         PropertiesDisplay = string.Empty,
                         Source = cached.IsStandard ? GameResourceSource.Bif : GameResourceSource.Override
                     });
