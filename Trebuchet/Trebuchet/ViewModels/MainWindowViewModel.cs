@@ -161,18 +161,25 @@ public partial class MainWindowViewModel : ObservableObject
     {
         get
         {
+            var hasUnsaved = HasUnsavedModuleEditorChanges || HasUnsavedFactionEditorChanges || IsModuleDirty;
             var reasons = new List<string>();
+
             if (HasUnsavedModuleEditorChanges)
-                reasons.Add("Module editor has unsaved IFO changes");
+                reasons.Add("unsaved IFO changes");
             if (HasUnsavedFactionEditorChanges)
-                reasons.Add("Faction editor has unsaved changes");
+                reasons.Add("unsaved faction changes");
+            if (IsModuleDirty)
+                reasons.Add("module modified since last build");
             if (HasNewerWorkingFiles)
                 reasons.Add($"{NewerFileCount} file(s) modified since last build");
             if (StaleScriptCount > 0)
                 reasons.Add($"{StaleScriptCount} script(s) need recompiling");
-            return reasons.Count > 0
-                ? $"Build recommended: {string.Join(", ", reasons)}"
-                : "";
+
+            if (reasons.Count == 0)
+                return "";
+
+            var prefix = hasUnsaved ? "You have unsaved changes" : "Build recommended";
+            return $"{prefix}: {string.Join(", ", reasons)}";
         }
     }
 
@@ -213,8 +220,8 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Whether to also compile .nss files with no corresponding .ncs.
-    /// Only applies when CompileScriptsEnabled is true.
+    /// Whether to compile all scripts (including uncompiled .nss with no .ncs).
+    /// When true: compile changed + uncompiled. When false: only changed.
     /// </summary>
     public bool BuildUncompiledScriptsEnabled
     {
@@ -225,8 +232,18 @@ public partial class MainWindowViewModel : ObservableObject
             {
                 SettingsService.Instance.BuildUncompiledScriptsEnabled = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(OnlyCompileChangedScripts));
             }
         }
+    }
+
+    /// <summary>
+    /// Inverse of BuildUncompiledScriptsEnabled for radio button binding.
+    /// </summary>
+    public bool OnlyCompileChangedScripts
+    {
+        get => !BuildUncompiledScriptsEnabled;
+        set => BuildUncompiledScriptsEnabled = !value;
     }
 
     /// <summary>

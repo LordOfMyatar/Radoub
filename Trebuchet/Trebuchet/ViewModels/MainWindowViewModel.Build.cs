@@ -132,27 +132,28 @@ public partial class MainWindowViewModel
     }
 
     [RelayCommand]
-    private void OpenBuildLog()
+    private void OpenBuildLogFolder()
     {
-        if (string.IsNullOrEmpty(_lastBuildLogPath) || !File.Exists(_lastBuildLogPath))
+        var logsDir = Path.Combine(Path.GetTempPath(), "Radoub", "BuildLogs");
+
+        if (!Directory.Exists(logsDir))
         {
-            UnifiedLogger.LogApplication(LogLevel.WARN, "No build log available");
+            UnifiedLogger.LogApplication(LogLevel.WARN, "Build log folder does not exist");
             return;
         }
 
         try
         {
-            // Open log file with default text editor
             var startInfo = new System.Diagnostics.ProcessStartInfo
             {
-                FileName = _lastBuildLogPath,
+                FileName = logsDir,
                 UseShellExecute = true
             };
             System.Diagnostics.Process.Start(startInfo)?.Dispose();
         }
         catch (Exception ex)
         {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open build log: {ex.Message}");
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open build log folder: {ex.Message}");
         }
     }
 
