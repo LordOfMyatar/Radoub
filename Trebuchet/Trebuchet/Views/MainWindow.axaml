@@ -9,6 +9,7 @@
         x:DataType="vm:MainWindowViewModel"
         x:Name="MainWindowRoot"
         Title="Trebuchet - Radoub Toolset (Alpha)"
+        Icon="avares://Trebuchet/Assets/Trebuchet.ico"
         Width="900" Height="600"
         MinWidth="700" MinHeight="500"
         WindowStartupLocation="CenterScreen"

@@ -104,6 +104,61 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Failed Scripts List -->
+                <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="12,8"
+                        IsVisible="{Binding HasFailedScripts}">
+                    <StackPanel Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="✕"
+                                       FontSize="16"
+                                       VerticalAlignment="Center"
+                                       x:Name="FailedScriptsIcon"/>
+                            <TextBlock Text="Failed Scripts"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <ItemsControl ItemsSource="{Binding FailedScriptItems}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:FailedScriptItem">
+                                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2">
+                                        <CheckBox IsChecked="{Binding IsSelected}"
+                                                  VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding ScriptName}"
+                                                   FontFamily="Consolas,Courier New,monospace"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding ErrorSummary}"
+                                                   Opacity="0.5"
+                                                   FontSize="{DynamicResource FontSizeSmall}"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   MaxWidth="400"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Open in Editor"
+                                    Command="{Binding OpenFailedScriptsInEditorCommand}"
+                                    Padding="12,6"
+                                    ToolTip.Tip="Open selected scripts in configured code editor"/>
+                            <Button Content="Select All"
+                                    Command="{Binding SelectAllFailedScriptsCommand}"
+                                    Padding="8,4"
+                                    FontSize="{DynamicResource FontSizeSmall}"/>
+                            <Button Content="Select None"
+                                    Command="{Binding SelectNoneFailedScriptsCommand}"
+                                    Padding="8,4"
+                                    FontSize="{DynamicResource FontSizeSmall}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
                 <!-- No warnings - all clear -->
                 <StackPanel Orientation="Horizontal"
                             Spacing="8"

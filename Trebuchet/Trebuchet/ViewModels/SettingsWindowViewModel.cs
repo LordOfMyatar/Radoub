@@ -74,6 +74,9 @@ public partial class SettingsWindowViewModel : ObservableObject
     [ObservableProperty]
     private bool _compileScriptsEnabled;
 
+    [ObservableProperty]
+    private string _codeEditorPath = "";
+
     public bool IsCompilerAvailable => ScriptCompilerService.Instance.IsCompilerAvailable;
 
     public string CompilerStatusText
@@ -162,6 +165,7 @@ public partial class SettingsWindowViewModel : ObservableObject
 
         // Build settings
         CompileScriptsEnabled = localSettings.CompileScriptsEnabled;
+        CodeEditorPath = localSettings.CodeEditorPath;
 
         // Shared theme setting
         UseSharedTheme = sharedSettings.UseSharedTheme;
@@ -307,6 +311,26 @@ public partial class SettingsWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task BrowseCodeEditorPath()
+    {
+        var files = await _window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Select Code Editor Executable",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("Executables") { Patterns = new[] { "*.exe" } },
+                new FilePickerFileType("All Files") { Patterns = new[] { "*" } }
+            }
+        });
+
+        if (files.Count > 0)
+        {
+            CodeEditorPath = files[0].Path.LocalPath;
+        }
+    }
+
+    [RelayCommand]
     private void Save()
     {
         var sharedSettings = RadoubSettings.Instance;
@@ -327,6 +351,7 @@ public partial class SettingsWindowViewModel : ObservableObject
 
         // Build settings
         localSettings.CompileScriptsEnabled = CompileScriptsEnabled;
+        localSettings.CodeEditorPath = CodeEditorPath;
 
         // Shared theme setting
         sharedSettings.UseSharedTheme = UseSharedTheme;

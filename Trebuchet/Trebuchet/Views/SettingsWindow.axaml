@@ -238,6 +238,25 @@
                                    FontSize="{DynamicResource FontSizeSmall}"
                                    Margin="24,0,0,0"/>
                     </StackPanel>
+
+                    <!-- Code Editor Path -->
+                    <StackPanel Margin="0,8,0,0" Spacing="4">
+                        <TextBlock Text="Code Editor:"
+                                   FontWeight="SemiBold"/>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding CodeEditorPath}"
+                                     Watermark="Path to code editor (e.g. VS Code, Notepad++) — leave blank for system default"
+                                     Margin="0,0,8,0"/>
+                            <Button Grid.Column="1"
+                                    Content="Browse..."
+                                    Command="{Binding BrowseCodeEditorPathCommand}"
+                                    Padding="8,4"/>
+                        </Grid>
+                        <TextBlock Text="Used to open failed scripts from Build &amp; Test tab. Leave blank to use system default."
+                                   Opacity="0.5"
+                                   FontSize="{DynamicResource FontSizeSmall}"/>
+                    </StackPanel>
                 </StackPanel>
 
                 <!-- Tool Paths Section (Read-Only Info) -->
