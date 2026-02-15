@@ -376,6 +376,12 @@ public partial class SettingsWindowViewModel : ObservableObject
             ThemeManager.Instance.ApplyTheme(themeId);
         }
 
+        // Re-apply font settings after theme (ApplyTheme resets font sizes to theme defaults)
+        if (Avalonia.Application.Current is App app)
+        {
+            app.ReapplyFontSettings();
+        }
+
         _window.Close();
     }
 

@@ -158,6 +158,11 @@ public partial class App : Application
         }
     }
 
+    /// <summary>
+    /// Re-apply font settings after theme changes (theme resets font sizes to defaults).
+    /// </summary>
+    public void ReapplyFontSettings() => ApplyFontSettings();
+
     private void ApplyFontSettings()
     {
         var settings = SettingsService.Instance;
