@@ -117,14 +117,18 @@ public class ScriptCompilerService
 
             if (!File.Exists(ncsPath))
             {
-                // No compiled file exists
-                staleScripts.Add(new StaleScriptInfo
+                // No compiled file exists — only flag if the script has an entry point
+                // Include/library scripts (no void main or int StartingConditional) never produce .ncs
+                if (HasEntryPoint(nssPath))
                 {
-                    NssPath = nssPath,
-                    NcsPath = ncsPath,
-                    Reason = StaleReason.MissingNcs,
-                    NssModified = nssInfo.LastWriteTime
-                });
+                    staleScripts.Add(new StaleScriptInfo
+                    {
+                        NssPath = nssPath,
+                        NcsPath = ncsPath,
+                        Reason = StaleReason.MissingNcs,
+                        NssModified = nssInfo.LastWriteTime
+                    });
+                }
             }
             else
             {
@@ -145,6 +149,25 @@ public class ScriptCompilerService
         }
 
         return staleScripts;
+    }
+
+    /// <summary>
+    /// Check if a .nss file has a compilable entry point (void main or int StartingConditional).
+    /// Include/library scripts without entry points never produce .ncs output.
+    /// </summary>
+    private static bool HasEntryPoint(string nssPath)
+    {
+        try
+        {
+            var content = File.ReadAllText(nssPath);
+            return content.Contains("void main", StringComparison.Ordinal)
+                || content.Contains("int StartingConditional", StringComparison.Ordinal);
+        }
+        catch
+        {
+            // If we can't read it, assume it has an entry point to be safe
+            return true;
+        }
     }
 
     /// <summary>
