@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.15.0-alpha] - 2026-02-14
-**Branch**: `trebuchet/issue-1350` | **PR**: #TBD
+**Branch**: `trebuchet/issue-1350` | **PR**: #1356
 
 ### Sprint: Post-Sprint 4 Bug Fixes (#1350)
 
