@@ -63,8 +63,9 @@ namespace Parley.Views.Helpers
             var context = new ParleyScriptBrowserContext(_viewModel.CurrentFilePath, _services.Settings, _services.GameData);
 
             // Set initial module path from RadoubSettings
+            // Validate this is a real module path, not just the modules parent directory (#1326)
             var modulePath = Radoub.Formats.Settings.RadoubSettings.Instance.CurrentModulePath;
-            if (!string.IsNullOrEmpty(modulePath))
+            if (Radoub.Formats.Settings.RadoubSettings.IsValidModulePath(modulePath))
             {
                 // If it's a .mod file, find the working directory
                 if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
@@ -75,12 +76,12 @@ namespace Parley.Views.Helpers
                 {
                     modulePath = null;
                 }
-            }
 
-            if (!string.IsNullOrEmpty(modulePath))
-            {
-                dialogBrowserPanel.ModulePath = modulePath;
-                UnifiedLogger.LogUI(LogLevel.INFO, $"DialogBrowserPanel initialized with module path");
+                if (!string.IsNullOrEmpty(modulePath))
+                {
+                    dialogBrowserPanel.ModulePath = modulePath;
+                    UnifiedLogger.LogUI(LogLevel.INFO, $"DialogBrowserPanel initialized with module path");
+                }
             }
 
             // Subscribe to file selection events
