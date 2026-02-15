@@ -50,14 +50,14 @@
                 <Button x:Name="RefreshButton" Width="28" Height="28"
                         ToolTip.Tip="Refresh flowchart colors" Click="OnRefreshClick"
                         HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
-                    <TextBlock Text="↻" FontSize="14" TextAlignment="Center"/>
+                    <TextBlock Text="↻" FontSize="{DynamicResource GlobalFontSize}" TextAlignment="Center"/>
                 </Button>
                 <Rectangle Width="1" Height="20" Fill="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="4,0"/>
                 <Button x:Name="CollapseAllButton" Height="28" Padding="10,4"
                         ToolTip.Tip="Collapse all nodes"
                         Click="OnCollapseAllClick">
                     <StackPanel Orientation="Horizontal" Spacing="4">
-                        <TextBlock Text="▶" FontSize="12"/>
+                        <TextBlock Text="▶" FontSize="{DynamicResource FontSizeXSmall}"/>
                         <TextBlock Text="Collapse All" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -65,7 +65,7 @@
                         ToolTip.Tip="Expand all nodes"
                         Click="OnExpandAllClick">
                     <StackPanel Orientation="Horizontal" Spacing="4">
-                        <TextBlock Text="▼" FontSize="12"/>
+                        <TextBlock Text="▼" FontSize="{DynamicResource FontSizeXSmall}"/>
                         <TextBlock Text="Expand All" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -168,15 +168,15 @@
                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                                     <!-- Indicators for conditions/actions/collapse -->
                                     <StackPanel Orientation="Horizontal" Spacing="4">
-                                        <TextBlock Text="❓" FontSize="9" Foreground="#0066CC"
+                                        <TextBlock Text="❓" FontSize="{DynamicResource FontSizeXSmall}" Foreground="{DynamicResource ThemeInfo}"
                                                    IsVisible="{Binding HasCondition}"
                                                    ToolTip.Tip="Has conditional script (ScriptAppears)"/>
-                                        <TextBlock Text="⚡" FontSize="9" Foreground="#FF6600"
+                                        <TextBlock Text="⚡" FontSize="{DynamicResource FontSizeXSmall}" Foreground="{DynamicResource ThemeWarning}"
                                                    IsVisible="{Binding HasAction}"
                                                    ToolTip.Tip="Has action script (ScriptAction)"/>
                                         <!-- Collapse indicator - shows when node has children -->
                                         <TextBlock x:Name="CollapseIndicator"
-                                                   FontSize="9"
+                                                   FontSize="{DynamicResource FontSizeXSmall}"
                                                    Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                                    Cursor="Hand"
                                                    ToolTip.Tip="Double-click to collapse/expand children">

@@ -13,6 +13,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.150-alpha] - 2026-02-15
+**Branch**: `parley/issue-1358` | **PR**: #1374
+
+### Tech Debt: 126 Hardcoded Theme Values (#1358)
+
+---
+
 ## [0.1.149-alpha] - 2026-02-08
 **Branch**: `parley/issue-1271` | **PR**: #1272
 

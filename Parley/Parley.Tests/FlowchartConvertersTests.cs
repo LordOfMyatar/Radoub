@@ -161,12 +161,9 @@ namespace Parley.Tests
             // Act
             var result = converter.Convert(values, typeof(IBrush), null, CultureInfo.InvariantCulture);
 
-            // Assert
+            // Assert - Root border uses BrushManager.GetDisabledBrush() (theme-aware gray)
             Assert.NotNull(result);
-            Assert.IsType<SolidColorBrush>(result);
-            var brush = (SolidColorBrush)result;
-            // Root border should be medium gray (#757575)
-            Assert.Equal(Color.Parse("#757575"), brush.Color);
+            Assert.IsAssignableFrom<IBrush>(result);
         }
 
         [Fact]
@@ -269,9 +266,9 @@ namespace Parley.Tests
             // Act
             var result = converter.Convert(values, typeof(IBrush), null, CultureInfo.InvariantCulture);
 
-            // Assert
+            // Assert - Default uses BrushManager (theme-aware, may be ImmutableSolidColorBrush)
             Assert.NotNull(result);
-            Assert.IsType<SolidColorBrush>(result);
+            Assert.IsAssignableFrom<IBrush>(result);
         }
 
         #endregion

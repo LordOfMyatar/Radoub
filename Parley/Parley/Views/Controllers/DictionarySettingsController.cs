@@ -11,6 +11,7 @@ using DialogEditor.Services;
 using Radoub.Dictionary;
 using Radoub.Dictionary.Models;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 
 namespace DialogEditor.Views.Controllers
 {
@@ -135,15 +136,14 @@ namespace DialogEditor.Views.Controllers
                     {
                         Text = dict.Description,
                         TextWrapping = Avalonia.Media.TextWrapping.Wrap,
-                        FontSize = 11,
-                        Foreground = Brushes.Gray
+                        Foreground = BrushManager.GetDisabledBrush()
                     };
                     panel.Children.Add(descBlock);
                 }
 
                 var border = new Border
                 {
-                    BorderBrush = Brushes.LightGray,
+                    BorderBrush = BrushManager.GetDisabledBrush(),
                     BorderThickness = new Thickness(1),
                     Padding = new Thickness(8),
                     CornerRadius = new CornerRadius(3),
@@ -160,7 +160,7 @@ namespace DialogEditor.Views.Controllers
                 {
                     Text = "No custom dictionaries found. Add .dic files to the Dictionaries folder.",
                     FontStyle = Avalonia.Media.FontStyle.Italic,
-                    Foreground = Brushes.Gray,
+                    Foreground = BrushManager.GetDisabledBrush(),
                     Margin = new Thickness(5)
                 };
                 dictionaryItems.Add(emptyText);

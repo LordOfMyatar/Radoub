@@ -30,32 +30,38 @@
         <!-- Warnings Panel (Issue #484: Toggleable via ShowWarnings setting) -->
         <StackPanel Grid.Row="0" Spacing="5" Margin="0,0,0,10"
                     IsVisible="{Binding ShowWarnings}">
-            <Border Background="#553D0000"
-                    BorderBrush="#883D0000"
+            <Border BorderBrush="{DynamicResource ThemeWarning}"
                     BorderThickness="1"
                     CornerRadius="4"
                     Padding="10,5"
                     IsVisible="{Binding ShowNoConditionalsWarning}">
-                <TextBlock Text="No conditional scripts found in this dialog"
-                           Foreground="#FFFFAA00"/>
+                <Panel>
+                    <Border Background="{DynamicResource ThemeWarning}" Opacity="0.15" CornerRadius="4"/>
+                    <TextBlock Text="No conditional scripts found in this dialog"
+                               Foreground="{DynamicResource ThemeWarning}"/>
+                </Panel>
             </Border>
-            <Border Background="#553D0000"
-                    BorderBrush="#883D0000"
+            <Border BorderBrush="{DynamicResource ThemeWarning}"
                     BorderThickness="1"
                     CornerRadius="4"
                     Padding="10,5"
                     IsVisible="{Binding ShowUnreachableSiblingsWarning}">
-                <TextBlock Text="NPC entries without conditions detected (unreachable siblings)"
-                           Foreground="#FFFFAA00"/>
+                <Panel>
+                    <Border Background="{DynamicResource ThemeWarning}" Opacity="0.15" CornerRadius="4"/>
+                    <TextBlock Text="NPC entries without conditions detected (unreachable siblings)"
+                               Foreground="{DynamicResource ThemeWarning}"/>
+                </Panel>
             </Border>
-            <Border Background="#55550000"
-                    BorderBrush="#88550000"
+            <Border BorderBrush="{DynamicResource ThemeError}"
                     BorderThickness="1"
                     CornerRadius="4"
                     Padding="10,5"
                     IsVisible="{Binding ShowLoopWarning}">
-                <TextBlock Text="Loop detected! Use Exit to escape."
-                           Foreground="#FFFF6666"/>
+                <Panel>
+                    <Border Background="{DynamicResource ThemeError}" Opacity="0.15" CornerRadius="4"/>
+                    <TextBlock Text="Loop detected! Use Exit to escape."
+                               Foreground="{DynamicResource ThemeError}"/>
+                </Panel>
             </Border>
         </StackPanel>
 
@@ -78,7 +84,7 @@
                            x:Name="SpeakerLabel"
                            Text="{Binding NpcSpeaker, StringFormat='[{0}]'}"
                            FontWeight="Bold"
-                           FontSize="14"
+                           FontSize="{DynamicResource GlobalFontSize}"
                            Margin="0,0,0,8"
                            Foreground="{DynamicResource SystemAccentColor}"/>
 
@@ -88,7 +94,7 @@
                     <controls:TokenTextBlock x:Name="NpcTextBlock"
                                TokenText="{Binding NpcText}"
                                TextWrapping="Wrap"
-                               FontSize="14"
+                               FontSize="{DynamicResource GlobalFontSize}"
                                LineHeight="20"/>
                 </ScrollViewer>
             </Grid>
@@ -107,19 +113,19 @@
                 <StackPanel Orientation="Horizontal" Spacing="5"
                             IsVisible="{Binding ConditionScript, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                     <TextBlock Text="Condition:"
-                               FontSize="11"
+                               FontSize="{DynamicResource FontSizeSmall}"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                     <TextBlock Text="{Binding ConditionScript}"
-                               FontSize="11"
+                               FontSize="{DynamicResource FontSizeSmall}"
                                FontFamily="Consolas,Courier New,monospace"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="5"
                             IsVisible="{Binding ActionScript, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                     <TextBlock Text="Action:"
-                               FontSize="11"
+                               FontSize="{DynamicResource FontSizeSmall}"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                     <TextBlock Text="{Binding ActionScript}"
-                               FontSize="11"
+                               FontSize="{DynamicResource FontSizeSmall}"
                                FontFamily="Consolas,Courier New,monospace"/>
                 </StackPanel>
             </StackPanel>
@@ -192,12 +198,12 @@
                 IsVisible="{Binding HasEnded}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="Conversation Ended"
-                           FontSize="16"
+                           FontSize="{DynamicResource FontSizeMedium}"
                            FontWeight="Bold"
                            HorizontalAlignment="Center"
                            Margin="0,0,0,10"/>
                 <TextBlock Text="{Binding StatusMessage}"
-                           FontSize="12"
+                           FontSize="{DynamicResource FontSizeXSmall}"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                            HorizontalAlignment="Center"/>
             </StackPanel>
@@ -317,25 +323,27 @@
 
         <!-- TTS Unavailable Warning (in same row, mutually exclusive) -->
         <Border Grid.Row="6"
-                Background="#553D0000"
-                BorderBrush="#883D0000"
+                BorderBrush="{DynamicResource ThemeWarning}"
                 BorderThickness="1"
                 CornerRadius="4"
                 Padding="10"
                 Margin="0,0,0,10"
                 IsVisible="{Binding !TtsAvailable}">
-            <StackPanel Spacing="5">
-                <TextBlock Text="Text-to-Speech not available"
-                           FontWeight="SemiBold"
-                           Foreground="#FFFFAA00"/>
-                <TextBlock Text="{Binding TtsUnavailableReason}"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                           TextWrapping="Wrap"/>
-                <TextBlock Text="{Binding TtsInstallInstructions}"
-                           FontSize="11"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                           TextWrapping="Wrap"/>
-            </StackPanel>
+            <Panel>
+                <Border Background="{DynamicResource ThemeWarning}" Opacity="0.15" CornerRadius="4"/>
+                <StackPanel Spacing="5">
+                    <TextBlock Text="Text-to-Speech not available"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThemeWarning}"/>
+                    <TextBlock Text="{Binding TtsUnavailableReason}"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                               TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding TtsInstallInstructions}"
+                               FontSize="{DynamicResource FontSizeSmall}"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+            </Panel>
         </Border>
 
         <!-- Coverage Display -->

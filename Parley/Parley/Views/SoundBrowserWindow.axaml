@@ -63,45 +63,45 @@
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,5" Spacing="15">
             <TextBlock Text="Sources:"
                        VerticalAlignment="Center"
-                       FontSize="11"/>
+                       FontSize="{DynamicResource FontSizeSmall}"/>
             <CheckBox x:Name="IncludeGameResourcesCheckBox"
                       Content="Game resources"
-                      FontSize="11"
+                      FontSize="{DynamicResource FontSizeSmall}"
                       IsChecked="False"
                       ToolTip.Tip="Include sounds from base game folders"
                       Checked="OnSourceSelectionChanged"
                       Unchecked="OnSourceSelectionChanged"/>
             <CheckBox x:Name="IncludeHakFolderCheckBox"
                       Content="HAK files"
-                      FontSize="11"
+                      FontSize="{DynamicResource FontSizeSmall}"
                       IsChecked="False"
                       ToolTip.Tip="Include sounds from HAK files in dialog directory"
                       Checked="OnSourceSelectionChanged"
                       Unchecked="OnSourceSelectionChanged"/>
             <CheckBox x:Name="IncludeBifFilesCheckBox"
                       Content="BIF archives"
-                      FontSize="11"
+                      FontSize="{DynamicResource FontSizeSmall}"
                       IsChecked="False"
                       ToolTip.Tip="Include base game sounds from BIF archives (slower)"
                       Checked="OnSourceSelectionChanged"
                       Unchecked="OnSourceSelectionChanged"/>
             <CheckBox x:Name="IncludeOtherLocationCheckBox"
                       Content="Other location"
-                      FontSize="11"
+                      FontSize="{DynamicResource FontSizeSmall}"
                       IsChecked="False"
                       ToolTip.Tip="Browse for sounds in a custom folder"
                       Checked="OnOtherLocationToggled"
                       Unchecked="OnOtherLocationToggled"/>
             <Button x:Name="BrowseLocationButton"
                     Content="Browse..."
-                    FontSize="11"
+                    FontSize="{DynamicResource FontSizeSmall}"
                     Padding="8,2"
                     IsEnabled="False"
                     Click="OnBrowseLocationClick"/>
             <TextBlock x:Name="OtherLocationLabel"
                        Text=""
                        VerticalAlignment="Center"
-                       FontSize="10"
+                       FontSize="{DynamicResource FontSizeXSmall}"
                        Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                        TextTrimming="CharacterEllipsis"
                        MaxWidth="150"/>
@@ -119,7 +119,7 @@
             <CheckBox Grid.Column="0"
                       x:Name="MonoOnlyCheckBox"
                       Content="Mono only"
-                      FontSize="11"
+                      FontSize="{DynamicResource FontSizeSmall}"
                       IsChecked="True"
                       ToolTip.Tip="Show only mono sounds (conversation-compatible)"
                       Checked="OnMonoFilterChanged"
@@ -127,16 +127,16 @@
             <CheckBox Grid.Column="1"
                       x:Name="DisableValidationCheckBox"
                       Content="Skip HAK validation"
-                      FontSize="11"
+                      FontSize="{DynamicResource FontSizeSmall}"
                       Margin="15,0,0,0"
                       ToolTip.Tip="Disable on-selection format validation for HAK sounds (faster for large HAK collections)"/>
             <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10">
                 <TextBlock Text="○ = BIF"
-                           FontSize="10"
+                           FontSize="{DynamicResource FontSizeXSmall}"
                            VerticalAlignment="Center"/>
                 <TextBlock Text="☐ = HAK"
-                           FontSize="10"
-                           Foreground="LightBlue"
+                           FontSize="{DynamicResource FontSizeXSmall}"
+                           Foreground="{DynamicResource ThemeInfo}"
                            VerticalAlignment="Center"/>
             </StackPanel>
         </Grid>

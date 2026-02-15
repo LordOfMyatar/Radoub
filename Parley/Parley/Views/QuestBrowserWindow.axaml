@@ -100,7 +100,7 @@
                                     <TextBlock Text="{Binding Tag}" FontWeight="Bold"/>
                                     <TextBlock Text="{Binding DisplayName}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                               FontSize="11"
+                                               FontSize="{DynamicResource FontSizeSmall}"
                                                TextTrimming="CharacterEllipsis"/>
                                 </StackPanel>
                             </DataTemplate>
@@ -149,7 +149,7 @@
                                                ToolTip.Tip="{Binding FullText}"/>
                                     <TextBlock Grid.Column="2"
                                                Text="✓ Complete"
-                                               Foreground="DarkGreen"
+                                               Foreground="{DynamicResource ThemeSuccess}"
                                                FontWeight="Bold"
                                                IsVisible="{Binding End}"/>
                                 </Grid>

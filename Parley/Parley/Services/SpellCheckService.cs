@@ -8,6 +8,7 @@ using Avalonia;
 using Avalonia.Media;
 using Radoub.Dictionary;
 using Radoub.Dictionary.Models;
+using Radoub.UI.Services;
 
 namespace DialogEditor.Services
 {
@@ -342,7 +343,7 @@ namespace DialogEditor.Services
             }
 
             // Ultimate fallback
-            return new SolidColorBrush(Color.Parse("#D32F2F"));
+            return BrushManager.GetErrorBrush();
         }
 
         /// <summary>
