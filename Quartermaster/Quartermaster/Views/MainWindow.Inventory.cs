@@ -228,18 +228,14 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// Handles equip items request from palette.
-    /// Only considers standard equipment slots (not creature natural slots like Claws/Skin).
+    /// Handles equip items request from palette or backpack.
+    /// Prefers standard slots, but falls back to natural slots for creature-only items (e.g., skins).
     /// </summary>
     private void OnEquipItemsRequested(object? sender, ItemViewModel[] items)
     {
         UnifiedLogger.LogInventory(LogLevel.INFO, $"OnEquipItemsRequested: {items.Length} items selected");
 
         var validator = new Radoub.UI.Services.EquipmentSlotValidator(GameData);
-
-        // Only consider standard slots (not natural/creature slots) when equipping from palette
-        // Natural slots (Claw1-3, Skin) are creature-only and should be edited directly
-        var standardSlots = _equipmentSlots.Where(s => s.IsStandard).ToList();
 
         foreach (var paletteItem in items)
         {
@@ -255,25 +251,36 @@ public partial class MainWindow
                 continue;
             }
 
-            // Mask out creature-only slots (Claw1=0x4000, Claw2=0x8000, Claw3=0x10000, Skin=0x20000)
+            // Try standard slots first, fall back to natural slots for creature-only items
             const int StandardSlotsMask = 0x3FFF; // Bits 0-13 only
             var standardSlotsBitmask = validSlotsBitmask.Value & StandardSlotsMask;
 
-            if (standardSlotsBitmask == 0)
+            List<EquipmentSlotViewModel> candidateSlots;
+            int effectiveBitmask;
+
+            if (standardSlotsBitmask != 0)
             {
-                UnifiedLogger.LogInventory(LogLevel.WARN,
-                    $"Cannot equip {paletteItem.Name}: item has no standard equipment slots (creature-only item?)");
-                continue;
+                // Item fits standard slots - use those
+                candidateSlots = _equipmentSlots.Where(s => s.IsStandard).ToList();
+                effectiveBitmask = standardSlotsBitmask;
+            }
+            else
+            {
+                // Creature-only item (e.g., skin) - use natural slots
+                candidateSlots = _equipmentSlots.Where(s => s.IsNatural).ToList();
+                effectiveBitmask = validSlotsBitmask.Value;
+                UnifiedLogger.LogInventory(LogLevel.DEBUG,
+                    $"Creature-only item {paletteItem.Name}: using natural slots, bitmask 0x{effectiveBitmask:X}");
             }
 
             UnifiedLogger.LogInventory(LogLevel.DEBUG,
-                $"Valid standard slots bitmask for {paletteItem.Name}: 0x{standardSlotsBitmask:X}");
+                $"Valid slots bitmask for {paletteItem.Name}: 0x{effectiveBitmask:X}");
 
-            // Find first empty matching standard slot
+            // Find first empty matching slot
             EquipmentSlotViewModel? targetSlot = null;
-            foreach (var slot in standardSlots)
+            foreach (var slot in candidateSlots)
             {
-                if ((standardSlotsBitmask & slot.SlotFlag) != 0 && !slot.HasItem)
+                if ((effectiveBitmask & slot.SlotFlag) != 0 && !slot.HasItem)
                 {
                     targetSlot = slot;
                     break;
@@ -283,9 +290,9 @@ public partial class MainWindow
             // If no empty slot, find first matching slot (will replace)
             if (targetSlot == null)
             {
-                foreach (var slot in standardSlots)
+                foreach (var slot in candidateSlots)
                 {
-                    if ((standardSlotsBitmask & slot.SlotFlag) != 0)
+                    if ((effectiveBitmask & slot.SlotFlag) != 0)
                     {
                         targetSlot = slot;
                         break;
@@ -296,7 +303,7 @@ public partial class MainWindow
             if (targetSlot == null)
             {
                 UnifiedLogger.LogInventory(LogLevel.WARN,
-                    $"Cannot equip {paletteItem.Name}: no matching standard slot found for bitmask 0x{standardSlotsBitmask:X}");
+                    $"Cannot equip {paletteItem.Name}: no matching slot found for bitmask 0x{effectiveBitmask:X}");
                 continue;
             }
 
@@ -334,11 +341,25 @@ public partial class MainWindow
         {
             const int StandardSlotsMask = 0x3FFF;
             var standardBits = validSlotsBitmask.Value & StandardSlotsMask;
-            var standardSlots = _equipmentSlots.Where(s => s.IsStandard).ToList();
+
+            // Determine candidate slots: standard first, natural for creature-only items
+            List<EquipmentSlotViewModel> candidateSlots;
+            int effectiveBits;
+
+            if (standardBits != 0)
+            {
+                candidateSlots = _equipmentSlots.Where(s => s.IsStandard).ToList();
+                effectiveBits = standardBits;
+            }
+            else
+            {
+                candidateSlots = _equipmentSlots.Where(s => s.IsNatural).ToList();
+                effectiveBits = validSlotsBitmask.Value;
+            }
 
             // Find the slot that OnEquipItemsRequested will target (same logic: empty first, then first match)
-            var targetSlot = standardSlots.FirstOrDefault(s => (standardBits & s.SlotFlag) != 0 && !s.HasItem)
-                          ?? standardSlots.FirstOrDefault(s => (standardBits & s.SlotFlag) != 0);
+            var targetSlot = candidateSlots.FirstOrDefault(s => (effectiveBits & s.SlotFlag) != 0 && !s.HasItem)
+                          ?? candidateSlots.FirstOrDefault(s => (effectiveBits & s.SlotFlag) != 0);
 
             // If the target slot has an existing item, unequip it to backpack first (swap)
             if (targetSlot?.HasItem == true)
