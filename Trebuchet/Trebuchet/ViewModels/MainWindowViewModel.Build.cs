@@ -60,12 +60,16 @@ public partial class MainWindowViewModel
             // If compile scripts is enabled and compiler is available, compile first
             if (SettingsService.Instance.CompileScriptsEnabled && compilerService.IsCompilerAvailable)
             {
-                // Filter scripts based on BuildUncompiledScriptsEnabled setting
-                var scriptsToCompile = staleScripts
-                    .Where(s => s.Reason == StaleReason.SourceNewer
-                             || SettingsService.Instance.BuildUncompiledScriptsEnabled)
-                    .Select(s => s.NssPath)
-                    .ToList();
+                // "Compile all" = every .nss in working dir; "Only changed" = stale scripts only
+                List<string> scriptsToCompile;
+                if (SettingsService.Instance.BuildUncompiledScriptsEnabled)
+                {
+                    scriptsToCompile = Directory.GetFiles(workingDir, "*.nss", SearchOption.TopDirectoryOnly).ToList();
+                }
+                else
+                {
+                    scriptsToCompile = staleScripts.Select(s => s.NssPath).ToList();
+                }
 
                 if (scriptsToCompile.Count > 0)
                 {
