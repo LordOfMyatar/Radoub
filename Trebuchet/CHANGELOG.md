@@ -15,6 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fix: Script Compiler Broken on Linux (#1389)
 
+- Replace bundled ARM64 (aarch64) Linux compiler binary with x86_64 binary from neverwinter.nim 2.1.2
+- Add runtime executable permission (`chmod +x`) for compiler binary on Linux/macOS using `File.SetUnixFileMode()`
+
 ---
 
 ## [1.18.0-alpha] - 2026-02-15
