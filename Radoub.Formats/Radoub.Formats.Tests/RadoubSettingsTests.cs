@@ -10,11 +10,17 @@ namespace Radoub.Formats.Tests;
 public class RadoubSettingsTests : IDisposable
 {
     private readonly string _testDirectory;
+    private readonly string _fakeTlkPath;
+    private readonly string _fakeModulePath;
 
     public RadoubSettingsTests()
     {
         _testDirectory = Path.Combine(Path.GetTempPath(), $"RadoubSettingsTest_{Guid.NewGuid():N}");
         Directory.CreateDirectory(_testDirectory);
+
+        // Build privacy-safe test paths under temp
+        _fakeTlkPath = Path.Combine(_testDirectory, "tlk", "custom.tlk");
+        _fakeModulePath = Path.Combine(_testDirectory, "modules", "mymodule");
 
         RadoubSettings.ResetForTesting();
         RadoubSettings.ConfigureForTesting(_testDirectory);
@@ -36,7 +42,7 @@ public class RadoubSettingsTests : IDisposable
     public void CustomTlkPath_PersistsToFile()
     {
         var settings = RadoubSettings.Instance;
-        settings.CustomTlkPath = "/home/user/NWN/tlk/custom.tlk";
+        settings.CustomTlkPath = _fakeTlkPath;
 
         // Verify the JSON file was written
         var filePath = Path.Combine(_testDirectory, "RadoubSettings.json");
@@ -50,7 +56,7 @@ public class RadoubSettingsTests : IDisposable
     public void CurrentModulePath_PersistsToFile()
     {
         var settings = RadoubSettings.Instance;
-        settings.CurrentModulePath = "/home/user/NWN/modules/mymodule";
+        settings.CurrentModulePath = _fakeModulePath;
 
         var filePath = Path.Combine(_testDirectory, "RadoubSettings.json");
         Assert.True(File.Exists(filePath));
@@ -62,25 +68,30 @@ public class RadoubSettingsTests : IDisposable
     [Fact]
     public void ReloadSettings_ReadsUpdatedValues()
     {
-        var settings = RadoubSettings.Instance;
-        settings.CustomTlkPath = "/original/path.tlk";
-        settings.CurrentModulePath = "/original/module";
+        var originalTlk = Path.Combine(_testDirectory, "original", "path.tlk");
+        var originalModule = Path.Combine(_testDirectory, "original", "module");
+        var updatedTlk = Path.Combine(_testDirectory, "updated", "custom.tlk");
+        var updatedModule = Path.Combine(_testDirectory, "updated", "module");
 
-        Assert.Equal("/original/path.tlk", settings.CustomTlkPath);
-        Assert.Equal("/original/module", settings.CurrentModulePath);
+        var settings = RadoubSettings.Instance;
+        settings.CustomTlkPath = originalTlk;
+        settings.CurrentModulePath = originalModule;
+
+        Assert.Equal(originalTlk, settings.CustomTlkPath);
+        Assert.Equal(originalModule, settings.CurrentModulePath);
 
         // Simulate another process writing to the settings file
         var filePath = Path.Combine(_testDirectory, "RadoubSettings.json");
         var json = File.ReadAllText(filePath);
-        json = json.Replace("/original/path.tlk", "/updated/custom.tlk");
-        json = json.Replace("/original/module", "/updated/module");
+        json = json.Replace(originalTlk.Replace("\\", "\\\\"), updatedTlk.Replace("\\", "\\\\"));
+        json = json.Replace(originalModule.Replace("\\", "\\\\"), updatedModule.Replace("\\", "\\\\"));
         File.WriteAllText(filePath, json);
 
         // Reload should pick up the new values
         settings.ReloadSettings();
 
-        Assert.Equal("/updated/custom.tlk", settings.CustomTlkPath);
-        Assert.Equal("/updated/module", settings.CurrentModulePath);
+        Assert.Equal(updatedTlk, settings.CustomTlkPath);
+        Assert.Equal(updatedModule, settings.CurrentModulePath);
     }
 
     [Fact]
@@ -88,8 +99,8 @@ public class RadoubSettingsTests : IDisposable
     {
         // First instance writes settings
         var settings1 = RadoubSettings.Instance;
-        settings1.CustomTlkPath = "/home/user/tlk/test.tlk";
-        settings1.CurrentModulePath = "/home/user/modules/test_module";
+        settings1.CustomTlkPath = _fakeTlkPath;
+        settings1.CurrentModulePath = _fakeModulePath;
 
         // Reset and create a new instance (simulates child process startup)
         RadoubSettings.ResetForTesting();
@@ -98,8 +109,8 @@ public class RadoubSettingsTests : IDisposable
         var settings2 = RadoubSettings.Instance;
 
         // New instance should have the same values from disk
-        Assert.Equal("/home/user/tlk/test.tlk", settings2.CustomTlkPath);
-        Assert.Equal("/home/user/modules/test_module", settings2.CurrentModulePath);
+        Assert.Equal(_fakeTlkPath, settings2.CustomTlkPath);
+        Assert.Equal(_fakeModulePath, settings2.CurrentModulePath);
     }
 
     [Fact]
@@ -128,7 +139,7 @@ public class RadoubSettingsTests : IDisposable
     public void EmptyCustomTlkPath_PersistsCorrectly()
     {
         var settings = RadoubSettings.Instance;
-        settings.CustomTlkPath = "/some/path.tlk";
+        settings.CustomTlkPath = _fakeTlkPath;
         settings.CustomTlkPath = "";
 
         // Reset and reload
