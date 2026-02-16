@@ -97,6 +97,51 @@ public static class PathHelper
     }
 
     /// <summary>
+    /// Find a file in a directory using case-insensitive matching.
+    /// First tries the exact path (fast path), then falls back to case-insensitive
+    /// directory enumeration. Required for cross-platform support - Linux filesystems
+    /// are case-sensitive but Aurora Engine ResRefs may have mixed case. (#1384)
+    /// </summary>
+    /// <param name="directory">The directory to search in.</param>
+    /// <param name="fileName">The filename to find (e.g., "module.ifo").</param>
+    /// <returns>The actual file path with correct casing, or null if not found.</returns>
+    public static string? FindFileInDirectory(string directory, string fileName)
+    {
+        if (string.IsNullOrEmpty(directory) || string.IsNullOrEmpty(fileName))
+            return null;
+
+        // Fast path: exact match (always works on Windows, works on Linux if case matches)
+        var exactPath = Path.Combine(directory, fileName);
+        if (File.Exists(exactPath))
+            return exactPath;
+
+        // Slow path: case-insensitive search (needed on Linux)
+        try
+        {
+            if (!Directory.Exists(directory))
+                return null;
+
+            var match = Directory.GetFiles(directory, fileName,
+                new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive })
+                .FirstOrDefault();
+            return match;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Check if a file exists in a directory using case-insensitive matching.
+    /// Convenience wrapper around FindFileInDirectory. (#1384)
+    /// </summary>
+    public static bool FileExistsInDirectory(string directory, string fileName)
+    {
+        return FindFileInDirectory(directory, fileName) != null;
+    }
+
+    /// <summary>
     /// Contracts a list of paths for storage.
     /// </summary>
     /// <param name="paths">List of paths to contract.</param>

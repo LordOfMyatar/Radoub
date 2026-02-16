@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Radoub.Formats.Common;
 using Radoub.Formats.Fac;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
@@ -239,8 +240,8 @@ public partial class FactionEditorViewModel : ObservableObject
             if (workingDir != null)
             {
                 _workingDirectoryPath = workingDir;
-                var facPath = Path.Combine(workingDir, "repute.fac");
-                if (File.Exists(facPath)) return facPath;
+                var facPath = PathHelper.FindFileInDirectory(workingDir, "repute.fac");
+                if (facPath != null) return facPath;
             }
             else
             {
@@ -251,8 +252,8 @@ public partial class FactionEditorViewModel : ObservableObject
         else if (Directory.Exists(modulePath))
         {
             _workingDirectoryPath = modulePath;
-            var facPath = Path.Combine(modulePath, "repute.fac");
-            if (File.Exists(facPath)) return facPath;
+            var facPath = PathHelper.FindFileInDirectory(modulePath, "repute.fac");
+            if (facPath != null) return facPath;
         }
 
         return null;

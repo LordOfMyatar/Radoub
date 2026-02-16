@@ -235,7 +235,9 @@ public class GameDataService : IGameDataService
             if (Directory.Exists(dataPath))
             {
                 config.GameDataPath = dataPath;
-                config.KeyFilePath = Path.Combine(dataPath, "nwn_base.key");
+                // Case-insensitive lookup for Linux (#1384)
+                config.KeyFilePath = PathHelper.FindFileInDirectory(dataPath, "nwn_base.key")
+                    ?? Path.Combine(dataPath, "nwn_base.key");
             }
         }
 

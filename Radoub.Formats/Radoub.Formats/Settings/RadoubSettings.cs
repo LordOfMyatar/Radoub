@@ -57,6 +57,30 @@ public class RadoubSettings : INotifyPropertyChanged
         }
     }
 
+    /// <summary>
+    /// Reset the singleton instance for testing. Clears instance and settings directory cache.
+    /// </summary>
+    public static void ResetForTesting()
+    {
+        lock (_lock)
+        {
+            _instance = null;
+            _settingsDirectory = null;
+        }
+    }
+
+    /// <summary>
+    /// Configure an isolated settings directory for testing.
+    /// Must be called before first Instance access.
+    /// </summary>
+    public static void ConfigureForTesting(string testDirectory)
+    {
+        lock (_lock)
+        {
+            _settingsDirectory = testDirectory;
+        }
+    }
+
     private static string SettingsFilePath => Path.Combine(SettingsDirectory, "RadoubSettings.json");
 
     // Game installation paths
@@ -104,6 +128,19 @@ public class RadoubSettings : INotifyPropertyChanged
         {
             AutoDetectPaths();
         }
+    }
+
+    /// <summary>
+    /// Reload settings from disk. Used when another process (e.g., Trebuchet)
+    /// may have updated RadoubSettings.json since this instance was created. (#1384)
+    /// </summary>
+    public void ReloadSettings()
+    {
+        LoadSettings();
+        UnifiedLogger.Log(LogLevel.DEBUG,
+            $"Reloaded settings - Module: {(string.IsNullOrEmpty(_currentModulePath) ? "(none)" : UnifiedLogger.SanitizePath(_currentModulePath))}, " +
+            $"TLK: {(string.IsNullOrEmpty(_customTlkPath) ? "(none)" : UnifiedLogger.SanitizePath(_customTlkPath))}",
+            "RadoubSettings", "Settings");
     }
 
     /// <summary>
@@ -472,8 +509,8 @@ public class RadoubSettings : INotifyPropertyChanged
         if (File.Exists(path) && path.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
             return true;
 
-        // Directory with module.ifo (unpacked module)
-        if (Directory.Exists(path) && File.Exists(Path.Combine(path, "module.ifo")))
+        // Directory with module.ifo (unpacked module) - case-insensitive for Linux (#1384)
+        if (Directory.Exists(path) && PathHelper.FileExistsInDirectory(path, "module.ifo"))
             return true;
 
         return false;
@@ -491,8 +528,8 @@ public class RadoubSettings : INotifyPropertyChanged
             if (Directory.Exists(dataPath))
                 return dataPath;
 
-            // Maybe the path IS the data folder
-            if (File.Exists(Path.Combine(_baseGameInstallPath, "nwn_base.key")))
+            // Maybe the path IS the data folder - case-insensitive for Linux (#1384)
+            if (PathHelper.FileExistsInDirectory(_baseGameInstallPath, "nwn_base.key"))
                 return _baseGameInstallPath;
         }
 
@@ -517,8 +554,9 @@ public class RadoubSettings : INotifyPropertyChanged
             var language = LanguageHelper.FromLanguageCode(langCode);
             if (language.HasValue)
             {
-                var tlkPath = Path.Combine(dir, "data", "dialog.tlk");
-                if (File.Exists(tlkPath))
+                // Case-insensitive for Linux (#1384)
+                var dataDir = Path.Combine(dir, "data");
+                if (PathHelper.FileExistsInDirectory(dataDir, "dialog.tlk"))
                     yield return language.Value;
             }
         }
@@ -535,28 +573,30 @@ public class RadoubSettings : INotifyPropertyChanged
         var langCode = LanguageHelper.GetLanguageCode(language);
         var tlkFilename = gender == Gender.Female ? "dialogf.tlk" : "dialog.tlk";
 
-        // NWN:EE structure: lang/XX/data/dialog.tlk
-        var eePath = Path.Combine(_baseGameInstallPath, "lang", langCode, "data", tlkFilename);
-        if (File.Exists(eePath))
+        // NWN:EE structure: lang/XX/data/dialog.tlk - case-insensitive for Linux (#1384)
+        var eeDataDir = Path.Combine(_baseGameInstallPath, "lang", langCode, "data");
+        var eePath = PathHelper.FindFileInDirectory(eeDataDir, tlkFilename);
+        if (eePath != null)
             return eePath;
 
         // Fall back to non-gendered if female not found
         if (gender == Gender.Female)
         {
-            var fallbackPath = Path.Combine(_baseGameInstallPath, "lang", langCode, "data", "dialog.tlk");
-            if (File.Exists(fallbackPath))
+            var fallbackPath = PathHelper.FindFileInDirectory(eeDataDir, "dialog.tlk");
+            if (fallbackPath != null)
                 return fallbackPath;
         }
 
         // Classic NWN structure: data/dialog.tlk (single language)
-        var classicPath = Path.Combine(_baseGameInstallPath, "data", tlkFilename);
-        if (File.Exists(classicPath))
+        var classicDataDir = Path.Combine(_baseGameInstallPath, "data");
+        var classicPath = PathHelper.FindFileInDirectory(classicDataDir, tlkFilename);
+        if (classicPath != null)
             return classicPath;
 
         if (gender == Gender.Female)
         {
-            var classicFallback = Path.Combine(_baseGameInstallPath, "data", "dialog.tlk");
-            if (File.Exists(classicFallback))
+            var classicFallback = PathHelper.FindFileInDirectory(classicDataDir, "dialog.tlk");
+            if (classicFallback != null)
                 return classicFallback;
         }
 
@@ -640,9 +680,11 @@ public class RadoubSettings : INotifyPropertyChanged
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Use defaults on error
+            // Use defaults on error, but log so failures aren't invisible (#1384)
+            UnifiedLogger.Log(LogLevel.WARN,
+                $"Failed to load RadoubSettings: {ex.Message}", "RadoubSettings", "Settings");
         }
     }
 
@@ -688,9 +730,11 @@ public class RadoubSettings : INotifyPropertyChanged
             var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(SettingsFilePath, json);
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore save errors
+            // Log save errors so failures aren't invisible (#1384)
+            UnifiedLogger.Log(LogLevel.WARN,
+                $"Failed to save RadoubSettings: {ex.Message}", "RadoubSettings", "Settings");
         }
     }
 
