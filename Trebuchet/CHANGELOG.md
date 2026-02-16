@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.19.0-alpha] - 2026-02-15
-**Branch**: `trebuchet/issue-1389` | **PR**: #TBD
+**Branch**: `trebuchet/issue-1389` | **PR**: #1390
 
 ### Fix: Script Compiler Broken on Linux (#1389)
 
