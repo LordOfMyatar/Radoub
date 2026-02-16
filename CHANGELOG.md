@@ -15,6 +15,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.70] - 2026-02-15
+**Branch**: `radoub/issue-1364` | **PR**: #1386
+
+### Sprint: Security Scan & Infrastructure (#1261, #1364, #1239)
+
+- [x] #1257 - NuGet vulnerability scan: 0 vulnerable packages found. Filed #1387 for xunit v2→v3 deprecation.
+- [x] #1256 - Semgrep static analysis: 0 findings across C# and security-audit rulesets.
+- [x] #1239 - Migrate all tools from hardcoded versions + GitInfo to Nerdbank.GitVersioning (NBGV). Per-tool `version.json` with path filters for independent monorepo versioning.
+- [x] #1364 - Add unified `radoub-pr-checks.yml` CI workflow: build (win+linux), unit tests, privacy scan. Add `fetch-depth: 0` to all 8 existing PR workflows for NBGV compatibility.
+- Add per-tool PR build/test workflows for Trebuchet and Fence (Windows + Ubuntu matrix).
+- Fix privacy scan: replace hardcoded path in BicReaderTests, exclude binary tools from grep scan.
+- Fix Ubuntu CI: exclude `Radoub.IntegrationTests` (net9.0-windows) on non-Windows runners.
+- Updated 3 release workflows (parley, manifest, radoub-bundle) to use NBGV instead of GitVersion/tag parsing.
+- Updated `/pre-merge`, `/init-item`, `/release` commands and `CLAUDE.md` for NBGV versioning.
+
+---
+
 ## [0.9.69] - 2026-02-14
 **Branch**: `radoub/issue-1352` | **PR**: #1365
 

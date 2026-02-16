@@ -157,9 +157,9 @@ Before releasing:
 - [ ] Latest commit: [hash] [message]
 
 ## Tool Versions Included
-- Parley: v0.1.120-alpha
-- Manifest: v0.6.0-alpha
-- Fence: v0.1.0-alpha
+- Parley: [NBGV computed version]
+- Manifest: [NBGV computed version]
+- Fence: [NBGV computed version]
 
 ## Changes Since Last Release
 [list of changelog entries from all tools]
@@ -167,6 +167,14 @@ Before releasing:
 ## Ready to Release?
 Confirm to create tag `radoub-v0.8.4` and trigger release build.
 ```
+
+**Getting Tool Versions** (NBGV):
+```bash
+dotnet nbgv get-version --project Parley -f json | jq -r '.SemVer2'
+dotnet nbgv get-version --project Manifest -f json | jq -r '.SemVer2'
+dotnet nbgv get-version --project Fence -f json | jq -r '.SemVer2'
+```
+On Windows without jq, use: `dotnet nbgv get-version --project Parley -v SemVer2`
 
 ## Safety Checks
 

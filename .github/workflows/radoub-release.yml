@@ -45,10 +45,26 @@ jobs:
       run: |
         TAG="${GITHUB_REF#refs/tags/}"
         VERSION="${TAG#radoub-v}"
-        COMMIT=$(git rev-parse --short=7 HEAD)
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "tag=$TAG" >> $GITHUB_OUTPUT
-        echo "commit=$COMMIT" >> $GITHUB_OUTPUT
+
+    - name: Determine Parley Version
+      uses: dotnet/nbgv@master
+      id: parley-ver
+      with:
+        path: Parley
+
+    - name: Determine Manifest Version
+      uses: dotnet/nbgv@master
+      id: manifest-ver
+      with:
+        path: Manifest
+
+    - name: Determine Fence Version
+      uses: dotnet/nbgv@master
+      id: fence-ver
+      with:
+        path: Fence
 
     - name: Restore Parley dependencies
       run: dotnet restore Parley/Parley/Parley.csproj -r ${{ matrix.runtime }}
@@ -62,17 +78,17 @@ jobs:
     # Publish all tools to the SAME output folder - DLLs are automatically shared
     # Parley first (larger, has more dependencies including CEF)
     # IncludePlugins=false excludes plugin SDK files from bundle (plugins not ready for release)
-    # InformationalVersion overrides GitInfo's auto-generated version with version+commit
+    # NBGV injects version automatically via MSBuild
     - name: Publish Parley to shared folder
-      run: dotnet publish Parley/Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -p:IncludePlugins=false -p:Version=${{ steps.version.outputs.version }} -p:InformationalVersion=${{ steps.version.outputs.version }}+${{ steps.version.outputs.commit }} -o ./publish/Radoub
+      run: dotnet publish Parley/Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -p:IncludePlugins=false -o ./publish/Radoub
 
     # Manifest - only adds Manifest.exe and Manifest-specific files, DLLs already present
     - name: Publish Manifest to shared folder
-      run: dotnet publish Manifest/Manifest/Manifest.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -p:Version=${{ steps.version.outputs.version }} -p:InformationalVersion=${{ steps.version.outputs.version }}+${{ steps.version.outputs.commit }} -o ./publish/Radoub
+      run: dotnet publish Manifest/Manifest/Manifest.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -o ./publish/Radoub
 
     # Fence - merchant/store editor
     - name: Publish Fence to shared folder
-      run: dotnet publish Fence/Fence/Fence.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -p:Version=${{ steps.version.outputs.version }} -p:InformationalVersion=${{ steps.version.outputs.version }}+${{ steps.version.outputs.commit }} -o ./publish/Radoub
+      run: dotnet publish Fence/Fence/Fence.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -o ./publish/Radoub
 
     - name: Display bundle structure
       shell: bash
@@ -107,9 +123,9 @@ jobs:
             <key>CFBundleName</key>
             <string>Parley</string>
             <key>CFBundleVersion</key>
-            <string>${{ steps.version.outputs.version }}</string>
+            <string>${{ steps.parley-ver.outputs.SemVer2 }}</string>
             <key>CFBundleShortVersionString</key>
-            <string>${{ steps.version.outputs.version }}</string>
+            <string>${{ steps.parley-ver.outputs.SemVer2 }}</string>
             <key>CFBundlePackageType</key>
             <string>APPL</string>
             <key>NSHighResolutionCapable</key>
@@ -136,9 +152,9 @@ jobs:
             <key>CFBundleName</key>
             <string>Manifest</string>
             <key>CFBundleVersion</key>
-            <string>${{ steps.version.outputs.version }}</string>
+            <string>${{ steps.manifest-ver.outputs.SemVer2 }}</string>
             <key>CFBundleShortVersionString</key>
-            <string>${{ steps.version.outputs.version }}</string>
+            <string>${{ steps.manifest-ver.outputs.SemVer2 }}</string>
             <key>CFBundlePackageType</key>
             <string>APPL</string>
             <key>NSHighResolutionCapable</key>
@@ -165,9 +181,9 @@ jobs:
             <key>CFBundleName</key>
             <string>Fence</string>
             <key>CFBundleVersion</key>
-            <string>${{ steps.version.outputs.version }}</string>
+            <string>${{ steps.fence-ver.outputs.SemVer2 }}</string>
             <key>CFBundleShortVersionString</key>
-            <string>${{ steps.version.outputs.version }}</string>
+            <string>${{ steps.fence-ver.outputs.SemVer2 }}</string>
             <key>CFBundlePackageType</key>
             <string>APPL</string>
             <key>NSHighResolutionCapable</key>

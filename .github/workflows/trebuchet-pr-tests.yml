@@ -1,0 +1,77 @@
+name: Trebuchet PR Tests
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'Trebuchet/**'
+      - 'Radoub.Formats/**'
+      - 'Radoub.UI/**'
+      - '.github/workflows/trebuchet-pr-tests.yml'
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0  # NBGV needs full history
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore and build
+      run: dotnet build Trebuchet/Trebuchet.Tests/Trebuchet.Tests.csproj --configuration Release
+
+    - name: Run Trebuchet.Tests
+      id: trebuchet-tests
+      shell: bash
+      run: |
+        dotnet test Trebuchet/Trebuchet.Tests/Trebuchet.Tests.csproj \
+          --configuration Release \
+          --no-build \
+          --verbosity normal \
+          --logger "trx;LogFileName=trebuchet-results.trx" \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./TestResults/Trebuchet
+      continue-on-error: true
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: trebuchet-test-results-${{ matrix.os }}
+        path: ./TestResults
+        retention-days: 30
+
+    - name: Test Report
+      uses: dorny/test-reporter@v2
+      if: always()
+      with:
+        name: Trebuchet Test Results (${{ matrix.os }})
+        path: './TestResults/Trebuchet/trebuchet-results.trx'
+        reporter: dotnet-trx
+        fail-on-error: false
+
+    - name: Report test results
+      if: always()
+      shell: bash
+      run: |
+        if [ "${{ steps.trebuchet-tests.outcome }}" = "success" ]; then
+          echo "✅ Trebuchet tests passed (${{ matrix.os }})"
+        else
+          echo "❌ Trebuchet tests failed (${{ matrix.os }})"
+          exit 1
+        fi

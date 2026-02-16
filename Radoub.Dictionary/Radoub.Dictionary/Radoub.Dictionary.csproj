@@ -8,7 +8,6 @@
     <AssemblyName>Radoub.Dictionary</AssemblyName>
     <Description>D&amp;D/NWN spell-checking library for Radoub tools</Description>
     <Authors>Lord of Midnight</Authors>
-    <Version>0.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

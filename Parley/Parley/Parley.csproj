@@ -9,12 +9,6 @@
     <!-- Define WINDOWS for conditional compilation of Windows-specific TTS code -->
     <DefineConstants Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(DefineConstants);WINDOWS</DefineConstants>
 
-    <!-- Version Configuration -->
-    <!-- Version properties are set by GitVersion during build -->
-    <!-- InformationalVersion will be set to semantic version (e.g., "0.1.1-alpha") -->
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
-
     <!-- Product Information -->
     <Product>Parley - Dialog Editor for Neverwinter Nights</Product>
     <Company>LNS Development</Company>
@@ -58,10 +52,6 @@
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
     <PackageReference Include="CommunityToolkit.Mvvm" />
-    <PackageReference Include="GitInfo">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="NAudio" />

@@ -1,0 +1,48 @@
+name: Trebuchet PR Build Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'Trebuchet/**'
+      - 'Radoub.Formats/**'
+      - 'Radoub.UI/**'
+      - '.github/workflows/trebuchet-pr-build.yml'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0  # NBGV needs full history
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore Trebuchet/Trebuchet/Trebuchet.csproj
+
+    - name: Build Trebuchet
+      id: build
+      run: dotnet build Trebuchet/Trebuchet/Trebuchet.csproj --configuration Release --no-restore
+      continue-on-error: true
+
+    - name: Report status
+      if: always()
+      shell: bash
+      run: |
+        if [ "${{ steps.build.outcome }}" = "success" ]; then
+          echo "✅ Trebuchet build successful (${{ matrix.os }})"
+        else
+          echo "❌ Trebuchet build failed (${{ matrix.os }})"
+          exit 1
+        fi

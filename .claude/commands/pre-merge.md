@@ -159,27 +159,14 @@ When the tech debt scan reports large files (>500 lines), **do NOT assume they a
 
 **Rule**: Always search the cache first. A tech debt warning is only "new" if no GitHub issue (open or closed) tracks it. Never create duplicates of existing issues.
 
-### Step 4: CHANGELOG and Version Validation
+### Step 4: CHANGELOG Validation
 
 Read CHANGELOG and verify:
 - Version section exists
 - PR number filled in (not TBD)
 - Date is today or earlier
 
-**Verify .csproj version matches CHANGELOG**:
-```bash
-# Get latest version from tool's CHANGELOG
-grep -E "^\#\# \[" [Tool]/CHANGELOG.md | head -2 | tail -1
-
-# Compare with .csproj Version
-grep "<Version>" [Tool]/[Tool]/[Tool].csproj
-```
-
-If versions don't match, update the `.csproj` file:
-- `<Version>` - Semantic version (e.g., "0.1.44-alpha")
-- `<AssemblyVersion>` - Numeric only (e.g., "0.1.44.0")
-- `<FileVersion>` - Numeric only (e.g., "0.1.44.0")
-- `<InformationalVersion>` - Same as Version
+**Note**: Version numbers are managed by NBGV via `version.json` files — no `.csproj` version properties to check. CHANGELOG versions are for human tracking only and don't need to match computed NBGV versions exactly.
 
 ### Step 5: Wiki Freshness Check
 

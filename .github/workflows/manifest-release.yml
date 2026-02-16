@@ -59,21 +59,17 @@ jobs:
       with:
         dotnet-version: '9.0.x'
 
-    - name: Extract Version from Tag
-      id: version
-      shell: bash
-      run: |
-        # Tag format: manifest-v0.6.0-alpha
-        TAG="${GITHUB_REF#refs/tags/}"
-        VERSION="${TAG#manifest-v}"
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "tag=$TAG" >> $GITHUB_OUTPUT
+    - name: Determine Version
+      uses: dotnet/nbgv@master
+      id: nbgv
+      with:
+        path: Manifest
 
     - name: Restore dependencies
       run: dotnet restore Manifest/Manifest/Manifest.csproj -r ${{ matrix.runtime }}
 
     - name: Build project
-      run: dotnet build Manifest/Manifest/Manifest.csproj --configuration Release --no-restore -r ${{ matrix.runtime }} -p:Version=${{ steps.version.outputs.version }}
+      run: dotnet build Manifest/Manifest/Manifest.csproj --configuration Release --no-restore -r ${{ matrix.runtime }}
 
     - name: Run tests
       run: dotnet test Manifest/Manifest.Tests/Manifest.Tests.csproj --configuration Release --verbosity normal
@@ -81,12 +77,12 @@ jobs:
     # Self-contained builds
     - name: Publish (Self-Contained)
       if: matrix.self-contained == true
-      run: dotnet publish Manifest/Manifest/Manifest.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=${{ steps.version.outputs.version }} -o ./Manifest/publish/${{ matrix.artifact-name }}
+      run: dotnet publish Manifest/Manifest/Manifest.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:IncludeNativeLibrariesForSelfExtract=true -o ./Manifest/publish/${{ matrix.artifact-name }}
 
     # Framework-dependent builds
     - name: Publish (Framework-Dependent)
       if: matrix.self-contained == false
-      run: dotnet publish Manifest/Manifest/Manifest.csproj -c Release -r ${{ matrix.runtime }} --self-contained false -p:PublishSingleFile=true -p:Version=${{ steps.version.outputs.version }} -o ./Manifest/publish/${{ matrix.artifact-name }}
+      run: dotnet publish Manifest/Manifest/Manifest.csproj -c Release -r ${{ matrix.runtime }} --self-contained false -p:PublishSingleFile=true -o ./Manifest/publish/${{ matrix.artifact-name }}
 
     # macOS: Create .app bundle for self-contained builds
     - name: Create macOS App Bundle
@@ -116,9 +112,9 @@ jobs:
             <key>CFBundleName</key>
             <string>Manifest</string>
             <key>CFBundleVersion</key>
-            <string>${{ steps.version.outputs.version }}</string>
+            <string>${{ steps.nbgv.outputs.SemVer2 }}</string>
             <key>CFBundleShortVersionString</key>
-            <string>${{ steps.version.outputs.version }}</string>
+            <string>${{ steps.nbgv.outputs.SemVer2 }}</string>
             <key>CFBundlePackageType</key>
             <string>APPL</string>
             <key>NSHighResolutionCapable</key>
@@ -176,14 +172,11 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Extract Version from Tag
-      id: version
-      shell: bash
-      run: |
-        TAG="${GITHUB_REF#refs/tags/}"
-        VERSION="${TAG#manifest-v}"
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "tag=$TAG" >> $GITHUB_OUTPUT
+    - name: Determine Version
+      uses: dotnet/nbgv@master
+      id: nbgv
+      with:
+        path: Manifest
 
     - name: Extract Changelog Highlights
       id: highlights
@@ -244,7 +237,7 @@ jobs:
           ./artifacts/**/*.zip
           ./artifacts/**/*.tar.gz
         body: |
-          # Manifest ${{ steps.version.outputs.version }}
+          # Manifest ${{ steps.nbgv.outputs.SemVer2 }}
 
           Journal editor for Neverwinter Nights `.jrl` files.
 
