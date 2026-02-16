@@ -1,3 +1,5 @@
+using System.Text.Json;
+using Radoub.Formats.Common;
 using Radoub.Formats.Settings;
 using Xunit;
 
@@ -80,12 +82,16 @@ public class RadoubSettingsTests : IDisposable
         Assert.Equal(originalTlk, settings.CustomTlkPath);
         Assert.Equal(originalModule, settings.CurrentModulePath);
 
-        // Simulate another process writing to the settings file
+        // Simulate another process writing updated values to the settings file.
+        // Must use ContractPath since that's how RadoubSettings persists paths -
+        // on Windows, temp paths are under user profile and get contracted to ~/...
         var filePath = Path.Combine(_testDirectory, "RadoubSettings.json");
-        var json = File.ReadAllText(filePath);
-        json = json.Replace(originalTlk.Replace("\\", "\\\\"), updatedTlk.Replace("\\", "\\\\"));
-        json = json.Replace(originalModule.Replace("\\", "\\\\"), updatedModule.Replace("\\", "\\\\"));
-        File.WriteAllText(filePath, json);
+        var updatedData = new Dictionary<string, string>
+        {
+            ["CustomTlkPath"] = PathHelper.ContractPath(updatedTlk),
+            ["CurrentModulePath"] = PathHelper.ContractPath(updatedModule)
+        };
+        File.WriteAllText(filePath, JsonSerializer.Serialize(updatedData, new JsonSerializerOptions { WriteIndented = true }));
 
         // Reload should pick up the new values
         settings.ReloadSettings();
