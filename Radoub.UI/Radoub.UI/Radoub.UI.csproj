@@ -41,6 +41,7 @@
 
   <!-- Shared theme files (#1199) - single source of truth for all Radoub tools -->
   <ItemGroup>
+    <PackageReference Include="Avalonia.Skia" VersionOverride="11.3.12" />
     <Content Include="Themes\*.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>Themes\%(Filename)%(Extension)</Link>
