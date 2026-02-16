@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Radoub.Formats.Common;
 using Radoub.Formats.Fac;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
@@ -239,7 +240,7 @@ public partial class FactionEditorViewModel : ObservableObject
             if (workingDir != null)
             {
                 _workingDirectoryPath = workingDir;
-                var facPath = FindFileCaseInsensitive(workingDir, "repute.fac");
+                var facPath = PathHelper.FindFileInDirectory(workingDir, "repute.fac");
                 if (facPath != null) return facPath;
             }
             else
@@ -251,35 +252,11 @@ public partial class FactionEditorViewModel : ObservableObject
         else if (Directory.Exists(modulePath))
         {
             _workingDirectoryPath = modulePath;
-            var facPath = FindFileCaseInsensitive(modulePath, "repute.fac");
+            var facPath = PathHelper.FindFileInDirectory(modulePath, "repute.fac");
             if (facPath != null) return facPath;
         }
 
         return null;
-    }
-
-    /// <summary>
-    /// Find a file by name using case-insensitive matching.
-    /// Required on Linux where filesystems are case-sensitive but
-    /// Aurora Engine resources may have mixed case. (#1384)
-    /// </summary>
-    private static string? FindFileCaseInsensitive(string directory, string fileName)
-    {
-        var exactPath = Path.Combine(directory, fileName);
-        if (File.Exists(exactPath)) return exactPath;
-
-        // Case-insensitive fallback for Linux
-        try
-        {
-            var match = Directory.GetFiles(directory, fileName,
-                new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive })
-                .FirstOrDefault();
-            return match;
-        }
-        catch
-        {
-            return null;
-        }
     }
 
     private static string? FindWorkingDirectory(string? moduleDir, string moduleName)

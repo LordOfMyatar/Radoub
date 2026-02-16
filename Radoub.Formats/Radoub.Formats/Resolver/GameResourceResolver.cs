@@ -346,7 +346,10 @@ public class GameResourceResolver : IDisposable
 
         var keyPath = _config.KeyFilePath;
         if (string.IsNullOrEmpty(keyPath) && !string.IsNullOrEmpty(_config.GameDataPath))
-            keyPath = Path.Combine(_config.GameDataPath, "nwn_base.key");
+        {
+            // Case-insensitive lookup for Linux (#1384)
+            keyPath = PathHelper.FindFileInDirectory(_config.GameDataPath, "nwn_base.key");
+        }
 
         if (string.IsNullOrEmpty(keyPath) || !File.Exists(keyPath))
             return;
@@ -436,6 +439,7 @@ public class GameResourceResolver : IDisposable
 
         // BIF filename may include "data\" prefix
         var normalized = bifFilename.Replace("\\", "/").Replace("/", Path.DirectorySeparatorChar.ToString());
+        var justFilename = Path.GetFileName(normalized);
 
         // Try relative to game data parent (for "data\file.bif" paths)
         var parentPath = Path.GetDirectoryName(_config.GameDataPath);
@@ -444,12 +448,24 @@ public class GameResourceResolver : IDisposable
             var fullPath = Path.Combine(parentPath, normalized);
             if (File.Exists(fullPath))
                 return fullPath;
+
+            // Case-insensitive fallback for Linux (#1384)
+            var dirPart = Path.GetDirectoryName(normalized);
+            var searchDir = string.IsNullOrEmpty(dirPart) ? parentPath : Path.Combine(parentPath, dirPart);
+            var found = PathHelper.FindFileInDirectory(searchDir, justFilename);
+            if (found != null)
+                return found;
         }
 
         // Try relative to game data path
-        var directPath = Path.Combine(_config.GameDataPath, Path.GetFileName(normalized));
+        var directPath = Path.Combine(_config.GameDataPath, justFilename);
         if (File.Exists(directPath))
             return directPath;
+
+        // Case-insensitive fallback for Linux (#1384)
+        var directFound = PathHelper.FindFileInDirectory(_config.GameDataPath, justFilename);
+        if (directFound != null)
+            return directFound;
 
         return null;
     }
@@ -465,7 +481,10 @@ public class GameResourceResolver : IDisposable
 
         var tlkPath = _config.TlkPath;
         if (string.IsNullOrEmpty(tlkPath) && !string.IsNullOrEmpty(_config.GameDataPath))
-            tlkPath = Path.Combine(_config.GameDataPath, "dialog.tlk");
+        {
+            // Case-insensitive lookup for Linux (#1384)
+            tlkPath = PathHelper.FindFileInDirectory(_config.GameDataPath, "dialog.tlk");
+        }
 
         if (string.IsNullOrEmpty(tlkPath) || !File.Exists(tlkPath))
             return;

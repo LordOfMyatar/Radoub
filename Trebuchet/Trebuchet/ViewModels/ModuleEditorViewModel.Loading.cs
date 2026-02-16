@@ -158,8 +158,9 @@ public partial class ModuleEditorViewModel
 
         foreach (var candidate in candidates)
         {
+            // Case-insensitive for Linux (#1384)
             if (Directory.Exists(candidate) &&
-                File.Exists(Path.Combine(candidate, "module.ifo")))
+                PathHelper.FileExistsInDirectory(candidate, "module.ifo"))
             {
                 return candidate;
             }
@@ -191,8 +192,9 @@ public partial class ModuleEditorViewModel
     {
         await Task.Run(() =>
         {
-            var ifoPath = Path.Combine(dirPath, "module.ifo");
-            if (!File.Exists(ifoPath))
+            // Case-insensitive for Linux (#1384)
+            var ifoPath = PathHelper.FindFileInDirectory(dirPath, "module.ifo");
+            if (ifoPath == null)
             {
                 throw new FileNotFoundException("module.ifo not found in directory");
             }

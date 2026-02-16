@@ -1,6 +1,7 @@
 using System.IO;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
+using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
 using RadoubLauncher.Services;
@@ -87,13 +88,15 @@ public partial class MainWindowViewModel
                 return false;
 
             var workingDir = Path.Combine(moduleDir, moduleName);
-            return Directory.Exists(workingDir) && File.Exists(Path.Combine(workingDir, "module.ifo"));
+            // Case-insensitive for Linux (#1384)
+            return Directory.Exists(workingDir) && PathHelper.FileExistsInDirectory(workingDir, "module.ifo");
         }
 
         // If it's already a directory path, check if module.ifo exists
         if (Directory.Exists(modulePath))
         {
-            return File.Exists(Path.Combine(modulePath, "module.ifo"));
+            // Case-insensitive for Linux (#1384)
+            return PathHelper.FileExistsInDirectory(modulePath, "module.ifo");
         }
 
         return false;
