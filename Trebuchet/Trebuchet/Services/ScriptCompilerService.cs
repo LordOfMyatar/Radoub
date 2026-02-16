@@ -62,6 +62,7 @@ public class ScriptCompilerService
         if (File.Exists(toolsPath))
         {
             CompilerPath = toolsPath;
+            EnsureExecutablePermission(toolsPath);
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Script compiler found: {compilerName}");
             return;
         }
@@ -71,11 +72,38 @@ public class ScriptCompilerService
         if (File.Exists(sameDirPath))
         {
             CompilerPath = sameDirPath;
+            EnsureExecutablePermission(sameDirPath);
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Script compiler found in app directory: {compilerName}");
             return;
         }
 
         UnifiedLogger.LogApplication(LogLevel.WARN, $"Script compiler not found ({compilerName}) - compilation disabled");
+    }
+
+    /// <summary>
+    /// Ensure the compiler binary has executable permission on Linux/macOS.
+    /// Git does not always preserve the execute bit, so we set it at runtime.
+    /// </summary>
+    private static void EnsureExecutablePermission(string path)
+    {
+        if (!OperatingSystem.IsLinux() && !OperatingSystem.IsMacOS())
+            return;
+
+        try
+        {
+            // Check if already executable by looking at Unix file mode
+            var fileInfo = new FileInfo(path);
+            var mode = File.GetUnixFileMode(path);
+            if (mode.HasFlag(UnixFileMode.UserExecute))
+                return;
+
+            File.SetUnixFileMode(path, mode | UnixFileMode.UserExecute);
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Set executable permission on {Path.GetFileName(path)}");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to set executable permission: {ex.Message}");
+        }
     }
 
     /// <summary>
