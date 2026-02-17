@@ -15,6 +15,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.72] - 2026-02-16
+**Branch**: `radoub/issue-1393` | **PR**: #1400
+
+### Sprint: Dependabot Dependency Updates (#1393)
+
+- [x] #1393 - Bump coverlet.collector from 6.0.4 to 8.0.0
+- [x] #1395 - Bump Avalonia and Avalonia.Controls.DataGrid 11.3.11 → 11.3.12
+- [x] #1396 - Bump Avalonia and Avalonia.Diagnostics 11.3.11 → 11.3.12
+- [x] #1397 - Bump Avalonia and Avalonia.Fonts.Inter 11.3.11 → 11.3.12
+- [x] #1398 - Bump Avalonia.Headless.XUnit 11.3.11 → 11.3.12
+- [x] #1399 - Bump Avalonia and Avalonia.Skia 11.3.11 → 11.3.12
+- Add `/dependabot` skill for standardized dependency update workflow
+
+---
+
 ## [0.9.71] - TBD
 **Branch**: `radoub/issue-1384` | **PR**: #1385
 
