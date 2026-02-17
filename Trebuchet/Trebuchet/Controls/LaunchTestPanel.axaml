@@ -254,7 +254,7 @@
                                     Command="{Binding BrowseCodeEditorPathCommand}"
                                     Padding="8,4"/>
                         </Grid>
-                        <TextBlock Text="Used to open failed scripts for editing."
+                        <TextBlock Text="Used to open script files. Leave blank to use system default."
                                    Opacity="0.5"
                                    FontSize="{DynamicResource FontSizeSmall}"/>
                     </StackPanel>
