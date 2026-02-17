@@ -408,14 +408,6 @@ jobs:
           - Radoub.UI shared components
           - Cross-tool discovery (launch Manifest from Parley's Quest Browser)
 
-          ## Standalone Downloads
-
-          Individual tools are also available as separate releases:
-          - [Parley Releases](https://github.com/${{ github.repository }}/releases?q=v&expanded=true)
-          - [Manifest Releases](https://github.com/${{ github.repository }}/releases?q=manifest-v&expanded=true)
-          - [Fence Releases](https://github.com/${{ github.repository }}/releases?q=fence-v&expanded=true)
-          - [Trebuchet Releases](https://github.com/${{ github.repository }}/releases?q=trebuchet-v&expanded=true)
-
           ## Changes
 
           See the individual changelogs:
