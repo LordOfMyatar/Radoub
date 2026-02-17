@@ -15,8 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: TLK Language & Delete Files (#1377)
 
-- [ ] #1363 - Add TLK language toggle
-- [ ] #1368 - Delete creature/character files from module
+- [x] #1363 - Add TLK language toggle (View > Language menu)
+- [x] #1368 - Delete creature/character files from module (context menu in browser panel)
 
 ---
 

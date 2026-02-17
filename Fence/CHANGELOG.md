@@ -15,9 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: TLK Language & Delete Files (#1377)
 
-- [ ] #1361 - Item palette not displaying in selected TLK language (bug)
-- [ ] #1362 - Add TLK language toggle
-- [ ] #1367 - Delete store files from module
+- [x] #1361 - Item palette now displays in selected TLK language
+- [x] #1362 - Add TLK language toggle (View > Language menu)
+- [x] #1367 - Delete store files from module (context menu in browser panel)
 
 ---
 
