@@ -645,6 +645,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
                 InitializePanels();
+                PopulateLanguageMenu();
             });
 
             token.ThrowIfCancellationRequested();
@@ -1124,6 +1125,126 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     e.Handled = true;
                     break;
             }
+        }
+    }
+
+    #endregion
+
+    #region Language Menu (#1363)
+
+    /// <summary>
+    /// Populates the View > Language submenu with detected languages and gender variants.
+    /// </summary>
+    private void PopulateLanguageMenu()
+    {
+        var languageMenu = this.FindControl<MenuItem>("LanguageMenu");
+        if (languageMenu == null) return;
+
+        languageMenu.Items.Clear();
+
+        var settings = RadoubSettings.Instance;
+        var availableLanguages = settings.GetAvailableTlkLanguages().ToList();
+
+        if (availableLanguages.Count == 0)
+        {
+            var noLangItem = new MenuItem { Header = "(No languages detected)", IsEnabled = false };
+            languageMenu.Items.Add(noLangItem);
+            return;
+        }
+
+        var currentLang = settings.EffectiveLanguage;
+        var currentFemale = settings.TlkUseFemale;
+
+        foreach (var language in availableLanguages)
+        {
+            var langName = LanguageHelper.GetDisplayName(language);
+            var langCode = LanguageHelper.GetLanguageCode(language);
+
+            // Male variant
+            var maleItem = new MenuItem
+            {
+                Header = $"{langName}",
+                Tag = (langCode, false),
+                Icon = (language == currentLang && !currentFemale) ? new TextBlock { Text = "✓" } : null
+            };
+            maleItem.Click += OnLanguageMenuItemClick;
+            languageMenu.Items.Add(maleItem);
+
+            // Female variant - check if dialogf.tlk exists
+            var femaleTlkPath = settings.GetTlkPath(language, Gender.Female);
+            var maleTlkPath = settings.GetTlkPath(language, Gender.Male);
+            var hasFemaleVariant = femaleTlkPath != null && maleTlkPath != null
+                && !string.Equals(femaleTlkPath, maleTlkPath, StringComparison.OrdinalIgnoreCase);
+
+            if (hasFemaleVariant)
+            {
+                var femaleItem = new MenuItem
+                {
+                    Header = $"{langName} (Female)",
+                    Tag = (langCode, true),
+                    Icon = (language == currentLang && currentFemale) ? new TextBlock { Text = "✓" } : null
+                };
+                femaleItem.Click += OnLanguageMenuItemClick;
+                languageMenu.Items.Add(femaleItem);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Handles language menu item selection. Updates RadoubSettings and reloads game data.
+    /// </summary>
+    private async void OnLanguageMenuItemClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem menuItem || menuItem.Tag is not (string langCode, bool useFemale))
+            return;
+
+        var settings = RadoubSettings.Instance;
+        var oldLang = settings.TlkLanguage;
+        var oldFemale = settings.TlkUseFemale;
+
+        // Skip if no change
+        if (langCode == oldLang && useFemale == oldFemale)
+            return;
+
+        settings.TlkLanguage = langCode;
+        settings.TlkUseFemale = useFemale;
+
+        var langDisplay = LanguageHelper.GetDisplayName(
+            LanguageHelper.FromLanguageCode(langCode) ?? Language.English);
+        var genderDisplay = useFemale ? " (Female)" : "";
+
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"Language changed to {langDisplay}{genderDisplay}");
+
+        // Update checkmarks
+        PopulateLanguageMenu();
+
+        // Reload GameDataService with new TLK and refresh display
+        UpdateStatus($"Switching to {langDisplay}{genderDisplay}...");
+
+        try
+        {
+            await Task.Run(() =>
+            {
+                _gameDataService?.ReloadConfiguration();
+            });
+
+            // Refresh the current creature display if one is loaded
+            if (_currentCreature != null)
+            {
+                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    LoadAllPanels(_currentCreature);
+                    UpdateCharacterHeader();
+                });
+            }
+
+            UpdateStatus($"Language: {langDisplay}{genderDisplay} - Ready");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Language switch failed: {ex.Message}");
+            UpdateStatus("Language switch failed");
         }
     }
 
