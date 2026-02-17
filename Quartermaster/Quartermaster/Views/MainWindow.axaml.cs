@@ -1281,6 +1281,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 _gameDataService?.ReloadConfiguration();
             });
 
+            // Rebuild downstream caches that hold resolved TLK strings
+            if (_creatureDisplayService != null)
+            {
+                await _creatureDisplayService.Feats.RebuildCacheAsync();
+            }
+
+            // Rebuild item palette cache with new language
+            await ClearAndReloadPaletteCacheAsync();
+
             // Refresh the current creature display if one is loaded
             if (_currentCreature != null)
             {

@@ -1151,16 +1151,23 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 _gameDataService?.ReloadConfiguration();
             });
 
-            // Clear item resolution cache so names re-resolve
+            // Clear all downstream caches that hold resolved TLK strings
             _itemResolutionService?.ClearCache();
+            _baseItemTypeService?.ClearCache();
 
             // Rebuild palette cache with new language
             await ClearAndReloadPaletteCacheAsync();
+
+            // Re-populate type filter and buy restrictions with new language names
+            await LoadBaseItemTypesAsync();
 
             // Refresh store inventory display if a file is loaded
             if (_currentStore != null)
             {
                 RefreshStoreInventoryNames();
+
+                // Re-apply buy restrictions with new language names
+                PopulateBuyRestrictions();
             }
 
             UpdateStatusBar($"Language: {langDisplay}{genderDisplay} - Ready");
