@@ -132,6 +132,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Subscribe to file selection events
         storeBrowserPanel.FileSelected += OnStoreBrowserFileSelected;
 
+        // Subscribe to file delete events (#1367)
+        storeBrowserPanel.FileDeleteRequested += OnStoreBrowserFileDeleteRequested;
+
         // Subscribe to collapse/expand events
         storeBrowserPanel.CollapsedChanged += OnStoreBrowserCollapsedChanged;
 
@@ -390,6 +393,126 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error loading store from browser: {ex.Message}");
             UpdateStatusBar($"Error: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Handles file delete request from store browser panel (#1367).
+    /// Shows confirmation dialog, deletes file, and refreshes list.
+    /// </summary>
+    private async void OnStoreBrowserFileDeleteRequested(object? sender, FileDeleteRequestedEventArgs e)
+    {
+        var entry = e.Entry;
+        if (string.IsNullOrEmpty(entry.FilePath) || !File.Exists(entry.FilePath))
+        {
+            UpdateStatusBar("File not found on disk");
+            return;
+        }
+
+        var fileName = Path.GetFileName(entry.FilePath);
+
+        // Modal confirmation dialog (destructive action - modal OK per CLAUDE.md)
+        var confirmed = await ShowDeleteConfirmationAsync(fileName);
+        if (!confirmed)
+            return;
+
+        try
+        {
+            // If this is the currently loaded file, clear the editor first
+            var isDeletingCurrent = string.Equals(_currentFilePath, entry.FilePath, StringComparison.OrdinalIgnoreCase);
+
+            File.Delete(entry.FilePath);
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Deleted store file: {fileName}");
+
+            if (isDeletingCurrent)
+            {
+                _currentStore = null;
+                _currentFilePath = null;
+                _isDirty = false;
+                StoreItems.Clear();
+                UpdateTitle();
+                UpdateItemCount();
+                UpdateStatusBar($"Deleted {fileName}");
+            }
+            else
+            {
+                UpdateStatusBar($"Deleted {fileName}");
+            }
+
+            // Refresh the store browser panel
+            var storeBrowserPanel = this.FindControl<StoreBrowserPanel>("StoreBrowserPanel");
+            if (storeBrowserPanel != null)
+            {
+                await storeBrowserPanel.RefreshAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to delete {fileName}: {ex.Message}");
+            UpdateStatusBar($"Delete failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Shows a modal confirmation dialog for file deletion.
+    /// Returns true if user confirms, false if cancelled.
+    /// </summary>
+    private async System.Threading.Tasks.Task<bool> ShowDeleteConfirmationAsync(string fileName)
+    {
+        var tcs = new System.Threading.Tasks.TaskCompletionSource<bool>();
+
+        var dialog = new Window
+        {
+            Title = "Confirm Delete",
+            Width = 380,
+            Height = 150,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false,
+            Content = new StackPanel
+            {
+                Margin = new Thickness(20),
+                Spacing = 16,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = $"Delete \"{fileName}\" from disk?\n\nThis cannot be undone.",
+                        TextWrapping = Avalonia.Media.TextWrapping.Wrap
+                    },
+                    new StackPanel
+                    {
+                        Orientation = Avalonia.Layout.Orientation.Horizontal,
+                        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+                        Spacing = 8,
+                        Children =
+                        {
+                            new Button { Content = "Delete", Tag = "delete", Width = 80 },
+                            new Button { Content = "Cancel", Tag = "cancel", Width = 80 }
+                        }
+                    }
+                }
+            }
+        };
+
+        if (dialog.Content is StackPanel outerPanel
+            && outerPanel.Children.LastOrDefault() is StackPanel buttonPanel)
+        {
+            foreach (var child in buttonPanel.Children)
+            {
+                if (child is Button btn)
+                {
+                    btn.Click += (s, e) =>
+                    {
+                        tcs.TrySetResult(btn.Tag?.ToString() == "delete");
+                        dialog.Close();
+                    };
+                }
+            }
+        }
+
+        dialog.Closed += (s, e) => tcs.TrySetResult(false);
+
+        await dialog.ShowDialog(this);
+        return await tcs.Task;
     }
 
     /// <summary>
