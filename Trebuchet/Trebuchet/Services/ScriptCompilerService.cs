@@ -37,7 +37,7 @@ public class ScriptCompilerService
     }
 
     /// <summary>
-    /// Path to the bundled compiler executable.
+    /// Path to the active compiler executable.
     /// </summary>
     public string? CompilerPath { get; private set; }
 
@@ -46,16 +46,51 @@ public class ScriptCompilerService
     /// </summary>
     public bool IsCompilerAvailable => !string.IsNullOrEmpty(CompilerPath) && File.Exists(CompilerPath);
 
+    /// <summary>
+    /// Whether the active compiler is a user-configured custom path or bundled.
+    /// </summary>
+    public bool IsCustomCompiler { get; private set; }
+
+    /// <summary>
+    /// Description of the active compiler source for display in UI.
+    /// </summary>
+    public string CompilerSourceDescription { get; private set; } = "Not found";
+
     private ScriptCompilerService()
+    {
+        DiscoverCompiler();
+    }
+
+    /// <summary>
+    /// Re-run compiler discovery. Call after the user changes the custom compiler path.
+    /// </summary>
+    public void RefreshCompiler()
     {
         DiscoverCompiler();
     }
 
     private void DiscoverCompiler()
     {
-        var exeDir = AppContext.BaseDirectory;
+        // Check user-configured custom path first
+        var customPath = SettingsService.Instance.ScriptCompilerPath;
+        if (!string.IsNullOrEmpty(customPath))
+        {
+            var expandedPath = PathHelper.ExpandPath(customPath);
+            if (File.Exists(expandedPath))
+            {
+                CompilerPath = expandedPath;
+                IsCustomCompiler = true;
+                EnsureExecutablePermission(expandedPath);
+                CompilerSourceDescription = $"Custom: {Path.GetFileName(expandedPath)}";
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Using custom script compiler: {UnifiedLogger.SanitizePath(expandedPath)}");
+                return;
+            }
 
-        // Determine platform-specific executable name
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Custom compiler path not found: {UnifiedLogger.SanitizePath(expandedPath)} — falling back to bundled");
+        }
+
+        IsCustomCompiler = false;
+        var exeDir = AppContext.BaseDirectory;
         var compilerName = GetPlatformCompilerName();
 
         // Look for bundled compiler in tools/ subfolder relative to executable
@@ -64,6 +99,7 @@ public class ScriptCompilerService
         {
             CompilerPath = toolsPath;
             EnsureExecutablePermission(toolsPath);
+            CompilerSourceDescription = $"Bundled: {compilerName}";
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Script compiler found: {compilerName}");
             return;
         }
@@ -74,10 +110,13 @@ public class ScriptCompilerService
         {
             CompilerPath = sameDirPath;
             EnsureExecutablePermission(sameDirPath);
+            CompilerSourceDescription = $"Bundled: {compilerName}";
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Script compiler found in app directory: {compilerName}");
             return;
         }
 
+        CompilerPath = null;
+        CompilerSourceDescription = "Not found";
         UnifiedLogger.LogApplication(LogLevel.WARN, $"Script compiler not found ({compilerName}) - compilation disabled");
     }
 

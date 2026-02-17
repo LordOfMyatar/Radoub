@@ -216,6 +216,30 @@
                                      ToolTip.Tip="Only recompile .nss files that are newer than their .ncs"/>
                     </StackPanel>
 
+                    <!-- Script Compiler Path -->
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Script Compiler:"
+                                   FontWeight="SemiBold"/>
+                        <Grid ColumnDefinitions="*,Auto,Auto">
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding ScriptCompilerPath}"
+                                     Watermark="Path to nwn_script_comp — leave blank for bundled"
+                                     Margin="0,0,8,0"/>
+                            <Button Grid.Column="1"
+                                    Content="Browse..."
+                                    Command="{Binding BrowseScriptCompilerPathCommand}"
+                                    Padding="8,4"
+                                    Margin="0,0,4,0"/>
+                            <Button Grid.Column="2"
+                                    Content="Clear"
+                                    Command="{Binding ClearScriptCompilerPathCommand}"
+                                    Padding="8,4"/>
+                        </Grid>
+                        <TextBlock Text="{Binding CompilerSourceDescription}"
+                                   Opacity="0.5"
+                                   FontSize="{DynamicResource FontSizeSmall}"/>
+                    </StackPanel>
+
                     <!-- Code Editor Path -->
                     <StackPanel Spacing="4">
                         <TextBlock Text="Code Editor:"

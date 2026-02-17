@@ -119,6 +119,7 @@ public class SettingsService : INotifyPropertyChanged
     private bool _buildUncompiledScriptsEnabled = false;
     private bool _alwaysSaveBeforeTesting = false;
     private string _codeEditorPath = "";
+    private string _scriptCompilerPath = "";
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -282,6 +283,16 @@ public class SettingsService : INotifyPropertyChanged
         set { if (SetProperty(ref _codeEditorPath, value ?? "")) SaveSettings(); }
     }
 
+    /// <summary>
+    /// Path to a custom script compiler executable.
+    /// When set, this compiler is used instead of the bundled one.
+    /// </summary>
+    public string ScriptCompilerPath
+    {
+        get => _scriptCompilerPath;
+        set { if (SetProperty(ref _scriptCompilerPath, value ?? "")) SaveSettings(); }
+    }
+
     public void AddRecentModule(string modulePath)
     {
         if (string.IsNullOrEmpty(modulePath))
@@ -377,6 +388,7 @@ public class SettingsService : INotifyPropertyChanged
                     _buildUncompiledScriptsEnabled = settings.BuildUncompiledScriptsEnabled;
                     _alwaysSaveBeforeTesting = settings.AlwaysSaveBeforeTesting;
                     _codeEditorPath = settings.CodeEditorPath ?? "";
+                    _scriptCompilerPath = settings.ScriptCompilerPath ?? "";
 
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {_recentModules.Count} recent modules");
                 }
@@ -414,7 +426,8 @@ public class SettingsService : INotifyPropertyChanged
                 CompileScriptsEnabled = CompileScriptsEnabled,
                 BuildUncompiledScriptsEnabled = BuildUncompiledScriptsEnabled,
                 AlwaysSaveBeforeTesting = AlwaysSaveBeforeTesting,
-                CodeEditorPath = CodeEditorPath
+                CodeEditorPath = CodeEditorPath,
+                ScriptCompilerPath = ScriptCompilerPath
             };
 
             var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
@@ -470,5 +483,6 @@ public class SettingsService : INotifyPropertyChanged
         public bool BuildUncompiledScriptsEnabled { get; set; } = false;
         public bool AlwaysSaveBeforeTesting { get; set; } = false;
         public string CodeEditorPath { get; set; } = "";
+        public string ScriptCompilerPath { get; set; } = "";
     }
 }

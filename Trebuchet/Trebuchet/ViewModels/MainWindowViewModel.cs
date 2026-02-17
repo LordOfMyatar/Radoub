@@ -267,6 +267,52 @@ public partial class MainWindowViewModel : ObservableObject
     /// </summary>
     public bool IsCompilerAvailable => ScriptCompilerService.Instance.IsCompilerAvailable;
 
+    public string CompilerSourceDescription => ScriptCompilerService.Instance.CompilerSourceDescription;
+
+    public string ScriptCompilerPath
+    {
+        get => SettingsService.Instance.ScriptCompilerPath;
+        set
+        {
+            if (SettingsService.Instance.ScriptCompilerPath != value)
+            {
+                SettingsService.Instance.ScriptCompilerPath = value;
+                ScriptCompilerService.Instance.RefreshCompiler();
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsCompilerAvailable));
+                OnPropertyChanged(nameof(CompilerSourceDescription));
+            }
+        }
+    }
+
+    [RelayCommand]
+    private async Task BrowseScriptCompilerPath()
+    {
+        if (_parentWindow == null) return;
+
+        var files = await _parentWindow.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Select Script Compiler Executable",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("Executables") { Patterns = new[] { "*.exe", "*" } },
+                new FilePickerFileType("All Files") { Patterns = new[] { "*" } }
+            }
+        });
+
+        if (files.Count > 0)
+        {
+            ScriptCompilerPath = files[0].Path.LocalPath;
+        }
+    }
+
+    [RelayCommand]
+    private void ClearScriptCompilerPath()
+    {
+        ScriptCompilerPath = "";
+    }
+
     /// <summary>
     /// Path to code editor for opening failed scripts.
     /// </summary>
