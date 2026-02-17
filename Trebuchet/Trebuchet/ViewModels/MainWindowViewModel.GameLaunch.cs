@@ -1,7 +1,5 @@
-using System.IO;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
-using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
 using RadoubLauncher.Services;
@@ -70,91 +68,12 @@ public partial class MainWindowViewModel
         _gameLauncher.LaunchWithModule(moduleName, testMode: false);
     }
 
-    /// <summary>
-    /// Check if an unpacked working directory exists for the current module.
-    /// </summary>
     private bool HasUnpackedWorkingDirectory()
-    {
-        var modulePath = RadoubSettings.Instance.CurrentModulePath;
-        if (string.IsNullOrEmpty(modulePath))
-            return false;
+        => ModulePathHelper.HasUnpackedWorkingDirectory(RadoubSettings.Instance.CurrentModulePath);
 
-        // If it's a .mod file, check for unpacked directory
-        if (modulePath.EndsWith(".mod", System.StringComparison.OrdinalIgnoreCase) && File.Exists(modulePath))
-        {
-            var moduleName = Path.GetFileNameWithoutExtension(modulePath);
-            var moduleDir = Path.GetDirectoryName(modulePath);
-            if (string.IsNullOrEmpty(moduleDir))
-                return false;
-
-            var workingDir = Path.Combine(moduleDir, moduleName);
-            // Case-insensitive for Linux (#1384)
-            return Directory.Exists(workingDir) && PathHelper.FileExistsInDirectory(workingDir, "module.ifo");
-        }
-
-        // If it's already a directory path, check if module.ifo exists
-        if (Directory.Exists(modulePath))
-        {
-            // Case-insensitive for Linux (#1384)
-            return PathHelper.FileExistsInDirectory(modulePath, "module.ifo");
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Get the working directory path for the current module.
-    /// </summary>
     private string? GetWorkingDirectoryPath()
-    {
-        var modulePath = RadoubSettings.Instance.CurrentModulePath;
-        if (string.IsNullOrEmpty(modulePath))
-            return null;
+        => ModulePathHelper.GetWorkingDirectory(RadoubSettings.Instance.CurrentModulePath);
 
-        if (modulePath.EndsWith(".mod", System.StringComparison.OrdinalIgnoreCase) && File.Exists(modulePath))
-        {
-            var moduleName = Path.GetFileNameWithoutExtension(modulePath);
-            var moduleDir = Path.GetDirectoryName(modulePath);
-            if (string.IsNullOrEmpty(moduleDir))
-                return null;
-
-            var workingDir = Path.Combine(moduleDir, moduleName);
-            if (Directory.Exists(workingDir))
-                return workingDir;
-        }
-        else if (Directory.Exists(modulePath))
-        {
-            return modulePath;
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Get the .mod file path for the current module.
-    /// </summary>
     private string? GetModFilePath()
-    {
-        var modulePath = RadoubSettings.Instance.CurrentModulePath;
-        if (string.IsNullOrEmpty(modulePath))
-            return null;
-
-        if (modulePath.EndsWith(".mod", System.StringComparison.OrdinalIgnoreCase))
-            return modulePath;
-
-        // If it's a directory, look for .mod file in parent
-        if (Directory.Exists(modulePath))
-        {
-            var dirName = Path.GetFileName(modulePath);
-            var parentDir = Path.GetDirectoryName(modulePath);
-            if (!string.IsNullOrEmpty(parentDir))
-            {
-                var modPath = Path.Combine(parentDir, dirName + ".mod");
-                if (File.Exists(modPath))
-                    return modPath;
-            }
-        }
-
-        return null;
-    }
+        => ModulePathHelper.GetModFilePath(RadoubSettings.Instance.CurrentModulePath);
 }

@@ -230,51 +230,20 @@ public partial class FactionEditorViewModel : ObservableObject
 
     private string? ResolveFacPath(string modulePath)
     {
-        // Check if it's a .mod file
-        if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
-        {
-            var moduleName = Path.GetFileNameWithoutExtension(modulePath);
-            var moduleDir = Path.GetDirectoryName(modulePath);
-            var workingDir = FindWorkingDirectory(moduleDir, moduleName);
+        var workingDir = RadoubLauncher.Services.ModulePathHelper.FindWorkingDirectoryWithFallbacks(modulePath);
 
-            if (workingDir != null)
-            {
-                _workingDirectoryPath = workingDir;
-                var facPath = PathHelper.FindFileInDirectory(workingDir, "repute.fac");
-                if (facPath != null) return facPath;
-            }
-            else
-            {
-                _isReadOnly = true;
-                // TODO: could read from packed .mod via ERF
-            }
-        }
-        else if (Directory.Exists(modulePath))
+        if (workingDir != null)
         {
-            _workingDirectoryPath = modulePath;
-            var facPath = PathHelper.FindFileInDirectory(modulePath, "repute.fac");
+            _workingDirectoryPath = workingDir;
+            var facPath = PathHelper.FindFileInDirectory(workingDir, "repute.fac");
             if (facPath != null) return facPath;
         }
-
-        return null;
-    }
-
-    private static string? FindWorkingDirectory(string? moduleDir, string moduleName)
-    {
-        if (string.IsNullOrEmpty(moduleDir)) return null;
-
-        var candidates = new[]
+        else if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
         {
-            Path.Combine(moduleDir, moduleName),
-            Path.Combine(moduleDir, "temp0"),
-            Path.Combine(moduleDir, "temp1")
-        };
-
-        foreach (var candidate in candidates)
-        {
-            if (Directory.Exists(candidate))
-                return candidate;
+            _isReadOnly = true;
+            // TODO (#1392): could read from packed .mod via ERF
         }
+
         return null;
     }
 
