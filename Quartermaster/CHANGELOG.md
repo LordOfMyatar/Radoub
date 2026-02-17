@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.69-alpha] - 2026-02-16
+**Branch**: `radoub/issue-1377` | **PR**: #TBD
+
+### Sprint: TLK Language & Delete Files (#1377)
+
+- [ ] #1363 - Add TLK language toggle
+- [ ] #1368 - Delete creature/character files from module
+
+---
+
 ## [0.1.68-alpha] - 2026-02-15
 **Branch**: `quartermaster/issue-1353` | **PR**: #1379
 
