@@ -29,6 +29,12 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
     public event EventHandler<FileSelectedEventArgs>? FileSelected;
 
     /// <summary>
+    /// Raised when the user requests deletion of a file from the browser panel.
+    /// The parent window handles confirmation and actual deletion.
+    /// </summary>
+    public event EventHandler<FileDeleteRequestedEventArgs>? FileDeleteRequested;
+
+    /// <summary>
     /// Raised when the panel's collapsed state changes.
     /// </summary>
     public event EventHandler<bool>? CollapsedChanged;
@@ -75,6 +81,9 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
     {
         InitializeComponent();
         HeaderText.Bind(TextBlock.TextProperty, this.GetObservable(HeaderTextProperty));
+
+        // Update Delete menu item state when context menu opens
+        FileListContextMenu.Opening += OnContextMenuOpening;
     }
 
     #region IFileBrowserPanel Implementation
@@ -388,6 +397,23 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
     private void OnCollapseClick(object? sender, RoutedEventArgs e)
     {
         IsCollapsed = !IsCollapsed;
+    }
+
+    private void OnContextMenuOpening(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        // Only enable Delete for module files (not HAK/vault resources)
+        var hasSelection = FileListBox.SelectedItem is FileBrowserEntry entry
+            && !entry.IsFromHak
+            && !string.IsNullOrEmpty(entry.FilePath);
+        DeleteMenuItem.IsEnabled = hasSelection;
+    }
+
+    private void OnDeleteMenuItemClick(object? sender, RoutedEventArgs e)
+    {
+        if (FileListBox.SelectedItem is FileBrowserEntry entry && !entry.IsFromHak && !string.IsNullOrEmpty(entry.FilePath))
+        {
+            FileDeleteRequested?.Invoke(this, new FileDeleteRequestedEventArgs(entry));
+        }
     }
 
     /// <summary>

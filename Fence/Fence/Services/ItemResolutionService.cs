@@ -5,6 +5,7 @@ using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Uti;
+using Radoub.UI.Services;
 
 namespace MerchantEditor.Services;
 
@@ -16,12 +17,14 @@ namespace MerchantEditor.Services;
 public class ItemResolutionService
 {
     private readonly IGameDataService? _gameDataService;
+    private readonly ITlkService? _tlkService;
     private readonly Dictionary<string, ResolvedItemData> _cache = new(StringComparer.OrdinalIgnoreCase);
     private string? _moduleDirectory;
 
-    public ItemResolutionService(IGameDataService? gameDataService)
+    public ItemResolutionService(IGameDataService? gameDataService, ITlkService? tlkService = null)
     {
         _gameDataService = gameDataService;
+        _tlkService = tlkService;
 
         // Log configuration status on creation
         if (_gameDataService == null)
@@ -179,24 +182,33 @@ public class ItemResolutionService
 
     private string ResolveDisplayName(UtiFile uti, string resRef)
     {
-        // 1. Try localized name string first
-        var defaultString = uti.LocalizedName.GetDefault();
-        if (TlkHelper.IsValidTlkString(defaultString))
-            return defaultString!;
-
-        // 2. Fall back to TLK reference if LocalizedName has a StrRef
-        if (uti.LocalizedName.StrRef != 0xFFFFFFFF && _gameDataService != null)
+        // Use TlkService for language-aware resolution (#1361)
+        if (_tlkService != null)
         {
-            var tlkString = _gameDataService.GetString(uti.LocalizedName.StrRef);
-            if (TlkHelper.IsValidTlkString(tlkString))
-                return tlkString!;
+            var resolved = _tlkService.ResolveLocString(uti.LocalizedName);
+            if (!string.IsNullOrEmpty(resolved))
+                return resolved;
+        }
+        else
+        {
+            // Fallback: no TlkService available - use basic resolution
+            var defaultString = uti.LocalizedName.GetDefault();
+            if (TlkHelper.IsValidTlkString(defaultString))
+                return defaultString!;
+
+            if (uti.LocalizedName.StrRef != 0xFFFFFFFF && _gameDataService != null)
+            {
+                var tlkString = _gameDataService.GetString(uti.LocalizedName.StrRef);
+                if (TlkHelper.IsValidTlkString(tlkString))
+                    return tlkString!;
+            }
         }
 
-        // 3. Fall back to ResRef from UTI
+        // Fall back to ResRef from UTI
         if (!string.IsNullOrEmpty(uti.TemplateResRef))
             return uti.TemplateResRef;
 
-        // 4. Final fallback to the resRef we were looking for
+        // Final fallback to the resRef we were looking for
         return resRef;
     }
 

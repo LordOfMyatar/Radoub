@@ -66,6 +66,22 @@ public class FileBrowserEntry
 }
 
 /// <summary>
+/// Event args for when a file delete is requested from the browser panel.
+/// </summary>
+public class FileDeleteRequestedEventArgs : EventArgs
+{
+    /// <summary>
+    /// The file entry to delete.
+    /// </summary>
+    public FileBrowserEntry Entry { get; }
+
+    public FileDeleteRequestedEventArgs(FileBrowserEntry entry)
+    {
+        Entry = entry;
+    }
+}
+
+/// <summary>
 /// Interface for embeddable file browser panels.
 /// Implemented by tool-specific panels (DialogBrowserPanel, StoreBrowserPanel, etc.)
 /// </summary>
@@ -75,6 +91,12 @@ public interface IFileBrowserPanel
     /// Raised when a file is selected (single-click) or activated (double-click).
     /// </summary>
     event EventHandler<FileSelectedEventArgs>? FileSelected;
+
+    /// <summary>
+    /// Raised when the user requests deletion of a file from the browser panel.
+    /// The parent window should handle confirmation and actual deletion.
+    /// </summary>
+    event EventHandler<FileDeleteRequestedEventArgs>? FileDeleteRequested;
 
     /// <summary>
     /// Raised when the panel's collapsed state changes.

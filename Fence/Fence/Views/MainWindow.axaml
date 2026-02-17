@@ -42,6 +42,8 @@
                 <MenuItem x:Name="StoreBrowserMenuItem" Header="_Store Browser" Click="OnToggleStoreBrowserClick" InputGesture="F4"/>
                 <MenuItem x:Name="ItemDetailsPanelMenuItem" Header="_Item Details" Click="OnToggleItemDetailsPanelClick" InputGesture="F5"/>
                 <Separator/>
+                <MenuItem x:Name="LanguageMenu" Header="_Language" AutomationProperties.AutomationId="LanguageMenu"/>
+                <Separator/>
                 <MenuItem Header="_Settings..." Click="OnSettingsClick"/>
             </MenuItem>
             <MenuItem Header="_Help">

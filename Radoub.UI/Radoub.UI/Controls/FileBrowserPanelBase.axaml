@@ -79,6 +79,13 @@
                          DoubleTapped="OnFileDoubleClicked"
                          Background="Transparent"
                          Margin="4,0,4,4">
+                    <ListBox.ContextMenu>
+                        <ContextMenu x:Name="FileListContextMenu">
+                            <MenuItem x:Name="DeleteMenuItem"
+                                      Header="Delete"
+                                      Click="OnDeleteMenuItemClick"/>
+                        </ContextMenu>
+                    </ListBox.ContextMenu>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding DisplayName}"
