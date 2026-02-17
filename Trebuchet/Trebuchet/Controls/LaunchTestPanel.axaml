@@ -193,7 +193,7 @@
                 <!-- Build Options -->
                 <StackPanel Spacing="8">
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <CheckBox Content="Compile scripts before building"
+                        <CheckBox Content="Compile scripts before saving"
                                   IsChecked="{Binding CompileScriptsEnabled}"
                                   IsEnabled="{Binding IsCompilerAvailable}"
                                   ToolTip.Tip="Run the NWScript compiler before packing the module"/>
