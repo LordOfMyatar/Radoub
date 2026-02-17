@@ -47,6 +47,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private BaseItemTypeService? _baseItemTypeService;
     private ItemResolutionService? _itemResolutionService;
     private IGameDataService? _gameDataService;
+    private TlkService? _tlkService;
     private bool _servicesInitialized;
 
     // Store palette categories loaded from storepal.itp
@@ -479,7 +480,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             _gameDataService = CreateGameDataService();
             _baseItemTypeService = new BaseItemTypeService(_gameDataService);
-            _itemResolutionService = new ItemResolutionService(_gameDataService);
+
+            // Create TlkService with settings integration for language-aware string resolution (#1361)
+            _tlkService = new TlkService();
+            _tlkService.EnableSettingsIntegration();
+
+            _itemResolutionService = new ItemResolutionService(_gameDataService, _tlkService);
         });
 
         _servicesInitialized = true;
@@ -658,6 +664,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         SaveWindowPosition();
         SaveStoreBrowserPanelSize();
         SaveItemDetailsPanelSize();
+
+        // Dispose TlkService to unsubscribe from settings events
+        _tlkService?.Dispose();
     }
 
     private void ShowUnsavedChangesWarning()
