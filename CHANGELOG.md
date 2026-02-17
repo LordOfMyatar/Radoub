@@ -6,6 +6,8 @@ For tool-specific changes, see the individual tool changelogs:
 - [Parley CHANGELOG](Parley/CHANGELOG.md)
 - [Manifest CHANGELOG](Manifest/CHANGELOG.md)
 - [Quartermaster CHANGELOG](Quartermaster/CHANGELOG.md)
+- [Fence CHANGELOG](Fence/CHANGELOG.md)
+- [Trebuchet CHANGELOG](Trebuchet/CHANGELOG.md)
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
@@ -20,7 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Code Quality & Release Readiness (#1402)
 
-- [ ] #1383 - Feat: Add Fence & Trebuchet to release builds
+- [x] #1383 - Feat: Add Fence & Trebuchet to release builds
 
 ---
 

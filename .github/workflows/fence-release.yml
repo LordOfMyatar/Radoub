@@ -1,0 +1,288 @@
+name: Fence Release Build
+
+on:
+  push:
+    tags:
+      - 'fence-v*'
+
+permissions:
+  contents: write  # Required to create releases
+
+jobs:
+  build-and-release:
+    strategy:
+      matrix:
+        include:
+          # Self-contained builds (recommended for users)
+          - os: windows-latest
+            runtime: win-x64
+            artifact-name: Fence-win-x64
+            output-ext: .exe
+            self-contained: true
+          - os: macos-latest
+            runtime: osx-arm64
+            artifact-name: Fence-osx-arm64
+            output-ext: ''
+            self-contained: true
+          - os: ubuntu-latest
+            runtime: linux-x64
+            artifact-name: Fence-linux-x64
+            output-ext: ''
+            self-contained: true
+          # Framework-dependent builds (smaller, requires .NET 9)
+          - os: windows-latest
+            runtime: win-x64
+            artifact-name: Fence-win-x64-fd
+            output-ext: .exe
+            self-contained: false
+          - os: macos-latest
+            runtime: osx-arm64
+            artifact-name: Fence-osx-arm64-fd
+            output-ext: ''
+            self-contained: false
+          - os: ubuntu-latest
+            runtime: linux-x64
+            artifact-name: Fence-linux-x64-fd
+            output-ext: ''
+            self-contained: false
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Determine Version
+      uses: dotnet/nbgv@master
+      id: nbgv
+      with:
+        path: Fence
+
+    - name: Restore dependencies
+      run: dotnet restore Fence/Fence/Fence.csproj -r ${{ matrix.runtime }}
+
+    - name: Build project
+      run: dotnet build Fence/Fence/Fence.csproj --configuration Release --no-restore -r ${{ matrix.runtime }}
+
+    - name: Run tests
+      run: dotnet test Fence/Fence.Tests/Fence.Tests.csproj --configuration Release --verbosity normal
+
+    # Self-contained builds
+    - name: Publish (Self-Contained)
+      if: matrix.self-contained == true
+      run: dotnet publish Fence/Fence/Fence.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:IncludeNativeLibrariesForSelfExtract=true -o ./Fence/publish/${{ matrix.artifact-name }}
+
+    # Framework-dependent builds
+    - name: Publish (Framework-Dependent)
+      if: matrix.self-contained == false
+      run: dotnet publish Fence/Fence/Fence.csproj -c Release -r ${{ matrix.runtime }} --self-contained false -p:PublishSingleFile=true -o ./Fence/publish/${{ matrix.artifact-name }}
+
+    # macOS: Create .app bundle for self-contained builds
+    - name: Create macOS App Bundle
+      if: matrix.os == 'macos-latest' && matrix.self-contained == true
+      shell: bash
+      run: |
+        APP_NAME="Fence.app"
+        BUNDLE_DIR="./Fence/publish/${{ matrix.artifact-name }}/$APP_NAME"
+
+        mkdir -p "$BUNDLE_DIR/Contents/MacOS"
+        mkdir -p "$BUNDLE_DIR/Contents/Resources"
+
+        # Move all published files into app bundle
+        mv ./Fence/publish/${{ matrix.artifact-name }}/Fence "$BUNDLE_DIR/Contents/MacOS/"
+        mv ./Fence/publish/${{ matrix.artifact-name }}/*.dylib "$BUNDLE_DIR/Contents/MacOS/" 2>/dev/null || true
+
+        # Create Info.plist
+        cat > "$BUNDLE_DIR/Contents/Info.plist" << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key>
+            <string>Fence</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.lnsdevelopment.fence</string>
+            <key>CFBundleName</key>
+            <string>Fence</string>
+            <key>CFBundleVersion</key>
+            <string>${{ steps.nbgv.outputs.SemVer2 }}</string>
+            <key>CFBundleShortVersionString</key>
+            <string>${{ steps.nbgv.outputs.SemVer2 }}</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+        </dict>
+        </plist>
+        EOF
+
+        # Make executable
+        chmod +x "$BUNDLE_DIR/Contents/MacOS/Fence"
+
+    # Package artifacts
+    - name: Package Windows Build
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        cd "./Fence/publish/${{ matrix.artifact-name }}"
+        $archiveName = "../../${{ matrix.artifact-name }}.zip"
+        Compress-Archive -Path "*" -DestinationPath $archiveName
+        Write-Host "Created: ${{ matrix.artifact-name }}.zip"
+
+    - name: Package macOS Build
+      if: matrix.os == 'macos-latest'
+      shell: bash
+      run: |
+        cd ./Fence/publish/${{ matrix.artifact-name }}
+        zip -r ../../${{ matrix.artifact-name }}.zip .
+        echo "Created: ${{ matrix.artifact-name }}.zip"
+
+    - name: Package Linux Build
+      if: matrix.os == 'ubuntu-latest'
+      shell: bash
+      run: |
+        cd ./Fence/publish/${{ matrix.artifact-name }}
+        tar -czf ../../${{ matrix.artifact-name }}.tar.gz .
+        echo "Created: ${{ matrix.artifact-name }}.tar.gz"
+
+    # Upload artifacts for release
+    - name: Upload artifact
+      uses: actions/upload-artifact@v6
+      with:
+        name: ${{ matrix.artifact-name }}
+        path: |
+          Fence/${{ matrix.artifact-name }}.zip
+          Fence/${{ matrix.artifact-name }}.tar.gz
+        if-no-files-found: ignore
+
+  create-release:
+    needs: build-and-release
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Determine Version
+      uses: dotnet/nbgv@master
+      id: nbgv
+      with:
+        path: Fence
+
+    - name: Extract Changelog Highlights
+      id: highlights
+      shell: bash
+      run: |
+        # Check for manually curated release notes first (created by /release command)
+        if [ -f "release-notes.md" ]; then
+          echo "Using curated release-notes.md"
+          cp release-notes.md highlights.md
+        elif [ -f "Fence/CHANGELOG.md" ]; then
+          # Fallback: auto-extract from changelog
+          # Find the first versioned section (skip [Unreleased])
+          section=$(awk '
+            /^## \[[0-9]/ { if (found) exit; found=1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' "Fence/CHANGELOG.md")
+
+          if [ -n "$section" ]; then
+            {
+              echo "## What's New"
+              echo ""
+              # Extract key points - lines starting with - or ###
+              echo "$section" | grep -E "^(###|- \[?x?\]?)" | head -15 | sed 's/^### /#### /'
+            } > highlights.md
+          else
+            echo "## What's New" > highlights.md
+            echo "" >> highlights.md
+            echo "_See CHANGELOG.md for details_" >> highlights.md
+          fi
+        else
+          echo "## What's New" > highlights.md
+          echo "" >> highlights.md
+          echo "_See CHANGELOG.md for details_" >> highlights.md
+        fi
+
+        # Store as multiline output
+        {
+          echo 'highlights<<EOF'
+          cat highlights.md
+          echo 'EOF'
+        } >> $GITHUB_OUTPUT
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v7
+      with:
+        path: ./artifacts
+
+    - name: Display artifact structure
+      run: |
+        echo "Artifacts downloaded:"
+        find ./artifacts -type f
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          ./artifacts/**/*.zip
+          ./artifacts/**/*.tar.gz
+        body: |
+          # Fence ${{ steps.nbgv.outputs.SemVer2 }}
+
+          Merchant and store editor for Neverwinter Nights `.utm` files.
+
+          ${{ steps.highlights.outputs.highlights }}
+
+          ## Downloads
+
+          ### Recommended (No .NET Required)
+
+          These bundles include everything needed to run Fence - just download and run!
+
+          - **Windows**: `Fence-win-x64.zip` (~50MB)
+            - Extract and run `Fence.exe`
+          - **macOS**: `Fence-osx-arm64.zip` (~55MB)
+            - Extract and open `Fence.app`
+            - Apple Silicon (M1/M2/M3) Macs
+          - **Linux**: `Fence-linux-x64.tar.gz` (~50MB)
+            - Extract and run `./Fence`
+
+          ### Advanced (Requires .NET 9 Runtime)
+
+          Smaller downloads for users who already have [.NET 9 Runtime](https://dotnet.microsoft.com/download/dotnet/9.0) installed:
+
+          - **Windows**: `Fence-win-x64-fd.zip` (~5MB)
+          - **macOS**: `Fence-osx-arm64-fd.zip` (~5MB)
+          - **Linux**: `Fence-linux-x64-fd.tar.gz` (~5MB)
+
+          ## Features
+
+          - Open and edit merchant/store files (`.utm`)
+          - Visual inventory management with drag-and-drop
+          - Blueprint palette with game data integration
+          - Theme support (dark/light mode)
+
+          ## Changes
+
+          See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/Fence/CHANGELOG.md) for detailed changes.
+
+          ## Installation Notes
+
+          **macOS**: You may need to allow the app in System Preferences → Security & Privacy after first launch.
+
+          **Linux**: Make the binary executable: `chmod +x Fence`
+
+          ---
+          🤖 Generated with [Claude Code](https://claude.com/claude-code)
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
