@@ -15,6 +15,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.73] - 2026-02-17
+**Branch**: `trebuchet/issue-1402` | **PR**: #TBD
+
+### Sprint: Code Quality & Release Readiness (#1402)
+
+- [ ] #1383 - Feat: Add Fence & Trebuchet to release builds
+
+---
+
 ## [0.9.72] - 2026-02-16
 **Branch**: `radoub/issue-1393` | **PR**: #1400
 
