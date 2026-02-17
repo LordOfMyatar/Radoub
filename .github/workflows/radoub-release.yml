@@ -66,6 +66,12 @@ jobs:
       with:
         path: Fence
 
+    - name: Determine Trebuchet Version
+      uses: dotnet/nbgv@master
+      id: trebuchet-ver
+      with:
+        path: Trebuchet
+
     - name: Restore Parley dependencies
       run: dotnet restore Parley/Parley/Parley.csproj -r ${{ matrix.runtime }}
 
@@ -74,6 +80,9 @@ jobs:
 
     - name: Restore Fence dependencies
       run: dotnet restore Fence/Fence/Fence.csproj -r ${{ matrix.runtime }}
+
+    - name: Restore Trebuchet dependencies
+      run: dotnet restore Trebuchet/Trebuchet/Trebuchet.csproj -r ${{ matrix.runtime }}
 
     # Publish all tools to the SAME output folder - DLLs are automatically shared
     # Parley first (larger, has more dependencies including CEF)
@@ -89,6 +98,10 @@ jobs:
     # Fence - merchant/store editor
     - name: Publish Fence to shared folder
       run: dotnet publish Fence/Fence/Fence.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -o ./publish/Radoub
+
+    # Trebuchet - launcher/hub (includes bundled tools/ directory with script compiler)
+    - name: Publish Trebuchet to shared folder
+      run: dotnet publish Trebuchet/Trebuchet/Trebuchet.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -o ./publish/Radoub
 
     - name: Display bundle structure
       shell: bash
@@ -193,6 +206,36 @@ jobs:
         EOF
         chmod +x "./bundle/Fence.app/Contents/MacOS/Fence"
 
+        # Trebuchet.app - copy from shared folder (includes tools/ for script compiler)
+        mkdir -p "./bundle/Trebuchet.app/Contents/MacOS"
+        mkdir -p "./bundle/Trebuchet.app/Contents/Resources"
+        cp ./publish/Radoub/Trebuchet "./bundle/Trebuchet.app/Contents/MacOS/"
+        cp ./publish/Radoub/*.dylib "./bundle/Trebuchet.app/Contents/MacOS/" 2>/dev/null || true
+        cp -r ./publish/Radoub/tools "./bundle/Trebuchet.app/Contents/MacOS/tools" 2>/dev/null || true
+        cat > "./bundle/Trebuchet.app/Contents/Info.plist" << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key>
+            <string>Trebuchet</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.lnsdevelopment.trebuchet</string>
+            <key>CFBundleName</key>
+            <string>Trebuchet</string>
+            <key>CFBundleVersion</key>
+            <string>${{ steps.trebuchet-ver.outputs.SemVer2 }}</string>
+            <key>CFBundleShortVersionString</key>
+            <string>${{ steps.trebuchet-ver.outputs.SemVer2 }}</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+        </dict>
+        </plist>
+        EOF
+        chmod +x "./bundle/Trebuchet.app/Contents/MacOS/Trebuchet"
+
     # Linux: Make executables
     - name: Set Linux permissions
       if: matrix.os == 'ubuntu-latest'
@@ -201,6 +244,8 @@ jobs:
         chmod +x ./publish/Radoub/Parley
         chmod +x ./publish/Radoub/Manifest
         chmod +x ./publish/Radoub/Fence
+        chmod +x ./publish/Radoub/Trebuchet
+        chmod +x ./publish/Radoub/tools/nwn_script_comp_linux 2>/dev/null || true
 
     # Package bundle - Windows/Linux use the shared folder directly
     - name: Package Windows Bundle
@@ -297,6 +342,7 @@ jobs:
             extract_changelog_section "Parley/CHANGELOG.md" "Parley"
             extract_changelog_section "Manifest/CHANGELOG.md" "Manifest"
             extract_changelog_section "Fence/CHANGELOG.md" "Fence"
+            extract_changelog_section "Trebuchet/CHANGELOG.md" "Trebuchet"
           } > highlights.md
         fi
 
@@ -326,7 +372,7 @@ jobs:
         body: |
           # Radoub ${{ steps.version.outputs.version }}
 
-          Bundled release containing Parley, Manifest, and Fence editors with shared runtime.
+          Bundled release containing Parley, Manifest, Fence, and Trebuchet with shared runtime.
 
           ${{ steps.highlights.outputs.highlights }}
 
@@ -337,12 +383,12 @@ jobs:
           These bundles include everything needed - just download and run!
 
           - **Windows**: `Radoub-win-x64.zip` (~110MB)
-            - Extract and run `Radoub/Parley.exe`, `Radoub/Manifest.exe`, or `Radoub/Fence.exe`
-          - **macOS**: `Radoub-osx-arm64.zip` (~120MB)
-            - Extract and open `Parley.app`, `Manifest.app`, or `Fence.app`
+            - Extract and run `Radoub/Parley.exe`, `Radoub/Manifest.exe`, `Radoub/Fence.exe`, or `Radoub/Trebuchet.exe`
+          - **macOS**: `Radoub-osx-arm64.zip` (~130MB)
+            - Extract and open `Parley.app`, `Manifest.app`, `Fence.app`, or `Trebuchet.app`
             - Apple Silicon (M1/M2/M3) Macs
-          - **Linux**: `Radoub-linux-x64.tar.gz` (~105MB)
-            - Extract and run `./Radoub/Parley`, `./Radoub/Manifest`, or `./Radoub/Fence`
+          - **Linux**: `Radoub-linux-x64.tar.gz` (~115MB)
+            - Extract and run `./Radoub/Parley`, `./Radoub/Manifest`, `./Radoub/Fence`, or `./Radoub/Trebuchet`
 
           ## What's Included
 
@@ -351,6 +397,7 @@ jobs:
           | **Parley** | Dialog editor for `.dlg` files |
           | **Manifest** | Journal editor for `.jrl` files |
           | **Fence** | Merchant/store editor for `.utm` files |
+          | **Trebuchet** | Launcher, module editor, and build system |
 
           ## Shared Infrastructure
 
@@ -361,24 +408,19 @@ jobs:
           - Radoub.UI shared components
           - Cross-tool discovery (launch Manifest from Parley's Quest Browser)
 
-          ## Standalone Downloads
-
-          Individual tools are also available as separate releases:
-          - [Parley Releases](https://github.com/${{ github.repository }}/releases?q=v&expanded=true)
-          - [Manifest Releases](https://github.com/${{ github.repository }}/releases?q=manifest-v&expanded=true)
-
           ## Changes
 
           See the individual changelogs:
           - [Parley CHANGELOG](https://github.com/${{ github.repository }}/blob/main/Parley/CHANGELOG.md)
           - [Manifest CHANGELOG](https://github.com/${{ github.repository }}/blob/main/Manifest/CHANGELOG.md)
           - [Fence CHANGELOG](https://github.com/${{ github.repository }}/blob/main/Fence/CHANGELOG.md)
+          - [Trebuchet CHANGELOG](https://github.com/${{ github.repository }}/blob/main/Trebuchet/CHANGELOG.md)
 
           ## Installation Notes
 
           **macOS**: You may need to allow the apps in System Preferences → Security & Privacy after first launch.
 
-          **Linux**: Make binaries executable: `chmod +x Radoub/Parley Radoub/Manifest Radoub/Fence`
+          **Linux**: Make binaries executable: `chmod +x Radoub/Parley Radoub/Manifest Radoub/Fence Radoub/Trebuchet`
 
           ---
           🤖 Generated with [Claude Code](https://claude.com/claude-code)

@@ -94,21 +94,7 @@ public partial class MainWindowViewModel
         var bicFiles = new List<string>();
         string defaultBic = string.Empty;
 
-        string? workingDir = null;
-
-        if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
-        {
-            var moduleName = Path.GetFileNameWithoutExtension(modulePath);
-            var moduleDir = Path.GetDirectoryName(modulePath);
-            if (!string.IsNullOrEmpty(moduleDir))
-            {
-                workingDir = Path.Combine(moduleDir, moduleName);
-            }
-        }
-        else if (Directory.Exists(modulePath))
-        {
-            workingDir = modulePath;
-        }
+        var workingDir = Services.ModulePathHelper.GetWorkingDirectory(modulePath);
 
         // Scan for BIC files in working directory
         if (!string.IsNullOrEmpty(workingDir) && Directory.Exists(workingDir))
@@ -144,39 +130,27 @@ public partial class MainWindowViewModel
     {
         Radoub.Formats.Ifo.IfoFile? ifoFile = null;
 
-        if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
-        {
-            // Check for unpacked working directory first
-            var moduleName = Path.GetFileNameWithoutExtension(modulePath);
-            var moduleDir = Path.GetDirectoryName(modulePath);
-            if (!string.IsNullOrEmpty(moduleDir))
-            {
-                var workingDir = Path.Combine(moduleDir, moduleName);
-                var ifoPath = Path.Combine(workingDir, "module.ifo");
-                if (File.Exists(ifoPath))
-                {
-                    ifoFile = Radoub.Formats.Ifo.IfoReader.Read(ifoPath);
-                }
-            }
+        var workingDir = Services.ModulePathHelper.GetWorkingDirectory(modulePath);
 
-            // Fall back to reading from .mod file
-            if (ifoFile == null)
-            {
-                var erf = ErfReader.ReadMetadataOnly(modulePath);
-                var ifoEntry = erf.FindResource("module", ResourceTypes.Ifo);
-                if (ifoEntry != null)
-                {
-                    var ifoData = ErfReader.ExtractResource(modulePath, ifoEntry);
-                    ifoFile = Radoub.Formats.Ifo.IfoReader.Read(ifoData);
-                }
-            }
-        }
-        else if (Directory.Exists(modulePath))
+        if (workingDir != null)
         {
-            var ifoPath = Path.Combine(modulePath, "module.ifo");
+            var ifoPath = Path.Combine(workingDir, "module.ifo");
             if (File.Exists(ifoPath))
             {
                 ifoFile = Radoub.Formats.Ifo.IfoReader.Read(ifoPath);
+            }
+        }
+
+        // Fall back to reading from packed .mod file
+        if (ifoFile == null && File.Exists(modulePath) &&
+            modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
+        {
+            var erf = ErfReader.ReadMetadataOnly(modulePath);
+            var ifoEntry = erf.FindResource("module", ResourceTypes.Ifo);
+            if (ifoEntry != null)
+            {
+                var ifoData = ErfReader.ExtractResource(modulePath, ifoEntry);
+                ifoFile = Radoub.Formats.Ifo.IfoReader.Read(ifoData);
             }
         }
 

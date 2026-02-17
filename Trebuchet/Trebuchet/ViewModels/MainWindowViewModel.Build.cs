@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using Radoub.Formats.Common;
 using Radoub.Formats.Erf;
 using Radoub.Formats.Logging;
+using RadoubLauncher.Models;
 using RadoubLauncher.Services;
 
 namespace RadoubLauncher.ViewModels;
@@ -86,7 +87,7 @@ public partial class MainWindowViewModel
                         });
 
                     // Always write a log when compilation runs
-                    var logPath = compilerService.WriteCompilationLog(compileResult, workingDir);
+                    var logPath = BuildLogService.WriteCompilationLog(compileResult, workingDir);
                     _lastBuildLogPath = logPath;
                     _lastBuildWorkingDir = workingDir;
                     HasBuildLog = true;
@@ -251,7 +252,7 @@ public partial class MainWindowViewModel
 
             // Write updated log
             var workingDir = _lastBuildWorkingDir ?? GetWorkingDirectoryPath() ?? "";
-            var logPath = compilerService.WriteCompilationLog(compileResult, workingDir);
+            var logPath = BuildLogService.WriteCompilationLog(compileResult, workingDir);
             _lastBuildLogPath = logPath;
             _lastBuildWorkingDir = workingDir;
             HasBuildLog = true;

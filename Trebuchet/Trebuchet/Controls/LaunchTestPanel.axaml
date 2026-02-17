@@ -193,7 +193,7 @@
                 <!-- Build Options -->
                 <StackPanel Spacing="8">
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <CheckBox Content="Compile scripts before building"
+                        <CheckBox Content="Compile scripts before saving"
                                   IsChecked="{Binding CompileScriptsEnabled}"
                                   IsEnabled="{Binding IsCompilerAvailable}"
                                   ToolTip.Tip="Run the NWScript compiler before packing the module"/>
@@ -216,6 +216,30 @@
                                      ToolTip.Tip="Only recompile .nss files that are newer than their .ncs"/>
                     </StackPanel>
 
+                    <!-- Script Compiler Path -->
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Script Compiler:"
+                                   FontWeight="SemiBold"/>
+                        <Grid ColumnDefinitions="*,Auto,Auto">
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding ScriptCompilerPath}"
+                                     Watermark="Path to nwn_script_comp — leave blank for bundled"
+                                     Margin="0,0,8,0"/>
+                            <Button Grid.Column="1"
+                                    Content="Browse..."
+                                    Command="{Binding BrowseScriptCompilerPathCommand}"
+                                    Padding="8,4"
+                                    Margin="0,0,4,0"/>
+                            <Button Grid.Column="2"
+                                    Content="Clear"
+                                    Command="{Binding ClearScriptCompilerPathCommand}"
+                                    Padding="8,4"/>
+                        </Grid>
+                        <TextBlock Text="{Binding CompilerSourceDescription}"
+                                   Opacity="0.5"
+                                   FontSize="{DynamicResource FontSizeSmall}"/>
+                    </StackPanel>
+
                     <!-- Code Editor Path -->
                     <StackPanel Spacing="4">
                         <TextBlock Text="Code Editor:"
@@ -223,14 +247,14 @@
                         <Grid ColumnDefinitions="*,Auto">
                             <TextBox Grid.Column="0"
                                      Text="{Binding CodeEditorPath}"
-                                     Watermark="Path to code editor — leave blank for system default"
+                                     Watermark="Path to code editor (e.g. VS Code, Notepad++)"
                                      Margin="0,0,8,0"/>
                             <Button Grid.Column="1"
                                     Content="Browse..."
                                     Command="{Binding BrowseCodeEditorPathCommand}"
                                     Padding="8,4"/>
                         </Grid>
-                        <TextBlock Text="Used to open failed scripts. Leave blank to use system default."
+                        <TextBlock Text="Used to open script files. Leave blank to use system default."
                                    Opacity="0.5"
                                    FontSize="{DynamicResource FontSizeSmall}"/>
                     </StackPanel>

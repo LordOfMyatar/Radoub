@@ -101,28 +101,8 @@ public partial class App : Application
         UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode: Reset theme to light, fonts to default");
     }
 
-    /// <summary>
-    /// Apply SafeMode font settings (system defaults).
-    /// </summary>
-    private void ApplySafeModeFontSettings()
-    {
-        if (Resources != null)
-        {
-            var baseSize = SafeModeService.DefaultFontSize;
-
-            Resources["GlobalFontSize"] = baseSize;
-            Resources["FontSizeXSmall"] = Math.Max(10, baseSize - 2);
-            Resources["FontSizeSmall"] = Math.Max(11, baseSize - 1);
-            Resources["FontSizeNormal"] = baseSize;
-            Resources["FontSizeMedium"] = baseSize + 2;
-            Resources["FontSizeLarge"] = baseSize + 4;
-            Resources["FontSizeXLarge"] = baseSize + 6;
-            Resources["FontSizeTitle"] = baseSize + 10;
-            Resources["GlobalFontFamily"] = FontFamily.Default;
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Applied SafeMode font settings");
-        }
-    }
+    // ApplySafeModeDefaults() already resets settings values, so just apply from settings
+    private void ApplySafeModeFontSettings() => ApplyFontSettings();
 
     public override void OnFrameworkInitializationCompleted()
     {

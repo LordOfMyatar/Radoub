@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.20.0-alpha] - 2026-02-17
+**Branch**: `trebuchet/issue-1402` | **PR**: #1404
+
+### Sprint: Code Quality & Release Readiness (#1402)
+
+- [x] #1392 - Tech Debt: Duplicate code, dead code, and dead ends cleanup
+- [x] #1382 - Tech Debt: Split ScriptCompilerService.cs (651 lines)
+- [x] #1391 - Feat: Allow user to configure preferred script compiler path
+- [x] #1383 - Feat: Add Fence & Trebuchet to release builds
+
+---
+
 ## [1.19.0-alpha] - 2026-02-15
 **Branch**: `trebuchet/issue-1389` | **PR**: #1390
 

@@ -58,29 +58,7 @@ public class ModuleValidityToForegroundConverter : IValueConverter
     }
 }
 
-/// <summary>
-/// Converts module validity to background color for the module name badge.
-/// True = Theme background alt (valid), False = Theme warning (invalid)
-/// Uses theme resources for colorblind accessibility.
-/// </summary>
-public class ModuleValidityToBgConverter : IValueConverter
-{
-    public static readonly ModuleValidityToBgConverter Instance = new();
-
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        if (value is bool isValid)
-        {
-            return isValid ? BrushManager.GetDisabledBrush() : BrushManager.GetWarningBrush();
-        }
-        return BrushManager.GetDisabledBrush();
-    }
-
-    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        throw new NotImplementedException();
-    }
-}
+// ModuleValidityToBgConverter removed 2026-02-17 — unreferenced dead code (#1392)
 
 /// <summary>
 /// Converts HasErrors bool to border brush for validation feedback.
