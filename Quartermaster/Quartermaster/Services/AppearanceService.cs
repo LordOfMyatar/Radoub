@@ -494,6 +494,38 @@ public class AppearanceService
         return packages;
     }
 
+    /// <summary>
+    /// Gets packages filtered by class ID from packages.2da ClassID column.
+    /// </summary>
+    public List<(byte Id, string Name)> GetPackagesForClass(int classId)
+    {
+        var packages = new List<(byte Id, string Name)>();
+
+        for (int i = 0; i < 256; i++)
+        {
+            var label = _gameDataService.Get2DAValue("packages", i, "Label");
+            if (string.IsNullOrEmpty(label) || label == "****")
+            {
+                if (packages.Count > 20 && i > 50)
+                    break;
+                continue;
+            }
+
+            var classIdStr = _gameDataService.Get2DAValue("packages", i, "ClassID");
+            if (string.IsNullOrEmpty(classIdStr) || classIdStr == "****")
+                continue;
+
+            if (int.TryParse(classIdStr, out int pkgClassId) && pkgClassId == classId)
+            {
+                var name = GetPackageName((byte)i);
+                packages.Add(((byte)i, name));
+            }
+        }
+
+        packages.Sort((a, b) => string.Compare(a.Name, b.Name, System.StringComparison.OrdinalIgnoreCase));
+        return packages;
+    }
+
     #endregion
 }
 

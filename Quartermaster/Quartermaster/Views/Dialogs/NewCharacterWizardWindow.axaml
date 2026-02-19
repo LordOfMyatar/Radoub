@@ -304,28 +304,321 @@
                 </Grid>
             </Grid>
 
-            <!-- Step 3: Appearance (placeholder) -->
+            <!-- Step 3: Appearance -->
             <Grid x:Name="Step3Panel" IsVisible="False">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="Appearance" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
-                <TextBlock Grid.Row="1" Text="Appearance customization coming in Sprint 2."
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                           VerticalAlignment="Center" HorizontalAlignment="Center"/>
-            </Grid>
-
-            <!-- Step 4: Class (placeholder) -->
-            <Grid x:Name="Step4Panel" IsVisible="False">
-                <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="Class &amp; Package" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
-                <TextBlock Grid.Row="1" Text="Class selection coming in Sprint 2."
+
+                <TextBlock Grid.Row="0" Text="Customize Appearance" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="1" Text="Choose your character's appearance type, phenotype, portrait, and body details."
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                           VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                           TextWrapping="Wrap" Margin="0,0,0,15"/>
+
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="350"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Appearance/Phenotype/Portrait -->
+                    <StackPanel Grid.Column="0" Spacing="10" Margin="0,0,15,0">
+                        <!-- Appearance -->
+                        <TextBlock Text="Appearance Type" FontWeight="SemiBold"/>
+                        <ComboBox x:Name="AppearanceComboBox" HorizontalAlignment="Stretch"
+                                  SelectionChanged="OnAppearanceSelectionChanged">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <!-- Phenotype -->
+                        <TextBlock Text="Phenotype" FontWeight="SemiBold"/>
+                        <ComboBox x:Name="PhenotypeComboBox" HorizontalAlignment="Stretch"
+                                  SelectionChanged="OnPhenotypeSelectionChanged">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <!-- Portrait -->
+                        <TextBlock Text="Portrait" FontWeight="SemiBold" Margin="0,5,0,0"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <!-- Portrait preview -->
+                            <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                    BorderThickness="1" Width="100" Height="125" Margin="0,0,10,0">
+                                <Image x:Name="PortraitPreviewImage" Stretch="Uniform"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" Spacing="5" VerticalAlignment="Center">
+                                <TextBlock x:Name="PortraitNameLabel" Text="No portrait selected"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                           TextWrapping="Wrap"/>
+                                <Button x:Name="BrowsePortraitButton" Content="Browse..."
+                                        Click="OnBrowsePortraitClick"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Right: Body Parts (visible for part-based appearances) -->
+                    <Border Grid.Column="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                            BorderThickness="1" Padding="15">
+                        <Grid x:Name="BodyPartsPanel">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="Body Parts &amp; Colors" FontWeight="Bold" FontSize="14" Margin="0,0,0,10"/>
+
+                            <ScrollViewer Grid.Row="1">
+                                <StackPanel Spacing="8">
+                                    <!-- Head -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Head:" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Column="1" x:Name="HeadNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1"
+                                                       ValueChanged="OnBodyPartChanged"/>
+                                    </Grid>
+
+                                    <!-- Separator -->
+                                    <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,2"/>
+
+                                    <!-- Skin Color -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Skin Color:" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Column="1" x:Name="SkinColorNumericUpDown"
+                                                       Minimum="0" Maximum="175" Value="0"
+                                                       ValueChanged="OnBodyPartChanged"/>
+                                    </Grid>
+
+                                    <!-- Hair Color -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Hair Color:" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Column="1" x:Name="HairColorNumericUpDown"
+                                                       Minimum="0" Maximum="175" Value="0"
+                                                       ValueChanged="OnBodyPartChanged"/>
+                                    </Grid>
+
+                                    <!-- Tattoo 1 Color -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Tattoo 1:" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Column="1" x:Name="Tattoo1ColorNumericUpDown"
+                                                       Minimum="0" Maximum="175" Value="0"
+                                                       ValueChanged="OnBodyPartChanged"/>
+                                    </Grid>
+
+                                    <!-- Tattoo 2 Color -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Tattoo 2:" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Column="1" x:Name="Tattoo2ColorNumericUpDown"
+                                                       Minimum="0" Maximum="175" Value="0"
+                                                       ValueChanged="OnBodyPartChanged"/>
+                                    </Grid>
+
+                                    <!-- Non-part-based notice -->
+                                    <TextBlock x:Name="BodyPartsNotApplicableLabel"
+                                               Text="Body part customization is only available for humanoid appearance types."
+                                               TextWrapping="Wrap" IsVisible="False"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                               FontStyle="Italic" Margin="0,10"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+
+            <!-- Step 4: Class & Package -->
+            <Grid x:Name="Step4Panel" IsVisible="False">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="Choose Class &amp; Package" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="1" Text="Select your starting class. The package determines recommended skills and feats."
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           TextWrapping="Wrap" Margin="0,0,0,15"/>
+
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="250"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Class List -->
+                    <Grid Grid.Column="0" Margin="0,0,15,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBox Grid.Row="0" x:Name="ClassSearchBox"
+                                 Watermark="Filter classes..."
+                                 Margin="0,0,0,5"
+                                 TextChanged="OnClassSearchChanged"/>
+
+                        <Border Grid.Row="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                BorderThickness="1">
+                            <ListBox x:Name="ClassListBox" SelectionChanged="OnClassSelectionChanged">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="5,2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{Binding Name}"/>
+                                            <TextBlock Grid.Column="1" x:Name="FavoredBadge"
+                                                       Text="★" FontSize="14"
+                                                       ToolTip.Tip="Racial favored class"
+                                                       IsVisible="{Binding IsFavored}"
+                                                       Foreground="{DynamicResource SystemAccentColor}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
+                    </Grid>
+
+                    <!-- Right: Class Detail + Package -->
+                    <Border Grid.Column="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                            BorderThickness="1" Padding="15">
+                        <ScrollViewer>
+                            <Grid x:Name="ClassDetailPanel">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Class Name -->
+                                <TextBlock Grid.Row="0" x:Name="SelectedClassNameLabel"
+                                           Text="Select a class"
+                                           FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                                <!-- Stats Grid -->
+                                <Border Grid.Row="1" x:Name="ClassStatsPanel"
+                                        Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                                        Padding="12" CornerRadius="4" Margin="0,0,0,10" IsVisible="False">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <TextBlock Grid.Column="0" Grid.Row="0" x:Name="ClassHitDieLabel" Text="Hit Die: d8" FontWeight="SemiBold" Margin="0,2"/>
+                                        <TextBlock Grid.Column="1" Grid.Row="0" x:Name="ClassSkillPointsLabel" Text="Skill Points: 2" FontWeight="SemiBold" Margin="0,2"/>
+                                        <TextBlock Grid.Column="0" Grid.Row="1" x:Name="ClassPrimaryAbilityLabel" Text="Primary: —" FontWeight="SemiBold" Margin="0,2"/>
+                                        <TextBlock Grid.Column="1" Grid.Row="1" x:Name="ClassCasterLabel" Text="Spellcasting: None" FontWeight="SemiBold" Margin="0,2"/>
+                                        <TextBlock Grid.Column="0" Grid.Row="2" x:Name="ClassAlignmentLabel" Text="" Margin="0,2"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" TextWrapping="Wrap"
+                                                   Grid.ColumnSpan="2"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Starting Package -->
+                                <StackPanel Grid.Row="2" x:Name="PackageSection" Spacing="5" Margin="0,0,0,10" IsVisible="False">
+                                    <TextBlock Text="Starting Package" FontWeight="Bold"/>
+                                    <ComboBox x:Name="PackageComboBox" HorizontalAlignment="Stretch"
+                                              SelectionChanged="OnPackageSelectionChanged">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Name}"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <!-- Description separator -->
+                                <Border Grid.Row="3" Height="1"
+                                        Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                        Margin="0,0,0,10" x:Name="ClassDescSeparator" IsVisible="False"/>
+
+                                <!-- Class Description -->
+                                <ScrollViewer Grid.Row="5" MaxHeight="200">
+                                    <TextBlock x:Name="ClassDescriptionLabel"
+                                               TextWrapping="Wrap"
+                                               Text="Select a class to see its details."
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                </ScrollViewer>
+                            </Grid>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+
+                <!-- Prestige Planning (collapsible) -->
+                <Border Grid.Row="3" x:Name="PrestigePlanningBorder"
+                        Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        Padding="10" CornerRadius="4" Margin="0,10,0,0">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <TextBlock x:Name="PrestigeToggleArrow" Text="▸" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock Text="Prestige Planning (Advisory)" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Border x:Name="PrestigeToggleClickArea" Background="Transparent" Margin="-10,-5,-10,0" Padding="10,5,10,0"
+                                PointerPressed="OnPrestigePlanningToggle" Cursor="Hand" Height="5"/>
+                        <StackPanel x:Name="PrestigePlanningContent" IsVisible="False" Margin="0,5,0,0" Spacing="5">
+                            <TextBlock Text="Select a prestige class goal to see its prerequisites:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                       FontSize="12"/>
+                            <ComboBox x:Name="PrestigeClassComboBox" HorizontalAlignment="Stretch"
+                                      SelectionChanged="OnPrestigeClassSelectionChanged">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Name}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <TextBlock x:Name="PrestigePrereqLabel"
+                                       TextWrapping="Wrap" FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
             </Grid>
 
             <!-- Step 5: Abilities (placeholder) -->

@@ -209,7 +209,7 @@ public partial class MainWindow
         }
 
         // Launch creation wizard
-        var wizard = new NewCharacterWizardWindow(DisplayService);
+        var wizard = new NewCharacterWizardWindow(DisplayService, GameData, IconService);
         await wizard.ShowDialog(this);
 
         if (!wizard.Confirmed || wizard.CreatedCreature == null)
