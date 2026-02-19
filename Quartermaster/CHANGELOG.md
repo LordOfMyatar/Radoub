@@ -10,6 +10,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.70-alpha] - 2026-02-18
+**Branch**: `quartermaster/issue-1406` | **PR**: #TBD
+
+### New Character Creation Wizard (#1406)
+
+- [ ] File > New opens a wizard instead of instant-creating a creature
+- [ ] BIC vs UTC file type selection
+- [ ] Race & sex selection from 2DA data
+- [ ] Full appearance selection (head, hair, colors, portrait)
+- [ ] Class selection with racial preferences
+- [ ] Prestige class planning with prerequisites
+- [ ] Ability score assignment with racial modifiers
+- [ ] Spell selection for casters (known and prepared)
+- [ ] Optional starting equipment/inventory
+- [ ] Summary screen with back-navigation
+- [ ] Wizard is cancellable without side effects
+
+---
+
 ## [0.1.69-alpha] - 2026-02-16
 **Branch**: `radoub/issue-1377` | **PR**: #1403
 
