@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Quartermaster.Services;
+using Quartermaster.Views.Dialogs;
 using Quartermaster.Views.Helpers;
 using Radoub.Formats.Bic;
 using Radoub.Formats.Common;
@@ -207,10 +208,19 @@ public partial class MainWindow
             CloseFile();
         }
 
-        // Create new creature with sensible defaults
-        _currentCreature = CreateNewCreature();
+        // Launch creation wizard
+        var wizard = new NewCharacterWizardWindow(DisplayService);
+        await wizard.ShowDialog(this);
+
+        if (!wizard.Confirmed || wizard.CreatedCreature == null)
+        {
+            UpdateStatus("New creature cancelled");
+            return;
+        }
+
+        _currentCreature = wizard.CreatedCreature;
         _currentFilePath = null; // New file, not yet saved
-        _isBicFile = false; // New files are UTC by default
+        _isBicFile = wizard.IsBicFile;
         _isLoading = true;
 
         // Clear panel file contexts (no file path yet)
@@ -318,7 +328,7 @@ public partial class MainWindow
             {
                 new CreatureClass
                 {
-                    Class = 7, // Commoner (classes.2da)
+                    Class = 255, // Commoner (classes.2da row 255, not 7 which is Ranger)
                     ClassLevel = 1
                 }
             },
