@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.71-alpha] - 2026-02-19
-**Branch**: `quartermaster/issue-1409` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1409` | **PR**: #1415
 
 ### Sprint: New Character Wizard - Steps 3-4 (Appearance, Class & Package) (#1409)
 
