@@ -156,8 +156,8 @@
                     <!-- UTC Card -->
                     <Border x:Name="UtcCard" Classes="file-type-card selected" PointerPressed="OnUtcCardClick" Width="280">
                         <StackPanel Spacing="10">
-                            <TextBlock Text="UTC" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
-                            <TextBlock Text="Creature Blueprint" FontSize="14" HorizontalAlignment="Center"
+                            <TextBlock Text="NPC" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Creature Blueprint (.utc)" FontSize="14" HorizontalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                             <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,5"/>
                             <TextBlock TextWrapping="Wrap" TextAlignment="Center" FontSize="12"
@@ -169,8 +169,8 @@
                     <!-- BIC Card -->
                     <Border x:Name="BicCard" Classes="file-type-card" PointerPressed="OnBicCardClick" Width="280">
                         <StackPanel Spacing="10">
-                            <TextBlock Text="BIC" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
-                            <TextBlock Text="Player Character" FontSize="14" HorizontalAlignment="Center"
+                            <TextBlock Text="PC" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Player Character (.bic)" FontSize="14" HorizontalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                             <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,5"/>
                             <TextBlock TextWrapping="Wrap" TextAlignment="Center" FontSize="12"
