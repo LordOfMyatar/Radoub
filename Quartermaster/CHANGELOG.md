@@ -15,10 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: New Character Wizard - Steps 3-4 (Appearance, Class & Package) (#1409)
 
-- [ ] Step 3: Appearance — Appearance ComboBox from `appearance.2da`, phenotype ComboBox, portrait browser integration, body part controls (head, skin/hair/tattoo colors)
-- [ ] Step 4: Class & Package — Class ListBox from `classes.2da` (BIC: player classes only), class detail panel, racial favored class badge
-- [ ] Starting Package — ComboBox filtered by selected class (`packages.2da`), add `GetPackagesForClass()` to `AppearanceService`
-- [ ] Prestige Planning — Collapsible advisory panel showing prestige class prerequisites from `cls_pres_*.2da`
+- [x] Step 3: Appearance — Appearance ComboBox from `appearance.2da`, phenotype ComboBox, portrait browser integration, body part controls (head, skin/hair/tattoo colors)
+- [x] Step 4: Class & Package — Class ListBox from `classes.2da` (BIC: player classes only), class detail panel, racial favored class badge
+- [x] Starting Package — ComboBox filtered by selected class (`packages.2da`), add `GetPackagesForClass()` to `AppearanceService`
+- [x] Prestige Planning — Collapsible advisory panel showing prestige class prerequisites from `cls_pres_*.2da`
 
 ---
 
