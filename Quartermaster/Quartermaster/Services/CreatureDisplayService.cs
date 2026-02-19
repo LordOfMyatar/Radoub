@@ -109,6 +109,71 @@ public class CreatureDisplayService
     }
 
     /// <summary>
+    /// Gets only player-selectable races (PlayerRace=1 in racialtypes.2da).
+    /// </summary>
+    public List<(byte Id, string Name)> GetPlayerRaces()
+    {
+        var races = new List<(byte Id, string Name)>();
+
+        for (int i = 0; i < 256; i++)
+        {
+            var label = _gameDataService.Get2DAValue("racialtypes", i, "Label");
+            if (string.IsNullOrEmpty(label) || label == "****")
+            {
+                if (races.Count > 10 && i > 50)
+                    break;
+                continue;
+            }
+
+            var playerRace = _gameDataService.Get2DAValue("racialtypes", i, "PlayerRace");
+            if (playerRace != "1")
+                continue;
+
+            var name = GetRaceName((byte)i);
+            races.Add(((byte)i, name));
+        }
+
+        races.Sort((a, b) => string.Compare(a.Name, b.Name, System.StringComparison.OrdinalIgnoreCase));
+        return races;
+    }
+
+    /// <summary>
+    /// Gets the favored class for a race. Returns class ID, or -1 for "Any" (e.g., Human).
+    /// </summary>
+    public int GetFavoredClass(byte raceId)
+    {
+        var favored = _gameDataService.Get2DAValue("racialtypes", raceId, "Favored");
+        if (!string.IsNullOrEmpty(favored) && favored != "****" && int.TryParse(favored, out int classId))
+            return classId;
+        return -1; // "Any" or not specified
+    }
+
+    /// <summary>
+    /// Gets the size category name for a race from racialtypes.2da.
+    /// </summary>
+    public string GetRaceSizeCategory(byte raceId)
+    {
+        var appearance = _gameDataService.Get2DAValue("racialtypes", raceId, "Appearance");
+        if (!string.IsNullOrEmpty(appearance) && appearance != "****" && int.TryParse(appearance, out int appId))
+        {
+            var sizeStr = _gameDataService.Get2DAValue("appearance", appId, "SIZECATEGORY");
+            if (!string.IsNullOrEmpty(sizeStr) && sizeStr != "****" && int.TryParse(sizeStr, out int size))
+            {
+                return size switch
+                {
+                    1 => "Tiny",
+                    2 => "Small",
+                    3 => "Medium",
+                    4 => "Large",
+                    5 => "Huge",
+                    _ => $"Size {size}"
+                };
+            }
+        }
+        return "Medium"; // Default fallback
+    }
+
+    /// <summary>
     /// Gets the display name for a gender ID.
     /// </summary>
     public string GetGenderName(byte genderId)

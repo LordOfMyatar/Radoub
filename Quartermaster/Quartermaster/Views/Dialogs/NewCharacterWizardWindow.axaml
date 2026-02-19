@@ -1,0 +1,406 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Quartermaster.Views.Dialogs.NewCharacterWizardWindow"
+        Title="New Character Wizard"
+        AutomationProperties.AutomationId="NewCharacterWizardWindow"
+        MinWidth="900" MinHeight="650"
+        Width="1000" Height="750"
+        SizeToContent="Manual"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource ThemeBackground}">
+
+    <Window.Styles>
+        <!-- Dark mode selection visibility fix -->
+        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected:focus /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <!-- Step indicator styles -->
+        <Style Selector="Border.step-indicator">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        <Style Selector="Border.step-indicator.current">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+        </Style>
+        <Style Selector="Border.step-indicator.completed">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+        </Style>
+        <!-- File type card styles -->
+        <Style Selector="Border.file-type-card">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="20"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Border.file-type-card.selected">
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}"/>
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Left Sidebar: Step Navigator -->
+        <Border Grid.Column="0" Grid.Row="0" Grid.RowSpan="2"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                Padding="10">
+            <StackPanel>
+                <!-- Header -->
+                <TextBlock x:Name="SidebarTitle"
+                           Text="New Character"
+                           FontSize="16"
+                           FontWeight="Bold"
+                           Margin="0,0,0,5"/>
+                <TextBlock x:Name="SidebarSummary"
+                           Text="Choose your path..."
+                           FontSize="12"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,20"/>
+
+                <!-- Step Indicators -->
+                <TextBlock Text="Steps" FontWeight="SemiBold" Margin="0,0,0,10"/>
+
+                <Border x:Name="Step1Border" Classes="step-indicator current">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock x:Name="Step1Number" Text="1" FontWeight="Bold" Width="20"/>
+                        <TextBlock Text="File Type"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="Step2Border" Classes="step-indicator">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock x:Name="Step2Number" Text="2" FontWeight="Bold" Width="20"/>
+                        <TextBlock Text="Race &amp; Sex"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="Step3Border" Classes="step-indicator">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock x:Name="Step3Number" Text="3" FontWeight="Bold" Width="20"/>
+                        <TextBlock Text="Appearance"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="Step4Border" Classes="step-indicator">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock x:Name="Step4Number" Text="4" FontWeight="Bold" Width="20"/>
+                        <TextBlock Text="Class"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="Step5Border" Classes="step-indicator">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock x:Name="Step5Number" Text="5" FontWeight="Bold" Width="20"/>
+                        <TextBlock Text="Abilities"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="Step6Border" Classes="step-indicator">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock x:Name="Step6Number" Text="6" FontWeight="Bold" Width="20"/>
+                        <TextBlock Text="Skills"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="Step7Border" Classes="step-indicator">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock x:Name="Step7Number" Text="7" FontWeight="Bold" Width="20"/>
+                        <TextBlock Text="Spells"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="Step8Border" Classes="step-indicator">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock x:Name="Step8Number" Text="8" FontWeight="Bold" Width="20"/>
+                        <TextBlock Text="Summary"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content Area -->
+        <Grid Grid.Column="1" Grid.Row="0" Margin="15">
+
+            <!-- Step 1: File Type -->
+            <Grid x:Name="Step1Panel">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="What are you creating?" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="1" Text="Choose the type of character file. This determines which options are available."
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           TextWrapping="Wrap" Margin="0,0,0,25"/>
+
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <!-- UTC Card -->
+                    <Border x:Name="UtcCard" Classes="file-type-card selected" PointerPressed="OnUtcCardClick" Width="280">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="NPC" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Creature Blueprint (.utc)" FontSize="14" HorizontalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                            <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,5"/>
+                            <TextBlock TextWrapping="Wrap" TextAlignment="Center" FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                       Text="A creature blueprint for module building. All races and classes available. Stats editable after creation."/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- BIC Card -->
+                    <Border x:Name="BicCard" Classes="file-type-card" PointerPressed="OnBicCardClick" Width="280">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="PC" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Player Character (.bic)" FontSize="14" HorizontalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                            <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,5"/>
+                            <TextBlock TextWrapping="Wrap" TextAlignment="Center" FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                       Text="A player character file. Uses player races and classes only, with standard 30-point ability buy."/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+
+            <!-- Step 2: Race & Sex -->
+            <Grid x:Name="Step2Panel" IsVisible="False">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="Choose Race &amp; Sex" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="1" Text="Your race determines ability modifiers, size, and favored class."
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           TextWrapping="Wrap" Margin="0,0,0,15"/>
+
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="280"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Race list + Sex toggle -->
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBox Grid.Row="0" x:Name="RaceSearchBox"
+                                 Watermark="Filter races..."
+                                 Margin="0,0,10,5"
+                                 TextChanged="OnRaceSearchChanged"/>
+
+                        <Border Grid.Row="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                BorderThickness="1" Margin="0,0,10,0">
+                            <ListBox x:Name="RaceListBox" SelectionChanged="OnRaceSelectionChanged">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Name}" Margin="5,2"/>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
+
+                        <!-- Sex Toggle -->
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10" Margin="0,10,10,0">
+                            <TextBlock Text="Sex:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                            <ToggleButton x:Name="MaleToggle" Content="Male" IsChecked="True"
+                                          Click="OnMaleToggleClick" Width="80"/>
+                            <ToggleButton x:Name="FemaleToggle" Content="Female" IsChecked="False"
+                                          Click="OnFemaleToggleClick" Width="80"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Right: Racial info panel -->
+                    <Border Grid.Column="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                            BorderThickness="1" Padding="15">
+                        <Grid x:Name="RaceInfoPanel">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" x:Name="SelectedRaceNameLabel"
+                                       Text="Select a race"
+                                       FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
+
+                            <!-- Ability Modifiers -->
+                            <Border Grid.Row="1" x:Name="RaceModifiersPanel"
+                                    Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                                    Padding="12" CornerRadius="4" Margin="0,0,0,10" IsVisible="False">
+                                <StackPanel>
+                                    <TextBlock Text="Ability Modifiers" FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <Grid x:Name="ModifiersGrid">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Column="0" Grid.Row="0" x:Name="StrModLabel" Text="STR: +0" FontWeight="SemiBold" Margin="0,2"/>
+                                        <TextBlock Grid.Column="1" Grid.Row="0" x:Name="DexModLabel" Text="DEX: +0" FontWeight="SemiBold" Margin="0,2"/>
+                                        <TextBlock Grid.Column="2" Grid.Row="0" x:Name="ConModLabel" Text="CON: +0" FontWeight="SemiBold" Margin="0,2"/>
+                                        <TextBlock Grid.Column="0" Grid.Row="1" x:Name="IntModLabel" Text="INT: +0" FontWeight="SemiBold" Margin="0,2"/>
+                                        <TextBlock Grid.Column="1" Grid.Row="1" x:Name="WisModLabel" Text="WIS: +0" FontWeight="SemiBold" Margin="0,2"/>
+                                        <TextBlock Grid.Column="2" Grid.Row="1" x:Name="ChaModLabel" Text="CHA: +0" FontWeight="SemiBold" Margin="0,2"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Favored Class & Size -->
+                            <StackPanel Grid.Row="2" x:Name="RaceTraitsPanel" Spacing="5" Margin="0,0,0,10" IsVisible="False">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="Favored Class:" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="FavoredClassLabel" Text="Any"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="Size:" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="RaceSizeLabel" Text="Medium"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Race Description -->
+                            <Border Grid.Row="3" Height="1"
+                                    Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                    Margin="0,0,0,10" x:Name="RaceDescSeparator" IsVisible="False"/>
+
+                            <ScrollViewer Grid.Row="4">
+                                <TextBlock x:Name="RaceDescriptionLabel"
+                                           TextWrapping="Wrap"
+                                           Text="Select a race to see its details."
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+
+            <!-- Step 3: Appearance (placeholder) -->
+            <Grid x:Name="Step3Panel" IsVisible="False">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="Appearance" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
+                <TextBlock Grid.Row="1" Text="Appearance customization coming in Sprint 2."
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           VerticalAlignment="Center" HorizontalAlignment="Center"/>
+            </Grid>
+
+            <!-- Step 4: Class (placeholder) -->
+            <Grid x:Name="Step4Panel" IsVisible="False">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="Class &amp; Package" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
+                <TextBlock Grid.Row="1" Text="Class selection coming in Sprint 2."
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           VerticalAlignment="Center" HorizontalAlignment="Center"/>
+            </Grid>
+
+            <!-- Step 5: Abilities (placeholder) -->
+            <Grid x:Name="Step5Panel" IsVisible="False">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="Ability Scores" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
+                <TextBlock Grid.Row="1" Text="Ability score assignment coming in Sprint 3."
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           VerticalAlignment="Center" HorizontalAlignment="Center"/>
+            </Grid>
+
+            <!-- Step 6: Skills (placeholder) -->
+            <Grid x:Name="Step6Panel" IsVisible="False">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="Skills" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
+                <TextBlock Grid.Row="1" Text="Skill allocation coming in Sprint 3."
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           VerticalAlignment="Center" HorizontalAlignment="Center"/>
+            </Grid>
+
+            <!-- Step 7: Spells (placeholder) -->
+            <Grid x:Name="Step7Panel" IsVisible="False">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="Spells" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
+                <TextBlock Grid.Row="1" Text="Spell selection coming in Sprint 4."
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           VerticalAlignment="Center" HorizontalAlignment="Center"/>
+            </Grid>
+
+            <!-- Step 8: Summary (placeholder) -->
+            <Grid x:Name="Step8Panel" IsVisible="False">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="Summary" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
+                <TextBlock Grid.Row="1" Text="Summary and character creation coming in Sprint 4."
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           VerticalAlignment="Center" HorizontalAlignment="Center"/>
+            </Grid>
+
+        </Grid>
+
+        <!-- Bottom Button Bar -->
+        <Border Grid.Column="1" Grid.Row="1"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                Padding="15">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Status Message -->
+                <TextBlock Grid.Column="0" x:Name="StatusLabel"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+
+                <!-- Navigation Buttons -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                    <Button x:Name="BackButton" Content="Back" Width="80" Click="OnBackClick" IsEnabled="False"/>
+                    <Button x:Name="NextButton" Content="Next" Width="80" Click="OnNextClick"/>
+                    <Button x:Name="FinishButton" Content="Create" Width="80" Click="OnFinishClick" IsVisible="False"/>
+                    <Button Content="Cancel" Width="80" Click="OnCancelClick"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

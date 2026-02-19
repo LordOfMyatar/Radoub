@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.70-alpha] - 2026-02-19
+**Branch**: `quartermaster/issue-1408` | **PR**: #1413
+
+### Sprint: New Character Wizard - Skeleton + Steps 1-2 (#1408)
+
+- [x] Wizard window skeleton with 8-step sidebar, navigation, button bar
+- [x] Step 1: File Type — PC/NPC toggle cards
+- [x] Step 2: Race & Sex — Race list from 2DA, racial stat block, sex toggle
+- [x] Add `GetPlayerRaces()`, `GetFavoredClass()`, `GetRaceSizeCategory()` to CreatureDisplayService
+- [x] Wire wizard into `NewFile()` in MainWindow
+- [x] Fix `CreateNewCreature()` Class 7 bug (7 is Ranger, not Commoner; real Commoner is 255)
+
+---
+
 ## [0.1.69-alpha] - 2026-02-16
 **Branch**: `radoub/issue-1377` | **PR**: #1403
 
