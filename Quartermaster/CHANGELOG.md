@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.71-alpha] - 2026-02-19
+**Branch**: `quartermaster/issue-1409` | **PR**: #TBD
+
+### Sprint: New Character Wizard - Steps 3-4 (Appearance, Class & Package) (#1409)
+
+- [ ] Step 3: Appearance — Appearance ComboBox from `appearance.2da`, phenotype ComboBox, portrait browser integration, body part controls (head, skin/hair/tattoo colors)
+- [ ] Step 4: Class & Package — Class ListBox from `classes.2da` (BIC: player classes only), class detail panel, racial favored class badge
+- [ ] Starting Package — ComboBox filtered by selected class (`packages.2da`), add `GetPackagesForClass()` to `AppearanceService`
+- [ ] Prestige Planning — Collapsible advisory panel showing prestige class prerequisites from `cls_pres_*.2da`
+
+---
+
 ## [0.1.70-alpha] - 2026-02-19
 **Branch**: `quartermaster/issue-1408` | **PR**: #1413
 
