@@ -701,28 +701,157 @@
                 </Border>
             </Grid>
 
-            <!-- Step 5: Abilities (placeholder) -->
+            <!-- Step 5: Ability Scores -->
             <Grid x:Name="Step5Panel" IsVisible="False">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="Ability Scores" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
-                <TextBlock Grid.Row="1" Text="Ability score assignment coming in Sprint 3."
+
+                <TextBlock Grid.Row="0" Text="Assign Ability Scores" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="1" Text="Distribute 30 points across your abilities. Base scores start at 8. Higher scores cost more points."
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                           VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                           TextWrapping="Wrap" Margin="0,0,0,15"/>
+
+                <!-- Points Remaining -->
+                <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        Padding="12" CornerRadius="4" Margin="0,0,0,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Points Remaining:" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="AbilityPointsRemainingLabel" Text="30" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" x:Name="AbilityAutoAssignButton" Content="Auto-Assign" Click="OnAbilityAutoAssignClick"/>
+                    </Grid>
+                </Border>
+
+                <!-- Prestige Advisory Banner -->
+                <Border Grid.Row="3" x:Name="PrestigeAbilityBanner"
+                        Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        Padding="8" CornerRadius="4" Margin="0,0,0,10" IsVisible="False">
+                    <TextBlock x:Name="PrestigeAbilityBannerLabel" TextWrapping="Wrap" FontSize="12" FontStyle="Italic"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                </Border>
+
+                <!-- Ability Score Grid -->
+                <Border Grid.Row="4" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                        BorderThickness="1" Padding="12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Header -->
+                        <Grid Grid.Row="0" Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="70"/>
+                                <ColumnDefinition Width="35"/>
+                                <ColumnDefinition Width="35"/>
+                                <ColumnDefinition Width="70"/>
+                                <ColumnDefinition Width="70"/>
+                                <ColumnDefinition Width="70"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Ability" FontWeight="Bold"/>
+                            <TextBlock Grid.Column="1" Text="Base" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            <TextBlock Grid.Column="4" Text="Racial" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            <TextBlock Grid.Column="5" Text="Total" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            <TextBlock Grid.Column="6" Text="Mod" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            <TextBlock Grid.Column="7" Text="Cost" FontWeight="Bold" HorizontalAlignment="Center"/>
+                        </Grid>
+
+                        <!-- Ability Rows -->
+                        <StackPanel Grid.Row="1" x:Name="AbilityRowsPanel" Spacing="6"/>
+                    </Grid>
+                </Border>
+
+                <!-- Cost Reference -->
+                <Border Grid.Row="5" Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        Padding="8" CornerRadius="4" Margin="0,8,0,0">
+                    <TextBlock Text="Cost table: 8→0  9→1  10→2  11→3  12→4  13→5  14→6  15→8  16→10  17→13  18→16"
+                               FontSize="11" FontFamily="Consolas"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                </Border>
             </Grid>
 
-            <!-- Step 6: Skills (placeholder) -->
+            <!-- Step 6: Skills -->
             <Grid x:Name="Step6Panel" IsVisible="False">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="Skills" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
-                <TextBlock Grid.Row="1" Text="Skill allocation coming in Sprint 3."
+
+                <TextBlock Grid.Row="0" Text="Allocate Skills" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="1" Text="Spend skill points on your character's abilities. Class skills cost 1 point, cross-class skills cost 2."
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                           VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                           TextWrapping="Wrap" Margin="0,0,0,15"/>
+
+                <!-- Points Remaining -->
+                <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        Padding="12" CornerRadius="4" Margin="0,0,0,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Skill Points Remaining:" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="SkillPointsRemainingLabel" Text="0" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBox Grid.Column="1" x:Name="SkillSearchBox" Watermark="Filter skills..."
+                                 Width="160" Margin="10,0" TextChanged="OnSkillSearchChanged"/>
+                        <Button Grid.Column="2" x:Name="SkillAutoAssignButton" Content="Auto-Assign" Click="OnSkillAutoAssignClick"/>
+                    </Grid>
+                </Border>
+
+                <!-- Skills Grid -->
+                <Border Grid.Row="3" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                        BorderThickness="1" Padding="0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Header -->
+                        <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="12,6">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="180"/>
+                                    <ColumnDefinition Width="50"/>
+                                    <ColumnDefinition Width="35"/>
+                                    <ColumnDefinition Width="35"/>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Skill" FontWeight="Bold"/>
+                                <TextBlock Grid.Column="1" Text="Key" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="4" Text="Ranks" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="5" Text="Max" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="6" Text="Type" FontWeight="Bold"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Skill Rows -->
+                        <ScrollViewer Grid.Row="1">
+                            <StackPanel x:Name="SkillRowsPanel" Spacing="0"/>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
             </Grid>
 
             <!-- Step 7: Spells (placeholder) -->

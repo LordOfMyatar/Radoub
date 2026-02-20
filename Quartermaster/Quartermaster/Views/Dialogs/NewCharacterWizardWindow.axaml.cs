@@ -79,6 +79,27 @@ public partial class NewCharacterWizardWindow : Window
     private bool _step4Loaded;
     private bool _prestigePlanningExpanded;
 
+    // Step 5: Ability Scores
+    private readonly Dictionary<string, int> _abilityBaseScores = new()
+    {
+        { "STR", 8 }, { "DEX", 8 }, { "CON", 8 },
+        { "INT", 8 }, { "WIS", 8 }, { "CHA", 8 }
+    };
+    private const int PointBuyTotal = 30;
+    private const int AbilityMinBase = 8;
+    private const int AbilityMaxBase = 18;
+    private static readonly int[] PointBuyCosts = { 0, 1, 2, 3, 4, 5, 6, 8, 10, 13, 16 }; // index = score - 8
+    private bool _step5Loaded;
+
+    // Step 6: Skills
+    private int _skillPointsTotal;
+    private readonly Dictionary<int, int> _skillRanksAllocated = new();
+    private HashSet<int> _classSkillIds = new();
+    private HashSet<int> _unavailableSkillIds = new();
+    private List<SkillDisplayItem> _allSkills = new();
+    private List<SkillDisplayItem> _filteredSkills = new();
+    private bool _step6Loaded;
+
     // Controls - navigation
     private readonly TextBlock _sidebarTitle;
     private readonly TextBlock _sidebarSummary;
@@ -147,6 +168,17 @@ public partial class NewCharacterWizardWindow : Window
     private readonly TextBlock _bodyPartsNotApplicableLabel;
     private readonly StackPanel _bodyPartsContent;
     private readonly Grid _bodyPartsPanel;
+
+    // Step 5 controls
+    private readonly TextBlock _abilityPointsRemainingLabel;
+    private readonly StackPanel _abilityRowsPanel;
+    private readonly Border _prestigeAbilityBanner;
+    private readonly TextBlock _prestigeAbilityBannerLabel;
+
+    // Step 6 controls
+    private readonly TextBlock _skillPointsRemainingLabel;
+    private readonly StackPanel _skillRowsPanel;
+    private readonly TextBox _skillSearchBox;
 
     // Step 4 controls
     private readonly TextBox _classSearchBox;
@@ -307,6 +339,17 @@ public partial class NewCharacterWizardWindow : Window
         _prestigeClassComboBox = this.FindControl<ComboBox>("PrestigeClassComboBox")!;
         _prestigePrereqLabel = this.FindControl<TextBlock>("PrestigePrereqLabel")!;
 
+        // Step 5 controls
+        _abilityPointsRemainingLabel = this.FindControl<TextBlock>("AbilityPointsRemainingLabel")!;
+        _abilityRowsPanel = this.FindControl<StackPanel>("AbilityRowsPanel")!;
+        _prestigeAbilityBanner = this.FindControl<Border>("PrestigeAbilityBanner")!;
+        _prestigeAbilityBannerLabel = this.FindControl<TextBlock>("PrestigeAbilityBannerLabel")!;
+
+        // Step 6 controls
+        _skillPointsRemainingLabel = this.FindControl<TextBlock>("SkillPointsRemainingLabel")!;
+        _skillRowsPanel = this.FindControl<StackPanel>("SkillRowsPanel")!;
+        _skillSearchBox = this.FindControl<TextBox>("SkillSearchBox")!;
+
         UpdateStepDisplay();
     }
 
@@ -354,6 +397,8 @@ public partial class NewCharacterWizardWindow : Window
             2 => _selectedRaceId != 255, // Must have a race selected
             3 => true, // Appearance always has defaults
             4 => _selectedClassId >= 0, // Must have a class selected
+            5 => GetAbilityPointsRemaining() == 0 || !_isBicFile, // BIC must spend all points
+            6 => GetSkillPointsRemaining() >= 0, // Can't overspend
             _ => true // Placeholder steps always valid
         };
 
@@ -364,6 +409,7 @@ public partial class NewCharacterWizardWindow : Window
         {
             2 when !canProceed => "Select a race to continue.",
             4 when !canProceed => "Select a class to continue.",
+            5 when !canProceed => $"Spend all {PointBuyTotal} ability points to continue.",
             _ => ""
         };
     }
@@ -380,6 +426,12 @@ public partial class NewCharacterWizardWindow : Window
                 break;
             case 4:
                 PrepareStep4();
+                break;
+            case 5:
+                PrepareStep5();
+                break;
+            case 6:
+                PrepareStep6();
                 break;
         }
     }
@@ -1102,6 +1154,722 @@ public partial class NewCharacterWizardWindow : Window
 
     #endregion
 
+    #region Step 5: Ability Scores
+
+    private static readonly string[] AbilityNames = { "STR", "DEX", "CON", "INT", "WIS", "CHA" };
+    private static readonly string[] AbilityFullNames = { "Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma" };
+
+    private void PrepareStep5()
+    {
+        if (!_step5Loaded)
+        {
+            _step5Loaded = true;
+            BuildAbilityRows();
+        }
+
+        UpdateAbilityDisplay();
+        UpdatePrestigeAbilityBanner();
+    }
+
+    private void BuildAbilityRows()
+    {
+        _abilityRowsPanel.Children.Clear();
+
+        for (int i = 0; i < AbilityNames.Length; i++)
+        {
+            var ability = AbilityNames[i];
+            var row = new Grid
+            {
+                ColumnDefinitions = ColumnDefinitions.Parse("120,70,35,35,70,70,70,*"),
+                Margin = new Avalonia.Thickness(0, 2)
+            };
+
+            // Ability name
+            var nameLabel = new TextBlock
+            {
+                Text = AbilityFullNames[i],
+                FontWeight = FontWeight.SemiBold,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+            };
+            Grid.SetColumn(nameLabel, 0);
+            row.Children.Add(nameLabel);
+
+            // Base score
+            var baseLabel = new TextBlock
+            {
+                Text = _abilityBaseScores[ability].ToString(),
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                FontSize = 16,
+                FontWeight = FontWeight.Bold,
+                Tag = $"Base_{ability}"
+            };
+            Grid.SetColumn(baseLabel, 1);
+            row.Children.Add(baseLabel);
+
+            // [-] button
+            var decreaseBtn = new Button
+            {
+                Content = "−",
+                Width = 28,
+                HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                Tag = ability
+            };
+            decreaseBtn.Click += OnAbilityDecrease;
+            Grid.SetColumn(decreaseBtn, 2);
+            row.Children.Add(decreaseBtn);
+
+            // [+] button
+            var increaseBtn = new Button
+            {
+                Content = "+",
+                Width = 28,
+                HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                Tag = ability
+            };
+            increaseBtn.Click += OnAbilityIncrease;
+            Grid.SetColumn(increaseBtn, 3);
+            row.Children.Add(increaseBtn);
+
+            // Racial modifier
+            var racialLabel = new TextBlock
+            {
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Tag = $"Racial_{ability}"
+            };
+            Grid.SetColumn(racialLabel, 4);
+            row.Children.Add(racialLabel);
+
+            // Total score
+            var totalLabel = new TextBlock
+            {
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                FontWeight = FontWeight.Bold,
+                FontSize = 16,
+                Tag = $"Total_{ability}"
+            };
+            Grid.SetColumn(totalLabel, 5);
+            row.Children.Add(totalLabel);
+
+            // Modifier
+            var modLabel = new TextBlock
+            {
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Tag = $"Mod_{ability}"
+            };
+            Grid.SetColumn(modLabel, 6);
+            row.Children.Add(modLabel);
+
+            // Cost
+            var costLabel = new TextBlock
+            {
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Foreground = this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush,
+                Tag = $"Cost_{ability}"
+            };
+            Grid.SetColumn(costLabel, 7);
+            row.Children.Add(costLabel);
+
+            _abilityRowsPanel.Children.Add(row);
+        }
+    }
+
+    private void UpdateAbilityDisplay()
+    {
+        var racialMods = _displayService.GetRacialModifiers(_selectedRaceId);
+
+        foreach (var row in _abilityRowsPanel.Children.OfType<Grid>())
+        {
+            foreach (var child in row.Children)
+            {
+                if (child is not TextBlock tb || child.Tag is not string tag)
+                    continue;
+
+                if (tag.StartsWith("Base_"))
+                {
+                    var ability = tag[5..];
+                    tb.Text = _abilityBaseScores[ability].ToString();
+                }
+                else if (tag.StartsWith("Racial_"))
+                {
+                    var ability = tag[7..];
+                    int racialMod = GetRacialModForAbility(racialMods, ability);
+                    if (racialMod == 0)
+                    {
+                        tb.Text = "—";
+                        tb.ClearValue(TextBlock.ForegroundProperty);
+                    }
+                    else
+                    {
+                        tb.Text = CreatureDisplayService.FormatBonus(racialMod);
+                        tb.Foreground = racialMod > 0
+                            ? BrushManager.GetSuccessBrush(this)
+                            : BrushManager.GetWarningBrush(this);
+                    }
+                }
+                else if (tag.StartsWith("Total_"))
+                {
+                    var ability = tag[6..];
+                    int baseScore = _abilityBaseScores[ability];
+                    int racialMod = GetRacialModForAbility(racialMods, ability);
+                    int total = baseScore + racialMod;
+                    tb.Text = total.ToString();
+                }
+                else if (tag.StartsWith("Mod_"))
+                {
+                    var ability = tag[4..];
+                    int baseScore = _abilityBaseScores[ability];
+                    int racialMod = GetRacialModForAbility(racialMods, ability);
+                    int total = baseScore + racialMod;
+                    int bonus = CreatureDisplayService.CalculateAbilityBonus(total);
+                    tb.Text = CreatureDisplayService.FormatBonus(bonus);
+                }
+                else if (tag.StartsWith("Cost_"))
+                {
+                    var ability = tag[5..];
+                    int baseScore = _abilityBaseScores[ability];
+                    int costIndex = baseScore - AbilityMinBase;
+                    int cost = costIndex >= 0 && costIndex < PointBuyCosts.Length ? PointBuyCosts[costIndex] : 0;
+                    tb.Text = cost.ToString();
+                }
+            }
+
+            // Update button enabled states
+            foreach (var child in row.Children)
+            {
+                if (child is Button btn && btn.Tag is string ability)
+                {
+                    int baseScore = _abilityBaseScores[ability];
+                    int remaining = GetAbilityPointsRemaining();
+
+                    if (btn.Content?.ToString() == "−")
+                        btn.IsEnabled = baseScore > AbilityMinBase;
+                    else if (btn.Content?.ToString() == "+")
+                    {
+                        int nextCostIndex = baseScore + 1 - AbilityMinBase;
+                        int nextCost = nextCostIndex < PointBuyCosts.Length ? PointBuyCosts[nextCostIndex] : int.MaxValue;
+                        int currentCost = PointBuyCosts[baseScore - AbilityMinBase];
+                        int costDelta = nextCost - currentCost;
+                        btn.IsEnabled = baseScore < AbilityMaxBase && remaining >= costDelta;
+                    }
+                }
+            }
+        }
+
+        // Update points remaining
+        int pointsRemaining = GetAbilityPointsRemaining();
+        _abilityPointsRemainingLabel.Text = pointsRemaining.ToString();
+
+        if (pointsRemaining > 0)
+            _abilityPointsRemainingLabel.Foreground = BrushManager.GetSuccessBrush(this);
+        else if (pointsRemaining == 0)
+            _abilityPointsRemainingLabel.ClearValue(TextBlock.ForegroundProperty);
+        else
+            _abilityPointsRemainingLabel.Foreground = BrushManager.GetErrorBrush(this);
+
+        ValidateCurrentStep();
+    }
+
+    private int GetAbilityPointsRemaining()
+    {
+        int spent = 0;
+        foreach (var ability in AbilityNames)
+        {
+            int costIndex = _abilityBaseScores[ability] - AbilityMinBase;
+            if (costIndex >= 0 && costIndex < PointBuyCosts.Length)
+                spent += PointBuyCosts[costIndex];
+        }
+        return PointBuyTotal - spent;
+    }
+
+    private static int GetRacialModForAbility(RacialModifiers mods, string ability) => ability switch
+    {
+        "STR" => mods.Str,
+        "DEX" => mods.Dex,
+        "CON" => mods.Con,
+        "INT" => mods.Int,
+        "WIS" => mods.Wis,
+        "CHA" => mods.Cha,
+        _ => 0
+    };
+
+    private void OnAbilityIncrease(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is string ability)
+        {
+            if (_abilityBaseScores[ability] < AbilityMaxBase)
+            {
+                int currentScore = _abilityBaseScores[ability];
+                int nextCostIndex = currentScore + 1 - AbilityMinBase;
+                int nextCost = nextCostIndex < PointBuyCosts.Length ? PointBuyCosts[nextCostIndex] : int.MaxValue;
+                int currentCost = PointBuyCosts[currentScore - AbilityMinBase];
+                int costDelta = nextCost - currentCost;
+
+                if (GetAbilityPointsRemaining() >= costDelta)
+                {
+                    _abilityBaseScores[ability]++;
+                    UpdateAbilityDisplay();
+                }
+            }
+        }
+    }
+
+    private void OnAbilityDecrease(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is string ability)
+        {
+            if (_abilityBaseScores[ability] > AbilityMinBase)
+            {
+                _abilityBaseScores[ability]--;
+                UpdateAbilityDisplay();
+            }
+        }
+    }
+
+    private void OnAbilityAutoAssignClick(object? sender, RoutedEventArgs e)
+    {
+        // Reset all to base 8
+        foreach (var ability in AbilityNames)
+            _abilityBaseScores[ability] = AbilityMinBase;
+
+        // Read package primary ability from packages.2da Attribute column
+        string? primaryAbility = null;
+        if (_selectedPackageId != 255)
+        {
+            primaryAbility = _gameDataService.Get2DAValue("packages", _selectedPackageId, "Attribute")?.ToUpperInvariant();
+        }
+
+        // Default distribution: balanced with emphasis on primary ability
+        // Strategy: primary ability gets priority, then spread remaining across useful stats
+        if (!string.IsNullOrEmpty(primaryAbility) && primaryAbility != "****" && _abilityBaseScores.ContainsKey(primaryAbility))
+        {
+            // Push primary ability to 16 (cost 10), leaves 20 points
+            _abilityBaseScores[primaryAbility] = 16;
+            int remaining = GetAbilityPointsRemaining();
+
+            // Distribute remaining points across other abilities
+            // Priority: CON > DEX > other stats
+            var priorityOrder = primaryAbility switch
+            {
+                "STR" => new[] { "CON", "DEX", "WIS", "INT", "CHA" },
+                "DEX" => new[] { "CON", "STR", "WIS", "INT", "CHA" },
+                "CON" => new[] { "STR", "DEX", "WIS", "INT", "CHA" },
+                "INT" => new[] { "CON", "DEX", "WIS", "STR", "CHA" },
+                "WIS" => new[] { "CON", "DEX", "INT", "STR", "CHA" },
+                "CHA" => new[] { "CON", "DEX", "WIS", "INT", "STR" },
+                _ => new[] { "CON", "DEX", "WIS", "INT", "CHA" }
+            };
+
+            // Try to raise each secondary ability to 14 (cost 6), then 12 (cost 4)
+            foreach (var target in new[] { 14, 12 })
+            {
+                foreach (var ability in priorityOrder)
+                {
+                    while (_abilityBaseScores[ability] < target)
+                    {
+                        int currentScore = _abilityBaseScores[ability];
+                        int nextCostIndex = currentScore + 1 - AbilityMinBase;
+                        if (nextCostIndex >= PointBuyCosts.Length) break;
+                        int costDelta = PointBuyCosts[nextCostIndex] - PointBuyCosts[currentScore - AbilityMinBase];
+                        if (GetAbilityPointsRemaining() < costDelta) break;
+                        _abilityBaseScores[ability]++;
+                    }
+                }
+            }
+
+            // Spend any remaining single points
+            foreach (var ability in priorityOrder)
+            {
+                while (GetAbilityPointsRemaining() > 0 && _abilityBaseScores[ability] < AbilityMaxBase)
+                {
+                    int currentScore = _abilityBaseScores[ability];
+                    int nextCostIndex = currentScore + 1 - AbilityMinBase;
+                    if (nextCostIndex >= PointBuyCosts.Length) break;
+                    int costDelta = PointBuyCosts[nextCostIndex] - PointBuyCosts[currentScore - AbilityMinBase];
+                    if (GetAbilityPointsRemaining() < costDelta) break;
+                    _abilityBaseScores[ability]++;
+                }
+            }
+        }
+        else
+        {
+            // No primary ability: balanced spread (all 12s = 24 points, then raise STR/CON)
+            foreach (var ability in AbilityNames)
+                _abilityBaseScores[ability] = 12;
+
+            var boostOrder = new[] { "STR", "CON", "DEX", "WIS", "INT", "CHA" };
+            foreach (var ability in boostOrder)
+            {
+                while (GetAbilityPointsRemaining() > 0 && _abilityBaseScores[ability] < AbilityMaxBase)
+                {
+                    int currentScore = _abilityBaseScores[ability];
+                    int nextCostIndex = currentScore + 1 - AbilityMinBase;
+                    if (nextCostIndex >= PointBuyCosts.Length) break;
+                    int costDelta = PointBuyCosts[nextCostIndex] - PointBuyCosts[currentScore - AbilityMinBase];
+                    if (GetAbilityPointsRemaining() < costDelta) break;
+                    _abilityBaseScores[ability]++;
+                }
+            }
+        }
+
+        UpdateAbilityDisplay();
+    }
+
+    private void UpdatePrestigeAbilityBanner()
+    {
+        if (_prestigeClassComboBox.SelectedItem is ClassDisplayItem selected)
+        {
+            var prereqs = _displayService.Classes.GetPrestigePrerequisites(selected.Id);
+            var abilityPrereqs = new List<string>();
+
+            // Check for skill prerequisites that imply minimum ability scores
+            // Not directly tracked in prestige prereqs, but advisory
+            if (prereqs.Count > 0)
+            {
+                _prestigeAbilityBannerLabel.Text = $"Prestige goal: {selected.Name} — Review prerequisites in the Class step to plan ability scores.";
+                _prestigeAbilityBanner.IsVisible = true;
+                return;
+            }
+        }
+
+        _prestigeAbilityBanner.IsVisible = false;
+    }
+
+    #endregion
+
+    #region Step 6: Skills
+
+    private void PrepareStep6()
+    {
+        // Recalculate skill points (INT may have changed in Step 5)
+        int intScore = _abilityBaseScores["INT"] + _displayService.GetRacialModifier(_selectedRaceId, "INT");
+        int intMod = CreatureDisplayService.CalculateAbilityBonus(intScore);
+        int basePoints = _displayService.GetClassSkillPointBase(_selectedClassId >= 0 ? _selectedClassId : 0);
+        _skillPointsTotal = Math.Max(1, basePoints + intMod) * 4; // Level 1 gets 4x
+
+        // Human bonus: +4 skill points at level 1
+        if (_selectedRaceId == 6) // Human
+            _skillPointsTotal += 4;
+
+        // Get class skills and unavailable skills
+        _classSkillIds = _displayService.Skills.GetClassSkillIds(_selectedClassId >= 0 ? _selectedClassId : 0);
+
+        // Build a temporary creature to check skill availability
+        var tempCreature = new UtcFile
+        {
+            ClassList = new List<CreatureClass>
+            {
+                new CreatureClass { Class = _selectedClassId >= 0 ? _selectedClassId : 0, ClassLevel = 1 }
+            }
+        };
+        _unavailableSkillIds = _displayService.Skills.GetUnavailableSkillIds(tempCreature, 28);
+
+        if (!_step6Loaded)
+        {
+            _step6Loaded = true;
+            _skillRanksAllocated.Clear();
+        }
+
+        BuildSkillList();
+        RenderSkillRows();
+    }
+
+    private void BuildSkillList()
+    {
+        _allSkills = new List<SkillDisplayItem>();
+
+        for (int i = 0; i < 28; i++)
+        {
+            bool isUnavailable = _unavailableSkillIds.Contains(i);
+            bool isClassSkill = _classSkillIds.Contains(i);
+            int maxRanks = isClassSkill ? 4 : 2; // Level 1: class skill max = level + 3 = 4, cross-class = (level + 3) / 2 = 2
+
+            _allSkills.Add(new SkillDisplayItem
+            {
+                SkillId = i,
+                Name = _displayService.Skills.GetSkillName(i),
+                KeyAbility = _displayService.Skills.GetSkillKeyAbility(i),
+                IsClassSkill = isClassSkill,
+                IsUnavailable = isUnavailable,
+                MaxRanks = maxRanks,
+                AllocatedRanks = _skillRanksAllocated.GetValueOrDefault(i, 0),
+                Cost = isClassSkill ? 1 : 2
+            });
+        }
+
+        // Sort: class skills first, then alphabetical
+        _allSkills = _allSkills
+            .OrderByDescending(s => s.IsClassSkill)
+            .ThenBy(s => s.Name)
+            .ToList();
+
+        ApplySkillFilter();
+    }
+
+    private void ApplySkillFilter()
+    {
+        var filter = _skillSearchBox?.Text?.Trim() ?? "";
+
+        if (string.IsNullOrEmpty(filter))
+        {
+            _filteredSkills = new List<SkillDisplayItem>(_allSkills);
+        }
+        else
+        {
+            _filteredSkills = _allSkills
+                .Where(s => s.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+    }
+
+    private void RenderSkillRows()
+    {
+        _skillRowsPanel.Children.Clear();
+
+        foreach (var skill in _filteredSkills)
+        {
+            var row = new Grid
+            {
+                ColumnDefinitions = ColumnDefinitions.Parse("180,50,35,35,60,60,*"),
+                Margin = new Avalonia.Thickness(12, 3, 12, 3),
+                Opacity = skill.IsUnavailable ? 0.4 : 1.0
+            };
+
+            // Skill name — class skills in green, cross-class uses theme default
+            var nameLabel = new TextBlock
+            {
+                Text = skill.Name,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+            };
+            if (skill.IsClassSkill)
+                nameLabel.Foreground = BrushManager.GetSuccessBrush(this);
+            Grid.SetColumn(nameLabel, 0);
+            row.Children.Add(nameLabel);
+
+            // Key ability
+            var keyLabel = new TextBlock
+            {
+                Text = skill.KeyAbility,
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Foreground = this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush,
+                FontSize = 11
+            };
+            Grid.SetColumn(keyLabel, 1);
+            row.Children.Add(keyLabel);
+
+            // [-] button
+            var decreaseBtn = new Button
+            {
+                Content = "−",
+                Width = 28,
+                HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                Tag = skill.SkillId,
+                IsEnabled = !skill.IsUnavailable && skill.AllocatedRanks > 0
+            };
+            decreaseBtn.Click += OnSkillDecrease;
+            Grid.SetColumn(decreaseBtn, 2);
+            row.Children.Add(decreaseBtn);
+
+            // [+] button
+            var increaseBtn = new Button
+            {
+                Content = "+",
+                Width = 28,
+                HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                Tag = skill.SkillId,
+                IsEnabled = !skill.IsUnavailable && skill.AllocatedRanks < skill.MaxRanks && GetSkillPointsRemaining() >= skill.Cost
+            };
+            increaseBtn.Click += OnSkillIncrease;
+            Grid.SetColumn(increaseBtn, 3);
+            row.Children.Add(increaseBtn);
+
+            // Allocated ranks
+            var ranksLabel = new TextBlock
+            {
+                Text = skill.AllocatedRanks > 0 ? skill.AllocatedRanks.ToString() : "—",
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                FontWeight = skill.AllocatedRanks > 0 ? FontWeight.Bold : FontWeight.Normal
+            };
+            if (skill.AllocatedRanks > 0)
+                ranksLabel.Foreground = BrushManager.GetSuccessBrush(this);
+            Grid.SetColumn(ranksLabel, 4);
+            row.Children.Add(ranksLabel);
+
+            // Max ranks
+            var maxLabel = new TextBlock
+            {
+                Text = skill.IsUnavailable ? "—" : skill.MaxRanks.ToString(),
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Foreground = this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush
+            };
+            Grid.SetColumn(maxLabel, 5);
+            row.Children.Add(maxLabel);
+
+            // Type indicator
+            var typeLabel = new TextBlock
+            {
+                Text = skill.IsUnavailable ? "Unavailable" : skill.IsClassSkill ? "Class (1 pt)" : "Cross-class (2 pts)",
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                FontSize = 11,
+                Foreground = this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush
+            };
+            Grid.SetColumn(typeLabel, 6);
+            row.Children.Add(typeLabel);
+
+            _skillRowsPanel.Children.Add(row);
+        }
+
+        UpdateSkillPointsDisplay();
+    }
+
+    private void UpdateSkillPointsDisplay()
+    {
+        int remaining = GetSkillPointsRemaining();
+        _skillPointsRemainingLabel.Text = remaining.ToString();
+
+        if (remaining > 0)
+            _skillPointsRemainingLabel.Foreground = BrushManager.GetSuccessBrush(this);
+        else if (remaining == 0)
+            _skillPointsRemainingLabel.ClearValue(TextBlock.ForegroundProperty);
+        else
+            _skillPointsRemainingLabel.Foreground = BrushManager.GetErrorBrush(this);
+
+        ValidateCurrentStep();
+    }
+
+    private int GetSkillPointsRemaining()
+    {
+        int spent = 0;
+        foreach (var (skillId, ranks) in _skillRanksAllocated)
+        {
+            bool isClassSkill = _classSkillIds.Contains(skillId);
+            int cost = isClassSkill ? 1 : 2;
+            spent += ranks * cost;
+        }
+        return _skillPointsTotal - spent;
+    }
+
+    private void OnSkillIncrease(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is int skillId)
+        {
+            bool isClassSkill = _classSkillIds.Contains(skillId);
+            int cost = isClassSkill ? 1 : 2;
+            int maxRanks = isClassSkill ? 4 : 2;
+
+            if (GetSkillPointsRemaining() >= cost)
+            {
+                int current = _skillRanksAllocated.GetValueOrDefault(skillId, 0);
+                if (current < maxRanks)
+                {
+                    _skillRanksAllocated[skillId] = current + 1;
+                    UpdateSkillItem(skillId);
+                    RenderSkillRows();
+                }
+            }
+        }
+    }
+
+    private void OnSkillDecrease(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is int skillId)
+        {
+            int current = _skillRanksAllocated.GetValueOrDefault(skillId, 0);
+            if (current > 0)
+            {
+                _skillRanksAllocated[skillId] = current - 1;
+                if (_skillRanksAllocated[skillId] == 0)
+                    _skillRanksAllocated.Remove(skillId);
+                UpdateSkillItem(skillId);
+                RenderSkillRows();
+            }
+        }
+    }
+
+    private void UpdateSkillItem(int skillId)
+    {
+        var skill = _allSkills.FirstOrDefault(s => s.SkillId == skillId);
+        if (skill != null)
+        {
+            skill.AllocatedRanks = _skillRanksAllocated.GetValueOrDefault(skillId, 0);
+        }
+    }
+
+    private void OnSkillSearchChanged(object? sender, TextChangedEventArgs e)
+    {
+        ApplySkillFilter();
+        RenderSkillRows();
+    }
+
+    private void OnSkillAutoAssignClick(object? sender, RoutedEventArgs e)
+    {
+        // Clear all allocations
+        _skillRanksAllocated.Clear();
+
+        // Try to read package skill preferences from SkillPref2DA in packages.2da
+        var preferredSkillIds = new List<int>();
+        if (_selectedPackageId != 255)
+        {
+            var skillPref2da = _gameDataService.Get2DAValue("packages", _selectedPackageId, "SkillPref2DA");
+            if (!string.IsNullOrEmpty(skillPref2da) && skillPref2da != "****")
+            {
+                // Read skill indices from the package skill preference table
+                for (int row = 0; row < 50; row++)
+                {
+                    var skillIndexStr = _gameDataService.Get2DAValue(skillPref2da, row, "SkillIndex");
+                    if (string.IsNullOrEmpty(skillIndexStr) || skillIndexStr == "****")
+                        break;
+                    if (int.TryParse(skillIndexStr, out int skillIndex))
+                        preferredSkillIds.Add(skillIndex);
+                }
+            }
+        }
+
+        // If no package preferences, use class skills sorted alphabetically
+        if (preferredSkillIds.Count == 0)
+        {
+            preferredSkillIds = _classSkillIds.OrderBy(id => _displayService.Skills.GetSkillName(id)).ToList();
+        }
+
+        // Distribute points to preferred skills, prioritizing class skills
+        // First pass: class skills from preferences
+        foreach (var skillId in preferredSkillIds.Where(id => _classSkillIds.Contains(id) && !_unavailableSkillIds.Contains(id)))
+        {
+            int maxRanks = 4; // Class skill max at level 1
+            while (_skillRanksAllocated.GetValueOrDefault(skillId, 0) < maxRanks && GetSkillPointsRemaining() >= 1)
+            {
+                _skillRanksAllocated[skillId] = _skillRanksAllocated.GetValueOrDefault(skillId, 0) + 1;
+            }
+        }
+
+        // Second pass: cross-class skills from preferences (if points remain)
+        foreach (var skillId in preferredSkillIds.Where(id => !_classSkillIds.Contains(id) && !_unavailableSkillIds.Contains(id)))
+        {
+            int maxRanks = 2; // Cross-class max at level 1
+            while (_skillRanksAllocated.GetValueOrDefault(skillId, 0) < maxRanks && GetSkillPointsRemaining() >= 2)
+            {
+                _skillRanksAllocated[skillId] = _skillRanksAllocated.GetValueOrDefault(skillId, 0) + 1;
+            }
+        }
+
+        // Update display items
+        foreach (var skill in _allSkills)
+        {
+            skill.AllocatedRanks = _skillRanksAllocated.GetValueOrDefault(skill.SkillId, 0);
+        }
+
+        RenderSkillRows();
+    }
+
+    #endregion
+
     #region Build Creature
 
     /// <summary>
@@ -1165,18 +1933,21 @@ public partial class NewCharacterWizardWindow : Window
             Color_Tattoo1 = _tattoo1Color,
             Color_Tattoo2 = _tattoo2Color,
 
-            // Default ability scores (will be set by Step 5 in Sprint 3)
-            Str = 10,
-            Dex = 10,
-            Con = 10,
-            Int = 10,
-            Wis = 10,
-            Cha = 10,
+            // Ability scores from Step 5 (base + racial modifiers applied to base)
+            Str = (byte)_abilityBaseScores["STR"],
+            Dex = (byte)_abilityBaseScores["DEX"],
+            Con = (byte)_abilityBaseScores["CON"],
+            Int = (byte)_abilityBaseScores["INT"],
+            Wis = (byte)_abilityBaseScores["WIS"],
+            Cha = (byte)_abilityBaseScores["CHA"],
 
-            // HP based on class hit die
-            HitPoints = (short)hitDie,
-            CurrentHitPoints = (short)hitDie,
-            MaxHitPoints = (short)hitDie,
+            // HP based on class hit die + CON modifier
+            HitPoints = (short)Math.Max(1, hitDie + CreatureDisplayService.CalculateAbilityBonus(
+                _abilityBaseScores["CON"] + _displayService.GetRacialModifier(_selectedRaceId, "CON"))),
+            CurrentHitPoints = (short)Math.Max(1, hitDie + CreatureDisplayService.CalculateAbilityBonus(
+                _abilityBaseScores["CON"] + _displayService.GetRacialModifier(_selectedRaceId, "CON"))),
+            MaxHitPoints = (short)Math.Max(1, hitDie + CreatureDisplayService.CalculateAbilityBonus(
+                _abilityBaseScores["CON"] + _displayService.GetRacialModifier(_selectedRaceId, "CON"))),
 
             // Alignment - True Neutral
             GoodEvil = 50,
@@ -1204,11 +1975,25 @@ public partial class NewCharacterWizardWindow : Window
 
             // Empty lists (will be populated by future steps)
             FeatList = new List<ushort>(),
-            SkillList = new List<byte>(),
+            SkillList = BuildSkillList_ForCreature(),
             SpecAbilityList = new List<SpecialAbility>(),
             ItemList = new List<InventoryItem>(),
             EquipItemList = new List<EquippedItem>()
         };
+    }
+
+    /// <summary>
+    /// Builds the skill list for the creature (28 skills, ordered by skill ID).
+    /// Each byte is the number of ranks allocated to that skill.
+    /// </summary>
+    private List<byte> BuildSkillList_ForCreature()
+    {
+        var skills = new List<byte>();
+        for (int i = 0; i < 28; i++)
+        {
+            skills.Add((byte)_skillRanksAllocated.GetValueOrDefault(i, 0));
+        }
+        return skills;
     }
 
     /// <summary>
@@ -1243,6 +2028,18 @@ public partial class NewCharacterWizardWindow : Window
     {
         public byte Id { get; init; }
         public string Name { get; init; } = "";
+    }
+
+    private class SkillDisplayItem
+    {
+        public int SkillId { get; set; }
+        public string Name { get; set; } = "";
+        public string KeyAbility { get; set; } = "";
+        public bool IsClassSkill { get; set; }
+        public bool IsUnavailable { get; set; }
+        public int MaxRanks { get; set; }
+        public int AllocatedRanks { get; set; }
+        public int Cost { get; set; } = 1;
     }
 
     #endregion
