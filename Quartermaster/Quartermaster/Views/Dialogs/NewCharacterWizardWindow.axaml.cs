@@ -9,6 +9,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Quartermaster.Services;
 using Radoub.Formats.Gff;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
 using Radoub.UI.Services;
@@ -1965,6 +1966,7 @@ public partial class NewCharacterWizardWindow : Window
     {
         int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
         bool isCaster = _displayService.IsCasterClass(classId);
+        UnifiedLogger.Log(LogLevel.DEBUG, $"PrepareStep7: classId={classId}, isCaster={isCaster}", "NewCharWiz", "🧙");
 
         if (!isCaster)
         {
@@ -1976,11 +1978,33 @@ public partial class NewCharacterWizardWindow : Window
         bool isSpontaneous = _displayService.Spells.IsSpontaneousCaster(classId);
         _maxSpellLevelForClass = _displayService.Spells.GetMaxSpellLevel(classId, 1);
         _isDivineCaster = !isSpontaneous && (classId == 2 || classId == 3); // Cleric=2, Druid=3
+        UnifiedLogger.Log(LogLevel.DEBUG, $"PrepareStep7: isSpontaneous={isSpontaneous}, maxSpellLevel={_maxSpellLevelForClass}, isDivine={_isDivineCaster}", "NewCharWiz", "🧙");
 
         if (_maxSpellLevelForClass < 0)
         {
             _needsSpellSelection = false;
             return;
+        }
+
+        // Check if there are actually any spells to select at this level
+        // (some casters like Paladins/Rangers have no spells at level 1)
+        if (!_isDivineCaster)
+        {
+            bool hasSpellsToSelect = false;
+            for (int level = 0; level <= _maxSpellLevelForClass; level++)
+            {
+                if (GetMaxSpellsForLevel(classId, level) > 0)
+                {
+                    hasSpellsToSelect = true;
+                    break;
+                }
+            }
+
+            if (!hasSpellsToSelect)
+            {
+                _needsSpellSelection = false;
+                return;
+            }
         }
 
         _needsSpellSelection = true;
