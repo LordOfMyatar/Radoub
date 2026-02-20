@@ -304,28 +304,401 @@
                 </Grid>
             </Grid>
 
-            <!-- Step 3: Appearance (placeholder) -->
+            <!-- Step 3: Appearance -->
             <Grid x:Name="Step3Panel" IsVisible="False">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="Appearance" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
-                <TextBlock Grid.Row="1" Text="Appearance customization coming in Sprint 2."
+
+                <TextBlock Grid.Row="0" Text="Customize Appearance" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="1" Text="Choose your character's appearance type, phenotype, portrait, and body details."
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                           VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                           TextWrapping="Wrap" Margin="0,0,0,15"/>
+
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="320"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Appearance/Phenotype/Portrait -->
+                    <StackPanel Grid.Column="0" Spacing="10" Margin="0,0,15,0">
+                        <!-- Appearance -->
+                        <TextBlock Text="Appearance Type" FontWeight="SemiBold"/>
+                        <ComboBox x:Name="AppearanceComboBox" HorizontalAlignment="Stretch"
+                                  SelectionChanged="OnAppearanceSelectionChanged">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <!-- Phenotype -->
+                        <TextBlock Text="Phenotype" FontWeight="SemiBold"/>
+                        <ComboBox x:Name="PhenotypeComboBox" HorizontalAlignment="Stretch"
+                                  SelectionChanged="OnPhenotypeSelectionChanged">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <!-- Portrait -->
+                        <TextBlock Text="Portrait" FontWeight="SemiBold" Margin="0,5,0,0"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <!-- Portrait preview -->
+                            <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                    BorderThickness="1" Width="100" Height="125" Margin="0,0,10,0">
+                                <Image x:Name="PortraitPreviewImage" Stretch="Uniform"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" Spacing="5" VerticalAlignment="Center">
+                                <TextBlock x:Name="PortraitNameLabel" Text="No portrait selected"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                           TextWrapping="Wrap"/>
+                                <Button x:Name="BrowsePortraitButton" Content="Browse..."
+                                        Click="OnBrowsePortraitClick"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Colors Section -->
+                        <TextBlock Text="Colors" FontWeight="SemiBold" Margin="0,5,0,0"/>
+                        <Grid ColumnDefinitions="70,56,20,70,56,20" RowDefinitions="Auto,Auto" RowSpacing="6" ColumnSpacing="4">
+                            <!-- Row 0: Skin / Hair -->
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Skin:" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <NumericUpDown Grid.Row="0" Grid.Column="1" x:Name="SkinColorNumericUpDown"
+                                           Minimum="0" Maximum="175" Value="0" FormatString="0"
+                                           Width="56" ValueChanged="OnColorValueChanged"/>
+                            <Border Grid.Row="0" Grid.Column="2" x:Name="SkinColorSwatch" Width="18" Height="18"
+                                    CornerRadius="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1"
+                                    Cursor="Hand" PointerPressed="OnSkinColorSwatchClick"/>
+                            <TextBlock Grid.Row="0" Grid.Column="3" Text="Hair:" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <NumericUpDown Grid.Row="0" Grid.Column="4" x:Name="HairColorNumericUpDown"
+                                           Minimum="0" Maximum="175" Value="0" FormatString="0"
+                                           Width="56" ValueChanged="OnColorValueChanged"/>
+                            <Border Grid.Row="0" Grid.Column="5" x:Name="HairColorSwatch" Width="18" Height="18"
+                                    CornerRadius="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1"
+                                    Cursor="Hand" PointerPressed="OnHairColorSwatchClick"/>
+                            <!-- Row 1: Tattoo 1 / Tattoo 2 -->
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Tattoo 1:" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <NumericUpDown Grid.Row="1" Grid.Column="1" x:Name="Tattoo1ColorNumericUpDown"
+                                           Minimum="0" Maximum="175" Value="0" FormatString="0"
+                                           Width="56" ValueChanged="OnColorValueChanged"/>
+                            <Border Grid.Row="1" Grid.Column="2" x:Name="Tattoo1ColorSwatch" Width="18" Height="18"
+                                    CornerRadius="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1"
+                                    Cursor="Hand" PointerPressed="OnTattoo1ColorSwatchClick"/>
+                            <TextBlock Grid.Row="1" Grid.Column="3" Text="Tattoo 2:" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <NumericUpDown Grid.Row="1" Grid.Column="4" x:Name="Tattoo2ColorNumericUpDown"
+                                           Minimum="0" Maximum="175" Value="0" FormatString="0"
+                                           Width="56" ValueChanged="OnColorValueChanged"/>
+                            <Border Grid.Row="1" Grid.Column="5" x:Name="Tattoo2ColorSwatch" Width="18" Height="18"
+                                    CornerRadius="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1"
+                                    Cursor="Hand" PointerPressed="OnTattoo2ColorSwatchClick"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Right: Body Parts -->
+                    <Border Grid.Column="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                            BorderThickness="1" Padding="12">
+                        <Grid x:Name="BodyPartsPanel">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="Body Parts" FontWeight="Bold" FontSize="14" Margin="0,0,0,8"/>
+
+                            <ScrollViewer Grid.Row="1">
+                                <StackPanel x:Name="BodyPartsContent" Spacing="4">
+                                    <!-- Core body parts - 2-column compact layout -->
+                                    <Grid ColumnDefinitions="60,*,60,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="4" ColumnSpacing="6">
+                                        <!-- Row 0: Head / Neck -->
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Head:" FontSize="12"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="0" Grid.Column="1" x:Name="HeadNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Neck:" FontSize="12"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="0" Grid.Column="3" x:Name="NeckNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <!-- Row 1: Torso / Pelvis -->
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Torso:" FontSize="12"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="1" x:Name="TorsoNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="2" Text="Pelvis:" FontSize="12"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="3" x:Name="PelvisNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <!-- Row 2: Belt / L Shoulder -->
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Belt:" FontSize="12"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="2" Grid.Column="1" x:Name="BeltNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="0" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                    </Grid>
+
+                                    <!-- Limbs Section -->
+                                    <TextBlock Text="Limbs" FontWeight="SemiBold" FontSize="12" Margin="0,4,0,2"/>
+                                    <Grid ColumnDefinitions="60,*,60,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="4" ColumnSpacing="6">
+                                        <!-- Shoulders -->
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="L Shoul:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="0" Grid.Column="1" x:Name="LShoulNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="0" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Text="R Shoul:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="0" Grid.Column="3" x:Name="RShoulNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="0" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <!-- Biceps -->
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="L Bicep:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="1" x:Name="LBicepNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="2" Text="R Bicep:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="3" x:Name="RBicepNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <!-- Forearms -->
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="L FArm:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="2" Grid.Column="1" x:Name="LFArmNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="2" Text="R FArm:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="2" Grid.Column="3" x:Name="RFArmNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <!-- Hands -->
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="L Hand:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="3" Grid.Column="1" x:Name="LHandNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <TextBlock Grid.Row="3" Grid.Column="2" Text="R Hand:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="3" Grid.Column="3" x:Name="RHandNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <!-- Thighs -->
+                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="L Thigh:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="4" Grid.Column="1" x:Name="LThighNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <TextBlock Grid.Row="4" Grid.Column="2" Text="R Thigh:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="4" Grid.Column="3" x:Name="RThighNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <!-- Shins -->
+                                        <TextBlock Grid.Row="5" Grid.Column="0" Text="L Shin:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="5" Grid.Column="1" x:Name="LShinNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <TextBlock Grid.Row="5" Grid.Column="2" Text="R Shin:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="5" Grid.Column="3" x:Name="RShinNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <!-- Feet -->
+                                        <TextBlock Grid.Row="6" Grid.Column="0" Text="L Foot:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="6" Grid.Column="1" x:Name="LFootNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <TextBlock Grid.Row="6" Grid.Column="2" Text="R Foot:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="6" Grid.Column="3" x:Name="RFootNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                    </Grid>
+
+                                    <!-- Non-part-based notice -->
+                                    <TextBlock x:Name="BodyPartsNotApplicableLabel"
+                                               Text="Body part customization is only available for humanoid appearance types."
+                                               TextWrapping="Wrap" IsVisible="False"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                               FontStyle="Italic" Margin="0,6"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- Advisory note about visualization -->
+                <Border Grid.Row="3" Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        Padding="8" CornerRadius="4" Margin="0,8,0,0">
+                    <TextBlock Text="More visualization options (3D preview, head gallery) are available on the Appearance panel after creating the character."
+                               TextWrapping="Wrap" FontSize="12" FontStyle="Italic"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                </Border>
             </Grid>
 
-            <!-- Step 4: Class (placeholder) -->
+            <!-- Step 4: Class & Package -->
             <Grid x:Name="Step4Panel" IsVisible="False">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="Class &amp; Package" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
-                <TextBlock Grid.Row="1" Text="Class selection coming in Sprint 2."
+
+                <TextBlock Grid.Row="0" Text="Choose Class &amp; Package" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="1" Text="Select your starting class. The package determines recommended skills and feats."
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                           VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                           TextWrapping="Wrap" Margin="0,0,0,15"/>
+
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="250"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Class List -->
+                    <Grid Grid.Column="0" Margin="0,0,15,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBox Grid.Row="0" x:Name="ClassSearchBox"
+                                 Watermark="Filter classes..."
+                                 Margin="0,0,0,5"
+                                 TextChanged="OnClassSearchChanged"/>
+
+                        <Border Grid.Row="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                BorderThickness="1">
+                            <ListBox x:Name="ClassListBox" SelectionChanged="OnClassSelectionChanged">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="5,2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{Binding Name}"/>
+                                            <TextBlock Grid.Column="1" x:Name="FavoredBadge"
+                                                       Text="★" FontSize="14"
+                                                       ToolTip.Tip="Racial favored class"
+                                                       IsVisible="{Binding IsFavored}"
+                                                       Foreground="{DynamicResource SystemAccentColor}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
+                    </Grid>
+
+                    <!-- Right: Class Detail + Package -->
+                    <Border Grid.Column="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                            BorderThickness="1" Padding="15">
+                        <ScrollViewer>
+                            <Grid x:Name="ClassDetailPanel">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Class Name -->
+                                <TextBlock Grid.Row="0" x:Name="SelectedClassNameLabel"
+                                           Text="Select a class"
+                                           FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                                <!-- Stats Grid -->
+                                <Border Grid.Row="1" x:Name="ClassStatsPanel"
+                                        Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                                        Padding="12" CornerRadius="4" Margin="0,0,0,10" IsVisible="False">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <TextBlock Grid.Column="0" Grid.Row="0" x:Name="ClassHitDieLabel" Text="Hit Die: d8" FontWeight="SemiBold" Margin="0,2"/>
+                                        <TextBlock Grid.Column="1" Grid.Row="0" x:Name="ClassSkillPointsLabel" Text="Skill Points: 2" FontWeight="SemiBold" Margin="0,2"/>
+                                        <TextBlock Grid.Column="0" Grid.Row="1" x:Name="ClassPrimaryAbilityLabel" Text="Primary: —" FontWeight="SemiBold" Margin="0,2"/>
+                                        <TextBlock Grid.Column="1" Grid.Row="1" x:Name="ClassCasterLabel" Text="Spellcasting: None" FontWeight="SemiBold" Margin="0,2"/>
+                                        <TextBlock Grid.Column="0" Grid.Row="2" x:Name="ClassAlignmentLabel" Text="" Margin="0,2"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" TextWrapping="Wrap"
+                                                   Grid.ColumnSpan="2"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Starting Package -->
+                                <StackPanel Grid.Row="2" x:Name="PackageSection" Spacing="5" Margin="0,0,0,10" IsVisible="False">
+                                    <TextBlock Text="Starting Package" FontWeight="Bold"/>
+                                    <ComboBox x:Name="PackageComboBox" HorizontalAlignment="Stretch"
+                                              SelectionChanged="OnPackageSelectionChanged">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Name}"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <!-- Description separator -->
+                                <Border Grid.Row="3" Height="1"
+                                        Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                        Margin="0,0,0,10" x:Name="ClassDescSeparator" IsVisible="False"/>
+
+                                <!-- Class Description -->
+                                <ScrollViewer Grid.Row="5" MaxHeight="200">
+                                    <TextBlock x:Name="ClassDescriptionLabel"
+                                               TextWrapping="Wrap"
+                                               Text="Select a class to see its details."
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                </ScrollViewer>
+                            </Grid>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+
+                <!-- Prestige Planning (collapsible) -->
+                <Border Grid.Row="3" x:Name="PrestigePlanningBorder"
+                        Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        Padding="10" CornerRadius="4" Margin="0,10,0,0">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <TextBlock x:Name="PrestigeToggleArrow" Text="▸" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock Text="Prestige Planning (Advisory)" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Border x:Name="PrestigeToggleClickArea" Background="Transparent" Margin="-10,-5,-10,0" Padding="10,5,10,0"
+                                PointerPressed="OnPrestigePlanningToggle" Cursor="Hand" Height="5"/>
+                        <StackPanel x:Name="PrestigePlanningContent" IsVisible="False" Margin="0,5,0,0" Spacing="5">
+                            <TextBlock Text="Select a prestige class goal to see its prerequisites:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                       FontSize="12"/>
+                            <ComboBox x:Name="PrestigeClassComboBox" HorizontalAlignment="Stretch"
+                                      SelectionChanged="OnPrestigeClassSelectionChanged">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Name}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <TextBlock x:Name="PrestigePrereqLabel"
+                                       TextWrapping="Wrap" FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
             </Grid>
 
             <!-- Step 5: Abilities (placeholder) -->

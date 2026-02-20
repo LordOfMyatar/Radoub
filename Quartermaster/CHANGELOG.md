@@ -10,6 +10,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.71-alpha] - 2026-02-19
+**Branch**: `quartermaster/issue-1409` | **PR**: #1415
+
+### Sprint: New Character Wizard - Steps 3-4 (Appearance, Class & Package) (#1409)
+
+- [x] Step 3: Appearance — Appearance ComboBox from `appearance.2da`, phenotype ComboBox, portrait browser integration, body part controls (head, skin/hair/tattoo colors)
+- [x] Step 3: All 18 body parts — Head, neck, torso, pelvis, belt, shoulders, biceps, forearms, hands, thighs, shins, feet in 2-column layout
+- [x] Step 3: Color picker swatches — Clickable color swatches next to numeric controls; opens palette color picker window (skin, hair, tattoo 1/2)
+- [x] Step 3: Portrait filter pre-population — Portrait browser auto-selects race/gender filters from wizard state
+- [x] Step 3: Visualization advisory note — Informs user about post-creation appearance panel features
+- [x] Step 4: Class & Package — Class ListBox from `classes.2da` (BIC: player classes only), class detail panel, racial favored class badge
+- [x] Starting Package — ComboBox filtered by selected class (`packages.2da`), add `GetPackagesForClass()` to `AppearanceService`
+- [x] Prestige Planning — Collapsible advisory panel showing prestige class prerequisites from `cls_pres_*.2da`
+
+---
+
 ## [0.1.70-alpha] - 2026-02-19
 **Branch**: `quartermaster/issue-1408` | **PR**: #1413
 

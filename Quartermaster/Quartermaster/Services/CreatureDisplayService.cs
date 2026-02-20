@@ -821,6 +821,7 @@ public class CreatureDisplayService
     public List<(ushort Id, string Name)> GetAllFactions(string? moduleDirectory = null) => Appearances.GetAllFactions(moduleDirectory);
     public string GetPackageName(byte packageId) => Appearances.GetPackageName(packageId);
     public List<(byte Id, string Name)> GetAllPackages() => Appearances.GetAllPackages();
+    public List<(byte Id, string Name)> GetPackagesForClass(int classId) => Appearances.GetPackagesForClass(classId);
 
     public string GetSpellName(int spellId) => Spells.GetSpellName(spellId);
     public List<int> GetAllSpellIds() => Spells.GetAllSpellIds();

@@ -9,6 +9,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Quartermaster.Services;
 using Radoub.Formats.Gff;
+using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
 using Radoub.UI.Services;
 
@@ -17,11 +18,13 @@ namespace Quartermaster.Views.Dialogs;
 /// <summary>
 /// Multi-step wizard for creating a new creature from scratch.
 /// 8 steps: File Type, Race &amp; Sex, Appearance, Class, Abilities, Skills, Spells, Summary.
-/// Steps 3-8 are placeholders pending future sprints.
+/// Steps 5-8 are placeholders pending future sprints.
 /// </summary>
 public partial class NewCharacterWizardWindow : Window
 {
     private readonly CreatureDisplayService _displayService;
+    private readonly IGameDataService _gameDataService;
+    private readonly ItemIconService? _itemIconService;
 
     // Wizard state
     private int _currentStep = 1;
@@ -35,6 +38,46 @@ public partial class NewCharacterWizardWindow : Window
     private byte _selectedGender; // 0 = Male
     private List<RaceDisplayItem> _allRaces = new();
     private List<RaceDisplayItem> _filteredRaces = new();
+
+    // Step 3: Appearance
+    private ushort _selectedAppearanceId;
+    private int _selectedPhenotype;
+    private ushort _selectedPortraitId = 1;
+    private byte _headVariation = 1;
+    private byte _neckVariation = 1;
+    private byte _torsoVariation = 1;
+    private byte _pelvisVariation = 1;
+    private byte _beltVariation;
+    private byte _lShoulVariation;
+    private byte _rShoulVariation;
+    private byte _lBicepVariation = 1;
+    private byte _rBicepVariation = 1;
+    private byte _lFArmVariation = 1;
+    private byte _rFArmVariation = 1;
+    private byte _lHandVariation = 1;
+    private byte _rHandVariation = 1;
+    private byte _lThighVariation = 1;
+    private byte _rThighVariation = 1;
+    private byte _lShinVariation = 1;
+    private byte _rShinVariation = 1;
+    private byte _lFootVariation = 1;
+    private byte _rFootVariation = 1;
+    private byte _skinColor;
+    private byte _hairColor;
+    private byte _tattoo1Color;
+    private byte _tattoo2Color;
+    private bool _isPartBased;
+    private bool _step3Loaded;
+    private PaletteColorService? _paletteColorService;
+
+    // Step 4: Class & Package
+    private int _selectedClassId = -1;
+    private byte _selectedPackageId = 255; // sentinel for none
+    private int _favoredClassId = -1;
+    private List<ClassDisplayItem> _allClasses = new();
+    private List<ClassDisplayItem> _filteredClasses = new();
+    private bool _step4Loaded;
+    private bool _prestigePlanningExpanded;
 
     // Controls - navigation
     private readonly TextBlock _sidebarTitle;
@@ -69,6 +112,61 @@ public partial class NewCharacterWizardWindow : Window
     private readonly Border _raceDescSeparator;
     private readonly TextBlock _raceDescriptionLabel;
 
+    // Step 3 controls
+    private readonly ComboBox _appearanceComboBox;
+    private readonly ComboBox _phenotypeComboBox;
+    private readonly Image _portraitPreviewImage;
+    private readonly TextBlock _portraitNameLabel;
+    private readonly NumericUpDown _headNumericUpDown;
+    private readonly NumericUpDown _neckNumericUpDown;
+    private readonly NumericUpDown _torsoNumericUpDown;
+    private readonly NumericUpDown _pelvisNumericUpDown;
+    private readonly NumericUpDown _beltNumericUpDown;
+    private readonly NumericUpDown _lShoulNumericUpDown;
+    private readonly NumericUpDown _rShoulNumericUpDown;
+    private readonly NumericUpDown _lBicepNumericUpDown;
+    private readonly NumericUpDown _rBicepNumericUpDown;
+    private readonly NumericUpDown _lFArmNumericUpDown;
+    private readonly NumericUpDown _rFArmNumericUpDown;
+    private readonly NumericUpDown _lHandNumericUpDown;
+    private readonly NumericUpDown _rHandNumericUpDown;
+    private readonly NumericUpDown _lThighNumericUpDown;
+    private readonly NumericUpDown _rThighNumericUpDown;
+    private readonly NumericUpDown _lShinNumericUpDown;
+    private readonly NumericUpDown _rShinNumericUpDown;
+    private readonly NumericUpDown _lFootNumericUpDown;
+    private readonly NumericUpDown _rFootNumericUpDown;
+    private readonly NumericUpDown _skinColorNumericUpDown;
+    private readonly NumericUpDown _hairColorNumericUpDown;
+    private readonly NumericUpDown _tattoo1ColorNumericUpDown;
+    private readonly NumericUpDown _tattoo2ColorNumericUpDown;
+    private readonly Border _skinColorSwatch;
+    private readonly Border _hairColorSwatch;
+    private readonly Border _tattoo1ColorSwatch;
+    private readonly Border _tattoo2ColorSwatch;
+    private readonly TextBlock _bodyPartsNotApplicableLabel;
+    private readonly StackPanel _bodyPartsContent;
+    private readonly Grid _bodyPartsPanel;
+
+    // Step 4 controls
+    private readonly TextBox _classSearchBox;
+    private readonly ListBox _classListBox;
+    private readonly TextBlock _selectedClassNameLabel;
+    private readonly Border _classStatsPanel;
+    private readonly TextBlock _classHitDieLabel;
+    private readonly TextBlock _classSkillPointsLabel;
+    private readonly TextBlock _classPrimaryAbilityLabel;
+    private readonly TextBlock _classCasterLabel;
+    private readonly TextBlock _classAlignmentLabel;
+    private readonly StackPanel _packageSection;
+    private readonly ComboBox _packageComboBox;
+    private readonly Border _classDescSeparator;
+    private readonly TextBlock _classDescriptionLabel;
+    private readonly TextBlock _prestigeToggleArrow;
+    private readonly StackPanel _prestigePlanningContent;
+    private readonly ComboBox _prestigeClassComboBox;
+    private readonly TextBlock _prestigePrereqLabel;
+
     /// <summary>
     /// The created creature, available after Confirmed is true.
     /// </summary>
@@ -87,11 +185,13 @@ public partial class NewCharacterWizardWindow : Window
     [Obsolete("Designer use only", error: true)]
     public NewCharacterWizardWindow() => throw new NotSupportedException("Use parameterized constructor");
 
-    public NewCharacterWizardWindow(CreatureDisplayService displayService)
+    public NewCharacterWizardWindow(CreatureDisplayService displayService, IGameDataService gameDataService, ItemIconService? itemIconService = null)
     {
         InitializeComponent();
 
         _displayService = displayService;
+        _gameDataService = gameDataService;
+        _itemIconService = itemIconService;
 
         // Navigation controls
         _sidebarTitle = this.FindControl<TextBlock>("SidebarTitle")!;
@@ -149,6 +249,64 @@ public partial class NewCharacterWizardWindow : Window
         _raceDescSeparator = this.FindControl<Border>("RaceDescSeparator")!;
         _raceDescriptionLabel = this.FindControl<TextBlock>("RaceDescriptionLabel")!;
 
+        // Step 3 controls
+        _appearanceComboBox = this.FindControl<ComboBox>("AppearanceComboBox")!;
+        _phenotypeComboBox = this.FindControl<ComboBox>("PhenotypeComboBox")!;
+        _portraitPreviewImage = this.FindControl<Image>("PortraitPreviewImage")!;
+        _portraitNameLabel = this.FindControl<TextBlock>("PortraitNameLabel")!;
+        _headNumericUpDown = this.FindControl<NumericUpDown>("HeadNumericUpDown")!;
+        _neckNumericUpDown = this.FindControl<NumericUpDown>("NeckNumericUpDown")!;
+        _torsoNumericUpDown = this.FindControl<NumericUpDown>("TorsoNumericUpDown")!;
+        _pelvisNumericUpDown = this.FindControl<NumericUpDown>("PelvisNumericUpDown")!;
+        _beltNumericUpDown = this.FindControl<NumericUpDown>("BeltNumericUpDown")!;
+        _lShoulNumericUpDown = this.FindControl<NumericUpDown>("LShoulNumericUpDown")!;
+        _rShoulNumericUpDown = this.FindControl<NumericUpDown>("RShoulNumericUpDown")!;
+        _lBicepNumericUpDown = this.FindControl<NumericUpDown>("LBicepNumericUpDown")!;
+        _rBicepNumericUpDown = this.FindControl<NumericUpDown>("RBicepNumericUpDown")!;
+        _lFArmNumericUpDown = this.FindControl<NumericUpDown>("LFArmNumericUpDown")!;
+        _rFArmNumericUpDown = this.FindControl<NumericUpDown>("RFArmNumericUpDown")!;
+        _lHandNumericUpDown = this.FindControl<NumericUpDown>("LHandNumericUpDown")!;
+        _rHandNumericUpDown = this.FindControl<NumericUpDown>("RHandNumericUpDown")!;
+        _lThighNumericUpDown = this.FindControl<NumericUpDown>("LThighNumericUpDown")!;
+        _rThighNumericUpDown = this.FindControl<NumericUpDown>("RThighNumericUpDown")!;
+        _lShinNumericUpDown = this.FindControl<NumericUpDown>("LShinNumericUpDown")!;
+        _rShinNumericUpDown = this.FindControl<NumericUpDown>("RShinNumericUpDown")!;
+        _lFootNumericUpDown = this.FindControl<NumericUpDown>("LFootNumericUpDown")!;
+        _rFootNumericUpDown = this.FindControl<NumericUpDown>("RFootNumericUpDown")!;
+        _skinColorNumericUpDown = this.FindControl<NumericUpDown>("SkinColorNumericUpDown")!;
+        _hairColorNumericUpDown = this.FindControl<NumericUpDown>("HairColorNumericUpDown")!;
+        _tattoo1ColorNumericUpDown = this.FindControl<NumericUpDown>("Tattoo1ColorNumericUpDown")!;
+        _tattoo2ColorNumericUpDown = this.FindControl<NumericUpDown>("Tattoo2ColorNumericUpDown")!;
+        _skinColorSwatch = this.FindControl<Border>("SkinColorSwatch")!;
+        _hairColorSwatch = this.FindControl<Border>("HairColorSwatch")!;
+        _tattoo1ColorSwatch = this.FindControl<Border>("Tattoo1ColorSwatch")!;
+        _tattoo2ColorSwatch = this.FindControl<Border>("Tattoo2ColorSwatch")!;
+        _bodyPartsNotApplicableLabel = this.FindControl<TextBlock>("BodyPartsNotApplicableLabel")!;
+        _bodyPartsContent = this.FindControl<StackPanel>("BodyPartsContent")!;
+        _bodyPartsPanel = this.FindControl<Grid>("BodyPartsPanel")!;
+
+        // Initialize palette color service for color swatches
+        _paletteColorService = new PaletteColorService(_gameDataService);
+
+        // Step 4 controls
+        _classSearchBox = this.FindControl<TextBox>("ClassSearchBox")!;
+        _classListBox = this.FindControl<ListBox>("ClassListBox")!;
+        _selectedClassNameLabel = this.FindControl<TextBlock>("SelectedClassNameLabel")!;
+        _classStatsPanel = this.FindControl<Border>("ClassStatsPanel")!;
+        _classHitDieLabel = this.FindControl<TextBlock>("ClassHitDieLabel")!;
+        _classSkillPointsLabel = this.FindControl<TextBlock>("ClassSkillPointsLabel")!;
+        _classPrimaryAbilityLabel = this.FindControl<TextBlock>("ClassPrimaryAbilityLabel")!;
+        _classCasterLabel = this.FindControl<TextBlock>("ClassCasterLabel")!;
+        _classAlignmentLabel = this.FindControl<TextBlock>("ClassAlignmentLabel")!;
+        _packageSection = this.FindControl<StackPanel>("PackageSection")!;
+        _packageComboBox = this.FindControl<ComboBox>("PackageComboBox")!;
+        _classDescSeparator = this.FindControl<Border>("ClassDescSeparator")!;
+        _classDescriptionLabel = this.FindControl<TextBlock>("ClassDescriptionLabel")!;
+        _prestigeToggleArrow = this.FindControl<TextBlock>("PrestigeToggleArrow")!;
+        _prestigePlanningContent = this.FindControl<StackPanel>("PrestigePlanningContent")!;
+        _prestigeClassComboBox = this.FindControl<ComboBox>("PrestigeClassComboBox")!;
+        _prestigePrereqLabel = this.FindControl<TextBlock>("PrestigePrereqLabel")!;
+
         UpdateStepDisplay();
     }
 
@@ -193,7 +351,9 @@ public partial class NewCharacterWizardWindow : Window
         bool canProceed = _currentStep switch
         {
             1 => true, // File type always has a selection (UTC default)
-            2 => _selectedRaceId != 255, // Must have a race selected (255 = sentinel for "none")
+            2 => _selectedRaceId != 255, // Must have a race selected
+            3 => true, // Appearance always has defaults
+            4 => _selectedClassId >= 0, // Must have a class selected
             _ => true // Placeholder steps always valid
         };
 
@@ -203,6 +363,7 @@ public partial class NewCharacterWizardWindow : Window
         _statusLabel.Text = _currentStep switch
         {
             2 when !canProceed => "Select a race to continue.",
+            4 when !canProceed => "Select a class to continue.",
             _ => ""
         };
     }
@@ -214,7 +375,12 @@ public partial class NewCharacterWizardWindow : Window
             case 2:
                 PrepareStep2();
                 break;
-            // Future steps will prepare here
+            case 3:
+                PrepareStep3();
+                break;
+            case 4:
+                PrepareStep4();
+                break;
         }
     }
 
@@ -239,7 +405,6 @@ public partial class NewCharacterWizardWindow : Window
 
     private void OnFinishClick(object? sender, RoutedEventArgs e)
     {
-        // Build minimal creature with what we have so far
         CreatedCreature = BuildCreature();
         Confirmed = true;
         Close();
@@ -263,6 +428,11 @@ public partial class NewCharacterWizardWindow : Window
             var raceName = _displayService.GetRaceName(_selectedRaceId);
             var genderName = _selectedGender == 0 ? "Male" : "Female";
             parts.Add($"{genderName} {raceName}");
+        }
+
+        if (_currentStep >= 4 && _selectedClassId >= 0)
+        {
+            parts.Add(_displayService.GetClassName(_selectedClassId));
         }
 
         _sidebarSummary.Text = parts.Count > 0
@@ -381,10 +551,10 @@ public partial class NewCharacterWizardWindow : Window
         UpdateModifierLabel(_chaModLabel, "CHA", mods.Cha);
 
         // Favored class
-        var favoredClassId = _displayService.GetFavoredClass(_selectedRaceId);
-        _favoredClassLabel.Text = favoredClassId == -1
+        _favoredClassId = _displayService.GetFavoredClass(_selectedRaceId);
+        _favoredClassLabel.Text = _favoredClassId == -1
             ? "Any"
-            : _displayService.GetClassName(favoredClassId);
+            : _displayService.GetClassName(_favoredClassId);
 
         // Size
         _raceSizeLabel.Text = _displayService.GetRaceSizeCategory(_selectedRaceId);
@@ -397,7 +567,7 @@ public partial class NewCharacterWizardWindow : Window
         {
             var desc = _displayService.GameDataService.GetString(descStrRef);
             _raceDescriptionLabel.Text = !string.IsNullOrEmpty(desc) ? desc : $"The {raceName}.";
-            _raceDescriptionLabel.Foreground = null; // Use default foreground
+            _raceDescriptionLabel.Foreground = null;
         }
         else
         {
@@ -421,9 +591,8 @@ public partial class NewCharacterWizardWindow : Window
         else if (modifier < 0)
             label.Foreground = BrushManager.GetWarningBrush(this);
         else
-            label.Foreground = new SolidColorBrush(Colors.Transparent); // Will use default via null
+            label.Foreground = new SolidColorBrush(Colors.Transparent);
 
-        // For zero modifiers, use the default text color
         if (modifier == 0)
             label.ClearValue(TextBlock.ForegroundProperty);
     }
@@ -446,15 +615,508 @@ public partial class NewCharacterWizardWindow : Window
 
     #endregion
 
+    #region Step 3: Appearance
+
+    private void PrepareStep3()
+    {
+        if (_step3Loaded)
+            return;
+
+        _step3Loaded = true;
+
+        // Load appearances
+        var appearances = _displayService.GetAllAppearances();
+        _appearanceComboBox.ItemsSource = appearances;
+
+        // Set default appearance based on race
+        var defaultAppId = GetDefaultAppearanceForRace(_selectedRaceId);
+        var defaultApp = appearances.FirstOrDefault(a => a.AppearanceId == defaultAppId);
+        if (defaultApp != null)
+            _appearanceComboBox.SelectedItem = defaultApp;
+        else if (appearances.Count > 0)
+            _appearanceComboBox.SelectedItem = appearances[0];
+
+        // Load phenotypes
+        var phenotypes = _displayService.GetAllPhenotypes();
+        _phenotypeComboBox.ItemsSource = phenotypes;
+        if (phenotypes.Count > 0)
+            _phenotypeComboBox.SelectedItem = phenotypes[0];
+
+        // Set default portrait
+        UpdatePortraitDisplay();
+
+        // Initialize color swatches
+        UpdateAllColorSwatches();
+    }
+
+    private void OnAppearanceSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_appearanceComboBox.SelectedItem is not AppearanceInfo selected)
+            return;
+
+        _selectedAppearanceId = selected.AppearanceId;
+        _isPartBased = selected.IsPartBased;
+        UpdateBodyPartsVisibility();
+    }
+
+    private void OnPhenotypeSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_phenotypeComboBox.SelectedItem is not PhenotypeInfo selected)
+            return;
+
+        _selectedPhenotype = selected.PhenotypeId;
+    }
+
+    private void UpdateBodyPartsVisibility()
+    {
+        // Show/hide body part controls based on whether appearance is part-based
+        _bodyPartsContent.IsEnabled = _isPartBased;
+        _bodyPartsNotApplicableLabel.IsVisible = !_isPartBased;
+
+        // Color controls are always enabled for part-based appearances
+        _skinColorNumericUpDown.IsEnabled = _isPartBased;
+        _hairColorNumericUpDown.IsEnabled = _isPartBased;
+        _tattoo1ColorNumericUpDown.IsEnabled = _isPartBased;
+        _tattoo2ColorNumericUpDown.IsEnabled = _isPartBased;
+        _skinColorSwatch.IsEnabled = _isPartBased;
+        _hairColorSwatch.IsEnabled = _isPartBased;
+        _tattoo1ColorSwatch.IsEnabled = _isPartBased;
+        _tattoo2ColorSwatch.IsEnabled = _isPartBased;
+    }
+
+    private void OnBodyPartChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        // Sync all body part values from controls to state
+        _headVariation = (byte)(_headNumericUpDown.Value ?? 1);
+        _neckVariation = (byte)(_neckNumericUpDown.Value ?? 1);
+        _torsoVariation = (byte)(_torsoNumericUpDown.Value ?? 1);
+        _pelvisVariation = (byte)(_pelvisNumericUpDown.Value ?? 1);
+        _beltVariation = (byte)(_beltNumericUpDown.Value ?? 0);
+        _lShoulVariation = (byte)(_lShoulNumericUpDown.Value ?? 0);
+        _rShoulVariation = (byte)(_rShoulNumericUpDown.Value ?? 0);
+        _lBicepVariation = (byte)(_lBicepNumericUpDown.Value ?? 1);
+        _rBicepVariation = (byte)(_rBicepNumericUpDown.Value ?? 1);
+        _lFArmVariation = (byte)(_lFArmNumericUpDown.Value ?? 1);
+        _rFArmVariation = (byte)(_rFArmNumericUpDown.Value ?? 1);
+        _lHandVariation = (byte)(_lHandNumericUpDown.Value ?? 1);
+        _rHandVariation = (byte)(_rHandNumericUpDown.Value ?? 1);
+        _lThighVariation = (byte)(_lThighNumericUpDown.Value ?? 1);
+        _rThighVariation = (byte)(_rThighNumericUpDown.Value ?? 1);
+        _lShinVariation = (byte)(_lShinNumericUpDown.Value ?? 1);
+        _rShinVariation = (byte)(_rShinNumericUpDown.Value ?? 1);
+        _lFootVariation = (byte)(_lFootNumericUpDown.Value ?? 1);
+        _rFootVariation = (byte)(_rFootNumericUpDown.Value ?? 1);
+    }
+
+    private void OnColorValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (!e.NewValue.HasValue) return;
+
+        var value = (byte)Math.Clamp(e.NewValue.Value, 0, 175);
+
+        if (sender == _skinColorNumericUpDown)
+        {
+            _skinColor = value;
+            UpdateColorSwatch(_skinColorSwatch, PaletteColorService.Palettes.Skin, value);
+        }
+        else if (sender == _hairColorNumericUpDown)
+        {
+            _hairColor = value;
+            UpdateColorSwatch(_hairColorSwatch, PaletteColorService.Palettes.Hair, value);
+        }
+        else if (sender == _tattoo1ColorNumericUpDown)
+        {
+            _tattoo1Color = value;
+            UpdateColorSwatch(_tattoo1ColorSwatch, PaletteColorService.Palettes.Tattoo1, value);
+        }
+        else if (sender == _tattoo2ColorNumericUpDown)
+        {
+            _tattoo2Color = value;
+            UpdateColorSwatch(_tattoo2ColorSwatch, PaletteColorService.Palettes.Tattoo2, value);
+        }
+    }
+
+    private void OnSkinColorSwatchClick(object? sender, PointerPressedEventArgs e)
+    {
+        OpenColorPicker(PaletteColorService.Palettes.Skin, _skinColor, newIndex =>
+        {
+            _skinColor = newIndex;
+            _skinColorNumericUpDown.Value = newIndex;
+            UpdateColorSwatch(_skinColorSwatch, PaletteColorService.Palettes.Skin, newIndex);
+        });
+    }
+
+    private void OnHairColorSwatchClick(object? sender, PointerPressedEventArgs e)
+    {
+        OpenColorPicker(PaletteColorService.Palettes.Hair, _hairColor, newIndex =>
+        {
+            _hairColor = newIndex;
+            _hairColorNumericUpDown.Value = newIndex;
+            UpdateColorSwatch(_hairColorSwatch, PaletteColorService.Palettes.Hair, newIndex);
+        });
+    }
+
+    private void OnTattoo1ColorSwatchClick(object? sender, PointerPressedEventArgs e)
+    {
+        OpenColorPicker(PaletteColorService.Palettes.Tattoo1, _tattoo1Color, newIndex =>
+        {
+            _tattoo1Color = newIndex;
+            _tattoo1ColorNumericUpDown.Value = newIndex;
+            UpdateColorSwatch(_tattoo1ColorSwatch, PaletteColorService.Palettes.Tattoo1, newIndex);
+        });
+    }
+
+    private void OnTattoo2ColorSwatchClick(object? sender, PointerPressedEventArgs e)
+    {
+        OpenColorPicker(PaletteColorService.Palettes.Tattoo2, _tattoo2Color, newIndex =>
+        {
+            _tattoo2Color = newIndex;
+            _tattoo2ColorNumericUpDown.Value = newIndex;
+            UpdateColorSwatch(_tattoo2ColorSwatch, PaletteColorService.Palettes.Tattoo2, newIndex);
+        });
+    }
+
+    private async void OpenColorPicker(string paletteName, byte currentIndex, Action<byte> onColorSelected)
+    {
+        if (_paletteColorService == null) return;
+
+        var picker = new ColorPickerWindow(_paletteColorService, paletteName, currentIndex);
+        await picker.ShowDialog(this);
+
+        if (picker.Confirmed)
+        {
+            onColorSelected(picker.SelectedColorIndex);
+        }
+    }
+
+    private void UpdateColorSwatch(Border? swatch, string paletteName, byte colorIndex)
+    {
+        if (swatch == null || _paletteColorService == null) return;
+        var color = _paletteColorService.GetPaletteColor(paletteName, colorIndex);
+        swatch.Background = new SolidColorBrush(color);
+    }
+
+    private void UpdateAllColorSwatches()
+    {
+        UpdateColorSwatch(_skinColorSwatch, PaletteColorService.Palettes.Skin, _skinColor);
+        UpdateColorSwatch(_hairColorSwatch, PaletteColorService.Palettes.Hair, _hairColor);
+        UpdateColorSwatch(_tattoo1ColorSwatch, PaletteColorService.Palettes.Tattoo1, _tattoo1Color);
+        UpdateColorSwatch(_tattoo2ColorSwatch, PaletteColorService.Palettes.Tattoo2, _tattoo2Color);
+    }
+
+    private async void OnBrowsePortraitClick(object? sender, RoutedEventArgs e)
+    {
+        if (_itemIconService == null)
+            return;
+
+        var browser = new PortraitBrowserWindow(_gameDataService, _itemIconService);
+
+        // Pre-populate filters based on wizard selections
+        browser.SetInitialFilters(_selectedRaceId, _selectedGender);
+
+        var result = await browser.ShowDialog<ushort?>(this);
+
+        if (result.HasValue)
+        {
+            _selectedPortraitId = result.Value;
+            UpdatePortraitDisplay();
+        }
+    }
+
+    private void UpdatePortraitDisplay()
+    {
+        var resRef = _displayService.GetPortraitResRef(_selectedPortraitId);
+        _portraitNameLabel.Text = resRef ?? $"Portrait {_selectedPortraitId}";
+
+        // Load portrait preview image if icon service available
+        if (_itemIconService != null && resRef != null)
+        {
+            var image = _itemIconService.GetPortrait(resRef);
+            _portraitPreviewImage.Source = image;
+        }
+        else
+        {
+            _portraitPreviewImage.Source = null;
+        }
+    }
+
+    #endregion
+
+    #region Step 4: Class & Package
+
+    private void PrepareStep4()
+    {
+        // Reload favored class (may have changed if race changed)
+        _favoredClassId = _displayService.GetFavoredClass(_selectedRaceId);
+
+        if (!_step4Loaded)
+        {
+            _step4Loaded = true;
+            LoadPrestigeClasses();
+        }
+
+        LoadClassList();
+    }
+
+    private void LoadClassList()
+    {
+        var allMetadata = _displayService.Classes.GetAllClassMetadata();
+
+        // For BIC: player classes only, base classes only (no prestige at level 1)
+        // For UTC: all classes
+        _allClasses = allMetadata
+            .Where(c => !_isBicFile || (c.IsPlayerClass && !c.IsPrestige))
+            .Select(c => new ClassDisplayItem
+            {
+                Id = c.ClassId,
+                Name = c.Name,
+                IsFavored = _favoredClassId >= 0 && c.ClassId == _favoredClassId
+            })
+            .OrderByDescending(c => c.IsFavored)
+            .ThenBy(c => c.Name)
+            .ToList();
+
+        _filteredClasses = new List<ClassDisplayItem>(_allClasses);
+        _classListBox.ItemsSource = _filteredClasses;
+
+        // If previously selected class is still in list, re-select it
+        if (_selectedClassId >= 0)
+        {
+            var existing = _filteredClasses.FirstOrDefault(c => c.Id == _selectedClassId);
+            if (existing != null)
+            {
+                _classListBox.SelectedItem = existing;
+                return;
+            }
+        }
+
+        // Select favored class by default, or first class
+        var favored = _filteredClasses.FirstOrDefault(c => c.IsFavored);
+        if (favored != null)
+            _classListBox.SelectedItem = favored;
+        else if (_filteredClasses.Count > 0)
+            _classListBox.SelectedItem = _filteredClasses[0];
+    }
+
+    private void OnClassSearchChanged(object? sender, TextChangedEventArgs e)
+    {
+        var filter = _classSearchBox.Text?.Trim() ?? "";
+
+        if (string.IsNullOrEmpty(filter))
+        {
+            _filteredClasses = new List<ClassDisplayItem>(_allClasses);
+        }
+        else
+        {
+            _filteredClasses = _allClasses
+                .Where(c => c.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        _classListBox.ItemsSource = _filteredClasses;
+    }
+
+    private void OnClassSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_classListBox.SelectedItem is not ClassDisplayItem selected)
+            return;
+
+        _selectedClassId = selected.Id;
+        UpdateClassDetailPanel();
+        LoadPackagesForClass();
+        ValidateCurrentStep();
+        UpdateSidebarSummary();
+    }
+
+    private void UpdateClassDetailPanel()
+    {
+        var metadata = _displayService.Classes.GetClassMetadata(_selectedClassId);
+        _selectedClassNameLabel.Text = metadata.Name;
+        _classStatsPanel.IsVisible = true;
+
+        // Stats
+        _classHitDieLabel.Text = $"Hit Die: d{metadata.HitDie}";
+        _classSkillPointsLabel.Text = $"Skill Points: {metadata.SkillPointsPerLevel} + INT";
+
+        // Primary ability
+        var primaryAbility = metadata.PrimaryAbility;
+        _classPrimaryAbilityLabel.Text = string.IsNullOrEmpty(primaryAbility) || primaryAbility == "****"
+            ? "Primary: —"
+            : $"Primary: {FormatAbilityName(primaryAbility)}";
+
+        // Spellcasting info
+        if (metadata.IsCaster)
+        {
+            var casterType = metadata.IsSpontaneousCaster ? "Spontaneous" : "Prepared";
+            _classCasterLabel.Text = $"Spellcasting: {casterType}";
+        }
+        else
+        {
+            _classCasterLabel.Text = "Spellcasting: None";
+        }
+
+        // Alignment restrictions
+        if (metadata.AlignmentRestriction != null)
+        {
+            var alignDesc = FormatAlignmentRestriction(metadata.AlignmentRestriction);
+            _classAlignmentLabel.Text = alignDesc;
+            _classAlignmentLabel.IsVisible = !string.IsNullOrEmpty(alignDesc);
+        }
+        else
+        {
+            _classAlignmentLabel.IsVisible = false;
+        }
+
+        // Description
+        var desc = _displayService.Classes.GetClassDescription(_selectedClassId);
+        if (!string.IsNullOrEmpty(desc))
+        {
+            _classDescriptionLabel.Text = desc;
+            _classDescriptionLabel.Foreground = null;
+            _classDescSeparator.IsVisible = true;
+        }
+        else
+        {
+            _classDescriptionLabel.Text = "No description available.";
+            _classDescSeparator.IsVisible = false;
+        }
+    }
+
+    private void LoadPackagesForClass()
+    {
+        var packages = _displayService.GetPackagesForClass(_selectedClassId);
+
+        if (packages.Count > 0)
+        {
+            var packageItems = packages.Select(p => new PackageDisplayItem
+            {
+                Id = p.Id,
+                Name = p.Name
+            }).ToList();
+
+            _packageComboBox.ItemsSource = packageItems;
+            _packageComboBox.SelectedItem = packageItems[0];
+            _packageSection.IsVisible = true;
+        }
+        else
+        {
+            _packageComboBox.ItemsSource = null;
+            _packageSection.IsVisible = false;
+            _selectedPackageId = 255;
+        }
+    }
+
+    private void OnPackageSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_packageComboBox.SelectedItem is not PackageDisplayItem selected)
+            return;
+
+        _selectedPackageId = selected.Id;
+    }
+
+    private static string FormatAbilityName(string abilityCode) => abilityCode.ToUpperInvariant() switch
+    {
+        "STR" => "Strength",
+        "DEX" => "Dexterity",
+        "CON" => "Constitution",
+        "INT" => "Intelligence",
+        "WIS" => "Wisdom",
+        "CHA" => "Charisma",
+        _ => abilityCode
+    };
+
+    private static string FormatAlignmentRestriction(AlignmentRestriction restriction)
+    {
+        var parts = new List<string>();
+        if ((restriction.RestrictionMask & 0x02) != 0) parts.Add("Lawful");
+        if ((restriction.RestrictionMask & 0x04) != 0) parts.Add("Chaotic");
+        if ((restriction.RestrictionMask & 0x08) != 0) parts.Add("Good");
+        if ((restriction.RestrictionMask & 0x10) != 0) parts.Add("Evil");
+        if ((restriction.RestrictionMask & 0x01) != 0) parts.Add("Neutral");
+
+        if (parts.Count == 0) return "";
+
+        string verb = restriction.Inverted ? "Cannot be" : "Must be";
+        return $"{verb}: {string.Join(" or ", parts)}";
+    }
+
+    #endregion
+
+    #region Prestige Planning
+
+    private void LoadPrestigeClasses()
+    {
+        var allMetadata = _displayService.Classes.GetAllClassMetadata();
+        var prestigeClasses = allMetadata
+            .Where(c => c.IsPrestige && c.IsPlayerClass)
+            .Select(c => new ClassDisplayItem { Id = c.ClassId, Name = c.Name })
+            .OrderBy(c => c.Name)
+            .ToList();
+
+        _prestigeClassComboBox.ItemsSource = prestigeClasses;
+    }
+
+    private void OnPrestigePlanningToggle(object? sender, PointerPressedEventArgs e)
+    {
+        _prestigePlanningExpanded = !_prestigePlanningExpanded;
+        _prestigePlanningContent.IsVisible = _prestigePlanningExpanded;
+        _prestigeToggleArrow.Text = _prestigePlanningExpanded ? "▾" : "▸";
+    }
+
+    private void OnPrestigeClassSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_prestigeClassComboBox.SelectedItem is not ClassDisplayItem selected)
+            return;
+
+        var prereqs = _displayService.Classes.GetPrestigePrerequisites(selected.Id);
+
+        if (prereqs.Count == 0)
+        {
+            _prestigePrereqLabel.Text = "No prerequisites listed.";
+            return;
+        }
+
+        var lines = new List<string>();
+        foreach (var prereq in prereqs)
+        {
+            string desc = prereq.Type switch
+            {
+                PrereqType.Feat => $"Feat: {_displayService.GetFeatName(prereq.Param1)}",
+                PrereqType.FeatOr => $"  or: {_displayService.GetFeatName(prereq.Param1)}",
+                PrereqType.Skill => $"Skill: {_displayService.Skills.GetSkillName(prereq.Param1)} ({prereq.Param2}+ ranks)",
+                PrereqType.Bab => $"Base Attack Bonus: +{prereq.Param1}",
+                PrereqType.Race => $"Race: {_displayService.GetRaceName((byte)prereq.Param1)}",
+                PrereqType.ArcaneSpell => prereq.Param1 > 0
+                    ? $"Can cast arcane spells level {prereq.Param1}+"
+                    : "Can cast arcane spells",
+                PrereqType.DivineSpell => prereq.Param1 > 0
+                    ? $"Can cast divine spells level {prereq.Param1}+"
+                    : "Can cast divine spells",
+                _ => prereq.Label
+            };
+            lines.Add(desc);
+        }
+
+        _prestigePrereqLabel.Text = string.Join("\n", lines);
+    }
+
+    #endregion
+
     #region Build Creature
 
     /// <summary>
     /// Builds a UtcFile from the current wizard selections.
-    /// Currently only populates race and gender (Sprint 1).
-    /// Future sprints will add class, stats, skills, spells, etc.
+    /// Populates race, gender, appearance, and class from Steps 1-4.
+    /// Future sprints will add stats, skills, spells, etc.
     /// </summary>
     private UtcFile BuildCreature()
     {
+        // Determine class and hit die for HP calculation
+        int classId = _selectedClassId >= 0 ? _selectedClassId : 255; // Commoner fallback
+        var hitDie = _selectedClassId >= 0
+            ? _displayService.Classes.GetClassMetadata(_selectedClassId).HitDie
+            : 4;
+
         return new UtcFile
         {
             // Identity
@@ -467,41 +1129,41 @@ public partial class NewCharacterWizardWindow : Window
             // Palette
             PaletteID = 1,
 
-            // Race & gender from wizard
+            // Race & gender from Step 2
             Race = _selectedRaceId,
             Gender = _selectedGender,
 
-            // Appearance defaults (will be set by Step 3 in Sprint 2)
-            AppearanceType = GetDefaultAppearanceForRace(_selectedRaceId),
-            Phenotype = 0,
-            PortraitId = 1,
+            // Appearance from Step 3
+            AppearanceType = _selectedAppearanceId > 0 ? _selectedAppearanceId : GetDefaultAppearanceForRace(_selectedRaceId),
+            Phenotype = _selectedPhenotype,
+            PortraitId = _selectedPortraitId,
 
-            // Default body parts
-            AppearanceHead = 1,
-            BodyPart_Belt = 0,
-            BodyPart_LBicep = 1,
-            BodyPart_RBicep = 1,
-            BodyPart_LFArm = 1,
-            BodyPart_RFArm = 1,
-            BodyPart_LFoot = 1,
-            BodyPart_RFoot = 1,
-            BodyPart_LHand = 1,
-            BodyPart_RHand = 1,
-            BodyPart_LShin = 1,
-            BodyPart_RShin = 1,
-            BodyPart_LShoul = 0,
-            BodyPart_RShoul = 0,
-            BodyPart_LThigh = 1,
-            BodyPart_RThigh = 1,
-            BodyPart_Neck = 1,
-            BodyPart_Pelvis = 1,
-            BodyPart_Torso = 1,
+            // Body parts from Step 3
+            AppearanceHead = _headVariation,
+            BodyPart_Neck = _neckVariation,
+            BodyPart_Torso = _torsoVariation,
+            BodyPart_Pelvis = _pelvisVariation,
+            BodyPart_Belt = _beltVariation,
+            BodyPart_LShoul = _lShoulVariation,
+            BodyPart_RShoul = _rShoulVariation,
+            BodyPart_LBicep = _lBicepVariation,
+            BodyPart_RBicep = _rBicepVariation,
+            BodyPart_LFArm = _lFArmVariation,
+            BodyPart_RFArm = _rFArmVariation,
+            BodyPart_LHand = _lHandVariation,
+            BodyPart_RHand = _rHandVariation,
+            BodyPart_LThigh = _lThighVariation,
+            BodyPart_RThigh = _rThighVariation,
+            BodyPart_LShin = _lShinVariation,
+            BodyPart_RShin = _rShinVariation,
+            BodyPart_LFoot = _lFootVariation,
+            BodyPart_RFoot = _rFootVariation,
 
-            // Colors
-            Color_Skin = 0,
-            Color_Hair = 0,
-            Color_Tattoo1 = 0,
-            Color_Tattoo2 = 0,
+            // Colors from Step 3
+            Color_Skin = _skinColor,
+            Color_Hair = _hairColor,
+            Color_Tattoo1 = _tattoo1Color,
+            Color_Tattoo2 = _tattoo2Color,
 
             // Default ability scores (will be set by Step 5 in Sprint 3)
             Str = 10,
@@ -511,10 +1173,10 @@ public partial class NewCharacterWizardWindow : Window
             Wis = 10,
             Cha = 10,
 
-            // HP
-            HitPoints = 4,
-            CurrentHitPoints = 4,
-            MaxHitPoints = 4,
+            // HP based on class hit die
+            HitPoints = (short)hitDie,
+            CurrentHitPoints = (short)hitDie,
+            MaxHitPoints = (short)hitDie,
 
             // Alignment - True Neutral
             GoodEvil = 50,
@@ -527,12 +1189,15 @@ public partial class NewCharacterWizardWindow : Window
             DecayTime = 5000,
             Interruptable = true,
 
-            // Commoner level 1 (will be replaced by Step 4 in Sprint 2)
+            // Starting package
+            StartingPackage = _selectedPackageId != 255 ? _selectedPackageId : (byte)0,
+
+            // Class from Step 4
             ClassList = new List<CreatureClass>
             {
                 new CreatureClass
                 {
-                    Class = 255, // Commoner
+                    Class = classId,
                     ClassLevel = 1
                 }
             },
@@ -562,6 +1227,19 @@ public partial class NewCharacterWizardWindow : Window
     #region Display Items
 
     private class RaceDisplayItem
+    {
+        public byte Id { get; init; }
+        public string Name { get; init; } = "";
+    }
+
+    private class ClassDisplayItem
+    {
+        public int Id { get; init; }
+        public string Name { get; init; } = "";
+        public bool IsFavored { get; init; }
+    }
+
+    private class PackageDisplayItem
     {
         public byte Id { get; init; }
         public string Name { get; init; } = "";
