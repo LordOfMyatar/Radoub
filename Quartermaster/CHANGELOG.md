@@ -10,6 +10,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.74-alpha] - 2026-02-19
+**Branch**: `quartermaster/issue-1412-1423` | **PR**: #TBD
+
+### Sprint: Feat Selection & Starting Equipment (#1423, #1412)
+
+#### Feat Selection Step (#1423)
+
+- [ ] Add Step 6: Feats — two-panel UI (available ↔ selected), mirroring spell selection
+- [ ] Filter available feats by prerequisites (ability scores, race, class)
+- [ ] Show granted feats (race + class) as read-only pre-selected
+- [ ] Allow picking 1 general feat (+ 1 Human bonus + 1 Fighter bonus if applicable)
+- [ ] Auto-Assign button reads package feat preferences (`FeatPref2DA` in `packages.2da`)
+- [ ] Renumber Steps 6-8 → 7-10 (sidebar, navigation, all references)
+- [ ] Update `TotalSteps` constant from 8 to 10
+- [ ] Update `BuildCreature()` to include player-chosen feats alongside granted feats
+- [ ] Validate feat prerequisites against current wizard state
+
+#### Starting Equipment Step (#1412)
+
+- [ ] Add equipment step using `packeq*.2da` package equipment tables
+- [ ] Option to use default package equipment or customize
+- [ ] Weapon/armor selection appropriate to class proficiencies
+- [ ] Basic adventuring gear (potions, scrolls, tools)
+- [ ] For UTC: inventory/store stock setup
+- [ ] Step is optional — user can skip and equip later in editor
+
+---
+
 ## [0.1.73-alpha] - 2026-02-19
 **Branch**: `quartermaster/issue-1411` | **PR**: #1422
 
