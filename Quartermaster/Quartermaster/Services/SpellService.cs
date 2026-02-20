@@ -174,9 +174,10 @@ public class SpellService
 
         int maxSpellLevel = -1;
 
+        // cls_spgn_*.2da columns are "SpellLevel0" through "SpellLevel9"
         for (int spellLevel = 0; spellLevel <= 9; spellLevel++)
         {
-            var columnName = $"NumSpellLevels{spellLevel}";
+            var columnName = $"SpellLevel{spellLevel}";
             var slotsStr = _gameDataService.Get2DAValue(spellGainTable, rowIndex, columnName);
 
             if (!string.IsNullOrEmpty(slotsStr) && slotsStr != "****" && slotsStr != "-")
