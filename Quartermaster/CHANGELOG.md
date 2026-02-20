@@ -28,6 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - [x] Granted feats from race + class (via FeatService)
 - [x] Proper SkillList sizing, SpellList population
 - [x] All UtcFile fields set from 2DA data (no hardcoded defaults)
+- [x] Fix: `GetMaxSpellLevel()` used wrong 2DA column names (`NumSpellLevels{n}` → `SpellLevel{n}`)
 
 ---
 
