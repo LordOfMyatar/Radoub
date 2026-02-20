@@ -10,6 +10,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.72-alpha] - 2026-02-19
+**Branch**: `quartermaster/issue-1410` | **PR**: #TBD
+
+### Sprint: New Character Wizard - Steps 5-6 (Abilities & Skills) (#1410)
+
+- [ ] Step 5: Ability Scores — 6-row grid (STR/DEX/CON/INT/WIS/CHA) with [-][+] buttons, Base/Racial/Final/Modifier columns
+- [ ] Point-buy system: 30 points, base 8, cap 18 with cost table
+- [ ] Points remaining counter with color feedback
+- [ ] Racial modifiers display (green/warning via BrushManager)
+- [ ] Step 6: Skills — Skill allocation grid with [-][+] buttons, class/cross-class distinction
+- [ ] Cross-class skills cost 2 points, class skills cost 1
+- [ ] Skill points formula: (ClassSkillPointBase + INT modifier) × 4 at level 1
+- [ ] Auto-Assign buttons for both steps — reads package preferences
+- [ ] Prestige prerequisite advisory banner on ability scores
+
+---
+
 ## [0.1.71-alpha] - 2026-02-19
 **Branch**: `quartermaster/issue-1409` | **PR**: #1415
 
