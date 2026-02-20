@@ -100,6 +100,20 @@ public partial class NewCharacterWizardWindow : Window
     private List<SkillDisplayItem> _filteredSkills = new();
     private bool _step6Loaded;
 
+    // Step 7: Spells
+    private bool _needsSpellSelection;
+    private bool _isDivineCaster;
+    private bool _step7Loaded;
+    private int _currentSpellLevel; // Currently selected spell level tab
+    private int _maxSpellLevelForClass;
+    private readonly Dictionary<int, List<int>> _selectedSpellsByLevel = new(); // spell level → list of spell IDs
+    private List<SpellDisplayItem> _availableSpellsForLevel = new();
+    private List<SpellDisplayItem> _filteredAvailableSpells = new();
+
+    // Step 8: Summary
+    private string _characterName = "";
+    private byte _paletteId = 1;
+
     // Controls - navigation
     private readonly TextBlock _sidebarTitle;
     private readonly TextBlock _sidebarSummary;
@@ -179,6 +193,34 @@ public partial class NewCharacterWizardWindow : Window
     private readonly TextBlock _skillPointsRemainingLabel;
     private readonly StackPanel _skillRowsPanel;
     private readonly TextBox _skillSearchBox;
+
+    // Step 7 controls
+    private readonly TextBlock _spellStepDescription;
+    private readonly StackPanel _spellLevelTabsPanel;
+    private readonly TextBlock _spellSelectionCountLabel;
+    private readonly TextBox _spellSearchBox2;
+    private readonly ListBox _availableSpellsListBox;
+    private readonly ListBox _selectedSpellsListBox;
+    private readonly TextBlock _selectedSpellCountLabel;
+    private readonly Border _divineSpellInfoPanel;
+    private readonly TextBlock _divineSpellInfoLabel;
+
+    // Step 8 controls
+    private readonly TextBox _characterNameTextBox;
+    private readonly TextBlock _generatedTagLabel;
+    private readonly TextBlock _generatedResRefLabel;
+    private readonly TextBlock _paletteIdLabelText;
+    private readonly NumericUpDown _paletteIdNumericUpDown;
+    private readonly TextBlock _paletteIdNote;
+    private readonly TextBlock _summaryFileTypeLabel;
+    private readonly TextBlock _summaryRaceLabel;
+    private readonly TextBlock _summaryAppearanceLabel;
+    private readonly TextBlock _summaryClassLabel;
+    private readonly TextBlock _summaryAbilitiesLabel;
+    private readonly TextBlock _summarySkillsLabel;
+    private readonly TextBlock _summarySpellsLabel;
+    private readonly Grid _summarySpellsSection;
+    private readonly TextBlock _summaryFeatsLabel;
 
     // Step 4 controls
     private readonly TextBox _classSearchBox;
@@ -350,6 +392,34 @@ public partial class NewCharacterWizardWindow : Window
         _skillRowsPanel = this.FindControl<StackPanel>("SkillRowsPanel")!;
         _skillSearchBox = this.FindControl<TextBox>("SkillSearchBox")!;
 
+        // Step 7 controls
+        _spellStepDescription = this.FindControl<TextBlock>("SpellStepDescription")!;
+        _spellLevelTabsPanel = this.FindControl<StackPanel>("SpellLevelTabsPanel")!;
+        _spellSelectionCountLabel = this.FindControl<TextBlock>("SpellSelectionCountLabel")!;
+        _spellSearchBox2 = this.FindControl<TextBox>("SpellSearchBox")!;
+        _availableSpellsListBox = this.FindControl<ListBox>("AvailableSpellsListBox")!;
+        _selectedSpellsListBox = this.FindControl<ListBox>("SelectedSpellsListBox")!;
+        _selectedSpellCountLabel = this.FindControl<TextBlock>("SelectedSpellCountLabel")!;
+        _divineSpellInfoPanel = this.FindControl<Border>("DivineSpellInfoPanel")!;
+        _divineSpellInfoLabel = this.FindControl<TextBlock>("DivineSpellInfoLabel")!;
+
+        // Step 8 controls
+        _characterNameTextBox = this.FindControl<TextBox>("CharacterNameTextBox")!;
+        _generatedTagLabel = this.FindControl<TextBlock>("GeneratedTagLabel")!;
+        _generatedResRefLabel = this.FindControl<TextBlock>("GeneratedResRefLabel")!;
+        _paletteIdLabelText = this.FindControl<TextBlock>("PaletteIdLabelText")!;
+        _paletteIdNumericUpDown = this.FindControl<NumericUpDown>("PaletteIdNumericUpDown")!;
+        _paletteIdNote = this.FindControl<TextBlock>("PaletteIdNote")!;
+        _summaryFileTypeLabel = this.FindControl<TextBlock>("SummaryFileTypeLabel")!;
+        _summaryRaceLabel = this.FindControl<TextBlock>("SummaryRaceLabel")!;
+        _summaryAppearanceLabel = this.FindControl<TextBlock>("SummaryAppearanceLabel")!;
+        _summaryClassLabel = this.FindControl<TextBlock>("SummaryClassLabel")!;
+        _summaryAbilitiesLabel = this.FindControl<TextBlock>("SummaryAbilitiesLabel")!;
+        _summarySkillsLabel = this.FindControl<TextBlock>("SummarySkillsLabel")!;
+        _summarySpellsLabel = this.FindControl<TextBlock>("SummarySpellsLabel")!;
+        _summarySpellsSection = this.FindControl<Grid>("SummarySpellsSection")!;
+        _summaryFeatsLabel = this.FindControl<TextBlock>("SummaryFeatsLabel")!;
+
         UpdateStepDisplay();
     }
 
@@ -399,7 +469,9 @@ public partial class NewCharacterWizardWindow : Window
             4 => _selectedClassId >= 0, // Must have a class selected
             5 => GetAbilityPointsRemaining() == 0 || !_isBicFile, // BIC must spend all points
             6 => GetSkillPointsRemaining() >= 0, // Can't overspend
-            _ => true // Placeholder steps always valid
+            7 => !_needsSpellSelection || _isDivineCaster || IsSpellSelectionComplete(),
+            8 => true, // Summary is always valid (name is optional)
+            _ => true
         };
 
         _nextButton.IsEnabled = canProceed;
@@ -410,6 +482,7 @@ public partial class NewCharacterWizardWindow : Window
             2 when !canProceed => "Select a race to continue.",
             4 when !canProceed => "Select a class to continue.",
             5 when !canProceed => $"Spend all {PointBuyTotal} ability points to continue.",
+            7 when !canProceed => "Select all required spells to continue.",
             _ => ""
         };
     }
@@ -433,6 +506,17 @@ public partial class NewCharacterWizardWindow : Window
             case 6:
                 PrepareStep6();
                 break;
+            case 7:
+                PrepareStep7();
+                if (!_needsSpellSelection)
+                {
+                    _currentStep++;
+                    PrepareCurrentStep(); // Skip to step 8
+                }
+                break;
+            case 8:
+                PrepareStep8();
+                break;
         }
     }
 
@@ -451,6 +535,11 @@ public partial class NewCharacterWizardWindow : Window
         if (_currentStep > 1)
         {
             _currentStep--;
+
+            // Skip spell step when going back if non-caster
+            if (_currentStep == 7 && !_needsSpellSelection)
+                _currentStep--;
+
             UpdateStepDisplay();
         }
     }
@@ -1870,43 +1959,628 @@ public partial class NewCharacterWizardWindow : Window
 
     #endregion
 
+    #region Step 7: Spells
+
+    private void PrepareStep7()
+    {
+        int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
+        bool isCaster = _displayService.IsCasterClass(classId);
+
+        if (!isCaster)
+        {
+            _needsSpellSelection = false;
+            _isDivineCaster = false;
+            return;
+        }
+
+        bool isSpontaneous = _displayService.Spells.IsSpontaneousCaster(classId);
+        _maxSpellLevelForClass = _displayService.Spells.GetMaxSpellLevel(classId, 1);
+        _isDivineCaster = !isSpontaneous && (classId == 2 || classId == 3); // Cleric=2, Druid=3
+
+        if (_maxSpellLevelForClass < 0)
+        {
+            _needsSpellSelection = false;
+            return;
+        }
+
+        _needsSpellSelection = true;
+
+        if (_isDivineCaster)
+        {
+            // Divine casters (Cleric, Druid) get spells automatically
+            var className = _displayService.GetClassName(classId);
+            _divineSpellInfoLabel.Text = $"As a {className}, your deity grants you access to all {className.ToLowerInvariant()} spells.\n" +
+                $"You can prepare spells each day after resting.";
+            _divineSpellInfoPanel.IsVisible = true;
+
+            // Hide the two-panel selection UI
+            _spellLevelTabsPanel.IsVisible = false;
+            _spellSelectionCountLabel.IsVisible = false;
+            _spellSearchBox2.IsVisible = false;
+            _availableSpellsListBox.IsVisible = false;
+            _selectedSpellsListBox.IsVisible = false;
+            _selectedSpellCountLabel.IsVisible = false;
+            // Hide the parent grids of the available/selected panels
+            var twoPanel = _availableSpellsListBox.Parent?.Parent as Grid;
+            if (twoPanel != null) twoPanel.IsVisible = false;
+
+            _spellStepDescription.Text = $"{className}s receive all their class spells automatically through divine power.";
+            return;
+        }
+
+        // Spontaneous casters (Bard, Sorcerer) or Wizard: show spell selection UI
+        _divineSpellInfoPanel.IsVisible = false;
+        var selectionParent = _availableSpellsListBox.Parent?.Parent as Grid;
+        if (selectionParent != null) selectionParent.IsVisible = true;
+        _spellLevelTabsPanel.IsVisible = true;
+        _spellSelectionCountLabel.IsVisible = true;
+        _spellSearchBox2.IsVisible = true;
+        _availableSpellsListBox.IsVisible = true;
+        _selectedSpellsListBox.IsVisible = true;
+        _selectedSpellCountLabel.IsVisible = true;
+
+        string classNameForDesc = _displayService.GetClassName(classId);
+        if (isSpontaneous)
+            _spellStepDescription.Text = $"Choose spells known for your {classNameForDesc}. These are the spells you can cast.";
+        else
+            _spellStepDescription.Text = $"Choose spells for your {classNameForDesc}'s spellbook.";
+
+        // Initialize spell level selections if not already done
+        if (!_step7Loaded)
+        {
+            _step7Loaded = true;
+            _selectedSpellsByLevel.Clear();
+        }
+
+        // Build spell level tabs
+        BuildSpellLevelTabs();
+
+        // Default to level 0 (cantrips)
+        _currentSpellLevel = 0;
+        SelectSpellLevelTab(0);
+    }
+
+    private void BuildSpellLevelTabs()
+    {
+        _spellLevelTabsPanel.Children.Clear();
+
+        for (int level = 0; level <= _maxSpellLevelForClass; level++)
+        {
+            var btn = new ToggleButton
+            {
+                Content = level == 0 ? "Cantrips" : $"Level {level}",
+                Tag = level,
+                Margin = new Avalonia.Thickness(0, 0, 2, 0),
+                IsChecked = level == 0
+            };
+            btn.Click += OnSpellLevelTabClick;
+            _spellLevelTabsPanel.Children.Add(btn);
+        }
+    }
+
+    private void OnSpellLevelTabClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is ToggleButton btn && btn.Tag is int level)
+        {
+            SelectSpellLevelTab(level);
+        }
+    }
+
+    private void SelectSpellLevelTab(int level)
+    {
+        _currentSpellLevel = level;
+
+        // Update tab checked states
+        foreach (var child in _spellLevelTabsPanel.Children)
+        {
+            if (child is ToggleButton tb && tb.Tag is int tabLevel)
+                tb.IsChecked = tabLevel == level;
+        }
+
+        // Load available spells for this level
+        LoadAvailableSpellsForLevel(level);
+        UpdateSelectedSpellsDisplay();
+        UpdateSpellSelectionCount();
+        ValidateCurrentStep();
+    }
+
+    private void LoadAvailableSpellsForLevel(int spellLevel)
+    {
+        int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
+        var allSpellIds = _displayService.Spells.GetAllSpellIds();
+        var selectedForLevel = _selectedSpellsByLevel.GetValueOrDefault(spellLevel, new List<int>());
+
+        _availableSpellsForLevel = new List<SpellDisplayItem>();
+
+        foreach (var spellId in allSpellIds)
+        {
+            var info = _displayService.Spells.GetSpellInfo(spellId);
+            if (info == null) continue;
+
+            int levelForClass = info.GetLevelForClass(classId);
+            if (levelForClass != spellLevel) continue;
+
+            // Skip if already selected
+            if (selectedForLevel.Contains(spellId)) continue;
+
+            _availableSpellsForLevel.Add(new SpellDisplayItem
+            {
+                SpellId = spellId,
+                Name = info.Name,
+                SchoolAbbrev = GetSchoolAbbrev(info.School)
+            });
+        }
+
+        _availableSpellsForLevel = _availableSpellsForLevel.OrderBy(s => s.Name).ToList();
+        ApplySpellFilter();
+    }
+
+    private void ApplySpellFilter()
+    {
+        var filter = _spellSearchBox2?.Text?.Trim() ?? "";
+
+        if (string.IsNullOrEmpty(filter))
+        {
+            _filteredAvailableSpells = new List<SpellDisplayItem>(_availableSpellsForLevel);
+        }
+        else
+        {
+            _filteredAvailableSpells = _availableSpellsForLevel
+                .Where(s => s.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        _availableSpellsListBox.ItemsSource = _filteredAvailableSpells;
+    }
+
+    private void OnSpellSearchChanged(object? sender, TextChangedEventArgs e)
+    {
+        ApplySpellFilter();
+    }
+
+    private void UpdateSelectedSpellsDisplay()
+    {
+        var selectedForLevel = _selectedSpellsByLevel.GetValueOrDefault(_currentSpellLevel, new List<int>());
+        var items = selectedForLevel.Select(id =>
+        {
+            var info = _displayService.Spells.GetSpellInfo(id);
+            return new SpellDisplayItem
+            {
+                SpellId = id,
+                Name = info?.Name ?? $"Spell {id}",
+                SchoolAbbrev = info != null ? GetSchoolAbbrev(info.School) : ""
+            };
+        }).OrderBy(s => s.Name).ToList();
+
+        _selectedSpellsListBox.ItemsSource = items;
+
+        // Update count for this level
+        int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
+        int maxForLevel = GetMaxSpellsForLevel(classId, _currentSpellLevel);
+        _selectedSpellCountLabel.Text = $"({selectedForLevel.Count} / {maxForLevel})";
+
+        if (selectedForLevel.Count > maxForLevel)
+            _selectedSpellCountLabel.Foreground = BrushManager.GetErrorBrush(this);
+        else if (selectedForLevel.Count == maxForLevel)
+            _selectedSpellCountLabel.ClearValue(TextBlock.ForegroundProperty);
+        else
+            _selectedSpellCountLabel.Foreground = BrushManager.GetSuccessBrush(this);
+    }
+
+    private void UpdateSpellSelectionCount()
+    {
+        int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
+        int totalSelected = 0;
+        int totalRequired = 0;
+
+        for (int level = 0; level <= _maxSpellLevelForClass; level++)
+        {
+            int selected = _selectedSpellsByLevel.GetValueOrDefault(level, new List<int>()).Count;
+            int max = GetMaxSpellsForLevel(classId, level);
+            totalSelected += selected;
+            totalRequired += max;
+        }
+
+        _spellSelectionCountLabel.Text = $"Total: {totalSelected} / {totalRequired}";
+    }
+
+    private int GetMaxSpellsForLevel(int classId, int spellLevel)
+    {
+        bool isSpontaneous = _displayService.Spells.IsSpontaneousCaster(classId);
+
+        if (isSpontaneous)
+        {
+            // Spontaneous casters: use SpellsKnownLimit
+            var knownLimits = _displayService.Spells.GetSpellsKnownLimit(classId, 1);
+            if (knownLimits != null && spellLevel < knownLimits.Length)
+                return knownLimits[spellLevel];
+            return 0;
+        }
+        else
+        {
+            // Wizard: use spell slots as guide for initial spellbook
+            // At level 1, wizards get 3 + INT mod cantrips and all level 0 plus (3 + INT mod) level 1 spells
+            // Simplified: use spell slots
+            var slots = _displayService.Spells.GetSpellSlots(classId, 1);
+            if (slots != null && spellLevel < slots.Length)
+                return Math.Max(slots[spellLevel], 0);
+            return 0;
+        }
+    }
+
+    private void OnAddSpellClick(object? sender, RoutedEventArgs e)
+    {
+        var selected = _availableSpellsListBox.SelectedItems?.Cast<SpellDisplayItem>().ToList();
+        if (selected == null || selected.Count == 0) return;
+
+        int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
+        int maxForLevel = GetMaxSpellsForLevel(classId, _currentSpellLevel);
+
+        if (!_selectedSpellsByLevel.ContainsKey(_currentSpellLevel))
+            _selectedSpellsByLevel[_currentSpellLevel] = new List<int>();
+
+        foreach (var spell in selected)
+        {
+            if (_selectedSpellsByLevel[_currentSpellLevel].Count >= maxForLevel)
+                break;
+            if (!_selectedSpellsByLevel[_currentSpellLevel].Contains(spell.SpellId))
+                _selectedSpellsByLevel[_currentSpellLevel].Add(spell.SpellId);
+        }
+
+        LoadAvailableSpellsForLevel(_currentSpellLevel);
+        UpdateSelectedSpellsDisplay();
+        UpdateSpellSelectionCount();
+        ValidateCurrentStep();
+    }
+
+    private void OnRemoveSpellClick(object? sender, RoutedEventArgs e)
+    {
+        var selected = _selectedSpellsListBox.SelectedItems?.Cast<SpellDisplayItem>().ToList();
+        if (selected == null || selected.Count == 0) return;
+
+        if (!_selectedSpellsByLevel.ContainsKey(_currentSpellLevel)) return;
+
+        foreach (var spell in selected)
+        {
+            _selectedSpellsByLevel[_currentSpellLevel].Remove(spell.SpellId);
+        }
+
+        if (_selectedSpellsByLevel[_currentSpellLevel].Count == 0)
+            _selectedSpellsByLevel.Remove(_currentSpellLevel);
+
+        LoadAvailableSpellsForLevel(_currentSpellLevel);
+        UpdateSelectedSpellsDisplay();
+        UpdateSpellSelectionCount();
+        ValidateCurrentStep();
+    }
+
+    private void OnSpellAutoAssignClick(object? sender, RoutedEventArgs e)
+    {
+        int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
+
+        // Clear current selections
+        _selectedSpellsByLevel.Clear();
+
+        // Try to read package spell preferences
+        var preferredSpellIds = new List<int>();
+        if (_selectedPackageId != 255)
+        {
+            var spellPref2da = _gameDataService.Get2DAValue("packages", _selectedPackageId, "SpellPref2DA");
+            if (!string.IsNullOrEmpty(spellPref2da) && spellPref2da != "****")
+            {
+                for (int row = 0; row < 100; row++)
+                {
+                    var spellIdStr = _gameDataService.Get2DAValue(spellPref2da, row, "SpellIndex");
+                    if (string.IsNullOrEmpty(spellIdStr) || spellIdStr == "****")
+                        break;
+                    if (int.TryParse(spellIdStr, out int spellId))
+                        preferredSpellIds.Add(spellId);
+                }
+            }
+        }
+
+        // Get all available spells organized by level
+        var allSpellIds = _displayService.Spells.GetAllSpellIds();
+        var spellsByLevel = new Dictionary<int, List<SpellAutoAssignItem>>();
+
+        foreach (var spellId in allSpellIds)
+        {
+            var info = _displayService.Spells.GetSpellInfo(spellId);
+            if (info == null) continue;
+
+            int levelForClass = info.GetLevelForClass(classId);
+            if (levelForClass < 0 || levelForClass > _maxSpellLevelForClass) continue;
+
+            if (!spellsByLevel.ContainsKey(levelForClass))
+                spellsByLevel[levelForClass] = new List<SpellAutoAssignItem>();
+            spellsByLevel[levelForClass].Add(new SpellAutoAssignItem { Id = spellId, Name = info.Name });
+        }
+
+        // Fill each level
+        for (int level = 0; level <= _maxSpellLevelForClass; level++)
+        {
+            int maxForLevel = GetMaxSpellsForLevel(classId, level);
+            if (maxForLevel <= 0) continue;
+
+            _selectedSpellsByLevel[level] = new List<int>();
+            var availableForLevel = spellsByLevel.GetValueOrDefault(level, new List<SpellAutoAssignItem>());
+
+            // Prefer package spells first
+            foreach (var prefId in preferredSpellIds)
+            {
+                if (_selectedSpellsByLevel[level].Count >= maxForLevel) break;
+                if (availableForLevel.Any(s => s.Id == prefId) && !_selectedSpellsByLevel[level].Contains(prefId))
+                    _selectedSpellsByLevel[level].Add(prefId);
+            }
+
+            // Fill remaining with alphabetical order
+            foreach (var spell in availableForLevel.OrderBy(s => s.Name))
+            {
+                if (_selectedSpellsByLevel[level].Count >= maxForLevel) break;
+                if (!_selectedSpellsByLevel[level].Contains(spell.Id))
+                    _selectedSpellsByLevel[level].Add(spell.Id);
+            }
+        }
+
+        // Refresh display
+        LoadAvailableSpellsForLevel(_currentSpellLevel);
+        UpdateSelectedSpellsDisplay();
+        UpdateSpellSelectionCount();
+        ValidateCurrentStep();
+    }
+
+    private bool IsSpellSelectionComplete()
+    {
+        int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
+
+        for (int level = 0; level <= _maxSpellLevelForClass; level++)
+        {
+            int maxForLevel = GetMaxSpellsForLevel(classId, level);
+            if (maxForLevel <= 0) continue;
+
+            int selected = _selectedSpellsByLevel.GetValueOrDefault(level, new List<int>()).Count;
+            if (selected < maxForLevel)
+                return false;
+        }
+
+        return true;
+    }
+
+    private static string GetSchoolAbbrev(SpellSchool school) => school switch
+    {
+        SpellSchool.Abjuration => "Abj",
+        SpellSchool.Conjuration => "Con",
+        SpellSchool.Divination => "Div",
+        SpellSchool.Enchantment => "Enc",
+        SpellSchool.Evocation => "Evo",
+        SpellSchool.Illusion => "Ill",
+        SpellSchool.Necromancy => "Nec",
+        SpellSchool.Transmutation => "Tra",
+        _ => ""
+    };
+
+    #endregion
+
+    #region Step 8: Summary
+
+    private void PrepareStep8()
+    {
+        // Populate summary fields
+        _summaryFileTypeLabel.Text = _isBicFile ? "Player Character (BIC)" : "Creature Blueprint (UTC)";
+
+        var raceName = _displayService.GetRaceName(_selectedRaceId);
+        var genderName = _selectedGender == 0 ? "Male" : "Female";
+        _summaryRaceLabel.Text = $"{genderName} {raceName}";
+
+        // Appearance
+        var appName = _selectedAppearanceId > 0
+            ? _displayService.GetAppearanceName(_selectedAppearanceId)
+            : _displayService.GetAppearanceName(GetDefaultAppearanceForRace(_selectedRaceId));
+        _summaryAppearanceLabel.Text = $"{appName}, Portrait {_selectedPortraitId}";
+
+        // Class
+        if (_selectedClassId >= 0)
+        {
+            var className = _displayService.GetClassName(_selectedClassId);
+            _summaryClassLabel.Text = $"{className} (Level 1)";
+        }
+
+        // Abilities
+        var racialMods = _displayService.GetRacialModifiers(_selectedRaceId);
+        var abilityParts = new List<string>();
+        foreach (var ability in AbilityNames)
+        {
+            int baseScore = _abilityBaseScores[ability];
+            int racialMod = GetRacialModForAbility(racialMods, ability);
+            int total = baseScore + racialMod;
+            abilityParts.Add($"{ability} {total}");
+        }
+        _summaryAbilitiesLabel.Text = string.Join("  |  ", abilityParts);
+
+        // Skills
+        int skillCount = _skillRanksAllocated.Count(kvp => kvp.Value > 0);
+        int skillPointsSpent = _skillPointsTotal - GetSkillPointsRemaining();
+        if (skillCount > 0)
+        {
+            var topSkills = _skillRanksAllocated
+                .Where(kvp => kvp.Value > 0)
+                .OrderByDescending(kvp => kvp.Value)
+                .Take(5)
+                .Select(kvp => $"{_displayService.Skills.GetSkillName(kvp.Key)} ({kvp.Value})")
+                .ToList();
+            _summarySkillsLabel.Text = $"{skillPointsSpent} points in {skillCount} skills: {string.Join(", ", topSkills)}" +
+                (skillCount > 5 ? $" +{skillCount - 5} more" : "");
+        }
+        else
+        {
+            _summarySkillsLabel.Text = "No skills allocated";
+        }
+
+        // Spells
+        if (_needsSpellSelection)
+        {
+            _summarySpellsSection.IsVisible = true;
+            if (_isDivineCaster)
+            {
+                _summarySpellsLabel.Text = "All spells granted by deity (divine caster)";
+            }
+            else
+            {
+                int totalSpells = _selectedSpellsByLevel.Values.Sum(list => list.Count);
+                _summarySpellsLabel.Text = $"{totalSpells} spells selected";
+            }
+        }
+        else
+        {
+            _summarySpellsSection.IsVisible = false;
+        }
+
+        // Feats (auto-granted)
+        var grantedFeats = GetGrantedFeatIds();
+        if (grantedFeats.Count > 0)
+        {
+            var featNames = grantedFeats
+                .Select(id => _displayService.GetFeatName(id))
+                .Where(n => !string.IsNullOrEmpty(n))
+                .OrderBy(n => n)
+                .ToList();
+            _summaryFeatsLabel.Text = featNames.Count > 0
+                ? string.Join(", ", featNames)
+                : "None";
+        }
+        else
+        {
+            _summaryFeatsLabel.Text = "None";
+        }
+
+        // Palette ID visibility (UTC only)
+        bool showPalette = !_isBicFile;
+        _paletteIdLabelText.IsVisible = showPalette;
+        _paletteIdNumericUpDown.IsVisible = showPalette;
+        _paletteIdNote.IsVisible = showPalette;
+    }
+
+    private void OnCharacterNameChanged(object? sender, TextChangedEventArgs e)
+    {
+        _characterName = _characterNameTextBox.Text?.Trim() ?? "";
+
+        // Generate tag and resref from name
+        var sanitized = SanitizeForResRef(_characterName);
+        _generatedTagLabel.Text = string.IsNullOrEmpty(sanitized) ? "new_creature" : sanitized;
+        _generatedResRefLabel.Text = string.IsNullOrEmpty(sanitized) ? "new_creature" : sanitized;
+    }
+
+    private void OnSummaryEditClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is string stepStr && int.TryParse(stepStr, out int targetStep))
+        {
+            _currentStep = targetStep;
+            UpdateStepDisplay();
+        }
+    }
+
+    private static string SanitizeForResRef(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return "";
+
+        // Lowercase, replace spaces with underscores, remove non-alphanumeric/underscore
+        var sanitized = name.ToLowerInvariant()
+            .Replace(' ', '_');
+
+        var chars = sanitized.Where(c => char.IsLetterOrDigit(c) || c == '_').ToArray();
+        var result = new string(chars);
+
+        // Enforce Aurora Engine 16-char limit
+        if (result.Length > 16)
+            result = result[..16];
+
+        // Remove trailing underscores
+        result = result.TrimEnd('_');
+
+        return result;
+    }
+
+    private HashSet<int> GetGrantedFeatIds()
+    {
+        int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
+
+        var racialFeats = _displayService.Feats.GetRaceGrantedFeatIds(_selectedRaceId);
+        var classFeats = _displayService.Feats.GetClassGrantedFeatIds(classId);
+
+        var combined = new HashSet<int>(racialFeats);
+        combined.UnionWith(classFeats);
+        return combined;
+    }
+
+    #endregion
+
     #region Build Creature
 
     /// <summary>
-    /// Builds a UtcFile from the current wizard selections.
-    /// Populates race, gender, appearance, and class from Steps 1-4.
-    /// Future sprints will add stats, skills, spells, etc.
+    /// Builds a UtcFile from all wizard selections.
+    /// Populates all fields from Steps 1-8 using 2DA data.
     /// </summary>
     private UtcFile BuildCreature()
     {
-        // Determine class and hit die for HP calculation
-        int classId = _selectedClassId >= 0 ? _selectedClassId : 255; // Commoner fallback
+        int classId = _selectedClassId >= 0 ? _selectedClassId : 255;
         var hitDie = _selectedClassId >= 0
             ? _displayService.Classes.GetClassMetadata(_selectedClassId).HitDie
             : 4;
 
+        int conTotal = _abilityBaseScores["CON"] + _displayService.GetRacialModifier(_selectedRaceId, "CON");
+        int hp = Math.Max(1, hitDie + CreatureDisplayService.CalculateAbilityBonus(conTotal));
+
+        // Saving throws from class progression at level 1
+        var saves = _selectedClassId >= 0
+            ? _displayService.GetClassSaves(_selectedClassId, 1)
+            : new SavingThrows();
+
+        // Tag/ResRef from user input
+        var sanitized = SanitizeForResRef(_characterName);
+        var tag = string.IsNullOrEmpty(sanitized) ? "new_creature" : sanitized;
+        var resRef = tag;
+
+        // Palette ID from step 8
+        _paletteId = (byte)(_paletteIdNumericUpDown.Value ?? 1);
+
+        // Build class entry with spell data
+        var creatureClass = new CreatureClass
+        {
+            Class = classId,
+            ClassLevel = 1
+        };
+
+        // Populate spells on the class
+        PopulateClassSpells(creatureClass, classId);
+
+        // FirstName
+        var firstName = new CExoLocString { StrRef = 0xFFFFFFFF };
+        if (!string.IsNullOrEmpty(_characterName))
+        {
+            firstName.LocalizedStrings[0] = _characterName; // English (language 0)
+        }
+
         return new UtcFile
         {
-            // Identity
-            FirstName = new CExoLocString { StrRef = 0xFFFFFFFF },
+            // Identity (Step 8)
+            FirstName = firstName,
             LastName = new CExoLocString { StrRef = 0xFFFFFFFF },
-            Tag = "new_creature",
-            TemplateResRef = "new_creature",
+            Tag = tag,
+            TemplateResRef = resRef,
             Description = new CExoLocString { StrRef = 0xFFFFFFFF },
+            PaletteID = _isBicFile ? (byte)0 : _paletteId,
 
-            // Palette
-            PaletteID = 1,
-
-            // Race & gender from Step 2
+            // Race & gender (Step 2)
             Race = _selectedRaceId,
             Gender = _selectedGender,
 
-            // Appearance from Step 3
+            // Appearance (Step 3)
             AppearanceType = _selectedAppearanceId > 0 ? _selectedAppearanceId : GetDefaultAppearanceForRace(_selectedRaceId),
             Phenotype = _selectedPhenotype,
             PortraitId = _selectedPortraitId,
 
-            // Body parts from Step 3
+            // Body parts (Step 3)
             AppearanceHead = _headVariation,
             BodyPart_Neck = _neckVariation,
             BodyPart_Torso = _torsoVariation,
@@ -1927,13 +2601,13 @@ public partial class NewCharacterWizardWindow : Window
             BodyPart_LFoot = _lFootVariation,
             BodyPart_RFoot = _rFootVariation,
 
-            // Colors from Step 3
+            // Colors (Step 3)
             Color_Skin = _skinColor,
             Color_Hair = _hairColor,
             Color_Tattoo1 = _tattoo1Color,
             Color_Tattoo2 = _tattoo2Color,
 
-            // Ability scores from Step 5 (base + racial modifiers applied to base)
+            // Ability scores (Step 5) — base scores only, game applies racial mods
             Str = (byte)_abilityBaseScores["STR"],
             Dex = (byte)_abilityBaseScores["DEX"],
             Con = (byte)_abilityBaseScores["CON"],
@@ -1941,15 +2615,17 @@ public partial class NewCharacterWizardWindow : Window
             Wis = (byte)_abilityBaseScores["WIS"],
             Cha = (byte)_abilityBaseScores["CHA"],
 
-            // HP based on class hit die + CON modifier
-            HitPoints = (short)Math.Max(1, hitDie + CreatureDisplayService.CalculateAbilityBonus(
-                _abilityBaseScores["CON"] + _displayService.GetRacialModifier(_selectedRaceId, "CON"))),
-            CurrentHitPoints = (short)Math.Max(1, hitDie + CreatureDisplayService.CalculateAbilityBonus(
-                _abilityBaseScores["CON"] + _displayService.GetRacialModifier(_selectedRaceId, "CON"))),
-            MaxHitPoints = (short)Math.Max(1, hitDie + CreatureDisplayService.CalculateAbilityBonus(
-                _abilityBaseScores["CON"] + _displayService.GetRacialModifier(_selectedRaceId, "CON"))),
+            // HP (hit die + CON mod at level 1)
+            HitPoints = (short)hp,
+            CurrentHitPoints = (short)hp,
+            MaxHitPoints = (short)hp,
 
-            // Alignment - True Neutral
+            // Saving throws from class (level 1)
+            FortBonus = (short)saves.Fortitude,
+            RefBonus = (short)saves.Reflex,
+            WillBonus = (short)saves.Will,
+
+            // Alignment — True Neutral
             GoodEvil = 50,
             LawfulChaotic = 50,
 
@@ -1960,26 +2636,44 @@ public partial class NewCharacterWizardWindow : Window
             DecayTime = 5000,
             Interruptable = true,
 
-            // Starting package
+            // Starting package (Step 4)
             StartingPackage = _selectedPackageId != 255 ? _selectedPackageId : (byte)0,
 
-            // Class from Step 4
-            ClassList = new List<CreatureClass>
-            {
-                new CreatureClass
-                {
-                    Class = classId,
-                    ClassLevel = 1
-                }
-            },
+            // Class (Step 4) with spells (Step 7)
+            ClassList = new List<CreatureClass> { creatureClass },
 
-            // Empty lists (will be populated by future steps)
-            FeatList = new List<ushort>(),
+            // Feats: granted by race + class
+            FeatList = GetGrantedFeatIds().Select(id => (ushort)id).ToList(),
+
+            // Skills (Step 6)
             SkillList = BuildSkillList_ForCreature(),
+
+            // Empty lists
             SpecAbilityList = new List<SpecialAbility>(),
             ItemList = new List<InventoryItem>(),
             EquipItemList = new List<EquippedItem>()
         };
+    }
+
+    private void PopulateClassSpells(CreatureClass creatureClass, int classId)
+    {
+        if (!_needsSpellSelection || _isDivineCaster)
+            return;
+
+        foreach (var (spellLevel, spellIds) in _selectedSpellsByLevel)
+        {
+            if (spellLevel < 0 || spellLevel >= 10) continue;
+
+            foreach (var spellId in spellIds)
+            {
+                creatureClass.KnownSpells[spellLevel].Add(new KnownSpell
+                {
+                    Spell = (ushort)spellId,
+                    SpellFlags = 0x01, // Readied
+                    SpellMetaMagic = 0
+                });
+            }
+        }
     }
 
     /// <summary>
@@ -2040,6 +2734,19 @@ public partial class NewCharacterWizardWindow : Window
         public int MaxRanks { get; set; }
         public int AllocatedRanks { get; set; }
         public int Cost { get; set; } = 1;
+    }
+
+    private class SpellDisplayItem
+    {
+        public int SpellId { get; set; }
+        public string Name { get; set; } = "";
+        public string SchoolAbbrev { get; set; } = "";
+    }
+
+    private class SpellAutoAssignItem
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
     }
 
     #endregion

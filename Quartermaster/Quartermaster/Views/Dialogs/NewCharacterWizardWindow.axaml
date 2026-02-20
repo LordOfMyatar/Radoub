@@ -854,28 +854,277 @@
                 </Border>
             </Grid>
 
-            <!-- Step 7: Spells (placeholder) -->
+            <!-- Step 7: Spells -->
             <Grid x:Name="Step7Panel" IsVisible="False">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="Spells" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
-                <TextBlock Grid.Row="1" Text="Spell selection coming in Sprint 4."
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                           VerticalAlignment="Center" HorizontalAlignment="Center"/>
-            </Grid>
-
-            <!-- Step 8: Summary (placeholder) -->
-            <Grid x:Name="Step8Panel" IsVisible="False">
-                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="Summary" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
-                <TextBlock Grid.Row="1" Text="Summary and character creation coming in Sprint 4."
+
+                <TextBlock Grid.Row="0" Text="Select Spells" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="1" x:Name="SpellStepDescription"
+                           Text="Choose spells known for your class."
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                           VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                           TextWrapping="Wrap" Margin="0,0,0,15"/>
+
+                <!-- Spell Level Tabs + Selection Counter + Auto-Assign -->
+                <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        Padding="12" CornerRadius="4" Margin="0,0,0,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" x:Name="SpellLevelTabsPanel" Orientation="Horizontal" Spacing="4"/>
+                        <TextBlock Grid.Column="1" x:Name="SpellSelectionCountLabel" VerticalAlignment="Center"
+                                   FontWeight="Bold" Margin="10,0"/>
+                        <Button Grid.Column="2" x:Name="SpellAutoAssignButton" Content="Auto-Assign" Click="OnSpellAutoAssignClick"/>
+                    </Grid>
+                </Border>
+
+                <!-- Two-panel spell selection -->
+                <Grid Grid.Row="3">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="60"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Available Spells -->
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="Available Spells" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox Grid.Row="1" x:Name="SpellSearchBox" Watermark="Filter spells..."
+                                 Margin="0,0,0,5" TextChanged="OnSpellSearchChanged"/>
+                        <Border Grid.Row="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                BorderThickness="1">
+                            <ListBox x:Name="AvailableSpellsListBox" SelectionMode="Multiple,Toggle">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="4,2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding SchoolAbbrev}" FontSize="10"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                       VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
+                    </Grid>
+
+                    <!-- Center: Add/Remove Buttons -->
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="8">
+                        <Button x:Name="AddSpellButton" Content="▶" Width="40" HorizontalContentAlignment="Center"
+                                Click="OnAddSpellClick" ToolTip.Tip="Add selected spell(s)"/>
+                        <Button x:Name="RemoveSpellButton" Content="◀" Width="40" HorizontalContentAlignment="Center"
+                                Click="OnRemoveSpellClick" ToolTip.Tip="Remove selected spell(s)"/>
+                    </StackPanel>
+
+                    <!-- Right: Selected Spells -->
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,5">
+                            <TextBlock Text="Selected Spells" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="SelectedSpellCountLabel" Text="(0 / 0)"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Border Grid.Row="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                BorderThickness="1" Margin="0,25,0,0">
+                            <ListBox x:Name="SelectedSpellsListBox" SelectionMode="Multiple,Toggle">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="4,2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding SchoolAbbrev}" FontSize="10"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                       VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
+                    </Grid>
+                </Grid>
+
+                <!-- Divine caster info overlay (shown instead of two-panel for divine casters) -->
+                <Border Grid.Row="3" x:Name="DivineSpellInfoPanel" IsVisible="False"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                        BorderThickness="1" Padding="20">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="10">
+                        <TextBlock x:Name="DivineSpellInfoLabel" TextWrapping="Wrap" TextAlignment="Center"
+                                   FontSize="14"/>
+                        <TextBlock Text="No spell selection is needed — your spells will be available automatically."
+                                   TextWrapping="Wrap" TextAlignment="Center"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Step 8: Summary & Create -->
+            <Grid x:Name="Step8Panel" IsVisible="False">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="Review &amp; Create" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="1" Text="Review your choices, enter a name, and create your character."
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           TextWrapping="Wrap" Margin="0,0,0,15"/>
+
+                <ScrollViewer Grid.Row="2">
+                    <StackPanel Spacing="10">
+                        <!-- Name & Identity -->
+                        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                                Padding="12" CornerRadius="4">
+                            <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="100,*,Auto" RowSpacing="8" ColumnSpacing="10">
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Name:" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <TextBox Grid.Row="0" Grid.Column="1" x:Name="CharacterNameTextBox"
+                                         Watermark="Enter character name..."
+                                         TextChanged="OnCharacterNameChanged"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Tag:" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="GeneratedTagLabel" Text="new_creature"
+                                           VerticalAlignment="Center"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="ResRef:" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" x:Name="GeneratedResRefLabel" Text="new_creature"
+                                           VerticalAlignment="Center"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" x:Name="PaletteIdLabelText" Text="Palette ID:" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                <NumericUpDown Grid.Row="3" Grid.Column="1" x:Name="PaletteIdNumericUpDown"
+                                               Minimum="0" Maximum="255" Value="1" FormatString="0"
+                                               Width="80" HorizontalAlignment="Left"/>
+                                <TextBlock Grid.Row="3" Grid.Column="2" x:Name="PaletteIdNote" Text="(UTC only)"
+                                           VerticalAlignment="Center" FontSize="11"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Summary Sections -->
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                BorderThickness="1" Padding="12" CornerRadius="4">
+                            <StackPanel Spacing="12">
+                                <!-- File Type -->
+                                <Grid ColumnDefinitions="120,*,Auto">
+                                    <TextBlock Grid.Column="0" Text="File Type:" FontWeight="Bold"/>
+                                    <TextBlock Grid.Column="1" x:Name="SummaryFileTypeLabel"/>
+                                    <Button Grid.Column="2" Content="[Edit]" Classes="hyperlink"
+                                            Tag="1" Click="OnSummaryEditClick" Cursor="Hand"
+                                            Background="Transparent" BorderThickness="0" Padding="2"
+                                            Foreground="{DynamicResource SystemAccentColor}"/>
+                                </Grid>
+
+                                <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+
+                                <!-- Race & Sex -->
+                                <Grid ColumnDefinitions="120,*,Auto">
+                                    <TextBlock Grid.Column="0" Text="Race &amp; Sex:" FontWeight="Bold"/>
+                                    <TextBlock Grid.Column="1" x:Name="SummaryRaceLabel"/>
+                                    <Button Grid.Column="2" Content="[Edit]" Classes="hyperlink"
+                                            Tag="2" Click="OnSummaryEditClick" Cursor="Hand"
+                                            Background="Transparent" BorderThickness="0" Padding="2"
+                                            Foreground="{DynamicResource SystemAccentColor}"/>
+                                </Grid>
+
+                                <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+
+                                <!-- Appearance -->
+                                <Grid ColumnDefinitions="120,*,Auto">
+                                    <TextBlock Grid.Column="0" Text="Appearance:" FontWeight="Bold"/>
+                                    <TextBlock Grid.Column="1" x:Name="SummaryAppearanceLabel" TextWrapping="Wrap"/>
+                                    <Button Grid.Column="2" Content="[Edit]" Classes="hyperlink"
+                                            Tag="3" Click="OnSummaryEditClick" Cursor="Hand"
+                                            Background="Transparent" BorderThickness="0" Padding="2"
+                                            Foreground="{DynamicResource SystemAccentColor}"/>
+                                </Grid>
+
+                                <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+
+                                <!-- Class -->
+                                <Grid ColumnDefinitions="120,*,Auto">
+                                    <TextBlock Grid.Column="0" Text="Class:" FontWeight="Bold"/>
+                                    <TextBlock Grid.Column="1" x:Name="SummaryClassLabel"/>
+                                    <Button Grid.Column="2" Content="[Edit]" Classes="hyperlink"
+                                            Tag="4" Click="OnSummaryEditClick" Cursor="Hand"
+                                            Background="Transparent" BorderThickness="0" Padding="2"
+                                            Foreground="{DynamicResource SystemAccentColor}"/>
+                                </Grid>
+
+                                <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+
+                                <!-- Abilities -->
+                                <Grid ColumnDefinitions="120,*,Auto">
+                                    <TextBlock Grid.Column="0" Text="Abilities:" FontWeight="Bold"/>
+                                    <TextBlock Grid.Column="1" x:Name="SummaryAbilitiesLabel" TextWrapping="Wrap"/>
+                                    <Button Grid.Column="2" Content="[Edit]" Classes="hyperlink"
+                                            Tag="5" Click="OnSummaryEditClick" Cursor="Hand"
+                                            Background="Transparent" BorderThickness="0" Padding="2"
+                                            Foreground="{DynamicResource SystemAccentColor}"/>
+                                </Grid>
+
+                                <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+
+                                <!-- Skills -->
+                                <Grid ColumnDefinitions="120,*,Auto">
+                                    <TextBlock Grid.Column="0" Text="Skills:" FontWeight="Bold"/>
+                                    <TextBlock Grid.Column="1" x:Name="SummarySkillsLabel" TextWrapping="Wrap"/>
+                                    <Button Grid.Column="2" Content="[Edit]" Classes="hyperlink"
+                                            Tag="6" Click="OnSummaryEditClick" Cursor="Hand"
+                                            Background="Transparent" BorderThickness="0" Padding="2"
+                                            Foreground="{DynamicResource SystemAccentColor}"/>
+                                </Grid>
+
+                                <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+
+                                <!-- Spells -->
+                                <Grid ColumnDefinitions="120,*,Auto" x:Name="SummarySpellsSection">
+                                    <TextBlock Grid.Column="0" Text="Spells:" FontWeight="Bold"/>
+                                    <TextBlock Grid.Column="1" x:Name="SummarySpellsLabel" TextWrapping="Wrap"/>
+                                    <Button Grid.Column="2" Content="[Edit]" Classes="hyperlink"
+                                            Tag="7" Click="OnSummaryEditClick" Cursor="Hand"
+                                            Background="Transparent" BorderThickness="0" Padding="2"
+                                            Foreground="{DynamicResource SystemAccentColor}"/>
+                                </Grid>
+
+                                <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+
+                                <!-- Feats (auto-granted, read-only) -->
+                                <StackPanel>
+                                    <TextBlock Text="Granted Feats:" FontWeight="Bold" Margin="0,0,0,4"/>
+                                    <TextBlock x:Name="SummaryFeatsLabel" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
             </Grid>
 
         </Grid>
