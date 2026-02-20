@@ -116,20 +116,34 @@
                 <Border x:Name="Step6Border" Classes="step-indicator">
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <TextBlock x:Name="Step6Number" Text="6" FontWeight="Bold" Width="20"/>
-                        <TextBlock Text="Skills"/>
+                        <TextBlock Text="Feats"/>
                     </StackPanel>
                 </Border>
 
                 <Border x:Name="Step7Border" Classes="step-indicator">
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <TextBlock x:Name="Step7Number" Text="7" FontWeight="Bold" Width="20"/>
-                        <TextBlock Text="Spells"/>
+                        <TextBlock Text="Skills"/>
                     </StackPanel>
                 </Border>
 
                 <Border x:Name="Step8Border" Classes="step-indicator">
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <TextBlock x:Name="Step8Number" Text="8" FontWeight="Bold" Width="20"/>
+                        <TextBlock Text="Spells"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="Step9Border" Classes="step-indicator">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock x:Name="Step9Number" Text="9" FontWeight="Bold" Width="20"/>
+                        <TextBlock Text="Equipment"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="Step10Border" Classes="step-indicator">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock x:Name="Step10Number" Text="10" FontWeight="Bold" Width="20"/>
                         <TextBlock Text="Summary"/>
                     </StackPanel>
                 </Border>
@@ -784,8 +798,121 @@
                 </Border>
             </Grid>
 
-            <!-- Step 6: Skills -->
+            <!-- Step 6: Feats -->
             <Grid x:Name="Step6Panel" IsVisible="False">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="Select Feats" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="1" x:Name="FeatStepDescription"
+                           Text="Choose your starting feats. Granted feats from your race and class are pre-selected."
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           TextWrapping="Wrap" Margin="0,0,0,15"/>
+
+                <!-- Feat Selection Counter + Auto-Assign -->
+                <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        Padding="12" CornerRadius="4" Margin="0,0,0,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Feats to Choose:" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="FeatSelectionCountLabel" Text="0 / 0" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" x:Name="FeatAutoAssignButton" Content="Auto-Assign" Click="OnFeatAutoAssignClick"/>
+                    </Grid>
+                </Border>
+
+                <!-- Two-panel feat selection -->
+                <Grid Grid.Row="3">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="60"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Available Feats -->
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="Available Feats" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox Grid.Row="1" x:Name="FeatSearchBox" Watermark="Filter feats..."
+                                 Margin="0,0,0,5" TextChanged="OnFeatSearchChanged"/>
+                        <Border Grid.Row="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                BorderThickness="1">
+                            <ListBox x:Name="AvailableFeatsListBox" SelectionMode="Multiple,Toggle">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="4,2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding CategoryAbbrev}" FontSize="10"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                       VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
+                    </Grid>
+
+                    <!-- Center: Add/Remove Buttons -->
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="8">
+                        <Button x:Name="AddFeatButton" Content="▶" Width="40" HorizontalContentAlignment="Center"
+                                Click="OnAddFeatClick" ToolTip.Tip="Add selected feat(s)"/>
+                        <Button x:Name="RemoveFeatButton" Content="◀" Width="40" HorizontalContentAlignment="Center"
+                                Click="OnRemoveFeatClick" ToolTip.Tip="Remove selected feat(s)"/>
+                    </StackPanel>
+
+                    <!-- Right: Selected Feats -->
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,5">
+                            <TextBlock Text="Selected Feats" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="SelectedFeatCountLabel" Text="(0 chosen + 0 granted)"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Border Grid.Row="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                BorderThickness="1" Margin="0,25,0,0">
+                            <ListBox x:Name="SelectedFeatsListBox" SelectionMode="Multiple,Toggle">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="4,2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding SourceLabel}" FontSize="10"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                       VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Grid>
+
+            <!-- Step 7: Skills -->
+            <Grid x:Name="Step7Panel" IsVisible="False">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -854,8 +981,8 @@
                 </Border>
             </Grid>
 
-            <!-- Step 7: Spells -->
-            <Grid x:Name="Step7Panel" IsVisible="False">
+            <!-- Step 8: Spells -->
+            <Grid x:Name="Step8Panel" IsVisible="False">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -980,8 +1107,79 @@
                 </Border>
             </Grid>
 
-            <!-- Step 8: Summary & Create -->
-            <Grid x:Name="Step8Panel" IsVisible="False">
+            <!-- Step 9: Starting Equipment -->
+            <Grid x:Name="Step9Panel" IsVisible="False">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="Starting Equipment" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="1" x:Name="EquipmentStepDescription"
+                           Text="Equip your character with starting gear from the package defaults, or skip to equip later."
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           TextWrapping="Wrap" Margin="0,0,0,15"/>
+
+                <!-- Equipment Actions -->
+                <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        Padding="12" CornerRadius="4" Margin="0,0,0,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Items:" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="EquipmentCountLabel" Text="0 items" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" x:Name="LoadPackageEquipmentButton" Content="Load Package Defaults"
+                                Click="OnLoadPackageEquipmentClick" Margin="0,0,8,0"/>
+                        <Button Grid.Column="2" x:Name="ClearEquipmentButton" Content="Clear All" Click="OnClearEquipmentClick"/>
+                    </Grid>
+                </Border>
+
+                <!-- Equipment List -->
+                <Border Grid.Row="3" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                        BorderThickness="1" Padding="12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Header -->
+                        <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="12,6" Margin="0,0,0,4">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="120"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Item" FontWeight="Bold"/>
+                                <TextBlock Grid.Column="1" Text="Slot" FontWeight="Bold"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Equipment Items -->
+                        <ScrollViewer Grid.Row="1">
+                            <StackPanel x:Name="EquipmentItemsPanel" Spacing="2"/>
+                        </ScrollViewer>
+
+                        <!-- Empty state message -->
+                        <TextBlock x:Name="EquipmentEmptyLabel" Grid.Row="1"
+                                   Text="No equipment selected. Click 'Load Package Defaults' to auto-equip, or skip this step to equip later in the editor."
+                                   TextWrapping="Wrap" FontStyle="Italic"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Margin="20"/>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- Step 10: Summary & Create -->
+            <Grid x:Name="Step10Panel" IsVisible="False">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -1091,12 +1289,24 @@
 
                                 <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
 
+                                <!-- Feats -->
+                                <Grid ColumnDefinitions="120,*,Auto">
+                                    <TextBlock Grid.Column="0" Text="Feats:" FontWeight="Bold"/>
+                                    <TextBlock Grid.Column="1" x:Name="SummaryFeatsLabel" TextWrapping="Wrap"/>
+                                    <Button Grid.Column="2" Content="[Edit]" Classes="hyperlink"
+                                            Tag="6" Click="OnSummaryEditClick" Cursor="Hand"
+                                            Background="Transparent" BorderThickness="0" Padding="2"
+                                            Foreground="{DynamicResource SystemAccentColor}"/>
+                                </Grid>
+
+                                <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+
                                 <!-- Skills -->
                                 <Grid ColumnDefinitions="120,*,Auto">
                                     <TextBlock Grid.Column="0" Text="Skills:" FontWeight="Bold"/>
                                     <TextBlock Grid.Column="1" x:Name="SummarySkillsLabel" TextWrapping="Wrap"/>
                                     <Button Grid.Column="2" Content="[Edit]" Classes="hyperlink"
-                                            Tag="6" Click="OnSummaryEditClick" Cursor="Hand"
+                                            Tag="7" Click="OnSummaryEditClick" Cursor="Hand"
                                             Background="Transparent" BorderThickness="0" Padding="2"
                                             Foreground="{DynamicResource SystemAccentColor}"/>
                                 </Grid>
@@ -1108,19 +1318,22 @@
                                     <TextBlock Grid.Column="0" Text="Spells:" FontWeight="Bold"/>
                                     <TextBlock Grid.Column="1" x:Name="SummarySpellsLabel" TextWrapping="Wrap"/>
                                     <Button Grid.Column="2" Content="[Edit]" Classes="hyperlink"
-                                            Tag="7" Click="OnSummaryEditClick" Cursor="Hand"
+                                            Tag="8" Click="OnSummaryEditClick" Cursor="Hand"
                                             Background="Transparent" BorderThickness="0" Padding="2"
                                             Foreground="{DynamicResource SystemAccentColor}"/>
                                 </Grid>
 
                                 <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
 
-                                <!-- Feats (auto-granted, read-only) -->
-                                <StackPanel>
-                                    <TextBlock Text="Granted Feats:" FontWeight="Bold" Margin="0,0,0,4"/>
-                                    <TextBlock x:Name="SummaryFeatsLabel" TextWrapping="Wrap"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
-                                </StackPanel>
+                                <!-- Equipment -->
+                                <Grid ColumnDefinitions="120,*,Auto" x:Name="SummaryEquipmentSection">
+                                    <TextBlock Grid.Column="0" Text="Equipment:" FontWeight="Bold"/>
+                                    <TextBlock Grid.Column="1" x:Name="SummaryEquipmentLabel" TextWrapping="Wrap"/>
+                                    <Button Grid.Column="2" Content="[Edit]" Classes="hyperlink"
+                                            Tag="9" Click="OnSummaryEditClick" Cursor="Hand"
+                                            Background="Transparent" BorderThickness="0" Padding="2"
+                                            Foreground="{DynamicResource SystemAccentColor}"/>
+                                </Grid>
                             </StackPanel>
                         </Border>
                     </StackPanel>
