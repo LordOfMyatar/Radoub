@@ -15,15 +15,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: New Character Wizard - Steps 5-6 (Abilities & Skills) (#1410)
 
-- [ ] Step 5: Ability Scores — 6-row grid (STR/DEX/CON/INT/WIS/CHA) with [-][+] buttons, Base/Racial/Final/Modifier columns
-- [ ] Point-buy system: 30 points, base 8, cap 18 with cost table
-- [ ] Points remaining counter with color feedback
-- [ ] Racial modifiers display (green/warning via BrushManager)
-- [ ] Step 6: Skills — Skill allocation grid with [-][+] buttons, class/cross-class distinction
-- [ ] Cross-class skills cost 2 points, class skills cost 1
-- [ ] Skill points formula: (ClassSkillPointBase + INT modifier) × 4 at level 1
-- [ ] Auto-Assign buttons for both steps — reads package preferences
-- [ ] Prestige prerequisite advisory banner on ability scores
+- [x] Step 5: Ability Scores — 6-row grid (STR/DEX/CON/INT/WIS/CHA) with [-][+] buttons, Base/Racial/Final/Modifier/Cost columns
+- [x] Point-buy system: 30 points, base 8, cap 18 with cost table
+- [x] Points remaining counter with color feedback (green/neutral/error)
+- [x] Racial modifiers display (green/warning via BrushManager)
+- [x] Step 6: Skills — Skill allocation grid with [-][+] buttons, class/cross-class distinction, search filter
+- [x] Cross-class skills cost 2 points, class skills cost 1; unavailable skills grayed out
+- [x] Skill points formula: (ClassSkillPointBase + INT modifier) × 4 at level 1 (+4 for Human)
+- [x] Auto-Assign buttons for both steps — abilities from package `Attribute` column, skills from `SkillPref2DA`
+- [x] Prestige prerequisite advisory banner on ability scores
+- [x] HP calculation includes CON modifier from assigned ability scores
+- [x] BuildCreature() outputs ability scores and skill list from wizard state
 
 ---
 
