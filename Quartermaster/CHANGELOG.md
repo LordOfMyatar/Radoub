@@ -15,19 +15,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: New Character Wizard - Steps 7-8 (Spells & Summary) (#1411)
 
-- [ ] Step 7: Spells — Skip for non-casters via `PrepareCurrentStep()` recursion
-- [ ] Spontaneous casters (Bard, Sorcerer): select known spells up to `GetSpellsKnownLimit()`
-- [ ] Divine casters (Cleric, Druid): auto-granted, show informational list
-- [ ] Wizard class: select spellbook spells
-- [ ] Two-panel UI: available spells (filtered by class + level, with search) ↔ selected spells
-- [ ] Auto-Assign button reads `packsp*.2da` spell preferences
-- [ ] Step 8: Summary & Create — Read-only review with [Edit] links to navigate back
-- [ ] Name field (FirstName) + auto-generated Tag/ResRef (16-char limit, lowercase, underscores)
-- [ ] UTC: PaletteID selection
-- [ ] BuildCreature() method — produces complete UtcFile with all wizard selections
-- [ ] Granted feats from race + class (via FeatService)
-- [ ] Proper SkillList sizing, SpellList population
-- [ ] All UtcFile fields set from 2DA data (no hardcoded defaults)
+- [x] Step 7: Spells — Skip for non-casters via `PrepareCurrentStep()` recursion
+- [x] Spontaneous casters (Bard, Sorcerer): select known spells up to `GetSpellsKnownLimit()`
+- [x] Divine casters (Cleric, Druid): auto-granted, show informational list
+- [x] Wizard class: select spellbook spells
+- [x] Two-panel UI: available spells (filtered by class + level, with search) ↔ selected spells
+- [x] Auto-Assign button reads `packsp*.2da` spell preferences
+- [x] Step 8: Summary & Create — Read-only review with [Edit] links to navigate back
+- [x] Name field (FirstName) + auto-generated Tag/ResRef (16-char limit, lowercase, underscores)
+- [x] UTC: PaletteID selection
+- [x] BuildCreature() method — produces complete UtcFile with all wizard selections
+- [x] Granted feats from race + class (via FeatService)
+- [x] Proper SkillList sizing, SpellList population
+- [x] All UtcFile fields set from 2DA data (no hardcoded defaults)
 
 ---
 
