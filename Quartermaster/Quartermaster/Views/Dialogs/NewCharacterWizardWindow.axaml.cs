@@ -1268,7 +1268,7 @@ public partial class NewCharacterWizardWindow : Window
             {
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Foreground = new SolidColorBrush(Colors.Gray),
+                Foreground = this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush,
                 Tag = $"Cost_{ability}"
             };
             Grid.SetColumn(costLabel, 7);
@@ -1639,15 +1639,14 @@ public partial class NewCharacterWizardWindow : Window
                 Opacity = skill.IsUnavailable ? 0.4 : 1.0
             };
 
-            // Skill name
+            // Skill name — class skills in green, cross-class uses theme default
             var nameLabel = new TextBlock
             {
                 Text = skill.Name,
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Foreground = skill.IsClassSkill
-                    ? BrushManager.GetSuccessBrush(this)
-                    : null
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
             };
+            if (skill.IsClassSkill)
+                nameLabel.Foreground = BrushManager.GetSuccessBrush(this);
             Grid.SetColumn(nameLabel, 0);
             row.Children.Add(nameLabel);
 
@@ -1657,7 +1656,7 @@ public partial class NewCharacterWizardWindow : Window
                 Text = skill.KeyAbility,
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Foreground = new SolidColorBrush(Colors.Gray),
+                Foreground = this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush,
                 FontSize = 11
             };
             Grid.SetColumn(keyLabel, 1);
@@ -1695,9 +1694,10 @@ public partial class NewCharacterWizardWindow : Window
                 Text = skill.AllocatedRanks > 0 ? skill.AllocatedRanks.ToString() : "—",
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                FontWeight = skill.AllocatedRanks > 0 ? FontWeight.Bold : FontWeight.Normal,
-                Foreground = skill.AllocatedRanks > 0 ? BrushManager.GetSuccessBrush(this) : null
+                FontWeight = skill.AllocatedRanks > 0 ? FontWeight.Bold : FontWeight.Normal
             };
+            if (skill.AllocatedRanks > 0)
+                ranksLabel.Foreground = BrushManager.GetSuccessBrush(this);
             Grid.SetColumn(ranksLabel, 4);
             row.Children.Add(ranksLabel);
 
@@ -1707,7 +1707,7 @@ public partial class NewCharacterWizardWindow : Window
                 Text = skill.IsUnavailable ? "—" : skill.MaxRanks.ToString(),
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Foreground = new SolidColorBrush(Colors.Gray)
+                Foreground = this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush
             };
             Grid.SetColumn(maxLabel, 5);
             row.Children.Add(maxLabel);
@@ -1718,7 +1718,7 @@ public partial class NewCharacterWizardWindow : Window
                 Text = skill.IsUnavailable ? "Unavailable" : skill.IsClassSkill ? "Class (1 pt)" : "Cross-class (2 pts)",
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
                 FontSize = 11,
-                Foreground = new SolidColorBrush(Colors.Gray)
+                Foreground = this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush
             };
             Grid.SetColumn(typeLabel, 6);
             row.Children.Add(typeLabel);
