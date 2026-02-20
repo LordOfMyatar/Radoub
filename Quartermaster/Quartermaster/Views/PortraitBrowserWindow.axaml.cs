@@ -69,6 +69,44 @@ public partial class PortraitBrowserWindow : Window
         LoadPortraits();
     }
 
+    /// <summary>
+    /// Pre-selects the race and gender filters before the window is shown.
+    /// Call after construction, before ShowDialog.
+    /// </summary>
+    /// <param name="raceId">Race ID to filter by, or -1 for all races</param>
+    /// <param name="gender">0=Male, 1=Female, or -1 for all</param>
+    public void SetInitialFilters(int raceId, int gender)
+    {
+        // Find and select the matching race filter item
+        if (raceId >= 0)
+        {
+            for (int i = 0; i < _raceFilterComboBox.Items.Count; i++)
+            {
+                if (_raceFilterComboBox.Items[i] is ComboBoxItem item && item.Tag is int tag && tag == raceId)
+                {
+                    _raceFilterComboBox.SelectedIndex = i;
+                    break;
+                }
+            }
+        }
+
+        // Find and select the matching gender filter item
+        if (gender >= 0)
+        {
+            for (int i = 0; i < _genderFilterComboBox.Items.Count; i++)
+            {
+                if (_genderFilterComboBox.Items[i] is ComboBoxItem item && item.Tag is int tag && tag == gender)
+                {
+                    _genderFilterComboBox.SelectedIndex = i;
+                    break;
+                }
+            }
+        }
+
+        // Refresh the list with new filters
+        UpdatePortraitList();
+    }
+
     private void InitializeComponent()
     {
         AvaloniaXamlLoader.Load(this);

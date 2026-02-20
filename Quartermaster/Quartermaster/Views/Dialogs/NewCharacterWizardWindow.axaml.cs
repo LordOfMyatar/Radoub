@@ -44,12 +44,31 @@ public partial class NewCharacterWizardWindow : Window
     private int _selectedPhenotype;
     private ushort _selectedPortraitId = 1;
     private byte _headVariation = 1;
+    private byte _neckVariation = 1;
+    private byte _torsoVariation = 1;
+    private byte _pelvisVariation = 1;
+    private byte _beltVariation;
+    private byte _lShoulVariation;
+    private byte _rShoulVariation;
+    private byte _lBicepVariation = 1;
+    private byte _rBicepVariation = 1;
+    private byte _lFArmVariation = 1;
+    private byte _rFArmVariation = 1;
+    private byte _lHandVariation = 1;
+    private byte _rHandVariation = 1;
+    private byte _lThighVariation = 1;
+    private byte _rThighVariation = 1;
+    private byte _lShinVariation = 1;
+    private byte _rShinVariation = 1;
+    private byte _lFootVariation = 1;
+    private byte _rFootVariation = 1;
     private byte _skinColor;
     private byte _hairColor;
     private byte _tattoo1Color;
     private byte _tattoo2Color;
     private bool _isPartBased;
     private bool _step3Loaded;
+    private PaletteColorService? _paletteColorService;
 
     // Step 4: Class & Package
     private int _selectedClassId = -1;
@@ -99,11 +118,34 @@ public partial class NewCharacterWizardWindow : Window
     private readonly Image _portraitPreviewImage;
     private readonly TextBlock _portraitNameLabel;
     private readonly NumericUpDown _headNumericUpDown;
+    private readonly NumericUpDown _neckNumericUpDown;
+    private readonly NumericUpDown _torsoNumericUpDown;
+    private readonly NumericUpDown _pelvisNumericUpDown;
+    private readonly NumericUpDown _beltNumericUpDown;
+    private readonly NumericUpDown _lShoulNumericUpDown;
+    private readonly NumericUpDown _rShoulNumericUpDown;
+    private readonly NumericUpDown _lBicepNumericUpDown;
+    private readonly NumericUpDown _rBicepNumericUpDown;
+    private readonly NumericUpDown _lFArmNumericUpDown;
+    private readonly NumericUpDown _rFArmNumericUpDown;
+    private readonly NumericUpDown _lHandNumericUpDown;
+    private readonly NumericUpDown _rHandNumericUpDown;
+    private readonly NumericUpDown _lThighNumericUpDown;
+    private readonly NumericUpDown _rThighNumericUpDown;
+    private readonly NumericUpDown _lShinNumericUpDown;
+    private readonly NumericUpDown _rShinNumericUpDown;
+    private readonly NumericUpDown _lFootNumericUpDown;
+    private readonly NumericUpDown _rFootNumericUpDown;
     private readonly NumericUpDown _skinColorNumericUpDown;
     private readonly NumericUpDown _hairColorNumericUpDown;
     private readonly NumericUpDown _tattoo1ColorNumericUpDown;
     private readonly NumericUpDown _tattoo2ColorNumericUpDown;
+    private readonly Border _skinColorSwatch;
+    private readonly Border _hairColorSwatch;
+    private readonly Border _tattoo1ColorSwatch;
+    private readonly Border _tattoo2ColorSwatch;
     private readonly TextBlock _bodyPartsNotApplicableLabel;
+    private readonly StackPanel _bodyPartsContent;
     private readonly Grid _bodyPartsPanel;
 
     // Step 4 controls
@@ -213,12 +255,38 @@ public partial class NewCharacterWizardWindow : Window
         _portraitPreviewImage = this.FindControl<Image>("PortraitPreviewImage")!;
         _portraitNameLabel = this.FindControl<TextBlock>("PortraitNameLabel")!;
         _headNumericUpDown = this.FindControl<NumericUpDown>("HeadNumericUpDown")!;
+        _neckNumericUpDown = this.FindControl<NumericUpDown>("NeckNumericUpDown")!;
+        _torsoNumericUpDown = this.FindControl<NumericUpDown>("TorsoNumericUpDown")!;
+        _pelvisNumericUpDown = this.FindControl<NumericUpDown>("PelvisNumericUpDown")!;
+        _beltNumericUpDown = this.FindControl<NumericUpDown>("BeltNumericUpDown")!;
+        _lShoulNumericUpDown = this.FindControl<NumericUpDown>("LShoulNumericUpDown")!;
+        _rShoulNumericUpDown = this.FindControl<NumericUpDown>("RShoulNumericUpDown")!;
+        _lBicepNumericUpDown = this.FindControl<NumericUpDown>("LBicepNumericUpDown")!;
+        _rBicepNumericUpDown = this.FindControl<NumericUpDown>("RBicepNumericUpDown")!;
+        _lFArmNumericUpDown = this.FindControl<NumericUpDown>("LFArmNumericUpDown")!;
+        _rFArmNumericUpDown = this.FindControl<NumericUpDown>("RFArmNumericUpDown")!;
+        _lHandNumericUpDown = this.FindControl<NumericUpDown>("LHandNumericUpDown")!;
+        _rHandNumericUpDown = this.FindControl<NumericUpDown>("RHandNumericUpDown")!;
+        _lThighNumericUpDown = this.FindControl<NumericUpDown>("LThighNumericUpDown")!;
+        _rThighNumericUpDown = this.FindControl<NumericUpDown>("RThighNumericUpDown")!;
+        _lShinNumericUpDown = this.FindControl<NumericUpDown>("LShinNumericUpDown")!;
+        _rShinNumericUpDown = this.FindControl<NumericUpDown>("RShinNumericUpDown")!;
+        _lFootNumericUpDown = this.FindControl<NumericUpDown>("LFootNumericUpDown")!;
+        _rFootNumericUpDown = this.FindControl<NumericUpDown>("RFootNumericUpDown")!;
         _skinColorNumericUpDown = this.FindControl<NumericUpDown>("SkinColorNumericUpDown")!;
         _hairColorNumericUpDown = this.FindControl<NumericUpDown>("HairColorNumericUpDown")!;
         _tattoo1ColorNumericUpDown = this.FindControl<NumericUpDown>("Tattoo1ColorNumericUpDown")!;
         _tattoo2ColorNumericUpDown = this.FindControl<NumericUpDown>("Tattoo2ColorNumericUpDown")!;
+        _skinColorSwatch = this.FindControl<Border>("SkinColorSwatch")!;
+        _hairColorSwatch = this.FindControl<Border>("HairColorSwatch")!;
+        _tattoo1ColorSwatch = this.FindControl<Border>("Tattoo1ColorSwatch")!;
+        _tattoo2ColorSwatch = this.FindControl<Border>("Tattoo2ColorSwatch")!;
         _bodyPartsNotApplicableLabel = this.FindControl<TextBlock>("BodyPartsNotApplicableLabel")!;
+        _bodyPartsContent = this.FindControl<StackPanel>("BodyPartsContent")!;
         _bodyPartsPanel = this.FindControl<Grid>("BodyPartsPanel")!;
+
+        // Initialize palette color service for color swatches
+        _paletteColorService = new PaletteColorService(_gameDataService);
 
         // Step 4 controls
         _classSearchBox = this.FindControl<TextBox>("ClassSearchBox")!;
@@ -576,6 +644,9 @@ public partial class NewCharacterWizardWindow : Window
 
         // Set default portrait
         UpdatePortraitDisplay();
+
+        // Initialize color swatches
+        UpdateAllColorSwatches();
     }
 
     private void OnAppearanceSelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -599,22 +670,138 @@ public partial class NewCharacterWizardWindow : Window
     private void UpdateBodyPartsVisibility()
     {
         // Show/hide body part controls based on whether appearance is part-based
-        _headNumericUpDown.IsEnabled = _isPartBased;
+        _bodyPartsContent.IsEnabled = _isPartBased;
+        _bodyPartsNotApplicableLabel.IsVisible = !_isPartBased;
+
+        // Color controls are always enabled for part-based appearances
         _skinColorNumericUpDown.IsEnabled = _isPartBased;
         _hairColorNumericUpDown.IsEnabled = _isPartBased;
         _tattoo1ColorNumericUpDown.IsEnabled = _isPartBased;
         _tattoo2ColorNumericUpDown.IsEnabled = _isPartBased;
-        _bodyPartsNotApplicableLabel.IsVisible = !_isPartBased;
+        _skinColorSwatch.IsEnabled = _isPartBased;
+        _hairColorSwatch.IsEnabled = _isPartBased;
+        _tattoo1ColorSwatch.IsEnabled = _isPartBased;
+        _tattoo2ColorSwatch.IsEnabled = _isPartBased;
     }
 
     private void OnBodyPartChanged(object? sender, NumericUpDownValueChangedEventArgs e)
     {
-        // Sync values from controls to state
+        // Sync all body part values from controls to state
         _headVariation = (byte)(_headNumericUpDown.Value ?? 1);
-        _skinColor = (byte)(_skinColorNumericUpDown.Value ?? 0);
-        _hairColor = (byte)(_hairColorNumericUpDown.Value ?? 0);
-        _tattoo1Color = (byte)(_tattoo1ColorNumericUpDown.Value ?? 0);
-        _tattoo2Color = (byte)(_tattoo2ColorNumericUpDown.Value ?? 0);
+        _neckVariation = (byte)(_neckNumericUpDown.Value ?? 1);
+        _torsoVariation = (byte)(_torsoNumericUpDown.Value ?? 1);
+        _pelvisVariation = (byte)(_pelvisNumericUpDown.Value ?? 1);
+        _beltVariation = (byte)(_beltNumericUpDown.Value ?? 0);
+        _lShoulVariation = (byte)(_lShoulNumericUpDown.Value ?? 0);
+        _rShoulVariation = (byte)(_rShoulNumericUpDown.Value ?? 0);
+        _lBicepVariation = (byte)(_lBicepNumericUpDown.Value ?? 1);
+        _rBicepVariation = (byte)(_rBicepNumericUpDown.Value ?? 1);
+        _lFArmVariation = (byte)(_lFArmNumericUpDown.Value ?? 1);
+        _rFArmVariation = (byte)(_rFArmNumericUpDown.Value ?? 1);
+        _lHandVariation = (byte)(_lHandNumericUpDown.Value ?? 1);
+        _rHandVariation = (byte)(_rHandNumericUpDown.Value ?? 1);
+        _lThighVariation = (byte)(_lThighNumericUpDown.Value ?? 1);
+        _rThighVariation = (byte)(_rThighNumericUpDown.Value ?? 1);
+        _lShinVariation = (byte)(_lShinNumericUpDown.Value ?? 1);
+        _rShinVariation = (byte)(_rShinNumericUpDown.Value ?? 1);
+        _lFootVariation = (byte)(_lFootNumericUpDown.Value ?? 1);
+        _rFootVariation = (byte)(_rFootNumericUpDown.Value ?? 1);
+    }
+
+    private void OnColorValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (!e.NewValue.HasValue) return;
+
+        var value = (byte)Math.Clamp(e.NewValue.Value, 0, 175);
+
+        if (sender == _skinColorNumericUpDown)
+        {
+            _skinColor = value;
+            UpdateColorSwatch(_skinColorSwatch, PaletteColorService.Palettes.Skin, value);
+        }
+        else if (sender == _hairColorNumericUpDown)
+        {
+            _hairColor = value;
+            UpdateColorSwatch(_hairColorSwatch, PaletteColorService.Palettes.Hair, value);
+        }
+        else if (sender == _tattoo1ColorNumericUpDown)
+        {
+            _tattoo1Color = value;
+            UpdateColorSwatch(_tattoo1ColorSwatch, PaletteColorService.Palettes.Tattoo1, value);
+        }
+        else if (sender == _tattoo2ColorNumericUpDown)
+        {
+            _tattoo2Color = value;
+            UpdateColorSwatch(_tattoo2ColorSwatch, PaletteColorService.Palettes.Tattoo2, value);
+        }
+    }
+
+    private void OnSkinColorSwatchClick(object? sender, PointerPressedEventArgs e)
+    {
+        OpenColorPicker(PaletteColorService.Palettes.Skin, _skinColor, newIndex =>
+        {
+            _skinColor = newIndex;
+            _skinColorNumericUpDown.Value = newIndex;
+            UpdateColorSwatch(_skinColorSwatch, PaletteColorService.Palettes.Skin, newIndex);
+        });
+    }
+
+    private void OnHairColorSwatchClick(object? sender, PointerPressedEventArgs e)
+    {
+        OpenColorPicker(PaletteColorService.Palettes.Hair, _hairColor, newIndex =>
+        {
+            _hairColor = newIndex;
+            _hairColorNumericUpDown.Value = newIndex;
+            UpdateColorSwatch(_hairColorSwatch, PaletteColorService.Palettes.Hair, newIndex);
+        });
+    }
+
+    private void OnTattoo1ColorSwatchClick(object? sender, PointerPressedEventArgs e)
+    {
+        OpenColorPicker(PaletteColorService.Palettes.Tattoo1, _tattoo1Color, newIndex =>
+        {
+            _tattoo1Color = newIndex;
+            _tattoo1ColorNumericUpDown.Value = newIndex;
+            UpdateColorSwatch(_tattoo1ColorSwatch, PaletteColorService.Palettes.Tattoo1, newIndex);
+        });
+    }
+
+    private void OnTattoo2ColorSwatchClick(object? sender, PointerPressedEventArgs e)
+    {
+        OpenColorPicker(PaletteColorService.Palettes.Tattoo2, _tattoo2Color, newIndex =>
+        {
+            _tattoo2Color = newIndex;
+            _tattoo2ColorNumericUpDown.Value = newIndex;
+            UpdateColorSwatch(_tattoo2ColorSwatch, PaletteColorService.Palettes.Tattoo2, newIndex);
+        });
+    }
+
+    private async void OpenColorPicker(string paletteName, byte currentIndex, Action<byte> onColorSelected)
+    {
+        if (_paletteColorService == null) return;
+
+        var picker = new ColorPickerWindow(_paletteColorService, paletteName, currentIndex);
+        await picker.ShowDialog(this);
+
+        if (picker.Confirmed)
+        {
+            onColorSelected(picker.SelectedColorIndex);
+        }
+    }
+
+    private void UpdateColorSwatch(Border? swatch, string paletteName, byte colorIndex)
+    {
+        if (swatch == null || _paletteColorService == null) return;
+        var color = _paletteColorService.GetPaletteColor(paletteName, colorIndex);
+        swatch.Background = new SolidColorBrush(color);
+    }
+
+    private void UpdateAllColorSwatches()
+    {
+        UpdateColorSwatch(_skinColorSwatch, PaletteColorService.Palettes.Skin, _skinColor);
+        UpdateColorSwatch(_hairColorSwatch, PaletteColorService.Palettes.Hair, _hairColor);
+        UpdateColorSwatch(_tattoo1ColorSwatch, PaletteColorService.Palettes.Tattoo1, _tattoo1Color);
+        UpdateColorSwatch(_tattoo2ColorSwatch, PaletteColorService.Palettes.Tattoo2, _tattoo2Color);
     }
 
     private async void OnBrowsePortraitClick(object? sender, RoutedEventArgs e)
@@ -623,6 +810,10 @@ public partial class NewCharacterWizardWindow : Window
             return;
 
         var browser = new PortraitBrowserWindow(_gameDataService, _itemIconService);
+
+        // Pre-populate filters based on wizard selections
+        browser.SetInitialFilters(_selectedRaceId, _selectedGender);
+
         var result = await browser.ShowDialog<ushort?>(this);
 
         if (result.HasValue)
@@ -949,24 +1140,24 @@ public partial class NewCharacterWizardWindow : Window
 
             // Body parts from Step 3
             AppearanceHead = _headVariation,
-            BodyPart_Belt = 0,
-            BodyPart_LBicep = 1,
-            BodyPart_RBicep = 1,
-            BodyPart_LFArm = 1,
-            BodyPart_RFArm = 1,
-            BodyPart_LFoot = 1,
-            BodyPart_RFoot = 1,
-            BodyPart_LHand = 1,
-            BodyPart_RHand = 1,
-            BodyPart_LShin = 1,
-            BodyPart_RShin = 1,
-            BodyPart_LShoul = 0,
-            BodyPart_RShoul = 0,
-            BodyPart_LThigh = 1,
-            BodyPart_RThigh = 1,
-            BodyPart_Neck = 1,
-            BodyPart_Pelvis = 1,
-            BodyPart_Torso = 1,
+            BodyPart_Neck = _neckVariation,
+            BodyPart_Torso = _torsoVariation,
+            BodyPart_Pelvis = _pelvisVariation,
+            BodyPart_Belt = _beltVariation,
+            BodyPart_LShoul = _lShoulVariation,
+            BodyPart_RShoul = _rShoulVariation,
+            BodyPart_LBicep = _lBicepVariation,
+            BodyPart_RBicep = _rBicepVariation,
+            BodyPart_LFArm = _lFArmVariation,
+            BodyPart_RFArm = _rFArmVariation,
+            BodyPart_LHand = _lHandVariation,
+            BodyPart_RHand = _rHandVariation,
+            BodyPart_LThigh = _lThighVariation,
+            BodyPart_RThigh = _rThighVariation,
+            BodyPart_LShin = _lShinVariation,
+            BodyPart_RShin = _rShinVariation,
+            BodyPart_LFoot = _lFootVariation,
+            BodyPart_RFoot = _rFootVariation,
 
             // Colors from Step 3
             Color_Skin = _skinColor,

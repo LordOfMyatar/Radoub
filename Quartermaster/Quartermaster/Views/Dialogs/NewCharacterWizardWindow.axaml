@@ -310,6 +310,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Text="Customize Appearance" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
@@ -319,7 +320,7 @@
 
                 <Grid Grid.Row="2">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="350"/>
+                        <ColumnDefinition Width="320"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
@@ -367,82 +368,153 @@
                                         Click="OnBrowsePortraitClick"/>
                             </StackPanel>
                         </Grid>
+
+                        <!-- Colors Section -->
+                        <TextBlock Text="Colors" FontWeight="SemiBold" Margin="0,5,0,0"/>
+                        <Grid ColumnDefinitions="70,56,20,70,56,20" RowDefinitions="Auto,Auto" RowSpacing="6" ColumnSpacing="4">
+                            <!-- Row 0: Skin / Hair -->
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Skin:" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <NumericUpDown Grid.Row="0" Grid.Column="1" x:Name="SkinColorNumericUpDown"
+                                           Minimum="0" Maximum="175" Value="0" FormatString="0"
+                                           Width="56" ValueChanged="OnColorValueChanged"/>
+                            <Border Grid.Row="0" Grid.Column="2" x:Name="SkinColorSwatch" Width="18" Height="18"
+                                    CornerRadius="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1"
+                                    Cursor="Hand" PointerPressed="OnSkinColorSwatchClick"/>
+                            <TextBlock Grid.Row="0" Grid.Column="3" Text="Hair:" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <NumericUpDown Grid.Row="0" Grid.Column="4" x:Name="HairColorNumericUpDown"
+                                           Minimum="0" Maximum="175" Value="0" FormatString="0"
+                                           Width="56" ValueChanged="OnColorValueChanged"/>
+                            <Border Grid.Row="0" Grid.Column="5" x:Name="HairColorSwatch" Width="18" Height="18"
+                                    CornerRadius="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1"
+                                    Cursor="Hand" PointerPressed="OnHairColorSwatchClick"/>
+                            <!-- Row 1: Tattoo 1 / Tattoo 2 -->
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Tattoo 1:" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <NumericUpDown Grid.Row="1" Grid.Column="1" x:Name="Tattoo1ColorNumericUpDown"
+                                           Minimum="0" Maximum="175" Value="0" FormatString="0"
+                                           Width="56" ValueChanged="OnColorValueChanged"/>
+                            <Border Grid.Row="1" Grid.Column="2" x:Name="Tattoo1ColorSwatch" Width="18" Height="18"
+                                    CornerRadius="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1"
+                                    Cursor="Hand" PointerPressed="OnTattoo1ColorSwatchClick"/>
+                            <TextBlock Grid.Row="1" Grid.Column="3" Text="Tattoo 2:" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <NumericUpDown Grid.Row="1" Grid.Column="4" x:Name="Tattoo2ColorNumericUpDown"
+                                           Minimum="0" Maximum="175" Value="0" FormatString="0"
+                                           Width="56" ValueChanged="OnColorValueChanged"/>
+                            <Border Grid.Row="1" Grid.Column="5" x:Name="Tattoo2ColorSwatch" Width="18" Height="18"
+                                    CornerRadius="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1"
+                                    Cursor="Hand" PointerPressed="OnTattoo2ColorSwatchClick"/>
+                        </Grid>
                     </StackPanel>
 
-                    <!-- Right: Body Parts (visible for part-based appearances) -->
+                    <!-- Right: Body Parts -->
                     <Border Grid.Column="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                            BorderThickness="1" Padding="15">
+                            BorderThickness="1" Padding="12">
                         <Grid x:Name="BodyPartsPanel">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Text="Body Parts &amp; Colors" FontWeight="Bold" FontSize="14" Margin="0,0,0,10"/>
+                            <TextBlock Grid.Row="0" Text="Body Parts" FontWeight="Bold" FontSize="14" Margin="0,0,0,8"/>
 
                             <ScrollViewer Grid.Row="1">
-                                <StackPanel Spacing="8">
-                                    <!-- Head -->
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="100"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="Head:" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                        <NumericUpDown Grid.Column="1" x:Name="HeadNumericUpDown"
-                                                       Minimum="0" Maximum="255" Value="1"
-                                                       ValueChanged="OnBodyPartChanged"/>
+                                <StackPanel x:Name="BodyPartsContent" Spacing="4">
+                                    <!-- Core body parts - 2-column compact layout -->
+                                    <Grid ColumnDefinitions="60,*,60,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="4" ColumnSpacing="6">
+                                        <!-- Row 0: Head / Neck -->
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Head:" FontSize="12"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="0" Grid.Column="1" x:Name="HeadNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Neck:" FontSize="12"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="0" Grid.Column="3" x:Name="NeckNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <!-- Row 1: Torso / Pelvis -->
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Torso:" FontSize="12"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="1" x:Name="TorsoNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="2" Text="Pelvis:" FontSize="12"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="3" x:Name="PelvisNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <!-- Row 2: Belt / L Shoulder -->
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Belt:" FontSize="12"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="2" Grid.Column="1" x:Name="BeltNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="0" FormatString="0" ValueChanged="OnBodyPartChanged"/>
                                     </Grid>
 
-                                    <!-- Separator -->
-                                    <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,2"/>
-
-                                    <!-- Skin Color -->
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="100"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="Skin Color:" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                        <NumericUpDown Grid.Column="1" x:Name="SkinColorNumericUpDown"
-                                                       Minimum="0" Maximum="175" Value="0"
-                                                       ValueChanged="OnBodyPartChanged"/>
-                                    </Grid>
-
-                                    <!-- Hair Color -->
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="100"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="Hair Color:" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                        <NumericUpDown Grid.Column="1" x:Name="HairColorNumericUpDown"
-                                                       Minimum="0" Maximum="175" Value="0"
-                                                       ValueChanged="OnBodyPartChanged"/>
-                                    </Grid>
-
-                                    <!-- Tattoo 1 Color -->
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="100"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="Tattoo 1:" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                        <NumericUpDown Grid.Column="1" x:Name="Tattoo1ColorNumericUpDown"
-                                                       Minimum="0" Maximum="175" Value="0"
-                                                       ValueChanged="OnBodyPartChanged"/>
-                                    </Grid>
-
-                                    <!-- Tattoo 2 Color -->
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="100"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="Tattoo 2:" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                        <NumericUpDown Grid.Column="1" x:Name="Tattoo2ColorNumericUpDown"
-                                                       Minimum="0" Maximum="175" Value="0"
-                                                       ValueChanged="OnBodyPartChanged"/>
+                                    <!-- Limbs Section -->
+                                    <TextBlock Text="Limbs" FontWeight="SemiBold" FontSize="12" Margin="0,4,0,2"/>
+                                    <Grid ColumnDefinitions="60,*,60,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="4" ColumnSpacing="6">
+                                        <!-- Shoulders -->
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="L Shoul:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="0" Grid.Column="1" x:Name="LShoulNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="0" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Text="R Shoul:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="0" Grid.Column="3" x:Name="RShoulNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="0" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <!-- Biceps -->
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="L Bicep:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="1" x:Name="LBicepNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="2" Text="R Bicep:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="3" x:Name="RBicepNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <!-- Forearms -->
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="L FArm:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="2" Grid.Column="1" x:Name="LFArmNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="2" Text="R FArm:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="2" Grid.Column="3" x:Name="RFArmNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <!-- Hands -->
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="L Hand:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="3" Grid.Column="1" x:Name="LHandNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <TextBlock Grid.Row="3" Grid.Column="2" Text="R Hand:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="3" Grid.Column="3" x:Name="RHandNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <!-- Thighs -->
+                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="L Thigh:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="4" Grid.Column="1" x:Name="LThighNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <TextBlock Grid.Row="4" Grid.Column="2" Text="R Thigh:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="4" Grid.Column="3" x:Name="RThighNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <!-- Shins -->
+                                        <TextBlock Grid.Row="5" Grid.Column="0" Text="L Shin:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="5" Grid.Column="1" x:Name="LShinNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <TextBlock Grid.Row="5" Grid.Column="2" Text="R Shin:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="5" Grid.Column="3" x:Name="RShinNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <!-- Feet -->
+                                        <TextBlock Grid.Row="6" Grid.Column="0" Text="L Foot:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="6" Grid.Column="1" x:Name="LFootNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
+                                        <TextBlock Grid.Row="6" Grid.Column="2" Text="R Foot:" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        <NumericUpDown Grid.Row="6" Grid.Column="3" x:Name="RFootNumericUpDown"
+                                                       Minimum="0" Maximum="255" Value="1" FormatString="0" ValueChanged="OnBodyPartChanged"/>
                                     </Grid>
 
                                     <!-- Non-part-based notice -->
@@ -450,12 +522,20 @@
                                                Text="Body part customization is only available for humanoid appearance types."
                                                TextWrapping="Wrap" IsVisible="False"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                               FontStyle="Italic" Margin="0,10"/>
+                                               FontStyle="Italic" Margin="0,6"/>
                                 </StackPanel>
                             </ScrollViewer>
                         </Grid>
                     </Border>
                 </Grid>
+
+                <!-- Advisory note about visualization -->
+                <Border Grid.Row="3" Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        Padding="8" CornerRadius="4" Margin="0,8,0,0">
+                    <TextBlock Text="More visualization options (3D preview, head gallery) are available on the Appearance panel after creating the character."
+                               TextWrapping="Wrap" FontSize="12" FontStyle="Italic"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                </Border>
             </Grid>
 
             <!-- Step 4: Class & Package -->
