@@ -10,6 +10,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.73-alpha] - 2026-02-19
+**Branch**: `quartermaster/issue-1411` | **PR**: #TBD
+
+### Sprint: New Character Wizard - Steps 7-8 (Spells & Summary) (#1411)
+
+- [ ] Step 7: Spells — Skip for non-casters via `PrepareCurrentStep()` recursion
+- [ ] Spontaneous casters (Bard, Sorcerer): select known spells up to `GetSpellsKnownLimit()`
+- [ ] Divine casters (Cleric, Druid): auto-granted, show informational list
+- [ ] Wizard class: select spellbook spells
+- [ ] Two-panel UI: available spells (filtered by class + level, with search) ↔ selected spells
+- [ ] Auto-Assign button reads `packsp*.2da` spell preferences
+- [ ] Step 8: Summary & Create — Read-only review with [Edit] links to navigate back
+- [ ] Name field (FirstName) + auto-generated Tag/ResRef (16-char limit, lowercase, underscores)
+- [ ] UTC: PaletteID selection
+- [ ] BuildCreature() method — produces complete UtcFile with all wizard selections
+- [ ] Granted feats from race + class (via FeatService)
+- [ ] Proper SkillList sizing, SpellList population
+- [ ] All UtcFile fields set from 2DA data (no hardcoded defaults)
+
+---
+
 ## [0.1.72-alpha] - 2026-02-19
 **Branch**: `quartermaster/issue-1410` | **PR**: #1419
 
