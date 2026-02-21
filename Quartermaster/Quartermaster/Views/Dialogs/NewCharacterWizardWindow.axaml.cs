@@ -225,6 +225,7 @@ public partial class NewCharacterWizardWindow : Window
     private readonly ListBox _availableSpellsListBox;
     private readonly ListBox _selectedSpellsListBox;
     private readonly TextBlock _selectedSpellCountLabel;
+    private readonly Grid _spellSelectionTwoPanel;
     private readonly Border _divineSpellInfoPanel;
     private readonly TextBlock _divineSpellInfoLabel;
 
@@ -240,6 +241,7 @@ public partial class NewCharacterWizardWindow : Window
     private readonly NumericUpDown _ageNumericUpDown;
     private readonly TextBlock _ageNote;
     private readonly TextBox _descriptionTextBox;
+    private readonly ComboBox _voiceSetComboBox;
     private readonly TextBlock _generatedTagLabel;
     private readonly TextBlock _generatedResRefLabel;
     private readonly TextBlock _paletteIdLabelText;
@@ -453,6 +455,7 @@ public partial class NewCharacterWizardWindow : Window
         _availableSpellsListBox = this.FindControl<ListBox>("AvailableSpellsListBox")!;
         _selectedSpellsListBox = this.FindControl<ListBox>("SelectedSpellsListBox")!;
         _selectedSpellCountLabel = this.FindControl<TextBlock>("SelectedSpellCountLabel")!;
+        _spellSelectionTwoPanel = this.FindControl<Grid>("SpellSelectionTwoPanel")!;
         _divineSpellInfoPanel = this.FindControl<Border>("DivineSpellInfoPanel")!;
         _divineSpellInfoLabel = this.FindControl<TextBlock>("DivineSpellInfoLabel")!;
 
@@ -468,6 +471,8 @@ public partial class NewCharacterWizardWindow : Window
         _ageNumericUpDown = this.FindControl<NumericUpDown>("AgeNumericUpDown")!;
         _ageNote = this.FindControl<TextBlock>("AgeNote")!;
         _descriptionTextBox = this.FindControl<TextBox>("DescriptionTextBox")!;
+        _voiceSetComboBox = this.FindControl<ComboBox>("VoiceSetComboBox")!;
+        PopulateVoiceSets();
         _generatedTagLabel = this.FindControl<TextBlock>("GeneratedTagLabel")!;
         _generatedResRefLabel = this.FindControl<TextBlock>("GeneratedResRefLabel")!;
         _paletteIdLabelText = this.FindControl<TextBlock>("PaletteIdLabelText")!;
@@ -529,6 +534,31 @@ public partial class NewCharacterWizardWindow : Window
         }
 
         _paletteIdComboBox.SelectedIndex = defaultIndex;
+    }
+
+    private void PopulateVoiceSets()
+    {
+        _voiceSetComboBox.Items.Clear();
+
+        var soundSets = _displayService.GetAllSoundSets();
+
+        if (soundSets.Count == 0)
+        {
+            _voiceSetComboBox.Items.Add(new ComboBoxItem { Content = "None (0)", Tag = (ushort)0 });
+            _voiceSetComboBox.SelectedIndex = 0;
+            return;
+        }
+
+        foreach (var (id, name) in soundSets)
+        {
+            _voiceSetComboBox.Items.Add(new ComboBoxItem
+            {
+                Content = $"{name} ({id})",
+                Tag = id
+            });
+        }
+
+        _voiceSetComboBox.SelectedIndex = 0;
     }
 
     #region Step Navigation
@@ -2522,15 +2552,9 @@ public partial class NewCharacterWizardWindow : Window
             _divineSpellInfoPanel.IsVisible = true;
 
             // Hide the two-panel selection UI
+            _spellSelectionTwoPanel.IsVisible = false;
             _spellLevelTabsPanel.IsVisible = false;
             _spellSelectionCountLabel.IsVisible = false;
-            _spellSearchBox2.IsVisible = false;
-            _availableSpellsListBox.IsVisible = false;
-            _selectedSpellsListBox.IsVisible = false;
-            _selectedSpellCountLabel.IsVisible = false;
-            // Hide the parent grids of the available/selected panels
-            var twoPanel = _availableSpellsListBox.Parent?.Parent as Grid;
-            if (twoPanel != null) twoPanel.IsVisible = false;
 
             _spellStepDescription.Text = $"{className}s receive all their class spells automatically through divine power.";
             return;
@@ -2538,14 +2562,9 @@ public partial class NewCharacterWizardWindow : Window
 
         // Spontaneous casters (Bard, Sorcerer) or Wizard: show spell selection UI
         _divineSpellInfoPanel.IsVisible = false;
-        var selectionParent = _availableSpellsListBox.Parent?.Parent as Grid;
-        if (selectionParent != null) selectionParent.IsVisible = true;
+        _spellSelectionTwoPanel.IsVisible = true;
         _spellLevelTabsPanel.IsVisible = true;
         _spellSelectionCountLabel.IsVisible = true;
-        _spellSearchBox2.IsVisible = true;
-        _availableSpellsListBox.IsVisible = true;
-        _selectedSpellsListBox.IsVisible = true;
-        _selectedSpellCountLabel.IsVisible = true;
 
         string classNameForDesc = _displayService.GetClassName(classId);
         if (isSpontaneous)
@@ -3423,6 +3442,9 @@ public partial class NewCharacterWizardWindow : Window
             // Alignment — True Neutral
             GoodEvil = 50,
             LawfulChaotic = 50,
+
+            // Voice set (Step 10)
+            SoundSetFile = (_voiceSetComboBox.SelectedItem is ComboBoxItem voiceItem && voiceItem.Tag is ushort voiceId) ? voiceId : (ushort)0,
 
             // Behavior defaults
             FactionID = 1,
