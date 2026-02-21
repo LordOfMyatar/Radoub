@@ -210,7 +210,7 @@ public partial class MainWindow
         }
 
         // Launch creation wizard
-        var wizard = new NewCharacterWizardWindow(DisplayService, GameData, IconService);
+        var wizard = new NewCharacterWizardWindow(DisplayService, GameData, IconService, _audioService);
         await wizard.ShowDialog(this);
 
         if (!wizard.Confirmed || wizard.CreatedCreature == null)
@@ -231,6 +231,7 @@ public partial class MainWindow
 
         // Populate UI
         ClearInventoryUI();
+        PopulateInventoryUI();
         UpdateCharacterHeader();
         LoadAllPanels(_currentCreature);
         UpdateInventoryCounts();
