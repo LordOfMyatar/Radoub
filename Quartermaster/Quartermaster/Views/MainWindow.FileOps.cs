@@ -8,6 +8,7 @@ using Radoub.Formats.Bic;
 using Radoub.Formats.Common;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Settings;
 using Radoub.Formats.Utc;
 using Radoub.UI.Views;
 using System;
@@ -235,13 +236,14 @@ public partial class MainWindow
         UpdateInventoryCounts();
         OnPropertyChanged(nameof(HasFile));
 
-        // Mark as dirty immediately (new unsaved file)
         _isLoading = false;
         _isDirty = true;
         UpdateTitle();
-        UpdateStatus("New creature created");
 
         UnifiedLogger.LogCreature(LogLevel.INFO, "Created new creature blueprint");
+
+        // Prompt to save immediately with smart default directory
+        await PromptSaveNewCreature();
     }
 
     /// <summary>
@@ -551,6 +553,92 @@ public partial class MainWindow
                 UpdateTitle();
                 UpdateStatus($"Converted and saved as {(savingAsBic ? "BIC" : "UTC")}: {Path.GetFileName(_currentFilePath)}");
             }
+        }
+    }
+
+    /// <summary>
+    /// Prompts the user to save a newly created creature immediately after wizard creation.
+    /// BIC files default to the local vault directory, UTC files to the module directory.
+    /// </summary>
+    private async Task PromptSaveNewCreature()
+    {
+        if (_currentCreature == null) return;
+
+        // Determine default save directory
+        IStorageFolder? suggestedFolder = null;
+        try
+        {
+            if (_isBicFile)
+            {
+                // BIC → local vault
+                var nwnPath = RadoubSettings.Instance.NeverwinterNightsPath;
+                if (!string.IsNullOrEmpty(nwnPath))
+                {
+                    var localVault = Path.Combine(nwnPath, "localvault");
+                    if (Directory.Exists(localVault))
+                        suggestedFolder = await StorageProvider.TryGetFolderFromPathAsync(localVault);
+                }
+            }
+            else
+            {
+                // UTC → module directory
+                var modulePath = RadoubSettings.Instance.CurrentModulePath;
+                if (!string.IsNullOrEmpty(modulePath) && Directory.Exists(modulePath))
+                {
+                    suggestedFolder = await StorageProvider.TryGetFolderFromPathAsync(modulePath);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogCreature(LogLevel.DEBUG, $"Could not resolve default save directory: {ex.Message}");
+        }
+
+        // Generate suggested filename from creature's ResRef or tag
+        var suggestedName = _currentCreature.TemplateResRef;
+        if (string.IsNullOrEmpty(suggestedName) || suggestedName == "new_creature")
+            suggestedName = _currentCreature.Tag ?? "new_creature";
+
+        var extension = _isBicFile ? "bic" : "utc";
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = _isBicFile ? "Save Player Character" : "Save Creature Blueprint",
+            DefaultExtension = extension,
+            FileTypeChoices = _isBicFile
+                ? new[] { new FilePickerFileType("Player Character") { Patterns = new[] { "*.bic" } } }
+                : new[] { new FilePickerFileType("Creature Blueprint") { Patterns = new[] { "*.utc" } } },
+            SuggestedFileName = suggestedName,
+            SuggestedStartLocation = suggestedFolder
+        });
+
+        if (file != null)
+        {
+            _currentFilePath = file.Path.LocalPath;
+
+            if (!await ValidateAuroraFilename(_currentFilePath))
+            {
+                _currentFilePath = null;
+                UpdateStatus("New creature created (not saved yet)");
+                return;
+            }
+
+            // Convert to BIC if saving as .bic and creature is still a UtcFile
+            var savingAsBic = Path.GetExtension(_currentFilePath).Equals(".bic", StringComparison.OrdinalIgnoreCase);
+            if (savingAsBic && _currentCreature is not BicFile)
+            {
+                _currentCreature = BicFile.FromUtcFile(_currentCreature);
+                _isBicFile = true;
+            }
+
+            await SaveFile();
+            UpdateTitle();
+            UpdateCharacterHeader();
+            SettingsService.Instance.AddRecentFile(_currentFilePath);
+            UpdateRecentFilesMenu();
+        }
+        else
+        {
+            UpdateStatus("New creature created (not saved yet)");
         }
     }
 

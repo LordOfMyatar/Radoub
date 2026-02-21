@@ -8,18 +8,20 @@ using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Quartermaster.Services;
+using Radoub.Formats.Common;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
+using Radoub.Formats.Bic;
 using Radoub.Formats.Utc;
+using Radoub.Formats.Uti;
 using Radoub.UI.Services;
 
 namespace Quartermaster.Views.Dialogs;
 
 /// <summary>
 /// Multi-step wizard for creating a new creature from scratch.
-/// 8 steps: File Type, Race &amp; Sex, Appearance, Class, Abilities, Skills, Spells, Summary.
-/// Steps 5-8 are placeholders pending future sprints.
+/// 10 steps: File Type, Race &amp; Sex, Appearance, Class, Abilities, Feats, Skills, Spells, Equipment, Summary.
 /// </summary>
 public partial class NewCharacterWizardWindow : Window
 {
@@ -29,7 +31,7 @@ public partial class NewCharacterWizardWindow : Window
 
     // Wizard state
     private int _currentStep = 1;
-    private const int TotalSteps = 8;
+    private const int TotalSteps = 10;
 
     // Step 1: File Type
     private bool _isBicFile; // false = UTC (default), true = BIC
@@ -79,6 +81,8 @@ public partial class NewCharacterWizardWindow : Window
     private List<ClassDisplayItem> _filteredClasses = new();
     private bool _step4Loaded;
     private bool _prestigePlanningExpanded;
+    private bool _classNeedsDomains;
+    private List<DomainDisplayItem> _domainList = new();
 
     // Step 5: Ability Scores
     private readonly Dictionary<string, int> _abilityBaseScores = new()
@@ -92,26 +96,36 @@ public partial class NewCharacterWizardWindow : Window
     private static readonly int[] PointBuyCosts = { 0, 1, 2, 3, 4, 5, 6, 8, 10, 13, 16 }; // index = score - 8
     private bool _step5Loaded;
 
-    // Step 6: Skills
+    // Step 6: Feats
+    private readonly List<int> _chosenFeatIds = new(); // Player-chosen feats (not granted)
+    private List<FeatDisplayItem> _availableFeats = new();
+    private List<FeatDisplayItem> _filteredAvailableFeats = new();
+    private int _featsToChoose; // Number of feats the player gets to pick
+
+    // Step 7: Skills (was Step 6)
     private int _skillPointsTotal;
     private readonly Dictionary<int, int> _skillRanksAllocated = new();
     private HashSet<int> _classSkillIds = new();
     private HashSet<int> _unavailableSkillIds = new();
     private List<SkillDisplayItem> _allSkills = new();
     private List<SkillDisplayItem> _filteredSkills = new();
-    private bool _step6Loaded;
+    private bool _step7Loaded;
 
-    // Step 7: Spells
+    // Step 8: Spells (was Step 7)
     private bool _needsSpellSelection;
     private bool _isDivineCaster;
-    private bool _step7Loaded;
+    private bool _step8Loaded;
     private int _currentSpellLevel; // Currently selected spell level tab
     private int _maxSpellLevelForClass;
     private readonly Dictionary<int, List<int>> _selectedSpellsByLevel = new(); // spell level → list of spell IDs
     private List<SpellDisplayItem> _availableSpellsForLevel = new();
     private List<SpellDisplayItem> _filteredAvailableSpells = new();
 
-    // Step 8: Summary
+    // Step 9: Equipment
+    private readonly List<EquipmentDisplayItem> _equipmentItems = new();
+    private bool _step9Loaded;
+
+    // Step 10: Summary (was Step 8)
     private string _characterName = "";
     private byte _paletteId = 1;
 
@@ -128,6 +142,8 @@ public partial class NewCharacterWizardWindow : Window
     // Step 1 controls
     private readonly Border _utcCard;
     private readonly Border _bicCard;
+    private readonly StackPanel _defaultScriptsPanel;
+    private readonly CheckBox _defaultScriptsCheckBox;
 
     // Step 2 controls
     private readonly TextBox _raceSearchBox;
@@ -190,12 +206,20 @@ public partial class NewCharacterWizardWindow : Window
     private readonly Border _prestigeAbilityBanner;
     private readonly TextBlock _prestigeAbilityBannerLabel;
 
-    // Step 6 controls
+    // Step 6 controls (Feats)
+    private readonly TextBlock _featStepDescription;
+    private readonly TextBlock _featSelectionCountLabel;
+    private readonly TextBox _featSearchBox;
+    private readonly ListBox _availableFeatsListBox;
+    private readonly ListBox _selectedFeatsListBox;
+    private readonly TextBlock _selectedFeatCountLabel;
+
+    // Step 7 controls (Skills, was Step 6)
     private readonly TextBlock _skillPointsRemainingLabel;
     private readonly StackPanel _skillRowsPanel;
     private readonly TextBox _skillSearchBox;
 
-    // Step 7 controls
+    // Step 8 controls (Spells, was Step 7)
     private readonly TextBlock _spellStepDescription;
     private readonly StackPanel _spellLevelTabsPanel;
     private readonly TextBlock _spellSelectionCountLabel;
@@ -203,25 +227,42 @@ public partial class NewCharacterWizardWindow : Window
     private readonly ListBox _availableSpellsListBox;
     private readonly ListBox _selectedSpellsListBox;
     private readonly TextBlock _selectedSpellCountLabel;
+    private readonly Grid _spellSelectionTwoPanel;
     private readonly Border _divineSpellInfoPanel;
     private readonly TextBlock _divineSpellInfoLabel;
 
-    // Step 8 controls
+    // Step 9 controls (Equipment)
+    private readonly TextBlock _equipmentCountLabel;
+    private readonly StackPanel _equipmentItemsPanel;
+    private readonly TextBlock _equipmentEmptyLabel;
+
+    // Step 10 controls (Summary, was Step 8)
     private readonly TextBox _characterNameTextBox;
+    private readonly TextBox _lastNameTextBox;
+    private readonly TextBlock _ageLabelText;
+    private readonly NumericUpDown _ageNumericUpDown;
+    private readonly TextBlock _ageNote;
+    private readonly TextBox _descriptionTextBox;
+    private readonly ComboBox _voiceSetComboBox;
     private readonly TextBlock _generatedTagLabel;
     private readonly TextBlock _generatedResRefLabel;
     private readonly TextBlock _paletteIdLabelText;
-    private readonly NumericUpDown _paletteIdNumericUpDown;
+    private readonly ComboBox _paletteIdComboBox;
     private readonly TextBlock _paletteIdNote;
     private readonly TextBlock _summaryFileTypeLabel;
     private readonly TextBlock _summaryRaceLabel;
     private readonly TextBlock _summaryAppearanceLabel;
     private readonly TextBlock _summaryClassLabel;
     private readonly TextBlock _summaryAbilitiesLabel;
+    private readonly TextBlock _summaryFeatsLabel;
     private readonly TextBlock _summarySkillsLabel;
     private readonly TextBlock _summarySpellsLabel;
     private readonly Grid _summarySpellsSection;
-    private readonly TextBlock _summaryFeatsLabel;
+    private readonly Grid _summaryEquipmentSection;
+    private readonly TextBlock _summaryEquipmentLabel;
+    private readonly Border _summaryScriptsDivider;
+    private readonly Grid _summaryScriptsSection;
+    private readonly TextBlock _summaryScriptsLabel;
 
     // Step 4 controls
     private readonly TextBox _classSearchBox;
@@ -236,6 +277,9 @@ public partial class NewCharacterWizardWindow : Window
     private readonly StackPanel _packageSection;
     private readonly ComboBox _packageComboBox;
     private readonly Border _classDescSeparator;
+    private readonly StackPanel _domainSelectionPanel;
+    private readonly ComboBox _domain1ComboBox;
+    private readonly ComboBox _domain2ComboBox;
     private readonly TextBlock _classDescriptionLabel;
     private readonly TextBlock _prestigeToggleArrow;
     private readonly StackPanel _prestigePlanningContent;
@@ -251,6 +295,7 @@ public partial class NewCharacterWizardWindow : Window
     /// Whether the user selected BIC file type.
     /// </summary>
     public bool IsBicFile => _isBicFile;
+
 
     /// <summary>
     /// Whether the user completed the wizard.
@@ -281,7 +326,9 @@ public partial class NewCharacterWizardWindow : Window
             this.FindControl<Border>("Step5Border")!,
             this.FindControl<Border>("Step6Border")!,
             this.FindControl<Border>("Step7Border")!,
-            this.FindControl<Border>("Step8Border")!
+            this.FindControl<Border>("Step8Border")!,
+            this.FindControl<Border>("Step9Border")!,
+            this.FindControl<Border>("Step10Border")!
         };
 
         _stepPanels = new[]
@@ -293,7 +340,9 @@ public partial class NewCharacterWizardWindow : Window
             this.FindControl<Grid>("Step5Panel")!,
             this.FindControl<Grid>("Step6Panel")!,
             this.FindControl<Grid>("Step7Panel")!,
-            this.FindControl<Grid>("Step8Panel")!
+            this.FindControl<Grid>("Step8Panel")!,
+            this.FindControl<Grid>("Step9Panel")!,
+            this.FindControl<Grid>("Step10Panel")!
         };
 
         _backButton = this.FindControl<Button>("BackButton")!;
@@ -304,6 +353,8 @@ public partial class NewCharacterWizardWindow : Window
         // Step 1 controls
         _utcCard = this.FindControl<Border>("UtcCard")!;
         _bicCard = this.FindControl<Border>("BicCard")!;
+        _defaultScriptsPanel = this.FindControl<StackPanel>("DefaultScriptsPanel")!;
+        _defaultScriptsCheckBox = this.FindControl<CheckBox>("DefaultScriptsCheckBox")!;
 
         // Step 2 controls
         _raceSearchBox = this.FindControl<TextBox>("RaceSearchBox")!;
@@ -376,6 +427,9 @@ public partial class NewCharacterWizardWindow : Window
         _packageSection = this.FindControl<StackPanel>("PackageSection")!;
         _packageComboBox = this.FindControl<ComboBox>("PackageComboBox")!;
         _classDescSeparator = this.FindControl<Border>("ClassDescSeparator")!;
+        _domainSelectionPanel = this.FindControl<StackPanel>("DomainSelectionPanel")!;
+        _domain1ComboBox = this.FindControl<ComboBox>("Domain1ComboBox")!;
+        _domain2ComboBox = this.FindControl<ComboBox>("Domain2ComboBox")!;
         _classDescriptionLabel = this.FindControl<TextBlock>("ClassDescriptionLabel")!;
         _prestigeToggleArrow = this.FindControl<TextBlock>("PrestigeToggleArrow")!;
         _prestigePlanningContent = this.FindControl<StackPanel>("PrestigePlanningContent")!;
@@ -388,12 +442,20 @@ public partial class NewCharacterWizardWindow : Window
         _prestigeAbilityBanner = this.FindControl<Border>("PrestigeAbilityBanner")!;
         _prestigeAbilityBannerLabel = this.FindControl<TextBlock>("PrestigeAbilityBannerLabel")!;
 
-        // Step 6 controls
+        // Step 6 controls (Feats)
+        _featStepDescription = this.FindControl<TextBlock>("FeatStepDescription")!;
+        _featSelectionCountLabel = this.FindControl<TextBlock>("FeatSelectionCountLabel")!;
+        _featSearchBox = this.FindControl<TextBox>("FeatSearchBox")!;
+        _availableFeatsListBox = this.FindControl<ListBox>("AvailableFeatsListBox")!;
+        _selectedFeatsListBox = this.FindControl<ListBox>("SelectedFeatsListBox")!;
+        _selectedFeatCountLabel = this.FindControl<TextBlock>("SelectedFeatCountLabel")!;
+
+        // Step 7 controls (Skills)
         _skillPointsRemainingLabel = this.FindControl<TextBlock>("SkillPointsRemainingLabel")!;
         _skillRowsPanel = this.FindControl<StackPanel>("SkillRowsPanel")!;
         _skillSearchBox = this.FindControl<TextBox>("SkillSearchBox")!;
 
-        // Step 7 controls
+        // Step 8 controls (Spells)
         _spellStepDescription = this.FindControl<TextBlock>("SpellStepDescription")!;
         _spellLevelTabsPanel = this.FindControl<StackPanel>("SpellLevelTabsPanel")!;
         _spellSelectionCountLabel = this.FindControl<TextBlock>("SpellSelectionCountLabel")!;
@@ -401,25 +463,44 @@ public partial class NewCharacterWizardWindow : Window
         _availableSpellsListBox = this.FindControl<ListBox>("AvailableSpellsListBox")!;
         _selectedSpellsListBox = this.FindControl<ListBox>("SelectedSpellsListBox")!;
         _selectedSpellCountLabel = this.FindControl<TextBlock>("SelectedSpellCountLabel")!;
+        _spellSelectionTwoPanel = this.FindControl<Grid>("SpellSelectionTwoPanel")!;
         _divineSpellInfoPanel = this.FindControl<Border>("DivineSpellInfoPanel")!;
         _divineSpellInfoLabel = this.FindControl<TextBlock>("DivineSpellInfoLabel")!;
 
-        // Step 8 controls
+        // Step 9 controls (Equipment)
+        _equipmentCountLabel = this.FindControl<TextBlock>("EquipmentCountLabel")!;
+        _equipmentItemsPanel = this.FindControl<StackPanel>("EquipmentItemsPanel")!;
+        _equipmentEmptyLabel = this.FindControl<TextBlock>("EquipmentEmptyLabel")!;
+
+        // Step 10 controls (Summary)
         _characterNameTextBox = this.FindControl<TextBox>("CharacterNameTextBox")!;
+        _lastNameTextBox = this.FindControl<TextBox>("LastNameTextBox")!;
+        _ageLabelText = this.FindControl<TextBlock>("AgeLabelText")!;
+        _ageNumericUpDown = this.FindControl<NumericUpDown>("AgeNumericUpDown")!;
+        _ageNote = this.FindControl<TextBlock>("AgeNote")!;
+        _descriptionTextBox = this.FindControl<TextBox>("DescriptionTextBox")!;
+        _voiceSetComboBox = this.FindControl<ComboBox>("VoiceSetComboBox")!;
+        PopulateVoiceSets();
         _generatedTagLabel = this.FindControl<TextBlock>("GeneratedTagLabel")!;
         _generatedResRefLabel = this.FindControl<TextBlock>("GeneratedResRefLabel")!;
         _paletteIdLabelText = this.FindControl<TextBlock>("PaletteIdLabelText")!;
-        _paletteIdNumericUpDown = this.FindControl<NumericUpDown>("PaletteIdNumericUpDown")!;
+        _paletteIdComboBox = this.FindControl<ComboBox>("PaletteIdComboBox")!;
+        PopulatePaletteCategories();
         _paletteIdNote = this.FindControl<TextBlock>("PaletteIdNote")!;
         _summaryFileTypeLabel = this.FindControl<TextBlock>("SummaryFileTypeLabel")!;
         _summaryRaceLabel = this.FindControl<TextBlock>("SummaryRaceLabel")!;
         _summaryAppearanceLabel = this.FindControl<TextBlock>("SummaryAppearanceLabel")!;
         _summaryClassLabel = this.FindControl<TextBlock>("SummaryClassLabel")!;
         _summaryAbilitiesLabel = this.FindControl<TextBlock>("SummaryAbilitiesLabel")!;
+        _summaryFeatsLabel = this.FindControl<TextBlock>("SummaryFeatsLabel")!;
         _summarySkillsLabel = this.FindControl<TextBlock>("SummarySkillsLabel")!;
         _summarySpellsLabel = this.FindControl<TextBlock>("SummarySpellsLabel")!;
         _summarySpellsSection = this.FindControl<Grid>("SummarySpellsSection")!;
-        _summaryFeatsLabel = this.FindControl<TextBlock>("SummaryFeatsLabel")!;
+        _summaryEquipmentSection = this.FindControl<Grid>("SummaryEquipmentSection")!;
+        _summaryEquipmentLabel = this.FindControl<TextBlock>("SummaryEquipmentLabel")!;
+        _summaryScriptsDivider = this.FindControl<Border>("SummaryScriptsDivider")!;
+        _summaryScriptsSection = this.FindControl<Grid>("SummaryScriptsSection")!;
+        _summaryScriptsLabel = this.FindControl<TextBlock>("SummaryScriptsLabel")!;
 
         UpdateStepDisplay();
     }
@@ -427,6 +508,65 @@ public partial class NewCharacterWizardWindow : Window
     private void InitializeComponent()
     {
         AvaloniaXamlLoader.Load(this);
+    }
+
+    private void PopulatePaletteCategories()
+    {
+        _paletteIdComboBox.Items.Clear();
+
+        var categories = _displayService.GetCreaturePaletteCategories().ToList();
+
+        if (categories.Count == 0)
+        {
+            _paletteIdComboBox.Items.Add(new ComboBoxItem { Content = "Custom (1)", Tag = (byte)1 });
+            _paletteIdComboBox.SelectedIndex = 0;
+            return;
+        }
+
+        int defaultIndex = 0;
+        int index = 0;
+        foreach (var category in categories.OrderBy(c => c.Id))
+        {
+            var displayName = !string.IsNullOrEmpty(category.ParentPath)
+                ? $"{category.ParentPath}/{category.Name} ({category.Id})"
+                : $"{category.Name} ({category.Id})";
+
+            _paletteIdComboBox.Items.Add(new ComboBoxItem
+            {
+                Content = displayName,
+                Tag = category.Id
+            });
+
+            if (category.Id == 1) defaultIndex = index;
+            index++;
+        }
+
+        _paletteIdComboBox.SelectedIndex = defaultIndex;
+    }
+
+    private void PopulateVoiceSets()
+    {
+        _voiceSetComboBox.Items.Clear();
+
+        var soundSets = _displayService.GetAllSoundSets();
+
+        if (soundSets.Count == 0)
+        {
+            _voiceSetComboBox.Items.Add(new ComboBoxItem { Content = "None (0)", Tag = (ushort)0 });
+            _voiceSetComboBox.SelectedIndex = 0;
+            return;
+        }
+
+        foreach (var (id, name) in soundSets)
+        {
+            _voiceSetComboBox.Items.Add(new ComboBoxItem
+            {
+                Content = $"{name} ({id})",
+                Tag = id
+            });
+        }
+
+        _voiceSetComboBox.SelectedIndex = 0;
     }
 
     #region Step Navigation
@@ -469,9 +609,11 @@ public partial class NewCharacterWizardWindow : Window
             3 => true, // Appearance always has defaults
             4 => _selectedClassId >= 0, // Must have a class selected
             5 => GetAbilityPointsRemaining() == 0 || !_isBicFile, // BIC must spend all points
-            6 => GetSkillPointsRemaining() >= 0, // Can't overspend
-            7 => !_needsSpellSelection || _isDivineCaster || IsSpellSelectionComplete(),
-            8 => true, // Summary is always valid (name is optional)
+            6 => IsFeatSelectionComplete(), // Must choose all available feats
+            7 => GetSkillPointsRemaining() >= 0, // Can't overspend
+            8 => !_needsSpellSelection || _isDivineCaster || IsSpellSelectionComplete(),
+            9 => true, // Equipment is optional
+            10 => true, // Summary is always valid (name is optional)
             _ => true
         };
 
@@ -483,7 +625,8 @@ public partial class NewCharacterWizardWindow : Window
             2 when !canProceed => "Select a race to continue.",
             4 when !canProceed => "Select a class to continue.",
             5 when !canProceed => $"Spend all {PointBuyTotal} ability points to continue.",
-            7 when !canProceed => "Select all required spells to continue.",
+            6 when !canProceed => $"Select {_featsToChoose - _chosenFeatIds.Count} more feat(s) to continue.",
+            8 when !canProceed => "Select all required spells to continue.",
             _ => ""
         };
     }
@@ -509,14 +652,20 @@ public partial class NewCharacterWizardWindow : Window
                 break;
             case 7:
                 PrepareStep7();
-                if (!_needsSpellSelection)
-                {
-                    _currentStep++;
-                    PrepareCurrentStep(); // Skip to step 8
-                }
                 break;
             case 8:
                 PrepareStep8();
+                if (!_needsSpellSelection)
+                {
+                    _currentStep++;
+                    PrepareCurrentStep(); // Skip to step 9
+                }
+                break;
+            case 9:
+                PrepareStep9();
+                break;
+            case 10:
+                PrepareStep10();
                 break;
         }
     }
@@ -538,7 +687,7 @@ public partial class NewCharacterWizardWindow : Window
             _currentStep--;
 
             // Skip spell step when going back if non-caster
-            if (_currentStep == 7 && !_needsSpellSelection)
+            if (_currentStep == 8 && !_needsSpellSelection)
                 _currentStep--;
 
             UpdateStepDisplay();
@@ -609,6 +758,9 @@ public partial class NewCharacterWizardWindow : Window
         _bicCard.Classes.Add("file-type-card");
         if (_isBicFile)
             _bicCard.Classes.Add("selected");
+
+        // Show default scripts option for UTC only
+        _defaultScriptsPanel.IsVisible = !_isBicFile;
 
         UpdateSidebarSummary();
     }
@@ -1066,6 +1218,7 @@ public partial class NewCharacterWizardWindow : Window
         _selectedClassId = selected.Id;
         UpdateClassDetailPanel();
         LoadPackagesForClass();
+        UpdateDomainVisibility();
         ValidateCurrentStep();
         UpdateSidebarSummary();
     }
@@ -1137,7 +1290,14 @@ public partial class NewCharacterWizardWindow : Window
             }).ToList();
 
             _packageComboBox.ItemsSource = packageItems;
-            _packageComboBox.SelectedItem = packageItems[0];
+
+            // Select the class's default package from classes.2da "Package" column
+            var defaultPkgStr = _gameDataService.Get2DAValue("classes", _selectedClassId, "Package");
+            PackageDisplayItem? defaultItem = null;
+            if (int.TryParse(defaultPkgStr, out int defaultPkgId))
+                defaultItem = packageItems.FirstOrDefault(p => p.Id == defaultPkgId);
+            _packageComboBox.SelectedItem = defaultItem ?? packageItems[0];
+
             _packageSection.IsVisible = true;
         }
         else
@@ -1154,6 +1314,131 @@ public partial class NewCharacterWizardWindow : Window
             return;
 
         _selectedPackageId = selected.Id;
+
+        // Update domain defaults from package if domains are visible
+        if (_classNeedsDomains)
+            LoadPackageDomainDefaults();
+    }
+
+    /// <summary>
+    /// Checks if the selected class uses domains by looking at its packages.
+    /// Shows/hides the domain picker panel accordingly.
+    /// </summary>
+    private void UpdateDomainVisibility()
+    {
+        _classNeedsDomains = false;
+
+        if (_selectedClassId < 0)
+        {
+            _domainSelectionPanel.IsVisible = false;
+            return;
+        }
+
+        // Check if any package for this class has Domain1 set (non-****)
+        var packages = _displayService.GetPackagesForClass(_selectedClassId);
+        foreach (var pkg in packages)
+        {
+            var domain1Str = _gameDataService.Get2DAValue("packages", pkg.Id, "Domain1");
+            if (!string.IsNullOrEmpty(domain1Str) && domain1Str != "****")
+            {
+                _classNeedsDomains = true;
+                break;
+            }
+        }
+
+        _domainSelectionPanel.IsVisible = _classNeedsDomains;
+
+        if (_classNeedsDomains)
+        {
+            PopulateDomains();
+            LoadPackageDomainDefaults();
+        }
+    }
+
+    /// <summary>
+    /// Populates domain ComboBoxes from domains.2da.
+    /// </summary>
+    private void PopulateDomains()
+    {
+        _domainList.Clear();
+        _domain1ComboBox.Items.Clear();
+        _domain2ComboBox.Items.Clear();
+
+        // Read domains.2da — row 0 is typically "Air", rows go up to ~20+
+        for (int row = 0; row < 50; row++)
+        {
+            var label = _gameDataService.Get2DAValue("domains", row, "Label");
+            if (string.IsNullOrEmpty(label))
+                break;
+            if (label == "****")
+                continue;
+
+            // Get display name from TLK
+            var nameStrRef = _gameDataService.Get2DAValue("domains", row, "Name");
+            var name = label; // fallback
+            if (!string.IsNullOrEmpty(nameStrRef) && nameStrRef != "****" && int.TryParse(nameStrRef, out int strRef))
+            {
+                var tlkName = _gameDataService.GetString(strRef.ToString());
+                if (!string.IsNullOrEmpty(tlkName))
+                    name = tlkName;
+            }
+
+            _domainList.Add(new DomainDisplayItem { Id = row, Name = name });
+        }
+
+        foreach (var domain in _domainList)
+        {
+            _domain1ComboBox.Items.Add(new ComboBoxItem { Content = domain.Name, Tag = domain.Id });
+            _domain2ComboBox.Items.Add(new ComboBoxItem { Content = domain.Name, Tag = domain.Id });
+        }
+
+        // Default to first two different domains
+        if (_domain1ComboBox.Items.Count > 0)
+            _domain1ComboBox.SelectedIndex = 0;
+        if (_domain2ComboBox.Items.Count > 1)
+            _domain2ComboBox.SelectedIndex = 1;
+        else if (_domain2ComboBox.Items.Count > 0)
+            _domain2ComboBox.SelectedIndex = 0;
+    }
+
+    /// <summary>
+    /// Sets domain ComboBox selections from the current package defaults.
+    /// </summary>
+    private void LoadPackageDomainDefaults()
+    {
+        var domain1Str = _gameDataService.Get2DAValue("packages", _selectedPackageId, "Domain1");
+        var domain2Str = _gameDataService.Get2DAValue("packages", _selectedPackageId, "Domain2");
+
+        if (!string.IsNullOrEmpty(domain1Str) && domain1Str != "****" && int.TryParse(domain1Str, out int d1))
+        {
+            for (int i = 0; i < _domain1ComboBox.Items.Count; i++)
+            {
+                if (_domain1ComboBox.Items[i] is ComboBoxItem item && item.Tag is int tagId && tagId == d1)
+                {
+                    _domain1ComboBox.SelectedIndex = i;
+                    break;
+                }
+            }
+        }
+
+        if (!string.IsNullOrEmpty(domain2Str) && domain2Str != "****" && int.TryParse(domain2Str, out int d2))
+        {
+            for (int i = 0; i < _domain2ComboBox.Items.Count; i++)
+            {
+                if (_domain2ComboBox.Items[i] is ComboBoxItem item && item.Tag is int tagId && tagId == d2)
+                {
+                    _domain2ComboBox.SelectedIndex = i;
+                    break;
+                }
+            }
+        }
+    }
+
+    private static byte GetSelectedDomainId(ComboBox comboBox)
+    {
+        if (comboBox.SelectedItem is ComboBoxItem item && item.Tag is int domainId)
+            return (byte)domainId;
+        return 0;
     }
 
     private static string FormatAbilityName(string abilityCode) => abilityCode.ToUpperInvariant() switch
@@ -1631,9 +1916,392 @@ public partial class NewCharacterWizardWindow : Window
 
     #endregion
 
-    #region Step 6: Skills
+    #region Step 6: Feats
 
     private void PrepareStep6()
+    {
+        int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
+
+        // Calculate how many feats the player gets to choose
+        // Build a temp creature to use ExpectedFeatCount
+        var tempCreature = new UtcFile
+        {
+            Race = _selectedRaceId,
+            ClassList = new List<CreatureClass>
+            {
+                new CreatureClass { Class = classId, ClassLevel = 1 }
+            }
+        };
+
+        var expectedInfo = _displayService.Feats.GetExpectedFeatCount(tempCreature);
+        _featsToChoose = expectedInfo.TotalExpected;
+
+        // Get granted feats (auto-assigned, not choosable)
+        var grantedFeatIds = GetGrantedFeatIds();
+
+        // Get all feats available to this class/race
+        var allFeatIds = _displayService.Feats.GetAllFeatIds();
+
+        // Build ability scores for prereq checking
+        var racialMods = _displayService.GetRacialModifiers(_selectedRaceId);
+
+        // Build available feats list (excluding granted and already chosen)
+        _availableFeats = new List<FeatDisplayItem>();
+        foreach (var featId in allFeatIds)
+        {
+            // Skip granted feats
+            if (grantedFeatIds.Contains(featId)) continue;
+
+            // Skip already chosen feats
+            if (_chosenFeatIds.Contains(featId)) continue;
+
+            // Check if feat is available to this class
+            if (!_displayService.Feats.IsFeatAvailable(tempCreature, featId))
+                continue;
+
+            // Check prerequisites against current wizard state - only show feats that meet prereqs
+            var prereqs = _displayService.Feats.GetFeatPrerequisites(featId);
+            if (!CheckWizardFeatPrereqs(prereqs)) continue;
+
+            var name = _displayService.GetFeatName(featId);
+            if (string.IsNullOrEmpty(name)) continue;
+
+            var category = _displayService.Feats.GetFeatCategory(featId);
+
+            _availableFeats.Add(new FeatDisplayItem
+            {
+                FeatId = featId,
+                Name = name,
+                CategoryAbbrev = GetFeatCategoryAbbrev(category),
+                IsGranted = false,
+                MeetsPrereqs = true,
+                SourceLabel = ""
+            });
+        }
+
+        _availableFeats = _availableFeats
+            .OrderBy(f => f.Name)
+            .ToList();
+
+        ApplyFeatFilter();
+
+        // Build selected feats list (granted + chosen)
+        UpdateSelectedFeatsDisplay();
+        UpdateFeatSelectionCount();
+
+        // Update description
+        var parts = new List<string>();
+        if (expectedInfo.BaseFeats > 0) parts.Add($"{expectedInfo.BaseFeats} general");
+        if (expectedInfo.RacialBonusFeats > 0) parts.Add($"{expectedInfo.RacialBonusFeats} racial bonus");
+        if (expectedInfo.ClassBonusFeats > 0) parts.Add($"{expectedInfo.ClassBonusFeats} class bonus");
+        var breakdown = parts.Count > 0 ? $" ({string.Join(" + ", parts)})" : "";
+        _featStepDescription.Text = $"Choose {_featsToChoose} feat(s){breakdown}. Granted feats from your race and class are shown as pre-selected.";
+    }
+
+    private bool CheckWizardFeatPrereqs(FeatPrerequisites prereqs)
+    {
+        // No prerequisites at all - always available
+        bool hasAny = prereqs.RequiredFeats.Count > 0 ||
+                      prereqs.OrRequiredFeats.Count > 0 ||
+                      prereqs.MinStr > 0 || prereqs.MinDex > 0 || prereqs.MinCon > 0 ||
+                      prereqs.MinInt > 0 || prereqs.MinWis > 0 || prereqs.MinCha > 0 ||
+                      prereqs.MinBab > 0 || prereqs.MinSpellLevel > 0 ||
+                      prereqs.RequiredSkills.Count > 0 ||
+                      prereqs.MinLevel > 0 || prereqs.MaxLevel > 0 ||
+                      prereqs.RequiresEpic;
+        if (!hasAny) return true;
+
+        // Check ability score prerequisites
+        var racialMods = _displayService.GetRacialModifiers(_selectedRaceId);
+        int strTotal = _abilityBaseScores["STR"] + racialMods.Str;
+        int dexTotal = _abilityBaseScores["DEX"] + racialMods.Dex;
+        int conTotal = _abilityBaseScores["CON"] + racialMods.Con;
+        int intTotal = _abilityBaseScores["INT"] + racialMods.Int;
+        int wisTotal = _abilityBaseScores["WIS"] + racialMods.Wis;
+        int chaTotal = _abilityBaseScores["CHA"] + racialMods.Cha;
+
+        if (prereqs.MinStr > 0 && strTotal < prereqs.MinStr) return false;
+        if (prereqs.MinDex > 0 && dexTotal < prereqs.MinDex) return false;
+        if (prereqs.MinCon > 0 && conTotal < prereqs.MinCon) return false;
+        if (prereqs.MinInt > 0 && intTotal < prereqs.MinInt) return false;
+        if (prereqs.MinWis > 0 && wisTotal < prereqs.MinWis) return false;
+        if (prereqs.MinCha > 0 && chaTotal < prereqs.MinCha) return false;
+
+        // Check BAB (level 1 = BAB from class)
+        if (prereqs.MinBab > 0)
+        {
+            int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
+            int bab = _displayService.GetClassBab(classId, 1);
+            if (bab < prereqs.MinBab) return false;
+        }
+
+        // Check level (wizard is always level 1)
+        if (prereqs.MinLevel > 1) return false;
+        if (prereqs.MaxLevel > 0 && prereqs.MaxLevel < 1) return false;
+
+        // Check required feats (AND logic) — must have all
+        if (prereqs.RequiredFeats.Count > 0)
+        {
+            var grantedFeats = GetGrantedFeatIds();
+            foreach (var reqFeatId in prereqs.RequiredFeats)
+            {
+                if (!grantedFeats.Contains(reqFeatId) && !_chosenFeatIds.Contains(reqFeatId))
+                    return false;
+            }
+        }
+
+        // Check OR required feats — must have at least one
+        if (prereqs.OrRequiredFeats.Count > 0)
+        {
+            var grantedFeats = GetGrantedFeatIds();
+            bool hasOne = prereqs.OrRequiredFeats.Any(id => grantedFeats.Contains(id) || _chosenFeatIds.Contains(id));
+            if (!hasOne) return false;
+        }
+
+        // Check skill requirements
+        if (prereqs.RequiredSkills.Count > 0)
+        {
+            foreach (var (skillId, minRanks) in prereqs.RequiredSkills)
+            {
+                int allocated = _skillRanksAllocated.GetValueOrDefault(skillId, 0);
+                if (allocated < minRanks) return false;
+            }
+        }
+
+        // Epic feats not available at level 1
+        if (prereqs.RequiresEpic) return false;
+
+        return true;
+    }
+
+    private void ApplyFeatFilter()
+    {
+        var filter = _featSearchBox?.Text?.Trim() ?? "";
+
+        if (string.IsNullOrEmpty(filter))
+        {
+            _filteredAvailableFeats = new List<FeatDisplayItem>(_availableFeats);
+        }
+        else
+        {
+            _filteredAvailableFeats = _availableFeats
+                .Where(f => f.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        _availableFeatsListBox.ItemsSource = _filteredAvailableFeats;
+    }
+
+    private void UpdateSelectedFeatsDisplay()
+    {
+        var grantedFeatIds = GetGrantedFeatIds();
+        var selectedItems = new List<FeatDisplayItem>();
+
+        // Add granted feats first (read-only)
+        foreach (var featId in grantedFeatIds.OrderBy(id => _displayService.GetFeatName(id)))
+        {
+            var name = _displayService.GetFeatName(featId);
+            if (string.IsNullOrEmpty(name)) continue;
+            selectedItems.Add(new FeatDisplayItem
+            {
+                FeatId = featId,
+                Name = name,
+                IsGranted = true,
+                SourceLabel = "(granted)",
+                MeetsPrereqs = true
+            });
+        }
+
+        // Add chosen feats
+        foreach (var featId in _chosenFeatIds)
+        {
+            var name = _displayService.GetFeatName(featId);
+            if (string.IsNullOrEmpty(name)) continue;
+            selectedItems.Add(new FeatDisplayItem
+            {
+                FeatId = featId,
+                Name = name,
+                IsGranted = false,
+                SourceLabel = "(chosen)",
+                MeetsPrereqs = true
+            });
+        }
+
+        _selectedFeatsListBox.ItemsSource = selectedItems;
+        _selectedFeatCountLabel.Text = $"({_chosenFeatIds.Count} chosen + {grantedFeatIds.Count} granted)";
+    }
+
+    private void UpdateFeatSelectionCount()
+    {
+        int remaining = _featsToChoose - _chosenFeatIds.Count;
+        _featSelectionCountLabel.Text = $"{_chosenFeatIds.Count} / {_featsToChoose}";
+
+        if (remaining > 0)
+            _featSelectionCountLabel.Foreground = BrushManager.GetWarningBrush(this);
+        else if (remaining == 0)
+            _featSelectionCountLabel.Foreground = BrushManager.GetSuccessBrush(this);
+        else
+            _featSelectionCountLabel.ClearValue(TextBlock.ForegroundProperty);
+    }
+
+    private bool IsFeatSelectionComplete()
+    {
+        return _chosenFeatIds.Count >= _featsToChoose;
+    }
+
+    private void OnFeatSearchChanged(object? sender, TextChangedEventArgs e)
+    {
+        ApplyFeatFilter();
+    }
+
+    private void OnAddFeatClick(object? sender, RoutedEventArgs e)
+    {
+        var selectedItems = _availableFeatsListBox.SelectedItems?
+            .OfType<FeatDisplayItem>()
+            .Where(f => f.MeetsPrereqs)
+            .ToList() ?? new();
+
+        foreach (var item in selectedItems)
+        {
+            if (_chosenFeatIds.Count >= _featsToChoose) break;
+            if (!_chosenFeatIds.Contains(item.FeatId))
+            {
+                _chosenFeatIds.Add(item.FeatId);
+                _availableFeats.RemoveAll(f => f.FeatId == item.FeatId);
+            }
+        }
+
+        ApplyFeatFilter();
+        UpdateSelectedFeatsDisplay();
+        UpdateFeatSelectionCount();
+        ValidateCurrentStep();
+    }
+
+    private void OnRemoveFeatClick(object? sender, RoutedEventArgs e)
+    {
+        var selectedItems = _selectedFeatsListBox.SelectedItems?
+            .OfType<FeatDisplayItem>()
+            .Where(f => !f.IsGranted) // Can't remove granted feats
+            .ToList() ?? new();
+
+        foreach (var item in selectedItems)
+        {
+            _chosenFeatIds.Remove(item.FeatId);
+
+            // Re-add to available list
+            var category = _displayService.Feats.GetFeatCategory(item.FeatId);
+            var prereqs = _displayService.Feats.GetFeatPrerequisites(item.FeatId);
+            bool meetsPrereqs = CheckWizardFeatPrereqs(prereqs);
+
+            _availableFeats.Add(new FeatDisplayItem
+            {
+                FeatId = item.FeatId,
+                Name = item.Name,
+                CategoryAbbrev = GetFeatCategoryAbbrev(category),
+                IsGranted = false,
+                MeetsPrereqs = meetsPrereqs,
+                SourceLabel = meetsPrereqs ? "" : "(prereqs)"
+            });
+        }
+
+        _availableFeats = _availableFeats
+            .OrderByDescending(f => f.MeetsPrereqs)
+            .ThenBy(f => f.Name)
+            .ToList();
+
+        ApplyFeatFilter();
+        UpdateSelectedFeatsDisplay();
+        UpdateFeatSelectionCount();
+        ValidateCurrentStep();
+    }
+
+    private void OnFeatAutoAssignClick(object? sender, RoutedEventArgs e)
+    {
+        _chosenFeatIds.Clear();
+
+        // Try to read package feat preferences from FeatPref2DA in packages.2da
+        var preferredFeatIds = new List<int>();
+        if (_selectedPackageId != 255)
+        {
+            var featPref2da = _gameDataService.Get2DAValue("packages", _selectedPackageId, "FeatPref2DA");
+            if (!string.IsNullOrEmpty(featPref2da) && featPref2da != "****")
+            {
+                for (int row = 0; row < 100; row++)
+                {
+                    var featIdStr = _gameDataService.Get2DAValue(featPref2da, row, "FeatIndex");
+                    if (string.IsNullOrEmpty(featIdStr) || featIdStr == "****")
+                        break;
+                    if (int.TryParse(featIdStr, out int featId))
+                        preferredFeatIds.Add(featId);
+                }
+            }
+        }
+
+        var grantedFeatIds = GetGrantedFeatIds();
+        int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
+        var tempCreature = new UtcFile
+        {
+            Race = _selectedRaceId,
+            ClassList = new List<CreatureClass>
+            {
+                new CreatureClass { Class = classId, ClassLevel = 1 }
+            }
+        };
+
+        // First: pick from preferred feats
+        foreach (var featId in preferredFeatIds)
+        {
+            if (_chosenFeatIds.Count >= _featsToChoose) break;
+            if (grantedFeatIds.Contains(featId)) continue;
+            if (_chosenFeatIds.Contains(featId)) continue;
+            if (!_displayService.Feats.IsFeatAvailable(tempCreature, featId)) continue;
+
+            var prereqs = _displayService.Feats.GetFeatPrerequisites(featId);
+            if (CheckWizardFeatPrereqs(prereqs))
+                _chosenFeatIds.Add(featId);
+        }
+
+        // Second: fill remaining with feats that meet prereqs, alphabetically
+        if (_chosenFeatIds.Count < _featsToChoose)
+        {
+            var allFeatIds = _displayService.Feats.GetAllFeatIds();
+            var remaining = allFeatIds
+                .Where(id => !grantedFeatIds.Contains(id) && !_chosenFeatIds.Contains(id))
+                .Where(id => _displayService.Feats.IsFeatAvailable(tempCreature, id))
+                .Select(id => (Id: id, Name: _displayService.GetFeatName(id)))
+                .Where(f => !string.IsNullOrEmpty(f.Name))
+                .OrderBy(f => f.Name);
+
+            foreach (var (id, _) in remaining)
+            {
+                if (_chosenFeatIds.Count >= _featsToChoose) break;
+                var prereqs = _displayService.Feats.GetFeatPrerequisites(id);
+                if (CheckWizardFeatPrereqs(prereqs))
+                    _chosenFeatIds.Add(id);
+            }
+        }
+
+        // Rebuild available list and re-validate
+        PrepareStep6();
+        ValidateCurrentStep();
+    }
+
+    private static string GetFeatCategoryAbbrev(FeatCategory category) => category switch
+    {
+        FeatCategory.Combat => "Cmb",
+        FeatCategory.ActiveCombat => "Act",
+        FeatCategory.Defensive => "Def",
+        FeatCategory.Magical => "Mag",
+        FeatCategory.ClassRacial => "C/R",
+        FeatCategory.Other => "Oth",
+        _ => ""
+    };
+
+    #endregion
+
+    #region Step 7: Skills (was Step 6)
+
+    private void PrepareStep7()
     {
         // Recalculate skill points (INT may have changed in Step 5)
         int intScore = _abilityBaseScores["INT"] + _displayService.GetRacialModifier(_selectedRaceId, "INT");
@@ -1658,9 +2326,9 @@ public partial class NewCharacterWizardWindow : Window
         };
         _unavailableSkillIds = _displayService.Skills.GetUnavailableSkillIds(tempCreature, 28);
 
-        if (!_step6Loaded)
+        if (!_step7Loaded)
         {
-            _step6Loaded = true;
+            _step7Loaded = true;
             _skillRanksAllocated.Clear();
         }
 
@@ -1960,9 +2628,9 @@ public partial class NewCharacterWizardWindow : Window
 
     #endregion
 
-    #region Step 7: Spells
+    #region Step 8: Spells (was Step 7)
 
-    private void PrepareStep7()
+    private void PrepareStep8()
     {
         int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
         bool isCaster = _displayService.IsCasterClass(classId);
@@ -2018,15 +2686,9 @@ public partial class NewCharacterWizardWindow : Window
             _divineSpellInfoPanel.IsVisible = true;
 
             // Hide the two-panel selection UI
+            _spellSelectionTwoPanel.IsVisible = false;
             _spellLevelTabsPanel.IsVisible = false;
             _spellSelectionCountLabel.IsVisible = false;
-            _spellSearchBox2.IsVisible = false;
-            _availableSpellsListBox.IsVisible = false;
-            _selectedSpellsListBox.IsVisible = false;
-            _selectedSpellCountLabel.IsVisible = false;
-            // Hide the parent grids of the available/selected panels
-            var twoPanel = _availableSpellsListBox.Parent?.Parent as Grid;
-            if (twoPanel != null) twoPanel.IsVisible = false;
 
             _spellStepDescription.Text = $"{className}s receive all their class spells automatically through divine power.";
             return;
@@ -2034,14 +2696,9 @@ public partial class NewCharacterWizardWindow : Window
 
         // Spontaneous casters (Bard, Sorcerer) or Wizard: show spell selection UI
         _divineSpellInfoPanel.IsVisible = false;
-        var selectionParent = _availableSpellsListBox.Parent?.Parent as Grid;
-        if (selectionParent != null) selectionParent.IsVisible = true;
+        _spellSelectionTwoPanel.IsVisible = true;
         _spellLevelTabsPanel.IsVisible = true;
         _spellSelectionCountLabel.IsVisible = true;
-        _spellSearchBox2.IsVisible = true;
-        _availableSpellsListBox.IsVisible = true;
-        _selectedSpellsListBox.IsVisible = true;
-        _selectedSpellCountLabel.IsVisible = true;
 
         string classNameForDesc = _displayService.GetClassName(classId);
         if (isSpontaneous)
@@ -2050,9 +2707,9 @@ public partial class NewCharacterWizardWindow : Window
             _spellStepDescription.Text = $"Choose spells for your {classNameForDesc}'s spellbook.";
 
         // Initialize spell level selections if not already done
-        if (!_step7Loaded)
+        if (!_step8Loaded)
         {
-            _step7Loaded = true;
+            _step8Loaded = true;
             _selectedSpellsByLevel.Clear();
         }
 
@@ -2385,9 +3042,194 @@ public partial class NewCharacterWizardWindow : Window
 
     #endregion
 
-    #region Step 8: Summary
+    #region Step 9: Equipment
 
-    private void PrepareStep8()
+    private void PrepareStep9()
+    {
+        if (_step9Loaded) return;
+        _step9Loaded = true;
+
+        // Equipment step is optional — show empty state by default
+        UpdateEquipmentDisplay();
+    }
+
+    private void OnLoadPackageEquipmentClick(object? sender, RoutedEventArgs e)
+    {
+        _equipmentItems.Clear();
+
+        if (_selectedPackageId == 255)
+        {
+            UpdateEquipmentDisplay();
+            return;
+        }
+
+        // Read equipment from packeq*.2da referenced by packages.2da Equip2DA column
+        var equip2da = _gameDataService.Get2DAValue("packages", _selectedPackageId, "Equip2DA");
+        if (string.IsNullOrEmpty(equip2da) || equip2da == "****")
+        {
+            UnifiedLogger.Log(LogLevel.DEBUG, $"No Equip2DA for package {_selectedPackageId}", "NewCharWiz", "📦");
+            UpdateEquipmentDisplay();
+            return;
+        }
+
+        // Read equipment entries from the package equipment table (packeq*.2da uses "Label" column)
+        for (int row = 0; row < 50; row++)
+        {
+            var resRef = _gameDataService.Get2DAValue(equip2da, row, "Label");
+            if (string.IsNullOrEmpty(resRef) || resRef == "****")
+                break;
+
+            // Get display name and slot info from the UTI resource
+            var displayName = GetItemDisplayName(resRef);
+            int slotFlags = GetItemSlotFlags(resRef);
+            var slotName = slotFlags != 0 ? GetPrimarySlotName(slotFlags) : "Backpack";
+
+            _equipmentItems.Add(new EquipmentDisplayItem
+            {
+                ResRef = resRef,
+                Name = displayName,
+                SlotName = slotName,
+                SlotFlags = slotFlags
+            });
+        }
+
+        UnifiedLogger.Log(LogLevel.DEBUG, $"Loaded {_equipmentItems.Count} equipment items from {equip2da}", "NewCharWiz", "📦");
+        UpdateEquipmentDisplay();
+    }
+
+    private void OnClearEquipmentClick(object? sender, RoutedEventArgs e)
+    {
+        _equipmentItems.Clear();
+        UpdateEquipmentDisplay();
+    }
+
+    private void UpdateEquipmentDisplay()
+    {
+        _equipmentItemsPanel.Children.Clear();
+        _equipmentEmptyLabel.IsVisible = _equipmentItems.Count == 0;
+        _equipmentCountLabel.Text = $"{_equipmentItems.Count} items";
+
+        foreach (var item in _equipmentItems)
+        {
+            var row = new Grid
+            {
+                ColumnDefinitions = Avalonia.Controls.ColumnDefinitions.Parse("*,120"),
+                Margin = new Avalonia.Thickness(0, 2)
+            };
+
+            var nameLabel = new TextBlock
+            {
+                Text = item.Name,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Margin = new Avalonia.Thickness(8, 4)
+            };
+            Grid.SetColumn(nameLabel, 0);
+            row.Children.Add(nameLabel);
+
+            var slotLabel = new TextBlock
+            {
+                Text = item.SlotName,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Foreground = new SolidColorBrush(Colors.Gray),
+                FontSize = 12
+            };
+            Grid.SetColumn(slotLabel, 1);
+            row.Children.Add(slotLabel);
+
+            _equipmentItemsPanel.Children.Add(row);
+        }
+    }
+
+    private string GetItemDisplayName(string resRef)
+    {
+        try
+        {
+            var utiData = _gameDataService.FindResource(resRef, ResourceTypes.Uti);
+            if (utiData != null)
+            {
+                var uti = UtiReader.Read(utiData);
+                var locName = uti.LocalizedName;
+                if (locName != null)
+                {
+                    // Try localized string first
+                    if (locName.LocalizedStrings.TryGetValue(0, out var engName) && !string.IsNullOrEmpty(engName))
+                        return engName;
+                    // Try StrRef
+                    if (locName.StrRef != 0xFFFFFFFF)
+                    {
+                        var tlkName = _gameDataService.GetString(locName.StrRef.ToString());
+                        if (!string.IsNullOrEmpty(tlkName))
+                            return tlkName;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.Log(LogLevel.DEBUG, $"Failed to read item name for {resRef}: {ex.Message}", "NewCharWiz", "📦");
+        }
+
+        return resRef; // Fallback to resref
+    }
+
+    /// <summary>
+    /// Gets a display-friendly slot name from an EquipableSlots bitmask.
+    /// Picks the first recognized slot bit (e.g., 0x30 → "Right Hand").
+    /// </summary>
+    private static string GetPrimarySlotName(int slotFlags)
+    {
+        // Check each known slot bit from lowest to highest
+        int[] knownSlots =
+        [
+            EquipmentSlots.Head, EquipmentSlots.Chest, EquipmentSlots.Boots,
+            EquipmentSlots.Arms, EquipmentSlots.RightHand, EquipmentSlots.LeftHand,
+            EquipmentSlots.Cloak, EquipmentSlots.LeftRing, EquipmentSlots.RightRing,
+            EquipmentSlots.Neck, EquipmentSlots.Belt, EquipmentSlots.Arrows,
+            EquipmentSlots.Bullets, EquipmentSlots.Bolts
+        ];
+
+        foreach (var slot in knownSlots)
+        {
+            if ((slotFlags & slot) != 0)
+                return EquipmentSlots.GetSlotName(slot);
+        }
+
+        return $"Slot ({slotFlags:X})";
+    }
+
+    private int GetItemSlotFlags(string resRef)
+    {
+        try
+        {
+            var utiData = _gameDataService.FindResource(resRef, ResourceTypes.Uti);
+            if (utiData != null)
+            {
+                var uti = UtiReader.Read(utiData);
+                int baseItem = uti.BaseItem;
+                var slotsStr = _gameDataService.Get2DAValue("baseitems", baseItem, "EquipableSlots");
+                if (!string.IsNullOrEmpty(slotsStr) && slotsStr != "****")
+                {
+                    // Parse decimal first, then hex with 0x prefix (same as EquipmentSlotValidator)
+                    if (int.TryParse(slotsStr, out int slots))
+                        return slots;
+                    if (slotsStr.StartsWith("0x", StringComparison.OrdinalIgnoreCase) &&
+                        int.TryParse(slotsStr[2..], System.Globalization.NumberStyles.HexNumber, null, out slots))
+                        return slots;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.Log(LogLevel.DEBUG, $"Failed to read slot for {resRef}: {ex.Message}", "NewCharWiz", "📦");
+        }
+        return 0;
+    }
+
+    #endregion
+
+    #region Step 10: Summary (was Step 8)
+
+    private void PrepareStep10()
     {
         // Populate summary fields
         _summaryFileTypeLabel.Text = _isBicFile ? "Player Character (BIC)" : "Creature Blueprint (UTC)";
@@ -2406,7 +3248,18 @@ public partial class NewCharacterWizardWindow : Window
         if (_selectedClassId >= 0)
         {
             var className = _displayService.GetClassName(_selectedClassId);
-            _summaryClassLabel.Text = $"{className} (Level 1)";
+            var classText = $"{className} (Level 1)";
+
+            // Append domains if applicable
+            if (_classNeedsDomains)
+            {
+                var d1Name = (_domain1ComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
+                var d2Name = (_domain2ComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
+                if (!string.IsNullOrEmpty(d1Name) && !string.IsNullOrEmpty(d2Name))
+                    classText += $" — Domains: {d1Name}, {d2Name}";
+            }
+
+            _summaryClassLabel.Text = classText;
         }
 
         // Abilities
@@ -2459,29 +3312,66 @@ public partial class NewCharacterWizardWindow : Window
             _summarySpellsSection.IsVisible = false;
         }
 
-        // Feats (auto-granted)
+        // Feats (granted + chosen)
         var grantedFeats = GetGrantedFeatIds();
-        if (grantedFeats.Count > 0)
+        var allFeatIds = new HashSet<int>(grantedFeats);
+        allFeatIds.UnionWith(_chosenFeatIds);
+
+        if (allFeatIds.Count > 0)
         {
-            var featNames = grantedFeats
+            var grantedNames = grantedFeats
                 .Select(id => _displayService.GetFeatName(id))
                 .Where(n => !string.IsNullOrEmpty(n))
                 .OrderBy(n => n)
                 .ToList();
-            _summaryFeatsLabel.Text = featNames.Count > 0
-                ? string.Join(", ", featNames)
-                : "None";
+            var chosenNames = _chosenFeatIds
+                .Select(id => _displayService.GetFeatName(id))
+                .Where(n => !string.IsNullOrEmpty(n))
+                .OrderBy(n => n)
+                .ToList();
+
+            var parts2 = new List<string>();
+            if (chosenNames.Count > 0) parts2.Add($"{chosenNames.Count} chosen ({string.Join(", ", chosenNames)})");
+            if (grantedNames.Count > 0) parts2.Add($"{grantedNames.Count} granted");
+            _summaryFeatsLabel.Text = string.Join(" + ", parts2);
         }
         else
         {
             _summaryFeatsLabel.Text = "None";
         }
 
+        // Equipment
+        if (_equipmentItems.Count > 0)
+        {
+            _summaryEquipmentSection.IsVisible = true;
+            _summaryEquipmentLabel.Text = $"{_equipmentItems.Count} items";
+        }
+        else
+        {
+            _summaryEquipmentSection.IsVisible = true;
+            _summaryEquipmentLabel.Text = "None (can be added later in editor)";
+        }
+
+        // Scripts (UTC only)
+        bool isUtc = !_isBicFile;
+        _summaryScriptsDivider.IsVisible = isUtc;
+        _summaryScriptsSection.IsVisible = isUtc;
+        if (isUtc)
+        {
+            _summaryScriptsLabel.Text = _defaultScriptsCheckBox.IsChecked == true
+                ? "Default NWN scripts (nw_c2_default*)"
+                : "None (can be added later in editor)";
+        }
+
+        // Age visibility (BIC only)
+        _ageLabelText.IsVisible = _isBicFile;
+        _ageNumericUpDown.IsVisible = _isBicFile;
+        _ageNote.IsVisible = _isBicFile;
+
         // Palette ID visibility (UTC only)
-        bool showPalette = !_isBicFile;
-        _paletteIdLabelText.IsVisible = showPalette;
-        _paletteIdNumericUpDown.IsVisible = showPalette;
-        _paletteIdNote.IsVisible = showPalette;
+        _paletteIdLabelText.IsVisible = isUtc;
+        _paletteIdComboBox.IsVisible = isUtc;
+        _paletteIdNote.IsVisible = isUtc;
     }
 
     private void OnCharacterNameChanged(object? sender, TextChangedEventArgs e)
@@ -2530,11 +3420,62 @@ public partial class NewCharacterWizardWindow : Window
         int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
 
         var racialFeats = _displayService.Feats.GetRaceGrantedFeatIds(_selectedRaceId);
-        var classFeats = _displayService.Feats.GetClassGrantedFeatIds(classId);
+
+        // Get class feats granted at level 1 only (not all levels).
+        // cls_feat_*.2da: List==3 + GrantedOnLevel==1, or List==-1 (granted at creation).
+        var classFeats = GetClassFeatsGrantedAtLevel(classId, 1);
 
         var combined = new HashSet<int>(racialFeats);
         combined.UnionWith(classFeats);
         return combined;
+    }
+
+    private HashSet<int> GetClassFeatsGrantedAtLevel(int classId, int level)
+    {
+        var result = new HashSet<int>();
+        var featTable = _gameDataService.Get2DAValue("classes", classId, "FeatsTable");
+        if (string.IsNullOrEmpty(featTable) || featTable == "****")
+            return result;
+
+        for (int row = 0; row < 200; row++)
+        {
+            var featIndexStr = _gameDataService.Get2DAValue(featTable, row, "FeatIndex");
+            if (string.IsNullOrEmpty(featIndexStr) || featIndexStr == "****")
+                break;
+
+            if (!int.TryParse(featIndexStr, out int featId))
+                continue;
+
+            var listType = _gameDataService.Get2DAValue(featTable, row, "List");
+
+            // List==-1: granted at creation (level 1)
+            if (listType == "-1" && level == 1)
+            {
+                result.Add(featId);
+                continue;
+            }
+
+            // List==3: automatically granted at GrantedOnLevel
+            if (listType == "3")
+            {
+                var grantedLevelStr = _gameDataService.Get2DAValue(featTable, row, "GrantedOnLevel");
+                if (int.TryParse(grantedLevelStr, out int grantedLevel) && grantedLevel == level)
+                    result.Add(featId);
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Gets all feat IDs for the creature: granted + player-chosen.
+    /// </summary>
+    private HashSet<int> GetAllFeatIdsForCreature()
+    {
+        var all = GetGrantedFeatIds();
+        foreach (var featId in _chosenFeatIds)
+            all.Add(featId);
+        return all;
     }
 
     #endregion
@@ -2543,7 +3484,7 @@ public partial class NewCharacterWizardWindow : Window
 
     /// <summary>
     /// Builds a UtcFile from all wizard selections.
-    /// Populates all fields from Steps 1-8 using 2DA data.
+    /// Populates all fields from Steps 1-10 using 2DA data.
     /// </summary>
     private UtcFile BuildCreature()
     {
@@ -2566,17 +3507,22 @@ public partial class NewCharacterWizardWindow : Window
         var resRef = tag;
 
         // Palette ID from step 8
-        _paletteId = (byte)(_paletteIdNumericUpDown.Value ?? 1);
+        _paletteId = (_paletteIdComboBox.SelectedItem is ComboBoxItem item && item.Tag is byte id) ? id : (byte)1;
 
         // Build class entry with spell data
         var creatureClass = new CreatureClass
         {
             Class = classId,
-            ClassLevel = 1
+            ClassLevel = 1,
+            Domain1 = GetSelectedDomainId(_domain1ComboBox),
+            Domain2 = GetSelectedDomainId(_domain2ComboBox)
         };
 
         // Populate spells on the class
         PopulateClassSpells(creatureClass, classId);
+
+        // Build equipment lists (equipped + backpack)
+        var equipmentLists = BuildEquipmentLists();
 
         // FirstName
         var firstName = new CExoLocString { StrRef = 0xFFFFFFFF };
@@ -2585,14 +3531,30 @@ public partial class NewCharacterWizardWindow : Window
             firstName.LocalizedStrings[0] = _characterName; // English (language 0)
         }
 
-        return new UtcFile
+        // LastName
+        var lastName = new CExoLocString { StrRef = 0xFFFFFFFF };
+        var lastNameText = _lastNameTextBox.Text?.Trim() ?? "";
+        if (!string.IsNullOrEmpty(lastNameText))
         {
-            // Identity (Step 8)
+            lastName.LocalizedStrings[0] = lastNameText;
+        }
+
+        // Description/Biography
+        var description = new CExoLocString { StrRef = 0xFFFFFFFF };
+        var descText = _descriptionTextBox.Text?.Trim() ?? "";
+        if (!string.IsNullOrEmpty(descText))
+        {
+            description.LocalizedStrings[0] = descText;
+        }
+
+        var creature = new UtcFile
+        {
+            // Identity (Step 10)
             FirstName = firstName,
-            LastName = new CExoLocString { StrRef = 0xFFFFFFFF },
+            LastName = lastName,
             Tag = tag,
             TemplateResRef = resRef,
-            Description = new CExoLocString { StrRef = 0xFFFFFFFF },
+            Description = description,
             PaletteID = _isBicFile ? (byte)0 : _paletteId,
 
             // Race & gender (Step 2)
@@ -2653,6 +3615,9 @@ public partial class NewCharacterWizardWindow : Window
             GoodEvil = 50,
             LawfulChaotic = 50,
 
+            // Voice set (Step 10)
+            SoundSetFile = (_voiceSetComboBox.SelectedItem is ComboBoxItem voiceItem && voiceItem.Tag is ushort voiceId) ? voiceId : (ushort)0,
+
             // Behavior defaults
             FactionID = 1,
             PerceptionRange = 11,
@@ -2663,20 +3628,51 @@ public partial class NewCharacterWizardWindow : Window
             // Starting package (Step 4)
             StartingPackage = _selectedPackageId != 255 ? _selectedPackageId : (byte)0,
 
-            // Class (Step 4) with spells (Step 7)
+            // Class (Step 4) with spells (Step 8)
             ClassList = new List<CreatureClass> { creatureClass },
 
-            // Feats: granted by race + class
-            FeatList = GetGrantedFeatIds().Select(id => (ushort)id).ToList(),
+            // Feats: granted (race + class) + player-chosen (Step 6)
+            FeatList = GetAllFeatIdsForCreature().Select(id => (ushort)id).ToList(),
 
-            // Skills (Step 6)
+            // Skills (Step 7)
             SkillList = BuildSkillList_ForCreature(),
 
-            // Empty lists
+            // Equipment (Step 9)
             SpecAbilityList = new List<SpecialAbility>(),
-            ItemList = new List<InventoryItem>(),
-            EquipItemList = new List<EquippedItem>()
+            ItemList = equipmentLists.Backpack,
+            EquipItemList = equipmentLists.Equipped
         };
+
+        // Apply default NWN scripts for UTC files if option is checked
+        if (!_isBicFile && _defaultScriptsCheckBox.IsChecked == true)
+            ApplyDefaultScripts(creature);
+
+        // Convert to BicFile if creating a player character
+        if (_isBicFile)
+        {
+            var bicFile = BicFile.FromUtcFile(creature);
+            bicFile.Age = (int)(_ageNumericUpDown.Value ?? 25);
+            return bicFile;
+        }
+
+        return creature;
+    }
+
+    private static void ApplyDefaultScripts(UtcFile utc)
+    {
+        utc.ScriptAttacked = "nw_c2_default5";
+        utc.ScriptDamaged = "nw_c2_default6";
+        utc.ScriptDeath = "nw_c2_default7";
+        utc.ScriptDialogue = "nw_c2_default4";
+        utc.ScriptDisturbed = "nw_c2_default8";
+        utc.ScriptEndRound = "nw_c2_default3";
+        utc.ScriptHeartbeat = "nw_c2_default1";
+        utc.ScriptOnBlocked = "nw_c2_defaulte";
+        utc.ScriptOnNotice = "nw_c2_default2";
+        utc.ScriptRested = "nw_c2_defaulta";
+        utc.ScriptSpawn = "nw_c2_default9";
+        utc.ScriptSpellAt = "nw_c2_defaultb";
+        utc.ScriptUserDefine = "nw_c2_defaultd";
     }
 
     private void PopulateClassSpells(CreatureClass creatureClass, int classId)
@@ -2712,6 +3708,69 @@ public partial class NewCharacterWizardWindow : Window
             skills.Add((byte)_skillRanksAllocated.GetValueOrDefault(i, 0));
         }
         return skills;
+    }
+
+    /// <summary>
+    /// Splits equipment into equipped items and backpack items.
+    /// Items with valid EquipableSlots go into equipment slots (first fit wins).
+    /// Items without a slot (or when the slot is already taken) go to backpack.
+    /// </summary>
+    private (List<EquippedItem> Equipped, List<InventoryItem> Backpack) BuildEquipmentLists()
+    {
+        var equipped = new List<EquippedItem>();
+        var backpack = new List<InventoryItem>();
+        var usedSlots = new HashSet<int>();
+        ushort posX = 0;
+        ushort posY = 0;
+
+        foreach (var equip in _equipmentItems)
+        {
+            int assignedSlot = 0;
+
+            if (equip.SlotFlags != 0)
+            {
+                // EquipableSlots is a bitmask — pick the first available slot bit
+                for (int bit = 0; bit < 14; bit++)
+                {
+                    int slotBit = 1 << bit;
+                    if ((equip.SlotFlags & slotBit) != 0 && !usedSlots.Contains(slotBit))
+                    {
+                        assignedSlot = slotBit;
+                        break;
+                    }
+                }
+            }
+
+            if (assignedSlot != 0)
+            {
+                usedSlots.Add(assignedSlot);
+                equipped.Add(new EquippedItem
+                {
+                    Slot = assignedSlot,
+                    EquipRes = equip.ResRef
+                });
+            }
+            else
+            {
+                backpack.Add(new InventoryItem
+                {
+                    InventoryRes = equip.ResRef,
+                    Repos_PosX = posX,
+                    Repos_PosY = posY,
+                    Dropable = true,
+                    Pickpocketable = false
+                });
+
+                posX++;
+                if (posX >= 4)
+                {
+                    posX = 0;
+                    posY++;
+                }
+            }
+        }
+
+        return (equipped, backpack);
     }
 
     /// <summary>
@@ -2771,6 +3830,31 @@ public partial class NewCharacterWizardWindow : Window
     {
         public int Id { get; set; }
         public string Name { get; set; } = "";
+    }
+
+    private class FeatDisplayItem
+    {
+        public int FeatId { get; set; }
+        public string Name { get; set; } = "";
+        public string CategoryAbbrev { get; set; } = "";
+        public bool IsGranted { get; set; }
+        public bool MeetsPrereqs { get; set; } = true;
+        public string SourceLabel { get; set; } = "";
+    }
+
+    private class EquipmentDisplayItem
+    {
+        public string ResRef { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string SlotName { get; set; } = "";
+        public int SlotFlags { get; set; } // Raw EquipableSlots bit flags from baseitems.2da
+    }
+
+    private class DomainDisplayItem
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public override string ToString() => Name;
     }
 
     #endregion

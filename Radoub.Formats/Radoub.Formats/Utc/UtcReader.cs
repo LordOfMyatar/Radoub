@@ -232,7 +232,9 @@ public static class UtcReader
             var creatureClass = new CreatureClass
             {
                 Class = classStruct.GetFieldValue<int>("Class", 0),
-                ClassLevel = classStruct.GetFieldValue<short>("ClassLevel", 1)
+                ClassLevel = classStruct.GetFieldValue<short>("ClassLevel", 1),
+                Domain1 = classStruct.GetFieldValue<byte>("Domain1", 0),
+                Domain2 = classStruct.GetFieldValue<byte>("Domain2", 0)
             };
 
             // Parse known spells (KnownList0-9) - used by Bards, Sorcerers, PC Wizards
