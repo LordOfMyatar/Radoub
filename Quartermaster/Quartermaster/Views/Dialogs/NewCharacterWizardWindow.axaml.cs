@@ -2901,17 +2901,17 @@ public partial class NewCharacterWizardWindow : Window
             if (string.IsNullOrEmpty(resRef) || resRef == "****")
                 break;
 
-            // Get display name from the UTI resource
+            // Get display name and slot info from the UTI resource
             var displayName = GetItemDisplayName(resRef);
-
-            // Determine slot from base item type
-            var slotName = GetItemSlotName(resRef);
+            int slotFlags = GetItemSlotFlags(resRef);
+            var slotName = slotFlags != 0 ? EquipmentSlots.GetSlotName(slotFlags) : "Backpack";
 
             _equipmentItems.Add(new EquipmentDisplayItem
             {
                 ResRef = resRef,
                 Name = displayName,
-                SlotName = slotName
+                SlotName = slotName,
+                SlotFlags = slotFlags
             });
         }
 
@@ -2994,7 +2994,7 @@ public partial class NewCharacterWizardWindow : Window
         return resRef; // Fallback to resref
     }
 
-    private string GetItemSlotName(string resRef)
+    private int GetItemSlotFlags(string resRef)
     {
         try
         {
@@ -3002,21 +3002,18 @@ public partial class NewCharacterWizardWindow : Window
             if (utiData != null)
             {
                 var uti = UtiReader.Read(utiData);
-                // Read base item type to determine slot
                 int baseItem = uti.BaseItem;
                 var slotsStr = _gameDataService.Get2DAValue("baseitems", baseItem, "EquipableSlots");
-                if (!string.IsNullOrEmpty(slotsStr) && slotsStr != "****" && int.TryParse(slotsStr, System.Globalization.NumberStyles.HexNumber, null, out int slotFlags))
-                {
-                    return EquipmentSlots.GetSlotName(slotFlags);
-                }
+                if (!string.IsNullOrEmpty(slotsStr) && slotsStr != "****" &&
+                    int.TryParse(slotsStr, System.Globalization.NumberStyles.HexNumber, null, out int slotFlags))
+                    return slotFlags;
             }
         }
         catch (Exception ex)
         {
-            UnifiedLogger.Log(LogLevel.DEBUG, $"Failed to get slot for {resRef}: {ex.Message}", "NewCharWiz", "📦");
+            UnifiedLogger.Log(LogLevel.DEBUG, $"Failed to read slot for {resRef}: {ex.Message}", "NewCharWiz", "📦");
         }
-
-        return "Inventory";
+        return 0;
     }
 
     #endregion
@@ -3287,6 +3284,9 @@ public partial class NewCharacterWizardWindow : Window
         // Populate spells on the class
         PopulateClassSpells(creatureClass, classId);
 
+        // Build equipment lists (equipped + backpack)
+        var equipmentLists = BuildEquipmentLists();
+
         // FirstName
         var firstName = new CExoLocString { StrRef = 0xFFFFFFFF };
         if (!string.IsNullOrEmpty(_characterName))
@@ -3383,8 +3383,8 @@ public partial class NewCharacterWizardWindow : Window
 
             // Equipment (Step 9)
             SpecAbilityList = new List<SpecialAbility>(),
-            ItemList = BuildInventoryItems(),
-            EquipItemList = new List<EquippedItem>()
+            ItemList = equipmentLists.Backpack,
+            EquipItemList = equipmentLists.Equipped
         };
     }
 
@@ -3424,36 +3424,66 @@ public partial class NewCharacterWizardWindow : Window
     }
 
     /// <summary>
-    /// Builds inventory items from the equipment step selections.
-    /// Items go into the backpack (ItemList). Equipment slot assignment is left to the editor.
+    /// Splits equipment into equipped items and backpack items.
+    /// Items with valid EquipableSlots go into equipment slots (first fit wins).
+    /// Items without a slot (or when the slot is already taken) go to backpack.
     /// </summary>
-    private List<InventoryItem> BuildInventoryItems()
+    private (List<EquippedItem> Equipped, List<InventoryItem> Backpack) BuildEquipmentLists()
     {
-        var items = new List<InventoryItem>();
+        var equipped = new List<EquippedItem>();
+        var backpack = new List<InventoryItem>();
+        var usedSlots = new HashSet<int>();
         ushort posX = 0;
         ushort posY = 0;
 
         foreach (var equip in _equipmentItems)
         {
-            items.Add(new InventoryItem
-            {
-                InventoryRes = equip.ResRef,
-                Repos_PosX = posX,
-                Repos_PosY = posY,
-                Dropable = true,
-                Pickpocketable = false
-            });
+            int assignedSlot = 0;
 
-            // Simple grid layout for backpack positions
-            posX++;
-            if (posX >= 4)
+            if (equip.SlotFlags != 0)
             {
-                posX = 0;
-                posY++;
+                // EquipableSlots is a bitmask — pick the first available slot bit
+                for (int bit = 0; bit < 14; bit++)
+                {
+                    int slotBit = 1 << bit;
+                    if ((equip.SlotFlags & slotBit) != 0 && !usedSlots.Contains(slotBit))
+                    {
+                        assignedSlot = slotBit;
+                        break;
+                    }
+                }
+            }
+
+            if (assignedSlot != 0)
+            {
+                usedSlots.Add(assignedSlot);
+                equipped.Add(new EquippedItem
+                {
+                    Slot = assignedSlot,
+                    EquipRes = equip.ResRef
+                });
+            }
+            else
+            {
+                backpack.Add(new InventoryItem
+                {
+                    InventoryRes = equip.ResRef,
+                    Repos_PosX = posX,
+                    Repos_PosY = posY,
+                    Dropable = true,
+                    Pickpocketable = false
+                });
+
+                posX++;
+                if (posX >= 4)
+                {
+                    posX = 0;
+                    posY++;
+                }
             }
         }
 
-        return items;
+        return (equipped, backpack);
     }
 
     /// <summary>
@@ -3530,6 +3560,7 @@ public partial class NewCharacterWizardWindow : Window
         public string ResRef { get; set; } = "";
         public string Name { get; set; } = "";
         public string SlotName { get; set; } = "";
+        public int SlotFlags { get; set; } // Raw EquipableSlots bit flags from baseitems.2da
     }
 
     #endregion
