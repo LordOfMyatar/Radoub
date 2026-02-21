@@ -2085,8 +2085,9 @@ public partial class NewCharacterWizardWindow : Window
             }
         }
 
-        // Rebuild available list
+        // Rebuild available list and re-validate
         PrepareStep6();
+        ValidateCurrentStep();
     }
 
     private static string GetFeatCategoryAbbrev(FeatCategory category) => category switch
