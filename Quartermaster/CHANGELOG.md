@@ -10,31 +10,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.74-alpha] - 2026-02-19
+## [0.1.74-alpha] - 2026-02-21
 **Branch**: `quartermaster/issue-1412-1423` | **PR**: #1425
 
 ### Sprint: Feat Selection & Starting Equipment (#1423, #1412)
 
 #### Feat Selection Step (#1423)
 
-- [ ] Add Step 6: Feats — two-panel UI (available ↔ selected), mirroring spell selection
-- [ ] Filter available feats by prerequisites (ability scores, race, class)
-- [ ] Show granted feats (race + class) as read-only pre-selected
-- [ ] Allow picking 1 general feat (+ 1 Human bonus + 1 Fighter bonus if applicable)
-- [ ] Auto-Assign button reads package feat preferences (`FeatPref2DA` in `packages.2da`)
-- [ ] Renumber Steps 6-8 → 7-10 (sidebar, navigation, all references)
-- [ ] Update `TotalSteps` constant from 8 to 10
-- [ ] Update `BuildCreature()` to include player-chosen feats alongside granted feats
-- [ ] Validate feat prerequisites against current wizard state
+- [x] Add Step 6: Feats — two-panel UI (available ↔ selected), mirroring spell selection
+- [x] Filter available feats by prerequisites (ability scores, race, class)
+- [x] Show granted feats (race + class) as read-only pre-selected
+- [x] Allow picking 1 general feat (+ 1 Human bonus + 1 Fighter bonus if applicable)
+- [x] Auto-Assign button reads package feat preferences (`FeatPref2DA` in `packages.2da`)
+- [x] Renumber Steps 6-8 → 7-10 (sidebar, navigation, all references)
+- [x] Update `TotalSteps` constant from 8 to 10
+- [x] Update `BuildCreature()` to include player-chosen feats alongside granted feats
+- [x] Validate feat prerequisites against current wizard state
 
 #### Starting Equipment Step (#1412)
 
-- [ ] Add equipment step using `packeq*.2da` package equipment tables
-- [ ] Option to use default package equipment or customize
-- [ ] Weapon/armor selection appropriate to class proficiencies
-- [ ] Basic adventuring gear (potions, scrolls, tools)
-- [ ] For UTC: inventory/store stock setup
-- [ ] Step is optional — user can skip and equip later in editor
+- [x] Add equipment step using `packeq*.2da` package equipment tables
+- [x] Load Package Defaults button reads `packeq*.2da` equipment tables
+- [x] Equipment slot display resolves bitmask to primary slot name
+- [x] Items split into equipped slots vs backpack based on `EquipableSlots`
+- [x] Clear All button to reset equipment
+- [x] Step is optional — user can skip and equip later in editor
+
+#### Additional Enhancements
+
+- [x] Save As dialog on Create — BIC defaults to local vault, UTC to module path
+- [x] Voice set picker populated from `soundset.2da`
+- [x] Cleric domain selection on Class & Package step (reads `domains.2da`)
+- [x] Domain1/Domain2 fields added to CreatureClass in Radoub.Formats
+- [x] Name, Last Name, Age (BIC only), Description fields on identity step
+- [x] Default NWN scripts applied to UTC files
 
 ---
 
