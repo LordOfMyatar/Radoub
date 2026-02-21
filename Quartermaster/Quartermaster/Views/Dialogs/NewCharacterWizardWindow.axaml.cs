@@ -12,6 +12,7 @@ using Radoub.Formats.Common;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
+using Radoub.Formats.Bic;
 using Radoub.Formats.Utc;
 using Radoub.Formats.Uti;
 using Radoub.UI.Services;
@@ -234,6 +235,11 @@ public partial class NewCharacterWizardWindow : Window
 
     // Step 10 controls (Summary, was Step 8)
     private readonly TextBox _characterNameTextBox;
+    private readonly TextBox _lastNameTextBox;
+    private readonly TextBlock _ageLabelText;
+    private readonly NumericUpDown _ageNumericUpDown;
+    private readonly TextBlock _ageNote;
+    private readonly TextBox _descriptionTextBox;
     private readonly TextBlock _generatedTagLabel;
     private readonly TextBlock _generatedResRefLabel;
     private readonly TextBlock _paletteIdLabelText;
@@ -282,6 +288,7 @@ public partial class NewCharacterWizardWindow : Window
     /// Whether the user selected BIC file type.
     /// </summary>
     public bool IsBicFile => _isBicFile;
+
 
     /// <summary>
     /// Whether the user completed the wizard.
@@ -456,6 +463,11 @@ public partial class NewCharacterWizardWindow : Window
 
         // Step 10 controls (Summary)
         _characterNameTextBox = this.FindControl<TextBox>("CharacterNameTextBox")!;
+        _lastNameTextBox = this.FindControl<TextBox>("LastNameTextBox")!;
+        _ageLabelText = this.FindControl<TextBlock>("AgeLabelText")!;
+        _ageNumericUpDown = this.FindControl<NumericUpDown>("AgeNumericUpDown")!;
+        _ageNote = this.FindControl<TextBlock>("AgeNote")!;
+        _descriptionTextBox = this.FindControl<TextBox>("DescriptionTextBox")!;
         _generatedTagLabel = this.FindControl<TextBlock>("GeneratedTagLabel")!;
         _generatedResRefLabel = this.FindControl<TextBlock>("GeneratedResRefLabel")!;
         _paletteIdLabelText = this.FindControl<TextBlock>("PaletteIdLabelText")!;
@@ -3162,6 +3174,11 @@ public partial class NewCharacterWizardWindow : Window
                 : "None (can be added later in editor)";
         }
 
+        // Age visibility (BIC only)
+        _ageLabelText.IsVisible = _isBicFile;
+        _ageNumericUpDown.IsVisible = _isBicFile;
+        _ageNote.IsVisible = _isBicFile;
+
         // Palette ID visibility (UTC only)
         _paletteIdLabelText.IsVisible = isUtc;
         _paletteIdComboBox.IsVisible = isUtc;
@@ -3323,14 +3340,30 @@ public partial class NewCharacterWizardWindow : Window
             firstName.LocalizedStrings[0] = _characterName; // English (language 0)
         }
 
+        // LastName
+        var lastName = new CExoLocString { StrRef = 0xFFFFFFFF };
+        var lastNameText = _lastNameTextBox.Text?.Trim() ?? "";
+        if (!string.IsNullOrEmpty(lastNameText))
+        {
+            lastName.LocalizedStrings[0] = lastNameText;
+        }
+
+        // Description/Biography
+        var description = new CExoLocString { StrRef = 0xFFFFFFFF };
+        var descText = _descriptionTextBox.Text?.Trim() ?? "";
+        if (!string.IsNullOrEmpty(descText))
+        {
+            description.LocalizedStrings[0] = descText;
+        }
+
         var creature = new UtcFile
         {
             // Identity (Step 10)
             FirstName = firstName,
-            LastName = new CExoLocString { StrRef = 0xFFFFFFFF },
+            LastName = lastName,
             Tag = tag,
             TemplateResRef = resRef,
-            Description = new CExoLocString { StrRef = 0xFFFFFFFF },
+            Description = description,
             PaletteID = _isBicFile ? (byte)0 : _paletteId,
 
             // Race & gender (Step 2)
@@ -3419,6 +3452,14 @@ public partial class NewCharacterWizardWindow : Window
         // Apply default NWN scripts for UTC files if option is checked
         if (!_isBicFile && _defaultScriptsCheckBox.IsChecked == true)
             ApplyDefaultScripts(creature);
+
+        // Convert to BicFile if creating a player character
+        if (_isBicFile)
+        {
+            var bicFile = BicFile.FromUtcFile(creature);
+            bicFile.Age = (int)(_ageNumericUpDown.Value ?? 25);
+            return bicFile;
+        }
 
         return creature;
     }
