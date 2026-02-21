@@ -166,32 +166,41 @@
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                            TextWrapping="Wrap" Margin="0,0,0,25"/>
 
-                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="20" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <!-- UTC Card -->
-                    <Border x:Name="UtcCard" Classes="file-type-card selected" PointerPressed="OnUtcCardClick" Width="280">
-                        <StackPanel Spacing="10">
-                            <TextBlock Text="NPC" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
-                            <TextBlock Text="Creature Blueprint (.utc)" FontSize="14" HorizontalAlignment="Center"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
-                            <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,5"/>
-                            <TextBlock TextWrapping="Wrap" TextAlignment="Center" FontSize="12"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                       Text="A creature blueprint for module building. All races and classes available. Stats editable after creation."/>
-                        </StackPanel>
-                    </Border>
+                <StackPanel Grid.Row="2" Spacing="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="20" HorizontalAlignment="Center">
+                        <!-- UTC Card -->
+                        <Border x:Name="UtcCard" Classes="file-type-card selected" PointerPressed="OnUtcCardClick" Width="280">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="NPC" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Creature Blueprint (.utc)" FontSize="14" HorizontalAlignment="Center"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,5"/>
+                                <TextBlock TextWrapping="Wrap" TextAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                           Text="A creature blueprint for module building. All races and classes available. Stats editable after creation."/>
+                            </StackPanel>
+                        </Border>
 
-                    <!-- BIC Card -->
-                    <Border x:Name="BicCard" Classes="file-type-card" PointerPressed="OnBicCardClick" Width="280">
-                        <StackPanel Spacing="10">
-                            <TextBlock Text="PC" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
-                            <TextBlock Text="Player Character (.bic)" FontSize="14" HorizontalAlignment="Center"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
-                            <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,5"/>
-                            <TextBlock TextWrapping="Wrap" TextAlignment="Center" FontSize="12"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                       Text="A player character file. Uses player races and classes only, with standard 30-point ability buy."/>
-                        </StackPanel>
-                    </Border>
+                        <!-- BIC Card -->
+                        <Border x:Name="BicCard" Classes="file-type-card" PointerPressed="OnBicCardClick" Width="280">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="PC" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Player Character (.bic)" FontSize="14" HorizontalAlignment="Center"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,5"/>
+                                <TextBlock TextWrapping="Wrap" TextAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                           Text="A player character file. Uses player races and classes only, with standard 30-point ability buy."/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Default Scripts option (UTC only) -->
+                    <StackPanel x:Name="DefaultScriptsPanel" Orientation="Horizontal" Spacing="8"
+                                HorizontalAlignment="Center" Margin="0,10,0,0">
+                        <CheckBox x:Name="DefaultScriptsCheckBox" IsChecked="True"
+                                  Content="Load default NWN scripts (nw_c2_default*)"/>
+                    </StackPanel>
                 </StackPanel>
             </Grid>
 
@@ -1332,6 +1341,15 @@
                                             Tag="9" Click="OnSummaryEditClick" Cursor="Hand"
                                             Background="Transparent" BorderThickness="0" Padding="2"
                                             Foreground="{DynamicResource SystemAccentColor}"/>
+                                </Grid>
+
+                                <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                        x:Name="SummaryScriptsDivider"/>
+
+                                <!-- Scripts (UTC only) -->
+                                <Grid ColumnDefinitions="120,*" x:Name="SummaryScriptsSection">
+                                    <TextBlock Grid.Column="0" Text="Scripts:" FontWeight="Bold"/>
+                                    <TextBlock Grid.Column="1" x:Name="SummaryScriptsLabel" TextWrapping="Wrap"/>
                                 </Grid>
                             </StackPanel>
                         </Border>

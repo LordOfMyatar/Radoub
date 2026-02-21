@@ -139,6 +139,8 @@ public partial class NewCharacterWizardWindow : Window
     // Step 1 controls
     private readonly Border _utcCard;
     private readonly Border _bicCard;
+    private readonly StackPanel _defaultScriptsPanel;
+    private readonly CheckBox _defaultScriptsCheckBox;
 
     // Step 2 controls
     private readonly TextBox _raceSearchBox;
@@ -248,6 +250,9 @@ public partial class NewCharacterWizardWindow : Window
     private readonly Grid _summarySpellsSection;
     private readonly Grid _summaryEquipmentSection;
     private readonly TextBlock _summaryEquipmentLabel;
+    private readonly Border _summaryScriptsDivider;
+    private readonly Grid _summaryScriptsSection;
+    private readonly TextBlock _summaryScriptsLabel;
 
     // Step 4 controls
     private readonly TextBox _classSearchBox;
@@ -334,6 +339,8 @@ public partial class NewCharacterWizardWindow : Window
         // Step 1 controls
         _utcCard = this.FindControl<Border>("UtcCard")!;
         _bicCard = this.FindControl<Border>("BicCard")!;
+        _defaultScriptsPanel = this.FindControl<StackPanel>("DefaultScriptsPanel")!;
+        _defaultScriptsCheckBox = this.FindControl<CheckBox>("DefaultScriptsCheckBox")!;
 
         // Step 2 controls
         _raceSearchBox = this.FindControl<TextBox>("RaceSearchBox")!;
@@ -466,6 +473,9 @@ public partial class NewCharacterWizardWindow : Window
         _summarySpellsSection = this.FindControl<Grid>("SummarySpellsSection")!;
         _summaryEquipmentSection = this.FindControl<Grid>("SummaryEquipmentSection")!;
         _summaryEquipmentLabel = this.FindControl<TextBlock>("SummaryEquipmentLabel")!;
+        _summaryScriptsDivider = this.FindControl<Border>("SummaryScriptsDivider")!;
+        _summaryScriptsSection = this.FindControl<Grid>("SummaryScriptsSection")!;
+        _summaryScriptsLabel = this.FindControl<TextBlock>("SummaryScriptsLabel")!;
 
         UpdateStepDisplay();
     }
@@ -698,6 +708,9 @@ public partial class NewCharacterWizardWindow : Window
         _bicCard.Classes.Add("file-type-card");
         if (_isBicFile)
             _bicCard.Classes.Add("selected");
+
+        // Show default scripts option for UTC only
+        _defaultScriptsPanel.IsVisible = !_isBicFile;
 
         UpdateSidebarSummary();
     }
@@ -3138,11 +3151,21 @@ public partial class NewCharacterWizardWindow : Window
             _summaryEquipmentLabel.Text = "None (can be added later in editor)";
         }
 
+        // Scripts (UTC only)
+        bool isUtc = !_isBicFile;
+        _summaryScriptsDivider.IsVisible = isUtc;
+        _summaryScriptsSection.IsVisible = isUtc;
+        if (isUtc)
+        {
+            _summaryScriptsLabel.Text = _defaultScriptsCheckBox.IsChecked == true
+                ? "Default NWN scripts (nw_c2_default*)"
+                : "None (can be added later in editor)";
+        }
+
         // Palette ID visibility (UTC only)
-        bool showPalette = !_isBicFile;
-        _paletteIdLabelText.IsVisible = showPalette;
-        _paletteIdComboBox.IsVisible = showPalette;
-        _paletteIdNote.IsVisible = showPalette;
+        _paletteIdLabelText.IsVisible = isUtc;
+        _paletteIdComboBox.IsVisible = isUtc;
+        _paletteIdNote.IsVisible = isUtc;
     }
 
     private void OnCharacterNameChanged(object? sender, TextChangedEventArgs e)
@@ -3300,7 +3323,7 @@ public partial class NewCharacterWizardWindow : Window
             firstName.LocalizedStrings[0] = _characterName; // English (language 0)
         }
 
-        return new UtcFile
+        var creature = new UtcFile
         {
             // Identity (Step 10)
             FirstName = firstName,
@@ -3392,6 +3415,29 @@ public partial class NewCharacterWizardWindow : Window
             ItemList = equipmentLists.Backpack,
             EquipItemList = equipmentLists.Equipped
         };
+
+        // Apply default NWN scripts for UTC files if option is checked
+        if (!_isBicFile && _defaultScriptsCheckBox.IsChecked == true)
+            ApplyDefaultScripts(creature);
+
+        return creature;
+    }
+
+    private static void ApplyDefaultScripts(UtcFile utc)
+    {
+        utc.ScriptAttacked = "nw_c2_default5";
+        utc.ScriptDamaged = "nw_c2_default6";
+        utc.ScriptDeath = "nw_c2_default7";
+        utc.ScriptDialogue = "nw_c2_default4";
+        utc.ScriptDisturbed = "nw_c2_default8";
+        utc.ScriptEndRound = "nw_c2_default3";
+        utc.ScriptHeartbeat = "nw_c2_default1";
+        utc.ScriptOnBlocked = "nw_c2_defaulte";
+        utc.ScriptOnNotice = "nw_c2_default2";
+        utc.ScriptRested = "nw_c2_defaulta";
+        utc.ScriptSpawn = "nw_c2_default9";
+        utc.ScriptSpellAt = "nw_c2_defaultb";
+        utc.ScriptUserDefine = "nw_c2_defaultd";
     }
 
     private void PopulateClassSpells(CreatureClass creatureClass, int classId)
