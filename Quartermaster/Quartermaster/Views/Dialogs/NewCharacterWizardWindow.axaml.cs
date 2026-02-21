@@ -1226,7 +1226,14 @@ public partial class NewCharacterWizardWindow : Window
             }).ToList();
 
             _packageComboBox.ItemsSource = packageItems;
-            _packageComboBox.SelectedItem = packageItems[0];
+
+            // Select the class's default package from classes.2da "Package" column
+            var defaultPkgStr = _gameDataService.Get2DAValue("classes", _selectedClassId, "Package");
+            PackageDisplayItem? defaultItem = null;
+            if (int.TryParse(defaultPkgStr, out int defaultPkgId))
+                defaultItem = packageItems.FirstOrDefault(p => p.Id == defaultPkgId);
+            _packageComboBox.SelectedItem = defaultItem ?? packageItems[0];
+
             _packageSection.IsVisible = true;
         }
         else
