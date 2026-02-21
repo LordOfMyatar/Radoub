@@ -1192,7 +1192,7 @@
                            TextWrapping="Wrap" Margin="0,0,0,15"/>
 
                 <ScrollViewer Grid.Row="2">
-                    <StackPanel Spacing="10">
+                    <StackPanel Spacing="10" Margin="0,0,16,0">
                         <!-- Name & Identity -->
                         <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                                 Padding="12" CornerRadius="4">
@@ -1214,11 +1214,10 @@
                                            VerticalAlignment="Center"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
 
-                                <TextBlock Grid.Row="3" Grid.Column="0" x:Name="PaletteIdLabelText" Text="Palette ID:" VerticalAlignment="Center"
+                                <TextBlock Grid.Row="3" Grid.Column="0" x:Name="PaletteIdLabelText" Text="Palette:" VerticalAlignment="Center"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
-                                <NumericUpDown Grid.Row="3" Grid.Column="1" x:Name="PaletteIdNumericUpDown"
-                                               Minimum="0" Maximum="255" Value="1" FormatString="0"
-                                               Width="80" HorizontalAlignment="Left"/>
+                                <ComboBox Grid.Row="3" Grid.Column="1" x:Name="PaletteIdComboBox"
+                                          HorizontalAlignment="Left" MinWidth="250"/>
                                 <TextBlock Grid.Row="3" Grid.Column="2" x:Name="PaletteIdNote" Text="(UTC only)"
                                            VerticalAlignment="Center" FontSize="11"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>

@@ -235,7 +235,7 @@ public partial class NewCharacterWizardWindow : Window
     private readonly TextBlock _generatedTagLabel;
     private readonly TextBlock _generatedResRefLabel;
     private readonly TextBlock _paletteIdLabelText;
-    private readonly NumericUpDown _paletteIdNumericUpDown;
+    private readonly ComboBox _paletteIdComboBox;
     private readonly TextBlock _paletteIdNote;
     private readonly TextBlock _summaryFileTypeLabel;
     private readonly TextBlock _summaryRaceLabel;
@@ -452,7 +452,8 @@ public partial class NewCharacterWizardWindow : Window
         _generatedTagLabel = this.FindControl<TextBlock>("GeneratedTagLabel")!;
         _generatedResRefLabel = this.FindControl<TextBlock>("GeneratedResRefLabel")!;
         _paletteIdLabelText = this.FindControl<TextBlock>("PaletteIdLabelText")!;
-        _paletteIdNumericUpDown = this.FindControl<NumericUpDown>("PaletteIdNumericUpDown")!;
+        _paletteIdComboBox = this.FindControl<ComboBox>("PaletteIdComboBox")!;
+        PopulatePaletteCategories();
         _paletteIdNote = this.FindControl<TextBlock>("PaletteIdNote")!;
         _summaryFileTypeLabel = this.FindControl<TextBlock>("SummaryFileTypeLabel")!;
         _summaryRaceLabel = this.FindControl<TextBlock>("SummaryRaceLabel")!;
@@ -472,6 +473,40 @@ public partial class NewCharacterWizardWindow : Window
     private void InitializeComponent()
     {
         AvaloniaXamlLoader.Load(this);
+    }
+
+    private void PopulatePaletteCategories()
+    {
+        _paletteIdComboBox.Items.Clear();
+
+        var categories = _displayService.GetCreaturePaletteCategories().ToList();
+
+        if (categories.Count == 0)
+        {
+            _paletteIdComboBox.Items.Add(new ComboBoxItem { Content = "Custom (1)", Tag = (byte)1 });
+            _paletteIdComboBox.SelectedIndex = 0;
+            return;
+        }
+
+        int defaultIndex = 0;
+        int index = 0;
+        foreach (var category in categories.OrderBy(c => c.Id))
+        {
+            var displayName = !string.IsNullOrEmpty(category.ParentPath)
+                ? $"{category.ParentPath}/{category.Name} ({category.Id})"
+                : $"{category.Name} ({category.Id})";
+
+            _paletteIdComboBox.Items.Add(new ComboBoxItem
+            {
+                Content = displayName,
+                Tag = category.Id
+            });
+
+            if (category.Id == 1) defaultIndex = index;
+            index++;
+        }
+
+        _paletteIdComboBox.SelectedIndex = defaultIndex;
     }
 
     #region Step Navigation
@@ -1728,9 +1763,9 @@ public partial class NewCharacterWizardWindow : Window
             if (!_displayService.Feats.IsFeatAvailable(tempCreature, featId))
                 continue;
 
-            // Check prerequisites against current wizard state
+            // Check prerequisites against current wizard state - only show feats that meet prereqs
             var prereqs = _displayService.Feats.GetFeatPrerequisites(featId);
-            bool meetsPrereqs = CheckWizardFeatPrereqs(prereqs);
+            if (!CheckWizardFeatPrereqs(prereqs)) continue;
 
             var name = _displayService.GetFeatName(featId);
             if (string.IsNullOrEmpty(name)) continue;
@@ -1743,14 +1778,13 @@ public partial class NewCharacterWizardWindow : Window
                 Name = name,
                 CategoryAbbrev = GetFeatCategoryAbbrev(category),
                 IsGranted = false,
-                MeetsPrereqs = meetsPrereqs,
-                SourceLabel = meetsPrereqs ? "" : "(prereqs)"
+                MeetsPrereqs = true,
+                SourceLabel = ""
             });
         }
 
         _availableFeats = _availableFeats
-            .OrderByDescending(f => f.MeetsPrereqs)
-            .ThenBy(f => f.Name)
+            .OrderBy(f => f.Name)
             .ToList();
 
         ApplyFeatFilter();
@@ -2852,17 +2886,12 @@ public partial class NewCharacterWizardWindow : Window
             return;
         }
 
-        // Read equipment entries from the package equipment table
+        // Read equipment entries from the package equipment table (packeq*.2da uses "Label" column)
         for (int row = 0; row < 50; row++)
         {
-            var resRef = _gameDataService.Get2DAValue(equip2da, row, "Name");
+            var resRef = _gameDataService.Get2DAValue(equip2da, row, "Label");
             if (string.IsNullOrEmpty(resRef) || resRef == "****")
-            {
-                // Some tables use "Object" column instead
-                resRef = _gameDataService.Get2DAValue(equip2da, row, "Object");
-                if (string.IsNullOrEmpty(resRef) || resRef == "****")
-                    break;
-            }
+                break;
 
             // Get display name from the UTI resource
             var displayName = GetItemDisplayName(resRef);
@@ -3101,7 +3130,7 @@ public partial class NewCharacterWizardWindow : Window
         // Palette ID visibility (UTC only)
         bool showPalette = !_isBicFile;
         _paletteIdLabelText.IsVisible = showPalette;
-        _paletteIdNumericUpDown.IsVisible = showPalette;
+        _paletteIdComboBox.IsVisible = showPalette;
         _paletteIdNote.IsVisible = showPalette;
     }
 
@@ -3151,11 +3180,51 @@ public partial class NewCharacterWizardWindow : Window
         int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
 
         var racialFeats = _displayService.Feats.GetRaceGrantedFeatIds(_selectedRaceId);
-        var classFeats = _displayService.Feats.GetClassGrantedFeatIds(classId);
+
+        // Get class feats granted at level 1 only (not all levels).
+        // cls_feat_*.2da: List==3 + GrantedOnLevel==1, or List==-1 (granted at creation).
+        var classFeats = GetClassFeatsGrantedAtLevel(classId, 1);
 
         var combined = new HashSet<int>(racialFeats);
         combined.UnionWith(classFeats);
         return combined;
+    }
+
+    private HashSet<int> GetClassFeatsGrantedAtLevel(int classId, int level)
+    {
+        var result = new HashSet<int>();
+        var featTable = _gameDataService.Get2DAValue("classes", classId, "FeatsTable");
+        if (string.IsNullOrEmpty(featTable) || featTable == "****")
+            return result;
+
+        for (int row = 0; row < 200; row++)
+        {
+            var featIndexStr = _gameDataService.Get2DAValue(featTable, row, "FeatIndex");
+            if (string.IsNullOrEmpty(featIndexStr) || featIndexStr == "****")
+                break;
+
+            if (!int.TryParse(featIndexStr, out int featId))
+                continue;
+
+            var listType = _gameDataService.Get2DAValue(featTable, row, "List");
+
+            // List==-1: granted at creation (level 1)
+            if (listType == "-1" && level == 1)
+            {
+                result.Add(featId);
+                continue;
+            }
+
+            // List==3: automatically granted at GrantedOnLevel
+            if (listType == "3")
+            {
+                var grantedLevelStr = _gameDataService.Get2DAValue(featTable, row, "GrantedOnLevel");
+                if (int.TryParse(grantedLevelStr, out int grantedLevel) && grantedLevel == level)
+                    result.Add(featId);
+            }
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -3198,7 +3267,7 @@ public partial class NewCharacterWizardWindow : Window
         var resRef = tag;
 
         // Palette ID from step 8
-        _paletteId = (byte)(_paletteIdNumericUpDown.Value ?? 1);
+        _paletteId = (_paletteIdComboBox.SelectedItem is ComboBoxItem item && item.Tag is byte id) ? id : (byte)1;
 
         // Build class entry with spell data
         var creatureClass = new CreatureClass
