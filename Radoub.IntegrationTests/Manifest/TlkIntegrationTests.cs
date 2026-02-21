@@ -14,7 +14,7 @@ namespace Radoub.IntegrationTests.Manifest;
 [Collection("ManifestSequential")]
 public class TlkIntegrationTests : ManifestTestBase
 {
-    private const string TestFileName = "original_module.jrl";
+    private const string TestFileName = "module.jrl";
 
     [Fact]
     [Trait("Category", "TLK")]
