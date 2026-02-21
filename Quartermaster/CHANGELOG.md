@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.75-alpha] - 2026-02-21
+**Branch**: `quartermaster/issue-1438` | **PR**: #TBD
+
+### Sprint: New Character Wizard Bug Fix & Polish (#1438)
+
+- [ ] #1430 - Default portrait should be hu_m_99_ or hu_f_99_
+- [ ] #1428 - Inventory appears empty after wizard until save/reload
+- [ ] #1427 - Missing many cleric deity domains in New Character Wizard
+- [ ] #1421 - Bug: Appearance doesn't refresh when changing color
+- [ ] #1429 - Soundset dropdown should use browser filtering like other screens
+- [ ] #1426 - Local vault and server vault don't work for creatures panel
+
+---
+
 ## [0.1.74-alpha] - 2026-02-21
 **Branch**: `quartermaster/issue-1412-1423` | **PR**: #1425
 
