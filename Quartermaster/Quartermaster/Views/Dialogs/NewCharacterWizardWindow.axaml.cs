@@ -81,6 +81,8 @@ public partial class NewCharacterWizardWindow : Window
     private List<ClassDisplayItem> _filteredClasses = new();
     private bool _step4Loaded;
     private bool _prestigePlanningExpanded;
+    private bool _classNeedsDomains;
+    private List<DomainDisplayItem> _domainList = new();
 
     // Step 5: Ability Scores
     private readonly Dictionary<string, int> _abilityBaseScores = new()
@@ -275,6 +277,9 @@ public partial class NewCharacterWizardWindow : Window
     private readonly StackPanel _packageSection;
     private readonly ComboBox _packageComboBox;
     private readonly Border _classDescSeparator;
+    private readonly StackPanel _domainSelectionPanel;
+    private readonly ComboBox _domain1ComboBox;
+    private readonly ComboBox _domain2ComboBox;
     private readonly TextBlock _classDescriptionLabel;
     private readonly TextBlock _prestigeToggleArrow;
     private readonly StackPanel _prestigePlanningContent;
@@ -422,6 +427,9 @@ public partial class NewCharacterWizardWindow : Window
         _packageSection = this.FindControl<StackPanel>("PackageSection")!;
         _packageComboBox = this.FindControl<ComboBox>("PackageComboBox")!;
         _classDescSeparator = this.FindControl<Border>("ClassDescSeparator")!;
+        _domainSelectionPanel = this.FindControl<StackPanel>("DomainSelectionPanel")!;
+        _domain1ComboBox = this.FindControl<ComboBox>("Domain1ComboBox")!;
+        _domain2ComboBox = this.FindControl<ComboBox>("Domain2ComboBox")!;
         _classDescriptionLabel = this.FindControl<TextBlock>("ClassDescriptionLabel")!;
         _prestigeToggleArrow = this.FindControl<TextBlock>("PrestigeToggleArrow")!;
         _prestigePlanningContent = this.FindControl<StackPanel>("PrestigePlanningContent")!;
@@ -1210,6 +1218,7 @@ public partial class NewCharacterWizardWindow : Window
         _selectedClassId = selected.Id;
         UpdateClassDetailPanel();
         LoadPackagesForClass();
+        UpdateDomainVisibility();
         ValidateCurrentStep();
         UpdateSidebarSummary();
     }
@@ -1305,6 +1314,131 @@ public partial class NewCharacterWizardWindow : Window
             return;
 
         _selectedPackageId = selected.Id;
+
+        // Update domain defaults from package if domains are visible
+        if (_classNeedsDomains)
+            LoadPackageDomainDefaults();
+    }
+
+    /// <summary>
+    /// Checks if the selected class uses domains by looking at its packages.
+    /// Shows/hides the domain picker panel accordingly.
+    /// </summary>
+    private void UpdateDomainVisibility()
+    {
+        _classNeedsDomains = false;
+
+        if (_selectedClassId < 0)
+        {
+            _domainSelectionPanel.IsVisible = false;
+            return;
+        }
+
+        // Check if any package for this class has Domain1 set (non-****)
+        var packages = _displayService.GetPackagesForClass(_selectedClassId);
+        foreach (var pkg in packages)
+        {
+            var domain1Str = _gameDataService.Get2DAValue("packages", pkg.Id, "Domain1");
+            if (!string.IsNullOrEmpty(domain1Str) && domain1Str != "****")
+            {
+                _classNeedsDomains = true;
+                break;
+            }
+        }
+
+        _domainSelectionPanel.IsVisible = _classNeedsDomains;
+
+        if (_classNeedsDomains)
+        {
+            PopulateDomains();
+            LoadPackageDomainDefaults();
+        }
+    }
+
+    /// <summary>
+    /// Populates domain ComboBoxes from domains.2da.
+    /// </summary>
+    private void PopulateDomains()
+    {
+        _domainList.Clear();
+        _domain1ComboBox.Items.Clear();
+        _domain2ComboBox.Items.Clear();
+
+        // Read domains.2da — row 0 is typically "Air", rows go up to ~20+
+        for (int row = 0; row < 50; row++)
+        {
+            var label = _gameDataService.Get2DAValue("domains", row, "Label");
+            if (string.IsNullOrEmpty(label))
+                break;
+            if (label == "****")
+                continue;
+
+            // Get display name from TLK
+            var nameStrRef = _gameDataService.Get2DAValue("domains", row, "Name");
+            var name = label; // fallback
+            if (!string.IsNullOrEmpty(nameStrRef) && nameStrRef != "****" && int.TryParse(nameStrRef, out int strRef))
+            {
+                var tlkName = _gameDataService.GetString(strRef.ToString());
+                if (!string.IsNullOrEmpty(tlkName))
+                    name = tlkName;
+            }
+
+            _domainList.Add(new DomainDisplayItem { Id = row, Name = name });
+        }
+
+        foreach (var domain in _domainList)
+        {
+            _domain1ComboBox.Items.Add(new ComboBoxItem { Content = domain.Name, Tag = domain.Id });
+            _domain2ComboBox.Items.Add(new ComboBoxItem { Content = domain.Name, Tag = domain.Id });
+        }
+
+        // Default to first two different domains
+        if (_domain1ComboBox.Items.Count > 0)
+            _domain1ComboBox.SelectedIndex = 0;
+        if (_domain2ComboBox.Items.Count > 1)
+            _domain2ComboBox.SelectedIndex = 1;
+        else if (_domain2ComboBox.Items.Count > 0)
+            _domain2ComboBox.SelectedIndex = 0;
+    }
+
+    /// <summary>
+    /// Sets domain ComboBox selections from the current package defaults.
+    /// </summary>
+    private void LoadPackageDomainDefaults()
+    {
+        var domain1Str = _gameDataService.Get2DAValue("packages", _selectedPackageId, "Domain1");
+        var domain2Str = _gameDataService.Get2DAValue("packages", _selectedPackageId, "Domain2");
+
+        if (!string.IsNullOrEmpty(domain1Str) && domain1Str != "****" && int.TryParse(domain1Str, out int d1))
+        {
+            for (int i = 0; i < _domain1ComboBox.Items.Count; i++)
+            {
+                if (_domain1ComboBox.Items[i] is ComboBoxItem item && item.Tag is int tagId && tagId == d1)
+                {
+                    _domain1ComboBox.SelectedIndex = i;
+                    break;
+                }
+            }
+        }
+
+        if (!string.IsNullOrEmpty(domain2Str) && domain2Str != "****" && int.TryParse(domain2Str, out int d2))
+        {
+            for (int i = 0; i < _domain2ComboBox.Items.Count; i++)
+            {
+                if (_domain2ComboBox.Items[i] is ComboBoxItem item && item.Tag is int tagId && tagId == d2)
+                {
+                    _domain2ComboBox.SelectedIndex = i;
+                    break;
+                }
+            }
+        }
+    }
+
+    private static byte GetSelectedDomainId(ComboBox comboBox)
+    {
+        if (comboBox.SelectedItem is ComboBoxItem item && item.Tag is int domainId)
+            return (byte)domainId;
+        return 0;
     }
 
     private static string FormatAbilityName(string abilityCode) => abilityCode.ToUpperInvariant() switch
@@ -2948,7 +3082,7 @@ public partial class NewCharacterWizardWindow : Window
             // Get display name and slot info from the UTI resource
             var displayName = GetItemDisplayName(resRef);
             int slotFlags = GetItemSlotFlags(resRef);
-            var slotName = slotFlags != 0 ? EquipmentSlots.GetSlotName(slotFlags) : "Backpack";
+            var slotName = slotFlags != 0 ? GetPrimarySlotName(slotFlags) : "Backpack";
 
             _equipmentItems.Add(new EquipmentDisplayItem
             {
@@ -3038,6 +3172,31 @@ public partial class NewCharacterWizardWindow : Window
         return resRef; // Fallback to resref
     }
 
+    /// <summary>
+    /// Gets a display-friendly slot name from an EquipableSlots bitmask.
+    /// Picks the first recognized slot bit (e.g., 0x30 → "Right Hand").
+    /// </summary>
+    private static string GetPrimarySlotName(int slotFlags)
+    {
+        // Check each known slot bit from lowest to highest
+        int[] knownSlots =
+        [
+            EquipmentSlots.Head, EquipmentSlots.Chest, EquipmentSlots.Boots,
+            EquipmentSlots.Arms, EquipmentSlots.RightHand, EquipmentSlots.LeftHand,
+            EquipmentSlots.Cloak, EquipmentSlots.LeftRing, EquipmentSlots.RightRing,
+            EquipmentSlots.Neck, EquipmentSlots.Belt, EquipmentSlots.Arrows,
+            EquipmentSlots.Bullets, EquipmentSlots.Bolts
+        ];
+
+        foreach (var slot in knownSlots)
+        {
+            if ((slotFlags & slot) != 0)
+                return EquipmentSlots.GetSlotName(slot);
+        }
+
+        return $"Slot ({slotFlags:X})";
+    }
+
     private int GetItemSlotFlags(string resRef)
     {
         try
@@ -3089,7 +3248,18 @@ public partial class NewCharacterWizardWindow : Window
         if (_selectedClassId >= 0)
         {
             var className = _displayService.GetClassName(_selectedClassId);
-            _summaryClassLabel.Text = $"{className} (Level 1)";
+            var classText = $"{className} (Level 1)";
+
+            // Append domains if applicable
+            if (_classNeedsDomains)
+            {
+                var d1Name = (_domain1ComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
+                var d2Name = (_domain2ComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
+                if (!string.IsNullOrEmpty(d1Name) && !string.IsNullOrEmpty(d2Name))
+                    classText += $" — Domains: {d1Name}, {d2Name}";
+            }
+
+            _summaryClassLabel.Text = classText;
         }
 
         // Abilities
@@ -3343,7 +3513,9 @@ public partial class NewCharacterWizardWindow : Window
         var creatureClass = new CreatureClass
         {
             Class = classId,
-            ClassLevel = 1
+            ClassLevel = 1,
+            Domain1 = GetSelectedDomainId(_domain1ComboBox),
+            Domain2 = GetSelectedDomainId(_domain2ComboBox)
         };
 
         // Populate spells on the class
@@ -3676,6 +3848,13 @@ public partial class NewCharacterWizardWindow : Window
         public string Name { get; set; } = "";
         public string SlotName { get; set; } = "";
         public int SlotFlags { get; set; } // Raw EquipableSlots bit flags from baseitems.2da
+    }
+
+    private class DomainDisplayItem
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public override string ToString() => Name;
     }
 
     #endregion

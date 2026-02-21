@@ -230,6 +230,13 @@ public static class UtcWriter
             AddIntField(classStruct, "Class", cls.Class);
             AddShortField(classStruct, "ClassLevel", cls.ClassLevel);
 
+            // Write domains (Cleric)
+            if (cls.Domain1 != 0 || cls.Domain2 != 0)
+            {
+                AddByteField(classStruct, "Domain1", cls.Domain1);
+                AddByteField(classStruct, "Domain2", cls.Domain2);
+            }
+
             // Write known spells (KnownList0-9)
             for (int level = 0; level < 10; level++)
             {

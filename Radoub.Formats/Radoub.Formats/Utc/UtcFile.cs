@@ -634,6 +634,16 @@ public class CreatureClass
     public short ClassLevel { get; set; }
 
     /// <summary>
+    /// First cleric domain. Index into domains.2da. 0 = no domain.
+    /// </summary>
+    public byte Domain1 { get; set; }
+
+    /// <summary>
+    /// Second cleric domain. Index into domains.2da. 0 = no domain.
+    /// </summary>
+    public byte Domain2 { get; set; }
+
+    /// <summary>
     /// Known spells by spell level (0-9).
     /// Used by Bards, Sorcerers, and PC Wizards (spellbook).
     /// </summary>
