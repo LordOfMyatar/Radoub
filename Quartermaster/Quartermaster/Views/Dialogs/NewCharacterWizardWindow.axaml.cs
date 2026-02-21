@@ -3004,9 +3004,15 @@ public partial class NewCharacterWizardWindow : Window
                 var uti = UtiReader.Read(utiData);
                 int baseItem = uti.BaseItem;
                 var slotsStr = _gameDataService.Get2DAValue("baseitems", baseItem, "EquipableSlots");
-                if (!string.IsNullOrEmpty(slotsStr) && slotsStr != "****" &&
-                    int.TryParse(slotsStr, System.Globalization.NumberStyles.HexNumber, null, out int slotFlags))
-                    return slotFlags;
+                if (!string.IsNullOrEmpty(slotsStr) && slotsStr != "****")
+                {
+                    // Parse decimal first, then hex with 0x prefix (same as EquipmentSlotValidator)
+                    if (int.TryParse(slotsStr, out int slots))
+                        return slots;
+                    if (slotsStr.StartsWith("0x", StringComparison.OrdinalIgnoreCase) &&
+                        int.TryParse(slotsStr[2..], System.Globalization.NumberStyles.HexNumber, null, out slots))
+                        return slots;
+                }
             }
         }
         catch (Exception ex)
