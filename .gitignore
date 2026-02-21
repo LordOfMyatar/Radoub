@@ -29,7 +29,6 @@ Desktop.ini
 *.cache
 ~$*
 nul
-release-notes.md
 
 # Python
 __pycache__/
