@@ -8,8 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+---
+
+## [0.1.151-alpha] - 2026-02-21
+
 ### UI Improvements
 - Dialog Tree and Scrap Tree backgrounds now use sidebar color for better visual distinction (#1089)
+  - Shipped in Cross-Tool UI Consistency sprint (#1154, PR #1196)
 
 ---
 
