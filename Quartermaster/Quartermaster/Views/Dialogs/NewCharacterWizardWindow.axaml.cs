@@ -1,14 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Avalonia.Platform.Storage;
 using Quartermaster.Services;
 using Quartermaster.Views;
 using Radoub.Formats.Services;
+using Radoub.Formats.Settings;
 using Radoub.Formats.Utc;
 using Radoub.UI.Services;
 
@@ -145,6 +148,9 @@ public partial class NewCharacterWizardWindow : Window
     private readonly Border _bicCard;
     private readonly StackPanel _defaultScriptsPanel;
     private readonly CheckBox _defaultScriptsCheckBox;
+    private readonly TextBox _saveLocationTextBox;
+    private readonly Button _browseSaveLocationButton;
+    private readonly TextBlock _saveLocationNote;
 
     // Step 2 controls
     private readonly TextBox _raceSearchBox;
@@ -166,7 +172,10 @@ public partial class NewCharacterWizardWindow : Window
     private readonly TextBlock _raceDescriptionLabel;
 
     // Step 3 controls
-    private readonly ComboBox _appearanceComboBox;
+    private readonly TextBox _appearanceSearchBox;
+    private readonly ListBox _appearanceListBox;
+    private List<AppearanceInfo> _allAppearances = new();
+    private List<AppearanceInfo> _filteredAppearances = new();
     private readonly ComboBox _phenotypeComboBox;
     private readonly Image _portraitPreviewImage;
     private readonly TextBlock _portraitNameLabel;
@@ -304,6 +313,10 @@ public partial class NewCharacterWizardWindow : Window
     /// </summary>
     public bool IsBicFile => _isBicFile;
 
+    /// <summary>
+    /// The save file path chosen in Step 1, or null if the user skipped.
+    /// </summary>
+    public string? ChosenSavePath { get; private set; }
 
     /// <summary>
     /// Whether the user completed the wizard.
@@ -364,6 +377,9 @@ public partial class NewCharacterWizardWindow : Window
         _bicCard = this.FindControl<Border>("BicCard")!;
         _defaultScriptsPanel = this.FindControl<StackPanel>("DefaultScriptsPanel")!;
         _defaultScriptsCheckBox = this.FindControl<CheckBox>("DefaultScriptsCheckBox")!;
+        _saveLocationTextBox = this.FindControl<TextBox>("SaveLocationTextBox")!;
+        _browseSaveLocationButton = this.FindControl<Button>("BrowseSaveLocationButton")!;
+        _saveLocationNote = this.FindControl<TextBlock>("SaveLocationNote")!;
 
         // Step 2 controls
         _raceSearchBox = this.FindControl<TextBox>("RaceSearchBox")!;
@@ -385,7 +401,8 @@ public partial class NewCharacterWizardWindow : Window
         _raceDescriptionLabel = this.FindControl<TextBlock>("RaceDescriptionLabel")!;
 
         // Step 3 controls
-        _appearanceComboBox = this.FindControl<ComboBox>("AppearanceComboBox")!;
+        _appearanceSearchBox = this.FindControl<TextBox>("AppearanceSearchBox")!;
+        _appearanceListBox = this.FindControl<ListBox>("AppearanceListBox")!;
         _phenotypeComboBox = this.FindControl<ComboBox>("PhenotypeComboBox")!;
         _portraitPreviewImage = this.FindControl<Image>("PortraitPreviewImage")!;
         _portraitNameLabel = this.FindControl<TextBlock>("PortraitNameLabel")!;
@@ -805,7 +822,56 @@ public partial class NewCharacterWizardWindow : Window
         // Show default scripts option for UTC only
         _defaultScriptsPanel.IsVisible = !_isBicFile;
 
+        // Clear save location when file type changes (extension changes)
+        ChosenSavePath = null;
+        _saveLocationTextBox.Text = "";
+
         UpdateSidebarSummary();
+    }
+
+    private async void OnBrowseSaveLocationClick(object? sender, RoutedEventArgs e)
+    {
+        var extension = _isBicFile ? "bic" : "utc";
+        var title = _isBicFile ? "Save Player Character" : "Save Creature Blueprint";
+
+        IStorageFolder? suggestedFolder = null;
+        try
+        {
+            if (_isBicFile)
+            {
+                var nwnPath = RadoubSettings.Instance.NeverwinterNightsPath;
+                if (!string.IsNullOrEmpty(nwnPath))
+                {
+                    var localVault = Path.Combine(nwnPath, "localvault");
+                    if (Directory.Exists(localVault))
+                        suggestedFolder = await StorageProvider.TryGetFolderFromPathAsync(localVault);
+                }
+            }
+            else
+            {
+                var modulePath = RadoubSettings.Instance.CurrentModulePath;
+                if (!string.IsNullOrEmpty(modulePath) && Directory.Exists(modulePath))
+                    suggestedFolder = await StorageProvider.TryGetFolderFromPathAsync(modulePath);
+            }
+        }
+        catch { /* fallback to no suggestion */ }
+
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = title,
+            DefaultExtension = extension,
+            FileTypeChoices = _isBicFile
+                ? new[] { new FilePickerFileType("Player Character") { Patterns = new[] { "*.bic" } } }
+                : new[] { new FilePickerFileType("Creature Blueprint") { Patterns = new[] { "*.utc" } } },
+            SuggestedFileName = "new_creature",
+            SuggestedStartLocation = suggestedFolder
+        });
+
+        if (file != null)
+        {
+            ChosenSavePath = file.Path.LocalPath;
+            _saveLocationTextBox.Text = ChosenSavePath;
+        }
     }
 
     #endregion

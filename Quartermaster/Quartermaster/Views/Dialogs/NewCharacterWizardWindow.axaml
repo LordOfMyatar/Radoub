@@ -201,6 +201,22 @@
                         <CheckBox x:Name="DefaultScriptsCheckBox" IsChecked="True"
                                   Content="Load default NWN scripts (nw_c2_default*)"/>
                     </StackPanel>
+
+                    <!-- Save Location -->
+                    <StackPanel Spacing="6" HorizontalAlignment="Center" Margin="0,10,0,0" MaxWidth="580">
+                        <TextBlock Text="Save Location" FontWeight="Bold" HorizontalAlignment="Center"/>
+                        <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+                            <TextBox x:Name="SaveLocationTextBox" Grid.Column="0" IsReadOnly="True"
+                                     Watermark="Click Browse to choose save location..."
+                                     Margin="0,0,8,0"/>
+                            <Button x:Name="BrowseSaveLocationButton" Grid.Column="1"
+                                    Content="Browse..." Click="OnBrowseSaveLocationClick"/>
+                        </Grid>
+                        <TextBlock x:Name="SaveLocationNote" FontSize="11"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                   TextWrapping="Wrap" HorizontalAlignment="Center"
+                                   Text="Choose where to save before building your character."/>
+                    </StackPanel>
                 </StackPanel>
             </Grid>
 
@@ -351,14 +367,18 @@
                     <StackPanel Grid.Column="0" Spacing="10" Margin="0,0,15,0">
                         <!-- Appearance -->
                         <TextBlock Text="Appearance Type" FontWeight="SemiBold"/>
-                        <ComboBox x:Name="AppearanceComboBox" HorizontalAlignment="Stretch"
-                                  SelectionChanged="OnAppearanceSelectionChanged">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Name}"/>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
+                        <TextBox x:Name="AppearanceSearchBox" Watermark="Filter appearances..."
+                                 Margin="0,0,0,3" TextChanged="OnAppearanceSearchChanged"/>
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                BorderThickness="1" MaxHeight="160">
+                            <ListBox x:Name="AppearanceListBox" SelectionChanged="OnAppearanceSelectionChanged">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Name}" Margin="4,1"/>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
 
                         <!-- Phenotype -->
                         <TextBlock Text="Phenotype" FontWeight="SemiBold"/>
