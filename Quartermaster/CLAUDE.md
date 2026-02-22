@@ -15,40 +15,116 @@ Tool-specific guidance for Claude Code sessions working with Quartermaster.
 ### Core Features
 
 - Edit creature stats, abilities, skills, feats, spells, inventory
-- Appearance preview rendering
+- New Character Wizard with full character creation workflow
+- Level Up Wizard for class progression
+- Appearance preview rendering (OpenGL)
 - Load items from module directory, Override, HAK, and BIF archives
 - Support for both UTC (creature blueprints) and BIC (player characters)
 - Sidebar navigation with Stats, Classes, Skills, Feats, Spells, Inventory, Advanced, Appearance, Scripts sections
+- Creature browser for module-level file management
 
-### Project Structure
+---
+
+## Project Structure
 
 ```
 Quartermaster/
-├── CHANGELOG.md (this tool's changelog)
+├── CHANGELOG.md
 ├── CLAUDE.md (this file)
 ├── Quartermaster/ (source code)
-│   ├── App.axaml(.cs) - Application entry point
+│   ├── App.axaml(.cs) - Application entry, theme/icon setup
+│   ├── Program.cs - Entry point, logging init
+│   ├── Controls/
+│   │   └── ModelPreviewGLControl.cs - OpenGL 3D model preview
+│   ├── ViewModels/
+│   │   ├── BindableBase.cs - MVVM property binding base
+│   │   ├── RelayCommand.cs - ICommand implementation
+│   │   ├── FeatListViewModel.cs
+│   │   ├── SpellListViewModel.cs
+│   │   ├── SpecialAbilityViewModel.cs
+│   │   └── VariableViewModel.cs
+│   ├── Services/ (18 files)
+│   │   ├── CommandLineService.cs - CLI argument parsing
+│   │   ├── SettingsService.cs - User preferences
+│   │   ├── CreatureDisplayService.cs - Creature display (partial)
+│   │   ├── CreatureDisplayService.Combat.cs - Combat stats partial
+│   │   ├── CharacterSheetService.cs - Character sheet calculations
+│   │   ├── ClassService.cs - NWN class data
+│   │   ├── FeatService.cs - Feat lookup and validation
+│   │   ├── FeatCacheService.cs - Feat data caching
+│   │   ├── SkillService.cs - Skill calculations
+│   │   ├── SpellService.cs - Spell lookup
+│   │   ├── AppearanceService.cs - Appearance/color data
+│   │   ├── ModelService.cs - 3D model loading
+│   │   ├── TextureService.cs - Texture loading and caching
+│   │   ├── ItemIconService.cs - Item icon management
+│   │   ├── LevelHistoryService.cs - Level/class progression
+│   │   ├── ModularPaletteCacheService.cs - Multi-source item caching
+│   │   ├── PaletteColorService.cs - Palette color utilities
+│   │   └── QuartermasterScriptBrowserContext.cs - Script browser
 │   ├── Views/
-│   │   ├── MainWindow.axaml(.cs) - Main window (partial classes below)
-│   │   ├── MainWindow.FileOps.cs - File operations partial
-│   │   ├── MainWindow.Inventory.cs - Inventory population partial
+│   │   ├── MainWindow.axaml(.cs) - Main window (9 partial files)
+│   │   ├── MainWindow.CreatureBrowser.cs
+│   │   ├── MainWindow.FileOps.cs
+│   │   ├── MainWindow.FileValidation.cs
+│   │   ├── MainWindow.Inventory.cs
+│   │   ├── MainWindow.ItemPalette.cs
+│   │   ├── MainWindow.ItemResolution.cs
+│   │   ├── MainWindow.Lifecycle.cs
+│   │   ├── MainWindow.MenuDialogs.cs
+│   │   ├── PortraitBrowserWindow.axaml(.cs)
+│   │   ├── SoundsetBrowserWindow.axaml(.cs)
 │   │   ├── Helpers/
-│   │   │   └── DialogHelper.cs - Common dialog helper
+│   │   │   └── DialogHelper.cs
+│   │   ├── Dialogs/
+│   │   │   ├── SettingsWindow.axaml(.cs) - Settings (2 partials)
+│   │   │   ├── SettingsWindow.Paths.cs
+│   │   │   ├── NewCharacterWizardWindow.axaml(.cs) - Wizard (9 partials)
+│   │   │   ├── NewCharacterWizardWindow.Race.cs
+│   │   │   ├── NewCharacterWizardWindow.Appearance.cs
+│   │   │   ├── NewCharacterWizardWindow.ClassSelection.cs
+│   │   │   ├── NewCharacterWizardWindow.Abilities.cs
+│   │   │   ├── NewCharacterWizardWindow.Skills.cs
+│   │   │   ├── NewCharacterWizardWindow.Feats.cs
+│   │   │   ├── NewCharacterWizardWindow.EquipmentAndSummary.cs
+│   │   │   ├── NewCharacterWizardWindow.BuildCreature.cs
+│   │   │   ├── LevelUpWizardWindow.axaml(.cs)
+│   │   │   ├── ClassBrowserWindow.axaml(.cs)
+│   │   │   ├── ClassPickerWindow.axaml(.cs)
+│   │   │   ├── ColorPickerWindow.axaml(.cs)
+│   │   │   ├── FactionPickerWindow.axaml(.cs)
+│   │   │   ├── PackagePickerWindow.axaml(.cs)
+│   │   │   └── SpellPickerWindow.axaml(.cs)
 │   │   └── Panels/
-│   │       ├── StatsPanel.axaml(.cs) - Ability scores, combat, saves
-│   │       ├── ClassesPanel.axaml(.cs) - Class levels, alignment, identity
+│   │       ├── BasePanelControl.cs - Base class for panels
+│   │       ├── ComboBoxHelper.cs - ComboBox utilities
+│   │       ├── StatsPanel.axaml(.cs) - Ability scores, combat, saves (4 partials)
+│   │       ├── StatsPanel.Abilities.cs
+│   │       ├── StatsPanel.Combat.cs
+│   │       ├── StatsPanel.Saves.cs
+│   │       ├── ClassesPanel.axaml(.cs) - Class levels, alignment
 │   │       ├── SkillsPanel.axaml(.cs) - Skill ranks
-│   │       ├── FeatsPanel.axaml(.cs) - Feats and special abilities
-│   │       ├── SpellsPanel.axaml(.cs) - Known/memorized spells
+│   │       ├── FeatsPanel.axaml(.cs) - Feats (5 partials)
+│   │       ├── FeatsPanel.Display.cs
+│   │       ├── FeatsPanel.Search.cs
+│   │       ├── FeatsPanel.Selection.cs
+│   │       ├── FeatsPanel.SpecialAbilities.cs
+│   │       ├── SpellsPanel.axaml(.cs) - Spells (4 partials)
+│   │       ├── SpellsPanel.DataLoading.cs
+│   │       ├── SpellsPanel.EventHandlers.cs
+│   │       ├── SpellsPanel.SummaryBuilders.cs
+│   │       ├── InventoryPanel.axaml(.cs) - Equipment and backpack
 │   │       ├── ScriptsPanel.axaml(.cs) - Event scripts
 │   │       ├── AdvancedPanel.axaml(.cs) - Flags, behavior, variables
-│   │       ├── AppearancePanel.axaml(.cs) - Visual appearance with preview
-│   │       └── InventoryPanel.axaml(.cs) - Equipment and backpack
-│   └── Services/
-│       ├── CommandLineService.cs - CLI argument parsing
-│       ├── SettingsService.cs - User preferences
-│       ├── AppearanceService.cs - Appearance rendering
-│       └── ModelService.cs - 3D model handling
+│   │       ├── AppearancePanel.axaml(.cs) - Visual preview (3 partials)
+│   │       ├── AppearancePanel.DataLoading.cs
+│   │       ├── AppearancePanel.EventHandlers.cs
+│   │       ├── CharacterPanel.axaml(.cs) - Name, portrait, soundset (3 partials)
+│   │       ├── CharacterPanel.Dialogs.cs
+│   │       ├── CharacterPanel.Soundset.cs
+│   │       ├── QuickBarPanel.axaml(.cs) - Quick access bar
+│   │       └── PlaceholderPanel.axaml(.cs) - Placeholder
+│   └── Assets/
 └── Quartermaster.Tests/ (unit tests)
     ├── CommandLineServiceTests.cs
     └── SettingsServiceTests.cs
@@ -56,64 +132,85 @@ Quartermaster/
 
 ---
 
-## Current Features (v0.1.55-alpha)
+## Partial Class Organization
 
-### Editing Capabilities
-- **Stats**: Ability scores, HP, AC, attack bonus, saves (editing)
-- **Classes**: Class levels, alignment, deity, race, gender
-- **Skills**: Skill ranks with progress bars (editing)
-- **Feats**: Add/remove feats and special abilities
-- **Spells**: Known spells, memorized spells, metamagic support
-- **Inventory**: Equipment slots and backpack with item details
-- **Advanced**: Flags, behavior, appearance values, local variables
-- **Appearance**: Visual preview with body part rendering
-- **Scripts**: All creature event scripts + conversation resref
+Quartermaster uses C# partial classes extensively to keep files manageable (~500 lines max).
 
-### File Operations
-- Open UTC and BIC files via custom `CreatureBrowserWindow`
-- Save with automatic backup
-- Recent files list
-- Re-level character to level 1
+### Naming Convention
 
-### Item Resolution
+`ClassName.Concern.cs` - e.g., `MainWindow.FileOps.cs`, `CharacterPanel.Soundset.cs`
 
-Items are resolved in this order:
-1. **Module directory** - Same folder as the UTC/BIC file
-2. **Override folder** - User's NWN Override directory
-3. **HAK files** - Module-specific HAK archives
-4. **BIF archives** - Base game data
+### Partial Class Map
+
+| Class | Files | Total Lines |
+|-------|-------|-------------|
+| **MainWindow** | 9 partials | ~3,392 |
+| **NewCharacterWizardWindow** | 9 partials | ~3,572 |
+| **SettingsWindow** | 2 partials | ~805 |
+| **CreatureDisplayService** | 2 partials | ~927 |
+| **FeatsPanel** | 5 partials | ~1,109 |
+| **SpellsPanel** | 4 partials | ~1,810 |
+| **StatsPanel** | 4 partials | ~880 |
+| **AppearancePanel** | 3 partials | ~921 |
+| **CharacterPanel** | 3 partials | ~959 |
+
+### MainWindow Partials
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| MainWindow.axaml.cs | 742 | Core: fields, constructor, panels, navigation, edit ops, UI updates, keyboard shortcuts |
+| MainWindow.CreatureBrowser.cs | 382 | Creature browser panel init, visibility, file selection, delete |
+| MainWindow.FileOps.cs | 713 | Recent files, menu handlers, export, open/save/new/close |
+| MainWindow.FileValidation.cs | 207 | Aurora filename validation, BIC class validation, rename workflow |
+| MainWindow.Inventory.cs | 506 | Populate inventory from creature data |
+| MainWindow.ItemPalette.cs | 420 | Item palette with modular caching (BIF/Override/HAK) |
+| MainWindow.ItemResolution.cs | 157 | UTI resolution from module/Override/HAK/BIF |
+| MainWindow.Lifecycle.cs | 216 | Window opened, service init, caches, startup file, closing |
+| MainWindow.MenuDialogs.cs | 249 | Settings, About, Level Up, Re-Level, Down-Level dialogs |
+
+### NewCharacterWizardWindow Partials
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| .axaml.cs | 758 | Core: wizard navigation, step management |
+| .Race.cs | 158 | Race selection step |
+| .Appearance.cs | 246 | Appearance selection step |
+| .ClassSelection.cs | 407 | Class and level selection |
+| .Abilities.cs | 402 | Ability score allocation |
+| .Skills.cs | 347 | Skill assignment |
+| .Feats.cs | 401 | Feat selection |
+| .EquipmentAndSummary.cs | 458 | Equipment and summary review |
+| .BuildCreature.cs | 395 | Character build and creation |
+
+### When to Split
+
+Split a file when it exceeds ~500 lines. Group by functional concern:
+- **Data loading** - reading from services/files
+- **Event handlers** - user interaction responses
+- **Validation** - input/output checking
+- **Display/Summary** - building display strings
+
+Each partial file needs its own `using` statements - they are NOT shared across partials.
 
 ---
 
-## Development Patterns
-
-### Partial Classes
-
-MainWindow uses partial classes to keep code manageable:
-
-| File | Purpose |
-|------|---------|
-| MainWindow.axaml.cs | Core window logic, navigation, event handlers |
-| MainWindow.FileOps.cs | Open/Save/Recent files |
-| MainWindow.Inventory.cs | Populate inventory from creature data |
-
-When adding new functionality, consider if it belongs in an existing partial or warrants a new one.
-
-### Content Panels
+## Content Panels
 
 Each section in the sidebar has its own UserControl in `Views/Panels/`:
 
-| Panel | Status |
-|-------|--------|
-| StatsPanel | Editable - ability scores, HP, saves, movement |
-| ClassesPanel | Editable - class levels, alignment, identity |
-| SkillsPanel | Editable - skill ranks with progress bars |
-| FeatsPanel | Editable - add/remove feats and special abilities |
-| SpellsPanel | Editable - known/memorized spells with metamagic |
-| ScriptsPanel | Editable - event scripts and conversation resref |
-| AdvancedPanel | Editable - flags, behavior, appearance, variables |
-| AppearancePanel | View - appearance preview rendering |
-| InventoryPanel | View - equipment + backpack + palette |
+| Panel | Partials | Status |
+|-------|----------|--------|
+| StatsPanel | 4 files | Editable - ability scores, HP, saves, combat |
+| ClassesPanel | 1 file | Editable - class levels, alignment, identity |
+| SkillsPanel | 1 file | Editable - skill ranks with progress bars |
+| FeatsPanel | 5 files | Editable - add/remove feats and special abilities |
+| SpellsPanel | 4 files | Editable - known/memorized spells with metamagic |
+| ScriptsPanel | 1 file | Editable - event scripts and conversation resref |
+| AdvancedPanel | 1 file | Editable - flags, behavior, appearance, variables |
+| AppearancePanel | 3 files | View - appearance preview rendering |
+| InventoryPanel | 1 file | View - equipment + backpack + palette |
+| CharacterPanel | 3 files | Editable - name, portrait, soundset |
+| QuickBarPanel | 1 file | Quick access bar |
 
 To add a new panel:
 1. Create UserControl in `Views/Panels/`
@@ -121,13 +218,46 @@ To add a new panel:
 3. Add navigation in `NavigateToSection()`
 4. Add AutomationId for FlaUI testing
 
-### Services
+---
 
-All services follow similar patterns:
+## Services
 
-- **Singleton pattern** with `Instance` property
+18 services in the `Services/` directory:
+
+| Service | Lines | Purpose |
+|---------|-------|---------|
+| CommandLineService | 37 | CLI argument parsing (--file, --safemode) |
+| SettingsService | 471 | User preferences, singleton with env var override |
+| CreatureDisplayService | 655+272 | Creature display state + combat stats (2 partials) |
+| CharacterSheetService | 773 | Character sheet calculations |
+| ClassService | 873 | NWN class data, levels, abilities |
+| FeatService | 920 | Feat lookup and validation |
+| FeatCacheService | 178 | Feat data caching |
+| SkillService | 262 | Skill calculations |
+| SpellService | 339 | Spell lookup |
+| AppearanceService | 551 | Appearance/color data |
+| ModelService | 554 | 3D model loading |
+| TextureService | 303 | Texture loading and caching |
+| ItemIconService | 251 | Item icon management |
+| LevelHistoryService | 503 | Level/class progression tracking |
+| ModularPaletteCacheService | 390 | Multi-source item caching (BIF/Override/HAK) |
+| PaletteColorService | 153 | Palette color utilities |
+| QuartermasterScriptBrowserContext | 111 | Script browser integration |
+
+Service patterns:
+- **Singleton** with `Instance` property
 - **Environment variable override** for testing (e.g., `QUARTERMASTER_SETTINGS_DIR`)
 - **INotifyPropertyChanged** for bindable settings
+
+---
+
+## Item Resolution
+
+Items are resolved in this order:
+1. **Module directory** - Same folder as the UTC/BIC file
+2. **Override folder** - User's NWN Override directory
+3. **HAK files** - Module-specific HAK archives
+4. **BIF archives** - Base game data
 
 ---
 
@@ -155,13 +285,11 @@ dotnet test Radoub.IntegrationTests --filter "Category=Smoke&FullyQualifiedName~
 
 ## Shared Dependencies
 
-Quartermaster uses these shared libraries:
-
 | Library | Purpose |
 |---------|---------|
-| Radoub.Formats | UTC, BIC, UTI file parsing |
-| Radoub.UI | ItemListView, EquipmentSlotsPanel, ItemFilterPanel, CreatureBrowserWindow |
-| Radoub.Formats.Services | GameDataService for BIF/TLK access |
+| Radoub.Formats | UTC, BIC, UTI, IFO file parsing, GameDataService |
+| Radoub.UI | ItemListView, EquipmentSlotsPanel, ItemFilterPanel, CreatureBrowserWindow, ThemeManager, BrushManager, AboutWindow |
+| Radoub.Dictionary | (not yet integrated - future spell-check for text fields) |
 
 ---
 
@@ -178,47 +306,14 @@ Changes go in `Quartermaster/CHANGELOG.md` (not Radoub CHANGELOG).
 
 ---
 
-## Common Tasks
-
-### Adding a New Panel
-
-1. Create UserControl in `Views/Panels/`
-2. Add to MainWindow.axaml content grid with `IsVisible="False"`
-3. Add navigation button in sidebar with AutomationId
-4. Update `NavigateToSection()` switch statement
-5. Add tests if significant logic
-
-### Adding a New Service
-
-1. Create in `Services/` folder
-2. Follow singleton pattern with environment variable override
-3. Add tests in Quartermaster.Tests
-
-### Working with Creature Data
-
-```csharp
-// Load creature
-var creature = UtcReader.Read(filePath);  // or BicReader for .bic
-
-// Access inventory
-foreach (var item in creature.ItemList) { ... }
-foreach (var equipped in creature.EquipItemList) { ... }
-
-// Resolve item data
-var utiData = _gameDataService.FindResource(resRef, ResourceTypes.Uti);
-var item = UtiReader.Read(utiData);
-```
-
----
-
 ## FlaUI Testing
 
 The sidebar layout is designed for FlaUI compatibility:
 
 | Element | AutomationId | Test Action |
 |---------|--------------|-------------|
-| Stats Button | `NavButton_Stats` | Click → verify StatsPanel visible |
-| Inventory Button | `NavButton_Inventory` | Click → verify InventoryPanel visible |
+| Stats Button | `NavButton_Stats` | Click -> verify StatsPanel visible |
+| Inventory Button | `NavButton_Inventory` | Click -> verify InventoryPanel visible |
 | Character Name | `CharacterName` | Verify text after file load |
 | Content Area | `ContentArea` | Verify active panel |
 
