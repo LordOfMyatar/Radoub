@@ -17,6 +17,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.75] - 2026-02-21
+**Branch**: `radoub/issue-1401` | **PR**: #TBD
+
+### Enhancement: Investigate Claude Code Hooks for CLAUDE.md Enforcement (#1401)
+
+---
+
 ## [0.9.74] - 2026-02-21
 **Branch**: `radoub/issue-1442` | **PR**: #1450
 
