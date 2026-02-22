@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.14-alpha] - 2026-02-22
-**Branch**: `quartermaster/issue-1482` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1482` | **PR**: #1483
 
 ### Sprint: New Character Wizard Missing Features (#1482)
 
