@@ -166,6 +166,11 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
         _hakEntries.Clear();
         _hakCreaturesLoaded = false;
 
+        // Load vault entries here (not in LoadAdditionalFilesAsync) so they bypass
+        // the base class name-based dedup. Vault BICs can share names with module UTCs
+        // and both should appear in the list as separate entries.
+        await LoadVaultEntriesAsync();
+
         return await Task.Run(() =>
         {
             var entries = new List<FileBrowserEntry>();
@@ -173,7 +178,11 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
             try
             {
                 if (!Directory.Exists(modulePath))
+                {
+                    // Still return vault entries even if module path is invalid
+                    entries.AddRange(_vaultEntries);
                     return entries;
+                }
 
                 // Load UTC files (creature blueprints) from module
                 var utcFiles = Directory.GetFiles(modulePath, "*.utc", SearchOption.TopDirectoryOnly);
@@ -203,32 +212,32 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
                     });
                 }
 
-                entries = entries.OrderBy(e => e.Name).ToList();
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"CreatureBrowserPanel: Found {entries.Count} creatures in module");
+
+                // Add vault entries - these are from different sources so no dedup
+                entries.AddRange(_vaultEntries);
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"CreatureBrowserPanel: Added {_vaultEntries.Count} vault entries");
             }
             catch (Exception ex)
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"CreatureBrowserPanel: Error loading creatures: {ex.Message}");
             }
 
-            return entries;
+            return entries.OrderBy(e => e.Source).ThenBy(e => e.Name).ToList();
         });
     }
 
     protected override async Task<List<FileBrowserEntry>> LoadAdditionalFilesAsync()
     {
-        await LoadVaultEntriesAsync();
-
+        // Vault entries are loaded in LoadFilesFromModuleAsync to bypass base class
+        // name-based dedup. Only HAK entries go through additional loading (HAK dedup
+        // by name IS desired - HAK overrides should merge with module).
         if (_showHakCreatures && !_hakCreaturesLoaded)
         {
             await LoadHakCreaturesAsync();
         }
 
-        // Combine vault and HAK entries
-        var allEntries = new List<FileBrowserEntry>();
-        allEntries.AddRange(_vaultEntries.Cast<FileBrowserEntry>());
-        allEntries.AddRange(_hakEntries.Cast<FileBrowserEntry>());
-        return allEntries;
+        return _hakEntries.Cast<FileBrowserEntry>().ToList();
     }
 
     private async Task LoadVaultEntriesAsync()
