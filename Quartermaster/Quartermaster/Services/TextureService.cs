@@ -140,6 +140,7 @@ public class TextureService
 
     /// <summary>
     /// Load a DDS texture using Pfim decoder.
+    /// Handles both standard Microsoft DDS and BioWare's proprietary DDS format.
     /// </summary>
     public (int width, int height, byte[] pixels)? LoadDdsTexture(string ddsResRef)
     {
@@ -150,9 +151,18 @@ public class TextureService
         if (ddsData == null || ddsData.Length == 0)
             return null;
 
+        // Detect BioWare DDS format (lacks "DDS " magic header)
+        // Standard DDS starts with 0x44445320 ("DDS "), BioWare starts with width/height
+        bool isBiowareDds = ddsData.Length >= 20 &&
+            !(ddsData[0] == 0x44 && ddsData[1] == 0x44 && ddsData[2] == 0x53 && ddsData[3] == 0x20);
+
+        byte[]? decodableData = isBiowareDds ? ConvertBiowareDdsToStandard(ddsData) : ddsData;
+        if (decodableData == null)
+            return null;
+
         try
         {
-            using var stream = new MemoryStream(ddsData);
+            using var stream = new MemoryStream(decodableData);
             using var image = Pfimage.FromStream(stream);
 
             byte[] pixels = ConvertPfimToRgba(image);
@@ -164,6 +174,84 @@ public class TextureService
                 $"TextureService.LoadDdsTexture: DDS '{ddsResRef}' decode failed: {ex.Message}");
             return null;
         }
+    }
+
+    /// <summary>
+    /// Convert BioWare's proprietary DDS format to standard Microsoft DDS.
+    /// BioWare header (20 bytes): width(4), height(4), channels(4), pitch(4), alpha(4)
+    /// Channels: 3 = DXT1 (RGB), 4 = DXT5 (RGBA)
+    /// </summary>
+    private static byte[]? ConvertBiowareDdsToStandard(byte[] biowareData)
+    {
+        if (biowareData.Length < 20) return null;
+
+        uint width = BitConverter.ToUInt32(biowareData, 0);
+        uint height = BitConverter.ToUInt32(biowareData, 4);
+        uint channels = BitConverter.ToUInt32(biowareData, 8);
+        // pitch at offset 12, alpha at offset 16 - not needed for conversion
+
+        if (width == 0 || height == 0 || width > 4096 || height > 4096)
+            return null;
+
+        // Determine DXT format from channel count
+        // 3 channels = DXT1 (BC1), 4 channels = DXT5 (BC3)
+        bool isDxt1 = channels == 3;
+        string fourCC = isDxt1 ? "DXT1" : "DXT5";
+        uint blockSize = isDxt1 ? 8u : 16u;
+        uint mainImageSize = (width / 4) * (height / 4) * blockSize;
+
+        // Build standard DDS header (128 bytes)
+        // DDS header: 4 magic + 124 header bytes
+        var header = new byte[128];
+
+        // Magic "DDS "
+        header[0] = 0x44; header[1] = 0x44; header[2] = 0x53; header[3] = 0x20;
+
+        // dwSize = 124
+        BitConverter.GetBytes(124u).CopyTo(header, 4);
+
+        // dwFlags: DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT | DDSD_LINEARSIZE | DDSD_MIPMAPCOUNT
+        BitConverter.GetBytes(0x000A1007u).CopyTo(header, 8);
+
+        // dwHeight, dwWidth
+        BitConverter.GetBytes(height).CopyTo(header, 12);
+        BitConverter.GetBytes(width).CopyTo(header, 16);
+
+        // dwPitchOrLinearSize
+        BitConverter.GetBytes(mainImageSize).CopyTo(header, 20);
+
+        // dwDepth = 0 (offset 24)
+        // dwMipMapCount - calculate from dimensions
+        uint mipCount = 1;
+        uint mw = width, mh = height;
+        while (mw > 1 || mh > 1) { mw = Math.Max(1, mw / 2); mh = Math.Max(1, mh / 2); mipCount++; }
+        BitConverter.GetBytes(mipCount).CopyTo(header, 28);
+
+        // dwReserved1[11] = 0 (offsets 32-75)
+
+        // Pixel format (at offset 76, 32 bytes)
+        // ddpf.dwSize = 32
+        BitConverter.GetBytes(32u).CopyTo(header, 76);
+        // ddpf.dwFlags = DDPF_FOURCC (0x4)
+        BitConverter.GetBytes(4u).CopyTo(header, 80);
+        // ddpf.dwFourCC
+        header[84] = (byte)fourCC[0];
+        header[85] = (byte)fourCC[1];
+        header[86] = (byte)fourCC[2];
+        header[87] = (byte)fourCC[3];
+        // ddpf remaining fields = 0 (offsets 88-107)
+
+        // dwCaps = DDSCAPS_TEXTURE | DDSCAPS_MIPMAP | DDSCAPS_COMPLEX (0x401008)
+        BitConverter.GetBytes(0x00401008u).CopyTo(header, 108);
+        // dwCaps2-4 = 0, dwReserved2 = 0
+
+        // Combine header + pixel data (skip 20-byte BioWare header)
+        int pixelDataLen = biowareData.Length - 20;
+        var result = new byte[128 + pixelDataLen];
+        header.CopyTo(result, 0);
+        Array.Copy(biowareData, 20, result, 128, pixelDataLen);
+
+        return result;
     }
 
     private static byte[] ConvertPfimToRgba(IImage image)

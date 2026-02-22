@@ -364,11 +364,12 @@ public class AppearanceAnalysisTests
         // Models with known issues (use exact names from appearance.2da RACE column)
         var testModels = new[]
         {
-            "c_boar",          // Boar - detached hooves
-            "c_beetle",        // Beetle - scattered legs
-            "c_frostgia",      // Frost giant - detached lower body
-            "c_chicken",       // Chicken - was working, may have regressed
-            "c_troll",         // Troll - missing legs (rotation issue?)
+            "c_ogrechiefa",    // Elite Ogre - renders red
+            "c_archon",        // Lantern Archon - renders red
+            "c_DrgMist",       // Mist Dragon - renders red
+            "c_lantern",       // Alt name for lantern archon
+            "c_curst",         // Curst warrior - renders red
+            "c_boar",          // Boar - fixed
         };
 
         foreach (var modelName in testModels)
@@ -424,7 +425,7 @@ public class AppearanceAnalysisTests
                     // Check for rotation
                     var hasRot = mesh.Orientation != System.Numerics.Quaternion.Identity;
                     var rotInfo = hasRot ? $" ROT={mesh.Orientation}" : "";
-                    _output.WriteLine($"  Mesh '{mesh.Name}': nodePos={mesh.Position:F2}, vertCenter={vertCenter:F2} ({pattern}){rotInfo}");
+                    _output.WriteLine($"  Mesh '{mesh.Name}': bitmap='{mesh.Bitmap}', nodePos={mesh.Position:F2}, vertCenter={vertCenter:F2} ({pattern}){rotInfo}");
                     _output.WriteLine($"    {verts.Length} verts, {mesh.Faces.Length} faces, type={mesh.GetType().Name}, parentDepth={parentChain.Count}");
                     _output.WriteLine($"    Chain: {string.Join(" <- ", parentChain)}");
                 }
@@ -432,6 +433,62 @@ public class AppearanceAnalysisTests
             if (model.GetMeshNodes().Count() > 15)
             {
                 _output.WriteLine($"  ... and {model.GetMeshNodes().Count() - 15} more meshes");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Check which texture formats exist for problematic models.
+    /// </summary>
+    [Fact]
+    public void DebugTextureAvailability()
+    {
+        if (!RadoubSettings.Instance.HasGamePaths)
+        {
+            _output.WriteLine("SKIP: No game paths configured");
+            return;
+        }
+
+        using var gameData = new GameDataService();
+        if (!gameData.IsConfigured)
+        {
+            _output.WriteLine("SKIP: GameDataService not configured");
+            return;
+        }
+
+        var textureNames = new[]
+        {
+            "c_ogrechiefa", "c_drgmist_bod", "c_curst2", "c_boar",
+            "c_curst", "bone", "torso_g", "lthigh_g", "rthigh_g"
+        };
+
+        var textureService = new Services.TextureService(gameData);
+
+        foreach (var name in textureNames)
+        {
+            var plt = gameData.FindResource(name, Radoub.Formats.Common.ResourceTypes.Plt);
+            var tga = gameData.FindResource(name, Radoub.Formats.Common.ResourceTypes.Tga);
+            var dds = gameData.FindResource(name, Radoub.Formats.Common.ResourceTypes.Dds);
+            _output.WriteLine($"  '{name}': PLT={plt?.Length ?? 0}, TGA={tga?.Length ?? 0}, DDS={dds?.Length ?? 0}");
+
+            // Try actual texture loading
+            var result = textureService.LoadTexture(name);
+            if (result.HasValue)
+                _output.WriteLine($"    -> LOADED {result.Value.width}x{result.Value.height}");
+            else
+                _output.WriteLine($"    -> FAILED to load");
+
+            // Analyze DDS format
+            if (dds != null && dds.Length >= 20)
+            {
+                var w = BitConverter.ToUInt32(dds, 0);
+                var h = BitConverter.ToUInt32(dds, 4);
+                var channels = BitConverter.ToUInt32(dds, 8);
+                var pitch = BitConverter.ToUInt32(dds, 12);
+                var alpha = BitConverter.ToSingle(dds, 16);
+                var isBioware = dds.Length >= 4 && dds[0] != 0x44; // Not 'D' for DDS
+                var dataSize = dds.Length - 20;
+                _output.WriteLine($"    DDS: bioware={isBioware}, {w}x{h}, ch={channels}, pitch={pitch}, alpha={alpha:F2}, dataSize={dataSize}");
             }
         }
     }
