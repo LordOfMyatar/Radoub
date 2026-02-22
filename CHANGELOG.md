@@ -17,6 +17,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.75] - 2026-02-21
+**Branch**: `radoub/issue-1401` | **PR**: #1456
+
+### Enhancement: Investigate Claude Code Hooks for CLAUDE.md Enforcement (#1401)
+
+- Added 6 hooks for mechanical enforcement of CLAUDE.md rules
+- `check-commit-format.sh` — enforces `[Tool] type:` commit message format
+- `check-showdialog.sh` — blocks `ShowDialog()` for info windows (must use `Show()`)
+- `check-hardcoded-gamedata.sh` — catches hardcoded race/class/feat data
+- `check-pdf-read.sh` — blocks PDF reads without explicit user instruction
+- `check-theme-brushes.sh` — catches hardcoded colors instead of BrushManager/DynamicResource
+- Stop prompt hook — catches premature task completion claims
+
+---
+
 ## [0.9.74] - 2026-02-21
 **Branch**: `radoub/issue-1442` | **PR**: #1450
 
