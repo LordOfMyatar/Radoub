@@ -364,12 +364,10 @@ public class AppearanceAnalysisTests
         // Models with known issues (use exact names from appearance.2da RACE column)
         var testModels = new[]
         {
-            "c_ogrechiefA",    // Ogre Chieftain
-            "c_Ogre35",        // Ogre Elite (appearance row 75)
-            "c_clantern",      // Lantern Archon (appearance row 103)
-            "c_drgmist",       // Mist Dragon (appearance row 118)
-            "c_curst",         // Curst warrior
-            "c_boar",          // Boar - fixed
+            "c_yduechf",       // Duergar Cleric (appearance row 412, MODELTYPE=F)
+            "c_allip",         // Allip (appearance row 186, MODELTYPE=S)
+            "c_wraith",        // Wraith (appearance row 187, MODELTYPE=S)
+            "c_golruby",       // Ruby Golem (appearance row 173, MODELTYPE=F)
         };
 
         foreach (var modelName in testModels)
@@ -459,7 +457,10 @@ public class AppearanceAnalysisTests
         var textureNames = new[]
         {
             "c_ogrechiefa", "c_drgmist_bod", "c_curst2", "c_boar",
-            "c_curst", "bone", "torso_g", "lthigh_g", "rthigh_g"
+            "c_curst", "bone", "torso_g", "lthigh_g", "rthigh_g",
+            "c_yduechf", "c_ydueslv", "c_allip", "c_wraith", "c_golruby",
+            "duechf_neck", "duechf_head", "duechf_footl", "duechf_body", "duechf_drobe",
+            "yduechf_body", "yduechf", "duechf"
         };
 
         var textureService = new Services.TextureService(gameData);
@@ -490,6 +491,30 @@ public class AppearanceAnalysisTests
                 var dataSize = dds.Length - 20;
                 _output.WriteLine($"    DDS: bioware={isBioware}, {w}x{h}, ch={channels}, pitch={pitch}, alpha={alpha:F2}, dataSize={dataSize}");
             }
+
+            // Analyze TGA format header
+            if (tga != null && tga.Length >= 18)
+            {
+                var idLen = tga[0];
+                var colormapType = tga[1];
+                var imageType = tga[2];
+                var tgaWidth = BitConverter.ToUInt16(tga, 12);
+                var tgaHeight = BitConverter.ToUInt16(tga, 14);
+                var bpp = tga[16];
+                var descriptor = tga[17];
+                _output.WriteLine($"    TGA: type={imageType}, {tgaWidth}x{tgaHeight}, bpp={bpp}, colormap={colormapType}, idLen={idLen}, desc=0x{descriptor:X2}");
+
+                // Try loading and log exception
+                try
+                {
+                    var tgaImg = Radoub.Formats.Tga.TgaReader.Read(tga);
+                    _output.WriteLine($"    TGA reader: {tgaImg.Width}x{tgaImg.Height}");
+                }
+                catch (Exception ex)
+                {
+                    _output.WriteLine($"    TGA reader FAILED: {ex.Message}");
+                }
+            }
         }
     }
 
@@ -519,7 +544,7 @@ public class AppearanceAnalysisTests
             return;
         }
 
-        var searchTerms = new[] { "archon", "lantern", "mist", "curst", "ogre" };
+        var searchTerms = new[] { "archon", "lantern", "mist", "curst", "ogre", "duergar", "allip", "wraith", "golem", "ruby" };
         var labelCol = twoDA.GetColumnIndex("LABEL");
         var raceCol = twoDA.GetColumnIndex("RACE");
         var modelTypeCol = twoDA.GetColumnIndex("MODELTYPE");

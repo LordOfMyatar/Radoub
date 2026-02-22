@@ -132,8 +132,10 @@ public class TextureService
             var tgaImage = TgaReader.Read(tgaData);
             return (tgaImage.Width, tgaImage.Height, tgaImage.Pixels);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"TextureService.LoadTgaTexture: TGA '{tgaResRef}' decode failed ({tgaData.Length} bytes): {ex.Message}");
             return null;
         }
     }
