@@ -57,6 +57,20 @@ public static class UnifiedLogger
     }
 
     /// <summary>
+    /// Set the application name before full configuration.
+    /// Call this before accessing RadoubSettings or any code that might trigger logging,
+    /// so that any pre-configuration log output goes to the correct directory
+    /// (~/Radoub/{AppName}/Logs/) instead of the default ~/Radoub/Radoub/Logs/.
+    /// </summary>
+    public static void SetAppName(string appName)
+    {
+        if (!_configured)
+        {
+            _appName = appName;
+        }
+    }
+
+    /// <summary>
     /// Check if the logger has been configured.
     /// </summary>
     public static bool IsConfigured => _configured;

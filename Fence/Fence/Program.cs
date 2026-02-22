@@ -34,6 +34,9 @@ sealed class Program
             SafeMode.ActivateSafeMode(clearParameterCache: false, clearPluginData: false);
         }
 
+        // Set app name early so any pre-configuration logging goes to correct directory
+        UnifiedLogger.SetAppName("Fence");
+
         // Initialize unified logging with shared settings
         var sharedSettings = RadoubSettings.Instance;
         UnifiedLogger.Configure(new LoggerConfig
