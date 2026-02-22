@@ -15,13 +15,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: New Character Wizard Missing Features (#1482)
 
-- [ ] #1461 - Alignment chooser (defaults to True Neutral with no option)
-- [ ] #1459 - Familiar support for eligible classes
-- [ ] #1440 - Faction dropdown for UTC creation
-- [ ] #1478 - Searchable appearance type selection
-- [ ] #1476 - Move file save prompt to beginning of wizard
-- [ ] #1472 - Feat description panel in wizards
-- [ ] #1477 - Creature browser doesn't show newly created creatures (bug)
+- [x] #1477 - Fix: Creature browser now refreshes after saving new creature
+- [x] #1461 - Feat: 3x3 alignment grid with class restriction validation
+- [x] #1440 - Feat: Faction dropdown for UTC creation (Step 10)
+- [x] #1478 - Feat: Searchable appearance type selection (TextBox filter + ListBox)
+- [x] #1476 - Feat: Save location picker moved to Step 1 of wizard
+- [x] #1472 - Feat: Feat description panel shows selected feat details
+- [x] #1459 - Feat: Familiar selection for Wizard/Sorcerer (hen_familiar.2da + FamiliarType GFF field)
 
 ---
 
