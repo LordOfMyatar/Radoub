@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.79-alpha] - 2026-02-22
+**Branch**: `quartermaster/issue-1469` | **PR**: #TBD
+
+### Sprint: Hardcoded Values Bug Bash (#1469)
+
+- [ ] #1462 - Hardcoded Human race ID (6) in 7+ locations
+- [ ] #1463 - Hardcoded skill count (28) blocks custom content
+- [ ] #1464 - Hardcoded divine caster class IDs (2, 3)
+- [ ] #1465 - Hardcoded feat progression (every 3 levels)
+- [ ] #1466 - 2DA iteration limits too low for custom content
+- [ ] #1467 - Feat deduplication may filter valid stacking feats
+- [ ] #1468 - Hardcoded skill point multiplier and appearance fallback
+
+---
+
 ## [0.1.78-alpha] - 2026-02-22
 **Branch**: `quartermaster/issue-1454` | **PR**: #1458
 
