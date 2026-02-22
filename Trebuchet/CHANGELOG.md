@@ -10,6 +10,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.21.0-alpha] - 2026-02-21
+**Branch**: `trebuchet/issue-1405` | **PR**: #TBD
+
+### Fix: Stale Logging to ~/Radoub/Radoub/Logs Ignores Retention Settings (#1405)
+
+---
+
 ## [1.20.0-alpha] - 2026-02-17
 **Branch**: `trebuchet/issue-1402` | **PR**: #1404
 
