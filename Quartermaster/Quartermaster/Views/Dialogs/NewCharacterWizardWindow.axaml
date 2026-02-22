@@ -906,6 +906,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Text="Select Feats" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
@@ -950,7 +951,8 @@
                                  Margin="0,0,0,5" TextChanged="OnFeatSearchChanged"/>
                         <Border Grid.Row="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                 BorderThickness="1">
-                            <ListBox x:Name="AvailableFeatsListBox" SelectionMode="Multiple,Toggle">
+                            <ListBox x:Name="AvailableFeatsListBox" SelectionMode="Multiple,Toggle"
+                                     SelectionChanged="OnAvailableFeatSelectionChanged">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Grid Margin="4,2">
@@ -991,7 +993,8 @@
                         </StackPanel>
                         <Border Grid.Row="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                 BorderThickness="1" Margin="0,25,0,0">
-                            <ListBox x:Name="SelectedFeatsListBox" SelectionMode="Multiple,Toggle">
+                            <ListBox x:Name="SelectedFeatsListBox" SelectionMode="Multiple,Toggle"
+                                     SelectionChanged="OnSelectedFeatSelectionChanged">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Grid Margin="4,2">
@@ -1010,6 +1013,19 @@
                         </Border>
                     </Grid>
                 </Grid>
+
+                <!-- Feat Description Panel -->
+                <Border Grid.Row="4" Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        Padding="10" CornerRadius="4" Margin="0,8,0,0" MinHeight="60" MaxHeight="120">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Spacing="2">
+                            <TextBlock x:Name="FeatDescriptionTitle" FontWeight="Bold" FontSize="13"
+                                       Text="Select a feat to see its description"/>
+                            <TextBlock x:Name="FeatDescriptionText" TextWrapping="Wrap" FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
             </Grid>
 
             <!-- Step 7: Skills -->

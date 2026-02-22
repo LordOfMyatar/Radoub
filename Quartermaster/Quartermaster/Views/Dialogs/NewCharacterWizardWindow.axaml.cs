@@ -223,6 +223,8 @@ public partial class NewCharacterWizardWindow : Window
     private readonly ListBox _availableFeatsListBox;
     private readonly ListBox _selectedFeatsListBox;
     private readonly TextBlock _selectedFeatCountLabel;
+    private readonly TextBlock _featDescriptionTitle;
+    private readonly TextBlock _featDescriptionText;
 
     // Step 7 controls (Skills, was Step 6)
     private readonly TextBlock _skillPointsRemainingLabel;
@@ -488,6 +490,8 @@ public partial class NewCharacterWizardWindow : Window
         _availableFeatsListBox = this.FindControl<ListBox>("AvailableFeatsListBox")!;
         _selectedFeatsListBox = this.FindControl<ListBox>("SelectedFeatsListBox")!;
         _selectedFeatCountLabel = this.FindControl<TextBlock>("SelectedFeatCountLabel")!;
+        _featDescriptionTitle = this.FindControl<TextBlock>("FeatDescriptionTitle")!;
+        _featDescriptionText = this.FindControl<TextBlock>("FeatDescriptionText")!;
 
         // Step 7 controls (Skills)
         _skillPointsRemainingLabel = this.FindControl<TextBlock>("SkillPointsRemainingLabel")!;
