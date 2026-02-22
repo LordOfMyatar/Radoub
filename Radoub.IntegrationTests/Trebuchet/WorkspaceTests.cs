@@ -86,9 +86,10 @@ public class WorkspaceTests : TrebuchetTestBase
         Assert.True(ready, "Window should be ready");
         Thread.Sleep(1000);
 
-        // Click Factions tab
+        // Click Factions tab (ensure focus before each click to prevent VSCode stealing it)
         var factionsTab = FindTabByName("Factions");
         Assert.NotNull(factionsTab);
+        EnsureFocused();
         factionsTab.Click();
         Thread.Sleep(500);
 
@@ -102,6 +103,7 @@ public class WorkspaceTests : TrebuchetTestBase
         // Click Build & Test tab
         var launchTab = FindTabByName("Build & Test");
         Assert.NotNull(launchTab);
+        EnsureFocused();
         launchTab.Click();
         Thread.Sleep(500);
 
@@ -115,6 +117,7 @@ public class WorkspaceTests : TrebuchetTestBase
         // Click back to Module tab
         var moduleTab = FindTabByName("Module");
         Assert.NotNull(moduleTab);
+        EnsureFocused();
         moduleTab.Click();
         Thread.Sleep(500);
     }
@@ -134,6 +137,7 @@ public class WorkspaceTests : TrebuchetTestBase
         // Navigate to Build & Test tab
         var launchTab = FindTabByName("Build & Test");
         Assert.NotNull(launchTab);
+        EnsureFocused();
         launchTab.Click();
         Thread.Sleep(500);
 
@@ -170,6 +174,7 @@ public class WorkspaceTests : TrebuchetTestBase
         // Navigate to Build & Test tab
         var launchTab = FindTabByName("Build & Test");
         Assert.NotNull(launchTab);
+        EnsureFocused();
         launchTab.Click();
         Thread.Sleep(500);
 
@@ -197,6 +202,7 @@ public class WorkspaceTests : TrebuchetTestBase
         // Navigate to Build & Test tab
         var launchTab = FindTabByName("Build & Test");
         Assert.NotNull(launchTab);
+        EnsureFocused();
         launchTab.Click();
         Thread.Sleep(500);
 
@@ -245,6 +251,7 @@ public class WorkspaceTests : TrebuchetTestBase
         // Navigate to Factions tab - toolbar should still be accessible
         var factionsTab = FindTabByName("Factions");
         Assert.NotNull(factionsTab);
+        EnsureFocused();
         factionsTab.Click();
         Thread.Sleep(500);
 
@@ -256,6 +263,7 @@ public class WorkspaceTests : TrebuchetTestBase
         // Navigate to Build & Test tab - toolbar should still be accessible
         var launchTab = FindTabByName("Build & Test");
         Assert.NotNull(launchTab);
+        EnsureFocused();
         launchTab.Click();
         Thread.Sleep(500);
 

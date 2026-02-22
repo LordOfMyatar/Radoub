@@ -160,6 +160,7 @@ public class ValueChangeTests : FenceTestBase
         }
         else
         {
+            EnsureFocused();
             element.AsCheckBox()?.Click();
         }
         Thread.Sleep(200);

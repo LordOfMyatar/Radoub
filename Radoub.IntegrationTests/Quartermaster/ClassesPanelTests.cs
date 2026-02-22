@@ -26,6 +26,7 @@ public class ClassesPanelTests : QuartermasterTestBase
         }
         else
         {
+            EnsureFocused();
             button.Click();
         }
 
@@ -103,6 +104,7 @@ public class ClassesPanelTests : QuartermasterTestBase
             }
             else
             {
+                EnsureFocused();
                 button.Click();
             }
             Thread.Sleep(500); // Wait for dialog to open
@@ -134,6 +136,7 @@ public class ClassesPanelTests : QuartermasterTestBase
             var cancelButton = pickerWindow.FindFirstDescendant(cf => cf.ByAutomationId("CancelButton"));
             if (cancelButton == null) return false;
 
+            EnsureFocused();
             cancelButton.AsButton().Click();
             Thread.Sleep(300);
             return true;
@@ -175,6 +178,7 @@ public class ClassesPanelTests : QuartermasterTestBase
             }
             else
             {
+                EnsureFocused();
                 button.Click();
             }
             Thread.Sleep(500);
@@ -198,6 +202,7 @@ public class ClassesPanelTests : QuartermasterTestBase
             var cancelButton = pickerWindow.FindFirstDescendant(cf => cf.ByAutomationId("CancelButton"));
             if (cancelButton == null) return false;
 
+            EnsureFocused();
             cancelButton.AsButton().Click();
             Thread.Sleep(300);
             return true;

@@ -72,6 +72,7 @@ public class TlkIntegrationTests : ManifestTestBase
         var firstItem = treeView.FindFirstDescendant(cf => cf.ByControlType(FlaUI.Core.Definitions.ControlType.TreeItem));
         if (firstItem != null)
         {
+            EnsureFocused();
             firstItem.Click();
             Thread.Sleep(300);
 
@@ -101,6 +102,7 @@ public class TlkIntegrationTests : ManifestTestBase
         if (firstItem != null)
         {
             // Double-click to expand
+            EnsureFocused();
             firstItem.DoubleClick();
             Thread.Sleep(500);
 

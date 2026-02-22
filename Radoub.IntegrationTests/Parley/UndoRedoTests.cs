@@ -71,6 +71,7 @@ public class UndoRedoTests : ParleyTestBase
             // Get tree and ensure it's fully loaded
             var treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
             var firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+            EnsureFocused();
             firstItem?.Click();
             Thread.Sleep(500);
 
@@ -192,6 +193,7 @@ public class UndoRedoTests : ParleyTestBase
             // Get tree and click first item to ensure it's loaded
             var treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
             var firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+            EnsureFocused();
             firstItem?.Click();
             Thread.Sleep(500);
 
@@ -272,6 +274,7 @@ public class UndoRedoTests : ParleyTestBase
             // Get tree and click first item to ensure it's loaded
             var treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
             var firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+            EnsureFocused();
             firstItem?.Click();
             Thread.Sleep(500);
 
@@ -390,6 +393,7 @@ public class UndoRedoTests : ParleyTestBase
             }
 
             var originalNodeName = targetItem!.Name;
+            EnsureFocused();
             targetItem.Click();
             Thread.Sleep(500);
 
@@ -475,6 +479,7 @@ public class UndoRedoTests : ParleyTestBase
                 return;
             }
 
+            EnsureFocused();
             targetItem.Click();
             Thread.Sleep(300);
 
