@@ -618,7 +618,7 @@
                             <ListBox x:Name="ClassListBox" SelectionChanged="OnClassSelectionChanged">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid Margin="5,2">
+                                        <Grid Margin="5,2,16,2">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
@@ -639,7 +639,7 @@
                     <!-- Right: Class Detail + Package -->
                     <Border Grid.Column="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                             BorderThickness="1" Padding="15">
-                        <ScrollViewer>
+                        <ScrollViewer Padding="0,0,8,0">
                             <Grid x:Name="ClassDetailPanel">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
@@ -966,7 +966,7 @@
                                      SelectionChanged="OnAvailableFeatSelectionChanged">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid Margin="4,2">
+                                        <Grid Margin="4,2,16,2">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
@@ -1008,7 +1008,7 @@
                                      SelectionChanged="OnSelectedFeatSelectionChanged">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid Margin="4,2">
+                                        <Grid Margin="4,2,16,2">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>

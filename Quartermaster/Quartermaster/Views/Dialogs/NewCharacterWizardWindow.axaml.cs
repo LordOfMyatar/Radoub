@@ -603,14 +603,19 @@ public partial class NewCharacterWizardWindow : Window
         var factions = _displayService.GetAllFactions();
 
         int defaultIndex = 0;
+        int itemIndex = 0;
         for (int i = 0; i < factions.Count; i++)
         {
+            // Faction 0 (PC) is not valid for creature blueprints
+            if (factions[i].Id == 0) continue;
+
             _factionComboBox.Items.Add(new ComboBoxItem
             {
                 Content = $"{factions[i].Name} ({factions[i].Id})",
                 Tag = factions[i].Id
             });
-            if (factions[i].Id == 1) defaultIndex = i; // Default to Hostile
+            if (factions[i].Id == 1) defaultIndex = itemIndex; // Default to Hostile
+            itemIndex++;
         }
 
         if (_factionComboBox.Items.Count > 0)
@@ -859,8 +864,19 @@ public partial class NewCharacterWizardWindow : Window
             else
             {
                 var modulePath = RadoubSettings.Instance.CurrentModulePath;
-                if (!string.IsNullOrEmpty(modulePath) && Directory.Exists(modulePath))
-                    suggestedFolder = await StorageProvider.TryGetFolderFromPathAsync(modulePath);
+                if (!string.IsNullOrEmpty(modulePath))
+                {
+                    // Unpacked module directory — save directly into it
+                    if (Directory.Exists(modulePath))
+                        suggestedFolder = await StorageProvider.TryGetFolderFromPathAsync(modulePath);
+                    // .mod file — suggest the parent directory
+                    else if (File.Exists(modulePath))
+                    {
+                        var parentDir = Path.GetDirectoryName(modulePath);
+                        if (!string.IsNullOrEmpty(parentDir) && Directory.Exists(parentDir))
+                            suggestedFolder = await StorageProvider.TryGetFolderFromPathAsync(parentDir);
+                    }
+                }
             }
         }
         catch { /* fallback to no suggestion */ }
