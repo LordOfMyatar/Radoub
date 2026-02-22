@@ -48,29 +48,17 @@ jobs:
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "tag=$TAG" >> $GITHUB_OUTPUT
 
-    - name: Determine Parley Version
-      uses: dotnet/nbgv@v0.4.2
-      id: parley-ver
-      with:
-        path: Parley
+    - name: Restore dotnet tools
+      run: dotnet tool restore
 
-    - name: Determine Manifest Version
-      uses: dotnet/nbgv@v0.4.2
-      id: manifest-ver
-      with:
-        path: Manifest
-
-    - name: Determine Fence Version
-      uses: dotnet/nbgv@v0.4.2
-      id: fence-ver
-      with:
-        path: Fence
-
-    - name: Determine Trebuchet Version
-      uses: dotnet/nbgv@v0.4.2
-      id: trebuchet-ver
-      with:
-        path: Trebuchet
+    - name: Determine Tool Versions
+      id: tool-versions
+      shell: bash
+      run: |
+        echo "parley=$(dotnet nbgv get-version -p Parley -v SemVer2)" >> $GITHUB_OUTPUT
+        echo "manifest=$(dotnet nbgv get-version -p Manifest -v SemVer2)" >> $GITHUB_OUTPUT
+        echo "fence=$(dotnet nbgv get-version -p Fence -v SemVer2)" >> $GITHUB_OUTPUT
+        echo "trebuchet=$(dotnet nbgv get-version -p Trebuchet -v SemVer2)" >> $GITHUB_OUTPUT
 
     - name: Restore Parley dependencies
       run: dotnet restore Parley/Parley/Parley.csproj -r ${{ matrix.runtime }}
@@ -136,9 +124,9 @@ jobs:
             <key>CFBundleName</key>
             <string>Parley</string>
             <key>CFBundleVersion</key>
-            <string>${{ steps.parley-ver.outputs.SemVer2 }}</string>
+            <string>${{ steps.tool-versions.outputs.parley }}</string>
             <key>CFBundleShortVersionString</key>
-            <string>${{ steps.parley-ver.outputs.SemVer2 }}</string>
+            <string>${{ steps.tool-versions.outputs.parley }}</string>
             <key>CFBundlePackageType</key>
             <string>APPL</string>
             <key>NSHighResolutionCapable</key>
@@ -165,9 +153,9 @@ jobs:
             <key>CFBundleName</key>
             <string>Manifest</string>
             <key>CFBundleVersion</key>
-            <string>${{ steps.manifest-ver.outputs.SemVer2 }}</string>
+            <string>${{ steps.tool-versions.outputs.manifest }}</string>
             <key>CFBundleShortVersionString</key>
-            <string>${{ steps.manifest-ver.outputs.SemVer2 }}</string>
+            <string>${{ steps.tool-versions.outputs.manifest }}</string>
             <key>CFBundlePackageType</key>
             <string>APPL</string>
             <key>NSHighResolutionCapable</key>
@@ -194,9 +182,9 @@ jobs:
             <key>CFBundleName</key>
             <string>Fence</string>
             <key>CFBundleVersion</key>
-            <string>${{ steps.fence-ver.outputs.SemVer2 }}</string>
+            <string>${{ steps.tool-versions.outputs.fence }}</string>
             <key>CFBundleShortVersionString</key>
-            <string>${{ steps.fence-ver.outputs.SemVer2 }}</string>
+            <string>${{ steps.tool-versions.outputs.fence }}</string>
             <key>CFBundlePackageType</key>
             <string>APPL</string>
             <key>NSHighResolutionCapable</key>
@@ -224,9 +212,9 @@ jobs:
             <key>CFBundleName</key>
             <string>Trebuchet</string>
             <key>CFBundleVersion</key>
-            <string>${{ steps.trebuchet-ver.outputs.SemVer2 }}</string>
+            <string>${{ steps.tool-versions.outputs.trebuchet }}</string>
             <key>CFBundleShortVersionString</key>
-            <string>${{ steps.trebuchet-ver.outputs.SemVer2 }}</string>
+            <string>${{ steps.tool-versions.outputs.trebuchet }}</string>
             <key>CFBundlePackageType</key>
             <string>APPL</string>
             <key>NSHighResolutionCapable</key>
