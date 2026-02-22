@@ -35,8 +35,8 @@ public partial class NewCharacterWizardWindow
         _filteredRaces = new List<RaceDisplayItem>(_allRaces);
         _raceListBox.ItemsSource = _filteredRaces;
 
-        // Select Human by default if available
-        var humanItem = _filteredRaces.FirstOrDefault(r => r.Id == 6);
+        // Select first race by default (list is already sorted, no hardcoded race ID)
+        var humanItem = _filteredRaces.FirstOrDefault();
         if (humanItem != null)
         {
             _raceListBox.SelectedItem = humanItem;
@@ -71,6 +71,18 @@ public partial class NewCharacterWizardWindow
             return;
 
         _selectedRaceId = selected.Id;
+
+        // Update point-buy budget from racialtypes.2da (e.g., Animal races get fewer points)
+        int newPointBuy = _displayService.GetRacialAbilitiesPointBuyNumber(_selectedRaceId);
+        if (newPointBuy != _pointBuyTotal)
+        {
+            _pointBuyTotal = newPointBuy;
+            // Reset ability scores when point pool changes — previous allocation may be invalid
+            foreach (var ability in AbilityNames)
+                _abilityBaseScores[ability] = AbilityMinBase;
+            _step5Loaded = false; // Force rebuild of ability rows on next visit
+        }
+
         UpdateRaceInfoPanel();
         ValidateCurrentStep();
     }

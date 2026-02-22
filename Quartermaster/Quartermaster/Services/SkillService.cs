@@ -132,7 +132,8 @@ public class SkillService
             return false;
 
         // The cls_skill_*.2da files have rows with SkillIndex and ClassSkill columns
-        for (int row = 0; row < 50; row++)
+        int rowCount = _gameDataService.Get2DA(skillsTable)?.RowCount ?? 50;
+        for (int row = 0; row < rowCount; row++)
         {
             var skillIndexStr = _gameDataService.Get2DAValue(skillsTable, row, "SkillIndex");
             if (string.IsNullOrEmpty(skillIndexStr) || skillIndexStr == "****")
@@ -159,7 +160,8 @@ public class SkillService
             return result;
 
         // Iterate through the cls_skill_*.2da rows
-        for (int row = 0; row < 50; row++)
+        int rowCount = _gameDataService.Get2DA(skillsTable)?.RowCount ?? 50;
+        for (int row = 0; row < rowCount; row++)
         {
             var skillIndexStr = _gameDataService.Get2DAValue(skillsTable, row, "SkillIndex");
             if (string.IsNullOrEmpty(skillIndexStr) || skillIndexStr == "****")
@@ -231,7 +233,8 @@ public class SkillService
         if (skillsTable == null)
             return false;
 
-        for (int row = 0; row < 50; row++)
+        int isRowCount = _gameDataService.Get2DA(skillsTable)?.RowCount ?? 50;
+        for (int row = 0; row < isRowCount; row++)
         {
             var skillIndexStr = _gameDataService.Get2DAValue(skillsTable, row, "SkillIndex");
             if (string.IsNullOrEmpty(skillIndexStr) || skillIndexStr == "****")

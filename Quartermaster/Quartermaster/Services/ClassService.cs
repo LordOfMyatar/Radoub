@@ -590,12 +590,11 @@ public class ClassService
 
     private bool CanCastDivineSpells(UtcFile creature, int minLevel)
     {
-        // Divine casters: Cleric (2), Druid (3), Paladin (6), Ranger (7)
-        var divineCasterIds = new HashSet<int> { 2, 3, 6, 7 };
-
+        // Detect divine casters from 2DA: classes with DivSpellLvlMod > 0, or
+        // classes that are SpellCaster=1, MemorizesSpells=1, and no SpellKnownTable
         foreach (var creatureClass in creature.ClassList)
         {
-            if (divineCasterIds.Contains(creatureClass.Class))
+            if (IsDivineCasterClass(creatureClass.Class))
             {
                 if (minLevel <= 0)
                     return true;
@@ -606,6 +605,29 @@ public class ClassService
             }
         }
         return false;
+    }
+
+    private bool IsDivineCasterClass(int classId)
+    {
+        // Check DivSpellLvlMod first - any class that advances divine casting
+        var divMod = _gameDataService.Get2DAValue("classes", classId, "DivSpellLvlMod");
+        if (!string.IsNullOrEmpty(divMod) && divMod != "****" && int.TryParse(divMod, out int mod) && mod > 0)
+            return true;
+
+        // Check if class is a divine caster: SpellCaster, memorizes, no SpellKnownTable, uses WIS
+        var spellCaster = _gameDataService.Get2DAValue("classes", classId, "SpellCaster");
+        if (spellCaster != "1")
+            return false;
+
+        var memorizesSpells = _gameDataService.Get2DAValue("classes", classId, "MemorizesSpells");
+        if (memorizesSpells != "1")
+            return false;
+
+        var spellKnownTable = _gameDataService.Get2DAValue("classes", classId, "SpellKnownTable");
+        if (!string.IsNullOrEmpty(spellKnownTable) && spellKnownTable != "****")
+            return false; // Has SpellKnownTable = not divine (e.g., Wizard)
+
+        return true;
     }
 
     private int GetMaxCasterSpellLevel(int classId, int classLevel)

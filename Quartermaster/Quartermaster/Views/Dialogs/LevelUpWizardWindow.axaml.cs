@@ -493,17 +493,19 @@ public partial class LevelUpWizardWindow : Window
         // Calculate feats to select this level
         int totalLevel = _creature.ClassList.Sum(c => c.ClassLevel) + 1;
 
-        // Base feat at level 1, then every 3 levels (1, 3, 6, 9, 12, 15, 18, 21...)
+        // D&D 3.5/NWN rule: base feat at level 1, then every 3 levels (1, 3, 6, 9, 12, 15, 18, 21...)
+        // This interval is an engine rule, not configurable via 2DA
+        const int FeatProgressionInterval = 3;
         _featsToSelect = 0;
-        if (totalLevel == 1 || totalLevel % 3 == 0)
+        if (totalLevel == 1 || totalLevel % FeatProgressionInterval == 0)
             _featsToSelect++;
 
         // Class bonus feats (from cls_bfeat_*.2da)
         _featsToSelect += GetClassBonusFeats(_selectedClassId, _newClassLevel);
 
-        // Human bonus feat at level 1
-        if (totalLevel == 1 && _creature.Race == 6) // Human
-            _featsToSelect++;
+        // Racial bonus feat at level 1 (from racialtypes.2da ExtraFeatsAtFirstLevel)
+        if (totalLevel == 1)
+            _featsToSelect += _displayService.GetRacialExtraFeatsAtFirstLevel(_creature.Race);
 
         _selectedFeats.Clear();
 
@@ -555,8 +557,8 @@ public partial class LevelUpWizardWindow : Window
 
         foreach (var featId in allFeatIds)
         {
-            // Skip feats the creature already has
-            if (existingFeats.Contains(featId))
+            // Skip feats the creature already has — unless GAINMULTIPLE=1 in feat.2da
+            if (existingFeats.Contains(featId) && !_displayService.CanFeatBeGainedMultipleTimes(featId))
                 continue;
 
             // Check if feat is available to select (universal or in class table)
@@ -604,7 +606,8 @@ public partial class LevelUpWizardWindow : Window
         if (string.IsNullOrEmpty(featTable) || featTable == "****")
             return result;
 
-        for (int row = 0; row < 300; row++)
+        int rowCount = _displayService.GameDataService.Get2DA(featTable)?.RowCount ?? 300;
+        for (int row = 0; row < rowCount; row++)
         {
             var featIndexStr = _displayService.GameDataService.Get2DAValue(featTable, row, "FeatIndex");
             if (string.IsNullOrEmpty(featIndexStr) || featIndexStr == "****")
@@ -787,21 +790,24 @@ public partial class LevelUpWizardWindow : Window
         int intMod = CreatureDisplayService.CalculateAbilityBonus(_creature.Int);
         _skillPointsToAllocate = Math.Max(1, basePoints + intMod);
 
-        // First level gets 4x skill points
+        // D&D 3.5/NWN rule: level 1 gets 4x skill points (engine rule, not 2DA-configurable)
+        const int FirstLevelSkillMultiplier = 4;
         int totalLevel = _creature.ClassList.Sum(c => c.ClassLevel) + 1;
         if (totalLevel == 1)
-            _skillPointsToAllocate *= 4;
+            _skillPointsToAllocate *= FirstLevelSkillMultiplier;
 
-        // Human bonus skill points
-        if (_creature.Race == 6) // Human
-            _skillPointsToAllocate += totalLevel == 1 ? 4 : 1;
+        // Racial bonus skill points (from racialtypes.2da ExtraSkillPointsPerLvl)
+        int racialExtraPerLevel = _displayService.GetRacialExtraSkillPointsPerLevel(_creature.Race);
+        if (racialExtraPerLevel > 0)
+            _skillPointsToAllocate += totalLevel == 1 ? racialExtraPerLevel * FirstLevelSkillMultiplier : racialExtraPerLevel;
 
         _skillPointsAdded.Clear();
 
         // Cache class skills for the level being gained
         _classSkillIds = _displayService.GetClassSkillIds(_selectedClassId);
 
-        _skillPointsTotalLabel.Text = $"(Base {basePoints} + INT {intMod}{(_creature.Race == 6 ? " + Human" : "")} = {_skillPointsToAllocate})";
+        string racialLabel = racialExtraPerLevel > 0 ? $" + Racial({racialExtraPerLevel})" : "";
+        _skillPointsTotalLabel.Text = $"(Base {basePoints} + INT {intMod}{racialLabel} = {_skillPointsToAllocate})";
         UpdateSkillPointsDisplay();
 
         // Build skill list
@@ -813,7 +819,8 @@ public partial class LevelUpWizardWindow : Window
     {
         var skills = new List<SkillDisplayItem>();
 
-        for (int i = 0; i < 28; i++) // Standard NWN skill count
+        int skillCount = _displayService.GetSkillCount();
+        for (int i = 0; i < skillCount; i++)
         {
             int currentRanks = i < _creature.SkillList.Count ? _creature.SkillList[i] : 0;
             bool isClassSkill = _classSkillIds.Contains(i);

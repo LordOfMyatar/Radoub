@@ -35,7 +35,7 @@ public partial class NewCharacterWizardWindow : Window
     private bool _isBicFile; // false = UTC (default), true = BIC
 
     // Step 2: Race & Sex
-    private byte _selectedRaceId = 6; // Human default
+    private byte _selectedRaceId; // Set when race is selected in Step 2
     private byte _selectedGender; // 0 = Male
     private List<RaceDisplayItem> _allRaces = new();
     private List<RaceDisplayItem> _filteredRaces = new();
@@ -88,7 +88,7 @@ public partial class NewCharacterWizardWindow : Window
         { "STR", 8 }, { "DEX", 8 }, { "CON", 8 },
         { "INT", 8 }, { "WIS", 8 }, { "CHA", 8 }
     };
-    private const int PointBuyTotal = 30;
+    private int _pointBuyTotal = 30; // Default; updated from racialtypes.2da AbilitiesPointBuyNumber
     private const int AbilityMinBase = 8;
     private const int AbilityMaxBase = 18;
     private static readonly int[] PointBuyCosts = { 0, 1, 2, 3, 4, 5, 6, 8, 10, 13, 16 }; // index = score - 8
@@ -613,7 +613,7 @@ public partial class NewCharacterWizardWindow : Window
         {
             2 when !canProceed => "Select a race to continue.",
             4 when !canProceed => "Select a class to continue.",
-            5 when !canProceed => $"Spend all {PointBuyTotal} ability points to continue.",
+            5 when !canProceed => $"Spend all {_pointBuyTotal} ability points to continue.",
             6 when !canProceed => $"Select {_featsToChoose - _chosenFeatIds.Count} more feat(s) to continue.",
             8 when !canProceed => "Select all required spells to continue.",
             _ => ""

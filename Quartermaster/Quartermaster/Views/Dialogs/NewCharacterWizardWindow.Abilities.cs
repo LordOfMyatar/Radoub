@@ -20,6 +20,9 @@ public partial class NewCharacterWizardWindow
 
     private void PrepareStep5()
     {
+        // Update point-buy budget from racialtypes.2da (race may have changed since last visit)
+        _pointBuyTotal = _displayService.GetRacialAbilitiesPointBuyNumber(_selectedRaceId);
+
         if (!_step5Loaded)
         {
             _step5Loaded = true;
@@ -242,7 +245,7 @@ public partial class NewCharacterWizardWindow
             if (costIndex >= 0 && costIndex < PointBuyCosts.Length)
                 spent += PointBuyCosts[costIndex];
         }
-        return PointBuyTotal - spent;
+        return _pointBuyTotal - spent;
     }
 
     private static int GetRacialModForAbility(RacialModifiers mods, string ability) => ability switch

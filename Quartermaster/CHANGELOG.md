@@ -10,6 +10,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.79-alpha] - 2026-02-22
+**Branch**: `quartermaster/issue-1469` | **PR**: #1471
+
+### Sprint: Hardcoded Values Bug Bash (#1469)
+
+- [x] #1462 - Replace hardcoded Human race ID (6) with racialtypes.2da lookups
+  - Added `GetRacialExtraFeatsAtFirstLevel()`, `GetRacialExtraSkillPointsPerLevel()`, `GetRacialDefaultAppearance()` to CreatureDisplayService
+  - Replaced `== 6` checks in NewCharacterWizard (Race, Skills), LevelUpWizard, FeatService
+  - Racial bonus skill points and feats now read from `ExtraFeatsAtFirstLevel` and `ExtraSkillPointsPerLvl` columns
+- [x] #1463 - Replace hardcoded skill count (28) with dynamic skills.2da RowCount
+  - Added `GetSkillCount()` to CreatureDisplayService
+  - Updated skill loops in NewCharacterWizard (Skills, BuildCreature), LevelUpWizard
+- [x] #1464 - Replace hardcoded divine caster class IDs (2, 3) with 2DA detection
+  - Added `IsDivineCaster()` to CreatureDisplayService using SpellCaster/MemorizesSpells/SpellKnownTable columns
+  - Replaced `classId == 2 || classId == 3` in NewCharacterWizard.Spells
+  - Replaced hardcoded `{ 2, 3, 6, 7 }` in ClassService.CanCastDivineSpells with DivSpellLvlMod lookup
+- [x] #1465 - Extract feat progression interval (3) as named constant
+  - `FeatProgressionInterval = 3` in LevelUpWizard and FeatService
+  - Documented as D&D 3.5/NWN engine rule (not 2DA-configurable)
+- [x] #1466 - Replace hardcoded 2DA iteration limits with dynamic RowCount
+  - AppearanceService: appearance (1000→dynamic), portraits (500→dynamic), soundsets (500→dynamic)
+  - FeatService: feat.2da (2000→dynamic), class feat tables (200/300→dynamic), racial feat tables (100→dynamic)
+  - SkillService: cls_skill_*.2da (50→dynamic)
+  - PortraitBrowserWindow, SoundsetBrowserWindow: 500→dynamic
+  - LevelUpWizard: feat table (300→dynamic)
+- [x] #1467 - Check GAINMULTIPLE before excluding feats from selection
+  - Added `CanFeatBeGainedMultipleTimes()` to CreatureDisplayService
+  - LevelUpWizard now allows re-selecting feats with `GAINMULTIPLE=1` in feat.2da
+- [x] #1468 - Extract skill point multiplier as named constant
+  - `FirstLevelSkillMultiplier = 4` in NewCharacterWizard and LevelUpWizard
+  - Documented as D&D 3.5/NWN engine rule (not 2DA-configurable)
+- [x] Replace hardcoded point-buy total (30) with racialtypes.2da AbilitiesPointBuyNumber
+  - Added `GetRacialAbilitiesPointBuyNumber()` to CreatureDisplayService
+  - Point-buy budget now updates when race changes (e.g., Animal races get fewer points)
+  - Ability scores reset when switching to a race with a different point pool
+
+---
+
 ## [0.1.78-alpha] - 2026-02-22
 **Branch**: `quartermaster/issue-1454` | **PR**: #1458
 
