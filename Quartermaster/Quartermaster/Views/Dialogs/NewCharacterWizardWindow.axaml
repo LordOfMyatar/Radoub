@@ -1277,7 +1277,7 @@
                         <!-- Name & Identity -->
                         <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                                 Padding="12" CornerRadius="4">
-                            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="100,*,Auto" RowSpacing="8" ColumnSpacing="10">
+                            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="100,*,Auto" RowSpacing="8" ColumnSpacing="10">
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="First Name:" FontWeight="Bold" VerticalAlignment="Center"/>
                                 <TextBox Grid.Row="0" Grid.Column="1" x:Name="CharacterNameTextBox"
                                          Watermark="Enter character name..."
@@ -1325,6 +1325,15 @@
                                 <ComboBox Grid.Row="7" Grid.Column="1" x:Name="PaletteIdComboBox"
                                           HorizontalAlignment="Left" MinWidth="250"/>
                                 <TextBlock Grid.Row="7" Grid.Column="2" x:Name="PaletteIdNote" Text="(UTC only)"
+                                           VerticalAlignment="Center" FontSize="11"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+
+                                <TextBlock Grid.Row="8" Grid.Column="0" x:Name="FactionLabelText" Text="Faction:" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                <ComboBox Grid.Row="8" Grid.Column="1" x:Name="FactionComboBox"
+                                          HorizontalAlignment="Left" MinWidth="250"
+                                          SelectionChanged="OnFactionSelectionChanged"/>
+                                <TextBlock Grid.Row="8" Grid.Column="2" x:Name="FactionNote" Text="(UTC only)"
                                            VerticalAlignment="Center" FontSize="11"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                             </Grid>

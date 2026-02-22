@@ -128,6 +128,7 @@ public partial class NewCharacterWizardWindow : Window
     // Step 10: Summary (was Step 8)
     private string _characterName = "";
     private byte _paletteId = 1;
+    private ushort _selectedFactionId = 1; // Default: Hostile (standard NWN default for NPCs)
 
     // Controls - navigation
     private readonly TextBlock _sidebarTitle;
@@ -250,6 +251,9 @@ public partial class NewCharacterWizardWindow : Window
     private readonly TextBlock _paletteIdLabelText;
     private readonly ComboBox _paletteIdComboBox;
     private readonly TextBlock _paletteIdNote;
+    private readonly TextBlock _factionLabelText;
+    private readonly ComboBox _factionComboBox;
+    private readonly TextBlock _factionNote;
     private readonly TextBlock _summaryFileTypeLabel;
     private readonly TextBlock _summaryRaceLabel;
     private readonly TextBlock _summaryAppearanceLabel;
@@ -504,6 +508,10 @@ public partial class NewCharacterWizardWindow : Window
         _paletteIdComboBox = this.FindControl<ComboBox>("PaletteIdComboBox")!;
         PopulatePaletteCategories();
         _paletteIdNote = this.FindControl<TextBlock>("PaletteIdNote")!;
+        _factionLabelText = this.FindControl<TextBlock>("FactionLabelText")!;
+        _factionComboBox = this.FindControl<ComboBox>("FactionComboBox")!;
+        _factionNote = this.FindControl<TextBlock>("FactionNote")!;
+        PopulateFactions();
         _summaryFileTypeLabel = this.FindControl<TextBlock>("SummaryFileTypeLabel")!;
         _summaryRaceLabel = this.FindControl<TextBlock>("SummaryRaceLabel")!;
         _summaryAppearanceLabel = this.FindControl<TextBlock>("SummaryAppearanceLabel")!;
@@ -560,6 +568,33 @@ public partial class NewCharacterWizardWindow : Window
         }
 
         _paletteIdComboBox.SelectedIndex = defaultIndex;
+    }
+
+    private void PopulateFactions()
+    {
+        _factionComboBox.Items.Clear();
+
+        var factions = _displayService.GetAllFactions();
+
+        int defaultIndex = 0;
+        for (int i = 0; i < factions.Count; i++)
+        {
+            _factionComboBox.Items.Add(new ComboBoxItem
+            {
+                Content = $"{factions[i].Name} ({factions[i].Id})",
+                Tag = factions[i].Id
+            });
+            if (factions[i].Id == 1) defaultIndex = i; // Default to Hostile
+        }
+
+        if (_factionComboBox.Items.Count > 0)
+            _factionComboBox.SelectedIndex = defaultIndex;
+    }
+
+    private void OnFactionSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_factionComboBox.SelectedItem is ComboBoxItem item && item.Tag is ushort factionId)
+            _selectedFactionId = factionId;
     }
 
     private async void OnBrowseVoiceSetClick(object? sender, RoutedEventArgs e)

@@ -152,8 +152,8 @@ public partial class NewCharacterWizardWindow
             // Voice set (Step 10)
             SoundSetFile = _selectedVoiceSetId,
 
-            // Behavior defaults
-            FactionID = 1,
+            // Behavior defaults (Step 10 faction)
+            FactionID = _selectedFactionId,
             PerceptionRange = 11,
             WalkRate = 4,
             DecayTime = 5000,

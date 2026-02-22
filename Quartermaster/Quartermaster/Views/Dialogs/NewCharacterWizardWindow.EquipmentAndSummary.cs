@@ -351,6 +351,11 @@ public partial class NewCharacterWizardWindow
         _paletteIdLabelText.IsVisible = isUtc;
         _paletteIdComboBox.IsVisible = isUtc;
         _paletteIdNote.IsVisible = isUtc;
+
+        // Faction visibility (UTC only)
+        _factionLabelText.IsVisible = isUtc;
+        _factionComboBox.IsVisible = isUtc;
+        _factionNote.IsVisible = isUtc;
     }
 
     private void OnCharacterNameChanged(object? sender, TextChangedEventArgs e)
