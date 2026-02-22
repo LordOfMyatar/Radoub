@@ -64,6 +64,7 @@ git diff main...HEAD --name-only
 | `Manifest/**` only | Manifest | No |
 | `Quartermaster/**` only | Quartermaster | No |
 | `Fence/**` only | Fence | No |
+| `Trebuchet/**` only | Trebuchet | No |
 | `Radoub.*/**` | All affected | Yes |
 | Multiple tools | All affected | Yes |
 
@@ -123,13 +124,17 @@ powershell -ExecutionPolicy Bypass -File "d:\LOM\workspace\Radoub\Radoub.Integra
 
 The script handles:
 - Privacy scan (hardcoded paths)
-- Tech debt scan (large files >500 lines)
+- Tech debt scan (warn >800, issue >1000 lines)
 - Unit tests (tool + shared if needed)
 - UI tests (if not -UnitOnly)
 
 ### Step 3b: Tech Debt Issue Verification
 
-When the tech debt scan reports large files (>500 lines), **do NOT assume they are pre-existing**. For each flagged file:
+The tech debt scan uses two thresholds:
+- **>800 lines**: Warning only (logged, no issue required)
+- **>1000 lines**: Issue required (must have a tracking issue)
+
+For files exceeding **1000 lines**, do NOT assume they are pre-existing. For each:
 
 1. Search the GitHub issue cache for an existing tech debt issue (includes both open and closed):
    ```bash
@@ -156,6 +161,8 @@ When the tech debt scan reports large files (>500 lines), **do NOT assume they a
    ```
    ⚠️ Tech debt: MainWindowViewModel.cs (1288 lines) - NEW issue created: #XXXX
    ```
+
+For files in the **800-1000 line** warning range, just report them in the checklist — no issue needed.
 
 **Rule**: Always search the cache first. A tech debt warning is only "new" if no GitHub issue (open or closed) tracks it. Never create duplicates of existing issues.
 
@@ -189,7 +196,7 @@ Flag if >30 days old and code changed.
 | Check | Status |
 |-------|--------|
 | Privacy scan | ✅/⚠️ |
-| Tech debt | ✅ / ⚠️ Tracked (#N) / ⚠️ NEW issue created (#N) |
+| Tech debt | ✅ / ⚠️ Warning (800+) / ⚠️ Tracked (#N) / ⚠️ NEW issue created (#N) |
 | Unit tests | ✅ N passed / ❌ N failed |
 | UI tests | ⏭️ Skipped / 🔄 Auto-triggered / ✅ N passed / ❌ N failed |
 
@@ -220,7 +227,7 @@ The `|| true` handles case where PR is already ready.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File "d:\LOM\workspace\Radoub\Radoub.IntegrationTests\run-tests.ps1" `
-    -Tool [Parley|Quartermaster|Manifest|Fence] `
+    -Tool [Parley|Quartermaster|Manifest|Fence|Trebuchet] `
     -SkipShared      # Skip Radoub.* tests
     -UnitOnly        # Skip UI tests (default for pre-merge)
     -TechDebt        # Include large file scan
