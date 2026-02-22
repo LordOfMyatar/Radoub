@@ -364,9 +364,11 @@ public class AppearanceAnalysisTests
         // Models with known issues (use exact names from appearance.2da RACE column)
         var testModels = new[]
         {
+            "c_boar",          // Boar - detached hooves
+            "c_beetle",        // Beetle - scattered legs
+            "c_frostgia",      // Frost giant - detached lower body
+            "c_chicken",       // Chicken - was working, may have regressed
             "c_troll",         // Troll - missing legs (rotation issue?)
-            "c_gnomefm",       // Gnome female - big forearms
-            "c_duergarf",      // Duergar fighter - helmet on face
         };
 
         foreach (var modelName in testModels)
@@ -389,7 +391,9 @@ public class AppearanceAnalysisTests
                 var current = mesh.Parent;
                 while (current != null)
                 {
-                    parentChain.Add($"{current.Name}(pos={current.Position})");
+                    var hasParentRot = current.Orientation != System.Numerics.Quaternion.Identity;
+                    var rotStr = hasParentRot ? $", rot={current.Orientation}" : "";
+                    parentChain.Add($"{current.Name}(pos={current.Position}{rotStr})");
                     current = current.Parent;
                 }
 

@@ -309,31 +309,29 @@ void main()
     /// </summary>
     private static Matrix4x4 GetWorldTransform(MdlNode node)
     {
-        // Build transform chain from leaf to root, then apply root-to-leaf
-        var transforms = new List<Matrix4x4>();
+        // System.Numerics uses row-major convention where Vector3.Transform(v, M) = v * M
+        // For hierarchical transforms: v_world = v_local * NodeLocal * ParentLocal * ... * RootLocal
+        // So we need: worldTransform = NodeLocal * ParentLocal * ... * RootLocal
+        // We walk leaf-to-root, accumulating: world = local * world
+        //
+        // Each local transform: vertex is scaled, rotated, then translated
+        // In row-major: localTransform = S * R * T (applied left-to-right on row vector)
+        var worldTransform = Matrix4x4.Identity;
         var current = node;
 
         while (current != null)
         {
-            // Build local transform: Scale, then Rotate, then Translate
-            // In matrix terms: T * R * S (applied right-to-left to vertex)
             var scale = Matrix4x4.CreateScale(current.Scale);
             var rotation = Matrix4x4.CreateFromQuaternion(current.Orientation);
             var translation = Matrix4x4.CreateTranslation(current.Position);
 
-            // Local transform = T * R * S (vertex is scaled, rotated, then translated)
-            var localTransform = translation * rotation * scale;
-            transforms.Add(localTransform);
+            // Row-major local transform: S * R * T
+            var localTransform = scale * rotation * translation;
+
+            // Accumulate: node * parent * grandparent * ... * root
+            worldTransform = worldTransform * localTransform;
 
             current = current.Parent;
-        }
-
-        // Apply transforms from root to leaf: Root * ... * Parent * Node
-        // We collected leaf-to-root, so reverse and multiply
-        var worldTransform = Matrix4x4.Identity;
-        for (int i = transforms.Count - 1; i >= 0; i--)
-        {
-            worldTransform = worldTransform * transforms[i];
         }
 
         return worldTransform;
@@ -637,20 +635,19 @@ void main()
                 continue;
             }
 
-            // Accumulate position offsets from parent chain (no rotation/scale - just translations)
-            // This handles hierarchical models like beetle legs attached to body
-            var worldPosition = Vector3.Zero;
-            MdlNode? current = mesh;
-            while (current != null)
-            {
-                worldPosition += current.Position;
-                current = current.Parent;
-            }
+            // Determine transform strategy based on mesh type:
+            // - Skin meshes (MdlSkinNode): vertices in bind-pose/model space, no transform needed
+            // - Trimesh: vertices in local node space, need full world transform (T*R*S hierarchy)
+            bool isSkinMesh = mesh is Radoub.Formats.Mdl.MdlSkinNode;
 
-            // Apply mesh's own rotation to vertices (but NOT parent rotations)
-            // This fixes meshes like troll legs that have 180° rotation
-            var meshRotation = mesh.Orientation;
-            var hasMeshRotation = meshRotation != Quaternion.Identity;
+            // For non-skin meshes: compute full world transform matrix from hierarchy
+            var worldTransform = Matrix4x4.Identity;
+            bool hasWorldTransform = false;
+            if (!isSkinMesh)
+            {
+                worldTransform = GetWorldTransform(mesh);
+                hasWorldTransform = worldTransform != Matrix4x4.Identity;
+            }
 
             // Count NaN vertices - we'll skip them during rendering
             var nanVertexIndices = new HashSet<int>();
@@ -680,12 +677,19 @@ void main()
                 UnifiedLogger.LogApplication(LogLevel.WARN, $"  Mesh {meshIndex} '{mesh.Name}' normal count mismatch: {mesh.Normals.Length} normals vs {mesh.Vertices.Length} vertices");
             }
 
-            // For head meshes, log additional debug info
-            if (mesh.Name?.ToLowerInvariant().Contains("head") == true)
+            // Log mesh hierarchy for debugging transforms
             {
+                var parentChain = new System.Text.StringBuilder();
+                MdlNode? p = mesh;
+                while (p != null)
+                {
+                    if (parentChain.Length > 0) parentChain.Append(" -> ");
+                    parentChain.Append($"{p.Name}(pos={p.Position}, rot={p.Orientation})");
+                    p = p.Parent;
+                }
                 UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"  HEAD MESH '{mesh.Name}': worldTransform has rotation={mesh.Orientation != Quaternion.Identity}, verts={mesh.Vertices.Length}, " +
-                    $"faces={mesh.Faces.Length}, hasUVs={hasUVs}, hasNormals={hasNormals}");
+                    $"  MESH '{mesh.Name}': isSkin={isSkinMesh}, hasXform={hasWorldTransform}, " +
+                    $"verts={mesh.Vertices.Length}, faces={mesh.Faces.Length}, chain=[{parentChain}]");
             }
 
             // Track draw call for this mesh
@@ -709,14 +713,17 @@ void main()
                 // Get vertex in local mesh space
                 var localVertex = mesh.Vertices[i];
 
-                // Apply mesh's own rotation if present (fixes troll legs, etc.)
-                if (hasMeshRotation)
+                Vector3 v;
+                if (isSkinMesh)
                 {
-                    localVertex = Vector3.Transform(localVertex, meshRotation);
+                    // Skin mesh: vertices already in model space, use as-is
+                    v = localVertex;
                 }
-
-                // Then apply world position offset
-                var v = localVertex + worldPosition;
+                else
+                {
+                    // Trimesh: apply full world transform (handles hierarchy rotations + positions)
+                    v = hasWorldTransform ? TransformPosition(localVertex, worldTransform) : localVertex;
+                }
 
                 // Position
                 vertices.Add(v.X);
@@ -728,9 +735,9 @@ void main()
                 if (hasNormals)
                 {
                     normal = mesh.Normals[i];
-                    if (hasMeshRotation)
+                    if (hasWorldTransform && !isSkinMesh)
                     {
-                        normal = Vector3.Transform(normal, meshRotation);
+                        normal = TransformNormal(normal, worldTransform);
                     }
                 }
                 else

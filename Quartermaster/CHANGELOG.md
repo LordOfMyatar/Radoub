@@ -15,8 +15,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: 3D Preview & Appearance Fixes (#1153)
 
-- [ ] #1134 - 3D Preview: Texture/Coloring Issues After Geometry Fix
-- [ ] #1031 - Appearance panel missing tattoo display
+- [x] #1134 - 3D Preview: Texture/Coloring Issues After Geometry Fix
+  - Add DDS texture fallback to TextureService (PLT → TGA → DDS → human fallback)
+  - Fix row-major matrix convention in GetWorldTransform() for correct hierarchical transforms
+  - Fix creature mesh positioning: skin meshes skip transform (bind-pose), trimeshes use full hierarchy
+  - Reparent composite body part meshes to prevent double-transform from original MDL hierarchy
+  - Fixed: boar, beetle, frost giant, chicken, and other non-humanoid creature models
+- [x] #1031 - Appearance panel missing tattoo display (completed in prior sprint)
 
 ---
 
