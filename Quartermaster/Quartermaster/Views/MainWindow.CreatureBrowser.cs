@@ -247,6 +247,8 @@ public partial class MainWindow
 
     /// <summary>
     /// Updates the CreatureBrowserPanel's current file highlight (#1145).
+    /// Only updates ModulePath for files actually in a module directory,
+    /// not for vault/HAK files which would corrupt the module scan path.
     /// </summary>
     private void UpdateCreatureBrowserCurrentFile(string? filePath)
     {
@@ -255,13 +257,17 @@ public partial class MainWindow
         {
             creatureBrowserPanel.CurrentFilePath = filePath;
 
-            // Update module path if we have a file
+            // Only update module path for module files - vault/HAK files live
+            // elsewhere and setting ModulePath to their directory would trigger
+            // a full refresh that loses all module UTC entries.
             if (!string.IsNullOrEmpty(filePath))
             {
-                var modulePath = Path.GetDirectoryName(filePath);
-                if (!string.IsNullOrEmpty(modulePath))
+                var fileDir = Path.GetDirectoryName(filePath);
+                if (!string.IsNullOrEmpty(fileDir) &&
+                    (string.IsNullOrEmpty(creatureBrowserPanel.ModulePath) ||
+                     fileDir.Equals(creatureBrowserPanel.ModulePath, StringComparison.OrdinalIgnoreCase)))
                 {
-                    creatureBrowserPanel.ModulePath = modulePath;
+                    creatureBrowserPanel.ModulePath = fileDir;
                 }
             }
         }

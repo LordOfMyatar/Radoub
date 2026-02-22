@@ -120,8 +120,8 @@ $prs = $data.data.repository.pullRequests.nodes
 
 # Calculate summary statistics
 $labelCounts = @{}
-$toolLabels = @("parley", "quartermaster", "manifest", "fence", "radoub")
-$typeLabels = @("bug", "enhancement", "epic", "sprint", "tech-debt", "documentation", "refactor")
+$toolLabels = @("parley", "quartermaster", "manifest", "fence", "radoub", "Trebuchet")
+$typeLabels = @("bug", "enhancement", "epic", "sprint", "tech-debt", "documentation", "refactor", "testing", "research")
 
 foreach ($issue in $issues) {
     foreach ($label in $issue.labels.nodes) {

@@ -319,10 +319,17 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
             return;
         }
 
-        var currentName = System.IO.Path.GetFileNameWithoutExtension(_currentFilePath);
+        // Prefer exact FilePath match (disambiguates kingsnake.utc vs kingsnake.bic),
+        // fall back to name match for entries without file paths (e.g., HAK resources).
         var entry = _filteredEntries.FirstOrDefault(e =>
-            e.Name.Equals(currentName, StringComparison.OrdinalIgnoreCase) ||
-            (e.FilePath != null && e.FilePath.Equals(_currentFilePath, StringComparison.OrdinalIgnoreCase)));
+            e.FilePath != null && e.FilePath.Equals(_currentFilePath, StringComparison.OrdinalIgnoreCase));
+
+        if (entry == null)
+        {
+            var currentName = System.IO.Path.GetFileNameWithoutExtension(_currentFilePath);
+            entry = _filteredEntries.FirstOrDefault(e =>
+                e.Name.Equals(currentName, StringComparison.OrdinalIgnoreCase));
+        }
 
         if (entry != null)
         {

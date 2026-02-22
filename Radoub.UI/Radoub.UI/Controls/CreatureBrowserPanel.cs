@@ -83,25 +83,28 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
         // Create filter checkboxes
         _showModuleCheck = new CheckBox
         {
-            Content = "Module (.utc)",
+            Content = "Module",
             IsChecked = true
         };
+        ToolTip.SetTip(_showModuleCheck, "Show .utc and .bic files from module folder");
         _showLocalVaultCheck = new CheckBox
         {
-            Content = "Local Vault (.bic)",
-            IsChecked = true
+            Content = "Local Vault",
+            IsChecked = false
         };
+        ToolTip.SetTip(_showLocalVaultCheck, "Show .bic files from localvault");
         _showServerVaultCheck = new CheckBox
         {
-            Content = "Server Vault (.bic)",
+            Content = "Server Vault",
             IsChecked = false
         };
+        ToolTip.SetTip(_showServerVaultCheck, "Show .bic files from servervault subdirectories");
         _showHakCheck = new CheckBox
         {
-            Content = "HAK (.utc)",
+            Content = "HAK",
             IsChecked = false
         };
-        ToolTip.SetTip(_showHakCheck, "Include creature blueprints from HAK files");
+        ToolTip.SetTip(_showHakCheck, "Show .utc files from HAK archives");
 
         _showModuleCheck.IsCheckedChanged += OnFilterChanged;
         _showLocalVaultCheck.IsCheckedChanged += OnFilterChanged;
@@ -163,6 +166,11 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
         _hakEntries.Clear();
         _hakCreaturesLoaded = false;
 
+        // Load vault entries here (not in LoadAdditionalFilesAsync) so they bypass
+        // the base class name-based dedup. Vault BICs can share names with module UTCs
+        // and both should appear in the list as separate entries.
+        await LoadVaultEntriesAsync();
+
         return await Task.Run(() =>
         {
             var entries = new List<FileBrowserEntry>();
@@ -170,7 +178,11 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
             try
             {
                 if (!Directory.Exists(modulePath))
+                {
+                    // Still return vault entries even if module path is invalid
+                    entries.AddRange(_vaultEntries);
                     return entries;
+                }
 
                 // Load UTC files (creature blueprints) from module
                 var utcFiles = Directory.GetFiles(modulePath, "*.utc", SearchOption.TopDirectoryOnly);
@@ -200,32 +212,32 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
                     });
                 }
 
-                entries = entries.OrderBy(e => e.Name).ToList();
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"CreatureBrowserPanel: Found {entries.Count} creatures in module");
+
+                // Add vault entries - these are from different sources so no dedup
+                entries.AddRange(_vaultEntries);
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"CreatureBrowserPanel: Added {_vaultEntries.Count} vault entries");
             }
             catch (Exception ex)
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"CreatureBrowserPanel: Error loading creatures: {ex.Message}");
             }
 
-            return entries;
+            return entries.OrderBy(e => e.Source).ThenBy(e => e.Name).ToList();
         });
     }
 
     protected override async Task<List<FileBrowserEntry>> LoadAdditionalFilesAsync()
     {
-        await LoadVaultEntriesAsync();
-
+        // Vault entries are loaded in LoadFilesFromModuleAsync to bypass base class
+        // name-based dedup. Only HAK entries go through additional loading (HAK dedup
+        // by name IS desired - HAK overrides should merge with module).
         if (_showHakCreatures && !_hakCreaturesLoaded)
         {
             await LoadHakCreaturesAsync();
         }
 
-        // Combine vault and HAK entries
-        var allEntries = new List<FileBrowserEntry>();
-        allEntries.AddRange(_vaultEntries.Cast<FileBrowserEntry>());
-        allEntries.AddRange(_hakEntries.Cast<FileBrowserEntry>());
-        return allEntries;
+        return _hakEntries.Cast<FileBrowserEntry>().ToList();
     }
 
     private async Task LoadVaultEntriesAsync()
@@ -294,7 +306,7 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
 
     private string? GetLocalVaultPath()
     {
-        var nwnPath = _context?.NeverwinterNightsPath;
+        var nwnPath = _context?.NeverwinterNightsPath ?? RadoubSettings.Instance.NeverwinterNightsPath;
         if (string.IsNullOrEmpty(nwnPath))
             return null;
 
@@ -304,7 +316,7 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
 
     private string? GetServerVaultPath()
     {
-        var nwnPath = _context?.NeverwinterNightsPath;
+        var nwnPath = _context?.NeverwinterNightsPath ?? RadoubSettings.Instance.NeverwinterNightsPath;
         if (string.IsNullOrEmpty(nwnPath))
             return null;
 
@@ -488,20 +500,25 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
             return "No creatures found";
         }
 
-        // For creatures, count by source type
+        // Base class moduleCount includes vault entries (anything !IsFromHak).
+        // Compute accurate counts from Source field instead.
         var parts = new List<string>();
-        if (moduleCount > 0) parts.Add($"{moduleCount} module");
 
-        // Vault counts
+        // Module count = total minus vault minus HAK
+        var actualModuleCount = totalCount - hakCount
+            - _vaultEntries.Count(e => e.Source == "LocalVault" && _showLocalVaultCheck.IsChecked == true)
+            - _vaultEntries.Count(e => e.Source == "ServerVault" && _showServerVaultCheck.IsChecked == true);
+        if (actualModuleCount > 0 && _showModuleCheck.IsChecked == true)
+            parts.Add($"{actualModuleCount} module");
+
         var localCount = _vaultEntries.Count(e => e.Source == "LocalVault");
-        var serverCount = _vaultEntries.Count(e => e.Source == "ServerVault");
-
         if (localCount > 0 && _showLocalVaultCheck.IsChecked == true)
             parts.Add($"{localCount} vault");
+
+        var serverCount = _vaultEntries.Count(e => e.Source == "ServerVault");
         if (serverCount > 0 && _showServerVaultCheck.IsChecked == true)
             parts.Add($"{serverCount} server");
 
-        // HAK count
         if (hakCount > 0 && _showHakCheck.IsChecked == true)
             parts.Add($"{hakCount} HAK");
 

@@ -10,6 +10,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.78-alpha] - 2026-02-22
+**Branch**: `quartermaster/issue-1454` | **PR**: #1458
+
+### Sprint: Bug Fix & Polish (#1454)
+
+- [x] #1173 - Body part changes don't refresh or save (fixed in prior PR)
+- [x] #1188 - CreatureBrowserPanel not searching LocalVault/ServerVault for BIC files
+  - Added RadoubSettings fallback for vault path resolution when IScriptBrowserContext is null
+  - Fixed vault BICs deduped by base class name check (vault entries now bypass dedup)
+  - Fixed clicking vault BIC corrupted ModulePath, causing module UTCs to disappear
+  - Fixed same-name files (kingsnake.utc/kingsnake.bic) colliding in highlight selection
+  - Fixed vault entries counted as "module" in status label
+  - Cleaned up checkbox labels and defaults (LocalVault off by default, tooltips added)
+- [x] #957 - Move status bar to top of window
+  - Moved DockPanel.Dock from Bottom to Top, matching Fence pattern
+  - Added themed background, border styling, corner radius
+
+---
+
 ## [0.1.77-alpha] - 2026-02-21
 **Branch**: `quartermaster/issue-1153` | **PR**: #1451
 
