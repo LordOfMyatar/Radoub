@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.77-alpha] - 2026-02-21
+**Branch**: `quartermaster/issue-1153` | **PR**: #TBD
+
+### Sprint: 3D Preview & Appearance Fixes (#1153)
+
+- [ ] #1134 - 3D Preview: Texture/Coloring Issues After Geometry Fix
+- [ ] #1031 - Appearance panel missing tattoo display
+
+---
+
 ## [0.1.76-alpha] - 2026-02-21
 **Branch**: `quartermaster/issue-1441` | **PR**: #1443
 
