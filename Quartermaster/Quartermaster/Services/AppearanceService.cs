@@ -88,15 +88,12 @@ public class AppearanceService
     {
         var appearances = new List<AppearanceInfo>();
 
-        for (int i = 0; i < 1000; i++)
+        int rowCount = _gameDataService.Get2DA("appearance")?.RowCount ?? 1000;
+        for (int i = 0; i < rowCount; i++)
         {
             var label = _gameDataService.Get2DAValue("appearance", i, "LABEL");
             if (string.IsNullOrEmpty(label) || label == "****")
-            {
-                if (appearances.Count > 100)
-                    break;
                 continue;
-            }
 
             var modelType = _gameDataService.Get2DAValue("appearance", i, "MODELTYPE");
             var isPartBased = modelType?.ToUpperInvariant() == "P";
@@ -207,15 +204,12 @@ public class AppearanceService
     {
         var portraits = new List<(ushort Id, string Name)>();
 
-        for (int i = 0; i < 500; i++)
+        int rowCount = _gameDataService.Get2DA("portraits")?.RowCount ?? 500;
+        for (int i = 0; i < rowCount; i++)
         {
             var baseResRef = _gameDataService.Get2DAValue("portraits", i, "BaseResRef");
             if (string.IsNullOrEmpty(baseResRef) || baseResRef == "****")
-            {
-                if (portraits.Count > 50)
-                    break;
                 continue;
-            }
 
             portraits.Add(((ushort)i, baseResRef));
         }
@@ -243,7 +237,8 @@ public class AppearanceService
         if (normalizedResRef.StartsWith("po_"))
             normalizedResRef = normalizedResRef.Substring(3);
 
-        for (int i = 0; i < 500; i++)
+        int rowCount = _gameDataService.Get2DA("portraits")?.RowCount ?? 500;
+        for (int i = 0; i < rowCount; i++)
         {
             var baseResRef = _gameDataService.Get2DAValue("portraits", i, "BaseResRef");
             if (string.IsNullOrEmpty(baseResRef) || baseResRef == "****")
@@ -377,15 +372,12 @@ public class AppearanceService
     {
         var soundSets = new List<(ushort Id, string Name)>();
 
-        for (int i = 0; i < 500; i++)
+        int rowCount = _gameDataService.Get2DA("soundset")?.RowCount ?? 500;
+        for (int i = 0; i < rowCount; i++)
         {
             var label = _gameDataService.Get2DAValue("soundset", i, "LABEL");
             if (string.IsNullOrEmpty(label) || label == "****")
-            {
-                if (soundSets.Count > 50)
-                    break;
                 continue;
-            }
 
             var displayName = GetSoundSetName((ushort)i);
             soundSets.Add(((ushort)i, displayName));

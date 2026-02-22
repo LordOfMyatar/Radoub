@@ -175,6 +175,78 @@ public partial class CreatureDisplayService
     }
 
     /// <summary>
+    /// Gets the number of extra feats a race grants at first level (from racialtypes.2da ExtraFeatsAtFirstLevel).
+    /// Human = 1 in standard NWN data, but custom content may differ.
+    /// </summary>
+    public int GetRacialExtraFeatsAtFirstLevel(int raceId)
+    {
+        var extraFeats = _gameDataService.Get2DAValue("racialtypes", raceId, "ExtraFeatsAtFirstLevel");
+        if (!string.IsNullOrEmpty(extraFeats) && extraFeats != "****" && int.TryParse(extraFeats, out int bonus))
+            return bonus;
+        return 0;
+    }
+
+    /// <summary>
+    /// Gets the number of extra skill points a race grants per level (from racialtypes.2da ExtraSkillPointsPerLvl).
+    /// Human = 1 in standard NWN data, but custom content may differ.
+    /// </summary>
+    public int GetRacialExtraSkillPointsPerLevel(int raceId)
+    {
+        var extraPoints = _gameDataService.Get2DAValue("racialtypes", raceId, "ExtraSkillPointsPerLvl");
+        if (!string.IsNullOrEmpty(extraPoints) && extraPoints != "****" && int.TryParse(extraPoints, out int bonus))
+            return bonus;
+        return 0;
+    }
+
+    /// <summary>
+    /// Gets the default appearance type for a race from racialtypes.2da.
+    /// </summary>
+    public int GetRacialDefaultAppearance(int raceId)
+    {
+        var appearance = _gameDataService.Get2DAValue("racialtypes", raceId, "Appearance");
+        if (!string.IsNullOrEmpty(appearance) && appearance != "****" && int.TryParse(appearance, out int appId))
+            return appId;
+        return 0;
+    }
+
+    /// <summary>
+    /// Checks if a class is a divine caster (memorizes spells but doesn't use SpellKnownTable).
+    /// Divine casters (Cleric, Druid, etc.) get access to all spells on their class list.
+    /// </summary>
+    public bool IsDivineCaster(int classId)
+    {
+        var spellCaster = _gameDataService.Get2DAValue("classes", classId, "SpellCaster");
+        if (spellCaster != "1")
+            return false;
+
+        var memorizesSpells = _gameDataService.Get2DAValue("classes", classId, "MemorizesSpells");
+        if (string.IsNullOrEmpty(memorizesSpells) || memorizesSpells == "****" || memorizesSpells != "1")
+            return false;
+
+        // Divine casters memorize spells but have no SpellKnownTable (they get ALL spells)
+        var spellKnownTable = _gameDataService.Get2DAValue("classes", classId, "SpellKnownTable");
+        return string.IsNullOrEmpty(spellKnownTable) || spellKnownTable == "****";
+    }
+
+    /// <summary>
+    /// Gets the total skill count from skills.2da (dynamic, supports custom content).
+    /// </summary>
+    public int GetSkillCount()
+    {
+        var skills2da = _gameDataService.Get2DA("skills");
+        return skills2da?.RowCount ?? 28;
+    }
+
+    /// <summary>
+    /// Checks if a feat can be gained multiple times (GAINMULTIPLE column in feat.2da).
+    /// </summary>
+    public bool CanFeatBeGainedMultipleTimes(int featId)
+    {
+        var gainMultiple = _gameDataService.Get2DAValue("feat", featId, "GAINMULTIPLE");
+        return gainMultiple == "1";
+    }
+
+    /// <summary>
     /// Gets the display name for a gender ID.
     /// </summary>
     public string GetGenderName(byte genderId)

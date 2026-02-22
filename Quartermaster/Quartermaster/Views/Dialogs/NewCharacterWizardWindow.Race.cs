@@ -35,8 +35,8 @@ public partial class NewCharacterWizardWindow
         _filteredRaces = new List<RaceDisplayItem>(_allRaces);
         _raceListBox.ItemsSource = _filteredRaces;
 
-        // Select Human by default if available
-        var humanItem = _filteredRaces.FirstOrDefault(r => r.Id == 6);
+        // Select first race by default (list is already sorted, no hardcoded race ID)
+        var humanItem = _filteredRaces.FirstOrDefault();
         if (humanItem != null)
         {
             _raceListBox.SelectedItem = humanItem;

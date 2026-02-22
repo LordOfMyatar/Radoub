@@ -243,16 +243,12 @@ public class FeatService
     {
         var featIds = new List<int>();
 
-        // feat.2da can have 1000+ rows
-        for (int i = 0; i < 2000; i++)
+        int rowCount = _gameDataService.Get2DA("feat")?.RowCount ?? 2000;
+        for (int i = 0; i < rowCount; i++)
         {
             var label = _gameDataService.Get2DAValue("feat", i, "LABEL");
             if (string.IsNullOrEmpty(label) || label == "****")
-            {
-                if (featIds.Count > 100)
-                    break;
                 continue;
-            }
 
             var featName = _gameDataService.Get2DAValue("feat", i, "FEAT");
             if (string.IsNullOrEmpty(featName) || featName == "****")
@@ -306,7 +302,8 @@ public class FeatService
         if (string.IsNullOrEmpty(featTable) || featTable == "****")
             return result;
 
-        for (int row = 0; row < 200; row++)
+        int rowCount = _gameDataService.Get2DA(featTable)?.RowCount ?? 200;
+        for (int row = 0; row < rowCount; row++)
         {
             var featIndexStr = _gameDataService.Get2DAValue(featTable, row, "FeatIndex");
             if (string.IsNullOrEmpty(featIndexStr) || featIndexStr == "****")
@@ -380,7 +377,8 @@ public class FeatService
         if (string.IsNullOrEmpty(featTable) || featTable == "****")
             return result;
 
-        for (int row = 0; row < 100; row++)
+        int raceRowCount = _gameDataService.Get2DA(featTable)?.RowCount ?? 100;
+        for (int row = 0; row < raceRowCount; row++)
         {
             var featIndexStr = _gameDataService.Get2DAValue(featTable, row, "FeatIndex");
             if (string.IsNullOrEmpty(featIndexStr) || featIndexStr == "****")
@@ -448,7 +446,8 @@ public class FeatService
         if (string.IsNullOrEmpty(featTable) || featTable == "****")
             return false;
 
-        for (int row = 0; row < 300; row++)
+        int tableRowCount = _gameDataService.Get2DA(featTable)?.RowCount ?? 300;
+        for (int row = 0; row < tableRowCount; row++)
         {
             var featIndexStr = _gameDataService.Get2DAValue(featTable, row, "FeatIndex");
             if (string.IsNullOrEmpty(featIndexStr) || featIndexStr == "****")
@@ -738,9 +737,10 @@ public class FeatService
         var result = new ExpectedFeatInfo();
         int totalLevel = creature.ClassList.Sum(c => c.ClassLevel);
 
-        // Base feats from character level: 1 at level 1, +1 every 3 levels thereafter
-        // Formula: 1 + floor((level - 1) / 3)
-        result.BaseFeats = 1 + (totalLevel - 1) / 3;
+        // D&D 3.5/NWN rule: 1 feat at level 1, +1 every 3 levels thereafter
+        // This interval is an engine rule, not configurable via 2DA
+        const int FeatProgressionInterval = 3;
+        result.BaseFeats = 1 + (totalLevel - 1) / FeatProgressionInterval;
 
         // Racial bonus feat (Human gets +1)
         result.RacialBonusFeats = GetRacialBonusFeatCount(creature.Race);
@@ -767,8 +767,8 @@ public class FeatService
         if (!string.IsNullOrEmpty(extraFeats) && extraFeats != "****" && int.TryParse(extraFeats, out int bonus))
             return bonus;
 
-        // Fallback: Human (raceId 6) gets 1 extra feat
-        return raceId == 6 ? 1 : 0;
+        // Fallback: no extra feats if 2DA column is missing
+        return 0;
     }
 
     /// <summary>

@@ -118,15 +118,12 @@ public partial class SoundsetBrowserWindow : Window
 
         _allSoundsets.Clear();
 
-        for (int i = 0; i < 500; i++)
+        int rowCount = _gameDataService.Get2DA("soundset")?.RowCount ?? 500;
+        for (int i = 0; i < rowCount; i++)
         {
             var label = _gameDataService.Get2DAValue("soundset", i, "LABEL");
             if (string.IsNullOrEmpty(label) || label == "****")
-            {
-                if (_allSoundsets.Count > 50)
-                    break;
                 continue;
-            }
 
             var displayName = GetSoundsetDisplayName((ushort)i);
 

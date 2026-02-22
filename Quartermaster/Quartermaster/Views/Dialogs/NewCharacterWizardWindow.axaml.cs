@@ -35,7 +35,7 @@ public partial class NewCharacterWizardWindow : Window
     private bool _isBicFile; // false = UTC (default), true = BIC
 
     // Step 2: Race & Sex
-    private byte _selectedRaceId = 6; // Human default
+    private byte _selectedRaceId; // Set when race is selected in Step 2
     private byte _selectedGender; // 0 = Male
     private List<RaceDisplayItem> _allRaces = new();
     private List<RaceDisplayItem> _filteredRaces = new();

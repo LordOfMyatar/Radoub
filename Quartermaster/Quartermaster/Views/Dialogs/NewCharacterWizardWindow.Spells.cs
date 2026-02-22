@@ -32,7 +32,7 @@ public partial class NewCharacterWizardWindow
 
         bool isSpontaneous = _displayService.Spells.IsSpontaneousCaster(classId);
         _maxSpellLevelForClass = _displayService.Spells.GetMaxSpellLevel(classId, 1);
-        _isDivineCaster = !isSpontaneous && (classId == 2 || classId == 3); // Cleric=2, Druid=3
+        _isDivineCaster = _displayService.IsDivineCaster(classId);
         UnifiedLogger.Log(LogLevel.DEBUG, $"PrepareStep7: isSpontaneous={isSpontaneous}, maxSpellLevel={_maxSpellLevelForClass}, isDivine={_isDivineCaster}", "NewCharWiz", "🧙");
 
         if (_maxSpellLevelForClass < 0)

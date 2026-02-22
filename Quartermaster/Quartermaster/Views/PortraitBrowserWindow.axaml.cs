@@ -141,15 +141,12 @@ public partial class PortraitBrowserWindow : Window
         var races = new HashSet<int>();
 
         // Load portraits from portraits.2da
-        for (int i = 0; i < 500; i++)
+        int rowCount = _gameDataService.Get2DA("portraits")?.RowCount ?? 500;
+        for (int i = 0; i < rowCount; i++)
         {
             var baseResRef = _gameDataService.Get2DAValue("portraits", i, "BaseResRef");
             if (string.IsNullOrEmpty(baseResRef) || baseResRef == "****")
-            {
-                if (_allPortraits.Count > 50)
-                    break;
                 continue;
-            }
 
             // Get race and sex columns
             var raceStr = _gameDataService.Get2DAValue("portraits", i, "Race");

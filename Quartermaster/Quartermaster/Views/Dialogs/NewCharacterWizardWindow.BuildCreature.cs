@@ -231,13 +231,14 @@ public partial class NewCharacterWizardWindow
     }
 
     /// <summary>
-    /// Builds the skill list for the creature (28 skills, ordered by skill ID).
+    /// Builds the skill list for the creature, ordered by skill ID.
     /// Each byte is the number of ranks allocated to that skill.
     /// </summary>
     private List<byte> BuildSkillList_ForCreature()
     {
         var skills = new List<byte>();
-        for (int i = 0; i < 28; i++)
+        int skillCount = _displayService.GetSkillCount();
+        for (int i = 0; i < skillCount; i++)
         {
             skills.Add((byte)_skillRanksAllocated.GetValueOrDefault(i, 0));
         }

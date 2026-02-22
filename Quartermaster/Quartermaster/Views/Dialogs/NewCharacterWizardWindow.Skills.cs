@@ -24,11 +24,14 @@ public partial class NewCharacterWizardWindow
         int intScore = _abilityBaseScores["INT"] + _displayService.GetRacialModifier(_selectedRaceId, "INT");
         int intMod = CreatureDisplayService.CalculateAbilityBonus(intScore);
         int basePoints = _displayService.GetClassSkillPointBase(_selectedClassId >= 0 ? _selectedClassId : 0);
-        _skillPointsTotal = Math.Max(1, basePoints + intMod) * 4; // Level 1 gets 4x
+        // D&D 3.5/NWN rule: level 1 gets 4x skill points (engine rule, not 2DA-configurable)
+        const int FirstLevelSkillMultiplier = 4;
+        _skillPointsTotal = Math.Max(1, basePoints + intMod) * FirstLevelSkillMultiplier;
 
-        // Human bonus: +4 skill points at level 1
-        if (_selectedRaceId == 6) // Human
-            _skillPointsTotal += 4;
+        // Racial bonus skill points at level 1 (from racialtypes.2da ExtraSkillPointsPerLvl)
+        int racialExtraPerLevel = _displayService.GetRacialExtraSkillPointsPerLevel(_selectedRaceId);
+        if (racialExtraPerLevel > 0)
+            _skillPointsTotal += racialExtraPerLevel * FirstLevelSkillMultiplier;
 
         // Get class skills and unavailable skills
         _classSkillIds = _displayService.Skills.GetClassSkillIds(_selectedClassId >= 0 ? _selectedClassId : 0);
@@ -41,7 +44,7 @@ public partial class NewCharacterWizardWindow
                 new CreatureClass { Class = _selectedClassId >= 0 ? _selectedClassId : 0, ClassLevel = 1 }
             }
         };
-        _unavailableSkillIds = _displayService.Skills.GetUnavailableSkillIds(tempCreature, 28);
+        _unavailableSkillIds = _displayService.Skills.GetUnavailableSkillIds(tempCreature, _displayService.GetSkillCount());
 
         if (!_step7Loaded)
         {
@@ -57,7 +60,8 @@ public partial class NewCharacterWizardWindow
     {
         _allSkills = new List<SkillDisplayItem>();
 
-        for (int i = 0; i < 28; i++)
+        int skillCount = _displayService.GetSkillCount();
+        for (int i = 0; i < skillCount; i++)
         {
             bool isUnavailable = _unavailableSkillIds.Contains(i);
             bool isClassSkill = _classSkillIds.Contains(i);
@@ -296,7 +300,8 @@ public partial class NewCharacterWizardWindow
             if (!string.IsNullOrEmpty(skillPref2da) && skillPref2da != "****")
             {
                 // Read skill indices from the package skill preference table
-                for (int row = 0; row < 50; row++)
+                int prefRowCount = _gameDataService.Get2DA(skillPref2da)?.RowCount ?? 50;
+                for (int row = 0; row < prefRowCount; row++)
                 {
                     var skillIndexStr = _gameDataService.Get2DAValue(skillPref2da, row, "SkillIndex");
                     if (string.IsNullOrEmpty(skillIndexStr) || skillIndexStr == "****")
