@@ -29,6 +29,8 @@ public class ModelPreviewGLControl : OpenGlControlBase
     private uint _ebo;
     private int _indexCount;
     private readonly Dictionary<string, uint> _textureCache = new();
+    // Maps unresolvable bitmap names to valid fallback texture names
+    private readonly Dictionary<string, string> _textureRemapping = new();
 
     // Per-mesh draw info for textured rendering
     private readonly List<MeshDrawCall> _meshDrawCalls = new();
@@ -573,21 +575,28 @@ void main()
         {
             if (drawCall.IndexCount == 0) continue;
 
-            // Check if we have a texture for this mesh
-            bool hasTexture = !string.IsNullOrEmpty(drawCall.TextureName) &&
-                             _textureCache.TryGetValue(drawCall.TextureName, out var texId) && texId != 0;
+            // Check if we have a texture for this mesh (direct or remapped)
+            var resolvedTexture = drawCall.TextureName;
+            if (!string.IsNullOrEmpty(resolvedTexture) && !_textureCache.ContainsKey(resolvedTexture)
+                && _textureRemapping.TryGetValue(resolvedTexture, out var remapped))
+            {
+                resolvedTexture = remapped;
+            }
+
+            bool hasTexture = !string.IsNullOrEmpty(resolvedTexture) &&
+                             _textureCache.TryGetValue(resolvedTexture, out var texId) && texId != 0;
 
             if (hasTexture)
             {
                 SetUniformBool("hasTexture", true);
                 _gl.ActiveTexture(TextureUnit.Texture0);
-                _gl.BindTexture(TextureTarget.Texture2D, _textureCache[drawCall.TextureName!]);
+                _gl.BindTexture(TextureTarget.Texture2D, _textureCache[resolvedTexture!]);
                 SetUniformInt("diffuseTexture", 0);
             }
             else
             {
                 SetUniformBool("hasTexture", false);
-                SetUniformVec3("flatColor", new Vector3(1.0f, 0.0f, 0.0f)); // Bright red for debugging
+                SetUniformVec3("flatColor", new Vector3(0.6f, 0.6f, 0.6f)); // Neutral gray for untextured meshes
             }
 
             // Use unsafe pointer for DrawElements offset
@@ -688,15 +697,21 @@ void main()
                     p = p.Parent;
                 }
                 UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"  MESH '{mesh.Name}': isSkin={isSkinMesh}, hasXform={hasWorldTransform}, " +
+                    $"  MESH '{mesh.Name}': bitmap='{mesh.Bitmap}', isSkin={isSkinMesh}, hasXform={hasWorldTransform}, " +
                     $"verts={mesh.Vertices.Length}, faces={mesh.Faces.Length}, chain=[{parentChain}]");
             }
+
+            // Resolve texture name: use mesh bitmap, falling back to model name for
+            // empty/NULL bitmaps (common in skin meshes and some simple creatures)
+            var rawBitmap = mesh.Bitmap?.ToLowerInvariant();
+            if (string.IsNullOrEmpty(rawBitmap) || rawBitmap == "null")
+                rawBitmap = _model.Name?.ToLowerInvariant();
 
             // Track draw call for this mesh
             var drawCall = new MeshDrawCall
             {
                 IndexOffset = indices.Count * sizeof(uint),
-                TextureName = mesh.Bitmap?.ToLowerInvariant()
+                TextureName = rawBitmap
             };
 
             // Add vertices (position, normal, texcoord)
@@ -879,6 +894,8 @@ void main()
     {
         if (_gl == null || _textureService == null || _model == null) return;
 
+        _textureRemapping.Clear();
+
         // Collect unique texture names from meshes
         var textureNames = new HashSet<string>();
         foreach (var mesh in _model.GetMeshNodes())
@@ -904,6 +921,8 @@ void main()
         UnifiedLogger.LogApplication(LogLevel.DEBUG,
             $"UpdateTextures: {textureNames.Count} textures, colors: skin={_colorIndices.Skin}, hair={_colorIndices.Hair}, " +
             $"metal1={_colorIndices.Metal1}, metal2={_colorIndices.Metal2}, cloth1={_colorIndices.Cloth1}, cloth2={_colorIndices.Cloth2}");
+
+        var failedTextures = new List<string>();
         foreach (var texName in textureNames)
         {
             if (_textureCache.ContainsKey(texName))
@@ -915,6 +934,7 @@ void main()
                 if (textureData == null)
                 {
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Texture '{texName}' returned null");
+                    failedTextures.Add(texName);
                     continue;
                 }
 
@@ -929,6 +949,41 @@ void main()
             catch (Exception ex)
             {
                 UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to load texture '{texName}': {ex.Message}");
+                failedTextures.Add(texName);
+            }
+        }
+
+        // For textures that failed to load, try model name as fallback.
+        // NWN creature models often have meshes with bitmap set to node name (e.g. "torso_g")
+        // instead of an actual texture. The real texture is typically the model name (e.g. "c_curst2").
+        if (failedTextures.Count > 0)
+        {
+            var modelTexture = _model.Name?.ToLowerInvariant();
+            if (!string.IsNullOrEmpty(modelTexture) && !_textureCache.ContainsKey(modelTexture))
+            {
+                var fallbackData = _textureService.LoadTexture(modelTexture, _colorIndices);
+                if (fallbackData != null)
+                {
+                    var (w, h, px) = fallbackData.Value;
+                    var fallbackId = UploadTexture(w, h, px);
+                    if (fallbackId != 0)
+                    {
+                        _textureCache[modelTexture] = fallbackId;
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                            $"  Loaded model fallback texture '{modelTexture}' ({w}x{h}) -> texId={fallbackId}");
+                    }
+                }
+            }
+
+            // Map failed textures to model texture if it loaded successfully
+            if (!string.IsNullOrEmpty(modelTexture) && _textureCache.ContainsKey(modelTexture))
+            {
+                foreach (var failed in failedTextures)
+                {
+                    _textureRemapping[failed] = modelTexture;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"  Remapped texture '{failed}' -> '{modelTexture}' (model fallback)");
+                }
             }
         }
     }

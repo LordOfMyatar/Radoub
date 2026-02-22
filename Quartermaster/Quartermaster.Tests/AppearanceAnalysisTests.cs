@@ -364,11 +364,11 @@ public class AppearanceAnalysisTests
         // Models with known issues (use exact names from appearance.2da RACE column)
         var testModels = new[]
         {
-            "c_ogrechiefa",    // Elite Ogre - renders red
-            "c_archon",        // Lantern Archon - renders red
-            "c_DrgMist",       // Mist Dragon - renders red
-            "c_lantern",       // Alt name for lantern archon
-            "c_curst",         // Curst warrior - renders red
+            "c_ogrechiefA",    // Ogre Chieftain
+            "c_Ogre35",        // Ogre Elite (appearance row 75)
+            "c_clantern",      // Lantern Archon (appearance row 103)
+            "c_drgmist",       // Mist Dragon (appearance row 118)
+            "c_curst",         // Curst warrior
             "c_boar",          // Boar - fixed
         };
 
@@ -489,6 +489,55 @@ public class AppearanceAnalysisTests
                 var isBioware = dds.Length >= 4 && dds[0] != 0x44; // Not 'D' for DDS
                 var dataSize = dds.Length - 20;
                 _output.WriteLine($"    DDS: bioware={isBioware}, {w}x{h}, ch={channels}, pitch={pitch}, alpha={alpha:F2}, dataSize={dataSize}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Find the lantern archon and mist dragon in appearance.2da to determine correct model names.
+    /// </summary>
+    [Fact]
+    public void FindProblematicCreatureAppearances()
+    {
+        if (!RadoubSettings.Instance.HasGamePaths)
+        {
+            _output.WriteLine("SKIP: No game paths configured");
+            return;
+        }
+
+        using var gameData = new GameDataService();
+        if (!gameData.IsConfigured)
+        {
+            _output.WriteLine("SKIP: GameDataService not configured");
+            return;
+        }
+
+        var twoDA = gameData.Get2DA("appearance");
+        if (twoDA == null)
+        {
+            _output.WriteLine("SKIP: Could not load appearance.2da");
+            return;
+        }
+
+        var searchTerms = new[] { "archon", "lantern", "mist", "curst", "ogre" };
+        var labelCol = twoDA.GetColumnIndex("LABEL");
+        var raceCol = twoDA.GetColumnIndex("RACE");
+        var modelTypeCol = twoDA.GetColumnIndex("MODELTYPE");
+
+        for (int row = 0; row < twoDA.RowCount; row++)
+        {
+            var label = twoDA.GetValue(row, labelCol)?.ToLowerInvariant() ?? "";
+            if (searchTerms.Any(s => label.Contains(s)))
+            {
+                var race = twoDA.GetValue(row, raceCol) ?? "null";
+                var modelType = twoDA.GetValue(row, modelTypeCol) ?? "null";
+
+                // Check if model exists
+                var modelName = race.ToLowerInvariant();
+                var mdlData = gameData.FindResource(modelName, Radoub.Formats.Common.ResourceTypes.Mdl);
+                var exists = mdlData != null && mdlData.Length > 0;
+
+                _output.WriteLine($"  Row {row}: LABEL='{label}', RACE='{race}', MODELTYPE='{modelType}', MDL exists={exists} ({mdlData?.Length ?? 0} bytes)");
             }
         }
     }
