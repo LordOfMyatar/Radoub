@@ -41,6 +41,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - [x] #1468 - Extract skill point multiplier as named constant
   - `FirstLevelSkillMultiplier = 4` in NewCharacterWizard and LevelUpWizard
   - Documented as D&D 3.5/NWN engine rule (not 2DA-configurable)
+- [x] Replace hardcoded point-buy total (30) with racialtypes.2da AbilitiesPointBuyNumber
+  - Added `GetRacialAbilitiesPointBuyNumber()` to CreatureDisplayService
+  - Point-buy budget now updates when race changes (e.g., Animal races get fewer points)
+  - Ability scores reset when switching to a race with a different point pool
 
 ---
 

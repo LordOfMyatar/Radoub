@@ -199,6 +199,18 @@ public partial class CreatureDisplayService
     }
 
     /// <summary>
+    /// Gets the point-buy budget for ability scores from racialtypes.2da AbilitiesPointBuyNumber.
+    /// Returns 30 (standard D&amp;D 3.5 default) if the column is missing or empty.
+    /// </summary>
+    public int GetRacialAbilitiesPointBuyNumber(int raceId)
+    {
+        var pointBuy = _gameDataService.Get2DAValue("racialtypes", raceId, "AbilitiesPointBuyNumber");
+        if (!string.IsNullOrEmpty(pointBuy) && pointBuy != "****" && int.TryParse(pointBuy, out int points))
+            return points;
+        return 30; // Standard D&D 3.5 default
+    }
+
+    /// <summary>
     /// Gets the default appearance type for a race from racialtypes.2da.
     /// </summary>
     public int GetRacialDefaultAppearance(int raceId)
