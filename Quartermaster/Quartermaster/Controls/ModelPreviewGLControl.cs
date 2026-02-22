@@ -29,6 +29,8 @@ public class ModelPreviewGLControl : OpenGlControlBase
     private uint _ebo;
     private int _indexCount;
     private readonly Dictionary<string, uint> _textureCache = new();
+    // Maps unresolvable bitmap names to valid fallback texture names
+    private readonly Dictionary<string, string> _textureRemapping = new();
 
     // Per-mesh draw info for textured rendering
     private readonly List<MeshDrawCall> _meshDrawCalls = new();
@@ -309,31 +311,29 @@ void main()
     /// </summary>
     private static Matrix4x4 GetWorldTransform(MdlNode node)
     {
-        // Build transform chain from leaf to root, then apply root-to-leaf
-        var transforms = new List<Matrix4x4>();
+        // System.Numerics uses row-major convention where Vector3.Transform(v, M) = v * M
+        // For hierarchical transforms: v_world = v_local * NodeLocal * ParentLocal * ... * RootLocal
+        // So we need: worldTransform = NodeLocal * ParentLocal * ... * RootLocal
+        // We walk leaf-to-root, accumulating: world = local * world
+        //
+        // Each local transform: vertex is scaled, rotated, then translated
+        // In row-major: localTransform = S * R * T (applied left-to-right on row vector)
+        var worldTransform = Matrix4x4.Identity;
         var current = node;
 
         while (current != null)
         {
-            // Build local transform: Scale, then Rotate, then Translate
-            // In matrix terms: T * R * S (applied right-to-left to vertex)
             var scale = Matrix4x4.CreateScale(current.Scale);
             var rotation = Matrix4x4.CreateFromQuaternion(current.Orientation);
             var translation = Matrix4x4.CreateTranslation(current.Position);
 
-            // Local transform = T * R * S (vertex is scaled, rotated, then translated)
-            var localTransform = translation * rotation * scale;
-            transforms.Add(localTransform);
+            // Row-major local transform: S * R * T
+            var localTransform = scale * rotation * translation;
+
+            // Accumulate: node * parent * grandparent * ... * root
+            worldTransform = worldTransform * localTransform;
 
             current = current.Parent;
-        }
-
-        // Apply transforms from root to leaf: Root * ... * Parent * Node
-        // We collected leaf-to-root, so reverse and multiply
-        var worldTransform = Matrix4x4.Identity;
-        for (int i = transforms.Count - 1; i >= 0; i--)
-        {
-            worldTransform = worldTransform * transforms[i];
         }
 
         return worldTransform;
@@ -575,21 +575,28 @@ void main()
         {
             if (drawCall.IndexCount == 0) continue;
 
-            // Check if we have a texture for this mesh
-            bool hasTexture = !string.IsNullOrEmpty(drawCall.TextureName) &&
-                             _textureCache.TryGetValue(drawCall.TextureName, out var texId) && texId != 0;
+            // Check if we have a texture for this mesh (direct or remapped)
+            var resolvedTexture = drawCall.TextureName;
+            if (!string.IsNullOrEmpty(resolvedTexture) && !_textureCache.ContainsKey(resolvedTexture)
+                && _textureRemapping.TryGetValue(resolvedTexture, out var remapped))
+            {
+                resolvedTexture = remapped;
+            }
+
+            bool hasTexture = !string.IsNullOrEmpty(resolvedTexture) &&
+                             _textureCache.TryGetValue(resolvedTexture, out var texId) && texId != 0;
 
             if (hasTexture)
             {
                 SetUniformBool("hasTexture", true);
                 _gl.ActiveTexture(TextureUnit.Texture0);
-                _gl.BindTexture(TextureTarget.Texture2D, _textureCache[drawCall.TextureName!]);
+                _gl.BindTexture(TextureTarget.Texture2D, _textureCache[resolvedTexture!]);
                 SetUniformInt("diffuseTexture", 0);
             }
             else
             {
                 SetUniformBool("hasTexture", false);
-                SetUniformVec3("flatColor", new Vector3(1.0f, 0.0f, 0.0f)); // Bright red for debugging
+                SetUniformVec3("flatColor", new Vector3(0.6f, 0.6f, 0.6f)); // Neutral gray for untextured meshes
             }
 
             // Use unsafe pointer for DrawElements offset
@@ -637,20 +644,19 @@ void main()
                 continue;
             }
 
-            // Accumulate position offsets from parent chain (no rotation/scale - just translations)
-            // This handles hierarchical models like beetle legs attached to body
-            var worldPosition = Vector3.Zero;
-            MdlNode? current = mesh;
-            while (current != null)
-            {
-                worldPosition += current.Position;
-                current = current.Parent;
-            }
+            // Determine transform strategy based on mesh type:
+            // - Skin meshes (MdlSkinNode): vertices in bind-pose/model space, no transform needed
+            // - Trimesh: vertices in local node space, need full world transform (T*R*S hierarchy)
+            bool isSkinMesh = mesh is Radoub.Formats.Mdl.MdlSkinNode;
 
-            // Apply mesh's own rotation to vertices (but NOT parent rotations)
-            // This fixes meshes like troll legs that have 180° rotation
-            var meshRotation = mesh.Orientation;
-            var hasMeshRotation = meshRotation != Quaternion.Identity;
+            // For non-skin meshes: compute full world transform matrix from hierarchy
+            var worldTransform = Matrix4x4.Identity;
+            bool hasWorldTransform = false;
+            if (!isSkinMesh)
+            {
+                worldTransform = GetWorldTransform(mesh);
+                hasWorldTransform = worldTransform != Matrix4x4.Identity;
+            }
 
             // Count NaN vertices - we'll skip them during rendering
             var nanVertexIndices = new HashSet<int>();
@@ -680,19 +686,32 @@ void main()
                 UnifiedLogger.LogApplication(LogLevel.WARN, $"  Mesh {meshIndex} '{mesh.Name}' normal count mismatch: {mesh.Normals.Length} normals vs {mesh.Vertices.Length} vertices");
             }
 
-            // For head meshes, log additional debug info
-            if (mesh.Name?.ToLowerInvariant().Contains("head") == true)
+            // Log mesh hierarchy for debugging transforms
             {
+                var parentChain = new System.Text.StringBuilder();
+                MdlNode? p = mesh;
+                while (p != null)
+                {
+                    if (parentChain.Length > 0) parentChain.Append(" -> ");
+                    parentChain.Append($"{p.Name}(pos={p.Position}, rot={p.Orientation})");
+                    p = p.Parent;
+                }
                 UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"  HEAD MESH '{mesh.Name}': worldTransform has rotation={mesh.Orientation != Quaternion.Identity}, verts={mesh.Vertices.Length}, " +
-                    $"faces={mesh.Faces.Length}, hasUVs={hasUVs}, hasNormals={hasNormals}");
+                    $"  MESH '{mesh.Name}': bitmap='{mesh.Bitmap}', isSkin={isSkinMesh}, hasXform={hasWorldTransform}, " +
+                    $"verts={mesh.Vertices.Length}, faces={mesh.Faces.Length}, chain=[{parentChain}]");
             }
+
+            // Resolve texture name: use mesh bitmap, falling back to model name for
+            // empty/NULL bitmaps (common in skin meshes and some simple creatures)
+            var rawBitmap = mesh.Bitmap?.ToLowerInvariant();
+            if (string.IsNullOrEmpty(rawBitmap) || rawBitmap == "null")
+                rawBitmap = _model.Name?.ToLowerInvariant();
 
             // Track draw call for this mesh
             var drawCall = new MeshDrawCall
             {
                 IndexOffset = indices.Count * sizeof(uint),
-                TextureName = mesh.Bitmap?.ToLowerInvariant()
+                TextureName = rawBitmap
             };
 
             // Add vertices (position, normal, texcoord)
@@ -709,14 +728,17 @@ void main()
                 // Get vertex in local mesh space
                 var localVertex = mesh.Vertices[i];
 
-                // Apply mesh's own rotation if present (fixes troll legs, etc.)
-                if (hasMeshRotation)
+                Vector3 v;
+                if (isSkinMesh)
                 {
-                    localVertex = Vector3.Transform(localVertex, meshRotation);
+                    // Skin mesh: vertices already in model space, use as-is
+                    v = localVertex;
                 }
-
-                // Then apply world position offset
-                var v = localVertex + worldPosition;
+                else
+                {
+                    // Trimesh: apply full world transform (handles hierarchy rotations + positions)
+                    v = hasWorldTransform ? TransformPosition(localVertex, worldTransform) : localVertex;
+                }
 
                 // Position
                 vertices.Add(v.X);
@@ -728,9 +750,9 @@ void main()
                 if (hasNormals)
                 {
                     normal = mesh.Normals[i];
-                    if (hasMeshRotation)
+                    if (hasWorldTransform && !isSkinMesh)
                     {
-                        normal = Vector3.Transform(normal, meshRotation);
+                        normal = TransformNormal(normal, worldTransform);
                     }
                 }
                 else
@@ -872,6 +894,8 @@ void main()
     {
         if (_gl == null || _textureService == null || _model == null) return;
 
+        _textureRemapping.Clear();
+
         // Collect unique texture names from meshes
         var textureNames = new HashSet<string>();
         foreach (var mesh in _model.GetMeshNodes())
@@ -897,6 +921,8 @@ void main()
         UnifiedLogger.LogApplication(LogLevel.DEBUG,
             $"UpdateTextures: {textureNames.Count} textures, colors: skin={_colorIndices.Skin}, hair={_colorIndices.Hair}, " +
             $"metal1={_colorIndices.Metal1}, metal2={_colorIndices.Metal2}, cloth1={_colorIndices.Cloth1}, cloth2={_colorIndices.Cloth2}");
+
+        var failedTextures = new List<string>();
         foreach (var texName in textureNames)
         {
             if (_textureCache.ContainsKey(texName))
@@ -908,6 +934,7 @@ void main()
                 if (textureData == null)
                 {
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Texture '{texName}' returned null");
+                    failedTextures.Add(texName);
                     continue;
                 }
 
@@ -922,6 +949,41 @@ void main()
             catch (Exception ex)
             {
                 UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to load texture '{texName}': {ex.Message}");
+                failedTextures.Add(texName);
+            }
+        }
+
+        // For textures that failed to load, try model name as fallback.
+        // NWN creature models often have meshes with bitmap set to node name (e.g. "torso_g")
+        // instead of an actual texture. The real texture is typically the model name (e.g. "c_curst2").
+        if (failedTextures.Count > 0)
+        {
+            var modelTexture = _model.Name?.ToLowerInvariant();
+            if (!string.IsNullOrEmpty(modelTexture) && !_textureCache.ContainsKey(modelTexture))
+            {
+                var fallbackData = _textureService.LoadTexture(modelTexture, _colorIndices);
+                if (fallbackData != null)
+                {
+                    var (w, h, px) = fallbackData.Value;
+                    var fallbackId = UploadTexture(w, h, px);
+                    if (fallbackId != 0)
+                    {
+                        _textureCache[modelTexture] = fallbackId;
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                            $"  Loaded model fallback texture '{modelTexture}' ({w}x{h}) -> texId={fallbackId}");
+                    }
+                }
+            }
+
+            // Map failed textures to model texture if it loaded successfully
+            if (!string.IsNullOrEmpty(modelTexture) && _textureCache.ContainsKey(modelTexture))
+            {
+                foreach (var failed in failedTextures)
+                {
+                    _textureRemapping[failed] = modelTexture;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"  Remapped texture '{failed}' -> '{modelTexture}' (model fallback)");
+                }
             }
         }
     }

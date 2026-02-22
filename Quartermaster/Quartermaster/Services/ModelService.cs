@@ -320,6 +320,9 @@ public class ModelService
                     {
                         compositeModel.GeometryRoot = new Radoub.Formats.Mdl.MdlNode { Name = "composite_root" };
                     }
+                    // Reparent to composite root so GetWorldTransform() uses bone position,
+                    // not the original part model's hierarchy
+                    node.Parent = compositeModel.GeometryRoot;
                     compositeModel.GeometryRoot.Children.Add(node);
                     meshCount++;
                     // Log vertex bounds and texture info for debugging

@@ -10,6 +10,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.77-alpha] - 2026-02-21
+**Branch**: `quartermaster/issue-1153` | **PR**: #1451
+
+### Sprint: 3D Preview & Appearance Fixes (#1153)
+
+- [x] #1134 - 3D Preview: Texture/Coloring Issues After Geometry Fix
+  - Add DDS texture fallback to TextureService (PLT → TGA → DDS → human fallback)
+  - Add BioWare proprietary DDS format conversion (20-byte header → standard 128-byte DDS header)
+  - Fix row-major matrix convention in GetWorldTransform() for correct hierarchical transforms
+  - Fix creature mesh positioning: skin meshes skip transform (bind-pose), trimeshes use full hierarchy
+  - Reparent composite body part meshes to prevent double-transform from original MDL hierarchy
+  - Add texture fallback for placeholder bitmaps (mesh node names → model texture)
+  - Add grayscale TGA support (image type 3/11) for ghost creature textures (allip, wraith)
+  - Change untextured mesh color from red to neutral gray
+  - Fixed: boar, beetle, frost giant, chicken, curst warrior, ogre elite, allip, wraith, duergar
+- [x] #1031 - Appearance panel missing tattoo display (completed in prior sprint)
+
+---
+
 ## [0.1.76-alpha] - 2026-02-21
 **Branch**: `quartermaster/issue-1441` | **PR**: #1443
 

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using Pfim;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Plt;
@@ -130,14 +132,179 @@ public class TextureService
             var tgaImage = TgaReader.Read(tgaData);
             return (tgaImage.Width, tgaImage.Height, tgaImage.Pixels);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"TextureService.LoadTgaTexture: TGA '{tgaResRef}' decode failed ({tgaData.Length} bytes): {ex.Message}");
             return null;
         }
     }
 
     /// <summary>
-    /// Load a texture (tries PLT first, then TGA, with human fallback).
+    /// Load a DDS texture using Pfim decoder.
+    /// Handles both standard Microsoft DDS and BioWare's proprietary DDS format.
+    /// </summary>
+    public (int width, int height, byte[] pixels)? LoadDdsTexture(string ddsResRef)
+    {
+        if (string.IsNullOrEmpty(ddsResRef))
+            return null;
+
+        var ddsData = _gameDataService.FindResource(ddsResRef.ToLowerInvariant(), ResourceTypes.Dds);
+        if (ddsData == null || ddsData.Length == 0)
+            return null;
+
+        // Detect BioWare DDS format (lacks "DDS " magic header)
+        // Standard DDS starts with 0x44445320 ("DDS "), BioWare starts with width/height
+        bool isBiowareDds = ddsData.Length >= 20 &&
+            !(ddsData[0] == 0x44 && ddsData[1] == 0x44 && ddsData[2] == 0x53 && ddsData[3] == 0x20);
+
+        byte[]? decodableData = isBiowareDds ? ConvertBiowareDdsToStandard(ddsData) : ddsData;
+        if (decodableData == null)
+            return null;
+
+        try
+        {
+            using var stream = new MemoryStream(decodableData);
+            using var image = Pfimage.FromStream(stream);
+
+            byte[] pixels = ConvertPfimToRgba(image);
+            return (image.Width, image.Height, pixels);
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"TextureService.LoadDdsTexture: DDS '{ddsResRef}' decode failed: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Convert BioWare's proprietary DDS format to standard Microsoft DDS.
+    /// BioWare header (20 bytes): width(4), height(4), channels(4), pitch(4), alpha(4)
+    /// Channels: 3 = DXT1 (RGB), 4 = DXT5 (RGBA)
+    /// </summary>
+    private static byte[]? ConvertBiowareDdsToStandard(byte[] biowareData)
+    {
+        if (biowareData.Length < 20) return null;
+
+        uint width = BitConverter.ToUInt32(biowareData, 0);
+        uint height = BitConverter.ToUInt32(biowareData, 4);
+        uint channels = BitConverter.ToUInt32(biowareData, 8);
+        // pitch at offset 12, alpha at offset 16 - not needed for conversion
+
+        if (width == 0 || height == 0 || width > 4096 || height > 4096)
+            return null;
+
+        // Determine DXT format from channel count
+        // 3 channels = DXT1 (BC1), 4 channels = DXT5 (BC3)
+        bool isDxt1 = channels == 3;
+        string fourCC = isDxt1 ? "DXT1" : "DXT5";
+        uint blockSize = isDxt1 ? 8u : 16u;
+        uint mainImageSize = (width / 4) * (height / 4) * blockSize;
+
+        // Build standard DDS header (128 bytes)
+        // DDS header: 4 magic + 124 header bytes
+        var header = new byte[128];
+
+        // Magic "DDS "
+        header[0] = 0x44; header[1] = 0x44; header[2] = 0x53; header[3] = 0x20;
+
+        // dwSize = 124
+        BitConverter.GetBytes(124u).CopyTo(header, 4);
+
+        // dwFlags: DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT | DDSD_LINEARSIZE | DDSD_MIPMAPCOUNT
+        BitConverter.GetBytes(0x000A1007u).CopyTo(header, 8);
+
+        // dwHeight, dwWidth
+        BitConverter.GetBytes(height).CopyTo(header, 12);
+        BitConverter.GetBytes(width).CopyTo(header, 16);
+
+        // dwPitchOrLinearSize
+        BitConverter.GetBytes(mainImageSize).CopyTo(header, 20);
+
+        // dwDepth = 0 (offset 24)
+        // dwMipMapCount - calculate from dimensions
+        uint mipCount = 1;
+        uint mw = width, mh = height;
+        while (mw > 1 || mh > 1) { mw = Math.Max(1, mw / 2); mh = Math.Max(1, mh / 2); mipCount++; }
+        BitConverter.GetBytes(mipCount).CopyTo(header, 28);
+
+        // dwReserved1[11] = 0 (offsets 32-75)
+
+        // Pixel format (at offset 76, 32 bytes)
+        // ddpf.dwSize = 32
+        BitConverter.GetBytes(32u).CopyTo(header, 76);
+        // ddpf.dwFlags = DDPF_FOURCC (0x4)
+        BitConverter.GetBytes(4u).CopyTo(header, 80);
+        // ddpf.dwFourCC
+        header[84] = (byte)fourCC[0];
+        header[85] = (byte)fourCC[1];
+        header[86] = (byte)fourCC[2];
+        header[87] = (byte)fourCC[3];
+        // ddpf remaining fields = 0 (offsets 88-107)
+
+        // dwCaps = DDSCAPS_TEXTURE | DDSCAPS_MIPMAP | DDSCAPS_COMPLEX (0x401008)
+        BitConverter.GetBytes(0x00401008u).CopyTo(header, 108);
+        // dwCaps2-4 = 0, dwReserved2 = 0
+
+        // Combine header + pixel data (skip 20-byte BioWare header)
+        int pixelDataLen = biowareData.Length - 20;
+        var result = new byte[128 + pixelDataLen];
+        header.CopyTo(result, 0);
+        Array.Copy(biowareData, 20, result, 128, pixelDataLen);
+
+        return result;
+    }
+
+    private static byte[] ConvertPfimToRgba(IImage image)
+    {
+        int width = image.Width;
+        int height = image.Height;
+        byte[] output = new byte[width * height * 4];
+        byte[] src = image.Data;
+
+        switch (image.Format)
+        {
+            case Pfim.ImageFormat.Rgba32:
+                Array.Copy(src, output, Math.Min(src.Length, output.Length));
+                break;
+
+            case Pfim.ImageFormat.Rgb24:
+                for (int i = 0, j = 0; i < output.Length && j < src.Length - 2; i += 4, j += 3)
+                {
+                    output[i] = src[j];
+                    output[i + 1] = src[j + 1];
+                    output[i + 2] = src[j + 2];
+                    output[i + 3] = 255;
+                }
+                break;
+
+            case Pfim.ImageFormat.Rgb8:
+                for (int i = 0, j = 0; i < output.Length && j < src.Length; i += 4, j++)
+                {
+                    output[i] = src[j];
+                    output[i + 1] = src[j];
+                    output[i + 2] = src[j];
+                    output[i + 3] = 255;
+                }
+                break;
+
+            default:
+                for (int i = 0; i < output.Length; i += 4)
+                {
+                    output[i] = 128;
+                    output[i + 1] = 128;
+                    output[i + 2] = 128;
+                    output[i + 3] = 255;
+                }
+                break;
+        }
+
+        return output;
+    }
+
+    /// <summary>
+    /// Load a texture (tries PLT first, then TGA, then DDS, with human fallback).
     /// </summary>
     public (int width, int height, byte[] pixels)? LoadTexture(
         string resRef,
@@ -148,15 +315,18 @@ public class TextureService
 
         colorIndices ??= new PltColorIndices();
 
-        // Try PLT first
+        // Try PLT first, then TGA, then DDS (matches Aurora Engine resolution order)
         var pltResult = RenderPltTexture(resRef, colorIndices);
         if (pltResult.HasValue)
             return pltResult;
 
-        // Fall back to TGA
         var tgaResult = LoadTgaTexture(resRef);
         if (tgaResult.HasValue)
             return tgaResult;
+
+        var ddsResult = LoadDdsTexture(resRef);
+        if (ddsResult.HasValue)
+            return ddsResult;
 
         // If race-specific texture not found, try human fallback
         // e.g., pme0_head001 -> pmh0_head001
@@ -174,6 +344,10 @@ public class TextureService
                 tgaResult = LoadTgaTexture(humanResRef);
                 if (tgaResult.HasValue)
                     return tgaResult;
+
+                ddsResult = LoadDdsTexture(humanResRef);
+                if (ddsResult.HasValue)
+                    return ddsResult;
             }
         }
 
