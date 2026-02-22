@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.75-alpha] - 2026-02-21
+**Branch**: `quartermaster/issue-1438` | **PR**: #1439
+
+### Sprint: New Character Wizard Bug Fix & Polish (#1438)
+
+- [x] #1430 - Default portrait based on gender (hu_m_99_ for male, hu_f_99_ for female)
+- [x] #1428 - Populate inventory UI immediately after wizard creation
+- [x] #1427 - Fix domain iteration: skip blank rows instead of stopping early
+- [x] #1421 - Clear GPU texture cache on color change so preview refreshes
+- [x] #1429 - Replace voice set ComboBox with SoundsetBrowserWindow
+- [x] #1426 - Add auto-detection fallback for vault paths in CreatureBrowserWindow
+
+---
+
 ## [0.1.74-alpha] - 2026-02-21
 **Branch**: `quartermaster/issue-1412-1423` | **PR**: #1425
 

@@ -35,6 +35,7 @@ public class NavigationTests : ParleyTestBase
         {
             var tree = FindElement("DialogTreeView");
             var firstItem = tree?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+            EnsureFocused();
             firstItem?.Click();
             Thread.Sleep(200);
             return firstItem != null;
@@ -50,6 +51,7 @@ public class NavigationTests : ParleyTestBase
         steps.Run("Scripts tab is clickable", () =>
         {
             var tab = FindTabByName("Scripts");
+            EnsureFocused();
             tab?.Click();
             Thread.Sleep(200);
             return true;
@@ -66,6 +68,7 @@ public class NavigationTests : ParleyTestBase
         steps.Run("Node tab click switches content", () =>
         {
             var tab = FindTabByName("Node");
+            EnsureFocused();
             tab?.Click();
             Thread.Sleep(200);
             // After clicking Node tab, animation combo should be visible (node is selected)
@@ -79,6 +82,7 @@ public class NavigationTests : ParleyTestBase
         steps.Run("Scrap tab click switches content", () =>
         {
             var tab = FindTabByName("Scrap");
+            EnsureFocused();
             tab?.Click();
             Thread.Sleep(300);
             // After clicking Scrap tab, scrap list should be visible
@@ -89,6 +93,7 @@ public class NavigationTests : ParleyTestBase
         steps.Run("Can return to Scripts tab", () =>
         {
             var tab = FindTabByName("Scripts");
+            EnsureFocused();
             tab?.Click();
             Thread.Sleep(200);
             return FindElement("ScriptAppearsTextBox") != null;
@@ -165,6 +170,7 @@ public class NavigationTests : ParleyTestBase
         {
             var tree = FindElement("DialogTreeView");
             var firstItem = tree?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+            EnsureFocused();
             firstItem?.Click();
             Thread.Sleep(200);
             return firstItem != null;
@@ -174,6 +180,7 @@ public class NavigationTests : ParleyTestBase
         steps.Run("Navigate to Scripts tab", () =>
         {
             var tab = FindTabByName("Scripts");
+            EnsureFocused();
             tab?.Click();
             Thread.Sleep(200);
             return true;
@@ -189,6 +196,7 @@ public class NavigationTests : ParleyTestBase
         steps.Run("Navigate to Node tab", () =>
         {
             var tab = FindTabByName("Node");
+            EnsureFocused();
             tab?.Click();
             Thread.Sleep(200);
             return true;
@@ -226,6 +234,7 @@ public class NavigationTests : ParleyTestBase
         {
             var tree = FindElement("DialogTreeView");
             var firstItem = tree?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+            EnsureFocused();
             firstItem?.Click();
             Thread.Sleep(200);
             return firstItem != null;
@@ -253,6 +262,7 @@ public class NavigationTests : ParleyTestBase
         steps.Run("Navigate to Scripts tab", () =>
         {
             var tab = FindTabByName("Scripts");
+            EnsureFocused();
             tab?.Click();
             Thread.Sleep(200);
             return true;

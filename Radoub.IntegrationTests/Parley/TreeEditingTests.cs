@@ -79,6 +79,7 @@ public class TreeEditingTests : ParleyTestBase
             {
                 var treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
                 var firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+                EnsureFocused();
                 firstItem?.Click();
                 Thread.Sleep(200);
                 return firstItem != null;
@@ -125,6 +126,7 @@ public class TreeEditingTests : ParleyTestBase
         {
             var treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
             var firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+            EnsureFocused();
             firstItem?.Click();
             Thread.Sleep(200);
             return firstItem != null;

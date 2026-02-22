@@ -38,9 +38,8 @@ public class SpellsPanelTests : QuartermasterTestBase
 
         steps.Run("Navigate to Spells panel", () =>
         {
-            var navButton = FindElement("NavButton_Spells");
-            if (navButton == null) return false;
-            navButton.AsButton().Click();
+            EnsureFocused();
+            if (!ClickButton("NavButton_Spells")) return false;
             Thread.Sleep(200);
             return IsElementVisible("SpellsPanel");
         });
@@ -74,8 +73,8 @@ public class SpellsPanelTests : QuartermasterTestBase
         {
             StartApplication();
             WaitForTitleContains("Quartermaster", DefaultTimeout);
-            var navButton = FindElement("NavButton_Spells");
-            navButton?.AsButton().Click();
+            EnsureFocused();
+            if (!ClickButton("NavButton_Spells")) return false;
             Thread.Sleep(500); // Extra time for footer elements
             return IsElementVisible("SpellsPanel");
         });

@@ -94,10 +94,12 @@ function Invoke-PrivacyScan {
 # Tech debt scan - check for large files in changed code
 function Invoke-TechDebtScan {
     Write-Host "`n=== Tech Debt Scan ===" -ForegroundColor Magenta
-    Write-Host "Checking for large files (>500 lines)..." -ForegroundColor Yellow
+    Write-Host "Checking for large files (warn >800, issue >1000 lines)..." -ForegroundColor Yellow
 
-    $largeFiles = @()
-    $threshold = 500
+    $warnFiles = @()
+    $issueFiles = @()
+    $warnThreshold = 800
+    $issueThreshold = 1000
 
     # Get changed files compared to main
     $changedFiles = git diff main...HEAD --name-only 2>$null | Where-Object { $_ -match "\.cs$" }
@@ -110,20 +112,29 @@ function Invoke-TechDebtScan {
     foreach ($file in $changedFiles) {
         if (Test-Path $file) {
             $lineCount = (Get-Content $file | Measure-Object -Line).Lines
-            if ($lineCount -gt $threshold) {
-                $largeFiles += [PSCustomObject]@{ File = $file; Lines = $lineCount }
+            if ($lineCount -gt $issueThreshold) {
+                $issueFiles += [PSCustomObject]@{ File = $file; Lines = $lineCount }
+            } elseif ($lineCount -gt $warnThreshold) {
+                $warnFiles += [PSCustomObject]@{ File = $file; Lines = $lineCount }
             }
         }
     }
 
-    if ($largeFiles.Count -eq 0) {
-        Write-Host "  PASS - No large files (>$threshold lines)" -ForegroundColor Green
+    if ($warnFiles.Count -eq 0 -and $issueFiles.Count -eq 0) {
+        Write-Host "  PASS - No large files (>$warnThreshold lines)" -ForegroundColor Green
     } else {
-        Write-Host "  WARN - Large files found:" -ForegroundColor Yellow
-        foreach ($f in $largeFiles | Sort-Object Lines -Descending) {
-            Write-Host ("    {0,5} lines: {1}" -f $f.Lines, $f.File) -ForegroundColor Yellow
+        if ($issueFiles.Count -gt 0) {
+            Write-Host "  ISSUE - Files exceeding $issueThreshold lines (needs tech debt issue):" -ForegroundColor Red
+            foreach ($f in $issueFiles | Sort-Object Lines -Descending) {
+                Write-Host ("    {0,5} lines: {1}" -f $f.Lines, $f.File) -ForegroundColor Red
+            }
         }
-        Write-Host "  Consider refactoring or creating tech-debt issues" -ForegroundColor Gray
+        if ($warnFiles.Count -gt 0) {
+            Write-Host "  WARN - Files exceeding $warnThreshold lines:" -ForegroundColor Yellow
+            foreach ($f in $warnFiles | Sort-Object Lines -Descending) {
+                Write-Host ("    {0,5} lines: {1}" -f $f.Lines, $f.File) -ForegroundColor Yellow
+            }
+        }
     }
 }
 

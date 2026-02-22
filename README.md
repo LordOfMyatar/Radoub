@@ -22,14 +22,16 @@ These tools are ready for adventurous users to try out. Like a zombie hungering 
 
 Cross-platform dialog editor for Neverwinter Nights DLG files with modern UI and Aurora Engine compatibility.
 
-**Status**: User Preview (Alpha)
+**Status**: User Preview (Beta)
 **Platforms**: Windows, Linux, macOS (experimental)
 **Key Features**:
-- Dialog tree editing with undo/redo
-- Native flowchart view (handles 100+ depth trees)
-- Sound and script browsers with module HAK support
-- Color-blind accessible themes
-- Dark mode and font scaling
+- Dialog tree editing with full undo/redo
+- Native flowchart view (handles 100+ depth trees) with PNG/SVG export
+- Sound and script browsers with module HAK support and parameter preview
+- Conversation simulator
+- Multi-NPC conversations with color-coded NPCs
+- Spell-checking with custom D&D/NWN dictionary
+- Color-blind accessible themes, dark mode, and font scaling
 
 **Learn more**: [Parley/README.md](Parley/README.md) | [Wiki](https://github.com/LordOfMyatar/Radoub/wiki/Parley)
 
@@ -37,57 +39,67 @@ Cross-platform dialog editor for Neverwinter Nights DLG files with modern UI and
 
 Cross-platform journal editor for Neverwinter Nights JRL files.
 
-**Status**: User Preview (Alpha)
+**Status**: User Preview (Beta)
 **Platforms**: Windows, Linux, macOS (experimental)
 **Key Features**:
 - Quest category and entry editing
 - TLK string resolution with multi-language support
 - Spell-checking with custom dictionary support
+- Cross-tool navigation from Parley (jump to quest/entry)
+- Auto-load journal from Trebuchet's current module
 - Theme support (dark/light, accessibility themes)
-- Auto-detect game installation paths
 
 **Learn more**: [Manifest/README.md](Manifest/README.md) | [Wiki](https://github.com/LordOfMyatar/Radoub/wiki/Manifest)
-
----
-
-### In Development
 
 #### Fence - Merchant Editor
 
 Store/merchant editor for Neverwinter Nights UTM files.
 
-**Status**: Nearing User Preview
+**Status**: User Preview (Alpha)
 **Platforms**: Windows, Linux, macOS (experimental)
-**Features**:
-- Store properties editing (markup, markdown, gold reserves)
-- Item palette with search/filter
-- Buy restrictions (WillOnlyBuy/WillNotBuy)
-- Custom content support via module HAKs
+**Key Features**:
+- Store properties editing (name, markup/markdown, gold reserves)
+- Store inventory across 5 panels (Armor, Misc, Potions, Rings, Weapons)
+- Item palette loaded from BIF archives with search and filter
+- Buy restrictions (WillOnlyBuy/WillNotBuy) by base item type
+- Event scripts and local variable editing
+- Custom content support via module HAKs and TLK
+
+**Learn more**: [Fence/README.md](Fence/README.md) | [Wiki](https://github.com/LordOfMyatar/Radoub/wiki/Fence)
 
 #### Quartermaster - Creature & Inventory Editor
 
 Cross-platform creature and inventory editor for Neverwinter Nights UTC and BIC files.
 
-**Status**: In Development (user preview expected next sprint)
+**Status**: User Preview (Alpha)
 **Platforms**: Windows, Linux, macOS (experimental)
-**Features**:
+**Key Features**:
 - Edit creature blueprints (.utc) and player characters (.bic)
-- Visual equipment slots panel
-- Inventory management with drag-and-drop
-- Creature properties (abilities, feats, skills)
-- Class and level configuration
+- New Character Wizard with 10-step guided creation
+- Visual appearance preview with color customization
+- Stats, classes, skills, feats, and spells panels
+- Equipment slots and inventory management
+- Portrait and soundset browsers
+- Creature browser for loading from modules
 
-#### Trebuchet - Tool Launcher & Settings Hub
+**Learn more**: [Quartermaster/README.md](Quartermaster/README.md) | [Wiki](https://github.com/LordOfMyatar/Radoub/wiki/Quartermaster)
 
-Central launcher for the Radoub toolset with module-wide configuration.
+#### Trebuchet - Tool Launcher & Module Hub
 
-**Status**: In Development
+Central launcher and module management hub for the Radoub toolset.
+
+**Status**: User Preview (Alpha)
 **Platforms**: Windows, Linux, macOS (experimental)
-**Features**:
-- Launch any Radoub tool
-- Module-wide settings (game paths, HAKs, TLK)
-- Theme configuration across all tools
-- IFO module file editing
+**Key Features**:
+- Launch any Radoub tool with recent file support
+- Module editor (IFO properties, HAKs, time settings, entry point, event scripts)
+- Module management (unpack, edit, build/pack with automatic backups)
+- Visual faction editor with reputation matrix
+- Game launcher (test module or load with character select)
+- NWScript compiler integration
+- Theme editor for customizing all tools
+
+**Learn more**: [Trebuchet/README.md](Trebuchet/README.md) | [Wiki](https://github.com/LordOfMyatar/Radoub/wiki/Trebuchet)
 
 *Note: Development timelines have a sea-wide margin of error. We're building this ship while sailing it.*
 
@@ -100,6 +112,12 @@ Central launcher for the Radoub toolset with module-wide configuration.
 Aurora Engine file format parsers used by all tools.
 
 **Supported Formats**: GFF, KEY, BIF, TLK, 2DA, ERF, DLG, JRL, UTC, UTI, UTM, BIC, IFO, SSF
+
+#### Radoub.UI
+
+Shared UI components and theming for all tools.
+
+**Includes**: ThemeManager, ScriptBrowserWindow, SoundBrowserWindow, PortraitBrowserWindow, CreatureBrowserPanel, AboutWindow, StatusBarControl, BrushManager, VersionHelper, SpellCheckTextBox
 
 #### Radoub.Dictionary
 
@@ -161,6 +179,8 @@ dotnet build Radoub.sln
 dotnet build Parley/Parley.sln
 dotnet build Manifest/Manifest/Manifest.csproj
 dotnet build Quartermaster/Quartermaster/Quartermaster.csproj
+dotnet build Fence/Fence/Fence.csproj
+dotnet build Trebuchet/Trebuchet/Trebuchet.csproj
 ```
 
 **Note**: `Radoub.sln` excludes `Radoub.IntegrationTests` (Windows-only FlaUI UI tests).
@@ -227,7 +247,7 @@ See [LICENSE](LICENSE) for details.
 
 - BioWare/Beamdog for Neverwinter Nights and Aurora Engine
 - Original Aurora Toolset developers
-- NWN community for 20+ years of modding excellence
+- NWN community for 20+ years of modding and tooling excellence
 - [neverwinter.nim](https://github.com/niv/neverwinter.nim) (MIT) - Primary reference for Aurora file format parsing
 - [WeCantSpell.Hunspell](https://github.com/aarondandy/WeCantSpell.Hunspell) (MIT) - .NET Hunspell port for spell-checking
 - [Hunspell](https://hunspell.github.io/) - Spell-checking engine used by LibreOffice, Firefox, Chrome

@@ -213,6 +213,8 @@ void main()
         if (!ColorsEqual(_colorIndices, colorIndices))
         {
             _colorIndices = colorIndices;
+            // Clear cached textures so they reload with new color indices
+            ClearTextureCache();
             _needsTextureUpdate = true;
             RequestNextFrameRendering();
         }
@@ -236,6 +238,19 @@ void main()
             Leather1 = leather1,
             Leather2 = leather2
         });
+    }
+
+    /// <summary>
+    /// Clears the GPU texture cache so textures reload with current color indices.
+    /// </summary>
+    private void ClearTextureCache()
+    {
+        if (_gl != null)
+        {
+            foreach (var texId in _textureCache.Values)
+                _gl.DeleteTexture(texId);
+        }
+        _textureCache.Clear();
     }
 
     private static bool ColorsEqual(PltColorIndices a, PltColorIndices b)

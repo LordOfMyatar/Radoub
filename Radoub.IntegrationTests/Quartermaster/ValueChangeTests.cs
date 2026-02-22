@@ -61,6 +61,7 @@ public class ValueChangeTests : QuartermasterTestBase
         }
         else
         {
+            EnsureFocused();
             button.Click();
         }
 

@@ -1247,8 +1247,10 @@
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
 
                                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Voice Set:" VerticalAlignment="Center"/>
-                                <ComboBox Grid.Row="3" Grid.Column="1" x:Name="VoiceSetComboBox"
-                                          HorizontalAlignment="Left" MinWidth="250"/>
+                                <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                    <TextBlock x:Name="VoiceSetLabel" Text="None" VerticalAlignment="Center" MinWidth="200"/>
+                                    <Button x:Name="BrowseVoiceSetButton" Content="Browse..." Click="OnBrowseVoiceSetClick"/>
+                                </StackPanel>
 
                                 <TextBlock Grid.Row="4" Grid.Column="0" Text="Description:" VerticalAlignment="Top" Margin="0,4,0,0"/>
                                 <TextBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" x:Name="DescriptionTextBox"

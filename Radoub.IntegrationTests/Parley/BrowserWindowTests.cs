@@ -36,6 +36,7 @@ public class BrowserWindowTests : ParleyTestBase
         {
             var tree = FindElement("DialogTreeView");
             var firstItem = tree?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+            EnsureFocused();
             firstItem?.Click();
             Thread.Sleep(200);
             return firstItem != null;
@@ -44,6 +45,7 @@ public class BrowserWindowTests : ParleyTestBase
         steps.Run("Navigate to Node tab", () =>
         {
             var tab = FindTabByName("Node");
+            EnsureFocused();
             tab?.Click();
             Thread.Sleep(200);
             return tab != null;
@@ -55,6 +57,7 @@ public class BrowserWindowTests : ParleyTestBase
         steps.Run("Click BrowseSoundButton", () =>
         {
             var button = FindElement("BrowseSoundButton");
+            EnsureFocused();
             button?.Click();
             Thread.Sleep(500);
             return true;
@@ -138,6 +141,7 @@ public class BrowserWindowTests : ParleyTestBase
         {
             var tree = FindElement("DialogTreeView");
             var firstItem = tree?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+            EnsureFocused();
             firstItem?.Click();
             Thread.Sleep(200);
             return firstItem != null;
@@ -146,6 +150,7 @@ public class BrowserWindowTests : ParleyTestBase
         steps.Run("Navigate to Scripts tab", () =>
         {
             var tab = FindTabByName("Scripts");
+            EnsureFocused();
             tab?.Click();
             Thread.Sleep(200);
             return tab != null;
@@ -209,6 +214,7 @@ public class BrowserWindowTests : ParleyTestBase
         {
             var tree = FindElement("DialogTreeView");
             var firstItem = tree?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+            EnsureFocused();
             firstItem?.Click();
             Thread.Sleep(200);
             return firstItem != null;
@@ -308,6 +314,7 @@ public class BrowserWindowTests : ParleyTestBase
             if (allItems.Length < 2) return false; // Need at least ROOT + one entry
 
             // Select second item (first actual entry, not ROOT)
+            EnsureFocused();
             allItems[1].Click();
             Thread.Sleep(300);
             return true;

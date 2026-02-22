@@ -8,14 +8,14 @@
 
 Parley is a cross-platform dialog editor for Neverwinter Nights `.dlg` files. Built with modern technology while maintaining Aurora Engine compatibility.
 
-**Status**: Alpha (v0.1.105)
-**Platforms**: Windows, Linux, macOS
+**Status**: Beta
+**Platforms**: Windows, Linux, macOS (experimental)
 
 ---
 
-## Alpha Status
+## Beta Status
 
-**This is alpha software. Always work with backup copies of your module files.**
+**This is beta software. Always work with backup copies of your module files.**
 
 See [Known Issues](https://github.com/LordOfMyatar/Radoub/issues?q=is%3Aissue+is%3Aopen+label%3Aparley) for current bug list.
 
@@ -23,12 +23,15 @@ See [Known Issues](https://github.com/LordOfMyatar/Radoub/issues?q=is%3Aissue+is
 
 ## Features
 
-- Dialog tree editing with undo/redo
-- Native flowchart view (View → Flowchart or F5)
+- Dialog tree editing with full undo/redo
+- Native flowchart view (View → Flowchart or F5) with PNG/SVG export
 - Sound and script browsers with parameter preview
+- Conversation simulator (F6)
 - Color-coded NPCs for multi-NPC conversations
+- Orphan node management with scrap container
+- Spell-checking with custom D&D/NWN dictionary
 - Cross-platform (Windows, Linux, macOS)
-- Themes and accessibility options (dark mode, font scaling)
+- Themes and accessibility options (dark mode, font scaling, color-blind modes)
 
 ---
 

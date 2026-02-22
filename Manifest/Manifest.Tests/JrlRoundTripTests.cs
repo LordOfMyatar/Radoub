@@ -243,7 +243,7 @@ public class JrlRoundTripTests : IDisposable
     [Fact]
     public void RoundTrip_RealJrlFile_PreservesData()
     {
-        var originalPath = Path.Combine(_testDataPath, "original_module.jrl");
+        var originalPath = Path.Combine(_testDataPath, "module.jrl");
         if (!File.Exists(originalPath))
         {
             // Skip if test data not available

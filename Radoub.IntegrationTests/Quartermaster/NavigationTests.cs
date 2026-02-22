@@ -121,6 +121,7 @@ public class NavigationTests : QuartermasterTestBase
         }
         else
         {
+            EnsureFocused();
             button.Click();
         }
 

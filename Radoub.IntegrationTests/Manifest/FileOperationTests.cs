@@ -11,7 +11,7 @@ namespace Radoub.IntegrationTests.Manifest;
 public class FileOperationTests : ManifestTestBase
 {
     // Use the test JRL file from Manifest.Tests
-    private const string TestFileName = "original_module.jrl";
+    private const string TestFileName = "module.jrl";
 
     [Fact]
     [Trait("Category", "FileOps")]

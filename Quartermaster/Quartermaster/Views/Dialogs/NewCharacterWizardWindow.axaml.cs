@@ -8,6 +8,7 @@ using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Quartermaster.Services;
+using Quartermaster.Views;
 using Radoub.Formats.Common;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
@@ -28,6 +29,7 @@ public partial class NewCharacterWizardWindow : Window
     private readonly CreatureDisplayService _displayService;
     private readonly IGameDataService _gameDataService;
     private readonly ItemIconService? _itemIconService;
+    private readonly AudioService? _audioService;
 
     // Wizard state
     private int _currentStep = 1;
@@ -243,7 +245,8 @@ public partial class NewCharacterWizardWindow : Window
     private readonly NumericUpDown _ageNumericUpDown;
     private readonly TextBlock _ageNote;
     private readonly TextBox _descriptionTextBox;
-    private readonly ComboBox _voiceSetComboBox;
+    private readonly TextBlock _voiceSetLabel;
+    private ushort _selectedVoiceSetId;
     private readonly TextBlock _generatedTagLabel;
     private readonly TextBlock _generatedResRefLabel;
     private readonly TextBlock _paletteIdLabelText;
@@ -305,13 +308,14 @@ public partial class NewCharacterWizardWindow : Window
     [Obsolete("Designer use only", error: true)]
     public NewCharacterWizardWindow() => throw new NotSupportedException("Use parameterized constructor");
 
-    public NewCharacterWizardWindow(CreatureDisplayService displayService, IGameDataService gameDataService, ItemIconService? itemIconService = null)
+    public NewCharacterWizardWindow(CreatureDisplayService displayService, IGameDataService gameDataService, ItemIconService? itemIconService = null, AudioService? audioService = null)
     {
         InitializeComponent();
 
         _displayService = displayService;
         _gameDataService = gameDataService;
         _itemIconService = itemIconService;
+        _audioService = audioService;
 
         // Navigation controls
         _sidebarTitle = this.FindControl<TextBlock>("SidebarTitle")!;
@@ -479,8 +483,7 @@ public partial class NewCharacterWizardWindow : Window
         _ageNumericUpDown = this.FindControl<NumericUpDown>("AgeNumericUpDown")!;
         _ageNote = this.FindControl<TextBlock>("AgeNote")!;
         _descriptionTextBox = this.FindControl<TextBox>("DescriptionTextBox")!;
-        _voiceSetComboBox = this.FindControl<ComboBox>("VoiceSetComboBox")!;
-        PopulateVoiceSets();
+        _voiceSetLabel = this.FindControl<TextBlock>("VoiceSetLabel")!;
         _generatedTagLabel = this.FindControl<TextBlock>("GeneratedTagLabel")!;
         _generatedResRefLabel = this.FindControl<TextBlock>("GeneratedResRefLabel")!;
         _paletteIdLabelText = this.FindControl<TextBlock>("PaletteIdLabelText")!;
@@ -544,29 +547,19 @@ public partial class NewCharacterWizardWindow : Window
         _paletteIdComboBox.SelectedIndex = defaultIndex;
     }
 
-    private void PopulateVoiceSets()
+    private async void OnBrowseVoiceSetClick(object? sender, RoutedEventArgs e)
     {
-        _voiceSetComboBox.Items.Clear();
+        if (_audioService == null) return;
 
-        var soundSets = _displayService.GetAllSoundSets();
+        var browser = new SoundsetBrowserWindow(_gameDataService, _audioService);
+        var result = await browser.ShowDialog<ushort?>(this);
 
-        if (soundSets.Count == 0)
+        if (result.HasValue)
         {
-            _voiceSetComboBox.Items.Add(new ComboBoxItem { Content = "None (0)", Tag = (ushort)0 });
-            _voiceSetComboBox.SelectedIndex = 0;
-            return;
+            _selectedVoiceSetId = result.Value;
+            var name = _displayService.GetSoundSetName(result.Value);
+            _voiceSetLabel.Text = $"{name} ({result.Value})";
         }
-
-        foreach (var (id, name) in soundSets)
-        {
-            _voiceSetComboBox.Items.Add(new ComboBoxItem
-            {
-                Content = $"{name} ({id})",
-                Tag = id
-            });
-        }
-
-        _voiceSetComboBox.SelectedIndex = 0;
     }
 
     #region Step Navigation
@@ -936,7 +929,11 @@ public partial class NewCharacterWizardWindow : Window
         if (phenotypes.Count > 0)
             _phenotypeComboBox.SelectedItem = phenotypes[0];
 
-        // Set default portrait
+        // Set default portrait based on gender (hu_m_99_ for male, hu_f_99_ for female)
+        var defaultPortraitResRef = _selectedGender == 0 ? "hu_m_99_" : "hu_f_99_";
+        var defaultPortraitId = _displayService.FindPortraitIdByResRef(defaultPortraitResRef);
+        if (defaultPortraitId.HasValue)
+            _selectedPortraitId = defaultPortraitId.Value;
         UpdatePortraitDisplay();
 
         // Initialize color swatches
@@ -1364,13 +1361,11 @@ public partial class NewCharacterWizardWindow : Window
         _domain1ComboBox.Items.Clear();
         _domain2ComboBox.Items.Clear();
 
-        // Read domains.2da — row 0 is typically "Air", rows go up to ~20+
+        // Read domains.2da — row 0 is typically "Air", rows go up to ~40+
         for (int row = 0; row < 50; row++)
         {
             var label = _gameDataService.Get2DAValue("domains", row, "Label");
-            if (string.IsNullOrEmpty(label))
-                break;
-            if (label == "****")
+            if (string.IsNullOrEmpty(label) || label == "****")
                 continue;
 
             // Get display name from TLK
@@ -3616,7 +3611,7 @@ public partial class NewCharacterWizardWindow : Window
             LawfulChaotic = 50,
 
             // Voice set (Step 10)
-            SoundSetFile = (_voiceSetComboBox.SelectedItem is ComboBoxItem voiceItem && voiceItem.Tag is ushort voiceId) ? voiceId : (ushort)0,
+            SoundSetFile = _selectedVoiceSetId,
 
             // Behavior defaults
             FactionID = 1,

@@ -249,11 +249,25 @@ public partial class CreatureBrowserWindow : Window
     }
 
     /// <summary>
+    /// Gets the NWN user documents path, trying context first then auto-detection.
+    /// </summary>
+    private string? GetNwnPath()
+    {
+        // Try context first (from RadoubSettings via QuartermasterScriptBrowserContext)
+        var nwnPath = _context?.NeverwinterNightsPath;
+        if (!string.IsNullOrEmpty(nwnPath))
+            return nwnPath;
+
+        // Fallback: try auto-detection directly
+        return Radoub.Formats.Settings.ResourcePathDetector.AutoDetectGamePath();
+    }
+
+    /// <summary>
     /// Get the localvault path for player character BIC files.
     /// </summary>
     private string? GetLocalVaultPath()
     {
-        var nwnPath = _context?.NeverwinterNightsPath;
+        var nwnPath = GetNwnPath();
         if (string.IsNullOrEmpty(nwnPath))
             return null;
 
@@ -266,7 +280,7 @@ public partial class CreatureBrowserWindow : Window
     /// </summary>
     private string? GetServerVaultPath()
     {
-        var nwnPath = _context?.NeverwinterNightsPath;
+        var nwnPath = GetNwnPath();
         if (string.IsNullOrEmpty(nwnPath))
             return null;
 
