@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.14-alpha] - 2026-02-22
+**Branch**: `quartermaster/issue-1482` | **PR**: #TBD
+
+### Sprint: New Character Wizard Missing Features (#1482)
+
+- [ ] #1461 - Alignment chooser (defaults to True Neutral with no option)
+- [ ] #1459 - Familiar support for eligible classes
+- [ ] #1440 - Faction dropdown for UTC creation
+- [ ] #1478 - Searchable appearance type selection
+- [ ] #1476 - Move file save prompt to beginning of wizard
+- [ ] #1472 - Feat description panel in wizards
+- [ ] #1477 - Creature browser doesn't show newly created creatures (bug)
+
+---
+
 ## [0.1.79-alpha] - 2026-02-22
 **Branch**: `quartermaster/issue-1469` | **PR**: #1471
 
