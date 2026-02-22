@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.78-alpha] - 2026-02-22
-**Branch**: `quartermaster/issue-1454` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1454` | **PR**: #1458
 
 ### Sprint: Bug Fix & Polish (#1454)
 
