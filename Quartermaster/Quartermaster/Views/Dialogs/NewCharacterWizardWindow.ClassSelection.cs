@@ -98,6 +98,7 @@ public partial class NewCharacterWizardWindow
         UpdateClassDetailPanel();
         LoadPackagesForClass();
         UpdateDomainVisibility();
+        UpdateFamiliarVisibility();
         UpdateAlignmentButtonStates();
         ValidateCurrentStep();
         UpdateSidebarSummary();
@@ -317,6 +318,59 @@ public partial class NewCharacterWizardWindow
         if (comboBox.SelectedItem is ComboBoxItem item && item.Tag is int domainId)
             return (byte)domainId;
         return 0;
+    }
+
+    /// <summary>
+    /// Shows/hides the familiar selection panel based on whether the class grants a familiar.
+    /// </summary>
+    private void UpdateFamiliarVisibility()
+    {
+        bool showFamiliar = _selectedClassId >= 0 && _displayService.ClassGrantsFamiliar(_selectedClassId);
+        _familiarSelectionPanel.IsVisible = showFamiliar;
+
+        if (showFamiliar)
+            PopulateFamiliars();
+        else
+            _selectedFamiliarType = 0;
+    }
+
+    private void PopulateFamiliars()
+    {
+        _familiarComboBox.Items.Clear();
+        var familiars = _displayService.GetAllFamiliars();
+
+        foreach (var (id, name) in familiars)
+        {
+            _familiarComboBox.Items.Add(new ComboBoxItem { Content = name, Tag = id });
+        }
+
+        // Try to set default from package's Associate column
+        int defaultFamiliar = 0;
+        if (_selectedPackageId != 255)
+        {
+            var assocStr = _gameDataService.Get2DAValue("packages", _selectedPackageId, "Associate");
+            if (!string.IsNullOrEmpty(assocStr) && assocStr != "****" && int.TryParse(assocStr, out int assocId))
+                defaultFamiliar = assocId;
+        }
+
+        // Select the default familiar
+        for (int i = 0; i < _familiarComboBox.Items.Count; i++)
+        {
+            if (_familiarComboBox.Items[i] is ComboBoxItem item && item.Tag is int tagId && tagId == defaultFamiliar)
+            {
+                _familiarComboBox.SelectedIndex = i;
+                return;
+            }
+        }
+
+        if (_familiarComboBox.Items.Count > 0)
+            _familiarComboBox.SelectedIndex = 0;
+    }
+
+    private void OnFamiliarSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_familiarComboBox.SelectedItem is ComboBoxItem item && item.Tag is int familiarId)
+            _selectedFamiliarType = familiarId;
     }
 
     private static string FormatAbilityName(string abilityCode) => abilityCode.ToUpperInvariant() switch

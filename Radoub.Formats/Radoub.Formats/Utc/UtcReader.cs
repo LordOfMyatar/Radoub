@@ -173,6 +173,7 @@ public static class UtcReader
             SoundSetFile = root.GetFieldValue<ushort>("SoundSetFile", 0),
             DecayTime = root.GetFieldValue<uint>("DecayTime", 5000),
             StartingPackage = root.GetFieldValue<byte>("StartingPackage", 0),
+            FamiliarType = root.GetFieldValue<int>("FamiliarType", 0),
 
             // Conversation
             Conversation = root.GetFieldValue<string>("Conversation", string.Empty),

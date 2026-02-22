@@ -648,6 +648,7 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
 
@@ -722,8 +723,18 @@
                                     </Grid>
                                 </StackPanel>
 
+                                <!-- Familiar Selection (Wizard/Sorcerer) -->
+                                <StackPanel Grid.Row="5" x:Name="FamiliarSelectionPanel" Spacing="5" Margin="0,0,0,10" IsVisible="False">
+                                    <TextBlock Text="Familiar" FontWeight="Bold"/>
+                                    <ComboBox x:Name="FamiliarComboBox" HorizontalAlignment="Stretch"
+                                              SelectionChanged="OnFamiliarSelectionChanged"/>
+                                    <TextBlock Text="Your familiar is a magical companion that aids you."
+                                               FontSize="11" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                </StackPanel>
+
                                 <!-- Alignment Selection -->
-                                <StackPanel Grid.Row="5" x:Name="AlignmentSelectionPanel" Spacing="5" Margin="0,0,0,10">
+                                <StackPanel Grid.Row="6" x:Name="AlignmentSelectionPanel" Spacing="5" Margin="0,0,0,10">
                                     <TextBlock Text="Alignment" FontWeight="Bold"/>
                                     <Grid x:Name="AlignmentGrid" HorizontalAlignment="Left">
                                         <Grid.ColumnDefinitions>
@@ -772,7 +783,7 @@
                                 </StackPanel>
 
                                 <!-- Class Description -->
-                                <ScrollViewer Grid.Row="6" MaxHeight="200">
+                                <ScrollViewer Grid.Row="7" MaxHeight="200">
                                     <TextBlock x:Name="ClassDescriptionLabel"
                                                TextWrapping="Wrap"
                                                Text="Select a class to see its details."

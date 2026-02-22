@@ -297,6 +297,9 @@ public partial class NewCharacterWizardWindow : Window
     private readonly StackPanel _domainSelectionPanel;
     private readonly ComboBox _domain1ComboBox;
     private readonly ComboBox _domain2ComboBox;
+    private readonly StackPanel _familiarSelectionPanel;
+    private readonly ComboBox _familiarComboBox;
+    private int _selectedFamiliarType;
     private readonly TextBlock _classDescriptionLabel;
     private readonly TextBlock _prestigeToggleArrow;
     private readonly StackPanel _prestigePlanningContent;
@@ -458,6 +461,8 @@ public partial class NewCharacterWizardWindow : Window
         _domainSelectionPanel = this.FindControl<StackPanel>("DomainSelectionPanel")!;
         _domain1ComboBox = this.FindControl<ComboBox>("Domain1ComboBox")!;
         _domain2ComboBox = this.FindControl<ComboBox>("Domain2ComboBox")!;
+        _familiarSelectionPanel = this.FindControl<StackPanel>("FamiliarSelectionPanel")!;
+        _familiarComboBox = this.FindControl<ComboBox>("FamiliarComboBox")!;
         _classDescriptionLabel = this.FindControl<TextBlock>("ClassDescriptionLabel")!;
         _prestigeToggleArrow = this.FindControl<TextBlock>("PrestigeToggleArrow")!;
         _prestigePlanningContent = this.FindControl<StackPanel>("PrestigePlanningContent")!;

@@ -162,6 +162,9 @@ public partial class NewCharacterWizardWindow
             // Starting package (Step 4)
             StartingPackage = _selectedPackageId != 255 ? _selectedPackageId : (byte)0,
 
+            // Familiar (Step 4, Wizard/Sorcerer)
+            FamiliarType = _selectedFamiliarType,
+
             // Class (Step 4) with spells (Step 8)
             ClassList = new List<CreatureClass> { creatureClass },
 
