@@ -500,20 +500,25 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
             return "No creatures found";
         }
 
-        // For creatures, count by source type
+        // Base class moduleCount includes vault entries (anything !IsFromHak).
+        // Compute accurate counts from Source field instead.
         var parts = new List<string>();
-        if (moduleCount > 0) parts.Add($"{moduleCount} module");
 
-        // Vault counts
+        // Module count = total minus vault minus HAK
+        var actualModuleCount = totalCount - hakCount
+            - _vaultEntries.Count(e => e.Source == "LocalVault" && _showLocalVaultCheck.IsChecked == true)
+            - _vaultEntries.Count(e => e.Source == "ServerVault" && _showServerVaultCheck.IsChecked == true);
+        if (actualModuleCount > 0 && _showModuleCheck.IsChecked == true)
+            parts.Add($"{actualModuleCount} module");
+
         var localCount = _vaultEntries.Count(e => e.Source == "LocalVault");
-        var serverCount = _vaultEntries.Count(e => e.Source == "ServerVault");
-
         if (localCount > 0 && _showLocalVaultCheck.IsChecked == true)
             parts.Add($"{localCount} vault");
+
+        var serverCount = _vaultEntries.Count(e => e.Source == "ServerVault");
         if (serverCount > 0 && _showServerVaultCheck.IsChecked == true)
             parts.Add($"{serverCount} server");
 
-        // HAK count
         if (hakCount > 0 && _showHakCheck.IsChecked == true)
             parts.Add($"{hakCount} HAK");
 
