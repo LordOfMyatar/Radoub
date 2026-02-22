@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.76-alpha] - 2026-02-21
+**Branch**: `quartermaster/issue-1441` | **PR**: #1443
+
+### Sprint: Tech Debt - File Splits (#1441)
+
+- [x] #1432 - Split NewCharacterWizardWindow.axaml.cs (3856→758 lines, 9 partials)
+- [x] #1380 - Split MainWindow.axaml.cs (1568→742 lines, 9 partials total)
+- [x] #1125 - Split CharacterPanel.axaml.cs (903→613 lines, 3 partials)
+- [x] #1417 - Split CreatureDisplayService.cs (915→655 lines, 2 partials)
+- [x] #1418 - Split MainWindow.FileOps.cs (900→713 lines, 2 partials)
+- [x] #1370 - Split SettingsWindow.axaml.cs (785→463 lines, 2 partials)
+
+---
+
 ## [0.1.75-alpha] - 2026-02-21
 **Branch**: `quartermaster/issue-1438` | **PR**: #1439
 

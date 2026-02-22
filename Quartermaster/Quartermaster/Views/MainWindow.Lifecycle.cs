@@ -1,0 +1,216 @@
+using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls;
+using Quartermaster.Services;
+using Radoub.Formats.Logging;
+using Radoub.Formats.Services;
+using Radoub.UI.Services;
+using Radoub.UI.ViewModels;
+using DialogHelper = Quartermaster.Views.Helpers.DialogHelper;
+
+namespace Quartermaster.Views;
+
+/// <summary>
+/// Window lifecycle: startup, service initialization, window position, and closing.
+/// </summary>
+public partial class MainWindow
+{
+    #region Window Lifecycle
+
+    private void OnWindowOpened(object? sender, EventArgs e)
+    {
+        Opened -= OnWindowOpened;
+
+        // Create cancellation token for async operations
+        _windowCts = new CancellationTokenSource();
+
+        UpdateStatus("Initializing...");
+        UpdateRecentFilesMenu();
+
+        // Fire and forget - don't block UI thread
+        // Service init and all loading happens in background
+        _ = InitializeAndLoadAsync(_windowCts.Token);
+    }
+
+    private async Task InitializeAndLoadAsync(CancellationToken token)
+    {
+        try
+        {
+            // Initialize services on background thread - this is the expensive part
+            await InitializeServicesAsync();
+
+            token.ThrowIfCancellationRequested();
+
+            // Now initialize panels that depend on services (must be on UI thread)
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                InitializePanels();
+                PopulateLanguageMenu();
+            });
+
+            token.ThrowIfCancellationRequested();
+
+            // Fire-and-forget cache and item loading in parallel
+            _ = InitializeCachesAsync(token);
+            StartGameItemsLoad(token);
+
+            await HandleStartupFileAsync();
+
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                UpdateStatus("Ready");
+            });
+        }
+        catch (OperationCanceledException)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Window initialization cancelled");
+        }
+    }
+
+    private async Task InitializeServicesAsync()
+    {
+        if (_servicesInitialized) return;
+
+        // Run the expensive GameDataService initialization on a background thread
+        await Task.Run(() =>
+        {
+            _gameDataService = new GameDataService();
+            _creatureDisplayService = new CreatureDisplayService(_gameDataService);
+            _itemViewModelFactory = new ItemViewModelFactory(_gameDataService);
+            _itemIconService = new ItemIconService(_gameDataService);
+            _audioService = new AudioService();
+
+            if (_gameDataService.IsConfigured)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO, "GameDataService initialized - BIF lookup enabled");
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, "GameDataService not configured - BIF lookup disabled");
+            }
+        });
+
+        _servicesInitialized = true;
+        UnifiedLogger.LogApplication(LogLevel.INFO, "Quartermaster services initialized");
+    }
+
+    private async Task InitializeCachesAsync(CancellationToken token)
+    {
+        if (GameData.IsConfigured)
+        {
+            UpdateStatus("Loading game data caches...");
+            try
+            {
+                token.ThrowIfCancellationRequested();
+                await DisplayService.InitializeCachesAsync();
+                UnifiedLogger.LogApplication(LogLevel.INFO, "Game data caches initialized");
+            }
+            catch (OperationCanceledException)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Cache initialization cancelled");
+                return;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Cache initialization failed: {ex.Message}");
+            }
+            UpdateStatus("Ready");
+        }
+    }
+
+    private async Task HandleStartupFileAsync()
+    {
+        var options = CommandLineService.Options;
+
+        if (string.IsNullOrEmpty(options.FilePath))
+            return;
+
+        if (!File.Exists(options.FilePath))
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Command line file not found: {UnifiedLogger.SanitizePath(options.FilePath)}");
+            UpdateStatus($"File not found: {Path.GetFileName(options.FilePath)}");
+            return;
+        }
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loading file from command line: {UnifiedLogger.SanitizePath(options.FilePath)}");
+        await LoadFile(options.FilePath);
+    }
+
+    private void RestoreWindowPosition()
+    {
+        var settings = SettingsService.Instance;
+        Position = new PixelPoint((int)settings.WindowLeft, (int)settings.WindowTop);
+        Width = settings.WindowWidth;
+        Height = settings.WindowHeight;
+
+        if (settings.WindowMaximized)
+        {
+            WindowState = WindowState.Maximized;
+        }
+
+        // Restore sidebar width
+        if (MainGrid.ColumnDefinitions.Count > 0)
+        {
+            MainGrid.ColumnDefinitions[0].Width = new GridLength(settings.SidebarWidth);
+        }
+    }
+
+    private void SaveWindowPosition()
+    {
+        var settings = SettingsService.Instance;
+
+        if (WindowState == WindowState.Normal)
+        {
+            settings.WindowLeft = Position.X;
+            settings.WindowTop = Position.Y;
+            settings.WindowWidth = Width;
+            settings.WindowHeight = Height;
+        }
+        settings.WindowMaximized = WindowState == WindowState.Maximized;
+
+        // Save sidebar width
+        if (MainGrid.ColumnDefinitions.Count > 0)
+        {
+            settings.SidebarWidth = MainGrid.ColumnDefinitions[0].Width.Value;
+        }
+
+        // Save creature browser panel size (#1145)
+        SaveCreatureBrowserPanelSize();
+    }
+
+    private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
+    {
+        if (_isDirty)
+        {
+            e.Cancel = true;
+            var result = await DialogHelper.ShowUnsavedChangesDialog(this);
+            if (result == "Save")
+            {
+                await SaveFile();
+                _isDirty = false; // Clear dirty before Close() to prevent re-entry
+                Close();
+            }
+            else if (result == "Discard")
+            {
+                _isDirty = false;
+                Close();
+            }
+            // Cancel: do nothing, window stays open
+        }
+        else
+        {
+            // Cancel all async operations
+            _windowCts?.Cancel();
+            _windowCts?.Dispose();
+
+            SaveWindowPosition();
+            _audioService?.Dispose();
+            _gameDataService?.Dispose();
+        }
+    }
+
+    #endregion
+}

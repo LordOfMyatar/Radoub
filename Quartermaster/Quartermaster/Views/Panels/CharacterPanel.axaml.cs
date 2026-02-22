@@ -1,25 +1,22 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Quartermaster.Services;
 using Radoub.Formats.Bic;
-using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Ssf;
 using Radoub.Formats.Utc;
-using Radoub.UI.Controls;
 using Radoub.UI.Services;
-using Radoub.UI.Views;
 
 namespace Quartermaster.Views.Panels;
 
+/// <summary>
+/// Character identity panel: name, race, portrait, soundset, conversation, BIC fields.
+/// Partial classes: Soundset (preview playback), Dialogs (browse dialog handlers).
+/// </summary>
 public partial class CharacterPanel : UserControl
 {
     private TextBox? _firstNameTextBox;
@@ -163,6 +160,8 @@ public partial class CharacterPanel : UserControl
             _biographyTextBox.TextChanged += OnTextChanged;
     }
 
+    #region Service Setup
+
     public void SetDisplayService(CreatureDisplayService displayService)
     {
         _displayService = displayService;
@@ -185,6 +184,10 @@ public partial class CharacterPanel : UserControl
     {
         _currentFilePath = filePath;
     }
+
+    #endregion
+
+    #region File Type
 
     /// <summary>
     /// Set whether the current file is a BIC (player character) or UTC (creature blueprint).
@@ -236,6 +239,10 @@ public partial class CharacterPanel : UserControl
         if (_portraitResRefLabel != null)
             _portraitResRefLabel.Opacity = _isBicFile ? 1.0 : 0.5;
     }
+
+    #endregion
+
+    #region Data Loading
 
     private void LoadRaceData()
     {
@@ -352,6 +359,48 @@ public partial class CharacterPanel : UserControl
         Avalonia.Threading.Dispatcher.UIThread.Post(() => _isLoading = false, Avalonia.Threading.DispatcherPriority.Background);
     }
 
+    public void ClearPanel()
+    {
+        _isLoading = true; // Prevent change events during clear
+
+        if (_firstNameTextBox != null)
+            _firstNameTextBox.Text = "";
+        if (_lastNameTextBox != null)
+            _lastNameTextBox.Text = "";
+        if (_raceComboBox != null)
+            _raceComboBox.SelectedIndex = -1;
+        if (_subraceTextBox != null)
+            _subraceTextBox.Text = "";
+        if (_deityTextBox != null)
+            _deityTextBox.Text = "";
+        if (_portraitComboBox != null)
+            _portraitComboBox.SelectedIndex = -1;
+        if (_portraitIdTextBox != null)
+            _portraitIdTextBox.Text = "";
+        if (_portraitResRefTextBox != null)
+            _portraitResRefTextBox.Text = "";
+        if (_soundSetComboBox != null)
+            _soundSetComboBox.SelectedIndex = -1;
+        if (_conversationTextBox != null)
+            _conversationTextBox.Text = "";
+
+        // Clear BIC-specific fields
+        if (_experienceTextBox != null)
+            _experienceTextBox.Text = "";
+        if (_goldTextBox != null)
+            _goldTextBox.Text = "";
+        if (_ageTextBox != null)
+            _ageTextBox.Text = "";
+        if (_biographyTextBox != null)
+            _biographyTextBox.Text = "";
+
+        _isLoading = false;
+    }
+
+    #endregion
+
+    #region Selection Helpers
+
     private void SelectRace(byte raceId)
     {
         if (_raceComboBox == null) return;
@@ -436,6 +485,10 @@ public partial class CharacterPanel : UserControl
         _soundSetComboBox.SelectedIndex = _soundSetComboBox.Items.Count - 1;
         UpdateSoundsetTypeAvailability(soundSetId);
     }
+
+    #endregion
+
+    #region Event Handlers
 
     private void OnTextChanged(object? sender, TextChangedEventArgs e)
     {
@@ -554,349 +607,6 @@ public partial class CharacterPanel : UserControl
         _currentCreature.Portrait = _portraitResRefTextBox?.Text ?? "";
         CharacterChanged?.Invoke(this, EventArgs.Empty);
         PortraitChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    private async void OnBrowseConversationClick(object? sender, RoutedEventArgs e)
-    {
-        var context = new QuartermasterScriptBrowserContext(_currentFilePath, _gameDataService);
-        var browser = new DialogBrowserWindow(context);
-
-        var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel is Window parentWindow)
-        {
-            var result = await browser.ShowDialog<string?>(parentWindow);
-            if (!string.IsNullOrEmpty(result) && _conversationTextBox != null)
-                _conversationTextBox.Text = result;
-        }
-    }
-
-    private void OnClearConversationClick(object? sender, RoutedEventArgs e)
-    {
-        if (_conversationTextBox != null)
-            _conversationTextBox.Text = "";
-    }
-
-    private async void OnBrowsePortraitClick(object? sender, RoutedEventArgs e)
-    {
-        try
-        {
-            if (_gameDataService == null || _itemIconService == null)
-            {
-                UnifiedLogger.Log(LogLevel.WARN, "CharacterPanel: Cannot open portrait browser - missing services", "CharacterPanel", "UI");
-                return;
-            }
-
-            UnifiedLogger.Log(LogLevel.INFO, "CharacterPanel: Opening portrait browser", "CharacterPanel", "UI");
-            var browser = new PortraitBrowserWindow(_gameDataService, _itemIconService);
-
-            var topLevel = TopLevel.GetTopLevel(this);
-            if (topLevel is Window parentWindow)
-            {
-                var result = await browser.ShowDialog<ushort?>(parentWindow);
-                UnifiedLogger.Log(LogLevel.INFO, $"CharacterPanel: Portrait browser returned: {(result.HasValue ? result.Value.ToString() : "null")}", "CharacterPanel", "UI");
-
-                if (result.HasValue)
-                {
-                    SelectPortrait(result.Value);
-                    // Trigger change event
-                    if (_currentCreature != null)
-                    {
-                        _currentCreature.PortraitId = result.Value;
-                        // Also clear the Portrait string field since we're using PortraitId now
-                        _currentCreature.Portrait = string.Empty;
-                        CharacterChanged?.Invoke(this, EventArgs.Empty);
-                        PortraitChanged?.Invoke(this, EventArgs.Empty);
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.Log(LogLevel.ERROR, $"CharacterPanel: OnBrowsePortraitClick crashed: {ex}", "CharacterPanel", "UI");
-        }
-    }
-
-    private async void OnBrowseSoundSetClick(object? sender, RoutedEventArgs e)
-    {
-        if (_gameDataService == null || _audioService == null)
-            return;
-
-        var browser = new SoundsetBrowserWindow(_gameDataService, _audioService);
-
-        var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel is Window parentWindow)
-        {
-            var result = await browser.ShowDialog<ushort?>(parentWindow);
-            if (result.HasValue)
-            {
-                SelectSoundSet(result.Value);
-                // Trigger change event
-                if (_currentCreature != null)
-                {
-                    _currentCreature.SoundSetFile = result.Value;
-                    CharacterChanged?.Invoke(this, EventArgs.Empty);
-                }
-            }
-        }
-    }
-
-    public void ClearPanel()
-    {
-        _isLoading = true; // Prevent change events during clear
-
-        if (_firstNameTextBox != null)
-            _firstNameTextBox.Text = "";
-        if (_lastNameTextBox != null)
-            _lastNameTextBox.Text = "";
-        if (_raceComboBox != null)
-            _raceComboBox.SelectedIndex = -1;
-        if (_subraceTextBox != null)
-            _subraceTextBox.Text = "";
-        if (_deityTextBox != null)
-            _deityTextBox.Text = "";
-        if (_portraitComboBox != null)
-            _portraitComboBox.SelectedIndex = -1;
-        if (_portraitIdTextBox != null)
-            _portraitIdTextBox.Text = "";
-        if (_portraitResRefTextBox != null)
-            _portraitResRefTextBox.Text = "";
-        if (_soundSetComboBox != null)
-            _soundSetComboBox.SelectedIndex = -1;
-        if (_conversationTextBox != null)
-            _conversationTextBox.Text = "";
-
-        // Clear BIC-specific fields
-        if (_experienceTextBox != null)
-            _experienceTextBox.Text = "";
-        if (_goldTextBox != null)
-            _goldTextBox.Text = "";
-        if (_ageTextBox != null)
-            _ageTextBox.Text = "";
-        if (_biographyTextBox != null)
-            _biographyTextBox.Text = "";
-
-        _isLoading = false;
-    }
-
-    #region Soundset Preview (#916)
-
-    /// <summary>
-    /// Sets the audio service for soundset preview playback.
-    /// </summary>
-    public void SetAudioService(AudioService? service)
-    {
-        _audioService = service;
-        if (_audioService != null)
-        {
-            _audioService.PlaybackStopped += OnPlaybackStopped;
-        }
-    }
-
-    /// <summary>
-    /// Item for the soundset type dropdown with availability tracking.
-    /// </summary>
-    private class SoundsetTypeItem : INotifyPropertyChanged
-    {
-        private bool _isAvailable = true;
-
-        public string Name { get; set; } = "";
-        public SsfSoundType SoundType { get; set; }
-
-        public bool IsAvailable
-        {
-            get => _isAvailable;
-            set
-            {
-                if (_isAvailable != value)
-                {
-                    _isAvailable = value;
-                    OnPropertyChanged();
-                    OnPropertyChanged(nameof(DisplayName));
-                    OnPropertyChanged(nameof(Opacity));
-                }
-            }
-        }
-
-        public string DisplayName => IsAvailable ? Name : $"{Name} (N/A)";
-
-        // Use opacity for theme-aware dimming of unavailable items
-        public double Opacity => IsAvailable ? 1.0 : 0.5;
-
-        public override string ToString() => DisplayName;
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-    }
-
-    private void InitializeSoundsetTypeComboBox()
-    {
-        if (_soundsetTypeComboBox == null) return;
-
-        _soundsetTypeItems = new List<SoundsetTypeItem>
-        {
-            new() { Name = "Hello", SoundType = SsfSoundType.Hello },
-            new() { Name = "Goodbye", SoundType = SsfSoundType.Goodbye },
-            new() { Name = "Yes", SoundType = SsfSoundType.Yes },
-            new() { Name = "No", SoundType = SsfSoundType.No },
-            new() { Name = "Attack", SoundType = SsfSoundType.Attack },
-            new() { Name = "Battlecry", SoundType = SsfSoundType.Battlecry1 },
-            new() { Name = "Taunt", SoundType = SsfSoundType.Taunt },
-            new() { Name = "Death", SoundType = SsfSoundType.Death },
-            new() { Name = "Laugh", SoundType = SsfSoundType.Laugh },
-            new() { Name = "Selected", SoundType = SsfSoundType.Selected },
-        };
-
-        _soundsetTypeComboBox.ItemsSource = _soundsetTypeItems;
-        _soundsetTypeComboBox.SelectedIndex = 0; // Hello
-        _soundsetTypeComboBox.SelectionChanged += OnSoundsetTypeSelectionChanged;
-    }
-
-    private void OnSoundsetTypeSelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        UpdateSoundsetPlayButtonState();
-    }
-
-    private void UpdateSoundsetPlayButtonState()
-    {
-        if (_soundsetPlayButton == null) return;
-
-        if (_currentCreature == null || _currentCreature.SoundSetFile == ushort.MaxValue)
-        {
-            _soundsetPlayButton.IsEnabled = false;
-            return;
-        }
-
-        if (_soundsetTypeComboBox?.SelectedItem is SoundsetTypeItem selectedType)
-        {
-            _soundsetPlayButton.IsEnabled = selectedType.IsAvailable;
-        }
-        else
-        {
-            _soundsetPlayButton.IsEnabled = false;
-        }
-    }
-
-    private void UpdateSoundsetTypeAvailability(ushort soundsetId)
-    {
-        if (_gameDataService == null || _soundsetTypeComboBox == null) return;
-
-        if (soundsetId == ushort.MaxValue)
-        {
-            // No soundset - mark all as available (greyed button handles this)
-            foreach (var item in _soundsetTypeItems)
-                item.IsAvailable = true;
-            return;
-        }
-
-        var ssf = _gameDataService.GetSoundset(soundsetId);
-        if (ssf == null)
-        {
-            UnifiedLogger.LogApplication(LogLevel.WARN, $"Could not load soundset {soundsetId} for availability check");
-            return;
-        }
-
-        foreach (var typeItem in _soundsetTypeItems)
-        {
-            var entry = ssf.GetEntry(typeItem.SoundType);
-            typeItem.IsAvailable = entry != null && entry.HasSound;
-        }
-
-        // Force ComboBox to refresh display
-        _soundsetTypeComboBox.ItemsSource = null;
-        _soundsetTypeComboBox.ItemsSource = _soundsetTypeItems;
-
-        // Re-select first available or keep current selection
-        var currentIndex = _soundsetTypeComboBox.SelectedIndex;
-        if (currentIndex >= 0 && currentIndex < _soundsetTypeItems.Count && _soundsetTypeItems[currentIndex].IsAvailable)
-        {
-            _soundsetTypeComboBox.SelectedIndex = currentIndex;
-        }
-        else
-        {
-            // Find first available
-            var firstAvailable = _soundsetTypeItems.FindIndex(t => t.IsAvailable);
-            _soundsetTypeComboBox.SelectedIndex = firstAvailable >= 0 ? firstAvailable : 0;
-        }
-
-        UpdateSoundsetPlayButtonState();
-    }
-
-    private async void OnSoundsetPlayClick(object? sender, RoutedEventArgs e)
-    {
-        if (_soundsetTypeComboBox?.SelectedItem is not SoundsetTypeItem selectedType)
-            return;
-
-        if (_currentCreature == null || _gameDataService == null || _audioService == null)
-            return;
-
-        var soundsetId = _currentCreature.SoundSetFile;
-        if (soundsetId == ushort.MaxValue)
-        {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "No soundset assigned to creature");
-            return;
-        }
-
-        // Get the soundset
-        var ssf = _gameDataService.GetSoundset(soundsetId);
-        if (ssf == null)
-        {
-            UnifiedLogger.LogApplication(LogLevel.WARN, $"Cannot load soundset ID {soundsetId}");
-            return;
-        }
-
-        // Get the sound entry
-        var entry = ssf.GetEntry(selectedType.SoundType);
-        if (entry == null || !entry.HasSound)
-        {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"No sound for '{selectedType.Name}' in soundset {soundsetId}");
-            return;
-        }
-
-        // Disable play button during playback
-        if (_soundsetPlayButton != null) _soundsetPlayButton.IsEnabled = false;
-
-        UnifiedLogger.LogApplication(LogLevel.INFO, $"Playing soundset sound: {entry.ResRef}");
-
-        try
-        {
-            // Load sound from GameDataService (BIF archives)
-            var soundData = _gameDataService.FindResource(entry.ResRef, ResourceTypes.Wav);
-            if (soundData != null)
-            {
-                // Log first bytes for format diagnosis
-                var headerBytes = soundData.Length >= 16 ? soundData[..16] : soundData;
-                var hex = BitConverter.ToString(headerBytes).Replace("-", " ");
-                var ascii = new string(headerBytes.Select(b => b >= 32 && b < 127 ? (char)b : '.').ToArray());
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Found sound in BIF: {entry.ResRef} ({soundData.Length} bytes) - Header: {hex} | {ascii}");
-                // Extract to temp file and play
-                var tempPath = Path.Combine(Path.GetTempPath(), $"ssf_{entry.ResRef}.wav");
-                await File.WriteAllBytesAsync(tempPath, soundData);
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Wrote temp file: {tempPath}");
-                _audioService.Play(tempPath);
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Playing: {entry.ResRef} (from BIF)");
-                return;
-            }
-
-            UnifiedLogger.LogApplication(LogLevel.WARN, $"Sound not found in GameDataService: {entry.ResRef}");
-            if (_soundsetPlayButton != null) _soundsetPlayButton.IsEnabled = true;
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to play sound '{entry.ResRef}': {ex.GetType().Name}: {ex.Message}");
-            if (_soundsetPlayButton != null) _soundsetPlayButton.IsEnabled = true;
-        }
-    }
-
-    private void OnPlaybackStopped(object? sender, EventArgs e)
-    {
-        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-        {
-            if (_soundsetPlayButton != null) _soundsetPlayButton.IsEnabled = true;
-        });
     }
 
     #endregion

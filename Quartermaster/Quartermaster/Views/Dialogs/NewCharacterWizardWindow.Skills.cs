@@ -1,0 +1,347 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Avalonia.Media;
+using Quartermaster.Services;
+using Radoub.Formats.Gff;
+using Radoub.Formats.Utc;
+using Radoub.UI.Services;
+
+namespace Quartermaster.Views.Dialogs;
+
+/// <summary>
+/// Step 7: Skill rank allocation.
+/// </summary>
+public partial class NewCharacterWizardWindow
+{
+    #region Step 7: Skills (was Step 6)
+
+    private void PrepareStep7()
+    {
+        // Recalculate skill points (INT may have changed in Step 5)
+        int intScore = _abilityBaseScores["INT"] + _displayService.GetRacialModifier(_selectedRaceId, "INT");
+        int intMod = CreatureDisplayService.CalculateAbilityBonus(intScore);
+        int basePoints = _displayService.GetClassSkillPointBase(_selectedClassId >= 0 ? _selectedClassId : 0);
+        _skillPointsTotal = Math.Max(1, basePoints + intMod) * 4; // Level 1 gets 4x
+
+        // Human bonus: +4 skill points at level 1
+        if (_selectedRaceId == 6) // Human
+            _skillPointsTotal += 4;
+
+        // Get class skills and unavailable skills
+        _classSkillIds = _displayService.Skills.GetClassSkillIds(_selectedClassId >= 0 ? _selectedClassId : 0);
+
+        // Build a temporary creature to check skill availability
+        var tempCreature = new UtcFile
+        {
+            ClassList = new List<CreatureClass>
+            {
+                new CreatureClass { Class = _selectedClassId >= 0 ? _selectedClassId : 0, ClassLevel = 1 }
+            }
+        };
+        _unavailableSkillIds = _displayService.Skills.GetUnavailableSkillIds(tempCreature, 28);
+
+        if (!_step7Loaded)
+        {
+            _step7Loaded = true;
+            _skillRanksAllocated.Clear();
+        }
+
+        BuildSkillList();
+        RenderSkillRows();
+    }
+
+    private void BuildSkillList()
+    {
+        _allSkills = new List<SkillDisplayItem>();
+
+        for (int i = 0; i < 28; i++)
+        {
+            bool isUnavailable = _unavailableSkillIds.Contains(i);
+            bool isClassSkill = _classSkillIds.Contains(i);
+            int maxRanks = isClassSkill ? 4 : 2; // Level 1: class skill max = level + 3 = 4, cross-class = (level + 3) / 2 = 2
+
+            _allSkills.Add(new SkillDisplayItem
+            {
+                SkillId = i,
+                Name = _displayService.Skills.GetSkillName(i),
+                KeyAbility = _displayService.Skills.GetSkillKeyAbility(i),
+                IsClassSkill = isClassSkill,
+                IsUnavailable = isUnavailable,
+                MaxRanks = maxRanks,
+                AllocatedRanks = _skillRanksAllocated.GetValueOrDefault(i, 0),
+                Cost = isClassSkill ? 1 : 2
+            });
+        }
+
+        // Sort: class skills first, then alphabetical
+        _allSkills = _allSkills
+            .OrderByDescending(s => s.IsClassSkill)
+            .ThenBy(s => s.Name)
+            .ToList();
+
+        ApplySkillFilter();
+    }
+
+    private void ApplySkillFilter()
+    {
+        var filter = _skillSearchBox?.Text?.Trim() ?? "";
+
+        if (string.IsNullOrEmpty(filter))
+        {
+            _filteredSkills = new List<SkillDisplayItem>(_allSkills);
+        }
+        else
+        {
+            _filteredSkills = _allSkills
+                .Where(s => s.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+    }
+
+    private void RenderSkillRows()
+    {
+        _skillRowsPanel.Children.Clear();
+
+        foreach (var skill in _filteredSkills)
+        {
+            var row = new Grid
+            {
+                ColumnDefinitions = ColumnDefinitions.Parse("180,50,35,35,60,60,*"),
+                Margin = new Avalonia.Thickness(12, 3, 12, 3),
+                Opacity = skill.IsUnavailable ? 0.4 : 1.0
+            };
+
+            // Skill name — class skills in green, cross-class uses theme default
+            var nameLabel = new TextBlock
+            {
+                Text = skill.Name,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+            };
+            if (skill.IsClassSkill)
+                nameLabel.Foreground = BrushManager.GetSuccessBrush(this);
+            Grid.SetColumn(nameLabel, 0);
+            row.Children.Add(nameLabel);
+
+            // Key ability
+            var keyLabel = new TextBlock
+            {
+                Text = skill.KeyAbility,
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Foreground = this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush,
+                FontSize = 11
+            };
+            Grid.SetColumn(keyLabel, 1);
+            row.Children.Add(keyLabel);
+
+            // [-] button
+            var decreaseBtn = new Button
+            {
+                Content = "−",
+                Width = 28,
+                HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                Tag = skill.SkillId,
+                IsEnabled = !skill.IsUnavailable && skill.AllocatedRanks > 0
+            };
+            decreaseBtn.Click += OnSkillDecrease;
+            Grid.SetColumn(decreaseBtn, 2);
+            row.Children.Add(decreaseBtn);
+
+            // [+] button
+            var increaseBtn = new Button
+            {
+                Content = "+",
+                Width = 28,
+                HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                Tag = skill.SkillId,
+                IsEnabled = !skill.IsUnavailable && skill.AllocatedRanks < skill.MaxRanks && GetSkillPointsRemaining() >= skill.Cost
+            };
+            increaseBtn.Click += OnSkillIncrease;
+            Grid.SetColumn(increaseBtn, 3);
+            row.Children.Add(increaseBtn);
+
+            // Allocated ranks
+            var ranksLabel = new TextBlock
+            {
+                Text = skill.AllocatedRanks > 0 ? skill.AllocatedRanks.ToString() : "—",
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                FontWeight = skill.AllocatedRanks > 0 ? FontWeight.Bold : FontWeight.Normal
+            };
+            if (skill.AllocatedRanks > 0)
+                ranksLabel.Foreground = BrushManager.GetSuccessBrush(this);
+            Grid.SetColumn(ranksLabel, 4);
+            row.Children.Add(ranksLabel);
+
+            // Max ranks
+            var maxLabel = new TextBlock
+            {
+                Text = skill.IsUnavailable ? "—" : skill.MaxRanks.ToString(),
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Foreground = this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush
+            };
+            Grid.SetColumn(maxLabel, 5);
+            row.Children.Add(maxLabel);
+
+            // Type indicator
+            var typeLabel = new TextBlock
+            {
+                Text = skill.IsUnavailable ? "Unavailable" : skill.IsClassSkill ? "Class (1 pt)" : "Cross-class (2 pts)",
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                FontSize = 11,
+                Foreground = this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush
+            };
+            Grid.SetColumn(typeLabel, 6);
+            row.Children.Add(typeLabel);
+
+            _skillRowsPanel.Children.Add(row);
+        }
+
+        UpdateSkillPointsDisplay();
+    }
+
+    private void UpdateSkillPointsDisplay()
+    {
+        int remaining = GetSkillPointsRemaining();
+        _skillPointsRemainingLabel.Text = remaining.ToString();
+
+        if (remaining > 0)
+            _skillPointsRemainingLabel.Foreground = BrushManager.GetSuccessBrush(this);
+        else if (remaining == 0)
+            _skillPointsRemainingLabel.ClearValue(TextBlock.ForegroundProperty);
+        else
+            _skillPointsRemainingLabel.Foreground = BrushManager.GetErrorBrush(this);
+
+        ValidateCurrentStep();
+    }
+
+    private int GetSkillPointsRemaining()
+    {
+        int spent = 0;
+        foreach (var (skillId, ranks) in _skillRanksAllocated)
+        {
+            bool isClassSkill = _classSkillIds.Contains(skillId);
+            int cost = isClassSkill ? 1 : 2;
+            spent += ranks * cost;
+        }
+        return _skillPointsTotal - spent;
+    }
+
+    private void OnSkillIncrease(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is int skillId)
+        {
+            bool isClassSkill = _classSkillIds.Contains(skillId);
+            int cost = isClassSkill ? 1 : 2;
+            int maxRanks = isClassSkill ? 4 : 2;
+
+            if (GetSkillPointsRemaining() >= cost)
+            {
+                int current = _skillRanksAllocated.GetValueOrDefault(skillId, 0);
+                if (current < maxRanks)
+                {
+                    _skillRanksAllocated[skillId] = current + 1;
+                    UpdateSkillItem(skillId);
+                    RenderSkillRows();
+                }
+            }
+        }
+    }
+
+    private void OnSkillDecrease(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is int skillId)
+        {
+            int current = _skillRanksAllocated.GetValueOrDefault(skillId, 0);
+            if (current > 0)
+            {
+                _skillRanksAllocated[skillId] = current - 1;
+                if (_skillRanksAllocated[skillId] == 0)
+                    _skillRanksAllocated.Remove(skillId);
+                UpdateSkillItem(skillId);
+                RenderSkillRows();
+            }
+        }
+    }
+
+    private void UpdateSkillItem(int skillId)
+    {
+        var skill = _allSkills.FirstOrDefault(s => s.SkillId == skillId);
+        if (skill != null)
+        {
+            skill.AllocatedRanks = _skillRanksAllocated.GetValueOrDefault(skillId, 0);
+        }
+    }
+
+    private void OnSkillSearchChanged(object? sender, TextChangedEventArgs e)
+    {
+        ApplySkillFilter();
+        RenderSkillRows();
+    }
+
+    private void OnSkillAutoAssignClick(object? sender, RoutedEventArgs e)
+    {
+        // Clear all allocations
+        _skillRanksAllocated.Clear();
+
+        // Try to read package skill preferences from SkillPref2DA in packages.2da
+        var preferredSkillIds = new List<int>();
+        if (_selectedPackageId != 255)
+        {
+            var skillPref2da = _gameDataService.Get2DAValue("packages", _selectedPackageId, "SkillPref2DA");
+            if (!string.IsNullOrEmpty(skillPref2da) && skillPref2da != "****")
+            {
+                // Read skill indices from the package skill preference table
+                for (int row = 0; row < 50; row++)
+                {
+                    var skillIndexStr = _gameDataService.Get2DAValue(skillPref2da, row, "SkillIndex");
+                    if (string.IsNullOrEmpty(skillIndexStr) || skillIndexStr == "****")
+                        break;
+                    if (int.TryParse(skillIndexStr, out int skillIndex))
+                        preferredSkillIds.Add(skillIndex);
+                }
+            }
+        }
+
+        // If no package preferences, use class skills sorted alphabetically
+        if (preferredSkillIds.Count == 0)
+        {
+            preferredSkillIds = _classSkillIds.OrderBy(id => _displayService.Skills.GetSkillName(id)).ToList();
+        }
+
+        // Distribute points to preferred skills, prioritizing class skills
+        // First pass: class skills from preferences
+        foreach (var skillId in preferredSkillIds.Where(id => _classSkillIds.Contains(id) && !_unavailableSkillIds.Contains(id)))
+        {
+            int maxRanks = 4; // Class skill max at level 1
+            while (_skillRanksAllocated.GetValueOrDefault(skillId, 0) < maxRanks && GetSkillPointsRemaining() >= 1)
+            {
+                _skillRanksAllocated[skillId] = _skillRanksAllocated.GetValueOrDefault(skillId, 0) + 1;
+            }
+        }
+
+        // Second pass: cross-class skills from preferences (if points remain)
+        foreach (var skillId in preferredSkillIds.Where(id => !_classSkillIds.Contains(id) && !_unavailableSkillIds.Contains(id)))
+        {
+            int maxRanks = 2; // Cross-class max at level 1
+            while (_skillRanksAllocated.GetValueOrDefault(skillId, 0) < maxRanks && GetSkillPointsRemaining() >= 2)
+            {
+                _skillRanksAllocated[skillId] = _skillRanksAllocated.GetValueOrDefault(skillId, 0) + 1;
+            }
+        }
+
+        // Update display items
+        foreach (var skill in _allSkills)
+        {
+            skill.AllocatedRanks = _skillRanksAllocated.GetValueOrDefault(skill.SkillId, 0);
+        }
+
+        RenderSkillRows();
+    }
+
+    #endregion
+}

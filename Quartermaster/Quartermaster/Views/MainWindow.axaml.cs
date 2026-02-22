@@ -8,7 +8,6 @@ using Quartermaster.Views.Helpers;
 using Quartermaster.Views.Panels;
 using Radoub.Formats.Bic;
 using Radoub.Formats.Common;
-using Radoub.Formats.Ifo;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
@@ -29,6 +28,11 @@ using System.Threading.Tasks;
 
 namespace Quartermaster.Views;
 
+/// <summary>
+/// Main window for Quartermaster creature/inventory editor.
+/// Partial class files: FileOps, Inventory, ItemPalette, ItemResolution,
+/// CreatureBrowser, Lifecycle, MenuDialogs.
+/// </summary>
 public partial class MainWindow : Window, INotifyPropertyChanged
 {
     private UtcFile? _currentCreature;
@@ -305,564 +309,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     #endregion
 
-    #region Creature Browser Panel (#1145)
-
-    /// <summary>
-    /// Initializes creature browser panel with context and event handlers (#1145).
-    /// </summary>
-    private void InitializeCreatureBrowserPanel()
-    {
-        var creatureBrowserPanel = this.FindControl<CreatureBrowserPanel>("CreatureBrowserPanel");
-        if (creatureBrowserPanel == null)
-        {
-            UnifiedLogger.LogUI(LogLevel.WARN, "CreatureBrowserPanel not found");
-            return;
-        }
-
-        // Set initial module path from RadoubSettings (set by Trebuchet)
-        var modulePath = RadoubSettings.Instance.CurrentModulePath;
-        if (RadoubSettings.IsValidModulePath(modulePath))
-        {
-            // If it's a .mod file, find the working directory
-            if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
-            {
-                modulePath = FindWorkingDirectory(modulePath);
-            }
-
-            if (!string.IsNullOrEmpty(modulePath) && Directory.Exists(modulePath))
-            {
-                creatureBrowserPanel.ModulePath = modulePath;
-                UnifiedLogger.LogUI(LogLevel.INFO, "CreatureBrowserPanel initialized with module path from Trebuchet");
-            }
-        }
-
-        // Subscribe to file selection events
-        creatureBrowserPanel.FileSelected += OnCreatureBrowserFileSelected;
-
-        // Subscribe to file delete events (#1368)
-        creatureBrowserPanel.FileDeleteRequested += OnCreatureBrowserFileDeleteRequested;
-
-        // Subscribe to collapse/expand events
-        creatureBrowserPanel.CollapsedChanged += OnCreatureBrowserCollapsedChanged;
-
-        // Restore panel state from settings
-        RestoreCreatureBrowserPanelState();
-
-        // Update menu item checkmark
-        UpdateCreatureBrowserMenuState();
-
-        UnifiedLogger.LogUI(LogLevel.INFO, "CreatureBrowserPanel initialized");
-    }
-
-    /// <summary>
-    /// Find the unpacked working directory for a .mod file.
-    /// Checks for module name folder, temp0, or temp1.
-    /// </summary>
-    private static string? FindWorkingDirectory(string modFilePath)
-    {
-        var moduleName = Path.GetFileNameWithoutExtension(modFilePath);
-        var moduleDir = Path.GetDirectoryName(modFilePath);
-
-        if (string.IsNullOrEmpty(moduleDir))
-            return null;
-
-        // Check in priority order (same as Trebuchet)
-        var candidates = new[]
-        {
-            Path.Combine(moduleDir, moduleName),
-            Path.Combine(moduleDir, "temp0"),
-            Path.Combine(moduleDir, "temp1")
-        };
-
-        foreach (var candidate in candidates)
-        {
-            if (Directory.Exists(candidate))
-                return candidate;
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Update status bar module indicator from RadoubSettings (#1003).
-    /// Shows module name or "No module selected" in warning colors.
-    /// </summary>
-    private void UpdateModuleIndicator()
-    {
-        var moduleText = this.FindControl<TextBlock>("ModuleText");
-        if (moduleText == null) return;
-
-        try
-        {
-            var modulePath = RadoubSettings.Instance.CurrentModulePath;
-
-            // Validate this is a real module path, not just the modules parent directory (#1327)
-            if (!RadoubSettings.IsValidModulePath(modulePath))
-            {
-                moduleText.Text = "No module selected";
-                moduleText.Foreground = BrushManager.GetWarningBrush(this);
-                return;
-            }
-
-            // Resolve .mod to working directory
-            if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
-                modulePath = FindWorkingDirectory(modulePath);
-
-            if (string.IsNullOrEmpty(modulePath) || !Directory.Exists(modulePath))
-            {
-                moduleText.Text = "No module selected";
-                moduleText.Foreground = BrushManager.GetWarningBrush(this);
-                return;
-            }
-
-            // Extract module name from module.ifo
-            var ifoPath = Path.Combine(modulePath, "module.ifo");
-            string? moduleName = null;
-            if (File.Exists(ifoPath))
-            {
-                var ifo = IfoReader.Read(ifoPath);
-                moduleName = ifo.ModuleName.GetDefault();
-            }
-
-            moduleText.Text = $"Module: {moduleName ?? Path.GetFileName(modulePath)}";
-            moduleText.Foreground = BrushManager.GetInfoBrush(this);
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogUI(LogLevel.WARN, $"Failed to update module indicator: {ex.Message}");
-            moduleText.Text = "No module selected";
-            moduleText.Foreground = BrushManager.GetWarningBrush(this);
-        }
-    }
-
-    /// <summary>
-    /// Restores creature browser panel state from settings (#1145).
-    /// </summary>
-    private void RestoreCreatureBrowserPanelState()
-    {
-        var settings = SettingsService.Instance;
-        var outerContentGrid = this.FindControl<Grid>("OuterContentGrid");
-        var creatureBrowserPanel = this.FindControl<CreatureBrowserPanel>("CreatureBrowserPanel");
-        var creatureBrowserSplitter = this.FindControl<GridSplitter>("CreatureBrowserSplitter");
-
-        if (outerContentGrid == null || creatureBrowserPanel == null || creatureBrowserSplitter == null)
-            return;
-
-        var creatureBrowserColumn = outerContentGrid.ColumnDefinitions[0];
-        var creatureBrowserSplitterColumn = outerContentGrid.ColumnDefinitions[1];
-
-        if (settings.CreatureBrowserPanelVisible)
-        {
-            creatureBrowserColumn.Width = new GridLength(settings.CreatureBrowserPanelWidth, GridUnitType.Pixel);
-            creatureBrowserSplitterColumn.Width = new GridLength(5, GridUnitType.Pixel);
-            creatureBrowserPanel.IsVisible = true;
-            creatureBrowserSplitter.IsVisible = true;
-        }
-        else
-        {
-            creatureBrowserColumn.Width = new GridLength(0, GridUnitType.Pixel);
-            creatureBrowserSplitterColumn.Width = new GridLength(0, GridUnitType.Pixel);
-            creatureBrowserPanel.IsVisible = false;
-            creatureBrowserSplitter.IsVisible = false;
-        }
-    }
-
-    /// <summary>
-    /// Saves creature browser panel width to settings (#1145).
-    /// </summary>
-    private void SaveCreatureBrowserPanelSize()
-    {
-        var outerContentGrid = this.FindControl<Grid>("OuterContentGrid");
-        if (outerContentGrid == null) return;
-
-        var creatureBrowserColumn = outerContentGrid.ColumnDefinitions[0];
-        if (creatureBrowserColumn.Width.IsAbsolute && creatureBrowserColumn.Width.Value > 0)
-        {
-            SettingsService.Instance.CreatureBrowserPanelWidth = creatureBrowserColumn.Width.Value;
-        }
-    }
-
-    /// <summary>
-    /// Sets creature browser panel visibility (#1145).
-    /// </summary>
-    private void SetCreatureBrowserPanelVisible(bool visible)
-    {
-        var settings = SettingsService.Instance;
-        settings.CreatureBrowserPanelVisible = visible;
-
-        var outerContentGrid = this.FindControl<Grid>("OuterContentGrid");
-        var creatureBrowserPanel = this.FindControl<CreatureBrowserPanel>("CreatureBrowserPanel");
-        var creatureBrowserSplitter = this.FindControl<GridSplitter>("CreatureBrowserSplitter");
-
-        if (outerContentGrid == null || creatureBrowserPanel == null || creatureBrowserSplitter == null)
-            return;
-
-        var creatureBrowserColumn = outerContentGrid.ColumnDefinitions[0];
-        var creatureBrowserSplitterColumn = outerContentGrid.ColumnDefinitions[1];
-
-        if (visible)
-        {
-            creatureBrowserColumn.Width = new GridLength(settings.CreatureBrowserPanelWidth, GridUnitType.Pixel);
-            creatureBrowserSplitterColumn.Width = new GridLength(5, GridUnitType.Pixel);
-            creatureBrowserPanel.IsVisible = true;
-            creatureBrowserSplitter.IsVisible = true;
-        }
-        else
-        {
-            // Save current width before hiding
-            if (creatureBrowserColumn.Width.IsAbsolute && creatureBrowserColumn.Width.Value > 0)
-            {
-                settings.CreatureBrowserPanelWidth = creatureBrowserColumn.Width.Value;
-            }
-
-            creatureBrowserColumn.Width = new GridLength(0, GridUnitType.Pixel);
-            creatureBrowserSplitterColumn.Width = new GridLength(0, GridUnitType.Pixel);
-            creatureBrowserPanel.IsVisible = false;
-            creatureBrowserSplitter.IsVisible = false;
-        }
-
-        UpdateCreatureBrowserMenuState();
-    }
-
-    /// <summary>
-    /// Handles collapse/expand button clicks from CreatureBrowserPanel (#1145).
-    /// </summary>
-    private void OnCreatureBrowserCollapsedChanged(object? sender, bool isCollapsed)
-    {
-        SetCreatureBrowserPanelVisible(!isCollapsed);
-    }
-
-    /// <summary>
-    /// Updates the CreatureBrowserPanel's current file highlight (#1145).
-    /// </summary>
-    private void UpdateCreatureBrowserCurrentFile(string? filePath)
-    {
-        var creatureBrowserPanel = this.FindControl<CreatureBrowserPanel>("CreatureBrowserPanel");
-        if (creatureBrowserPanel != null)
-        {
-            creatureBrowserPanel.CurrentFilePath = filePath;
-
-            // Update module path if we have a file
-            if (!string.IsNullOrEmpty(filePath))
-            {
-                var modulePath = Path.GetDirectoryName(filePath);
-                if (!string.IsNullOrEmpty(modulePath))
-                {
-                    creatureBrowserPanel.ModulePath = modulePath;
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// Handles file selection in the creature browser panel (#1145).
-    /// </summary>
-    private async void OnCreatureBrowserFileSelected(object? sender, FileSelectedEventArgs e)
-    {
-        // Only load on single click (per issue requirements)
-        if (e.Entry.IsFromHak)
-        {
-            // HAK files can't be edited directly - show info
-            UpdateStatus($"HAK creatures are read-only: {e.Entry.Name}");
-            return;
-        }
-
-        if (string.IsNullOrEmpty(e.Entry.FilePath))
-        {
-            UnifiedLogger.LogUI(LogLevel.WARN, $"CreatureBrowserPanel: No file path for {e.Entry.Name}");
-            return;
-        }
-
-        // Skip if this is already the loaded file
-        if (string.Equals(_currentFilePath, e.Entry.FilePath, StringComparison.OrdinalIgnoreCase))
-        {
-            UnifiedLogger.LogUI(LogLevel.DEBUG, $"CreatureBrowserPanel: File already loaded: {e.Entry.Name}");
-            return;
-        }
-
-        // Auto-save if dirty
-        if (_isDirty && _currentCreature != null && !string.IsNullOrEmpty(_currentFilePath))
-        {
-            UpdateStatus("Auto-saving...");
-            await SaveFile();
-        }
-
-        // Load the selected file
-        await LoadFile(e.Entry.FilePath);
-
-        // Update the current file highlight
-        UpdateCreatureBrowserCurrentFile(e.Entry.FilePath);
-    }
-
-    /// <summary>
-    /// Handles file delete request from creature browser panel (#1368).
-    /// Shows confirmation dialog, deletes file, and refreshes list.
-    /// </summary>
-    private async void OnCreatureBrowserFileDeleteRequested(object? sender, FileDeleteRequestedEventArgs e)
-    {
-        var entry = e.Entry;
-        if (string.IsNullOrEmpty(entry.FilePath) || !File.Exists(entry.FilePath))
-        {
-            UpdateStatus("File not found on disk");
-            return;
-        }
-
-        var fileName = Path.GetFileName(entry.FilePath);
-
-        // Modal confirmation dialog (destructive action)
-        var confirmed = await DialogHelper.ShowConfirmationDialog(
-            this, "Confirm Delete", $"Delete \"{fileName}\" from disk?\n\nThis cannot be undone.");
-        if (!confirmed)
-            return;
-
-        try
-        {
-            var isDeletingCurrent = string.Equals(_currentFilePath, entry.FilePath, StringComparison.OrdinalIgnoreCase);
-
-            File.Delete(entry.FilePath);
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Deleted creature file: {fileName}");
-
-            if (isDeletingCurrent)
-            {
-                CloseFile();
-            }
-
-            UpdateStatus($"Deleted {fileName}");
-
-            // Refresh the creature browser panel
-            var creatureBrowserPanel = this.FindControl<CreatureBrowserPanel>("CreatureBrowserPanel");
-            if (creatureBrowserPanel != null)
-            {
-                await creatureBrowserPanel.RefreshAsync();
-            }
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to delete {fileName}: {ex.Message}");
-            UpdateStatus($"Delete failed: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Toggles creature browser panel visibility from View menu (#1145).
-    /// </summary>
-    private void OnToggleCreatureBrowserClick(object? sender, RoutedEventArgs e)
-    {
-        var settings = SettingsService.Instance;
-        SetCreatureBrowserPanelVisible(!settings.CreatureBrowserPanelVisible);
-    }
-
-    /// <summary>
-    /// Updates View menu checkmark for Creature Browser item (#1145).
-    /// </summary>
-    private void UpdateCreatureBrowserMenuState()
-    {
-        var menuItem = this.FindControl<MenuItem>("CreatureBrowserMenuItem");
-        if (menuItem != null)
-        {
-            var isVisible = SettingsService.Instance.CreatureBrowserPanelVisible;
-            menuItem.Icon = isVisible ? new TextBlock { Text = "✓" } : null;
-        }
-    }
-
-    #endregion
-
-    #region Window Lifecycle
-
-    private void OnWindowOpened(object? sender, EventArgs e)
-    {
-        Opened -= OnWindowOpened;
-
-        // Create cancellation token for async operations
-        _windowCts = new CancellationTokenSource();
-
-        UpdateStatus("Initializing...");
-        UpdateRecentFilesMenu();
-
-        // Fire and forget - don't block UI thread
-        // Service init and all loading happens in background
-        _ = InitializeAndLoadAsync(_windowCts.Token);
-    }
-
-    private async Task InitializeAndLoadAsync(CancellationToken token)
-    {
-        try
-        {
-            // Initialize services on background thread - this is the expensive part
-            await InitializeServicesAsync();
-
-            token.ThrowIfCancellationRequested();
-
-            // Now initialize panels that depend on services (must be on UI thread)
-            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                InitializePanels();
-                PopulateLanguageMenu();
-            });
-
-            token.ThrowIfCancellationRequested();
-
-            // Fire-and-forget cache and item loading in parallel
-            _ = InitializeCachesAsync(token);
-            StartGameItemsLoad(token);
-
-            await HandleStartupFileAsync();
-
-            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                UpdateStatus("Ready");
-            });
-        }
-        catch (OperationCanceledException)
-        {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Window initialization cancelled");
-        }
-    }
-
-    private async Task InitializeServicesAsync()
-    {
-        if (_servicesInitialized) return;
-
-        // Run the expensive GameDataService initialization on a background thread
-        await Task.Run(() =>
-        {
-            _gameDataService = new GameDataService();
-            _creatureDisplayService = new CreatureDisplayService(_gameDataService);
-            _itemViewModelFactory = new ItemViewModelFactory(_gameDataService);
-            _itemIconService = new ItemIconService(_gameDataService);
-            _audioService = new AudioService();
-
-            if (_gameDataService.IsConfigured)
-            {
-                UnifiedLogger.LogApplication(LogLevel.INFO, "GameDataService initialized - BIF lookup enabled");
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN, "GameDataService not configured - BIF lookup disabled");
-            }
-        });
-
-        _servicesInitialized = true;
-        UnifiedLogger.LogApplication(LogLevel.INFO, "Quartermaster services initialized");
-    }
-
-    private async Task InitializeCachesAsync(CancellationToken token)
-    {
-        if (GameData.IsConfigured)
-        {
-            UpdateStatus("Loading game data caches...");
-            try
-            {
-                token.ThrowIfCancellationRequested();
-                await DisplayService.InitializeCachesAsync();
-                UnifiedLogger.LogApplication(LogLevel.INFO, "Game data caches initialized");
-            }
-            catch (OperationCanceledException)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Cache initialization cancelled");
-                return;
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"Cache initialization failed: {ex.Message}");
-            }
-            UpdateStatus("Ready");
-        }
-    }
-
-    private async Task HandleStartupFileAsync()
-    {
-        var options = CommandLineService.Options;
-
-        if (string.IsNullOrEmpty(options.FilePath))
-            return;
-
-        if (!File.Exists(options.FilePath))
-        {
-            UnifiedLogger.LogApplication(LogLevel.WARN, $"Command line file not found: {UnifiedLogger.SanitizePath(options.FilePath)}");
-            UpdateStatus($"File not found: {Path.GetFileName(options.FilePath)}");
-            return;
-        }
-
-        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loading file from command line: {UnifiedLogger.SanitizePath(options.FilePath)}");
-        await LoadFile(options.FilePath);
-    }
-
-    private void RestoreWindowPosition()
-    {
-        var settings = SettingsService.Instance;
-        Position = new Avalonia.PixelPoint((int)settings.WindowLeft, (int)settings.WindowTop);
-        Width = settings.WindowWidth;
-        Height = settings.WindowHeight;
-
-        if (settings.WindowMaximized)
-        {
-            WindowState = WindowState.Maximized;
-        }
-
-        // Restore sidebar width
-        if (MainGrid.ColumnDefinitions.Count > 0)
-        {
-            MainGrid.ColumnDefinitions[0].Width = new Avalonia.Controls.GridLength(settings.SidebarWidth);
-        }
-    }
-
-    private void SaveWindowPosition()
-    {
-        var settings = SettingsService.Instance;
-
-        if (WindowState == WindowState.Normal)
-        {
-            settings.WindowLeft = Position.X;
-            settings.WindowTop = Position.Y;
-            settings.WindowWidth = Width;
-            settings.WindowHeight = Height;
-        }
-        settings.WindowMaximized = WindowState == WindowState.Maximized;
-
-        // Save sidebar width
-        if (MainGrid.ColumnDefinitions.Count > 0)
-        {
-            settings.SidebarWidth = MainGrid.ColumnDefinitions[0].Width.Value;
-        }
-
-        // Save creature browser panel size (#1145)
-        SaveCreatureBrowserPanelSize();
-    }
-
-    private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
-    {
-        if (_isDirty)
-        {
-            e.Cancel = true;
-            var result = await DialogHelper.ShowUnsavedChangesDialog(this);
-            if (result == "Save")
-            {
-                await SaveFile();
-                _isDirty = false; // Clear dirty before Close() to prevent re-entry
-                Close();
-            }
-            else if (result == "Discard")
-            {
-                _isDirty = false;
-                Close();
-            }
-            // Cancel: do nothing, window stays open
-        }
-        else
-        {
-            // Cancel all async operations
-            _windowCts?.Cancel();
-            _windowCts?.Dispose();
-
-            SaveWindowPosition();
-            _audioService?.Dispose();
-            _gameDataService?.Dispose();
-        }
-    }
-
-    #endregion
-
     #region Edit Operations
 
     private void OnDeleteClick(object? sender, RoutedEventArgs e)
@@ -917,7 +363,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             {
                 CharacterNameText.Text = "No Character Loaded";
                 CharacterSummaryText.Text = "";
-                // Clear portrait
                 if (portraitImage != null)
                 {
                     portraitImage.Source = null;
@@ -929,19 +374,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 return;
             }
 
-            // Get character name using display service
             UnifiedLogger.LogApplication(LogLevel.DEBUG, "UpdateCharacterHeader: Setting name");
             CharacterNameText.Text = CreatureDisplayService.GetCreatureFullName(_currentCreature);
 
-            // Build race/class summary using display service
             UnifiedLogger.LogApplication(LogLevel.DEBUG, "UpdateCharacterHeader: Setting summary");
             CharacterSummaryText.Text = DisplayService.GetCreatureSummary(_currentCreature);
 
-            // Load portrait image (#916)
             if (portraitImage != null && portraitPlaceholder != null)
             {
-                // Use PortraitId if set, otherwise use Portrait string field directly
-                // BIC files often have PortraitId=0 but a valid Portrait string (e.g., "po_hu_f_07_")
                 string? portraitResRef;
                 if (_currentCreature.PortraitId > 0)
                 {
@@ -949,7 +389,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 }
                 else if (!string.IsNullOrEmpty(_currentCreature.Portrait))
                 {
-                    // Use the Portrait string field directly - it's already the ResRef
                     portraitResRef = _currentCreature.Portrait;
                 }
                 else
@@ -959,7 +398,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait lookup: PortraitId={_currentCreature.PortraitId}, Portrait='{_currentCreature.Portrait ?? ""}', ResRef={portraitResRef ?? "null"}");
                 if (!string.IsNullOrEmpty(portraitResRef))
                 {
-                    // ImageService.GetPortrait handles size suffix internally (tries m, l, s)
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateCharacterHeader: Loading portrait {portraitResRef}");
                     var portrait = IconService.GetPortrait(portraitResRef);
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateCharacterHeader: GetPortrait returned {(portrait != null ? "bitmap" : "null")}");
@@ -974,7 +412,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     }
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait not found: {portraitResRef}");
                 }
-                // No portrait available - show placeholder
                 portraitImage.Source = null;
                 portraitImage.IsVisible = false;
                 portraitPlaceholder.IsVisible = true;
@@ -1003,14 +440,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void MarkDirty([CallerMemberName] string? caller = null)
     {
-        // Don't mark dirty during file loading - panels may fire change events
         if (_isLoading)
         {
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"MarkDirty: Blocked (isLoading=true) from {caller}");
             return;
         }
 
-        // Don't mark dirty if no file is loaded - stale events from clearing panels
         if (_currentCreature == null)
         {
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"MarkDirty: Blocked (no file loaded) from {caller}");
@@ -1027,11 +462,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void LoadAllPanels(UtcFile? creature)
     {
-        // Pass file type to panels that need it for BIC-specific handling
         StatsPanelContent.SetFileType(_isBicFile);
         StatsPanelContent.LoadCreature(creature);
 
-        // Pass equipped items to StatsPanel for BAB calculation
         var equippedItems = _equipmentSlots
             .Where(s => s.HasItem && s.EquippedItem?.Item != null)
             .Select(s => s.EquippedItem!.Item);
@@ -1048,7 +481,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         AdvancedPanelContent.SetFileType(_isBicFile);
         AdvancedPanelContent.LoadCreature(creature);
 
-        // Load QuickBar for BIC files only
         if (_isBicFile && creature is BicFile bicFile)
         {
             QuickBarPanelContent.LoadQuickBar(bicFile);
@@ -1058,30 +490,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             QuickBarPanelContent.ClearPanel();
         }
 
-        // Update UI visibility based on file type
         UpdateFileTypeVisibility();
     }
 
-    /// <summary>
-    /// Update UI element visibility based on whether loaded file is BIC or UTC.
-    /// BIC files (player characters) don't have scripts, conversation, or some advanced properties.
-    /// UTC files (creature blueprints) don't have QuickBar, experience, gold, or age.
-    /// </summary>
     private void UpdateFileTypeVisibility()
     {
-        // Hide Scripts nav button for BIC files (player characters don't have scripts)
         NavScripts.IsVisible = !_isBicFile;
-
-        // Show QuickBar nav button only for BIC files (player characters have quickbar)
         NavQuickBar.IsVisible = _isBicFile;
 
-        // If currently on Scripts section and loading a BIC, navigate away
         if (_isBicFile && _currentSection == "Scripts")
         {
             NavigateToSection("Character", NavCharacter);
         }
 
-        // If currently on QuickBar section and loading a UTC, navigate away
         if (!_isBicFile && _currentSection == "QuickBar")
         {
             NavigateToSection("Character", NavCharacter);
@@ -1090,7 +511,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void ClearAllPanels()
     {
-        // Reset file type for all panels that track it
         StatsPanelContent.SetFileType(false);
         StatsPanelContent.ClearStats();
         CharacterPanelContent.SetFileType(false);
@@ -1105,7 +525,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         AdvancedPanelContent.ClearPanel();
         QuickBarPanelContent.ClearPanel();
 
-        // Reset nav button visibility to defaults (Scripts visible, QuickBar hidden)
         NavScripts.IsVisible = true;
         NavQuickBar.IsVisible = false;
     }
@@ -1184,9 +603,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     #region Language Menu (#1363)
 
-    /// <summary>
-    /// Populates the View > Language submenu with detected languages and gender variants.
-    /// </summary>
     private void PopulateLanguageMenu()
     {
         var languageMenu = this.FindControl<MenuItem>("LanguageMenu");
@@ -1212,7 +628,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             var langName = LanguageHelper.GetDisplayName(language);
             var langCode = LanguageHelper.GetLanguageCode(language);
 
-            // Male variant
             var maleItem = new MenuItem
             {
                 Header = $"{langName}",
@@ -1222,7 +637,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             maleItem.Click += OnLanguageMenuItemClick;
             languageMenu.Items.Add(maleItem);
 
-            // Female variant - check if dialogf.tlk exists
             var femaleTlkPath = settings.GetTlkPath(language, Gender.Female);
             var maleTlkPath = settings.GetTlkPath(language, Gender.Male);
             var hasFemaleVariant = femaleTlkPath != null && maleTlkPath != null
@@ -1242,9 +656,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
-    /// <summary>
-    /// Handles language menu item selection. Updates RadoubSettings and reloads game data.
-    /// </summary>
     private async void OnLanguageMenuItemClick(object? sender, RoutedEventArgs e)
     {
         if (sender is not MenuItem menuItem || menuItem.Tag is not (string langCode, bool useFemale))
@@ -1254,7 +665,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var oldLang = settings.TlkLanguage;
         var oldFemale = settings.TlkUseFemale;
 
-        // Skip if no change
         if (langCode == oldLang && useFemale == oldFemale)
             return;
 
@@ -1268,10 +678,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         UnifiedLogger.LogApplication(LogLevel.INFO,
             $"Language changed to {langDisplay}{genderDisplay}");
 
-        // Update checkmarks
         PopulateLanguageMenu();
 
-        // Reload GameDataService with new TLK and refresh display
         UpdateStatus($"Switching to {langDisplay}{genderDisplay}...");
 
         try
@@ -1281,16 +689,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 _gameDataService?.ReloadConfiguration();
             });
 
-            // Rebuild downstream caches that hold resolved TLK strings
             if (_creatureDisplayService != null)
             {
                 await _creatureDisplayService.Feats.RebuildCacheAsync();
             }
 
-            // Rebuild item palette cache with new language
             await ClearAndReloadPaletteCacheAsync();
 
-            // Refresh the current creature display if one is loaded
             if (_currentCreature != null)
             {
                 await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
@@ -1307,237 +712,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Language switch failed: {ex.Message}");
             UpdateStatus("Language switch failed");
         }
-    }
-
-    #endregion
-
-    #region Menu Handlers - Dialogs
-
-    private void OnSettingsClick(object? sender, RoutedEventArgs e)
-    {
-        var settingsWindow = new SettingsWindow();
-        settingsWindow.SetMainWindow(this);
-        settingsWindow.Show(this);
-    }
-
-    private void OnAboutClick(object? sender, RoutedEventArgs e)
-    {
-        DialogHelper.ShowAboutDialog(this);
-    }
-
-    private async void OnLevelUpClick(object? sender, RoutedEventArgs e)
-    {
-        if (_currentCreature == null)
-            return;
-
-        var wizard = new LevelUpWizardWindow(DisplayService, _currentCreature);
-        await wizard.ShowDialog(this);
-
-        if (wizard.Confirmed)
-        {
-            // Refresh all panels to show updated data
-            MarkDirty();
-            LoadAllPanels(_currentCreature);
-            UpdateCharacterHeader();
-            UpdateStatus("Character leveled up");
-        }
-    }
-
-    private void OnViewLevelHistoryClick(object? sender, RoutedEventArgs e)
-    {
-        if (_currentCreature == null)
-            return;
-
-        var history = LevelHistoryService.Decode(_currentCreature.Comment);
-        if (history == null || history.Count == 0)
-        {
-            DialogHelper.ShowMessageDialog(this, "Level History", "No level history recorded for this character.\n\nLevel history is recorded when you level up using Quartermaster's Level Up wizard.");
-            return;
-        }
-
-        var formatted = LevelHistoryService.FormatForDisplay(
-            history,
-            DisplayService.GetClassName,
-            DisplayService.GetFeatName,
-            DisplayService.GetSkillName);
-
-        DialogHelper.ShowMessageDialog(this, $"Level History ({history.Count} levels)", formatted);
-    }
-
-    private async void OnReLevelClick(object? sender, RoutedEventArgs e)
-    {
-        if (_currentCreature == null)
-            return;
-
-        int totalLevel = _currentCreature.ClassList.Sum(c => c.ClassLevel);
-        if (totalLevel <= 1)
-        {
-            ShowErrorDialog("Cannot Re-Level", "Character is already at level 1.");
-            return;
-        }
-
-        var firstClass = _currentCreature.ClassList.FirstOrDefault();
-        var className = firstClass != null ? DisplayService.GetClassName(firstClass.Class) : "Unknown";
-
-        var confirmed = await DialogHelper.ShowConfirmationDialog(
-            this,
-            "Re-Level Character",
-            $"This will reset the character to level 1 {className}:\n\n" +
-            $"• All class levels beyond 1 will be removed\n" +
-            $"• All skills will be reset to 0\n" +
-            $"• All choosable feats will be removed\n" +
-            $"• Racial and class-granted feats will be kept\n\n" +
-            $"After reset, use Level Up (Ctrl+L) to rebuild {totalLevel - 1} level(s).\n\n" +
-            $"Continue?");
-
-        if (!confirmed)
-            return;
-
-        // Strip character to level 1
-        StripCharacterToLevelOne();
-
-        MarkDirty();
-        LoadAllPanels(_currentCreature);
-        UpdateCharacterHeader();
-        UpdateStatus($"Character reset to level 1. Use Level Up to rebuild.");
-    }
-
-    private void StripCharacterToLevelOne()
-    {
-        if (_currentCreature == null)
-            return;
-
-        StripCreatureToLevelOne(_currentCreature);
-    }
-
-    private async void OnDownLevelClick(object? sender, RoutedEventArgs e)
-    {
-        if (_currentCreature == null)
-            return;
-
-        int totalLevel = _currentCreature.ClassList.Sum(c => c.ClassLevel);
-        if (totalLevel <= 1)
-        {
-            ShowErrorDialog("Cannot Down-Level", "Character is already at level 1.");
-            return;
-        }
-
-        var firstClass = _currentCreature.ClassList.FirstOrDefault();
-        var className = firstClass != null ? DisplayService.GetClassName(firstClass.Class) : "Unknown";
-        var originalName = CreatureDisplayService.GetCreatureFullName(_currentCreature);
-
-        var confirmed = await DialogHelper.ShowConfirmationDialog(
-            this,
-            "Down-Level Character",
-            $"This will save a level 1 copy of \"{originalName}\" as a new file:\n\n" +
-            $"• The copy will be level 1 {className}\n" +
-            $"• All skills will be reset to 0\n" +
-            $"• Only racial/class-granted feats will be kept\n" +
-            $"• The original file will not be modified\n\n" +
-            $"Choose where to save the level 1 copy.");
-
-        if (!confirmed)
-            return;
-
-        // Show save dialog
-        var filters = new List<Avalonia.Platform.Storage.FilePickerFileType>
-        {
-            new("NWN Creature") { Patterns = new[] { "*.utc" } },
-            new("NWN Character") { Patterns = new[] { "*.bic" } },
-            new("All Files") { Patterns = new[] { "*" } }
-        };
-
-        var suggestedName = $"{Path.GetFileNameWithoutExtension(_currentFilePath ?? "creature")}_lvl1{Path.GetExtension(_currentFilePath ?? ".utc")}";
-
-        var storageProvider = StorageProvider;
-        var result = await storageProvider.SaveFilePickerAsync(new Avalonia.Platform.Storage.FilePickerSaveOptions
-        {
-            Title = "Save Down-Leveled Copy",
-            FileTypeChoices = filters,
-            SuggestedFileName = suggestedName
-        });
-
-        if (result == null)
-            return;
-
-        var savePath = result.Path.LocalPath;
-
-        try
-        {
-            // Create a deep copy (serialize and deserialize)
-            var copy = CreateCreatureCopy(_currentCreature);
-
-            // Strip the copy to level 1
-            StripCreatureToLevelOne(copy);
-
-            // Save the copy
-            if (savePath.EndsWith(".bic", StringComparison.OrdinalIgnoreCase))
-            {
-                // BIC files wrap the UTC data in an additional layer
-                // For simplicity, just save as UTC for now
-                Radoub.Formats.Utc.UtcWriter.Write(copy, savePath);
-            }
-            else
-            {
-                Radoub.Formats.Utc.UtcWriter.Write(copy, savePath);
-            }
-
-            UpdateStatus($"Saved level 1 copy to {Path.GetFileName(savePath)}");
-        }
-        catch (Exception ex)
-        {
-            ShowErrorDialog("Save Failed", $"Failed to save level 1 copy: {ex.Message}");
-        }
-    }
-
-    private UtcFile CreateCreatureCopy(UtcFile original)
-    {
-        // Create a copy by serializing and deserializing
-        var buffer = Radoub.Formats.Utc.UtcWriter.Write(original);
-        return Radoub.Formats.Utc.UtcReader.Read(buffer);
-    }
-
-    private void StripCreatureToLevelOne(UtcFile creature)
-    {
-        // Keep first class at level 1, remove others
-        if (creature.ClassList.Count > 0)
-        {
-            var firstClass = creature.ClassList[0];
-            firstClass.ClassLevel = 1;
-            creature.ClassList.Clear();
-            creature.ClassList.Add(firstClass);
-        }
-
-        // Get feats to keep (racial + class granted at level 1)
-        var featsToKeep = new HashSet<ushort>();
-
-        // Racial feats
-        var racialFeats = DisplayService.Feats.GetRaceGrantedFeatIds(creature.Race);
-        foreach (var f in racialFeats)
-            featsToKeep.Add((ushort)f);
-
-        // Class granted feats at level 1
-        if (creature.ClassList.Count > 0)
-        {
-            var classGrantedFeats = DisplayService.Feats.GetClassGrantedFeatIds(creature.ClassList[0].Class);
-            foreach (var f in classGrantedFeats)
-                featsToKeep.Add((ushort)f);
-        }
-
-        // Filter feat list to only keep granted feats
-        var newFeatList = creature.FeatList.Where(f => featsToKeep.Contains(f)).ToList();
-        creature.FeatList.Clear();
-        foreach (var f in newFeatList)
-            creature.FeatList.Add(f);
-
-        // Reset all skills to 0
-        for (int i = 0; i < creature.SkillList.Count; i++)
-            creature.SkillList[i] = 0;
-    }
-
-    private void ShowErrorDialog(string title, string message)
-    {
-        DialogHelper.ShowErrorDialog(this, title, message);
     }
 
     #endregion
