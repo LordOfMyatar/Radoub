@@ -17,6 +17,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.74] - 2026-02-21
+**Branch**: `radoub/issue-1442` | **PR**: #TBD
+
+### Sprint: Tech Debt - Shared Libraries & Infrastructure (#1442)
+
+- [ ] #1371 - Split RadoubSettings.cs (646 lines)
+- [ ] #1372 - Split ThemeManager.cs (637 lines)
+- [ ] #1388 - Split BicReaderTests.cs (558 lines)
+- [ ] #1387 - Migrate test projects from xunit v2 to xunit.v3
+- [ ] #1436 - Replace dotnet/nbgv GitHub Action with local tool
+
+---
+
 ## [0.9.73] - 2026-02-17
 **Branch**: `trebuchet/issue-1402` | **PR**: #1404
 
