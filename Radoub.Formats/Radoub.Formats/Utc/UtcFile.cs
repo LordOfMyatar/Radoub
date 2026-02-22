@@ -505,6 +505,11 @@ public class UtcFile
     /// </summary>
     public byte StartingPackage { get; set; }
 
+    /// <summary>
+    /// Index into hen_familiar.2da (familiar type for wizard/sorcerer)
+    /// </summary>
+    public int FamiliarType { get; set; }
+
     // Conversation
 
     /// <summary>

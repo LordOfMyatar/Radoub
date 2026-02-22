@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -22,17 +23,18 @@ public partial class NewCharacterWizardWindow
 
         _step3Loaded = true;
 
-        // Load appearances
-        var appearances = _displayService.GetAllAppearances();
-        _appearanceComboBox.ItemsSource = appearances;
+        // Load appearances into backing list and populate ListBox
+        _allAppearances = _displayService.GetAllAppearances();
+        _filteredAppearances = new List<AppearanceInfo>(_allAppearances);
+        _appearanceListBox.ItemsSource = _filteredAppearances;
 
         // Set default appearance based on race
         var defaultAppId = GetDefaultAppearanceForRace(_selectedRaceId);
-        var defaultApp = appearances.FirstOrDefault(a => a.AppearanceId == defaultAppId);
+        var defaultApp = _allAppearances.FirstOrDefault(a => a.AppearanceId == defaultAppId);
         if (defaultApp != null)
-            _appearanceComboBox.SelectedItem = defaultApp;
-        else if (appearances.Count > 0)
-            _appearanceComboBox.SelectedItem = appearances[0];
+            _appearanceListBox.SelectedItem = defaultApp;
+        else if (_allAppearances.Count > 0)
+            _appearanceListBox.SelectedItem = _allAppearances[0];
 
         // Load phenotypes
         var phenotypes = _displayService.GetAllPhenotypes();
@@ -51,9 +53,31 @@ public partial class NewCharacterWizardWindow
         UpdateAllColorSwatches();
     }
 
+    private void OnAppearanceSearchChanged(object? sender, TextChangedEventArgs e)
+    {
+        var filter = _appearanceSearchBox.Text?.Trim() ?? "";
+        if (string.IsNullOrEmpty(filter))
+        {
+            _filteredAppearances = new List<AppearanceInfo>(_allAppearances);
+        }
+        else
+        {
+            _filteredAppearances = _allAppearances
+                .Where(a => a.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        var previousSelection = _appearanceListBox.SelectedItem as AppearanceInfo;
+        _appearanceListBox.ItemsSource = _filteredAppearances;
+
+        // Restore selection if still in filtered list
+        if (previousSelection != null && _filteredAppearances.Contains(previousSelection))
+            _appearanceListBox.SelectedItem = previousSelection;
+    }
+
     private void OnAppearanceSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (_appearanceComboBox.SelectedItem is not AppearanceInfo selected)
+        if (_appearanceListBox.SelectedItem is not AppearanceInfo selected)
             return;
 
         _selectedAppearanceId = selected.AppearanceId;

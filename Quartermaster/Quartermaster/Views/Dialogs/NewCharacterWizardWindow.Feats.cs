@@ -386,6 +386,25 @@ public partial class NewCharacterWizardWindow
         ValidateCurrentStep();
     }
 
+    private void OnAvailableFeatSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_availableFeatsListBox.SelectedItem is FeatDisplayItem feat)
+            UpdateFeatDescription(feat.FeatId, feat.Name);
+    }
+
+    private void OnSelectedFeatSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_selectedFeatsListBox.SelectedItem is FeatDisplayItem feat)
+            UpdateFeatDescription(feat.FeatId, feat.Name);
+    }
+
+    private void UpdateFeatDescription(int featId, string name)
+    {
+        _featDescriptionTitle.Text = name;
+        var desc = _displayService.GetFeatDescription(featId);
+        _featDescriptionText.Text = !string.IsNullOrEmpty(desc) ? desc : "No description available.";
+    }
+
     private static string GetFeatCategoryAbbrev(FeatCategory category) => category switch
     {
         FeatCategory.Combat => "Cmb",

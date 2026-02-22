@@ -145,15 +145,15 @@ public partial class NewCharacterWizardWindow
             RefBonus = (short)saves.Reflex,
             WillBonus = (short)saves.Will,
 
-            // Alignment — True Neutral
-            GoodEvil = 50,
-            LawfulChaotic = 50,
+            // Alignment (Step 4)
+            GoodEvil = _selectedGoodEvil,
+            LawfulChaotic = _selectedLawChaos,
 
             // Voice set (Step 10)
             SoundSetFile = _selectedVoiceSetId,
 
-            // Behavior defaults
-            FactionID = 1,
+            // Behavior defaults (Step 10 faction)
+            FactionID = _selectedFactionId,
             PerceptionRange = 11,
             WalkRate = 4,
             DecayTime = 5000,
@@ -161,6 +161,9 @@ public partial class NewCharacterWizardWindow
 
             // Starting package (Step 4)
             StartingPackage = _selectedPackageId != 255 ? _selectedPackageId : (byte)0,
+
+            // Familiar (Step 4, Wizard/Sorcerer)
+            FamiliarType = _selectedFamiliarType,
 
             // Class (Step 4) with spells (Step 8)
             ClassList = new List<CreatureClass> { creatureClass },

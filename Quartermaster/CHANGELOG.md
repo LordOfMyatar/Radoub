@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.14-alpha] - 2026-02-22
+**Branch**: `quartermaster/issue-1482` | **PR**: #1483
+
+### Sprint: New Character Wizard Missing Features (#1482)
+
+- [x] #1477 - Fix: Creature browser now refreshes after saving new creature
+- [x] #1461 - Feat: 3x3 alignment grid with class restriction validation
+- [x] #1440 - Feat: Faction dropdown for UTC creation (Step 10)
+- [x] #1478 - Feat: Searchable appearance type selection (TextBox filter + ListBox)
+- [x] #1476 - Feat: Save location picker moved to Step 1 of wizard
+- [x] #1472 - Feat: Feat description panel shows selected feat details
+- [x] #1459 - Feat: Familiar selection for Wizard/Sorcerer (hen_familiar.2da + FamiliarType GFF field)
+
+---
+
 ## [0.1.79-alpha] - 2026-02-22
 **Branch**: `quartermaster/issue-1469` | **PR**: #1471
 

@@ -1,14 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Avalonia.Platform.Storage;
 using Quartermaster.Services;
 using Quartermaster.Views;
 using Radoub.Formats.Services;
+using Radoub.Formats.Settings;
 using Radoub.Formats.Utc;
 using Radoub.UI.Services;
 
@@ -71,9 +74,11 @@ public partial class NewCharacterWizardWindow : Window
     private bool _step3Loaded;
     private PaletteColorService? _paletteColorService;
 
-    // Step 4: Class & Package
+    // Step 4: Class, Package & Alignment
     private int _selectedClassId = -1;
     private byte _selectedPackageId = 255; // sentinel for none
+    private byte _selectedGoodEvil = 50; // 0=Evil, 50=Neutral, 100=Good — default True Neutral
+    private byte _selectedLawChaos = 50; // 0=Chaotic, 50=Neutral, 100=Lawful
     private int _favoredClassId = -1;
     private List<ClassDisplayItem> _allClasses = new();
     private List<ClassDisplayItem> _filteredClasses = new();
@@ -126,6 +131,7 @@ public partial class NewCharacterWizardWindow : Window
     // Step 10: Summary (was Step 8)
     private string _characterName = "";
     private byte _paletteId = 1;
+    private ushort _selectedFactionId = 1; // Default: Hostile (standard NWN default for NPCs)
 
     // Controls - navigation
     private readonly TextBlock _sidebarTitle;
@@ -142,6 +148,9 @@ public partial class NewCharacterWizardWindow : Window
     private readonly Border _bicCard;
     private readonly StackPanel _defaultScriptsPanel;
     private readonly CheckBox _defaultScriptsCheckBox;
+    private readonly TextBox _saveLocationTextBox;
+    private readonly Button _browseSaveLocationButton;
+    private readonly TextBlock _saveLocationNote;
 
     // Step 2 controls
     private readonly TextBox _raceSearchBox;
@@ -163,7 +172,10 @@ public partial class NewCharacterWizardWindow : Window
     private readonly TextBlock _raceDescriptionLabel;
 
     // Step 3 controls
-    private readonly ComboBox _appearanceComboBox;
+    private readonly TextBox _appearanceSearchBox;
+    private readonly ListBox _appearanceListBox;
+    private List<AppearanceInfo> _allAppearances = new();
+    private List<AppearanceInfo> _filteredAppearances = new();
     private readonly ComboBox _phenotypeComboBox;
     private readonly Image _portraitPreviewImage;
     private readonly TextBlock _portraitNameLabel;
@@ -211,6 +223,8 @@ public partial class NewCharacterWizardWindow : Window
     private readonly ListBox _availableFeatsListBox;
     private readonly ListBox _selectedFeatsListBox;
     private readonly TextBlock _selectedFeatCountLabel;
+    private readonly TextBlock _featDescriptionTitle;
+    private readonly TextBlock _featDescriptionText;
 
     // Step 7 controls (Skills, was Step 6)
     private readonly TextBlock _skillPointsRemainingLabel;
@@ -248,10 +262,14 @@ public partial class NewCharacterWizardWindow : Window
     private readonly TextBlock _paletteIdLabelText;
     private readonly ComboBox _paletteIdComboBox;
     private readonly TextBlock _paletteIdNote;
+    private readonly TextBlock _factionLabelText;
+    private readonly ComboBox _factionComboBox;
+    private readonly TextBlock _factionNote;
     private readonly TextBlock _summaryFileTypeLabel;
     private readonly TextBlock _summaryRaceLabel;
     private readonly TextBlock _summaryAppearanceLabel;
     private readonly TextBlock _summaryClassLabel;
+    private readonly TextBlock _summaryAlignmentLabel;
     private readonly TextBlock _summaryAbilitiesLabel;
     private readonly TextBlock _summaryFeatsLabel;
     private readonly TextBlock _summarySkillsLabel;
@@ -279,11 +297,16 @@ public partial class NewCharacterWizardWindow : Window
     private readonly StackPanel _domainSelectionPanel;
     private readonly ComboBox _domain1ComboBox;
     private readonly ComboBox _domain2ComboBox;
+    private readonly StackPanel _familiarSelectionPanel;
+    private readonly ComboBox _familiarComboBox;
+    private int _selectedFamiliarType;
     private readonly TextBlock _classDescriptionLabel;
     private readonly TextBlock _prestigeToggleArrow;
     private readonly StackPanel _prestigePlanningContent;
     private readonly ComboBox _prestigeClassComboBox;
     private readonly TextBlock _prestigePrereqLabel;
+    private readonly ToggleButton[] _alignmentButtons;
+    private readonly TextBlock _alignmentRestrictionWarning;
 
     /// <summary>
     /// The created creature, available after Confirmed is true.
@@ -295,6 +318,10 @@ public partial class NewCharacterWizardWindow : Window
     /// </summary>
     public bool IsBicFile => _isBicFile;
 
+    /// <summary>
+    /// The save file path chosen in Step 1, or null if the user skipped.
+    /// </summary>
+    public string? ChosenSavePath { get; private set; }
 
     /// <summary>
     /// Whether the user completed the wizard.
@@ -355,6 +382,9 @@ public partial class NewCharacterWizardWindow : Window
         _bicCard = this.FindControl<Border>("BicCard")!;
         _defaultScriptsPanel = this.FindControl<StackPanel>("DefaultScriptsPanel")!;
         _defaultScriptsCheckBox = this.FindControl<CheckBox>("DefaultScriptsCheckBox")!;
+        _saveLocationTextBox = this.FindControl<TextBox>("SaveLocationTextBox")!;
+        _browseSaveLocationButton = this.FindControl<Button>("BrowseSaveLocationButton")!;
+        _saveLocationNote = this.FindControl<TextBlock>("SaveLocationNote")!;
 
         // Step 2 controls
         _raceSearchBox = this.FindControl<TextBox>("RaceSearchBox")!;
@@ -376,7 +406,8 @@ public partial class NewCharacterWizardWindow : Window
         _raceDescriptionLabel = this.FindControl<TextBlock>("RaceDescriptionLabel")!;
 
         // Step 3 controls
-        _appearanceComboBox = this.FindControl<ComboBox>("AppearanceComboBox")!;
+        _appearanceSearchBox = this.FindControl<TextBox>("AppearanceSearchBox")!;
+        _appearanceListBox = this.FindControl<ListBox>("AppearanceListBox")!;
         _phenotypeComboBox = this.FindControl<ComboBox>("PhenotypeComboBox")!;
         _portraitPreviewImage = this.FindControl<Image>("PortraitPreviewImage")!;
         _portraitNameLabel = this.FindControl<TextBlock>("PortraitNameLabel")!;
@@ -430,11 +461,26 @@ public partial class NewCharacterWizardWindow : Window
         _domainSelectionPanel = this.FindControl<StackPanel>("DomainSelectionPanel")!;
         _domain1ComboBox = this.FindControl<ComboBox>("Domain1ComboBox")!;
         _domain2ComboBox = this.FindControl<ComboBox>("Domain2ComboBox")!;
+        _familiarSelectionPanel = this.FindControl<StackPanel>("FamiliarSelectionPanel")!;
+        _familiarComboBox = this.FindControl<ComboBox>("FamiliarComboBox")!;
         _classDescriptionLabel = this.FindControl<TextBlock>("ClassDescriptionLabel")!;
         _prestigeToggleArrow = this.FindControl<TextBlock>("PrestigeToggleArrow")!;
         _prestigePlanningContent = this.FindControl<StackPanel>("PrestigePlanningContent")!;
         _prestigeClassComboBox = this.FindControl<ComboBox>("PrestigeClassComboBox")!;
         _prestigePrereqLabel = this.FindControl<TextBlock>("PrestigePrereqLabel")!;
+        _alignmentButtons = new[]
+        {
+            this.FindControl<ToggleButton>("AlignLG")!,
+            this.FindControl<ToggleButton>("AlignNG")!,
+            this.FindControl<ToggleButton>("AlignCG")!,
+            this.FindControl<ToggleButton>("AlignLN")!,
+            this.FindControl<ToggleButton>("AlignTN")!,
+            this.FindControl<ToggleButton>("AlignCN")!,
+            this.FindControl<ToggleButton>("AlignLE")!,
+            this.FindControl<ToggleButton>("AlignNE")!,
+            this.FindControl<ToggleButton>("AlignCE")!
+        };
+        _alignmentRestrictionWarning = this.FindControl<TextBlock>("AlignmentRestrictionWarning")!;
 
         // Step 5 controls
         _abilityPointsRemainingLabel = this.FindControl<TextBlock>("AbilityPointsRemainingLabel")!;
@@ -449,6 +495,8 @@ public partial class NewCharacterWizardWindow : Window
         _availableFeatsListBox = this.FindControl<ListBox>("AvailableFeatsListBox")!;
         _selectedFeatsListBox = this.FindControl<ListBox>("SelectedFeatsListBox")!;
         _selectedFeatCountLabel = this.FindControl<TextBlock>("SelectedFeatCountLabel")!;
+        _featDescriptionTitle = this.FindControl<TextBlock>("FeatDescriptionTitle")!;
+        _featDescriptionText = this.FindControl<TextBlock>("FeatDescriptionText")!;
 
         // Step 7 controls (Skills)
         _skillPointsRemainingLabel = this.FindControl<TextBlock>("SkillPointsRemainingLabel")!;
@@ -486,10 +534,15 @@ public partial class NewCharacterWizardWindow : Window
         _paletteIdComboBox = this.FindControl<ComboBox>("PaletteIdComboBox")!;
         PopulatePaletteCategories();
         _paletteIdNote = this.FindControl<TextBlock>("PaletteIdNote")!;
+        _factionLabelText = this.FindControl<TextBlock>("FactionLabelText")!;
+        _factionComboBox = this.FindControl<ComboBox>("FactionComboBox")!;
+        _factionNote = this.FindControl<TextBlock>("FactionNote")!;
+        PopulateFactions();
         _summaryFileTypeLabel = this.FindControl<TextBlock>("SummaryFileTypeLabel")!;
         _summaryRaceLabel = this.FindControl<TextBlock>("SummaryRaceLabel")!;
         _summaryAppearanceLabel = this.FindControl<TextBlock>("SummaryAppearanceLabel")!;
         _summaryClassLabel = this.FindControl<TextBlock>("SummaryClassLabel")!;
+        _summaryAlignmentLabel = this.FindControl<TextBlock>("SummaryAlignmentLabel")!;
         _summaryAbilitiesLabel = this.FindControl<TextBlock>("SummaryAbilitiesLabel")!;
         _summaryFeatsLabel = this.FindControl<TextBlock>("SummaryFeatsLabel")!;
         _summarySkillsLabel = this.FindControl<TextBlock>("SummarySkillsLabel")!;
@@ -541,6 +594,38 @@ public partial class NewCharacterWizardWindow : Window
         }
 
         _paletteIdComboBox.SelectedIndex = defaultIndex;
+    }
+
+    private void PopulateFactions()
+    {
+        _factionComboBox.Items.Clear();
+
+        var factions = _displayService.GetAllFactions(RadoubSettings.Instance.CurrentModulePath);
+
+        int defaultIndex = 0;
+        int itemIndex = 0;
+        for (int i = 0; i < factions.Count; i++)
+        {
+            // Faction 0 (PC) is not valid for creature blueprints
+            if (factions[i].Id == 0) continue;
+
+            _factionComboBox.Items.Add(new ComboBoxItem
+            {
+                Content = $"{factions[i].Name} ({factions[i].Id})",
+                Tag = factions[i].Id
+            });
+            if (factions[i].Id == 1) defaultIndex = itemIndex; // Default to Hostile
+            itemIndex++;
+        }
+
+        if (_factionComboBox.Items.Count > 0)
+            _factionComboBox.SelectedIndex = defaultIndex;
+    }
+
+    private void OnFactionSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_factionComboBox.SelectedItem is ComboBoxItem item && item.Tag is ushort factionId)
+            _selectedFactionId = factionId;
     }
 
     private async void OnBrowseVoiceSetClick(object? sender, RoutedEventArgs e)
@@ -751,7 +836,67 @@ public partial class NewCharacterWizardWindow : Window
         // Show default scripts option for UTC only
         _defaultScriptsPanel.IsVisible = !_isBicFile;
 
+        // Clear save location when file type changes (extension changes)
+        ChosenSavePath = null;
+        _saveLocationTextBox.Text = "";
+
         UpdateSidebarSummary();
+    }
+
+    private async void OnBrowseSaveLocationClick(object? sender, RoutedEventArgs e)
+    {
+        var extension = _isBicFile ? "bic" : "utc";
+        var title = _isBicFile ? "Save Player Character" : "Save Creature Blueprint";
+
+        IStorageFolder? suggestedFolder = null;
+        try
+        {
+            if (_isBicFile)
+            {
+                var nwnPath = RadoubSettings.Instance.NeverwinterNightsPath;
+                if (!string.IsNullOrEmpty(nwnPath))
+                {
+                    var localVault = Path.Combine(nwnPath, "localvault");
+                    if (Directory.Exists(localVault))
+                        suggestedFolder = await StorageProvider.TryGetFolderFromPathAsync(localVault);
+                }
+            }
+            else
+            {
+                var modulePath = RadoubSettings.Instance.CurrentModulePath;
+                if (!string.IsNullOrEmpty(modulePath))
+                {
+                    // Unpacked module directory — save directly into it
+                    if (Directory.Exists(modulePath))
+                        suggestedFolder = await StorageProvider.TryGetFolderFromPathAsync(modulePath);
+                    // .mod file — suggest the parent directory
+                    else if (File.Exists(modulePath))
+                    {
+                        var parentDir = Path.GetDirectoryName(modulePath);
+                        if (!string.IsNullOrEmpty(parentDir) && Directory.Exists(parentDir))
+                            suggestedFolder = await StorageProvider.TryGetFolderFromPathAsync(parentDir);
+                    }
+                }
+            }
+        }
+        catch { /* fallback to no suggestion */ }
+
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = title,
+            DefaultExtension = extension,
+            FileTypeChoices = _isBicFile
+                ? new[] { new FilePickerFileType("Player Character") { Patterns = new[] { "*.bic" } } }
+                : new[] { new FilePickerFileType("Creature Blueprint") { Patterns = new[] { "*.utc" } } },
+            SuggestedFileName = "new_creature",
+            SuggestedStartLocation = suggestedFolder
+        });
+
+        if (file != null)
+        {
+            ChosenSavePath = file.Path.LocalPath;
+            _saveLocationTextBox.Text = ChosenSavePath;
+        }
     }
 
     #endregion

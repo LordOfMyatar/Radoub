@@ -10,6 +10,7 @@ using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
 using Radoub.Formats.Utc;
+using Radoub.UI.Controls;
 using Radoub.UI.Views;
 using System;
 using System.Collections.Generic;
@@ -243,8 +244,43 @@ public partial class MainWindow
 
         UnifiedLogger.LogCreature(LogLevel.INFO, "Created new creature blueprint");
 
-        // Prompt to save immediately with smart default directory
-        await PromptSaveNewCreature();
+        // Save to path chosen in wizard Step 1, or prompt if not chosen (#1476)
+        if (!string.IsNullOrEmpty(wizard.ChosenSavePath))
+        {
+            _currentFilePath = wizard.ChosenSavePath;
+
+            // Validate Aurora filename constraints
+            if (!await ValidateAuroraFilename(_currentFilePath))
+            {
+                _currentFilePath = null;
+                UpdateStatus("New creature created (not saved yet)");
+                return;
+            }
+
+            // Convert to BIC if saving as .bic and creature is still a UtcFile
+            var savingAsBic = Path.GetExtension(_currentFilePath).Equals(".bic", StringComparison.OrdinalIgnoreCase);
+            if (savingAsBic && _currentCreature is not BicFile)
+            {
+                _currentCreature = BicFile.FromUtcFile(_currentCreature);
+                _isBicFile = true;
+            }
+
+            await SaveFile();
+            UpdateTitle();
+            UpdateCharacterHeader();
+            SettingsService.Instance.AddRecentFile(_currentFilePath);
+            UpdateRecentFilesMenu();
+
+            // Refresh creature browser so the new file appears (#1477)
+            UpdateCreatureBrowserCurrentFile(_currentFilePath);
+            var creatureBrowserPanel = this.FindControl<CreatureBrowserPanel>("CreatureBrowserPanel");
+            if (creatureBrowserPanel != null)
+                await creatureBrowserPanel.RefreshAsync();
+        }
+        else
+        {
+            await PromptSaveNewCreature();
+        }
     }
 
     /// <summary>
@@ -636,6 +672,12 @@ public partial class MainWindow
             UpdateCharacterHeader();
             SettingsService.Instance.AddRecentFile(_currentFilePath);
             UpdateRecentFilesMenu();
+
+            // Refresh creature browser so the new file appears (#1477)
+            UpdateCreatureBrowserCurrentFile(_currentFilePath);
+            var creatureBrowserPanel = this.FindControl<CreatureBrowserPanel>("CreatureBrowserPanel");
+            if (creatureBrowserPanel != null)
+                await creatureBrowserPanel.RefreshAsync();
         }
         else
         {

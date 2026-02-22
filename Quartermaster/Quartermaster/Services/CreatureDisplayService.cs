@@ -657,6 +657,48 @@ public partial class CreatureDisplayService
     public int[]? GetSpellSlots(int classId, int classLevel) => Spells.GetSpellSlots(classId, classLevel);
     public int[]? GetSpellsKnownLimit(int classId, int classLevel) => Spells.GetSpellsKnownLimit(classId, classLevel);
 
+    /// <summary>
+    /// Returns true if the given class grants a familiar (Wizard/Sorcerer by convention).
+    /// Checks if the selected package's Associate column references hen_familiar.2da.
+    /// </summary>
+    public bool ClassGrantsFamiliar(int classId)
+    {
+        // NWN hardcodes Wizard (10) and Sorcerer (37) as familiar-granting classes
+        // Also check Pale Master (29) doesn't get familiar — only Wizard/Sorcerer
+        var label = GameDataService.Get2DAValue("classes", classId, "Label")?.ToLowerInvariant() ?? "";
+        return label == "wizard" || label == "sorcerer";
+    }
+
+    /// <summary>
+    /// Gets all familiars from hen_familiar.2da.
+    /// </summary>
+    public List<(int Id, string Name)> GetAllFamiliars()
+    {
+        var familiars = new List<(int Id, string Name)>();
+        var table = GameDataService.Get2DA("hen_familiar");
+        int rowCount = table?.RowCount ?? 20;
+
+        for (int i = 0; i < rowCount; i++)
+        {
+            var label = GameDataService.Get2DAValue("hen_familiar", i, "NAME");
+            if (string.IsNullOrEmpty(label) || label == "****")
+                continue;
+
+            var strRef = GameDataService.Get2DAValue("hen_familiar", i, "STRREF");
+            string name = label; // fallback to label
+            if (!string.IsNullOrEmpty(strRef) && strRef != "****")
+            {
+                var tlkName = GameDataService.GetString(strRef);
+                if (!string.IsNullOrEmpty(tlkName))
+                    name = tlkName;
+            }
+
+            familiars.Add((i, name));
+        }
+
+        return familiars;
+    }
+
     #endregion
 
     #region Palette Categories

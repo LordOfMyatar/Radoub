@@ -201,6 +201,22 @@
                         <CheckBox x:Name="DefaultScriptsCheckBox" IsChecked="True"
                                   Content="Load default NWN scripts (nw_c2_default*)"/>
                     </StackPanel>
+
+                    <!-- Save Location -->
+                    <StackPanel Spacing="6" HorizontalAlignment="Center" Margin="0,10,0,0" MaxWidth="580">
+                        <TextBlock Text="Save Location" FontWeight="Bold" HorizontalAlignment="Center"/>
+                        <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+                            <TextBox x:Name="SaveLocationTextBox" Grid.Column="0" IsReadOnly="True"
+                                     Watermark="Click Browse to choose save location..."
+                                     Margin="0,0,8,0"/>
+                            <Button x:Name="BrowseSaveLocationButton" Grid.Column="1"
+                                    Content="Browse..." Click="OnBrowseSaveLocationClick"/>
+                        </Grid>
+                        <TextBlock x:Name="SaveLocationNote" FontSize="11"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                   TextWrapping="Wrap" HorizontalAlignment="Center"
+                                   Text="Choose where to save before building your character."/>
+                    </StackPanel>
                 </StackPanel>
             </Grid>
 
@@ -348,17 +364,22 @@
                     </Grid.ColumnDefinitions>
 
                     <!-- Left: Appearance/Phenotype/Portrait -->
-                    <StackPanel Grid.Column="0" Spacing="10" Margin="0,0,15,0">
+                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="10" Margin="0,0,15,0">
                         <!-- Appearance -->
                         <TextBlock Text="Appearance Type" FontWeight="SemiBold"/>
-                        <ComboBox x:Name="AppearanceComboBox" HorizontalAlignment="Stretch"
-                                  SelectionChanged="OnAppearanceSelectionChanged">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Name}"/>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
+                        <TextBox x:Name="AppearanceSearchBox" Watermark="Filter appearances..."
+                                 Margin="0,0,0,3" TextChanged="OnAppearanceSearchChanged"/>
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                BorderThickness="1" MaxHeight="160">
+                            <ListBox x:Name="AppearanceListBox" SelectionChanged="OnAppearanceSelectionChanged">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Name}" Margin="4,1"/>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
 
                         <!-- Phenotype -->
                         <TextBlock Text="Phenotype" FontWeight="SemiBold"/>
@@ -431,6 +452,7 @@
                                     Cursor="Hand" PointerPressed="OnTattoo2ColorSwatchClick"/>
                         </Grid>
                     </StackPanel>
+                    </ScrollViewer>
 
                     <!-- Right: Body Parts -->
                     <Border Grid.Column="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
@@ -598,7 +620,7 @@
                             <ListBox x:Name="ClassListBox" SelectionChanged="OnClassSelectionChanged">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid Margin="5,2">
+                                        <Grid Margin="5,2,16,2">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
@@ -619,9 +641,11 @@
                     <!-- Right: Class Detail + Package -->
                     <Border Grid.Column="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                             BorderThickness="1" Padding="15">
-                        <ScrollViewer>
+                        <ScrollViewer Padding="0,0,8,0">
                             <Grid x:Name="ClassDetailPanel">
                                 <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
@@ -701,8 +725,67 @@
                                     </Grid>
                                 </StackPanel>
 
+                                <!-- Familiar Selection (Wizard/Sorcerer) -->
+                                <StackPanel Grid.Row="5" x:Name="FamiliarSelectionPanel" Spacing="5" Margin="0,0,0,10" IsVisible="False">
+                                    <TextBlock Text="Familiar" FontWeight="Bold"/>
+                                    <ComboBox x:Name="FamiliarComboBox" HorizontalAlignment="Stretch"
+                                              SelectionChanged="OnFamiliarSelectionChanged"/>
+                                    <TextBlock Text="Your familiar is a magical companion that aids you."
+                                               FontSize="11" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                </StackPanel>
+
+                                <!-- Alignment Selection -->
+                                <StackPanel Grid.Row="6" x:Name="AlignmentSelectionPanel" Spacing="5" Margin="0,0,0,10">
+                                    <TextBlock Text="Alignment" FontWeight="Bold"/>
+                                    <Grid x:Name="AlignmentGrid" HorizontalAlignment="Left">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="90"/>
+                                            <ColumnDefinition Width="90"/>
+                                            <ColumnDefinition Width="90"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <!-- Column headers -->
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Lawful" HorizontalAlignment="Center" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,0,0,3"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="Neutral" HorizontalAlignment="Center" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,0,0,3"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Chaotic" HorizontalAlignment="Center" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,0,0,3"/>
+                                        <!-- Row 1: Good -->
+                                        <ToggleButton Grid.Row="1" Grid.Column="0" x:Name="AlignLG" Content="LG" Width="80" HorizontalContentAlignment="Center"
+                                                      Margin="2" Click="OnAlignmentClick" ToolTip.Tip="Lawful Good"/>
+                                        <ToggleButton Grid.Row="1" Grid.Column="1" x:Name="AlignNG" Content="NG" Width="80" HorizontalContentAlignment="Center"
+                                                      Margin="2" Click="OnAlignmentClick" ToolTip.Tip="Neutral Good"/>
+                                        <ToggleButton Grid.Row="1" Grid.Column="2" x:Name="AlignCG" Content="CG" Width="80" HorizontalContentAlignment="Center"
+                                                      Margin="2" Click="OnAlignmentClick" ToolTip.Tip="Chaotic Good"/>
+                                        <!-- Row 2: Neutral -->
+                                        <ToggleButton Grid.Row="2" Grid.Column="0" x:Name="AlignLN" Content="LN" Width="80" HorizontalContentAlignment="Center"
+                                                      Margin="2" Click="OnAlignmentClick" ToolTip.Tip="Lawful Neutral"/>
+                                        <ToggleButton Grid.Row="2" Grid.Column="1" x:Name="AlignTN" Content="TN" Width="80" HorizontalContentAlignment="Center"
+                                                      Margin="2" Click="OnAlignmentClick" IsChecked="True" ToolTip.Tip="True Neutral"/>
+                                        <ToggleButton Grid.Row="2" Grid.Column="2" x:Name="AlignCN" Content="CN" Width="80" HorizontalContentAlignment="Center"
+                                                      Margin="2" Click="OnAlignmentClick" ToolTip.Tip="Chaotic Neutral"/>
+                                        <!-- Row 3: Evil -->
+                                        <ToggleButton Grid.Row="3" Grid.Column="0" x:Name="AlignLE" Content="LE" Width="80" HorizontalContentAlignment="Center"
+                                                      Margin="2" Click="OnAlignmentClick" ToolTip.Tip="Lawful Evil"/>
+                                        <ToggleButton Grid.Row="3" Grid.Column="1" x:Name="AlignNE" Content="NE" Width="80" HorizontalContentAlignment="Center"
+                                                      Margin="2" Click="OnAlignmentClick" ToolTip.Tip="Neutral Evil"/>
+                                        <ToggleButton Grid.Row="3" Grid.Column="2" x:Name="AlignCE" Content="CE" Width="80" HorizontalContentAlignment="Center"
+                                                      Margin="2" Click="OnAlignmentClick" ToolTip.Tip="Chaotic Evil"/>
+                                    </Grid>
+                                    <TextBlock x:Name="AlignmentRestrictionWarning" TextWrapping="Wrap" FontSize="11"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                               IsVisible="False"/>
+                                </StackPanel>
+
                                 <!-- Class Description -->
-                                <ScrollViewer Grid.Row="5" MaxHeight="200">
+                                <ScrollViewer Grid.Row="7" MaxHeight="200">
                                     <TextBlock x:Name="ClassDescriptionLabel"
                                                TextWrapping="Wrap"
                                                Text="Select a class to see its details."
@@ -836,6 +919,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Text="Select Feats" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
@@ -880,10 +964,11 @@
                                  Margin="0,0,0,5" TextChanged="OnFeatSearchChanged"/>
                         <Border Grid.Row="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                 BorderThickness="1">
-                            <ListBox x:Name="AvailableFeatsListBox" SelectionMode="Multiple,Toggle">
+                            <ListBox x:Name="AvailableFeatsListBox" SelectionMode="Multiple,Toggle"
+                                     SelectionChanged="OnAvailableFeatSelectionChanged">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid Margin="4,2">
+                                        <Grid Margin="4,2,16,2">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
@@ -921,10 +1006,11 @@
                         </StackPanel>
                         <Border Grid.Row="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                 BorderThickness="1" Margin="0,25,0,0">
-                            <ListBox x:Name="SelectedFeatsListBox" SelectionMode="Multiple,Toggle">
+                            <ListBox x:Name="SelectedFeatsListBox" SelectionMode="Multiple,Toggle"
+                                     SelectionChanged="OnSelectedFeatSelectionChanged">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid Margin="4,2">
+                                        <Grid Margin="4,2,16,2">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
@@ -940,6 +1026,19 @@
                         </Border>
                     </Grid>
                 </Grid>
+
+                <!-- Feat Description Panel -->
+                <Border Grid.Row="4" Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        Padding="10" CornerRadius="4" Margin="0,8,0,0" MinHeight="60" MaxHeight="120">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Spacing="2">
+                            <TextBlock x:Name="FeatDescriptionTitle" FontWeight="Bold" FontSize="13"
+                                       Text="Select a feat to see its description"/>
+                            <TextBlock x:Name="FeatDescriptionText" TextWrapping="Wrap" FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
             </Grid>
 
             <!-- Step 7: Skills -->
@@ -1227,7 +1326,7 @@
                         <!-- Name & Identity -->
                         <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                                 Padding="12" CornerRadius="4">
-                            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="100,*,Auto" RowSpacing="8" ColumnSpacing="10">
+                            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="100,*,Auto" RowSpacing="8" ColumnSpacing="10">
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="First Name:" FontWeight="Bold" VerticalAlignment="Center"/>
                                 <TextBox Grid.Row="0" Grid.Column="1" x:Name="CharacterNameTextBox"
                                          Watermark="Enter character name..."
@@ -1277,6 +1376,15 @@
                                 <TextBlock Grid.Row="7" Grid.Column="2" x:Name="PaletteIdNote" Text="(UTC only)"
                                            VerticalAlignment="Center" FontSize="11"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+
+                                <TextBlock Grid.Row="8" Grid.Column="0" x:Name="FactionLabelText" Text="Faction:" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                <ComboBox Grid.Row="8" Grid.Column="1" x:Name="FactionComboBox"
+                                          HorizontalAlignment="Left" MinWidth="250"
+                                          SelectionChanged="OnFactionSelectionChanged"/>
+                                <TextBlock Grid.Row="8" Grid.Column="2" x:Name="FactionNote" Text="(UTC only)"
+                                           VerticalAlignment="Center" FontSize="11"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                             </Grid>
                         </Border>
 
@@ -1320,7 +1428,7 @@
 
                                 <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
 
-                                <!-- Class -->
+                                <!-- Class & Alignment -->
                                 <Grid ColumnDefinitions="120,*,Auto">
                                     <TextBlock Grid.Column="0" Text="Class:" FontWeight="Bold"/>
                                     <TextBlock Grid.Column="1" x:Name="SummaryClassLabel"/>
@@ -1328,6 +1436,10 @@
                                             Tag="4" Click="OnSummaryEditClick" Cursor="Hand"
                                             Background="Transparent" BorderThickness="0" Padding="2"
                                             Foreground="{DynamicResource SystemAccentColor}"/>
+                                </Grid>
+                                <Grid ColumnDefinitions="120,*">
+                                    <TextBlock Grid.Column="0" Text="Alignment:" FontWeight="Bold"/>
+                                    <TextBlock Grid.Column="1" x:Name="SummaryAlignmentLabel"/>
                                 </Grid>
 
                                 <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>

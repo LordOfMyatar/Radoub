@@ -15,13 +15,33 @@ Tool-specific guidance for Claude Code sessions working with Quartermaster.
 ### Core Features
 
 - Edit creature stats, abilities, skills, feats, spells, inventory
-- New Character Wizard with full character creation workflow
+- New Character Wizard with full 10-step character creation workflow
 - Level Up Wizard for class progression
 - Appearance preview rendering (OpenGL)
 - Load items from module directory, Override, HAK, and BIF archives
 - Support for both UTC (creature blueprints) and BIC (player characters)
 - Sidebar navigation with Stats, Classes, Skills, Feats, Spells, Inventory, Advanced, Appearance, Scripts sections
 - Creature browser for module-level file management
+
+### New Character Wizard (10 Steps)
+
+1. **File Type** - UTC/BIC selection with save location picker
+2. **Race & Sex** - Searchable race list with racial info panel (modifiers, favored class, size, description)
+3. **Appearance** - Searchable appearance list, phenotype, portrait browser, body parts, colors (skin/hair/tattoo)
+4. **Class & Package** - Class selection with detail panel, package defaults, cleric domains, familiar selection
+5. **Abilities** - Point-buy allocation with racial modifiers
+6. **Feats** - Available/selected feat lists with prereq checking, auto-assign from package prefs, feat descriptions
+7. **Alignment** - Good/Evil and Law/Chaos axes
+8. **Skills** - Skill point allocation with class/cross-class costs
+9. **Spells** - Spell selection for caster classes (arcane known spells, divine auto-grant)
+10. **Equipment & Summary** - Package equipment loading, character name/tag/resref, faction, palette ID
+
+Key wizard patterns:
+- All game data sourced from 2DA files (no hardcoded race/class/feat data)
+- Package-based defaults for skills, feats, spells, equipment
+- Custom factions loaded from module's `repute.fac`
+- Familiar support for Wizard/Sorcerer via `hen_familiar.2da`
+- Equipment loaded from `packeq*.2da` referenced by `packages.2da`
 
 ---
 
@@ -172,15 +192,15 @@ Quartermaster uses C# partial classes extensively to keep files manageable (~500
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| .axaml.cs | 758 | Core: wizard navigation, step management |
-| .Race.cs | 158 | Race selection step |
-| .Appearance.cs | 246 | Appearance selection step |
-| .ClassSelection.cs | 407 | Class and level selection |
-| .Abilities.cs | 402 | Ability score allocation |
-| .Skills.cs | 347 | Skill assignment |
-| .Feats.cs | 401 | Feat selection |
-| .EquipmentAndSummary.cs | 458 | Equipment and summary review |
-| .BuildCreature.cs | 395 | Character build and creation |
+| .axaml.cs | ~900 | Core: wizard navigation, step management, save location, factions |
+| .Race.cs | ~170 | Step 2: Race selection with info panel |
+| .Appearance.cs | ~270 | Step 3: Appearance, phenotype, portrait, colors |
+| .ClassSelection.cs | ~500 | Step 4: Class, package, domains, familiar |
+| .Abilities.cs | ~400 | Step 5: Point-buy ability allocation |
+| .Feats.cs | ~420 | Step 6: Feat selection with prereqs and descriptions |
+| .Skills.cs | ~350 | Step 8: Skill assignment |
+| .EquipmentAndSummary.cs | ~480 | Steps 9-10: Equipment and summary/finalization |
+| .BuildCreature.cs | ~450 | Character build and GFF field population |
 
 ### When to Split
 

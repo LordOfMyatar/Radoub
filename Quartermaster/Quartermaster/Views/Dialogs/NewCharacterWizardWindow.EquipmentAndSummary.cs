@@ -49,11 +49,12 @@ public partial class NewCharacterWizardWindow
         }
 
         // Read equipment entries from the package equipment table (packeq*.2da uses "Label" column)
-        for (int row = 0; row < 50; row++)
+        int equipRowCount = _gameDataService.Get2DA(equip2da)?.RowCount ?? 50;
+        for (int row = 0; row < equipRowCount; row++)
         {
             var resRef = _gameDataService.Get2DAValue(equip2da, row, "Label");
             if (string.IsNullOrEmpty(resRef) || resRef == "****")
-                break;
+                continue;
 
             // Get display name and slot info from the UTI resource
             var displayName = GetItemDisplayName(resRef);
@@ -238,6 +239,9 @@ public partial class NewCharacterWizardWindow
             _summaryClassLabel.Text = classText;
         }
 
+        // Alignment
+        _summaryAlignmentLabel.Text = GetAlignmentName(_selectedGoodEvil, _selectedLawChaos);
+
         // Abilities
         var racialMods = _displayService.GetRacialModifiers(_selectedRaceId);
         var abilityParts = new List<string>();
@@ -348,6 +352,11 @@ public partial class NewCharacterWizardWindow
         _paletteIdLabelText.IsVisible = isUtc;
         _paletteIdComboBox.IsVisible = isUtc;
         _paletteIdNote.IsVisible = isUtc;
+
+        // Faction visibility (UTC only)
+        _factionLabelText.IsVisible = isUtc;
+        _factionComboBox.IsVisible = isUtc;
+        _factionNote.IsVisible = isUtc;
     }
 
     private void OnCharacterNameChanged(object? sender, TextChangedEventArgs e)
@@ -452,6 +461,21 @@ public partial class NewCharacterWizardWindow
         foreach (var featId in _chosenFeatIds)
             all.Add(featId);
         return all;
+    }
+
+    #endregion
+
+    #region Alignment Helpers
+
+    private static string GetAlignmentName(byte goodEvil, byte lawChaos)
+    {
+        string geAxis = goodEvil > 70 ? "Good" : goodEvil < 30 ? "Evil" : "Neutral";
+        string lcAxis = lawChaos > 70 ? "Lawful" : lawChaos < 30 ? "Chaotic" : "Neutral";
+
+        if (geAxis == "Neutral" && lcAxis == "Neutral")
+            return "True Neutral";
+
+        return $"{lcAxis} {geAxis}";
     }
 
     #endregion

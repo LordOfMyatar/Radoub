@@ -177,6 +177,7 @@ public static class UtcWriter
         AddWordField(root, "SoundSetFile", utc.SoundSetFile);
         AddDwordField(root, "DecayTime", utc.DecayTime);
         AddByteField(root, "StartingPackage", utc.StartingPackage);
+        AddIntField(root, "FamiliarType", utc.FamiliarType);
 
         // Conversation
         if (!string.IsNullOrEmpty(utc.Conversation))
