@@ -83,25 +83,28 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
         // Create filter checkboxes
         _showModuleCheck = new CheckBox
         {
-            Content = "Module (.utc)",
+            Content = "Module",
             IsChecked = true
         };
+        ToolTip.SetTip(_showModuleCheck, "Show .utc and .bic files from module folder");
         _showLocalVaultCheck = new CheckBox
         {
-            Content = "Local Vault (.bic)",
-            IsChecked = true
+            Content = "Local Vault",
+            IsChecked = false
         };
+        ToolTip.SetTip(_showLocalVaultCheck, "Show .bic files from localvault");
         _showServerVaultCheck = new CheckBox
         {
-            Content = "Server Vault (.bic)",
+            Content = "Server Vault",
             IsChecked = false
         };
+        ToolTip.SetTip(_showServerVaultCheck, "Show .bic files from servervault subdirectories");
         _showHakCheck = new CheckBox
         {
-            Content = "HAK (.utc)",
+            Content = "HAK",
             IsChecked = false
         };
-        ToolTip.SetTip(_showHakCheck, "Include creature blueprints from HAK files");
+        ToolTip.SetTip(_showHakCheck, "Show .utc files from HAK archives");
 
         _showModuleCheck.IsCheckedChanged += OnFilterChanged;
         _showLocalVaultCheck.IsCheckedChanged += OnFilterChanged;
