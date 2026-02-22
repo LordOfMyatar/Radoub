@@ -71,9 +71,11 @@ public partial class NewCharacterWizardWindow : Window
     private bool _step3Loaded;
     private PaletteColorService? _paletteColorService;
 
-    // Step 4: Class & Package
+    // Step 4: Class, Package & Alignment
     private int _selectedClassId = -1;
     private byte _selectedPackageId = 255; // sentinel for none
+    private byte _selectedGoodEvil = 50; // 0=Evil, 50=Neutral, 100=Good — default True Neutral
+    private byte _selectedLawChaos = 50; // 0=Chaotic, 50=Neutral, 100=Lawful
     private int _favoredClassId = -1;
     private List<ClassDisplayItem> _allClasses = new();
     private List<ClassDisplayItem> _filteredClasses = new();
@@ -252,6 +254,7 @@ public partial class NewCharacterWizardWindow : Window
     private readonly TextBlock _summaryRaceLabel;
     private readonly TextBlock _summaryAppearanceLabel;
     private readonly TextBlock _summaryClassLabel;
+    private readonly TextBlock _summaryAlignmentLabel;
     private readonly TextBlock _summaryAbilitiesLabel;
     private readonly TextBlock _summaryFeatsLabel;
     private readonly TextBlock _summarySkillsLabel;
@@ -284,6 +287,8 @@ public partial class NewCharacterWizardWindow : Window
     private readonly StackPanel _prestigePlanningContent;
     private readonly ComboBox _prestigeClassComboBox;
     private readonly TextBlock _prestigePrereqLabel;
+    private readonly ToggleButton[] _alignmentButtons;
+    private readonly TextBlock _alignmentRestrictionWarning;
 
     /// <summary>
     /// The created creature, available after Confirmed is true.
@@ -435,6 +440,19 @@ public partial class NewCharacterWizardWindow : Window
         _prestigePlanningContent = this.FindControl<StackPanel>("PrestigePlanningContent")!;
         _prestigeClassComboBox = this.FindControl<ComboBox>("PrestigeClassComboBox")!;
         _prestigePrereqLabel = this.FindControl<TextBlock>("PrestigePrereqLabel")!;
+        _alignmentButtons = new[]
+        {
+            this.FindControl<ToggleButton>("AlignLG")!,
+            this.FindControl<ToggleButton>("AlignNG")!,
+            this.FindControl<ToggleButton>("AlignCG")!,
+            this.FindControl<ToggleButton>("AlignLN")!,
+            this.FindControl<ToggleButton>("AlignTN")!,
+            this.FindControl<ToggleButton>("AlignCN")!,
+            this.FindControl<ToggleButton>("AlignLE")!,
+            this.FindControl<ToggleButton>("AlignNE")!,
+            this.FindControl<ToggleButton>("AlignCE")!
+        };
+        _alignmentRestrictionWarning = this.FindControl<TextBlock>("AlignmentRestrictionWarning")!;
 
         // Step 5 controls
         _abilityPointsRemainingLabel = this.FindControl<TextBlock>("AbilityPointsRemainingLabel")!;
@@ -490,6 +508,7 @@ public partial class NewCharacterWizardWindow : Window
         _summaryRaceLabel = this.FindControl<TextBlock>("SummaryRaceLabel")!;
         _summaryAppearanceLabel = this.FindControl<TextBlock>("SummaryAppearanceLabel")!;
         _summaryClassLabel = this.FindControl<TextBlock>("SummaryClassLabel")!;
+        _summaryAlignmentLabel = this.FindControl<TextBlock>("SummaryAlignmentLabel")!;
         _summaryAbilitiesLabel = this.FindControl<TextBlock>("SummaryAbilitiesLabel")!;
         _summaryFeatsLabel = this.FindControl<TextBlock>("SummaryFeatsLabel")!;
         _summarySkillsLabel = this.FindControl<TextBlock>("SummarySkillsLabel")!;

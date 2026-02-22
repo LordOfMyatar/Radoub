@@ -238,6 +238,9 @@ public partial class NewCharacterWizardWindow
             _summaryClassLabel.Text = classText;
         }
 
+        // Alignment
+        _summaryAlignmentLabel.Text = GetAlignmentName(_selectedGoodEvil, _selectedLawChaos);
+
         // Abilities
         var racialMods = _displayService.GetRacialModifiers(_selectedRaceId);
         var abilityParts = new List<string>();
@@ -452,6 +455,21 @@ public partial class NewCharacterWizardWindow
         foreach (var featId in _chosenFeatIds)
             all.Add(featId);
         return all;
+    }
+
+    #endregion
+
+    #region Alignment Helpers
+
+    private static string GetAlignmentName(byte goodEvil, byte lawChaos)
+    {
+        string geAxis = goodEvil > 70 ? "Good" : goodEvil < 30 ? "Evil" : "Neutral";
+        string lcAxis = lawChaos > 70 ? "Lawful" : lawChaos < 30 ? "Chaotic" : "Neutral";
+
+        if (geAxis == "Neutral" && lcAxis == "Neutral")
+            return "True Neutral";
+
+        return $"{lcAxis} {geAxis}";
     }
 
     #endregion

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Quartermaster.Services;
@@ -97,6 +98,7 @@ public partial class NewCharacterWizardWindow
         UpdateClassDetailPanel();
         LoadPackagesForClass();
         UpdateDomainVisibility();
+        UpdateAlignmentButtonStates();
         ValidateCurrentStep();
         UpdateSidebarSummary();
     }
@@ -341,6 +343,141 @@ public partial class NewCharacterWizardWindow
 
         string verb = restriction.Inverted ? "Cannot be" : "Must be";
         return $"{verb}: {string.Join(" or ", parts)}";
+    }
+
+    #endregion
+
+    #region Alignment Selection
+
+    // Alignment grid: LG NG CG / LN TN CN / LE NE CE
+    // Values: GoodEvil (0=Evil, 50=Neutral, 100=Good), LawChaos (0=Chaotic, 50=Neutral, 100=Lawful)
+    private static readonly (byte GoodEvil, byte LawChaos)[] AlignmentValues =
+    {
+        (100, 100), (100, 50), (100, 0),   // LG, NG, CG
+        (50, 100),  (50, 50),  (50, 0),    // LN, TN, CN
+        (0, 100),   (0, 50),   (0, 0)      // LE, NE, CE
+    };
+
+    private void OnAlignmentClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not ToggleButton clicked) return;
+
+        // Find which button was clicked
+        int index = Array.IndexOf(_alignmentButtons, clicked);
+        if (index < 0) return;
+
+        // Set values
+        _selectedGoodEvil = AlignmentValues[index].GoodEvil;
+        _selectedLawChaos = AlignmentValues[index].LawChaos;
+
+        // Update button states - only one can be checked
+        for (int i = 0; i < _alignmentButtons.Length; i++)
+        {
+            _alignmentButtons[i].IsChecked = (i == index);
+        }
+
+        // Validate against class alignment restrictions
+        UpdateAlignmentRestrictionWarning();
+    }
+
+    private void UpdateAlignmentRestrictionWarning()
+    {
+        if (_selectedClassId < 0)
+        {
+            _alignmentRestrictionWarning.IsVisible = false;
+            return;
+        }
+
+        var metadata = _displayService.Classes.GetClassMetadata(_selectedClassId);
+        if (metadata.AlignmentRestriction == null)
+        {
+            _alignmentRestrictionWarning.IsVisible = false;
+            return;
+        }
+
+        bool allowed = IsAlignmentAllowed(metadata.AlignmentRestriction, _selectedGoodEvil, _selectedLawChaos);
+        if (!allowed)
+        {
+            var restrictionText = FormatAlignmentRestriction(metadata.AlignmentRestriction);
+            _alignmentRestrictionWarning.Text = $"Warning: {metadata.Name} requires {restrictionText}";
+            _alignmentRestrictionWarning.IsVisible = true;
+        }
+        else
+        {
+            _alignmentRestrictionWarning.IsVisible = false;
+        }
+    }
+
+    private void UpdateAlignmentButtonStates()
+    {
+        if (_selectedClassId < 0) return;
+
+        var metadata = _displayService.Classes.GetClassMetadata(_selectedClassId);
+
+        for (int i = 0; i < _alignmentButtons.Length; i++)
+        {
+            if (metadata.AlignmentRestriction != null)
+            {
+                bool allowed = IsAlignmentAllowed(metadata.AlignmentRestriction,
+                    AlignmentValues[i].GoodEvil, AlignmentValues[i].LawChaos);
+                _alignmentButtons[i].IsEnabled = allowed;
+            }
+            else
+            {
+                _alignmentButtons[i].IsEnabled = true;
+            }
+        }
+
+        // If current selection is now disabled, auto-select first valid alignment
+        int currentIndex = GetCurrentAlignmentIndex();
+        if (currentIndex >= 0 && !_alignmentButtons[currentIndex].IsEnabled)
+        {
+            for (int i = 0; i < _alignmentButtons.Length; i++)
+            {
+                if (_alignmentButtons[i].IsEnabled)
+                {
+                    _selectedGoodEvil = AlignmentValues[i].GoodEvil;
+                    _selectedLawChaos = AlignmentValues[i].LawChaos;
+                    for (int j = 0; j < _alignmentButtons.Length; j++)
+                        _alignmentButtons[j].IsChecked = (j == i);
+                    break;
+                }
+            }
+        }
+
+        UpdateAlignmentRestrictionWarning();
+    }
+
+    private int GetCurrentAlignmentIndex()
+    {
+        for (int i = 0; i < AlignmentValues.Length; i++)
+        {
+            if (AlignmentValues[i].GoodEvil == _selectedGoodEvil &&
+                AlignmentValues[i].LawChaos == _selectedLawChaos)
+                return i;
+        }
+        return 4; // Default to TN
+    }
+
+    private static bool IsAlignmentAllowed(AlignmentRestriction restriction, byte goodEvil, byte lawChaos)
+    {
+        // Convert 0-100 values to bitmask categories
+        int alignBits = 0;
+        if (goodEvil > 70) alignBits |= 0x08;       // Good
+        else if (goodEvil < 30) alignBits |= 0x10;   // Evil
+        if (lawChaos > 70) alignBits |= 0x02;        // Lawful
+        else if (lawChaos < 30) alignBits |= 0x04;   // Chaotic
+
+        // Neutral on either axis
+        if (goodEvil >= 30 && goodEvil <= 70 && lawChaos >= 30 && lawChaos <= 70)
+            alignBits |= 0x01; // True Neutral
+        else if (goodEvil >= 30 && goodEvil <= 70)
+            alignBits |= 0x01; // Neutral on good/evil axis
+        else if (lawChaos >= 30 && lawChaos <= 70)
+            alignBits |= 0x01; // Neutral on law/chaos axis
+
+        bool matches = (alignBits & restriction.RestrictionMask) != 0;
+        return restriction.Inverted ? !matches : matches;
     }
 
     #endregion

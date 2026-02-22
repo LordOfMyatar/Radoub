@@ -627,6 +627,7 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
 
@@ -701,8 +702,57 @@
                                     </Grid>
                                 </StackPanel>
 
+                                <!-- Alignment Selection -->
+                                <StackPanel Grid.Row="5" x:Name="AlignmentSelectionPanel" Spacing="5" Margin="0,0,0,10">
+                                    <TextBlock Text="Alignment" FontWeight="Bold"/>
+                                    <Grid x:Name="AlignmentGrid" HorizontalAlignment="Left">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="90"/>
+                                            <ColumnDefinition Width="90"/>
+                                            <ColumnDefinition Width="90"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <!-- Column headers -->
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Lawful" HorizontalAlignment="Center" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,0,0,3"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="Neutral" HorizontalAlignment="Center" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,0,0,3"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Chaotic" HorizontalAlignment="Center" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,0,0,3"/>
+                                        <!-- Row 1: Good -->
+                                        <ToggleButton Grid.Row="1" Grid.Column="0" x:Name="AlignLG" Content="LG" Width="80" HorizontalContentAlignment="Center"
+                                                      Margin="2" Click="OnAlignmentClick" ToolTip.Tip="Lawful Good"/>
+                                        <ToggleButton Grid.Row="1" Grid.Column="1" x:Name="AlignNG" Content="NG" Width="80" HorizontalContentAlignment="Center"
+                                                      Margin="2" Click="OnAlignmentClick" ToolTip.Tip="Neutral Good"/>
+                                        <ToggleButton Grid.Row="1" Grid.Column="2" x:Name="AlignCG" Content="CG" Width="80" HorizontalContentAlignment="Center"
+                                                      Margin="2" Click="OnAlignmentClick" ToolTip.Tip="Chaotic Good"/>
+                                        <!-- Row 2: Neutral -->
+                                        <ToggleButton Grid.Row="2" Grid.Column="0" x:Name="AlignLN" Content="LN" Width="80" HorizontalContentAlignment="Center"
+                                                      Margin="2" Click="OnAlignmentClick" ToolTip.Tip="Lawful Neutral"/>
+                                        <ToggleButton Grid.Row="2" Grid.Column="1" x:Name="AlignTN" Content="TN" Width="80" HorizontalContentAlignment="Center"
+                                                      Margin="2" Click="OnAlignmentClick" IsChecked="True" ToolTip.Tip="True Neutral"/>
+                                        <ToggleButton Grid.Row="2" Grid.Column="2" x:Name="AlignCN" Content="CN" Width="80" HorizontalContentAlignment="Center"
+                                                      Margin="2" Click="OnAlignmentClick" ToolTip.Tip="Chaotic Neutral"/>
+                                        <!-- Row 3: Evil -->
+                                        <ToggleButton Grid.Row="3" Grid.Column="0" x:Name="AlignLE" Content="LE" Width="80" HorizontalContentAlignment="Center"
+                                                      Margin="2" Click="OnAlignmentClick" ToolTip.Tip="Lawful Evil"/>
+                                        <ToggleButton Grid.Row="3" Grid.Column="1" x:Name="AlignNE" Content="NE" Width="80" HorizontalContentAlignment="Center"
+                                                      Margin="2" Click="OnAlignmentClick" ToolTip.Tip="Neutral Evil"/>
+                                        <ToggleButton Grid.Row="3" Grid.Column="2" x:Name="AlignCE" Content="CE" Width="80" HorizontalContentAlignment="Center"
+                                                      Margin="2" Click="OnAlignmentClick" ToolTip.Tip="Chaotic Evil"/>
+                                    </Grid>
+                                    <TextBlock x:Name="AlignmentRestrictionWarning" TextWrapping="Wrap" FontSize="11"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                               IsVisible="False"/>
+                                </StackPanel>
+
                                 <!-- Class Description -->
-                                <ScrollViewer Grid.Row="5" MaxHeight="200">
+                                <ScrollViewer Grid.Row="6" MaxHeight="200">
                                     <TextBlock x:Name="ClassDescriptionLabel"
                                                TextWrapping="Wrap"
                                                Text="Select a class to see its details."
@@ -1320,7 +1370,7 @@
 
                                 <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
 
-                                <!-- Class -->
+                                <!-- Class & Alignment -->
                                 <Grid ColumnDefinitions="120,*,Auto">
                                     <TextBlock Grid.Column="0" Text="Class:" FontWeight="Bold"/>
                                     <TextBlock Grid.Column="1" x:Name="SummaryClassLabel"/>
@@ -1328,6 +1378,10 @@
                                             Tag="4" Click="OnSummaryEditClick" Cursor="Hand"
                                             Background="Transparent" BorderThickness="0" Padding="2"
                                             Foreground="{DynamicResource SystemAccentColor}"/>
+                                </Grid>
+                                <Grid ColumnDefinitions="120,*">
+                                    <TextBlock Grid.Column="0" Text="Alignment:" FontWeight="Bold"/>
+                                    <TextBlock Grid.Column="1" x:Name="SummaryAlignmentLabel"/>
                                 </Grid>
 
                                 <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>

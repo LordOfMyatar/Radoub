@@ -145,9 +145,9 @@ public partial class NewCharacterWizardWindow
             RefBonus = (short)saves.Reflex,
             WillBonus = (short)saves.Will,
 
-            // Alignment — True Neutral
-            GoodEvil = 50,
-            LawfulChaotic = 50,
+            // Alignment (Step 4)
+            GoodEvil = _selectedGoodEvil,
+            LawfulChaotic = _selectedLawChaos,
 
             // Voice set (Step 10)
             SoundSetFile = _selectedVoiceSetId,
