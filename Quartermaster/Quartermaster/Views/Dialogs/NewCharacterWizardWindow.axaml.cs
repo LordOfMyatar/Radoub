@@ -600,7 +600,7 @@ public partial class NewCharacterWizardWindow : Window
     {
         _factionComboBox.Items.Clear();
 
-        var factions = _displayService.GetAllFactions();
+        var factions = _displayService.GetAllFactions(RadoubSettings.Instance.CurrentModulePath);
 
         int defaultIndex = 0;
         int itemIndex = 0;

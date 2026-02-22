@@ -364,7 +364,8 @@
                     </Grid.ColumnDefinitions>
 
                     <!-- Left: Appearance/Phenotype/Portrait -->
-                    <StackPanel Grid.Column="0" Spacing="10" Margin="0,0,15,0">
+                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="10" Margin="0,0,15,0">
                         <!-- Appearance -->
                         <TextBlock Text="Appearance Type" FontWeight="SemiBold"/>
                         <TextBox x:Name="AppearanceSearchBox" Watermark="Filter appearances..."
@@ -451,6 +452,7 @@
                                     Cursor="Hand" PointerPressed="OnTattoo2ColorSwatchClick"/>
                         </Grid>
                     </StackPanel>
+                    </ScrollViewer>
 
                     <!-- Right: Body Parts -->
                     <Border Grid.Column="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"

@@ -40,11 +40,16 @@ public partial class NewCharacterWizardWindow
         if (humanItem != null)
         {
             _raceListBox.SelectedItem = humanItem;
+            _selectedRaceId = humanItem.Id;
         }
         else if (_filteredRaces.Count > 0)
         {
             _raceListBox.SelectedItem = _filteredRaces[0];
+            _selectedRaceId = _filteredRaces[0].Id;
         }
+
+        // Ensure race info panel is populated (SelectionChanged may not fire on initial load)
+        UpdateRaceInfoPanel();
     }
 
     private void OnRaceSearchChanged(object? sender, TextChangedEventArgs e)
