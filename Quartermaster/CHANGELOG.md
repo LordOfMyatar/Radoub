@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Bug Fix & Polish (#1454)
 
-- [ ] #1173 - Body part changes don't refresh or save (**data loss bug**)
+- [x] #1173 - Body part changes don't refresh or save (fixed in prior PR)
 - [ ] #1188 - CreatureBrowserPanel not searching LocalVault/ServerVault for BIC files
 - [ ] #957 - Move status bar to top of window
 

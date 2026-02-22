@@ -294,7 +294,7 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
 
     private string? GetLocalVaultPath()
     {
-        var nwnPath = _context?.NeverwinterNightsPath;
+        var nwnPath = _context?.NeverwinterNightsPath ?? RadoubSettings.Instance.NeverwinterNightsPath;
         if (string.IsNullOrEmpty(nwnPath))
             return null;
 
@@ -304,7 +304,7 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
 
     private string? GetServerVaultPath()
     {
-        var nwnPath = _context?.NeverwinterNightsPath;
+        var nwnPath = _context?.NeverwinterNightsPath ?? RadoubSettings.Instance.NeverwinterNightsPath;
         if (string.IsNullOrEmpty(nwnPath))
             return null;
 
