@@ -15,12 +15,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Tech Debt - File Splits (#1441)
 
-- [ ] #1432 - Split NewCharacterWizardWindow.axaml.cs (3325 lines)
-- [ ] #1418 - Split MainWindow.FileOps.cs (695 lines)
-- [ ] #1417 - Split CreatureDisplayService.cs (793 lines)
-- [ ] #1380 - Split MainWindow.axaml.cs (1187 lines)
-- [ ] #1370 - Split SettingsWindow.axaml.cs (672 lines)
-- [ ] #1125 - Refactor: Split CharacterPanel.axaml.cs (903 LOC)
+- [x] #1432 - Split NewCharacterWizardWindow.axaml.cs (3856→758 lines, 9 partials)
+- [x] #1380 - Split MainWindow.axaml.cs (1568→742 lines, 9 partials total)
+- [x] #1125 - Split CharacterPanel.axaml.cs (903→613 lines, 3 partials)
+- [x] #1417 - Split CreatureDisplayService.cs (915→655 lines, 2 partials)
+- [x] #1418 - Split MainWindow.FileOps.cs (900→713 lines, 2 partials)
+- [x] #1370 - Split SettingsWindow.axaml.cs (785→463 lines, 2 partials)
 
 ---
 
