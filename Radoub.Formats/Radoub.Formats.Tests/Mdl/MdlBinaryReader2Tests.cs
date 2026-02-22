@@ -4,7 +4,6 @@ using Radoub.Formats.Mdl;
 using Radoub.Formats.Resolver;
 using Radoub.Formats.Services;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Radoub.Formats.Tests.Mdl;
 

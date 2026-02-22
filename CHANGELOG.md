@@ -17,6 +17,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.74] - 2026-02-21
+**Branch**: `radoub/issue-1442` | **PR**: #1450
+
+### Sprint: Tech Debt - Shared Libraries & Infrastructure (#1442)
+
+- [x] #1371 - Split RadoubSettings.cs → partial class + RadoubSettings.Persistence.cs
+- [x] #1372 - Split ThemeManager.cs → partial class + ThemeManager.Resources.cs
+- [x] #1388 - Split BicReaderTests.cs → BicReaderTests.cs + BicConversionTests.cs
+- [x] #1387 - Migrate eligible test projects to xunit.v3 (4 of 10; Avalonia headless projects remain on v2)
+- [x] #1436 - Replace dotnet/nbgv GitHub Action with local dotnet tool
+
+---
+
 ## [0.9.73] - 2026-02-17
 **Branch**: `trebuchet/issue-1402` | **PR**: #1404
 

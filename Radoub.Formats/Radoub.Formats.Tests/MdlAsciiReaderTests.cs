@@ -1,7 +1,6 @@
 using System.Numerics;
 using Radoub.Formats.Mdl;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Radoub.Formats.Tests;
 
