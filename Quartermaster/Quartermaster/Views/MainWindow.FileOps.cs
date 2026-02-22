@@ -10,6 +10,7 @@ using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
 using Radoub.Formats.Utc;
+using Radoub.UI.Controls;
 using Radoub.UI.Views;
 using System;
 using System.Collections.Generic;
@@ -636,6 +637,12 @@ public partial class MainWindow
             UpdateCharacterHeader();
             SettingsService.Instance.AddRecentFile(_currentFilePath);
             UpdateRecentFilesMenu();
+
+            // Refresh creature browser so the new file appears (#1477)
+            UpdateCreatureBrowserCurrentFile(_currentFilePath);
+            var creatureBrowserPanel = this.FindControl<CreatureBrowserPanel>("CreatureBrowserPanel");
+            if (creatureBrowserPanel != null)
+                await creatureBrowserPanel.RefreshAsync();
         }
         else
         {
