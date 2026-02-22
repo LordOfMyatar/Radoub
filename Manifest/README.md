@@ -8,14 +8,14 @@
 
 Manifest is a cross-platform journal editor for Neverwinter Nights `.jrl` files. Built with modern technology while maintaining Aurora Engine compatibility.
 
-**Status**: Alpha
+**Status**: Beta
 **Platforms**: Windows, Linux, macOS (experimental)
 
 ---
 
-## Alpha Status
+## Beta Status
 
-**This is alpha software. Always work with backup copies of your module files.**
+**This is beta software. Always work with backup copies of your module files.**
 
 See [Known Issues](https://github.com/LordOfMyatar/Radoub/issues?q=is%3Aissue+is%3Aopen+label%3Amanifest) for current bug list.
 

@@ -22,7 +22,7 @@ These tools are ready for adventurous users to try out. Like a zombie hungering 
 
 Cross-platform dialog editor for Neverwinter Nights DLG files with modern UI and Aurora Engine compatibility.
 
-**Status**: User Preview (Alpha)
+**Status**: User Preview (Beta)
 **Platforms**: Windows, Linux, macOS (experimental)
 **Key Features**:
 - Dialog tree editing with full undo/redo
@@ -39,7 +39,7 @@ Cross-platform dialog editor for Neverwinter Nights DLG files with modern UI and
 
 Cross-platform journal editor for Neverwinter Nights JRL files.
 
-**Status**: User Preview (Alpha)
+**Status**: User Preview (Beta)
 **Platforms**: Windows, Linux, macOS (experimental)
 **Key Features**:
 - Quest category and entry editing
@@ -247,7 +247,7 @@ See [LICENSE](LICENSE) for details.
 
 - BioWare/Beamdog for Neverwinter Nights and Aurora Engine
 - Original Aurora Toolset developers
-- NWN community for 20+ years of modding excellence
+- NWN community for 20+ years of modding and tooling excellence
 - [neverwinter.nim](https://github.com/niv/neverwinter.nim) (MIT) - Primary reference for Aurora file format parsing
 - [WeCantSpell.Hunspell](https://github.com/aarondandy/WeCantSpell.Hunspell) (MIT) - .NET Hunspell port for spell-checking
 - [Hunspell](https://hunspell.github.io/) - Spell-checking engine used by LibreOffice, Firefox, Chrome
