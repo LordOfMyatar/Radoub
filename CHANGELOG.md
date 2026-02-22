@@ -22,11 +22,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Tech Debt - Shared Libraries & Infrastructure (#1442)
 
-- [ ] #1371 - Split RadoubSettings.cs (646 lines)
-- [ ] #1372 - Split ThemeManager.cs (637 lines)
-- [ ] #1388 - Split BicReaderTests.cs (558 lines)
-- [ ] #1387 - Migrate test projects from xunit v2 to xunit.v3
-- [ ] #1436 - Replace dotnet/nbgv GitHub Action with local tool
+- [x] #1371 - Split RadoubSettings.cs → partial class + RadoubSettings.Persistence.cs
+- [x] #1372 - Split ThemeManager.cs → partial class + ThemeManager.Resources.cs
+- [x] #1388 - Split BicReaderTests.cs → BicReaderTests.cs + BicConversionTests.cs
+- [x] #1387 - Migrate eligible test projects to xunit.v3 (4 of 10; Avalonia headless projects remain on v2)
+- [x] #1436 - Replace dotnet/nbgv GitHub Action with local dotnet tool
 
 ---
 
