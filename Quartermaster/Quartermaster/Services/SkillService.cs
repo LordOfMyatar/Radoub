@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
 
@@ -261,5 +262,95 @@ public class SkillService
             }
         }
         return result;
+    }
+
+    /// <summary>
+    /// Auto-assigns skill points based on package preferences, falling back to class skills alphabetically.
+    /// Shared by both New Character Wizard and Level Up Wizard.
+    /// </summary>
+    /// <param name="packageId">Package ID for preferences (255 = no package)</param>
+    /// <param name="classSkillIds">Set of class skill IDs for the class being leveled</param>
+    /// <param name="unavailableSkillIds">Set of skill IDs that cannot be used</param>
+    /// <param name="totalPoints">Total skill points to allocate</param>
+    /// <param name="totalLevel">Total character level (for max rank calculation)</param>
+    /// <param name="existingRanks">Existing skill ranks (skillId -> ranks), null for NCW level 1</param>
+    /// <returns>Dictionary of skillId -> points added</returns>
+    public Dictionary<int, int> AutoAssignSkills(
+        byte packageId,
+        HashSet<int> classSkillIds,
+        HashSet<int> unavailableSkillIds,
+        int totalPoints,
+        int totalLevel,
+        IReadOnlyList<byte>? existingRanks)
+    {
+        var allocated = new Dictionary<int, int>();
+        int pointsRemaining = totalPoints;
+
+        // Read package skill preferences
+        var preferredSkillIds = new List<int>();
+        if (packageId != 255)
+        {
+            var skillPref2da = _gameDataService.Get2DAValue("packages", packageId, "SkillPref2DA");
+            if (!string.IsNullOrEmpty(skillPref2da) && skillPref2da != "****")
+            {
+                var twoDA = _gameDataService.Get2DA(skillPref2da);
+                int prefRowCount = twoDA?.RowCount ?? 50;
+                for (int row = 0; row < prefRowCount; row++)
+                {
+                    var skillIndexStr = _gameDataService.Get2DAValue(skillPref2da, row, "SkillIndex");
+                    if (string.IsNullOrEmpty(skillIndexStr) || skillIndexStr == "****")
+                        break;
+                    if (int.TryParse(skillIndexStr, out int skillIndex))
+                        preferredSkillIds.Add(skillIndex);
+                }
+            }
+        }
+
+        // Fallback: if no package preferences, use class skills alphabetically
+        if (preferredSkillIds.Count == 0)
+        {
+            preferredSkillIds = classSkillIds
+                .Where(id => !unavailableSkillIds.Contains(id))
+                .OrderBy(id => GetSkillName(id))
+                .ToList();
+        }
+
+        int GetCurrentRanks(int skillId)
+        {
+            int existing = (existingRanks != null && skillId < existingRanks.Count) ? existingRanks[skillId] : 0;
+            return existing + allocated.GetValueOrDefault(skillId, 0);
+        }
+
+        int GetMaxRanks(bool isClassSkill)
+        {
+            return isClassSkill ? totalLevel + 3 : (totalLevel + 3) / 2;
+        }
+
+        // First pass: class skills from preferences
+        foreach (var skillId in preferredSkillIds.Where(id => classSkillIds.Contains(id) && !unavailableSkillIds.Contains(id)))
+        {
+            int maxRanks = GetMaxRanks(true);
+            while (GetCurrentRanks(skillId) < maxRanks && pointsRemaining >= 1)
+            {
+                allocated[skillId] = allocated.GetValueOrDefault(skillId, 0) + 1;
+                pointsRemaining--;
+            }
+        }
+
+        // Second pass: cross-class skills from preferences (if points remain)
+        if (pointsRemaining > 0)
+        {
+            foreach (var skillId in preferredSkillIds.Where(id => !classSkillIds.Contains(id) && !unavailableSkillIds.Contains(id)))
+            {
+                int maxRanks = GetMaxRanks(false);
+                while (GetCurrentRanks(skillId) < maxRanks && pointsRemaining >= 2)
+                {
+                    allocated[skillId] = allocated.GetValueOrDefault(skillId, 0) + 1;
+                    pointsRemaining -= 2;
+                }
+            }
+        }
+
+        return allocated;
     }
 }

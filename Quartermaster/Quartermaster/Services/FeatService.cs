@@ -815,6 +815,115 @@ public class FeatService
     }
 
     /// <summary>
+    /// Gets the set of feat IDs that are in the class bonus feat pool (List=1 in cls_feat_*.2da).
+    /// These are the feats restricted to bonus feat slots (e.g., Fighter bonus = martial feats,
+    /// Wizard bonus = metamagic/item creation).
+    /// </summary>
+    public HashSet<int> GetClassBonusFeatPool(int classId)
+    {
+        var result = new HashSet<int>();
+        var featTable = _gameDataService.Get2DAValue("classes", classId, "FeatsTable");
+        if (string.IsNullOrEmpty(featTable) || featTable == "****")
+            return result;
+
+        int rowCount = _gameDataService.Get2DA(featTable)?.RowCount ?? 300;
+        for (int row = 0; row < rowCount; row++)
+        {
+            var featIndexStr = _gameDataService.Get2DAValue(featTable, row, "FeatIndex");
+            if (string.IsNullOrEmpty(featIndexStr) || featIndexStr == "****")
+                break;
+
+            if (int.TryParse(featIndexStr, out int featId))
+            {
+                var listType = _gameDataService.Get2DAValue(featTable, row, "List");
+                if (listType == "1") // Bonus-only feats
+                    result.Add(featId);
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Auto-assigns feats based on package preferences, falling back to alphabetical selection.
+    /// Shared by both New Character Wizard and Level Up Wizard.
+    /// </summary>
+    /// <param name="creature">The creature (for prereq checking)</param>
+    /// <param name="classId">The class being leveled/created</param>
+    /// <param name="packageId">Package ID for preferences (255 = no package)</param>
+    /// <param name="currentFeats">Current feat set (including any tentatively selected)</param>
+    /// <param name="maxCount">Maximum number of feats to auto-assign</param>
+    /// <param name="bonusFeatPool">If non-null, restrict selections to this pool (for class bonus feats)</param>
+    /// <param name="prereqChecker">Function to check if a feat meets prerequisites</param>
+    /// <returns>List of auto-assigned feat IDs</returns>
+    public List<int> AutoAssignFeats(
+        UtcFile creature,
+        int classId,
+        byte packageId,
+        HashSet<int> currentFeats,
+        int maxCount,
+        HashSet<int>? bonusFeatPool,
+        Func<int, bool> prereqChecker)
+    {
+        var assigned = new List<int>();
+
+        // Read package feat preferences
+        var preferredFeatIds = new List<int>();
+        if (packageId != 255)
+        {
+            var featPref2da = _gameDataService.Get2DAValue("packages", packageId, "FeatPref2DA");
+            if (!string.IsNullOrEmpty(featPref2da) && featPref2da != "****")
+            {
+                for (int row = 0; row < 100; row++)
+                {
+                    var featIdStr = _gameDataService.Get2DAValue(featPref2da, row, "FeatIndex");
+                    if (string.IsNullOrEmpty(featIdStr) || featIdStr == "****")
+                        break;
+                    if (int.TryParse(featIdStr, out int featId))
+                        preferredFeatIds.Add(featId);
+                }
+            }
+        }
+
+        // Build a temp creature for availability check
+        bool IsAvailableAndValid(int featId)
+        {
+            if (currentFeats.Contains(featId)) return false;
+            if (assigned.Contains(featId)) return false;
+            if (bonusFeatPool != null && !bonusFeatPool.Contains(featId)) return false;
+            if (!IsFeatAvailable(creature, featId)) return false;
+            return prereqChecker(featId);
+        }
+
+        // First pass: pick from preferred feats
+        foreach (var featId in preferredFeatIds)
+        {
+            if (assigned.Count >= maxCount) break;
+            if (IsAvailableAndValid(featId))
+                assigned.Add(featId);
+        }
+
+        // Second pass: fill remaining alphabetically from all available feats
+        if (assigned.Count < maxCount)
+        {
+            var allFeatIds = GetAllFeatIds();
+            var remaining = allFeatIds
+                .Where(IsAvailableAndValid)
+                .Select(id => (Id: id, Name: GetFeatName(id)))
+                .Where(f => !string.IsNullOrEmpty(f.Name))
+                .OrderBy(f => f.Name);
+
+            foreach (var (id, _) in remaining)
+            {
+                if (assigned.Count >= maxCount) break;
+                assigned.Add(id);
+            }
+        }
+
+        return assigned;
+    }
+
+    /// <summary>
     /// Gets the number of bonus feats granted by a class up to a given level.
     /// Reads from cls_bfeat_*.2da (BonusFeatsTable column in classes.2da).
     /// </summary>

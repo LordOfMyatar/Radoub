@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 
@@ -295,6 +297,114 @@ public class SpellService
         }
 
         return limits;
+    }
+
+    /// <summary>
+    /// Gets all spell IDs available to a class at a given spell level.
+    /// Filters spells.2da by the class-specific column matching the spell level.
+    /// </summary>
+    public List<int> GetSpellsForClassAtLevel(int classId, int spellLevel)
+    {
+        var result = new List<int>();
+        var allSpellIds = GetAllSpellIds();
+
+        foreach (var spellId in allSpellIds)
+        {
+            var info = GetSpellInfo(spellId);
+            if (info == null) continue;
+
+            int levelForClass = info.GetLevelForClass(classId);
+            if (levelForClass == spellLevel)
+                result.Add(spellId);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Auto-assigns spells based on package preferences, falling back to alphabetical selection.
+    /// Shared by both New Character Wizard and Level Up Wizard.
+    /// </summary>
+    /// <param name="classId">The caster class</param>
+    /// <param name="packageId">Package ID for preferences (255 = no package)</param>
+    /// <param name="maxSpellLevel">Highest spell level to fill</param>
+    /// <param name="maxPerLevel">Function returning max spells allowed for a given spell level</param>
+    /// <param name="existingSpells">Set of spell IDs the creature already knows (to exclude)</param>
+    /// <returns>Dictionary of spellLevel -> list of assigned spell IDs</returns>
+    public Dictionary<int, List<int>> AutoAssignSpells(
+        int classId,
+        byte packageId,
+        int maxSpellLevel,
+        Func<int, int> maxPerLevel,
+        HashSet<int>? existingSpells)
+    {
+        var result = new Dictionary<int, List<int>>();
+
+        // Read package spell preferences
+        var preferredSpellIds = new List<int>();
+        if (packageId != 255)
+        {
+            var spellPref2da = _gameDataService.Get2DAValue("packages", packageId, "SpellPref2DA");
+            if (!string.IsNullOrEmpty(spellPref2da) && spellPref2da != "****")
+            {
+                for (int row = 0; row < 100; row++)
+                {
+                    var spellIdStr = _gameDataService.Get2DAValue(spellPref2da, row, "SpellIndex");
+                    if (string.IsNullOrEmpty(spellIdStr) || spellIdStr == "****")
+                        break;
+                    if (int.TryParse(spellIdStr, out int spellId))
+                        preferredSpellIds.Add(spellId);
+                }
+            }
+        }
+
+        // Build available spells by level
+        var availableByLevel = new Dictionary<int, List<(int SpellId, string SpellName)>>();
+        var allSpellIds = GetAllSpellIds();
+
+        foreach (var spellId in allSpellIds)
+        {
+            if (existingSpells != null && existingSpells.Contains(spellId))
+                continue;
+
+            var info = GetSpellInfo(spellId);
+            if (info == null) continue;
+
+            int levelForClass = info.GetLevelForClass(classId);
+            if (levelForClass < 0 || levelForClass > maxSpellLevel) continue;
+
+            if (!availableByLevel.ContainsKey(levelForClass))
+                availableByLevel[levelForClass] = new List<(int, string)>();
+            availableByLevel[levelForClass].Add((spellId, info.Name));
+        }
+
+        // Fill each level
+        for (int level = 0; level <= maxSpellLevel; level++)
+        {
+            int maxForLevel = maxPerLevel(level);
+            if (maxForLevel <= 0) continue;
+
+            result[level] = new List<int>();
+            var available = availableByLevel.GetValueOrDefault(level, new List<(int SpellId, string SpellName)>());
+
+            // Prefer package spells first
+            foreach (var prefId in preferredSpellIds)
+            {
+                if (result[level].Count >= maxForLevel) break;
+                if (available.Any(s => s.SpellId == prefId) && !result[level].Contains(prefId))
+                    result[level].Add(prefId);
+            }
+
+            // Fill remaining alphabetically
+            foreach (var spell in available.OrderBy(s => s.SpellName))
+            {
+                if (result[level].Count >= maxForLevel) break;
+                if (!result[level].Contains(spell.SpellId))
+                    result[level].Add(spell.SpellId);
+            }
+        }
+
+        return result;
     }
 }
 
