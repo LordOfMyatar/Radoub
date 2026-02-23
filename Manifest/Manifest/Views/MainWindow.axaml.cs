@@ -336,62 +336,27 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void UpdateRecentFilesMenu()
     {
-        RecentFilesMenu.Items.Clear();
-
-        var recentFiles = SettingsService.Instance.RecentFiles;
-
-        if (recentFiles.Count == 0)
-        {
-            var emptyItem = new MenuItem { Header = "(No recent files)", IsEnabled = false };
-            RecentFilesMenu.Items.Add(emptyItem);
-            return;
-        }
-
-        foreach (var filePath in recentFiles)
-        {
-            var fileName = Path.GetFileName(filePath);
-            var displayPath = UnifiedLogger.SanitizePath(filePath);
-
-            var menuItem = new MenuItem
+        Radoub.UI.Services.RecentFilesMenuHelper.Populate(
+            RecentFilesMenu,
+            SettingsService.Instance.RecentFiles,
+            async filePath =>
             {
-                Header = fileName,
-                Tag = filePath
-            };
-            ToolTip.SetTip(menuItem, displayPath);
-            menuItem.Click += OnRecentFileClick;
-
-            RecentFilesMenu.Items.Add(menuItem);
-        }
-
-        // Add separator and clear option
-        RecentFilesMenu.Items.Add(new Separator());
-
-        var clearItem = new MenuItem { Header = "Clear Recent Files" };
-        clearItem.Click += OnClearRecentFilesClick;
-        RecentFilesMenu.Items.Add(clearItem);
-    }
-
-    private async void OnRecentFileClick(object? sender, RoutedEventArgs e)
-    {
-        if (sender is MenuItem menuItem && menuItem.Tag is string filePath)
-        {
-            if (File.Exists(filePath))
+                if (File.Exists(filePath))
+                {
+                    await LoadFile(filePath);
+                }
+                else
+                {
+                    UpdateStatus($"File not found: {Path.GetFileName(filePath)}");
+                    SettingsService.Instance.RemoveRecentFile(filePath);
+                    UpdateRecentFilesMenu();
+                }
+            },
+            () =>
             {
-                await LoadFile(filePath);
-            }
-            else
-            {
-                UpdateStatus($"File not found: {Path.GetFileName(filePath)}");
-                SettingsService.Instance.RemoveRecentFile(filePath);
+                SettingsService.Instance.ClearRecentFiles();
                 UpdateRecentFilesMenu();
-            }
-        }
-    }
-
-    private void OnClearRecentFilesClick(object? sender, RoutedEventArgs e)
-    {
-        SettingsService.Instance.ClearRecentFiles();
-        UpdateRecentFilesMenu();
+            });
     }
 
     private async void OnOpenClick(object? sender, RoutedEventArgs e)
