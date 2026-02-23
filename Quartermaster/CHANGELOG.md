@@ -15,11 +15,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Level Up Wizard - Feature Parity & Spells (#1491)
 
-- [ ] #1473 - Auto-assign buttons (skills, feats) + package-based defaults
-- [ ] #1474 - Show auto-assigned spells for Ranger/Paladin
-- [ ] #1018 (partial) - Spell selection UI for spontaneous casters (Sorcerer/Bard)
-- [ ] #1018 (partial) - Spell selection UI for prepared casters (Wizard/Cleric/Druid)
-- [ ] #1018 (partial) - Bonus feat restriction for Fighter/Wizard
+- [x] #1473 - Auto-assign buttons for skills, feats, and spells using package-based defaults
+  - Extracted auto-assign algorithms from NCW into shared `FeatService`, `SkillService`, `SpellService` methods
+  - LUW resolves default package from `classes.2da` `Package` column
+  - NCW refactored to call shared services (removed ~120 lines of inline logic)
+- [x] #1474 - Divine/auto-grant caster spell display (Ranger, Paladin, Cleric, Druid)
+  - Read-only info panel showing spells gained at each level
+  - Uses `GetSpellsForClassAtLevel()` from shared `SpellService`
+- [x] #1018 (partial) - Spell selection UI for spontaneous casters (Sorcerer/Bard)
+  - Two-panel picker with spell level tabs, search filter, add/remove, auto-assign
+  - Delta calculation: only new spells gained at current level (via `cls_spkn_*.2da`)
+  - Spell write-back to creature's `KnownSpells` array on apply
+- [x] #1018 (partial) - Spell selection UI for prepared casters (Wizard)
+  - Spellbook picker using `cls_spgn_*.2da` for slots per level
+  - Shares UI infrastructure with spontaneous caster picker
+- [x] #1018 (partial) - Bonus feat restriction for Fighter/Wizard
+  - Bonus feat slots restricted to `List=1` feats from `cls_feat_*.2da`
+  - General feat slots remain unrestricted
+  - UI labels indicate "Class Bonus Feat" vs "General Feat" selection
+- [x] Auto-granted class feats (List=3) applied during level-up
+  - Added `GetClassFeatsGrantedAtLevel()` to FeatService
+  - Bard Song, Curse Song, and similar feats now correctly granted at appropriate levels
 
 ---
 
