@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.15-alpha] - 2026-02-22
-**Branch**: `quartermaster/issue-1490` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1490` | **PR**: #1494
 
 ### Sprint: Level Up Wizard - Bug Fix & Foundation (#1490)
 
