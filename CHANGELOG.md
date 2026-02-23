@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.76] - 2026-02-22
-**Branch**: `radoub/issue-1453` | **PR**: #TBD
+**Branch**: `radoub/issue-1453` | **PR**: #1508
 
 ### Sprint: Cross-Tool Service Standardization (#1444)
 
