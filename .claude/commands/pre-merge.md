@@ -235,6 +235,7 @@ powershell -ExecutionPolicy Bypass -File "d:\LOM\workspace\Radoub\Radoub.Integra
 
 ## Notes
 
+- **`jq` not available**: This environment does not have `jq` installed. Commands and hooks that parse JSON should use PowerShell (`ConvertFrom-Json`, `Select-String`) or `gh`'s built-in `--jq` flag instead. If a command fails with `jq: command not found`, switch to a PowerShell equivalent or use `gh` query flags (e.g., `gh project item-add ... --format json` then parse with `pwsh -Command`).
 - Default: unit tests only (fast), unless UI changes detected
 - UI tests auto-triggered when `.axaml`, `Views/`, `Controls/`, `Dialogs/`, or `Windows/` files change
 - Use `--no-auto-ui` to disable auto-detection (force unit-only)
