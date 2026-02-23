@@ -373,7 +373,12 @@ After Step 9 (Create Draft PR), **only for sprints and epics**:
 ```bash
 # Add to Radoub project (returns item ID)
 ITEM_JSON=$(gh project item-add 3 --owner LordOfMyatar --url https://github.com/LordOfMyatar/Radoub/issues/[number] --format json)
-ITEM_ID=$(echo "$ITEM_JSON" | jq -r '.id')
+
+# Parse item ID (no jq on this system - use grep/sed or parse from gh output)
+# The gh output includes "id" field. Extract with:
+ITEM_ID=$(echo "$ITEM_JSON" | pwsh -Command '$input | ConvertFrom-Json | Select-Object -ExpandProperty id')
+# Or parse directly from JSON output (id is always returned):
+# ITEM_ID=$(echo "$ITEM_JSON" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
 
 # Set status to "In Progress"
 gh project item-edit \
@@ -382,6 +387,8 @@ gh project item-edit \
   --field-id PVTSSF_lAHOAotjYs4BHbMqzg4Lxyk \
   --single-select-option-id 47fc9ee4
 ```
+
+> **Note**: `jq` is not available in this environment. Use PowerShell `ConvertFrom-Json`, `grep`/`sed`, or `gh`'s `--jq` flag for JSON parsing.
 
 ### Updated Summary Output
 

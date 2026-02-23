@@ -364,12 +364,6 @@ public partial class NewCharacterWizardWindow
         public string SchoolAbbrev { get; set; } = "";
     }
 
-    private class SpellAutoAssignItem
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = "";
-    }
-
     private class FeatDisplayItem
     {
         public int FeatId { get; set; }

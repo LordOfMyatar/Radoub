@@ -292,51 +292,18 @@ public partial class NewCharacterWizardWindow
         // Clear all allocations
         _skillRanksAllocated.Clear();
 
-        // Try to read package skill preferences from SkillPref2DA in packages.2da
-        var preferredSkillIds = new List<int>();
-        if (_selectedPackageId != 255)
-        {
-            var skillPref2da = _gameDataService.Get2DAValue("packages", _selectedPackageId, "SkillPref2DA");
-            if (!string.IsNullOrEmpty(skillPref2da) && skillPref2da != "****")
-            {
-                // Read skill indices from the package skill preference table
-                int prefRowCount = _gameDataService.Get2DA(skillPref2da)?.RowCount ?? 50;
-                for (int row = 0; row < prefRowCount; row++)
-                {
-                    var skillIndexStr = _gameDataService.Get2DAValue(skillPref2da, row, "SkillIndex");
-                    if (string.IsNullOrEmpty(skillIndexStr) || skillIndexStr == "****")
-                        break;
-                    if (int.TryParse(skillIndexStr, out int skillIndex))
-                        preferredSkillIds.Add(skillIndex);
-                }
-            }
-        }
+        // Use shared service method (NCW is level 1, no existing ranks)
+        var allocated = _displayService.Skills.AutoAssignSkills(
+            _selectedPackageId,
+            _classSkillIds,
+            _unavailableSkillIds,
+            _skillPointsTotal,
+            totalLevel: 1,
+            existingRanks: null);
 
-        // If no package preferences, use class skills sorted alphabetically
-        if (preferredSkillIds.Count == 0)
+        foreach (var (skillId, points) in allocated)
         {
-            preferredSkillIds = _classSkillIds.OrderBy(id => _displayService.Skills.GetSkillName(id)).ToList();
-        }
-
-        // Distribute points to preferred skills, prioritizing class skills
-        // First pass: class skills from preferences
-        foreach (var skillId in preferredSkillIds.Where(id => _classSkillIds.Contains(id) && !_unavailableSkillIds.Contains(id)))
-        {
-            int maxRanks = 4; // Class skill max at level 1
-            while (_skillRanksAllocated.GetValueOrDefault(skillId, 0) < maxRanks && GetSkillPointsRemaining() >= 1)
-            {
-                _skillRanksAllocated[skillId] = _skillRanksAllocated.GetValueOrDefault(skillId, 0) + 1;
-            }
-        }
-
-        // Second pass: cross-class skills from preferences (if points remain)
-        foreach (var skillId in preferredSkillIds.Where(id => !_classSkillIds.Contains(id) && !_unavailableSkillIds.Contains(id)))
-        {
-            int maxRanks = 2; // Cross-class max at level 1
-            while (_skillRanksAllocated.GetValueOrDefault(skillId, 0) < maxRanks && GetSkillPointsRemaining() >= 2)
-            {
-                _skillRanksAllocated[skillId] = _skillRanksAllocated.GetValueOrDefault(skillId, 0) + 1;
-            }
+            _skillRanksAllocated[skillId] = points;
         }
 
         // Update display items

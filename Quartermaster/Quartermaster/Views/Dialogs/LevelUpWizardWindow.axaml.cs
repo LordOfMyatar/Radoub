@@ -2,11 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Quartermaster.Services;
 using Radoub.Formats.Utc;
+using Radoub.UI.Services;
 
 namespace Quartermaster.Views.Dialogs;
 
@@ -30,12 +32,27 @@ public partial class LevelUpWizardWindow : Window
     private bool _isNewClass;
     private List<int> _selectedFeats = new();
     private Dictionary<int, int> _skillPointsAdded = new();
-    private List<int> _selectedSpells = new();
+    private readonly Dictionary<int, List<int>> _selectedSpellsByLevel = new();
 
     // Step applicability
     private int _featsToSelect;
+    private int _generalFeatsToSelect;
+    private int _bonusFeatsToSelect;
     private int _skillPointsToAllocate;
     private bool _needsSpellSelection;
+    private byte _resolvedPackageId = 255;
+
+    // Spell selection state
+    private bool _isDivineCaster;
+    private bool _isSpontaneousCaster;
+    private int _maxSpellLevelThisLevel;
+    private int _currentSpellLevel;
+    private Dictionary<int, int> _newSpellsPerLevel = new(); // spell level -> new spells to pick
+    private List<SpellDisplayItem> _availableSpellsForLevel = new();
+    private List<SpellDisplayItem> _filteredAvailableSpells = new();
+
+    // Bonus feat restriction
+    private HashSet<int>? _bonusFeatPool;
 
     // UI state
     private List<ClassDisplayItem> _allClasses = new();
@@ -78,6 +95,20 @@ public partial class LevelUpWizardWindow : Window
     private readonly TextBlock _skillPointsRemainingLabel;
     private readonly TextBlock _skillPointsTotalLabel;
     private readonly ItemsControl _skillsItemsControl;
+
+    // Step 4 controls
+    private readonly TextBlock _spellStepDescription;
+    private readonly Border _spellTabsBar;
+    private readonly StackPanel _spellLevelTabsPanel;
+    private readonly TextBlock _spellSelectionCountLabel;
+    private readonly Grid _spellSelectionTwoPanel;
+    private readonly TextBox _spellSearchBox;
+    private readonly ListBox _availableSpellsListBox;
+    private readonly ListBox _selectedSpellsListBox;
+    private readonly TextBlock _selectedSpellCountLabel;
+    private readonly Border _divineSpellInfoPanel;
+    private readonly TextBlock _divineSpellInfoLabel;
+    private readonly ItemsControl _divineSpellsList;
 
     // Step 5 controls
     private readonly TextBlock _summaryClassLabel;
@@ -159,6 +190,20 @@ public partial class LevelUpWizardWindow : Window
         _skillPointsTotalLabel = this.FindControl<TextBlock>("SkillPointsTotalLabel")!;
         _skillsItemsControl = this.FindControl<ItemsControl>("SkillsItemsControl")!;
 
+        // Step 4
+        _spellStepDescription = this.FindControl<TextBlock>("SpellStepDescription")!;
+        _spellTabsBar = this.FindControl<Border>("SpellTabsBar")!;
+        _spellLevelTabsPanel = this.FindControl<StackPanel>("SpellLevelTabsPanel")!;
+        _spellSelectionCountLabel = this.FindControl<TextBlock>("SpellSelectionCountLabel")!;
+        _spellSelectionTwoPanel = this.FindControl<Grid>("SpellSelectionTwoPanel")!;
+        _spellSearchBox = this.FindControl<TextBox>("SpellSearchBox")!;
+        _availableSpellsListBox = this.FindControl<ListBox>("AvailableSpellsListBox")!;
+        _selectedSpellsListBox = this.FindControl<ListBox>("SelectedSpellsListBox")!;
+        _selectedSpellCountLabel = this.FindControl<TextBlock>("SelectedSpellCountLabel")!;
+        _divineSpellInfoPanel = this.FindControl<Border>("DivineSpellInfoPanel")!;
+        _divineSpellInfoLabel = this.FindControl<TextBlock>("DivineSpellInfoLabel")!;
+        _divineSpellsList = this.FindControl<ItemsControl>("DivineSpellsList")!;
+
         // Step 5
         _summaryClassLabel = this.FindControl<TextBlock>("SummaryClassLabel")!;
         _summaryFeatsPanel = this.FindControl<Border>("SummaryFeatsPanel")!;
@@ -235,7 +280,7 @@ public partial class LevelUpWizardWindow : Window
             1 => _selectedClassId >= 0,
             2 => _selectedFeats.Count >= _featsToSelect,
             3 => GetRemainingSkillPoints() == 0,
-            4 => true, // Spell selection is deferred - always allow proceeding
+            4 => _isDivineCaster || IsSpellSelectionComplete(),
             5 => true,
             _ => false
         };
@@ -249,7 +294,7 @@ public partial class LevelUpWizardWindow : Window
             1 when _selectedClassId < 0 => "Select a class to continue.",
             2 when _selectedFeats.Count < _featsToSelect => $"Select {_featsToSelect - _selectedFeats.Count} more feat(s).",
             3 when GetRemainingSkillPoints() > 0 => $"Allocate {GetRemainingSkillPoints()} remaining skill point(s).",
-            4 when _needsSpellSelection => "Spell selection deferred. Add spells via the Spells panel after leveling.",
+            4 when !_isDivineCaster && !IsSpellSelectionComplete() => "Select spells for each spell level.",
             _ => ""
         };
     }
@@ -515,9 +560,21 @@ public partial class LevelUpWizardWindow : Window
 
     private void PrepareStep2()
     {
+        // Resolve default package for auto-assign
+        var pkgStr = _displayService.GameDataService.Get2DAValue("classes", _selectedClassId, "Package");
+        _resolvedPackageId = (!string.IsNullOrEmpty(pkgStr) && pkgStr != "****" && byte.TryParse(pkgStr, out byte pkgId))
+            ? pkgId : (byte)255;
+
         // Use shared FeatService calculation for consistency with NCW
         var featInfo = _displayService.Feats.GetLevelUpFeatCount(_creature, _selectedClassId, _newClassLevel);
         _featsToSelect = featInfo.TotalFeats;
+        _generalFeatsToSelect = featInfo.GeneralFeats + featInfo.RacialBonusFeats;
+        _bonusFeatsToSelect = featInfo.ClassBonusFeats;
+
+        // Get the bonus feat pool if class grants bonus feats
+        _bonusFeatPool = _bonusFeatsToSelect > 0
+            ? _displayService.Feats.GetClassBonusFeatPool(_selectedClassId)
+            : null;
 
         _selectedFeats.Clear();
 
@@ -525,7 +582,7 @@ public partial class LevelUpWizardWindow : Window
         var parts = new List<string>();
         if (featInfo.GeneralFeats > 0) parts.Add($"{featInfo.GeneralFeats} general");
         if (featInfo.RacialBonusFeats > 0) parts.Add($"{featInfo.RacialBonusFeats} racial bonus");
-        if (featInfo.ClassBonusFeats > 0) parts.Add($"{featInfo.ClassBonusFeats} class bonus");
+        if (featInfo.ClassBonusFeats > 0) parts.Add($"{featInfo.ClassBonusFeats} class bonus (restricted)");
         var breakdown = parts.Count > 1 ? $" ({string.Join(" + ", parts)})" : "";
 
         _featAllocationLabel.Text = _featsToSelect > 0
@@ -680,13 +737,29 @@ public partial class LevelUpWizardWindow : Window
 
     private void UpdateFeatSelectionUI()
     {
-        _selectedFeatsHeader.Text = $"Selected Feats ({_selectedFeats.Count}/{_featsToSelect})";
+        // Show bonus feat phase indicator
+        if (IsSelectingBonusFeat())
+        {
+            _selectedFeatsHeader.Text = $"Selected Feats ({_selectedFeats.Count}/{_featsToSelect}) - Bonus Feat (restricted pool)";
+        }
+        else
+        {
+            _selectedFeatsHeader.Text = $"Selected Feats ({_selectedFeats.Count}/{_featsToSelect})";
+        }
 
         // Update button states
         var selectedItem = _availableFeatsListBox.SelectedItem as FeatDisplayItem;
-        _addFeatButton.IsEnabled = selectedItem != null &&
-                                   selectedItem.CanSelect &&
-                                   _selectedFeats.Count < _featsToSelect;
+        bool canAdd = selectedItem != null &&
+                      selectedItem.CanSelect &&
+                      _selectedFeats.Count < _featsToSelect;
+
+        // If in bonus feat phase, only allow feats from the bonus pool
+        if (canAdd && IsSelectingBonusFeat() && _bonusFeatPool != null && selectedItem != null)
+        {
+            canAdd = _bonusFeatPool.Contains(selectedItem.FeatId);
+        }
+
+        _addFeatButton.IsEnabled = canAdd;
         _removeFeatButton.IsEnabled = _selectedFeatsListBox.SelectedItem != null;
 
         ValidateCurrentStep();
@@ -728,6 +801,10 @@ public partial class LevelUpWizardWindow : Window
             return;
 
         if (!item.CanSelect || _selectedFeats.Count >= _featsToSelect)
+            return;
+
+        // Enforce bonus feat pool restriction
+        if (IsSelectingBonusFeat() && _bonusFeatPool != null && !_bonusFeatPool.Contains(item.FeatId))
             return;
 
         _selectedFeats.Add(item.FeatId);
@@ -781,6 +858,62 @@ public partial class LevelUpWizardWindow : Window
             .OrderByDescending(f => f.CanSelect)
             .ThenBy(f => f.Name)
             .ToList();
+    }
+
+    private void OnFeatAutoAssignClick(object? sender, RoutedEventArgs e)
+    {
+        _selectedFeats.Clear();
+
+        var existingFeats = new HashSet<int>(_creature.FeatList.Select(f => (int)f));
+        var currentFeats = new HashSet<ushort>(_creature.FeatList);
+
+        bool CheckPrereqs(int featId)
+        {
+            var result = _displayService.Feats.CheckFeatPrerequisites(
+                _creature, featId, currentFeats,
+                c => _displayService.CalculateBaseAttackBonus(c),
+                cid => _displayService.GetClassName(cid));
+            return result.AllMet;
+        }
+
+        // Auto-assign general feats first (unrestricted pool)
+        if (_generalFeatsToSelect > 0)
+        {
+            var generalFeats = _displayService.Feats.AutoAssignFeats(
+                _creature, _selectedClassId, _resolvedPackageId,
+                existingFeats, _generalFeatsToSelect, null, CheckPrereqs);
+            _selectedFeats.AddRange(generalFeats);
+
+            // Add to currentFeats for prereq chain
+            foreach (var f in generalFeats)
+            {
+                existingFeats.Add(f);
+                currentFeats.Add((ushort)f);
+            }
+        }
+
+        // Auto-assign bonus feats (restricted pool)
+        if (_bonusFeatsToSelect > 0 && _bonusFeatPool != null)
+        {
+            var bonusFeats = _displayService.Feats.AutoAssignFeats(
+                _creature, _selectedClassId, _resolvedPackageId,
+                existingFeats, _bonusFeatsToSelect, _bonusFeatPool, CheckPrereqs);
+            _selectedFeats.AddRange(bonusFeats);
+        }
+
+        RefreshFeatPrerequisites();
+        ApplyFeatFilter();
+        RefreshSelectedFeatsList();
+        UpdateFeatSelectionUI();
+    }
+
+    /// <summary>
+    /// Determines if the current feat selection is in the bonus feat phase.
+    /// General feats are selected first, then bonus feats from the restricted pool.
+    /// </summary>
+    private bool IsSelectingBonusFeat()
+    {
+        return _bonusFeatsToSelect > 0 && _selectedFeats.Count >= _generalFeatsToSelect;
     }
 
     #endregion
@@ -918,90 +1051,366 @@ public partial class LevelUpWizardWindow : Window
         }
     }
 
+    private void OnSkillAutoAssignClick(object? sender, RoutedEventArgs e)
+    {
+        int totalLevel = _creature.ClassList.Sum(c => c.ClassLevel) + 1;
+        _skillPointsAdded = _displayService.Skills.AutoAssignSkills(
+            _resolvedPackageId,
+            _classSkillIds,
+            _unavailableSkillIds,
+            _skillPointsToAllocate,
+            totalLevel,
+            _creature.SkillList);
+
+        _skillsItemsControl.ItemsSource = BuildSkillList();
+        UpdateSkillPointsDisplay();
+    }
+
     #endregion
 
     #region Step 4: Spell Selection
 
-    private TextBlock? _spellPlaceholder;
-    private int _spellsToSelect;
-    private int _maxSpellLevelThisLevel;
-
     private void PrepareStep4()
     {
-        // Get the placeholder control if not yet found
-        _spellPlaceholder ??= this.FindControl<TextBlock>("SpellPlaceholder");
-
-        // Check if this class/level grants new spells
         bool isCaster = _displayService.IsCasterClass(_selectedClassId);
         if (!isCaster)
         {
             _needsSpellSelection = false;
-            if (_spellPlaceholder != null)
-                _spellPlaceholder.Text = $"{_displayService.GetClassName(_selectedClassId)} is not a spellcasting class.";
+            _spellStepDescription.Text = $"{_displayService.GetClassName(_selectedClassId)} is not a spellcasting class.";
+            _spellTabsBar.IsVisible = false;
+            _spellSelectionTwoPanel.IsVisible = false;
+            _divineSpellInfoPanel.IsVisible = false;
             return;
         }
 
-        // Check spell progression for this class
-        bool isSpontaneous = _displayService.Spells.IsSpontaneousCaster(_selectedClassId);
+        _isSpontaneousCaster = _displayService.Spells.IsSpontaneousCaster(_selectedClassId);
+        _isDivineCaster = _displayService.IsDivineCaster(_selectedClassId);
         int maxSpellLevel = _displayService.Spells.GetMaxSpellLevel(_selectedClassId, _newClassLevel);
         int prevMaxSpellLevel = _newClassLevel > 1 ? _displayService.Spells.GetMaxSpellLevel(_selectedClassId, _newClassLevel - 1) : -1;
-
         _maxSpellLevelThisLevel = maxSpellLevel;
 
-        if (isSpontaneous)
+        if (maxSpellLevel < 0)
         {
-            // For spontaneous casters (Sorcerer/Bard), check spells known
+            _needsSpellSelection = false;
+            _spellStepDescription.Text = "No spells available at this class level.";
+            _spellTabsBar.IsVisible = false;
+            _spellSelectionTwoPanel.IsVisible = false;
+            _divineSpellInfoPanel.IsVisible = false;
+            return;
+        }
+
+        var className = _displayService.GetClassName(_selectedClassId);
+
+        // Divine casters (Cleric, Druid, Ranger, Paladin) - show info panel
+        if (_isDivineCaster)
+        {
+            _needsSpellSelection = true; // Step shows, but no selection needed
+            _spellTabsBar.IsVisible = false;
+            _spellSelectionTwoPanel.IsVisible = false;
+            _divineSpellInfoPanel.IsVisible = true;
+
+            _spellStepDescription.Text = $"{className} spells are granted automatically.";
+            _divineSpellInfoLabel.Text = $"As a {className}, you gain access to all {className.ToLowerInvariant()} spells " +
+                                          $"up to level {maxSpellLevel}. No spell selection is needed.";
+
+            // Show new spells gained at this level for informational purposes
+            var newSpellNames = new List<string>();
+            for (int level = Math.Max(0, prevMaxSpellLevel + 1); level <= maxSpellLevel; level++)
+            {
+                var spellIds = _displayService.Spells.GetSpellsForClassAtLevel(_selectedClassId, level);
+                foreach (var spellId in spellIds)
+                    newSpellNames.Add($"  [{level}] {_displayService.GetSpellName(spellId)}");
+            }
+
+            if (newSpellNames.Count > 0)
+            {
+                _divineSpellsList.ItemsSource = newSpellNames.OrderBy(s => s).Take(50).ToList();
+            }
+            else
+            {
+                _divineSpellsList.ItemsSource = new[] { "No new spell levels gained." };
+            }
+            return;
+        }
+
+        // Spontaneous casters (Sorcerer/Bard) - calculate new spells per level
+        _newSpellsPerLevel.Clear();
+        _selectedSpellsByLevel.Clear();
+
+        if (_isSpontaneousCaster)
+        {
             var knownAtLevel = _displayService.Spells.GetSpellsKnownLimit(_selectedClassId, _newClassLevel);
             var knownAtPrevLevel = _newClassLevel > 1 ? _displayService.Spells.GetSpellsKnownLimit(_selectedClassId, _newClassLevel - 1) : null;
 
-            _spellsToSelect = 0;
             if (knownAtLevel != null)
             {
-                for (int i = 0; i <= 9; i++)
+                for (int i = 0; i <= maxSpellLevel; i++)
                 {
                     int prevKnown = knownAtPrevLevel?[i] ?? 0;
                     int newKnown = knownAtLevel[i];
                     if (newKnown > prevKnown)
-                        _spellsToSelect += (newKnown - prevKnown);
+                        _newSpellsPerLevel[i] = newKnown - prevKnown;
                 }
             }
 
-            if (_spellsToSelect > 0)
-            {
-                _needsSpellSelection = true;
-                if (_spellPlaceholder != null)
-                    _spellPlaceholder.Text = $"Spell selection for spontaneous casters is not yet implemented.\n" +
-                                              $"You can learn {_spellsToSelect} new spell(s) at this level (up to level {maxSpellLevel}).\n" +
-                                              $"Use the Spells panel after leveling up to add spells manually.";
-            }
-            else
-            {
-                _needsSpellSelection = false;
-                if (_spellPlaceholder != null)
-                    _spellPlaceholder.Text = "No new spells to learn at this level.";
-            }
+            _spellStepDescription.Text = $"Choose new spells known for your {className}.";
         }
         else
         {
-            // For prepared casters (Wizard, Cleric, Druid), check if we gained a new spell level
-            bool gainedNewLevel = maxSpellLevel > prevMaxSpellLevel;
+            // Wizard - use spell gain table for spellbook additions
+            var slotsAtLevel = _displayService.Spells.GetSpellSlots(_selectedClassId, _newClassLevel);
+            var slotsAtPrevLevel = _newClassLevel > 1 ? _displayService.Spells.GetSpellSlots(_selectedClassId, _newClassLevel - 1) : null;
 
-            if (gainedNewLevel && maxSpellLevel > 0)
+            if (slotsAtLevel != null)
             {
-                _needsSpellSelection = true;
-                if (_spellPlaceholder != null)
-                    _spellPlaceholder.Text = $"Spell selection for prepared casters is not yet implemented.\n" +
-                                              $"You have gained access to level {maxSpellLevel} spells.\n" +
-                                              $"Use the Spells panel after leveling up to prepare spells.";
+                for (int i = 0; i <= maxSpellLevel; i++)
+                {
+                    int prevSlots = slotsAtPrevLevel?[i] ?? 0;
+                    int newSlots = slotsAtLevel[i];
+                    // Wizard gets 2 new spells per level for their spellbook (NWN convention)
+                    // At higher levels, just use delta if any new slots gained
+                    if (newSlots > prevSlots || (_newClassLevel == 1 && newSlots > 0))
+                    {
+                        _newSpellsPerLevel[i] = _newClassLevel == 1 ? newSlots : Math.Max(newSlots - prevSlots, 2);
+                    }
+                }
             }
-            else
+
+            _spellStepDescription.Text = $"Choose spells to add to your {className}'s spellbook.";
+        }
+
+        bool hasNewSpells = _newSpellsPerLevel.Values.Any(v => v > 0);
+        if (!hasNewSpells)
+        {
+            _needsSpellSelection = false;
+            _spellStepDescription.Text = "No new spells to learn at this level.";
+            _spellTabsBar.IsVisible = false;
+            _spellSelectionTwoPanel.IsVisible = false;
+            _divineSpellInfoPanel.IsVisible = false;
+            return;
+        }
+
+        _needsSpellSelection = true;
+        _spellTabsBar.IsVisible = true;
+        _spellSelectionTwoPanel.IsVisible = true;
+        _divineSpellInfoPanel.IsVisible = false;
+
+        // Build spell level tabs
+        BuildSpellLevelTabs();
+
+        // Select first available tab
+        _currentSpellLevel = _newSpellsPerLevel.Keys.Min();
+        SelectSpellLevelTab(_currentSpellLevel);
+    }
+
+    private void BuildSpellLevelTabs()
+    {
+        _spellLevelTabsPanel.Children.Clear();
+        foreach (var level in _newSpellsPerLevel.Keys.OrderBy(k => k))
+        {
+            var btn = new ToggleButton
             {
-                _needsSpellSelection = false;
-                if (_spellPlaceholder != null)
-                    _spellPlaceholder.Text = "No new spell levels gained. Use the Spells panel to prepare different spells.";
-            }
+                Content = level == 0 ? "Cantrips" : $"Level {level}",
+                Tag = level,
+                Margin = new Avalonia.Thickness(0, 0, 2, 0),
+                IsChecked = false
+            };
+            btn.Click += OnSpellLevelTabClick;
+            _spellLevelTabsPanel.Children.Add(btn);
         }
     }
+
+    private void OnSpellLevelTabClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is ToggleButton btn && btn.Tag is int level)
+            SelectSpellLevelTab(level);
+    }
+
+    private void SelectSpellLevelTab(int level)
+    {
+        _currentSpellLevel = level;
+
+        // Update tab checked states
+        foreach (var child in _spellLevelTabsPanel.Children)
+        {
+            if (child is ToggleButton tb && tb.Tag is int tabLevel)
+                tb.IsChecked = tabLevel == level;
+        }
+
+        LoadAvailableSpellsForLevel(level);
+        UpdateSelectedSpellsDisplay();
+        UpdateSpellSelectionCount();
+        ValidateCurrentStep();
+    }
+
+    private void LoadAvailableSpellsForLevel(int spellLevel)
+    {
+        var allSpellIds = _displayService.Spells.GetSpellsForClassAtLevel(_selectedClassId, spellLevel);
+        var selectedForLevel = _selectedSpellsByLevel.GetValueOrDefault(spellLevel, new List<int>());
+
+        // Get creature's existing spells to exclude
+        var existingSpells = new HashSet<int>(_creature.SpecAbilityList.Select(sa => (int)sa.Spell));
+
+        _availableSpellsForLevel = new List<SpellDisplayItem>();
+        foreach (var spellId in allSpellIds)
+        {
+            if (selectedForLevel.Contains(spellId)) continue;
+            if (existingSpells.Contains(spellId)) continue;
+
+            var info = _displayService.Spells.GetSpellInfo(spellId);
+            if (info == null) continue;
+
+            _availableSpellsForLevel.Add(new SpellDisplayItem
+            {
+                SpellId = spellId,
+                Name = info.Name,
+                SchoolAbbrev = GetSchoolAbbrev(info.School)
+            });
+        }
+
+        _availableSpellsForLevel = _availableSpellsForLevel.OrderBy(s => s.Name).ToList();
+        ApplySpellFilter();
+    }
+
+    private void ApplySpellFilter()
+    {
+        var filter = _spellSearchBox?.Text?.Trim() ?? "";
+
+        _filteredAvailableSpells = string.IsNullOrEmpty(filter)
+            ? new List<SpellDisplayItem>(_availableSpellsForLevel)
+            : _availableSpellsForLevel.Where(s => s.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        _availableSpellsListBox.ItemsSource = _filteredAvailableSpells;
+    }
+
+    private void OnSpellSearchChanged(object? sender, TextChangedEventArgs e)
+    {
+        ApplySpellFilter();
+    }
+
+    private void UpdateSelectedSpellsDisplay()
+    {
+        var selectedForLevel = _selectedSpellsByLevel.GetValueOrDefault(_currentSpellLevel, new List<int>());
+        var items = selectedForLevel.Select(id =>
+        {
+            var info = _displayService.Spells.GetSpellInfo(id);
+            return new SpellDisplayItem
+            {
+                SpellId = id,
+                Name = info?.Name ?? $"Spell {id}",
+                SchoolAbbrev = info != null ? GetSchoolAbbrev(info.School) : ""
+            };
+        }).OrderBy(s => s.Name).ToList();
+
+        _selectedSpellsListBox.ItemsSource = items;
+
+        int maxForLevel = _newSpellsPerLevel.GetValueOrDefault(_currentSpellLevel, 0);
+        _selectedSpellCountLabel.Text = $"({selectedForLevel.Count} / {maxForLevel})";
+
+        if (selectedForLevel.Count > maxForLevel)
+            _selectedSpellCountLabel.Foreground = BrushManager.GetErrorBrush(this);
+        else if (selectedForLevel.Count == maxForLevel)
+            _selectedSpellCountLabel.ClearValue(TextBlock.ForegroundProperty);
+        else
+            _selectedSpellCountLabel.Foreground = BrushManager.GetSuccessBrush(this);
+    }
+
+    private void UpdateSpellSelectionCount()
+    {
+        int totalSelected = 0;
+        int totalRequired = 0;
+        foreach (var (level, required) in _newSpellsPerLevel)
+        {
+            totalSelected += _selectedSpellsByLevel.GetValueOrDefault(level, new List<int>()).Count;
+            totalRequired += required;
+        }
+        _spellSelectionCountLabel.Text = $"Total: {totalSelected} / {totalRequired}";
+    }
+
+    private void OnAddSpellClick(object? sender, RoutedEventArgs e)
+    {
+        var selected = _availableSpellsListBox.SelectedItems?.Cast<SpellDisplayItem>().ToList();
+        if (selected == null || selected.Count == 0) return;
+
+        int maxForLevel = _newSpellsPerLevel.GetValueOrDefault(_currentSpellLevel, 0);
+        if (!_selectedSpellsByLevel.ContainsKey(_currentSpellLevel))
+            _selectedSpellsByLevel[_currentSpellLevel] = new List<int>();
+
+        foreach (var spell in selected)
+        {
+            if (_selectedSpellsByLevel[_currentSpellLevel].Count >= maxForLevel) break;
+            if (!_selectedSpellsByLevel[_currentSpellLevel].Contains(spell.SpellId))
+                _selectedSpellsByLevel[_currentSpellLevel].Add(spell.SpellId);
+        }
+
+        LoadAvailableSpellsForLevel(_currentSpellLevel);
+        UpdateSelectedSpellsDisplay();
+        UpdateSpellSelectionCount();
+        ValidateCurrentStep();
+    }
+
+    private void OnRemoveSpellClick(object? sender, RoutedEventArgs e)
+    {
+        var selected = _selectedSpellsListBox.SelectedItems?.Cast<SpellDisplayItem>().ToList();
+        if (selected == null || selected.Count == 0) return;
+
+        if (!_selectedSpellsByLevel.ContainsKey(_currentSpellLevel)) return;
+
+        foreach (var spell in selected)
+            _selectedSpellsByLevel[_currentSpellLevel].Remove(spell.SpellId);
+
+        if (_selectedSpellsByLevel[_currentSpellLevel].Count == 0)
+            _selectedSpellsByLevel.Remove(_currentSpellLevel);
+
+        LoadAvailableSpellsForLevel(_currentSpellLevel);
+        UpdateSelectedSpellsDisplay();
+        UpdateSpellSelectionCount();
+        ValidateCurrentStep();
+    }
+
+    private void OnSpellAutoAssignClick(object? sender, RoutedEventArgs e)
+    {
+        var existingSpells = new HashSet<int>(_creature.SpecAbilityList.Select(sa => (int)sa.Spell));
+
+        var assigned = _displayService.Spells.AutoAssignSpells(
+            _selectedClassId,
+            _resolvedPackageId,
+            _maxSpellLevelThisLevel,
+            level => _newSpellsPerLevel.GetValueOrDefault(level, 0),
+            existingSpells);
+
+        _selectedSpellsByLevel.Clear();
+        foreach (var (level, spells) in assigned)
+            _selectedSpellsByLevel[level] = spells;
+
+        LoadAvailableSpellsForLevel(_currentSpellLevel);
+        UpdateSelectedSpellsDisplay();
+        UpdateSpellSelectionCount();
+        ValidateCurrentStep();
+    }
+
+    private bool IsSpellSelectionComplete()
+    {
+        foreach (var (level, required) in _newSpellsPerLevel)
+        {
+            int selected = _selectedSpellsByLevel.GetValueOrDefault(level, new List<int>()).Count;
+            if (selected < required) return false;
+        }
+        return true;
+    }
+
+    private static string GetSchoolAbbrev(SpellSchool school) => school switch
+    {
+        SpellSchool.Abjuration => "Abj",
+        SpellSchool.Conjuration => "Con",
+        SpellSchool.Divination => "Div",
+        SpellSchool.Enchantment => "Enc",
+        SpellSchool.Evocation => "Evo",
+        SpellSchool.Illusion => "Ill",
+        SpellSchool.Necromancy => "Nec",
+        SpellSchool.Transmutation => "Tra",
+        _ => ""
+    };
 
     #endregion
 
@@ -1030,11 +1439,16 @@ public partial class LevelUpWizardWindow : Window
             }
         }
 
-        // Feats summary
-        if (_selectedFeats.Count > 0)
+        // Feats summary (player-selected + auto-granted)
+        var grantedFeatIds = _displayService.Feats.GetClassFeatsGrantedAtLevel(_selectedClassId, _newClassLevel);
+        var featSummary = _selectedFeats.Select(f => _displayService.GetFeatName(f)).ToList();
+        foreach (var gf in grantedFeatIds)
+            featSummary.Add($"{_displayService.GetFeatName(gf)} (granted)");
+
+        if (featSummary.Count > 0)
         {
             _summaryFeatsPanel.IsVisible = true;
-            _summaryFeatsList.ItemsSource = _selectedFeats.Select(f => _displayService.GetFeatName(f));
+            _summaryFeatsList.ItemsSource = featSummary;
         }
         else
         {
@@ -1049,10 +1463,19 @@ public partial class LevelUpWizardWindow : Window
         _summarySkillsList.ItemsSource = skillChanges.Count > 0 ? skillChanges : new[] { "(No skills allocated)" };
 
         // Spells summary
-        if (_selectedSpells.Count > 0)
+        var allSelectedSpells = _selectedSpellsByLevel
+            .SelectMany(kv => kv.Value)
+            .Distinct()
+            .ToList();
+        if (allSelectedSpells.Count > 0)
         {
             _summarySpellsPanel.IsVisible = true;
-            _summarySpellsList.ItemsSource = _selectedSpells.Select(s => _displayService.GetSpellName(s));
+            _summarySpellsList.ItemsSource = allSelectedSpells.Select(s => _displayService.GetSpellName(s));
+        }
+        else if (_isDivineCaster)
+        {
+            _summarySpellsPanel.IsVisible = true;
+            _summarySpellsList.ItemsSource = new[] { "(Divine caster - spells granted automatically)" };
         }
         else
         {
@@ -1100,10 +1523,21 @@ public partial class LevelUpWizardWindow : Window
             });
         }
 
-        // Add feats
+        // Add player-selected feats
         foreach (var featId in _selectedFeats)
         {
             // GAINMULTIPLE feats can appear multiple times in the feat list
+            if (_displayService.CanFeatBeGainedMultipleTimes(featId) ||
+                !_creature.FeatList.Contains((ushort)featId))
+            {
+                _creature.FeatList.Add((ushort)featId);
+            }
+        }
+
+        // Add automatically granted class feats (List=3 at this class level, List=-1 at level 1)
+        var grantedFeats = _displayService.Feats.GetClassFeatsGrantedAtLevel(_selectedClassId, _newClassLevel);
+        foreach (var featId in grantedFeats)
+        {
             if (_displayService.CanFeatBeGainedMultipleTimes(featId) ||
                 !_creature.FeatList.Contains((ushort)featId))
             {
@@ -1119,7 +1553,29 @@ public partial class LevelUpWizardWindow : Window
             _creature.SkillList[skillId] = (byte)Math.Min(255, _creature.SkillList[skillId] + points);
         }
 
-        // Add spells (TODO: implement spell addition)
+        // Add spells to creature's known spell list
+        var spellClass = _creature.ClassList.FirstOrDefault(c => c.Class == _selectedClassId);
+        if (spellClass != null)
+        {
+            foreach (var (spellLevel, spellIds) in _selectedSpellsByLevel)
+            {
+                if (spellLevel < spellClass.KnownSpells.Length)
+                {
+                    foreach (var spellId in spellIds)
+                    {
+                        if (!spellClass.KnownSpells[spellLevel].Any(s => s.Spell == (ushort)spellId))
+                        {
+                            spellClass.KnownSpells[spellLevel].Add(new KnownSpell
+                            {
+                                Spell = (ushort)spellId,
+                                SpellFlags = 0x01, // Readied
+                                SpellMetaMagic = 0x00
+                            });
+                        }
+                    }
+                }
+            }
+        }
 
         // Record level history if enabled
         RecordLevelHistory();
@@ -1218,6 +1674,15 @@ public partial class LevelUpWizardWindow : Window
         public string DisplayName => Name;
         public string PrereqTooltip => PrereqResult?.GetTooltip() ?? "No prerequisites";
         public string Badge => !MeetsPrereqs ? "(prereqs)" : IsClassFeat ? "(class)" : "";
+    }
+
+    private class SpellDisplayItem
+    {
+        public int SpellId { get; set; }
+        public string Name { get; set; } = "";
+        public string SchoolAbbrev { get; set; } = "";
+
+        public string DisplayName => string.IsNullOrEmpty(SchoolAbbrev) ? Name : $"{Name} [{SchoolAbbrev}]";
     }
 
     #endregion

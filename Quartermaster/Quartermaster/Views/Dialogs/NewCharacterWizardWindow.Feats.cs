@@ -319,25 +319,6 @@ public partial class NewCharacterWizardWindow
     {
         _chosenFeatIds.Clear();
 
-        // Try to read package feat preferences from FeatPref2DA in packages.2da
-        var preferredFeatIds = new List<int>();
-        if (_selectedPackageId != 255)
-        {
-            var featPref2da = _gameDataService.Get2DAValue("packages", _selectedPackageId, "FeatPref2DA");
-            if (!string.IsNullOrEmpty(featPref2da) && featPref2da != "****")
-            {
-                for (int row = 0; row < 100; row++)
-                {
-                    var featIdStr = _gameDataService.Get2DAValue(featPref2da, row, "FeatIndex");
-                    if (string.IsNullOrEmpty(featIdStr) || featIdStr == "****")
-                        break;
-                    if (int.TryParse(featIdStr, out int featId))
-                        preferredFeatIds.Add(featId);
-                }
-            }
-        }
-
-        var grantedFeatIds = GetGrantedFeatIds();
         int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
         var tempCreature = new UtcFile
         {
@@ -348,37 +329,25 @@ public partial class NewCharacterWizardWindow
             }
         };
 
-        // First: pick from preferred feats
-        foreach (var featId in preferredFeatIds)
-        {
-            if (_chosenFeatIds.Count >= _featsToChoose) break;
-            if (grantedFeatIds.Contains(featId)) continue;
-            if (_chosenFeatIds.Contains(featId)) continue;
-            if (!_displayService.Feats.IsFeatAvailable(tempCreature, featId)) continue;
+        var grantedFeatIds = GetGrantedFeatIds();
 
-            var prereqs = _displayService.Feats.GetFeatPrerequisites(featId);
-            if (CheckWizardFeatPrereqs(prereqs))
-                _chosenFeatIds.Add(featId);
-        }
-
-        // Second: fill remaining with feats that meet prereqs, alphabetically
-        if (_chosenFeatIds.Count < _featsToChoose)
-        {
-            var allFeatIds = _displayService.Feats.GetAllFeatIds();
-            var remaining = allFeatIds
-                .Where(id => !grantedFeatIds.Contains(id) && !_chosenFeatIds.Contains(id))
-                .Where(id => _displayService.Feats.IsFeatAvailable(tempCreature, id))
-                .Select(id => (Id: id, Name: _displayService.GetFeatName(id)))
-                .Where(f => !string.IsNullOrEmpty(f.Name))
-                .OrderBy(f => f.Name);
-
-            foreach (var (id, _) in remaining)
+        // Use shared service method with NCW prereq checker
+        var assigned = _displayService.Feats.AutoAssignFeats(
+            tempCreature,
+            classId,
+            _selectedPackageId,
+            grantedFeatIds,
+            _featsToChoose,
+            bonusFeatPool: null,
+            prereqChecker: featId =>
             {
-                if (_chosenFeatIds.Count >= _featsToChoose) break;
-                var prereqs = _displayService.Feats.GetFeatPrerequisites(id);
-                if (CheckWizardFeatPrereqs(prereqs))
-                    _chosenFeatIds.Add(id);
-            }
+                var prereqs = _displayService.Feats.GetFeatPrerequisites(featId);
+                return CheckWizardFeatPrereqs(prereqs);
+            });
+
+        foreach (var featId in assigned)
+        {
+            _chosenFeatIds.Add(featId);
         }
 
         // Rebuild available list and re-validate

@@ -170,11 +170,11 @@ Confirm to create tag `radoub-v0.8.4` and trigger release build.
 
 **Getting Tool Versions** (NBGV):
 ```bash
-dotnet nbgv get-version --project Parley -f json | jq -r '.SemVer2'
-dotnet nbgv get-version --project Manifest -f json | jq -r '.SemVer2'
-dotnet nbgv get-version --project Fence -f json | jq -r '.SemVer2'
+# Preferred (no jq needed):
+dotnet nbgv get-version --project Parley -v SemVer2
+dotnet nbgv get-version --project Manifest -v SemVer2
+dotnet nbgv get-version --project Fence -v SemVer2
 ```
-On Windows without jq, use: `dotnet nbgv get-version --project Parley -v SemVer2`
 
 ## Safety Checks
 
