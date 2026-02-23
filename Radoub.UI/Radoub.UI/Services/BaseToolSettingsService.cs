@@ -25,7 +25,7 @@ namespace Radoub.UI.Services;
 /// used by Quartermaster, Manifest, Fence, and Trebuchet.
 /// </summary>
 /// <typeparam name="TSettings">The JSON-serializable settings data class</typeparam>
-public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChanged
+public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChanged, IWindowSettings
     where TSettings : BaseToolSettingsService<TSettings>.BaseSettingsData, new()
 {
     // Window settings

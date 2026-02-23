@@ -269,14 +269,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void RestoreWindowPosition()
     {
         var settings = SettingsService.Instance;
-        Position = new Avalonia.PixelPoint((int)settings.WindowLeft, (int)settings.WindowTop);
-        Width = settings.WindowWidth;
-        Height = settings.WindowHeight;
-
-        if (settings.WindowMaximized)
-        {
-            WindowState = WindowState.Maximized;
-        }
+        Radoub.UI.Services.WindowPositionHelper.Restore(this, settings);
 
         // Restore tree panel width
         if (MainGrid.ColumnDefinitions.Count > 0)
@@ -288,15 +281,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void SaveWindowPosition()
     {
         var settings = SettingsService.Instance;
-
-        if (WindowState == WindowState.Normal)
-        {
-            settings.WindowLeft = Position.X;
-            settings.WindowTop = Position.Y;
-            settings.WindowWidth = Width;
-            settings.WindowHeight = Height;
-        }
-        settings.WindowMaximized = WindowState == WindowState.Maximized;
+        Radoub.UI.Services.WindowPositionHelper.Save(this, settings);
 
         // Save tree panel width
         if (MainGrid.ColumnDefinitions.Count > 0)

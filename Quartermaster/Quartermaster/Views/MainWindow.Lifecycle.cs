@@ -142,14 +142,7 @@ public partial class MainWindow
     private void RestoreWindowPosition()
     {
         var settings = SettingsService.Instance;
-        Position = new PixelPoint((int)settings.WindowLeft, (int)settings.WindowTop);
-        Width = settings.WindowWidth;
-        Height = settings.WindowHeight;
-
-        if (settings.WindowMaximized)
-        {
-            WindowState = WindowState.Maximized;
-        }
+        Radoub.UI.Services.WindowPositionHelper.Restore(this, settings);
 
         // Restore sidebar width
         if (MainGrid.ColumnDefinitions.Count > 0)
@@ -161,15 +154,7 @@ public partial class MainWindow
     private void SaveWindowPosition()
     {
         var settings = SettingsService.Instance;
-
-        if (WindowState == WindowState.Normal)
-        {
-            settings.WindowLeft = Position.X;
-            settings.WindowTop = Position.Y;
-            settings.WindowWidth = Width;
-            settings.WindowHeight = Height;
-        }
-        settings.WindowMaximized = WindowState == WindowState.Maximized;
+        Radoub.UI.Services.WindowPositionHelper.Save(this, settings);
 
         // Save sidebar width
         if (MainGrid.ColumnDefinitions.Count > 0)
