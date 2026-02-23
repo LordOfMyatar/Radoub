@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.16-alpha] - 2026-02-22
+**Branch**: `quartermaster/issue-1491` | **PR**: #TBD
+
+### Sprint: Level Up Wizard - Feature Parity & Spells (#1491)
+
+- [ ] #1473 - Auto-assign buttons (skills, feats) + package-based defaults
+- [ ] #1474 - Show auto-assigned spells for Ranger/Paladin
+- [ ] #1018 (partial) - Spell selection UI for spontaneous casters (Sorcerer/Bard)
+- [ ] #1018 (partial) - Spell selection UI for prepared casters (Wizard/Cleric/Druid)
+- [ ] #1018 (partial) - Bonus feat restriction for Fighter/Wizard
+
+---
+
 ## [0.2.15-alpha] - 2026-02-22
 **Branch**: `quartermaster/issue-1490` | **PR**: #1494
 
