@@ -1439,11 +1439,16 @@ public partial class LevelUpWizardWindow : Window
             }
         }
 
-        // Feats summary
-        if (_selectedFeats.Count > 0)
+        // Feats summary (player-selected + auto-granted)
+        var grantedFeatIds = _displayService.Feats.GetClassFeatsGrantedAtLevel(_selectedClassId, _newClassLevel);
+        var featSummary = _selectedFeats.Select(f => _displayService.GetFeatName(f)).ToList();
+        foreach (var gf in grantedFeatIds)
+            featSummary.Add($"{_displayService.GetFeatName(gf)} (granted)");
+
+        if (featSummary.Count > 0)
         {
             _summaryFeatsPanel.IsVisible = true;
-            _summaryFeatsList.ItemsSource = _selectedFeats.Select(f => _displayService.GetFeatName(f));
+            _summaryFeatsList.ItemsSource = featSummary;
         }
         else
         {
@@ -1518,10 +1523,21 @@ public partial class LevelUpWizardWindow : Window
             });
         }
 
-        // Add feats
+        // Add player-selected feats
         foreach (var featId in _selectedFeats)
         {
             // GAINMULTIPLE feats can appear multiple times in the feat list
+            if (_displayService.CanFeatBeGainedMultipleTimes(featId) ||
+                !_creature.FeatList.Contains((ushort)featId))
+            {
+                _creature.FeatList.Add((ushort)featId);
+            }
+        }
+
+        // Add automatically granted class feats (List=3 at this class level, List=-1 at level 1)
+        var grantedFeats = _displayService.Feats.GetClassFeatsGrantedAtLevel(_selectedClassId, _newClassLevel);
+        foreach (var featId in grantedFeats)
+        {
             if (_displayService.CanFeatBeGainedMultipleTimes(featId) ||
                 !_creature.FeatList.Contains((ushort)featId))
             {

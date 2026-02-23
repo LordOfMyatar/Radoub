@@ -279,6 +279,49 @@ public class FeatService
     /// Gets the set of feat IDs granted by a class at all levels.
     /// Reads from cls_feat_*.2da files.
     /// </summary>
+    /// <summary>
+    /// Gets feats automatically granted at a specific class level.
+    /// Reads List=3 + GrantedOnLevel from cls_feat_*.2da, plus List=-1 for level 1.
+    /// </summary>
+    public HashSet<int> GetClassFeatsGrantedAtLevel(int classId, int classLevel)
+    {
+        var result = new HashSet<int>();
+
+        var featTable = _gameDataService.Get2DAValue("classes", classId, "FeatsTable");
+        if (string.IsNullOrEmpty(featTable) || featTable == "****")
+            return result;
+
+        int rowCount = _gameDataService.Get2DA(featTable)?.RowCount ?? 200;
+        for (int row = 0; row < rowCount; row++)
+        {
+            var featIndexStr = _gameDataService.Get2DAValue(featTable, row, "FeatIndex");
+            if (string.IsNullOrEmpty(featIndexStr) || featIndexStr == "****")
+                break;
+
+            if (!int.TryParse(featIndexStr, out int featId))
+                continue;
+
+            var listType = _gameDataService.Get2DAValue(featTable, row, "List");
+
+            // List=-1: granted at creation (class level 1 only)
+            if (listType == "-1" && classLevel == 1)
+            {
+                result.Add(featId);
+                continue;
+            }
+
+            // List=3: automatically granted at GrantedOnLevel
+            if (listType == "3")
+            {
+                var grantedLevelStr = _gameDataService.Get2DAValue(featTable, row, "GrantedOnLevel");
+                if (int.TryParse(grantedLevelStr, out int grantedLevel) && grantedLevel == classLevel)
+                    result.Add(featId);
+            }
+        }
+
+        return result;
+    }
+
     public HashSet<int> GetClassGrantedFeatIds(int classId)
     {
         // Check cache first
