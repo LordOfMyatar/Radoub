@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.15-alpha] - 2026-02-22
+**Branch**: `quartermaster/issue-1490` | **PR**: #TBD
+
+### Sprint: Level Up Wizard - Bug Fix & Foundation (#1490)
+
+- [ ] #1460 - Audit Level Up Wizard for parity with New Character Wizard
+- [ ] #1475 - Fix feat prompting for multiclass characters
+- [ ] #1018 (partial) - Deep copy for cancel/undo
+- [ ] #1018 (partial) - Repeatable feats handling (`GAINMULTIPLE` in feat.2da)
+
+---
+
 ## [0.2.14-alpha] - 2026-02-22
 **Branch**: `quartermaster/issue-1482` | **PR**: #1483
 
