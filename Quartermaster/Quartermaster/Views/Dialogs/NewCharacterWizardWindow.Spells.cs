@@ -329,65 +329,17 @@ public partial class NewCharacterWizardWindow
         // Clear current selections
         _selectedSpellsByLevel.Clear();
 
-        // Try to read package spell preferences
-        var preferredSpellIds = new List<int>();
-        if (_selectedPackageId != 255)
+        // Use shared service method (NCW is level 1, no existing spells)
+        var assigned = _displayService.Spells.AutoAssignSpells(
+            classId,
+            _selectedPackageId,
+            _maxSpellLevelForClass,
+            maxPerLevel: level => GetMaxSpellsForLevel(classId, level),
+            existingSpells: null);
+
+        foreach (var (level, spellIds) in assigned)
         {
-            var spellPref2da = _gameDataService.Get2DAValue("packages", _selectedPackageId, "SpellPref2DA");
-            if (!string.IsNullOrEmpty(spellPref2da) && spellPref2da != "****")
-            {
-                for (int row = 0; row < 100; row++)
-                {
-                    var spellIdStr = _gameDataService.Get2DAValue(spellPref2da, row, "SpellIndex");
-                    if (string.IsNullOrEmpty(spellIdStr) || spellIdStr == "****")
-                        break;
-                    if (int.TryParse(spellIdStr, out int spellId))
-                        preferredSpellIds.Add(spellId);
-                }
-            }
-        }
-
-        // Get all available spells organized by level
-        var allSpellIds = _displayService.Spells.GetAllSpellIds();
-        var spellsByLevel = new Dictionary<int, List<SpellAutoAssignItem>>();
-
-        foreach (var spellId in allSpellIds)
-        {
-            var info = _displayService.Spells.GetSpellInfo(spellId);
-            if (info == null) continue;
-
-            int levelForClass = info.GetLevelForClass(classId);
-            if (levelForClass < 0 || levelForClass > _maxSpellLevelForClass) continue;
-
-            if (!spellsByLevel.ContainsKey(levelForClass))
-                spellsByLevel[levelForClass] = new List<SpellAutoAssignItem>();
-            spellsByLevel[levelForClass].Add(new SpellAutoAssignItem { Id = spellId, Name = info.Name });
-        }
-
-        // Fill each level
-        for (int level = 0; level <= _maxSpellLevelForClass; level++)
-        {
-            int maxForLevel = GetMaxSpellsForLevel(classId, level);
-            if (maxForLevel <= 0) continue;
-
-            _selectedSpellsByLevel[level] = new List<int>();
-            var availableForLevel = spellsByLevel.GetValueOrDefault(level, new List<SpellAutoAssignItem>());
-
-            // Prefer package spells first
-            foreach (var prefId in preferredSpellIds)
-            {
-                if (_selectedSpellsByLevel[level].Count >= maxForLevel) break;
-                if (availableForLevel.Any(s => s.Id == prefId) && !_selectedSpellsByLevel[level].Contains(prefId))
-                    _selectedSpellsByLevel[level].Add(prefId);
-            }
-
-            // Fill remaining with alphabetical order
-            foreach (var spell in availableForLevel.OrderBy(s => s.Name))
-            {
-                if (_selectedSpellsByLevel[level].Count >= maxForLevel) break;
-                if (!_selectedSpellsByLevel[level].Contains(spell.Id))
-                    _selectedSpellsByLevel[level].Add(spell.Id);
-            }
+            _selectedSpellsByLevel[level] = spellIds;
         }
 
         // Refresh display
