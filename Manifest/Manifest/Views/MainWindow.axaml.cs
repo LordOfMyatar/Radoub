@@ -292,30 +292,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
     {
-        if (_isDirty)
+        var shouldClose = await Radoub.UI.Services.FileOperationsHelper.HandleClosingAsync(
+            this, e, _isDirty, async () => { await SaveFile(); return true; });
+
+        if (shouldClose)
         {
-            e.Cancel = true;
-            var result = await ShowUnsavedChangesDialog();
-            if (result == "Save")
-            {
-                await SaveFile();
-                Close();
-            }
-            else if (result == "Discard")
-            {
-                _isDirty = false;
-                Close();
-            }
-            // else Cancel - do nothing, stay open
-        }
-        else
-        {
+            _isDirty = false;
             SaveWindowPosition();
+            if (e.Cancel)
+            {
+                // HandleClosingAsync set Cancel=true, we need to re-close
+                Close();
+            }
         }
     }
-
-    private Task<string> ShowUnsavedChangesDialog()
-        => DialogHelper.ShowUnsavedChangesAsync(this);
 
     #region File Operations
 
@@ -491,19 +481,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private async Task CreateNewJournal()
     {
         // Check for unsaved changes
-        if (_isDirty)
-        {
-            var result = await ShowUnsavedChangesDialog();
-            if (result == "Save")
-            {
-                await SaveFile();
-            }
-            else if (result == "Cancel")
-            {
-                return;
-            }
-            // Discard - continue creating new file
-        }
+        var dirtyResult = await Radoub.UI.Services.FileOperationsHelper.CheckDirtyAsync(this, _isDirty);
+        if (dirtyResult == Radoub.UI.Services.DirtyCheckResult.Cancel) return;
+        if (dirtyResult == Radoub.UI.Services.DirtyCheckResult.Save) await SaveFile();
 
         // Prompt for save location with default filename
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
