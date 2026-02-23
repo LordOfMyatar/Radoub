@@ -306,7 +306,7 @@
                         <ItemsControl x:Name="SkillsItemsControl">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Grid Margin="5,3">
+                                    <Grid Margin="5,3" Opacity="{Binding RowOpacity}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="180"/>
                                             <ColumnDefinition Width="60"/>

@@ -104,7 +104,7 @@ public partial class LevelUpWizardWindow : Window
 
         _displayService = displayService;
         _creature = creature;
-        _originalCreature = creature; // TODO: Deep copy for cancellation
+        _originalCreature = creature.DeepCopy(); // Deep copy for cancel/undo rollback
 
         // Find all controls
         _characterNameLabel = this.FindControl<TextBlock>("CharacterNameLabel")!;
@@ -319,8 +319,20 @@ public partial class LevelUpWizardWindow : Window
 
     private void OnFinishClick(object? sender, RoutedEventArgs e)
     {
-        ApplyLevelUp();
-        Confirmed = true;
+        try
+        {
+            ApplyLevelUp();
+            Confirmed = true;
+        }
+        catch (Exception ex)
+        {
+            // Rollback: restore creature from deep copy
+            RestoreFromOriginal();
+            Confirmed = false;
+            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                Radoub.Formats.Logging.LogLevel.ERROR,
+                $"Level-up failed, rolled back changes: {ex.Message}");
+        }
         Close();
     }
 
@@ -328,6 +340,19 @@ public partial class LevelUpWizardWindow : Window
     {
         Confirmed = false;
         Close();
+    }
+
+    /// <summary>
+    /// Restores the creature to its pre-wizard state from the deep copy.
+    /// Used for rollback on error during ApplyLevelUp.
+    /// </summary>
+    private void RestoreFromOriginal()
+    {
+        _creature.ClassList = _originalCreature.ClassList;
+        _creature.FeatList = _originalCreature.FeatList;
+        _creature.SkillList = _originalCreature.SkillList;
+        _creature.SpecAbilityList = _originalCreature.SpecAbilityList;
+        _creature.Comment = _originalCreature.Comment;
     }
 
     #endregion
@@ -490,27 +515,21 @@ public partial class LevelUpWizardWindow : Window
 
     private void PrepareStep2()
     {
-        // Calculate feats to select this level
-        int totalLevel = _creature.ClassList.Sum(c => c.ClassLevel) + 1;
-
-        // D&D 3.5/NWN rule: base feat at level 1, then every 3 levels (1, 3, 6, 9, 12, 15, 18, 21...)
-        // This interval is an engine rule, not configurable via 2DA
-        const int FeatProgressionInterval = 3;
-        _featsToSelect = 0;
-        if (totalLevel == 1 || totalLevel % FeatProgressionInterval == 0)
-            _featsToSelect++;
-
-        // Class bonus feats (from cls_bfeat_*.2da)
-        _featsToSelect += GetClassBonusFeats(_selectedClassId, _newClassLevel);
-
-        // Racial bonus feat at level 1 (from racialtypes.2da ExtraFeatsAtFirstLevel)
-        if (totalLevel == 1)
-            _featsToSelect += _displayService.GetRacialExtraFeatsAtFirstLevel(_creature.Race);
+        // Use shared FeatService calculation for consistency with NCW
+        var featInfo = _displayService.Feats.GetLevelUpFeatCount(_creature, _selectedClassId, _newClassLevel);
+        _featsToSelect = featInfo.TotalFeats;
 
         _selectedFeats.Clear();
 
+        // Show breakdown if multiple sources contribute
+        var parts = new List<string>();
+        if (featInfo.GeneralFeats > 0) parts.Add($"{featInfo.GeneralFeats} general");
+        if (featInfo.RacialBonusFeats > 0) parts.Add($"{featInfo.RacialBonusFeats} racial bonus");
+        if (featInfo.ClassBonusFeats > 0) parts.Add($"{featInfo.ClassBonusFeats} class bonus");
+        var breakdown = parts.Count > 1 ? $" ({string.Join(" + ", parts)})" : "";
+
         _featAllocationLabel.Text = _featsToSelect > 0
-            ? $"You have {_featsToSelect} feat(s) to select."
+            ? $"You have {_featsToSelect} feat(s) to select{breakdown}."
             : "No feats to select at this level.";
 
         // Build the list of available feats
@@ -628,26 +647,14 @@ public partial class LevelUpWizardWindow : Window
         return result;
     }
 
-    private int GetClassBonusFeats(int classId, int classLevel)
-    {
-        // Read from cls_bfeat_*.2da (BonusFeatsTable)
-        var bfeatTable = _displayService.GameDataService.Get2DAValue("classes", classId, "BonusFeatsTable");
-        if (string.IsNullOrEmpty(bfeatTable) || bfeatTable == "****")
-            return 0;
-
-        // Check if this specific level grants a bonus feat
-        var bonus = _displayService.GameDataService.Get2DAValue(bfeatTable, classLevel - 1, "Bonus");
-        return bonus == "1" ? 1 : 0;
-    }
-
     private void ApplyFeatFilter()
     {
         var searchText = _featSearchBox?.Text?.Trim() ?? "";
 
         _filteredAvailableFeats = _allAvailableFeats.Where(f =>
         {
-            // Don't show already-selected feats in available list
-            if (_selectedFeats.Contains(f.FeatId))
+            // Don't show already-selected feats — unless GAINMULTIPLE allows re-selection
+            if (_selectedFeats.Contains(f.FeatId) && !_displayService.CanFeatBeGainedMultipleTimes(f.FeatId))
                 return false;
 
             if (!string.IsNullOrEmpty(searchText) &&
@@ -782,6 +789,7 @@ public partial class LevelUpWizardWindow : Window
 
     // Tracks class skill status for the level being gained
     private HashSet<int> _classSkillIds = new();
+    private HashSet<int> _unavailableSkillIds = new();
 
     private void PrepareStep3()
     {
@@ -806,6 +814,9 @@ public partial class LevelUpWizardWindow : Window
         // Cache class skills for the level being gained
         _classSkillIds = _displayService.GetClassSkillIds(_selectedClassId);
 
+        // Determine unavailable skills (e.g., Use Magic Device for non-Rogue classes)
+        _unavailableSkillIds = _displayService.GetUnavailableSkillIds(_creature, _displayService.GetSkillCount());
+
         string racialLabel = racialExtraPerLevel > 0 ? $" + Racial({racialExtraPerLevel})" : "";
         _skillPointsTotalLabel.Text = $"(Base {basePoints} + INT {intMod}{racialLabel} = {_skillPointsToAllocate})";
         UpdateSkillPointsDisplay();
@@ -824,6 +835,7 @@ public partial class LevelUpWizardWindow : Window
         {
             int currentRanks = i < _creature.SkillList.Count ? _creature.SkillList[i] : 0;
             bool isClassSkill = _classSkillIds.Contains(i);
+            bool isUnavailable = _unavailableSkillIds.Contains(i);
 
             skills.Add(new SkillDisplayItem
             {
@@ -832,7 +844,8 @@ public partial class LevelUpWizardWindow : Window
                 CurrentRanks = currentRanks,
                 AddedRanks = _skillPointsAdded.GetValueOrDefault(i, 0),
                 IsClassSkill = isClassSkill,
-                MaxRanks = CalculateMaxRanks(isClassSkill),
+                IsUnavailable = isUnavailable,
+                MaxRanks = isUnavailable ? 0 : CalculateMaxRanks(isClassSkill),
                 Cost = isClassSkill ? 1 : 2
             });
         }
@@ -1090,8 +1103,12 @@ public partial class LevelUpWizardWindow : Window
         // Add feats
         foreach (var featId in _selectedFeats)
         {
-            if (!_creature.FeatList.Contains((ushort)featId))
+            // GAINMULTIPLE feats can appear multiple times in the feat list
+            if (_displayService.CanFeatBeGainedMultipleTimes(featId) ||
+                !_creature.FeatList.Contains((ushort)featId))
+            {
                 _creature.FeatList.Add((ushort)featId);
+            }
         }
 
         // Add skill points
@@ -1177,12 +1194,14 @@ public partial class LevelUpWizardWindow : Window
         public int CurrentRanks { get; set; }
         public int AddedRanks { get; set; }
         public bool IsClassSkill { get; set; }
+        public bool IsUnavailable { get; set; }
         public int MaxRanks { get; set; }
         public int Cost { get; set; } = 1;
 
-        public string ClassSkillIndicator => IsClassSkill ? "(class skill, 1 pt)" : "(cross-class, 2 pts)";
-        public bool CanIncrease => CurrentRanks + AddedRanks < MaxRanks;
+        public string ClassSkillIndicator => IsUnavailable ? "(unavailable)" : IsClassSkill ? "(class skill, 1 pt)" : "(cross-class, 2 pts)";
+        public bool CanIncrease => !IsUnavailable && CurrentRanks + AddedRanks < MaxRanks;
         public bool CanDecrease => AddedRanks > 0;
+        public double RowOpacity => IsUnavailable ? 0.4 : 1.0;
     }
 
     private class FeatDisplayItem

@@ -365,7 +365,7 @@
 
                     <!-- Left: Appearance/Phenotype/Portrait -->
                     <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
-                    <StackPanel Spacing="10" Margin="0,0,15,0">
+                    <StackPanel Spacing="10" Margin="0,0,15,15">
                         <!-- Appearance -->
                         <TextBlock Text="Appearance Type" FontWeight="SemiBold"/>
                         <TextBox x:Name="AppearanceSearchBox" Watermark="Filter appearances..."

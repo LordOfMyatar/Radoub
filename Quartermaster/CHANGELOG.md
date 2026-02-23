@@ -10,6 +10,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.15-alpha] - 2026-02-22
+**Branch**: `quartermaster/issue-1490` | **PR**: #1494
+
+### Sprint: Level Up Wizard - Bug Fix & Foundation (#1490)
+
+- [x] #1460 - Audit Level Up Wizard for parity with New Character Wizard
+  - Comprehensive audit document comparing LUW (1,205 lines) vs NCW (3,572 lines) across feats, skills, spells, and cancel safety
+  - Identified 11 findings, 4 fixed this sprint
+- [x] #1475 - Fix feat prompting for multiclass characters
+  - Added `GetLevelUpFeatCount()` to FeatService for per-level calculation
+  - Fixed cumulative formula in `GetExpectedFeatCount` (was granting at 1,4,7... instead of 1,3,6,9...)
+  - LUW now shows feat breakdown (general + class bonus + racial)
+- [x] #1018 (partial) - Deep copy for cancel/undo
+  - Added `DeepCopy()` to UtcFile with deep copy of all lists and reference types
+  - LUW constructor now clones creature for rollback safety
+  - `ApplyLevelUp()` wrapped in try/catch with `RestoreFromOriginal()` on failure
+- [x] #1018 (partial) - Repeatable feats handling (`GAINMULTIPLE` in feat.2da)
+  - Fixed `ApplyFeatFilter()` to keep GAINMULTIPLE feats in available list after selection
+  - Fixed `ApplyLevelUp()` to allow duplicate feat entries for repeatable feats
+- [x] Audit finding: Unavailable skill filtering
+  - Skills that a creature cannot use are now dimmed (0.4 opacity) and disabled in LUW
+  - Matches NCW behavior using `GetUnavailableSkillIds()`
+
+---
+
 ## [0.2.14-alpha] - 2026-02-22
 **Branch**: `quartermaster/issue-1482` | **PR**: #1483
 
