@@ -653,8 +653,8 @@ public partial class LevelUpWizardWindow : Window
 
         _filteredAvailableFeats = _allAvailableFeats.Where(f =>
         {
-            // Don't show already-selected feats in available list
-            if (_selectedFeats.Contains(f.FeatId))
+            // Don't show already-selected feats — unless GAINMULTIPLE allows re-selection
+            if (_selectedFeats.Contains(f.FeatId) && !_displayService.CanFeatBeGainedMultipleTimes(f.FeatId))
                 return false;
 
             if (!string.IsNullOrEmpty(searchText) &&
@@ -1097,8 +1097,12 @@ public partial class LevelUpWizardWindow : Window
         // Add feats
         foreach (var featId in _selectedFeats)
         {
-            if (!_creature.FeatList.Contains((ushort)featId))
+            // GAINMULTIPLE feats can appear multiple times in the feat list
+            if (_displayService.CanFeatBeGainedMultipleTimes(featId) ||
+                !_creature.FeatList.Contains((ushort)featId))
+            {
                 _creature.FeatList.Add((ushort)featId);
+            }
         }
 
         // Add skill points
