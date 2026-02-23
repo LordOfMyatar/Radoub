@@ -1,13 +1,11 @@
 using System;
-using Radoub.Formats.Logging;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
-using System.Runtime.CompilerServices;
-using Radoub.Formats.Settings;
 using Radoub.Formats.Common;
+using Radoub.Formats.Logging;
+using Radoub.Formats.Settings;
+using Radoub.UI.Services;
 
 namespace RadoubLauncher.Services;
 
@@ -15,8 +13,11 @@ namespace RadoubLauncher.Services;
 /// Settings service for Trebuchet.
 /// Stores tool-specific settings in ~/Radoub/Trebuchet/TrebuchetSettings.json
 /// Game paths and TLK settings are in shared RadoubSettings.
+///
+/// Trebuchet has RecentModules (directories/files) instead of RecentFiles,
+/// and syncs logging settings to RadoubSettings for cross-tool sharing.
 /// </summary>
-public class SettingsService : INotifyPropertyChanged
+public class SettingsService : BaseToolSettingsService<SettingsService.SettingsData>
 {
     private static SettingsService? _instance;
     private static readonly object _lock = new();
@@ -47,7 +48,7 @@ public class SettingsService : INotifyPropertyChanged
         {
             if (_instance != null)
                 throw new InvalidOperationException("ConfigureForTesting must be called before first Instance access");
-            _settingsDirectory = testDirectory;
+            _testSettingsDirectory = testDirectory;
         }
     }
 
@@ -60,169 +61,62 @@ public class SettingsService : INotifyPropertyChanged
         lock (_lock)
         {
             _instance = null;
-            _settingsDirectory = null;
+            _testSettingsDirectory = null;
         }
     }
 
-    /// <summary>
-    /// Shared settings for game paths and TLK configuration.
-    /// </summary>
-    public static RadoubSettings SharedSettings => RadoubSettings.Instance;
+    private static string? _testSettingsDirectory;
 
-    private static string? _settingsDirectory;
-    private static string SettingsDirectory
-    {
-        get
-        {
-            if (_settingsDirectory == null)
-            {
-                var envDir = Environment.GetEnvironmentVariable("TREBUCHET_SETTINGS_DIR");
-                if (!string.IsNullOrEmpty(envDir))
-                {
-                    _settingsDirectory = envDir;
-                }
-                else
-                {
-                    var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                    _settingsDirectory = Path.Combine(userProfile, "Radoub", "Trebuchet");
-                }
-            }
-            return _settingsDirectory;
-        }
-    }
-
-    private static string SettingsFilePath => Path.Combine(SettingsDirectory, "TrebuchetSettings.json");
-
-    // Window settings
-    private double _windowLeft = 100;
-    private double _windowTop = 100;
-    private double _windowWidth = 900;
-    private double _windowHeight = 600;
-    private bool _windowMaximized = false;
+    protected override string ToolName => "Trebuchet";
+    protected override string SettingsEnvironmentVariable => "TREBUCHET_SETTINGS_DIR";
+    protected override string SettingsFileName => "TrebuchetSettings.json";
+    protected override double DefaultWindowWidth => 900;
+    protected override double DefaultWindowHeight => 600;
 
     // UI settings
-    private double _fontSize = 14;
     private double _fontSizeScale = 1.0;
-    private string _fontFamily = "";
-    private string _currentThemeId = "org.radoub.theme.light";
 
-    // Logging settings - using shared LoggingSettings
-    private readonly LoggingSettings _loggingSettings = new();
-
-    // Recent modules
+    // Recent modules (Trebuchet tracks modules, not individual files)
     private const int DefaultMaxRecentModules = 10;
     private List<string> _recentModules = new();
     private int _maxRecentModules = DefaultMaxRecentModules;
 
     // Build settings
-    private bool _compileScriptsEnabled = false;
-    private bool _buildUncompiledScriptsEnabled = false;
-    private bool _alwaysSaveBeforeTesting = false;
+    private bool _compileScriptsEnabled;
+    private bool _buildUncompiledScriptsEnabled;
+    private bool _alwaysSaveBeforeTesting;
     private string _codeEditorPath = "";
     private string _scriptCompilerPath = "";
 
-    public event PropertyChangedEventHandler? PropertyChanged;
-
     private SettingsService()
     {
-        LoadSettings();
-        UnifiedLogger.LogApplication(LogLevel.INFO, "Trebuchet SettingsService initialized");
+        if (_testSettingsDirectory != null)
+            SettingsDirectory = _testSettingsDirectory;
+
+        Initialize();
     }
 
-    // Window properties
-    public double WindowLeft
+    /// <summary>
+    /// Sync log retention to RadoubSettings so other tools pick it up.
+    /// </summary>
+    protected override void OnLoggingRetentionChanged(int sessions)
     {
-        get => _windowLeft;
-        set { if (SetProperty(ref _windowLeft, value)) SaveSettings(); }
+        RadoubSettings.Instance.SharedLogRetentionSessions = sessions;
     }
 
-    public double WindowTop
+    /// <summary>
+    /// Sync log level to RadoubSettings so other tools pick it up.
+    /// </summary>
+    protected override void OnLoggingLevelChanged(LogLevel level)
     {
-        get => _windowTop;
-        set { if (SetProperty(ref _windowTop, value)) SaveSettings(); }
-    }
-
-    public double WindowWidth
-    {
-        get => _windowWidth;
-        set { if (SetProperty(ref _windowWidth, Math.Max(600, value))) SaveSettings(); }
-    }
-
-    public double WindowHeight
-    {
-        get => _windowHeight;
-        set { if (SetProperty(ref _windowHeight, Math.Max(400, value))) SaveSettings(); }
-    }
-
-    public bool WindowMaximized
-    {
-        get => _windowMaximized;
-        set { if (SetProperty(ref _windowMaximized, value)) SaveSettings(); }
+        RadoubSettings.Instance.SharedLogLevel = level;
     }
 
     // UI properties
-    public double FontSize
-    {
-        get => _fontSize;
-        set { if (SetProperty(ref _fontSize, Math.Max(8, Math.Min(24, value)))) SaveSettings(); }
-    }
-
     public double FontSizeScale
     {
         get => _fontSizeScale;
         set { if (SetProperty(ref _fontSizeScale, Math.Max(0.8, Math.Min(1.5, value)))) SaveSettings(); }
-    }
-
-    public string FontFamily
-    {
-        get => _fontFamily;
-        set { if (SetProperty(ref _fontFamily, value ?? "")) SaveSettings(); }
-    }
-
-    public string CurrentThemeId
-    {
-        get => _currentThemeId;
-        set { if (SetProperty(ref _currentThemeId, value ?? "org.radoub.theme.light")) SaveSettings(); }
-    }
-
-    // Logging properties - delegate to shared LoggingSettings
-    public int LogRetentionSessions
-    {
-        get => _loggingSettings.LogRetentionSessions;
-        set
-        {
-            var clamped = Math.Max(1, Math.Min(10, value));
-            if (_loggingSettings.LogRetentionSessions != clamped)
-            {
-                _loggingSettings.LogRetentionSessions = clamped;
-
-                // Sync to shared settings so other tools use this retention
-                RadoubSettings.Instance.SharedLogRetentionSessions = clamped;
-
-                OnPropertyChanged();
-                SaveSettings();
-                UnifiedLogger.LogSettings(LogLevel.INFO, $"Log retention set to {clamped} sessions");
-            }
-        }
-    }
-
-    public LogLevel CurrentLogLevel
-    {
-        get => _loggingSettings.LogLevel;
-        set
-        {
-            if (_loggingSettings.LogLevel != value)
-            {
-                _loggingSettings.LogLevel = value;
-                _loggingSettings.ApplyToLogger();
-
-                // Sync to shared settings so other tools use this level
-                RadoubSettings.Instance.SharedLogLevel = value;
-
-                OnPropertyChanged();
-                SaveSettings();
-            }
-        }
     }
 
     // Recent Modules
@@ -241,64 +135,11 @@ public class SettingsService : INotifyPropertyChanged
         }
     }
 
-    // Build Settings
-    /// <summary>
-    /// Whether to compile NWScript files before building the module.
-    /// When enabled, the Build command will compile .nss files to .ncs before packing.
-    /// </summary>
-    public bool CompileScriptsEnabled
-    {
-        get => _compileScriptsEnabled;
-        set { if (SetProperty(ref _compileScriptsEnabled, value)) SaveSettings(); }
-    }
-
-    /// <summary>
-    /// Whether to compile .nss files that have no corresponding .ncs file.
-    /// Only applies when CompileScriptsEnabled is also true.
-    /// Uses HasUncommentedEntryPoint() filter to skip include/library files.
-    /// </summary>
-    public bool BuildUncompiledScriptsEnabled
-    {
-        get => _buildUncompiledScriptsEnabled;
-        set { if (SetProperty(ref _buildUncompiledScriptsEnabled, value)) SaveSettings(); }
-    }
-
-    /// <summary>
-    /// Whether to automatically build and save before launching a test.
-    /// When enabled, Test Module runs Build &amp; Save before launching the game.
-    /// </summary>
-    public bool AlwaysSaveBeforeTesting
-    {
-        get => _alwaysSaveBeforeTesting;
-        set { if (SetProperty(ref _alwaysSaveBeforeTesting, value)) SaveSettings(); }
-    }
-
-    /// <summary>
-    /// Path to the user's preferred code editor for opening script files.
-    /// When empty, files are opened with the system default association.
-    /// </summary>
-    public string CodeEditorPath
-    {
-        get => _codeEditorPath;
-        set { if (SetProperty(ref _codeEditorPath, value ?? "")) SaveSettings(); }
-    }
-
-    /// <summary>
-    /// Path to a custom script compiler executable.
-    /// When set, this compiler is used instead of the bundled one.
-    /// </summary>
-    public string ScriptCompilerPath
-    {
-        get => _scriptCompilerPath;
-        set { if (SetProperty(ref _scriptCompilerPath, value ?? "")) SaveSettings(); }
-    }
-
     public void AddRecentModule(string modulePath)
     {
         if (string.IsNullOrEmpty(modulePath))
             return;
 
-        // For modules, check if directory or file exists
         if (!File.Exists(modulePath) && !Directory.Exists(modulePath))
             return;
 
@@ -334,154 +175,84 @@ public class SettingsService : INotifyPropertyChanged
             _recentModules.RemoveAt(_recentModules.Count - 1);
     }
 
-    private void LoadSettings()
+    // Build Settings
+    public bool CompileScriptsEnabled
     {
-        try
-        {
-            if (!Directory.Exists(SettingsDirectory))
-            {
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Creating settings directory: {UnifiedLogger.SanitizePath(SettingsDirectory)}");
-                Directory.CreateDirectory(SettingsDirectory);
-            }
-
-            if (File.Exists(SettingsFilePath))
-            {
-                var json = File.ReadAllText(SettingsFilePath);
-                var settings = JsonSerializer.Deserialize<SettingsData>(json);
-
-                if (settings != null)
-                {
-                    _windowLeft = settings.WindowLeft;
-                    _windowTop = settings.WindowTop;
-                    _windowWidth = Math.Max(600, settings.WindowWidth);
-                    _windowHeight = Math.Max(400, settings.WindowHeight);
-                    _windowMaximized = settings.WindowMaximized;
-
-                    _fontSize = Math.Max(8, Math.Min(24, settings.FontSize));
-                    _fontSizeScale = Math.Max(0.8, Math.Min(1.5, settings.FontSizeScale));
-                    _fontFamily = settings.FontFamily ?? "";
-                    _currentThemeId = !string.IsNullOrEmpty(settings.CurrentThemeId)
-                        ? settings.CurrentThemeId
-                        : "org.radoub.theme.light";
-
-                    // Load logging settings from shared model
-                    _loggingSettings.LogRetentionSessions = settings.LogRetentionSessions;
-                    _loggingSettings.LogLevel = settings.LogLevel;
-                    _loggingSettings.Normalize();
-                    _loggingSettings.ApplyToLogger();
-
-                    // Load recent modules (expand ~ to full path for runtime use)
-                    _recentModules = PathHelper.ExpandPaths(settings.RecentModules ?? new List<string>()).ToList();
-                    _maxRecentModules = settings.MaxRecentModules > 0 && settings.MaxRecentModules <= 20
-                        ? settings.MaxRecentModules
-                        : DefaultMaxRecentModules;
-
-                    // Remove modules that no longer exist
-                    var removedCount = _recentModules.RemoveAll(m => !File.Exists(m) && !Directory.Exists(m));
-                    if (removedCount > 0)
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed {removedCount} missing modules from recent list");
-                    }
-
-                    // Build settings
-                    _compileScriptsEnabled = settings.CompileScriptsEnabled;
-                    _buildUncompiledScriptsEnabled = settings.BuildUncompiledScriptsEnabled;
-                    _alwaysSaveBeforeTesting = settings.AlwaysSaveBeforeTesting;
-                    _codeEditorPath = settings.CodeEditorPath ?? "";
-                    _scriptCompilerPath = settings.ScriptCompilerPath ?? "";
-
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {_recentModules.Count} recent modules");
-                }
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.INFO, "Settings file does not exist, using defaults");
-            }
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error loading settings: {ex.Message}");
-        }
+        get => _compileScriptsEnabled;
+        set { if (SetProperty(ref _compileScriptsEnabled, value)) SaveSettings(); }
     }
 
-    private void SaveSettings()
+    public bool BuildUncompiledScriptsEnabled
     {
-        try
+        get => _buildUncompiledScriptsEnabled;
+        set { if (SetProperty(ref _buildUncompiledScriptsEnabled, value)) SaveSettings(); }
+    }
+
+    public bool AlwaysSaveBeforeTesting
+    {
+        get => _alwaysSaveBeforeTesting;
+        set { if (SetProperty(ref _alwaysSaveBeforeTesting, value)) SaveSettings(); }
+    }
+
+    public string CodeEditorPath
+    {
+        get => _codeEditorPath;
+        set { if (SetProperty(ref _codeEditorPath, value ?? "")) SaveSettings(); }
+    }
+
+    public string ScriptCompilerPath
+    {
+        get => _scriptCompilerPath;
+        set { if (SetProperty(ref _scriptCompilerPath, value ?? "")) SaveSettings(); }
+    }
+
+    protected override void LoadToolSettings(SettingsData settings)
+    {
+        _fontSizeScale = Math.Max(0.8, Math.Min(1.5, settings.FontSizeScale));
+
+        // Load recent modules
+        _recentModules = PathHelper.ExpandPaths(settings.RecentModules ?? new List<string>()).ToList();
+        _maxRecentModules = settings.MaxRecentModules > 0 && settings.MaxRecentModules <= 20
+            ? settings.MaxRecentModules
+            : DefaultMaxRecentModules;
+
+        var removedCount = _recentModules.RemoveAll(m => !File.Exists(m) && !Directory.Exists(m));
+        if (removedCount > 0)
         {
-            var settings = new SettingsData
-            {
-                WindowLeft = WindowLeft,
-                WindowTop = WindowTop,
-                WindowWidth = WindowWidth,
-                WindowHeight = WindowHeight,
-                WindowMaximized = WindowMaximized,
-                FontSize = FontSize,
-                FontSizeScale = FontSizeScale,
-                FontFamily = FontFamily,
-                CurrentThemeId = CurrentThemeId,
-                LogRetentionSessions = _loggingSettings.LogRetentionSessions,
-                LogLevel = _loggingSettings.LogLevel,
-                RecentModules = PathHelper.ContractPaths(_recentModules).ToList(),  // Use ~ for privacy
-                MaxRecentModules = MaxRecentModules,
-                CompileScriptsEnabled = CompileScriptsEnabled,
-                BuildUncompiledScriptsEnabled = BuildUncompiledScriptsEnabled,
-                AlwaysSaveBeforeTesting = AlwaysSaveBeforeTesting,
-                CodeEditorPath = CodeEditorPath,
-                ScriptCompilerPath = ScriptCompilerPath
-            };
-
-            var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
-            {
-                WriteIndented = true
-            });
-
-            File.WriteAllText(SettingsFilePath, json);
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Settings saved to {UnifiedLogger.SanitizePath(SettingsFilePath)}");
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Removed {removedCount} missing modules from recent list");
         }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error saving settings: {ex.Message}");
-        }
+
+        // Build settings
+        _compileScriptsEnabled = settings.CompileScriptsEnabled;
+        _buildUncompiledScriptsEnabled = settings.BuildUncompiledScriptsEnabled;
+        _alwaysSaveBeforeTesting = settings.AlwaysSaveBeforeTesting;
+        _codeEditorPath = settings.CodeEditorPath ?? "";
+        _scriptCompilerPath = settings.ScriptCompilerPath ?? "";
     }
 
-    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    protected override void SaveToolSettings(SettingsData settings)
     {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        settings.FontSizeScale = FontSizeScale;
+        settings.RecentModules = PathHelper.ContractPaths(_recentModules).ToList();
+        settings.MaxRecentModules = MaxRecentModules;
+        settings.CompileScriptsEnabled = CompileScriptsEnabled;
+        settings.BuildUncompiledScriptsEnabled = BuildUncompiledScriptsEnabled;
+        settings.AlwaysSaveBeforeTesting = AlwaysSaveBeforeTesting;
+        settings.CodeEditorPath = CodeEditorPath;
+        settings.ScriptCompilerPath = ScriptCompilerPath;
     }
 
-    private bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    public class SettingsData : BaseSettingsData
     {
-        if (EqualityComparer<T>.Default.Equals(field, value))
-            return false;
-
-        field = value;
-        OnPropertyChanged(propertyName);
-        return true;
-    }
-
-    private class SettingsData
-    {
-        public double WindowLeft { get; set; } = 100;
-        public double WindowTop { get; set; } = 100;
-        public double WindowWidth { get; set; } = 900;
-        public double WindowHeight { get; set; } = 600;
-        public bool WindowMaximized { get; set; } = false;
-
-        public double FontSize { get; set; } = 14;
         public double FontSizeScale { get; set; } = 1.0;
-        public string FontFamily { get; set; } = "";
-        public string CurrentThemeId { get; set; } = "org.radoub.theme.light";
-
-        public int LogRetentionSessions { get; set; } = 3;
-        public LogLevel LogLevel { get; set; } = LogLevel.INFO;
 
         public List<string> RecentModules { get; set; } = new();
         public int MaxRecentModules { get; set; } = DefaultMaxRecentModules;
 
-        // Build settings
-        public bool CompileScriptsEnabled { get; set; } = false;
-        public bool BuildUncompiledScriptsEnabled { get; set; } = false;
-        public bool AlwaysSaveBeforeTesting { get; set; } = false;
+        public bool CompileScriptsEnabled { get; set; }
+        public bool BuildUncompiledScriptsEnabled { get; set; }
+        public bool AlwaysSaveBeforeTesting { get; set; }
         public string CodeEditorPath { get; set; } = "";
         public string ScriptCompilerPath { get; set; } = "";
     }

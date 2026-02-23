@@ -702,16 +702,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void RestoreWindowPosition()
     {
-        var settings = SettingsService.Instance;
-
-        Position = new PixelPoint((int)settings.WindowLeft, (int)settings.WindowTop);
-        Width = settings.WindowWidth;
-        Height = settings.WindowHeight;
-
-        if (settings.WindowMaximized)
-        {
-            WindowState = WindowState.Maximized;
-        }
+        Radoub.UI.Services.WindowPositionHelper.Restore(this, SettingsService.Instance);
     }
 
     private void OnWindowLoaded(object? sender, RoutedEventArgs e)
@@ -764,17 +755,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void SaveWindowPosition()
     {
-        var settings = SettingsService.Instance;
-
-        if (WindowState == WindowState.Normal)
-        {
-            settings.WindowLeft = Position.X;
-            settings.WindowTop = Position.Y;
-            settings.WindowWidth = Width;
-            settings.WindowHeight = Height;
-        }
-
-        settings.WindowMaximized = WindowState == WindowState.Maximized;
+        Radoub.UI.Services.WindowPositionHelper.Save(this, SettingsService.Instance);
     }
 
     private void OnWindowClosing(object? sender, WindowClosingEventArgs e)

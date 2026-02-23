@@ -269,14 +269,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void RestoreWindowPosition()
     {
         var settings = SettingsService.Instance;
-        Position = new Avalonia.PixelPoint((int)settings.WindowLeft, (int)settings.WindowTop);
-        Width = settings.WindowWidth;
-        Height = settings.WindowHeight;
-
-        if (settings.WindowMaximized)
-        {
-            WindowState = WindowState.Maximized;
-        }
+        Radoub.UI.Services.WindowPositionHelper.Restore(this, settings);
 
         // Restore tree panel width
         if (MainGrid.ColumnDefinitions.Count > 0)
@@ -288,15 +281,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void SaveWindowPosition()
     {
         var settings = SettingsService.Instance;
-
-        if (WindowState == WindowState.Normal)
-        {
-            settings.WindowLeft = Position.X;
-            settings.WindowTop = Position.Y;
-            settings.WindowWidth = Width;
-            settings.WindowHeight = Height;
-        }
-        settings.WindowMaximized = WindowState == WindowState.Maximized;
+        Radoub.UI.Services.WindowPositionHelper.Save(this, settings);
 
         // Save tree panel width
         if (MainGrid.ColumnDefinitions.Count > 0)
@@ -307,91 +292,46 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
     {
-        if (_isDirty)
+        var shouldClose = await Radoub.UI.Services.FileOperationsHelper.HandleClosingAsync(
+            this, e, _isDirty, async () => { await SaveFile(); return true; });
+
+        if (shouldClose)
         {
-            e.Cancel = true;
-            var result = await ShowUnsavedChangesDialog();
-            if (result == "Save")
-            {
-                await SaveFile();
-                Close();
-            }
-            else if (result == "Discard")
-            {
-                _isDirty = false;
-                Close();
-            }
-            // else Cancel - do nothing, stay open
-        }
-        else
-        {
+            _isDirty = false;
             SaveWindowPosition();
+            if (e.Cancel)
+            {
+                // HandleClosingAsync set Cancel=true, we need to re-close
+                Close();
+            }
         }
     }
-
-    private Task<string> ShowUnsavedChangesDialog()
-        => DialogHelper.ShowUnsavedChangesAsync(this);
 
     #region File Operations
 
     private void UpdateRecentFilesMenu()
     {
-        RecentFilesMenu.Items.Clear();
-
-        var recentFiles = SettingsService.Instance.RecentFiles;
-
-        if (recentFiles.Count == 0)
-        {
-            var emptyItem = new MenuItem { Header = "(No recent files)", IsEnabled = false };
-            RecentFilesMenu.Items.Add(emptyItem);
-            return;
-        }
-
-        foreach (var filePath in recentFiles)
-        {
-            var fileName = Path.GetFileName(filePath);
-            var displayPath = UnifiedLogger.SanitizePath(filePath);
-
-            var menuItem = new MenuItem
+        Radoub.UI.Services.RecentFilesMenuHelper.Populate(
+            RecentFilesMenu,
+            SettingsService.Instance.RecentFiles,
+            async filePath =>
             {
-                Header = fileName,
-                Tag = filePath
-            };
-            ToolTip.SetTip(menuItem, displayPath);
-            menuItem.Click += OnRecentFileClick;
-
-            RecentFilesMenu.Items.Add(menuItem);
-        }
-
-        // Add separator and clear option
-        RecentFilesMenu.Items.Add(new Separator());
-
-        var clearItem = new MenuItem { Header = "Clear Recent Files" };
-        clearItem.Click += OnClearRecentFilesClick;
-        RecentFilesMenu.Items.Add(clearItem);
-    }
-
-    private async void OnRecentFileClick(object? sender, RoutedEventArgs e)
-    {
-        if (sender is MenuItem menuItem && menuItem.Tag is string filePath)
-        {
-            if (File.Exists(filePath))
+                if (File.Exists(filePath))
+                {
+                    await LoadFile(filePath);
+                }
+                else
+                {
+                    UpdateStatus($"File not found: {Path.GetFileName(filePath)}");
+                    SettingsService.Instance.RemoveRecentFile(filePath);
+                    UpdateRecentFilesMenu();
+                }
+            },
+            () =>
             {
-                await LoadFile(filePath);
-            }
-            else
-            {
-                UpdateStatus($"File not found: {Path.GetFileName(filePath)}");
-                SettingsService.Instance.RemoveRecentFile(filePath);
+                SettingsService.Instance.ClearRecentFiles();
                 UpdateRecentFilesMenu();
-            }
-        }
-    }
-
-    private void OnClearRecentFilesClick(object? sender, RoutedEventArgs e)
-    {
-        SettingsService.Instance.ClearRecentFiles();
-        UpdateRecentFilesMenu();
+            });
     }
 
     private async void OnOpenClick(object? sender, RoutedEventArgs e)
@@ -541,19 +481,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private async Task CreateNewJournal()
     {
         // Check for unsaved changes
-        if (_isDirty)
-        {
-            var result = await ShowUnsavedChangesDialog();
-            if (result == "Save")
-            {
-                await SaveFile();
-            }
-            else if (result == "Cancel")
-            {
-                return;
-            }
-            // Discard - continue creating new file
-        }
+        var dirtyResult = await Radoub.UI.Services.FileOperationsHelper.CheckDirtyAsync(this, _isDirty);
+        if (dirtyResult == Radoub.UI.Services.DirtyCheckResult.Cancel) return;
+        if (dirtyResult == Radoub.UI.Services.DirtyCheckResult.Save) await SaveFile();
 
         // Prompt for save location with default filename
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions

@@ -410,62 +410,30 @@ public partial class MainWindow
 
     private void UpdateRecentFilesMenu()
     {
-        PopulateRecentFilesMenuItems();
-    }
-
-    private void PopulateRecentFilesMenuItems()
-    {
-        RecentFilesMenu.Items.Clear();
-
-        var recentFiles = SettingsService.Instance.RecentFiles;
-
-        if (recentFiles.Count == 0)
-        {
-            var emptyItem = new MenuItem { Header = "(No recent files)", IsEnabled = false };
-            RecentFilesMenu.Items.Add(emptyItem);
-            return;
-        }
-
-        foreach (var filePath in recentFiles)
-        {
-            var item = new MenuItem
+        Radoub.UI.Services.RecentFilesMenuHelper.Populate(
+            RecentFilesMenu,
+            SettingsService.Instance.RecentFiles,
+            async filePath =>
             {
-                Header = Path.GetFileName(filePath),
-                Tag = filePath
-            };
-            item.Click += OnRecentFileClick;
-            RecentFilesMenu.Items.Add(item);
-        }
+                // Check file existence on background thread to avoid blocking on network paths
+                var exists = await System.Threading.Tasks.Task.Run(() => File.Exists(filePath));
 
-        RecentFilesMenu.Items.Add(new Separator());
-
-        var clearItem = new MenuItem { Header = "Clear Recent Files" };
-        clearItem.Click += (s, e) =>
-        {
-            SettingsService.Instance.ClearRecentFiles();
-            UpdateRecentFilesMenu();
-        };
-        RecentFilesMenu.Items.Add(clearItem);
-    }
-
-    private async void OnRecentFileClick(object? sender, RoutedEventArgs e)
-    {
-        if (sender is MenuItem item && item.Tag is string filePath)
-        {
-            // Check file existence on background thread to avoid blocking on network paths
-            var exists = await System.Threading.Tasks.Task.Run(() => File.Exists(filePath));
-
-            if (exists)
+                if (exists)
+                {
+                    LoadFile(filePath);
+                }
+                else
+                {
+                    ShowError($"File not found: {filePath}");
+                    SettingsService.Instance.RemoveRecentFile(filePath);
+                    UpdateRecentFilesMenu();
+                }
+            },
+            () =>
             {
-                LoadFile(filePath);
-            }
-            else
-            {
-                ShowError($"File not found: {filePath}");
-                SettingsService.Instance.RemoveRecentFile(filePath);
-                PopulateRecentFilesMenuItems();
-            }
-        }
+                SettingsService.Instance.ClearRecentFiles();
+                UpdateRecentFilesMenu();
+            });
     }
 
     #endregion

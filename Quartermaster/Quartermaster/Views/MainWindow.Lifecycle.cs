@@ -142,14 +142,7 @@ public partial class MainWindow
     private void RestoreWindowPosition()
     {
         var settings = SettingsService.Instance;
-        Position = new PixelPoint((int)settings.WindowLeft, (int)settings.WindowTop);
-        Width = settings.WindowWidth;
-        Height = settings.WindowHeight;
-
-        if (settings.WindowMaximized)
-        {
-            WindowState = WindowState.Maximized;
-        }
+        Radoub.UI.Services.WindowPositionHelper.Restore(this, settings);
 
         // Restore sidebar width
         if (MainGrid.ColumnDefinitions.Count > 0)
@@ -161,15 +154,7 @@ public partial class MainWindow
     private void SaveWindowPosition()
     {
         var settings = SettingsService.Instance;
-
-        if (WindowState == WindowState.Normal)
-        {
-            settings.WindowLeft = Position.X;
-            settings.WindowTop = Position.Y;
-            settings.WindowWidth = Width;
-            settings.WindowHeight = Height;
-        }
-        settings.WindowMaximized = WindowState == WindowState.Maximized;
+        Radoub.UI.Services.WindowPositionHelper.Save(this, settings);
 
         // Save sidebar width
         if (MainGrid.ColumnDefinitions.Count > 0)
@@ -183,25 +168,13 @@ public partial class MainWindow
 
     private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
     {
-        if (_isDirty)
+        var shouldClose = await Radoub.UI.Services.FileOperationsHelper.HandleClosingAsync(
+            this, e, _isDirty, async () => { await SaveFile(); return true; });
+
+        if (shouldClose)
         {
-            e.Cancel = true;
-            var result = await DialogHelper.ShowUnsavedChangesDialog(this);
-            if (result == "Save")
-            {
-                await SaveFile();
-                _isDirty = false; // Clear dirty before Close() to prevent re-entry
-                Close();
-            }
-            else if (result == "Discard")
-            {
-                _isDirty = false;
-                Close();
-            }
-            // Cancel: do nothing, window stays open
-        }
-        else
-        {
+            _isDirty = false;
+
             // Cancel all async operations
             _windowCts?.Cancel();
             _windowCts?.Dispose();
@@ -209,6 +182,12 @@ public partial class MainWindow
             SaveWindowPosition();
             _audioService?.Dispose();
             _gameDataService?.Dispose();
+
+            if (e.Cancel)
+            {
+                // HandleClosingAsync set Cancel=true, we need to re-close
+                Close();
+            }
         }
     }
 
