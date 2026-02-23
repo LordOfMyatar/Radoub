@@ -17,6 +17,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.76] - 2026-02-22
+**Branch**: `radoub/issue-1453` | **PR**: #TBD
+
+### Sprint: Cross-Tool Service Standardization (#1444)
+
+- [ ] #1445 - Extract BaseToolSettingsService<T> into Radoub.UI
+- [ ] #1446 - Centralize RecentFilesService in Radoub.UI
+- [ ] #1447 - Centralize WindowLayoutService in Radoub.UI
+- [ ] #1448 - Create shared IDocumentState for dirty tracking + title bar
+- [ ] #1449 - Create shared FileOperationsHelper for save/new/close workflows
+
+---
+
 ## [0.9.75] - 2026-02-21
 **Branch**: `radoub/issue-1401` | **PR**: #1456
 
