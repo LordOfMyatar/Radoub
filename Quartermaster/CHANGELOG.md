@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.16-alpha] - 2026-02-22
-**Branch**: `quartermaster/issue-1491` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1491` | **PR**: #1504
 
 ### Sprint: Level Up Wizard - Feature Parity & Spells (#1491)
 
