@@ -729,6 +729,49 @@ public class FeatService
     }
 
     /// <summary>
+    /// Calculates the number of choosable feats for a single level-up event.
+    /// Used by Level Up Wizard to determine how many feats the user picks this level.
+    /// </summary>
+    /// <param name="creature">The creature BEFORE leveling (current state)</param>
+    /// <param name="selectedClassId">The class being leveled</param>
+    /// <param name="newClassLevel">The new class level (after level-up)</param>
+    public LevelUpFeatInfo GetLevelUpFeatCount(UtcFile creature, int selectedClassId, int newClassLevel)
+    {
+        var result = new LevelUpFeatInfo();
+        int newTotalLevel = creature.ClassList.Sum(c => c.ClassLevel) + 1;
+
+        // D&D 3.5/NWN rule: general feat at level 1, then every 3 levels (3, 6, 9, 12...)
+        // This interval is an engine rule, not configurable via 2DA
+        const int FeatProgressionInterval = 3;
+        if (newTotalLevel == 1 || newTotalLevel % FeatProgressionInterval == 0)
+            result.GeneralFeats = 1;
+
+        // Racial bonus feats only at level 1
+        if (newTotalLevel == 1)
+            result.RacialBonusFeats = GetRacialBonusFeatCount(creature.Race);
+
+        // Class bonus feat for the class being leveled
+        result.ClassBonusFeats = GetClassBonusFeatAtLevel(selectedClassId, newClassLevel);
+
+        result.TotalFeats = result.GeneralFeats + result.RacialBonusFeats + result.ClassBonusFeats;
+        return result;
+    }
+
+    /// <summary>
+    /// Gets whether a specific class level grants a bonus feat (0 or 1).
+    /// Reads from cls_bfeat_*.2da (BonusFeatsTable column in classes.2da).
+    /// </summary>
+    private int GetClassBonusFeatAtLevel(int classId, int classLevel)
+    {
+        var bfeatTable = _gameDataService.Get2DAValue("classes", classId, "BonusFeatsTable");
+        if (string.IsNullOrEmpty(bfeatTable) || bfeatTable == "****")
+            return 0;
+
+        var bonus = _gameDataService.Get2DAValue(bfeatTable, classLevel - 1, "Bonus");
+        return bonus == "1" ? 1 : 0;
+    }
+
+    /// <summary>
     /// Calculates the expected number of choosable feats for a creature based on level and class.
     /// Does NOT include automatically granted feats (those are in GetCombinedGrantedFeatIds).
     /// </summary>
@@ -737,10 +780,10 @@ public class FeatService
         var result = new ExpectedFeatInfo();
         int totalLevel = creature.ClassList.Sum(c => c.ClassLevel);
 
-        // D&D 3.5/NWN rule: 1 feat at level 1, +1 every 3 levels thereafter
+        // D&D 3.5/NWN rule: 1 feat at level 1, then +1 at every multiple of 3
+        // Levels that grant feats: 1, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39
         // This interval is an engine rule, not configurable via 2DA
-        const int FeatProgressionInterval = 3;
-        result.BaseFeats = 1 + (totalLevel - 1) / FeatProgressionInterval;
+        result.BaseFeats = 1 + totalLevel / 3;
 
         // Racial bonus feat (Human gets +1)
         result.RacialBonusFeats = GetRacialBonusFeatCount(creature.Race);
@@ -795,11 +838,11 @@ public class FeatService
 }
 
 /// <summary>
-/// Breakdown of expected choosable feats for a creature.
+/// Breakdown of expected choosable feats for a creature (cumulative over all levels).
 /// </summary>
 public class ExpectedFeatInfo
 {
-    /// <summary>Base feats from character level (1 + floor((level-1)/3))</summary>
+    /// <summary>Base feats from character level (1 + floor(level/3))</summary>
     public int BaseFeats { get; set; }
 
     /// <summary>Racial bonus feats (Human = 1)</summary>
@@ -810,6 +853,24 @@ public class ExpectedFeatInfo
 
     /// <summary>Total expected choosable feats</summary>
     public int TotalExpected { get; set; }
+}
+
+/// <summary>
+/// Breakdown of feats to choose for a single level-up event.
+/// </summary>
+public class LevelUpFeatInfo
+{
+    /// <summary>General feat (0 or 1) - granted at levels 1, 3, 6, 9...</summary>
+    public int GeneralFeats { get; set; }
+
+    /// <summary>Racial bonus feats (only at level 1)</summary>
+    public int RacialBonusFeats { get; set; }
+
+    /// <summary>Class bonus feat (0 or 1) from BonusFeatsTable</summary>
+    public int ClassBonusFeats { get; set; }
+
+    /// <summary>Total feats to choose this level</summary>
+    public int TotalFeats { get; set; }
 }
 
 /// <summary>
