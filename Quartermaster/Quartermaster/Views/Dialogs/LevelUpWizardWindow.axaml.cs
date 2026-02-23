@@ -104,7 +104,7 @@ public partial class LevelUpWizardWindow : Window
 
         _displayService = displayService;
         _creature = creature;
-        _originalCreature = creature; // TODO: Deep copy for cancellation
+        _originalCreature = creature.DeepCopy(); // Deep copy for cancel/undo rollback
 
         // Find all controls
         _characterNameLabel = this.FindControl<TextBlock>("CharacterNameLabel")!;
@@ -319,8 +319,20 @@ public partial class LevelUpWizardWindow : Window
 
     private void OnFinishClick(object? sender, RoutedEventArgs e)
     {
-        ApplyLevelUp();
-        Confirmed = true;
+        try
+        {
+            ApplyLevelUp();
+            Confirmed = true;
+        }
+        catch (Exception ex)
+        {
+            // Rollback: restore creature from deep copy
+            RestoreFromOriginal();
+            Confirmed = false;
+            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                Radoub.Formats.Logging.LogLevel.ERROR,
+                $"Level-up failed, rolled back changes: {ex.Message}");
+        }
         Close();
     }
 
@@ -328,6 +340,19 @@ public partial class LevelUpWizardWindow : Window
     {
         Confirmed = false;
         Close();
+    }
+
+    /// <summary>
+    /// Restores the creature to its pre-wizard state from the deep copy.
+    /// Used for rollback on error during ApplyLevelUp.
+    /// </summary>
+    private void RestoreFromOriginal()
+    {
+        _creature.ClassList = _originalCreature.ClassList;
+        _creature.FeatList = _originalCreature.FeatList;
+        _creature.SkillList = _originalCreature.SkillList;
+        _creature.SpecAbilityList = _originalCreature.SpecAbilityList;
+        _creature.Comment = _originalCreature.Comment;
     }
 
     #endregion

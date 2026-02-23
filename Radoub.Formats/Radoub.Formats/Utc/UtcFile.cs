@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Radoub.Formats.Gff;
 
 namespace Radoub.Formats.Utc;
@@ -621,6 +624,191 @@ public class UtcFile
     /// Used for scripting and module-specific data.
     /// </summary>
     public List<Variable> VarTable { get; set; } = new();
+
+    /// <summary>
+    /// Creates a deep copy of this UtcFile, including all list contents.
+    /// Used by Level Up Wizard for cancel/undo safety.
+    /// </summary>
+    public UtcFile DeepCopy()
+    {
+        var copy = new UtcFile
+        {
+            FileType = FileType,
+            FileVersion = FileVersion,
+            TemplateResRef = TemplateResRef,
+            Comment = Comment,
+            PaletteID = PaletteID,
+            FirstName = DeepCopyLocString(FirstName),
+            LastName = DeepCopyLocString(LastName),
+            Tag = Tag,
+            Description = DeepCopyLocString(Description),
+            Race = Race,
+            Gender = Gender,
+            Subrace = Subrace,
+            Deity = Deity,
+            AppearanceType = AppearanceType,
+            Phenotype = Phenotype,
+            PortraitId = PortraitId,
+            Portrait = Portrait,
+            Tail = Tail,
+            Wings = Wings,
+            BodyBag = BodyBag,
+            AppearanceHead = AppearanceHead,
+            BodyPart_Belt = BodyPart_Belt,
+            BodyPart_LBicep = BodyPart_LBicep,
+            BodyPart_RBicep = BodyPart_RBicep,
+            BodyPart_LFArm = BodyPart_LFArm,
+            BodyPart_RFArm = BodyPart_RFArm,
+            BodyPart_LFoot = BodyPart_LFoot,
+            BodyPart_RFoot = BodyPart_RFoot,
+            BodyPart_LHand = BodyPart_LHand,
+            BodyPart_RHand = BodyPart_RHand,
+            BodyPart_LShin = BodyPart_LShin,
+            BodyPart_RShin = BodyPart_RShin,
+            BodyPart_LShoul = BodyPart_LShoul,
+            BodyPart_RShoul = BodyPart_RShoul,
+            BodyPart_LThigh = BodyPart_LThigh,
+            BodyPart_RThigh = BodyPart_RThigh,
+            BodyPart_Neck = BodyPart_Neck,
+            BodyPart_Pelvis = BodyPart_Pelvis,
+            BodyPart_Torso = BodyPart_Torso,
+            Color_Skin = Color_Skin,
+            Color_Hair = Color_Hair,
+            Color_Tattoo1 = Color_Tattoo1,
+            Color_Tattoo2 = Color_Tattoo2,
+            ArmorPart_Belt = ArmorPart_Belt,
+            ArmorPart_LBicep = ArmorPart_LBicep,
+            ArmorPart_RBicep = ArmorPart_RBicep,
+            ArmorPart_LFArm = ArmorPart_LFArm,
+            ArmorPart_RFArm = ArmorPart_RFArm,
+            ArmorPart_LFoot = ArmorPart_LFoot,
+            ArmorPart_RFoot = ArmorPart_RFoot,
+            ArmorPart_LHand = ArmorPart_LHand,
+            ArmorPart_RHand = ArmorPart_RHand,
+            ArmorPart_LShin = ArmorPart_LShin,
+            ArmorPart_RShin = ArmorPart_RShin,
+            ArmorPart_LShoul = ArmorPart_LShoul,
+            ArmorPart_RShoul = ArmorPart_RShoul,
+            ArmorPart_LThigh = ArmorPart_LThigh,
+            ArmorPart_RThigh = ArmorPart_RThigh,
+            ArmorPart_Neck = ArmorPart_Neck,
+            ArmorPart_Pelvis = ArmorPart_Pelvis,
+            ArmorPart_Torso = ArmorPart_Torso,
+            ArmorPart_Robe = ArmorPart_Robe,
+            Str = Str,
+            Dex = Dex,
+            Con = Con,
+            Int = Int,
+            Wis = Wis,
+            Cha = Cha,
+            HitPoints = HitPoints,
+            CurrentHitPoints = CurrentHitPoints,
+            MaxHitPoints = MaxHitPoints,
+            NaturalAC = NaturalAC,
+            ChallengeRating = ChallengeRating,
+            CRAdjust = CRAdjust,
+            FortBonus = FortBonus,
+            RefBonus = RefBonus,
+            WillBonus = WillBonus,
+            GoodEvil = GoodEvil,
+            LawfulChaotic = LawfulChaotic,
+            Plot = Plot,
+            IsImmortal = IsImmortal,
+            NoPermDeath = NoPermDeath,
+            IsPC = IsPC,
+            Disarmable = Disarmable,
+            Lootable = Lootable,
+            Interruptable = Interruptable,
+            FactionID = FactionID,
+            PerceptionRange = PerceptionRange,
+            WalkRate = WalkRate,
+            SoundSetFile = SoundSetFile,
+            DecayTime = DecayTime,
+            StartingPackage = StartingPackage,
+            FamiliarType = FamiliarType,
+            Conversation = Conversation,
+            ScriptAttacked = ScriptAttacked,
+            ScriptDamaged = ScriptDamaged,
+            ScriptDeath = ScriptDeath,
+            ScriptDialogue = ScriptDialogue,
+            ScriptDisturbed = ScriptDisturbed,
+            ScriptEndRound = ScriptEndRound,
+            ScriptHeartbeat = ScriptHeartbeat,
+            ScriptOnBlocked = ScriptOnBlocked,
+            ScriptOnNotice = ScriptOnNotice,
+            ScriptRested = ScriptRested,
+            ScriptSpawn = ScriptSpawn,
+            ScriptSpellAt = ScriptSpellAt,
+            ScriptUserDefine = ScriptUserDefine,
+            ClassList = ClassList.Select(c => new CreatureClass
+            {
+                Class = c.Class,
+                ClassLevel = c.ClassLevel,
+                Domain1 = c.Domain1,
+                Domain2 = c.Domain2,
+                KnownSpells = DeepCopySpellArrays(c.KnownSpells, s => new KnownSpell
+                {
+                    Spell = s.Spell,
+                    SpellFlags = s.SpellFlags,
+                    SpellMetaMagic = s.SpellMetaMagic
+                }),
+                MemorizedSpells = DeepCopySpellArrays(c.MemorizedSpells, s => new MemorizedSpell
+                {
+                    Spell = s.Spell,
+                    SpellFlags = s.SpellFlags,
+                    SpellMetaMagic = s.SpellMetaMagic,
+                    Ready = s.Ready
+                })
+            }).ToList(),
+            FeatList = new List<ushort>(FeatList),
+            SkillList = new List<byte>(SkillList),
+            SpecAbilityList = SpecAbilityList.Select(sa => new SpecialAbility
+            {
+                Spell = sa.Spell,
+                SpellCasterLevel = sa.SpellCasterLevel,
+                SpellFlags = sa.SpellFlags
+            }).ToList(),
+            ItemList = ItemList.Select(i => new InventoryItem
+            {
+                InventoryRes = i.InventoryRes,
+                Repos_PosX = i.Repos_PosX,
+                Repos_PosY = i.Repos_PosY,
+                Dropable = i.Dropable,
+                Pickpocketable = i.Pickpocketable
+            }).ToList(),
+            EquipItemList = EquipItemList.Select(e => new EquippedItem
+            {
+                Slot = e.Slot,
+                EquipRes = e.EquipRes
+            }).ToList(),
+            VarTable = VarTable.Select(v => new Variable
+            {
+                Name = v.Name,
+                Type = v.Type,
+                Value = v.Value // Value types (int, float, string, uint) are immutable
+            }).ToList()
+        };
+
+        return copy;
+    }
+
+    private static CExoLocString DeepCopyLocString(CExoLocString source)
+    {
+        return new CExoLocString
+        {
+            StrRef = source.StrRef,
+            SubStringCount = source.SubStringCount,
+            LocalizedStrings = new Dictionary<uint, string>(source.LocalizedStrings)
+        };
+    }
+
+    private static List<T>[] DeepCopySpellArrays<T>(List<T>[] source, Func<T, T> copyFunc)
+    {
+        var arrays = new List<T>[source.Length];
+        for (int i = 0; i < source.Length; i++)
+            arrays[i] = source[i].Select(copyFunc).ToList();
+        return arrays;
+    }
 }
 
 /// <summary>
