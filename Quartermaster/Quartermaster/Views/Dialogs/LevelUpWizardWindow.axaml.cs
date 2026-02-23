@@ -789,6 +789,7 @@ public partial class LevelUpWizardWindow : Window
 
     // Tracks class skill status for the level being gained
     private HashSet<int> _classSkillIds = new();
+    private HashSet<int> _unavailableSkillIds = new();
 
     private void PrepareStep3()
     {
@@ -813,6 +814,9 @@ public partial class LevelUpWizardWindow : Window
         // Cache class skills for the level being gained
         _classSkillIds = _displayService.GetClassSkillIds(_selectedClassId);
 
+        // Determine unavailable skills (e.g., Use Magic Device for non-Rogue classes)
+        _unavailableSkillIds = _displayService.GetUnavailableSkillIds(_creature, _displayService.GetSkillCount());
+
         string racialLabel = racialExtraPerLevel > 0 ? $" + Racial({racialExtraPerLevel})" : "";
         _skillPointsTotalLabel.Text = $"(Base {basePoints} + INT {intMod}{racialLabel} = {_skillPointsToAllocate})";
         UpdateSkillPointsDisplay();
@@ -831,6 +835,7 @@ public partial class LevelUpWizardWindow : Window
         {
             int currentRanks = i < _creature.SkillList.Count ? _creature.SkillList[i] : 0;
             bool isClassSkill = _classSkillIds.Contains(i);
+            bool isUnavailable = _unavailableSkillIds.Contains(i);
 
             skills.Add(new SkillDisplayItem
             {
@@ -839,7 +844,8 @@ public partial class LevelUpWizardWindow : Window
                 CurrentRanks = currentRanks,
                 AddedRanks = _skillPointsAdded.GetValueOrDefault(i, 0),
                 IsClassSkill = isClassSkill,
-                MaxRanks = CalculateMaxRanks(isClassSkill),
+                IsUnavailable = isUnavailable,
+                MaxRanks = isUnavailable ? 0 : CalculateMaxRanks(isClassSkill),
                 Cost = isClassSkill ? 1 : 2
             });
         }
@@ -1188,12 +1194,14 @@ public partial class LevelUpWizardWindow : Window
         public int CurrentRanks { get; set; }
         public int AddedRanks { get; set; }
         public bool IsClassSkill { get; set; }
+        public bool IsUnavailable { get; set; }
         public int MaxRanks { get; set; }
         public int Cost { get; set; } = 1;
 
-        public string ClassSkillIndicator => IsClassSkill ? "(class skill, 1 pt)" : "(cross-class, 2 pts)";
-        public bool CanIncrease => CurrentRanks + AddedRanks < MaxRanks;
+        public string ClassSkillIndicator => IsUnavailable ? "(unavailable)" : IsClassSkill ? "(class skill, 1 pt)" : "(cross-class, 2 pts)";
+        public bool CanIncrease => !IsUnavailable && CurrentRanks + AddedRanks < MaxRanks;
         public bool CanDecrease => AddedRanks > 0;
+        public double RowOpacity => IsUnavailable ? 0.4 : 1.0;
     }
 
     private class FeatDisplayItem
