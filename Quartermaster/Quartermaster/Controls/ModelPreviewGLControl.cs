@@ -518,35 +518,34 @@ void main()
 
         // Model matrix: center at origin, rotate, then scale
         //
-        // GLSL applies transforms right-to-left (column-vector convention):
-        //   gl_Position = projection * view * model * vertex
-        // So in GLSL, the rightmost transform is applied first to the vertex.
+        // System.Numerics uses row-vector convention: v_transformed = v * M
+        // For M = A * B * C, the vertex computes: ((v * A) * B) * C
+        // So leftmost matrix is applied first.
         //
-        // C# builds in reverse order (left = last applied, right = first applied):
-        //   model = Scale * RotX(pitch) * RotX(90°) * RotZ(yaw) * Translate(-center)
+        // The upload to GLSL transposes implicitly (row-major → column-major),
+        // so GLSL's (model * v) is equivalent to System.Numerics' (v * M).
         //
-        // Effective vertex transform order:
+        // Effective vertex transform order (left to right):
         // 1. Translate model center to origin (rotation pivots around geometric center)
         // 2. User yaw rotation around Z axis
         // 3. Tilt from Z-up (NWN) to Y-up (screen)
         // 4. User pitch rotation
         // 5. Scale to fit in view
 
-        // Build right-to-left: start with first-applied transform
         // Step 1: Center model at origin before rotation
         var m = Matrix4x4.CreateTranslation(-_cameraTarget);
 
         // Step 2: User yaw rotation around model Z axis
-        m = Matrix4x4.CreateRotationZ(_rotationY) * m;
+        m = m * Matrix4x4.CreateRotationZ(_rotationY);
 
         // Step 3: Tilt from Z-up to Y-up (rotate 90° around X)
-        m = Matrix4x4.CreateRotationX(MathF.PI / 2) * m;
+        m = m * Matrix4x4.CreateRotationX(MathF.PI / 2);
 
         // Step 4: User pitch rotation around X axis
-        m = Matrix4x4.CreateRotationX(_rotationX) * m;
+        m = m * Matrix4x4.CreateRotationX(_rotationX);
 
         // Step 5: Scale to fit in view (scale the rotated model)
-        m = Matrix4x4.CreateScale(scale) * m;
+        m = m * Matrix4x4.CreateScale(scale);
 
         var modelMatrix = m;
 
