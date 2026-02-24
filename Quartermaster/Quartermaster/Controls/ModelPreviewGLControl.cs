@@ -72,7 +72,7 @@ out vec2 TexCoord;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-uniform float verticalOffset;
+uniform vec2 screenOffset;
 
 void main()
 {
@@ -81,8 +81,9 @@ void main()
     Normal = mat3(model) * aNormal;
     TexCoord = aTexCoord;
     vec4 pos = projection * view * model * vec4(aPosition, 1.0);
-    // Apply vertical offset to center model on screen
-    pos.y -= verticalOffset;
+    // Offset to center model's geometric center on screen.
+    // Computed on CPU by transforming _cameraTarget through the model matrix.
+    pos.xy -= screenOffset;
     gl_Position = pos;
 }
 ";
@@ -522,18 +523,10 @@ void main()
         // View matrix: identity (offset is done in shader for testing)
         var view = Matrix4x4.Identity;
 
-        // Model matrix: center at origin, rotate, then scale
-        //
-        // Left-multiply accumulation: v * (E * D * C * B * A) applies E first.
-        // Each left-multiply adds a transform that runs EARLIER in the pipeline.
-        // So the LAST left-multiply is the FIRST transform applied to vertices.
-        //
-        // Effective vertex transform order:
-        // 1. Translate model center to origin (added last = applied first)
-        // 2. Yaw rotation around Z axis
-        // 3. Tilt from Z-up (NWN) to Y-up (screen)
-        // 4. Pitch rotation around X axis
-        // 5. Scale to fit in view
+        // Model matrix: rotate around origin, then scale.
+        // Centering is done via shader uniform (screenOffset) because the
+        // matrix upload transposes row→column major, which breaks translation
+        // components. Rotation and scale are unaffected by transposition.
 
         var m = Matrix4x4.CreateRotationZ(_rotationY);
 
@@ -542,10 +535,6 @@ void main()
         m = Matrix4x4.CreateRotationX(_rotationX) * m;
 
         m = Matrix4x4.CreateScale(scale) * m;
-
-        // Center model at origin so rotation pivots around geometric center.
-        // Left-multiplied last = applied first to vertices.
-        m = Matrix4x4.CreateTranslation(-_cameraTarget) * m;
 
         var modelMatrix = m;
 
@@ -557,16 +546,22 @@ void main()
         SetUniformMatrix4("view", view);
         SetUniformMatrix4("projection", projection);
 
-        // Centering is handled in the model matrix (translate applied first).
-        // Set verticalOffset to 0 for shader compatibility.
-        var offsetLoc = _gl.GetUniformLocation(_shaderProgram, "verticalOffset");
-        _gl.Uniform1(offsetLoc, 0.0f);
+        // Compute where the model's geometric center lands on screen after
+        // the model transform, then offset to center it. This correctly handles
+        // all rotation angles (the old code only offset Y, causing X drift).
+        //
+        // GLSL computes M*v (column-vector) using the original System.Numerics
+        // matrix. To match this in C#, we compute v * M^T via Transform.
+        var centerScreen = Vector4.Transform(
+            new Vector4(_cameraTarget, 1.0f), Matrix4x4.Transpose(modelMatrix));
+        var offsetLoc = _gl.GetUniformLocation(_shaderProgram, "screenOffset");
+        _gl.Uniform2(offsetLoc, centerScreen.X, centerScreen.Y);
 
         // Debug logging for centering issues - only log once per model
         if (_logOncePerModel)
         {
             _logOncePerModel = false;
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Render: center={_cameraTarget}, scale={scale:F3}, radius={_modelRadius:F3}");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Render: center={_cameraTarget}, scale={scale:F3}, radius={_modelRadius:F3}, screenOffset=({centerScreen.X:F3}, {centerScreen.Y:F3})");
         }
 
         // Lighting - from upper front right
