@@ -10,10 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.2.17-alpha] - 2026-02-23
+## [0.2.17-alpha] - 2026-02-24
 **Branch**: `quartermaster/issue-1205` | **PR**: #1517
 
 ### Bug: Model rotation causes perspective distortion on limbs (#1205)
+
+- Replaced orthographic projection with 30° FOV perspective — eliminates depth flattening during rotation
+- Pre-center mesh vertices at geometric center — rotation now pivots around model center, not world origin
+- Fixed matrix upload convention — System.Numerics row-vector matrices now correctly transposed for GLSL column-vector math
+- Proper camera framing via `CreateLookAt` with auto-distance based on model radius
+- NaN vertex exclusion from bounds computation prevents incorrect centering
+- Removed shader `screenOffset` uniform (no longer needed with pre-centered vertices)
 
 ---
 
