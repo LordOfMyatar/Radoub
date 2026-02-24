@@ -48,6 +48,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
     private float _zoom = 1.0f;
     private Vector3 _cameraTarget = Vector3.Zero;
     private float _modelRadius = 1.0f;
+    private bool _hasVertexBounds;
 
     // PLT color indices for texture rendering
     private PltColorIndices _colorIndices = new();
@@ -282,21 +283,26 @@ void main()
         _rotationY = MathF.PI;
         _rotationX = 0;
         _zoom = 1.0f;
-        CenterCamera();
+        // Use vertex-computed bounds if available, otherwise safe defaults.
+        // Don't call CenterCamera() — model stored bounds are unreliable
+        // (they include the full skeleton hierarchy, not just rendered mesh).
+        if (!_hasVertexBounds)
+        {
+            _cameraTarget = Vector3.Zero;
+            _modelRadius = 1.0f;
+        }
         RequestNextFrameRendering();
     }
 
     private void CenterCamera()
     {
-        if (_model == null)
-        {
-            _cameraTarget = Vector3.Zero;
-            _modelRadius = 1.0f;
-            return;
-        }
-
-        _cameraTarget = (_model.BoundingMin + _model.BoundingMax) * 0.5f;
-        _modelRadius = _model.Radius > 0 ? _model.Radius : 1.0f;
+        // Set safe defaults. Actual center and radius are computed from
+        // rendered vertices in UpdateMeshBuffers(). The model's stored
+        // BoundingMin/Max encompasses the full skeleton hierarchy and is
+        // much larger than the visible mesh.
+        _cameraTarget = Vector3.Zero;
+        _modelRadius = 1.0f;
+        _hasVertexBounds = false;
     }
 
     /// <summary>
@@ -849,6 +855,7 @@ void main()
             float sizeY = maxY - minY;
             float sizeZ = maxZ - minZ;
             _modelRadius = Math.Max(Math.Max(sizeX, sizeY), sizeZ) * 0.5f;
+            _hasVertexBounds = true;
 
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Vertex bounds: X=[{minX:F2},{maxX:F2}] Y=[{minY:F2},{maxY:F2}] Z=[{minZ:F2},{maxZ:F2}], center={_cameraTarget}, radius={_modelRadius:F2}");
 
