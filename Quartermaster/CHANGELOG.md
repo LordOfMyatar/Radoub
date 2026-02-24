@@ -10,6 +10,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.17-alpha] - 2026-02-23
+**Branch**: `quartermaster/issue-1205` | **PR**: #TBD
+
+### Bug: Model rotation causes perspective distortion on limbs (#1205)
+
+---
+
 ## [0.2.16-alpha] - 2026-02-22
 **Branch**: `quartermaster/issue-1491` | **PR**: #1504
 
