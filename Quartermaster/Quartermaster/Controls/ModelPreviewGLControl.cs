@@ -516,25 +516,36 @@ void main()
         // View matrix: identity (offset is done in shader for testing)
         var view = Matrix4x4.Identity;
 
-        // Model matrix: rotate around origin, then scale
-        // Centering is done via shader uniform to avoid matrix math issues
+        // Model matrix: center at origin, rotate, then scale
         //
-        // Transform order (right to left in matrix multiplication):
-        // 1. User yaw rotation around Z axis
-        // 2. Tilt from Z-up (NWN) to Y-up (screen)
-        // 3. User pitch rotation
-        // 4. Scale to fit in view
+        // GLSL applies transforms right-to-left (column-vector convention):
+        //   gl_Position = projection * view * model * vertex
+        // So in GLSL, the rightmost transform is applied first to the vertex.
+        //
+        // C# builds in reverse order (left = last applied, right = first applied):
+        //   model = Scale * RotX(pitch) * RotX(90°) * RotZ(yaw) * Translate(-center)
+        //
+        // Effective vertex transform order:
+        // 1. Translate model center to origin (rotation pivots around geometric center)
+        // 2. User yaw rotation around Z axis
+        // 3. Tilt from Z-up (NWN) to Y-up (screen)
+        // 4. User pitch rotation
+        // 5. Scale to fit in view
 
-        // Step 1: User yaw rotation around model Z axis
-        var m = Matrix4x4.CreateRotationZ(_rotationY);
+        // Build right-to-left: start with first-applied transform
+        // Step 1: Center model at origin before rotation
+        var m = Matrix4x4.CreateTranslation(-_cameraTarget);
 
-        // Step 2: Tilt from Z-up to Y-up (rotate 90° around X)
+        // Step 2: User yaw rotation around model Z axis
+        m = Matrix4x4.CreateRotationZ(_rotationY) * m;
+
+        // Step 3: Tilt from Z-up to Y-up (rotate 90° around X)
         m = Matrix4x4.CreateRotationX(MathF.PI / 2) * m;
 
-        // Step 3: User pitch rotation around X axis
+        // Step 4: User pitch rotation around X axis
         m = Matrix4x4.CreateRotationX(_rotationX) * m;
 
-        // Step 4: Scale to fit in view (scale the rotated model)
+        // Step 5: Scale to fit in view (scale the rotated model)
         m = Matrix4x4.CreateScale(scale) * m;
 
         var modelMatrix = m;
@@ -547,18 +558,16 @@ void main()
         SetUniformMatrix4("view", view);
         SetUniformMatrix4("projection", projection);
 
-        // Vertical offset to center the model on screen
-        // The model's Z center maps to Y after the 90° tilt, then gets scaled
-        // We offset in clip space to move the model down so its center is at screen center
-        float verticalOffset = _cameraTarget.Z * scale;
+        // Centering is now handled in the model matrix (translate to origin before rotation)
+        // so verticalOffset is no longer needed - set to 0 for shader compatibility
         var offsetLoc = _gl.GetUniformLocation(_shaderProgram, "verticalOffset");
-        _gl.Uniform1(offsetLoc, verticalOffset);
+        _gl.Uniform1(offsetLoc, 0.0f);
 
         // Debug logging for centering issues - only log once per model
         if (_logOncePerModel)
         {
             _logOncePerModel = false;
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Render: center.Z={_cameraTarget.Z:F3}, scale={scale:F3}, verticalOffset={verticalOffset:F3}, uniformLoc={offsetLoc}");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Render: center={_cameraTarget}, scale={scale:F3}, radius={_modelRadius:F3}");
         }
 
         // Lighting - from upper front right
