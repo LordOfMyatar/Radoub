@@ -518,25 +518,28 @@ void main()
 
         // Model matrix: center at origin, rotate, then scale
         //
-        // Uses left-multiplication pattern matching original code convention.
-        // Each new left-multiply wraps the previous transforms.
-        // The translation centers the model at origin before rotation so the
-        // model pivots around its geometric center, not world origin.
+        // Left-multiply accumulation: v * (E * D * C * B * A) applies E first.
+        // Each left-multiply adds a transform that runs EARLIER in the pipeline.
+        // So the LAST left-multiply is the FIRST transform applied to vertices.
+        //
+        // Effective vertex transform order:
+        // 1. Translate model center to origin (added last = applied first)
+        // 2. Yaw rotation around Z axis
+        // 3. Tilt from Z-up (NWN) to Y-up (screen)
+        // 4. Pitch rotation around X axis
+        // 5. Scale to fit in view
 
-        // Step 1: Center model at origin before rotation
-        var m = Matrix4x4.CreateTranslation(-_cameraTarget);
+        var m = Matrix4x4.CreateRotationZ(_rotationY);
 
-        // Step 2: User yaw rotation around model Z axis
-        m = Matrix4x4.CreateRotationZ(_rotationY) * m;
-
-        // Step 3: Tilt from Z-up to Y-up (rotate 90° around X)
         m = Matrix4x4.CreateRotationX(MathF.PI / 2) * m;
 
-        // Step 4: User pitch rotation around X axis
         m = Matrix4x4.CreateRotationX(_rotationX) * m;
 
-        // Step 5: Scale to fit in view (scale the rotated model)
         m = Matrix4x4.CreateScale(scale) * m;
+
+        // Center model at origin so rotation pivots around geometric center.
+        // Left-multiplied last = applied first to vertices.
+        m = Matrix4x4.CreateTranslation(-_cameraTarget) * m;
 
         var modelMatrix = m;
 
@@ -548,8 +551,8 @@ void main()
         SetUniformMatrix4("view", view);
         SetUniformMatrix4("projection", projection);
 
-        // Centering is now handled in the model matrix (translate to origin before rotation)
-        // so verticalOffset is no longer needed - set to 0 for shader compatibility
+        // Centering is handled in the model matrix (translate applied first).
+        // Set verticalOffset to 0 for shader compatibility.
         var offsetLoc = _gl.GetUniformLocation(_shaderProgram, "verticalOffset");
         _gl.Uniform1(offsetLoc, 0.0f);
 
