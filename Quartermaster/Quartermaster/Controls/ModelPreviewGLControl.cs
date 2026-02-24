@@ -48,6 +48,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
     private float _zoom = 1.0f;
     private Vector3 _cameraTarget = Vector3.Zero;
     private float _modelRadius = 1.0f;
+    private bool _hasVertexBounds;
 
     // PLT color indices for texture rendering
     private PltColorIndices _colorIndices = new();
@@ -71,18 +72,13 @@ out vec2 TexCoord;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-uniform float verticalOffset;
 
 void main()
 {
     FragPos = vec3(model * vec4(aPosition, 1.0));
-    // Simplified normal matrix - works for uniform scaling
     Normal = mat3(model) * aNormal;
     TexCoord = aTexCoord;
-    vec4 pos = projection * view * model * vec4(aPosition, 1.0);
-    // Apply vertical offset to center model on screen
-    pos.y -= verticalOffset;
-    gl_Position = pos;
+    gl_Position = projection * view * model * vec4(aPosition, 1.0);
 }
 ";
 
@@ -282,21 +278,26 @@ void main()
         _rotationY = MathF.PI;
         _rotationX = 0;
         _zoom = 1.0f;
-        CenterCamera();
+        // Use vertex-computed bounds if available, otherwise safe defaults.
+        // Don't call CenterCamera() — model stored bounds are unreliable
+        // (they include the full skeleton hierarchy, not just rendered mesh).
+        if (!_hasVertexBounds)
+        {
+            _cameraTarget = Vector3.Zero;
+            _modelRadius = 1.0f;
+        }
         RequestNextFrameRendering();
     }
 
     private void CenterCamera()
     {
-        if (_model == null)
-        {
-            _cameraTarget = Vector3.Zero;
-            _modelRadius = 1.0f;
-            return;
-        }
-
-        _cameraTarget = (_model.BoundingMin + _model.BoundingMax) * 0.5f;
-        _modelRadius = _model.Radius > 0 ? _model.Radius : 1.0f;
+        // Set safe defaults. Actual center and radius are computed from
+        // rendered vertices in UpdateMeshBuffers(). The model's stored
+        // BoundingMin/Max encompasses the full skeleton hierarchy and is
+        // much larger than the visible mesh.
+        _cameraTarget = Vector3.Zero;
+        _modelRadius = 1.0f;
+        _hasVertexBounds = false;
     }
 
     /// <summary>
@@ -505,37 +506,28 @@ void main()
         // Set up matrices
         var aspect = (float)width / height;
 
-        // Base scale factor to fit model in view (without zoom) - use 0.45 to leave margin
-        float baseScale = 0.45f / Math.Max(_modelRadius, 0.001f);
-        float scale = baseScale * _zoom;
+        // Perspective projection: camera at fixed distance, model scaled to fit.
+        // FOV of 30° gives a natural look without extreme foreshortening.
+        float fovRadians = MathF.PI / 6f; // 30°
+        float halfFovTan = MathF.Tan(fovRadians * 0.5f);
 
-        // Orthographic projection - height is fixed at 2.0, width adjusts for aspect
-        // Use tighter near/far planes for better depth precision
-        var projection = Matrix4x4.CreateOrthographic(2.0f * aspect, 2.0f, -10f, 10f);
+        // Camera distance so the model fills ~90% of view height at zoom=1
+        float radius = Math.Max(_modelRadius, 0.001f);
+        float cameraDistance = (radius / halfFovTan) / _zoom;
 
-        // View matrix: identity (offset is done in shader for testing)
-        var view = Matrix4x4.Identity;
+        var projection = Matrix4x4.CreatePerspectiveFieldOfView(
+            fovRadians, aspect, cameraDistance * 0.01f, cameraDistance * 100f);
 
-        // Model matrix: rotate around origin, then scale
-        // Centering is done via shader uniform to avoid matrix math issues
-        //
-        // Transform order (right to left in matrix multiplication):
-        // 1. User yaw rotation around Z axis
-        // 2. Tilt from Z-up (NWN) to Y-up (screen)
-        // 3. User pitch rotation
-        // 4. Scale to fit in view
+        // View matrix: camera looking at origin from +Y (after Z-up tilt)
+        var eye = new Vector3(0, -cameraDistance, 0);
+        var view = Matrix4x4.CreateLookAt(eye, Vector3.Zero, Vector3.UnitZ);
 
-        // Step 1: User yaw rotation around model Z axis
+        // Model matrix: rotate the model (vertices are pre-centered at origin).
+        // No scale needed — perspective + camera distance handles framing.
+        // The view matrix (LookAt with Z-up) already handles coordinate conversion,
+        // so no extra Z-up to Y-up tilt is needed here.
         var m = Matrix4x4.CreateRotationZ(_rotationY);
-
-        // Step 2: Tilt from Z-up to Y-up (rotate 90° around X)
-        m = Matrix4x4.CreateRotationX(MathF.PI / 2) * m;
-
-        // Step 3: User pitch rotation around X axis
         m = Matrix4x4.CreateRotationX(_rotationX) * m;
-
-        // Step 4: Scale to fit in view (scale the rotated model)
-        m = Matrix4x4.CreateScale(scale) * m;
 
         var modelMatrix = m;
 
@@ -547,18 +539,11 @@ void main()
         SetUniformMatrix4("view", view);
         SetUniformMatrix4("projection", projection);
 
-        // Vertical offset to center the model on screen
-        // The model's Z center maps to Y after the 90° tilt, then gets scaled
-        // We offset in clip space to move the model down so its center is at screen center
-        float verticalOffset = _cameraTarget.Z * scale;
-        var offsetLoc = _gl.GetUniformLocation(_shaderProgram, "verticalOffset");
-        _gl.Uniform1(offsetLoc, verticalOffset);
-
-        // Debug logging for centering issues - only log once per model
+        // Debug logging - only log once per model
         if (_logOncePerModel)
         {
             _logOncePerModel = false;
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Render: center.Z={_cameraTarget.Z:F3}, scale={scale:F3}, verticalOffset={verticalOffset:F3}, uniformLoc={offsetLoc}");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Render: camDist={cameraDistance:F3}, radius={_modelRadius:F3}");
         }
 
         // Lighting - from upper front right
@@ -627,9 +612,14 @@ void main()
 
         _meshDrawCalls.Clear();
 
-        // Collect all mesh data
+        // Two-pass vertex collection:
+        // Pass 1: Collect world-space vertices and compute geometric center
+        // Pass 2: Subtract center from all positions so mesh is centered at origin
+        // This ensures rotation pivots around the geometric center, not world origin.
+
         var vertices = new List<float>();
         var indices = new List<uint>();
+        var nanFlatIndices = new HashSet<int>(); // Flat vertex indices with NaN data (for bounds exclusion)
         uint baseVertex = 0;
 
         int meshIndex = 0;
@@ -720,6 +710,7 @@ void main()
                 // For NaN vertices, output a zero vertex (won't be rendered due to face filtering)
                 if (nanVertexIndices.Contains(i))
                 {
+                    nanFlatIndices.Add(vertices.Count / 8); // Track for bounds exclusion
                     // 8 floats per vertex: position(3), normal(3), texcoord(2)
                     for (int j = 0; j < 8; j++) vertices.Add(0);
                     continue;
@@ -820,7 +811,9 @@ void main()
 
         _indexCount = indices.Count;
 
-        // Calculate actual bounds from vertex data and update camera target
+        // Pass 2: Compute geometric center from vertex data, then subtract it
+        // from all vertex positions so the mesh is centered at origin.
+        // This ensures rotation pivots around the geometric center.
         if (vertices.Count >= 8)
         {
             float minX = float.MaxValue, maxX = float.MinValue;
@@ -828,6 +821,9 @@ void main()
             float minZ = float.MaxValue, maxZ = float.MinValue;
             for (int i = 0; i < vertices.Count; i += 8)
             {
+                // Skip NaN-zeroed vertices — they'd incorrectly pull bounds toward origin
+                if (nanFlatIndices.Contains(i / 8)) continue;
+
                 minX = Math.Min(minX, vertices[i]);
                 maxX = Math.Max(maxX, vertices[i]);
                 minY = Math.Min(minY, vertices[i + 1]);
@@ -836,22 +832,43 @@ void main()
                 maxZ = Math.Max(maxZ, vertices[i + 2]);
             }
 
-            // Update camera target to actual geometric center of vertices
-            _cameraTarget = new Vector3(
+            // Guard: if all vertices were NaN, bounds are still at MaxValue — skip centering
+            if (minX == float.MaxValue)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, "All vertices were NaN — skipping centering");
+                _modelRadius = 1.0f;
+                _hasVertexBounds = false;
+            }
+            else
+            {
+
+            var center = new Vector3(
                 (minX + maxX) * 0.5f,
                 (minY + maxY) * 0.5f,
                 (minZ + maxZ) * 0.5f);
+
+            // Subtract center from all vertex positions (every 8 floats, first 3 are XYZ)
+            for (int i = 0; i < vertices.Count; i += 8)
+            {
+                vertices[i]     -= center.X;
+                vertices[i + 1] -= center.Y;
+                vertices[i + 2] -= center.Z;
+            }
 
             // Calculate radius from bounds
             float sizeX = maxX - minX;
             float sizeY = maxY - minY;
             float sizeZ = maxZ - minZ;
             _modelRadius = Math.Max(Math.Max(sizeX, sizeY), sizeZ) * 0.5f;
+            _hasVertexBounds = true;
 
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Vertex bounds: X=[{minX:F2},{maxX:F2}] Y=[{minY:F2},{maxY:F2}] Z=[{minZ:F2},{maxZ:F2}], center={_cameraTarget}, radius={_modelRadius:F2}");
+            // Vertices are now centered at origin — no need for screenOffset or _cameraTarget
+            _cameraTarget = Vector3.Zero;
 
-            // Request another frame to use the updated center
-            RequestNextFrameRendering();
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Vertex bounds: X=[{minX:F2},{maxX:F2}] Y=[{minY:F2},{maxY:F2}] Z=[{minZ:F2},{maxZ:F2}], " +
+                $"pre-centered by ({center.X:F2}, {center.Y:F2}, {center.Z:F2}), radius={_modelRadius:F2}");
+            } // else (valid bounds)
         }
 
         UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateMeshBuffers: model={_model?.Name ?? "null"}, {_meshDrawCalls.Count} meshes ({skippedMeshes} skipped), {vertices.Count / 8} vertices, {_indexCount / 3} triangles");
@@ -1028,13 +1045,17 @@ void main()
         }
         if (location >= 0)
         {
-            // Convert Matrix4x4 to float array (column-major order for OpenGL)
+            // System.Numerics uses row-vector convention: result = v * M
+            // GLSL uses column-vector convention: result = M_gl * v
+            // For these to agree, GLSL needs M^T (the transpose).
+            // We write M^T in column-major order (which OpenGL expects).
+            // M^T columns = M rows, so column 0 of M^T = row 0 of M = {M11,M12,M13,M14}.
             ReadOnlySpan<float> values = stackalloc float[16]
             {
-                matrix.M11, matrix.M21, matrix.M31, matrix.M41,
-                matrix.M12, matrix.M22, matrix.M32, matrix.M42,
-                matrix.M13, matrix.M23, matrix.M33, matrix.M43,
-                matrix.M14, matrix.M24, matrix.M34, matrix.M44
+                matrix.M11, matrix.M12, matrix.M13, matrix.M14,  // M^T column 0 = M row 0
+                matrix.M21, matrix.M22, matrix.M23, matrix.M24,  // M^T column 1 = M row 1
+                matrix.M31, matrix.M32, matrix.M33, matrix.M34,  // M^T column 2 = M row 2
+                matrix.M41, matrix.M42, matrix.M43, matrix.M44   // M^T column 3 = M row 3
             };
             _gl.UniformMatrix4(location, 1, false, values);
         }
