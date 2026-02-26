@@ -213,15 +213,6 @@ public partial class AppearancePanel
         SelectComboByTag(_rFootComboBox, creature.BodyPart_RFoot);
 
         // Colors
-        if (_skinColorNumeric != null)
-            _skinColorNumeric.Value = creature.Color_Skin;
-        if (_hairColorNumeric != null)
-            _hairColorNumeric.Value = creature.Color_Hair;
-        if (_tattoo1ColorNumeric != null)
-            _tattoo1ColorNumeric.Value = creature.Color_Tattoo1;
-        if (_tattoo2ColorNumeric != null)
-            _tattoo2ColorNumeric.Value = creature.Color_Tattoo2;
-
         UpdateAllColorSwatches();
     }
 

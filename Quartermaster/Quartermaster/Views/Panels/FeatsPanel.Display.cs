@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Radoub.UI.Services;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -120,7 +121,7 @@ public partial class FeatsPanel
                 Text = raceName,
                 FontWeight = FontWeight.Bold,
                 FontSize = smallFontSize,
-                Foreground = GetInfoBrush(),
+                Foreground = BrushManager.GetInfoBrush(this),
                 Margin = new Thickness(0, 0, 0, 6)
             };
             _assignedFeatsListPanel.Children.Add(raceHeader);
@@ -133,7 +134,7 @@ public partial class FeatsPanel
                 {
                     Text = $"  {featName}",
                     FontSize = smallFontSize,
-                    Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? GetDisabledBrush(),
+                    Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? BrushManager.GetDisabledBrush(this),
                     Margin = new Thickness(0, 2, 0, 0)
                 };
                 _assignedFeatsListPanel.Children.Add(featText);
@@ -157,7 +158,7 @@ public partial class FeatsPanel
                 Text = className,
                 FontWeight = FontWeight.Bold,
                 FontSize = smallFontSize,
-                Foreground = GetSelectionBrush(),
+                Foreground = BrushManager.GetWarningBrush(this),
                 Margin = new Thickness(0, _assignedFeatsListPanel.Children.Count > 0 ? 12 : 0, 0, 6)
             };
             _assignedFeatsListPanel.Children.Add(classHeader);
@@ -170,7 +171,7 @@ public partial class FeatsPanel
                 {
                     Text = $"  {featName}",
                     FontSize = smallFontSize,
-                    Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? GetDisabledBrush(),
+                    Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? BrushManager.GetDisabledBrush(this),
                     Margin = new Thickness(0, 2, 0, 0)
                 };
                 _assignedFeatsListPanel.Children.Add(featText);
@@ -188,7 +189,7 @@ public partial class FeatsPanel
                 Text = "Assigned",
                 FontWeight = FontWeight.Bold,
                 FontSize = smallFontSize,
-                Foreground = GetSuccessBrush(),
+                Foreground = BrushManager.GetSuccessBrush(this),
                 Margin = new Thickness(0, _assignedFeatsListPanel.Children.Count > 0 ? 12 : 0, 0, 6)
             };
             _assignedFeatsListPanel.Children.Add(selectedHeader);
@@ -201,7 +202,7 @@ public partial class FeatsPanel
                 {
                     Text = $"  {featName}",
                     FontSize = smallFontSize,
-                    Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? GetDisabledBrush(),
+                    Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? BrushManager.GetDisabledBrush(this),
                     Margin = new Thickness(0, 2, 0, 0)
                 };
                 _assignedFeatsListPanel.Children.Add(featText);
@@ -275,36 +276,6 @@ public partial class FeatsPanel
 
     #endregion
 
-    #region Theme-Aware Colors
-
-    // Fallback brush for when theme resource is not available
-    private static readonly IBrush FallbackBrush = Brushes.Gray;
-
-    private IBrush GetDisabledBrush() =>
-        this.FindResource("ThemeDisabled") as IBrush
-        ?? this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush
-        ?? FallbackBrush;
-
-    private IBrush GetSuccessBrush() =>
-        this.FindResource("ThemeSuccess") as IBrush
-        ?? this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush
-        ?? FallbackBrush;
-
-    private IBrush GetWarningBrush() =>
-        this.FindResource("ThemeWarning") as IBrush
-        ?? this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush
-        ?? FallbackBrush;
-
-    private IBrush GetInfoBrush() =>
-        this.FindResource("ThemeInfo") as IBrush
-        ?? this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush
-        ?? FallbackBrush;
-
-    private IBrush GetSelectionBrush() =>
-        this.FindResource("ThemeSelection") as IBrush
-        ?? this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush
-        ?? FallbackBrush;
-
     private static IBrush GetTransparentRowBackground(IBrush baseBrush, byte alpha = 30)
     {
         if (baseBrush is SolidColorBrush scb)
@@ -314,6 +285,4 @@ public partial class FeatsPanel
         }
         return Brushes.Transparent;
     }
-
-    #endregion
 }

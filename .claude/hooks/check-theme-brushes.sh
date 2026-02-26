@@ -40,6 +40,19 @@ if echo "$FILE_PATH" | grep -qP '\.axaml$'; then
     echo "WARNING: Hardcoded hex color detected in AXAML. Use DynamicResource with theme keys (ThemeSuccess, ThemeWarning, ThemeError, ThemeInfo, etc.) or BrushManager in code-behind. See Radoub.UI/Services/BrushManager.cs." >&2
     exit 2
   fi
+
+  # Check for hardcoded named colors in Foreground/Background attributes
+  # Pattern: Foreground="LimeGreen", Background="Red", etc.
+  # Allowed: "Transparent", "White" (used in Style setters for selected items)
+  NAMED_COLORS='(LimeGreen|Red|Green|Orange|Yellow|DodgerBlue|OrangeRed|DarkRed|Crimson|Gray|DarkGray|LightGray|Blue|Cyan|Magenta|Pink|Purple|Brown|Gold|Silver)'
+  if echo "$NEW_STRING" | grep -qP "(Foreground|Background|Fill|Stroke)=\"$NAMED_COLORS\""; then
+    # Allow if within a Style definition (e.g., selected item foreground)
+    if echo "$NEW_STRING" | grep -qP '<Style'; then
+      exit 0
+    fi
+    echo "WARNING: Hardcoded named color detected in AXAML. Use DynamicResource with theme keys (ThemeSuccess, ThemeWarning, ThemeError, ThemeInfo, etc.) instead. See Radoub.UI/Services/BrushManager.cs." >&2
+    exit 2
+  fi
 fi
 
 # === C# FILES: Check for hardcoded brush creation ===

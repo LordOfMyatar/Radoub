@@ -1,6 +1,8 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Quartermaster.ViewModels;
+using Radoub.UI.Services;
 using Quartermaster.Views.Helpers;
 using Radoub.Formats.Utc;
 using System;
@@ -159,48 +161,43 @@ public partial class SpellsPanel
         if (spell.IsBlocked)
         {
             spell.StatusText = "Blocked";
-            spell.StatusColor = GetDisabledBrush();
+            spell.StatusColor = BrushManager.GetDisabledBrush(this);
             spell.RowBackground = GetTransparentRowBackground(spell.StatusColor, 20);
             spell.TextOpacity = 0.5;
-            spell.MemorizedCountColor = GetDisabledBrush();
+            spell.MemorizedCountColor = BrushManager.GetDisabledBrush(this);
         }
         else if (isKnown && memorizedCount > 0)
         {
             // Show memorization count if > 1
             spell.StatusText = memorizedCount > 1 ? $"K + M×{memorizedCount}" : "K + M";
-            spell.StatusColor = GetSelectionBrush();
+            spell.StatusColor = BrushManager.GetWarningBrush(this);
             spell.RowBackground = GetTransparentRowBackground(spell.StatusColor, 30);
             spell.TextOpacity = 1.0;
-            spell.MemorizedCountColor = GetSelectionBrush();
+            spell.MemorizedCountColor = BrushManager.GetWarningBrush(this);
         }
         else if (memorizedCount > 0)
         {
             // Memorized but not known (edge case - shouldn't happen normally)
             spell.StatusText = memorizedCount > 1 ? $"M×{memorizedCount}" : "Memorized";
-            spell.StatusColor = GetSelectionBrush();
+            spell.StatusColor = BrushManager.GetWarningBrush(this);
             spell.RowBackground = GetTransparentRowBackground(spell.StatusColor, 30);
             spell.TextOpacity = 1.0;
-            spell.MemorizedCountColor = GetSelectionBrush();
+            spell.MemorizedCountColor = BrushManager.GetWarningBrush(this);
         }
         else if (isKnown)
         {
             spell.StatusText = "Known";
-            spell.StatusColor = GetSuccessBrush();
+            spell.StatusColor = BrushManager.GetSuccessBrush(this);
             spell.RowBackground = GetTransparentRowBackground(spell.StatusColor, 30);
             spell.TextOpacity = 1.0;
             // Use visible foreground for "0" when spell can be memorized
             if (!spell.IsSpontaneousCaster)
             {
-                var app = Avalonia.Application.Current;
-                if (app?.Resources.TryGetResource("SystemControlForegroundBaseHighBrush", Avalonia.Styling.ThemeVariant.Default, out var brush) == true
-                    && brush is IBrush b)
-                    spell.MemorizedCountColor = b;
-                else
-                    spell.MemorizedCountColor = GetInfoBrush();
+                spell.MemorizedCountColor = BrushManager.GetInfoBrush(this);
             }
             else
             {
-                spell.MemorizedCountColor = GetDisabledBrush();
+                spell.MemorizedCountColor = BrushManager.GetDisabledBrush(this);
             }
         }
         else
@@ -209,7 +206,7 @@ public partial class SpellsPanel
             spell.StatusColor = Brushes.Transparent;
             spell.RowBackground = Brushes.Transparent;
             spell.TextOpacity = 0.7;
-            spell.MemorizedCountColor = GetDisabledBrush();
+            spell.MemorizedCountColor = BrushManager.GetDisabledBrush(this);
         }
     }
 
@@ -242,7 +239,7 @@ public partial class SpellsPanel
                       $"• {memorizedCount} memorized spell(s)\n\n" +
                       "This action cannot be undone.";
 
-        var confirmed = await DialogHelper.ShowConfirmationDialog(parentWindow, "Clear All Spells", message);
+        var confirmed = await Helpers.DialogHelper.ShowConfirmationDialog(parentWindow, "Clear All Spells", message);
 
         if (!confirmed)
             return;

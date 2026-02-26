@@ -466,7 +466,7 @@
                             <TextBlock Grid.Row="0" Text="Body Parts" FontWeight="Bold" FontSize="14" Margin="0,0,0,8"/>
 
                             <ScrollViewer Grid.Row="1">
-                                <StackPanel x:Name="BodyPartsContent" Spacing="4">
+                                <StackPanel x:Name="BodyPartsContent" Spacing="4" Margin="0,0,15,0">
                                     <!-- Core body parts - 2-column compact layout -->
                                     <Grid ColumnDefinitions="60,*,60,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="4" ColumnSpacing="6">
                                         <!-- Row 0: Head / Neck -->
@@ -1105,7 +1105,7 @@
 
                         <!-- Skill Rows -->
                         <ScrollViewer Grid.Row="1">
-                            <StackPanel x:Name="SkillRowsPanel" Spacing="0"/>
+                            <StackPanel x:Name="SkillRowsPanel" Spacing="0" Margin="0,0,15,0"/>
                         </ScrollViewer>
                     </Grid>
                 </Border>
@@ -1294,7 +1294,7 @@
 
                         <!-- Equipment Items -->
                         <ScrollViewer Grid.Row="1">
-                            <StackPanel x:Name="EquipmentItemsPanel" Spacing="2"/>
+                            <StackPanel x:Name="EquipmentItemsPanel" Spacing="2" Margin="0,0,15,0"/>
                         </ScrollViewer>
 
                         <!-- Empty state message -->

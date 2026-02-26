@@ -3,7 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
-using Avalonia.Styling;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
@@ -171,12 +170,12 @@ public partial class SkillsPanel : BasePanelControl
             double textOpacity;
             if (isUnavailable)
             {
-                rowBackground = GetTransparentRowBackground(GetDisabledBrush(), 20);
+                rowBackground = GetTransparentRowBackground(BrushManager.GetDisabledBrush(this), 20);
                 textOpacity = 0.5;
             }
             else if (isClassSkill)
             {
-                rowBackground = GetTransparentRowBackground(GetInfoBrush(), 30);
+                rowBackground = GetTransparentRowBackground(BrushManager.GetInfoBrush(this), 30);
                 textOpacity = 1.0;
             }
             else
@@ -384,7 +383,7 @@ public partial class SkillsPanel : BasePanelControl
             {
                 Text = $"{skillPointBase}+INT = {pointsPerLevel}/lvl",
                 FontSize = smallFontSize,
-                Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush ?? GetDisabledBrush(),
+                Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush ?? BrushManager.GetDisabledBrush(this),
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
             };
             row.Children.Add(pointsLabel);
@@ -400,15 +399,15 @@ public partial class SkillsPanel : BasePanelControl
         var separator = new Border
         {
             Height = 1,
-            Background = this.FindResource("SystemControlForegroundBaseLowBrush") as IBrush ?? GetDisabledBrush(),
+            Background = this.FindResource("SystemControlForegroundBaseLowBrush") as IBrush ?? BrushManager.GetDisabledBrush(this),
             Margin = new Avalonia.Thickness(0, 6)
         };
         _skillPointsTablePanel.Children.Add(separator);
 
         // Add total summary
-        var usageColor = totalRanksSpent > totalSkillPoints ? GetErrorBrush() :
-                         totalRanksSpent == totalSkillPoints ? GetSuccessBrush() :
-                         this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? Brushes.White;
+        var usageColor = totalRanksSpent > totalSkillPoints ? BrushManager.GetErrorBrush(this) :
+                         totalRanksSpent == totalSkillPoints ? BrushManager.GetSuccessBrush(this) :
+                         this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? BrushManager.GetDisabledBrush(this);
 
         var totalRow = new TextBlock
         {
@@ -425,7 +424,7 @@ public partial class SkillsPanel : BasePanelControl
             Text = "(Estimate - excludes race/feat bonuses)",
             FontSize = smallSize,
             FontStyle = Avalonia.Media.FontStyle.Italic,
-            Foreground = this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush ?? GetDisabledBrush(),
+            Foreground = this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush ?? BrushManager.GetDisabledBrush(this),
             Margin = new Avalonia.Thickness(0, 4, 0, 0)
         };
         _skillPointsTablePanel.Children.Add(noteRow);
@@ -439,22 +438,6 @@ public partial class SkillsPanel : BasePanelControl
         return _displayService?.GetClassSkillPointBase(classId) ?? 2;
     }
 
-    private IBrush GetSuccessBrush()
-    {
-        var app = Application.Current;
-        if (app?.Resources.TryGetResource("ThemeSuccess", ThemeVariant.Default, out var brush) == true && brush is IBrush b)
-            return b;
-        return new SolidColorBrush(Color.Parse("#388E3C"));
-    }
-
-    private IBrush GetErrorBrush()
-    {
-        var app = Application.Current;
-        if (app?.Resources.TryGetResource("ThemeError", ThemeVariant.Default, out var brush) == true && brush is IBrush b)
-            return b;
-        return new SolidColorBrush(Color.Parse("#D32F2F"));
-    }
-
     private string GetSkillName(int skillId)
     {
         return _displayService?.GetSkillName(skillId) ?? $"Skill {skillId}";
@@ -463,30 +446,6 @@ public partial class SkillsPanel : BasePanelControl
     private string GetSkillKeyAbility(int skillId)
     {
         return _displayService?.GetSkillKeyAbility(skillId) ?? "INT";
-    }
-
-    #region Theme-Aware Colors
-
-    // Light theme default colors for fallback
-    private static readonly IBrush DefaultDisabledBrush = new SolidColorBrush(Color.Parse("#757575")); // Gray
-    private static readonly IBrush DefaultInfoBrush = new SolidColorBrush(Color.Parse("#1976D2"));     // Blue
-
-    private IBrush GetDisabledBrush()
-    {
-        var app = Application.Current;
-        if (app?.Resources.TryGetResource("ThemeDisabled", ThemeVariant.Default, out var brush) == true
-            && brush is IBrush b)
-            return b;
-        return DefaultDisabledBrush;
-    }
-
-    private IBrush GetInfoBrush()
-    {
-        var app = Application.Current;
-        if (app?.Resources.TryGetResource("ThemeInfo", ThemeVariant.Default, out var brush) == true
-            && brush is IBrush b)
-            return b;
-        return DefaultInfoBrush;
     }
 
     private static IBrush GetTransparentRowBackground(IBrush baseBrush, byte alpha = 30)
@@ -498,8 +457,6 @@ public partial class SkillsPanel : BasePanelControl
         }
         return Brushes.Transparent;
     }
-
-    #endregion
 }
 
 /// <summary>
@@ -537,22 +494,11 @@ public class SkillViewModel : System.ComponentModel.INotifyPropertyChanged
     {
         get
         {
-            var app = Application.Current;
             if (AbilityModifier > 0)
-            {
-                if (app?.Resources.TryGetResource("ThemeSuccess", ThemeVariant.Default, out var brush) == true && brush is IBrush b)
-                    return b;
-                return new SolidColorBrush(Color.Parse("#388E3C")); // Green fallback
-            }
+                return BrushManager.GetSuccessBrush();
             if (AbilityModifier < 0)
-            {
-                if (app?.Resources.TryGetResource("ThemeError", ThemeVariant.Default, out var brush) == true && brush is IBrush b)
-                    return b;
-                return new SolidColorBrush(Color.Parse("#D32F2F")); // Red fallback
-            }
-            if (app?.Resources.TryGetResource("ThemeDisabled", ThemeVariant.Default, out var grayBrush) == true && grayBrush is IBrush g)
-                return g;
-            return new SolidColorBrush(Color.Parse("#757575")); // Gray fallback
+                return BrushManager.GetErrorBrush();
+            return BrushManager.GetDisabledBrush();
         }
     }
 

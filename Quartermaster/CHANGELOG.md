@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.18-alpha] - 2026-02-25
+**Branch**: `quartermaster/issue-1524` | **PR**: #1527
+
+### Sprint: Theme Cleanup (#1524)
+
+- [x] #1481 - Hardcoded Colors and Brushes (102 instances)
+- [x] #1496 - Audit ScrollViewer padding across panels and wizards
+- [x] #1531 - Simplify AppearancePanel color pickers — removed NumericUpDown, kept swatch-only UI
+- Improved text contrast in wizard skill steps (BaseMediumLow → BaseMediumBrush)
+- Fixed hardcoded `LimeGreen` in LevelUpWizard → `DynamicResource ThemeSuccess`
+- Added named-color detection to theme brush hook
+
+---
+
 ## [0.2.17-alpha] - 2026-02-24
 **Branch**: `quartermaster/issue-1205` | **PR**: #1517
 

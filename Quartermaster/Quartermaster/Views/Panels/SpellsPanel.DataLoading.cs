@@ -1,5 +1,7 @@
+using Avalonia;
 using Avalonia.Media;
 using Quartermaster.Services;
+using Radoub.UI.Services;
 using Quartermaster.ViewModels;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
@@ -247,21 +249,21 @@ public partial class SpellsPanel
         if (isBlocked)
         {
             statusText = "Blocked";
-            statusColor = GetDisabledBrush();
+            statusColor = BrushManager.GetDisabledBrush(this);
             rowBackground = GetTransparentRowBackground(statusColor, 20);
             textOpacity = 0.5;
         }
         else if (memorizedCount > 0)
         {
             statusText = memorizedCount > 1 ? $"M×{memorizedCount}" : "Memorized";
-            statusColor = GetSelectionBrush();
+            statusColor = BrushManager.GetWarningBrush(this);
             rowBackground = GetTransparentRowBackground(statusColor, 30);
             textOpacity = 1.0;
         }
         else if (isKnown)
         {
             statusText = "Known";
-            statusColor = GetSuccessBrush();
+            statusColor = BrushManager.GetSuccessBrush(this);
             rowBackground = GetTransparentRowBackground(statusColor, 30);
             textOpacity = 1.0;
         }
@@ -313,22 +315,17 @@ public partial class SpellsPanel
         if (vm.MemorizedCount > 0)
         {
             // Memorized - use gold/selection color (high visibility)
-            vm.MemorizedCountColor = GetSelectionBrush();
+            vm.MemorizedCountColor = BrushManager.GetWarningBrush(this);
         }
         else if (vm.IsKnown && !vm.IsSpontaneousCaster && !vm.IsBlocked)
         {
             // Can memorize but hasn't - use normal foreground for visibility
-            var app = Avalonia.Application.Current;
-            if (app?.Resources.TryGetResource("SystemControlForegroundBaseHighBrush", Avalonia.Styling.ThemeVariant.Default, out var brush) == true
-                && brush is IBrush b)
-                vm.MemorizedCountColor = b;
-            else
-                vm.MemorizedCountColor = GetInfoBrush();
+            vm.MemorizedCountColor = BrushManager.GetInfoBrush(this);
         }
         else
         {
             // Blocked or spontaneous - use disabled
-            vm.MemorizedCountColor = GetDisabledBrush();
+            vm.MemorizedCountColor = BrushManager.GetDisabledBrush(this);
         }
     }
 

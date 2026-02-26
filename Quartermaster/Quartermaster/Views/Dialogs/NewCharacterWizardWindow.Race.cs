@@ -149,9 +149,6 @@ public partial class NewCharacterWizardWindow
         else if (modifier < 0)
             label.Foreground = BrushManager.GetWarningBrush(this);
         else
-            label.Foreground = new SolidColorBrush(Colors.Transparent);
-
-        if (modifier == 0)
             label.ClearValue(TextBlock.ForegroundProperty);
     }
 

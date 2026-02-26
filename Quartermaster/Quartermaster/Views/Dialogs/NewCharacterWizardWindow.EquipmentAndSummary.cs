@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Quartermaster.Services;
+using Radoub.UI.Services;
 using Radoub.Formats.Common;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
@@ -107,7 +108,7 @@ public partial class NewCharacterWizardWindow
             {
                 Text = item.SlotName,
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Foreground = new SolidColorBrush(Colors.Gray),
+                Foreground = BrushManager.GetDisabledBrush(this),
                 FontSize = 12
             };
             Grid.SetColumn(slotLabel, 1);
