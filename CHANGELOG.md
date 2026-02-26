@@ -17,6 +17,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.79] - 2026-02-26
+**Branch**: `radoub/issue-1529` | **PR**: #TBD
+
+### Sprint: Document Lifecycle Standardization (#1529)
+
+- [ ] #1448 - Create shared IDocumentState for dirty tracking + title bar
+- [ ] #1449 - Create shared FileOperationsHelper for save/new/close workflows
+
+---
+
 ## [0.9.78] - 2026-02-25
 **Branch**: `radoub/issue-1528` | **PR**: #1532
 
