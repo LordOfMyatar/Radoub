@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.15.2-alpha] - 2026-02-25
+**Branch**: `radoub/issue-1523` | **PR**: #TBD
+
+### Sprint: File Splits (#1523)
+
+- [ ] #1515 - Split MainWindow.axaml.cs (1247 lines)
+- [ ] #1373 - Split SettingsWindow.axaml.cs (549 lines)
+
+---
+
 ## [0.15.1-alpha] - 2026-02-11
 **Branch**: `radoub/issue-1300` | **PR**: #1310
 
