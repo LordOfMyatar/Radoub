@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.18-alpha] - 2026-02-25
-**Branch**: `quartermaster/issue-1524` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1524` | **PR**: #1527
 
 ### Sprint: Theme Cleanup (#1524)
 
