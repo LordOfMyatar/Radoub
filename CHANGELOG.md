@@ -17,7 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.9.77] - TBD
+## [0.9.77] - 2026-02-25
 **Branch**: `radoub/issue-1513` | **PR**: #1522
 
 ### Sprint: Dependabot Dependency Updates (#1513)

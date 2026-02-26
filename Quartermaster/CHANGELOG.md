@@ -15,8 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Theme Cleanup (#1524)
 
-- [ ] #1481 - Hardcoded Colors and Brushes (102 instances)
-- [ ] #1496 - Audit ScrollViewer padding across panels and wizards
+- [x] #1481 - Hardcoded Colors and Brushes (102 instances)
+- [x] #1496 - Audit ScrollViewer padding across panels and wizards
 
 ---
 
