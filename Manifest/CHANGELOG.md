@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.15.2-alpha] - 2026-02-25
-**Branch**: `radoub/issue-1523` | **PR**: #TBD
+**Branch**: `radoub/issue-1523` | **PR**: #1525
 
 ### Sprint: File Splits (#1523)
 
