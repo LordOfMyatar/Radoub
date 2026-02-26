@@ -17,6 +17,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.78] - 2026-02-25
+**Branch**: `radoub/issue-1528` | **PR**: #TBD
+
+### Sprint: Cross-Tool Service Standardization Wave 2 (#1528)
+
+- [ ] #1445 - Extract BaseToolSettingsService<T> into Radoub.UI
+- [ ] #1446 - Centralize RecentFilesService in Radoub.UI
+- [ ] #1447 - Centralize WindowLayoutService in Radoub.UI
+
+---
+
 ## [0.9.77] - 2026-02-25
 **Branch**: `radoub/issue-1513` | **PR**: #1522
 
