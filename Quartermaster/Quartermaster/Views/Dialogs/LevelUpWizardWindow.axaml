@@ -322,8 +322,8 @@
                                         <TextBlock Grid.Column="1" Text="{Binding CurrentRanks}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         <Button Grid.Column="2" Content="-" Width="25" Click="OnSkillDecrease" Tag="{Binding SkillId}" IsEnabled="{Binding CanDecrease}"/>
                                         <Button Grid.Column="3" Content="+" Width="25" Click="OnSkillIncrease" Tag="{Binding SkillId}" IsEnabled="{Binding CanIncrease}"/>
-                                        <TextBlock Grid.Column="4" Text="{Binding AddedRanks}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="LimeGreen"/>
-                                        <TextBlock Grid.Column="5" Text="{Binding ClassSkillIndicator}" VerticalAlignment="Center" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                        <TextBlock Grid.Column="4" Text="{Binding AddedRanks}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource ThemeSuccess}"/>
+                                        <TextBlock Grid.Column="5" Text="{Binding ClassSkillIndicator}" VerticalAlignment="Center" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>

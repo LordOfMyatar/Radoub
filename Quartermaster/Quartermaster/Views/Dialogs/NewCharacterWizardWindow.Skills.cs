@@ -135,7 +135,7 @@ public partial class NewCharacterWizardWindow
                 Text = skill.KeyAbility,
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Foreground = this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush,
+                Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush,
                 FontSize = 11
             };
             Grid.SetColumn(keyLabel, 1);
@@ -186,7 +186,7 @@ public partial class NewCharacterWizardWindow
                 Text = skill.IsUnavailable ? "—" : skill.MaxRanks.ToString(),
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Foreground = this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush
+                Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush
             };
             Grid.SetColumn(maxLabel, 5);
             row.Children.Add(maxLabel);
@@ -197,7 +197,7 @@ public partial class NewCharacterWizardWindow
                 Text = skill.IsUnavailable ? "Unavailable" : skill.IsClassSkill ? "Class (1 pt)" : "Cross-class (2 pts)",
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
                 FontSize = 11,
-                Foreground = this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush
+                Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush
             };
             Grid.SetColumn(typeLabel, 6);
             row.Children.Add(typeLabel);
