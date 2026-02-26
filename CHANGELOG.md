@@ -17,6 +17,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.77] - TBD
+**Branch**: `radoub/issue-1513` | **PR**: #TBD
+
+### Sprint: Dependabot Dependency Updates (#1513)
+
+Consolidates dependabot PRs: #1513, #1514
+
+- Bump System.Text.Json from 10.0.2 to 10.0.3 (#1514)
+- Bump Microsoft.Extensions.DependencyInjection from 10.0.2 to 10.0.3 (#1513)
+- Bump Microsoft.Extensions.Logging from 10.0.2 to 10.0.3 (#1513)
+
+---
+
 ## [0.9.76] - 2026-02-22
 **Branch**: `radoub/issue-1453` | **PR**: #1508
 
