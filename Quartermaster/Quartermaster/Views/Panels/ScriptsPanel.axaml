@@ -7,7 +7,7 @@
 
     <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="20">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <StackPanel Spacing="20">
+            <StackPanel Spacing="20" Margin="0,0,15,0">
                 <!-- Header -->
                 <TextBlock Text="Event Scripts"
                            FontSize="{DynamicResource FontSizeXLarge}"

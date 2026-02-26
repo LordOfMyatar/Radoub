@@ -12,7 +12,7 @@
 
             <!-- LEFT PANEL: Body Parts Configuration -->
             <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
-                <StackPanel Spacing="15" Margin="15">
+                <StackPanel Spacing="15" Margin="15,15,30,15">
                     <!-- Header -->
                     <TextBlock Text="Appearance"
                                FontSize="{DynamicResource FontSizeLarge}"
