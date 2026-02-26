@@ -51,12 +51,6 @@ public partial class AppearancePanel : UserControl
     private ComboBox? _lFootComboBox;
     private ComboBox? _rFootComboBox;
 
-    // Color controls
-    private NumericUpDown? _skinColorNumeric;
-    private NumericUpDown? _hairColorNumeric;
-    private NumericUpDown? _tattoo1ColorNumeric;
-    private NumericUpDown? _tattoo2ColorNumeric;
-
     // Color swatches
     private Border? _skinColorSwatch;
     private Border? _hairColorSwatch;
@@ -131,12 +125,6 @@ public partial class AppearancePanel : UserControl
         _rShinComboBox = this.FindControl<ComboBox>("RShinComboBox");
         _lFootComboBox = this.FindControl<ComboBox>("LFootComboBox");
         _rFootComboBox = this.FindControl<ComboBox>("RFootComboBox");
-
-        // Color controls
-        _skinColorNumeric = this.FindControl<NumericUpDown>("SkinColorNumeric");
-        _hairColorNumeric = this.FindControl<NumericUpDown>("HairColorNumeric");
-        _tattoo1ColorNumeric = this.FindControl<NumericUpDown>("Tattoo1ColorNumeric");
-        _tattoo2ColorNumeric = this.FindControl<NumericUpDown>("Tattoo2ColorNumeric");
 
         // Color swatches
         _skinColorSwatch = this.FindControl<Border>("SkinColorSwatch");
@@ -216,15 +204,6 @@ public partial class AppearancePanel : UserControl
             _phenotypeComboBox.SelectedIndex = -1;
 
         UpdateBodyPartsEnabledState(false);
-
-        if (_skinColorNumeric != null)
-            _skinColorNumeric.Value = 0;
-        if (_hairColorNumeric != null)
-            _hairColorNumeric.Value = 0;
-        if (_tattoo1ColorNumeric != null)
-            _tattoo1ColorNumeric.Value = 0;
-        if (_tattoo2ColorNumeric != null)
-            _tattoo2ColorNumeric.Value = 0;
     }
 
     /// <summary>

@@ -17,6 +17,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - [x] #1481 - Hardcoded Colors and Brushes (102 instances)
 - [x] #1496 - Audit ScrollViewer padding across panels and wizards
+- [x] #1531 - Simplify AppearancePanel color pickers — removed NumericUpDown, kept swatch-only UI
+- Improved text contrast in wizard skill steps (BaseMediumLow → BaseMediumBrush)
+- Fixed hardcoded `LimeGreen` in LevelUpWizard → `DynamicResource ThemeSuccess`
+- Added named-color detection to theme brush hook
 
 ---
 

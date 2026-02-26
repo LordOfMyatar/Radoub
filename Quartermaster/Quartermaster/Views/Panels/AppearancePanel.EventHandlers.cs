@@ -27,16 +27,6 @@ public partial class AppearancePanel
         // Body part combo events
         WireBodyPartComboEvents();
 
-        // Color value changed events
-        if (_skinColorNumeric != null)
-            _skinColorNumeric.ValueChanged += OnColorValueChanged;
-        if (_hairColorNumeric != null)
-            _hairColorNumeric.ValueChanged += OnColorValueChanged;
-        if (_tattoo1ColorNumeric != null)
-            _tattoo1ColorNumeric.ValueChanged += OnColorValueChanged;
-        if (_tattoo2ColorNumeric != null)
-            _tattoo2ColorNumeric.ValueChanged += OnColorValueChanged;
-
         // Color swatch click events
         if (_skinColorSwatch != null)
         {
@@ -209,45 +199,11 @@ public partial class AppearancePanel
         AppearanceChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    private void OnColorValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
-    {
-        if (_isLoading || _currentCreature == null || !e.NewValue.HasValue) return;
-
-        // Clamp to valid byte range (0-175 per AXAML, but enforce 0-255 for safety)
-        var rawValue = (int)Math.Clamp(e.NewValue.Value, 0, 255);
-        var value = (byte)rawValue;
-
-        if (sender == _skinColorNumeric)
-        {
-            _currentCreature.Color_Skin = value;
-            UpdateColorSwatch(_skinColorSwatch, PaletteColorService.Palettes.Skin, value);
-        }
-        else if (sender == _hairColorNumeric)
-        {
-            _currentCreature.Color_Hair = value;
-            UpdateColorSwatch(_hairColorSwatch, PaletteColorService.Palettes.Hair, value);
-        }
-        else if (sender == _tattoo1ColorNumeric)
-        {
-            _currentCreature.Color_Tattoo1 = value;
-            UpdateColorSwatch(_tattoo1ColorSwatch, PaletteColorService.Palettes.Tattoo1, value);
-        }
-        else if (sender == _tattoo2ColorNumeric)
-        {
-            _currentCreature.Color_Tattoo2 = value;
-            UpdateColorSwatch(_tattoo2ColorSwatch, PaletteColorService.Palettes.Tattoo2, value);
-        }
-
-        UpdateModelPreview();
-        AppearanceChanged?.Invoke(this, EventArgs.Empty);
-    }
-
     private void OnSkinColorSwatchClicked(object? sender, PointerPressedEventArgs e)
     {
         OpenColorPicker(PaletteColorService.Palettes.Skin, _currentCreature?.Color_Skin ?? 0, newIndex =>
         {
             if (_currentCreature != null) _currentCreature.Color_Skin = newIndex;
-            if (_skinColorNumeric != null) _skinColorNumeric.Value = newIndex;
             UpdateColorSwatch(_skinColorSwatch, PaletteColorService.Palettes.Skin, newIndex);
             UpdateModelPreview();
             AppearanceChanged?.Invoke(this, EventArgs.Empty);
@@ -259,7 +215,6 @@ public partial class AppearancePanel
         OpenColorPicker(PaletteColorService.Palettes.Hair, _currentCreature?.Color_Hair ?? 0, newIndex =>
         {
             if (_currentCreature != null) _currentCreature.Color_Hair = newIndex;
-            if (_hairColorNumeric != null) _hairColorNumeric.Value = newIndex;
             UpdateColorSwatch(_hairColorSwatch, PaletteColorService.Palettes.Hair, newIndex);
             UpdateModelPreview();
             AppearanceChanged?.Invoke(this, EventArgs.Empty);
@@ -271,7 +226,6 @@ public partial class AppearancePanel
         OpenColorPicker(PaletteColorService.Palettes.Tattoo1, _currentCreature?.Color_Tattoo1 ?? 0, newIndex =>
         {
             if (_currentCreature != null) _currentCreature.Color_Tattoo1 = newIndex;
-            if (_tattoo1ColorNumeric != null) _tattoo1ColorNumeric.Value = newIndex;
             UpdateColorSwatch(_tattoo1ColorSwatch, PaletteColorService.Palettes.Tattoo1, newIndex);
             UpdateModelPreview();
             AppearanceChanged?.Invoke(this, EventArgs.Empty);
@@ -283,7 +237,6 @@ public partial class AppearancePanel
         OpenColorPicker(PaletteColorService.Palettes.Tattoo2, _currentCreature?.Color_Tattoo2 ?? 0, newIndex =>
         {
             if (_currentCreature != null) _currentCreature.Color_Tattoo2 = newIndex;
-            if (_tattoo2ColorNumeric != null) _tattoo2ColorNumeric.Value = newIndex;
             UpdateColorSwatch(_tattoo2ColorSwatch, PaletteColorService.Palettes.Tattoo2, newIndex);
             UpdateModelPreview();
             AppearanceChanged?.Invoke(this, EventArgs.Empty);

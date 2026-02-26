@@ -217,64 +217,42 @@
                             Padding="12">
                         <StackPanel Spacing="8">
                             <TextBlock Text="Colors" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
-                            <Grid ColumnDefinitions="55,88,55,88" RowDefinitions="Auto,Auto" RowSpacing="4" ColumnSpacing="6">
+                            <Grid ColumnDefinitions="55,22,20,55,22" RowDefinitions="Auto,Auto" RowSpacing="4" ColumnSpacing="4">
                                 <!-- Skin / Hair -->
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Skin:" FontSize="{DynamicResource FontSizeSmall}"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            VerticalAlignment="Center"/>
-                                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                                    <NumericUpDown x:Name="SkinColorNumeric"
-                                                   Minimum="0" Maximum="175" Value="0"
-                                                   FormatString="0"
-                                                   Width="56" FontSize="{DynamicResource FontSizeXSmall}"
-                                                   AutomationProperties.AutomationId="SkinColorNumeric"/>
-                                    <Border x:Name="SkinColorSwatch" Width="18" Height="18"
-                                            CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
-                                            Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"/>
-                                </StackPanel>
-                                <TextBlock Grid.Row="0" Grid.Column="2" Text="Hair:" FontSize="{DynamicResource FontSizeSmall}"
+                                <Border Grid.Row="0" Grid.Column="1" x:Name="SkinColorSwatch" Width="18" Height="18"
+                                        CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
+                                        Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"
+                                        ToolTip.Tip="Click to choose skin color"/>
+
+                                <TextBlock Grid.Row="0" Grid.Column="3" Text="Hair:" FontSize="{DynamicResource FontSizeSmall}"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            VerticalAlignment="Center"/>
-                                <StackPanel Grid.Row="0" Grid.Column="3" Orientation="Horizontal" Spacing="8">
-                                    <NumericUpDown x:Name="HairColorNumeric"
-                                                   Minimum="0" Maximum="175" Value="0"
-                                                   FormatString="0"
-                                                   Width="56" FontSize="{DynamicResource FontSizeXSmall}"
-                                                   AutomationProperties.AutomationId="HairColorNumeric"/>
-                                    <Border x:Name="HairColorSwatch" Width="18" Height="18"
-                                            CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
-                                            Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"/>
-                                </StackPanel>
+                                <Border Grid.Row="0" Grid.Column="4" x:Name="HairColorSwatch" Width="18" Height="18"
+                                        CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
+                                        Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"
+                                        ToolTip.Tip="Click to choose hair color"/>
 
-                                <!-- Tattoo 1 / Tattoo 2 - colors tattoo pixels painted in body PLT textures -->
+                                <!-- Tattoo 1 / Tattoo 2 -->
                                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Tat 1:" FontSize="{DynamicResource FontSizeSmall}"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            VerticalAlignment="Center"
                                            ToolTip.Tip="Tattoo colors apply to pixels painted in body part textures. Most base game models have minimal tattoo areas."/>
-                                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                                    <NumericUpDown x:Name="Tattoo1ColorNumeric"
-                                                   Minimum="0" Maximum="175" Value="0"
-                                                   FormatString="0"
-                                                   Width="56" FontSize="{DynamicResource FontSizeXSmall}"
-                                                   AutomationProperties.AutomationId="Tattoo1ColorNumeric"/>
-                                    <Border x:Name="Tattoo1ColorSwatch" Width="18" Height="18"
-                                            CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
-                                            Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"/>
-                                </StackPanel>
-                                <TextBlock Grid.Row="1" Grid.Column="2" Text="Tat 2:" FontSize="{DynamicResource FontSizeSmall}"
+                                <Border Grid.Row="1" Grid.Column="1" x:Name="Tattoo1ColorSwatch" Width="18" Height="18"
+                                        CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
+                                        Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"
+                                        ToolTip.Tip="Click to choose tattoo 1 color"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="3" Text="Tat 2:" FontSize="{DynamicResource FontSizeSmall}"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            VerticalAlignment="Center"
                                            ToolTip.Tip="Tattoo colors apply to pixels painted in body part textures. Custom content may add more tattoo areas."/>
-                                <StackPanel Grid.Row="1" Grid.Column="3" Orientation="Horizontal" Spacing="8">
-                                    <NumericUpDown x:Name="Tattoo2ColorNumeric"
-                                                   Minimum="0" Maximum="175" Value="0"
-                                                   FormatString="0"
-                                                   Width="56" FontSize="{DynamicResource FontSizeXSmall}"
-                                                   AutomationProperties.AutomationId="Tattoo2ColorNumeric"/>
-                                    <Border x:Name="Tattoo2ColorSwatch" Width="18" Height="18"
-                                            CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
-                                            Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"/>
-                                </StackPanel>
+                                <Border Grid.Row="1" Grid.Column="4" x:Name="Tattoo2ColorSwatch" Width="18" Height="18"
+                                        CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
+                                        Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"
+                                        ToolTip.Tip="Click to choose tattoo 2 color"/>
                             </Grid>
                         </StackPanel>
                     </Border>
