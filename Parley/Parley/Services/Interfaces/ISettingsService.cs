@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using DialogEditor.Utils;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 
 namespace DialogEditor.Services
 {
@@ -10,8 +11,9 @@ namespace DialogEditor.Services
     /// Interface for Parley application settings.
     /// Provides access to user preferences, game paths, and configuration.
     /// #1230: Phase 3 - Service interface extraction for dependency injection.
+    /// #1447: Extends IWindowSettings for WindowPositionHelper compatibility.
     /// </summary>
-    public interface ISettingsService : INotifyPropertyChanged
+    public interface ISettingsService : INotifyPropertyChanged, IWindowSettings
     {
         // Recent files (delegated to RecentFilesService)
         List<string> RecentFiles { get; }
@@ -20,13 +22,6 @@ namespace DialogEditor.Services
         void RemoveRecentFile(string filePath);
         void ClearRecentFiles();
         void CleanupRecentFiles();
-
-        // Window layout (delegated to WindowLayoutService)
-        double WindowLeft { get; set; }
-        double WindowTop { get; set; }
-        double WindowWidth { get; set; }
-        double WindowHeight { get; set; }
-        bool WindowMaximized { get; set; }
 
         // Panel layout (delegated to WindowLayoutService)
         double LeftPanelWidth { get; set; }

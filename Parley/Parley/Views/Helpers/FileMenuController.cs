@@ -305,52 +305,66 @@ namespace Parley.Views.Helpers
         }
 
         /// <summary>
-        /// Handle recent file click - Load selected recent file.
+        /// Populate the recent files submenu using shared RecentFilesMenuHelper.
         /// </summary>
-        public async void OnRecentFileClick(object? sender, RoutedEventArgs e)
+        public void PopulateRecentFilesMenu()
+        {
+            var recentFilesMenuItem = _window.FindControl<MenuItem>("RecentFilesMenuItem");
+            if (recentFilesMenuItem == null)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, "RecentFilesMenuItem not found in XAML");
+                return;
+            }
+
+            RecentFilesMenuHelper.Populate(
+                recentFilesMenuItem,
+                _settings.RecentFiles,
+                async filePath => await HandleRecentFileClick(filePath),
+                () =>
+                {
+                    _settings.ClearRecentFiles();
+                    PopulateRecentFilesMenu();
+                });
+        }
+
+        /// <summary>
+        /// Handles loading a file from the recent files menu.
+        /// Extracted from OnRecentFileClick for use with RecentFilesMenuHelper.
+        /// </summary>
+        private async Task HandleRecentFileClick(string filePath)
         {
             try
             {
-                if (sender is MenuItem menuItem && menuItem.Tag is string filePath)
+                if (!File.Exists(filePath))
                 {
-                    // Check if file exists before trying to load
-                    if (!File.Exists(filePath))
-                    {
-                        var fileName = Path.GetFileName(filePath);
-                        var shouldRemove = await ShowConfirmDialog(
-                            "File Not Found",
-                            $"The file '{fileName}' could not be found.\n\nFull path: {UnifiedLogger.SanitizePath(filePath)}\n\nRemove from recent files?");
+                    var fileName = Path.GetFileName(filePath);
+                    var shouldRemove = await ShowConfirmDialog(
+                        "File Not Found",
+                        $"The file '{fileName}' could not be found.\n\nFull path: {UnifiedLogger.SanitizePath(filePath)}\n\nRemove from recent files?");
 
-                        if (shouldRemove)
-                        {
-                            _settings.RemoveRecentFile(filePath);
-                            _populateRecentFilesMenu();
-                        }
-                        return;
+                    if (shouldRemove)
+                    {
+                        _settings.RemoveRecentFile(filePath);
+                        _populateRecentFilesMenu();
                     }
+                    return;
+                }
 
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Loading recent file: {UnifiedLogger.SanitizePath(filePath)}");
-                    await ViewModel.LoadDialogAsync(filePath);
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Loading recent file: {UnifiedLogger.SanitizePath(filePath)}");
+                await ViewModel.LoadDialogAsync(filePath);
 
-                    // Update module info bar
-                    UpdateModuleInfo(filePath);
+                UpdateModuleInfo(filePath);
+                _populateRecentFilesMenu();
+                _updateEmbeddedFlowchartAfterLoad();
 
-                    // Refresh recent files menu to move this file to top (#597)
-                    _populateRecentFilesMenu();
-
-                    // Update embedded flowchart
-                    _updateEmbeddedFlowchartAfterLoad();
-
-                    // Scan creatures for portrait/soundset display (#786, #915, #916)
-                    if (_scanCreaturesForModule != null)
+                if (_scanCreaturesForModule != null)
+                {
+                    var moduleDir = Path.GetDirectoryName(filePath);
+                    if (!string.IsNullOrEmpty(moduleDir))
                     {
-                        var moduleDir = Path.GetDirectoryName(filePath);
-                        if (!string.IsNullOrEmpty(moduleDir))
-                        {
-                            ViewModel.StatusMessage = "Loading creatures...";
-                            await _scanCreaturesForModule(moduleDir);
-                            ViewModel.StatusMessage = $"Opened: {Path.GetFileName(filePath)}";
-                        }
+                        ViewModel.StatusMessage = "Loading creatures...";
+                        await _scanCreaturesForModule(moduleDir);
+                        ViewModel.StatusMessage = $"Opened: {Path.GetFileName(filePath)}";
                     }
                 }
             }
@@ -358,66 +372,6 @@ namespace Parley.Views.Helpers
             {
                 ViewModel.StatusMessage = $"Error loading recent file: {ex.Message}";
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load recent file: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Populate the recent files submenu.
-        /// </summary>
-        public void PopulateRecentFilesMenu()
-        {
-            try
-            {
-                var recentFilesMenuItem = _window.FindControl<MenuItem>("RecentFilesMenuItem");
-                if (recentFilesMenuItem == null)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.WARN, "RecentFilesMenuItem not found in XAML");
-                    return;
-                }
-
-                var menuItems = new System.Collections.Generic.List<object>();
-                var recentFiles = _settings.RecentFiles;
-
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"PopulateRecentFilesMenu: {recentFiles.Count} recent files from settings");
-
-                if (recentFiles.Count == 0)
-                {
-                    var noFilesItem = new MenuItem { Header = "(No recent files)", IsEnabled = false };
-                    menuItems.Add(noFilesItem);
-                }
-                else
-                {
-                    foreach (var file in recentFiles)
-                    {
-                        var fileName = Path.GetFileName(file);
-                        // Escape underscores for menu display (Avalonia treats _ as mnemonic)
-                        var displayName = fileName.Replace("_", "__");
-
-                        var menuItem = new MenuItem
-                        {
-                            Header = displayName,
-                            Tag = file
-                        };
-                        menuItem.Click += OnRecentFileClick;
-                        ToolTip.SetTip(menuItem, file);
-                        menuItems.Add(menuItem);
-                    }
-
-                    menuItems.Add(new Separator());
-                    var clearItem = new MenuItem { Header = "Clear Recent Files" };
-                    clearItem.Click += (s, args) =>
-                    {
-                        _settings.ClearRecentFiles();
-                        PopulateRecentFilesMenu();
-                    };
-                    menuItems.Add(clearItem);
-                }
-
-                recentFilesMenuItem.ItemsSource = menuItems;
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error building recent files menu: {ex.Message}");
             }
         }
 

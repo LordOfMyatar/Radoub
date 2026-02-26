@@ -5,6 +5,7 @@ using DialogEditor.Utils;
 using DialogEditor.ViewModels;
 using System;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,8 +14,8 @@ namespace DialogEditor.Services
 {
     /// <summary>
     /// Manages window position, panel sizes, and UI state persistence.
-    /// Handles save/restore of window geometry and screen boundary validation.
-    /// Also handles startup tasks like loading command line files.
+    /// Uses WindowPositionHelper from Radoub.UI for basic position save/restore (#1447).
+    /// Adds Parley-specific panel persistence, debug settings, and startup handling.
     /// Extracted from MainWindow.axaml.cs to separate persistence concerns.
     /// </summary>
     public class WindowPersistenceManager
@@ -55,31 +56,14 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
-        /// Restores window position from settings with screen validation
+        /// Restores window position from settings using shared WindowPositionHelper.
+        /// Adds async screen validation with delay to prevent saving during restore.
         /// </summary>
         public async Task RestoreWindowPositionAsync()
         {
             _isRestoringPosition = true;
-            var settings = _settings;
-            UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                $"Restoring window position: Left={settings.WindowLeft}, Top={settings.WindowTop}, Current={_window.Position.X},{_window.Position.Y}");
 
-            if (settings.WindowLeft >= 0 && settings.WindowTop >= 0)
-            {
-                var targetPos = new PixelPoint((int)settings.WindowLeft, (int)settings.WindowTop);
-
-                // Validate position is on a visible screen
-                if (IsPositionOnScreen(targetPos))
-                {
-                    _window.Position = targetPos;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Position restored to ({targetPos.X}, {targetPos.Y})");
-                }
-                else
-                {
-                    UnifiedLogger.LogApplication(LogLevel.WARN,
-                        $"Saved position ({targetPos.X}, {targetPos.Y}) is off-screen, using default");
-                }
-            }
+            WindowPositionHelper.Restore(_window, _settings, validateBounds: true);
 
             // Allow position saving after a short delay (to avoid saving the restore itself)
             await Task.Delay(500);
@@ -87,62 +71,14 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
-        /// Saves current window position and size to settings
+        /// Saves current window position and size to settings using shared WindowPositionHelper.
         /// </summary>
         public void SaveWindowPosition()
         {
-            // Don't save position during initial restore
             if (_isRestoringPosition)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"Position changed during restore, skipping save: ({_window.Position.X}, {_window.Position.Y})");
                 return;
-            }
 
-            var settings = _settings;
-            if (_window.Position.X >= 0 && _window.Position.Y >= 0)
-            {
-                settings.WindowLeft = _window.Position.X;
-                settings.WindowTop = _window.Position.Y;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"Saved window position: ({_window.Position.X}, {_window.Position.Y})");
-            }
-
-            // Width/Height already bound to settings with TwoWay, but ensure they're saved
-            if (_window.Width > 0 && _window.Height > 0)
-            {
-                settings.WindowWidth = _window.Width;
-                settings.WindowHeight = _window.Height;
-            }
-        }
-
-        /// <summary>
-        /// Checks if a position is visible on any screen
-        /// </summary>
-        private bool IsPositionOnScreen(PixelPoint position)
-        {
-            var screens = _window.Screens.All;
-            UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                $"Checking position ({position.X}, {position.Y}) against {screens.Count} screens");
-
-            foreach (var screen in screens)
-            {
-                var bounds = screen.Bounds;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"  Screen: X={bounds.X}, Y={bounds.Y}, W={bounds.Width}, H={bounds.Height}, Primary={screen.IsPrimary}");
-
-                // Check if the top-left corner is within screen bounds (with some tolerance)
-                if (position.X >= bounds.X - 50 &&
-                    position.X < bounds.X + bounds.Width &&
-                    position.Y >= bounds.Y - 50 &&
-                    position.Y < bounds.Y + bounds.Height)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "  Position is ON this screen");
-                    return true;
-                }
-            }
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "  Position is OFF all screens");
-            return false;
+            WindowPositionHelper.Save(_window, _settings);
         }
 
         /// <summary>

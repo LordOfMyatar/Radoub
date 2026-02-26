@@ -22,9 +22,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Cross-Tool Service Standardization Wave 2 (#1528)
 
-- [ ] #1445 - Extract BaseToolSettingsService<T> into Radoub.UI
-- [ ] #1446 - Centralize RecentFilesService in Radoub.UI
-- [ ] #1447 - Centralize WindowLayoutService in Radoub.UI
+- [x] #1445 - BaseToolSettingsService<T> already extracted in Wave 1 (#1508); verified all 4 tools using it
+- [x] #1446 - Migrated Parley to use shared RecentFilesMenuHelper.Populate() from Radoub.UI
+- [x] #1447 - Migrated Parley to use WindowPositionHelper + IWindowSettings from Radoub.UI
 
 ---
 
