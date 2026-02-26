@@ -5,6 +5,8 @@ using Manifest.Services;
 using Radoub.Formats.Jrl;
 using Radoub.Formats.Logging;
 using Radoub.UI.Views;
+using DirtyCheckResult = Radoub.UI.Services.DirtyCheckResult;
+using FileOperationsHelper = Radoub.UI.Services.FileOperationsHelper;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -116,8 +118,8 @@ public partial class MainWindow
         try
         {
             _currentJrl = JrlReader.Read(filePath);
-            _currentFilePath = filePath;
-            _isDirty = false;
+            _documentState.CurrentFilePath = filePath;
+            _documentState.ClearDirty();
 
             // Clear selection and update UI
             _selectedItem = null;
@@ -173,7 +175,7 @@ public partial class MainWindow
         try
         {
             JrlWriter.Write(_currentJrl, _currentFilePath);
-            _isDirty = false;
+            _documentState.ClearDirty();
             UpdateTitle();
             UpdateStatus($"Saved: {Path.GetFileName(_currentFilePath)}");
 
@@ -190,9 +192,9 @@ public partial class MainWindow
     private async Task CreateNewJournal()
     {
         // Check for unsaved changes
-        var dirtyResult = await Radoub.UI.Services.FileOperationsHelper.CheckDirtyAsync(this, _isDirty);
-        if (dirtyResult == Radoub.UI.Services.DirtyCheckResult.Cancel) return;
-        if (dirtyResult == Radoub.UI.Services.DirtyCheckResult.Save) await SaveFile();
+        var dirtyResult = await FileOperationsHelper.CheckDirtyAsync(this, _documentState);
+        if (dirtyResult == DirtyCheckResult.Cancel) return;
+        if (dirtyResult == DirtyCheckResult.Save) await SaveFile();
 
         // Prompt for save location with default filename
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
@@ -229,7 +231,7 @@ public partial class MainWindow
             // Load the newly created file
             _currentJrl = newJrl;
             _currentFilePath = filePath;
-            _isDirty = false;
+            _documentState.ClearDirty();
 
             UpdateTree();
             UpdateTitle();

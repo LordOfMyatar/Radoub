@@ -15,6 +15,8 @@ using System.Runtime.CompilerServices;
 using Radoub.UI.Utils;
 using Radoub.UI.Views;
 using DialogHelper = Radoub.UI.Services.DialogHelper;
+using DocumentState = Radoub.UI.Services.DocumentState;
+using FileOperationsHelper = Radoub.UI.Services.FileOperationsHelper;
 
 namespace Manifest.Views;
 
@@ -28,10 +30,16 @@ namespace Manifest.Views;
 public partial class MainWindow : Window, INotifyPropertyChanged
 {
     private JrlFile? _currentJrl;
-    private string? _currentFilePath;
-    private bool _isDirty;
+    private readonly DocumentState _documentState = new("Manifest");
     private object? _selectedItem;
     private Language _currentViewLanguage = Language.English;
+
+    // Convenience accessor for document state file path
+    private string? _currentFilePath
+    {
+        get => _documentState.CurrentFilePath;
+        set => _documentState.CurrentFilePath = value;
+    }
 
     // Bindable properties for UI state
     public bool HasFile => _currentJrl != null;
@@ -44,6 +52,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         InitializeComponent();
         DataContext = this;
+
+        // Wire up shared document state for title bar updates
+        _documentState.DirtyStateChanged += () => Title = _documentState.GetTitle();
 
         // Restore window position
         RestoreWindowPosition();
@@ -95,12 +106,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
     {
-        var shouldClose = await Radoub.UI.Services.FileOperationsHelper.HandleClosingAsync(
-            this, e, _isDirty, async () => { await SaveFile(); return true; });
+        var shouldClose = await FileOperationsHelper.HandleClosingAsync(
+            this, e, _documentState.IsDirty, async () => { await SaveFile(); return true; });
 
         if (shouldClose)
         {
-            _isDirty = false;
+            _documentState.ClearDirty();
             SaveWindowPosition();
             if (e.Cancel)
             {
@@ -332,9 +343,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void UpdateTitle()
     {
-        var displayPath = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : "Untitled";
-        var dirty = _isDirty ? "*" : "";
-        Title = $"Manifest - {displayPath}{dirty}";
+        Title = _documentState.GetTitle();
     }
 
     private void UpdateStatus(string message)
@@ -344,11 +353,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void MarkDirty()
     {
-        if (!_isDirty)
-        {
-            _isDirty = true;
-            UpdateTitle();
-        }
+        _documentState.MarkDirty();
     }
 
     private void ShowErrorDialog(string title, string message)
