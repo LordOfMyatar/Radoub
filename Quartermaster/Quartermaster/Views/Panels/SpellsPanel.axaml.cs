@@ -1,8 +1,6 @@
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
-using Avalonia.Styling;
 using Quartermaster.Services;
 using Quartermaster.ViewModels;
 using Radoub.Formats.Logging;
@@ -374,50 +372,6 @@ public partial class SpellsPanel : UserControl
             block.Text = text;
     }
 
-    #region Theme-Aware Colors
-
-    // Light theme default colors for fallback
-    private static readonly IBrush DefaultDisabledBrush = new SolidColorBrush(Color.Parse("#757575")); // Gray
-    private static readonly IBrush DefaultSuccessBrush = new SolidColorBrush(Color.Parse("#388E3C"));  // Green
-    private static readonly IBrush DefaultInfoBrush = new SolidColorBrush(Color.Parse("#1976D2"));     // Blue
-    private static readonly IBrush DefaultSelectionBrush = new SolidColorBrush(Color.Parse("#FFC107")); // Gold/Yellow
-
-    private IBrush GetDisabledBrush()
-    {
-        var app = Application.Current;
-        if (app?.Resources.TryGetResource("ThemeDisabled", ThemeVariant.Default, out var brush) == true
-            && brush is IBrush b)
-            return b;
-        return DefaultDisabledBrush;
-    }
-
-    private IBrush GetSuccessBrush()
-    {
-        var app = Application.Current;
-        if (app?.Resources.TryGetResource("ThemeSuccess", ThemeVariant.Default, out var brush) == true
-            && brush is IBrush b)
-            return b;
-        return DefaultSuccessBrush;
-    }
-
-    private IBrush GetInfoBrush()
-    {
-        var app = Application.Current;
-        if (app?.Resources.TryGetResource("ThemeInfo", ThemeVariant.Default, out var brush) == true
-            && brush is IBrush b)
-            return b;
-        return DefaultInfoBrush;
-    }
-
-    private IBrush GetSelectionBrush()
-    {
-        var app = Application.Current;
-        if (app?.Resources.TryGetResource("ThemeSelection", ThemeVariant.Default, out var brush) == true
-            && brush is IBrush b)
-            return b;
-        return DefaultSelectionBrush;
-    }
-
     private static IBrush GetTransparentRowBackground(IBrush baseBrush, byte alpha = 30)
     {
         if (baseBrush is SolidColorBrush scb)
@@ -427,6 +381,4 @@ public partial class SpellsPanel : UserControl
         }
         return Brushes.Transparent;
     }
-
-    #endregion
 }

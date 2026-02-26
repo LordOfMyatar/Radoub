@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Radoub.UI.Services;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -142,9 +143,9 @@ public partial class SpellsPanel
                 Margin = new Avalonia.Thickness(4, 0, 4, 4),
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                 Foreground = isSelected
-                    ? GetInfoBrush()
+                    ? BrushManager.GetInfoBrush(this)
                     : this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush
-                      ?? GetDisabledBrush()
+                      ?? BrushManager.GetDisabledBrush(this)
             };
             Grid.SetRow(classHeader, 0);
             Grid.SetColumn(classHeader, col + 1);
@@ -209,25 +210,25 @@ public partial class SpellsPanel
                 if (totalLimit <= 0)
                 {
                     cellText = "-";
-                    cellColor = GetDisabledBrush();
+                    cellColor = BrushManager.GetDisabledBrush(this);
                 }
                 else if (usedCount >= totalLimit)
                 {
                     // Full - show in gold/yellow
                     cellText = $"{usedCount}/{totalLimit}";
-                    cellColor = GetSelectionBrush();
+                    cellColor = BrushManager.GetWarningBrush(this);
                 }
                 else if (usedCount > 0)
                 {
                     // Partial - show in green
                     cellText = $"{usedCount}/{totalLimit}";
-                    cellColor = GetSuccessBrush();
+                    cellColor = BrushManager.GetSuccessBrush(this);
                 }
                 else
                 {
                     // Empty - use info brush for visibility on dark themes
                     cellText = $"0/{totalLimit}";
-                    cellColor = GetInfoBrush();
+                    cellColor = BrushManager.GetInfoBrush(this);
                 }
 
                 var slotCell = new TextBlock
@@ -327,8 +328,8 @@ public partial class SpellsPanel
                 FontWeight = Avalonia.Media.FontWeight.Bold,
                 FontSize = normalFontSize,
                 Foreground = isSelectedClass
-                    ? GetInfoBrush()
-                    : this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? GetDisabledBrush(),
+                    ? BrushManager.GetInfoBrush(this)
+                    : this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? BrushManager.GetDisabledBrush(this),
                 Margin = new Avalonia.Thickness(0, hasAnySpells && _knownSpellsListPanel.Children.Count > 0 ? 12 : 0, 0, 6)
             };
             _knownSpellsListPanel.Children.Add(classHeader);
@@ -345,7 +346,7 @@ public partial class SpellsPanel
                     Text = level == 0 ? "  Cantrips" : $"  Level {level}",
                     FontWeight = Avalonia.Media.FontWeight.SemiBold,
                     FontSize = normalFontSize,
-                    Foreground = GetInfoBrush(),
+                    Foreground = BrushManager.GetInfoBrush(this),
                     Margin = new Avalonia.Thickness(0, 4, 0, 2)
                 };
                 _knownSpellsListPanel.Children.Add(levelHeader);
@@ -393,22 +394,22 @@ public partial class SpellsPanel
                         // Not a standard class spell (e.g., feat-based ability)
                         // Only mark with asterisk if not ignoring restrictions
                         displayName = memCount > 0 ? $"{spellName} ({memCount}) *" : $"{spellName} *";
-                        foreground = GetDisabledBrush();
+                        foreground = BrushManager.GetDisabledBrush(this);
                     }
                     else if (memCount > 0)
                     {
                         // Memorized - highlight in gold
-                        foreground = GetSelectionBrush();
+                        foreground = BrushManager.GetWarningBrush(this);
                     }
                     else if (isOverlap)
                     {
                         // Spell appears in multiple classes - highlight in gold
                         displayName = $"{spellName} ⬥";
-                        foreground = GetSelectionBrush();
+                        foreground = BrushManager.GetWarningBrush(this);
                     }
                     else
                     {
-                        foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? GetDisabledBrush();
+                        foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? BrushManager.GetDisabledBrush(this);
                     }
 
                     var spellLabel = new TextBlock
@@ -609,9 +610,9 @@ public partial class SpellsPanel
                 Margin = new Avalonia.Thickness(4, 0, 4, 4),
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                 Foreground = isSelected
-                    ? GetInfoBrush()
+                    ? BrushManager.GetInfoBrush(this)
                     : this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush
-                      ?? GetDisabledBrush()
+                      ?? BrushManager.GetDisabledBrush(this)
             };
             Grid.SetRow(classHeader, 0);
             Grid.SetColumn(classHeader, col + 1);
@@ -648,12 +649,12 @@ public partial class SpellsPanel
                 IBrush cellColor;
                 if (count > 0)
                 {
-                    cellColor = GetSelectionBrush();
+                    cellColor = BrushManager.GetWarningBrush(this);
                 }
                 else
                 {
                     // Use info brush for visibility on dark themes
-                    cellColor = GetInfoBrush();
+                    cellColor = BrushManager.GetInfoBrush(this);
                 }
 
                 var countCell = new TextBlock

@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Quartermaster.Services;
+using Radoub.UI.Services;
 using Quartermaster.ViewModels;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
@@ -317,21 +318,21 @@ public partial class FeatsPanel : UserControl
         {
             // Unavailable to this class/race
             statusText = "Unavailable";
-            statusColor = GetDisabledBrush();
+            statusColor = BrushManager.GetDisabledBrush(this);
             rowBackground = GetTransparentRowBackground(statusColor, 20);
             textOpacity = 0.5;
         }
         else if (isAssigned && isGranted)
         {
             statusText = "Granted";
-            statusColor = GetSelectionBrush();
+            statusColor = BrushManager.GetWarningBrush(this);
             rowBackground = GetTransparentRowBackground(statusColor, 30);
             textOpacity = 1.0;
         }
         else if (isAssigned)
         {
             statusText = "Assigned";
-            statusColor = GetSuccessBrush();
+            statusColor = BrushManager.GetSuccessBrush(this);
             rowBackground = GetTransparentRowBackground(statusColor, 30);
             textOpacity = 1.0;
         }
@@ -339,7 +340,7 @@ public partial class FeatsPanel : UserControl
         {
             // Has unmet prerequisites
             statusText = "Prereqs Unmet";
-            statusColor = GetWarningBrush();
+            statusColor = BrushManager.GetWarningBrush(this);
             rowBackground = Brushes.Transparent;
             textOpacity = 0.7;
         }
@@ -347,7 +348,7 @@ public partial class FeatsPanel : UserControl
         {
             // All prerequisites met - available to select
             statusText = "Available";
-            statusColor = GetInfoBrush();
+            statusColor = BrushManager.GetInfoBrush(this);
             rowBackground = Brushes.Transparent;
             textOpacity = 0.8;
         }
@@ -355,7 +356,7 @@ public partial class FeatsPanel : UserControl
         {
             // No prerequisites - available to select
             statusText = "Available";
-            statusColor = GetInfoBrush();
+            statusColor = BrushManager.GetInfoBrush(this);
             rowBackground = Brushes.Transparent;
             textOpacity = 0.8;
         }

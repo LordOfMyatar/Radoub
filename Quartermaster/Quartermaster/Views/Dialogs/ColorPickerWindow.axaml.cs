@@ -6,8 +6,8 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
-using Avalonia.Styling;
 using Quartermaster.Services;
+using Radoub.UI.Services;
 
 namespace Quartermaster.Views.Dialogs;
 
@@ -167,28 +167,9 @@ public partial class ColorPickerWindow : Window
         Close();
     }
 
-    #region Theme-Aware Colors
+    private IBrush GetBorderBrush() =>
+        BrushManager.GetDisabledBrush(this);
 
-    private static readonly IBrush DefaultBorderBrush = new SolidColorBrush(Color.Parse("#757575"));
-    private static readonly IBrush DefaultSelectionBrush = new SolidColorBrush(Color.Parse("#FFC107"));
-
-    private IBrush GetBorderBrush()
-    {
-        var app = Application.Current;
-        if (app?.Resources.TryGetResource("ThemeBorder", ThemeVariant.Default, out var brush) == true
-            && brush is IBrush b)
-            return b;
-        return DefaultBorderBrush;
-    }
-
-    private IBrush GetSelectionBrush()
-    {
-        var app = Application.Current;
-        if (app?.Resources.TryGetResource("ThemeAccent", ThemeVariant.Default, out var brush) == true
-            && brush is IBrush b)
-            return b;
-        return DefaultSelectionBrush;
-    }
-
-    #endregion
+    private IBrush GetSelectionBrush() =>
+        BrushManager.GetWarningBrush(this);
 }
