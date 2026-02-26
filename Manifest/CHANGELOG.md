@@ -15,8 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: File Splits (#1523)
 
-- [ ] #1515 - Split MainWindow.axaml.cs (1247 lines)
-- [ ] #1373 - Split SettingsWindow.axaml.cs (549 lines)
+- [x] #1515 - Split MainWindow.axaml.cs into 4 partial files (core, FileOps, EditOps, PropertyPanel)
+- [x] #1373 - Split SettingsWindow.axaml.cs into 3 partial files (core, Paths, Dictionary)
 
 ---
 

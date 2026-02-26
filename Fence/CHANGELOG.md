@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: File Splits (#1523)
 
-- [ ] #1516 - Split MainWindow.axaml.cs (1114 lines)
+- [x] #1516 - Split MainWindow.axaml.cs - extracted StoreBrowser and LanguageMenu partial files
 
 ---
 
