@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.14-alpha] - 2026-02-25
+**Branch**: `radoub/issue-1523` | **PR**: #1525
+
+### Sprint: File Splits (#1523)
+
+- [x] #1516 - Split MainWindow.axaml.cs - extracted StoreBrowser and LanguageMenu partial files
+
+---
+
 ## [0.1.13-alpha] - 2026-02-16
 **Branch**: `radoub/issue-1377` | **PR**: #1403
 
