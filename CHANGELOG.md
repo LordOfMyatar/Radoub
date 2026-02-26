@@ -17,6 +17,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.78] - 2026-02-25
+**Branch**: `radoub/issue-1528` | **PR**: #1532
+
+### Sprint: Cross-Tool Service Standardization Wave 2 (#1528)
+
+- [x] #1445 - BaseToolSettingsService<T> already extracted in Wave 1 (#1508); verified all 4 tools using it
+- [x] #1446 - Migrated Parley to use shared RecentFilesMenuHelper.Populate() from Radoub.UI
+- [x] #1447 - Migrated Parley to use WindowPositionHelper + IWindowSettings from Radoub.UI
+
+---
+
 ## [0.9.77] - 2026-02-25
 **Branch**: `radoub/issue-1513` | **PR**: #1522
 
