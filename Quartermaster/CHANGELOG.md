@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.18-alpha] - 2026-02-25
+**Branch**: `quartermaster/issue-1524` | **PR**: #TBD
+
+### Sprint: Theme Cleanup (#1524)
+
+- [ ] #1481 - Hardcoded Colors and Brushes (102 instances)
+- [ ] #1496 - Audit ScrollViewer padding across panels and wizards
+
+---
+
 ## [0.2.17-alpha] - 2026-02-24
 **Branch**: `quartermaster/issue-1205` | **PR**: #1517
 
