@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.79] - 2026-02-26
-**Branch**: `radoub/issue-1529` | **PR**: #TBD
+**Branch**: `radoub/issue-1529` | **PR**: #1534
 
 ### Sprint: Document Lifecycle Standardization (#1529)
 
