@@ -169,11 +169,11 @@ public partial class MainWindow
     private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
     {
         var shouldClose = await Radoub.UI.Services.FileOperationsHelper.HandleClosingAsync(
-            this, e, _isDirty, async () => { await SaveFile(); return true; });
+            this, e, _documentState.IsDirty, async () => { await SaveFile(); return true; });
 
         if (shouldClose)
         {
-            _isDirty = false;
+            _documentState.ClearDirty();
 
             // Cancel all async operations
             _windowCts?.Cancel();
