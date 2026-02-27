@@ -40,8 +40,19 @@ namespace MerchantEditor.Views;
 public partial class MainWindow : Window, INotifyPropertyChanged
 {
     private UtmFile? _currentStore;
-    private string? _currentFilePath;
-    private bool _isDirty;
+    private readonly DocumentState _documentState = new("Fence", " - Merchant Editor");
+
+    // Convenience accessors for document state (used across partial files)
+    private string? _currentFilePath
+    {
+        get => _documentState.CurrentFilePath;
+        set => _documentState.CurrentFilePath = value;
+    }
+    private bool _isDirty
+    {
+        get => _documentState.IsDirty;
+        set { if (value) _documentState.ForceDirty(); else _documentState.ClearDirty(); }
+    }
 
     // Regex for valid ResRef characters (alphanumeric + underscore)
     private static readonly Regex ValidResRefPattern = new(@"^[a-zA-Z0-9_]*$", RegexOptions.Compiled);
@@ -69,6 +80,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         InitializeComponent();
         DataContext = this;
+
+        // Wire up shared document state for title bar updates
+        _documentState.DirtyStateChanged += () => Title = _documentState.GetTitle();
 
         // Defer heavy I/O (GameDataService, palette loading) to Opened event
         // Only do fast, synchronous UI setup here
@@ -238,50 +252,37 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         WindowPositionHelper.Save(this, SettingsService.Instance);
     }
 
-    private void OnWindowClosing(object? sender, WindowClosingEventArgs e)
+    private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
     {
-        if (_isDirty)
-        {
-            // Show non-modal warning - user can still close
-            ShowUnsavedChangesWarning();
-        }
-
-        SaveWindowPosition();
-        SaveStoreBrowserPanelSize();
-        SaveItemDetailsPanelSize();
-
-        // Dispose TlkService to unsubscribe from settings events
-        _tlkService?.Dispose();
-    }
-
-    private void ShowUnsavedChangesWarning()
-    {
-        // Non-modal notification
-        var dialog = new Window
-        {
-            Title = "Unsaved Changes",
-            Width = 300,
-            Height = 120,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            CanResize = false,
-            Content = new StackPanel
+        var shouldClose = await FileOperationsHelper.HandleClosingAsync(
+            this, e, _documentState.IsDirty, async () =>
             {
-                Margin = new Thickness(20),
-                Spacing = 12,
-                Children =
+                if (string.IsNullOrEmpty(_currentFilePath))
                 {
-                    new TextBlock { Text = "You have unsaved changes.", TextWrapping = Avalonia.Media.TextWrapping.Wrap },
-                    new Button { Content = "OK", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right }
+                    // New unsaved file - trigger SaveAs
+                    OnSaveAsClick(null, new RoutedEventArgs());
+                    return !_documentState.IsDirty; // true if save succeeded
                 }
-            }
-        };
+                await SaveFile(_currentFilePath);
+                return true;
+            });
 
-        if (dialog.Content is StackPanel panel && panel.Children.LastOrDefault() is Button btn)
+        if (shouldClose)
         {
-            btn.Click += (s, e) => dialog.Close();
-        }
+            _documentState.ClearDirty();
+            SaveWindowPosition();
+            SaveStoreBrowserPanelSize();
+            SaveItemDetailsPanelSize();
 
-        dialog.Show(this);
+            // Dispose TlkService to unsubscribe from settings events
+            _tlkService?.Dispose();
+
+            if (e.Cancel)
+            {
+                // HandleClosingAsync set Cancel=true, we need to re-close
+                Close();
+            }
+        }
     }
 
     #endregion
@@ -485,19 +486,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void UpdateTitle()
     {
-        var title = "Fence - Merchant Editor";
-
-        if (!string.IsNullOrEmpty(_currentFilePath))
-        {
-            title = $"Fence - {Path.GetFileName(_currentFilePath)}";
-        }
-
-        if (_isDirty)
-        {
-            title += " *";
-        }
-
-        Title = title;
+        Title = _documentState.GetTitle();
     }
 
     #endregion

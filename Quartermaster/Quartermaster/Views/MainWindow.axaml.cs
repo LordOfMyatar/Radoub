@@ -36,10 +36,8 @@ namespace Quartermaster.Views;
 public partial class MainWindow : Window, INotifyPropertyChanged
 {
     private UtcFile? _currentCreature;
-    private string? _currentFilePath;
-    private bool _isDirty;
+    private readonly Radoub.UI.Services.DocumentState _documentState = new("Quartermaster");
     private bool _isBicFile;
-    private bool _isLoading;
     private string _currentSection = "Character";
     private Button? _selectedNavButton;
 
@@ -65,6 +63,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     // Equipment slots collection (shared with InventoryPanel)
     private ObservableCollection<EquipmentSlotViewModel> _equipmentSlots = new();
 
+    // Convenience accessors for document state (used across partial files)
+    private string? _currentFilePath
+    {
+        get => _documentState.CurrentFilePath;
+        set => _documentState.CurrentFilePath = value;
+    }
+    private bool _isDirty => _documentState.IsDirty;
+    private bool _isLoading
+    {
+        get => _documentState.IsLoading;
+        set => _documentState.IsLoading = value;
+    }
+
     // Selection state tracking
     private bool _hasSelection;
 
@@ -81,6 +92,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public MainWindow()
     {
         InitializeComponent();
+
+        // Wire up shared document state for title bar updates
+        _documentState.DirtyStateChanged += () => Title = _documentState.GetTitle(_isBicFile ? " (Player)" : null);
 
         // Only do fast UI setup in constructor - defer heavy I/O to OnWindowOpened
         InitializeEquipmentSlots();
@@ -340,10 +354,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void UpdateTitle()
     {
-        var displayPath = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : "Untitled";
-        var dirty = _isDirty ? "*" : "";
-        var fileType = _isBicFile ? " (Player)" : "";
-        Title = $"Quartermaster - {displayPath}{fileType}{dirty}";
+        Title = _documentState.GetTitle(_isBicFile ? " (Player)" : null);
     }
 
     private void UpdateStatus(string message)
@@ -440,24 +451,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void MarkDirty([CallerMemberName] string? caller = null)
     {
-        if (_isLoading)
-        {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"MarkDirty: Blocked (isLoading=true) from {caller}");
-            return;
-        }
-
-        if (_currentCreature == null)
-        {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"MarkDirty: Blocked (no file loaded) from {caller}");
-            return;
-        }
-
-        if (!_isDirty)
-        {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"MarkDirty: Setting dirty from {caller}");
-            _isDirty = true;
-            UpdateTitle();
-        }
+        _documentState.MarkDirty(caller);
     }
 
     private void LoadAllPanels(UtcFile? creature)

@@ -35,6 +35,12 @@ public interface IDocumentState
     void MarkDirty([CallerMemberName] string? caller = null);
 
     /// <summary>
+    /// Force-mark the document as dirty, bypassing IsLoading and file path guards.
+    /// Use for "new unsaved document" scenarios where the file has no path yet.
+    /// </summary>
+    void ForceDirty();
+
+    /// <summary>
     /// Clear the dirty flag (after save or load).
     /// </summary>
     void ClearDirty();
@@ -98,6 +104,16 @@ public class DocumentState : IDocumentState
         }
     }
 
+    public void ForceDirty()
+    {
+        if (!_isDirty)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "ForceDirty: Setting dirty (bypassing guards)");
+            _isDirty = true;
+            DirtyStateChanged?.Invoke();
+        }
+    }
+
     public void ClearDirty()
     {
         if (_isDirty)
@@ -109,19 +125,24 @@ public class DocumentState : IDocumentState
 
     /// <summary>
     /// Generates a title bar string with the standard format:
-    /// "ToolName - filepath*" or "ToolName" if no file loaded.
+    /// "ToolName - filepath*" or "ToolName - Untitled*" if no file loaded.
     /// </summary>
     /// <param name="extraInfo">Optional extra info to include (e.g., " (Player)" for BIC files)</param>
     public string GetTitle(string? extraInfo = null)
     {
         if (CurrentFilePath == null)
         {
+            if (_isDirty)
+            {
+                var extra = extraInfo ?? "";
+                return $"{_toolName} - Untitled{extra}*";
+            }
             return _titleSuffix != null ? $"{_toolName}{_titleSuffix}" : _toolName;
         }
 
         var displayPath = UnifiedLogger.SanitizePath(CurrentFilePath);
         var dirty = _isDirty ? "*" : "";
-        var extra = extraInfo ?? "";
-        return $"{_toolName} - {displayPath}{extra}{dirty}";
+        var extraSuffix = extraInfo ?? "";
+        return $"{_toolName} - {displayPath}{extraSuffix}{dirty}";
     }
 }

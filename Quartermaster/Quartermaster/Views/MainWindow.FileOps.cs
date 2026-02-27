@@ -148,20 +148,10 @@ public partial class MainWindow
 
     private async Task NewFile()
     {
-        // Check for unsaved changes
-        if (_isDirty)
-        {
-            var result = await DialogHelper.ShowUnsavedChangesDialog(this);
-            if (result == "Save")
-            {
-                await SaveFile();
-            }
-            else if (result == "Cancel")
-            {
-                return;
-            }
-            // "Discard" continues to create new file
-        }
+        // Check for unsaved changes using shared helper
+        var dirtyResult = await Radoub.UI.Services.FileOperationsHelper.CheckDirtyAsync(this, _documentState);
+        if (dirtyResult == Radoub.UI.Services.DirtyCheckResult.Cancel) return;
+        if (dirtyResult == Radoub.UI.Services.DirtyCheckResult.Save) await SaveFile();
 
         // Close current file if open
         if (_currentCreature != null)
@@ -198,7 +188,7 @@ public partial class MainWindow
         OnPropertyChanged(nameof(HasFile));
 
         _isLoading = false;
-        _isDirty = true;
+        _documentState.ForceDirty();
         UpdateTitle();
 
         UnifiedLogger.LogCreature(LogLevel.INFO, "Created new creature blueprint");
@@ -394,7 +384,7 @@ public partial class MainWindow
 
             // Clear loading flag and reset dirty state
             _isLoading = false;
-            _isDirty = false;
+            _documentState.ClearDirty();
             UpdateTitle();
             UpdateStatus($"Loaded: {Path.GetFileName(filePath)}");
 
@@ -437,7 +427,7 @@ public partial class MainWindow
                 UtcWriter.Write(_currentCreature, _currentFilePath);
             }
 
-            _isDirty = false;
+            _documentState.ClearDirty();
             UpdateTitle();
             UpdateStatus($"Saved: {Path.GetFileName(_currentFilePath)}");
 
@@ -545,7 +535,7 @@ public partial class MainWindow
                 _isLoading = true;
                 LoadAllPanels(_currentCreature);
                 _isLoading = false;
-                _isDirty = false; // Reset dirty after panel reload
+                _documentState.ClearDirty(); // Reset dirty after panel reload
                 UpdateTitle();
                 UpdateStatus($"Converted and saved as {(savingAsBic ? "BIC" : "UTC")}: {Path.GetFileName(_currentFilePath)}");
             }
@@ -651,20 +641,10 @@ public partial class MainWindow
     {
         try
         {
-            if (_isDirty)
-            {
-                var result = await DialogHelper.ShowUnsavedChangesDialog(this);
-                if (result == "Save")
-                {
-                    await SaveFile();
-                    // SaveFile sets _isDirty = false on success
-                }
-                else if (result == "Cancel")
-                {
-                    return false;
-                }
-                // "Discard" continues to close - _isDirty will be cleared in CloseFile
-            }
+            // Use shared helper for unsaved changes dialog
+            var dirtyResult = await Radoub.UI.Services.FileOperationsHelper.CheckDirtyAsync(this, _documentState);
+            if (dirtyResult == Radoub.UI.Services.DirtyCheckResult.Cancel) return false;
+            if (dirtyResult == Radoub.UI.Services.DirtyCheckResult.Save) await SaveFile();
 
             // Prevent any events during close from marking dirty
             _isLoading = true;
@@ -685,7 +665,7 @@ public partial class MainWindow
         UnifiedLogger.LogApplication(LogLevel.DEBUG, "CloseFile: Starting");
         _currentCreature = null;
         _currentFilePath = null;
-        _isDirty = false;
+        _documentState.ClearDirty();
         _isBicFile = false;
 
         UnifiedLogger.LogApplication(LogLevel.DEBUG, "CloseFile: Clearing panel file contexts");

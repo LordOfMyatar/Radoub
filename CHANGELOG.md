@@ -17,6 +17,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.79] - 2026-02-26
+**Branch**: `radoub/issue-1529` | **PR**: #1534
+
+### Sprint: Document Lifecycle Standardization (#1529)
+
+- [x] #1448 - Migrated Manifest, Quartermaster, and Fence to shared `DocumentState` from Radoub.UI; added `ForceDirty()` and "Untitled*" title support for new unsaved files
+- [x] #1449 - Migrated Quartermaster `NewFile`/`CloseFileWithCheck` and Fence window closing to shared `FileOperationsHelper.CheckDirtyAsync`; Fence now shows Save/Discard/Cancel instead of non-modal warning
+
+---
+
 ## [0.9.78] - 2026-02-25
 **Branch**: `radoub/issue-1528` | **PR**: #1532
 
