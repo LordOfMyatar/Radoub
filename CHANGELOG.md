@@ -22,8 +22,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Document Lifecycle Standardization (#1529)
 
-- [ ] #1448 - Create shared IDocumentState for dirty tracking + title bar
-- [ ] #1449 - Create shared FileOperationsHelper for save/new/close workflows
+- [x] #1448 - Migrated Manifest, Quartermaster, and Fence to shared `DocumentState` from Radoub.UI; added `ForceDirty()` and "Untitled*" title support for new unsaved files
+- [x] #1449 - Migrated Quartermaster `NewFile`/`CloseFileWithCheck` and Fence window closing to shared `FileOperationsHelper.CheckDirtyAsync`; Fence now shows Save/Discard/Cancel instead of non-modal warning
 
 ---
 
