@@ -112,8 +112,8 @@ jobs:
           'C:\\\\Users\\\\[A-Za-z]+'
         )
 
-        # Check all source files, exclude NonPublic, test outputs, binaries, docs, and bundled tools
-        FILES=$(git ls-files | grep -vE '(^NonPublic/|/NonPublic/|^\.git/|\.png$|\.jpg$|\.ico$|\.dll$|\.exe$|^Documentation/|^About/|/tools/)')
+        # Check all source files, exclude NonPublic, test outputs, binaries, docs, bundled tools, and vendored skills
+        FILES=$(git ls-files | grep -vE '(^NonPublic/|/NonPublic/|^\.git/|\.png$|\.jpg$|\.ico$|\.dll$|\.exe$|^Documentation/|^About/|/tools/|^\.agents/skills/|^\.claude/skills/)')
 
         FOUND_ISSUES=0
 
