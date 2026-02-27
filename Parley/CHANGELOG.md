@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.152-alpha] - 2026-02-26
+**Branch**: `radoub/issue-1530` | **PR**: #1537
+
+### Sprint: File Splits (#1530)
+
+- ConversationSimulatorViewModel split into 3 partials (base + ConversationFlow + CoverageAnalysis)
+- FlowchartManager split into 5 partials (base + Layout + PanelSync + Export + NodeSync)
+- MainWindow.Properties split: extracted AutoSave and ResourceBrowsing partials
+
+---
+
 ## [0.1.151-alpha] - 2026-02-21
 
 ### UI Improvements

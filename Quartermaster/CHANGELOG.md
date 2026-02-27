@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.19-alpha] - 2026-02-26
+**Branch**: `radoub/issue-1530` | **PR**: #1537
+
+### Sprint: File Splits (#1530)
+
+- LevelUpWizardWindow.axaml.cs split into 6 partials (base + ClassSelection + FeatSelection + SkillAllocation + SpellSelection + SummaryAndApply)
+
+---
+
 ## [0.2.18-alpha] - 2026-02-25
 **Branch**: `quartermaster/issue-1524` | **PR**: #1527
 
