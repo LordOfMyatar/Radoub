@@ -15,7 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: File Splits (#1530)
 
-- [ ] #719 - Parley large files needing refactoring
+- ConversationSimulatorViewModel split into 3 partials (base + ConversationFlow + CoverageAnalysis)
+- FlowchartManager split into 5 partials (base + Layout + PanelSync + Export + NodeSync)
+- MainWindow.Properties split: extracted AutoSave and ResourceBrowsing partials
 
 ---
 

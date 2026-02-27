@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: File Splits (#1530)
 
-- [ ] #1480 - Split LevelUpWizardWindow.axaml.cs (1010 lines)
+- LevelUpWizardWindow.axaml.cs split into 6 partials (base + ClassSelection + FeatSelection + SkillAllocation + SpellSelection + SummaryAndApply)
 
 ---
 
