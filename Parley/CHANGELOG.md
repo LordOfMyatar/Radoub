@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.152-alpha] - 2026-02-26
+**Branch**: `radoub/issue-1530` | **PR**: #TBD
+
+### Sprint: File Splits (#1530)
+
+- [ ] #719 - Parley large files needing refactoring
+
+---
+
 ## [0.1.151-alpha] - 2026-02-21
 
 ### UI Improvements
