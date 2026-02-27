@@ -957,6 +957,60 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\.claude\scripts\Searc
 
 ---
 
+## Agent Skills (obra/superpowers)
+
+Installed skills in `.agents/skills/` provide structured methodologies. Claude should follow these skills automatically based on context — no user invocation needed.
+
+### Installed Skills
+
+| Skill | Location | Trigger |
+|-------|----------|---------|
+| **systematic-debugging** | `.claude/skills/systematic-debugging/` | Any bug, test failure, unexpected behavior, or build error |
+| **test-driven-development** | `.claude/skills/test-driven-development/` | Implementing new features or bug fixes that need tests |
+| **verification-before-completion** | `.claude/skills/verification-before-completion/` | Before claiming work is done, tests pass, or build succeeds |
+
+### When to Apply Each Skill
+
+**systematic-debugging** — Apply when:
+- Test failures occur (unit, integration, or FlaUI)
+- Build errors or warnings appear
+- Binary format round-trip validation fails
+- Unexpected runtime behavior reported
+- **Especially** when tempted to "just try a quick fix"
+- Follow all four phases: Root Cause → Pattern Analysis → Hypothesis → Implementation
+
+**test-driven-development** — Apply when:
+- Adding new features (format parsers, UI controls, services)
+- Fixing bugs (write failing test reproducing the bug first)
+- Adding to Radoub.Formats (GFF fields, 2DA parsing, etc.)
+- **Exception**: UI layout/styling work, generated code, config files — ask user
+
+**verification-before-completion** — Apply when:
+- About to mark a TodoWrite task as completed
+- About to commit or create a PR
+- About to claim "tests pass" or "build succeeds"
+- Moving to the next sprint item
+- **Rule**: Run `dotnet test` or `dotnet build` and show the output. No "should work" claims.
+
+### Skill Interaction
+
+The skills chain naturally:
+1. Bug reported → **systematic-debugging** (find root cause)
+2. Root cause found → **test-driven-development** (write failing test, then fix)
+3. Fix implemented → **verification-before-completion** (prove it works with evidence)
+
+### Managing Skills
+
+```bash
+# Skills installed via:
+npx -y skills add https://github.com/obra/superpowers --skill <name> --yes
+
+# Skill files live in .agents/skills/ (content) with symlinks in .claude/skills/
+# Source: https://github.com/obra/superpowers (MIT License)
+```
+
+---
+
 ## Resources
 
 - **Wiki**: `d:\LOM\workspace\Radoub.wiki\` (local clone of https://github.com/LordOfMyatar/Radoub/wiki)
