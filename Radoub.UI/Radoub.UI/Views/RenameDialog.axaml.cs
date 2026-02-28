@@ -85,11 +85,12 @@ public partial class RenameDialog : Window
 
         if (count > AuroraFilenameValidator.MaxFilenameLength)
         {
-            CharCountText.Foreground = Brushes.Red;
+            CharCountText.Foreground = BrushManager.GetErrorBrush();
         }
         else
         {
-            CharCountText.Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush ?? Brushes.Gray;
+            CharCountText.Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush
+                ?? BrushManager.GetDisabledBrush(); // theme-ok: fallback when resource unavailable
         }
 
         // Check if unchanged
@@ -130,12 +131,12 @@ public partial class RenameDialog : Window
 
         if (isError)
         {
-            ValidationBorder.Background = new SolidColorBrush(Color.FromRgb(200, 50, 50));
+            ValidationBorder.Background = BrushManager.GetErrorBrush();
         }
         else
         {
             ValidationBorder.Background = this.FindResource("SystemControlBackgroundBaseLowBrush") as IBrush
-                ?? new SolidColorBrush(Color.FromRgb(100, 100, 100));
+                ?? BrushManager.GetDisabledBrush(); // theme-ok: fallback when resource unavailable
         }
     }
 

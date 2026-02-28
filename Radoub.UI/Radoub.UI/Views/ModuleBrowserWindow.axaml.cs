@@ -9,6 +9,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 
 namespace Radoub.UI.Views;
 
@@ -77,19 +78,19 @@ public partial class ModuleBrowserWindow : Window
         if (!string.IsNullOrEmpty(_overridePath))
         {
             LocationPathLabel.Text = UnifiedLogger.SanitizePath(_overridePath);
-            LocationPathLabel.Foreground = new SolidColorBrush(Colors.White);
+            LocationPathLabel.Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? BrushManager.GetInfoBrush();
             ResetLocationButton.IsVisible = true;
         }
         else if (!string.IsNullOrEmpty(_defaultModulesPath) && Directory.Exists(_defaultModulesPath))
         {
             LocationPathLabel.Text = UnifiedLogger.SanitizePath(_defaultModulesPath);
-            LocationPathLabel.Foreground = new SolidColorBrush(Colors.LightGray);
+            LocationPathLabel.Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush ?? BrushManager.GetDisabledBrush();
             ResetLocationButton.IsVisible = false;
         }
         else
         {
             LocationPathLabel.Text = "(no modules folder found - use browse...)";
-            LocationPathLabel.Foreground = new SolidColorBrush(Colors.Orange);
+            LocationPathLabel.Foreground = BrushManager.GetWarningBrush(this);
             ResetLocationButton.IsVisible = false;
         }
     }
@@ -167,7 +168,7 @@ public partial class ModuleBrowserWindow : Window
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load modules: {ex.Message}");
             ModuleCountLabel.Text = $"Error loading modules: {ex.Message}";
-            ModuleCountLabel.Foreground = new SolidColorBrush(Colors.Red);
+            ModuleCountLabel.Foreground = BrushManager.GetErrorBrush(this);
         }
 
         return Task.CompletedTask;
@@ -237,12 +238,12 @@ public partial class ModuleBrowserWindow : Window
             {
                 ModuleCountLabel.Text = "No .mod files found";
             }
-            ModuleCountLabel.Foreground = new SolidColorBrush(Colors.Orange);
+            ModuleCountLabel.Foreground = BrushManager.GetWarningBrush(this);
         }
         else
         {
             ModuleCountLabel.Text = $"{modulesToDisplay.Count} module{(modulesToDisplay.Count == 1 ? "" : "s")}";
-            ModuleCountLabel.Foreground = new SolidColorBrush(Colors.White);
+            ModuleCountLabel.Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? BrushManager.GetInfoBrush();
         }
     }
 

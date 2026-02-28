@@ -56,7 +56,7 @@ public partial class StoreBrowserWindow : Window
         if (!string.IsNullOrEmpty(_overridePath))
         {
             LocationPathLabel.Text = UnifiedLogger.SanitizePath(_overridePath);
-            LocationPathLabel.Foreground = new SolidColorBrush(Colors.White);
+            LocationPathLabel.Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? BrushManager.GetInfoBrush();
             ResetLocationButton.IsVisible = true;
         }
         else
@@ -65,12 +65,12 @@ public partial class StoreBrowserWindow : Window
             if (!string.IsNullOrEmpty(currentDir))
             {
                 LocationPathLabel.Text = UnifiedLogger.SanitizePath(currentDir);
-                LocationPathLabel.Foreground = new SolidColorBrush(Colors.LightGray);
+                LocationPathLabel.Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush ?? BrushManager.GetDisabledBrush();
             }
             else
             {
                 LocationPathLabel.Text = "(no module loaded - use browse...)";
-                LocationPathLabel.Foreground = new SolidColorBrush(Colors.Orange);
+                LocationPathLabel.Foreground = BrushManager.GetWarningBrush(this);
             }
             ResetLocationButton.IsVisible = false;
         }
@@ -137,7 +137,7 @@ public partial class StoreBrowserWindow : Window
         if (string.IsNullOrEmpty(currentDir) || !Directory.Exists(currentDir))
         {
             StoreCountLabel.Text = "No module folder selected";
-            StoreCountLabel.Foreground = new SolidColorBrush(Colors.Orange);
+            StoreCountLabel.Foreground = BrushManager.GetWarningBrush(this);
             return;
         }
 
@@ -165,7 +165,7 @@ public partial class StoreBrowserWindow : Window
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error scanning for stores: {ex.Message}");
             StoreCountLabel.Text = $"Error: {ex.Message}";
-            StoreCountLabel.Foreground = new SolidColorBrush(Colors.Red);
+            StoreCountLabel.Foreground = BrushManager.GetErrorBrush(this);
         }
     }
 
@@ -196,12 +196,12 @@ public partial class StoreBrowserWindow : Window
             StoreCountLabel.Text = _allStores.Count == 0
                 ? "No .utm files found in module folder"
                 : "No matches for filter";
-            StoreCountLabel.Foreground = new SolidColorBrush(Colors.Orange);
+            StoreCountLabel.Foreground = BrushManager.GetWarningBrush(this);
         }
         else
         {
             StoreCountLabel.Text = $"{_filteredStores.Count} store{(_filteredStores.Count == 1 ? "" : "s")}";
-            StoreCountLabel.Foreground = new SolidColorBrush(Colors.White);
+            StoreCountLabel.Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? BrushManager.GetInfoBrush();
         }
     }
 

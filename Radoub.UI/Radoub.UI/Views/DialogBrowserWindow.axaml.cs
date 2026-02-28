@@ -83,7 +83,7 @@ public partial class DialogBrowserWindow : Window
         if (!string.IsNullOrEmpty(_overridePath))
         {
             LocationPathLabel.Text = UnifiedLogger.SanitizePath(_overridePath);
-            LocationPathLabel.Foreground = new SolidColorBrush(Colors.White);
+            LocationPathLabel.Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? BrushManager.GetInfoBrush();
             ResetLocationButton.IsVisible = true;
         }
         else
@@ -92,12 +92,12 @@ public partial class DialogBrowserWindow : Window
             if (!string.IsNullOrEmpty(currentDir))
             {
                 LocationPathLabel.Text = UnifiedLogger.SanitizePath(currentDir);
-                LocationPathLabel.Foreground = new SolidColorBrush(Colors.LightGray);
+                LocationPathLabel.Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush ?? BrushManager.GetDisabledBrush();
             }
             else
             {
                 LocationPathLabel.Text = "(no file loaded - use browse...)";
-                LocationPathLabel.Foreground = new SolidColorBrush(Colors.Orange);
+                LocationPathLabel.Foreground = BrushManager.GetWarningBrush(this);
             }
             ResetLocationButton.IsVisible = false;
         }
@@ -192,7 +192,7 @@ public partial class DialogBrowserWindow : Window
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load dialogs: {ex.Message}");
             DialogCountLabel.Text = $"Error loading dialogs: {ex.Message}";
-            DialogCountLabel.Foreground = new SolidColorBrush(Colors.Red);
+            DialogCountLabel.Foreground = BrushManager.GetErrorBrush(this);
         }
     }
 
@@ -427,7 +427,7 @@ public partial class DialogBrowserWindow : Window
             {
                 DialogCountLabel.Text = "No matching dialogs";
             }
-            DialogCountLabel.Foreground = new SolidColorBrush(Colors.Orange);
+            DialogCountLabel.Foreground = BrushManager.GetWarningBrush(this);
         }
         else
         {
@@ -437,7 +437,7 @@ public partial class DialogBrowserWindow : Window
                 countText += $" + {hakCount} HAK";
             }
             DialogCountLabel.Text = countText;
-            DialogCountLabel.Foreground = new SolidColorBrush(Colors.White);
+            DialogCountLabel.Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? BrushManager.GetInfoBrush();
         }
     }
 
