@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.80] - 2026-02-27
-**Branch**: `radoub/issue-1555` | **PR**: #TBD
+**Branch**: `radoub/issue-1555` | **PR**: #1559
 
 ### Sprint: Manifest & Fence Test Coverage + Anti-Pattern Cleanup (#1555)
 
