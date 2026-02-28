@@ -409,7 +409,7 @@ public partial class MainWindow
             headerPanel.Children.Add(new TextBlock
             {
                 Text = $"StrRef: {info.StrRef}",
-                Foreground = Avalonia.Media.Brushes.Gray
+                Foreground = Radoub.UI.Services.BrushManager.GetDisabledBrush()
             });
         }
         DockPanel.SetDock(headerPanel, Avalonia.Controls.Dock.Top);
@@ -425,7 +425,7 @@ public partial class MainWindow
             {
                 Text = "(No translations available)",
                 FontStyle = Avalonia.Media.FontStyle.Italic,
-                Foreground = Avalonia.Media.Brushes.Gray
+                Foreground = Radoub.UI.Services.BrushManager.GetDisabledBrush()
             });
         }
         else

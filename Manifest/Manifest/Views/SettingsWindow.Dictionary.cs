@@ -113,7 +113,7 @@ public partial class SettingsWindow
             {
                 Text = "No custom dictionaries found",
                 FontStyle = FontStyle.Italic,
-                Foreground = Brushes.Gray,
+                Foreground = Radoub.UI.Services.BrushManager.GetDisabledBrush(),
                 Margin = new Thickness(5)
             });
         }

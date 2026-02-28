@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.155-alpha] - 2026-02-28
+**Branch**: `parley/issue-1563` | **PR**: #1565
+
+### Sprint: Visual & UX Polish
+
+- [x] #1165 - FlowView shows 📋 symbol for nodes with quest tags
+- [x] #1539 - Replace hardcoded Colors/Brushes with theme-aware BrushManager in browser windows, RenameDialog, AboutWindow, Manifest views
+- [x] #1375 - Fix UndoMenuItem_Exists/RedoMenuItem_Exists intermittent failure (search desktop for Avalonia popup menus with retries)
+
+---
+
 ## [0.1.154-alpha] - 2026-02-28
 **Branch**: `parley/issue-1562` | **PR**: #1564
 

@@ -387,7 +387,7 @@ public class SpellCheckService : IDisposable
         }
 
         // Ultimate fallback
-        return new SolidColorBrush(Color.Parse("#D32F2F"));
+        return new SolidColorBrush(Color.Parse("#D32F2F")); // theme-ok
     }
 
     /// <summary>

@@ -203,6 +203,9 @@ namespace DialogEditor.Services
             if (control != null)
             {
                 node.OriginalNode.Quest = control.Text ?? "";
+
+                // Notify FlowView so quest tag indicator (📋) updates immediately
+                DialogChangeEventBus.Instance.PublishNodeModified(node.OriginalNode, "QuestChanged");
             }
         }
 

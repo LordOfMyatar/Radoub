@@ -57,7 +57,7 @@ public partial class JournalBrowserWindow : Window
         if (!string.IsNullOrEmpty(_overridePath))
         {
             LocationPathLabel.Text = UnifiedLogger.SanitizePath(_overridePath);
-            LocationPathLabel.Foreground = new SolidColorBrush(Colors.White);
+            LocationPathLabel.Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? BrushManager.GetInfoBrush();
             ResetLocationButton.IsVisible = true;
         }
         else
@@ -66,12 +66,12 @@ public partial class JournalBrowserWindow : Window
             if (!string.IsNullOrEmpty(currentDir))
             {
                 LocationPathLabel.Text = UnifiedLogger.SanitizePath(currentDir);
-                LocationPathLabel.Foreground = new SolidColorBrush(Colors.LightGray);
+                LocationPathLabel.Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush ?? BrushManager.GetDisabledBrush();
             }
             else
             {
                 LocationPathLabel.Text = "(no module loaded - use browse...)";
-                LocationPathLabel.Foreground = new SolidColorBrush(Colors.Orange);
+                LocationPathLabel.Foreground = BrushManager.GetWarningBrush(this);
             }
             ResetLocationButton.IsVisible = false;
         }
@@ -137,7 +137,7 @@ public partial class JournalBrowserWindow : Window
         if (string.IsNullOrEmpty(currentDir) || !Directory.Exists(currentDir))
         {
             JournalCountLabel.Text = "No module folder selected";
-            JournalCountLabel.Foreground = new SolidColorBrush(Colors.Orange);
+            JournalCountLabel.Foreground = BrushManager.GetWarningBrush(this);
             return;
         }
 
@@ -165,12 +165,12 @@ public partial class JournalBrowserWindow : Window
             if (_journals.Count == 0)
             {
                 JournalCountLabel.Text = "No .jrl files found in module folder";
-                JournalCountLabel.Foreground = new SolidColorBrush(Colors.Orange);
+                JournalCountLabel.Foreground = BrushManager.GetWarningBrush(this);
             }
             else
             {
                 JournalCountLabel.Text = $"{_journals.Count} journal{(_journals.Count == 1 ? "" : "s")}";
-                JournalCountLabel.Foreground = new SolidColorBrush(Colors.White);
+                JournalCountLabel.Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? BrushManager.GetInfoBrush();
 
                 // Auto-select if only one journal (common case: module.jrl)
                 if (_journals.Count == 1)
@@ -185,7 +185,7 @@ public partial class JournalBrowserWindow : Window
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error scanning for journals: {ex.Message}");
             JournalCountLabel.Text = $"Error: {ex.Message}";
-            JournalCountLabel.Foreground = new SolidColorBrush(Colors.Red);
+            JournalCountLabel.Foreground = BrushManager.GetErrorBrush(this);
         }
     }
 

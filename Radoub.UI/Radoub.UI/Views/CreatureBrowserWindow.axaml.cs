@@ -59,7 +59,7 @@ public partial class CreatureBrowserWindow : Window
         if (!string.IsNullOrEmpty(_overridePath))
         {
             LocationPathLabel.Text = UnifiedLogger.SanitizePath(_overridePath);
-            LocationPathLabel.Foreground = new SolidColorBrush(Colors.White);
+            LocationPathLabel.Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? BrushManager.GetInfoBrush();
             ResetLocationButton.IsVisible = true;
         }
         else
@@ -68,12 +68,12 @@ public partial class CreatureBrowserWindow : Window
             if (!string.IsNullOrEmpty(currentDir))
             {
                 LocationPathLabel.Text = UnifiedLogger.SanitizePath(currentDir);
-                LocationPathLabel.Foreground = new SolidColorBrush(Colors.LightGray);
+                LocationPathLabel.Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush ?? BrushManager.GetDisabledBrush();
             }
             else
             {
                 LocationPathLabel.Text = "(no module loaded - use browse...)";
-                LocationPathLabel.Foreground = new SolidColorBrush(Colors.Orange);
+                LocationPathLabel.Foreground = BrushManager.GetWarningBrush(this);
             }
             ResetLocationButton.IsVisible = false;
         }
@@ -146,7 +146,7 @@ public partial class CreatureBrowserWindow : Window
         if (!hasModuleDir && !hasLocalVault && !hasServerVault)
         {
             CreatureCountLabel.Text = "No module folder or vaults found";
-            CreatureCountLabel.Foreground = new SolidColorBrush(Colors.Orange);
+            CreatureCountLabel.Foreground = BrushManager.GetWarningBrush(this);
             return;
         }
 
@@ -244,7 +244,7 @@ public partial class CreatureBrowserWindow : Window
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error scanning for creatures: {ex.Message}");
             CreatureCountLabel.Text = $"Error: {ex.Message}";
-            CreatureCountLabel.Foreground = new SolidColorBrush(Colors.Red);
+            CreatureCountLabel.Foreground = BrushManager.GetErrorBrush(this);
         }
     }
 
@@ -326,7 +326,7 @@ public partial class CreatureBrowserWindow : Window
             CreatureCountLabel.Text = _allCreatures.Count == 0
                 ? "No creature files found"
                 : "No matches for filter";
-            CreatureCountLabel.Foreground = new SolidColorBrush(Colors.Orange);
+            CreatureCountLabel.Foreground = BrushManager.GetWarningBrush(this);
         }
         else
         {
@@ -340,7 +340,7 @@ public partial class CreatureBrowserWindow : Window
             if (serverVaultCount > 0) parts.Add($"{serverVaultCount} servervault");
 
             CreatureCountLabel.Text = $"{_filteredCreatures.Count} creature{(_filteredCreatures.Count == 1 ? "" : "s")} ({string.Join(", ", parts)})";
-            CreatureCountLabel.Foreground = new SolidColorBrush(Colors.White);
+            CreatureCountLabel.Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? BrushManager.GetInfoBrush();
         }
     }
 

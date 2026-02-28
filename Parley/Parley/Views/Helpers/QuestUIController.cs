@@ -95,6 +95,9 @@ namespace Parley.Views.Helpers
             ViewModel.HasUnsavedChanges = true;
             _triggerAutoSave();
 
+            // Notify FlowView so quest tag indicator (📋) updates immediately
+            DialogChangeEventBus.Instance.PublishNodeModified(SelectedNode.OriginalNode, "QuestChanged");
+
             if (!string.IsNullOrEmpty(questTag))
             {
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Quest tag set to: {questTag}");
@@ -285,6 +288,9 @@ namespace Parley.Views.Helpers
                     ViewModel.HasUnsavedChanges = true;
                     _triggerAutoSave();
 
+                    // Notify FlowView so quest tag indicator (📋) appears immediately
+                    DialogChangeEventBus.Instance.PublishNodeModified(dialogNode, "QuestChanged");
+
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Quest selected from browser: {result.QuestTag}");
                     ViewModel.StatusMessage = result.EntryId.HasValue
                         ? $"Quest: {result.QuestTag}, Entry: {result.EntryId.Value}"
@@ -403,6 +409,9 @@ namespace Parley.Views.Helpers
             // Trigger autosave
             ViewModel.HasUnsavedChanges = true;
             _triggerAutoSave();
+
+            // Notify FlowView so quest tag indicator (📋) disappears immediately
+            DialogChangeEventBus.Instance.PublishNodeModified(dialogNode, "QuestChanged");
 
             UnifiedLogger.LogApplication(LogLevel.DEBUG, "Quest tag cleared");
             ViewModel.StatusMessage = "Quest tag cleared";

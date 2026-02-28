@@ -70,7 +70,7 @@ public partial class ScriptBrowserWindow : Window
         {
             // Show sanitized override path
             LocationPathLabel.Text = UnifiedLogger.SanitizePath(_overridePath);
-            LocationPathLabel.Foreground = new SolidColorBrush(Colors.White);
+            LocationPathLabel.Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? BrushManager.GetInfoBrush();
             ResetLocationButton.IsVisible = true;
         }
         else
@@ -80,12 +80,12 @@ public partial class ScriptBrowserWindow : Window
             if (!string.IsNullOrEmpty(currentDir))
             {
                 LocationPathLabel.Text = UnifiedLogger.SanitizePath(currentDir);
-                LocationPathLabel.Foreground = new SolidColorBrush(Colors.LightGray);
+                LocationPathLabel.Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush ?? BrushManager.GetDisabledBrush();
             }
             else
             {
                 LocationPathLabel.Text = "(no file loaded - use browse...)";
-                LocationPathLabel.Foreground = new SolidColorBrush(Colors.Orange);
+                LocationPathLabel.Foreground = BrushManager.GetWarningBrush(this);
             }
             ResetLocationButton.IsVisible = false;
         }
@@ -205,7 +205,7 @@ public partial class ScriptBrowserWindow : Window
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load scripts: {ex.Message}");
             ScriptCountLabel.Text = $"❌ Error loading scripts: {ex.Message}";
-            ScriptCountLabel.Foreground = new SolidColorBrush(Colors.Red);
+            ScriptCountLabel.Foreground = BrushManager.GetErrorBrush(this);
         }
     }
 
@@ -347,12 +347,12 @@ public partial class ScriptBrowserWindow : Window
             {
                 ScriptCountLabel.Text = "⚠ No matching scripts";
             }
-            ScriptCountLabel.Foreground = new SolidColorBrush(Colors.Orange);
+            ScriptCountLabel.Foreground = BrushManager.GetWarningBrush(this);
         }
         else
         {
             ScriptCountLabel.Text = ScriptListManager.FormatCountText(result);
-            ScriptCountLabel.Foreground = new SolidColorBrush(Colors.White);
+            ScriptCountLabel.Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? BrushManager.GetInfoBrush();
         }
     }
 

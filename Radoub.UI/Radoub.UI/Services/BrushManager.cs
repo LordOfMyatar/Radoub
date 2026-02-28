@@ -14,11 +14,11 @@ namespace Radoub.UI.Services;
 public static class BrushManager
 {
     // Fallback colors when theme doesn't define them (Material Design palette)
-    private static readonly IBrush FallbackSuccess = Brushes.Green;
-    private static readonly IBrush FallbackWarning = Brushes.Orange;
-    private static readonly IBrush FallbackError = Brushes.Red;
-    private static readonly IBrush FallbackInfo = Brushes.DodgerBlue;
-    private static readonly IBrush FallbackDisabled = new SolidColorBrush(Color.Parse("#9E9E9E")); // Gray 500
+    private static readonly IBrush FallbackSuccess = Brushes.Green; // theme-ok
+    private static readonly IBrush FallbackWarning = Brushes.Orange; // theme-ok
+    private static readonly IBrush FallbackError = Brushes.Red; // theme-ok
+    private static readonly IBrush FallbackInfo = Brushes.DodgerBlue; // theme-ok
+    private static readonly IBrush FallbackDisabled = new SolidColorBrush(Color.Parse("#9E9E9E")); // Gray 500 // theme-ok
 
     /// <summary>
     /// Gets the theme-aware success brush (green).
