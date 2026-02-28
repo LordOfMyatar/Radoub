@@ -238,14 +238,7 @@ public partial class NewCharacterWizardWindow
 
     private int GetAbilityPointsRemaining()
     {
-        int spent = 0;
-        foreach (var ability in AbilityNames)
-        {
-            int costIndex = _abilityBaseScores[ability] - AbilityMinBase;
-            if (costIndex >= 0 && costIndex < PointBuyCosts.Length)
-                spent += PointBuyCosts[costIndex];
-        }
-        return _pointBuyTotal - spent;
+        return AbilityPointBuyService.CalculatePointsRemaining(_pointBuyTotal, _abilityBaseScores);
     }
 
     private static int GetRacialModForAbility(RacialModifiers mods, string ability) => ability switch
