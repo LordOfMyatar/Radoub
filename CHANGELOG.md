@@ -22,10 +22,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Standardize status bar and title bar across all tools (#1321)
 
-- [ ] Quartermaster: Move status bar from bottom to top, adopt Fence border styling
-- [ ] Parley: Merge Module Info Bar into status bar (single combined bar)
-- [ ] Fence: Adopt custom title bar (icon + ThemeTitleBar)
-- [ ] Trebuchet: Adopt custom title bar (icon + ThemeTitleBar)
+- [x] Parley: Merge Module Info Bar into combined status bar (Fence pattern)
+- [x] Fence: Add custom title bar (icon + ThemeTitleBar)
+- [x] Trebuchet: Add icon to existing custom title bar
+- Quartermaster & Manifest: Already matched target pattern — no changes needed
 
 ---
 
