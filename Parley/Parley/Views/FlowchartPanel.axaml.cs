@@ -202,10 +202,11 @@ namespace DialogEditor.Views
                 });
             }
 
-            // #809: Refresh FlowView on structural changes (add/delete/move/undo/redo)
+            // #809: Refresh FlowView on structural changes and property edits
             if (e.ChangeType == DialogChangeType.NodeAdded ||
                 e.ChangeType == DialogChangeType.NodeDeleted ||
                 e.ChangeType == DialogChangeType.NodeMoved ||
+                e.ChangeType == DialogChangeType.NodeModified ||
                 e.ChangeType == DialogChangeType.DialogRefreshed)
             {
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
