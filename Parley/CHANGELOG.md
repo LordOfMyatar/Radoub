@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.153-alpha] - 2026-02-27
+**Branch**: `parley/issue-1554` | **PR**: #1558
+
+### Sprint: Test Quality Improvement (Controllers + Critical Services)
+
+- Removed 35 constructor-only and mock-behavior tests from controller test files (#1548)
+- Added 16 ScrapSerializationService tests: round-trip, persistence, migration (#1549)
+- Added 11 ScrapRestoreService tests: single/batch/subtree restore, validation (#1549)
+- Added 13 GameResourceService tests: graceful degradation, TLK handling, disposal (#1549)
+- Net change: +5 meaningful tests (removed 35 anti-pattern tests, added 40 behavioral tests)
+
+---
+
 ## [0.1.152-alpha] - 2026-02-26
 **Branch**: `radoub/issue-1530` | **PR**: #1537
 

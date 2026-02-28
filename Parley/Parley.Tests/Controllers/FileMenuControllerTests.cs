@@ -10,7 +10,7 @@ namespace Parley.Tests.Controllers
 {
     /// <summary>
     /// Unit tests for FileMenuController.
-    /// Tests business logic (filename validation, constructor guards).
+    /// Tests business logic (filename validation, close behavior).
     /// UI-dependent methods (OnOpenClick, PopulateRecentFilesMenu) require headless/integration tests.
     /// </summary>
     public class FileMenuControllerTests
@@ -23,118 +23,6 @@ namespace Parley.Tests.Controllers
             _mockSettings = new MockSettingsService();
             _viewModel = new MainViewModel();
         }
-
-        #region Constructor Validation
-
-        [AvaloniaFact]
-        public void Constructor_NullSettings_ThrowsArgumentNullException()
-        {
-            var w = new Avalonia.Controls.Window();
-            Assert.Throws<ArgumentNullException>("settings", () =>
-                new FileMenuController(w, new SafeControlFinder(w), null!,
-                    () => _viewModel, () => { }, () => { }, () => { }, () => { }, () => { },
-                    () => new ScriptParameterUIManager(_ => null, _ => { }, () => { }, () => false, () => null),
-                    () => Task.FromResult(false)));
-        }
-
-        [AvaloniaFact]
-        public void Constructor_NullGetViewModel_ThrowsArgumentNullException()
-        {
-            var w = new Avalonia.Controls.Window();
-            Assert.Throws<ArgumentNullException>("getViewModel", () =>
-                new FileMenuController(w, new SafeControlFinder(w), _mockSettings,
-                    null!, () => { }, () => { }, () => { }, () => { }, () => { },
-                    () => new ScriptParameterUIManager(_ => null, _ => { }, () => { }, () => false, () => null),
-                    () => Task.FromResult(false)));
-        }
-
-        [AvaloniaFact]
-        public void Constructor_NullSaveCurrentNodeProperties_ThrowsArgumentNullException()
-        {
-            var w = new Avalonia.Controls.Window();
-            Assert.Throws<ArgumentNullException>("saveCurrentNodeProperties", () =>
-                new FileMenuController(w, new SafeControlFinder(w), _mockSettings,
-                    () => _viewModel, null!, () => { }, () => { }, () => { }, () => { },
-                    () => new ScriptParameterUIManager(_ => null, _ => { }, () => { }, () => false, () => null),
-                    () => Task.FromResult(false)));
-        }
-
-        [AvaloniaFact]
-        public void Constructor_NullClearPropertiesPanel_ThrowsArgumentNullException()
-        {
-            var w = new Avalonia.Controls.Window();
-            Assert.Throws<ArgumentNullException>("clearPropertiesPanel", () =>
-                new FileMenuController(w, new SafeControlFinder(w), _mockSettings,
-                    () => _viewModel, () => { }, null!, () => { }, () => { }, () => { },
-                    () => new ScriptParameterUIManager(_ => null, _ => { }, () => { }, () => false, () => null),
-                    () => Task.FromResult(false)));
-        }
-
-        [AvaloniaFact]
-        public void Constructor_NullPopulateRecentFilesMenu_ThrowsArgumentNullException()
-        {
-            var w = new Avalonia.Controls.Window();
-            Assert.Throws<ArgumentNullException>("populateRecentFilesMenu", () =>
-                new FileMenuController(w, new SafeControlFinder(w), _mockSettings,
-                    () => _viewModel, () => { }, () => { }, null!, () => { }, () => { },
-                    () => new ScriptParameterUIManager(_ => null, _ => { }, () => { }, () => false, () => null),
-                    () => Task.FromResult(false)));
-        }
-
-        [AvaloniaFact]
-        public void Constructor_NullUpdateEmbeddedFlowchart_ThrowsArgumentNullException()
-        {
-            var w = new Avalonia.Controls.Window();
-            Assert.Throws<ArgumentNullException>("updateEmbeddedFlowchartAfterLoad", () =>
-                new FileMenuController(w, new SafeControlFinder(w), _mockSettings,
-                    () => _viewModel, () => { }, () => { }, () => { }, null!, () => { },
-                    () => new ScriptParameterUIManager(_ => null, _ => { }, () => { }, () => false, () => null),
-                    () => Task.FromResult(false)));
-        }
-
-        [AvaloniaFact]
-        public void Constructor_NullClearFlowcharts_ThrowsArgumentNullException()
-        {
-            var w = new Avalonia.Controls.Window();
-            Assert.Throws<ArgumentNullException>("clearFlowcharts", () =>
-                new FileMenuController(w, new SafeControlFinder(w), _mockSettings,
-                    () => _viewModel, () => { }, () => { }, () => { }, () => { }, null!,
-                    () => new ScriptParameterUIManager(_ => null, _ => { }, () => { }, () => false, () => null),
-                    () => Task.FromResult(false)));
-        }
-
-        [AvaloniaFact]
-        public void Constructor_NullGetParameterUIManager_ThrowsArgumentNullException()
-        {
-            var w = new Avalonia.Controls.Window();
-            Assert.Throws<ArgumentNullException>("getParameterUIManager", () =>
-                new FileMenuController(w, new SafeControlFinder(w), _mockSettings,
-                    () => _viewModel, () => { }, () => { }, () => { }, () => { }, () => { },
-                    null!, () => Task.FromResult(false)));
-        }
-
-        [AvaloniaFact]
-        public void Constructor_NullShowSaveAsDialogAsync_ThrowsArgumentNullException()
-        {
-            var w = new Avalonia.Controls.Window();
-            Assert.Throws<ArgumentNullException>("showSaveAsDialogAsync", () =>
-                new FileMenuController(w, new SafeControlFinder(w), _mockSettings,
-                    () => _viewModel, () => { }, () => { }, () => { }, () => { }, () => { },
-                    () => new ScriptParameterUIManager(_ => null, _ => { }, () => { }, () => false, () => null),
-                    null!));
-        }
-
-        [AvaloniaFact]
-        public void Constructor_NullOptionalParams_DoesNotThrow()
-        {
-            // scanCreaturesForModule and updateDialogBrowserCurrentFile are optional
-            var controller = CreateController(
-                scanCreaturesForModule: null,
-                updateDialogBrowserCurrentFile: null);
-            Assert.NotNull(controller);
-        }
-
-        #endregion
 
         #region Filename Validation (#826)
 

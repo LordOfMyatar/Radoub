@@ -10,8 +10,8 @@ namespace Parley.Tests.Controllers
 {
     /// <summary>
     /// Unit tests for QuestUIController.
-    /// Tests constructor validation, quest tag/entry logic, clear operations,
-    /// and journal loading. UI-dependent methods (browse dialogs) require headless tests.
+    /// Tests quest tag/entry logic, clear operations, and journal loading.
+    /// UI-dependent methods (browse dialogs) require headless tests.
     /// </summary>
     public class QuestUIControllerTests
     {
@@ -28,96 +28,6 @@ namespace Parley.Tests.Controllers
             _mockJournal = new MockJournalService();
             _viewModel = new MainViewModel();
         }
-
-        #region Constructor Validation
-
-        [AvaloniaFact]
-        public void Constructor_NullWindow_ThrowsArgumentNullException()
-        {
-            Assert.Throws<ArgumentNullException>("window", () =>
-                new QuestUIController(null!, new SafeControlFinder(new Avalonia.Controls.Window()),
-                    _mockSettings, _mockJournal, () => _viewModel, () => null,
-                    () => false, _ => { }, () => { }));
-        }
-
-        [AvaloniaFact]
-        public void Constructor_NullSettings_ThrowsArgumentNullException()
-        {
-            var w = new Avalonia.Controls.Window();
-            Assert.Throws<ArgumentNullException>("settings", () =>
-                new QuestUIController(w, new SafeControlFinder(w),
-                    null!, _mockJournal, () => _viewModel, () => null,
-                    () => false, _ => { }, () => { }));
-        }
-
-        [AvaloniaFact]
-        public void Constructor_NullJournalService_ThrowsArgumentNullException()
-        {
-            var w = new Avalonia.Controls.Window();
-            Assert.Throws<ArgumentNullException>("journalService", () =>
-                new QuestUIController(w, new SafeControlFinder(w),
-                    _mockSettings, null!, () => _viewModel, () => null,
-                    () => false, _ => { }, () => { }));
-        }
-
-        [AvaloniaFact]
-        public void Constructor_NullGetViewModel_ThrowsArgumentNullException()
-        {
-            var w = new Avalonia.Controls.Window();
-            Assert.Throws<ArgumentNullException>("getViewModel", () =>
-                new QuestUIController(w, new SafeControlFinder(w),
-                    _mockSettings, _mockJournal, null!, () => null,
-                    () => false, _ => { }, () => { }));
-        }
-
-        [AvaloniaFact]
-        public void Constructor_NullGetSelectedNode_ThrowsArgumentNullException()
-        {
-            var w = new Avalonia.Controls.Window();
-            Assert.Throws<ArgumentNullException>("getSelectedNode", () =>
-                new QuestUIController(w, new SafeControlFinder(w),
-                    _mockSettings, _mockJournal, () => _viewModel, null!,
-                    () => false, _ => { }, () => { }));
-        }
-
-        [AvaloniaFact]
-        public void Constructor_NullIsPopulatingProperties_ThrowsArgumentNullException()
-        {
-            var w = new Avalonia.Controls.Window();
-            Assert.Throws<ArgumentNullException>("isPopulatingProperties", () =>
-                new QuestUIController(w, new SafeControlFinder(w),
-                    _mockSettings, _mockJournal, () => _viewModel, () => null,
-                    null!, _ => { }, () => { }));
-        }
-
-        [AvaloniaFact]
-        public void Constructor_NullSetIsPopulatingProperties_ThrowsArgumentNullException()
-        {
-            var w = new Avalonia.Controls.Window();
-            Assert.Throws<ArgumentNullException>("setIsPopulatingProperties", () =>
-                new QuestUIController(w, new SafeControlFinder(w),
-                    _mockSettings, _mockJournal, () => _viewModel, () => null,
-                    () => false, null!, () => { }));
-        }
-
-        [AvaloniaFact]
-        public void Constructor_NullTriggerAutoSave_ThrowsArgumentNullException()
-        {
-            var w = new Avalonia.Controls.Window();
-            Assert.Throws<ArgumentNullException>("triggerAutoSave", () =>
-                new QuestUIController(w, new SafeControlFinder(w),
-                    _mockSettings, _mockJournal, () => _viewModel, () => null,
-                    () => false, _ => { }, null!));
-        }
-
-        [AvaloniaFact]
-        public void Constructor_ValidArgs_CreatesInstance()
-        {
-            var controller = CreateController();
-            Assert.NotNull(controller);
-        }
-
-        #endregion
 
         #region Quest Tag Text Changed Guards
 
@@ -362,65 +272,6 @@ namespace Parley.Tests.Controllers
             await controller.LoadJournalForCurrentModuleAsync();
 
             // Should handle missing directory gracefully
-        }
-
-        #endregion
-
-        #region Mock Journal Data Verification
-
-        [AvaloniaFact]
-        public void MockJournal_GetCategory_ReturnsCategory()
-        {
-            _mockJournal.AddCategory(new JournalCategory
-            {
-                Tag = "my_quest",
-                Name = new LocString()
-            });
-
-            var category = _mockJournal.GetCategory("my_quest");
-
-            Assert.NotNull(category);
-            Assert.Equal("my_quest", category.Tag);
-        }
-
-        [AvaloniaFact]
-        public void MockJournal_GetCategory_UnknownTag_ReturnsNull()
-        {
-            var category = _mockJournal.GetCategory("nonexistent");
-
-            Assert.Null(category);
-        }
-
-        [AvaloniaFact]
-        public void MockJournal_GetEntriesForQuest_ReturnsEntries()
-        {
-            _mockJournal.AddQuest("my_quest", 1, 2, 3);
-
-            var entries = _mockJournal.GetEntriesForQuest("my_quest");
-
-            Assert.Equal(3, entries.Count);
-            Assert.Equal(1u, entries[0].ID);
-            Assert.Equal(2u, entries[1].ID);
-            Assert.Equal(3u, entries[2].ID);
-        }
-
-        [AvaloniaFact]
-        public void MockJournal_GetEntriesForQuest_UnknownTag_ReturnsEmpty()
-        {
-            var entries = _mockJournal.GetEntriesForQuest("unknown");
-
-            Assert.Empty(entries);
-        }
-
-        [AvaloniaFact]
-        public void MockJournal_ClearCache_RemovesAll()
-        {
-            _mockJournal.AddQuest("quest1", 1);
-            _mockJournal.AddQuest("quest2", 2);
-
-            _mockJournal.ClearCache();
-
-            Assert.Empty(_mockJournal.GetQuestTags());
         }
 
         #endregion

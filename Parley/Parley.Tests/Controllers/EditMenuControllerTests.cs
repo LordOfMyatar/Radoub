@@ -8,7 +8,7 @@ namespace Parley.Tests.Controllers
 {
     /// <summary>
     /// Unit tests for EditMenuController.
-    /// Tests constructor validation and null-node guard paths.
+    /// Tests status message behavior and guard paths for edit operations.
     /// Clipboard operations require a running Avalonia UI and are covered in headless tests.
     /// </summary>
     public class EditMenuControllerTests
@@ -19,40 +19,6 @@ namespace Parley.Tests.Controllers
         {
             _viewModel = new MainViewModel();
         }
-
-        #region Constructor Validation
-
-        [AvaloniaFact]
-        public void Constructor_NullWindow_ThrowsArgumentNullException()
-        {
-            Assert.Throws<ArgumentNullException>("window", () =>
-                new EditMenuController(null!, () => _viewModel, () => null));
-        }
-
-        [AvaloniaFact]
-        public void Constructor_NullGetViewModel_ThrowsArgumentNullException()
-        {
-            var window = new Avalonia.Controls.Window();
-            Assert.Throws<ArgumentNullException>("getViewModel", () =>
-                new EditMenuController(window, null!, () => null));
-        }
-
-        [AvaloniaFact]
-        public void Constructor_NullGetSelectedNode_ThrowsArgumentNullException()
-        {
-            var window = new Avalonia.Controls.Window();
-            Assert.Throws<ArgumentNullException>("getSelectedNode", () =>
-                new EditMenuController(window, () => _viewModel, null!));
-        }
-
-        [AvaloniaFact]
-        public void Constructor_ValidArgs_CreatesInstance()
-        {
-            var controller = CreateController();
-            Assert.NotNull(controller);
-        }
-
-        #endregion
 
         #region Undo/Redo
 

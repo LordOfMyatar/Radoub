@@ -26,17 +26,6 @@ namespace Parley.Tests.Controllers
             _viewModel = new MainViewModel();
         }
 
-        #region Constructor
-
-        [AvaloniaFact]
-        public void Constructor_ValidArgs_CreatesInstance()
-        {
-            var controller = CreateController();
-            Assert.NotNull(controller);
-        }
-
-        #endregion
-
         #region Expand/Collapse Subnodes
 
         [AvaloniaFact]
