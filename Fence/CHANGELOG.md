@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.15-alpha] - 2026-02-27
+**Branch**: `radoub/issue-1555` | **PR**: #TBD
+
+### Sprint: Manifest & Fence Test Coverage + Anti-Pattern Cleanup (#1555)
+
+- [ ] #1551 - Add real item resolution tests, file operation tests, FlaUI smoke tests
+
+---
+
 ## [0.1.14-alpha] - 2026-02-25
 **Branch**: `radoub/issue-1523` | **PR**: #1525
 

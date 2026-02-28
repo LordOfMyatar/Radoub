@@ -17,6 +17,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.80] - 2026-02-27
+**Branch**: `radoub/issue-1555` | **PR**: #TBD
+
+### Sprint: Manifest & Fence Test Coverage + Anti-Pattern Cleanup (#1555)
+
+- [ ] #1552 - Fix cross-tool test anti-patterns (ResetForTesting, mock-only paths)
+
+---
+
 ## [0.9.79] - 2026-02-26
 **Branch**: `radoub/issue-1529` | **PR**: #1534
 
