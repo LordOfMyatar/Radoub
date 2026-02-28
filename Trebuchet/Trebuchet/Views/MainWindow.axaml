@@ -59,6 +59,10 @@
                         VerticalAlignment="Center"
                         Margin="8,0,0,0"
                         IsHitTestVisible="False">
+                <Image Source="avares://Trebuchet/Assets/Trebuchet.ico"
+                       Width="{DynamicResource GlobalFontSize}"
+                       Height="{DynamicResource GlobalFontSize}"
+                       Margin="0,0,8,0"/>
                 <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
                            VerticalAlignment="Center"
                            Foreground="{DynamicResource ThemeTitleBarForeground}"/>

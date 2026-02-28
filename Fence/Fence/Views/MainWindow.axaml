@@ -12,6 +12,9 @@
         Icon="avares://Fence/Assets/fence.ico"
         Width="1200" Height="800"
         MinWidth="900" MinHeight="600"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="PreferSystemChrome"
+        ExtendClientAreaTitleBarHeightHint="30"
         KeyDown="OnWindowKeyDown">
 
     <Window.Resources>
@@ -19,6 +22,26 @@
     </Window.Resources>
 
     <DockPanel>
+        <!-- Custom Title Bar -->
+        <Border DockPanel.Dock="Top" Background="{DynamicResource ThemeTitleBar}"
+                Height="30"
+                x:Name="TitleBar"
+                PointerPressed="OnTitleBarPointerPressed"
+                DoubleTapped="OnTitleBarDoubleTapped">
+            <StackPanel Orientation="Horizontal"
+                        VerticalAlignment="Center"
+                        Margin="8,0,0,0"
+                        IsHitTestVisible="False">
+                <Image Source="avares://Fence/Assets/fence.ico"
+                       Width="{DynamicResource GlobalFontSize}"
+                       Height="{DynamicResource GlobalFontSize}"
+                       Margin="0,0,8,0"/>
+                <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource ThemeTitleBarForeground}"/>
+            </StackPanel>
+        </Border>
+
         <!-- Menu Bar -->
         <Menu DockPanel.Dock="Top" AutomationProperties.AutomationId="MainMenu">
             <MenuItem Header="_File">

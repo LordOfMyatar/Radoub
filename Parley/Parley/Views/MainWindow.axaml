@@ -35,8 +35,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>  <!-- Status bar (#288: moved to top) -->
-            <RowDefinition Height="Auto"/>  <!-- Module info bar -->
+            <RowDefinition Height="Auto"/>  <!-- Status bar (combined with module info, #1321) -->
             <RowDefinition Height="1*" MinHeight="200"/>
             <RowDefinition Height="5"/>
             <RowDefinition Height="3*" MinHeight="200"/>
@@ -151,44 +150,35 @@
             </MenuItem>
         </Menu>
 
-        <!-- Status Bar (#288: Moved to top of window, under menu) -->
-        <Border Grid.Row="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,0,0,1" Padding="5,2">
+        <!-- Status Bar (combined with module info, #1321) -->
+        <Border Grid.Row="2"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="8,4"
+                Margin="8,4,8,0">
             <Grid>
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}"/>
-                <TextBlock Grid.Column="1" Text="{Binding LastSavedTime}" Foreground="{DynamicResource SystemAccentColor}" FontStyle="Italic" Margin="20,0,0,0"/>
-                <TextBlock Grid.Column="2" Text="{Binding LoadedFileName}" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="20,0,0,0"/>
-                <ProgressBar Grid.Column="3" Width="100" Height="16"
+                <TextBlock x:Name="ModuleNameTextBlock" Grid.Column="0" Text="No module selected" FontWeight="Bold"/>
+                <TextBlock Grid.Column="1" Text="{Binding StatusMessage}" Margin="20,0,0,0"/>
+                <TextBlock Grid.Column="2" Text="{Binding LastSavedTime}" Foreground="{DynamicResource SystemAccentColor}" FontStyle="Italic" Margin="20,0,0,0"/>
+                <TextBlock Grid.Column="3" Text="{Binding LoadedFileName}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0"/>
+                <ProgressBar Grid.Column="4" Width="100" Height="16"
                              IsIndeterminate="{Binding IsLoading}"
                              IsVisible="{Binding IsLoading}" Margin="10,0,0,0"/>
             </Grid>
         </Border>
 
-        <!-- Module Info Bar -->
-        <Border Grid.Row="3" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,0,0,1" Padding="8,4">
-            <StackPanel Orientation="Horizontal" Spacing="15">
-                <TextBlock x:Name="ModuleNameTextBlock"
-                           Text="No module selected"
-                           FontWeight="Bold"
-                           VerticalAlignment="Center"/>
-                <TextBlock Text="|"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                           VerticalAlignment="Center"/>
-                <TextBlock x:Name="ModulePathTextBlock"
-                           Text=""
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                           VerticalAlignment="Center"/>
-            </StackPanel>
-        </Border>
-
 <!-- Main Content Area (spans rows 4-6 for left/right layout) -->
         <!-- Outer grid: Dialog Browser Panel | Main Content -->
-        <Grid Grid.Row="4" Grid.RowSpan="3" x:Name="OuterContentGrid">
+        <Grid Grid.Row="3" Grid.RowSpan="3" x:Name="OuterContentGrid">
             <Grid.ColumnDefinitions>
                 <!-- Dialog browser panel (#1143) - collapsible left panel -->
                 <ColumnDefinition Width="200" MinWidth="0"/>
