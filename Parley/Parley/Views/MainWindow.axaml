@@ -88,6 +88,7 @@
                 <MenuItem Header="Save _As..." Click="OnSaveAsClick"/>
                 <Separator/>
                 <MenuItem Header="_Close" Click="OnCloseClick"/>
+                <MenuItem Header="_Delete File..." Click="OnDeleteFileClick"/>
                 <Separator/>
                 <MenuItem Header="E_xit" Click="OnExitClick"/>
             </MenuItem>

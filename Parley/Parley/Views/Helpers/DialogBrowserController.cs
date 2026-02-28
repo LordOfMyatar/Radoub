@@ -87,6 +87,9 @@ namespace Parley.Views.Helpers
             // Subscribe to file selection events
             dialogBrowserPanel.FileSelected += OnFileSelected;
 
+            // Subscribe to file delete events (#1509)
+            dialogBrowserPanel.FileDeleteRequested += OnFileDeleteRequested;
+
             // Subscribe to collapse/expand events (#1143)
             dialogBrowserPanel.CollapsedChanged += OnCollapsedChanged;
 
@@ -144,6 +147,54 @@ namespace Parley.Views.Helpers
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Handles file delete request from dialog browser panel (#1509).
+        /// Shows confirmation dialog, deletes file, and refreshes list.
+        /// </summary>
+        private async void OnFileDeleteRequested(object? sender, FileDeleteRequestedEventArgs e)
+        {
+            var entry = e.Entry;
+            if (string.IsNullOrEmpty(entry.FilePath) || !File.Exists(entry.FilePath))
+            {
+                _viewModel.StatusMessage = "File not found on disk";
+                return;
+            }
+
+            var fileName = Path.GetFileName(entry.FilePath);
+
+            var confirmed = await Radoub.UI.Services.DialogHelper.ShowConfirmAsync(
+                _window, "Confirm Delete", $"Delete \"{fileName}\" from disk?\n\nThis cannot be undone.");
+            if (!confirmed)
+                return;
+
+            try
+            {
+                var isDeletingCurrent = string.Equals(
+                    _viewModel.CurrentFilePath, entry.FilePath, StringComparison.OrdinalIgnoreCase);
+
+                File.Delete(entry.FilePath);
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Deleted dialog file: {fileName}");
+
+                if (isDeletingCurrent)
+                {
+                    _viewModel.CloseDialog();
+                }
+
+                _viewModel.StatusMessage = $"Deleted {fileName}";
+
+                var dialogBrowserPanel = _window.FindControl<DialogBrowserPanel>("DialogBrowserPanel");
+                if (dialogBrowserPanel != null)
+                {
+                    await dialogBrowserPanel.RefreshAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to delete {fileName}: {ex.Message}");
+                _viewModel.StatusMessage = $"Delete failed: {ex.Message}";
+            }
         }
 
         /// <summary>
