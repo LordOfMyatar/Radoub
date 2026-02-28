@@ -20,18 +20,10 @@ public partial class NewCharacterWizardWindow
 
     private void PrepareStep7()
     {
-        // Recalculate skill points (INT may have changed in Step 5)
-        int intScore = _abilityBaseScores["INT"] + _displayService.GetRacialModifier(_selectedRaceId, "INT");
-        int intMod = CreatureDisplayService.CalculateAbilityBonus(intScore);
-        int basePoints = _displayService.GetClassSkillPointBase(_selectedClassId >= 0 ? _selectedClassId : 0);
-        // D&D 3.5/NWN rule: level 1 gets 4x skill points (engine rule, not 2DA-configurable)
-        const int FirstLevelSkillMultiplier = 4;
-        _skillPointsTotal = Math.Max(1, basePoints + intMod) * FirstLevelSkillMultiplier;
-
-        // Racial bonus skill points at level 1 (from racialtypes.2da ExtraSkillPointsPerLvl)
-        int racialExtraPerLevel = _displayService.GetRacialExtraSkillPointsPerLevel(_selectedRaceId);
-        if (racialExtraPerLevel > 0)
-            _skillPointsTotal += racialExtraPerLevel * FirstLevelSkillMultiplier;
+        // Delegate skill point calculation to CharacterCreationService
+        var creationService = new CharacterCreationService(_displayService, _gameDataService);
+        _skillPointsTotal = creationService.CalculateLevel1SkillPoints(
+            _selectedClassId, _selectedRaceId, _abilityBaseScores["INT"]);
 
         // Get class skills and unavailable skills
         _classSkillIds = _displayService.Skills.GetClassSkillIds(_selectedClassId >= 0 ? _selectedClassId : 0);
@@ -65,7 +57,7 @@ public partial class NewCharacterWizardWindow
         {
             bool isUnavailable = _unavailableSkillIds.Contains(i);
             bool isClassSkill = _classSkillIds.Contains(i);
-            int maxRanks = isClassSkill ? 4 : 2; // Level 1: class skill max = level + 3 = 4, cross-class = (level + 3) / 2 = 2
+            int maxRanks = CharacterCreationService.CalculateMaxSkillRanks(isClassSkill, characterLevel: 1);
 
             _allSkills.Add(new SkillDisplayItem
             {
@@ -241,7 +233,7 @@ public partial class NewCharacterWizardWindow
         {
             bool isClassSkill = _classSkillIds.Contains(skillId);
             int cost = isClassSkill ? 1 : 2;
-            int maxRanks = isClassSkill ? 4 : 2;
+            int maxRanks = CharacterCreationService.CalculateMaxSkillRanks(isClassSkill, characterLevel: 1);
 
             if (GetSkillPointsRemaining() >= cost)
             {

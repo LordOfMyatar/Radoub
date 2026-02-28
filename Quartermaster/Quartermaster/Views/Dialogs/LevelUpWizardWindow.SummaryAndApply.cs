@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Quartermaster.Services;
-using Radoub.Formats.Utc;
 
 namespace Quartermaster.Views.Dialogs;
 
@@ -103,107 +101,23 @@ public partial class LevelUpWizardWindow
 
     #region Apply Level-Up
 
+    // Delegates to LevelUpApplicationService for testability
     private void ApplyLevelUp()
     {
-        // Find or create class entry
-        var classEntry = _creature.ClassList.FirstOrDefault(c => c.Class == _selectedClassId);
-        if (classEntry != null)
-        {
-            classEntry.ClassLevel++;
-        }
-        else
-        {
-            _creature.ClassList.Add(new CreatureClass
-            {
-                Class = _selectedClassId,
-                ClassLevel = 1
-            });
-        }
-
-        // Add player-selected feats
-        foreach (var featId in _selectedFeats)
-        {
-            // GAINMULTIPLE feats can appear multiple times in the feat list
-            if (_displayService.CanFeatBeGainedMultipleTimes(featId) ||
-                !_creature.FeatList.Contains((ushort)featId))
-            {
-                _creature.FeatList.Add((ushort)featId);
-            }
-        }
-
-        // Add automatically granted class feats (List=3 at this class level, List=-1 at level 1)
-        var grantedFeats = _displayService.Feats.GetClassFeatsGrantedAtLevel(_selectedClassId, _newClassLevel);
-        foreach (var featId in grantedFeats)
-        {
-            if (_displayService.CanFeatBeGainedMultipleTimes(featId) ||
-                !_creature.FeatList.Contains((ushort)featId))
-            {
-                _creature.FeatList.Add((ushort)featId);
-            }
-        }
-
-        // Add skill points
-        foreach (var (skillId, points) in _skillPointsAdded)
-        {
-            while (_creature.SkillList.Count <= skillId)
-                _creature.SkillList.Add(0);
-            _creature.SkillList[skillId] = (byte)Math.Min(255, _creature.SkillList[skillId] + points);
-        }
-
-        // Add spells to creature's known spell list
-        var spellClass = _creature.ClassList.FirstOrDefault(c => c.Class == _selectedClassId);
-        if (spellClass != null)
-        {
-            foreach (var (spellLevel, spellIds) in _selectedSpellsByLevel)
-            {
-                if (spellLevel < spellClass.KnownSpells.Length)
-                {
-                    foreach (var spellId in spellIds)
-                    {
-                        if (!spellClass.KnownSpells[spellLevel].Any(s => s.Spell == (ushort)spellId))
-                        {
-                            spellClass.KnownSpells[spellLevel].Add(new KnownSpell
-                            {
-                                Spell = (ushort)spellId,
-                                SpellFlags = 0x01, // Readied
-                                SpellMetaMagic = 0x00
-                            });
-                        }
-                    }
-                }
-            }
-        }
-
-        // Record level history if enabled
-        RecordLevelHistory();
-    }
-
-    private void RecordLevelHistory()
-    {
+        var service = new LevelUpApplicationService(_displayService);
         var settings = SettingsService.Instance;
-        if (!settings.RecordLevelHistory)
-            return;
 
-        // Build this level's record
-        var record = new LevelRecord
+        service.ApplyLevelUp(_creature, new LevelUpApplicationService.LevelUpInput
         {
-            TotalLevel = _creature.ClassList.Sum(c => c.ClassLevel),
-            ClassId = _selectedClassId,
-            ClassLevel = _newClassLevel,
-            Feats = _selectedFeats.ToList(),
-            Skills = _skillPointsAdded.Where(kv => kv.Value > 0).ToDictionary(kv => kv.Key, kv => kv.Value),
-            AbilityIncrease = -1 // TODO (#1598): Track ability increases when implemented
-        };
-
-        // Get existing history or create new
-        var existingHistory = LevelHistoryService.Decode(_creature.Comment) ?? new List<LevelRecord>();
-        existingHistory.Add(record);
-
-        // Encode and update comment
-        _creature.Comment = LevelHistoryService.AppendToComment(
-            _creature.Comment,
-            existingHistory,
-            settings.LevelHistoryEncoding);
+            SelectedClassId = _selectedClassId,
+            NewClassLevel = _newClassLevel,
+            IsNewClass = _isNewClass,
+            SelectedFeats = _selectedFeats,
+            SkillPointsAdded = _skillPointsAdded,
+            SelectedSpellsByLevel = _selectedSpellsByLevel,
+            RecordHistory = settings.RecordLevelHistory,
+            HistoryEncoding = settings.LevelHistoryEncoding
+        });
     }
 
     #endregion

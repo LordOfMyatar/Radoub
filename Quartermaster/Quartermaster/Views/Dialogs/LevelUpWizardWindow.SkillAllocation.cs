@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
@@ -20,21 +19,9 @@ public partial class LevelUpWizardWindow
 
     private void PrepareStep3()
     {
-        // Calculate skill points for this level
-        int basePoints = _displayService.GetClassSkillPointBase(_selectedClassId);
-        int intMod = CreatureDisplayService.CalculateAbilityBonus(_creature.Int);
-        _skillPointsToAllocate = Math.Max(1, basePoints + intMod);
-
-        // D&D 3.5/NWN rule: level 1 gets 4x skill points (engine rule, not 2DA-configurable)
-        const int FirstLevelSkillMultiplier = 4;
-        int totalLevel = _creature.ClassList.Sum(c => c.ClassLevel) + 1;
-        if (totalLevel == 1)
-            _skillPointsToAllocate *= FirstLevelSkillMultiplier;
-
-        // Racial bonus skill points (from racialtypes.2da ExtraSkillPointsPerLvl)
-        int racialExtraPerLevel = _displayService.GetRacialExtraSkillPointsPerLevel(_creature.Race);
-        if (racialExtraPerLevel > 0)
-            _skillPointsToAllocate += totalLevel == 1 ? racialExtraPerLevel * FirstLevelSkillMultiplier : racialExtraPerLevel;
+        // Delegate skill point calculation to LevelUpApplicationService
+        var levelUpService = new LevelUpApplicationService(_displayService);
+        _skillPointsToAllocate = levelUpService.CalculateLevelUpSkillPoints(_creature, _selectedClassId);
 
         _skillPointsAdded.Clear();
 
@@ -44,7 +31,11 @@ public partial class LevelUpWizardWindow
         // Determine unavailable skills (e.g., Use Magic Device for non-Rogue classes)
         _unavailableSkillIds = _displayService.GetUnavailableSkillIds(_creature, _displayService.GetSkillCount());
 
-        string racialLabel = racialExtraPerLevel > 0 ? $" + Racial({racialExtraPerLevel})" : "";
+        // Display formula breakdown (UI-only, not business logic)
+        int basePoints = _displayService.GetClassSkillPointBase(_selectedClassId);
+        int intMod = CreatureDisplayService.CalculateAbilityBonus(_creature.Int);
+        int racialExtra = _displayService.GetRacialExtraSkillPointsPerLevel(_creature.Race);
+        string racialLabel = racialExtra > 0 ? $" + Racial({racialExtra})" : "";
         _skillPointsTotalLabel.Text = $"(Base {basePoints} + INT {intMod}{racialLabel} = {_skillPointsToAllocate})";
         UpdateSkillPointsDisplay();
 
@@ -84,20 +75,12 @@ public partial class LevelUpWizardWindow
     private int CalculateMaxRanks(bool isClassSkill)
     {
         int totalLevel = _creature.ClassList.Sum(c => c.ClassLevel) + 1;
-        return isClassSkill ? totalLevel + 3 : (totalLevel + 3) / 2;
+        return LevelUpApplicationService.CalculateMaxSkillRanks(isClassSkill, totalLevel);
     }
 
-    private int GetRemainingSkillPoints()
-    {
-        int spent = 0;
-        foreach (var (skillId, ranks) in _skillPointsAdded)
-        {
-            bool isClassSkill = _classSkillIds.Contains(skillId);
-            int cost = isClassSkill ? 1 : 2;
-            spent += ranks * cost;
-        }
-        return _skillPointsToAllocate - spent;
-    }
+    private int GetRemainingSkillPoints() =>
+        LevelUpApplicationService.CalculateRemainingSkillPoints(
+            _skillPointsToAllocate, _skillPointsAdded, _classSkillIds);
 
     private void UpdateSkillPointsDisplay()
     {

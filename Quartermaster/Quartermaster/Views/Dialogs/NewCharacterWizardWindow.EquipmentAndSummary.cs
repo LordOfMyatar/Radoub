@@ -379,83 +379,16 @@ public partial class NewCharacterWizardWindow
         }
     }
 
-    private static string SanitizeForResRef(string name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            return "";
-
-        // Lowercase, replace spaces with underscores, remove non-alphanumeric/underscore
-        var sanitized = name.ToLowerInvariant()
-            .Replace(' ', '_');
-
-        var chars = sanitized.Where(c => char.IsLetterOrDigit(c) || c == '_').ToArray();
-        var result = new string(chars);
-
-        // Enforce Aurora Engine 16-char limit
-        if (result.Length > 16)
-            result = result[..16];
-
-        // Remove trailing underscores
-        result = result.TrimEnd('_');
-
-        return result;
-    }
+    // Delegates to CharacterCreationService for testability
+    private static string SanitizeForResRef(string name) =>
+        CharacterCreationService.SanitizeForResRef(name);
 
     private HashSet<int> GetGrantedFeatIds()
     {
-        int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
-
-        var racialFeats = _displayService.Feats.GetRaceGrantedFeatIds(_selectedRaceId);
-
-        // Get class feats granted at level 1 only (not all levels).
-        // cls_feat_*.2da: List==3 + GrantedOnLevel==1, or List==-1 (granted at creation).
-        var classFeats = GetClassFeatsGrantedAtLevel(classId, 1);
-
-        var combined = new HashSet<int>(racialFeats);
-        combined.UnionWith(classFeats);
-        return combined;
+        var creationService = new CharacterCreationService(_displayService, _gameDataService);
+        return creationService.GetGrantedFeatIds(_selectedRaceId, _selectedClassId);
     }
 
-    private HashSet<int> GetClassFeatsGrantedAtLevel(int classId, int level)
-    {
-        var result = new HashSet<int>();
-        var featTable = _gameDataService.Get2DAValue("classes", classId, "FeatsTable");
-        if (string.IsNullOrEmpty(featTable) || featTable == "****")
-            return result;
-
-        for (int row = 0; row < 200; row++)
-        {
-            var featIndexStr = _gameDataService.Get2DAValue(featTable, row, "FeatIndex");
-            if (string.IsNullOrEmpty(featIndexStr) || featIndexStr == "****")
-                break;
-
-            if (!int.TryParse(featIndexStr, out int featId))
-                continue;
-
-            var listType = _gameDataService.Get2DAValue(featTable, row, "List");
-
-            // List==-1: granted at creation (level 1)
-            if (listType == "-1" && level == 1)
-            {
-                result.Add(featId);
-                continue;
-            }
-
-            // List==3: automatically granted at GrantedOnLevel
-            if (listType == "3")
-            {
-                var grantedLevelStr = _gameDataService.Get2DAValue(featTable, row, "GrantedOnLevel");
-                if (int.TryParse(grantedLevelStr, out int grantedLevel) && grantedLevel == level)
-                    result.Add(featId);
-            }
-        }
-
-        return result;
-    }
-
-    /// <summary>
-    /// Gets all feat IDs for the creature: granted + player-chosen.
-    /// </summary>
     private HashSet<int> GetAllFeatIdsForCreature()
     {
         var all = GetGrantedFeatIds();
@@ -468,16 +401,8 @@ public partial class NewCharacterWizardWindow
 
     #region Alignment Helpers
 
-    private static string GetAlignmentName(byte goodEvil, byte lawChaos)
-    {
-        string geAxis = goodEvil > 70 ? "Good" : goodEvil < 30 ? "Evil" : "Neutral";
-        string lcAxis = lawChaos > 70 ? "Lawful" : lawChaos < 30 ? "Chaotic" : "Neutral";
-
-        if (geAxis == "Neutral" && lcAxis == "Neutral")
-            return "True Neutral";
-
-        return $"{lcAxis} {geAxis}";
-    }
+    private static string GetAlignmentName(byte goodEvil, byte lawChaos) =>
+        CharacterCreationService.GetAlignmentName(goodEvil, lawChaos);
 
     #endregion
 }
