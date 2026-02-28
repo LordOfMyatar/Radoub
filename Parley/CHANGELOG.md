@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.153-alpha] - 2026-02-27
-**Branch**: `parley/issue-1554` | **PR**: #TBD
+**Branch**: `parley/issue-1554` | **PR**: #1558
 
 ### Sprint: Test Quality Improvement (Controllers + Critical Services)
 
