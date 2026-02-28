@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.16-alpha] - 2026-02-27
+**Branch**: `radoub/issue-1560` | **PR**: #TBD
+
+### TDD Audit Followup (#1560)
+
+- [ ] ItemResolutionService tested with real GameDataService (not null)
+- [ ] BaseItemTypeService tested with real 2DA loading
+
+---
+
 ## [0.1.15-alpha] - 2026-02-27
 **Branch**: `radoub/issue-1555` | **PR**: #1559
 

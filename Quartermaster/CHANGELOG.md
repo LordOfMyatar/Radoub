@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.21-alpha] - 2026-02-27
+**Branch**: `radoub/issue-1560` | **PR**: #TBD
+
+### TDD Audit Followup (#1560)
+
+- [ ] Wire NCW `OnFinishClick()` to `CharacterCreationService.BuildCreature()` — remove duplicate inline logic
+- [ ] Dedicated tests for FeatService, SkillService, SpellService, CharacterSheetService
+
+---
+
 ## [0.2.20-alpha] - 2026-02-27
 **Branch**: `quartermaster/issue-1553` | **PR**: #1556
 

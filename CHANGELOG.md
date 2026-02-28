@@ -17,6 +17,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.81] - 2026-02-27
+**Branch**: `radoub/issue-1560` | **PR**: #TBD
+
+### TDD Audit Followup: Incomplete items from Epic #1543 (#1560)
+
+- [ ] #1544 (incomplete) - Wire NCW `OnFinishClick()` to `CharacterCreationService.BuildCreature()`
+- [ ] #1546 (redirected) - Dedicated tests for FeatService, SkillService, SpellService, CharacterSheetService
+- [ ] #1551 (incomplete) - Fence ItemResolutionService tested with real GameDataService
+
+---
+
 ## [0.9.80] - 2026-02-27
 **Branch**: `radoub/issue-1555` | **PR**: #1559
 
