@@ -219,6 +219,7 @@ namespace DialogEditor.Services
 
             var hasCondition = sourcePointer != null && !string.IsNullOrEmpty(sourcePointer.ScriptAppears);
             var hasAction = !string.IsNullOrEmpty(node.ScriptAction);
+            var hasQuestTag = !string.IsNullOrEmpty(node.Quest);
 
             // Count children for collapse indicator (#251)
             var childCount = node.Pointers?.Count ?? 0;
@@ -233,7 +234,8 @@ namespace DialogEditor.Services
                 isLink: false,
                 linkTargetId: null,
                 originalNode: node,
-                originalPointer: sourcePointer
+                originalPointer: sourcePointer,
+                hasQuestTag: hasQuestTag
             );
 
             flowchartNode.ChildCount = childCount;

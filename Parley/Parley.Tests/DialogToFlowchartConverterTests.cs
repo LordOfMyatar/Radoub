@@ -444,6 +444,63 @@ namespace Parley.Tests
 
         #endregion
 
+        #region Quest Tag Tests
+
+        [Fact]
+        public void Convert_EntryWithQuestTag_SetsHasQuestTag()
+        {
+            // Arrange
+            var dialog = new Dialog();
+            var startPtr = dialog.Add();
+            startPtr!.Node!.Text.Add(0, "The orcs are attacking!");
+            startPtr.Node.Quest = "q_orc_attack";
+            dialog.AddNodeInternal(startPtr.Node, DialogNodeType.Entry);
+
+            // Act
+            var graph = _converter.Convert(dialog);
+
+            // Assert
+            var node = graph.Nodes.Values.First(n => n.NodeType == FlowchartNodeType.Entry);
+            Assert.True(node.HasQuestTag);
+        }
+
+        [Fact]
+        public void Convert_EntryWithoutQuestTag_HasQuestTagIsFalse()
+        {
+            // Arrange
+            var dialog = new Dialog();
+            var startPtr = dialog.Add();
+            startPtr!.Node!.Text.Add(0, "Hello there.");
+            dialog.AddNodeInternal(startPtr.Node, DialogNodeType.Entry);
+
+            // Act
+            var graph = _converter.Convert(dialog);
+
+            // Assert
+            var node = graph.Nodes.Values.First(n => n.NodeType == FlowchartNodeType.Entry);
+            Assert.False(node.HasQuestTag);
+        }
+
+        [Fact]
+        public void Convert_EntryWithEmptyQuestTag_HasQuestTagIsFalse()
+        {
+            // Arrange
+            var dialog = new Dialog();
+            var startPtr = dialog.Add();
+            startPtr!.Node!.Text.Add(0, "Nothing to see here.");
+            startPtr.Node.Quest = "";
+            dialog.AddNodeInternal(startPtr.Node, DialogNodeType.Entry);
+
+            // Act
+            var graph = _converter.Convert(dialog);
+
+            // Assert
+            var node = graph.Nodes.Values.First(n => n.NodeType == FlowchartNodeType.Entry);
+            Assert.False(node.HasQuestTag);
+        }
+
+        #endregion
+
         #region Static Factory Method Tests
 
         [Fact]

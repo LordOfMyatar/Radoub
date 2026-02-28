@@ -174,6 +174,9 @@
                                         <TextBlock Text="⚡" FontSize="{DynamicResource FontSizeXSmall}" Foreground="{DynamicResource ThemeWarning}"
                                                    IsVisible="{Binding HasAction}"
                                                    ToolTip.Tip="Has action script (ScriptAction)"/>
+                                        <TextBlock Text="📋" FontSize="{DynamicResource FontSizeXSmall}" Foreground="{DynamicResource ThemeSuccess}"
+                                                   IsVisible="{Binding HasQuestTag}"
+                                                   ToolTip.Tip="Has quest tag assigned"/>
                                         <!-- Collapse indicator - shows when node has children -->
                                         <TextBlock x:Name="CollapseIndicator"
                                                    FontSize="{DynamicResource FontSizeXSmall}"

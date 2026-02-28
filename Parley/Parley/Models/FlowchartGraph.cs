@@ -59,6 +59,11 @@ namespace DialogEditor.Models
         public bool HasAction { get; }
 
         /// <summary>
+        /// True if this node has a quest tag assigned (Quest field is not empty)
+        /// </summary>
+        public bool HasQuestTag { get; }
+
+        /// <summary>
         /// True if this is a link node (points to another node rather than containing content)
         /// </summary>
         public bool IsLink { get; }
@@ -112,7 +117,8 @@ namespace DialogEditor.Models
             bool isLink = false,
             string? linkTargetId = null,
             DialogNode? originalNode = null,
-            DialogPtr? originalPointer = null)
+            DialogPtr? originalPointer = null,
+            bool hasQuestTag = false)
         {
             Id = id ?? throw new ArgumentNullException(nameof(id));
             NodeType = nodeType;
@@ -120,6 +126,7 @@ namespace DialogEditor.Models
             Speaker = speaker ?? string.Empty;
             HasCondition = hasCondition;
             HasAction = hasAction;
+            HasQuestTag = hasQuestTag;
             IsLink = isLink;
             LinkTargetId = linkTargetId;
             OriginalNode = originalNode;
