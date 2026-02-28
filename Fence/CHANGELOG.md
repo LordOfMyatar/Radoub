@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.16-alpha] - 2026-02-27
+**Branch**: `radoub/issue-1560` | **PR**: #1561
+
+### TDD Audit Followup (#1560)
+
+- [x] BaseItemTypeService tested with MockGameDataService — 2DA loading, TLK resolution, garbage filtering, unconfigured fallback (14 new tests)
+- [x] ItemResolutionService tested with MockGameDataService — configured vs unconfigured paths, caching, resolution (13 new tests)
+
+---
+
 ## [0.1.15-alpha] - 2026-02-27
 **Branch**: `radoub/issue-1555` | **PR**: #1559
 
