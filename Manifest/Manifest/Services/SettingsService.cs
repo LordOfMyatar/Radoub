@@ -29,18 +29,6 @@ namespace Manifest.Services
             }
         }
 
-        /// <summary>
-        /// Reset for testing - allows re-initialization with different settings.
-        /// Only for use in test teardown.
-        /// </summary>
-        public static void ResetForTesting()
-        {
-            lock (_lock)
-            {
-                _instance = null;
-            }
-        }
-
         protected override string ToolName => "Manifest";
         protected override string SettingsEnvironmentVariable => "MANIFEST_SETTINGS_DIR";
         protected override string SettingsFileName => "ManifestSettings.json";

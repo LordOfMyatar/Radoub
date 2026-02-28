@@ -34,15 +34,4 @@ public static class TlkService
         }
     }
 
-    /// <summary>
-    /// Reset for testing - allows re-initialization.
-    /// </summary>
-    public static void ResetForTesting()
-    {
-        lock (_lock)
-        {
-            _instance?.Dispose();
-            _instance = null;
-        }
-    }
 }

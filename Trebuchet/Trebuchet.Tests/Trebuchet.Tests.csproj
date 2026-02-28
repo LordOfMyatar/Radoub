@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Trebuchet\Trebuchet.csproj" />
+    <ProjectReference Include="..\..\Radoub.TestUtilities\Radoub.TestUtilities\Radoub.TestUtilities.csproj" />
   </ItemGroup>
 
 </Project>

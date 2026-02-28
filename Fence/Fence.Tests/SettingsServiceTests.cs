@@ -1,4 +1,5 @@
 using MerchantEditor.Services;
+using Radoub.TestUtilities.Helpers;
 
 namespace Fence.Tests;
 
@@ -12,12 +13,16 @@ public class SettingsServiceTests : IDisposable
         // Create isolated temp directory for each test
         _tempDir = Path.Combine(Path.GetTempPath(), "FenceTests", Guid.NewGuid().ToString());
         Directory.CreateDirectory(_tempDir);
-        SettingsService.ConfigureForTesting(_tempDir);
+
+        // Reset singleton and configure via environment variable
+        SingletonTestHelper.ResetSingleton<SettingsService>();
+        SingletonTestHelper.ConfigureSettingsDirectory("FENCE_SETTINGS_DIR", _tempDir);
     }
 
     public void Dispose()
     {
-        SettingsService.ResetForTesting();
+        SingletonTestHelper.ResetSingleton<SettingsService>();
+        SingletonTestHelper.ConfigureSettingsDirectory("FENCE_SETTINGS_DIR", null);
         try
         {
             if (Directory.Exists(_tempDir))

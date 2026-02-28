@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using Manifest.Services;
 using Radoub.Formats.Logging;
+using Radoub.TestUtilities.Helpers;
 using Xunit;
 
 namespace Manifest.Tests;
@@ -12,29 +13,23 @@ namespace Manifest.Tests;
 public class SettingsServiceTests : IDisposable
 {
     private readonly string _testSettingsDir;
-    private readonly string? _originalEnvValue;
 
     public SettingsServiceTests()
     {
-        // Save original env value
-        _originalEnvValue = Environment.GetEnvironmentVariable("MANIFEST_SETTINGS_DIR");
-
         // Create isolated temp directory for each test run
         _testSettingsDir = Path.Combine(Path.GetTempPath(), $"Manifest_Tests_{Guid.NewGuid():N}");
         Directory.CreateDirectory(_testSettingsDir);
 
-        // Reset and configure for testing BEFORE first Instance access
-        SettingsService.ResetForTesting();
-        Environment.SetEnvironmentVariable("MANIFEST_SETTINGS_DIR", _testSettingsDir);
+        // Reset singleton and configure via environment variable
+        SingletonTestHelper.ResetSingleton<SettingsService>();
+        SingletonTestHelper.ConfigureSettingsDirectory("MANIFEST_SETTINGS_DIR", _testSettingsDir);
     }
 
     public void Dispose()
     {
-        // Reset singleton so next test gets fresh instance
-        SettingsService.ResetForTesting();
-
-        // Restore original env value
-        Environment.SetEnvironmentVariable("MANIFEST_SETTINGS_DIR", _originalEnvValue);
+        // Reset singleton and clear env var
+        SingletonTestHelper.ResetSingleton<SettingsService>();
+        SingletonTestHelper.ConfigureSettingsDirectory("MANIFEST_SETTINGS_DIR", null);
 
         // Clean up temp directory
         try
@@ -73,7 +68,7 @@ public class SettingsServiceTests : IDisposable
         File.WriteAllText(settingsFile, "{ invalid json [[[");
 
         // Act - reset and reload
-        SettingsService.ResetForTesting();
+        SingletonTestHelper.ResetSingleton<SettingsService>();
         var service = SettingsService.Instance;
 
         // Assert - should have default values
@@ -98,7 +93,7 @@ public class SettingsServiceTests : IDisposable
         service.SpellCheckEnabled = false;
 
         // Act - reset and reload
-        SettingsService.ResetForTesting();
+        SingletonTestHelper.ResetSingleton<SettingsService>();
         var reloaded = SettingsService.Instance;
 
         // Assert
@@ -174,7 +169,7 @@ public class SettingsServiceTests : IDisposable
         File.Delete(tempFile);
 
         // Act - reset and reload (cleanup happens on load)
-        SettingsService.ResetForTesting();
+        SingletonTestHelper.ResetSingleton<SettingsService>();
         var reloaded = SettingsService.Instance;
 
         // Assert - missing file should be removed
