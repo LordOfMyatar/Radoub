@@ -15,9 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Visual & UX Polish
 
-- [ ] #1165 - FlowView should show symbols for quest tags
-- [ ] #1539 - Hardcoded theme values (colors, fonts, brushes)
-- [ ] #1375 - UndoMenuItem_Exists fails intermittently
+- [x] #1165 - FlowView shows 📋 symbol for nodes with quest tags
+- [x] #1539 - Replace hardcoded Colors/Brushes with theme-aware BrushManager in browser windows, RenameDialog, AboutWindow, Manifest views
+- [x] #1375 - Fix UndoMenuItem_Exists/RedoMenuItem_Exists intermittent failure (search desktop for Avalonia popup menus with retries)
 
 ---
 

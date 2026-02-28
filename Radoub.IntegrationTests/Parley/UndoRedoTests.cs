@@ -23,10 +23,11 @@ public class UndoRedoTests : ParleyTestBase
 
         // Act - Open Edit menu
         ClickMenu("Edit");
-        Thread.Sleep(200);
+        Thread.Sleep(300);
 
-        // Find Undo menu item
-        var undoItem = MainWindow!.FindFirstDescendant(cf => cf.ByName("Undo"));
+        // Find Undo menu item - search desktop because Avalonia renders
+        // dropdown menus as separate popup windows outside MainWindow's tree
+        var undoItem = FindMenuItemOnDesktop("Undo");
 
         // Assert
         Assert.NotNull(undoItem);
@@ -43,13 +44,45 @@ public class UndoRedoTests : ParleyTestBase
 
         // Act - Open Edit menu
         ClickMenu("Edit");
-        Thread.Sleep(200);
+        Thread.Sleep(300);
 
-        // Find Redo menu item
-        var redoItem = MainWindow!.FindFirstDescendant(cf => cf.ByName("Redo"));
+        // Find Redo menu item - search desktop because Avalonia renders
+        // dropdown menus as separate popup windows outside MainWindow's tree
+        var redoItem = FindMenuItemOnDesktop("Redo");
 
         // Assert
         Assert.NotNull(redoItem);
+    }
+
+    /// <summary>
+    /// Searches the desktop for a menu item by name with retries.
+    /// Avalonia renders dropdown menus as separate popup windows outside MainWindow's
+    /// automation tree, so MainWindow.FindFirstDescendant() won't find them reliably.
+    /// Falls back to MainWindow search if desktop search fails.
+    /// </summary>
+    private FlaUI.Core.AutomationElements.AutomationElement? FindMenuItemOnDesktop(string itemName)
+    {
+        const int maxRetries = 5;
+        const int retryDelayMs = 300;
+
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            // Search desktop first (where Avalonia popup menus live)
+            var desktop = Automation?.GetDesktop();
+            if (desktop != null)
+            {
+                var item = desktop.FindFirstDescendant(cf => cf.ByName(itemName));
+                if (item != null) return item;
+            }
+
+            // Fallback to MainWindow
+            var fallback = MainWindow?.FindFirstDescendant(cf => cf.ByName(itemName));
+            if (fallback != null) return fallback;
+
+            Thread.Sleep(retryDelayMs);
+        }
+
+        return null;
     }
 
     [Fact]
