@@ -131,6 +131,10 @@ namespace Parley.Tests.Mocks
         // Spell Check settings
         public bool SpellCheckEnabled { get; set; } = false;
 
+        // Recent creature tags (#1244)
+        public List<string> RecentCreatureTags { get; private set; } = new();
+        public void SetRecentCreatureTags(List<string> tags) => RecentCreatureTags = tags ?? new();
+
         protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
