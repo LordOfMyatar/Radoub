@@ -33,35 +33,35 @@ namespace Radoub.UI.Controls
         /// </summary>
         public static readonly StyledProperty<IBrush> StandardTokenBrushProperty =
             AvaloniaProperty.Register<TokenTextBlock, IBrush>(nameof(StandardTokenBrush),
-                new SolidColorBrush(Color.Parse("#00BCD4"))); // Cyan
+                new SolidColorBrush(Color.Parse("#00BCD4"))); // Cyan // theme-ok
 
         /// <summary>
         /// Color for CUSTOM tokens.
         /// </summary>
         public static readonly StyledProperty<IBrush> CustomTokenBrushProperty =
             AvaloniaProperty.Register<TokenTextBlock, IBrush>(nameof(CustomTokenBrush),
-                new SolidColorBrush(Color.Parse("#9C27B0"))); // Purple
+                new SolidColorBrush(Color.Parse("#9C27B0"))); // Purple // theme-ok
 
         /// <summary>
         /// Color for Action highlight tokens.
         /// </summary>
         public static readonly StyledProperty<IBrush> ActionTokenBrushProperty =
             AvaloniaProperty.Register<TokenTextBlock, IBrush>(nameof(ActionTokenBrush),
-                new SolidColorBrush(Color.Parse("#00FF00"))); // Green
+                new SolidColorBrush(Color.Parse("#00FF00"))); // Green // theme-ok
 
         /// <summary>
         /// Color for Check highlight tokens.
         /// </summary>
         public static readonly StyledProperty<IBrush> CheckTokenBrushProperty =
             AvaloniaProperty.Register<TokenTextBlock, IBrush>(nameof(CheckTokenBrush),
-                new SolidColorBrush(Color.Parse("#FF0000"))); // Red
+                new SolidColorBrush(Color.Parse("#FF0000"))); // Red // theme-ok
 
         /// <summary>
         /// Color for Highlight tokens.
         /// </summary>
         public static readonly StyledProperty<IBrush> HighlightTokenBrushProperty =
             AvaloniaProperty.Register<TokenTextBlock, IBrush>(nameof(HighlightTokenBrush),
-                new SolidColorBrush(Color.Parse("#0080FF"))); // Blue
+                new SolidColorBrush(Color.Parse("#0080FF"))); // Blue // theme-ok
 
         public string? TokenText
         {
@@ -191,7 +191,7 @@ namespace Radoub.UI.Controls
 
                 ColorToken color => new Run(color.DisplayText)
                 {
-                    Foreground = new SolidColorBrush(Color.FromRgb(color.Red, color.Green, color.Blue))
+                    Foreground = new SolidColorBrush(Color.FromRgb(color.Red, color.Green, color.Blue)) // theme-ok
                 },
 
                 UserColorToken userColor => CreateUserColorRun(userColor),

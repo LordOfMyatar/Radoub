@@ -66,7 +66,7 @@ public partial class ThemeManager
         // Background surface colors
         if (!string.IsNullOrEmpty(colors.Background))
         {
-            var bgColor = Color.Parse(colors.Background);
+            var bgColor = Color.Parse(colors.Background); // theme-ok
             resources["SystemChromeMediumColor"] = bgColor;
             resources["SystemChromeMediumLowColor"] = bgColor;
             resources["SystemChromeHighColor"] = bgColor;
@@ -76,7 +76,7 @@ public partial class ThemeManager
         // Sidebar/Alt surface colors
         if (!string.IsNullOrEmpty(colors.Sidebar))
         {
-            var sidebarColor = Color.Parse(colors.Sidebar);
+            var sidebarColor = Color.Parse(colors.Sidebar); // theme-ok
             resources["SystemAltMediumColor"] = sidebarColor;
             resources["SystemAltHighColor"] = sidebarColor;
             resources["SystemChromeLowColor"] = sidebarColor;
@@ -85,10 +85,10 @@ public partial class ThemeManager
         // Text color primitives — Fluent derives all control foregrounds from these
         if (!string.IsNullOrEmpty(colors.Text))
         {
-            var textColor = Color.Parse(colors.Text);
+            var textColor = Color.Parse(colors.Text); // theme-ok
             var mutedTextColor = !string.IsNullOrEmpty(colors.TextMuted)
-                ? Color.Parse(colors.TextMuted)
-                : Color.FromArgb((byte)(textColor.A * 0.7), textColor.R, textColor.G, textColor.B);
+                ? Color.Parse(colors.TextMuted) // theme-ok
+                : Color.FromArgb((byte)(textColor.A * 0.7), textColor.R, textColor.G, textColor.B); // theme-ok
 
             resources["SystemBaseHighColor"] = textColor;
             resources["SystemBaseMediumHighColor"] = textColor;
@@ -99,7 +99,7 @@ public partial class ThemeManager
         // Accent color — the ONE knob for accent-colored UI elements
         if (!string.IsNullOrEmpty(colors.Accent))
         {
-            var accentColor = Color.Parse(colors.Accent);
+            var accentColor = Color.Parse(colors.Accent); // theme-ok
             resources["SystemAccentColor"] = accentColor;
             resources["SystemAccentColorLight1"] = accentColor;
             resources["SystemAccentColorLight2"] = accentColor;
@@ -112,7 +112,7 @@ public partial class ThemeManager
         // Selection color primitives
         if (!string.IsNullOrEmpty(colors.Selection))
         {
-            var selColor = Color.Parse(colors.Selection);
+            var selColor = Color.Parse(colors.Selection); // theme-ok
             resources["SystemListLowColor"] = selColor;
             resources["SystemListMediumColor"] = selColor;
         }
@@ -120,7 +120,7 @@ public partial class ThemeManager
         // Border/disabled color primitives
         if (!string.IsNullOrEmpty(colors.Border))
         {
-            var borderColor = Color.Parse(colors.Border);
+            var borderColor = Color.Parse(colors.Border); // theme-ok
             resources["SystemBaseLowColor"] = borderColor;
             resources["SystemChromeDisabledLowColor"] = borderColor;
             resources["SystemChromeDisabledHighColor"] = borderColor;
@@ -139,13 +139,13 @@ public partial class ThemeManager
         // Background brushes (used by panels, flowchart, toolbars)
         if (!string.IsNullOrEmpty(colors.Background))
         {
-            var bgBrush = new SolidColorBrush(Color.Parse(colors.Background));
+            var bgBrush = new SolidColorBrush(Color.Parse(colors.Background)); // theme-ok
             resources["SystemControlBackgroundChromeMediumBrush"] = bgBrush;
             resources["SystemControlBackgroundChromeMediumLowBrush"] = bgBrush;
         }
         if (!string.IsNullOrEmpty(colors.Sidebar))
         {
-            var sidebarBrush = new SolidColorBrush(Color.Parse(colors.Sidebar));
+            var sidebarBrush = new SolidColorBrush(Color.Parse(colors.Sidebar)); // theme-ok
             resources["SystemControlBackgroundAltHighBrush"] = sidebarBrush;
         }
 
@@ -154,10 +154,10 @@ public partial class ThemeManager
         // BaseMediumLowBrush (285 uses): borders, dividers, de-emphasized text — use Border color
         if (!string.IsNullOrEmpty(colors.Text))
         {
-            var textColor = Color.Parse(colors.Text);
+            var textColor = Color.Parse(colors.Text); // theme-ok
             var mutedTextColor = !string.IsNullOrEmpty(colors.TextMuted)
-                ? Color.Parse(colors.TextMuted)
-                : Color.FromArgb((byte)(textColor.A * 0.7), textColor.R, textColor.G, textColor.B);
+                ? Color.Parse(colors.TextMuted) // theme-ok
+                : Color.FromArgb((byte)(textColor.A * 0.7), textColor.R, textColor.G, textColor.B); // theme-ok
 
             resources["SystemControlForegroundBaseHighBrush"] = new SolidColorBrush(textColor);
             resources["SystemControlForegroundBaseMediumHighBrush"] = new SolidColorBrush(textColor);
@@ -167,7 +167,7 @@ public partial class ThemeManager
             // otherwise fall back to muted text. This prevents borders from being invisible or
             // text-on-borders from being unreadable across themes.
             var borderColor = !string.IsNullOrEmpty(colors.Border)
-                ? Color.Parse(colors.Border)
+                ? Color.Parse(colors.Border) // theme-ok
                 : mutedTextColor;
             resources["SystemControlForegroundBaseMediumLowBrush"] = new SolidColorBrush(borderColor);
         }
@@ -175,14 +175,14 @@ public partial class ThemeManager
         // Selection/highlight brush
         if (!string.IsNullOrEmpty(colors.Selection))
         {
-            resources["SystemControlHighlightListLowBrush"] = new SolidColorBrush(Color.Parse(colors.Selection));
+            resources["SystemControlHighlightListLowBrush"] = new SolidColorBrush(Color.Parse(colors.Selection)); // theme-ok
         }
 
         // Border/low-emphasis brush
         if (!string.IsNullOrEmpty(colors.Border))
         {
-            resources["SystemControlBackgroundBaseLowBrush"] = new SolidColorBrush(Color.Parse(colors.Border));
-            resources["SystemControlForegroundBaseLowBrush"] = new SolidColorBrush(Color.Parse(colors.Border));
+            resources["SystemControlBackgroundBaseLowBrush"] = new SolidColorBrush(Color.Parse(colors.Border)); // theme-ok
+            resources["SystemControlForegroundBaseLowBrush"] = new SolidColorBrush(Color.Parse(colors.Border)); // theme-ok
         }
 
         // =================================================================
@@ -194,13 +194,13 @@ public partial class ThemeManager
         // Background brushes for explicit AXAML use
         if (!string.IsNullOrEmpty(colors.Background))
         {
-            var bgBrush = new SolidColorBrush(Color.Parse(colors.Background));
+            var bgBrush = new SolidColorBrush(Color.Parse(colors.Background)); // theme-ok
             resources["ThemeBackground"] = bgBrush;
             resources["ThemeBackgroundBrush"] = bgBrush; // Alias (used by QM/Fence SettingsWindow)
         }
         if (!string.IsNullOrEmpty(colors.Sidebar))
         {
-            var sidebarBrush = new SolidColorBrush(Color.Parse(colors.Sidebar));
+            var sidebarBrush = new SolidColorBrush(Color.Parse(colors.Sidebar)); // theme-ok
             resources["ThemeBackgroundAlt"] = sidebarBrush;
             resources["ThemeSidebar"] = sidebarBrush; // Alias used by browser panels (#1347)
         }
@@ -209,46 +209,46 @@ public partial class ThemeManager
         if (!string.IsNullOrEmpty(colors.Text))
         {
             var mutedTextColor = !string.IsNullOrEmpty(colors.TextMuted)
-                ? Color.Parse(colors.TextMuted)
-                : Color.FromArgb((byte)(Color.Parse(colors.Text).A * 0.7),
-                    Color.Parse(colors.Text).R, Color.Parse(colors.Text).G, Color.Parse(colors.Text).B);
+                ? Color.Parse(colors.TextMuted) // theme-ok
+                : Color.FromArgb((byte)(Color.Parse(colors.Text).A * 0.7), // theme-ok
+                    Color.Parse(colors.Text).R, Color.Parse(colors.Text).G, Color.Parse(colors.Text).B); // theme-ok
             resources["ThemeTextMuted"] = new SolidColorBrush(mutedTextColor);
         }
 
         // Title bar colors (#1089)
         if (!string.IsNullOrEmpty(colors.TitleBar))
-            resources["ThemeTitleBar"] = new SolidColorBrush(Color.Parse(colors.TitleBar));
+            resources["ThemeTitleBar"] = new SolidColorBrush(Color.Parse(colors.TitleBar)); // theme-ok
         if (!string.IsNullOrEmpty(colors.TitleBarForeground))
-            resources["ThemeTitleBarForeground"] = new SolidColorBrush(Color.Parse(colors.TitleBarForeground));
+            resources["ThemeTitleBarForeground"] = new SolidColorBrush(Color.Parse(colors.TitleBarForeground)); // theme-ok
 
         // Accent brush for explicit AXAML use (Trebuchet header bar)
         if (!string.IsNullOrEmpty(colors.Accent))
-            resources["ThemeAccentBrush"] = new SolidColorBrush(Color.Parse(colors.Accent));
+            resources["ThemeAccentBrush"] = new SolidColorBrush(Color.Parse(colors.Accent)); // theme-ok
 
         // Border brush for explicit AXAML use
         if (!string.IsNullOrEmpty(colors.Border))
-            resources["ThemeBorderBrush"] = new SolidColorBrush(Color.Parse(colors.Border));
+            resources["ThemeBorderBrush"] = new SolidColorBrush(Color.Parse(colors.Border)); // theme-ok
 
         // Semantic colors — used by BrushManager for colorblind accessibility
         if (!string.IsNullOrEmpty(colors.Success))
-            resources["ThemeSuccess"] = new SolidColorBrush(Color.Parse(colors.Success));
+            resources["ThemeSuccess"] = new SolidColorBrush(Color.Parse(colors.Success)); // theme-ok
         if (!string.IsNullOrEmpty(colors.Warning))
-            resources["ThemeWarning"] = new SolidColorBrush(Color.Parse(colors.Warning));
+            resources["ThemeWarning"] = new SolidColorBrush(Color.Parse(colors.Warning)); // theme-ok
         if (!string.IsNullOrEmpty(colors.Error))
-            resources["ThemeError"] = new SolidColorBrush(Color.Parse(colors.Error));
+            resources["ThemeError"] = new SolidColorBrush(Color.Parse(colors.Error)); // theme-ok
         if (!string.IsNullOrEmpty(colors.Info))
         {
-            var infoBrush = new SolidColorBrush(Color.Parse(colors.Info));
+            var infoBrush = new SolidColorBrush(Color.Parse(colors.Info)); // theme-ok
             resources["ThemeInfo"] = infoBrush;
             resources["ThemeInfoBrush"] = infoBrush; // Alias for Trebuchet
         }
         if (!string.IsNullOrEmpty(colors.Disabled))
-            resources["ThemeDisabled"] = new SolidColorBrush(Color.Parse(colors.Disabled));
+            resources["ThemeDisabled"] = new SolidColorBrush(Color.Parse(colors.Disabled)); // theme-ok
 
         // Button colors — only AccentButton (Fluent handles regular Button from accent primitives)
         if (!string.IsNullOrEmpty(colors.ButtonPrimary))
         {
-            var btnPrimaryBrush = new SolidColorBrush(Color.Parse(colors.ButtonPrimary));
+            var btnPrimaryBrush = new SolidColorBrush(Color.Parse(colors.ButtonPrimary)); // theme-ok
             resources["AccentButtonBackground"] = btnPrimaryBrush;
             resources["AccentButtonBackgroundPointerOver"] = btnPrimaryBrush;
             resources["AccentButtonBackgroundPressed"] = btnPrimaryBrush;
@@ -256,14 +256,14 @@ public partial class ThemeManager
         }
         if (!string.IsNullOrEmpty(colors.ButtonText))
         {
-            var btnTextBrush = new SolidColorBrush(Color.Parse(colors.ButtonText));
+            var btnTextBrush = new SolidColorBrush(Color.Parse(colors.ButtonText)); // theme-ok
             resources["AccentButtonForeground"] = btnTextBrush;
             resources["AccentButtonForegroundPointerOver"] = btnTextBrush;
             resources["AccentButtonForegroundPressed"] = btnTextBrush;
             resources["ThemeAccentForeground"] = btnTextBrush;
         }
         if (!string.IsNullOrEmpty(colors.ButtonSecondary))
-            resources["ThemeButtonSecondary"] = new SolidColorBrush(Color.Parse(colors.ButtonSecondary));
+            resources["ThemeButtonSecondary"] = new SolidColorBrush(Color.Parse(colors.ButtonSecondary)); // theme-ok
 
         // Parley-specific: tree node colors, edit mode borders
         if (!string.IsNullOrEmpty(colors.TreeReply))
@@ -271,13 +271,13 @@ public partial class ThemeManager
         if (!string.IsNullOrEmpty(colors.TreeEntry))
             resources["ThemeOwnerColor"] = colors.TreeEntry;
         if (!string.IsNullOrEmpty(colors.EditModeBorder))
-            resources["ThemeEditModeBorder"] = new SolidColorBrush(Color.Parse(colors.EditModeBorder));
+            resources["ThemeEditModeBorder"] = new SolidColorBrush(Color.Parse(colors.EditModeBorder)); // theme-ok
         if (!string.IsNullOrEmpty(colors.EditModeUnsaved))
-            resources["ThemeEditModeUnsaved"] = new SolidColorBrush(Color.Parse(colors.EditModeUnsaved));
+            resources["ThemeEditModeUnsaved"] = new SolidColorBrush(Color.Parse(colors.EditModeUnsaved)); // theme-ok
         if (!string.IsNullOrEmpty(colors.EditModeSaved))
-            resources["ThemeEditModeSaved"] = new SolidColorBrush(Color.Parse(colors.EditModeSaved));
+            resources["ThemeEditModeSaved"] = new SolidColorBrush(Color.Parse(colors.EditModeSaved)); // theme-ok
         if (!string.IsNullOrEmpty(colors.AutoTrimBorder))
-            resources["ThemeAutoTrimBorder"] = new SolidColorBrush(Color.Parse(colors.AutoTrimBorder));
+            resources["ThemeAutoTrimBorder"] = new SolidColorBrush(Color.Parse(colors.AutoTrimBorder)); // theme-ok
 
         // Bulk-generate Theme{PropertyName} brushes from all ThemeColors properties
         // This lets AXAML use {DynamicResource ThemeBackground}, {DynamicResource ThemeAccent}, etc.
@@ -289,7 +289,7 @@ public partial class ThemeManager
             {
                 try
                 {
-                    resources[$"Theme{prop.Name}"] = new SolidColorBrush(Color.Parse(colorValue));
+                    resources[$"Theme{prop.Name}"] = new SolidColorBrush(Color.Parse(colorValue)); // theme-ok
                 }
                 catch (Exception ex)
                 {
