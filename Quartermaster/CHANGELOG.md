@@ -15,8 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Metamagic Feats & Spell Variants (#638, #1156)
 
-- [ ] #638 - Meta-magic feats display with adjusted spell levels
-- [ ] #1156 - Metamagic UI — display metamagic variants as separate spells
+- [x] #638 - Meta-magic feats display: MetaMagicExpander shows creature's metamagic feats with level costs, loaded from feat.2da/TLK
+- [x] #1156 - Metamagic variant spells: each metamagic feat generates variant rows in spell list with effective levels; memorization stores SpellMetaMagic flag; counts tracked per (spellId, metamagic) tuple
+- [x] 34 new metamagic tests (level costs, effective levels, feat detection, flag storage, count keys)
 
 ---
 

@@ -37,6 +37,9 @@ public partial class SpellsPanel
         if (_isLoading || _currentCreature == null) return;
         if (_selectedClassIndex >= _currentCreature.ClassList.Count) return;
 
+        // Metamagic variants can't toggle Known — only base spells
+        if (spell.IsMetamagicVariant) return;
+
         var classEntry = _currentCreature.ClassList[_selectedClassIndex];
 
         if (isNowKnown)
@@ -68,19 +71,32 @@ public partial class SpellsPanel
                 knownList.Remove(existing);
             }
 
-            // Also remove from memorized if it was memorized
-            if (_memorizedSpellCounts.ContainsKey(spell.SpellId))
+            // Remove all memorizations of this spell (base + all metamagic variants)
+            var keysToRemove = _memorizedSpellCounts.Keys
+                .Where(k => k.spellId == spell.SpellId).ToList();
+            foreach (var key in keysToRemove)
             {
-                // Remove all memorizations of this spell
-                _memorizedSpellCounts.Remove(spell.SpellId);
-                var memorizedList = classEntry.MemorizedSpells[spell.SpellLevel];
-                memorizedList.RemoveAll(s => s.Spell == spell.SpellId);
-                spell.MemorizedCount = 0;
+                _memorizedSpellCounts.Remove(key);
             }
+            // Remove from all memorized levels (metamagic spells stored at base level)
+            for (int level = 0; level <= 9; level++)
+            {
+                classEntry.MemorizedSpells[level].RemoveAll(s => s.Spell == spell.SpellId);
+            }
+            spell.MemorizedCount = 0;
         }
 
-        // Update visual status
+        // Update visual status for the base spell
         UpdateSpellVisualStatus(spell);
+
+        // Update all metamagic variant rows for this spell
+        foreach (var variant in _allSpells.Where(s => s.SpellId == spell.SpellId && s.IsMetamagicVariant))
+        {
+            variant.IsKnown = isNowKnown;
+            if (!isNowKnown)
+                variant.MemorizedCount = 0;
+            UpdateSpellVisualStatus(variant);
+        }
 
         // Notify that spells changed
         SpellsChanged?.Invoke(this, EventArgs.Empty);
@@ -101,31 +117,34 @@ public partial class SpellsPanel
         if (_selectedClassIndex >= _currentCreature.ClassList.Count) return;
 
         var classEntry = _currentCreature.ClassList[_selectedClassIndex];
-        var memorizedList = classEntry.MemorizedSpells[spell.SpellLevel];
-        int currentCount = (_memorizedSpellCounts.TryGetValue(spell.SpellId, out var count) ? count : 0);
+        // Metamagic spells are stored at the BASE spell level in the GFF (NWN convention)
+        var memorizedList = classEntry.MemorizedSpells[spell.BaseSpellLevel];
+        var countKey = (spell.SpellId, spell.MetamagicFlag);
+        int currentCount = (_memorizedSpellCounts.TryGetValue(countKey, out var count) ? count : 0);
 
         if (delta > 0)
         {
-            // Add memorizations
+            // Add memorizations with the metamagic flag
             for (int i = 0; i < delta; i++)
             {
                 memorizedList.Add(new MemorizedSpell
                 {
                     Spell = (ushort)spell.SpellId,
                     SpellFlags = 0x01,
-                    SpellMetaMagic = 0,
+                    SpellMetaMagic = spell.MetamagicFlag,
                     Ready = 1
                 });
             }
-            _memorizedSpellCounts[spell.SpellId] = currentCount + delta;
+            _memorizedSpellCounts[countKey] = currentCount + delta;
         }
         else if (delta < 0)
         {
-            // Remove memorizations
+            // Remove memorizations matching this spell + metamagic combination
             int toRemove = Math.Min(-delta, currentCount);
             for (int i = 0; i < toRemove; i++)
             {
-                var existing = memorizedList.FirstOrDefault(s => s.Spell == spell.SpellId);
+                var existing = memorizedList.FirstOrDefault(s =>
+                    s.Spell == spell.SpellId && s.SpellMetaMagic == spell.MetamagicFlag);
                 if (existing != null)
                 {
                     memorizedList.Remove(existing);
@@ -134,13 +153,13 @@ public partial class SpellsPanel
 
             int newCount = currentCount - toRemove;
             if (newCount <= 0)
-                _memorizedSpellCounts.Remove(spell.SpellId);
+                _memorizedSpellCounts.Remove(countKey);
             else
-                _memorizedSpellCounts[spell.SpellId] = newCount;
+                _memorizedSpellCounts[countKey] = newCount;
         }
 
         // Update the view model
-        spell.MemorizedCount = _memorizedSpellCounts.TryGetValue(spell.SpellId, out var updatedCount) ? updatedCount : 0;
+        spell.MemorizedCount = _memorizedSpellCounts.TryGetValue(countKey, out var updatedCount) ? updatedCount : 0;
 
         // Update visual status
         UpdateSpellVisualStatus(spell);
@@ -157,6 +176,7 @@ public partial class SpellsPanel
         // Update status based on new known/memorized state
         bool isKnown = spell.IsKnown;
         int memorizedCount = spell.MemorizedCount;
+        bool isVariant = spell.IsMetamagicVariant;
 
         if (spell.IsBlocked)
         {
@@ -166,9 +186,29 @@ public partial class SpellsPanel
             spell.TextOpacity = 0.5;
             spell.MemorizedCountColor = BrushManager.GetDisabledBrush(this);
         }
+        else if (isVariant && memorizedCount > 0)
+        {
+            // Metamagic variant with memorizations
+            spell.StatusText = memorizedCount > 1 ? $"M×{memorizedCount}" : "Memorized";
+            spell.StatusColor = BrushManager.GetWarningBrush(this);
+            spell.RowBackground = GetTransparentRowBackground(spell.StatusColor, 20);
+            spell.TextOpacity = 0.85;
+            spell.MemorizedCountColor = BrushManager.GetWarningBrush(this);
+        }
+        else if (isVariant)
+        {
+            // Metamagic variant without memorizations
+            spell.StatusText = "";
+            spell.StatusColor = Brushes.Transparent;
+            spell.RowBackground = Brushes.Transparent;
+            spell.TextOpacity = 0.55;
+            spell.MemorizedCountColor = isKnown && !spell.IsSpontaneousCaster
+                ? BrushManager.GetInfoBrush(this)
+                : BrushManager.GetDisabledBrush(this);
+        }
         else if (isKnown && memorizedCount > 0)
         {
-            // Show memorization count if > 1
+            // Base spell: known and memorized
             spell.StatusText = memorizedCount > 1 ? $"K + M×{memorizedCount}" : "K + M";
             spell.StatusColor = BrushManager.GetWarningBrush(this);
             spell.RowBackground = GetTransparentRowBackground(spell.StatusColor, 30);
@@ -177,7 +217,7 @@ public partial class SpellsPanel
         }
         else if (memorizedCount > 0)
         {
-            // Memorized but not known (edge case - shouldn't happen normally)
+            // Memorized but not known (edge case)
             spell.StatusText = memorizedCount > 1 ? $"M×{memorizedCount}" : "Memorized";
             spell.StatusColor = BrushManager.GetWarningBrush(this);
             spell.RowBackground = GetTransparentRowBackground(spell.StatusColor, 30);
@@ -190,7 +230,6 @@ public partial class SpellsPanel
             spell.StatusColor = BrushManager.GetSuccessBrush(this);
             spell.RowBackground = GetTransparentRowBackground(spell.StatusColor, 30);
             spell.TextOpacity = 1.0;
-            // Use visible foreground for "0" when spell can be memorized
             if (!spell.IsSpontaneousCaster)
             {
                 spell.MemorizedCountColor = BrushManager.GetInfoBrush(this);

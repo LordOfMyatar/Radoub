@@ -23,6 +23,9 @@ public partial class SpellsPanel
 
         // Update selected class spell slot summary
         UpdateSpellSlotSummary();
+
+        // Update metamagic feats display
+        UpdateMetaMagicExpander();
     }
 
     /// <summary>
@@ -671,6 +674,79 @@ public partial class SpellsPanel
                 Grid.SetColumn(countCell, col + 1);
                 _memorizedSpellsTableGrid.Children.Add(countCell);
             }
+        }
+    }
+
+    /// <summary>
+    /// Engine-hardcoded metamagic feat ID to SpellMetaMagic flag mapping.
+    /// Feat IDs 18-23 are fixed in the NWN engine; the flag byte values are also engine constants.
+    /// Feat names are loaded from 2DA/TLK at runtime to support custom TLK overrides.
+    /// </summary>
+    private static readonly (int FeatId, byte Flag, int LevelCost)[] MetamagicFeatDefinitions =
+    {
+        (18, 0x01, 2),  // Empower Spell
+        (19, 0x02, 1),  // Extend Spell
+        (20, 0x04, 3),  // Maximize Spell
+        (21, 0x08, 4),  // Quicken Spell
+        (22, 0x10, 1),  // Silent Spell
+        (23, 0x20, 1),  // Still Spell
+    };
+
+    /// <summary>
+    /// Detects which metamagic feats the creature possesses and populates _creatureMetamagicFeats.
+    /// </summary>
+    private void DetectCreatureMetamagicFeats()
+    {
+        _creatureMetamagicFeats.Clear();
+
+        if (_currentCreature == null) return;
+
+        foreach (var (featId, flag, levelCost) in MetamagicFeatDefinitions)
+        {
+            if (_currentCreature.FeatList.Contains((ushort)featId))
+            {
+                // Load name from FeatService (supports custom TLK), with hardcoded fallback
+                var name = _displayService?.GetFeatName(featId) ?? GetMetamagicName(flag);
+                _creatureMetamagicFeats.Add((name, flag, levelCost));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Updates the MetaMagic Expander to show the creature's metamagic feats and their level costs.
+    /// </summary>
+    private void UpdateMetaMagicExpander()
+    {
+        if (_metaMagicContentPanel == null) return;
+
+        _metaMagicContentPanel.Children.Clear();
+
+        if (_creatureMetamagicFeats.Count == 0)
+        {
+            var noFeatsText = new TextBlock
+            {
+                Text = "No metamagic feats",
+                FontStyle = Avalonia.Media.FontStyle.Italic,
+                Foreground = this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush
+                             ?? Brushes.Gray,
+                FontSize = this.FindResource("FontSizeNormal") as double? ?? 14
+            };
+            _metaMagicContentPanel.Children.Add(noFeatsText);
+            return;
+        }
+
+        var normalFontSize = this.FindResource("FontSizeNormal") as double? ?? 14;
+
+        foreach (var (name, flag, levelCost) in _creatureMetamagicFeats)
+        {
+            var featText = new TextBlock
+            {
+                Text = $"{name} (+{levelCost} level{(levelCost != 1 ? "s" : "")})",
+                FontSize = normalFontSize,
+                Foreground = BrushManager.GetInfoBrush(this),
+                Margin = new Avalonia.Thickness(4, 0, 0, 0)
+            };
+            _metaMagicContentPanel.Children.Add(featText);
         }
     }
 

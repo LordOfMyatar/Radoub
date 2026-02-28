@@ -30,6 +30,23 @@ public class SpellListViewModel : BindableBase
     public int SpellId { get; set; }
 
     /// <summary>
+    /// Metamagic flag byte for this entry (0 = base spell, non-zero = metamagic variant).
+    /// Maps to SpellMetaMagic values: 0x01=Empower, 0x02=Extend, 0x04=Maximize, etc.
+    /// </summary>
+    public byte MetamagicFlag { get; set; }
+
+    /// <summary>
+    /// Whether this is a metamagic variant row (not the base spell).
+    /// </summary>
+    public bool IsMetamagicVariant => MetamagicFlag != 0;
+
+    /// <summary>
+    /// The base spell level before metamagic adjustment.
+    /// For base spells, equals SpellLevel. For variants, the original class spell level.
+    /// </summary>
+    public int BaseSpellLevel { get; set; }
+
+    /// <summary>
     /// Sets the icon service for lazy loading.
     /// </summary>
     public void SetIconService(ItemIconService? iconService)
@@ -235,9 +252,10 @@ public class SpellListViewModel : BindableBase
     }
 
     /// <summary>
-    /// Whether the Known checkbox can be toggled (not blocked).
+    /// Whether the Known checkbox can be toggled (not blocked, not a metamagic variant).
+    /// Metamagic variants inherit Known status from their base spell.
     /// </summary>
-    public bool CanToggleKnown => !IsBlocked;
+    public bool CanToggleKnown => !IsBlocked && !IsMetamagicVariant;
 
     /// <summary>
     /// Whether the Memorized checkbox can be toggled.

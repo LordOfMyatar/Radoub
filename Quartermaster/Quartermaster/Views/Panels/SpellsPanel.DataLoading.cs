@@ -139,6 +139,9 @@ public partial class SpellsPanel
         // Check if this is a spontaneous caster (Sorcerer, Bard)
         _isSpontaneousCaster = _displayService.IsSpontaneousCaster(classEntry.Class);
 
+        // Detect metamagic feats on the creature
+        DetectCreatureMetamagicFeats();
+
         // Populate known spell IDs from parsed KnownList0-9
         for (int level = 0; level < 10; level++)
         {
@@ -149,15 +152,16 @@ public partial class SpellsPanel
         }
 
         // Populate memorized spell counts from parsed MemorizedList0-9
-        // Same spell can appear multiple times (memorized in multiple slots)
+        // Keyed by (spellId, metamagic) to track base vs metamagic variants separately
         for (int level = 0; level < 10; level++)
         {
             foreach (var spell in classEntry.MemorizedSpells[level])
             {
-                if (_memorizedSpellCounts.ContainsKey(spell.Spell))
-                    _memorizedSpellCounts[spell.Spell]++;
+                var key = (spell.Spell, spell.SpellMetaMagic);
+                if (_memorizedSpellCounts.ContainsKey(key))
+                    _memorizedSpellCounts[key]++;
                 else
-                    _memorizedSpellCounts[spell.Spell] = 1;
+                    _memorizedSpellCounts[key] = 1;
             }
         }
 
@@ -176,16 +180,39 @@ public partial class SpellsPanel
         if (_displayService == null) return;
 
         var allSpellIds = _displayService.GetAllSpellIds();
+        var baseSpells = new List<SpellListViewModel>();
 
         foreach (var spellId in allSpellIds)
         {
             var vm = CreateSpellViewModel(spellId, classId);
             if (vm != null)
-                _allSpells.Add(vm);
+                baseSpells.Add(vm);
         }
 
-        // Sort by name
-        _allSpells = _allSpells.OrderBy(s => s.SpellName).ToList();
+        // Sort base spells by name
+        baseSpells = baseSpells.OrderBy(s => s.SpellName).ToList();
+
+        // Insert base spells with metamagic variants immediately after each
+        foreach (var baseSpell in baseSpells)
+        {
+            _allSpells.Add(baseSpell);
+
+            // Only generate variants for non-blocked spells that are accessible to this class
+            if (baseSpell.IsBlocked || _creatureMetamagicFeats.Count == 0)
+                continue;
+
+            foreach (var (mmName, mmFlag, mmCost) in _creatureMetamagicFeats)
+            {
+                int effectiveLevel = baseSpell.SpellLevel + mmCost;
+
+                // Only show variant if effective level is within valid range (0-9)
+                if (effectiveLevel > 9)
+                    continue;
+
+                var variantVm = CreateMetamagicVariantViewModel(baseSpell, mmName, mmFlag, effectiveLevel, classId);
+                _allSpells.Add(variantVm);
+            }
+        }
     }
 
     private SpellListViewModel? CreateSpellViewModel(int spellId, int classId)
@@ -194,7 +221,7 @@ public partial class SpellsPanel
 
         var spellName = _displayService.GetSpellName(spellId);
         var spellInfo = _displayService.GetSpellInfo(spellId);
-        var memorizedCount = (_memorizedSpellCounts.TryGetValue(spellId, out var cnt) ? cnt : 0);
+        var memorizedCount = (_memorizedSpellCounts.TryGetValue((spellId, 0), out var cnt) ? cnt : 0);
 
         if (spellInfo == null)
         {
@@ -275,12 +302,15 @@ public partial class SpellsPanel
             textOpacity = 0.7;
         }
 
+        int resolvedLevel = spellLevel >= 0 ? spellLevel : spellInfo.InnateLevel;
         var vm = new SpellListViewModel
         {
             SpellId = spellId,
             SpellName = spellName,
-            SpellLevel = spellLevel >= 0 ? spellLevel : spellInfo.InnateLevel,
+            SpellLevel = resolvedLevel,
             SpellLevelDisplay = spellLevel >= 0 ? spellLevel.ToString() : "-",
+            BaseSpellLevel = resolvedLevel,
+            MetamagicFlag = 0,
             InnateLevel = spellInfo.InnateLevel,
             InnateLevelDisplay = spellInfo.InnateLevel.ToString(),
             School = spellInfo.School,
@@ -338,5 +368,74 @@ public partial class SpellsPanel
         // Don't load upfront - use lazy loading via IconBitmap getter
         // This prevents loading 467+ bitmaps at once which crashes Avalonia
         spellVm.SetIconService(_itemIconService);
+    }
+
+    /// <summary>
+    /// Creates a metamagic variant view model row for a base spell.
+    /// Variant rows display with indented name, effective level, and track
+    /// their own memorization count keyed by (spellId, metamagicFlag).
+    /// </summary>
+    private SpellListViewModel CreateMetamagicVariantViewModel(
+        SpellListViewModel baseSpell, string metamagicName, byte metamagicFlag,
+        int effectiveLevel, int classId)
+    {
+        var memorizedCount = _memorizedSpellCounts.TryGetValue((baseSpell.SpellId, metamagicFlag), out var cnt) ? cnt : 0;
+
+        // Determine visual status
+        string statusText;
+        IBrush statusColor;
+        IBrush rowBackground;
+        double textOpacity;
+
+        if (memorizedCount > 0)
+        {
+            statusText = memorizedCount > 1 ? $"M×{memorizedCount}" : "Memorized";
+            statusColor = BrushManager.GetWarningBrush(this);
+            rowBackground = GetTransparentRowBackground(statusColor, 20);
+            textOpacity = 0.85;
+        }
+        else
+        {
+            statusText = "";
+            statusColor = Brushes.Transparent;
+            rowBackground = Brushes.Transparent;
+            textOpacity = 0.55;
+        }
+
+        var vm = new SpellListViewModel
+        {
+            SpellId = baseSpell.SpellId,
+            SpellName = $"  [{metamagicName}]",
+            SpellLevel = effectiveLevel,
+            SpellLevelDisplay = effectiveLevel.ToString(),
+            BaseSpellLevel = baseSpell.SpellLevel,
+            MetamagicFlag = metamagicFlag,
+            InnateLevel = baseSpell.InnateLevel,
+            InnateLevelDisplay = baseSpell.InnateLevelDisplay,
+            School = baseSpell.School,
+            SchoolName = baseSpell.SchoolName,
+            IsKnown = baseSpell.IsKnown,
+            MemorizedCount = memorizedCount,
+            IsBlocked = false,
+            IsSpontaneousCaster = _isSpontaneousCaster,
+            BlockedReason = "",
+            Description = $"{baseSpell.SpellName} with {metamagicName}\nEffective level: {effectiveLevel} (base {baseSpell.SpellLevel} + {effectiveLevel - baseSpell.SpellLevel})",
+            StatusText = statusText,
+            StatusColor = statusColor,
+            RowBackground = rowBackground,
+            TextOpacity = textOpacity
+        };
+
+        // Wire up change handlers
+        vm.OnKnownChanged = OnSpellKnownChanged;
+        vm.OnMemorizedCountChanged = OnSpellMemorizedCountChanged;
+
+        // Set memorized count color
+        UpdateMemorizedCountColor(vm);
+
+        // Share icon service with parent spell
+        vm.SetIconService(_itemIconService);
+
+        return vm;
     }
 }
