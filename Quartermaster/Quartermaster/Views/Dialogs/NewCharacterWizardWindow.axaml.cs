@@ -770,7 +770,79 @@ public partial class NewCharacterWizardWindow : Window
 
     private void OnFinishClick(object? sender, RoutedEventArgs e)
     {
-        CreatedCreature = BuildCreature();
+        // Read palette ID from UI before building input
+        _paletteId = (_paletteIdComboBox.SelectedItem is ComboBoxItem item && item.Tag is byte id) ? id : (byte)1;
+
+        var input = new CharacterCreationService.CharacterCreationInput
+        {
+            IsBicFile = _isBicFile,
+            ApplyDefaultScripts = _defaultScriptsCheckBox.IsChecked == true,
+            RaceId = _selectedRaceId,
+            Gender = _selectedGender,
+            AppearanceId = _selectedAppearanceId,
+            Phenotype = _selectedPhenotype,
+            PortraitId = _selectedPortraitId,
+            BodyParts = new CharacterCreationService.BodyPartVariations
+            {
+                Head = _headVariation,
+                Neck = _neckVariation,
+                Torso = _torsoVariation,
+                Pelvis = _pelvisVariation,
+                Belt = _beltVariation,
+                LShoulder = _lShoulVariation,
+                RShoulder = _rShoulVariation,
+                LBicep = _lBicepVariation,
+                RBicep = _rBicepVariation,
+                LForearm = _lFArmVariation,
+                RForearm = _rFArmVariation,
+                LHand = _lHandVariation,
+                RHand = _rHandVariation,
+                LThigh = _lThighVariation,
+                RThigh = _rThighVariation,
+                LShin = _lShinVariation,
+                RShin = _rShinVariation,
+                LFoot = _lFootVariation,
+                RFoot = _rFootVariation
+            },
+            Colors = new CharacterCreationService.ColorSelections
+            {
+                Skin = _skinColor,
+                Hair = _hairColor,
+                Tattoo1 = _tattoo1Color,
+                Tattoo2 = _tattoo2Color
+            },
+            ClassId = _selectedClassId,
+            PackageId = _selectedPackageId,
+            GoodEvil = _selectedGoodEvil,
+            LawChaos = _selectedLawChaos,
+            Domain1 = GetSelectedDomainId(_domain1ComboBox),
+            Domain2 = GetSelectedDomainId(_domain2ComboBox),
+            FamiliarType = _selectedFamiliarType,
+            AbilityBaseScores = new Dictionary<string, int>(_abilityBaseScores),
+            ChosenFeatIds = new List<int>(_chosenFeatIds),
+            SkillRanksAllocated = new Dictionary<int, int>(_skillRanksAllocated),
+            SelectedSpellsByLevel = _selectedSpellsByLevel.ToDictionary(
+                kvp => kvp.Key,
+                kvp => new List<int>(kvp.Value)),
+            NeedsSpellSelection = _needsSpellSelection,
+            IsDivineCaster = _isDivineCaster,
+            EquipmentItems = _equipmentItems.Select(e => new CharacterCreationService.EquipmentItem
+            {
+                ResRef = e.ResRef,
+                Name = e.Name,
+                SlotFlags = e.SlotFlags
+            }).ToList(),
+            CharacterName = _characterName,
+            LastName = _lastNameTextBox.Text?.Trim() ?? "",
+            Description = _descriptionTextBox.Text?.Trim() ?? "",
+            PaletteId = _paletteId,
+            FactionId = _selectedFactionId,
+            VoiceSetId = _selectedVoiceSetId,
+            Age = (int)(_ageNumericUpDown.Value ?? 25)
+        };
+
+        var service = new CharacterCreationService(_displayService, _gameDataService);
+        CreatedCreature = service.BuildCreature(input);
         Confirmed = true;
         Close();
     }
