@@ -15,8 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### TDD Audit Followup (#1560)
 
-- [ ] Wire NCW `OnFinishClick()` to `CharacterCreationService.BuildCreature()` — remove duplicate inline logic
-- [ ] Dedicated tests for FeatService, SkillService, SpellService, CharacterSheetService
+- [x] Wire NCW `OnFinishClick()` to `CharacterCreationService.BuildCreature()` — remove duplicate inline logic (~235 lines deleted)
+- [x] Dedicated tests for FeatService (53), SkillService (25), SpellService (26), CharacterSheetService (38) — 142 new tests
 
 ---
 

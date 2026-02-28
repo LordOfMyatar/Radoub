@@ -15,8 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### TDD Audit Followup (#1560)
 
-- [ ] ItemResolutionService tested with real GameDataService (not null)
-- [ ] BaseItemTypeService tested with real 2DA loading
+- [x] BaseItemTypeService tested with MockGameDataService — 2DA loading, TLK resolution, garbage filtering, unconfigured fallback (14 new tests)
+- [x] ItemResolutionService tested with MockGameDataService — configured vs unconfigured paths, caching, resolution (13 new tests)
 
 ---
 

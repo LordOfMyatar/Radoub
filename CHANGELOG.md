@@ -22,9 +22,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### TDD Audit Followup: Incomplete items from Epic #1543 (#1560)
 
-- [ ] #1544 (incomplete) - Wire NCW `OnFinishClick()` to `CharacterCreationService.BuildCreature()`
-- [ ] #1546 (redirected) - Dedicated tests for FeatService, SkillService, SpellService, CharacterSheetService
-- [ ] #1551 (incomplete) - Fence ItemResolutionService tested with real GameDataService
+- [x] #1544 (incomplete) - Wire NCW `OnFinishClick()` to `CharacterCreationService.BuildCreature()`
+- [x] #1546 (redirected) - Dedicated tests for FeatService, SkillService, SpellService, CharacterSheetService
+- [x] #1551 (incomplete) - Fence ItemResolutionService tested with real GameDataService
 
 ---
 
