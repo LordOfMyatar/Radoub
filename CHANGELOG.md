@@ -22,7 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Manifest & Fence Test Coverage + Anti-Pattern Cleanup (#1555)
 
-- [ ] #1552 - Fix cross-tool test anti-patterns (ResetForTesting, mock-only paths)
+- [x] #1552 - Fix cross-tool test anti-patterns: Replaced `ResetForTesting()`/`ConfigureForTesting()` in 6 production singletons with `SingletonTestHelper` (reflection + env vars) in Radoub.TestUtilities
 
 ---
 

@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Manifest & Fence Test Coverage + Anti-Pattern Cleanup (#1555)
 
-- [ ] #1551 - Add real item resolution tests, file operation tests, FlaUI smoke tests
+- [x] #1551 - Add CommandLineService tests (10), PaletteCacheService tests (7), extended SettingsService tests (11 new: panel clamping, visibility, ValidateRecentFilesAsync, persistence)
 
 ---
 

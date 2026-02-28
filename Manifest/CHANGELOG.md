@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Manifest & Fence Test Coverage + Anti-Pattern Cleanup (#1555)
 
-- [ ] #1550 - Add tests for edit operations, property panel, SpellCheckService
+- [x] #1550 - Add tests for edit operations, property panel, SpellCheckService (22 new tests: EditOps GenerateUniqueTag, PropertyPanel FormatStrRef, SpellCheckService singleton/word management)
 
 ---
 
