@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.22-alpha] - 2026-02-28
-**Branch**: `quartermaster/sprint/metamagic` | **PR**: #TBD
+**Branch**: `quartermaster/sprint/metamagic` | **PR**: #1574
 
 ### Sprint: Metamagic Feats & Spell Variants (#638, #1156)
 
