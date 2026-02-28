@@ -1,4 +1,5 @@
 using MerchantEditor.Services;
+using Radoub.TestUtilities.Helpers;
 
 namespace Fence.Tests;
 
@@ -12,12 +13,16 @@ public class SettingsServiceTests : IDisposable
         // Create isolated temp directory for each test
         _tempDir = Path.Combine(Path.GetTempPath(), "FenceTests", Guid.NewGuid().ToString());
         Directory.CreateDirectory(_tempDir);
-        SettingsService.ConfigureForTesting(_tempDir);
+
+        // Reset singleton and configure via environment variable
+        SingletonTestHelper.ResetSingleton<SettingsService>();
+        SingletonTestHelper.ConfigureSettingsDirectory("FENCE_SETTINGS_DIR", _tempDir);
     }
 
     public void Dispose()
     {
-        SettingsService.ResetForTesting();
+        SingletonTestHelper.ResetSingleton<SettingsService>();
+        SingletonTestHelper.ConfigureSettingsDirectory("FENCE_SETTINGS_DIR", null);
         try
         {
             if (Directory.Exists(_tempDir))
@@ -172,6 +177,131 @@ public class SettingsServiceTests : IDisposable
         // Act & Assert - above maximum
         settings.LogRetentionSessions = 20;
         Assert.Equal(10, settings.LogRetentionSessions);
+    }
+
+    [Fact]
+    public void RightPanelWidth_ClampedToRange()
+    {
+        var settings = SettingsService.Instance;
+
+        settings.RightPanelWidth = 100;
+        Assert.Equal(250, settings.RightPanelWidth);
+
+        settings.RightPanelWidth = 900;
+        Assert.Equal(700, settings.RightPanelWidth);
+    }
+
+    [Fact]
+    public void StoreBrowserPanelWidth_ClampedToRange()
+    {
+        var settings = SettingsService.Instance;
+
+        settings.StoreBrowserPanelWidth = 50;
+        Assert.Equal(150, settings.StoreBrowserPanelWidth);
+
+        settings.StoreBrowserPanelWidth = 600;
+        Assert.Equal(400, settings.StoreBrowserPanelWidth);
+    }
+
+    [Fact]
+    public void ItemDetailsPanelWidth_ClampedToRange()
+    {
+        var settings = SettingsService.Instance;
+
+        settings.ItemDetailsPanelWidth = 50;
+        Assert.Equal(180, settings.ItemDetailsPanelWidth);
+
+        settings.ItemDetailsPanelWidth = 700;
+        Assert.Equal(500, settings.ItemDetailsPanelWidth);
+    }
+
+    [Fact]
+    public void StoreBrowserPanelVisible_DefaultTrue()
+    {
+        var settings = SettingsService.Instance;
+
+        Assert.True(settings.StoreBrowserPanelVisible);
+    }
+
+    [Fact]
+    public void ItemDetailsPanelVisible_DefaultTrue()
+    {
+        var settings = SettingsService.Instance;
+
+        Assert.True(settings.ItemDetailsPanelVisible);
+    }
+
+    [Fact]
+    public void PanelVisible_SetToFalse_Persists()
+    {
+        var settings = SettingsService.Instance;
+
+        settings.StoreBrowserPanelVisible = false;
+        Assert.False(settings.StoreBrowserPanelVisible);
+
+        settings.ItemDetailsPanelVisible = false;
+        Assert.False(settings.ItemDetailsPanelVisible);
+    }
+
+    [Fact]
+    public async Task ValidateRecentFilesAsync_RemovesMissingFiles()
+    {
+        var settings = SettingsService.Instance;
+
+        // Add a file that exists and one that doesn't
+        var existingFile = Path.Combine(_tempDir, "exists.utm");
+        File.WriteAllText(existingFile, "");
+        settings.AddRecentFile(existingFile);
+        settings.AddRecentFile(Path.Combine(_tempDir, "missing.utm"));
+
+        await settings.ValidateRecentFilesAsync();
+
+        var recent = settings.RecentFiles;
+        Assert.Contains(existingFile, recent);
+        Assert.DoesNotContain(Path.Combine(_tempDir, "missing.utm"), recent);
+    }
+
+    [Fact]
+    public async Task ValidateRecentFilesAsync_AllFilesExist_NoChange()
+    {
+        var settings = SettingsService.Instance;
+        var file1 = Path.Combine(_tempDir, "file1.utm");
+        var file2 = Path.Combine(_tempDir, "file2.utm");
+        File.WriteAllText(file1, "");
+        File.WriteAllText(file2, "");
+        settings.AddRecentFile(file1);
+        settings.AddRecentFile(file2);
+
+        await settings.ValidateRecentFilesAsync();
+
+        Assert.Equal(2, settings.RecentFiles.Count);
+    }
+
+    [Fact]
+    public async Task ValidateRecentFilesAsync_EmptyList_DoesNotThrow()
+    {
+        var settings = SettingsService.Instance;
+
+        var exception = await Record.ExceptionAsync(() => settings.ValidateRecentFilesAsync());
+
+        Assert.Null(exception);
+    }
+
+    [Fact]
+    public void Settings_PersistAcrossReload()
+    {
+        var settings = SettingsService.Instance;
+        settings.LeftPanelWidth = 500;
+        settings.RightPanelWidth = 350;
+        settings.StoreBrowserPanelVisible = false;
+
+        // Reset and reload
+        SingletonTestHelper.ResetSingleton<SettingsService>();
+        var reloaded = SettingsService.Instance;
+
+        Assert.Equal(500, reloaded.LeftPanelWidth);
+        Assert.Equal(350, reloaded.RightPanelWidth);
+        Assert.False(reloaded.StoreBrowserPanelVisible);
     }
 }
 

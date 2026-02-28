@@ -1,5 +1,6 @@
 using RadoubLauncher.Services;
 using Radoub.Formats.Logging;
+using Radoub.TestUtilities.Helpers;
 
 namespace Trebuchet.Tests;
 
@@ -17,15 +18,16 @@ public class SettingsServiceTests : IDisposable
         _testDirectory = Path.Combine(Path.GetTempPath(), $"TrebuchetTest_{Guid.NewGuid():N}");
         Directory.CreateDirectory(_testDirectory);
 
-        // Reset and configure for testing BEFORE first Instance access
-        SettingsService.ResetForTesting();
-        SettingsService.ConfigureForTesting(_testDirectory);
+        // Reset singleton and configure via environment variable
+        SingletonTestHelper.ResetSingleton<SettingsService>();
+        SingletonTestHelper.ConfigureSettingsDirectory("TREBUCHET_SETTINGS_DIR", _testDirectory);
     }
 
     public void Dispose()
     {
-        // Reset singleton for next test
-        SettingsService.ResetForTesting();
+        // Reset singleton and clear env var
+        SingletonTestHelper.ResetSingleton<SettingsService>();
+        SingletonTestHelper.ConfigureSettingsDirectory("TREBUCHET_SETTINGS_DIR", null);
 
         // Clean up test directory
         try

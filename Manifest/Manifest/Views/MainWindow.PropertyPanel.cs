@@ -136,7 +136,7 @@ public partial class MainWindow
         }
     }
 
-    private static string FormatStrRef(uint strRef)
+    internal static string FormatStrRef(uint strRef)
     {
         if (strRef == 0xFFFFFFFF)
             return "(none)";

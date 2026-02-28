@@ -26,6 +26,7 @@
     <ProjectReference Include="..\Manifest\Manifest.csproj" />
     <ProjectReference Include="..\..\Radoub.Formats\Radoub.Formats\Radoub.Formats.csproj" />
     <ProjectReference Include="..\..\Radoub.Dictionary\Radoub.Dictionary\Radoub.Dictionary.csproj" />
+    <ProjectReference Include="..\..\Radoub.TestUtilities\Radoub.TestUtilities\Radoub.TestUtilities.csproj" />
   </ItemGroup>
 
   <!-- Test data files -->

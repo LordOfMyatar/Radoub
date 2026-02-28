@@ -8,7 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>

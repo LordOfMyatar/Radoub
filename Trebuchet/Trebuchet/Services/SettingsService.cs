@@ -37,36 +37,6 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
         }
     }
 
-    /// <summary>
-    /// Configure test mode with isolated settings directory.
-    /// MUST be called before first access to Instance.
-    /// </summary>
-    /// <param name="testDirectory">Temp directory for test settings</param>
-    public static void ConfigureForTesting(string testDirectory)
-    {
-        lock (_lock)
-        {
-            if (_instance != null)
-                throw new InvalidOperationException("ConfigureForTesting must be called before first Instance access");
-            _testSettingsDirectory = testDirectory;
-        }
-    }
-
-    /// <summary>
-    /// Reset for testing - allows re-initialization with different settings.
-    /// Only for use in test teardown.
-    /// </summary>
-    public static void ResetForTesting()
-    {
-        lock (_lock)
-        {
-            _instance = null;
-            _testSettingsDirectory = null;
-        }
-    }
-
-    private static string? _testSettingsDirectory;
-
     protected override string ToolName => "Trebuchet";
     protected override string SettingsEnvironmentVariable => "TREBUCHET_SETTINGS_DIR";
     protected override string SettingsFileName => "TrebuchetSettings.json";
@@ -90,9 +60,6 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
 
     private SettingsService()
     {
-        if (_testSettingsDirectory != null)
-            SettingsDirectory = _testSettingsDirectory;
-
         Initialize();
     }
 

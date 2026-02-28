@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Radoub.Formats\Radoub.Formats.csproj" />
+    <ProjectReference Include="..\..\Radoub.TestUtilities\Radoub.TestUtilities\Radoub.TestUtilities.csproj" />
   </ItemGroup>
 
   <ItemGroup>

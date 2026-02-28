@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.15.3-alpha] - 2026-02-27
+**Branch**: `radoub/issue-1555` | **PR**: #1559
+
+### Sprint: Manifest & Fence Test Coverage + Anti-Pattern Cleanup (#1555)
+
+- [x] #1550 - Add tests for edit operations, property panel, SpellCheckService (22 new tests: EditOps GenerateUniqueTag, PropertyPanel FormatStrRef, SpellCheckService singleton/word management)
+
+---
+
 ## [0.15.2-alpha] - 2026-02-25
 **Branch**: `radoub/issue-1523` | **PR**: #1525
 

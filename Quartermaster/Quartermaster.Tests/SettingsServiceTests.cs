@@ -1,4 +1,5 @@
 using Quartermaster.Services;
+using Radoub.TestUtilities.Helpers;
 
 namespace Quartermaster.Tests;
 
@@ -16,15 +17,16 @@ public class SettingsServiceTests : IDisposable
         _testSettingsDir = Path.Combine(Path.GetTempPath(), $"Quartermaster_Tests_{Guid.NewGuid():N}");
         Directory.CreateDirectory(_testSettingsDir);
 
-        // Reset and configure for testing BEFORE first Instance access
-        SettingsService.ResetForTesting();
-        SettingsService.ConfigureForTesting(_testSettingsDir);
+        // Reset singleton and configure via environment variable
+        SingletonTestHelper.ResetSingleton<SettingsService>();
+        SingletonTestHelper.ConfigureSettingsDirectory("QUARTERMASTER_SETTINGS_DIR", _testSettingsDir);
     }
 
     public void Dispose()
     {
-        // Reset singleton so next test gets fresh instance
-        SettingsService.ResetForTesting();
+        // Reset singleton and clear env var
+        SingletonTestHelper.ResetSingleton<SettingsService>();
+        SingletonTestHelper.ConfigureSettingsDirectory("QUARTERMASTER_SETTINGS_DIR", null);
 
         // Clean up temp directory
         try
@@ -173,8 +175,7 @@ public class SettingsServiceTests : IDisposable
         service.WindowWidth = 1000;
 
         // Reset and reload
-        SettingsService.ResetForTesting();
-        SettingsService.ConfigureForTesting(_testSettingsDir);
+        SingletonTestHelper.ResetSingleton<SettingsService>();
 
         var reloaded = SettingsService.Instance;
 

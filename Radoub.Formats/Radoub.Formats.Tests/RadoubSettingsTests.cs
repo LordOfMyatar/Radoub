@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Radoub.Formats.Common;
 using Radoub.Formats.Settings;
+using Radoub.TestUtilities.Helpers;
 using Xunit;
 
 namespace Radoub.Formats.Tests;
@@ -24,13 +25,13 @@ public class RadoubSettingsTests : IDisposable
         _fakeTlkPath = Path.Combine(_testDirectory, "tlk", "custom.tlk");
         _fakeModulePath = Path.Combine(_testDirectory, "modules", "mymodule");
 
-        RadoubSettings.ResetForTesting();
-        RadoubSettings.ConfigureForTesting(_testDirectory);
+        ResetAndConfigure();
     }
 
     public void Dispose()
     {
-        RadoubSettings.ResetForTesting();
+        SingletonTestHelper.ResetSingleton<RadoubSettings>("_instance", "_settingsDirectory");
+        SingletonTestHelper.ConfigureSettingsDirectory("RADOUB_SETTINGS_DIR", null);
 
         try
         {
@@ -38,6 +39,15 @@ public class RadoubSettingsTests : IDisposable
                 Directory.Delete(_testDirectory, true);
         }
         catch { /* Ignore cleanup errors */ }
+    }
+
+    /// <summary>
+    /// Reset the RadoubSettings singleton and configure it to use the test directory.
+    /// </summary>
+    private void ResetAndConfigure()
+    {
+        SingletonTestHelper.ResetSingleton<RadoubSettings>("_instance", "_settingsDirectory");
+        SingletonTestHelper.ConfigureSettingsDirectory("RADOUB_SETTINGS_DIR", _testDirectory);
     }
 
     [Fact]
@@ -109,8 +119,7 @@ public class RadoubSettingsTests : IDisposable
         settings1.CurrentModulePath = _fakeModulePath;
 
         // Reset and create a new instance (simulates child process startup)
-        RadoubSettings.ResetForTesting();
-        RadoubSettings.ConfigureForTesting(_testDirectory);
+        ResetAndConfigure();
 
         var settings2 = RadoubSettings.Instance;
 
@@ -134,8 +143,7 @@ public class RadoubSettingsTests : IDisposable
         Assert.Contains("~", json);
 
         // Reset and reload - should expand back to full path
-        RadoubSettings.ResetForTesting();
-        RadoubSettings.ConfigureForTesting(_testDirectory);
+        ResetAndConfigure();
 
         var settings2 = RadoubSettings.Instance;
         Assert.Equal(fullPath, settings2.CustomTlkPath);
@@ -149,8 +157,7 @@ public class RadoubSettingsTests : IDisposable
         settings.CustomTlkPath = "";
 
         // Reset and reload
-        RadoubSettings.ResetForTesting();
-        RadoubSettings.ConfigureForTesting(_testDirectory);
+        ResetAndConfigure();
 
         var settings2 = RadoubSettings.Instance;
         Assert.Equal("", settings2.CustomTlkPath);
@@ -164,8 +171,7 @@ public class RadoubSettingsTests : IDisposable
         File.WriteAllText(filePath, "{ this is not valid json }}}");
 
         // Should not throw, just use defaults
-        RadoubSettings.ResetForTesting();
-        RadoubSettings.ConfigureForTesting(_testDirectory);
+        ResetAndConfigure();
 
         var settings = RadoubSettings.Instance;
         // CustomTlkPath is never auto-detected, so it should be empty

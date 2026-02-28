@@ -40,11 +40,11 @@ public partial class RadoubSettings : INotifyPropertyChanged
         {
             if (_settingsDirectory == null)
             {
-                // Check for test override first (allows UI tests to use isolated settings)
-                var testDir = Environment.GetEnvironmentVariable("RADOUB_SETTINGS_DIR");
-                if (!string.IsNullOrEmpty(testDir))
+                // Support environment variable override for CI and test isolation
+                var overrideDir = Environment.GetEnvironmentVariable("RADOUB_SETTINGS_DIR");
+                if (!string.IsNullOrEmpty(overrideDir))
                 {
-                    _settingsDirectory = testDir;
+                    _settingsDirectory = overrideDir;
                 }
                 else
                 {
@@ -53,30 +53,6 @@ public partial class RadoubSettings : INotifyPropertyChanged
                 }
             }
             return _settingsDirectory;
-        }
-    }
-
-    /// <summary>
-    /// Reset the singleton instance for testing. Clears instance and settings directory cache.
-    /// </summary>
-    public static void ResetForTesting()
-    {
-        lock (_lock)
-        {
-            _instance = null;
-            _settingsDirectory = null;
-        }
-    }
-
-    /// <summary>
-    /// Configure an isolated settings directory for testing.
-    /// Must be called before first Instance access.
-    /// </summary>
-    public static void ConfigureForTesting(string testDirectory)
-    {
-        lock (_lock)
-        {
-            _settingsDirectory = testDirectory;
         }
     }
 

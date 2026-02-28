@@ -2,6 +2,7 @@ using Manifest.Services;
 using Radoub.Formats.Common;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Settings;
+using Radoub.TestUtilities.Helpers;
 using Xunit;
 
 namespace Manifest.Tests;
@@ -14,13 +15,13 @@ public class TlkServiceTests : IDisposable
 {
     public TlkServiceTests()
     {
-        // Reset services before each test
-        TlkService.ResetForTesting();
+        // Reset singleton before each test
+        SingletonTestHelper.ResetStaticSingleton(typeof(TlkService), "_instance");
     }
 
     public void Dispose()
     {
-        TlkService.ResetForTesting();
+        SingletonTestHelper.ResetStaticSingleton(typeof(TlkService), "_instance");
     }
 
     [Fact]

@@ -48,7 +48,7 @@ public partial class MainWindow
         UnifiedLogger.LogJournal(LogLevel.INFO, $"Added new category with tag: {uniqueTag}");
     }
 
-    private static string GenerateUniqueTag(string baseTag, HashSet<string> existingTags)
+    internal static string GenerateUniqueTag(string baseTag, HashSet<string> existingTags)
     {
         // Try base tag first (for empty journal)
         if (!existingTags.Contains(baseTag))
