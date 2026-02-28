@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.22-alpha] - 2026-02-28
+**Branch**: `quartermaster/sprint/metamagic` | **PR**: #TBD
+
+### Sprint: Metamagic Feats & Spell Variants (#638, #1156)
+
+- [ ] #638 - Meta-magic feats display with adjusted spell levels
+- [ ] #1156 - Metamagic UI — display metamagic variants as separate spells
+
+---
+
 ## [0.2.21-alpha] - 2026-02-27
 **Branch**: `radoub/issue-1560` | **PR**: #1561
 
