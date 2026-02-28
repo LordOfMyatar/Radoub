@@ -17,6 +17,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.82] - 2026-02-28
+**Branch**: `radoub/issue-1321` | **PR**: #TBD
+
+### Standardize status bar and title bar across all tools (#1321)
+
+- [ ] Quartermaster: Move status bar from bottom to top, adopt Fence border styling
+- [ ] Parley: Merge Module Info Bar into status bar (single combined bar)
+- [ ] Fence: Adopt custom title bar (icon + ThemeTitleBar)
+- [ ] Trebuchet: Adopt custom title bar (icon + ThemeTitleBar)
+
+---
+
 ## [0.9.81] - 2026-02-27
 **Branch**: `radoub/issue-1560` | **PR**: #1561
 
