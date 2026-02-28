@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.153-alpha] - 2026-02-27
+**Branch**: `parley/issue-1554` | **PR**: #TBD
+
+### Sprint: Test Quality Improvement (Controllers + Critical Services)
+
+- Replace constructor-only controller tests with behavioral tests (#1548)
+- Add tests for untested critical services (scrap, validators, error handling) (#1549)
+
+---
+
 ## [0.1.152-alpha] - 2026-02-26
 **Branch**: `radoub/issue-1530` | **PR**: #1537
 
