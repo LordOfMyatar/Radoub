@@ -41,21 +41,28 @@ namespace DialogEditor.Models
         /// </summary>
         private static IBrush GetThemedBrush(bool isDark)
         {
-            var app = Application.Current;
-            if (app != null)
+            try
             {
-                // Try to get the sidebar/background color from theme resources
-                // ThemeBackground is set by ThemeManager from theme manifest
-                var themeVariant = isDark ? ThemeVariant.Dark : ThemeVariant.Light;
-                if (app.Resources.TryGetResource("ThemeBackground", themeVariant, out var bgObj) && bgObj is IBrush brush)
+                var app = Application.Current;
+                if (app != null)
                 {
-                    return brush;
+                    // Try to get the sidebar/background color from theme resources
+                    // ThemeBackground is set by ThemeManager from theme manifest
+                    var themeVariant = isDark ? ThemeVariant.Dark : ThemeVariant.Light;
+                    if (app.Resources.TryGetResource("ThemeBackground", themeVariant, out var bgObj) && bgObj is IBrush brush)
+                    {
+                        return brush;
+                    }
+                    // Try SystemControlBackgroundAltHighBrush as fallback
+                    if (app.Resources.TryGetResource("SystemControlBackgroundAltHighBrush", themeVariant, out var altObj) && altObj is IBrush altBrush)
+                    {
+                        return altBrush;
+                    }
                 }
-                // Try SystemControlBackgroundAltHighBrush as fallback
-                if (app.Resources.TryGetResource("SystemControlBackgroundAltHighBrush", themeVariant, out var altObj) && altObj is IBrush altBrush)
-                {
-                    return altBrush;
-                }
+            }
+            catch (InvalidOperationException)
+            {
+                // Avalonia dispatcher thread check fails in unit test environments
             }
             // Fallback to hardcoded colors
             return new SolidColorBrush(isDark ? DarkBgColor : LightBgColor);

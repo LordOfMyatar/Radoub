@@ -36,14 +36,12 @@ namespace Parley.Views.Helpers
                 // Sanitize path for display
                 var displayPath = PathHelper.SanitizePathForDisplay(moduleDirectory);
 
-                // Update UI - info colors when module is active
+                // Update UI - info colors when module is active (#1321: merged into status bar)
                 _controls.WithControl<TextBlock>("ModuleNameTextBlock", tb =>
                 {
                     tb.Text = moduleName ?? Path.GetFileName(moduleDirectory);
                     tb.Foreground = BrushManager.GetInfoBrush(tb);
                 });
-                _controls.WithControl<TextBlock>("ModulePathTextBlock", tb =>
-                    tb.Text = displayPath);
 
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Module info updated: {moduleName ?? "(unnamed)"} | {displayPath}");
             }
@@ -64,7 +62,6 @@ namespace Parley.Views.Helpers
                 tb.Text = "No module selected";
                 tb.Foreground = BrushManager.GetWarningBrush(tb);
             });
-            _controls.WithControl<TextBlock>("ModulePathTextBlock", tb => tb.Text = "");
         }
 
         /// <summary>
@@ -107,14 +104,12 @@ namespace Parley.Views.Helpers
                 // Sanitize path for display
                 var displayPath = PathHelper.SanitizePathForDisplay(workingDir);
 
-                // Update UI - info colors when module is active
+                // Update UI - info colors when module is active (#1321: merged into status bar)
                 _controls.WithControl<TextBlock>("ModuleNameTextBlock", tb =>
                 {
                     tb.Text = moduleName ?? Path.GetFileName(workingDir);
                     tb.Foreground = BrushManager.GetInfoBrush(tb);
                 });
-                _controls.WithControl<TextBlock>("ModulePathTextBlock", tb =>
-                    tb.Text = displayPath);
 
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Module info from settings: {moduleName ?? "(unnamed)"} | {displayPath}");
             }
