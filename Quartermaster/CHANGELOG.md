@@ -15,10 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: NCW/LUW Service Extraction & Unit Tests (#1553)
 
-- [ ] #1544 - Extract NCW wizard step logic into testable services
-- [ ] #1545 - Extract LUW wizard logic into testable services
-- [ ] #1546 - Unit tests for FeatService, SkillService, SpellService, CharacterSheetService
-- [ ] #1547 - Round-trip validation tests for character creation and level-up
+- [x] #1544 - Extract NCW wizard step logic into testable services
+- [x] #1545 - Extract LUW wizard logic into testable services
+- [x] #1546 - Unit tests for AbilityPointBuyService, CharacterCreationService, LevelUpApplicationService
+- [x] #1547 - Round-trip validation tests for character creation and level-up
 
 ---
 
