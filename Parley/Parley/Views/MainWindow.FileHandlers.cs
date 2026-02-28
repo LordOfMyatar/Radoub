@@ -101,6 +101,50 @@ namespace DialogEditor.Views
             _selectedNode = null; // Clear local selection reference
         }
 
+        /// <summary>
+        /// Handle File > Delete File - Delete the currently loaded dialog file (#1509).
+        /// </summary>
+        private async void OnDeleteFileClick(object? sender, RoutedEventArgs e)
+        {
+            var filePath = _viewModel.CurrentFilePath;
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+            {
+                _viewModel.StatusMessage = "No file loaded to delete";
+                return;
+            }
+
+            var fileName = Path.GetFileName(filePath);
+
+            var confirmed = await Radoub.UI.Services.DialogHelper.ShowConfirmAsync(
+                this, "Confirm Delete", $"Delete \"{fileName}\" from disk?\n\nThis cannot be undone.");
+            if (!confirmed)
+                return;
+
+            try
+            {
+                File.Delete(filePath);
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Deleted dialog file: {fileName}");
+
+                // Close the dialog since the file no longer exists
+                _controllers.FileMenu.OnCloseClick(null, null!);
+                _selectedNode = null;
+
+                _viewModel.StatusMessage = $"Deleted {fileName}";
+
+                // Refresh the dialog browser panel
+                var dialogBrowserPanel = this.FindControl<Radoub.UI.Controls.DialogBrowserPanel>("DialogBrowserPanel");
+                if (dialogBrowserPanel != null)
+                {
+                    await dialogBrowserPanel.RefreshAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to delete {fileName}: {ex.Message}");
+                _viewModel.StatusMessage = $"Delete failed: {ex.Message}";
+            }
+        }
+
         private async void OnRenameDialogClick(object? sender, RoutedEventArgs e)
         {
             await RenameCurrentDialogAsync();

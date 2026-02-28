@@ -24,6 +24,7 @@ namespace DialogEditor.Views
         {
             await _services.WindowPersistence.RestoreWindowPositionAsync();
             PopulateRecentFilesMenu();
+            _services.ResourceBrowser.UpdateRecentCreatureTagsDropdown(); // #1244
             await _services.WindowPersistence.HandleStartupFileAsync(_viewModel);
 
             // If no file was loaded, try to show module info from RadoubSettings

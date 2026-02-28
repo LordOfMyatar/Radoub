@@ -339,6 +339,16 @@ namespace DialogEditor.Services
             set => _recentFiles.MaxRecentFiles = value;
         }
 
+        // Recent creature tags for character picker (#1244)
+        private List<string> _recentCreatureTags = new();
+        public List<string> RecentCreatureTags => _recentCreatureTags;
+
+        public void SetRecentCreatureTags(List<string> tags)
+        {
+            _recentCreatureTags = tags ?? new List<string>();
+            SaveSettings();
+        }
+
         // Window properties - DELEGATED to WindowLayoutService (#719)
         public double WindowLeft
         {
@@ -809,6 +819,9 @@ namespace DialogEditor.Services
                             settings.SoundBrowserIncludeBifFiles,
                             settings.SpellCheckEnabled);
 
+                        // Initialize recent creature tags (#1244)
+                        _recentCreatureTags = settings.RecentCreatureTags?.ToList() ?? new List<string>();
+
                         UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {_recentFiles.RecentFiles.Count} recent files, max={_recentFiles.MaxRecentFiles}, theme={(_uiSettings.IsDarkTheme ? "dark" : "light")}, logLevel={_loggingSettings.CurrentLogLevel}, retention={_loggingSettings.LogRetentionSessions} sessions, autoSave={_editorPreferences.AutoSaveEnabled}, delay={_editorPreferences.AutoSaveDelayMs}ms, paramCache={_editorPreferences.EnableParameterCache}");
                     }
                     else
@@ -886,7 +899,8 @@ namespace DialogEditor.Services
                     SpellCheckEnabled = SpellCheckEnabled,
                     ManifestPath = SharedPathHelper.ContractPath(ManifestPath),
                     ExternalEditorPath = SharedPathHelper.ContractPath(ExternalEditorPath),
-                    ScriptSearchPaths = SharedPathHelper.ContractPaths(_editorPreferences.ScriptSearchPathsInternal)
+                    ScriptSearchPaths = SharedPathHelper.ContractPaths(_editorPreferences.ScriptSearchPathsInternal),
+                    RecentCreatureTags = _recentCreatureTags.ToList()
                 };
 
                 var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
@@ -993,6 +1007,9 @@ namespace DialogEditor.Services
             // Script editor settings
             public string ExternalEditorPath { get; set; } = "";
             public List<string> ScriptSearchPaths { get; set; } = new List<string>();
+
+            // Recent creature tags for character picker (#1244)
+            public List<string> RecentCreatureTags { get; set; } = new List<string>();
         }
     }
 }

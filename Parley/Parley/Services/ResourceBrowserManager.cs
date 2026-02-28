@@ -33,8 +33,8 @@ namespace DialogEditor.Services
         private readonly Func<TreeViewSafeNode?> _getSelectedNode;
         private readonly Func<string?> _getCurrentFilePath;
 
-        // Session cache for recently used creature tags
-        private readonly List<string> _recentCreatureTags = new();
+        // Recently used creature tags - persisted via settings (#1244)
+        private readonly List<string> _recentCreatureTags;
 
         public ResourceBrowserManager(
             AudioService audioService,
@@ -56,6 +56,9 @@ namespace DialogEditor.Services
             _getSelectedNode = getSelectedNode ?? throw new ArgumentNullException(nameof(getSelectedNode));
             _getCurrentFilePath = getCurrentFilePath ?? (() => null);
             _gameDataService = gameDataService;
+
+            // Initialize from persisted settings (#1244)
+            _recentCreatureTags = new List<string>(settings.RecentCreatureTags ?? new List<string>());
         }
 
         /// <summary>
@@ -228,14 +231,17 @@ namespace DialogEditor.Services
 
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added to recent creature tags: {tag}");
 
+            // Persist to settings (#1244)
+            _settings.SetRecentCreatureTags(_recentCreatureTags);
+
             // Update the dropdown
             UpdateRecentCreatureTagsDropdown();
         }
 
         /// <summary>
-        /// Updates the recent creature tags dropdown
+        /// Updates the recent creature tags dropdown. Public for startup population (#1244).
         /// </summary>
-        private void UpdateRecentCreatureTagsDropdown()
+        public void UpdateRecentCreatureTagsDropdown()
         {
             var dropdown = _findControl("RecentCreatureTagsComboBox") as ComboBox;
             if (dropdown != null)

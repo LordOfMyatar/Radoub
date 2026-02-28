@@ -106,5 +106,9 @@ namespace DialogEditor.Services
 
         // Spell Check settings
         bool SpellCheckEnabled { get; set; }
+
+        // Recent creature tags for character picker (#1244)
+        List<string> RecentCreatureTags { get; }
+        void SetRecentCreatureTags(List<string> tags);
     }
 }
