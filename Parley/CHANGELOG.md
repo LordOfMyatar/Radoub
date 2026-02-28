@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.154-alpha] - 2026-02-28
+**Branch**: `parley/issue-1562` | **PR**: #TBD
+
+### Sprint: Bug Squash + Code Health
+
+- [ ] #1509 - Delete file not working from file panel
+- [ ] #1244 - Character picker Recent dropdown resets each session
+- [ ] #1540 - Split FileMenuController and NodeOperationsManager
+
+---
+
 ## [0.1.153-alpha] - 2026-02-27
 **Branch**: `parley/issue-1554` | **PR**: #1558
 
