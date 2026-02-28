@@ -515,6 +515,47 @@ git add . && git commit -m "[Radoub] test: Add UTC round-trip tests (#549)"
 - Simpler to bisect if issues arise
 - Clear progress tracking in git history
 
+**Sprint Completion — Manual Spot-Check List**:
+
+When all sprint items are done (before `/pre-merge`), generate a **manual spot-check list** if the sprint included any changes that need human visual/behavioral verification.
+
+**Include spot-checks when the sprint has:**
+- UI visual changes (new icons, color changes, layout, theme updates)
+- User-facing behavior (new shortcuts, menu items, dialog behavior)
+- Event/notification wiring (events that should trigger visible UI updates)
+- File format changes (round-trip with real files)
+
+**Skip spot-checks when:**
+- Changes are purely internal (refactoring, test-only, documentation)
+- Everything is fully covered by automated tests with no visual component
+
+**Format:**
+```markdown
+### Manual Spot-Checks
+
+Verify in the running app before `/pre-merge`:
+
+- [ ] [Specific thing to check] — [where/how to verify]
+- [ ] [Another thing] — [steps to reproduce]
+```
+
+**Rules:**
+- Be specific — "check the UI" is not useful
+- Include how to trigger the behavior
+- Only list things automated tests can't verify
+- Keep it short (3-8 items typical)
+
+**Example** (for a sprint with a new FlowView icon + theme fixes):
+```markdown
+### Manual Spot-Checks
+
+- [ ] 📋 icon appears in FlowView when quest tag is set on a node
+- [ ] 📋 icon disappears when quest tag is cleared (✕ button)
+- [ ] 📋 icon appears when quest selected via Browse dialog
+- [ ] Browser window text readable on dark theme (no white-on-white)
+- [ ] Browser window text readable on light theme (no invisible text)
+```
+
 ---
 
 ## Documentation Standards
