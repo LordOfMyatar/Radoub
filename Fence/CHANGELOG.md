@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.16-alpha] - 2026-02-27
-**Branch**: `radoub/issue-1560` | **PR**: #TBD
+**Branch**: `radoub/issue-1560` | **PR**: #1561
 
 ### TDD Audit Followup (#1560)
 

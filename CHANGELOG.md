@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.81] - 2026-02-27
-**Branch**: `radoub/issue-1560` | **PR**: #TBD
+**Branch**: `radoub/issue-1560` | **PR**: #1561
 
 ### TDD Audit Followup: Incomplete items from Epic #1543 (#1560)
 
