@@ -15,9 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Bug Squash + Code Health
 
-- [ ] #1509 - Delete file not working from file panel
-- [ ] #1244 - Character picker Recent dropdown resets each session
-- [ ] #1540 - Split FileMenuController and NodeOperationsManager
+- [x] #1509 - Wire up delete file from browser panel context menu + File > Delete File menu option
+- [x] #1244 - Persist character picker Recent dropdown across sessions via SettingsService
+- [x] #1540 - Split FileMenuController (3 partials) and NodeOperationsManager (3 partials), all <500 lines
 
 ---
 
