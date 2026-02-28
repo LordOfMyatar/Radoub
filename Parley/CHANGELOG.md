@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.155-alpha] - 2026-02-28
+**Branch**: `parley/issue-1563` | **PR**: #TBD
+
+### Sprint: Visual & UX Polish
+
+- [ ] #1165 - FlowView should show symbols for quest tags
+- [ ] #1539 - Hardcoded theme values (colors, fonts, brushes)
+- [ ] #1375 - UndoMenuItem_Exists fails intermittently
+
+---
+
 ## [0.1.154-alpha] - 2026-02-28
 **Branch**: `parley/issue-1562` | **PR**: #1564
 
