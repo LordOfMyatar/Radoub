@@ -10,6 +10,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.23-alpha] - 2026-02-28
+**Branch**: `quartermaster/issue-1557` | **PR**: #TBD
+
+### Bug: Dynamic elf model head/neck mismatch, halfling proportions off (#1557)
+
+---
+
 ## [0.2.22-alpha] - 2026-02-28
 **Branch**: `quartermaster/sprint/metamagic` | **PR**: #1574
 

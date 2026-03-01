@@ -63,6 +63,14 @@ $query = @'
         labels(first: 10) { nodes { name } }
         milestone { title number }
         assignees(first: 5) { nodes { login } }
+        comments(first: 20, orderBy: {field: UPDATED_AT, direction: DESC}) {
+          totalCount
+          nodes {
+            author { login }
+            body
+            createdAt
+          }
+        }
         projectItems(first: 5) {
           nodes {
             project { title number }

@@ -8,6 +8,7 @@
     - list: Issues without bodies (~40KB)
     - issue: Single issue with body (requires -Number)
     - search: Search issues by keyword (requires -Query)
+    - comments: Show comments for a single issue (requires -Number)
 
 .PARAMETER Number
     Issue number for single-issue view.
@@ -28,7 +29,7 @@
 
 param(
     [Parameter(Mandatory)]
-    [ValidateSet("status", "summary", "list", "issue", "search")]
+    [ValidateSet("status", "summary", "list", "issue", "search", "comments")]
     [string]$View,
 
     [int]$Number,
@@ -114,14 +115,55 @@ switch ($View) {
             exit 1
         }
 
-        @{
+        $result = @{
             number = $issue.number
             title = $issue.title
             body = $issue.body
             updatedAt = $issue.updatedAt
             author = $issue.author.login
             labels = ($issue.labels.nodes.name -join ", ")
-        } | ConvertTo-Json -Depth 5
+            commentCount = if ($issue.comments) { $issue.comments.totalCount } else { 0 }
+        }
+
+        # Include comments if present
+        if ($issue.comments -and $issue.comments.nodes.Count -gt 0) {
+            $result.comments = $issue.comments.nodes | ForEach-Object {
+                @{
+                    author = $_.author.login
+                    body = $_.body
+                    createdAt = $_.createdAt
+                }
+            }
+        }
+
+        $result | ConvertTo-Json -Depth 5
+    }
+
+    "comments" {
+        if (-not $Number) {
+            Write-Error "-Number required for comments view"
+            exit 1
+        }
+
+        $issue = $data.issues | Where-Object { $_.number -eq $Number }
+        if (-not $issue) {
+            Write-Error "Issue #$Number not found in cache"
+            exit 1
+        }
+
+        if (-not $issue.comments -or $issue.comments.totalCount -eq 0) {
+            Write-Host "Issue #$Number has no comments."
+            exit 0
+        }
+
+        Write-Host "Issue #${Number}: $($issue.title)"
+        Write-Host "Comments: $($issue.comments.totalCount) (showing up to 20 most recent)"
+        Write-Host ""
+        $issue.comments.nodes | ForEach-Object {
+            Write-Host "--- $($_.author.login) ($($_.createdAt)) ---"
+            Write-Host $_.body
+            Write-Host ""
+        }
     }
 
     "search" {
