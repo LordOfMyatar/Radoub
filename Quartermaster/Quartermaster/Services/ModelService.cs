@@ -232,6 +232,13 @@ public class ModelService
         TryAddBodyPart(compositeModel, basePrefix, "footl", GetPartNumber("LFoot", creature.BodyPart_LFoot));
         TryAddBodyPart(compositeModel, basePrefix, "footr", GetPartNumber("RFoot", creature.BodyPart_RFoot));
 
+        // Fix thin seams between adjacent body parts (#1557).
+        // NWN body parts rely on skeletal deformation for seamless joints, but our static
+        // preview places rigid meshes. Some races (elves) have very thin vertex overlap
+        // at joints that becomes visible under perspective projection. Nudge parts toward
+        // each other where overlap is too thin.
+        AdjustSeamOverlaps(compositeModel);
+
         // Calculate combined bounding box
         UpdateCompositeBounds(compositeModel);
 
@@ -483,6 +490,101 @@ public class ModelService
 
             UnifiedLogger.LogApplication(LogLevel.INFO,
                 $"UpdateCompositeBounds: bounds=({minX:F2},{minY:F2},{minZ:F2}) to ({maxX:F2},{maxY:F2},{maxZ:F2}), radius={model.Radius:F2}");
+        }
+    }
+
+    /// <summary>
+    /// Adjust body part positions to ensure adequate overlap at joints (#1557).
+    /// NWN body parts rely on skeletal deformation for seamless connections. Our static
+    /// preview places rigid meshes at bone positions, which can leave thin seams between
+    /// adjacent parts. This method detects thin overlaps and nudges parts closer together.
+    /// </summary>
+    private void AdjustSeamOverlaps(MdlModel compositeModel)
+    {
+        // Adjacent body part pairs that should overlap vertically.
+        // Format: (upper part name fragment, lower part name fragment)
+        // "Upper" = the part that is higher on the body (larger Z)
+        var adjacentPairs = new[]
+        {
+            ("head", "neck"),
+            ("neck", "chest"),
+        };
+
+        // Minimum overlap threshold in world units. Below this, parts get nudged.
+        // Human overlap is ~0.07, so 0.03 is a safe threshold that catches thin seams
+        // without affecting well-overlapping races.
+        const float minOverlap = 0.03f;
+
+        var meshes = compositeModel.GetMeshNodes().ToList();
+
+        foreach (var (upperFragment, lowerFragment) in adjacentPairs)
+        {
+            // Find meshes for each part
+            var upperMeshes = meshes.Where(m => m.Name.Contains(upperFragment, StringComparison.OrdinalIgnoreCase)).ToList();
+            var lowerMeshes = meshes.Where(m => m.Name.Contains(lowerFragment, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            if (upperMeshes.Count == 0 || lowerMeshes.Count == 0)
+                continue;
+
+            // Compute world-space Z bounds for each set of meshes
+            float upperMinZ = float.MaxValue;
+            foreach (var mesh in upperMeshes)
+            {
+                var transform = System.Numerics.Matrix4x4.CreateScale(mesh.Scale)
+                    * System.Numerics.Matrix4x4.CreateFromQuaternion(mesh.Orientation)
+                    * System.Numerics.Matrix4x4.CreateTranslation(mesh.Position);
+                foreach (var vertex in mesh.Vertices)
+                {
+                    var wv = System.Numerics.Vector3.Transform(vertex, transform);
+                    if (!float.IsNaN(wv.Z))
+                        upperMinZ = Math.Min(upperMinZ, wv.Z);
+                }
+            }
+
+            float lowerMaxZ = float.MinValue;
+            foreach (var mesh in lowerMeshes)
+            {
+                var transform = System.Numerics.Matrix4x4.CreateScale(mesh.Scale)
+                    * System.Numerics.Matrix4x4.CreateFromQuaternion(mesh.Orientation)
+                    * System.Numerics.Matrix4x4.CreateTranslation(mesh.Position);
+                foreach (var vertex in mesh.Vertices)
+                {
+                    var wv = System.Numerics.Vector3.Transform(vertex, transform);
+                    if (!float.IsNaN(wv.Z))
+                        lowerMaxZ = Math.Max(lowerMaxZ, wv.Z);
+                }
+            }
+
+            if (upperMinZ == float.MaxValue || lowerMaxZ == float.MinValue)
+                continue;
+
+            float overlap = lowerMaxZ - upperMinZ;
+            if (overlap >= minOverlap)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"AdjustSeamOverlaps: {upperFragment}/{lowerFragment} overlap={overlap:F4} >= {minOverlap} — OK");
+                continue;
+            }
+
+            // Need to increase overlap. Split the deficit evenly:
+            // push upper part down and lower part up.
+            float deficit = minOverlap - overlap;
+            float halfDeficit = deficit / 2f;
+
+            foreach (var mesh in upperMeshes)
+            {
+                mesh.Position = new System.Numerics.Vector3(
+                    mesh.Position.X, mesh.Position.Y, mesh.Position.Z - halfDeficit);
+            }
+            foreach (var mesh in lowerMeshes)
+            {
+                mesh.Position = new System.Numerics.Vector3(
+                    mesh.Position.X, mesh.Position.Y, mesh.Position.Z + halfDeficit);
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"AdjustSeamOverlaps: {upperFragment}/{lowerFragment} overlap={overlap:F4} < {minOverlap} — " +
+                $"nudged ±{halfDeficit:F4} (new overlap≈{minOverlap:F4})");
         }
     }
 
