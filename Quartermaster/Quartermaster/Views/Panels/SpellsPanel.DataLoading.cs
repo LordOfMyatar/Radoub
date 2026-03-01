@@ -405,7 +405,7 @@ public partial class SpellsPanel
         var vm = new SpellListViewModel
         {
             SpellId = baseSpell.SpellId,
-            SpellName = $"  [{metamagicName}]",
+            SpellName = $"  {baseSpell.SpellName} [{metamagicName}]",
             SpellLevel = effectiveLevel,
             SpellLevelDisplay = effectiveLevel.ToString(),
             BaseSpellLevel = baseSpell.SpellLevel,
