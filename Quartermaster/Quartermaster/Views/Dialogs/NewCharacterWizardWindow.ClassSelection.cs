@@ -6,6 +6,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Quartermaster.Services;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 
 namespace Quartermaster.Views.Dialogs;
@@ -520,6 +521,13 @@ public partial class NewCharacterWizardWindow
         if (_selectedClassId < 0) return;
 
         var metadata = _displayService.Classes.GetClassMetadata(_selectedClassId);
+
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"NCW.UpdateAlignmentButtonStates: classId={_selectedClassId} ({metadata.Name}) " +
+            $"hasRestriction={metadata.AlignmentRestriction != null}" +
+            (metadata.AlignmentRestriction != null
+                ? $" mask=0x{metadata.AlignmentRestriction.RestrictionMask:X2} type=0x{metadata.AlignmentRestriction.RestrictionType:X2} inverted={metadata.AlignmentRestriction.Inverted}"
+                : ""));
 
         for (int i = 0; i < _alignmentButtons.Length; i++)
         {

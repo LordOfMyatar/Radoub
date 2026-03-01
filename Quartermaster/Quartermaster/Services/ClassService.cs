@@ -193,8 +193,16 @@ public class ClassService
         var alignRestrictType = _gameDataService.Get2DAValue("classes", classId, "AlignRstrctType");
         var invertRestrict = _gameDataService.Get2DAValue("classes", classId, "InvertRestrict");
 
+        UnifiedLogger.LogApplication(LogLevel.DEBUG,
+            $"ClassService.LoadAlignmentRestrictions: class={classId} AlignRestrict='{alignRestrict}' " +
+            $"AlignRstrctType='{alignRestrictType}' InvertRestrict='{invertRestrict}'");
+
         if (string.IsNullOrEmpty(alignRestrict) || alignRestrict == "****")
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"ClassService: class={classId} has no AlignRestrict value — skipping");
             return;
+        }
 
         // Parse bitmask
         // 0x01 = neutral, 0x02 = lawful, 0x04 = chaotic, 0x08 = good, 0x10 = evil
@@ -233,6 +241,10 @@ public class ClassService
             RestrictionType = restrictType,
             Inverted = invert
         };
+
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"ClassService: class={classId} ({metadata.Name}) alignment restriction loaded: " +
+            $"mask=0x{restrictMask:X2} type=0x{restrictType:X2} inverted={invert}");
     }
 
     #endregion

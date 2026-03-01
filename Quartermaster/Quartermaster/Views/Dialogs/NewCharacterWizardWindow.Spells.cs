@@ -75,11 +75,17 @@ public partial class NewCharacterWizardWindow
             };
 
             // Show domain spell info for clerics
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"NCW.PrepareStep8: isDivine=true classNeedsDomains={_classNeedsDomains}");
             if (_classNeedsDomains)
             {
                 var d1Id = GetSelectedDomainId(_domain1ComboBox);
                 var d2Id = GetSelectedDomainId(_domain2ComboBox);
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"NCW.PrepareStep8: domain1Id={d1Id} domain2Id={d2Id}");
                 var domainLines = BuildDomainSpellSummary(d1Id, d2Id);
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"NCW.PrepareStep8: domainLines.Count={domainLines.Count}");
                 if (domainLines.Count > 0)
                 {
                     infoLines.Add("");
