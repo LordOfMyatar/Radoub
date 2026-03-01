@@ -15,6 +15,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Bug: Dynamic elf model head/neck mismatch, halfling proportions off (#1557)
 
+- Full SRT bone transform calculation (Scale * Rotation * Translation) for body part positioning
+- Overlap-aware seam adjustment: detects thin vertex overlap at joints and nudges parts closer
+- Part type tracking dictionary for reliable mesh-to-body-part mapping
+- Gamma correction (pow 1/1.6) and improved ambient lighting to match NWN toolset brightness
+- 15 new unit tests (bone transforms + seam overlaps)
+
 ---
 
 ## [0.2.22-alpha] - 2026-02-28
