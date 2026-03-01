@@ -8,6 +8,7 @@ namespace Quartermaster.Tests;
 /// Tests for alignment restriction parsing and validation.
 /// Verifies that classes.2da AlignRestrict/AlignRstrctType/InvertRestrict
 /// columns are correctly parsed (including 0x hex prefix) and enforced.
+/// Mock data matches NWN classes.2da values exactly.
 /// </summary>
 public class AlignmentRestrictionTests
 {
@@ -30,10 +31,11 @@ public class AlignmentRestrictionTests
     }
 
     [Fact]
-    public void Monk_RestrictionMask_IsLawful()
+    public void Monk_RestrictionMask_Is0x05()
     {
+        // 0x05 = neutral(0x01) + chaotic(0x04) prohibited
         var metadata = _classService.GetClassMetadata(5);
-        Assert.Equal(0x02, metadata.AlignmentRestriction!.RestrictionMask);
+        Assert.Equal(0x05, metadata.AlignmentRestriction!.RestrictionMask);
     }
 
     [Fact]
@@ -51,18 +53,20 @@ public class AlignmentRestrictionTests
     }
 
     [Fact]
-    public void Barbarian_IsInverted()
+    public void Barbarian_NotInverted()
     {
+        // Barbarian: mask=0x02 (lawful), invert=0 → lawful is PROHIBITED
         var metadata = _classService.GetClassMetadata(0);
-        Assert.True(metadata.AlignmentRestriction!.Inverted);
+        Assert.False(metadata.AlignmentRestriction!.Inverted);
     }
 
     [Fact]
-    public void Paladin_RestrictionMask_IsLawfulGood()
+    public void Paladin_RestrictionMask_Is0x15()
     {
+        // 0x15 = neutral(0x01) + chaotic(0x04) + evil(0x10) prohibited
         var metadata = _classService.GetClassMetadata(6);
         Assert.NotNull(metadata.AlignmentRestriction);
-        Assert.Equal(0x0A, metadata.AlignmentRestriction!.RestrictionMask);
+        Assert.Equal(0x15, metadata.AlignmentRestriction!.RestrictionMask);
     }
 
     [Fact]
@@ -75,22 +79,32 @@ public class AlignmentRestrictionTests
     [Fact]
     public void Fighter_HasNoAlignmentRestriction()
     {
+        // Fighter: 0x00 mask → no restriction created
         var metadata = _classService.GetClassMetadata(4);
+        Assert.Null(metadata.AlignmentRestriction);
+    }
+
+    [Fact]
+    public void Cleric_HasNoAlignmentRestriction()
+    {
+        // Cleric: 0x00 mask → no restriction created
+        var metadata = _classService.GetClassMetadata(2);
         Assert.Null(metadata.AlignmentRestriction);
     }
 
     [Fact]
     public void Druid_RestrictionMask_IsNeutral()
     {
+        // Druid: mask=0x01 (neutral), type=0x03, invert=1 → neutral REQUIRED on at least one axis
         var metadata = _classService.GetClassMetadata(3);
         Assert.NotNull(metadata.AlignmentRestriction);
         Assert.Equal(0x01, metadata.AlignmentRestriction!.RestrictionMask);
-        Assert.False(metadata.AlignmentRestriction.Inverted);
+        Assert.True(metadata.AlignmentRestriction.Inverted);
     }
 
     #endregion
 
-    #region Monk — must be Lawful (mask=0x02, type=0x01 LC axis, not inverted)
+    #region Monk — must be Lawful (mask=0x05 N+C prohibited, type=0x01 LC axis, invert=0)
 
     [Theory]
     [InlineData(100, 100, true)]  // LG
@@ -111,7 +125,7 @@ public class AlignmentRestrictionTests
 
     #endregion
 
-    #region Barbarian — cannot be Lawful (mask=0x02, type=0x01 LC axis, inverted)
+    #region Barbarian — cannot be Lawful (mask=0x02 lawful prohibited, type=0x01 LC axis, invert=0)
 
     [Theory]
     [InlineData(100, 100, false)] // LG
@@ -132,18 +146,18 @@ public class AlignmentRestrictionTests
 
     #endregion
 
-    #region Paladin — must be Lawful Good (mask=0x0A, type=0x03 both axes, not inverted)
+    #region Paladin — must be Lawful Good (mask=0x15 N+C+E prohibited, type=0x03 both, invert=0)
 
     [Theory]
     [InlineData(100, 100, true)]  // LG — only valid alignment
-    [InlineData(100, 50, false)]  // NG — Good but not Lawful
-    [InlineData(100, 0, false)]   // CG — Good but Chaotic
-    [InlineData(50, 100, false)]  // LN — Lawful but not Good
-    [InlineData(50, 50, false)]   // TN
-    [InlineData(50, 0, false)]    // CN
-    [InlineData(0, 100, false)]   // LE — Lawful but Evil
-    [InlineData(0, 50, false)]    // NE
-    [InlineData(0, 0, false)]     // CE
+    [InlineData(100, 50, false)]  // NG — neutral on LC axis → prohibited
+    [InlineData(100, 0, false)]   // CG — chaotic → prohibited
+    [InlineData(50, 100, false)]  // LN — neutral on GE axis → prohibited
+    [InlineData(50, 50, false)]   // TN — neutral on both → prohibited
+    [InlineData(50, 0, false)]    // CN — chaotic + neutral → prohibited
+    [InlineData(0, 100, false)]   // LE — evil → prohibited
+    [InlineData(0, 50, false)]    // NE — evil + neutral → prohibited
+    [InlineData(0, 0, false)]     // CE — chaotic + evil → prohibited
     public void Paladin_AllowsOnlyLawfulGood(byte goodEvil, byte lawChaos, bool expected)
     {
         var metadata = _classService.GetClassMetadata(6);
@@ -153,18 +167,18 @@ public class AlignmentRestrictionTests
 
     #endregion
 
-    #region Druid — must have Neutral on at least one axis (mask=0x01, type=0x03, not inverted)
+    #region Druid — must have Neutral on at least one axis (mask=0x01 neutral, type=0x03, invert=1)
 
     [Theory]
-    [InlineData(100, 50, true)]   // NG
-    [InlineData(50, 100, true)]   // LN
-    [InlineData(50, 50, true)]    // TN
-    [InlineData(50, 0, true)]     // CN
-    [InlineData(0, 50, true)]     // NE
-    [InlineData(100, 100, false)] // LG
-    [InlineData(100, 0, false)]   // CG
-    [InlineData(0, 100, false)]   // LE
-    [InlineData(0, 0, false)]     // CE
+    [InlineData(100, 50, true)]   // NG — neutral on LC
+    [InlineData(50, 100, true)]   // LN — neutral on GE
+    [InlineData(50, 50, true)]    // TN — neutral on both
+    [InlineData(50, 0, true)]     // CN — neutral on GE
+    [InlineData(0, 50, true)]     // NE — neutral on LC
+    [InlineData(100, 100, false)] // LG — no neutral
+    [InlineData(100, 0, false)]   // CG — no neutral
+    [InlineData(0, 100, false)]   // LE — no neutral
+    [InlineData(0, 0, false)]     // CE — no neutral
     public void Druid_RequiresNeutralAxis(byte goodEvil, byte lawChaos, bool expected)
     {
         var metadata = _classService.GetClassMetadata(3);
@@ -174,12 +188,15 @@ public class AlignmentRestrictionTests
 
     #endregion
 
-    #region Bard — cannot be Lawful (same as Barbarian)
+    #region Bard — cannot be Lawful (same restriction as Barbarian)
 
     [Theory]
     [InlineData(100, 100, false)] // LG — blocked
     [InlineData(100, 50, true)]   // NG — allowed
     [InlineData(100, 0, true)]    // CG — allowed
+    [InlineData(50, 100, false)]  // LN — blocked
+    [InlineData(50, 50, true)]    // TN — allowed
+    [InlineData(0, 0, true)]      // CE — allowed
     public void Bard_BlocksLawfulAlignments(byte goodEvil, byte lawChaos, bool expected)
     {
         var metadata = _classService.GetClassMetadata(1);
@@ -213,25 +230,7 @@ public class AlignmentRestrictionTests
         bool maskHasNeutral = (mask & 0x01) != 0;
 
         bool matches;
-        if (type == 0x03)
-        {
-            bool lcMatch = (maskHasLawful && isLawful) || (maskHasChaotic && isChaotic);
-            bool geMatch = (maskHasGood && isGood) || (maskHasEvil && isEvil);
-            bool neutralMatch = maskHasNeutral && (isNeutralLC || isNeutralGE);
-
-            bool hasLcRestriction = maskHasLawful || maskHasChaotic;
-            bool hasGeRestriction = maskHasGood || maskHasEvil;
-
-            if (hasLcRestriction && hasGeRestriction)
-                matches = lcMatch && geMatch || neutralMatch;
-            else if (hasLcRestriction)
-                matches = lcMatch || neutralMatch;
-            else if (hasGeRestriction)
-                matches = geMatch || neutralMatch;
-            else
-                matches = neutralMatch;
-        }
-        else if (type == 0x01)
+        if (type == 0x01)
         {
             matches = (maskHasLawful && isLawful) || (maskHasChaotic && isChaotic)
                 || (maskHasNeutral && isNeutralLC);
@@ -240,6 +239,13 @@ public class AlignmentRestrictionTests
         {
             matches = (maskHasGood && isGood) || (maskHasEvil && isEvil)
                 || (maskHasNeutral && isNeutralGE);
+        }
+        else if (type == 0x03)
+        {
+            bool lcMatch = (maskHasLawful && isLawful) || (maskHasChaotic && isChaotic);
+            bool geMatch = (maskHasGood && isGood) || (maskHasEvil && isEvil);
+            bool neutralMatch = maskHasNeutral && (isNeutralLC || isNeutralGE);
+            matches = lcMatch || geMatch || neutralMatch;
         }
         else
         {
@@ -252,6 +258,8 @@ public class AlignmentRestrictionTests
             matches = (alignBits & mask) != 0;
         }
 
-        return restriction.Inverted ? !matches : matches;
+        // Invert=0: mask = prohibited → block if matches
+        // Invert=1: mask = required → allow if matches
+        return restriction.Inverted ? matches : !matches;
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
 
@@ -204,14 +205,26 @@ public class ClassService
         if (!int.TryParse(alignValue, System.Globalization.NumberStyles.HexNumber, null, out int restrictMask))
         {
             if (!int.TryParse(alignRestrict, out restrictMask))
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"ClassService: Failed to parse AlignRestrict '{alignRestrict}' for class {classId}");
                 return;
+            }
         }
+
+        // Mask of 0 means no alignment restriction (e.g., Cleric, Fighter)
+        if (restrictMask == 0)
+            return;
 
         var typeValue = alignRestrictType != null &&
             alignRestrictType.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
             ? alignRestrictType[2..]
             : alignRestrictType;
-        int.TryParse(typeValue, System.Globalization.NumberStyles.HexNumber, null, out int restrictType);
+        if (!int.TryParse(typeValue, System.Globalization.NumberStyles.HexNumber, null, out int restrictType))
+        {
+            // Try plain decimal
+            int.TryParse(alignRestrictType, out restrictType);
+        }
         bool invert = invertRestrict == "1";
 
         metadata.AlignmentRestriction = new AlignmentRestriction

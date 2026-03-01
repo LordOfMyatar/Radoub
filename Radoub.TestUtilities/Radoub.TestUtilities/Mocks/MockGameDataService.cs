@@ -228,27 +228,29 @@ public class MockGameDataService : IGameDataService
         AddRow(racialTypes, "6", "Human", "11", "11", "11");
         _2daFiles["racialtypes"] = racialTypes;
 
-        // classes.2da - common classes
-        // AlignRestrict/AlignRstrctType/InvertRestrict per NWN rules:
-        //   Barbarian: cannot be Lawful (0x02 on LC axis, inverted)
-        //   Bard: cannot be Lawful (0x02 on LC axis, inverted)
-        //   Druid: must have Neutral axis (0x01 on both axes)
-        //   Monk: must be Lawful (0x02 on LC axis)
-        //   Paladin: must be Lawful Good (0x0A on both axes)
+        // classes.2da - common classes (values match NWN classes.2da exactly)
+        // AlignRestrict/AlignRstrctType/InvertRestrict:
+        //   Default (Invert=0): mask bits are PROHIBITED alignments
+        //   Inverted (Invert=1): mask bits are REQUIRED alignments
+        //   Barbarian: 0x02 prohibited on LC axis → cannot be Lawful
+        //   Bard: 0x02 prohibited on LC axis → cannot be Lawful
+        //   Druid: 0x01 required on both axes, inverted → must have Neutral on at least one axis
+        //   Monk: 0x05 prohibited on LC axis → cannot be Neutral/Chaotic (must be Lawful)
+        //   Paladin: 0x15 prohibited on both axes → cannot be N/C/E (must be Lawful Good)
         var classes = new TwoDAFile();
         classes.Columns.AddRange(new[] { "Label", "Name", "HitDie", "AttackBonusTable",
             "AlignRestrict", "AlignRstrctType", "InvertRestrict" });
-        AddRow(classes, "0", "Barbarian", "40", "12", "CLS_ATK_1", "0x02", "0x01", "1");
-        AddRow(classes, "1", "Bard", "41", "6", "CLS_ATK_2", "0x02", "0x01", "1");
-        AddRow(classes, "2", "Cleric", "42", "8", "CLS_ATK_2", "****", "****", "****");
-        AddRow(classes, "3", "Druid", "43", "8", "CLS_ATK_2", "0x01", "0x03", "0");
-        AddRow(classes, "4", "Fighter", "44", "10", "CLS_ATK_1", "****", "****", "****");
-        AddRow(classes, "5", "Monk", "45", "8", "CLS_ATK_2", "0x02", "0x01", "0");
-        AddRow(classes, "6", "Paladin", "46", "10", "CLS_ATK_1", "0x0A", "0x03", "0");
-        AddRow(classes, "7", "Ranger", "47", "10", "CLS_ATK_1", "****", "****", "****");
-        AddRow(classes, "8", "Rogue", "48", "6", "CLS_ATK_2", "****", "****", "****");
-        AddRow(classes, "9", "Sorcerer", "49", "4", "CLS_ATK_3", "****", "****", "****");
-        AddRow(classes, "10", "Wizard", "50", "4", "CLS_ATK_3", "****", "****", "****");
+        AddRow(classes, "0", "Barbarian", "40", "12", "CLS_ATK_1", "0x02", "0x01", "0");
+        AddRow(classes, "1", "Bard", "41", "6", "CLS_ATK_2", "0x02", "0x01", "0");
+        AddRow(classes, "2", "Cleric", "42", "8", "CLS_ATK_2", "0x00", "0x00", "0");
+        AddRow(classes, "3", "Druid", "43", "8", "CLS_ATK_2", "0x01", "0x03", "1");
+        AddRow(classes, "4", "Fighter", "44", "10", "CLS_ATK_1", "0x00", "0x01", "0");
+        AddRow(classes, "5", "Monk", "45", "8", "CLS_ATK_2", "0x05", "0x01", "0");
+        AddRow(classes, "6", "Paladin", "46", "10", "CLS_ATK_1", "0x15", "0x03", "0");
+        AddRow(classes, "7", "Ranger", "47", "10", "CLS_ATK_1", "0x00", "0x00", "0");
+        AddRow(classes, "8", "Rogue", "48", "6", "CLS_ATK_2", "0x00", "0x00", "0");
+        AddRow(classes, "9", "Sorcerer", "49", "4", "CLS_ATK_3", "0x00", "0x00", "0");
+        AddRow(classes, "10", "Wizard", "50", "4", "CLS_ATK_3", "0x00", "0x00", "0");
         _2daFiles["classes"] = classes;
 
         // gender.2da

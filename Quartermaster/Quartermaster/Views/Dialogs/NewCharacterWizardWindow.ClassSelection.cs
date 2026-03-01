@@ -447,7 +447,8 @@ public partial class NewCharacterWizardWindow
 
         if (parts.Count == 0) return "";
 
-        string verb = restriction.Inverted ? "Cannot be" : "Must be";
+        // Invert=0: mask = prohibited alignments; Invert=1: mask = required alignments
+        string verb = restriction.Inverted ? "Must be" : "Cannot be";
         return $"{verb}: {string.Join(" or ", parts)}";
     }
 
@@ -567,7 +568,13 @@ public partial class NewCharacterWizardWindow
 
     private static bool IsAlignmentAllowed(AlignmentRestriction restriction, byte goodEvil, byte lawChaos)
     {
-        // Determine alignment on each axis
+        // NWN alignment restriction system:
+        //   Invert=0 (default): mask bits are PROHIBITED alignments (block if matches)
+        //   Invert=1: mask bits are REQUIRED alignments (allow only if matches)
+        //
+        // Mask bits: 0x01=neutral, 0x02=lawful, 0x04=chaotic, 0x08=good, 0x10=evil
+        // Type: 0x01=LC axis only, 0x02=GE axis only, 0x03=both axes
+
         bool isLawful = lawChaos > 70;
         bool isChaotic = lawChaos < 30;
         bool isNeutralLC = !isLawful && !isChaotic;
@@ -579,37 +586,15 @@ public partial class NewCharacterWizardWindow
         int mask = restriction.RestrictionMask;
         int type = restriction.RestrictionType;
 
-        // Extract restriction bits per axis (neutral bit 0x01 is shared)
         bool maskHasLawful = (mask & 0x02) != 0;
         bool maskHasChaotic = (mask & 0x04) != 0;
         bool maskHasGood = (mask & 0x08) != 0;
         bool maskHasEvil = (mask & 0x10) != 0;
         bool maskHasNeutral = (mask & 0x01) != 0;
 
+        // Check if alignment matches any bit in the mask on applicable axes
         bool matches;
-        if (type == 0x03)
-        {
-            // Both axes: non-neutral bits must match per-axis (AND);
-            // neutral matches either axis (OR) — e.g. Druid "must have neutral on at least one axis"
-            bool lcMatch = (maskHasLawful && isLawful) || (maskHasChaotic && isChaotic);
-            bool geMatch = (maskHasGood && isGood) || (maskHasEvil && isEvil);
-            bool neutralMatch = maskHasNeutral && (isNeutralLC || isNeutralGE);
-
-            // Paladin (0x0A, both axes): must be Lawful AND Good → lcMatch && geMatch
-            // Druid (0x01, both axes): must be neutral on any axis → neutralMatch only
-            bool hasLcRestriction = maskHasLawful || maskHasChaotic;
-            bool hasGeRestriction = maskHasGood || maskHasEvil;
-
-            if (hasLcRestriction && hasGeRestriction)
-                matches = lcMatch && geMatch || neutralMatch;
-            else if (hasLcRestriction)
-                matches = lcMatch || neutralMatch;
-            else if (hasGeRestriction)
-                matches = geMatch || neutralMatch;
-            else
-                matches = neutralMatch; // Only neutral bit set
-        }
-        else if (type == 0x01)
+        if (type == 0x01)
         {
             // Law-Chaos axis only
             matches = (maskHasLawful && isLawful) || (maskHasChaotic && isChaotic)
@@ -620,6 +605,15 @@ public partial class NewCharacterWizardWindow
             // Good-Evil axis only
             matches = (maskHasGood && isGood) || (maskHasEvil && isEvil)
                 || (maskHasNeutral && isNeutralGE);
+        }
+        else if (type == 0x03)
+        {
+            // Both axes: check all mask bits against both axes (OR)
+            // Any matching bit on either axis counts as a match
+            bool lcMatch = (maskHasLawful && isLawful) || (maskHasChaotic && isChaotic);
+            bool geMatch = (maskHasGood && isGood) || (maskHasEvil && isEvil);
+            bool neutralMatch = maskHasNeutral && (isNeutralLC || isNeutralGE);
+            matches = lcMatch || geMatch || neutralMatch;
         }
         else
         {
@@ -633,7 +627,9 @@ public partial class NewCharacterWizardWindow
             matches = (alignBits & mask) != 0;
         }
 
-        return restriction.Inverted ? !matches : matches;
+        // Invert=0: mask = prohibited → block if matches (return !matches)
+        // Invert=1: mask = required → allow if matches (return matches)
+        return restriction.Inverted ? matches : !matches;
     }
 
     #endregion
