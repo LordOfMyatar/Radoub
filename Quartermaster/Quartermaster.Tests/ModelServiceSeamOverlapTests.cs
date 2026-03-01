@@ -7,10 +7,12 @@ namespace Quartermaster.Tests;
 /// <summary>
 /// Tests for ModelService.AdjustSeamOverlaps — validates that body parts with thin
 /// vertex overlap at joints get nudged closer together (#1557).
+/// Threshold is 0.10 world units (matching human-level overlap).
 /// </summary>
 public class ModelServiceSeamOverlapTests
 {
     private const float Tolerance = 0.001f;
+    private const float Threshold = 0.10f; // Must match ModelService.AdjustSeamOverlaps
 
     /// <summary>
     /// Create a synthetic composite model with head and neck meshes at given Z positions.
@@ -74,17 +76,16 @@ public class ModelServiceSeamOverlapTests
     [Fact]
     public void AdjustSeamOverlaps_ThinOverlap_NudgesPartsCloser()
     {
-        // Head bottom at Z=1.0, neck top at Z=1.01 → overlap = 0.01 (below 0.03 threshold)
+        // Head bottom at Z=1.0, neck top at Z=1.05 → overlap = 0.05 (below 0.10 threshold)
         var (model, partTypes) = CreateHeadNeckModel(
             headMinZ: 1.0f, headMaxZ: 1.5f, headPosition: new Vector3(0, 0, 1.25f),
-            neckMinZ: 0.5f, neckMaxZ: 1.01f, neckPosition: new Vector3(0, 0, 0.75f));
+            neckMinZ: 0.5f, neckMaxZ: 1.05f, neckPosition: new Vector3(0, 0, 0.75f));
 
-        float overlapBefore = 1.01f - 1.0f; // 0.01
-        Assert.True(overlapBefore < 0.03f, "Precondition: overlap should be thin");
+        float overlapBefore = 1.05f - 1.0f; // 0.05
+        Assert.True(overlapBefore < Threshold, "Precondition: overlap should be below threshold");
 
         ModelService.AdjustSeamOverlaps(model, partTypes);
 
-        // After adjustment, head should have moved down and neck up
         var headMesh = model.GetMeshNodes().First(m => m.Name == "headmesh01");
         var neckMesh = model.GetMeshNodes().First(m => m.Name == "neckmesh01");
 
@@ -96,12 +97,12 @@ public class ModelServiceSeamOverlapTests
     [Fact]
     public void AdjustSeamOverlaps_AdequateOverlap_NoChange()
     {
-        // Head bottom at Z=1.0, neck top at Z=1.07 → overlap = 0.07 (above 0.03 threshold)
+        // Head bottom at Z=1.0, neck top at Z=1.12 → overlap = 0.12 (above 0.10 threshold)
         var headPos = new Vector3(0, 0, 1.25f);
         var neckPos = new Vector3(0, 0, 0.75f);
         var (model, partTypes) = CreateHeadNeckModel(
             headMinZ: 1.0f, headMaxZ: 1.5f, headPosition: headPos,
-            neckMinZ: 0.5f, neckMaxZ: 1.07f, neckPosition: neckPos);
+            neckMinZ: 0.5f, neckMaxZ: 1.12f, neckPosition: neckPos);
 
         ModelService.AdjustSeamOverlaps(model, partTypes);
 
@@ -133,18 +134,18 @@ public class ModelServiceSeamOverlapTests
         Assert.True(headMesh.Position.Z < 1.25f, "Head should have moved down");
         Assert.True(neckMesh.Position.Z > 0.75f, "Neck should have moved up");
 
-        // Total nudge should close the 0.01 gap plus reach the 0.03 threshold
+        // Total nudge should close the 0.01 gap plus reach the 0.10 threshold
         float totalNudge = (1.25f - headMesh.Position.Z) + (neckMesh.Position.Z - 0.75f);
-        Assert.Equal(0.04f, totalNudge, Tolerance); // deficit = 0.03 - (-0.01) = 0.04
+        Assert.Equal(0.11f, totalNudge, Tolerance); // deficit = 0.10 - (-0.01) = 0.11
     }
 
     [Fact]
     public void AdjustSeamOverlaps_SplitsDeficitEvenly()
     {
-        // Overlap = 0.01, threshold = 0.03, deficit = 0.02, half = 0.01
+        // Overlap = 0.05, threshold = 0.10, deficit = 0.05, half = 0.025
         var (model, partTypes) = CreateHeadNeckModel(
             headMinZ: 1.0f, headMaxZ: 1.5f, headPosition: new Vector3(0, 0, 1.25f),
-            neckMinZ: 0.5f, neckMaxZ: 1.01f, neckPosition: new Vector3(0, 0, 0.75f));
+            neckMinZ: 0.5f, neckMaxZ: 1.05f, neckPosition: new Vector3(0, 0, 0.75f));
 
         ModelService.AdjustSeamOverlaps(model, partTypes);
 
@@ -156,7 +157,7 @@ public class ModelServiceSeamOverlapTests
 
         // Both should move by the same amount
         Assert.Equal(headDelta, neckDelta, Tolerance);
-        Assert.Equal(0.01f, headDelta, Tolerance); // half of 0.02 deficit
+        Assert.Equal(0.025f, headDelta, Tolerance); // half of 0.05 deficit
     }
 
     [Fact]
@@ -181,5 +182,32 @@ public class ModelServiceSeamOverlapTests
         ModelService.AdjustSeamOverlaps(model, partTypes);
 
         Assert.Equal(Vector3.Zero, mesh.Position);
+    }
+
+    [Fact]
+    public void AdjustSeamOverlaps_ElfLikeOverlap_GetsNudged()
+    {
+        // Simulate elf-like overlap: 0.048 (real measured value), below 0.10 threshold
+        var (model, partTypes) = CreateHeadNeckModel(
+            headMinZ: 1.655f, headMaxZ: 1.85f, headPosition: new Vector3(0, 0, 1.703f),
+            neckMinZ: 1.50f, neckMaxZ: 1.703f, neckPosition: new Vector3(0, 0, 1.622f));
+
+        // Overlap = neckMaxZ - headMinZ = 1.703 - 1.655 = 0.048
+        float overlapBefore = 1.703f - 1.655f;
+        Assert.Equal(0.048f, overlapBefore, Tolerance);
+        Assert.True(overlapBefore < Threshold);
+
+        ModelService.AdjustSeamOverlaps(model, partTypes);
+
+        var headMesh = model.GetMeshNodes().First(m => m.Name == "headmesh01");
+        var neckMesh = model.GetMeshNodes().First(m => m.Name == "neckmesh01");
+
+        // Head should move down, neck should move up
+        Assert.True(headMesh.Position.Z < 1.703f, "Elf head should have moved down");
+        Assert.True(neckMesh.Position.Z > 1.622f, "Elf neck should have moved up");
+
+        // Deficit = 0.10 - 0.048 = 0.052, each part moves 0.026
+        float headDelta = 1.703f - headMesh.Position.Z;
+        Assert.Equal(0.026f, headDelta, Tolerance);
     }
 }

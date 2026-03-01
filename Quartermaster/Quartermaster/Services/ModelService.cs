@@ -295,7 +295,7 @@ public class ModelService
         {
             // Body part MDL files have geometry at local origin
             // We need to position and orient them at the corresponding bone in the skeleton
-            var (bonePosition, boneOrientation) = GetBoneTransformForPart(partType);
+            var (bonePosition, _) = GetBoneTransformForPart(partType);
 
             var meshCount = 0;
             // Add all mesh nodes from this part to the composite model
@@ -303,9 +303,13 @@ public class ModelService
             {
                 if (node is Radoub.Formats.Mdl.MdlTrimeshNode trimesh)
                 {
-                    // Position and orient the mesh at the bone location
+                    // Position the mesh at the bone location.
+                    // NOTE: We intentionally DON'T set Orientation here. All NWN part-based
+                    // skeleton bones have identity orientation, so setting it is a no-op in theory.
+                    // In practice, Matrix4x4.Decompose can return slightly non-identity quaternions
+                    // from accumulated floating-point error, which causes visible displacement
+                    // when the rendering pipeline applies the rotation to mesh vertices.
                     trimesh.Position = bonePosition;
-                    trimesh.Orientation = boneOrientation;
 
                     // ALWAYS derive texture name for body parts - the texture field in body part MDLs
                     // often contains stale/garbage data from reused file structures. NWN expects
@@ -530,9 +534,10 @@ public class ModelService
         };
 
         // Minimum overlap threshold in world units. Below this, parts get nudged.
-        // Human overlap is ~0.07, so 0.03 is a safe threshold that catches thin seams
-        // without affecting well-overlapping races.
-        const float minOverlap = 0.03f;
+        // Measured overlaps: Human=0.112, Dwarf=0.090, Elf=0.048, Halfling=~0.05.
+        // NWN relies on skeletal deformation to close seams; our static preview needs
+        // enough raw vertex overlap to look seamless. Target human-like overlap.
+        const float minOverlap = 0.10f;
 
         var meshes = compositeModel.GetMeshNodes().ToList();
 
@@ -598,7 +603,7 @@ public class ModelService
             float overlap = lowerMaxZ - upperMinZ;
             if (overlap >= minOverlap)
             {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                UnifiedLogger.LogApplication(LogLevel.INFO,
                     $"AdjustSeamOverlaps: {upperPartType}/{lowerPartType} overlap={overlap:F4} >= {minOverlap} — OK");
                 continue;
             }
