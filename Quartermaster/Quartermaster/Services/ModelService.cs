@@ -278,8 +278,8 @@ public class ModelService
         if (partModel != null)
         {
             // Body part MDL files have geometry at local origin
-            // We need to position them at the corresponding bone location from the skeleton
-            var bonePosition = GetBonePositionForPart(partType);
+            // We need to position and orient them at the corresponding bone in the skeleton
+            var (bonePosition, boneOrientation) = GetBoneTransformForPart(partType);
 
             var meshCount = 0;
             // Add all mesh nodes from this part to the composite model
@@ -287,8 +287,9 @@ public class ModelService
             {
                 if (node is Radoub.Formats.Mdl.MdlTrimeshNode trimesh)
                 {
-                    // Position the mesh at the bone location
+                    // Position and orient the mesh at the bone location
                     trimesh.Position = bonePosition;
+                    trimesh.Orientation = boneOrientation;
 
                     // ALWAYS derive texture name for body parts - the texture field in body part MDLs
                     // often contains stale/garbage data from reused file structures. NWN expects
@@ -342,13 +343,16 @@ public class ModelService
     }
 
     /// <summary>
-    /// Get the world position for a body part by looking up its bone in the skeleton.
+    /// Get the world transform for a body part by looking up its bone in the skeleton.
+    /// Returns both position and orientation so body parts are correctly placed and rotated.
     /// Body part names map to skeleton bone names with _g suffix.
     /// </summary>
-    private System.Numerics.Vector3 GetBonePositionForPart(string partType)
+    private (System.Numerics.Vector3 Position, System.Numerics.Quaternion Orientation) GetBoneTransformForPart(string partType)
     {
+        var identity = (System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity);
+
         if (_currentSkeleton?.GeometryRoot == null)
-            return System.Numerics.Vector3.Zero;
+            return identity;
 
         // Map body part type to skeleton bone name
         // Body parts use NWN naming: bicepl, bicepr, forel, forer, etc.
@@ -377,18 +381,26 @@ public class ModelService
             _ => partType + "_g"
         };
 
-        // Find the bone in the skeleton and calculate its world position
+        // Find the bone in the skeleton and calculate its world transform
         var bone = FindBoneByName(_currentSkeleton.GeometryRoot, boneName);
         if (bone == null)
         {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"GetBonePositionForPart: Bone '{boneName}' not found for part '{partType}'");
-            return System.Numerics.Vector3.Zero;
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"GetBoneTransformForPart: Bone '{boneName}' not found for part '{partType}'");
+            return identity;
         }
 
-        // Calculate cumulative position by walking up the hierarchy
-        var worldPos = GetBoneWorldPosition(bone);
-        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"GetBonePositionForPart: '{partType}' -> bone '{boneName}' worldPos={worldPos}");
-        return worldPos;
+        // Compute full world transform matrix including rotations and scale
+        var worldMatrix = GetBoneWorldTransform(bone);
+
+        // Decompose to extract position and rotation
+        if (!System.Numerics.Matrix4x4.Decompose(worldMatrix, out _, out var rotation, out var translation))
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"GetBoneTransformForPart: Matrix decompose failed for bone '{boneName}'");
+            return identity;
+        }
+
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"GetBoneTransformForPart: '{partType}' -> bone '{boneName}' pos={translation}, rot={rotation}");
+        return (translation, rotation);
     }
 
     private MdlNode? FindBoneByName(MdlNode root, string name)
@@ -407,20 +419,30 @@ public class ModelService
     }
 
     /// <summary>
-    /// Calculate the world position of a bone by accumulating positions up the hierarchy.
+    /// Calculate the full world transform of a bone by accumulating S*R*T matrices up the hierarchy.
+    /// Mirrors ModelPreviewGLControl.GetWorldTransform() to properly handle parent bone rotations.
     /// </summary>
-    private System.Numerics.Vector3 GetBoneWorldPosition(MdlNode bone)
+    internal static System.Numerics.Matrix4x4 GetBoneWorldTransform(MdlNode bone)
     {
-        var position = bone.Position;
-        var current = bone.Parent;
+        var worldTransform = System.Numerics.Matrix4x4.Identity;
+        var current = bone;
 
         while (current != null)
         {
-            position += current.Position;
+            var scale = System.Numerics.Matrix4x4.CreateScale(current.Scale);
+            var rotation = System.Numerics.Matrix4x4.CreateFromQuaternion(current.Orientation);
+            var translation = System.Numerics.Matrix4x4.CreateTranslation(current.Position);
+
+            // Row-major local transform: S * R * T (same as ModelPreviewGLControl.GetWorldTransform)
+            var localTransform = scale * rotation * translation;
+
+            // Accumulate: node * parent * grandparent * ... * root
+            worldTransform = worldTransform * localTransform;
+
             current = current.Parent;
         }
 
-        return position;
+        return worldTransform;
     }
 
     private void UpdateCompositeBounds(MdlModel model)
@@ -434,21 +456,22 @@ public class ModelService
 
         foreach (var mesh in model.GetMeshNodes())
         {
-            // Include mesh position offset (bone position) when calculating world-space bounds
-            var meshPos = mesh.Position;
+            // Apply the mesh's full local transform (S*R*T) to get world-space vertex positions.
+            // Body parts have both position and orientation set from skeleton bones.
+            var localTransform = System.Numerics.Matrix4x4.CreateScale(mesh.Scale)
+                * System.Numerics.Matrix4x4.CreateFromQuaternion(mesh.Orientation)
+                * System.Numerics.Matrix4x4.CreateTranslation(mesh.Position);
 
             foreach (var vertex in mesh.Vertices)
             {
-                var worldX = vertex.X + meshPos.X;
-                var worldY = vertex.Y + meshPos.Y;
-                var worldZ = vertex.Z + meshPos.Z;
+                var worldVert = System.Numerics.Vector3.Transform(vertex, localTransform);
 
-                minX = Math.Min(minX, worldX);
-                minY = Math.Min(minY, worldY);
-                minZ = Math.Min(minZ, worldZ);
-                maxX = Math.Max(maxX, worldX);
-                maxY = Math.Max(maxY, worldY);
-                maxZ = Math.Max(maxZ, worldZ);
+                minX = Math.Min(minX, worldVert.X);
+                minY = Math.Min(minY, worldVert.Y);
+                minZ = Math.Min(minZ, worldVert.Z);
+                maxX = Math.Max(maxX, worldVert.X);
+                maxY = Math.Max(maxY, worldVert.Y);
+                maxZ = Math.Max(maxZ, worldVert.Z);
             }
         }
 
