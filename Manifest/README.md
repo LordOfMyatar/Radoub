@@ -25,6 +25,7 @@ See [Known Issues](https://github.com/LordOfMyatar/Radoub/issues?q=is%3Aissue+is
 
 - Quest category and entry editing
 - TLK string resolution with multi-language support
+- NWN color token support with token selector (Ctrl+T)
 - Spell-checking with custom D&D/NWN dictionary
 - Cross-tool navigation from Parley (jump to quest/entry via CLI)
 - Auto-load journal from Trebuchet's current module

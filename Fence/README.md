@@ -27,9 +27,11 @@ See [Known Issues](https://github.com/LordOfMyatar/Radoub/issues?q=is%3Aissue+is
 - **Store Inventory**: 5 panels (Armor, Misc, Potions, Rings, Weapons) with resref editing
 - **Item Palette**: Load items from BIF archives with search and filter
 - **Buy Restrictions**: WillOnlyBuy/WillNotBuy checkboxes by base item type
-- **Event Scripts**: OnOpenStore and OnStoreClose script assignment
+- **Event Scripts**: OnOpenStore and OnStoreClose script assignment via shared ScriptBrowserWindow
 - **Local Variables**: Variable editing for store-level scripting
-- **Custom File Browser**: Browse module directories for UTM files
+- **Store Browser**: Collapsible browser panel with HAK support (F4 toggle)
+- **TLK Language**: Item palette displays in selected TLK language
+- **File Management**: Delete store files from browser panel context menu
 - **Validation**: Duplicate resref detection and Aurora-safe character checking
 - **Custom Content**: Support for module HAKs and custom TLK files
 
