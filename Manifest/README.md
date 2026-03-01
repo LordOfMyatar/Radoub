@@ -27,9 +27,9 @@ See [Known Issues](https://github.com/LordOfMyatar/Radoub/issues?q=is%3Aissue+is
 - TLK string resolution with multi-language support
 - NWN color token support with token selector (Ctrl+T)
 - Spell-checking with custom D&D/NWN dictionary
-- Cross-tool navigation from Parley (jump to quest/entry via CLI)
+- Cross-tool navigation from Parley
 - Auto-load journal from Trebuchet's current module
-- Theme support (dark/light, accessibility themes)
+- Theme support (dark/light, color blind)
 - Auto-detect game installation paths
 
 ---
