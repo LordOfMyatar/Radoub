@@ -64,6 +64,7 @@ Store/merchant editor for Neverwinter Nights UTM files.
 - Buy restrictions (WillOnlyBuy/WillNotBuy) by base item type
 - Event scripts and local variable editing
 - Custom content support via module HAKs and TLK
+- TLK language selection for item display
 
 **Learn more**: [Fence/README.md](Fence/README.md) | [Wiki](https://github.com/LordOfMyatar/Radoub/wiki/Fence)
 
@@ -76,8 +77,9 @@ Cross-platform creature and inventory editor for Neverwinter Nights UTC and BIC 
 **Key Features**:
 - Edit creature blueprints (.utc) and player characters (.bic)
 - New Character Wizard with 10-step guided creation
-- Visual appearance preview with color customization
-- Stats, classes, skills, feats, and spells panels
+- Level Up Wizard with 5-step class progression and auto-assign
+- Visual appearance preview with OpenGL 3D rendering
+- Stats, classes, skills, feats, and spells panels with metamagic support
 - Equipment slots and inventory management
 - Portrait and soundset browsers
 - Creature browser for loading from modules
@@ -117,7 +119,7 @@ Aurora Engine file format parsers used by all tools.
 
 Shared UI components and theming for all tools.
 
-**Includes**: ThemeManager, ScriptBrowserWindow, SoundBrowserWindow, PortraitBrowserWindow, CreatureBrowserPanel, AboutWindow, StatusBarControl, BrushManager, VersionHelper, SpellCheckTextBox
+**Includes**: ThemeManager, ScriptBrowserWindow, SoundBrowserWindow, PortraitBrowserWindow, CreatureBrowserPanel, AboutWindow, StatusBarControl, BrushManager, VersionHelper, SpellCheckTextBox, BaseToolSettingsService, FileOperationsHelper, DocumentState, RecentFilesMenuHelper, WindowPositionHelper
 
 #### Radoub.Dictionary
 

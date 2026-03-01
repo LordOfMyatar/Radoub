@@ -29,14 +29,15 @@ See [Known Issues](https://github.com/LordOfMyatar/Radoub/issues?q=is%3Aissue+is
 - **Classes Panel**: Class levels, alignment, deity, race, gender
 - **Skills Panel**: Skill ranks with progress bars
 - **Feats Panel**: Add/remove feats with prerequisite validation
-- **Spells Panel**: Known and memorized spells with metamagic support
+- **Spells Panel**: Known and memorized spells with metamagic feat variants
 - **Scripts Panel**: Event scripts and conversation resref
 - **Advanced Panel**: Flags, behavior settings, appearance values, local variables
+- **Character Sheet**: Export creature summary as text or Markdown
 
 ### Visual Preview
 
-- **Appearance Panel**: Real-time body part rendering with OpenGL
-- **Color Customization**: Skin, hair, and tattoo color selection
+- **Appearance Panel**: Real-time 3D body part rendering with OpenGL
+- **Color Customization**: Skin, hair, and tattoo color selection via swatch palettes
 - **Portrait Browser**: Browse and select from game portraits
 
 ### Inventory
@@ -49,8 +50,17 @@ See [Known Issues](https://github.com/LordOfMyatar/Radoub/issues?q=is%3Aissue+is
 
 - 10-step guided creation process
 - Appearance, ability scores, classes, skills, feats, spells, equipment, summary
+- Point-buy ability allocation with racial modifiers
 - Starting equipment from class packages
 - Soundset browser with audio preview
+
+### Level Up Wizard
+
+- 5-step class progression (class, feats, skills, spells, summary)
+- Auto-assign buttons for skills, feats, and spells from class packages
+- Bonus feat restrictions for Fighter/Wizard class bonus slots
+- Divine/auto-grant caster spell display
+- Spell selection for spontaneous, prepared, and wizard spellbook casters
 
 ### Browsing
 

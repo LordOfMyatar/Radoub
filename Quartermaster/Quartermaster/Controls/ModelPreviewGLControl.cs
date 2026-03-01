@@ -113,6 +113,10 @@ void main()
     }
 
     vec3 result = (ambient + diffuse) * baseColor;
+
+    // Gamma correction: NWN textures are sRGB; brighten midtones to match toolset look
+    result = pow(result, vec3(1.0 / 1.6));
+
     FragColor = vec4(result, 1.0);
 }
 ";
@@ -546,11 +550,11 @@ void main()
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Render: camDist={cameraDistance:F3}, radius={_modelRadius:F3}");
         }
 
-        // Lighting - from upper front right
-        var lightDir = Vector3.Normalize(new Vector3(0.5f, 0.5f, 0.8f));
+        // Lighting - match NWN toolset brightness with higher ambient fill
+        var lightDir = Vector3.Normalize(new Vector3(0.3f, -0.5f, 0.8f));
         SetUniformVec3("lightDir", lightDir);
-        SetUniformVec3("lightColor", new Vector3(0.8f, 0.8f, 0.8f));
-        SetUniformVec3("ambientColor", new Vector3(0.3f, 0.3f, 0.3f));
+        SetUniformVec3("lightColor", new Vector3(0.7f, 0.7f, 0.7f));
+        SetUniformVec3("ambientColor", new Vector3(0.45f, 0.45f, 0.45f));
 
         // Bind VAO and draw
         _gl.BindVertexArray(_vao);

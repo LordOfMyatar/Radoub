@@ -50,6 +50,14 @@ See [Known Issues](https://github.com/LordOfMyatar/Radoub/issues?q=is%3Aissue+is
 - Visual faction relationship editor
 - Reputation matrix for faction interactions
 
+### Build & Test
+
+- **NWScript Compiler**: Compile scripts with configurable compiler path
+- **Compile Uncompiled**: Checkbox to compile all uncompiled scripts during build
+- **Recompile Selected**: Fix and recompile individual scripts after errors
+- **Compiler Log**: View compiler output with one-click log access
+- **Always Save Before Testing**: Optional auto-save before test launch
+
 ### Game Launcher
 
 - **Test Module**: Auto-select first character for quick testing

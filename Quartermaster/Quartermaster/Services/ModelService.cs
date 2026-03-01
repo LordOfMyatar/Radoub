@@ -21,6 +21,12 @@ public class ModelService
     private readonly Dictionary<string, MdlModel?> _modelCache = new();
     private MdlModel? _currentSkeleton;
 
+    /// <summary>
+    /// Maps mesh node names to their body part type (e.g., "head", "neck", "chest").
+    /// Populated during TryAddBodyPart, consumed by AdjustSeamOverlaps.
+    /// </summary>
+    private readonly Dictionary<string, string> _meshPartTypes = new();
+
     public ModelService(IGameDataService gameDataService)
     {
         _gameDataService = gameDataService;
@@ -162,6 +168,9 @@ public class ModelService
 
         UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadPartBasedCreatureModel: basePrefix={basePrefix}");
 
+        // Clear part type tracking from previous load
+        _meshPartTypes.Clear();
+
         // Load the base skeleton model first - it defines bone positions for body parts
         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"LoadPartBasedCreatureModel: Attempting to load skeleton model '{basePrefix}'...");
         var skeletonModel = LoadModel(basePrefix);
@@ -232,6 +241,13 @@ public class ModelService
         TryAddBodyPart(compositeModel, basePrefix, "footl", GetPartNumber("LFoot", creature.BodyPart_LFoot));
         TryAddBodyPart(compositeModel, basePrefix, "footr", GetPartNumber("RFoot", creature.BodyPart_RFoot));
 
+        // Fix thin seams between adjacent body parts (#1557).
+        // NWN body parts rely on skeletal deformation for seamless joints, but our static
+        // preview places rigid meshes. Some races (elves) have very thin vertex overlap
+        // at joints that becomes visible under perspective projection. Nudge parts toward
+        // each other where overlap is too thin.
+        AdjustSeamOverlaps(compositeModel);
+
         // Calculate combined bounding box
         UpdateCompositeBounds(compositeModel);
 
@@ -278,8 +294,8 @@ public class ModelService
         if (partModel != null)
         {
             // Body part MDL files have geometry at local origin
-            // We need to position them at the corresponding bone location from the skeleton
-            var bonePosition = GetBonePositionForPart(partType);
+            // We need to position and orient them at the corresponding bone in the skeleton
+            var (bonePosition, _) = GetBoneTransformForPart(partType);
 
             var meshCount = 0;
             // Add all mesh nodes from this part to the composite model
@@ -287,7 +303,12 @@ public class ModelService
             {
                 if (node is Radoub.Formats.Mdl.MdlTrimeshNode trimesh)
                 {
-                    // Position the mesh at the bone location
+                    // Position the mesh at the bone location.
+                    // NOTE: We intentionally DON'T set Orientation here. All NWN part-based
+                    // skeleton bones have identity orientation, so setting it is a no-op in theory.
+                    // In practice, Matrix4x4.Decompose can return slightly non-identity quaternions
+                    // from accumulated floating-point error, which causes visible displacement
+                    // when the rendering pipeline applies the rotation to mesh vertices.
                     trimesh.Position = bonePosition;
 
                     // ALWAYS derive texture name for body parts - the texture field in body part MDLs
@@ -325,6 +346,8 @@ public class ModelService
                     node.Parent = compositeModel.GeometryRoot;
                     compositeModel.GeometryRoot.Children.Add(node);
                     meshCount++;
+                    // Track which body part type this mesh belongs to (#1557)
+                    _meshPartTypes[trimesh.Name] = partType;
                     // Log vertex bounds and texture info for debugging
                     var hasUVs = trimesh.TextureCoords.Length > 0 && trimesh.TextureCoords[0].Length > 0;
                     UnifiedLogger.LogApplication(LogLevel.INFO,
@@ -342,13 +365,16 @@ public class ModelService
     }
 
     /// <summary>
-    /// Get the world position for a body part by looking up its bone in the skeleton.
+    /// Get the world transform for a body part by looking up its bone in the skeleton.
+    /// Returns both position and orientation so body parts are correctly placed and rotated.
     /// Body part names map to skeleton bone names with _g suffix.
     /// </summary>
-    private System.Numerics.Vector3 GetBonePositionForPart(string partType)
+    private (System.Numerics.Vector3 Position, System.Numerics.Quaternion Orientation) GetBoneTransformForPart(string partType)
     {
+        var identity = (System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity);
+
         if (_currentSkeleton?.GeometryRoot == null)
-            return System.Numerics.Vector3.Zero;
+            return identity;
 
         // Map body part type to skeleton bone name
         // Body parts use NWN naming: bicepl, bicepr, forel, forer, etc.
@@ -377,18 +403,26 @@ public class ModelService
             _ => partType + "_g"
         };
 
-        // Find the bone in the skeleton and calculate its world position
+        // Find the bone in the skeleton and calculate its world transform
         var bone = FindBoneByName(_currentSkeleton.GeometryRoot, boneName);
         if (bone == null)
         {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"GetBonePositionForPart: Bone '{boneName}' not found for part '{partType}'");
-            return System.Numerics.Vector3.Zero;
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"GetBoneTransformForPart: Bone '{boneName}' not found for part '{partType}'");
+            return identity;
         }
 
-        // Calculate cumulative position by walking up the hierarchy
-        var worldPos = GetBoneWorldPosition(bone);
-        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"GetBonePositionForPart: '{partType}' -> bone '{boneName}' worldPos={worldPos}");
-        return worldPos;
+        // Compute full world transform matrix including rotations and scale
+        var worldMatrix = GetBoneWorldTransform(bone);
+
+        // Decompose to extract position and rotation
+        if (!System.Numerics.Matrix4x4.Decompose(worldMatrix, out _, out var rotation, out var translation))
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"GetBoneTransformForPart: Matrix decompose failed for bone '{boneName}'");
+            return identity;
+        }
+
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"GetBoneTransformForPart: '{partType}' -> bone '{boneName}' pos={translation}, rot={rotation}");
+        return (translation, rotation);
     }
 
     private MdlNode? FindBoneByName(MdlNode root, string name)
@@ -407,20 +441,30 @@ public class ModelService
     }
 
     /// <summary>
-    /// Calculate the world position of a bone by accumulating positions up the hierarchy.
+    /// Calculate the full world transform of a bone by accumulating S*R*T matrices up the hierarchy.
+    /// Mirrors ModelPreviewGLControl.GetWorldTransform() to properly handle parent bone rotations.
     /// </summary>
-    private System.Numerics.Vector3 GetBoneWorldPosition(MdlNode bone)
+    internal static System.Numerics.Matrix4x4 GetBoneWorldTransform(MdlNode bone)
     {
-        var position = bone.Position;
-        var current = bone.Parent;
+        var worldTransform = System.Numerics.Matrix4x4.Identity;
+        var current = bone;
 
         while (current != null)
         {
-            position += current.Position;
+            var scale = System.Numerics.Matrix4x4.CreateScale(current.Scale);
+            var rotation = System.Numerics.Matrix4x4.CreateFromQuaternion(current.Orientation);
+            var translation = System.Numerics.Matrix4x4.CreateTranslation(current.Position);
+
+            // Row-major local transform: S * R * T (same as ModelPreviewGLControl.GetWorldTransform)
+            var localTransform = scale * rotation * translation;
+
+            // Accumulate: node * parent * grandparent * ... * root
+            worldTransform = worldTransform * localTransform;
+
             current = current.Parent;
         }
 
-        return position;
+        return worldTransform;
     }
 
     private void UpdateCompositeBounds(MdlModel model)
@@ -434,21 +478,22 @@ public class ModelService
 
         foreach (var mesh in model.GetMeshNodes())
         {
-            // Include mesh position offset (bone position) when calculating world-space bounds
-            var meshPos = mesh.Position;
+            // Apply the mesh's full local transform (S*R*T) to get world-space vertex positions.
+            // Body parts have both position and orientation set from skeleton bones.
+            var localTransform = System.Numerics.Matrix4x4.CreateScale(mesh.Scale)
+                * System.Numerics.Matrix4x4.CreateFromQuaternion(mesh.Orientation)
+                * System.Numerics.Matrix4x4.CreateTranslation(mesh.Position);
 
             foreach (var vertex in mesh.Vertices)
             {
-                var worldX = vertex.X + meshPos.X;
-                var worldY = vertex.Y + meshPos.Y;
-                var worldZ = vertex.Z + meshPos.Z;
+                var worldVert = System.Numerics.Vector3.Transform(vertex, localTransform);
 
-                minX = Math.Min(minX, worldX);
-                minY = Math.Min(minY, worldY);
-                minZ = Math.Min(minZ, worldZ);
-                maxX = Math.Max(maxX, worldX);
-                maxY = Math.Max(maxY, worldY);
-                maxZ = Math.Max(maxZ, worldZ);
+                minX = Math.Min(minX, worldVert.X);
+                minY = Math.Min(minY, worldVert.Y);
+                minZ = Math.Min(minZ, worldVert.Z);
+                maxX = Math.Max(maxX, worldVert.X);
+                maxY = Math.Max(maxY, worldVert.Y);
+                maxZ = Math.Max(maxZ, worldVert.Z);
             }
         }
 
@@ -460,6 +505,128 @@ public class ModelService
 
             UnifiedLogger.LogApplication(LogLevel.INFO,
                 $"UpdateCompositeBounds: bounds=({minX:F2},{minY:F2},{minZ:F2}) to ({maxX:F2},{maxY:F2},{maxZ:F2}), radius={model.Radius:F2}");
+        }
+    }
+
+    /// <summary>
+    /// Adjust body part positions to ensure adequate overlap at joints (#1557).
+    /// NWN body parts rely on skeletal deformation for seamless connections. Our static
+    /// preview places rigid meshes at bone positions, which can leave thin seams between
+    /// adjacent parts. This method detects thin overlaps and nudges parts closer together.
+    /// </summary>
+    internal void AdjustSeamOverlaps(MdlModel compositeModel)
+    {
+        AdjustSeamOverlaps(compositeModel, _meshPartTypes);
+    }
+
+    /// <summary>
+    /// Overload accepting explicit part type map (for unit testing with synthetic data).
+    /// </summary>
+    internal static void AdjustSeamOverlaps(MdlModel compositeModel, Dictionary<string, string> meshPartTypes)
+    {
+        // Adjacent body part pairs that should overlap vertically.
+        // Format: (upper part type, lower part type)
+        // "Upper" = the part that is higher on the body (larger Z)
+        var adjacentPairs = new[]
+        {
+            ("head", "neck"),
+            ("neck", "chest"),
+        };
+
+        // Minimum overlap threshold in world units. Below this, parts get nudged.
+        // Measured overlaps: Human=0.112, Dwarf=0.090, Elf=0.048, Halfling=~0.05.
+        // NWN relies on skeletal deformation to close seams; our static preview needs
+        // enough raw vertex overlap to look seamless. Target human-like overlap.
+        const float minOverlap = 0.10f;
+
+        var meshes = compositeModel.GetMeshNodes().ToList();
+
+        // Log all mesh names and their part type mappings for diagnostics
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"AdjustSeamOverlaps: {meshes.Count} meshes, {meshPartTypes.Count} part type mappings");
+        foreach (var mesh in meshes)
+        {
+            meshPartTypes.TryGetValue(mesh.Name, out var pt);
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"  mesh '{mesh.Name}' → partType='{pt ?? "(unmapped)"}', pos={mesh.Position}");
+        }
+
+        foreach (var (upperPartType, lowerPartType) in adjacentPairs)
+        {
+            // Match meshes by their tracked body part type, not by mesh node name
+            var upperMeshes = meshes.Where(m =>
+                meshPartTypes.TryGetValue(m.Name, out var pt) &&
+                string.Equals(pt, upperPartType, StringComparison.OrdinalIgnoreCase)).ToList();
+            var lowerMeshes = meshes.Where(m =>
+                meshPartTypes.TryGetValue(m.Name, out var pt) &&
+                string.Equals(pt, lowerPartType, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            if (upperMeshes.Count == 0 || lowerMeshes.Count == 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"AdjustSeamOverlaps: {upperPartType}/{lowerPartType} — upper={upperMeshes.Count}, lower={lowerMeshes.Count} — skipping");
+                continue;
+            }
+
+            // Compute world-space Z bounds for each set of meshes
+            float upperMinZ = float.MaxValue;
+            foreach (var mesh in upperMeshes)
+            {
+                var transform = System.Numerics.Matrix4x4.CreateScale(mesh.Scale)
+                    * System.Numerics.Matrix4x4.CreateFromQuaternion(mesh.Orientation)
+                    * System.Numerics.Matrix4x4.CreateTranslation(mesh.Position);
+                foreach (var vertex in mesh.Vertices)
+                {
+                    var wv = System.Numerics.Vector3.Transform(vertex, transform);
+                    if (!float.IsNaN(wv.Z))
+                        upperMinZ = Math.Min(upperMinZ, wv.Z);
+                }
+            }
+
+            float lowerMaxZ = float.MinValue;
+            foreach (var mesh in lowerMeshes)
+            {
+                var transform = System.Numerics.Matrix4x4.CreateScale(mesh.Scale)
+                    * System.Numerics.Matrix4x4.CreateFromQuaternion(mesh.Orientation)
+                    * System.Numerics.Matrix4x4.CreateTranslation(mesh.Position);
+                foreach (var vertex in mesh.Vertices)
+                {
+                    var wv = System.Numerics.Vector3.Transform(vertex, transform);
+                    if (!float.IsNaN(wv.Z))
+                        lowerMaxZ = Math.Max(lowerMaxZ, wv.Z);
+                }
+            }
+
+            if (upperMinZ == float.MaxValue || lowerMaxZ == float.MinValue)
+                continue;
+
+            float overlap = lowerMaxZ - upperMinZ;
+            if (overlap >= minOverlap)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"AdjustSeamOverlaps: {upperPartType}/{lowerPartType} overlap={overlap:F4} >= {minOverlap} — OK");
+                continue;
+            }
+
+            // Need to increase overlap. Split the deficit evenly:
+            // push upper part down and lower part up.
+            float deficit = minOverlap - overlap;
+            float halfDeficit = deficit / 2f;
+
+            foreach (var mesh in upperMeshes)
+            {
+                mesh.Position = new System.Numerics.Vector3(
+                    mesh.Position.X, mesh.Position.Y, mesh.Position.Z - halfDeficit);
+            }
+            foreach (var mesh in lowerMeshes)
+            {
+                mesh.Position = new System.Numerics.Vector3(
+                    mesh.Position.X, mesh.Position.Y, mesh.Position.Z + halfDeficit);
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"AdjustSeamOverlaps: {upperPartType}/{lowerPartType} overlap={overlap:F4} < {minOverlap} — " +
+                $"nudged ±{halfDeficit:F4} (new overlap≈{minOverlap:F4})");
         }
     }
 
