@@ -21,6 +21,12 @@ public class ModelService
     private readonly Dictionary<string, MdlModel?> _modelCache = new();
     private MdlModel? _currentSkeleton;
 
+    /// <summary>
+    /// Maps mesh node names to their body part type (e.g., "head", "neck", "chest").
+    /// Populated during TryAddBodyPart, consumed by AdjustSeamOverlaps.
+    /// </summary>
+    private readonly Dictionary<string, string> _meshPartTypes = new();
+
     public ModelService(IGameDataService gameDataService)
     {
         _gameDataService = gameDataService;
@@ -161,6 +167,9 @@ public class ModelService
         var basePrefix = $"p{genderChar}{race.ToLowerInvariant()}{creature.Phenotype}";
 
         UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadPartBasedCreatureModel: basePrefix={basePrefix}");
+
+        // Clear part type tracking from previous load
+        _meshPartTypes.Clear();
 
         // Load the base skeleton model first - it defines bone positions for body parts
         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"LoadPartBasedCreatureModel: Attempting to load skeleton model '{basePrefix}'...");
@@ -333,6 +342,8 @@ public class ModelService
                     node.Parent = compositeModel.GeometryRoot;
                     compositeModel.GeometryRoot.Children.Add(node);
                     meshCount++;
+                    // Track which body part type this mesh belongs to (#1557)
+                    _meshPartTypes[trimesh.Name] = partType;
                     // Log vertex bounds and texture info for debugging
                     var hasUVs = trimesh.TextureCoords.Length > 0 && trimesh.TextureCoords[0].Length > 0;
                     UnifiedLogger.LogApplication(LogLevel.INFO,
@@ -499,10 +510,18 @@ public class ModelService
     /// preview places rigid meshes at bone positions, which can leave thin seams between
     /// adjacent parts. This method detects thin overlaps and nudges parts closer together.
     /// </summary>
-    private void AdjustSeamOverlaps(MdlModel compositeModel)
+    internal void AdjustSeamOverlaps(MdlModel compositeModel)
+    {
+        AdjustSeamOverlaps(compositeModel, _meshPartTypes);
+    }
+
+    /// <summary>
+    /// Overload accepting explicit part type map (for unit testing with synthetic data).
+    /// </summary>
+    internal static void AdjustSeamOverlaps(MdlModel compositeModel, Dictionary<string, string> meshPartTypes)
     {
         // Adjacent body part pairs that should overlap vertically.
-        // Format: (upper part name fragment, lower part name fragment)
+        // Format: (upper part type, lower part type)
         // "Upper" = the part that is higher on the body (larger Z)
         var adjacentPairs = new[]
         {
@@ -517,14 +536,32 @@ public class ModelService
 
         var meshes = compositeModel.GetMeshNodes().ToList();
 
-        foreach (var (upperFragment, lowerFragment) in adjacentPairs)
+        // Log all mesh names and their part type mappings for diagnostics
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"AdjustSeamOverlaps: {meshes.Count} meshes, {meshPartTypes.Count} part type mappings");
+        foreach (var mesh in meshes)
         {
-            // Find meshes for each part
-            var upperMeshes = meshes.Where(m => m.Name.Contains(upperFragment, StringComparison.OrdinalIgnoreCase)).ToList();
-            var lowerMeshes = meshes.Where(m => m.Name.Contains(lowerFragment, StringComparison.OrdinalIgnoreCase)).ToList();
+            meshPartTypes.TryGetValue(mesh.Name, out var pt);
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"  mesh '{mesh.Name}' → partType='{pt ?? "(unmapped)"}', pos={mesh.Position}");
+        }
+
+        foreach (var (upperPartType, lowerPartType) in adjacentPairs)
+        {
+            // Match meshes by their tracked body part type, not by mesh node name
+            var upperMeshes = meshes.Where(m =>
+                meshPartTypes.TryGetValue(m.Name, out var pt) &&
+                string.Equals(pt, upperPartType, StringComparison.OrdinalIgnoreCase)).ToList();
+            var lowerMeshes = meshes.Where(m =>
+                meshPartTypes.TryGetValue(m.Name, out var pt) &&
+                string.Equals(pt, lowerPartType, StringComparison.OrdinalIgnoreCase)).ToList();
 
             if (upperMeshes.Count == 0 || lowerMeshes.Count == 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"AdjustSeamOverlaps: {upperPartType}/{lowerPartType} — upper={upperMeshes.Count}, lower={lowerMeshes.Count} — skipping");
                 continue;
+            }
 
             // Compute world-space Z bounds for each set of meshes
             float upperMinZ = float.MaxValue;
@@ -562,7 +599,7 @@ public class ModelService
             if (overlap >= minOverlap)
             {
                 UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"AdjustSeamOverlaps: {upperFragment}/{lowerFragment} overlap={overlap:F4} >= {minOverlap} — OK");
+                    $"AdjustSeamOverlaps: {upperPartType}/{lowerPartType} overlap={overlap:F4} >= {minOverlap} — OK");
                 continue;
             }
 
@@ -583,7 +620,7 @@ public class ModelService
             }
 
             UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"AdjustSeamOverlaps: {upperFragment}/{lowerFragment} overlap={overlap:F4} < {minOverlap} — " +
+                $"AdjustSeamOverlaps: {upperPartType}/{lowerPartType} overlap={overlap:F4} < {minOverlap} — " +
                 $"nudged ±{halfDeficit:F4} (new overlap≈{minOverlap:F4})");
         }
     }
