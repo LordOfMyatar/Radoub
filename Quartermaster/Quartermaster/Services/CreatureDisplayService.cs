@@ -672,6 +672,22 @@ public partial class CreatureDisplayService
     }
 
     /// <summary>
+    /// Returns true if the given class uses domain selections (Cleric).
+    /// Checks if any package for the class has a Domain1 column set.
+    /// </summary>
+    public bool ClassHasDomains(int classId)
+    {
+        var packages = GetPackagesForClass(classId);
+        foreach (var pkg in packages)
+        {
+            var domain1Str = GameDataService.Get2DAValue("packages", pkg.Id, "Domain1");
+            if (!string.IsNullOrEmpty(domain1Str) && domain1Str != "****")
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>
     /// Gets all familiars from hen_familiar.2da.
     /// </summary>
     public List<(int Id, string Name)> GetAllFamiliars()

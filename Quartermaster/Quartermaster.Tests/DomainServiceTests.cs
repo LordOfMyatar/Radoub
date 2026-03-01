@@ -210,4 +210,42 @@ public class DomainServiceTests
     }
 
     #endregion
+
+    #region GetAllDomains
+
+    [Fact]
+    public void GetAllDomains_ReturnsValidDomains()
+    {
+        var domains = _domainService.GetAllDomains();
+        Assert.True(domains.Count >= 3); // Air, Animal, Death at minimum
+    }
+
+    [Fact]
+    public void GetAllDomains_ExcludesInvalidRows()
+    {
+        var domains = _domainService.GetAllDomains();
+        // Row 3 has "****" label and should be excluded
+        Assert.DoesNotContain(domains, d => d.Id == 3);
+    }
+
+    [Fact]
+    public void GetAllDomains_IncludesCorrectNames()
+    {
+        var domains = _domainService.GetAllDomains();
+        Assert.Contains(domains, d => d.Name == "Air");
+        Assert.Contains(domains, d => d.Name == "Animal");
+        Assert.Contains(domains, d => d.Name == "Death");
+    }
+
+    [Fact]
+    public void GetAllDomains_HasCorrectIds()
+    {
+        var domains = _domainService.GetAllDomains();
+        var air = domains.Find(d => d.Name == "Air");
+        Assert.Equal(0, air.Id);
+        var animal = domains.Find(d => d.Name == "Animal");
+        Assert.Equal(1, animal.Id);
+    }
+
+    #endregion
 }

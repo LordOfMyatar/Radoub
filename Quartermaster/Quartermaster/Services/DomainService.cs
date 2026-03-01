@@ -84,6 +84,34 @@ public class DomainService
     }
 
     /// <summary>
+    /// Gets all valid domains from domains.2da as (Id, Name) tuples for dropdown population.
+    /// </summary>
+    public List<(int Id, string Name)> GetAllDomains()
+    {
+        var domains = new List<(int Id, string Name)>();
+
+        for (int row = 0; row < 50; row++)
+        {
+            var label = _gameDataService.Get2DAValue("domains", row, "Label");
+            if (string.IsNullOrEmpty(label) || label == "****")
+                continue;
+
+            var nameStrRef = _gameDataService.Get2DAValue("domains", row, "Name");
+            var name = label;
+            if (!string.IsNullOrEmpty(nameStrRef) && nameStrRef != "****")
+            {
+                var tlkName = _gameDataService.GetString(nameStrRef);
+                if (!string.IsNullOrEmpty(tlkName))
+                    name = tlkName;
+            }
+
+            domains.Add((row, name));
+        }
+
+        return domains;
+    }
+
+    /// <summary>
     /// Formats a domain's granted content as a display string.
     /// </summary>
     public static string FormatDomainSummary(DomainInfo domain)

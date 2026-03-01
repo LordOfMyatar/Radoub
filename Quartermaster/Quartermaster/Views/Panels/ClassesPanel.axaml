@@ -112,6 +112,65 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Domain Selection (visible when creature has a domain-granting class) -->
+                <Border x:Name="DomainSection"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="15"
+                        IsVisible="False">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Cleric Domains" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
+
+                        <Grid ColumnDefinitions="*,10,*" RowDefinitions="Auto,Auto">
+                            <TextBlock Grid.Row="0" Grid.Column="0"
+                                       Text="Domain 1"
+                                       FontSize="{DynamicResource FontSizeSmall}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <TextBlock Grid.Row="0" Grid.Column="2"
+                                       Text="Domain 2"
+                                       FontSize="{DynamicResource FontSizeSmall}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+
+                            <ComboBox Grid.Row="1" Grid.Column="0"
+                                      x:Name="Domain1ComboBox"
+                                      HorizontalAlignment="Stretch"
+                                      AutomationProperties.AutomationId="Domain1ComboBox"/>
+                            <ComboBox Grid.Row="1" Grid.Column="2"
+                                      x:Name="Domain2ComboBox"
+                                      HorizontalAlignment="Stretch"
+                                      AutomationProperties.AutomationId="Domain2ComboBox"/>
+                        </Grid>
+
+                        <TextBlock x:Name="DomainInfoText"
+                                   FontSize="{DynamicResource FontSizeXSmall}"
+                                   FontStyle="Italic"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Familiar Selection (visible when creature has a familiar-granting class) -->
+                <Border x:Name="FamiliarSection"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="15"
+                        IsVisible="False">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Familiar" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Familiar Type:"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <ComboBox x:Name="FamiliarComboBox"
+                                      MinWidth="200"
+                                      AutomationProperties.AutomationId="FamiliarComboBox"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
                 <!-- Alignment Section -->
                 <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1"

@@ -15,8 +15,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Classes & Levels Panel Enhancements (#1586, #1588)
 
-- [ ] #1586 - Add domain info to Classes & Levels panel (main editor)
-- [ ] #1588 - Display familiar information in Classes & Levels panel
+- [x] #1586 - Add domain info to Classes & Levels panel (main editor)
+  - Domain 1 and Domain 2 dropdowns for Cleric classes (populated from `domains.2da`)
+  - Shows granted feats inline below dropdowns
+  - Section auto-shows/hides based on class list
+  - New `GetAllDomains()` on DomainService, `ClassHasDomains()` on CreatureDisplayService
+- [x] #1588 - Display familiar information in Classes & Levels panel
+  - Familiar type dropdown for Wizard/Sorcerer classes (populated from `hen_familiar.2da`)
+  - Section auto-shows/hides based on class list
+  - Changes write directly to `FamiliarType` on creature
+  - 16 new tests (4 GetAllDomains + 12 ClassDomainAndFamiliar)
 
 ---
 
