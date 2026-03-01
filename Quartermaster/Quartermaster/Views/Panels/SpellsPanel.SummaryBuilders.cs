@@ -684,12 +684,12 @@ public partial class SpellsPanel
     /// </summary>
     private static readonly (int FeatId, byte Flag, int LevelCost)[] MetamagicFeatDefinitions =
     {
-        (18, 0x01, 2),  // Empower Spell
-        (19, 0x02, 1),  // Extend Spell
-        (20, 0x04, 3),  // Maximize Spell
-        (21, 0x08, 4),  // Quicken Spell
-        (22, 0x10, 1),  // Silent Spell
-        (23, 0x20, 1),  // Still Spell
+        (11, 0x01, 2),  // Empower Spell  (feat.2da row 11)
+        (12, 0x02, 1),  // Extend Spell   (feat.2da row 12)
+        (25, 0x04, 3),  // Maximize Spell (feat.2da row 25)
+        (29, 0x08, 4),  // Quicken Spell  (feat.2da row 29)
+        (33, 0x10, 1),  // Silent Spell   (feat.2da row 33)
+        (37, 0x20, 1),  // Still Spell    (feat.2da row 37)
     };
 
     /// <summary>

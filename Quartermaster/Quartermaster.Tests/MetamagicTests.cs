@@ -98,16 +98,16 @@ public class MetamagicTests
     [Fact]
     public void FeatList_ContainsMetamagicFeatIds_AreDetectable()
     {
-        // Standard NWN metamagic feat IDs
+        // Standard NWN metamagic feat IDs from feat.2da
         var creature = new UtcFile();
-        creature.FeatList.AddRange(new ushort[] { 18, 20, 23 }); // Empower, Maximize, Still
+        creature.FeatList.AddRange(new ushort[] { 11, 25, 37 }); // Empower (11), Maximize (25), Still (37)
 
-        Assert.Contains((ushort)18, creature.FeatList);
-        Assert.Contains((ushort)20, creature.FeatList);
-        Assert.Contains((ushort)23, creature.FeatList);
-        Assert.DoesNotContain((ushort)19, creature.FeatList); // Extend - not present
-        Assert.DoesNotContain((ushort)21, creature.FeatList); // Quicken - not present
-        Assert.DoesNotContain((ushort)22, creature.FeatList); // Silent - not present
+        Assert.Contains((ushort)11, creature.FeatList);
+        Assert.Contains((ushort)25, creature.FeatList);
+        Assert.Contains((ushort)37, creature.FeatList);
+        Assert.DoesNotContain((ushort)12, creature.FeatList); // Extend - not present
+        Assert.DoesNotContain((ushort)29, creature.FeatList); // Quicken - not present
+        Assert.DoesNotContain((ushort)33, creature.FeatList); // Silent - not present
     }
 
     [Fact]
@@ -116,7 +116,7 @@ public class MetamagicTests
         var creature = new UtcFile();
         creature.FeatList.AddRange(new ushort[] { 0, 1, 5, 7, 8 }); // Non-metamagic feats
 
-        var metamagicFeatIds = new ushort[] { 18, 19, 20, 21, 22, 23 };
+        var metamagicFeatIds = new ushort[] { 11, 12, 25, 29, 33, 37 };
         foreach (var mmId in metamagicFeatIds)
         {
             Assert.DoesNotContain(mmId, creature.FeatList);
