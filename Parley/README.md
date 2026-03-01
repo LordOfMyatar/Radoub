@@ -26,10 +26,14 @@ See [Known Issues](https://github.com/LordOfMyatar/Radoub/issues?q=is%3Aissue+is
 - Dialog tree editing with full undo/redo
 - Native flowchart view (View → Flowchart or F5) with PNG/SVG export
 - Sound and script browsers with parameter preview
-- Conversation simulator (F6)
+- Conversation simulator (F6) with text-to-speech and coverage tracking
 - Color-coded NPCs for multi-NPC conversations
-- Orphan node management with scrap container
+- NWN color token support with token selector (Ctrl+T)
+- Orphan node management with scrap container and subtree restore
+- Dialog file browser with module HAK support
+- Quest browser for cross-tool journal navigation
 - Spell-checking with custom D&D/NWN dictionary
+- Auto-save with configurable intervals
 - Cross-platform (Windows, Linux, macOS)
 - Themes and accessibility options (dark mode, font scaling, color-blind modes)
 
