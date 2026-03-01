@@ -228,20 +228,29 @@ public class MockGameDataService : IGameDataService
         AddRow(racialTypes, "6", "Human", "11", "11", "11");
         _2daFiles["racialtypes"] = racialTypes;
 
-        // classes.2da - common classes
+        // classes.2da - common classes (values match NWN classes.2da exactly)
+        // AlignRestrict/AlignRstrctType/InvertRestrict:
+        //   Default (Invert=0): mask bits are PROHIBITED alignments
+        //   Inverted (Invert=1): mask bits are REQUIRED alignments
+        //   Barbarian: 0x02 prohibited on LC axis → cannot be Lawful
+        //   Bard: 0x02 prohibited on LC axis → cannot be Lawful
+        //   Druid: 0x01 required on both axes, inverted → must have Neutral on at least one axis
+        //   Monk: 0x05 prohibited on LC axis → cannot be Neutral/Chaotic (must be Lawful)
+        //   Paladin: 0x15 prohibited on both axes → cannot be N/C/E (must be Lawful Good)
         var classes = new TwoDAFile();
-        classes.Columns.AddRange(new[] { "Label", "Name", "HitDie", "AttackBonusTable" });
-        AddRow(classes, "0", "Barbarian", "40", "12", "CLS_ATK_1");
-        AddRow(classes, "1", "Bard", "41", "6", "CLS_ATK_2");
-        AddRow(classes, "2", "Cleric", "42", "8", "CLS_ATK_2");
-        AddRow(classes, "3", "Druid", "43", "8", "CLS_ATK_2");
-        AddRow(classes, "4", "Fighter", "44", "10", "CLS_ATK_1");
-        AddRow(classes, "5", "Monk", "45", "8", "CLS_ATK_2");
-        AddRow(classes, "6", "Paladin", "46", "10", "CLS_ATK_1");
-        AddRow(classes, "7", "Ranger", "47", "10", "CLS_ATK_1");
-        AddRow(classes, "8", "Rogue", "48", "6", "CLS_ATK_2");
-        AddRow(classes, "9", "Sorcerer", "49", "4", "CLS_ATK_3");
-        AddRow(classes, "10", "Wizard", "50", "4", "CLS_ATK_3");
+        classes.Columns.AddRange(new[] { "Label", "Name", "HitDie", "AttackBonusTable",
+            "AlignRestrict", "AlignRstrctType", "InvertRestrict" });
+        AddRow(classes, "0", "Barbarian", "40", "12", "CLS_ATK_1", "0x02", "0x01", "0");
+        AddRow(classes, "1", "Bard", "41", "6", "CLS_ATK_2", "0x02", "0x01", "0");
+        AddRow(classes, "2", "Cleric", "42", "8", "CLS_ATK_2", "0x00", "0x00", "0");
+        AddRow(classes, "3", "Druid", "43", "8", "CLS_ATK_2", "0x01", "0x03", "1");
+        AddRow(classes, "4", "Fighter", "44", "10", "CLS_ATK_1", "0x00", "0x01", "0");
+        AddRow(classes, "5", "Monk", "45", "8", "CLS_ATK_2", "0x05", "0x01", "0");
+        AddRow(classes, "6", "Paladin", "46", "10", "CLS_ATK_1", "0x15", "0x03", "0");
+        AddRow(classes, "7", "Ranger", "47", "10", "CLS_ATK_1", "0x00", "0x00", "0");
+        AddRow(classes, "8", "Rogue", "48", "6", "CLS_ATK_2", "0x00", "0x00", "0");
+        AddRow(classes, "9", "Sorcerer", "49", "4", "CLS_ATK_3", "0x00", "0x00", "0");
+        AddRow(classes, "10", "Wizard", "50", "4", "CLS_ATK_3", "0x00", "0x00", "0");
         _2daFiles["classes"] = classes;
 
         // gender.2da
@@ -259,6 +268,68 @@ public class MockGameDataService : IGameDataService
         AddRow(appearance, "6", "P_HHF_", "246", "P", "4");  // Halfling female
         AddRow(appearance, "7", "P_HHM_", "247", "P", "4");  // Halfling male
         _2daFiles["appearance"] = appearance;
+
+        // domains.2da - sample cleric domains
+        // Columns: Label, Name, Description, Level_1..Level_9, GrantedFeat
+        var domains = new TwoDAFile();
+        domains.Columns.AddRange(new[] { "Label", "Name", "Description",
+            "Level_1", "Level_2", "Level_3", "Level_4", "Level_5",
+            "Level_6", "Level_7", "Level_8", "Level_9", "GrantedFeat" });
+        // Row 0: Air domain (spell IDs 0-8, granted feat row 0)
+        AddRow(domains, "0", "Air", "1000", "1100",
+            "0", "1", "2", "3", "4", "5", "6", "7", "8", "0");
+        // Row 1: Animal domain (spell IDs 9-17, granted feat row 1)
+        AddRow(domains, "1", "Animal", "1001", "1101",
+            "9", "10", "11", "12", "13", "14", "15", "16", "17", "1");
+        // Row 2: Death domain (7 spells, no level 8-9, no granted feat)
+        AddRow(domains, "2", "Death", "1002", "1102",
+            "18", "19", "20", "21", "22", "23", "24", "****", "****", "****");
+        // Row 3: empty/invalid domain
+        AddRow(domains, "3", "****", "****",
+            "****", "****", "****", "****", "****", "****", "****", "****", "****", "****");
+        _2daFiles["domains"] = domains;
+
+        // spells.2da - domain spell entries (minimal: just Name column for GetSpellName)
+        var spells = new TwoDAFile();
+        spells.Columns.AddRange(new[] { "Label", "Name" });
+        // Air domain spells (rows 0-8)
+        AddRow(spells, "0", "Call Lightning", "2000");
+        AddRow(spells, "1", "Gust of Wind", "2001");
+        AddRow(spells, "2", "Lightning Bolt", "2002");
+        AddRow(spells, "3", "Chain Lightning", "2003");
+        AddRow(spells, "4", "Whirlwind", "2004");
+        AddRow(spells, "5", "Control Winds", "2005");
+        AddRow(spells, "6", "Storm of Vengeance", "2006");
+        AddRow(spells, "7", "Elemental Swarm", "2007");
+        AddRow(spells, "8", "Gate", "2008");
+        // Animal domain spells (rows 9-17)
+        AddRow(spells, "9", "Cat's Grace", "2009");
+        AddRow(spells, "10", "Bull's Strength", "2010");
+        AddRow(spells, "11", "True Seeing", "2011");
+        AddRow(spells, "12", "Polymorph Self", "2012");
+        AddRow(spells, "13", "Summon Creature V", "2013");
+        AddRow(spells, "14", "Greater Stoneskin", "2014");
+        AddRow(spells, "15", "Creeping Doom", "2015");
+        AddRow(spells, "16", "Finger of Death", "2016");
+        AddRow(spells, "17", "Shapechange", "2017");
+        // Death domain spells (rows 18-24)
+        AddRow(spells, "18", "Phantasmal Killer", "2018");
+        AddRow(spells, "19", "Enervation", "2019");
+        AddRow(spells, "20", "Circle of Death", "2020");
+        AddRow(spells, "21", "Destruction", "2021");
+        AddRow(spells, "22", "Horrid Wilting", "2022");
+        AddRow(spells, "23", "Wail of the Banshee", "2023");
+        AddRow(spells, "24", "Implosion", "2024");
+        _2daFiles["spells"] = spells;
+
+        // feat.2da - domain-granted feat entries (minimal: just FEAT column for name lookup)
+        var feat = new TwoDAFile();
+        feat.Columns.AddRange(new[] { "Label", "FEAT" });
+        // Row 0: Air domain granted feat
+        AddRow(feat, "0", "AirGrantedFeat", "3000");
+        // Row 1: Animal domain granted feat
+        AddRow(feat, "1", "AnimalGrantedFeat", "3001");
+        _2daFiles["feat"] = feat;
 
         // Common TLK strings
         WithStrings(
@@ -281,7 +352,43 @@ public class MockGameDataService : IGameDataService
             (49, "Sorcerer"),
             (50, "Wizard"),
             (60, "Male"),
-            (61, "Female")
+            (61, "Female"),
+            // Domain names and descriptions
+            (1000, "Air"),
+            (1001, "Animal"),
+            (1002, "Death"),
+            (1100, "The Air domain grants power over wind and lightning."),
+            (1101, "The Animal domain grants an affinity with animals."),
+            (1102, "The Death domain grants power over death and undeath."),
+            // Domain spell names (Air: 2000-2008, Animal: 2009-2017, Death: 2018-2024)
+            (2000, "Call Lightning"),
+            (2001, "Gust of Wind"),
+            (2002, "Lightning Bolt"),
+            (2003, "Chain Lightning"),
+            (2004, "Whirlwind"),
+            (2005, "Control Winds"),
+            (2006, "Storm of Vengeance"),
+            (2007, "Elemental Swarm"),
+            (2008, "Gate"),
+            (2009, "Cat's Grace"),
+            (2010, "Bull's Strength"),
+            (2011, "True Seeing"),
+            (2012, "Polymorph Self"),
+            (2013, "Summon Creature V"),
+            (2014, "Greater Stoneskin"),
+            (2015, "Creeping Doom"),
+            (2016, "Finger of Death"),
+            (2017, "Shapechange"),
+            (2018, "Phantasmal Killer"),
+            (2019, "Enervation"),
+            (2020, "Circle of Death"),
+            (2021, "Destruction"),
+            (2022, "Horrid Wilting"),
+            (2023, "Wail of the Banshee"),
+            (2024, "Implosion"),
+            // Domain feat names
+            (3000, "Elemental Turning"),
+            (3001, "Animal Companion")
         );
     }
 

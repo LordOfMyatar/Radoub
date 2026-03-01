@@ -60,6 +60,37 @@ public partial class LevelUpWizardWindow
             _divineSpellInfoLabel.Text = $"As a {className}, you gain access to all {className.ToLowerInvariant()} spells " +
                                           $"up to level {maxSpellLevel}. No spell selection is needed.";
 
+            // Show domain spells for divine casters with domains
+            var classEntry = _creature.ClassList.FirstOrDefault(c => (int)c.Class == _selectedClassId);
+            if (classEntry != null)
+            {
+                var domain1Id = (int)classEntry.Domain1;
+                var domain2Id = (int)classEntry.Domain2;
+                if (domain1Id > 0 || domain2Id > 0)
+                {
+                    var domainLines = new List<string>();
+                    void AddDomainInfo(int domainId)
+                    {
+                        var domainInfo = _displayService.Domains.GetDomainInfo(domainId);
+                        if (domainInfo == null) return;
+                        domainLines.Add($"  {domainInfo.Name}:");
+                        if (domainInfo.GrantedFeatId >= 0)
+                            domainLines.Add($"    Feat: {domainInfo.GrantedFeatName}");
+                        foreach (var spell in domainInfo.DomainSpells)
+                            domainLines.Add($"    Level {spell.Level}: {spell.Name}");
+                    }
+
+                    if (domain1Id > 0) AddDomainInfo(domain1Id);
+                    if (domain2Id > 0) AddDomainInfo(domain2Id);
+
+                    if (domainLines.Count > 0)
+                    {
+                        _divineSpellInfoLabel.Text += "\n\nYour domains also grant additional spells:\n" +
+                            string.Join("\n", domainLines);
+                    }
+                }
+            }
+
             // Show new spells gained at this level for informational purposes
             var newSpellNames = new List<string>();
             for (int level = Math.Max(0, prevMaxSpellLevel + 1); level <= maxSpellLevel; level++)

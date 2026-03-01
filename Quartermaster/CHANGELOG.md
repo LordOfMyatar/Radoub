@@ -10,6 +10,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.24-alpha] - 2026-03-01
+**Branch**: `quartermaster/issue-1493` | **PR**: #1585
+
+### Sprint: Class Restrictions & Domain Display (#1493)
+
+- [x] #1488 - Enforce class alignment restrictions in New Character Wizard
+  - Fixed 0x prefix parsing bug in `AlignRestrict`/`AlignRstrctType` hex values
+  - Rewrote alignment validation with per-axis logic (LC, GE, both-axis modes)
+  - Monk requires Lawful, Paladin requires LG, Druid requires Neutral axis, Barbarian/Bard cannot be Lawful
+  - 48 new alignment restriction tests
+- [x] #1489 - Display domain spells, feats, and engine-granted abilities
+  - New `DomainService` reading `domains.2da` for Level_1–9 spells and GrantedFeat
+  - NCW Step 4: Domain info panel shows spells and granted feat when domains selected
+  - NCW Spells step: Domain spell summary for divine casters
+  - SpellsPanel (main editor): Domain Spells section in left column
+  - FeatsPanel (main editor): Domain-granted feats section in Assigned Feats list
+  - 22 new DomainService tests
+
+---
+
 ## [0.2.23-alpha] - 2026-02-28
 **Branch**: `quartermaster/issue-1557` | **PR**: #1583
 

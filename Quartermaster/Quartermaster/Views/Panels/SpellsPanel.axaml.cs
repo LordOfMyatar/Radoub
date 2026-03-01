@@ -30,6 +30,8 @@ public partial class SpellsPanel : UserControl
     private TextBlock? _spellSlotTableTitle;
     private Border? _knownSpellsListBorder;
     private StackPanel? _knownSpellsListPanel;
+    private Border? _domainSpellsBorder;
+    private StackPanel? _domainSpellsPanel;
     private Border? _memorizedSpellsTableBorder;
     private Grid? _memorizedSpellsTableGrid;
     private TextBlock? _spellSlotSummaryText;
@@ -100,6 +102,8 @@ public partial class SpellsPanel : UserControl
         _spellSlotTableTitle = this.FindControl<TextBlock>("SpellSlotTableTitle");
         _knownSpellsListBorder = this.FindControl<Border>("KnownSpellsListBorder");
         _knownSpellsListPanel = this.FindControl<StackPanel>("KnownSpellsListPanel");
+        _domainSpellsBorder = this.FindControl<Border>("DomainSpellsBorder");
+        _domainSpellsPanel = this.FindControl<StackPanel>("DomainSpellsPanel");
         _memorizedSpellsTableBorder = this.FindControl<Border>("MemorizedSpellsTableBorder");
         _memorizedSpellsTableGrid = this.FindControl<Grid>("MemorizedSpellsTableGrid");
         _spellSlotSummaryText = this.FindControl<TextBlock>("SpellSlotSummaryText");
@@ -337,6 +341,12 @@ public partial class SpellsPanel : UserControl
             _knownSpellsListBorder.IsVisible = false;
         if (_knownSpellsListPanel != null)
             _knownSpellsListPanel.Children.Clear();
+
+        // Hide domain spells
+        if (_domainSpellsBorder != null)
+            _domainSpellsBorder.IsVisible = false;
+        if (_domainSpellsPanel != null)
+            _domainSpellsPanel.Children.Clear();
 
         // Hide memorized spells table
         if (_memorizedSpellsTableBorder != null)

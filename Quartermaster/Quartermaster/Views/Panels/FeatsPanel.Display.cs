@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Quartermaster.Services;
 using Radoub.UI.Services;
 using System.Collections.Generic;
 using System.Linq;
@@ -175,6 +176,58 @@ public partial class FeatsPanel
                     Margin = new Thickness(0, 2, 0, 0)
                 };
                 _assignedFeatsListPanel.Children.Add(featText);
+            }
+        }
+
+        // Show domain-granted feats (informational — engine auto-grants these)
+        if (_currentCreature != null && _displayService != null)
+        {
+            var domainFeatsShown = new HashSet<int>();
+            for (int i = 0; i < _currentCreature.ClassList.Count; i++)
+            {
+                var classEntry = _currentCreature.ClassList[i];
+                var domain1Id = (int)classEntry.Domain1;
+                var domain2Id = (int)classEntry.Domain2;
+
+                if (domain1Id == 0 && domain2Id == 0) continue;
+
+                var domainIds = new List<int>();
+                if (domain1Id > 0) domainIds.Add(domain1Id);
+                if (domain2Id > 0) domainIds.Add(domain2Id);
+
+                foreach (var domainId in domainIds)
+                {
+                    var domainInfo = _displayService.Domains.GetDomainInfo(domainId);
+                    if (domainInfo == null || domainInfo.GrantedFeatId < 0) continue;
+                    if (!domainFeatsShown.Add(domainInfo.GrantedFeatId)) continue;
+
+                    if (!hasAnyFeats || _assignedFeatsListPanel.Children.Count > 0)
+                    {
+                        // First domain feat — add section header
+                        if (domainFeatsShown.Count == 1)
+                        {
+                            hasAnyFeats = true;
+                            var domainHeader = new TextBlock
+                            {
+                                Text = "Domain",
+                                FontWeight = FontWeight.Bold,
+                                FontSize = smallFontSize,
+                                Foreground = BrushManager.GetInfoBrush(this),
+                                Margin = new Thickness(0, _assignedFeatsListPanel.Children.Count > 0 ? 12 : 0, 0, 6)
+                            };
+                            _assignedFeatsListPanel.Children.Add(domainHeader);
+                        }
+                    }
+
+                    var featText = new TextBlock
+                    {
+                        Text = $"  {domainInfo.GrantedFeatName} ({domainInfo.Name})",
+                        FontSize = smallFontSize,
+                        Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? BrushManager.GetDisabledBrush(this),
+                        Margin = new Thickness(0, 2, 0, 0)
+                    };
+                    _assignedFeatsListPanel.Children.Add(featText);
+                }
             }
         }
 

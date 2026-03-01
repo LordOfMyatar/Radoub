@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Quartermaster.Services;
 using Radoub.UI.Services;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,6 +27,9 @@ public partial class SpellsPanel
 
         // Update metamagic feats display
         UpdateMetaMagicExpander();
+
+        // Update domain spells display (informational for divine casters with domains)
+        UpdateDomainSpells();
     }
 
     /// <summary>
@@ -810,5 +814,90 @@ public partial class SpellsPanel
     public static int GetEffectiveSpellLevel(int baseLevel, byte metamagic)
     {
         return baseLevel + GetMetamagicLevelCost(metamagic);
+    }
+
+    /// <summary>
+    /// Updates the Domain Spells section on the left side.
+    /// Shows spells and granted feats from the creature's cleric domains.
+    /// This is informational — the NWN engine auto-grants these; they are not stored in the creature file.
+    /// </summary>
+    private void UpdateDomainSpells()
+    {
+        if (_domainSpellsPanel == null || _domainSpellsBorder == null) return;
+
+        _domainSpellsPanel.Children.Clear();
+
+        if (_currentCreature == null || _displayService == null)
+        {
+            _domainSpellsBorder.IsVisible = false;
+            return;
+        }
+
+        var normalFontSize = this.FindResource("FontSizeNormal") as double? ?? 14;
+        bool hasDomainContent = false;
+
+        // Check each class for domains (typically only Cleric)
+        for (int i = 0; i < _currentCreature.ClassList.Count; i++)
+        {
+            var classEntry = _currentCreature.ClassList[i];
+            var domain1Id = (int)classEntry.Domain1;
+            var domain2Id = (int)classEntry.Domain2;
+
+            // Skip if no domains set (0 = no domain)
+            if (domain1Id == 0 && domain2Id == 0)
+                continue;
+
+            var domainIds = new List<int>();
+            if (domain1Id > 0) domainIds.Add(domain1Id);
+            if (domain2Id > 0) domainIds.Add(domain2Id);
+
+            foreach (var domainId in domainIds)
+            {
+                var domainInfo = _displayService.Domains.GetDomainInfo(domainId);
+                if (domainInfo == null) continue;
+
+                hasDomainContent = true;
+
+                // Domain header
+                var domainHeader = new TextBlock
+                {
+                    Text = domainInfo.Name,
+                    FontWeight = Avalonia.Media.FontWeight.Bold,
+                    FontSize = normalFontSize,
+                    Foreground = BrushManager.GetInfoBrush(this),
+                    Margin = new Avalonia.Thickness(0, _domainSpellsPanel.Children.Count > 0 ? 12 : 0, 0, 4)
+                };
+                _domainSpellsPanel.Children.Add(domainHeader);
+
+                // Granted feat
+                if (domainInfo.GrantedFeatId >= 0)
+                {
+                    var featText = new TextBlock
+                    {
+                        Text = $"  Feat: {domainInfo.GrantedFeatName}",
+                        FontSize = normalFontSize,
+                        Foreground = BrushManager.GetWarningBrush(this),
+                        Margin = new Avalonia.Thickness(0, 2, 0, 2)
+                    };
+                    _domainSpellsPanel.Children.Add(featText);
+                }
+
+                // Domain spells by level
+                foreach (var spell in domainInfo.DomainSpells)
+                {
+                    var spellText = new TextBlock
+                    {
+                        Text = $"  Lvl {spell.Level}: {spell.Name}",
+                        FontSize = normalFontSize,
+                        Foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush
+                                     ?? BrushManager.GetDisabledBrush(this),
+                        Margin = new Avalonia.Thickness(0, 1, 0, 1)
+                    };
+                    _domainSpellsPanel.Children.Add(spellText);
+                }
+            }
+        }
+
+        _domainSpellsBorder.IsVisible = hasDomainContent;
     }
 }

@@ -6,6 +6,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Quartermaster.Services;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 
 namespace Quartermaster.Views.Dialogs;
@@ -233,6 +234,11 @@ public partial class NewCharacterWizardWindow
         {
             PopulateDomains();
             LoadPackageDomainDefaults();
+            UpdateDomainInfoDisplay();
+        }
+        else
+        {
+            _domainInfoLabel.IsVisible = false;
         }
     }
 
@@ -320,6 +326,53 @@ public partial class NewCharacterWizardWindow
         return 0;
     }
 
+    private void OnDomainSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        UpdateDomainInfoDisplay();
+    }
+
+    /// <summary>
+    /// Updates the domain info label to show granted feats and spells for selected domains.
+    /// </summary>
+    private void UpdateDomainInfoDisplay()
+    {
+        var d1Id = GetSelectedDomainId(_domain1ComboBox);
+        var d2Id = GetSelectedDomainId(_domain2ComboBox);
+
+        var lines = new List<string>();
+
+        var d1 = _displayService.Domains.GetDomainInfo(d1Id);
+        if (d1 != null)
+        {
+            lines.Add($"◆ {d1.Name}");
+            if (d1.GrantedFeatId >= 0)
+                lines.Add($"  Granted: {d1.GrantedFeatName}");
+            foreach (var spell in d1.DomainSpells)
+                lines.Add($"  Lvl {spell.Level}: {spell.Name}");
+        }
+
+        var d2 = _displayService.Domains.GetDomainInfo(d2Id);
+        if (d2 != null)
+        {
+            if (lines.Count > 0) lines.Add("");
+            lines.Add($"◆ {d2.Name}");
+            if (d2.GrantedFeatId >= 0)
+                lines.Add($"  Granted: {d2.GrantedFeatName}");
+            foreach (var spell in d2.DomainSpells)
+                lines.Add($"  Lvl {spell.Level}: {spell.Name}");
+        }
+
+        if (lines.Count > 0)
+        {
+            _domainInfoLabel.Text = string.Join("\n", lines);
+            _domainInfoLabel.IsVisible = true;
+        }
+        else
+        {
+            _domainInfoLabel.IsVisible = false;
+        }
+    }
+
     /// <summary>
     /// Shows/hides the familiar selection panel based on whether the class grants a familiar.
     /// </summary>
@@ -395,7 +448,8 @@ public partial class NewCharacterWizardWindow
 
         if (parts.Count == 0) return "";
 
-        string verb = restriction.Inverted ? "Cannot be" : "Must be";
+        // Invert=0: mask = prohibited alignments; Invert=1: mask = required alignments
+        string verb = restriction.Inverted ? "Must be" : "Cannot be";
         return $"{verb}: {string.Join(" or ", parts)}";
     }
 
@@ -468,6 +522,13 @@ public partial class NewCharacterWizardWindow
 
         var metadata = _displayService.Classes.GetClassMetadata(_selectedClassId);
 
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"NCW.UpdateAlignmentButtonStates: classId={_selectedClassId} ({metadata.Name}) " +
+            $"hasRestriction={metadata.AlignmentRestriction != null}" +
+            (metadata.AlignmentRestriction != null
+                ? $" mask=0x{metadata.AlignmentRestriction.RestrictionMask:X2} type=0x{metadata.AlignmentRestriction.RestrictionType:X2} inverted={metadata.AlignmentRestriction.Inverted}"
+                : ""));
+
         for (int i = 0; i < _alignmentButtons.Length; i++)
         {
             if (metadata.AlignmentRestriction != null)
@@ -515,23 +576,68 @@ public partial class NewCharacterWizardWindow
 
     private static bool IsAlignmentAllowed(AlignmentRestriction restriction, byte goodEvil, byte lawChaos)
     {
-        // Convert 0-100 values to bitmask categories
-        int alignBits = 0;
-        if (goodEvil > 70) alignBits |= 0x08;       // Good
-        else if (goodEvil < 30) alignBits |= 0x10;   // Evil
-        if (lawChaos > 70) alignBits |= 0x02;        // Lawful
-        else if (lawChaos < 30) alignBits |= 0x04;   // Chaotic
+        // NWN alignment restriction system:
+        //   Invert=0 (default): mask bits are PROHIBITED alignments (block if matches)
+        //   Invert=1: mask bits are REQUIRED alignments (allow only if matches)
+        //
+        // Mask bits: 0x01=neutral, 0x02=lawful, 0x04=chaotic, 0x08=good, 0x10=evil
+        // Type: 0x01=LC axis only, 0x02=GE axis only, 0x03=both axes
 
-        // Neutral on either axis
-        if (goodEvil >= 30 && goodEvil <= 70 && lawChaos >= 30 && lawChaos <= 70)
-            alignBits |= 0x01; // True Neutral
-        else if (goodEvil >= 30 && goodEvil <= 70)
-            alignBits |= 0x01; // Neutral on good/evil axis
-        else if (lawChaos >= 30 && lawChaos <= 70)
-            alignBits |= 0x01; // Neutral on law/chaos axis
+        bool isLawful = lawChaos > 70;
+        bool isChaotic = lawChaos < 30;
+        bool isNeutralLC = !isLawful && !isChaotic;
 
-        bool matches = (alignBits & restriction.RestrictionMask) != 0;
-        return restriction.Inverted ? !matches : matches;
+        bool isGood = goodEvil > 70;
+        bool isEvil = goodEvil < 30;
+        bool isNeutralGE = !isGood && !isEvil;
+
+        int mask = restriction.RestrictionMask;
+        int type = restriction.RestrictionType;
+
+        bool maskHasLawful = (mask & 0x02) != 0;
+        bool maskHasChaotic = (mask & 0x04) != 0;
+        bool maskHasGood = (mask & 0x08) != 0;
+        bool maskHasEvil = (mask & 0x10) != 0;
+        bool maskHasNeutral = (mask & 0x01) != 0;
+
+        // Check if alignment matches any bit in the mask on applicable axes
+        bool matches;
+        if (type == 0x01)
+        {
+            // Law-Chaos axis only
+            matches = (maskHasLawful && isLawful) || (maskHasChaotic && isChaotic)
+                || (maskHasNeutral && isNeutralLC);
+        }
+        else if (type == 0x02)
+        {
+            // Good-Evil axis only
+            matches = (maskHasGood && isGood) || (maskHasEvil && isEvil)
+                || (maskHasNeutral && isNeutralGE);
+        }
+        else if (type == 0x03)
+        {
+            // Both axes: check all mask bits against both axes (OR)
+            // Any matching bit on either axis counts as a match
+            bool lcMatch = (maskHasLawful && isLawful) || (maskHasChaotic && isChaotic);
+            bool geMatch = (maskHasGood && isGood) || (maskHasEvil && isEvil);
+            bool neutralMatch = maskHasNeutral && (isNeutralLC || isNeutralGE);
+            matches = lcMatch || geMatch || neutralMatch;
+        }
+        else
+        {
+            // No type specified: simple bitmask OR check (legacy fallback)
+            int alignBits = 0;
+            if (isGood) alignBits |= 0x08;
+            if (isEvil) alignBits |= 0x10;
+            if (isLawful) alignBits |= 0x02;
+            if (isChaotic) alignBits |= 0x04;
+            if (isNeutralLC || isNeutralGE) alignBits |= 0x01;
+            matches = (alignBits & mask) != 0;
+        }
+
+        // Invert=0: mask = prohibited → block if matches (return !matches)
+        // Invert=1: mask = required → allow if matches (return matches)
+        return restriction.Inverted ? matches : !matches;
     }
 
     #endregion

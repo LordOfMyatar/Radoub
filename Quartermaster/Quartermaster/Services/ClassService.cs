@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
 
@@ -192,18 +193,46 @@ public class ClassService
         var alignRestrictType = _gameDataService.Get2DAValue("classes", classId, "AlignRstrctType");
         var invertRestrict = _gameDataService.Get2DAValue("classes", classId, "InvertRestrict");
 
+        UnifiedLogger.LogApplication(LogLevel.DEBUG,
+            $"ClassService.LoadAlignmentRestrictions: class={classId} AlignRestrict='{alignRestrict}' " +
+            $"AlignRstrctType='{alignRestrictType}' InvertRestrict='{invertRestrict}'");
+
         if (string.IsNullOrEmpty(alignRestrict) || alignRestrict == "****")
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"ClassService: class={classId} has no AlignRestrict value — skipping");
             return;
+        }
 
         // Parse bitmask
         // 0x01 = neutral, 0x02 = lawful, 0x04 = chaotic, 0x08 = good, 0x10 = evil
-        if (!int.TryParse(alignRestrict, System.Globalization.NumberStyles.HexNumber, null, out int restrictMask))
+        // 2DA stores values as "0x02", "0x10", etc. — strip prefix before hex parse
+        var alignValue = alignRestrict.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+            ? alignRestrict[2..]
+            : alignRestrict;
+        if (!int.TryParse(alignValue, System.Globalization.NumberStyles.HexNumber, null, out int restrictMask))
         {
             if (!int.TryParse(alignRestrict, out restrictMask))
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"ClassService: Failed to parse AlignRestrict '{alignRestrict}' for class {classId}");
                 return;
+            }
         }
 
-        int.TryParse(alignRestrictType, out int restrictType);
+        // Mask of 0 means no alignment restriction (e.g., Cleric, Fighter)
+        if (restrictMask == 0)
+            return;
+
+        var typeValue = alignRestrictType != null &&
+            alignRestrictType.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+            ? alignRestrictType[2..]
+            : alignRestrictType;
+        if (!int.TryParse(typeValue, System.Globalization.NumberStyles.HexNumber, null, out int restrictType))
+        {
+            // Try plain decimal
+            int.TryParse(alignRestrictType, out restrictType);
+        }
         bool invert = invertRestrict == "1";
 
         metadata.AlignmentRestriction = new AlignmentRestriction
@@ -212,6 +241,10 @@ public class ClassService
             RestrictionType = restrictType,
             Inverted = invert
         };
+
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"ClassService: class={classId} ({metadata.Name}) alignment restriction loaded: " +
+            $"mask=0x{restrictMask:X2} type=0x{restrictType:X2} inverted={invert}");
     }
 
     #endregion
@@ -470,11 +503,10 @@ public class ClassService
 
     private (string Description, bool Met) CheckAlignmentRestriction(UtcFile creature, AlignmentRestriction restriction)
     {
-        // Decode alignment from creature
-        int lawChaos = creature.LawfulChaotic; // 0-100: 0=Lawful, 50=Neutral, 100=Chaotic
-        int goodEvil = creature.GoodEvil;       // 0-100: 0=Good, 50=Neutral, 100=Evil
+        // Decode alignment from creature (UtcFile: 0=Lawful/Good, 100=Chaotic/Evil)
+        int lawChaos = creature.LawfulChaotic;
+        int goodEvil = creature.GoodEvil;
 
-        // Thresholds: <30 = one extreme, 30-70 = neutral, >70 = other extreme
         bool isLawful = lawChaos < 30;
         bool isChaotic = lawChaos > 70;
         bool isNeutralLC = !isLawful && !isChaotic;
@@ -483,25 +515,65 @@ public class ClassService
         bool isEvil = goodEvil > 70;
         bool isNeutralGE = !isGood && !isEvil;
 
-        // Build current alignment bitmask
-        int currentMask = 0;
-        if (isNeutralLC && isNeutralGE) currentMask |= 0x01; // True neutral
-        if (isLawful) currentMask |= 0x02;
-        if (isChaotic) currentMask |= 0x04;
-        if (isGood) currentMask |= 0x08;
-        if (isEvil) currentMask |= 0x10;
+        int mask = restriction.RestrictionMask;
+        int type = restriction.RestrictionType;
 
-        // Check against restriction
-        bool matches = (currentMask & restriction.RestrictionMask) != 0;
+        bool maskHasLawful = (mask & 0x02) != 0;
+        bool maskHasChaotic = (mask & 0x04) != 0;
+        bool maskHasGood = (mask & 0x08) != 0;
+        bool maskHasEvil = (mask & 0x10) != 0;
+        bool maskHasNeutral = (mask & 0x01) != 0;
+
+        // Check alignment against restriction using RestrictionType for axis-aware logic
+        bool matches;
+        if (type == 0x03)
+        {
+            bool lcMatch = (maskHasLawful && isLawful) || (maskHasChaotic && isChaotic);
+            bool geMatch = (maskHasGood && isGood) || (maskHasEvil && isEvil);
+            bool neutralMatch = maskHasNeutral && (isNeutralLC || isNeutralGE);
+
+            bool hasLcRestriction = maskHasLawful || maskHasChaotic;
+            bool hasGeRestriction = maskHasGood || maskHasEvil;
+
+            if (hasLcRestriction && hasGeRestriction)
+                matches = lcMatch && geMatch || neutralMatch;
+            else if (hasLcRestriction)
+                matches = lcMatch || neutralMatch;
+            else if (hasGeRestriction)
+                matches = geMatch || neutralMatch;
+            else
+                matches = neutralMatch;
+        }
+        else if (type == 0x01)
+        {
+            matches = (maskHasLawful && isLawful) || (maskHasChaotic && isChaotic)
+                || (maskHasNeutral && isNeutralLC);
+        }
+        else if (type == 0x02)
+        {
+            matches = (maskHasGood && isGood) || (maskHasEvil && isEvil)
+                || (maskHasNeutral && isNeutralGE);
+        }
+        else
+        {
+            int currentMask = 0;
+            if (isLawful) currentMask |= 0x02;
+            if (isChaotic) currentMask |= 0x04;
+            if (isGood) currentMask |= 0x08;
+            if (isEvil) currentMask |= 0x10;
+            if (isNeutralLC || isNeutralGE) currentMask |= 0x01;
+            matches = (currentMask & mask) != 0;
+        }
+
         bool allowed = restriction.Inverted ? !matches : matches;
 
         // Build description
         var alignDesc = new List<string>();
-        if ((restriction.RestrictionMask & 0x02) != 0) alignDesc.Add("Lawful");
-        if ((restriction.RestrictionMask & 0x04) != 0) alignDesc.Add("Chaotic");
-        if ((restriction.RestrictionMask & 0x08) != 0) alignDesc.Add("Good");
-        if ((restriction.RestrictionMask & 0x10) != 0) alignDesc.Add("Evil");
-        if ((restriction.RestrictionMask & 0x01) != 0) alignDesc.Add("Neutral");
+        if (maskHasLawful) alignDesc.Add("Lawful");
+        if (maskHasChaotic) alignDesc.Add("Chaotic");
+        if (maskHasGood) alignDesc.Add("Good");
+        if (maskHasEvil) alignDesc.Add("Evil");
+        if (maskHasNeutral) alignDesc.Add("Neutral");
 
         string verb = restriction.Inverted ? "Cannot be" : "Must be";
         string description = $"{verb}: {string.Join(" or ", alignDesc)}";
