@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.24-alpha] - 2026-03-01
+**Branch**: `quartermaster/issue-1493` | **PR**: #TBD
+
+### Sprint: Class Restrictions & Domain Display (#1493)
+
+- [ ] #1488 - Enforce class alignment restrictions in New Character Wizard
+- [ ] #1489 - Display domain spells, feats, and engine-granted abilities
+
+---
+
 ## [0.2.23-alpha] - 2026-02-28
 **Branch**: `quartermaster/issue-1557` | **PR**: #1583
 
