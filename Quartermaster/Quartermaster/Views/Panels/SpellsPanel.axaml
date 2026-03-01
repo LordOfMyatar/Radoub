@@ -371,18 +371,10 @@
                     <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                             BorderThickness="1"
                             CornerRadius="4"
-                            Padding="15"
-                            MaxHeight="120">
-                        <StackPanel>
-                            <TextBlock Text="Meta-magic display will show applied feats that modify spell slots."
-                                       FontStyle="Italic"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                       TextWrapping="Wrap"/>
-                            <TextBlock Text="(Read-only in this version)"
-                                       FontStyle="Italic"
-                                       FontSize="{DynamicResource FontSizeSmall}"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                       Margin="0,5,0,0"/>
+                            Padding="10"
+                            MaxHeight="200">
+                        <StackPanel x:Name="MetaMagicContentPanel" Spacing="4">
+                            <!-- Dynamically populated with creature's metamagic feats -->
                         </StackPanel>
                     </Border>
                 </Expander>

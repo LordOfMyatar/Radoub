@@ -43,6 +43,7 @@ public partial class SpellsPanel : UserControl
     private TextBlock? _noSpellsText;
     private TextBlock? _loadingText;
     private Expander? _metaMagicExpander;
+    private StackPanel? _metaMagicContentPanel;
 
     // Class selector
     private ComboBox? _classComboBox;
@@ -56,9 +57,12 @@ public partial class SpellsPanel : UserControl
     private ObservableCollection<SpellListViewModel> _displayedSpells = new();
     private List<SpellListViewModel> _allSpells = new();
     private HashSet<int> _knownSpellIds = new();
-    private Dictionary<int, int> _memorizedSpellCounts = new();  // spellId -> count
+    private Dictionary<(int spellId, byte metamagic), int> _memorizedSpellCounts = new();
     private int _selectedClassIndex = 0;
     private bool _isSpontaneousCaster = false;
+
+    // Metamagic feats the current creature possesses
+    private List<(string Name, byte Flag, int LevelCost)> _creatureMetamagicFeats = new();
 
     public SpellsPanel()
     {
@@ -108,6 +112,7 @@ public partial class SpellsPanel : UserControl
         _noSpellsText = this.FindControl<TextBlock>("NoSpellsText");
         _loadingText = this.FindControl<TextBlock>("LoadingText");
         _metaMagicExpander = this.FindControl<Expander>("MetaMagicExpander");
+        _metaMagicContentPanel = this.FindControl<StackPanel>("MetaMagicContentPanel");
 
         // Find class selector
         _classComboBox = this.FindControl<ComboBox>("ClassComboBox");
@@ -237,11 +242,19 @@ public partial class SpellsPanel : UserControl
         var filtered = _allSpells.AsEnumerable();
 
         // Apply search filter
+        // For metamagic variants, also match against the parent spell name
         var searchText = _searchTextBox?.Text?.Trim() ?? "";
         if (!string.IsNullOrEmpty(searchText))
         {
+            // Build set of matching base spell IDs so variants follow their parent
+            var matchingSpellIds = new HashSet<int>(
+                _allSpells.Where(s => !s.IsMetamagicVariant &&
+                    s.SpellName.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                .Select(s => s.SpellId));
+
             filtered = filtered.Where(s =>
-                s.SpellName.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+                s.SpellName.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                (s.IsMetamagicVariant && matchingSpellIds.Contains(s.SpellId)));
         }
 
         // Apply level filter
@@ -364,6 +377,11 @@ public partial class SpellsPanel : UserControl
         _ignoreClassRestrictions = false;
         if (_ignoreRestrictionsCheckBox != null)
             _ignoreRestrictionsCheckBox.IsChecked = false;
+
+        // Clear metamagic feats
+        _creatureMetamagicFeats.Clear();
+        if (_metaMagicContentPanel != null)
+            _metaMagicContentPanel.Children.Clear();
     }
 
     private static void SetText(TextBlock? block, string text)

@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.22-alpha] - 2026-02-28
+**Branch**: `quartermaster/sprint/metamagic` | **PR**: #1574
+
+### Sprint: Metamagic Feats & Spell Variants (#638, #1156)
+
+- [x] #638 - Meta-magic feats display: MetaMagicExpander shows creature's metamagic feats with level costs, loaded from feat.2da/TLK
+- [x] #1156 - Metamagic variant spells: each metamagic feat generates variant rows in spell list with effective levels; memorization stores SpellMetaMagic flag; counts tracked per (spellId, metamagic) tuple
+- [x] 34 new metamagic tests (level costs, effective levels, feat detection, flag storage, count keys)
+
+---
+
 ## [0.2.21-alpha] - 2026-02-27
 **Branch**: `radoub/issue-1560` | **PR**: #1561
 
