@@ -297,6 +297,7 @@ public partial class NewCharacterWizardWindow : Window
     private readonly StackPanel _domainSelectionPanel;
     private readonly ComboBox _domain1ComboBox;
     private readonly ComboBox _domain2ComboBox;
+    private readonly TextBlock _domainInfoLabel;
     private readonly StackPanel _familiarSelectionPanel;
     private readonly ComboBox _familiarComboBox;
     private int _selectedFamiliarType;
@@ -461,6 +462,7 @@ public partial class NewCharacterWizardWindow : Window
         _domainSelectionPanel = this.FindControl<StackPanel>("DomainSelectionPanel")!;
         _domain1ComboBox = this.FindControl<ComboBox>("Domain1ComboBox")!;
         _domain2ComboBox = this.FindControl<ComboBox>("Domain2ComboBox")!;
+        _domainInfoLabel = this.FindControl<TextBlock>("DomainInfoLabel")!;
         _familiarSelectionPanel = this.FindControl<StackPanel>("FamiliarSelectionPanel")!;
         _familiarComboBox = this.FindControl<ComboBox>("FamiliarComboBox")!;
         _classDescriptionLabel = this.FindControl<TextBlock>("ClassDescriptionLabel")!;

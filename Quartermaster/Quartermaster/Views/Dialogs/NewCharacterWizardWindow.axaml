@@ -720,9 +720,15 @@
                                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                                         <TextBlock Grid.Column="2" Grid.Row="0" Text="Domain 2" Margin="0,0,0,3"
                                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
-                                        <ComboBox Grid.Column="0" Grid.Row="1" x:Name="Domain1ComboBox" HorizontalAlignment="Stretch"/>
-                                        <ComboBox Grid.Column="2" Grid.Row="1" x:Name="Domain2ComboBox" HorizontalAlignment="Stretch"/>
+                                        <ComboBox Grid.Column="0" Grid.Row="1" x:Name="Domain1ComboBox" HorizontalAlignment="Stretch"
+                                                 SelectionChanged="OnDomainSelectionChanged"/>
+                                        <ComboBox Grid.Column="2" Grid.Row="1" x:Name="Domain2ComboBox" HorizontalAlignment="Stretch"
+                                                 SelectionChanged="OnDomainSelectionChanged"/>
                                     </Grid>
+                                    <!-- Domain Info Display -->
+                                    <TextBlock x:Name="DomainInfoLabel" TextWrapping="Wrap" FontSize="11"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               IsVisible="False" Margin="0,4,0,0"/>
                                 </StackPanel>
 
                                 <!-- Familiar Selection (Wizard/Sorcerer) -->

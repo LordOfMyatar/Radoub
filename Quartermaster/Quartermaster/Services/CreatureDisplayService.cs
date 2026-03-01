@@ -22,6 +22,7 @@ public partial class CreatureDisplayService
     public AppearanceService Appearances { get; }
     public SpellService Spells { get; }
     public ClassService Classes { get; }
+    public DomainService Domains { get; }
 
     /// <summary>
     /// Direct access to game data service for advanced queries.
@@ -45,6 +46,7 @@ public partial class CreatureDisplayService
         Appearances = new AppearanceService(gameDataService);
         Spells = new SpellService(gameDataService);
         Classes = new ClassService(gameDataService, Skills, Feats);
+        Domains = new DomainService(gameDataService, Spells);
     }
 
     /// <summary>

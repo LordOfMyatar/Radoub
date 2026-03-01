@@ -68,8 +68,27 @@ public partial class NewCharacterWizardWindow
         {
             // Divine casters (Cleric, Druid) get spells automatically
             var className = _displayService.GetClassName(classId);
-            _divineSpellInfoLabel.Text = $"As a {className}, your deity grants you access to all {className.ToLowerInvariant()} spells.\n" +
-                $"You can prepare spells each day after resting.";
+            var infoLines = new List<string>
+            {
+                $"As a {className}, your deity grants you access to all {className.ToLowerInvariant()} spells.",
+                "You can prepare spells each day after resting."
+            };
+
+            // Show domain spell info for clerics
+            if (_classNeedsDomains)
+            {
+                var d1Id = GetSelectedDomainId(_domain1ComboBox);
+                var d2Id = GetSelectedDomainId(_domain2ComboBox);
+                var domainLines = BuildDomainSpellSummary(d1Id, d2Id);
+                if (domainLines.Count > 0)
+                {
+                    infoLines.Add("");
+                    infoLines.Add("Your domains also grant additional spells:");
+                    infoLines.AddRange(domainLines);
+                }
+            }
+
+            _divineSpellInfoLabel.Text = string.Join("\n", infoLines);
             _divineSpellInfoPanel.IsVisible = true;
 
             // Hide the two-panel selection UI
@@ -378,6 +397,36 @@ public partial class NewCharacterWizardWindow
         SpellSchool.Transmutation => "Tra",
         _ => ""
     };
+
+    #endregion
+
+    #region Domain Spell Summary
+
+    /// <summary>
+    /// Builds a summary of domain spells for display in the spells step.
+    /// </summary>
+    private List<string> BuildDomainSpellSummary(byte domain1Id, byte domain2Id)
+    {
+        var lines = new List<string>();
+
+        var d1 = _displayService.Domains.GetDomainInfo(domain1Id);
+        if (d1 != null && d1.DomainSpells.Count > 0)
+        {
+            lines.Add($"  {d1.Name}:");
+            foreach (var spell in d1.DomainSpells)
+                lines.Add($"    Level {spell.Level}: {spell.Name}");
+        }
+
+        var d2 = _displayService.Domains.GetDomainInfo(domain2Id);
+        if (d2 != null && d2.DomainSpells.Count > 0)
+        {
+            lines.Add($"  {d2.Name}:");
+            foreach (var spell in d2.DomainSpells)
+                lines.Add($"    Level {spell.Level}: {spell.Name}");
+        }
+
+        return lines;
+    }
 
     #endregion
 }

@@ -79,6 +79,26 @@
                         </StackPanel>
                     </StackPanel>
                 </Border>
+
+                <!-- Domain Spells (informational - engine auto-grants these for divine casters with domains) -->
+                <Border x:Name="DomainSpellsBorder"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        CornerRadius="4"
+                        Padding="10"
+                        Margin="0,10,0,0"
+                        MinWidth="180"
+                        IsVisible="False"
+                        AutomationProperties.AutomationId="DomainSpellsSection">
+                    <StackPanel>
+                        <TextBlock Text="Domain Spells"
+                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource FontSizeMedium}"
+                                   Margin="0,0,0,10"/>
+                        <StackPanel x:Name="DomainSpellsPanel">
+                            <!-- Dynamically populated with domain spells and granted feats -->
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
             </StackPanel>
             </ScrollViewer>
 

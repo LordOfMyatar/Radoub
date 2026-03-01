@@ -233,6 +233,11 @@ public partial class NewCharacterWizardWindow
         {
             PopulateDomains();
             LoadPackageDomainDefaults();
+            UpdateDomainInfoDisplay();
+        }
+        else
+        {
+            _domainInfoLabel.IsVisible = false;
         }
     }
 
@@ -318,6 +323,53 @@ public partial class NewCharacterWizardWindow
         if (comboBox.SelectedItem is ComboBoxItem item && item.Tag is int domainId)
             return (byte)domainId;
         return 0;
+    }
+
+    private void OnDomainSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        UpdateDomainInfoDisplay();
+    }
+
+    /// <summary>
+    /// Updates the domain info label to show granted feats and spells for selected domains.
+    /// </summary>
+    private void UpdateDomainInfoDisplay()
+    {
+        var d1Id = GetSelectedDomainId(_domain1ComboBox);
+        var d2Id = GetSelectedDomainId(_domain2ComboBox);
+
+        var lines = new List<string>();
+
+        var d1 = _displayService.Domains.GetDomainInfo(d1Id);
+        if (d1 != null)
+        {
+            lines.Add($"◆ {d1.Name}");
+            if (d1.GrantedFeatId >= 0)
+                lines.Add($"  Granted: {d1.GrantedFeatName}");
+            foreach (var spell in d1.DomainSpells)
+                lines.Add($"  Lvl {spell.Level}: {spell.Name}");
+        }
+
+        var d2 = _displayService.Domains.GetDomainInfo(d2Id);
+        if (d2 != null)
+        {
+            if (lines.Count > 0) lines.Add("");
+            lines.Add($"◆ {d2.Name}");
+            if (d2.GrantedFeatId >= 0)
+                lines.Add($"  Granted: {d2.GrantedFeatName}");
+            foreach (var spell in d2.DomainSpells)
+                lines.Add($"  Lvl {spell.Level}: {spell.Name}");
+        }
+
+        if (lines.Count > 0)
+        {
+            _domainInfoLabel.Text = string.Join("\n", lines);
+            _domainInfoLabel.IsVisible = true;
+        }
+        else
+        {
+            _domainInfoLabel.IsVisible = false;
+        }
     }
 
     /// <summary>

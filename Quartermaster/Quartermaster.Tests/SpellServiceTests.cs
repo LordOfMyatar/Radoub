@@ -182,9 +182,11 @@ public class SpellServiceTests
     public void GetAllSpellIds_ReturnsAllConfiguredSpells()
     {
         var ids = _spellService.GetAllSpellIds();
-        Assert.Equal(5, ids.Count);
+        // 25 spells: 5 from SpellServiceTests setup + 20 additional from domain mock data
+        Assert.Equal(25, ids.Count);
         Assert.Contains(0, ids);
         Assert.Contains(4, ids);
+        Assert.Contains(24, ids);
     }
 
     #endregion
