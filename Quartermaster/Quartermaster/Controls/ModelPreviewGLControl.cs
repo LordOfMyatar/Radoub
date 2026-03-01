@@ -648,6 +648,16 @@ void main()
                 hasWorldTransform = worldTransform != Matrix4x4.Identity;
             }
 
+            // Body part seam fix (#1557): NWN body part models rely on skeletal deformation
+            // to seamlessly connect at joints. Our static preview uses rigid placement, which
+            // exposes thin seams where adjacent parts barely overlap (especially elves: 0.012
+            // units overlap vs human's 0.070). Stretch each body part's Z extent slightly from
+            // its bone position to increase overlap at joint boundaries.
+            // Only applies to composite body part models (parent is "composite_root").
+            bool isBodyPartMesh = hasWorldTransform && !isSkinMesh
+                && mesh.Parent?.Name == "composite_root";
+            float boneZ = mesh.Position.Z;
+
             // Count NaN vertices - we'll skip them during rendering
             var nanVertexIndices = new HashSet<int>();
             for (int i = 0; i < mesh.Vertices.Length; i++)
@@ -729,6 +739,15 @@ void main()
                 {
                     // Trimesh: apply full world transform (handles hierarchy rotations + positions)
                     v = hasWorldTransform ? TransformPosition(localVertex, worldTransform) : localVertex;
+                }
+
+                // Body part seam fix: stretch vertex Z from bone position to increase overlap.
+                // Z-only stretch avoids distorting the X/Y silhouette profile.
+                // 15% adds ~0.01 units at joints with 0.07 unit half-extents (typical).
+                if (isBodyPartMesh)
+                {
+                    const float seamStretchZ = 1.15f;
+                    v.Z = boneZ + (v.Z - boneZ) * seamStretchZ;
                 }
 
                 // Position
