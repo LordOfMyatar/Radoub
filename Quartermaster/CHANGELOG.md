@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.25-alpha] - 2026-03-01
+**Branch**: `quartermaster/issue-1586` | **PR**: #TBD
+
+### Sprint: Classes & Levels Panel Enhancements (#1586, #1588)
+
+- [ ] #1586 - Add domain info to Classes & Levels panel (main editor)
+- [ ] #1588 - Display familiar information in Classes & Levels panel
+
+---
+
 ## [0.2.24-alpha] - 2026-03-01
 **Branch**: `quartermaster/issue-1493` | **PR**: #1585
 
