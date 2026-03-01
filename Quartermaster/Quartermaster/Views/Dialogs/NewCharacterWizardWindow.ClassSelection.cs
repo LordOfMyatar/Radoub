@@ -515,22 +515,72 @@ public partial class NewCharacterWizardWindow
 
     private static bool IsAlignmentAllowed(AlignmentRestriction restriction, byte goodEvil, byte lawChaos)
     {
-        // Convert 0-100 values to bitmask categories
-        int alignBits = 0;
-        if (goodEvil > 70) alignBits |= 0x08;       // Good
-        else if (goodEvil < 30) alignBits |= 0x10;   // Evil
-        if (lawChaos > 70) alignBits |= 0x02;        // Lawful
-        else if (lawChaos < 30) alignBits |= 0x04;   // Chaotic
+        // Determine alignment on each axis
+        bool isLawful = lawChaos > 70;
+        bool isChaotic = lawChaos < 30;
+        bool isNeutralLC = !isLawful && !isChaotic;
 
-        // Neutral on either axis
-        if (goodEvil >= 30 && goodEvil <= 70 && lawChaos >= 30 && lawChaos <= 70)
-            alignBits |= 0x01; // True Neutral
-        else if (goodEvil >= 30 && goodEvil <= 70)
-            alignBits |= 0x01; // Neutral on good/evil axis
-        else if (lawChaos >= 30 && lawChaos <= 70)
-            alignBits |= 0x01; // Neutral on law/chaos axis
+        bool isGood = goodEvil > 70;
+        bool isEvil = goodEvil < 30;
+        bool isNeutralGE = !isGood && !isEvil;
 
-        bool matches = (alignBits & restriction.RestrictionMask) != 0;
+        int mask = restriction.RestrictionMask;
+        int type = restriction.RestrictionType;
+
+        // Extract restriction bits per axis (neutral bit 0x01 is shared)
+        bool maskHasLawful = (mask & 0x02) != 0;
+        bool maskHasChaotic = (mask & 0x04) != 0;
+        bool maskHasGood = (mask & 0x08) != 0;
+        bool maskHasEvil = (mask & 0x10) != 0;
+        bool maskHasNeutral = (mask & 0x01) != 0;
+
+        bool matches;
+        if (type == 0x03)
+        {
+            // Both axes: non-neutral bits must match per-axis (AND);
+            // neutral matches either axis (OR) — e.g. Druid "must have neutral on at least one axis"
+            bool lcMatch = (maskHasLawful && isLawful) || (maskHasChaotic && isChaotic);
+            bool geMatch = (maskHasGood && isGood) || (maskHasEvil && isEvil);
+            bool neutralMatch = maskHasNeutral && (isNeutralLC || isNeutralGE);
+
+            // Paladin (0x0A, both axes): must be Lawful AND Good → lcMatch && geMatch
+            // Druid (0x01, both axes): must be neutral on any axis → neutralMatch only
+            bool hasLcRestriction = maskHasLawful || maskHasChaotic;
+            bool hasGeRestriction = maskHasGood || maskHasEvil;
+
+            if (hasLcRestriction && hasGeRestriction)
+                matches = lcMatch && geMatch || neutralMatch;
+            else if (hasLcRestriction)
+                matches = lcMatch || neutralMatch;
+            else if (hasGeRestriction)
+                matches = geMatch || neutralMatch;
+            else
+                matches = neutralMatch; // Only neutral bit set
+        }
+        else if (type == 0x01)
+        {
+            // Law-Chaos axis only
+            matches = (maskHasLawful && isLawful) || (maskHasChaotic && isChaotic)
+                || (maskHasNeutral && isNeutralLC);
+        }
+        else if (type == 0x02)
+        {
+            // Good-Evil axis only
+            matches = (maskHasGood && isGood) || (maskHasEvil && isEvil)
+                || (maskHasNeutral && isNeutralGE);
+        }
+        else
+        {
+            // No type specified: simple bitmask OR check (legacy fallback)
+            int alignBits = 0;
+            if (isGood) alignBits |= 0x08;
+            if (isEvil) alignBits |= 0x10;
+            if (isLawful) alignBits |= 0x02;
+            if (isChaotic) alignBits |= 0x04;
+            if (isNeutralLC || isNeutralGE) alignBits |= 0x01;
+            matches = (alignBits & mask) != 0;
+        }
+
         return restriction.Inverted ? !matches : matches;
     }
 
