@@ -261,7 +261,7 @@ jobs:
         echo "Created: ${{ matrix.bundle-name }}.tar.gz"
 
     - name: Upload bundle artifact
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ matrix.bundle-name }}
         path: |
