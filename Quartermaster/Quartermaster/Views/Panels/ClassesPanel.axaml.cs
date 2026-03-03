@@ -474,10 +474,8 @@ public partial class ClassesPanel : BasePanelControl
         _domain1ComboBox.Items.Clear();
         _domain2ComboBox.Items.Clear();
 
-        // Add a "None" option at index 0
-        _domain1ComboBox.Items.Add(new ComboBoxItem { Content = "(None)", Tag = 0 });
-        _domain2ComboBox.Items.Add(new ComboBoxItem { Content = "(None)", Tag = 0 });
-
+        // No "(None)" option — domain 0 is Air, a valid domain.
+        // Clerics always have two domains; non-clerics don't show this section at all.
         foreach (var domain in _domainItems)
         {
             _domain1ComboBox.Items.Add(new ComboBoxItem { Content = domain.Name, Tag = domain.Id });
@@ -498,7 +496,7 @@ public partial class ClassesPanel : BasePanelControl
             }
         }
 
-        // Default to None
+        // Default to first domain if exact match not found
         if (comboBox.Items.Count > 0)
             comboBox.SelectedIndex = 0;
     }
@@ -529,21 +527,15 @@ public partial class ClassesPanel : BasePanelControl
         var d1Id = GetSelectedDomainId(_domain1ComboBox);
         var d2Id = GetSelectedDomainId(_domain2ComboBox);
 
-        var parts = new System.Collections.Generic.List<string>();
+        var parts = new List<string>();
 
-        if (d1Id > 0)
-        {
-            var d1 = _displayService.Domains.GetDomainInfo(d1Id);
-            if (d1 != null && d1.GrantedFeatId >= 0)
-                parts.Add($"{d1.Name}: {d1.GrantedFeatName}");
-        }
+        var d1 = _displayService.Domains.GetDomainInfo(d1Id);
+        if (d1 != null && d1.GrantedFeatId >= 0)
+            parts.Add($"{d1.Name}: {d1.GrantedFeatName}");
 
-        if (d2Id > 0)
-        {
-            var d2 = _displayService.Domains.GetDomainInfo(d2Id);
-            if (d2 != null && d2.GrantedFeatId >= 0)
-                parts.Add($"{d2.Name}: {d2.GrantedFeatName}");
-        }
+        var d2 = _displayService.Domains.GetDomainInfo(d2Id);
+        if (d2 != null && d2.GrantedFeatId >= 0)
+            parts.Add($"{d2.Name}: {d2.GrantedFeatName}");
 
         SetText(_domainInfoText, parts.Count > 0 ? "Granted: " + string.Join(", ", parts) : "");
     }
