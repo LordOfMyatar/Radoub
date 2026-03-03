@@ -458,8 +458,24 @@ public partial class ClassesPanel : BasePanelControl
 
         // Select current domain values
         var classEntry = CurrentCreature.ClassList[_domainClassIndex];
-        SelectDomainById(_domain1ComboBox, classEntry.Domain1);
-        SelectDomainById(_domain2ComboBox, classEntry.Domain2);
+        var d1 = classEntry.Domain1;
+        var d2 = classEntry.Domain2;
+
+        // BioWare toolset often doesn't write Domain1/Domain2 to GFF — they default to 0.
+        // Infer from creature's feat list (domain powers are granted as feats).
+        if (d1 == 0 && d2 == 0)
+        {
+            var inferred = _displayService.Domains.InferDomainsFromFeats(CurrentCreature.FeatList);
+            if (inferred.Count >= 1) d1 = (byte)inferred[0];
+            if (inferred.Count >= 2) d2 = (byte)inferred[1];
+
+            // Write inferred values back to the class entry so they persist on save
+            classEntry.Domain1 = d1;
+            classEntry.Domain2 = d2;
+        }
+
+        SelectDomainById(_domain1ComboBox, d1);
+        SelectDomainById(_domain2ComboBox, d2);
 
         UpdateDomainInfoDisplay();
     }

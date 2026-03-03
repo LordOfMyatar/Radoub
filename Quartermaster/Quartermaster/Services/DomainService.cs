@@ -84,6 +84,33 @@ public class DomainService
     }
 
     /// <summary>
+    /// Infers domain IDs from a creature's feat list by matching GrantedFeat in domains.2da.
+    /// Used when Domain1/Domain2 are both 0 (unset by original toolset).
+    /// Returns up to 2 domain IDs.
+    /// </summary>
+    public List<int> InferDomainsFromFeats(IEnumerable<ushort> creatureFeats)
+    {
+        var featSet = new HashSet<int>();
+        foreach (var f in creatureFeats)
+            featSet.Add(f);
+
+        var foundDomains = new List<int>();
+
+        foreach (var (id, _) in GetAllDomains())
+        {
+            var info = GetDomainInfo(id);
+            if (info != null && info.GrantedFeatId >= 0 && featSet.Contains(info.GrantedFeatId))
+            {
+                foundDomains.Add(id);
+                if (foundDomains.Count >= 2)
+                    break;
+            }
+        }
+
+        return foundDomains;
+    }
+
+    /// <summary>
     /// Gets all valid domains from domains.2da as (Id, Name) tuples for dropdown population.
     /// </summary>
     public List<(int Id, string Name)> GetAllDomains()

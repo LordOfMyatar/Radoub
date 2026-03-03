@@ -248,4 +248,51 @@ public class DomainServiceTests
     }
 
     #endregion
+
+    #region InferDomainsFromFeats
+
+    [Fact]
+    public void InferDomainsFromFeats_WithAirFeat_ReturnsAirDomain()
+    {
+        // Feat 0 is the Air domain granted feat in mock data
+        var feats = new List<ushort> { 0 };
+        var inferred = _domainService.InferDomainsFromFeats(feats);
+        Assert.Contains(0, inferred); // Air domain = row 0
+    }
+
+    [Fact]
+    public void InferDomainsFromFeats_WithAnimalFeat_ReturnsAnimalDomain()
+    {
+        // Feat 1 is the Animal domain granted feat in mock data
+        var feats = new List<ushort> { 1 };
+        var inferred = _domainService.InferDomainsFromFeats(feats);
+        Assert.Contains(1, inferred); // Animal domain = row 1
+    }
+
+    [Fact]
+    public void InferDomainsFromFeats_WithBothFeats_ReturnsTwoDomains()
+    {
+        var feats = new List<ushort> { 0, 1 };
+        var inferred = _domainService.InferDomainsFromFeats(feats);
+        Assert.Equal(2, inferred.Count);
+    }
+
+    [Fact]
+    public void InferDomainsFromFeats_WithNoMatchingFeats_ReturnsEmpty()
+    {
+        var feats = new List<ushort> { 999, 998 };
+        var inferred = _domainService.InferDomainsFromFeats(feats);
+        Assert.Empty(inferred);
+    }
+
+    [Fact]
+    public void InferDomainsFromFeats_LimitsToTwoDomains()
+    {
+        // Even with all domain feats, should return max 2
+        var feats = new List<ushort> { 0, 1, 2, 3, 4, 5 };
+        var inferred = _domainService.InferDomainsFromFeats(feats);
+        Assert.True(inferred.Count <= 2);
+    }
+
+    #endregion
 }
