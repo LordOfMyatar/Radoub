@@ -32,13 +32,11 @@ public partial class ClassesPanel : BasePanelControl
     private Button? _packagePickerButton;
     private Button? _levelupWizardButton;
 
-    // Domain UI
+    // Domain UI (read-only, derived from feat list)
     private Border? _domainSection;
-    private ComboBox? _domain1ComboBox;
-    private ComboBox? _domain2ComboBox;
+    private TextBlock? _domain1Text;
+    private TextBlock? _domain2Text;
     private TextBlock? _domainInfoText;
-    private List<(int Id, string Name)> _domainItems = new();
-    private int _domainClassIndex = -1; // Index in ClassList of the domain-granting class
 
     // Familiar UI
     private Border? _familiarSection;
@@ -73,10 +71,10 @@ public partial class ClassesPanel : BasePanelControl
         _packagePickerButton = this.FindControl<Button>("PackagePickerButton");
         _levelupWizardButton = this.FindControl<Button>("LevelupWizardButton");
 
-        // Domain controls
+        // Domain controls (read-only display)
         _domainSection = this.FindControl<Border>("DomainSection");
-        _domain1ComboBox = this.FindControl<ComboBox>("Domain1ComboBox");
-        _domain2ComboBox = this.FindControl<ComboBox>("Domain2ComboBox");
+        _domain1Text = this.FindControl<TextBlock>("Domain1Text");
+        _domain2Text = this.FindControl<TextBlock>("Domain2Text");
         _domainInfoText = this.FindControl<TextBlock>("DomainInfoText");
 
         // Familiar controls
@@ -93,11 +91,6 @@ public partial class ClassesPanel : BasePanelControl
 
         if (_packagePickerButton != null)
             _packagePickerButton.Click += OnPackagePickerClick;
-
-        if (_domain1ComboBox != null)
-            _domain1ComboBox.SelectionChanged += OnDomainSelectionChanged;
-        if (_domain2ComboBox != null)
-            _domain2ComboBox.SelectionChanged += OnDomainSelectionChanged;
 
         if (_familiarComboBox != null)
             _familiarComboBox.SelectionChanged += OnFamiliarSelectionChanged;
@@ -223,8 +216,6 @@ public partial class ClassesPanel : BasePanelControl
             _domainSection.IsVisible = false;
         if (_familiarSection != null)
             _familiarSection.IsVisible = false;
-
-        _domainClassIndex = -1;
 
         LoadAlignment(50, 50);
         SetText(_packageText, "None");
@@ -428,132 +419,65 @@ public partial class ClassesPanel : BasePanelControl
 
     #endregion
 
-    #region Domains
+    #region Domains (read-only, derived from feat list)
 
     private void RefreshDomainSection()
     {
         if (CurrentCreature == null || _displayService == null || _domainSection == null)
             return;
 
-        _domainClassIndex = -1;
-
-        // Find the first class that has domains
+        // Check if any class has domains
+        bool hasDomainClass = false;
         for (int i = 0; i < CurrentCreature.ClassList.Count; i++)
         {
             if (_displayService.ClassHasDomains(CurrentCreature.ClassList[i].Class))
             {
-                _domainClassIndex = i;
+                hasDomainClass = true;
                 break;
             }
         }
 
-        if (_domainClassIndex < 0)
+        if (!hasDomainClass)
         {
             _domainSection.IsVisible = false;
             return;
         }
 
         _domainSection.IsVisible = true;
-        PopulateDomainComboBoxes();
 
-        // Select current domain values
-        var classEntry = CurrentCreature.ClassList[_domainClassIndex];
-        var d1 = classEntry.Domain1;
-        var d2 = classEntry.Domain2;
+        // Domains are controlled by feats in the Aurora Engine.
+        // Infer which domains the creature has from their domain power feats.
+        var inferred = _displayService.Domains.InferDomainsFromFeats(CurrentCreature.FeatList);
 
-        // BioWare toolset often doesn't write Domain1/Domain2 to GFF — they default to 0.
-        // Infer from creature's feat list (domain powers are granted as feats).
-        if (d1 == 0 && d2 == 0)
+        string d1Name = "(None)";
+        string d2Name = "(None)";
+        var grantedParts = new List<string>();
+
+        if (inferred.Count >= 1)
         {
-            var inferred = _displayService.Domains.InferDomainsFromFeats(CurrentCreature.FeatList);
-            if (inferred.Count >= 1) d1 = (byte)inferred[0];
-            if (inferred.Count >= 2) d2 = (byte)inferred[1];
-
-            // Write inferred values back to the class entry so they persist on save
-            classEntry.Domain1 = d1;
-            classEntry.Domain2 = d2;
-        }
-
-        SelectDomainById(_domain1ComboBox, d1);
-        SelectDomainById(_domain2ComboBox, d2);
-
-        UpdateDomainInfoDisplay();
-    }
-
-    private void PopulateDomainComboBoxes()
-    {
-        if (_displayService == null || _domain1ComboBox == null || _domain2ComboBox == null)
-            return;
-
-        _domainItems = _displayService.Domains.GetAllDomains();
-
-        _domain1ComboBox.Items.Clear();
-        _domain2ComboBox.Items.Clear();
-
-        // No "(None)" option — domain 0 is Air, a valid domain.
-        // Clerics always have two domains; non-clerics don't show this section at all.
-        foreach (var domain in _domainItems)
-        {
-            _domain1ComboBox.Items.Add(new ComboBoxItem { Content = domain.Name, Tag = domain.Id });
-            _domain2ComboBox.Items.Add(new ComboBoxItem { Content = domain.Name, Tag = domain.Id });
-        }
-    }
-
-    private static void SelectDomainById(ComboBox? comboBox, byte domainId)
-    {
-        if (comboBox == null) return;
-
-        for (int i = 0; i < comboBox.Items.Count; i++)
-        {
-            if (comboBox.Items[i] is ComboBoxItem item && item.Tag is int tagId && tagId == domainId)
+            var d1 = _displayService.Domains.GetDomainInfo(inferred[0]);
+            if (d1 != null)
             {
-                comboBox.SelectedIndex = i;
-                return;
+                d1Name = d1.Name;
+                if (d1.GrantedFeatId >= 0)
+                    grantedParts.Add($"{d1.Name}: {d1.GrantedFeatName}");
             }
         }
 
-        // Default to first domain if exact match not found
-        if (comboBox.Items.Count > 0)
-            comboBox.SelectedIndex = 0;
-    }
+        if (inferred.Count >= 2)
+        {
+            var d2 = _displayService.Domains.GetDomainInfo(inferred[1]);
+            if (d2 != null)
+            {
+                d2Name = d2.Name;
+                if (d2.GrantedFeatId >= 0)
+                    grantedParts.Add($"{d2.Name}: {d2.GrantedFeatName}");
+            }
+        }
 
-    private static byte GetSelectedDomainId(ComboBox? comboBox)
-    {
-        if (comboBox?.SelectedItem is ComboBoxItem item && item.Tag is int id)
-            return (byte)id;
-        return 0;
-    }
-
-    private void OnDomainSelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (IsLoading || CurrentCreature == null || _domainClassIndex < 0) return;
-
-        var classEntry = CurrentCreature.ClassList[_domainClassIndex];
-        classEntry.Domain1 = GetSelectedDomainId(_domain1ComboBox);
-        classEntry.Domain2 = GetSelectedDomainId(_domain2ComboBox);
-
-        UpdateDomainInfoDisplay();
-        ClassesChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    private void UpdateDomainInfoDisplay()
-    {
-        if (_displayService == null || _domainInfoText == null) return;
-
-        var d1Id = GetSelectedDomainId(_domain1ComboBox);
-        var d2Id = GetSelectedDomainId(_domain2ComboBox);
-
-        var parts = new List<string>();
-
-        var d1 = _displayService.Domains.GetDomainInfo(d1Id);
-        if (d1 != null && d1.GrantedFeatId >= 0)
-            parts.Add($"{d1.Name}: {d1.GrantedFeatName}");
-
-        var d2 = _displayService.Domains.GetDomainInfo(d2Id);
-        if (d2 != null && d2.GrantedFeatId >= 0)
-            parts.Add($"{d2.Name}: {d2.GrantedFeatName}");
-
-        SetText(_domainInfoText, parts.Count > 0 ? "Granted: " + string.Join(", ", parts) : "");
+        SetText(_domain1Text, d1Name);
+        SetText(_domain2Text, d2Name);
+        SetText(_domainInfoText, grantedParts.Count > 0 ? "Granted: " + string.Join(", ", grantedParts) : "");
     }
 
     #endregion

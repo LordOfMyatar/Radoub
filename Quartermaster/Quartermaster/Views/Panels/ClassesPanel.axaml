@@ -112,34 +112,37 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Domain Selection (visible when creature has a domain-granting class) -->
+                <!-- Cleric Domains (read-only, derived from feat list) -->
                 <Border x:Name="DomainSection"
                         BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15"
                         IsVisible="False">
-                    <StackPanel Spacing="10">
+                    <StackPanel Spacing="8">
                         <TextBlock Text="Cleric Domains" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
-                        <Grid ColumnDefinitions="*,10,*" RowDefinitions="Auto,Auto">
-                            <TextBlock Grid.Row="0" Grid.Column="0"
-                                       Text="Domain 1"
-                                       FontSize="{DynamicResource FontSizeSmall}"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock Grid.Row="0" Grid.Column="2"
-                                       Text="Domain 2"
-                                       FontSize="{DynamicResource FontSizeSmall}"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-
-                            <ComboBox Grid.Row="1" Grid.Column="0"
-                                      x:Name="Domain1ComboBox"
-                                      HorizontalAlignment="Stretch"
-                                      AutomationProperties.AutomationId="Domain1ComboBox"/>
-                            <ComboBox Grid.Row="1" Grid.Column="2"
-                                      x:Name="Domain2ComboBox"
-                                      HorizontalAlignment="Stretch"
-                                      AutomationProperties.AutomationId="Domain2ComboBox"/>
+                        <Grid ColumnDefinitions="*,10,*">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Domain 1"
+                                           FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <TextBlock x:Name="Domain1Text"
+                                           Text="(None)"
+                                           FontSize="{DynamicResource FontSizeNormal}"
+                                           FontWeight="SemiBold"
+                                           Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Domain 2"
+                                           FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <TextBlock x:Name="Domain2Text"
+                                           Text="(None)"
+                                           FontSize="{DynamicResource FontSizeNormal}"
+                                           FontWeight="SemiBold"
+                                           Margin="0,2,0,0"/>
+                            </StackPanel>
                         </Grid>
 
                         <TextBlock x:Name="DomainInfoText"
@@ -147,6 +150,11 @@
                                    FontStyle="Italic"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                    TextWrapping="Wrap"/>
+
+                        <TextBlock Text="Edit domains in Feats panel"
+                                   FontSize="{DynamicResource FontSizeXSmall}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                   FontStyle="Italic"/>
                     </StackPanel>
                 </Border>
 
