@@ -26,7 +26,7 @@
                         Padding="15">
                     <StackPanel Spacing="8">
                         <!-- Column Headers -->
-                        <Grid ColumnDefinitions="*,80,80,30" Margin="0,0,0,5"
+                        <Grid ColumnDefinitions="*,120,120,30" Margin="0,0,0,5"
                               x:Name="ColumnHeaderGrid">
                             <TextBlock Grid.Column="0" Text="Ability"
                                        FontSize="{DynamicResource FontSizeSmall}"
@@ -50,7 +50,7 @@
                                       AutomationProperties.AutomationId="AbilitiesList">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Grid ColumnDefinitions="*,80,80,30" Margin="0,3">
+                                    <Grid ColumnDefinitions="*,120,120,30" Margin="0,3">
                                         <!-- Ability Name -->
                                         <TextBlock Grid.Column="0"
                                                    Text="{Binding AbilityName}"
