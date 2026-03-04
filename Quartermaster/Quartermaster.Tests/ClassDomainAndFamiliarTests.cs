@@ -76,6 +76,19 @@ public class ClassDomainAndFamiliarTests
         Assert.False(_displayService.ClassGrantsFamiliar(2));
     }
 
+    [Fact]
+    public void ClassGrantsFamiliar_Druid_ReturnsTrue()
+    {
+        // Class 3 = Druid, which has a package with Associate set (animal companion)
+        Assert.True(_displayService.ClassGrantsFamiliar(3));
+    }
+
+    [Fact]
+    public void ClassGrantsFamiliar_InvalidClass_ReturnsFalse()
+    {
+        Assert.False(_displayService.ClassGrantsFamiliar(999));
+    }
+
     #endregion
 
     #region GetAllFamiliars
@@ -91,7 +104,7 @@ public class ClassDomainAndFamiliarTests
     public void GetAllFamiliars_HasExpectedCount()
     {
         var familiars = _displayService.GetAllFamiliars();
-        Assert.Equal(10, familiars.Count);
+        Assert.Equal(11, familiars.Count);
     }
 
     [Fact]
@@ -100,7 +113,8 @@ public class ClassDomainAndFamiliarTests
         var familiars = _displayService.GetAllFamiliars();
         Assert.Contains(familiars, f => f.Name == "Bat");
         Assert.Contains(familiars, f => f.Name == "Imp");
-        Assert.Contains(familiars, f => f.Name == "Fairy Dragon");
+        Assert.Contains(familiars, f => f.Name == "Faerie Dragon");
+        Assert.Contains(familiars, f => f.Name == "Eyeball");
     }
 
     [Fact]
