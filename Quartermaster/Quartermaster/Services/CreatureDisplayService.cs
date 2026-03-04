@@ -660,15 +660,36 @@ public partial class CreatureDisplayService
     public int[]? GetSpellsKnownLimit(int classId, int classLevel) => Spells.GetSpellsKnownLimit(classId, classLevel);
 
     /// <summary>
-    /// Returns true if the given class grants a familiar (Wizard/Sorcerer by convention).
-    /// Checks if the selected package's Associate column references hen_familiar.2da.
+    /// Returns true if the given class grants an associate (familiar or animal companion).
+    /// Checks if any package for the class has a non-empty Associate column in packages.2da.
+    /// Supports custom content classes that grant familiars/companions.
     /// </summary>
     public bool ClassGrantsFamiliar(int classId)
     {
-        // NWN hardcodes Wizard (10) and Sorcerer (37) as familiar-granting classes
-        // Also check Pale Master (29) doesn't get familiar — only Wizard/Sorcerer
-        var label = GameDataService.Get2DAValue("classes", classId, "Label")?.ToLowerInvariant() ?? "";
-        return label == "wizard" || label == "sorcerer";
+        var packages = GetPackagesForClass(classId);
+        foreach (var pkg in packages)
+        {
+            var associate = GameDataService.Get2DAValue("packages", pkg.Id, "Associate");
+            if (!string.IsNullOrEmpty(associate) && associate != "****")
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Returns true if the given class uses domain selections (Cleric).
+    /// Checks if any package for the class has a Domain1 column set.
+    /// </summary>
+    public bool ClassHasDomains(int classId)
+    {
+        var packages = GetPackagesForClass(classId);
+        foreach (var pkg in packages)
+        {
+            var domain1Str = GameDataService.Get2DAValue("packages", pkg.Id, "Domain1");
+            if (!string.IsNullOrEmpty(domain1Str) && domain1Str != "****")
+                return true;
+        }
+        return false;
     }
 
     /// <summary>

@@ -384,11 +384,14 @@ public partial class NewCharacterWizardWindow
         if (showFamiliar)
             PopulateFamiliars();
         else
-            _selectedFamiliarType = 0;
+            _selectedFamiliarType = -1;
     }
 
     private void PopulateFamiliars()
     {
+        // Preserve user's previous selection if they already picked one
+        int previousSelection = _selectedFamiliarType;
+
         _familiarComboBox.Items.Clear();
         var familiars = _displayService.GetAllFamiliars();
 
@@ -397,7 +400,20 @@ public partial class NewCharacterWizardWindow
             _familiarComboBox.Items.Add(new ComboBoxItem { Content = name, Tag = id });
         }
 
-        // Try to set default from package's Associate column
+        // Restore previous selection if user already picked one
+        if (previousSelection >= 0)
+        {
+            for (int i = 0; i < _familiarComboBox.Items.Count; i++)
+            {
+                if (_familiarComboBox.Items[i] is ComboBoxItem item && item.Tag is int tagId && tagId == previousSelection)
+                {
+                    _familiarComboBox.SelectedIndex = i;
+                    return;
+                }
+            }
+        }
+
+        // First time: try to set default from package's Associate column
         int defaultFamiliar = 0;
         if (_selectedPackageId != 255)
         {
@@ -406,7 +422,6 @@ public partial class NewCharacterWizardWindow
                 defaultFamiliar = assocId;
         }
 
-        // Select the default familiar
         for (int i = 0; i < _familiarComboBox.Items.Count; i++)
         {
             if (_familiarComboBox.Items[i] is ComboBoxItem item && item.Tag is int tagId && tagId == defaultFamiliar)
@@ -424,6 +439,13 @@ public partial class NewCharacterWizardWindow
     {
         if (_familiarComboBox.SelectedItem is ComboBoxItem item && item.Tag is int familiarId)
             _selectedFamiliarType = familiarId;
+    }
+
+    private int GetSelectedFamiliarType()
+    {
+        if (_familiarComboBox.SelectedItem is ComboBoxItem item && item.Tag is int familiarId)
+            return familiarId;
+        return _selectedFamiliarType >= 0 ? _selectedFamiliarType : 0;
     }
 
     private static string FormatAbilityName(string abilityCode) => abilityCode.ToUpperInvariant() switch

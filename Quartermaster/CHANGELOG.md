@@ -10,6 +10,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.25-alpha] - 2026-03-03
+**Branch**: `quartermaster/issue-1586` | **PR**: #1590
+
+### Sprint: Classes & Levels Panel Enhancements (#1586, #1588)
+
+- [x] #1586 - Editable domain dropdowns on Classes & Levels panel
+  - Domain 1 and Domain 2 ComboBoxes for Cleric classes (populated from `domains.2da`)
+  - Changing domain swaps GrantedFeat in FeatList and updates Domain1/Domain2 on CreatureClass
+  - Shows granted feats inline below dropdowns
+  - Section auto-shows/hides based on class list
+  - `DomainService.ResolveDomains()` — uses Domain1/Domain2 if set, falls back to feat inference
+  - `DomainService.GetGrantedFeatId()` — lookup helper for domain→feat mapping
+  - Fixed FeatsPanel domain display when Domain1/Domain2 are 0 (UTC files)
+  - Fixed BicReader/BicWriter missing Domain1/Domain2 fields
+  - Cross-panel refresh: FeatsPanel and SpellsPanel reload when domains change
+- [x] #1588 - Familiar/companion support on Classes & Levels panel and NCW
+  - Familiar type dropdown for any class with Associate in `packages.2da` (not hardcoded)
+  - Familiar name TextBox on ClassesPanel and NCW (reads/writes `FamiliarName` CExoString)
+  - Fixed BicReader/BicWriter missing `FamiliarType` read/write
+  - Added `FamiliarName` property to UtcFile + all readers/writers
+  - Fixed NCW familiar selection not persisting across step navigation
+  - 2DA-driven `ClassGrantsFamiliar()` — checks packages.2da Associate column (supports custom classes)
+  - Corrected mock data to match NWN game data (hen_familiar.2da, hen_companion.2da)
+  - 22 new tests (ClassDomainAndFamiliar, DomainService, BIC round-trip)
+
+---
+
 ## [0.2.24-alpha] - 2026-03-01
 **Branch**: `quartermaster/issue-1493` | **PR**: #1585
 

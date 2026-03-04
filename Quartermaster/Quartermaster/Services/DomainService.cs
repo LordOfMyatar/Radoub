@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Radoub.Formats.Services;
+using Radoub.Formats.Utc;
 
 namespace Quartermaster.Services;
 
@@ -81,6 +82,92 @@ public class DomainService
 
         _cache[domainId] = info;
         return info;
+    }
+
+    /// <summary>
+    /// Resolves the two domain IDs for a creature class.
+    /// Priority: Domain1/Domain2 fields if non-zero, then inference from FeatList.
+    /// Returns (domain1Id, domain2Id) where -1 means no domain found.
+    /// </summary>
+    public (int Domain1, int Domain2) ResolveDomains(CreatureClass clericClass, IEnumerable<ushort> featList)
+    {
+        // Priority 1: Authoritative Domain1/Domain2 fields
+        if (clericClass.Domain1 != 0 || clericClass.Domain2 != 0)
+        {
+            return (clericClass.Domain1, clericClass.Domain2);
+        }
+
+        // Priority 2: Infer from feat list (fallback for UTCs without Domain fields)
+        var inferred = InferDomainsFromFeats(featList);
+        int d1 = inferred.Count >= 1 ? inferred[0] : -1;
+        int d2 = inferred.Count >= 2 ? inferred[1] : -1;
+        return (d1, d2);
+    }
+
+    /// <summary>
+    /// Gets the GrantedFeat ID for a domain, or -1 if none.
+    /// </summary>
+    public int GetGrantedFeatId(int domainId)
+    {
+        var info = GetDomainInfo(domainId);
+        return info?.GrantedFeatId ?? -1;
+    }
+
+    /// <summary>
+    /// Infers domain IDs from a creature's feat list by matching GrantedFeat in domains.2da.
+    /// Used as fallback when Domain1/Domain2 fields are unset (0).
+    /// Returns up to 2 domain IDs.
+    /// </summary>
+    public List<int> InferDomainsFromFeats(IEnumerable<ushort> creatureFeats)
+    {
+        var featSet = new HashSet<int>();
+        foreach (var f in creatureFeats)
+            featSet.Add(f);
+
+        var foundDomains = new List<int>();
+
+        foreach (var (id, _) in GetAllDomains())
+        {
+            var info = GetDomainInfo(id);
+            if (info == null) continue;
+
+            if (info.GrantedFeatId >= 0 && featSet.Contains(info.GrantedFeatId))
+            {
+                foundDomains.Add(id);
+                if (foundDomains.Count >= 2)
+                    break;
+            }
+        }
+
+        return foundDomains;
+    }
+
+    /// <summary>
+    /// Gets all valid domains from domains.2da as (Id, Name) tuples for dropdown population.
+    /// </summary>
+    public List<(int Id, string Name)> GetAllDomains()
+    {
+        var domains = new List<(int Id, string Name)>();
+
+        for (int row = 0; row < 50; row++)
+        {
+            var label = _gameDataService.Get2DAValue("domains", row, "Label");
+            if (string.IsNullOrEmpty(label) || label == "****")
+                continue;
+
+            var nameStrRef = _gameDataService.Get2DAValue("domains", row, "Name");
+            var name = label;
+            if (!string.IsNullOrEmpty(nameStrRef) && nameStrRef != "****")
+            {
+                var tlkName = _gameDataService.GetString(nameStrRef);
+                if (!string.IsNullOrEmpty(tlkName))
+                    name = tlkName;
+            }
+
+            domains.Add((row, name));
+        }
+
+        return domains;
     }
 
     /// <summary>

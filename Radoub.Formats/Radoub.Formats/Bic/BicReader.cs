@@ -171,6 +171,8 @@ public static class BicReader
             SoundSetFile = root.GetFieldValue<ushort>("SoundSetFile", 0),
             DecayTime = root.GetFieldValue<uint>("DecayTime", 5000),
             StartingPackage = root.GetFieldValue<byte>("StartingPackage", 0),
+            FamiliarType = root.GetFieldValue<int>("FamiliarType", 0),
+            FamiliarName = root.GetFieldValue<string>("FamiliarName", string.Empty),
 
             // Conversation - Note: Not in BIC per Table 2.6.2
             // (Conversation field intentionally omitted)
@@ -237,7 +239,9 @@ public static class BicReader
             var creatureClass = new CreatureClass
             {
                 Class = classStruct.GetFieldValue<int>("Class", 0),
-                ClassLevel = classStruct.GetFieldValue<short>("ClassLevel", 1)
+                ClassLevel = classStruct.GetFieldValue<short>("ClassLevel", 1),
+                Domain1 = classStruct.GetFieldValue<byte>("Domain1", 0),
+                Domain2 = classStruct.GetFieldValue<byte>("Domain2", 0)
             };
 
             // Parse known spells (KnownList0-9) - used by Bards, Sorcerers, PC Wizards

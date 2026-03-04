@@ -513,6 +513,11 @@ public class UtcFile
     /// </summary>
     public int FamiliarType { get; set; }
 
+    /// <summary>
+    /// Custom name given to the familiar by the player.
+    /// </summary>
+    public string FamiliarName { get; set; } = string.Empty;
+
     // Conversation
 
     /// <summary>
@@ -726,6 +731,7 @@ public class UtcFile
             DecayTime = DecayTime,
             StartingPackage = StartingPackage,
             FamiliarType = FamiliarType,
+            FamiliarName = FamiliarName,
             Conversation = Conversation,
             ScriptAttacked = ScriptAttacked,
             ScriptDamaged = ScriptDamaged,
@@ -827,12 +833,14 @@ public class CreatureClass
     public short ClassLevel { get; set; }
 
     /// <summary>
-    /// First cleric domain. Index into domains.2da. 0 = no domain.
+    /// First cleric domain. Row index into domains.2da (0 = Air domain).
+    /// Non-cleric classes omit this field from GFF entirely.
     /// </summary>
     public byte Domain1 { get; set; }
 
     /// <summary>
-    /// Second cleric domain. Index into domains.2da. 0 = no domain.
+    /// Second cleric domain. Row index into domains.2da (0 = Air domain).
+    /// Non-cleric classes omit this field from GFF entirely.
     /// </summary>
     public byte Domain2 { get; set; }
 

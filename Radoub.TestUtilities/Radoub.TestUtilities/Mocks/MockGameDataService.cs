@@ -331,6 +331,51 @@ public class MockGameDataService : IGameDataService
         AddRow(feat, "1", "AnimalGrantedFeat", "3001");
         _2daFiles["feat"] = feat;
 
+        // packages.2da - class packages with domain info for Cleric, Associate for familiar/companion
+        var packages = new TwoDAFile();
+        packages.Columns.AddRange(new[] { "Label", "Name", "ClassID", "Domain1", "Domain2", "Associate" });
+        // Row 0: Cleric default package (ClassID=2, has domains, no familiar)
+        AddRow(packages, "0", "Cleric_Default", "100", "2", "0", "1", "****");
+        // Row 1: Fighter default package (ClassID=4, no domains, no familiar)
+        AddRow(packages, "1", "Fighter_Default", "101", "4", "****", "****", "****");
+        // Row 2: Wizard default package (ClassID=10, has familiar)
+        AddRow(packages, "2", "Wizard_Default", "102", "10", "****", "****", "0");
+        // Row 3: Sorcerer default package (ClassID=9, has familiar)
+        AddRow(packages, "3", "Sorcerer_Default", "103", "9", "****", "****", "0");
+        // Row 4: Druid default package (ClassID=3, has animal companion)
+        AddRow(packages, "4", "Druid_Default", "104", "3", "****", "****", "0");
+        _2daFiles["packages"] = packages;
+
+        // hen_familiar.2da - familiar types (matches NWN game data)
+        var familiars = new TwoDAFile();
+        familiars.Columns.AddRange(new[] { "NAME", "STRREF" });
+        AddRow(familiars, "0", "Bat", "4000");
+        AddRow(familiars, "1", "Panther", "4001");
+        AddRow(familiars, "2", "HellHound", "4002");
+        AddRow(familiars, "3", "Imp", "4003");
+        AddRow(familiars, "4", "FireMephit", "4004");
+        AddRow(familiars, "5", "IceMephit", "4005");
+        AddRow(familiars, "6", "Pixie", "4006");
+        AddRow(familiars, "7", "Raven", "4007");
+        AddRow(familiars, "8", "FaerieDragon", "4008");
+        AddRow(familiars, "9", "PseudoDragon", "4009");
+        AddRow(familiars, "10", "Eyeball", "4010");
+        _2daFiles["hen_familiar"] = familiars;
+
+        // hen_companion.2da - animal companion types (matches NWN game data)
+        var companions = new TwoDAFile();
+        companions.Columns.AddRange(new[] { "NAME", "STRREF" });
+        AddRow(companions, "0", "Badger", "5000");
+        AddRow(companions, "1", "Wolf", "5001");
+        AddRow(companions, "2", "Bear", "5002");
+        AddRow(companions, "3", "Boar", "5003");
+        AddRow(companions, "4", "Hawk", "5004");
+        AddRow(companions, "5", "Panther", "5005");
+        AddRow(companions, "6", "GiantSpider", "5006");
+        AddRow(companions, "7", "DireWolf", "5007");
+        AddRow(companions, "8", "DireRat", "5008");
+        _2daFiles["hen_companion"] = companions;
+
         // Common TLK strings
         WithStrings(
             (5, "Dwarf"),
@@ -388,7 +433,35 @@ public class MockGameDataService : IGameDataService
             (2024, "Implosion"),
             // Domain feat names
             (3000, "Elemental Turning"),
-            (3001, "Animal Companion")
+            (3001, "Animal Companion"),
+            // Package names
+            (100, "Cleric Default"),
+            (101, "Fighter Default"),
+            (102, "Wizard Default"),
+            (103, "Sorcerer Default"),
+            (104, "Druid Default"),
+            // Familiar names (matches NWN game data)
+            (4000, "Bat"),
+            (4001, "Panther"),
+            (4002, "Hell Hound"),
+            (4003, "Imp"),
+            (4004, "Fire Mephit"),
+            (4005, "Ice Mephit"),
+            (4006, "Pixie"),
+            (4007, "Raven"),
+            (4008, "Faerie Dragon"),
+            (4009, "Pseudo Dragon"),
+            (4010, "Eyeball"),
+            // Animal companion names (matches NWN game data)
+            (5000, "Badger"),
+            (5001, "Wolf"),
+            (5002, "Brown Bear"),
+            (5003, "Boar"),
+            (5004, "Hawk"),
+            (5005, "Panther"),
+            (5006, "Giant Spider"),
+            (5007, "Dire Wolf"),
+            (5008, "Dire Rat")
         );
     }
 

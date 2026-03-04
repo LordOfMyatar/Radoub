@@ -186,14 +186,13 @@ public partial class FeatsPanel
             for (int i = 0; i < _currentCreature.ClassList.Count; i++)
             {
                 var classEntry = _currentCreature.ClassList[i];
-                var domain1Id = (int)classEntry.Domain1;
-                var domain2Id = (int)classEntry.Domain2;
+                if (!_displayService.ClassHasDomains(classEntry.Class)) continue;
 
-                if (domain1Id == 0 && domain2Id == 0) continue;
-
+                // Resolve domains: use Domain1/Domain2 if set, else infer from feats
+                var (d1, d2) = _displayService.Domains.ResolveDomains(classEntry, _currentCreature.FeatList);
                 var domainIds = new List<int>();
-                if (domain1Id > 0) domainIds.Add(domain1Id);
-                if (domain2Id > 0) domainIds.Add(domain2Id);
+                if (d1 >= 0) domainIds.Add(d1);
+                if (d2 >= 0) domainIds.Add(d2);
 
                 foreach (var domainId in domainIds)
                 {

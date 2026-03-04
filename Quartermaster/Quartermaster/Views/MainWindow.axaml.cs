@@ -340,10 +340,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Mark document as dirty
         MarkDirty();
 
-        // Refresh stats panel to show updated saves and character summary
+        // Refresh dependent panels (stats recalc, feat list for domain feat swaps, domain spells)
         if (_currentCreature != null)
         {
             StatsPanelContent.LoadCreature(_currentCreature);
+            FeatsPanelContent.LoadCreature(_currentCreature);
+            SpellsPanelContent.LoadCreature(_currentCreature);
             UpdateCharacterHeader();
         }
     }

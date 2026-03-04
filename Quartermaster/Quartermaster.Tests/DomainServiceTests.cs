@@ -210,4 +210,149 @@ public class DomainServiceTests
     }
 
     #endregion
+
+    #region GetAllDomains
+
+    [Fact]
+    public void GetAllDomains_ReturnsValidDomains()
+    {
+        var domains = _domainService.GetAllDomains();
+        Assert.True(domains.Count >= 3); // Air, Animal, Death at minimum
+    }
+
+    [Fact]
+    public void GetAllDomains_ExcludesInvalidRows()
+    {
+        var domains = _domainService.GetAllDomains();
+        // Row 3 has "****" label and should be excluded
+        Assert.DoesNotContain(domains, d => d.Id == 3);
+    }
+
+    [Fact]
+    public void GetAllDomains_IncludesCorrectNames()
+    {
+        var domains = _domainService.GetAllDomains();
+        Assert.Contains(domains, d => d.Name == "Air");
+        Assert.Contains(domains, d => d.Name == "Animal");
+        Assert.Contains(domains, d => d.Name == "Death");
+    }
+
+    [Fact]
+    public void GetAllDomains_HasCorrectIds()
+    {
+        var domains = _domainService.GetAllDomains();
+        var air = domains.Find(d => d.Name == "Air");
+        Assert.Equal(0, air.Id);
+        var animal = domains.Find(d => d.Name == "Animal");
+        Assert.Equal(1, animal.Id);
+    }
+
+    #endregion
+
+    #region InferDomainsFromFeats
+
+    [Fact]
+    public void InferDomainsFromFeats_WithAirFeat_ReturnsAirDomain()
+    {
+        // Feat 0 is the Air domain granted feat in mock data
+        var feats = new List<ushort> { 0 };
+        var inferred = _domainService.InferDomainsFromFeats(feats);
+        Assert.Contains(0, inferred); // Air domain = row 0
+    }
+
+    [Fact]
+    public void InferDomainsFromFeats_WithAnimalFeat_ReturnsAnimalDomain()
+    {
+        // Feat 1 is the Animal domain granted feat in mock data
+        var feats = new List<ushort> { 1 };
+        var inferred = _domainService.InferDomainsFromFeats(feats);
+        Assert.Contains(1, inferred); // Animal domain = row 1
+    }
+
+    [Fact]
+    public void InferDomainsFromFeats_WithBothFeats_ReturnsTwoDomains()
+    {
+        var feats = new List<ushort> { 0, 1 };
+        var inferred = _domainService.InferDomainsFromFeats(feats);
+        Assert.Equal(2, inferred.Count);
+    }
+
+    [Fact]
+    public void InferDomainsFromFeats_WithNoMatchingFeats_ReturnsEmpty()
+    {
+        var feats = new List<ushort> { 999, 998 };
+        var inferred = _domainService.InferDomainsFromFeats(feats);
+        Assert.Empty(inferred);
+    }
+
+    [Fact]
+    public void InferDomainsFromFeats_LimitsToTwoDomains()
+    {
+        // Even with all domain feats, should return max 2
+        var feats = new List<ushort> { 0, 1, 2, 3, 4, 5 };
+        var inferred = _domainService.InferDomainsFromFeats(feats);
+        Assert.True(inferred.Count <= 2);
+    }
+
+    #endregion
+
+    #region ResolveDomains
+
+    [Fact]
+    public void ResolveDomains_WithExplicitFields_UsesFieldValues()
+    {
+        var cls = new Radoub.Formats.Utc.CreatureClass { Domain1 = 1, Domain2 = 2 };
+        var (d1, d2) = _domainService.ResolveDomains(cls, new List<ushort>());
+        Assert.Equal(1, d1);
+        Assert.Equal(2, d2);
+    }
+
+    [Fact]
+    public void ResolveDomains_WithZeroFields_FallsBackToFeatInference()
+    {
+        var cls = new Radoub.Formats.Utc.CreatureClass { Domain1 = 0, Domain2 = 0 };
+        // Feats 0 and 1 are Air and Animal domain granted feats in mock data
+        var feats = new List<ushort> { 0, 1 };
+        var (d1, d2) = _domainService.ResolveDomains(cls, feats);
+        Assert.Equal(0, d1); // Air
+        Assert.Equal(1, d2); // Animal
+    }
+
+    [Fact]
+    public void ResolveDomains_WithZeroFieldsAndNoFeats_ReturnsNegativeOne()
+    {
+        var cls = new Radoub.Formats.Utc.CreatureClass { Domain1 = 0, Domain2 = 0 };
+        var (d1, d2) = _domainService.ResolveDomains(cls, new List<ushort>());
+        Assert.Equal(-1, d1);
+        Assert.Equal(-1, d2);
+    }
+
+    #endregion
+
+    #region GetGrantedFeatId
+
+    [Fact]
+    public void GetGrantedFeatId_ValidDomain_ReturnsFeatId()
+    {
+        // Air domain (row 0) has granted feat 0 in mock data
+        int featId = _domainService.GetGrantedFeatId(0);
+        Assert.Equal(0, featId);
+    }
+
+    [Fact]
+    public void GetGrantedFeatId_InvalidDomain_ReturnsNegativeOne()
+    {
+        int featId = _domainService.GetGrantedFeatId(999);
+        Assert.Equal(-1, featId);
+    }
+
+    [Fact]
+    public void GetGrantedFeatId_DomainWithNoFeat_ReturnsNegativeOne()
+    {
+        // Death domain (row 2) has no granted feat in mock data
+        int featId = _domainService.GetGrantedFeatId(2);
+        Assert.Equal(-1, featId);
+    }
+
+    #endregion
 }

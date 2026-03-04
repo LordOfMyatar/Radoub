@@ -174,6 +174,7 @@ public static class UtcReader
             DecayTime = root.GetFieldValue<uint>("DecayTime", 5000),
             StartingPackage = root.GetFieldValue<byte>("StartingPackage", 0),
             FamiliarType = root.GetFieldValue<int>("FamiliarType", 0),
+            FamiliarName = root.GetFieldValue<string>("FamiliarName", string.Empty),
 
             // Conversation
             Conversation = root.GetFieldValue<string>("Conversation", string.Empty),

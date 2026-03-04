@@ -112,6 +112,76 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Cleric Domains -->
+                <Border x:Name="DomainSection"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="15"
+                        IsVisible="False">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Cleric Domains" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
+
+                        <Grid ColumnDefinitions="*,10,*">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Domain 1"
+                                           FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <ComboBox x:Name="Domain1ComboBox"
+                                          MinWidth="150"
+                                          Margin="0,2,0,0"
+                                          AutomationProperties.AutomationId="Domain1ComboBox"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Domain 2"
+                                           FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <ComboBox x:Name="Domain2ComboBox"
+                                          MinWidth="150"
+                                          Margin="0,2,0,0"
+                                          AutomationProperties.AutomationId="Domain2ComboBox"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock x:Name="DomainInfoText"
+                                   FontSize="{DynamicResource FontSizeXSmall}"
+                                   FontStyle="Italic"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Familiar Selection (visible when creature has a familiar-granting class) -->
+                <Border x:Name="FamiliarSection"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="15"
+                        IsVisible="False">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Familiar" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Familiar Type:"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <ComboBox x:Name="FamiliarComboBox"
+                                      MinWidth="200"
+                                      AutomationProperties.AutomationId="FamiliarComboBox"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Familiar Name:"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <TextBox x:Name="FamiliarNameTextBox"
+                                     MinWidth="200"
+                                     Watermark="(unnamed)"
+                                     AutomationProperties.AutomationId="FamiliarNameTextBox"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
                 <!-- Alignment Section -->
                 <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1"

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -31,6 +32,20 @@ public partial class ClassesPanel : BasePanelControl
     private Button? _packagePickerButton;
     private Button? _levelupWizardButton;
 
+    // Domain UI (editable ComboBoxes)
+    private Border? _domainSection;
+    private ComboBox? _domain1ComboBox;
+    private ComboBox? _domain2ComboBox;
+    private TextBlock? _domainInfoText;
+    private List<(int Id, string Name)> _domainItems = new();
+    private CreatureClass? _clericClass; // Tracks the domain-bearing class entry
+
+    // Familiar UI
+    private Border? _familiarSection;
+    private ComboBox? _familiarComboBox;
+    private TextBox? _familiarNameTextBox;
+    private List<(int Id, string Name)> _familiarItems = new();
+
     private ObservableCollection<ClassSlotViewModel> _classSlots = new();
 
     public event EventHandler? AlignmentChanged;
@@ -59,6 +74,17 @@ public partial class ClassesPanel : BasePanelControl
         _packagePickerButton = this.FindControl<Button>("PackagePickerButton");
         _levelupWizardButton = this.FindControl<Button>("LevelupWizardButton");
 
+        // Domain controls (editable)
+        _domainSection = this.FindControl<Border>("DomainSection");
+        _domain1ComboBox = this.FindControl<ComboBox>("Domain1ComboBox");
+        _domain2ComboBox = this.FindControl<ComboBox>("Domain2ComboBox");
+        _domainInfoText = this.FindControl<TextBlock>("DomainInfoText");
+
+        // Familiar controls
+        _familiarSection = this.FindControl<Border>("FamiliarSection");
+        _familiarComboBox = this.FindControl<ComboBox>("FamiliarComboBox");
+        _familiarNameTextBox = this.FindControl<TextBox>("FamiliarNameTextBox");
+
         if (_classSlotsList != null)
             _classSlotsList.ItemsSource = _classSlots;
 
@@ -69,6 +95,16 @@ public partial class ClassesPanel : BasePanelControl
 
         if (_packagePickerButton != null)
             _packagePickerButton.Click += OnPackagePickerClick;
+
+        if (_domain1ComboBox != null)
+            _domain1ComboBox.SelectionChanged += OnDomainSelectionChanged;
+        if (_domain2ComboBox != null)
+            _domain2ComboBox.SelectionChanged += OnDomainSelectionChanged;
+
+        if (_familiarComboBox != null)
+            _familiarComboBox.SelectionChanged += OnFamiliarSelectionChanged;
+        if (_familiarNameTextBox != null)
+            _familiarNameTextBox.LostFocus += OnFamiliarNameChanged;
     }
 
     public void SetDisplayService(CreatureDisplayService displayService)
@@ -89,6 +125,8 @@ public partial class ClassesPanel : BasePanelControl
         }
 
         RefreshClassSlots();
+        RefreshDomainSection();
+        RefreshFamiliarSection();
 
         LoadAlignment(creature.GoodEvil, creature.LawfulChaotic);
 
@@ -185,6 +223,11 @@ public partial class ClassesPanel : BasePanelControl
         if (_noClassesText != null)
             _noClassesText.IsVisible = true;
 
+        if (_domainSection != null)
+            _domainSection.IsVisible = false;
+        if (_familiarSection != null)
+            _familiarSection.IsVisible = false;
+
         LoadAlignment(50, 50);
         SetText(_packageText, "None");
     }
@@ -280,7 +323,11 @@ public partial class ClassesPanel : BasePanelControl
         RecalculateDerivedStats();
 
         // Refresh UI
+        IsLoading = true;
         RefreshClassSlots();
+        RefreshDomainSection();
+        RefreshFamiliarSection();
+        IsLoading = false;
 
         // Fire change event
         ClassesChanged?.Invoke(this, EventArgs.Empty);
@@ -379,6 +426,231 @@ public partial class ClassesPanel : BasePanelControl
             SetText(_packageText, _displayService.GetPackageName(picker.SelectedPackageId.Value));
             PackageChanged?.Invoke(this, EventArgs.Empty);
         }
+    }
+
+    #endregion
+
+    #region Domains
+
+    private void RefreshDomainSection()
+    {
+        if (CurrentCreature == null || _displayService == null || _domainSection == null)
+            return;
+
+        // Find the cleric (domain-using) class
+        _clericClass = null;
+        foreach (var cls in CurrentCreature.ClassList)
+        {
+            if (_displayService.ClassHasDomains(cls.Class))
+            {
+                _clericClass = cls;
+                break;
+            }
+        }
+
+        if (_clericClass == null)
+        {
+            _domainSection.IsVisible = false;
+            return;
+        }
+
+        _domainSection.IsVisible = true;
+        PopulateDomainComboBoxes();
+
+        // Resolve current domains: Domain1/Domain2 if set, else infer from feats
+        var (d1Id, d2Id) = _displayService.Domains.ResolveDomains(_clericClass, CurrentCreature.FeatList);
+
+        SelectDomainInComboBox(_domain1ComboBox, d1Id >= 0 ? d1Id : 0);
+        SelectDomainInComboBox(_domain2ComboBox, d2Id >= 0 ? d2Id : 0);
+
+        UpdateDomainInfoDisplay();
+    }
+
+    private void PopulateDomainComboBoxes()
+    {
+        if (_displayService == null) return;
+
+        _domainItems = _displayService.Domains.GetAllDomains();
+
+        _domain1ComboBox?.Items.Clear();
+        _domain2ComboBox?.Items.Clear();
+
+        foreach (var domain in _domainItems)
+        {
+            _domain1ComboBox?.Items.Add(new ComboBoxItem { Content = domain.Name, Tag = domain.Id });
+            _domain2ComboBox?.Items.Add(new ComboBoxItem { Content = domain.Name, Tag = domain.Id });
+        }
+    }
+
+    private static void SelectDomainInComboBox(ComboBox? combo, int domainId)
+    {
+        if (combo == null) return;
+        for (int i = 0; i < combo.Items.Count; i++)
+        {
+            if (combo.Items[i] is ComboBoxItem item && item.Tag is int id && id == domainId)
+            {
+                combo.SelectedIndex = i;
+                return;
+            }
+        }
+        if (combo.Items.Count > 0)
+            combo.SelectedIndex = 0;
+    }
+
+    private void OnDomainSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (IsLoading || CurrentCreature == null || _displayService == null || _clericClass == null)
+            return;
+
+        var newD1Id = GetSelectedDomainId(_domain1ComboBox);
+        var newD2Id = GetSelectedDomainId(_domain2ComboBox);
+
+        var oldD1Id = _clericClass.Domain1;
+        var oldD2Id = _clericClass.Domain2;
+
+        // Update the class entry
+        _clericClass.Domain1 = newD1Id;
+        _clericClass.Domain2 = newD2Id;
+
+        // Swap granted feats in FeatList
+        SwapDomainFeat(oldD1Id, newD1Id);
+        SwapDomainFeat(oldD2Id, newD2Id);
+
+        UpdateDomainInfoDisplay();
+        ClassesChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private static byte GetSelectedDomainId(ComboBox? combo)
+    {
+        if (combo?.SelectedItem is ComboBoxItem item && item.Tag is int id)
+            return (byte)id;
+        return 0;
+    }
+
+    private void SwapDomainFeat(int oldDomainId, int newDomainId)
+    {
+        if (CurrentCreature == null || _displayService == null) return;
+        if (oldDomainId == newDomainId) return;
+
+        // Remove old domain's granted feat
+        var oldFeatId = _displayService.Domains.GetGrantedFeatId(oldDomainId);
+        if (oldFeatId >= 0)
+        {
+            CurrentCreature.FeatList.Remove((ushort)oldFeatId);
+        }
+
+        // Add new domain's granted feat (if not already present)
+        var newFeatId = _displayService.Domains.GetGrantedFeatId(newDomainId);
+        if (newFeatId >= 0 && !CurrentCreature.FeatList.Contains((ushort)newFeatId))
+        {
+            CurrentCreature.FeatList.Add((ushort)newFeatId);
+        }
+    }
+
+    private void UpdateDomainInfoDisplay()
+    {
+        if (_displayService == null || _domainInfoText == null) return;
+
+        var d1Id = GetSelectedDomainId(_domain1ComboBox);
+        var d2Id = GetSelectedDomainId(_domain2ComboBox);
+        var parts = new List<string>();
+
+        var d1 = _displayService.Domains.GetDomainInfo(d1Id);
+        if (d1?.GrantedFeatId >= 0)
+            parts.Add($"{d1.Name}: {d1.GrantedFeatName}");
+
+        var d2 = _displayService.Domains.GetDomainInfo(d2Id);
+        if (d2?.GrantedFeatId >= 0)
+            parts.Add($"{d2.Name}: {d2.GrantedFeatName}");
+
+        SetText(_domainInfoText, parts.Count > 0 ? "Granted: " + string.Join(", ", parts) : "");
+    }
+
+    #endregion
+
+    #region Familiar
+
+    private void RefreshFamiliarSection()
+    {
+        if (CurrentCreature == null || _displayService == null || _familiarSection == null)
+            return;
+
+        // Check if any class grants a familiar
+        bool hasFamiliarClass = false;
+        foreach (var classEntry in CurrentCreature.ClassList)
+        {
+            if (_displayService.ClassGrantsFamiliar(classEntry.Class))
+            {
+                hasFamiliarClass = true;
+                break;
+            }
+        }
+
+        if (!hasFamiliarClass)
+        {
+            _familiarSection.IsVisible = false;
+            return;
+        }
+
+        _familiarSection.IsVisible = true;
+        PopulateFamiliarComboBox();
+
+        // Select current familiar type
+        SelectFamiliarById(CurrentCreature.FamiliarType);
+
+        // Load familiar name
+        if (_familiarNameTextBox != null)
+            _familiarNameTextBox.Text = CurrentCreature.FamiliarName ?? "";
+    }
+
+    private void PopulateFamiliarComboBox()
+    {
+        if (_displayService == null || _familiarComboBox == null) return;
+
+        _familiarItems = _displayService.GetAllFamiliars();
+        _familiarComboBox.Items.Clear();
+
+        foreach (var familiar in _familiarItems)
+        {
+            _familiarComboBox.Items.Add(new ComboBoxItem { Content = familiar.Name, Tag = familiar.Id });
+        }
+    }
+
+    private void SelectFamiliarById(int familiarType)
+    {
+        if (_familiarComboBox == null) return;
+
+        for (int i = 0; i < _familiarComboBox.Items.Count; i++)
+        {
+            if (_familiarComboBox.Items[i] is ComboBoxItem item && item.Tag is int tagId && tagId == familiarType)
+            {
+                _familiarComboBox.SelectedIndex = i;
+                return;
+            }
+        }
+
+        // Default to first
+        if (_familiarComboBox.Items.Count > 0)
+            _familiarComboBox.SelectedIndex = 0;
+    }
+
+    private void OnFamiliarSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (IsLoading || CurrentCreature == null) return;
+
+        if (_familiarComboBox?.SelectedItem is ComboBoxItem item && item.Tag is int id)
+        {
+            CurrentCreature.FamiliarType = id;
+            ClassesChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private void OnFamiliarNameChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (IsLoading || CurrentCreature == null || _familiarNameTextBox == null) return;
+
+        CurrentCreature.FamiliarName = _familiarNameTextBox.Text ?? "";
+        ClassesChanged?.Invoke(this, EventArgs.Empty);
     }
 
     #endregion

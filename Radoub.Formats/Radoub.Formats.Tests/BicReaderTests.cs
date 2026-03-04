@@ -1,5 +1,6 @@
 using Radoub.Formats.Bic;
 using Radoub.Formats.Gff;
+using Radoub.Formats.Utc;
 using Xunit;
 
 namespace Radoub.Formats.Tests;
@@ -241,7 +242,29 @@ public class BicReaderTests
         {
             Assert.Equal(original.ClassList[i].Class, roundTripped.ClassList[i].Class);
             Assert.Equal(original.ClassList[i].ClassLevel, roundTripped.ClassList[i].ClassLevel);
+            Assert.Equal(original.ClassList[i].Domain1, roundTripped.ClassList[i].Domain1);
+            Assert.Equal(original.ClassList[i].Domain2, roundTripped.ClassList[i].Domain2);
         }
+    }
+
+    [Fact]
+    public void RoundTrip_PreservesClericDomains()
+    {
+        var original = new BicFile();
+        original.ClassList.Add(new CreatureClass
+        {
+            Class = 2, // Cleric
+            ClassLevel = 5,
+            Domain1 = 19, // Trickery
+            Domain2 = 13  // Magic
+        });
+
+        var buffer = BicWriter.Write(original);
+        var roundTripped = BicReader.Read(buffer);
+
+        Assert.Single(roundTripped.ClassList);
+        Assert.Equal(19, roundTripped.ClassList[0].Domain1);
+        Assert.Equal(13, roundTripped.ClassList[0].Domain2);
     }
 
     [Fact]
