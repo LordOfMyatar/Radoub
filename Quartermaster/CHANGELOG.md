@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.26-alpha] - 2026-03-03
-**Branch**: `quartermaster/issue-1611` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1611` | **PR**: #1612
 
 ### Sprint: Special Abilities & Scripts (#1611)
 
