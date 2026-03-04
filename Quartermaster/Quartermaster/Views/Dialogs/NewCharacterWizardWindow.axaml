@@ -736,6 +736,10 @@
                                     <TextBlock Text="Familiar" FontWeight="Bold"/>
                                     <ComboBox x:Name="FamiliarComboBox" HorizontalAlignment="Stretch"
                                               SelectionChanged="OnFamiliarSelectionChanged"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,5,0,0">
+                                        <TextBlock Text="Name:" VerticalAlignment="Center"/>
+                                        <TextBox x:Name="FamiliarNameTextBox" MinWidth="200" Watermark="(unnamed)"/>
+                                    </StackPanel>
                                     <TextBlock Text="Your familiar is a magical companion that aids you."
                                                FontSize="11" TextWrapping="Wrap"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>

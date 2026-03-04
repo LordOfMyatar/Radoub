@@ -300,7 +300,8 @@ public partial class NewCharacterWizardWindow : Window
     private readonly TextBlock _domainInfoLabel;
     private readonly StackPanel _familiarSelectionPanel;
     private readonly ComboBox _familiarComboBox;
-    private int _selectedFamiliarType;
+    private readonly TextBox _familiarNameTextBox;
+    private int _selectedFamiliarType = -1;
     private readonly TextBlock _classDescriptionLabel;
     private readonly TextBlock _prestigeToggleArrow;
     private readonly StackPanel _prestigePlanningContent;
@@ -465,6 +466,7 @@ public partial class NewCharacterWizardWindow : Window
         _domainInfoLabel = this.FindControl<TextBlock>("DomainInfoLabel")!;
         _familiarSelectionPanel = this.FindControl<StackPanel>("FamiliarSelectionPanel")!;
         _familiarComboBox = this.FindControl<ComboBox>("FamiliarComboBox")!;
+        _familiarNameTextBox = this.FindControl<TextBox>("FamiliarNameTextBox")!;
         _classDescriptionLabel = this.FindControl<TextBlock>("ClassDescriptionLabel")!;
         _prestigeToggleArrow = this.FindControl<TextBlock>("PrestigeToggleArrow")!;
         _prestigePlanningContent = this.FindControl<StackPanel>("PrestigePlanningContent")!;
@@ -819,7 +821,8 @@ public partial class NewCharacterWizardWindow : Window
             LawChaos = _selectedLawChaos,
             Domain1 = GetSelectedDomainId(_domain1ComboBox),
             Domain2 = GetSelectedDomainId(_domain2ComboBox),
-            FamiliarType = _selectedFamiliarType,
+            FamiliarType = GetSelectedFamiliarType(),
+            FamiliarName = _familiarNameTextBox.Text ?? "",
             AbilityBaseScores = new Dictionary<string, int>(_abilityBaseScores),
             ChosenFeatIds = new List<int>(_chosenFeatIds),
             SkillRanksAllocated = new Dictionary<int, int>(_skillRanksAllocated),

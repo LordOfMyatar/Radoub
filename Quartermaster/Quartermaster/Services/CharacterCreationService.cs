@@ -53,6 +53,7 @@ public class CharacterCreationService
         public int Domain1 { get; set; }
         public int Domain2 { get; set; }
         public int FamiliarType { get; set; }
+        public string FamiliarName { get; set; } = "";
 
         // Step 5
         public Dictionary<string, int> AbilityBaseScores { get; set; } = new()
@@ -233,6 +234,7 @@ public class CharacterCreationService
 
             StartingPackage = input.PackageId != 255 ? input.PackageId : (byte)0,
             FamiliarType = input.FamiliarType,
+            FamiliarName = input.FamiliarName,
 
             ClassList = new List<CreatureClass> { creatureClass },
             FeatList = GetAllFeatIdsForCreature(input).Select(id => (ushort)id).ToList(),
