@@ -274,14 +274,11 @@ public partial class FeatsPanel
         _assignedFeatIds.Clear();
         _grantedFeatIds.Clear();
         _unavailableFeatIds.Clear();
-        _abilities.Clear();
         _currentCreature = null;
 
         SetText(_featsSummaryText, "0 feats assigned");
         if (_noFeatsText != null)
             _noFeatsText.IsVisible = false;
-        if (_noAbilitiesText != null)
-            _noAbilitiesText.IsVisible = true;
         if (_searchTextBox != null)
             _searchTextBox.Text = "";
         if (_categoryFilterComboBox != null)
@@ -311,13 +308,6 @@ public partial class FeatsPanel
         if (_displayService != null)
             return _displayService.GetFeatName(featId);
         return $"Feat {featId}";
-    }
-
-    private string GetSpellNameInternal(ushort spellId)
-    {
-        if (_displayService != null)
-            return _displayService.GetSpellName(spellId);
-        return $"Spell {spellId}";
     }
 
     private static void SetText(TextBlock? block, string text)

@@ -20,7 +20,7 @@ namespace Quartermaster.Views.Panels;
 /// - FeatsPanel.Search.cs: Search and filter functionality
 /// - FeatsPanel.Display.cs: Summary display, assigned feats list, theme helpers
 /// - FeatsPanel.Selection.cs: Feat add/remove operations
-/// - FeatsPanel.SpecialAbilities.cs: Special abilities management
+/// Special abilities are now in their own SpecialAbilitiesPanel.
 /// </summary>
 public partial class FeatsPanel : UserControl
 {
@@ -42,10 +42,6 @@ public partial class FeatsPanel : UserControl
     private ListBox? _featsList;
     private TextBlock? _noFeatsText;
     private TextBlock? _loadingText;
-    private Expander? _specialAbilitiesExpander;
-    private ItemsControl? _specialAbilitiesList;
-    private TextBlock? _noAbilitiesText;
-    private Button? _addAbilityButton;
     private Border? _assignedFeatsListBorder;
     private StackPanel? _assignedFeatsListPanel;
     private bool _isLoading;
@@ -55,7 +51,6 @@ public partial class FeatsPanel : UserControl
     private HashSet<ushort> _assignedFeatIds = new();
     private HashSet<int> _grantedFeatIds = new();
     private HashSet<int> _unavailableFeatIds = new();
-    private ObservableCollection<SpecialAbilityViewModel> _abilities = new();
 
     #endregion
 
@@ -65,11 +60,6 @@ public partial class FeatsPanel : UserControl
     /// Raised when the creature's feat list is modified (feat added or removed).
     /// </summary>
     public event EventHandler? FeatsChanged;
-
-    /// <summary>
-    /// Raised when the creature's special abilities are modified.
-    /// </summary>
-    public event EventHandler? SpecialAbilitiesChanged;
 
     #endregion
 
@@ -116,10 +106,6 @@ public partial class FeatsPanel : UserControl
         _featsList = this.FindControl<ListBox>("FeatsList");
         _noFeatsText = this.FindControl<TextBlock>("NoFeatsText");
         _loadingText = this.FindControl<TextBlock>("LoadingText");
-        _specialAbilitiesExpander = this.FindControl<Expander>("SpecialAbilitiesExpander");
-        _specialAbilitiesList = this.FindControl<ItemsControl>("SpecialAbilitiesList");
-        _noAbilitiesText = this.FindControl<TextBlock>("NoAbilitiesText");
-        _addAbilityButton = this.FindControl<Button>("AddAbilityButton");
         _assignedFeatsListBorder = this.FindControl<Border>("AssignedFeatsListBorder");
         _assignedFeatsListPanel = this.FindControl<StackPanel>("AssignedFeatsListPanel");
 
@@ -127,9 +113,6 @@ public partial class FeatsPanel : UserControl
         {
             _featsList.ItemsSource = _displayedFeats;
         }
-        if (_specialAbilitiesList != null)
-            _specialAbilitiesList.ItemsSource = _abilities;
-
         // Wire up search and filter controls
         if (_searchTextBox != null)
         {
@@ -162,9 +145,6 @@ public partial class FeatsPanel : UserControl
         if (_showUnavailableCheckBox != null)
             _showUnavailableCheckBox.IsCheckedChanged += (s, e) => ApplySearchAndFilter();
 
-        // Wire up Add Ability button
-        if (_addAbilityButton != null)
-            _addAbilityButton.Click += OnAddAbilityClick;
     }
 
     #endregion
@@ -200,7 +180,6 @@ public partial class FeatsPanel : UserControl
         _assignedFeatIds.Clear();
         _grantedFeatIds.Clear();
         _unavailableFeatIds.Clear();
-        _abilities.Clear();
         _currentCreature = creature;
 
         if (creature == null)
@@ -225,9 +204,6 @@ public partial class FeatsPanel : UserControl
 
         // Load ALL feats from feat.2da
         LoadAllFeats(creature);
-
-        // Load special abilities
-        LoadSpecialAbilities(creature);
 
         // Apply initial filter
         ApplySearchAndFilter();

@@ -1,0 +1,127 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="500"
+             x:Class="Quartermaster.Views.Panels.SpecialAbilitiesPanel">
+
+    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="20">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="20" Margin="0,0,15,0">
+                <!-- Header -->
+                <TextBlock Text="Special Abilities (Spell-Like)"
+                           FontSize="{DynamicResource FontSizeXLarge}"
+                           FontWeight="Bold"/>
+
+                <!-- Summary -->
+                <TextBlock x:Name="AbilitiesSummaryText"
+                           Text="0 abilities assigned"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+
+                <!-- Abilities List -->
+                <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="15">
+                    <StackPanel Spacing="8">
+                        <!-- Column Headers -->
+                        <Grid ColumnDefinitions="*,70,70,60,30" Margin="0,0,0,5"
+                              x:Name="ColumnHeaderGrid">
+                            <TextBlock Grid.Column="0" Text="Ability"
+                                       FontSize="{DynamicResource FontSizeSmall}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <TextBlock Grid.Column="1" Text="CL"
+                                       FontSize="{DynamicResource FontSizeSmall}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Grid.Column="2" Text="Uses"
+                                       FontSize="{DynamicResource FontSizeSmall}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Grid.Column="3" Text="Flags"
+                                       FontSize="{DynamicResource FontSizeSmall}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       HorizontalAlignment="Center"/>
+                        </Grid>
+
+                        <Separator Margin="0,0,0,5"/>
+
+                        <ItemsControl x:Name="AbilitiesList"
+                                      AutomationProperties.AutomationId="AbilitiesList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid ColumnDefinitions="*,70,70,60,30" Margin="0,3">
+                                        <!-- Ability Name -->
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding AbilityName}"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <!-- Caster Level -->
+                                        <NumericUpDown Grid.Column="1"
+                                                       Value="{Binding CasterLevel, Mode=TwoWay}"
+                                                       Minimum="1" Maximum="40" Increment="1"
+                                                       FormatString="0"
+                                                       FontSize="{DynamicResource FontSizeSmall}"
+                                                       VerticalAlignment="Center"
+                                                       HorizontalAlignment="Center"
+                                                       AutomationProperties.AutomationId="AbilityCasterLevel"/>
+                                        <!-- Uses Display -->
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding UsesDisplay}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center"
+                                                   FontSize="{DynamicResource FontSizeSmall}"/>
+                                        <!-- Unlimited Checkbox -->
+                                        <CheckBox Grid.Column="3"
+                                                  IsChecked="{Binding IsUnlimited, Mode=TwoWay}"
+                                                  Content="Unl"
+                                                  ToolTip.Tip="Unlimited uses per day"
+                                                  FontSize="{DynamicResource FontSizeSmall}"
+                                                  VerticalAlignment="Center"
+                                                  HorizontalAlignment="Center"
+                                                  AutomationProperties.AutomationId="AbilityUnlimited"/>
+                                        <!-- Remove Button -->
+                                        <Button Grid.Column="4"
+                                                Content="✕"
+                                                ToolTip.Tip="Remove ability"
+                                                Command="{Binding RemoveCommand}"
+                                                FontSize="{DynamicResource FontSizeSmall}"
+                                                Padding="4,2"
+                                                VerticalAlignment="Center"
+                                                AutomationProperties.AutomationId="RemoveAbilityButton"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock x:Name="NoAbilitiesText"
+                                   Text="No special abilities assigned"
+                                   FontStyle="Italic"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                   IsVisible="True"
+                                   Margin="0,10"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Add Button -->
+                <Button x:Name="AddAbilityButton"
+                        Content="Add Ability..."
+                        HorizontalAlignment="Left"
+                        AutomationProperties.AutomationId="AddAbilityButton"/>
+
+                <!-- Info text -->
+                <TextBlock Text="Spell-like abilities from the creature's SpecAbilityList. Uses per day are determined by the Unlimited flag."
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           FontStyle="Italic"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           TextWrapping="Wrap"
+                           Margin="0,5,0,0"/>
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+</UserControl>

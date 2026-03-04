@@ -46,9 +46,15 @@ public class SpecialAbilityViewModel : ObservableObject
             else
                 Flags = (byte)(Flags & ~0x04);
             OnPropertyChanged();
+            OnPropertyChanged(nameof(UsesDisplay));
             OnFlagsChanged?.Invoke(this);
         }
     }
+
+    /// <summary>
+    /// Display string for uses per day. "Unlimited" if flag 0x04 set, otherwise "Limited".
+    /// </summary>
+    public string UsesDisplay => IsUnlimited ? "Unlimited" : "Limited";
 
     public Action<SpecialAbilityViewModel>? OnCasterLevelChanged { get; set; }
     public Action<SpecialAbilityViewModel>? OnFlagsChanged { get; set; }
