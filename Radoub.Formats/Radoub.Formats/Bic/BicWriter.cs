@@ -176,6 +176,9 @@ public static class BicWriter
         AddWordField(root, "SoundSetFile", bic.SoundSetFile);
         AddDwordField(root, "DecayTime", bic.DecayTime);
         AddByteField(root, "StartingPackage", bic.StartingPackage);
+        AddIntField(root, "FamiliarType", bic.FamiliarType);
+        if (!string.IsNullOrEmpty(bic.FamiliarName))
+            AddCExoStringField(root, "FamiliarName", bic.FamiliarName);
 
         // Conversation excluded per Table 2.6.2
 
@@ -230,6 +233,13 @@ public static class BicWriter
             var classStruct = new GffStruct { Type = 2 };
             AddIntField(classStruct, "Class", cls.Class);
             AddShortField(classStruct, "ClassLevel", cls.ClassLevel);
+
+            // Write domains (Cleric)
+            if (cls.Domain1 != 0 || cls.Domain2 != 0)
+            {
+                AddByteField(classStruct, "Domain1", cls.Domain1);
+                AddByteField(classStruct, "Domain2", cls.Domain2);
+            }
 
             // Write known spells (KnownList0-9)
             for (int level = 0; level < 10; level++)

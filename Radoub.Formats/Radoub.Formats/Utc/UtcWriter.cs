@@ -178,6 +178,8 @@ public static class UtcWriter
         AddDwordField(root, "DecayTime", utc.DecayTime);
         AddByteField(root, "StartingPackage", utc.StartingPackage);
         AddIntField(root, "FamiliarType", utc.FamiliarType);
+        if (!string.IsNullOrEmpty(utc.FamiliarName))
+            AddCExoStringField(root, "FamiliarName", utc.FamiliarName);
 
         // Conversation
         if (!string.IsNullOrEmpty(utc.Conversation))

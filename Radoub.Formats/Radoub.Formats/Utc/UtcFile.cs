@@ -513,6 +513,11 @@ public class UtcFile
     /// </summary>
     public int FamiliarType { get; set; }
 
+    /// <summary>
+    /// Custom name given to the familiar by the player.
+    /// </summary>
+    public string FamiliarName { get; set; } = string.Empty;
+
     // Conversation
 
     /// <summary>
@@ -726,6 +731,7 @@ public class UtcFile
             DecayTime = DecayTime,
             StartingPackage = StartingPackage,
             FamiliarType = FamiliarType,
+            FamiliarName = FamiliarName,
             Conversation = Conversation,
             ScriptAttacked = ScriptAttacked,
             ScriptDamaged = ScriptDamaged,
