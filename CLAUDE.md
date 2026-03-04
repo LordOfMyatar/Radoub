@@ -480,6 +480,13 @@ dotnet nbgv get-version --project [ToolDir]
 - **Why**: During test runs, VSCode or other apps can steal focus. Keyboard shortcuts like Ctrl+Shift+E open VSCode's file explorer instead of triggering test app actions.
 - See `FlaUITestBase.EnsureFocused()` for focus verification pattern
 
+**Test Output (MANDATORY)**:
+- **NEVER truncate test output** — always capture and review the full results
+- When running `dotnet test`, do NOT pipe through `tail` or `head` — read the complete output
+- If a test run reports failures, the failing test names and error messages MUST be visible
+- Use `--verbosity normal` or higher if needed to see failure details
+- This is a recurring issue: truncated output hides failures and leads to false "all tests pass" claims
+
 **Before PRs to Main**:
 - All tools must build
 - All tool tests must pass
