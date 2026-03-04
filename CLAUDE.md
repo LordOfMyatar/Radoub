@@ -481,11 +481,17 @@ dotnet nbgv get-version --project [ToolDir]
 - See `FlaUITestBase.EnsureFocused()` for focus verification pattern
 
 **Test Output (MANDATORY)**:
-- **NEVER truncate test output** — always capture and review the full results
-- When running `dotnet test`, do NOT pipe through `tail` or `head` — read the complete output
-- If a test run reports failures, the failing test names and error messages MUST be visible
-- Use `--verbosity normal` or higher if needed to see failure details
-- This is a recurring issue: truncated output hides failures and leads to false "all tests pass" claims
+- **NEVER pipe test output through `tail` or `head`** — this discards failures and leads to false "all tests pass" claims
+- Run tests with `run_in_background`, then grep the output file for results:
+  ```bash
+  # Run tests (output goes to a file automatically)
+  dotnet test Radoub.sln --no-build  # with run_in_background=true
+
+  # After completion, grep the output file for summary + failures
+  grep -E "^(Failed|Passed|  Failed)" $OUTPUT_FILE
+  ```
+- The `Failed!` and `Passed!` summary lines plus any `  Failed` detail lines give full visibility without reading thousands of lines
+- If failures appear, read the full output file for stack traces and error details
 
 **Before PRs to Main**:
 - All tools must build
