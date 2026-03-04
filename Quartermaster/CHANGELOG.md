@@ -15,8 +15,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Special Abilities & Scripts (#1611)
 
-- [ ] #1575 - Special Abilities panel needs UX overhaul
-- [ ] #1487 - Load Script Set Option in Scripts Panel
+- [x] #1575 - Special Abilities panel UX overhaul
+  - Extracted Special Abilities from Feats panel into dedicated nav panel ("Abilities")
+  - New `SpecialAbilitiesPanel` with full-width layout, summary count, column headers
+  - Added "Uses" column displaying Unlimited/Limited based on flag 0x04
+  - `UsesDisplay` property on `SpecialAbilityViewModel` for data binding
+  - Removed Special Abilities expander from FeatsPanel (deleted `FeatsPanel.SpecialAbilities.cs`)
+  - New ✧ nav button in sidebar between Feats and Skills
+- [x] #1487 - Load Script Set Option in Scripts Panel
+  - Added "Load Script Set..." and "Save Script Set..." buttons to Scripts panel
+  - `ScriptTemplateService` for reading/writing Aurora Toolset INI format (`[ResRefs]` section)
+  - Bidirectional mapping between INI keys and UtcFile field names (all 13 script slots)
+  - Default directory: `{NeverwinterNightsPath}/scripttemplates/` (auto-created on first use)
+  - Compatible with existing Aurora Toolset template files (nwn1.ini, x2.ini, BattleAI.ini, etc.)
+  - 13 unit tests for INI parsing, saving, round-trip, key mapping
 
 ---
 
