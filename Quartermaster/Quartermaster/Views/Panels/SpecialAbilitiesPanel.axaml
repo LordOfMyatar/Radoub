@@ -5,7 +5,7 @@
              mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="500"
              x:Class="Quartermaster.Views.Panels.SpecialAbilitiesPanel">
 
-    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="20">
+    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="20,20,5,20">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="20" Margin="0,0,15,0">
                 <!-- Header -->
@@ -26,7 +26,7 @@
                         Padding="15">
                     <StackPanel Spacing="8">
                         <!-- Column Headers -->
-                        <Grid ColumnDefinitions="*,70,70,60,30" Margin="0,0,0,5"
+                        <Grid ColumnDefinitions="*,80,80,30" Margin="0,0,0,5"
                               x:Name="ColumnHeaderGrid">
                             <TextBlock Grid.Column="0" Text="Ability"
                                        FontSize="{DynamicResource FontSizeSmall}"
@@ -42,11 +42,6 @@
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        HorizontalAlignment="Center"/>
-                            <TextBlock Grid.Column="3" Text="Flags"
-                                       FontSize="{DynamicResource FontSizeSmall}"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                       HorizontalAlignment="Center"/>
                         </Grid>
 
                         <Separator Margin="0,0,0,5"/>
@@ -55,7 +50,7 @@
                                       AutomationProperties.AutomationId="AbilitiesList">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Grid ColumnDefinitions="*,70,70,60,30" Margin="0,3">
+                                    <Grid ColumnDefinitions="*,80,80,30" Margin="0,3">
                                         <!-- Ability Name -->
                                         <TextBlock Grid.Column="0"
                                                    Text="{Binding AbilityName}"
@@ -70,23 +65,17 @@
                                                        VerticalAlignment="Center"
                                                        HorizontalAlignment="Center"
                                                        AutomationProperties.AutomationId="AbilityCasterLevel"/>
-                                        <!-- Uses Display -->
-                                        <TextBlock Grid.Column="2"
-                                                   Text="{Binding UsesDisplay}"
-                                                   VerticalAlignment="Center"
-                                                   HorizontalAlignment="Center"
-                                                   FontSize="{DynamicResource FontSizeSmall}"/>
-                                        <!-- Unlimited Checkbox -->
-                                        <CheckBox Grid.Column="3"
-                                                  IsChecked="{Binding IsUnlimited, Mode=TwoWay}"
-                                                  Content="Unl"
-                                                  ToolTip.Tip="Unlimited uses per day"
-                                                  FontSize="{DynamicResource FontSizeSmall}"
-                                                  VerticalAlignment="Center"
-                                                  HorizontalAlignment="Center"
-                                                  AutomationProperties.AutomationId="AbilityUnlimited"/>
+                                        <!-- Uses per Day -->
+                                        <NumericUpDown Grid.Column="2"
+                                                       Value="{Binding Uses, Mode=TwoWay}"
+                                                       Minimum="0" Maximum="255" Increment="1"
+                                                       FormatString="0"
+                                                       FontSize="{DynamicResource FontSizeSmall}"
+                                                       VerticalAlignment="Center"
+                                                       HorizontalAlignment="Center"
+                                                       AutomationProperties.AutomationId="AbilityUses"/>
                                         <!-- Remove Button -->
-                                        <Button Grid.Column="4"
+                                        <Button Grid.Column="3"
                                                 Content="✕"
                                                 ToolTip.Tip="Remove ability"
                                                 Command="{Binding RemoveCommand}"
@@ -115,7 +104,7 @@
                         AutomationProperties.AutomationId="AddAbilityButton"/>
 
                 <!-- Info text -->
-                <TextBlock Text="Spell-like abilities from the creature's SpecAbilityList. Uses per day are determined by the Unlimited flag."
+                <TextBlock Text="Spell-like abilities from the creature's SpecAbilityList."
                            FontSize="{DynamicResource FontSizeSmall}"
                            FontStyle="Italic"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"

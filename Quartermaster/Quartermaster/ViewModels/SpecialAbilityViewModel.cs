@@ -35,26 +35,22 @@ public class SpecialAbilityViewModel : ObservableObject
         set => SetProperty(ref _flags, value);
     }
 
-    // Flag 0x04 = unlimited uses
-    public bool IsUnlimited
+    /// <summary>
+    /// Uses per day, stored in SpellFlags byte.
+    /// The Aurora Toolset treats this as a simple integer count.
+    /// </summary>
+    public byte Uses
     {
-        get => (Flags & 0x04) != 0;
+        get => _flags;
         set
         {
-            if (value)
-                Flags = (byte)(Flags | 0x04);
-            else
-                Flags = (byte)(Flags & ~0x04);
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(UsesDisplay));
-            OnFlagsChanged?.Invoke(this);
+            if (SetProperty(ref _flags, value, nameof(Flags)))
+            {
+                OnPropertyChanged();
+                OnFlagsChanged?.Invoke(this);
+            }
         }
     }
-
-    /// <summary>
-    /// Display string for uses per day. "Unlimited" if flag 0x04 set, otherwise "Limited".
-    /// </summary>
-    public string UsesDisplay => IsUnlimited ? "Unlimited" : "Limited";
 
     public Action<SpecialAbilityViewModel>? OnCasterLevelChanged { get; set; }
     public Action<SpecialAbilityViewModel>? OnFlagsChanged { get; set; }
