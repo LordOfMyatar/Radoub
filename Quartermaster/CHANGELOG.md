@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.26-alpha] - 2026-03-03
+**Branch**: `quartermaster/issue-1611` | **PR**: #TBD
+
+### Sprint: Special Abilities & Scripts (#1611)
+
+- [ ] #1575 - Special Abilities panel needs UX overhaul
+- [ ] #1487 - Load Script Set Option in Scripts Panel
+
+---
+
 ## [0.2.25-alpha] - 2026-03-03
 **Branch**: `quartermaster/issue-1586` | **PR**: #1590
 
