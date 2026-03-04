@@ -13,11 +13,29 @@
                            FontSize="{DynamicResource FontSizeXLarge}"
                            FontWeight="Bold"/>
 
-                <!-- Scripts Summary -->
-                <TextBlock x:Name="ScriptsSummaryText"
-                           Text="0 scripts assigned"
-                           FontSize="{DynamicResource FontSizeSmall}"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                <!-- Scripts Summary and Template Buttons -->
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock x:Name="ScriptsSummaryText"
+                               Text="0 scripts assigned"
+                               FontSize="{DynamicResource FontSizeSmall}"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               VerticalAlignment="Center"/>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                        <Button x:Name="LoadScriptSetButton"
+                                Content="Load Script Set..."
+                                FontSize="{DynamicResource FontSizeSmall}"
+                                Padding="8,4"
+                                ToolTip.Tip="Load scripts from an Aurora Toolset INI template"
+                                AutomationProperties.AutomationId="LoadScriptSetButton"/>
+                        <Button x:Name="SaveScriptSetButton"
+                                Content="Save Script Set..."
+                                FontSize="{DynamicResource FontSizeSmall}"
+                                Padding="8,4"
+                                ToolTip.Tip="Save current scripts as an Aurora Toolset INI template"
+                                AutomationProperties.AutomationId="SaveScriptSetButton"/>
+                    </StackPanel>
+                </Grid>
 
                 <!-- Scripts List -->
                 <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"

@@ -1,14 +1,18 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Avalonia.Platform.Storage;
 using Quartermaster.Services;
 using Quartermaster.ViewModels;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
 using Radoub.UI.Views;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 
 namespace Quartermaster.Views.Panels;
@@ -18,6 +22,8 @@ public partial class ScriptsPanel : BasePanelControl
     private TextBlock? _scriptsSummaryText;
     private ItemsControl? _scriptsList;
     private TextBlock? _noScriptsText;
+    private Button? _loadScriptSetButton;
+    private Button? _saveScriptSetButton;
 
     private ObservableCollection<ScriptViewModel> _scripts = new();
     private string? _currentFilePath;
@@ -37,12 +43,19 @@ public partial class ScriptsPanel : BasePanelControl
         _scriptsSummaryText = this.FindControl<TextBlock>("ScriptsSummaryText");
         _scriptsList = this.FindControl<ItemsControl>("ScriptsList");
         _noScriptsText = this.FindControl<TextBlock>("NoScriptsText");
+        _loadScriptSetButton = this.FindControl<Button>("LoadScriptSetButton");
+        _saveScriptSetButton = this.FindControl<Button>("SaveScriptSetButton");
 
         if (_scriptsList != null)
         {
             _scriptsList.ItemsSource = _scripts;
             _scriptsList.AddHandler(Button.ClickEvent, OnScriptButtonClick);
         }
+
+        if (_loadScriptSetButton != null)
+            _loadScriptSetButton.Click += OnLoadScriptSetClick;
+        if (_saveScriptSetButton != null)
+            _saveScriptSetButton.Click += OnSaveScriptSetClick;
     }
 
     public void SetGameDataService(IGameDataService? gameDataService)
@@ -170,6 +183,109 @@ public partial class ScriptsPanel : BasePanelControl
             var result = await browser.ShowDialog<string?>(parentWindow);
             if (!string.IsNullOrEmpty(result))
                 vm.ScriptResRef = result;
+        }
+    }
+
+    private async void OnLoadScriptSetClick(object? sender, RoutedEventArgs e)
+    {
+        if (CurrentCreature == null) return;
+
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel == null) return;
+
+        var templateDir = ScriptTemplateService.EnsureTemplateDirectory();
+
+        var options = new FilePickerOpenOptions
+        {
+            Title = "Load Script Set",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("Script Template") { Patterns = new[] { "*.ini" } },
+                new FilePickerFileType("All Files") { Patterns = new[] { "*" } }
+            }
+        };
+
+        if (!string.IsNullOrEmpty(templateDir) && Directory.Exists(templateDir))
+        {
+            options.SuggestedStartLocation = await topLevel.StorageProvider
+                .TryGetFolderFromPathAsync(templateDir);
+        }
+
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(options);
+        if (files.Count == 0) return;
+
+        var filePath = files[0].Path.LocalPath;
+
+        try
+        {
+            var template = ScriptTemplateService.LoadTemplate(filePath);
+
+            // Apply loaded scripts to the UI
+            IsLoading = true;
+            foreach (var vm in _scripts)
+            {
+                if (template.TryGetValue(vm.FieldName, out var resRef))
+                {
+                    vm.ScriptResRef = resRef;
+                    UpdateCreatureScript(vm.FieldName, resRef);
+                }
+            }
+            IsLoading = false;
+
+            UpdateSummary();
+            ScriptsChanged?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to load script template: {ex.Message}");
+        }
+    }
+
+    private async void OnSaveScriptSetClick(object? sender, RoutedEventArgs e)
+    {
+        if (CurrentCreature == null) return;
+
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel == null) return;
+
+        var templateDir = ScriptTemplateService.EnsureTemplateDirectory();
+
+        var options = new FilePickerSaveOptions
+        {
+            Title = "Save Script Set",
+            DefaultExtension = "ini",
+            FileTypeChoices = new[]
+            {
+                new FilePickerFileType("Script Template") { Patterns = new[] { "*.ini" } }
+            },
+            SuggestedFileName = "scripts"
+        };
+
+        if (!string.IsNullOrEmpty(templateDir) && Directory.Exists(templateDir))
+        {
+            options.SuggestedStartLocation = await topLevel.StorageProvider
+                .TryGetFolderFromPathAsync(templateDir);
+        }
+
+        var file = await topLevel.StorageProvider.SaveFilePickerAsync(options);
+        if (file == null) return;
+
+        var filePath = file.Path.LocalPath;
+
+        try
+        {
+            var scripts = new Dictionary<string, string>();
+            foreach (var vm in _scripts)
+            {
+                scripts[vm.FieldName] = vm.ScriptResRef;
+            }
+
+            ScriptTemplateService.SaveTemplate(filePath, scripts);
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to save script template: {ex.Message}");
         }
     }
 
