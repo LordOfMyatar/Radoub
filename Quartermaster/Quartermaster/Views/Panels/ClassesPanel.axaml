@@ -112,7 +112,7 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Cleric Domains (read-only, derived from feat list) -->
+                <!-- Cleric Domains -->
                 <Border x:Name="DomainSection"
                         BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1"
@@ -127,21 +127,19 @@
                                 <TextBlock Text="Domain 1"
                                            FontSize="{DynamicResource FontSizeSmall}"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="Domain1Text"
-                                           Text="(None)"
-                                           FontSize="{DynamicResource FontSizeNormal}"
-                                           FontWeight="SemiBold"
-                                           Margin="0,2,0,0"/>
+                                <ComboBox x:Name="Domain1ComboBox"
+                                          MinWidth="150"
+                                          Margin="0,2,0,0"
+                                          AutomationProperties.AutomationId="Domain1ComboBox"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="Domain 2"
                                            FontSize="{DynamicResource FontSizeSmall}"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="Domain2Text"
-                                           Text="(None)"
-                                           FontSize="{DynamicResource FontSizeNormal}"
-                                           FontWeight="SemiBold"
-                                           Margin="0,2,0,0"/>
+                                <ComboBox x:Name="Domain2ComboBox"
+                                          MinWidth="150"
+                                          Margin="0,2,0,0"
+                                          AutomationProperties.AutomationId="Domain2ComboBox"/>
                             </StackPanel>
                         </Grid>
 
@@ -150,11 +148,6 @@
                                    FontStyle="Italic"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                    TextWrapping="Wrap"/>
-
-                        <TextBlock Text="Edit domains in Feats panel"
-                                   FontSize="{DynamicResource FontSizeXSmall}"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                   FontStyle="Italic"/>
                     </StackPanel>
                 </Border>
 
@@ -175,6 +168,16 @@
                             <ComboBox x:Name="FamiliarComboBox"
                                       MinWidth="200"
                                       AutomationProperties.AutomationId="FamiliarComboBox"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Familiar Name:"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <TextBox x:Name="FamiliarNameTextBox"
+                                     MinWidth="200"
+                                     Watermark="(unnamed)"
+                                     AutomationProperties.AutomationId="FamiliarNameTextBox"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>
