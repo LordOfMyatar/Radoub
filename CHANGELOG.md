@@ -17,6 +17,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.83] - TBD
+**Branch**: `radoub/issue-1591` | **PR**: #1599
+
+### Dependabot Dependency Updates (#1591)
+
+- Bump `Microsoft.NET.Test.Sdk` from 18.0.1 to 18.3.0 (#1593)
+- Bump `actions/upload-artifact` from v6 to v7 (#1592)
+- Bump `actions/download-artifact` from v7 to v8 (#1591)
+
+---
+
 ## [0.9.82] - 2026-02-28
 **Branch**: `radoub/issue-1321` | **PR**: #1571
 
