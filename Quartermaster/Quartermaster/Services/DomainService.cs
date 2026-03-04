@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Radoub.Formats.Services;
+using Radoub.Formats.Utc;
 
 namespace Quartermaster.Services;
 
@@ -84,8 +85,37 @@ public class DomainService
     }
 
     /// <summary>
+    /// Resolves the two domain IDs for a creature class.
+    /// Priority: Domain1/Domain2 fields if non-zero, then inference from FeatList.
+    /// Returns (domain1Id, domain2Id) where -1 means no domain found.
+    /// </summary>
+    public (int Domain1, int Domain2) ResolveDomains(CreatureClass clericClass, IEnumerable<ushort> featList)
+    {
+        // Priority 1: Authoritative Domain1/Domain2 fields
+        if (clericClass.Domain1 != 0 || clericClass.Domain2 != 0)
+        {
+            return (clericClass.Domain1, clericClass.Domain2);
+        }
+
+        // Priority 2: Infer from feat list (fallback for UTCs without Domain fields)
+        var inferred = InferDomainsFromFeats(featList);
+        int d1 = inferred.Count >= 1 ? inferred[0] : -1;
+        int d2 = inferred.Count >= 2 ? inferred[1] : -1;
+        return (d1, d2);
+    }
+
+    /// <summary>
+    /// Gets the GrantedFeat ID for a domain, or -1 if none.
+    /// </summary>
+    public int GetGrantedFeatId(int domainId)
+    {
+        var info = GetDomainInfo(domainId);
+        return info?.GrantedFeatId ?? -1;
+    }
+
+    /// <summary>
     /// Infers domain IDs from a creature's feat list by matching GrantedFeat in domains.2da.
-    /// Used when Domain1/Domain2 are both 0 (unset by original toolset).
+    /// Used as fallback when Domain1/Domain2 fields are unset (0).
     /// Returns up to 2 domain IDs.
     /// </summary>
     public List<int> InferDomainsFromFeats(IEnumerable<ushort> creatureFeats)
@@ -99,7 +129,9 @@ public class DomainService
         foreach (var (id, _) in GetAllDomains())
         {
             var info = GetDomainInfo(id);
-            if (info != null && info.GrantedFeatId >= 0 && featSet.Contains(info.GrantedFeatId))
+            if (info == null) continue;
+
+            if (info.GrantedFeatId >= 0 && featSet.Contains(info.GrantedFeatId))
             {
                 foundDomains.Add(id);
                 if (foundDomains.Count >= 2)

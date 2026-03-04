@@ -295,4 +295,64 @@ public class DomainServiceTests
     }
 
     #endregion
+
+    #region ResolveDomains
+
+    [Fact]
+    public void ResolveDomains_WithExplicitFields_UsesFieldValues()
+    {
+        var cls = new Radoub.Formats.Utc.CreatureClass { Domain1 = 1, Domain2 = 2 };
+        var (d1, d2) = _domainService.ResolveDomains(cls, new List<ushort>());
+        Assert.Equal(1, d1);
+        Assert.Equal(2, d2);
+    }
+
+    [Fact]
+    public void ResolveDomains_WithZeroFields_FallsBackToFeatInference()
+    {
+        var cls = new Radoub.Formats.Utc.CreatureClass { Domain1 = 0, Domain2 = 0 };
+        // Feats 0 and 1 are Air and Animal domain granted feats in mock data
+        var feats = new List<ushort> { 0, 1 };
+        var (d1, d2) = _domainService.ResolveDomains(cls, feats);
+        Assert.Equal(0, d1); // Air
+        Assert.Equal(1, d2); // Animal
+    }
+
+    [Fact]
+    public void ResolveDomains_WithZeroFieldsAndNoFeats_ReturnsNegativeOne()
+    {
+        var cls = new Radoub.Formats.Utc.CreatureClass { Domain1 = 0, Domain2 = 0 };
+        var (d1, d2) = _domainService.ResolveDomains(cls, new List<ushort>());
+        Assert.Equal(-1, d1);
+        Assert.Equal(-1, d2);
+    }
+
+    #endregion
+
+    #region GetGrantedFeatId
+
+    [Fact]
+    public void GetGrantedFeatId_ValidDomain_ReturnsFeatId()
+    {
+        // Air domain (row 0) has granted feat 0 in mock data
+        int featId = _domainService.GetGrantedFeatId(0);
+        Assert.Equal(0, featId);
+    }
+
+    [Fact]
+    public void GetGrantedFeatId_InvalidDomain_ReturnsNegativeOne()
+    {
+        int featId = _domainService.GetGrantedFeatId(999);
+        Assert.Equal(-1, featId);
+    }
+
+    [Fact]
+    public void GetGrantedFeatId_DomainWithNoFeat_ReturnsNegativeOne()
+    {
+        // Death domain (row 2) has no granted feat in mock data
+        int featId = _domainService.GetGrantedFeatId(2);
+        Assert.Equal(-1, featId);
+    }
+
+    #endregion
 }
