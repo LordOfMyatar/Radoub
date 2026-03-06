@@ -4,6 +4,21 @@ using Radoub.UI.Services;
 namespace Radoub.UI.ViewModels;
 
 /// <summary>
+/// Visual size categories for equipment slot rendering in the paperdoll layout.
+/// </summary>
+public enum SlotSize
+{
+    /// <summary>Small square (rings, amulet). 48x48.</summary>
+    Small,
+    /// <summary>Standard square (head, belt, boots, gloves, ammo). 64x64.</summary>
+    Medium,
+    /// <summary>Large square (chest armor). 80x80.</summary>
+    Large,
+    /// <summary>Tall rectangle (weapons, cloak, shield). 64x96.</summary>
+    Tall
+}
+
+/// <summary>
 /// ViewModel for a single equipment slot in the EquipmentSlotsPanel.
 /// </summary>
 public partial class EquipmentSlotViewModel : ObservableObject
@@ -47,6 +62,11 @@ public partial class EquipmentSlotViewModel : ObservableObject
     /// Path to the slot's placeholder icon resource.
     /// </summary>
     public string IconPath => ItemIconHelper.GetSlotIconPath(SlotFlag);
+
+    /// <summary>
+    /// Visual size category for paperdoll layout.
+    /// </summary>
+    public SlotSize Size { get; init; } = SlotSize.Medium;
 
     /// <summary>
     /// True if this is a standard equipment slot (Head, Chest, etc.).
@@ -144,26 +164,26 @@ public static class EquipmentSlotFactory
     private const int FlagSkin = 0x20000;
 
     /// <summary>
-    /// Creates all standard equipment slots (14 slots).
+    /// Creates all standard equipment slots (14 slots) with paperdoll sizes.
     /// </summary>
     public static IReadOnlyList<EquipmentSlotViewModel> CreateStandardSlots()
     {
         return new List<EquipmentSlotViewModel>
         {
-            new(0, FlagHead, "Head"),
-            new(1, FlagChest, "Chest"),
-            new(2, FlagBoots, "Boots"),
-            new(3, FlagArms, "Arms"),
-            new(4, FlagRightHand, "Right Hand"),
-            new(5, FlagLeftHand, "Left Hand"),
-            new(6, FlagCloak, "Cloak"),
-            new(7, FlagLeftRing, "Left Ring"),
-            new(8, FlagRightRing, "Right Ring"),
-            new(9, FlagNeck, "Neck"),
-            new(10, FlagBelt, "Belt"),
-            new(11, FlagArrows, "Arrows"),
-            new(12, FlagBullets, "Bullets"),
-            new(13, FlagBolts, "Bolts")
+            new(0, FlagHead, "Head") { Size = SlotSize.Medium },
+            new(1, FlagChest, "Chest") { Size = SlotSize.Large },
+            new(2, FlagBoots, "Boots") { Size = SlotSize.Medium },
+            new(3, FlagArms, "Arms") { Size = SlotSize.Medium },
+            new(4, FlagRightHand, "Right Hand") { Size = SlotSize.Tall },
+            new(5, FlagLeftHand, "Left Hand") { Size = SlotSize.Tall },
+            new(6, FlagCloak, "Cloak") { Size = SlotSize.Tall },
+            new(7, FlagLeftRing, "Left Ring") { Size = SlotSize.Small },
+            new(8, FlagRightRing, "Right Ring") { Size = SlotSize.Small },
+            new(9, FlagNeck, "Neck") { Size = SlotSize.Small },
+            new(10, FlagBelt, "Belt") { Size = SlotSize.Medium },
+            new(11, FlagArrows, "Arrows") { Size = SlotSize.Small },
+            new(12, FlagBullets, "Bullets") { Size = SlotSize.Small },
+            new(13, FlagBolts, "Bolts") { Size = SlotSize.Small }
         };
     }
 
@@ -174,10 +194,10 @@ public static class EquipmentSlotFactory
     {
         return new List<EquipmentSlotViewModel>
         {
-            new(14, FlagClaw1, "Claw 1", isNatural: true),
-            new(15, FlagClaw2, "Claw 2", isNatural: true),
-            new(16, FlagClaw3, "Claw 3", isNatural: true),
-            new(17, FlagSkin, "Skin", isNatural: true)
+            new(14, FlagClaw1, "Claw 1", isNatural: true) { Size = SlotSize.Tall },
+            new(15, FlagClaw2, "Claw 2", isNatural: true) { Size = SlotSize.Tall },
+            new(16, FlagClaw3, "Claw 3", isNatural: true) { Size = SlotSize.Tall },
+            new(17, FlagSkin, "Skin", isNatural: true) { Size = SlotSize.Large }
         };
     }
 

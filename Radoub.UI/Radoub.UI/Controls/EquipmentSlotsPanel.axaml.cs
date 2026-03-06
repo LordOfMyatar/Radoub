@@ -35,6 +35,12 @@ public partial class EquipmentSlotsPanel : UserControl
         AvaloniaProperty.Register<EquipmentSlotsPanel, bool>(nameof(ShowNaturalSlots), defaultValue: false);
 
     /// <summary>
+    /// Natural AC value to display in the paperdoll.
+    /// </summary>
+    public static readonly StyledProperty<int> NaturalACProperty =
+        AvaloniaProperty.Register<EquipmentSlotsPanel, int>(nameof(NaturalAC), defaultValue: 0);
+
+    /// <summary>
     /// Event raised when a slot is clicked.
     /// </summary>
     public event EventHandler<EquipmentSlotViewModel>? SlotClicked;
@@ -110,6 +116,15 @@ public partial class EquipmentSlotsPanel : UserControl
         set => SetValue(ShowNaturalSlotsProperty, value);
     }
 
+    /// <summary>
+    /// Natural AC value displayed in the paperdoll center.
+    /// </summary>
+    public int NaturalAC
+    {
+        get => GetValue(NaturalACProperty);
+        set => SetValue(NaturalACProperty, value);
+    }
+
     private void OnLoaded(object? sender, RoutedEventArgs e)
     {
         // Create slot controls if not yet created
@@ -163,6 +178,31 @@ public partial class EquipmentSlotsPanel : UserControl
         }
     }
 
+    /// <summary>
+    /// Apply slot size dimensions after slots are bound.
+    /// </summary>
+    private void ApplySlotSizes()
+    {
+        foreach (var slot in Slots)
+        {
+            if (_slotControls.TryGetValue(slot.SlotId, out var control))
+            {
+                var (w, h) = GetSlotDimensions(slot.Size);
+                control.SlotWidth = w;
+                control.SlotHeight = h;
+            }
+        }
+    }
+
+    private static (double width, double height) GetSlotDimensions(SlotSize size) => size switch
+    {
+        SlotSize.Small => (48, 48),
+        SlotSize.Medium => (64, 64),
+        SlotSize.Large => (80, 80),
+        SlotSize.Tall => (64, 96),
+        _ => (64, 64)
+    };
+
     private void UpdateSlotBindings()
     {
         foreach (var slot in Slots)
@@ -172,6 +212,7 @@ public partial class EquipmentSlotsPanel : UserControl
                 control.Slot = slot;
             }
         }
+        ApplySlotSizes();
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -287,6 +328,18 @@ public class EquipmentSlotControl : TemplatedControl
     /// </summary>
     public static readonly StyledProperty<EquipmentSlotViewModel?> SlotProperty =
         AvaloniaProperty.Register<EquipmentSlotControl, EquipmentSlotViewModel?>(nameof(Slot));
+
+    /// <summary>
+    /// Width of the slot icon area (varies by SlotSize).
+    /// </summary>
+    public static readonly StyledProperty<double> SlotWidthProperty =
+        AvaloniaProperty.Register<EquipmentSlotControl, double>(nameof(SlotWidth), defaultValue: 64);
+
+    /// <summary>
+    /// Height of the slot icon area (varies by SlotSize).
+    /// </summary>
+    public static readonly StyledProperty<double> SlotHeightProperty =
+        AvaloniaProperty.Register<EquipmentSlotControl, double>(nameof(SlotHeight), defaultValue: 64);
 
     /// <summary>
     /// Event raised when slot is clicked.
@@ -410,6 +463,24 @@ public class EquipmentSlotControl : TemplatedControl
     {
         get => GetValue(SlotProperty);
         set => SetValue(SlotProperty, value);
+    }
+
+    /// <summary>
+    /// Width of the slot icon area.
+    /// </summary>
+    public double SlotWidth
+    {
+        get => GetValue(SlotWidthProperty);
+        set => SetValue(SlotWidthProperty, value);
+    }
+
+    /// <summary>
+    /// Height of the slot icon area.
+    /// </summary>
+    public double SlotHeight
+    {
+        get => GetValue(SlotHeightProperty);
+        set => SetValue(SlotHeightProperty, value);
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)

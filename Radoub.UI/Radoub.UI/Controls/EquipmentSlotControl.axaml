@@ -11,8 +11,6 @@
   </Design.PreviewWith>
 
   <ControlTheme x:Key="{x:Type controls:EquipmentSlotControl}" TargetType="controls:EquipmentSlotControl">
-    <Setter Property="Width" Value="80"/>
-    <Setter Property="Height" Value="110"/>
     <Setter Property="Template">
       <ControlTemplate>
         <StackPanel Spacing="2" DataContext="{Binding Slot, RelativeSource={RelativeSource TemplatedParent}}">
@@ -23,12 +21,12 @@
                      HorizontalAlignment="Center"
                      Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                      TextTrimming="CharacterEllipsis"
-                     MaxWidth="70"/>
+                     MaxWidth="80"/>
 
-          <!-- Slot border with item icon area -->
+          <!-- Slot border with item icon area - size from SlotWidth/SlotHeight -->
           <Border x:Name="SlotBorder"
-                  Width="64"
-                  Height="64"
+                  Width="{Binding SlotWidth, RelativeSource={RelativeSource TemplatedParent}}"
+                  Height="{Binding SlotHeight, RelativeSource={RelativeSource TemplatedParent}}"
                   BorderThickness="1"
                   BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                   Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"

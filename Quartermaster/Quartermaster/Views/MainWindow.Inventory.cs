@@ -59,6 +59,9 @@ public partial class MainWindow
             }
         }
 
+        // Set AC display
+        InventoryPanelContent.SetNaturalAC(_currentCreature.NaturalAC);
+
         // Populate item palette from module directory
         PopulateItemPalette();
 

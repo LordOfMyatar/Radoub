@@ -50,6 +50,16 @@
       <Setter Property="FontSize" Value="14"/>
       <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}"/>
     </Style>
+
+    <!-- AC display style -->
+    <Style Selector="Border.ac-display">
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+      <Setter Property="BorderThickness" Value="2"/>
+      <Setter Property="CornerRadius" Value="20"/>
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+      <Setter Property="Width" Value="48"/>
+      <Setter Property="Height" Value="48"/>
+    </Style>
   </UserControl.Styles>
 
   <Grid RowDefinitions="Auto,*">
@@ -70,52 +80,85 @@
 
     <!-- Slot panels container -->
     <Grid Grid.Row="1">
-      <!-- Standard equipment slots panel -->
+      <!-- Standard equipment slots panel - paperdoll layout -->
       <ScrollViewer x:Name="StandardPanel" IsVisible="True">
-        <Grid Margin="8" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="*,*,*,*">
-          <!-- Row 0: Head -->
+        <Grid Margin="4" HorizontalAlignment="Center" VerticalAlignment="Top">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>  <!-- Head -->
+            <RowDefinition Height="Auto"/>  <!-- Neck, Cloak row -->
+            <RowDefinition Height="Auto"/>  <!-- Arms, Chest, Rings -->
+            <RowDefinition Height="Auto"/>  <!-- Weapons, Belt -->
+            <RowDefinition Height="Auto"/>  <!-- Boots, Ammo -->
+          </Grid.RowDefinitions>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+
+          <!-- Row 0: Head (center) -->
           <StackPanel Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" HorizontalAlignment="Center">
             <ContentControl x:Name="SlotHead" Content="{Binding}"/>
           </StackPanel>
 
-          <!-- Row 1: Cloak, Neck -->
-          <StackPanel Grid.Row="1" Grid.Column="0" HorizontalAlignment="Center">
+          <!-- Row 1: Cloak (left), AC display (center), Neck (right) -->
+          <StackPanel Grid.Row="1" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
             <ContentControl x:Name="SlotCloak" Content="{Binding}"/>
           </StackPanel>
-          <StackPanel Grid.Row="1" Grid.Column="3" HorizontalAlignment="Center">
+          <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <!-- AC Display -->
+            <Border Classes="ac-display"
+                    ToolTip.Tip="Natural Armor Class">
+              <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="0">
+                <TextBlock Text="AC"
+                           FontSize="9"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                <TextBlock x:Name="ACValueText"
+                           Text="{Binding NaturalAC, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           FontSize="16"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+          <StackPanel Grid.Row="1" Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center">
             <ContentControl x:Name="SlotNeck" Content="{Binding}"/>
           </StackPanel>
 
-          <!-- Row 2: Arms, Chest, Left Ring, Right Ring -->
-          <StackPanel Grid.Row="2" Grid.Column="0" HorizontalAlignment="Center">
+          <!-- Row 2: Arms (left), Chest (center), Rings (right) -->
+          <StackPanel Grid.Row="2" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
             <ContentControl x:Name="SlotArms" Content="{Binding}"/>
           </StackPanel>
-          <StackPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" HorizontalAlignment="Center">
+          <StackPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center">
             <ContentControl x:Name="SlotChest" Content="{Binding}"/>
           </StackPanel>
-          <StackPanel Grid.Row="2" Grid.Column="3" HorizontalAlignment="Center">
-            <StackPanel Spacing="4">
+          <StackPanel Grid.Row="2" Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <StackPanel Spacing="2">
               <ContentControl x:Name="SlotLeftRing" Content="{Binding}"/>
               <ContentControl x:Name="SlotRightRing" Content="{Binding}"/>
             </StackPanel>
           </StackPanel>
 
-          <!-- Row 3: Right Hand, Belt, Left Hand -->
-          <StackPanel Grid.Row="3" Grid.Column="0" HorizontalAlignment="Center">
+          <!-- Row 3: Right Hand (left), Belt (center), Left Hand (right) -->
+          <StackPanel Grid.Row="3" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Top">
             <ContentControl x:Name="SlotRightHand" Content="{Binding}"/>
           </StackPanel>
-          <StackPanel Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" HorizontalAlignment="Center">
+          <StackPanel Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center">
             <ContentControl x:Name="SlotBelt" Content="{Binding}"/>
           </StackPanel>
-          <StackPanel Grid.Row="3" Grid.Column="3" HorizontalAlignment="Center">
+          <StackPanel Grid.Row="3" Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Top">
             <ContentControl x:Name="SlotLeftHand" Content="{Binding}"/>
           </StackPanel>
 
-          <!-- Row 4: Boots, Ammunition slots -->
-          <StackPanel Grid.Row="4" Grid.Column="0" HorizontalAlignment="Center">
+          <!-- Row 4: Boots (left), Ammunition slots (right) -->
+          <StackPanel Grid.Row="4" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
             <ContentControl x:Name="SlotBoots" Content="{Binding}"/>
           </StackPanel>
-          <StackPanel Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="4">
+          <StackPanel Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2">
             <ContentControl x:Name="SlotArrows" Content="{Binding}"/>
             <ContentControl x:Name="SlotBullets" Content="{Binding}"/>
             <ContentControl x:Name="SlotBolts" Content="{Binding}"/>
