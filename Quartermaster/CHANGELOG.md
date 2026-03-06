@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.27-alpha] - 2026-03-05
+**Branch**: `quartermaster/issue-1580` | **PR**: #TBD
+
+### Sprint: Item Palette UX & Equipment Layout (#1580)
+
+- [ ] #1313 — Drag from item palette to backpack
+- [ ] #1209 — Refine item palette search/filtering
+- [ ] #1484 — Game-Style Equipment Paperdoll Layout
+
+---
+
 ## [0.2.26-alpha] - 2026-03-05
 **Branch**: `quartermaster/issue-1611` | **PR**: #1612
 
