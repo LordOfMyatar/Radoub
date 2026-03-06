@@ -32,7 +32,7 @@
                                        FontSize="{DynamicResource FontSizeSmall}"
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock Grid.Column="1" Text="CL"
+                            <TextBlock Grid.Column="1" Text="Caster Level"
                                        FontSize="{DynamicResource FontSizeSmall}"
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
