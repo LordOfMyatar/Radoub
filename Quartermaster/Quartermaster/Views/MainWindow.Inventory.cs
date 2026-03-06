@@ -158,6 +158,7 @@ public partial class MainWindow
 
     /// <summary>
     /// Handles item dropped on backpack list.
+    /// Supports drops from equipment slots (EquippedItem) and palette (PaletteItem/ItemViewModels).
     /// </summary>
     private void OnBackpackItemDropped(object? sender, Radoub.UI.Controls.ItemDropEventArgs e)
     {
@@ -173,6 +174,25 @@ public partial class MainWindow
                     UnifiedLogger.LogInventory(LogLevel.INFO,
                         $"Dropped {equippedItem.Name} from {slot.Name} to backpack");
                 }
+            }
+        }
+        else if (e.DataObject.Contains("PaletteItem") || e.DataObject.Contains("ItemViewModels"))
+        {
+            var format = e.DataObject.Contains("PaletteItem") ? "PaletteItem" : "ItemViewModels";
+            var data = e.DataObject.Get(format);
+
+            var items = data switch
+            {
+                IReadOnlyList<ItemViewModel> list => list.ToArray(),
+                ItemViewModel single => new[] { single },
+                _ => null
+            };
+
+            if (items != null && items.Length > 0)
+            {
+                OnAddToBackpackRequested(sender, items);
+                UnifiedLogger.LogInventory(LogLevel.INFO,
+                    $"Dropped {items.Length} item(s) from palette to backpack");
             }
         }
     }
