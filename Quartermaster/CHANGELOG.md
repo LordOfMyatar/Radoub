@@ -15,9 +15,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Item Palette UX & Equipment Layout (#1580)
 
-- [ ] #1313 — Drag from item palette to backpack
-- [ ] #1209 — Refine item palette search/filtering
-- [ ] #1484 — Game-Style Equipment Paperdoll Layout
+- [x] #1313 — Drag from item palette to backpack
+  - Added PaletteItem/ItemViewModels drop handling to backpack drop handler
+  - Reuses existing OnAddToBackpackRequested for item creation
+- [x] #1209 — Refine item palette search/filtering
+  - Added slot-based filtering dropdown (Head, Chest, Right Hand, etc. + Non-Equipable)
+  - Added "Slots" column to item list showing which equipment slots each item fits
+  - Added EquipableSlotFlags/EquipableSlotsDisplay to ItemViewModel
+  - New SlotFilterInfo model and filter state persistence
+- [x] #1484 — Game-Style Equipment Paperdoll Layout
+  - Added SlotSize enum (Small/Medium/Large/Tall) for relative slot sizing
+  - Weapons/cloak use tall slots, chest armor uses large, rings/ammo use small
+  - Added AC display circle in center of paperdoll showing NaturalAC
+  - EquipmentSlotControl template uses dynamic SlotWidth/SlotHeight
 
 ---
 
