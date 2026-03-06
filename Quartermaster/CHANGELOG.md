@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.27-alpha] - 2026-03-05
-**Branch**: `quartermaster/issue-1580` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1580` | **PR**: #1613
 
 ### Sprint: Item Palette UX & Equipment Layout (#1580)
 
