@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Radoub.Formats.Services;
 using Radoub.UI.Models;
+using Radoub.UI.Services;
 using Radoub.UI.Settings;
 using Radoub.UI.ViewModels;
 
@@ -88,6 +89,20 @@ public partial class ItemFilterPanel : UserControl
     /// </summary>
     public static readonly StyledProperty<string> PropertySearchTextProperty =
         AvaloniaProperty.Register<ItemFilterPanel, string>(nameof(PropertySearchText), defaultValue: string.Empty);
+
+    /// <summary>
+    /// Available slot filters for the dropdown.
+    /// </summary>
+    public static readonly StyledProperty<ObservableCollection<SlotFilterInfo>> SlotFiltersProperty =
+        AvaloniaProperty.Register<ItemFilterPanel, ObservableCollection<SlotFilterInfo>>(
+            nameof(SlotFilters),
+            defaultValue: new ObservableCollection<SlotFilterInfo>());
+
+    /// <summary>
+    /// Currently selected slot filter.
+    /// </summary>
+    public static readonly StyledProperty<SlotFilterInfo?> SelectedSlotFilterProperty =
+        AvaloniaProperty.Register<ItemFilterPanel, SlotFilterInfo?>(nameof(SelectedSlotFilter));
 
     #endregion
 
@@ -222,6 +237,24 @@ public partial class ItemFilterPanel : UserControl
         set => SetValue(PropertySearchTextProperty, value);
     }
 
+    /// <summary>
+    /// Available slot filters.
+    /// </summary>
+    public ObservableCollection<SlotFilterInfo> SlotFilters
+    {
+        get => GetValue(SlotFiltersProperty);
+        set => SetValue(SlotFiltersProperty, value);
+    }
+
+    /// <summary>
+    /// Currently selected slot filter. Null or AllSlots means no filter.
+    /// </summary>
+    public SlotFilterInfo? SelectedSlotFilter
+    {
+        get => GetValue(SelectedSlotFilterProperty);
+        set => SetValue(SelectedSlotFilterProperty, value);
+    }
+
     #endregion
 
     #region Lifecycle
@@ -229,6 +262,7 @@ public partial class ItemFilterPanel : UserControl
     private void OnLoaded(object? sender, RoutedEventArgs e)
     {
         LoadItemTypes();
+        LoadSlotFilters();
         LoadFilterState();
         _isInitialized = true;
         ApplyFilter();
@@ -279,7 +313,8 @@ public partial class ItemFilterPanel : UserControl
         }
         else if (change.Property == ShowStandardProperty ||
                  change.Property == ShowCustomProperty ||
-                 change.Property == SelectedItemTypeProperty)
+                 change.Property == SelectedItemTypeProperty ||
+                 change.Property == SelectedSlotFilterProperty)
         {
             ApplyFilter();
         }
@@ -360,6 +395,23 @@ public partial class ItemFilterPanel : UserControl
         SelectedItemType = ItemTypeInfo.AllTypes;
     }
 
+    private void LoadSlotFilters()
+    {
+        SlotFilters.Clear();
+        SlotFilters.Add(SlotFilterInfo.AllSlots);
+
+        // Add standard equipment slots
+        foreach (var slot in EquipmentSlotFactory.CreateStandardSlots())
+        {
+            SlotFilters.Add(new SlotFilterInfo(slot.SlotFlag, slot.Name));
+        }
+
+        // Add non-equipable option at the end
+        SlotFilters.Add(SlotFilterInfo.NonEquipable);
+
+        SelectedSlotFilter = SlotFilterInfo.AllSlots;
+    }
+
     #endregion
 
     #region Filtering
@@ -380,6 +432,7 @@ public partial class ItemFilterPanel : UserControl
         var searchLower = SearchText?.ToLowerInvariant() ?? string.Empty;
         var propertySearchLower = PropertySearchText?.ToLowerInvariant() ?? string.Empty;
         var typeFilter = SelectedItemType;
+        var slotFilter = SelectedSlotFilter;
         var showStandard = ShowStandard;
         var showCustom = ShowCustom;
 
@@ -388,7 +441,7 @@ public partial class ItemFilterPanel : UserControl
 
         foreach (var item in Items)
         {
-            if (MatchesFilter(item, searchLower, propertySearchLower, typeFilter, showStandard, showCustom))
+            if (MatchesFilter(item, searchLower, propertySearchLower, typeFilter, slotFilter, showStandard, showCustom))
             {
                 FilteredItems.Add(item);
                 matchCount++;
@@ -408,6 +461,7 @@ public partial class ItemFilterPanel : UserControl
         string searchLower,
         string propertySearchLower,
         ItemTypeInfo? typeFilter,
+        SlotFilterInfo? slotFilter,
         bool showStandard,
         bool showCustom)
     {
@@ -420,6 +474,21 @@ public partial class ItemFilterPanel : UserControl
         {
             if (item.BaseItem != typeFilter.BaseItemIndex)
                 return false;
+        }
+
+        // Slot filter
+        if (slotFilter != null && !slotFilter.IsAllSlots)
+        {
+            if (slotFilter.IsNonEquipable)
+            {
+                // Show only items that cannot be equipped
+                if (item.IsEquipable) return false;
+            }
+            else
+            {
+                // Show only items that can go in the selected slot
+                if ((item.EquipableSlotFlags & slotFilter.SlotFlag) == 0) return false;
+            }
         }
 
         // Text search (name, tag, resref)
@@ -477,6 +546,17 @@ public partial class ItemFilterPanel : UserControl
         {
             SelectedItemType = ItemTypeInfo.AllTypes;
         }
+
+        // Restore selected slot filter
+        if (state.SelectedSlotFlag.HasValue)
+        {
+            SelectedSlotFilter = SlotFilters.FirstOrDefault(s => s.SlotFlag == state.SelectedSlotFlag.Value)
+                                ?? SlotFilterInfo.AllSlots;
+        }
+        else
+        {
+            SelectedSlotFilter = SlotFilterInfo.AllSlots;
+        }
     }
 
     private void SaveFilterState()
@@ -489,7 +569,8 @@ public partial class ItemFilterPanel : UserControl
             ShowCustom = ShowCustom,
             SearchText = string.IsNullOrEmpty(SearchText) ? null : SearchText,
             SelectedBaseItemIndex = SelectedItemType?.IsAllTypes == true ? null : SelectedItemType?.BaseItemIndex,
-            PropertySearchText = string.IsNullOrEmpty(PropertySearchText) ? null : PropertySearchText
+            PropertySearchText = string.IsNullOrEmpty(PropertySearchText) ? null : PropertySearchText,
+            SelectedSlotFlag = SelectedSlotFilter?.IsAllSlots == true ? null : SelectedSlotFilter?.SlotFlag
         };
 
         FilterSettings.SetFilterState(ContextKey, state);

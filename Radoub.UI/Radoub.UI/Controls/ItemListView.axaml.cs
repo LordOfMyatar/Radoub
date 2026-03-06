@@ -87,7 +87,7 @@ public partial class ItemListView : UserControl
     public event EventHandler<ItemViewModel>? DeleteRequested;
 
     // Column keys for persistence (must match XAML column order)
-    private static readonly string[] ColumnKeys = { "Icon", "Name", "ResRef", "Tag", "Type", "Value", "Properties" };
+    private static readonly string[] ColumnKeys = { "Icon", "Name", "ResRef", "Tag", "Type", "Slots", "Value", "Properties" };
 
     // Drag state
     private Point _dragStartPoint;

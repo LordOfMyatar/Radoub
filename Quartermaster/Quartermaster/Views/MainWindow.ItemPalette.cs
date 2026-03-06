@@ -270,7 +270,7 @@ public partial class MainWindow
                 foreach (var cached in _cachedPaletteData)
                 {
                     token.ThrowIfCancellationRequested();
-                    vms.Add(new ItemViewModel
+                    var vm = new ItemViewModel
                     {
                         ResRef = cached.ResRef,
                         Name = cached.DisplayName,
@@ -280,7 +280,9 @@ public partial class MainWindow
                         Tag = !string.IsNullOrEmpty(cached.Tag) ? cached.Tag : cached.ResRef,
                         PropertiesDisplay = string.Empty,
                         Source = cached.IsStandard ? GameResourceSource.Bif : GameResourceSource.Override
-                    });
+                    };
+                    ItemFactory.PopulateEquipableSlots(vm, cached.BaseItemType);
+                    vms.Add(vm);
                 }
                 return vms;
             }, token);

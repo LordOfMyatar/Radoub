@@ -240,6 +240,29 @@ public partial class ItemViewModel : ObservableObject
     /// </summary>
     public bool HasGameIcon => _iconLoader != null || _iconBitmap != null;
 
+    #region Equipment Slot Info
+
+    /// <summary>
+    /// Display string showing which equipment slots this item can go into.
+    /// E.g., "Head", "Right Hand, Left Hand", or "" for non-equipable items.
+    /// </summary>
+    [ObservableProperty]
+    private string _equipableSlotsDisplay = string.Empty;
+
+    /// <summary>
+    /// Bitmask of valid equipment slots from baseitems.2da EquipableSlots column.
+    /// 0 means non-equipable (backpack-only item like potions, scrolls).
+    /// </summary>
+    [ObservableProperty]
+    private int _equipableSlotFlags;
+
+    /// <summary>
+    /// True if this item can be equipped in at least one slot.
+    /// </summary>
+    public bool IsEquipable => EquipableSlotFlags != 0;
+
+    #endregion
+
     #region Inventory Metadata (for backpack items)
 
     /// <summary>

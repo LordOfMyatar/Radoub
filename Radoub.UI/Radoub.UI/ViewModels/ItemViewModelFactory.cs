@@ -2,6 +2,7 @@ using System.Linq;
 using Radoub.Formats.Common;
 using Radoub.Formats.Services;
 using Radoub.Formats.Uti;
+using Radoub.UI.Services;
 
 namespace Radoub.UI.ViewModels;
 
@@ -33,7 +34,9 @@ public class ItemViewModelFactory
         var baseItemName = ResolveBaseItemName(item.BaseItem);
         var propertiesDisplay = ResolvePropertiesDisplay(item.Properties);
 
-        return new ItemViewModel(item, displayName, baseItemName, propertiesDisplay, source);
+        var vm = new ItemViewModel(item, displayName, baseItemName, propertiesDisplay, source);
+        PopulateEquipableSlots(vm, item.BaseItem);
+        return vm;
     }
 
     /// <summary>
@@ -57,9 +60,11 @@ public class ItemViewModelFactory
         var baseItemName = ResolveBaseItemName(item.BaseItem);
         var propertiesDisplay = ResolvePropertiesDisplay(item.Properties);
 
-        return new ItemViewModel(
+        var vm = new ItemViewModel(
             item, displayName, baseItemName, propertiesDisplay,
             gridPositionX, gridPositionY, isDropable, isPickpocketable, source);
+        PopulateEquipableSlots(vm, item.BaseItem);
+        return vm;
     }
 
     /// <summary>
@@ -89,6 +94,26 @@ public class ItemViewModelFactory
     /// Get the base item type name (for caching).
     /// </summary>
     public string GetBaseItemTypeName(int baseItem) => ResolveBaseItemName(baseItem);
+
+    /// <summary>
+    /// Populate equipable slot info on an ItemViewModel using baseitems.2da lookup.
+    /// Works for both full and cache-loaded items.
+    /// </summary>
+    public void PopulateEquipableSlots(ItemViewModel vm, int baseItem)
+    {
+        var validator = new EquipmentSlotValidator(_gameData);
+        var flags = validator.GetEquipableSlots(baseItem);
+
+        if (flags == null || flags.Value == 0)
+        {
+            vm.EquipableSlotFlags = 0;
+            vm.EquipableSlotsDisplay = string.Empty;
+            return;
+        }
+
+        vm.EquipableSlotFlags = flags.Value;
+        vm.EquipableSlotsDisplay = string.Join(", ", validator.GetValidSlotNames(baseItem));
+    }
 
     private string ResolveDisplayName(UtiFile item)
     {
