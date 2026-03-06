@@ -261,6 +261,14 @@
                                     <TextBlock Text="Feats" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
+                            <Button x:Name="NavSpecialAbilities" Classes="NavButton"
+                                    Click="OnNavButtonClick" Tag="SpecialAbilities"
+                                    AutomationProperties.AutomationId="NavButton_SpecialAbilities">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="✧" FontSize="{DynamicResource FontSizeNormal}" Classes="NavIcon"/>
+                                    <TextBlock Text="Spell-Like" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
                             <Button x:Name="NavSkills" Classes="NavButton"
                                     Click="OnNavButtonClick" Tag="Skills"
                                     AutomationProperties.AutomationId="NavButton_Skills">
@@ -342,6 +350,10 @@
                     <!-- Feats Panel -->
                     <panels:FeatsPanel x:Name="FeatsPanelContent" IsVisible="False"
                                        AutomationProperties.AutomationId="FeatsPanel"/>
+
+                    <!-- Special Abilities Panel -->
+                    <panels:SpecialAbilitiesPanel x:Name="SpecialAbilitiesPanelContent" IsVisible="False"
+                                                   AutomationProperties.AutomationId="SpecialAbilitiesPanel"/>
 
                     <!-- Spells Panel -->
                     <panels:SpellsPanel x:Name="SpellsPanelContent" IsVisible="False"

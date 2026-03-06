@@ -155,7 +155,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         FeatsPanelContent.SetDisplayService(DisplayService);
         FeatsPanelContent.SetIconService(IconService);
         FeatsPanelContent.FeatsChanged += (s, e) => MarkDirty();
-        FeatsPanelContent.SpecialAbilitiesChanged += (s, e) => MarkDirty();
+
+        // Initialize special abilities panel with display service
+        SpecialAbilitiesPanelContent.SetDisplayService(DisplayService);
+        SpecialAbilitiesPanelContent.SpecialAbilitiesChanged += (s, e) => MarkDirty();
 
         // Initialize skills panel with display service for 2DA/TLK lookups
         SkillsPanelContent.SetDisplayService(DisplayService);
@@ -248,6 +251,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             "Classes" => NavClasses,
             "Skills" => NavSkills,
             "Feats" => NavFeats,
+            "SpecialAbilities" => NavSpecialAbilities,
             "Spells" => NavSpells,
             "Inventory" => NavInventory,
             "Appearance" => NavAppearance,
@@ -269,6 +273,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         ClassesPanelContent.IsVisible = false;
         SkillsPanelContent.IsVisible = false;
         FeatsPanelContent.IsVisible = false;
+        SpecialAbilitiesPanelContent.IsVisible = false;
         SpellsPanelContent.IsVisible = false;
         InventoryPanelContent.IsVisible = false;
         AppearancePanelContent.IsVisible = false;
@@ -293,6 +298,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 break;
             case "Feats":
                 FeatsPanelContent.IsVisible = true;
+                break;
+            case "SpecialAbilities":
+                SpecialAbilitiesPanelContent.IsVisible = true;
                 break;
             case "Spells":
                 SpellsPanelContent.IsVisible = true;
@@ -345,6 +353,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             StatsPanelContent.LoadCreature(_currentCreature);
             FeatsPanelContent.LoadCreature(_currentCreature);
+            SpecialAbilitiesPanelContent.LoadCreature(_currentCreature);
             SpellsPanelContent.LoadCreature(_currentCreature);
             UpdateCharacterHeader();
         }
@@ -471,6 +480,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         ClassesPanelContent.LoadCreature(creature);
         SkillsPanelContent.LoadCreature(creature);
         FeatsPanelContent.LoadCreature(creature);
+        SpecialAbilitiesPanelContent.LoadCreature(creature);
         SpellsPanelContent.LoadCreature(creature);
         ScriptsPanelContent.LoadCreature(creature);
         AppearancePanelContent.LoadCreature(creature);
@@ -514,6 +524,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         ClassesPanelContent.ClearPanel();
         SkillsPanelContent.ClearPanel();
         FeatsPanelContent.ClearPanel();
+        SpecialAbilitiesPanelContent.ClearPanel();
         SpellsPanelContent.ClearPanel();
         ScriptsPanelContent.ClearPanel();
         AppearancePanelContent.ClearPanel();

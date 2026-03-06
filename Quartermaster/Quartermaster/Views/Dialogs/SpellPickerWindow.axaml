@@ -43,7 +43,7 @@
         </Grid>
 
         <!-- Spells List -->
-        <Border Grid.Row="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Padding="5">
+        <Border Grid.Row="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Padding="5,5,20,5">
             <ListBox x:Name="SpellsListBox"
                      AutomationProperties.AutomationId="SpellsListBox"
                      SelectionChanged="OnSpellSelected">

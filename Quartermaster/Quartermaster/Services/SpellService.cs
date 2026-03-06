@@ -72,6 +72,49 @@ public class SpellService
     }
 
     /// <summary>
+    /// Gets spell IDs filtered to real spells (UserType=1) and special abilities (UserType=2).
+    /// Excludes feat-implemented entries (UserType=3) and item activations (UserType=4).
+    /// </summary>
+    public List<int> GetSpellAndAbilityIds()
+    {
+        var spellIds = new List<int>();
+        int consecutiveEmpty = 0;
+        const int maxConsecutiveEmpty = 100;
+
+        for (int i = 0; i < 2000; i++)
+        {
+            var label = _gameDataService.Get2DAValue("spells", i, "Label");
+            if (string.IsNullOrEmpty(label) || label == "****")
+            {
+                consecutiveEmpty++;
+                if (spellIds.Count > 0 && consecutiveEmpty >= maxConsecutiveEmpty)
+                    break;
+                continue;
+            }
+
+            consecutiveEmpty = 0;
+
+            var spellName = _gameDataService.Get2DAValue("spells", i, "Name");
+            if (string.IsNullOrEmpty(spellName) || spellName == "****")
+                continue;
+
+            var userTypeStr = _gameDataService.Get2DAValue("spells", i, "UserType");
+            if (!string.IsNullOrEmpty(userTypeStr) && userTypeStr != "****"
+                && int.TryParse(userTypeStr, out int userType))
+            {
+                // 1=spell, 2=special ability — include these
+                // 3=feat, 4=item — exclude these
+                if (userType != 1 && userType != 2)
+                    continue;
+            }
+
+            spellIds.Add(i);
+        }
+
+        return spellIds;
+    }
+
+    /// <summary>
     /// Gets detailed spell information from spells.2da.
     /// </summary>
     public SpellInfo? GetSpellInfo(int spellId)

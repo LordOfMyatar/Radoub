@@ -651,6 +651,7 @@ public partial class CreatureDisplayService
 
     public string GetSpellName(int spellId) => Spells.GetSpellName(spellId);
     public List<int> GetAllSpellIds() => Spells.GetAllSpellIds();
+    public List<int> GetSpellAndAbilityIds() => Spells.GetSpellAndAbilityIds();
     public SpellInfo? GetSpellInfo(int spellId) => Spells.GetSpellInfo(spellId);
     public string GetSpellSchoolName(SpellSchool school) => SpellService.GetSpellSchoolName(school);
     public int GetMaxSpellLevel(int classId, int classLevel) => Spells.GetMaxSpellLevel(classId, classLevel);

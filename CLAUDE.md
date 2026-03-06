@@ -480,6 +480,19 @@ dotnet nbgv get-version --project [ToolDir]
 - **Why**: During test runs, VSCode or other apps can steal focus. Keyboard shortcuts like Ctrl+Shift+E open VSCode's file explorer instead of triggering test app actions.
 - See `FlaUITestBase.EnsureFocused()` for focus verification pattern
 
+**Test Output (MANDATORY)**:
+- **NEVER pipe test output through `tail` or `head`** — this discards failures and leads to false "all tests pass" claims
+- Run tests with `run_in_background`, then grep the output file for results:
+  ```bash
+  # Run tests (output goes to a file automatically)
+  dotnet test Radoub.sln --no-build  # with run_in_background=true
+
+  # After completion, grep the output file for summary + failures
+  grep -E "^(Failed|Passed|  Failed)" $OUTPUT_FILE
+  ```
+- The `Failed!` and `Passed!` summary lines plus any `  Failed` detail lines give full visibility without reading thousands of lines
+- If failures appear, read the full output file for stack traces and error details
+
 **Before PRs to Main**:
 - All tools must build
 - All tool tests must pass
