@@ -70,12 +70,14 @@ public partial class SpecialAbilitiesPanel : BasePanelControl
 
         foreach (var ability in creature.SpecAbilityList)
         {
+            var spellInfo = _displayService?.GetSpellInfo(ability.Spell);
             var vm = new SpecialAbilityViewModel
             {
                 SpellId = ability.Spell,
                 AbilityName = GetSpellName(ability.Spell),
                 CasterLevelDisplay = $"CL {ability.SpellCasterLevel}",
-                Flags = ability.SpellFlags
+                Flags = ability.SpellFlags,
+                IsSpellLike = spellInfo != null && spellInfo.ClassLevels.Count > 0
             };
             // Set CasterLevel directly to avoid triggering callback during load
             vm._casterLevel = ability.SpellCasterLevel;
@@ -196,12 +198,15 @@ public partial class SpecialAbilitiesPanel : BasePanelControl
             };
             CurrentCreature.SpecAbilityList.Add(newAbility);
 
+            var spellInfo = _displayService?.GetSpellInfo(spellId);
+
             var vm = new SpecialAbilityViewModel
             {
                 SpellId = spellId,
                 AbilityName = picker.SelectedSpellName,
                 CasterLevelDisplay = "CL 1",
-                Flags = 0x01
+                Flags = 0x01,
+                IsSpellLike = spellInfo != null && spellInfo.ClassLevels.Count > 0
             };
             vm._casterLevel = 1;
             vm.OnCasterLevelChanged = OnAbilityCasterLevelChanged;

@@ -56,9 +56,10 @@
                                                    Text="{Binding AbilityName}"
                                                    VerticalAlignment="Center"
                                                    TextTrimming="CharacterEllipsis"/>
-                                        <!-- Caster Level -->
+                                        <!-- Caster Level (greyed out for monster abilities) -->
                                         <NumericUpDown Grid.Column="1"
                                                        Value="{Binding CasterLevel, Mode=TwoWay}"
+                                                       IsEnabled="{Binding IsSpellLike}"
                                                        Minimum="1" Maximum="40" Increment="1"
                                                        FormatString="0"
                                                        FontSize="{DynamicResource FontSizeSmall}"

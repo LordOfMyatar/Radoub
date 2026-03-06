@@ -52,6 +52,12 @@ public class SpecialAbilityViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// True if this ability is a spell-like ability (has class spell levels in spells.2da).
+    /// False for pure monster abilities where caster level is not applicable.
+    /// </summary>
+    public bool IsSpellLike { get; set; } = true;
+
     public Action<SpecialAbilityViewModel>? OnCasterLevelChanged { get; set; }
     public Action<SpecialAbilityViewModel>? OnFlagsChanged { get; set; }
     public ICommand? RemoveCommand { get; set; }
