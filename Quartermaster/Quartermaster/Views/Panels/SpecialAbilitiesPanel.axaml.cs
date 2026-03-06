@@ -160,7 +160,7 @@ public partial class SpecialAbilitiesPanel : BasePanelControl
     {
         if (_displayService == null || CurrentCreature == null) return;
 
-        var spellIds = _displayService.GetAllSpellIds();
+        var spellIds = _displayService.GetSpellAndAbilityIds();
         var spells = new List<(int Id, string Name, int InnateLevel)>();
 
         foreach (var spellId in spellIds)
