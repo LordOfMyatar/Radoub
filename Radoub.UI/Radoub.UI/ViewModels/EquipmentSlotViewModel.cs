@@ -5,17 +5,22 @@ namespace Radoub.UI.ViewModels;
 
 /// <summary>
 /// Visual size categories for equipment slot rendering in the paperdoll layout.
+/// Base grid unit is 32px. Sizes are expressed as grid multiples (WxH).
 /// </summary>
 public enum SlotSize
 {
-    /// <summary>Small square (rings, amulet). 48x48.</summary>
+    /// <summary>1x1 grid unit (rings, amulet, bullets). 32x32.</summary>
     Small,
-    /// <summary>Standard square (head, belt, boots, gloves, ammo). 64x64.</summary>
+    /// <summary>2x1 grid units (belt). 64x32.</summary>
+    Wide,
+    /// <summary>2x2 grid units (head, boots, gloves). 64x64.</summary>
     Medium,
-    /// <summary>Large square (chest armor). 80x80.</summary>
+    /// <summary>2x3 grid units (armor, cloak, left hand). 64x96.</summary>
     Large,
-    /// <summary>Tall rectangle (weapons, cloak, shield). 64x96.</summary>
-    Tall
+    /// <summary>1x3 grid units (arrows, bolts). 32x96.</summary>
+    Tall,
+    /// <summary>2x4 grid units (right hand). 64x128.</summary>
+    ExtraTall
 }
 
 /// <summary>
@@ -174,16 +179,16 @@ public static class EquipmentSlotFactory
             new(1, FlagChest, "Chest") { Size = SlotSize.Large },
             new(2, FlagBoots, "Boots") { Size = SlotSize.Medium },
             new(3, FlagArms, "Arms") { Size = SlotSize.Medium },
-            new(4, FlagRightHand, "Right Hand") { Size = SlotSize.Tall },
-            new(5, FlagLeftHand, "Left Hand") { Size = SlotSize.Tall },
-            new(6, FlagCloak, "Cloak") { Size = SlotSize.Tall },
+            new(4, FlagRightHand, "Right Hand") { Size = SlotSize.ExtraTall },
+            new(5, FlagLeftHand, "Left Hand") { Size = SlotSize.Large },
+            new(6, FlagCloak, "Cloak") { Size = SlotSize.Large },
             new(7, FlagLeftRing, "Left Ring") { Size = SlotSize.Small },
             new(8, FlagRightRing, "Right Ring") { Size = SlotSize.Small },
             new(9, FlagNeck, "Neck") { Size = SlotSize.Small },
-            new(10, FlagBelt, "Belt") { Size = SlotSize.Medium },
-            new(11, FlagArrows, "Arrows") { Size = SlotSize.Small },
+            new(10, FlagBelt, "Belt") { Size = SlotSize.Wide },
+            new(11, FlagArrows, "Arrows") { Size = SlotSize.Tall },
             new(12, FlagBullets, "Bullets") { Size = SlotSize.Small },
-            new(13, FlagBolts, "Bolts") { Size = SlotSize.Small }
+            new(13, FlagBolts, "Bolts") { Size = SlotSize.Tall }
         };
     }
 

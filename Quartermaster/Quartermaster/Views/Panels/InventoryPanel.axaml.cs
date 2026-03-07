@@ -208,16 +208,6 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
         // Don't clear palette - it's shared game data, not per-creature
         HasBackpackSelection = false;
         HasPaletteSelection = false;
-        SetNaturalAC(0);
-    }
-
-    /// <summary>
-    /// Sets the natural AC value displayed in the equipment paperdoll.
-    /// </summary>
-    public void SetNaturalAC(int ac)
-    {
-        if (_equipmentPanel != null)
-            _equipmentPanel.NaturalAC = ac;
     }
 
     public void UpdateInventoryCounts(out int equippedCount, out int backpackCount)

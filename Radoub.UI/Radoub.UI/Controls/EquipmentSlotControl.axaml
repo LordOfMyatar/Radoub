@@ -36,12 +36,12 @@
               <Border x:Name="EmptyPlaceholder"
                       IsVisible="{Binding IsEmpty, FallbackValue=True}"
                       Background="Transparent"
-                      CornerRadius="3">
+                      CornerRadius="3"
+                      Padding="4">
                 <svg:Svg Path="{Binding IconPath}"
-                         Width="40"
-                         Height="40"
                          HorizontalAlignment="Center"
                          VerticalAlignment="Center"
+                         Stretch="Uniform"
                          Opacity="0.5"/>
               </Border>
 
@@ -55,18 +55,15 @@
                   <!-- Actual game icon (if available) -->
                   <Image Source="{Binding EquippedItem.IconBitmap}"
                          IsVisible="{Binding EquippedItem.HasGameIcon, FallbackValue=False}"
-                         Width="48"
-                         Height="48"
                          HorizontalAlignment="Center"
                          VerticalAlignment="Center"
                          Stretch="Uniform"/>
                   <!-- Placeholder SVG (fallback) -->
                   <svg:Svg Path="{Binding IconPath}"
                            IsVisible="{Binding EquippedItem.HasGameIcon, Converter={x:Static BoolConverters.Not}, FallbackValue=True}"
-                           Width="48"
-                           Height="48"
                            HorizontalAlignment="Center"
-                           VerticalAlignment="Center"/>
+                           VerticalAlignment="Center"
+                           Stretch="Uniform"/>
                 </Grid>
               </Border>
 

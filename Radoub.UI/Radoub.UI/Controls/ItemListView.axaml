@@ -13,7 +13,7 @@
     </Style>
   </UserControl.Styles>
 
-  <Grid RowDefinitions="*">
+  <Grid x:Name="DropTargetGrid" RowDefinitions="*" Background="Transparent">
     <!-- DataGrid -->
     <DataGrid Grid.Row="0"
               x:Name="ItemsGrid"

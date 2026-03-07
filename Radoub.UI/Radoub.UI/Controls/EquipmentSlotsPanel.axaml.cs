@@ -35,12 +35,6 @@ public partial class EquipmentSlotsPanel : UserControl
         AvaloniaProperty.Register<EquipmentSlotsPanel, bool>(nameof(ShowNaturalSlots), defaultValue: false);
 
     /// <summary>
-    /// Natural AC value to display in the paperdoll.
-    /// </summary>
-    public static readonly StyledProperty<int> NaturalACProperty =
-        AvaloniaProperty.Register<EquipmentSlotsPanel, int>(nameof(NaturalAC), defaultValue: 0);
-
-    /// <summary>
     /// Event raised when a slot is clicked.
     /// </summary>
     public event EventHandler<EquipmentSlotViewModel>? SlotClicked;
@@ -116,15 +110,6 @@ public partial class EquipmentSlotsPanel : UserControl
         set => SetValue(ShowNaturalSlotsProperty, value);
     }
 
-    /// <summary>
-    /// Natural AC value displayed in the paperdoll center.
-    /// </summary>
-    public int NaturalAC
-    {
-        get => GetValue(NaturalACProperty);
-        set => SetValue(NaturalACProperty, value);
-    }
-
     private void OnLoaded(object? sender, RoutedEventArgs e)
     {
         // Create slot controls if not yet created
@@ -196,10 +181,12 @@ public partial class EquipmentSlotsPanel : UserControl
 
     private static (double width, double height) GetSlotDimensions(SlotSize size) => size switch
     {
-        SlotSize.Small => (48, 48),
-        SlotSize.Medium => (64, 64),
-        SlotSize.Large => (80, 80),
-        SlotSize.Tall => (64, 96),
+        SlotSize.Small => (32, 32),        // 1x1 grid units
+        SlotSize.Wide => (64, 32),         // 2x1 grid units
+        SlotSize.Medium => (64, 64),       // 2x2 grid units
+        SlotSize.Large => (64, 96),        // 2x3 grid units
+        SlotSize.Tall => (32, 96),         // 1x3 grid units
+        SlotSize.ExtraTall => (64, 128),   // 2x4 grid units
         _ => (64, 64)
     };
 
