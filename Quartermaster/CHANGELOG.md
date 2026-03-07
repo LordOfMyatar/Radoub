@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.28-alpha] - 2026-03-07
+**Branch**: `quartermaster/issue-1600` | **PR**: #TBD
+
+### Sprint: NCW UX Polish (Part 1) (#1600)
+
+- [ ] #1597 — UX: NCW Identity step should be separate from Summary, Portrait should move there
+- [ ] #1596 — UX: NCW sound set Browse button is oddly placed and hard to find
+- [ ] #1595 — NCW should validate/prompt for filename at wizard start
+
+---
+
 ## [0.2.27-alpha] - 2026-03-06
 **Branch**: `quartermaster/issue-1580` | **PR**: #1613
 
