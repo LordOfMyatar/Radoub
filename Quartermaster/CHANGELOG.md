@@ -15,9 +15,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: NCW UX Polish (Part 1) (#1600)
 
-- [ ] #1597 — UX: NCW Identity step should be separate from Summary, Portrait should move there
-- [ ] #1596 — UX: NCW sound set Browse button is oddly placed and hard to find
-- [ ] #1595 — NCW should validate/prompt for filename at wizard start
+- [x] #1597 — UX: NCW Identity step separate from Summary
+  - New Step 3 (Identity) with first/last name, portrait, voice set, age, description
+  - Portrait moved from Appearance to Identity step with Browse button
+  - Summary (Step 11) is now read-only review with Identity summary row
+  - All subsequent steps renumbered (10 → 11 total steps)
+- [x] #1596 — UX: NCW sound set Browse button placement
+  - Voice set Browse button now immediately adjacent to voice set label in Identity step
+- [x] #1595 — NCW filename validation at wizard start
+  - Validates generated ResRef in Identity step name change handler
+  - Warns when filename exceeds Aurora Engine 16-character limit
+  - Advisory note for mixed-case filenames (will be lowercased)
 
 ---
 

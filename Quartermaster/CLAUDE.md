@@ -23,18 +23,19 @@ Tool-specific guidance for Claude Code sessions working with Quartermaster.
 - Sidebar navigation with Stats, Classes, Skills, Feats, Spells, Inventory, Advanced, Appearance, Scripts sections
 - Creature browser for module-level file management
 
-### New Character Wizard (10 Steps)
+### New Character Wizard (11 Steps)
 
 1. **File Type** - UTC/BIC selection with save location picker
 2. **Race & Sex** - Searchable race list with racial info panel (modifiers, favored class, size, description)
-3. **Appearance** - Searchable appearance list, phenotype, portrait browser, body parts, colors (skin/hair/tattoo)
-4. **Class & Package** - Class selection with detail panel, package defaults, cleric domains, familiar selection
-5. **Abilities** - Point-buy allocation with racial modifiers
-6. **Feats** - Available/selected feat lists with prereq checking, auto-assign from package prefs, feat descriptions
-7. **Alignment** - Good/Evil and Law/Chaos axes
+3. **Identity** - Name, portrait, voice set, age, description, filename validation, UTC palette/faction
+4. **Appearance** - Searchable appearance list, phenotype, body parts, colors (skin/hair/tattoo)
+5. **Class & Package** - Class selection with detail panel, package defaults, cleric domains, familiar selection
+6. **Abilities** - Point-buy allocation with racial modifiers
+7. **Feats** - Available/selected feat lists with prereq checking, auto-assign from package prefs, feat descriptions
 8. **Skills** - Skill point allocation with class/cross-class costs
 9. **Spells** - Spell selection for caster classes (arcane known spells, divine auto-grant)
-10. **Equipment & Summary** - Package equipment loading, character name/tag/resref, faction, palette ID
+10. **Equipment** - Package equipment loading
+11. **Summary** - Read-only review of all selections with [Edit] buttons to jump back
 
 Key wizard patterns:
 - All game data sourced from 2DA files (no hardcoded race/class/feat data)
@@ -99,8 +100,9 @@ Quartermaster/
 │   │   ├── Dialogs/
 │   │   │   ├── SettingsWindow.axaml(.cs) - Settings (2 partials)
 │   │   │   ├── SettingsWindow.Paths.cs
-│   │   │   ├── NewCharacterWizardWindow.axaml(.cs) - Wizard (9 partials)
+│   │   │   ├── NewCharacterWizardWindow.axaml(.cs) - Wizard (10 partials)
 │   │   │   ├── NewCharacterWizardWindow.Race.cs
+│   │   │   ├── NewCharacterWizardWindow.Identity.cs
 │   │   │   ├── NewCharacterWizardWindow.Appearance.cs
 │   │   │   ├── NewCharacterWizardWindow.ClassSelection.cs
 │   │   │   ├── NewCharacterWizardWindow.Abilities.cs
@@ -165,7 +167,7 @@ Quartermaster uses C# partial classes extensively to keep files manageable (~500
 | Class | Files | Total Lines |
 |-------|-------|-------------|
 | **MainWindow** | 9 partials | ~3,392 |
-| **NewCharacterWizardWindow** | 9 partials | ~3,572 |
+| **NewCharacterWizardWindow** | 10 partials | ~3,690 |
 | **SettingsWindow** | 2 partials | ~805 |
 | **CreatureDisplayService** | 2 partials | ~927 |
 | **FeatsPanel** | 5 partials | ~1,109 |
@@ -194,12 +196,13 @@ Quartermaster uses C# partial classes extensively to keep files manageable (~500
 |------|-------|---------|
 | .axaml.cs | ~900 | Core: wizard navigation, step management, save location, factions |
 | .Race.cs | ~170 | Step 2: Race selection with info panel |
-| .Appearance.cs | ~270 | Step 3: Appearance, phenotype, portrait, colors |
-| .ClassSelection.cs | ~500 | Step 4: Class, package, domains, familiar |
-| .Abilities.cs | ~400 | Step 5: Point-buy ability allocation |
-| .Feats.cs | ~420 | Step 6: Feat selection with prereqs and descriptions |
+| .Identity.cs | ~115 | Step 3: Identity — name, portrait, voice set, filename validation |
+| .Appearance.cs | ~220 | Step 4: Appearance, phenotype, body parts, colors |
+| .ClassSelection.cs | ~500 | Step 5: Class, package, domains, familiar |
+| .Abilities.cs | ~400 | Step 6: Point-buy ability allocation |
+| .Feats.cs | ~420 | Step 7: Feat selection with prereqs and descriptions |
 | .Skills.cs | ~350 | Step 8: Skill assignment |
-| .EquipmentAndSummary.cs | ~480 | Steps 9-10: Equipment and summary/finalization |
+| .EquipmentAndSummary.cs | ~400 | Steps 10-11: Equipment and summary review |
 | .BuildCreature.cs | ~450 | Character build and GFF field population |
 
 ### When to Split
