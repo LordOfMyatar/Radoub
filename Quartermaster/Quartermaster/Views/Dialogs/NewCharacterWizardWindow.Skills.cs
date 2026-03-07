@@ -12,13 +12,13 @@ using Radoub.UI.Services;
 namespace Quartermaster.Views.Dialogs;
 
 /// <summary>
-/// Step 7: Skill rank allocation.
+/// Step 8: Skill rank allocation.
 /// </summary>
 public partial class NewCharacterWizardWindow
 {
-    #region Step 7: Skills (was Step 6)
+    #region Step 8: Skills
 
-    private void PrepareStep7()
+    private void PrepareStep8()
     {
         // Delegate skill point calculation to CharacterCreationService
         var creationService = new CharacterCreationService(_displayService, _gameDataService);

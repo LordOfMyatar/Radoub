@@ -12,13 +12,13 @@ using Radoub.UI.Services;
 namespace Quartermaster.Views.Dialogs;
 
 /// <summary>
-/// Step 6: Feat selection with prerequisites and auto-assign.
+/// Step 7: Feat selection with prerequisites and auto-assign.
 /// </summary>
 public partial class NewCharacterWizardWindow
 {
-    #region Step 6: Feats
+    #region Step 7: Feats
 
-    private void PrepareStep6()
+    private void PrepareStep7()
     {
         int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
 
@@ -351,7 +351,7 @@ public partial class NewCharacterWizardWindow
         }
 
         // Rebuild available list and re-validate
-        PrepareStep6();
+        PrepareStep7();
         ValidateCurrentStep();
     }
 

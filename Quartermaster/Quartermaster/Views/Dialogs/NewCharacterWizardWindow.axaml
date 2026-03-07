@@ -95,55 +95,62 @@
                 <Border x:Name="Step3Border" Classes="step-indicator">
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <TextBlock x:Name="Step3Number" Text="3" FontWeight="Bold" Width="20"/>
-                        <TextBlock Text="Appearance"/>
+                        <TextBlock Text="Identity"/>
                     </StackPanel>
                 </Border>
 
                 <Border x:Name="Step4Border" Classes="step-indicator">
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <TextBlock x:Name="Step4Number" Text="4" FontWeight="Bold" Width="20"/>
-                        <TextBlock Text="Class"/>
+                        <TextBlock Text="Appearance"/>
                     </StackPanel>
                 </Border>
 
                 <Border x:Name="Step5Border" Classes="step-indicator">
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <TextBlock x:Name="Step5Number" Text="5" FontWeight="Bold" Width="20"/>
-                        <TextBlock Text="Abilities"/>
+                        <TextBlock Text="Class"/>
                     </StackPanel>
                 </Border>
 
                 <Border x:Name="Step6Border" Classes="step-indicator">
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <TextBlock x:Name="Step6Number" Text="6" FontWeight="Bold" Width="20"/>
-                        <TextBlock Text="Feats"/>
+                        <TextBlock Text="Abilities"/>
                     </StackPanel>
                 </Border>
 
                 <Border x:Name="Step7Border" Classes="step-indicator">
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <TextBlock x:Name="Step7Number" Text="7" FontWeight="Bold" Width="20"/>
-                        <TextBlock Text="Skills"/>
+                        <TextBlock Text="Feats"/>
                     </StackPanel>
                 </Border>
 
                 <Border x:Name="Step8Border" Classes="step-indicator">
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <TextBlock x:Name="Step8Number" Text="8" FontWeight="Bold" Width="20"/>
-                        <TextBlock Text="Spells"/>
+                        <TextBlock Text="Skills"/>
                     </StackPanel>
                 </Border>
 
                 <Border x:Name="Step9Border" Classes="step-indicator">
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <TextBlock x:Name="Step9Number" Text="9" FontWeight="Bold" Width="20"/>
-                        <TextBlock Text="Equipment"/>
+                        <TextBlock Text="Spells"/>
                     </StackPanel>
                 </Border>
 
                 <Border x:Name="Step10Border" Classes="step-indicator">
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <TextBlock x:Name="Step10Number" Text="10" FontWeight="Bold" Width="20"/>
+                        <TextBlock Text="Equipment"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="Step11Border" Classes="step-indicator">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock x:Name="Step11Number" Text="11" FontWeight="Bold" Width="20"/>
                         <TextBlock Text="Summary"/>
                     </StackPanel>
                 </Border>
@@ -343,8 +350,134 @@
                 </Grid>
             </Grid>
 
-            <!-- Step 3: Appearance -->
+            <!-- Step 3: Identity -->
             <Grid x:Name="Step3Panel" IsVisible="False">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="Character Identity" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="1" Text="Name your character, choose a portrait and voice set."
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           TextWrapping="Wrap" Margin="0,0,0,15"/>
+
+                <ScrollViewer Grid.Row="2">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Left: Identity Fields -->
+                        <StackPanel Grid.Column="0" Spacing="12" Margin="0,0,20,0">
+                            <!-- Name -->
+                            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                                    Padding="12" CornerRadius="4">
+                                <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="100,*" RowSpacing="8" ColumnSpacing="10">
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="First Name:" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Row="0" Grid.Column="1" x:Name="IdentityFirstNameTextBox"
+                                             Watermark="Enter character name..."
+                                             TextChanged="OnIdentityNameChanged"/>
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Last Name:" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Row="1" Grid.Column="1" x:Name="IdentityLastNameTextBox"
+                                             Watermark="(optional)"/>
+
+                                    <TextBlock Grid.Row="2" Grid.Column="0" x:Name="IdentityAgeLabelText" Text="Age:" VerticalAlignment="Center"/>
+                                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                        <NumericUpDown x:Name="IdentityAgeNumericUpDown"
+                                                       Minimum="1" Maximum="9999" Value="25"
+                                                       HorizontalAlignment="Left" Width="100"
+                                                       FormatString="0"/>
+                                        <TextBlock x:Name="IdentityAgeNote" Text="(BIC only)"
+                                                   VerticalAlignment="Center" FontSize="11"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                    </StackPanel>
+
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Description:" VerticalAlignment="Top" Margin="0,4,0,0"/>
+                                    <TextBox Grid.Row="3" Grid.Column="1" x:Name="IdentityDescriptionTextBox"
+                                             Watermark="(optional) Character biography or description..."
+                                             AcceptsReturn="True" TextWrapping="Wrap"
+                                             Height="80"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Voice Set -->
+                            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                                    Padding="12" CornerRadius="4">
+                                <Grid ColumnDefinitions="100,*,Auto" ColumnSpacing="10">
+                                    <TextBlock Grid.Column="0" Text="Voice Set:" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" x:Name="IdentityVoiceSetLabel" Text="None" VerticalAlignment="Center"/>
+                                    <Button Grid.Column="2" x:Name="IdentityBrowseVoiceSetButton" Content="Browse..."
+                                            Click="OnBrowseVoiceSetClick"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Filename / ResRef Preview -->
+                            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                                    Padding="12" CornerRadius="4">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="Generated Identifiers" FontWeight="Bold"/>
+                                    <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="80,*" RowSpacing="4" ColumnSpacing="10">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Tag:"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1" x:Name="IdentityGeneratedTagLabel" Text="new_creature"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="ResRef:"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="1" x:Name="IdentityGeneratedResRefLabel" Text="new_creature"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                    </Grid>
+                                    <TextBlock x:Name="IdentityFilenameWarning" TextWrapping="Wrap" FontSize="11"
+                                               IsVisible="False"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- UTC-only fields -->
+                            <Border x:Name="IdentityUtcFieldsPanel" Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                                    Padding="12" CornerRadius="4">
+                                <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="100,*" RowSpacing="8" ColumnSpacing="10">
+                                    <TextBlock Grid.Row="0" Grid.Column="0" x:Name="IdentityPaletteIdLabelText" Text="Palette:"
+                                               VerticalAlignment="Center"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                    <ComboBox Grid.Row="0" Grid.Column="1" x:Name="IdentityPaletteIdComboBox"
+                                              HorizontalAlignment="Left" MinWidth="250"/>
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" x:Name="IdentityFactionLabelText" Text="Faction:"
+                                               VerticalAlignment="Center"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                    <ComboBox Grid.Row="1" Grid.Column="1" x:Name="IdentityFactionComboBox"
+                                              HorizontalAlignment="Left" MinWidth="250"
+                                              SelectionChanged="OnFactionSelectionChanged"/>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Right: Portrait -->
+                        <Border Grid.Column="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                BorderThickness="1" Padding="12" Width="180" VerticalAlignment="Top">
+                            <StackPanel Spacing="8" HorizontalAlignment="Center">
+                                <TextBlock Text="Portrait" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                        BorderThickness="1" Width="128" Height="160" HorizontalAlignment="Center">
+                                    <Image x:Name="IdentityPortraitPreviewImage" Stretch="Uniform"/>
+                                </Border>
+                                <TextBlock x:Name="IdentityPortraitNameLabel" Text="No portrait selected"
+                                           HorizontalAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                           TextWrapping="Wrap" TextAlignment="Center"/>
+                                <Button x:Name="IdentityBrowsePortraitButton" Content="Browse..."
+                                        Click="OnBrowsePortraitClick" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- Step 4: Appearance -->
+            <Grid x:Name="Step4Panel" IsVisible="False">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -353,7 +486,7 @@
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Text="Customize Appearance" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
-                <TextBlock Grid.Row="1" Text="Choose your character's appearance type, phenotype, portrait, and body details."
+                <TextBlock Grid.Row="1" Text="Choose your character's appearance type, phenotype, and body details."
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                            TextWrapping="Wrap" Margin="0,0,0,15"/>
 
@@ -391,27 +524,6 @@
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-
-                        <!-- Portrait -->
-                        <TextBlock Text="Portrait" FontWeight="SemiBold" Margin="0,5,0,0"/>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <!-- Portrait preview -->
-                            <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                    BorderThickness="1" Width="100" Height="125" Margin="0,0,10,0">
-                                <Image x:Name="PortraitPreviewImage" Stretch="Uniform"/>
-                            </Border>
-                            <StackPanel Grid.Column="1" Spacing="5" VerticalAlignment="Center">
-                                <TextBlock x:Name="PortraitNameLabel" Text="No portrait selected"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                           TextWrapping="Wrap"/>
-                                <Button x:Name="BrowsePortraitButton" Content="Browse..."
-                                        Click="OnBrowsePortraitClick"/>
-                            </StackPanel>
-                        </Grid>
 
                         <!-- Colors Section -->
                         <TextBlock Text="Colors" FontWeight="SemiBold" Margin="0,5,0,0"/>
@@ -583,8 +695,8 @@
                 </Border>
             </Grid>
 
-            <!-- Step 4: Class & Package -->
-            <Grid x:Name="Step4Panel" IsVisible="False">
+            <!-- Step 5: Class & Package -->
+            <Grid x:Name="Step5Panel" IsVisible="False">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -839,8 +951,8 @@
                 </Border>
             </Grid>
 
-            <!-- Step 5: Ability Scores -->
-            <Grid x:Name="Step5Panel" IsVisible="False">
+            <!-- Step 6: Ability Scores -->
+            <Grid x:Name="Step6Panel" IsVisible="False">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -922,8 +1034,8 @@
                 </Border>
             </Grid>
 
-            <!-- Step 6: Feats -->
-            <Grid x:Name="Step6Panel" IsVisible="False">
+            <!-- Step 7: Feats -->
+            <Grid x:Name="Step7Panel" IsVisible="False">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -1051,8 +1163,8 @@
                 </Border>
             </Grid>
 
-            <!-- Step 7: Skills -->
-            <Grid x:Name="Step7Panel" IsVisible="False">
+            <!-- Step 8: Skills -->
+            <Grid x:Name="Step8Panel" IsVisible="False">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -1121,8 +1233,8 @@
                 </Border>
             </Grid>
 
-            <!-- Step 8: Spells -->
-            <Grid x:Name="Step8Panel" IsVisible="False">
+            <!-- Step 9: Spells -->
+            <Grid x:Name="Step9Panel" IsVisible="False">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -1247,8 +1359,8 @@
                 </Border>
             </Grid>
 
-            <!-- Step 9: Starting Equipment -->
-            <Grid x:Name="Step9Panel" IsVisible="False">
+            <!-- Step 10: Starting Equipment -->
+            <Grid x:Name="Step10Panel" IsVisible="False">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -1318,8 +1430,8 @@
                 </Border>
             </Grid>
 
-            <!-- Step 10: Summary & Create -->
-            <Grid x:Name="Step10Panel" IsVisible="False">
+            <!-- Step 11: Summary & Create -->
+            <Grid x:Name="Step11Panel" IsVisible="False">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -1327,77 +1439,12 @@
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Text="Review &amp; Create" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
-                <TextBlock Grid.Row="1" Text="Review your choices, enter a name, and create your character."
+                <TextBlock Grid.Row="1" Text="Review your choices and create your character."
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                            TextWrapping="Wrap" Margin="0,0,0,15"/>
 
                 <ScrollViewer Grid.Row="2">
                     <StackPanel Spacing="10" Margin="0,0,16,0">
-                        <!-- Name & Identity -->
-                        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                                Padding="12" CornerRadius="4">
-                            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="100,*,Auto" RowSpacing="8" ColumnSpacing="10">
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="First Name:" FontWeight="Bold" VerticalAlignment="Center"/>
-                                <TextBox Grid.Row="0" Grid.Column="1" x:Name="CharacterNameTextBox"
-                                         Watermark="Enter character name..."
-                                         TextChanged="OnCharacterNameChanged"/>
-
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Last Name:" VerticalAlignment="Center"/>
-                                <TextBox Grid.Row="1" Grid.Column="1" x:Name="LastNameTextBox"
-                                         Watermark="(optional)"/>
-
-                                <TextBlock Grid.Row="2" Grid.Column="0" x:Name="AgeLabelText" Text="Age:" VerticalAlignment="Center"/>
-                                <NumericUpDown Grid.Row="2" Grid.Column="1" x:Name="AgeNumericUpDown"
-                                               Minimum="1" Maximum="9999" Value="25"
-                                               HorizontalAlignment="Left" Width="100"
-                                               FormatString="0"/>
-                                <TextBlock Grid.Row="2" Grid.Column="2" x:Name="AgeNote" Text="(BIC only)"
-                                           VerticalAlignment="Center" FontSize="11"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
-
-                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Voice Set:" VerticalAlignment="Center"/>
-                                <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                                    <TextBlock x:Name="VoiceSetLabel" Text="None" VerticalAlignment="Center" MinWidth="200"/>
-                                    <Button x:Name="BrowseVoiceSetButton" Content="Browse..." Click="OnBrowseVoiceSetClick"/>
-                                </StackPanel>
-
-                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Description:" VerticalAlignment="Top" Margin="0,4,0,0"/>
-                                <TextBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" x:Name="DescriptionTextBox"
-                                         Watermark="(optional) Character biography or description..."
-                                         AcceptsReturn="True" TextWrapping="Wrap"
-                                         Height="80"/>
-
-                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Tag:" VerticalAlignment="Center"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
-                                <TextBlock Grid.Row="5" Grid.Column="1" x:Name="GeneratedTagLabel" Text="new_creature"
-                                           VerticalAlignment="Center"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
-
-                                <TextBlock Grid.Row="6" Grid.Column="0" Text="ResRef:" VerticalAlignment="Center"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
-                                <TextBlock Grid.Row="6" Grid.Column="1" x:Name="GeneratedResRefLabel" Text="new_creature"
-                                           VerticalAlignment="Center"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
-
-                                <TextBlock Grid.Row="7" Grid.Column="0" x:Name="PaletteIdLabelText" Text="Palette:" VerticalAlignment="Center"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
-                                <ComboBox Grid.Row="7" Grid.Column="1" x:Name="PaletteIdComboBox"
-                                          HorizontalAlignment="Left" MinWidth="250"/>
-                                <TextBlock Grid.Row="7" Grid.Column="2" x:Name="PaletteIdNote" Text="(UTC only)"
-                                           VerticalAlignment="Center" FontSize="11"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
-
-                                <TextBlock Grid.Row="8" Grid.Column="0" x:Name="FactionLabelText" Text="Faction:" VerticalAlignment="Center"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
-                                <ComboBox Grid.Row="8" Grid.Column="1" x:Name="FactionComboBox"
-                                          HorizontalAlignment="Left" MinWidth="250"
-                                          SelectionChanged="OnFactionSelectionChanged"/>
-                                <TextBlock Grid.Row="8" Grid.Column="2" x:Name="FactionNote" Text="(UTC only)"
-                                           VerticalAlignment="Center" FontSize="11"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
-                            </Grid>
-                        </Border>
-
                         <!-- Summary Sections -->
                         <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                 BorderThickness="1" Padding="12" CornerRadius="4">
@@ -1426,12 +1473,24 @@
 
                                 <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
 
+                                <!-- Identity -->
+                                <Grid ColumnDefinitions="120,*,Auto">
+                                    <TextBlock Grid.Column="0" Text="Identity:" FontWeight="Bold"/>
+                                    <TextBlock Grid.Column="1" x:Name="SummaryIdentityLabel" TextWrapping="Wrap"/>
+                                    <Button Grid.Column="2" Content="[Edit]" Classes="hyperlink"
+                                            Tag="3" Click="OnSummaryEditClick" Cursor="Hand"
+                                            Background="Transparent" BorderThickness="0" Padding="2"
+                                            Foreground="{DynamicResource SystemAccentColor}"/>
+                                </Grid>
+
+                                <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+
                                 <!-- Appearance -->
                                 <Grid ColumnDefinitions="120,*,Auto">
                                     <TextBlock Grid.Column="0" Text="Appearance:" FontWeight="Bold"/>
                                     <TextBlock Grid.Column="1" x:Name="SummaryAppearanceLabel" TextWrapping="Wrap"/>
                                     <Button Grid.Column="2" Content="[Edit]" Classes="hyperlink"
-                                            Tag="3" Click="OnSummaryEditClick" Cursor="Hand"
+                                            Tag="4" Click="OnSummaryEditClick" Cursor="Hand"
                                             Background="Transparent" BorderThickness="0" Padding="2"
                                             Foreground="{DynamicResource SystemAccentColor}"/>
                                 </Grid>
@@ -1443,7 +1502,7 @@
                                     <TextBlock Grid.Column="0" Text="Class:" FontWeight="Bold"/>
                                     <TextBlock Grid.Column="1" x:Name="SummaryClassLabel"/>
                                     <Button Grid.Column="2" Content="[Edit]" Classes="hyperlink"
-                                            Tag="4" Click="OnSummaryEditClick" Cursor="Hand"
+                                            Tag="5" Click="OnSummaryEditClick" Cursor="Hand"
                                             Background="Transparent" BorderThickness="0" Padding="2"
                                             Foreground="{DynamicResource SystemAccentColor}"/>
                                 </Grid>
@@ -1459,7 +1518,7 @@
                                     <TextBlock Grid.Column="0" Text="Abilities:" FontWeight="Bold"/>
                                     <TextBlock Grid.Column="1" x:Name="SummaryAbilitiesLabel" TextWrapping="Wrap"/>
                                     <Button Grid.Column="2" Content="[Edit]" Classes="hyperlink"
-                                            Tag="5" Click="OnSummaryEditClick" Cursor="Hand"
+                                            Tag="6" Click="OnSummaryEditClick" Cursor="Hand"
                                             Background="Transparent" BorderThickness="0" Padding="2"
                                             Foreground="{DynamicResource SystemAccentColor}"/>
                                 </Grid>
@@ -1471,7 +1530,7 @@
                                     <TextBlock Grid.Column="0" Text="Feats:" FontWeight="Bold"/>
                                     <TextBlock Grid.Column="1" x:Name="SummaryFeatsLabel" TextWrapping="Wrap"/>
                                     <Button Grid.Column="2" Content="[Edit]" Classes="hyperlink"
-                                            Tag="6" Click="OnSummaryEditClick" Cursor="Hand"
+                                            Tag="7" Click="OnSummaryEditClick" Cursor="Hand"
                                             Background="Transparent" BorderThickness="0" Padding="2"
                                             Foreground="{DynamicResource SystemAccentColor}"/>
                                 </Grid>
@@ -1483,7 +1542,7 @@
                                     <TextBlock Grid.Column="0" Text="Skills:" FontWeight="Bold"/>
                                     <TextBlock Grid.Column="1" x:Name="SummarySkillsLabel" TextWrapping="Wrap"/>
                                     <Button Grid.Column="2" Content="[Edit]" Classes="hyperlink"
-                                            Tag="7" Click="OnSummaryEditClick" Cursor="Hand"
+                                            Tag="8" Click="OnSummaryEditClick" Cursor="Hand"
                                             Background="Transparent" BorderThickness="0" Padding="2"
                                             Foreground="{DynamicResource SystemAccentColor}"/>
                                 </Grid>
@@ -1495,7 +1554,7 @@
                                     <TextBlock Grid.Column="0" Text="Spells:" FontWeight="Bold"/>
                                     <TextBlock Grid.Column="1" x:Name="SummarySpellsLabel" TextWrapping="Wrap"/>
                                     <Button Grid.Column="2" Content="[Edit]" Classes="hyperlink"
-                                            Tag="8" Click="OnSummaryEditClick" Cursor="Hand"
+                                            Tag="9" Click="OnSummaryEditClick" Cursor="Hand"
                                             Background="Transparent" BorderThickness="0" Padding="2"
                                             Foreground="{DynamicResource SystemAccentColor}"/>
                                 </Grid>
@@ -1507,7 +1566,7 @@
                                     <TextBlock Grid.Column="0" Text="Equipment:" FontWeight="Bold"/>
                                     <TextBlock Grid.Column="1" x:Name="SummaryEquipmentLabel" TextWrapping="Wrap"/>
                                     <Button Grid.Column="2" Content="[Edit]" Classes="hyperlink"
-                                            Tag="9" Click="OnSummaryEditClick" Cursor="Hand"
+                                            Tag="10" Click="OnSummaryEditClick" Cursor="Hand"
                                             Background="Transparent" BorderThickness="0" Padding="2"
                                             Foreground="{DynamicResource SystemAccentColor}"/>
                                 </Grid>

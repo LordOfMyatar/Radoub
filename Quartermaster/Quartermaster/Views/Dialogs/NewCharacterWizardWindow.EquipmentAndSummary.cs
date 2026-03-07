@@ -15,13 +15,13 @@ using Radoub.Formats.Utc;
 namespace Quartermaster.Views.Dialogs;
 
 /// <summary>
-/// Steps 9-10: Equipment selection and character summary/finalization.
+/// Steps 10-11: Equipment selection and character summary review.
 /// </summary>
 public partial class NewCharacterWizardWindow
 {
-    #region Step 9: Equipment
+    #region Step 10: Equipment
 
-    private void PrepareStep9()
+    private void PrepareStep10()
     {
         if (_step9Loaded) return;
         _step9Loaded = true;
@@ -205,9 +205,9 @@ public partial class NewCharacterWizardWindow
 
     #endregion
 
-    #region Step 10: Summary (was Step 8)
+    #region Step 11: Summary (read-only review)
 
-    private void PrepareStep10()
+    private void PrepareStep11()
     {
         // Populate summary fields
         _summaryFileTypeLabel.Text = _isBicFile ? "Player Character (BIC)" : "Creature Blueprint (UTC)";
@@ -216,11 +216,32 @@ public partial class NewCharacterWizardWindow
         var genderName = _selectedGender == 0 ? "Male" : "Female";
         _summaryRaceLabel.Text = $"{genderName} {raceName}";
 
+        // Identity
+        var identityParts = new List<string>();
+        if (!string.IsNullOrEmpty(_characterName))
+            identityParts.Add(_characterName);
+        var lastName = _identityLastNameTextBox.Text?.Trim() ?? "";
+        if (!string.IsNullOrEmpty(lastName))
+            identityParts.Add(lastName);
+        if (identityParts.Count == 0)
+            identityParts.Add("(unnamed)");
+
+        var portraitResRef = _displayService.GetPortraitResRef(_selectedPortraitId);
+        identityParts.Add($"Portrait: {portraitResRef ?? _selectedPortraitId.ToString()}");
+
+        if (_selectedVoiceSetId > 0)
+        {
+            var voiceName = _displayService.GetSoundSetName(_selectedVoiceSetId);
+            identityParts.Add($"Voice: {voiceName}");
+        }
+
+        _summaryIdentityLabel.Text = string.Join(" | ", identityParts);
+
         // Appearance
         var appName = _selectedAppearanceId > 0
             ? _displayService.GetAppearanceName(_selectedAppearanceId)
             : _displayService.GetAppearanceName(GetDefaultAppearanceForRace(_selectedRaceId));
-        _summaryAppearanceLabel.Text = $"{appName}, Portrait {_selectedPortraitId}";
+        _summaryAppearanceLabel.Text = appName;
 
         // Class
         if (_selectedClassId >= 0)
@@ -343,31 +364,6 @@ public partial class NewCharacterWizardWindow
                 ? "Default NWN scripts (nw_c2_default*)"
                 : "None (can be added later in editor)";
         }
-
-        // Age visibility (BIC only)
-        _ageLabelText.IsVisible = _isBicFile;
-        _ageNumericUpDown.IsVisible = _isBicFile;
-        _ageNote.IsVisible = _isBicFile;
-
-        // Palette ID visibility (UTC only)
-        _paletteIdLabelText.IsVisible = isUtc;
-        _paletteIdComboBox.IsVisible = isUtc;
-        _paletteIdNote.IsVisible = isUtc;
-
-        // Faction visibility (UTC only)
-        _factionLabelText.IsVisible = isUtc;
-        _factionComboBox.IsVisible = isUtc;
-        _factionNote.IsVisible = isUtc;
-    }
-
-    private void OnCharacterNameChanged(object? sender, TextChangedEventArgs e)
-    {
-        _characterName = _characterNameTextBox.Text?.Trim() ?? "";
-
-        // Generate tag and resref from name
-        var sanitized = SanitizeForResRef(_characterName);
-        _generatedTagLabel.Text = string.IsNullOrEmpty(sanitized) ? "new_creature" : sanitized;
-        _generatedResRefLabel.Text = string.IsNullOrEmpty(sanitized) ? "new_creature" : sanitized;
     }
 
     private void OnSummaryEditClick(object? sender, RoutedEventArgs e)

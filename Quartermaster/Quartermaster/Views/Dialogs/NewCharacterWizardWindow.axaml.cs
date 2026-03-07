@@ -19,8 +19,8 @@ namespace Quartermaster.Views.Dialogs;
 
 /// <summary>
 /// Multi-step wizard for creating a new creature from scratch.
-/// 10 steps: File Type, Race &amp; Sex, Appearance, Class, Abilities, Feats, Skills, Spells, Equipment, Summary.
-/// Partial class files: Race, Appearance, ClassSelection, Abilities, Feats, Skills, Spells,
+/// 11 steps: File Type, Race &amp; Sex, Identity, Appearance, Class, Abilities, Feats, Skills, Spells, Equipment, Summary.
+/// Partial class files: Race, Identity, Appearance, ClassSelection, Abilities, Feats, Skills, Spells,
 /// EquipmentAndSummary, BuildCreature.
 /// </summary>
 public partial class NewCharacterWizardWindow : Window
@@ -32,7 +32,7 @@ public partial class NewCharacterWizardWindow : Window
 
     // Wizard state
     private int _currentStep = 1;
-    private const int TotalSteps = 10;
+    private const int TotalSteps = 11;
 
     // Step 1: File Type
     private bool _isBicFile; // false = UTC (default), true = BIC
@@ -128,7 +128,7 @@ public partial class NewCharacterWizardWindow : Window
     private readonly List<EquipmentDisplayItem> _equipmentItems = new();
     private bool _step9Loaded;
 
-    // Step 10: Summary (was Step 8)
+    // Step 3: Identity
     private string _characterName = "";
     private byte _paletteId = 1;
     private ushort _selectedFactionId = 1; // Default: Hostile (standard NWN default for NPCs)
@@ -171,14 +171,29 @@ public partial class NewCharacterWizardWindow : Window
     private readonly Border _raceDescSeparator;
     private readonly TextBlock _raceDescriptionLabel;
 
-    // Step 3 controls
+    // Step 3 controls (Identity)
+    private readonly TextBox _identityFirstNameTextBox;
+    private readonly TextBox _identityLastNameTextBox;
+    private readonly TextBlock _identityAgeLabelText;
+    private readonly NumericUpDown _identityAgeNumericUpDown;
+    private readonly TextBlock _identityAgeNote;
+    private readonly TextBox _identityDescriptionTextBox;
+    private readonly TextBlock _identityVoiceSetLabel;
+    private readonly Image _identityPortraitPreviewImage;
+    private readonly TextBlock _identityPortraitNameLabel;
+    private readonly TextBlock _identityGeneratedTagLabel;
+    private readonly TextBlock _identityGeneratedResRefLabel;
+    private readonly TextBlock _identityFilenameWarning;
+    private readonly Border _identityUtcFieldsPanel;
+    private readonly ComboBox _identityPaletteIdComboBox;
+    private readonly ComboBox _identityFactionComboBox;
+
+    // Step 4 controls (Appearance)
     private readonly TextBox _appearanceSearchBox;
     private readonly ListBox _appearanceListBox;
     private List<AppearanceInfo> _allAppearances = new();
     private List<AppearanceInfo> _filteredAppearances = new();
     private readonly ComboBox _phenotypeComboBox;
-    private readonly Image _portraitPreviewImage;
-    private readonly TextBlock _portraitNameLabel;
     private readonly NumericUpDown _headNumericUpDown;
     private readonly NumericUpDown _neckNumericUpDown;
     private readonly NumericUpDown _torsoNumericUpDown;
@@ -210,13 +225,13 @@ public partial class NewCharacterWizardWindow : Window
     private readonly StackPanel _bodyPartsContent;
     private readonly Grid _bodyPartsPanel;
 
-    // Step 5 controls
+    // Step 6 controls (Abilities)
     private readonly TextBlock _abilityPointsRemainingLabel;
     private readonly StackPanel _abilityRowsPanel;
     private readonly Border _prestigeAbilityBanner;
     private readonly TextBlock _prestigeAbilityBannerLabel;
 
-    // Step 6 controls (Feats)
+    // Step 7 controls (Feats)
     private readonly TextBlock _featStepDescription;
     private readonly TextBlock _featSelectionCountLabel;
     private readonly TextBox _featSearchBox;
@@ -226,12 +241,12 @@ public partial class NewCharacterWizardWindow : Window
     private readonly TextBlock _featDescriptionTitle;
     private readonly TextBlock _featDescriptionText;
 
-    // Step 7 controls (Skills, was Step 6)
+    // Step 8 controls (Skills)
     private readonly TextBlock _skillPointsRemainingLabel;
     private readonly StackPanel _skillRowsPanel;
     private readonly TextBox _skillSearchBox;
 
-    // Step 8 controls (Spells, was Step 7)
+    // Step 9 controls (Spells)
     private readonly TextBlock _spellStepDescription;
     private readonly StackPanel _spellLevelTabsPanel;
     private readonly TextBlock _spellSelectionCountLabel;
@@ -243,30 +258,16 @@ public partial class NewCharacterWizardWindow : Window
     private readonly Border _divineSpellInfoPanel;
     private readonly TextBlock _divineSpellInfoLabel;
 
-    // Step 9 controls (Equipment)
+    // Step 10 controls (Equipment)
     private readonly TextBlock _equipmentCountLabel;
     private readonly StackPanel _equipmentItemsPanel;
     private readonly TextBlock _equipmentEmptyLabel;
 
-    // Step 10 controls (Summary, was Step 8)
-    private readonly TextBox _characterNameTextBox;
-    private readonly TextBox _lastNameTextBox;
-    private readonly TextBlock _ageLabelText;
-    private readonly NumericUpDown _ageNumericUpDown;
-    private readonly TextBlock _ageNote;
-    private readonly TextBox _descriptionTextBox;
-    private readonly TextBlock _voiceSetLabel;
+    // Step 11 controls (Summary)
     private ushort _selectedVoiceSetId;
-    private readonly TextBlock _generatedTagLabel;
-    private readonly TextBlock _generatedResRefLabel;
-    private readonly TextBlock _paletteIdLabelText;
-    private readonly ComboBox _paletteIdComboBox;
-    private readonly TextBlock _paletteIdNote;
-    private readonly TextBlock _factionLabelText;
-    private readonly ComboBox _factionComboBox;
-    private readonly TextBlock _factionNote;
     private readonly TextBlock _summaryFileTypeLabel;
     private readonly TextBlock _summaryRaceLabel;
+    private readonly TextBlock _summaryIdentityLabel;
     private readonly TextBlock _summaryAppearanceLabel;
     private readonly TextBlock _summaryClassLabel;
     private readonly TextBlock _summaryAlignmentLabel;
@@ -281,7 +282,7 @@ public partial class NewCharacterWizardWindow : Window
     private readonly Grid _summaryScriptsSection;
     private readonly TextBlock _summaryScriptsLabel;
 
-    // Step 4 controls
+    // Step 5 controls (Class)
     private readonly TextBox _classSearchBox;
     private readonly ListBox _classListBox;
     private readonly TextBlock _selectedClassNameLabel;
@@ -357,7 +358,8 @@ public partial class NewCharacterWizardWindow : Window
             this.FindControl<Border>("Step7Border")!,
             this.FindControl<Border>("Step8Border")!,
             this.FindControl<Border>("Step9Border")!,
-            this.FindControl<Border>("Step10Border")!
+            this.FindControl<Border>("Step10Border")!,
+            this.FindControl<Border>("Step11Border")!
         };
 
         _stepPanels = new[]
@@ -371,7 +373,8 @@ public partial class NewCharacterWizardWindow : Window
             this.FindControl<Grid>("Step7Panel")!,
             this.FindControl<Grid>("Step8Panel")!,
             this.FindControl<Grid>("Step9Panel")!,
-            this.FindControl<Grid>("Step10Panel")!
+            this.FindControl<Grid>("Step10Panel")!,
+            this.FindControl<Grid>("Step11Panel")!
         };
 
         _backButton = this.FindControl<Button>("BackButton")!;
@@ -407,12 +410,27 @@ public partial class NewCharacterWizardWindow : Window
         _raceDescSeparator = this.FindControl<Border>("RaceDescSeparator")!;
         _raceDescriptionLabel = this.FindControl<TextBlock>("RaceDescriptionLabel")!;
 
-        // Step 3 controls
+        // Step 3 controls (Identity)
+        _identityFirstNameTextBox = this.FindControl<TextBox>("IdentityFirstNameTextBox")!;
+        _identityLastNameTextBox = this.FindControl<TextBox>("IdentityLastNameTextBox")!;
+        _identityAgeLabelText = this.FindControl<TextBlock>("IdentityAgeLabelText")!;
+        _identityAgeNumericUpDown = this.FindControl<NumericUpDown>("IdentityAgeNumericUpDown")!;
+        _identityAgeNote = this.FindControl<TextBlock>("IdentityAgeNote")!;
+        _identityDescriptionTextBox = this.FindControl<TextBox>("IdentityDescriptionTextBox")!;
+        _identityVoiceSetLabel = this.FindControl<TextBlock>("IdentityVoiceSetLabel")!;
+        _identityPortraitPreviewImage = this.FindControl<Image>("IdentityPortraitPreviewImage")!;
+        _identityPortraitNameLabel = this.FindControl<TextBlock>("IdentityPortraitNameLabel")!;
+        _identityGeneratedTagLabel = this.FindControl<TextBlock>("IdentityGeneratedTagLabel")!;
+        _identityGeneratedResRefLabel = this.FindControl<TextBlock>("IdentityGeneratedResRefLabel")!;
+        _identityFilenameWarning = this.FindControl<TextBlock>("IdentityFilenameWarning")!;
+        _identityUtcFieldsPanel = this.FindControl<Border>("IdentityUtcFieldsPanel")!;
+        _identityPaletteIdComboBox = this.FindControl<ComboBox>("IdentityPaletteIdComboBox")!;
+        _identityFactionComboBox = this.FindControl<ComboBox>("IdentityFactionComboBox")!;
+
+        // Step 4 controls (Appearance)
         _appearanceSearchBox = this.FindControl<TextBox>("AppearanceSearchBox")!;
         _appearanceListBox = this.FindControl<ListBox>("AppearanceListBox")!;
         _phenotypeComboBox = this.FindControl<ComboBox>("PhenotypeComboBox")!;
-        _portraitPreviewImage = this.FindControl<Image>("PortraitPreviewImage")!;
-        _portraitNameLabel = this.FindControl<TextBlock>("PortraitNameLabel")!;
         _headNumericUpDown = this.FindControl<NumericUpDown>("HeadNumericUpDown")!;
         _neckNumericUpDown = this.FindControl<NumericUpDown>("NeckNumericUpDown")!;
         _torsoNumericUpDown = this.FindControl<NumericUpDown>("TorsoNumericUpDown")!;
@@ -447,7 +465,7 @@ public partial class NewCharacterWizardWindow : Window
         // Initialize palette color service for color swatches
         _paletteColorService = new PaletteColorService(_gameDataService);
 
-        // Step 4 controls
+        // Step 5 controls (Class)
         _classSearchBox = this.FindControl<TextBox>("ClassSearchBox")!;
         _classListBox = this.FindControl<ListBox>("ClassListBox")!;
         _selectedClassNameLabel = this.FindControl<TextBlock>("SelectedClassNameLabel")!;
@@ -486,13 +504,13 @@ public partial class NewCharacterWizardWindow : Window
         };
         _alignmentRestrictionWarning = this.FindControl<TextBlock>("AlignmentRestrictionWarning")!;
 
-        // Step 5 controls
+        // Step 6 controls (Abilities)
         _abilityPointsRemainingLabel = this.FindControl<TextBlock>("AbilityPointsRemainingLabel")!;
         _abilityRowsPanel = this.FindControl<StackPanel>("AbilityRowsPanel")!;
         _prestigeAbilityBanner = this.FindControl<Border>("PrestigeAbilityBanner")!;
         _prestigeAbilityBannerLabel = this.FindControl<TextBlock>("PrestigeAbilityBannerLabel")!;
 
-        // Step 6 controls (Feats)
+        // Step 7 controls (Feats)
         _featStepDescription = this.FindControl<TextBlock>("FeatStepDescription")!;
         _featSelectionCountLabel = this.FindControl<TextBlock>("FeatSelectionCountLabel")!;
         _featSearchBox = this.FindControl<TextBox>("FeatSearchBox")!;
@@ -502,12 +520,12 @@ public partial class NewCharacterWizardWindow : Window
         _featDescriptionTitle = this.FindControl<TextBlock>("FeatDescriptionTitle")!;
         _featDescriptionText = this.FindControl<TextBlock>("FeatDescriptionText")!;
 
-        // Step 7 controls (Skills)
+        // Step 8 controls (Skills)
         _skillPointsRemainingLabel = this.FindControl<TextBlock>("SkillPointsRemainingLabel")!;
         _skillRowsPanel = this.FindControl<StackPanel>("SkillRowsPanel")!;
         _skillSearchBox = this.FindControl<TextBox>("SkillSearchBox")!;
 
-        // Step 8 controls (Spells)
+        // Step 9 controls (Spells)
         _spellStepDescription = this.FindControl<TextBlock>("SpellStepDescription")!;
         _spellLevelTabsPanel = this.FindControl<StackPanel>("SpellLevelTabsPanel")!;
         _spellSelectionCountLabel = this.FindControl<TextBlock>("SpellSelectionCountLabel")!;
@@ -519,31 +537,19 @@ public partial class NewCharacterWizardWindow : Window
         _divineSpellInfoPanel = this.FindControl<Border>("DivineSpellInfoPanel")!;
         _divineSpellInfoLabel = this.FindControl<TextBlock>("DivineSpellInfoLabel")!;
 
-        // Step 9 controls (Equipment)
+        // Step 10 controls (Equipment)
         _equipmentCountLabel = this.FindControl<TextBlock>("EquipmentCountLabel")!;
         _equipmentItemsPanel = this.FindControl<StackPanel>("EquipmentItemsPanel")!;
         _equipmentEmptyLabel = this.FindControl<TextBlock>("EquipmentEmptyLabel")!;
 
-        // Step 10 controls (Summary)
-        _characterNameTextBox = this.FindControl<TextBox>("CharacterNameTextBox")!;
-        _lastNameTextBox = this.FindControl<TextBox>("LastNameTextBox")!;
-        _ageLabelText = this.FindControl<TextBlock>("AgeLabelText")!;
-        _ageNumericUpDown = this.FindControl<NumericUpDown>("AgeNumericUpDown")!;
-        _ageNote = this.FindControl<TextBlock>("AgeNote")!;
-        _descriptionTextBox = this.FindControl<TextBox>("DescriptionTextBox")!;
-        _voiceSetLabel = this.FindControl<TextBlock>("VoiceSetLabel")!;
-        _generatedTagLabel = this.FindControl<TextBlock>("GeneratedTagLabel")!;
-        _generatedResRefLabel = this.FindControl<TextBlock>("GeneratedResRefLabel")!;
-        _paletteIdLabelText = this.FindControl<TextBlock>("PaletteIdLabelText")!;
-        _paletteIdComboBox = this.FindControl<ComboBox>("PaletteIdComboBox")!;
+        // Populate palette and faction combo boxes (identity step controls, already found above)
         PopulatePaletteCategories();
-        _paletteIdNote = this.FindControl<TextBlock>("PaletteIdNote")!;
-        _factionLabelText = this.FindControl<TextBlock>("FactionLabelText")!;
-        _factionComboBox = this.FindControl<ComboBox>("FactionComboBox")!;
-        _factionNote = this.FindControl<TextBlock>("FactionNote")!;
         PopulateFactions();
+
+        // Step 11 controls (Summary)
         _summaryFileTypeLabel = this.FindControl<TextBlock>("SummaryFileTypeLabel")!;
         _summaryRaceLabel = this.FindControl<TextBlock>("SummaryRaceLabel")!;
+        _summaryIdentityLabel = this.FindControl<TextBlock>("SummaryIdentityLabel")!;
         _summaryAppearanceLabel = this.FindControl<TextBlock>("SummaryAppearanceLabel")!;
         _summaryClassLabel = this.FindControl<TextBlock>("SummaryClassLabel")!;
         _summaryAlignmentLabel = this.FindControl<TextBlock>("SummaryAlignmentLabel")!;
@@ -568,14 +574,14 @@ public partial class NewCharacterWizardWindow : Window
 
     private void PopulatePaletteCategories()
     {
-        _paletteIdComboBox.Items.Clear();
+        _identityPaletteIdComboBox.Items.Clear();
 
         var categories = _displayService.GetCreaturePaletteCategories().ToList();
 
         if (categories.Count == 0)
         {
-            _paletteIdComboBox.Items.Add(new ComboBoxItem { Content = "Custom (1)", Tag = (byte)1 });
-            _paletteIdComboBox.SelectedIndex = 0;
+            _identityPaletteIdComboBox.Items.Add(new ComboBoxItem { Content = "Custom (1)", Tag = (byte)1 });
+            _identityPaletteIdComboBox.SelectedIndex = 0;
             return;
         }
 
@@ -587,7 +593,7 @@ public partial class NewCharacterWizardWindow : Window
                 ? $"{category.ParentPath}/{category.Name} ({category.Id})"
                 : $"{category.Name} ({category.Id})";
 
-            _paletteIdComboBox.Items.Add(new ComboBoxItem
+            _identityPaletteIdComboBox.Items.Add(new ComboBoxItem
             {
                 Content = displayName,
                 Tag = category.Id
@@ -597,12 +603,12 @@ public partial class NewCharacterWizardWindow : Window
             index++;
         }
 
-        _paletteIdComboBox.SelectedIndex = defaultIndex;
+        _identityPaletteIdComboBox.SelectedIndex = defaultIndex;
     }
 
     private void PopulateFactions()
     {
-        _factionComboBox.Items.Clear();
+        _identityFactionComboBox.Items.Clear();
 
         var factions = _displayService.GetAllFactions(RadoubSettings.Instance.CurrentModulePath);
 
@@ -613,7 +619,7 @@ public partial class NewCharacterWizardWindow : Window
             // Faction 0 (PC) is not valid for creature blueprints
             if (factions[i].Id == 0) continue;
 
-            _factionComboBox.Items.Add(new ComboBoxItem
+            _identityFactionComboBox.Items.Add(new ComboBoxItem
             {
                 Content = $"{factions[i].Name} ({factions[i].Id})",
                 Tag = factions[i].Id
@@ -622,13 +628,13 @@ public partial class NewCharacterWizardWindow : Window
             itemIndex++;
         }
 
-        if (_factionComboBox.Items.Count > 0)
-            _factionComboBox.SelectedIndex = defaultIndex;
+        if (_identityFactionComboBox.Items.Count > 0)
+            _identityFactionComboBox.SelectedIndex = defaultIndex;
     }
 
     private void OnFactionSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (_factionComboBox.SelectedItem is ComboBoxItem item && item.Tag is ushort factionId)
+        if (_identityFactionComboBox.SelectedItem is ComboBoxItem item && item.Tag is ushort factionId)
             _selectedFactionId = factionId;
     }
 
@@ -643,7 +649,7 @@ public partial class NewCharacterWizardWindow : Window
         {
             _selectedVoiceSetId = result.Value;
             var name = _displayService.GetSoundSetName(result.Value);
-            _voiceSetLabel.Text = $"{name} ({result.Value})";
+            _identityVoiceSetLabel.Text = $"{name} ({result.Value})";
         }
     }
 
@@ -684,14 +690,15 @@ public partial class NewCharacterWizardWindow : Window
         {
             1 => true, // File type always has a selection (UTC default)
             2 => _selectedRaceId != 255, // Must have a race selected
-            3 => true, // Appearance always has defaults
-            4 => _selectedClassId >= 0, // Must have a class selected
-            5 => GetAbilityPointsRemaining() == 0 || !_isBicFile, // BIC must spend all points
-            6 => IsFeatSelectionComplete(), // Must choose all available feats
-            7 => GetSkillPointsRemaining() >= 0, // Can't overspend
-            8 => !_needsSpellSelection || _isDivineCaster || IsSpellSelectionComplete(),
-            9 => true, // Equipment is optional
-            10 => true, // Summary is always valid (name is optional)
+            3 => true, // Identity always has defaults
+            4 => true, // Appearance always has defaults
+            5 => _selectedClassId >= 0, // Must have a class selected
+            6 => GetAbilityPointsRemaining() == 0 || !_isBicFile, // BIC must spend all points
+            7 => IsFeatSelectionComplete(), // Must choose all available feats
+            8 => GetSkillPointsRemaining() >= 0, // Can't overspend
+            9 => !_needsSpellSelection || _isDivineCaster || IsSpellSelectionComplete(),
+            10 => true, // Equipment is optional
+            11 => true, // Summary is always valid (read-only review)
             _ => true
         };
 
@@ -701,10 +708,10 @@ public partial class NewCharacterWizardWindow : Window
         _statusLabel.Text = _currentStep switch
         {
             2 when !canProceed => "Select a race to continue.",
-            4 when !canProceed => "Select a class to continue.",
-            5 when !canProceed => $"Spend all {_pointBuyTotal} ability points to continue.",
-            6 when !canProceed => $"Select {_featsToChoose - _chosenFeatIds.Count} more feat(s) to continue.",
-            8 when !canProceed => "Select all required spells to continue.",
+            5 when !canProceed => "Select a class to continue.",
+            6 when !canProceed => $"Spend all {_pointBuyTotal} ability points to continue.",
+            7 when !canProceed => $"Select {_featsToChoose - _chosenFeatIds.Count} more feat(s) to continue.",
+            9 when !canProceed => "Select all required spells to continue.",
             _ => ""
         };
     }
@@ -733,17 +740,20 @@ public partial class NewCharacterWizardWindow : Window
                 break;
             case 8:
                 PrepareStep8();
-                if (!_needsSpellSelection)
-                {
-                    _currentStep++;
-                    PrepareCurrentStep(); // Skip to step 9
-                }
                 break;
             case 9:
                 PrepareStep9();
+                if (!_needsSpellSelection)
+                {
+                    _currentStep++;
+                    PrepareCurrentStep(); // Skip to step 10
+                }
                 break;
             case 10:
                 PrepareStep10();
+                break;
+            case 11:
+                PrepareStep11();
                 break;
         }
     }
@@ -765,7 +775,7 @@ public partial class NewCharacterWizardWindow : Window
             _currentStep--;
 
             // Skip spell step when going back if non-caster
-            if (_currentStep == 8 && !_needsSpellSelection)
+            if (_currentStep == 9 && !_needsSpellSelection)
                 _currentStep--;
 
             UpdateStepDisplay();
@@ -775,7 +785,7 @@ public partial class NewCharacterWizardWindow : Window
     private void OnFinishClick(object? sender, RoutedEventArgs e)
     {
         // Read palette ID from UI before building input
-        _paletteId = (_paletteIdComboBox.SelectedItem is ComboBoxItem item && item.Tag is byte id) ? id : (byte)1;
+        _paletteId = (_identityPaletteIdComboBox.SelectedItem is ComboBoxItem item && item.Tag is byte id) ? id : (byte)1;
 
         var input = new CharacterCreationService.CharacterCreationInput
         {
@@ -838,12 +848,12 @@ public partial class NewCharacterWizardWindow : Window
                 SlotFlags = e.SlotFlags
             }).ToList(),
             CharacterName = _characterName,
-            LastName = _lastNameTextBox.Text?.Trim() ?? "",
-            Description = _descriptionTextBox.Text?.Trim() ?? "",
+            LastName = _identityLastNameTextBox.Text?.Trim() ?? "",
+            Description = _identityDescriptionTextBox.Text?.Trim() ?? "",
             PaletteId = _paletteId,
             FactionId = _selectedFactionId,
             VoiceSetId = _selectedVoiceSetId,
-            Age = (int)(_ageNumericUpDown.Value ?? 25)
+            Age = (int)(_identityAgeNumericUpDown.Value ?? 25)
         };
 
         var service = new CharacterCreationService(_displayService, _gameDataService);
@@ -872,7 +882,7 @@ public partial class NewCharacterWizardWindow : Window
             parts.Add($"{genderName} {raceName}");
         }
 
-        if (_currentStep >= 4 && _selectedClassId >= 0)
+        if (_currentStep >= 5 && _selectedClassId >= 0)
         {
             parts.Add(_displayService.GetClassName(_selectedClassId));
         }

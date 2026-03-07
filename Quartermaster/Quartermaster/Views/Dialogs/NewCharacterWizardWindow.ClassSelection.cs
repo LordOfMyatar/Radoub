@@ -12,13 +12,13 @@ using Radoub.Formats.Services;
 namespace Quartermaster.Views.Dialogs;
 
 /// <summary>
-/// Step 4: Class &amp; Package selection, domain configuration, and prestige planning.
+/// Step 5: Class &amp; Package selection, domain configuration, and prestige planning.
 /// </summary>
 public partial class NewCharacterWizardWindow
 {
-    #region Step 4: Class & Package
+    #region Step 5: Class & Package
 
-    private void PrepareStep4()
+    private void PrepareStep5()
     {
         // Reload favored class (may have changed if race changed)
         _favoredClassId = _displayService.GetFavoredClass(_selectedRaceId);
