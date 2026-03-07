@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.2.27-alpha] - 2026-03-05
+## [0.2.27-alpha] - 2026-03-06
 **Branch**: `quartermaster/issue-1580` | **PR**: #1613
 
 ### Sprint: Item Palette UX & Equipment Layout (#1580)
@@ -18,16 +18,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - [x] #1313 — Drag from item palette to backpack
   - Added PaletteItem/ItemViewModels drop handling to backpack drop handler
   - Reuses existing OnAddToBackpackRequested for item creation
+  - Fixed drop target: moved from DataGrid to wrapping Grid (DataGrid column-reorder consumes drag events)
 - [x] #1209 — Refine item palette search/filtering
   - Added slot-based filtering dropdown (Head, Chest, Right Hand, etc. + Non-Equipable)
   - Added "Slots" column to item list showing which equipment slots each item fits
   - Added EquipableSlotFlags/EquipableSlotsDisplay to ItemViewModel
   - New SlotFilterInfo model and filter state persistence
 - [x] #1484 — Game-Style Equipment Paperdoll Layout
-  - Added SlotSize enum (Small/Medium/Large/Tall) for relative slot sizing
-  - Weapons/cloak use tall slots, chest armor uses large, rings/ammo use small
-  - Added AC display circle in center of paperdoll showing NaturalAC
-  - EquipmentSlotControl template uses dynamic SlotWidth/SlotHeight
+  - Added SlotSize enum (Small/Wide/Medium/Large/Tall/ExtraTall) with 32px base grid unit
+  - Compact 4-row layout: Head+Cloak / Chest+Neck+Arms / Weapons+Belt / Boots+Ammo+Rings
+  - EquipmentSlotControl icons scale with Stretch="Uniform" to fit slot dimensions
+  - Equip-over-existing swaps old item to backpack automatically
 
 ---
 
