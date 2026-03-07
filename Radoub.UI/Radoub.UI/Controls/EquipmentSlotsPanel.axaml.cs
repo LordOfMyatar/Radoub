@@ -163,6 +163,33 @@ public partial class EquipmentSlotsPanel : UserControl
         }
     }
 
+    /// <summary>
+    /// Apply slot size dimensions after slots are bound.
+    /// </summary>
+    private void ApplySlotSizes()
+    {
+        foreach (var slot in Slots)
+        {
+            if (_slotControls.TryGetValue(slot.SlotId, out var control))
+            {
+                var (w, h) = GetSlotDimensions(slot.Size);
+                control.SlotWidth = w;
+                control.SlotHeight = h;
+            }
+        }
+    }
+
+    private static (double width, double height) GetSlotDimensions(SlotSize size) => size switch
+    {
+        SlotSize.Small => (32, 32),        // 1x1 grid units
+        SlotSize.Wide => (64, 32),         // 2x1 grid units
+        SlotSize.Medium => (64, 64),       // 2x2 grid units
+        SlotSize.Large => (64, 96),        // 2x3 grid units
+        SlotSize.Tall => (32, 96),         // 1x3 grid units
+        SlotSize.ExtraTall => (64, 128),   // 2x4 grid units
+        _ => (64, 64)
+    };
+
     private void UpdateSlotBindings()
     {
         foreach (var slot in Slots)
@@ -172,6 +199,7 @@ public partial class EquipmentSlotsPanel : UserControl
                 control.Slot = slot;
             }
         }
+        ApplySlotSizes();
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -287,6 +315,18 @@ public class EquipmentSlotControl : TemplatedControl
     /// </summary>
     public static readonly StyledProperty<EquipmentSlotViewModel?> SlotProperty =
         AvaloniaProperty.Register<EquipmentSlotControl, EquipmentSlotViewModel?>(nameof(Slot));
+
+    /// <summary>
+    /// Width of the slot icon area (varies by SlotSize).
+    /// </summary>
+    public static readonly StyledProperty<double> SlotWidthProperty =
+        AvaloniaProperty.Register<EquipmentSlotControl, double>(nameof(SlotWidth), defaultValue: 64);
+
+    /// <summary>
+    /// Height of the slot icon area (varies by SlotSize).
+    /// </summary>
+    public static readonly StyledProperty<double> SlotHeightProperty =
+        AvaloniaProperty.Register<EquipmentSlotControl, double>(nameof(SlotHeight), defaultValue: 64);
 
     /// <summary>
     /// Event raised when slot is clicked.
@@ -410,6 +450,24 @@ public class EquipmentSlotControl : TemplatedControl
     {
         get => GetValue(SlotProperty);
         set => SetValue(SlotProperty, value);
+    }
+
+    /// <summary>
+    /// Width of the slot icon area.
+    /// </summary>
+    public double SlotWidth
+    {
+        get => GetValue(SlotWidthProperty);
+        set => SetValue(SlotWidthProperty, value);
+    }
+
+    /// <summary>
+    /// Height of the slot icon area.
+    /// </summary>
+    public double SlotHeight
+    {
+        get => GetValue(SlotHeightProperty);
+        set => SetValue(SlotHeightProperty, value);
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)

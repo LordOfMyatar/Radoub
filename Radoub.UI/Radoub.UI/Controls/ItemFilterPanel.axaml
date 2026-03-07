@@ -24,8 +24,8 @@
                 ToolTip.Tip="Clear search"/>
       </Grid>
 
-      <!-- Row 2: Source checkboxes and Type filter -->
-      <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+      <!-- Row 2: Source checkboxes, Type filter, and Slot filter -->
+      <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto">
         <CheckBox x:Name="StandardCheck"
                   Grid.Column="0"
                   Content="Standard"
@@ -52,8 +52,23 @@
           </ComboBox>
         </StackPanel>
 
+        <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="16,0,0,0">
+          <TextBlock Text="Slot:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+          <ComboBox x:Name="SlotCombo"
+                    MinWidth="130"
+                    ItemsSource="{Binding SlotFilters, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    SelectedItem="{Binding SelectedSlotFilter, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
+                    ToolTip.Tip="Filter by equipment slot">
+            <ComboBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding Name}"/>
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+        </StackPanel>
+
         <TextBlock x:Name="ResultCount"
-                   Grid.Column="3"
+                   Grid.Column="5"
                    VerticalAlignment="Center"
                    Margin="16,0,0,0"
                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>

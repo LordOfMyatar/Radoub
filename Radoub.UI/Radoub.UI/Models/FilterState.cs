@@ -29,4 +29,9 @@ public class FilterState
     /// Property search string (searches item properties).
     /// </summary>
     public string? PropertySearchText { get; set; }
+
+    /// <summary>
+    /// Selected slot filter flag, or null for "All Slots".
+    /// </summary>
+    public int? SelectedSlotFlag { get; set; }
 }

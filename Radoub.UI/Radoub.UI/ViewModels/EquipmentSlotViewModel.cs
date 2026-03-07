@@ -4,6 +4,26 @@ using Radoub.UI.Services;
 namespace Radoub.UI.ViewModels;
 
 /// <summary>
+/// Visual size categories for equipment slot rendering in the paperdoll layout.
+/// Base grid unit is 32px. Sizes are expressed as grid multiples (WxH).
+/// </summary>
+public enum SlotSize
+{
+    /// <summary>1x1 grid unit (rings, amulet, bullets). 32x32.</summary>
+    Small,
+    /// <summary>2x1 grid units (belt). 64x32.</summary>
+    Wide,
+    /// <summary>2x2 grid units (head, boots, gloves). 64x64.</summary>
+    Medium,
+    /// <summary>2x3 grid units (armor, cloak, left hand). 64x96.</summary>
+    Large,
+    /// <summary>1x3 grid units (arrows, bolts). 32x96.</summary>
+    Tall,
+    /// <summary>2x4 grid units (right hand). 64x128.</summary>
+    ExtraTall
+}
+
+/// <summary>
 /// ViewModel for a single equipment slot in the EquipmentSlotsPanel.
 /// </summary>
 public partial class EquipmentSlotViewModel : ObservableObject
@@ -47,6 +67,11 @@ public partial class EquipmentSlotViewModel : ObservableObject
     /// Path to the slot's placeholder icon resource.
     /// </summary>
     public string IconPath => ItemIconHelper.GetSlotIconPath(SlotFlag);
+
+    /// <summary>
+    /// Visual size category for paperdoll layout.
+    /// </summary>
+    public SlotSize Size { get; init; } = SlotSize.Medium;
 
     /// <summary>
     /// True if this is a standard equipment slot (Head, Chest, etc.).
@@ -144,26 +169,26 @@ public static class EquipmentSlotFactory
     private const int FlagSkin = 0x20000;
 
     /// <summary>
-    /// Creates all standard equipment slots (14 slots).
+    /// Creates all standard equipment slots (14 slots) with paperdoll sizes.
     /// </summary>
     public static IReadOnlyList<EquipmentSlotViewModel> CreateStandardSlots()
     {
         return new List<EquipmentSlotViewModel>
         {
-            new(0, FlagHead, "Head"),
-            new(1, FlagChest, "Chest"),
-            new(2, FlagBoots, "Boots"),
-            new(3, FlagArms, "Arms"),
-            new(4, FlagRightHand, "Right Hand"),
-            new(5, FlagLeftHand, "Left Hand"),
-            new(6, FlagCloak, "Cloak"),
-            new(7, FlagLeftRing, "Left Ring"),
-            new(8, FlagRightRing, "Right Ring"),
-            new(9, FlagNeck, "Neck"),
-            new(10, FlagBelt, "Belt"),
-            new(11, FlagArrows, "Arrows"),
-            new(12, FlagBullets, "Bullets"),
-            new(13, FlagBolts, "Bolts")
+            new(0, FlagHead, "Head") { Size = SlotSize.Medium },
+            new(1, FlagChest, "Chest") { Size = SlotSize.Large },
+            new(2, FlagBoots, "Boots") { Size = SlotSize.Medium },
+            new(3, FlagArms, "Arms") { Size = SlotSize.Medium },
+            new(4, FlagRightHand, "Right Hand") { Size = SlotSize.ExtraTall },
+            new(5, FlagLeftHand, "Left Hand") { Size = SlotSize.Large },
+            new(6, FlagCloak, "Cloak") { Size = SlotSize.Large },
+            new(7, FlagLeftRing, "Left Ring") { Size = SlotSize.Small },
+            new(8, FlagRightRing, "Right Ring") { Size = SlotSize.Small },
+            new(9, FlagNeck, "Neck") { Size = SlotSize.Small },
+            new(10, FlagBelt, "Belt") { Size = SlotSize.Wide },
+            new(11, FlagArrows, "Arrows") { Size = SlotSize.Tall },
+            new(12, FlagBullets, "Bullets") { Size = SlotSize.Small },
+            new(13, FlagBolts, "Bolts") { Size = SlotSize.Tall }
         };
     }
 
@@ -174,10 +199,10 @@ public static class EquipmentSlotFactory
     {
         return new List<EquipmentSlotViewModel>
         {
-            new(14, FlagClaw1, "Claw 1", isNatural: true),
-            new(15, FlagClaw2, "Claw 2", isNatural: true),
-            new(16, FlagClaw3, "Claw 3", isNatural: true),
-            new(17, FlagSkin, "Skin", isNatural: true)
+            new(14, FlagClaw1, "Claw 1", isNatural: true) { Size = SlotSize.Tall },
+            new(15, FlagClaw2, "Claw 2", isNatural: true) { Size = SlotSize.Tall },
+            new(16, FlagClaw3, "Claw 3", isNatural: true) { Size = SlotSize.Tall },
+            new(17, FlagSkin, "Skin", isNatural: true) { Size = SlotSize.Large }
         };
     }
 

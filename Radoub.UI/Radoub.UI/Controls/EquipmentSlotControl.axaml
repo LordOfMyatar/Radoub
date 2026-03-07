@@ -11,8 +11,6 @@
   </Design.PreviewWith>
 
   <ControlTheme x:Key="{x:Type controls:EquipmentSlotControl}" TargetType="controls:EquipmentSlotControl">
-    <Setter Property="Width" Value="80"/>
-    <Setter Property="Height" Value="110"/>
     <Setter Property="Template">
       <ControlTemplate>
         <StackPanel Spacing="2" DataContext="{Binding Slot, RelativeSource={RelativeSource TemplatedParent}}">
@@ -23,12 +21,12 @@
                      HorizontalAlignment="Center"
                      Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                      TextTrimming="CharacterEllipsis"
-                     MaxWidth="70"/>
+                     MaxWidth="80"/>
 
-          <!-- Slot border with item icon area -->
+          <!-- Slot border with item icon area - size from SlotWidth/SlotHeight -->
           <Border x:Name="SlotBorder"
-                  Width="64"
-                  Height="64"
+                  Width="{Binding SlotWidth, RelativeSource={RelativeSource TemplatedParent}}"
+                  Height="{Binding SlotHeight, RelativeSource={RelativeSource TemplatedParent}}"
                   BorderThickness="1"
                   BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                   Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
@@ -38,12 +36,12 @@
               <Border x:Name="EmptyPlaceholder"
                       IsVisible="{Binding IsEmpty, FallbackValue=True}"
                       Background="Transparent"
-                      CornerRadius="3">
+                      CornerRadius="3"
+                      Padding="4">
                 <svg:Svg Path="{Binding IconPath}"
-                         Width="40"
-                         Height="40"
                          HorizontalAlignment="Center"
                          VerticalAlignment="Center"
+                         Stretch="Uniform"
                          Opacity="0.5"/>
               </Border>
 
@@ -57,18 +55,15 @@
                   <!-- Actual game icon (if available) -->
                   <Image Source="{Binding EquippedItem.IconBitmap}"
                          IsVisible="{Binding EquippedItem.HasGameIcon, FallbackValue=False}"
-                         Width="48"
-                         Height="48"
                          HorizontalAlignment="Center"
                          VerticalAlignment="Center"
                          Stretch="Uniform"/>
                   <!-- Placeholder SVG (fallback) -->
                   <svg:Svg Path="{Binding IconPath}"
                            IsVisible="{Binding EquippedItem.HasGameIcon, Converter={x:Static BoolConverters.Not}, FallbackValue=True}"
-                           Width="48"
-                           Height="48"
                            HorizontalAlignment="Center"
-                           VerticalAlignment="Center"/>
+                           VerticalAlignment="Center"
+                           Stretch="Uniform"/>
                 </Grid>
               </Border>
 

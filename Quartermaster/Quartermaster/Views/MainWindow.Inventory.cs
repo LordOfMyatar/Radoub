@@ -141,6 +141,14 @@ public partial class MainWindow
             return;
         }
 
+        // If slot already has an item, move it to backpack first (swap)
+        if (slot.HasItem && slot.EquippedItem != null)
+        {
+            UnifiedLogger.LogInventory(LogLevel.INFO,
+                $"Swapping: moving {slot.EquippedItem.Name} from {slot.Name} to backpack");
+            UnequipToBackpack(slot);
+        }
+
         var equippedItem = ItemFactory.Create(utiFile, droppedItem.Source);
         SetupLazyIconLoading(equippedItem);
         slot.EquippedItem = equippedItem;
@@ -158,6 +166,7 @@ public partial class MainWindow
 
     /// <summary>
     /// Handles item dropped on backpack list.
+    /// Supports drops from equipment slots (EquippedItem) and palette (PaletteItem/ItemViewModels).
     /// </summary>
     private void OnBackpackItemDropped(object? sender, Radoub.UI.Controls.ItemDropEventArgs e)
     {
@@ -173,6 +182,34 @@ public partial class MainWindow
                     UnifiedLogger.LogInventory(LogLevel.INFO,
                         $"Dropped {equippedItem.Name} from {slot.Name} to backpack");
                 }
+            }
+        }
+        else if (e.DataObject.Contains("PaletteItem") || e.DataObject.Contains("ItemViewModels"))
+        {
+            var format = e.DataObject.Contains("PaletteItem") ? "PaletteItem" : "ItemViewModels";
+            var data = e.DataObject.Get(format);
+
+            UnifiedLogger.LogInventory(LogLevel.DEBUG,
+                $"Backpack drop: format={format}, data type={data?.GetType().FullName ?? "null"}");
+
+            var items = data switch
+            {
+                IReadOnlyList<ItemViewModel> list => list.ToArray(),
+                IEnumerable<ItemViewModel> enumerable => enumerable.ToArray(),
+                ItemViewModel single => new[] { single },
+                _ => null
+            };
+
+            if (items != null && items.Length > 0)
+            {
+                OnAddToBackpackRequested(sender, items);
+                UnifiedLogger.LogInventory(LogLevel.INFO,
+                    $"Dropped {items.Length} item(s) from palette to backpack");
+            }
+            else
+            {
+                UnifiedLogger.LogInventory(LogLevel.WARN,
+                    $"Backpack drop: could not extract items from format={format}");
             }
         }
     }

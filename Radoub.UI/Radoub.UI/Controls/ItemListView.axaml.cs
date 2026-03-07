@@ -87,7 +87,7 @@ public partial class ItemListView : UserControl
     public event EventHandler<ItemViewModel>? DeleteRequested;
 
     // Column keys for persistence (must match XAML column order)
-    private static readonly string[] ColumnKeys = { "Icon", "Name", "ResRef", "Tag", "Type", "Value", "Properties" };
+    private static readonly string[] ColumnKeys = { "Icon", "Name", "ResRef", "Tag", "Type", "Slots", "Value", "Properties" };
 
     // Drag state
     private Point _dragStartPoint;
@@ -105,10 +105,11 @@ public partial class ItemListView : UserControl
         ItemsGrid.PointerMoved += OnGridPointerMoved;
         ItemsGrid.PointerReleased += OnGridPointerReleased;
 
-        // Enable drop support
-        DragDrop.SetAllowDrop(ItemsGrid, true);
-        ItemsGrid.AddHandler(DragDrop.DragOverEvent, OnDragOver);
-        ItemsGrid.AddHandler(DragDrop.DropEvent, OnDrop);
+        // Enable drop support on the wrapping Grid (not DataGrid itself,
+        // because DataGrid's internal column-reorder drag handling consumes drag events)
+        DragDrop.SetAllowDrop(DropTargetGrid, true);
+        DropTargetGrid.AddHandler(DragDrop.DragOverEvent, OnDragOver, RoutingStrategies.Bubble | RoutingStrategies.Tunnel);
+        DropTargetGrid.AddHandler(DragDrop.DropEvent, OnDrop, RoutingStrategies.Bubble | RoutingStrategies.Tunnel);
     }
 
     private void OnLoaded(object? sender, RoutedEventArgs e)
@@ -438,7 +439,17 @@ public partial class ItemListView : UserControl
 
     private void OnDrop(object? sender, DragEventArgs e)
     {
-        if (ItemDropped == null) return;
+        if (ItemDropped == null)
+        {
+            Radoub.Formats.Logging.UnifiedLogger.LogUI(
+                Radoub.Formats.Logging.LogLevel.WARN,
+                $"ItemListView.OnDrop: ItemDropped is null, ignoring drop (ContextKey={ContextKey})");
+            return;
+        }
+
+        Radoub.Formats.Logging.UnifiedLogger.LogUI(
+            Radoub.Formats.Logging.LogLevel.DEBUG,
+            $"ItemListView.OnDrop: processing drop (ContextKey={ContextKey})");
 
 #pragma warning disable CS0618 // e.Data is obsolete but we need IDataObject.Get/Contains methods
         var args = new ItemDropEventArgs(e.Data);

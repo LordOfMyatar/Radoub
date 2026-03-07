@@ -13,7 +13,7 @@
     </Style>
   </UserControl.Styles>
 
-  <Grid RowDefinitions="*">
+  <Grid x:Name="DropTargetGrid" RowDefinitions="*" Background="Transparent">
     <!-- DataGrid -->
     <DataGrid Grid.Row="0"
               x:Name="ItemsGrid"
@@ -71,6 +71,7 @@
         <DataGridTextColumn Header="ResRef" Binding="{Binding ResRef}" Width="120"/>
         <DataGridTextColumn Header="Tag" Binding="{Binding Tag}" Width="120"/>
         <DataGridTextColumn Header="Type" Binding="{Binding BaseItemName}" Width="100"/>
+        <DataGridTextColumn Header="Slots" Binding="{Binding EquipableSlotsDisplay}" Width="120"/>
         <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="80"/>
         <DataGridTextColumn Header="Properties" Binding="{Binding PropertiesDisplay}" Width="*"/>
       </DataGrid.Columns>
