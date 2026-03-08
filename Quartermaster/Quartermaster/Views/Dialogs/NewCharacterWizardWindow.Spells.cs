@@ -116,13 +116,28 @@ public partial class NewCharacterWizardWindow
         if (isSpontaneous)
             _spellStepDescription.Text = $"Choose spells known for your {classNameForDesc}. These are the spells you can cast.";
         else
-            _spellStepDescription.Text = $"Choose spells for your {classNameForDesc}'s spellbook.";
+        {
+            int intScore = _abilityBaseScores.GetValueOrDefault("INT", 10);
+            var racialMods = _displayService.GetRacialModifiers(_selectedRaceId);
+            intScore += racialMods.Int;
+            int intModifier = (intScore - 10) / 2;
+            int level1Count = System.Math.Max(3 + intModifier, 1);
+            _spellStepDescription.Text = $"Your {classNameForDesc} learns all cantrips and {level1Count} level 1 spell{(level1Count != 1 ? "s" : "")} for their spellbook.";
+        }
 
         // Initialize spell level selections if not already done
         if (!_step8Loaded)
         {
             _step8Loaded = true;
             _selectedSpellsByLevel.Clear();
+
+            // Wizards get all cantrips automatically in their spellbook
+            if (!isSpontaneous)
+            {
+                var allCantrips = _displayService.Spells.GetSpellsForClassAtLevel(classId, 0);
+                if (allCantrips.Count > 0)
+                    _selectedSpellsByLevel[0] = new List<int>(allCantrips);
+            }
         }
 
         // Build spell level tabs
@@ -291,13 +306,22 @@ public partial class NewCharacterWizardWindow
         }
         else
         {
-            // Wizard: use spell slots as guide for initial spellbook
-            // At level 1, wizards get 3 + INT mod cantrips and all level 0 plus (3 + INT mod) level 1 spells
-            // Simplified: use spell slots
-            var slots = _displayService.Spells.GetSpellSlots(classId, 1);
-            if (slots != null && spellLevel < slots.Length)
-                return System.Math.Max(slots[spellLevel], 0);
-            return 0;
+            // Wizard spellbook at level 1:
+            //   Cantrips (level 0): All available cantrips go into spellbook
+            //   Level 1+: 3 + INT modifier spells
+            if (spellLevel == 0)
+            {
+                // Wizards learn all cantrips — return total available count
+                return _displayService.Spells.GetSpellsForClassAtLevel(classId, 0).Count;
+            }
+            else
+            {
+                int intScore = _abilityBaseScores.GetValueOrDefault("INT", 10);
+                var racialMods = _displayService.GetRacialModifiers(_selectedRaceId);
+                intScore += racialMods.Int;
+                int intModifier = (intScore - 10) / 2;
+                return System.Math.Max(3 + intModifier, 1); // Minimum 1 spell
+            }
         }
     }
 

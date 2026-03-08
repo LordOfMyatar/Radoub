@@ -49,6 +49,7 @@ public partial class LevelUpWizardWindow : Window
     private int _maxSpellLevelThisLevel;
     private int _currentSpellLevel;
     private Dictionary<int, int> _newSpellsPerLevel = new(); // spell level -> new spells to pick
+    private int _wizardFreeSpellsRemaining; // Wizard: 2 free spells distributed across levels
     private List<SpellDisplayItem> _availableSpellsForLevel = new();
     private List<SpellDisplayItem> _filteredAvailableSpells = new();
 
