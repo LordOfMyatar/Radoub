@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.30-alpha] - 2026-03-07
+**Branch**: `quartermaster/issue-1602` | **PR**: #TBD
+
+### Sprint: NCW Spell Step & Validation (#1602)
+
+- [ ] #1587 — NCW: Wizard spell selection step
+- [ ] #1503 — Validation toggle for NCW and LUW (Chaotic Evil / True Neutral / Lawful Good)
+
+---
+
 ## [0.2.29-alpha] - 2026-03-07
 **Branch**: `quartermaster/issue-1601` | **PR**: #1625
 
