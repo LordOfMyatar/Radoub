@@ -10,13 +10,13 @@ using Quartermaster.Services;
 namespace Quartermaster.Views.Dialogs;
 
 /// <summary>
-/// Step 3: Appearance, body parts, colors, and portrait.
+/// Step 4: Appearance, body parts, and colors.
 /// </summary>
 public partial class NewCharacterWizardWindow
 {
-    #region Step 3: Appearance
+    #region Step 4: Appearance
 
-    private void PrepareStep3()
+    private void PrepareStep4()
     {
         if (_step3Loaded)
             return;
@@ -41,13 +41,6 @@ public partial class NewCharacterWizardWindow
         _phenotypeComboBox.ItemsSource = phenotypes;
         if (phenotypes.Count > 0)
             _phenotypeComboBox.SelectedItem = phenotypes[0];
-
-        // Set default portrait based on gender (hu_m_99_ for male, hu_f_99_ for female)
-        var defaultPortraitResRef = _selectedGender == 0 ? "hu_m_99_" : "hu_f_99_";
-        var defaultPortraitId = _displayService.FindPortraitIdByResRef(defaultPortraitResRef);
-        if (defaultPortraitId.HasValue)
-            _selectedPortraitId = defaultPortraitId.Value;
-        UpdatePortraitDisplay();
 
         // Initialize color swatches
         UpdateAllColorSwatches();
@@ -228,42 +221,6 @@ public partial class NewCharacterWizardWindow
         UpdateColorSwatch(_hairColorSwatch, PaletteColorService.Palettes.Hair, _hairColor);
         UpdateColorSwatch(_tattoo1ColorSwatch, PaletteColorService.Palettes.Tattoo1, _tattoo1Color);
         UpdateColorSwatch(_tattoo2ColorSwatch, PaletteColorService.Palettes.Tattoo2, _tattoo2Color);
-    }
-
-    private async void OnBrowsePortraitClick(object? sender, RoutedEventArgs e)
-    {
-        if (_itemIconService == null)
-            return;
-
-        var browser = new PortraitBrowserWindow(_gameDataService, _itemIconService);
-
-        // Pre-populate filters based on wizard selections
-        browser.SetInitialFilters(_selectedRaceId, _selectedGender);
-
-        var result = await browser.ShowDialog<ushort?>(this);
-
-        if (result.HasValue)
-        {
-            _selectedPortraitId = result.Value;
-            UpdatePortraitDisplay();
-        }
-    }
-
-    private void UpdatePortraitDisplay()
-    {
-        var resRef = _displayService.GetPortraitResRef(_selectedPortraitId);
-        _portraitNameLabel.Text = resRef ?? $"Portrait {_selectedPortraitId}";
-
-        // Load portrait preview image if icon service available
-        if (_itemIconService != null && resRef != null)
-        {
-            var image = _itemIconService.GetPortrait(resRef);
-            _portraitPreviewImage.Source = image;
-        }
-        else
-        {
-            _portraitPreviewImage.Source = null;
-        }
     }
 
     #endregion

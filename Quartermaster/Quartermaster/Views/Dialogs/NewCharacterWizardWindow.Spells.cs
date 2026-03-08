@@ -11,13 +11,13 @@ using Radoub.UI.Services;
 namespace Quartermaster.Views.Dialogs;
 
 /// <summary>
-/// Step 8: Spell selection by level for caster classes.
+/// Step 9: Spell selection by level for caster classes.
 /// </summary>
 public partial class NewCharacterWizardWindow
 {
-    #region Step 8: Spells (was Step 7)
+    #region Step 9: Spells
 
-    private void PrepareStep8()
+    private void PrepareStep9()
     {
         int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
         bool isCaster = _displayService.IsCasterClass(classId);

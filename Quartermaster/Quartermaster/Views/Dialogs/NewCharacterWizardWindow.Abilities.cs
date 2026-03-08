@@ -9,16 +9,16 @@ using Radoub.UI.Services;
 namespace Quartermaster.Views.Dialogs;
 
 /// <summary>
-/// Step 5: Ability score allocation (point-buy system).
+/// Step 6: Ability score allocation (point-buy system).
 /// </summary>
 public partial class NewCharacterWizardWindow
 {
-    #region Step 5: Ability Scores
+    #region Step 6: Ability Scores
 
     private static readonly string[] AbilityNames = { "STR", "DEX", "CON", "INT", "WIS", "CHA" };
     private static readonly string[] AbilityFullNames = { "Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma" };
 
-    private void PrepareStep5()
+    private void PrepareStep6()
     {
         // Update point-buy budget from racialtypes.2da (race may have changed since last visit)
         _pointBuyTotal = _displayService.GetRacialAbilitiesPointBuyNumber(_selectedRaceId);
