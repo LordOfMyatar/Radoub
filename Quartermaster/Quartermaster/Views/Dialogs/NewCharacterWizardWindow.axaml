@@ -246,20 +246,32 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Left: Race list + Sex toggle -->
+                    <!-- Left: Sex toggle + Race list -->
                     <Grid Grid.Column="0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <TextBox Grid.Row="0" x:Name="RaceSearchBox"
+                        <!-- Sex Toggle (prominent, at top) -->
+                        <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                                Padding="10,8" CornerRadius="4" Margin="0,0,10,8">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <TextBlock Text="Sex:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                <ToggleButton x:Name="MaleToggle" Content="Male" IsChecked="True"
+                                              Click="OnMaleToggleClick" Width="80"/>
+                                <ToggleButton x:Name="FemaleToggle" Content="Female" IsChecked="False"
+                                              Click="OnFemaleToggleClick" Width="80"/>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBox Grid.Row="1" x:Name="RaceSearchBox"
                                  Watermark="Filter races..."
                                  Margin="0,0,10,5"
                                  TextChanged="OnRaceSearchChanged"/>
 
-                        <Border Grid.Row="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                        <Border Grid.Row="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                 BorderThickness="1" Margin="0,0,10,0">
                             <ListBox x:Name="RaceListBox" SelectionChanged="OnRaceSelectionChanged">
                                 <ListBox.ItemTemplate>
@@ -269,15 +281,6 @@
                                 </ListBox.ItemTemplate>
                             </ListBox>
                         </Border>
-
-                        <!-- Sex Toggle -->
-                        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10" Margin="0,10,10,0">
-                            <TextBlock Text="Sex:" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                            <ToggleButton x:Name="MaleToggle" Content="Male" IsChecked="True"
-                                          Click="OnMaleToggleClick" Width="80"/>
-                            <ToggleButton x:Name="FemaleToggle" Content="Female" IsChecked="False"
-                                          Click="OnFemaleToggleClick" Width="80"/>
-                        </StackPanel>
                     </Grid>
 
                     <!-- Right: Racial info panel -->
@@ -1509,6 +1512,12 @@
                                 <Grid ColumnDefinitions="120,*">
                                     <TextBlock Grid.Column="0" Text="Alignment:" FontWeight="Bold"/>
                                     <TextBlock Grid.Column="1" x:Name="SummaryAlignmentLabel"/>
+                                </Grid>
+
+                                <!-- Familiar (conditional) -->
+                                <Grid ColumnDefinitions="120,*" x:Name="SummaryFamiliarSection" IsVisible="False">
+                                    <TextBlock Grid.Column="0" Text="Familiar:" FontWeight="Bold"/>
+                                    <TextBlock Grid.Column="1" x:Name="SummaryFamiliarLabel" TextWrapping="Wrap"/>
                                 </Grid>
 
                                 <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>

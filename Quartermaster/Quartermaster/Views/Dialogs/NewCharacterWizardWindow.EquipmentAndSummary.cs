@@ -264,6 +264,20 @@ public partial class NewCharacterWizardWindow
         // Alignment
         _summaryAlignmentLabel.Text = GetAlignmentName(_selectedGoodEvil, _selectedLawChaos);
 
+        // Familiar
+        bool hasFamiliar = _selectedClassId >= 0 && _displayService.ClassGrantsFamiliar(_selectedClassId);
+        _summaryFamiliarSection.IsVisible = hasFamiliar;
+        if (hasFamiliar)
+        {
+            var familiarType = GetSelectedFamiliarType();
+            var familiars = _displayService.GetAllFamiliars();
+            var familiarName = familiars.FirstOrDefault(f => f.Id == familiarType).Name ?? $"Type {familiarType}";
+            var customName = _familiarNameTextBox.Text?.Trim();
+            _summaryFamiliarLabel.Text = !string.IsNullOrEmpty(customName)
+                ? $"{familiarName} — \"{customName}\""
+                : familiarName;
+        }
+
         // Abilities
         var racialMods = _displayService.GetRacialModifiers(_selectedRaceId);
         var abilityParts = new List<string>();
