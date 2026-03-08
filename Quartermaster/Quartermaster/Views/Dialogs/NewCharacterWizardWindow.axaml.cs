@@ -282,6 +282,8 @@ public partial class NewCharacterWizardWindow : Window
     private readonly Border _summaryScriptsDivider;
     private readonly Grid _summaryScriptsSection;
     private readonly TextBlock _summaryScriptsLabel;
+    private readonly Grid _summaryFamiliarSection;
+    private readonly TextBlock _summaryFamiliarLabel;
 
     // Step 5 controls (Class)
     private readonly TextBox _classSearchBox;
@@ -565,6 +567,8 @@ public partial class NewCharacterWizardWindow : Window
         _summaryScriptsDivider = this.FindControl<Border>("SummaryScriptsDivider")!;
         _summaryScriptsSection = this.FindControl<Grid>("SummaryScriptsSection")!;
         _summaryScriptsLabel = this.FindControl<TextBlock>("SummaryScriptsLabel")!;
+        _summaryFamiliarSection = this.FindControl<Grid>("SummaryFamiliarSection")!;
+        _summaryFamiliarLabel = this.FindControl<TextBlock>("SummaryFamiliarLabel")!;
 
         UpdateStepDisplay();
     }

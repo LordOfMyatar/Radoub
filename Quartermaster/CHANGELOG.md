@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.29-alpha] - 2026-03-07
+**Branch**: `quartermaster/issue-1601` | **PR**: #1625
+
+### Sprint: NCW UX Polish (Part 2) (#1601)
+
+- [x] #1598 — NCW Summary/Review shows familiar type and custom name
+- [x] #866 — Search/filter for package picker (filter by name or ID)
+- [x] #1615 — NCW: Race descriptions already displayed on Race & Sex step (verified)
+- [x] #1616 — NCW: Gender selection moved above race list with visual highlight
+
+---
+
 ## [0.2.28-alpha] - 2026-03-07
 **Branch**: `quartermaster/issue-1600` | **PR**: #1614
 
