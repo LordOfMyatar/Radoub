@@ -212,9 +212,9 @@ public partial class NewCharacterWizardWindow
                         btn.IsEnabled = baseScore > AbilityMinBase;
                     else if (btn.Content?.ToString() == "+")
                     {
-                        if (_validationLevel == ValidationLevel.None && baseScore >= AbilityMaxBaseStrict)
+                        if (_validationLevel == ValidationLevel.None)
                         {
-                            // Chaotic Evil: free increases above normal cap
+                            // Chaotic Evil: no point cost, no cap (except absolute max)
                             btn.IsEnabled = baseScore < AbilityMaxBase;
                         }
                         else
@@ -268,9 +268,9 @@ public partial class NewCharacterWizardWindow
             int currentScore = _abilityBaseScores[ability];
             if (currentScore < AbilityMaxBase)
             {
-                if (_validationLevel == ValidationLevel.None && currentScore >= AbilityMaxBaseStrict)
+                if (_validationLevel == ValidationLevel.None)
                 {
-                    // Chaotic Evil: free increases above normal cap
+                    // Chaotic Evil: free increases, no point cost
                     _abilityBaseScores[ability]++;
                     UpdateAbilityDisplay();
                 }

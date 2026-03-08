@@ -707,11 +707,19 @@ public partial class NewCharacterWizardWindow : Window
         var level = (ValidationLevel)_validationLevelComboBox.SelectedIndex;
         SettingsService.Instance.ValidationLevel = level;
 
-        // Refresh ability step UI if on step 6 (button states depend on validation level)
-        if (_currentStep == 6 && _step5Loaded)
-            UpdateAbilityDisplay();
-        else
-            ValidateCurrentStep();
+        // Refresh step-specific UI when validation level changes
+        switch (_currentStep)
+        {
+            case 6 when _step5Loaded:
+                UpdateAbilityDisplay(); // Also calls ValidateCurrentStep
+                break;
+            case 8 when _step7Loaded:
+                RenderSkillRows(); // Rebuild buttons with new enabled state; also calls ValidateCurrentStep
+                break;
+            default:
+                ValidateCurrentStep();
+                break;
+        }
     }
 
     private void ValidateCurrentStep()
@@ -791,11 +799,13 @@ public partial class NewCharacterWizardWindow : Window
     }
 
     /// <summary>
-    /// Returns true when familiar panel is visible but no name has been entered.
+    /// Returns true when class grants a familiar but no name has been entered.
+    /// Uses class check rather than panel visibility to avoid rendering timing issues.
     /// </summary>
     private bool IsFamiliarNameRequired()
     {
-        return _familiarSelectionPanel.IsVisible
+        return _selectedClassId >= 0
+            && _displayService.ClassGrantsFamiliar(_selectedClassId)
             && string.IsNullOrWhiteSpace(_familiarNameTextBox.Text);
     }
 
