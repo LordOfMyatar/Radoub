@@ -23,6 +23,7 @@ public partial class AdvancedPanel : BasePanelControl
     private Button? _copyTagButton;
     private Button? _renameResRefButton;
     private Grid? _resRefRow;
+    private Grid? _tagRow;
     private Grid? _commentRow;
     private Grid? _paletteCategoryRow;
     private ComboBox? _paletteCategoryComboBox;
@@ -83,6 +84,7 @@ public partial class AdvancedPanel : BasePanelControl
         _copyTagButton = this.FindControl<Button>("CopyTagButton");
         _renameResRefButton = this.FindControl<Button>("RenameResRefButton");
         _resRefRow = this.FindControl<Grid>("ResRefRow");
+        _tagRow = this.FindControl<Grid>("TagRow");
         _commentRow = this.FindControl<Grid>("CommentRow");
         _paletteCategoryRow = this.FindControl<Grid>("PaletteCategoryRow");
         _paletteCategoryComboBox = this.FindControl<ComboBox>("PaletteCategoryComboBox");
@@ -271,6 +273,8 @@ public partial class AdvancedPanel : BasePanelControl
         // Hide UTC-only fields for BIC files
         if (_resRefRow != null)
             _resRefRow.IsVisible = !isBicFile;
+        if (_tagRow != null)
+            _tagRow.IsVisible = !isBicFile;
         if (_commentRow != null)
             _commentRow.IsVisible = !isBicFile;
         if (_paletteCategoryRow != null)

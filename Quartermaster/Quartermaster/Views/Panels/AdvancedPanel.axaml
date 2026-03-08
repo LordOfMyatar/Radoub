@@ -43,8 +43,8 @@
                                         ToolTip.Tip="Rename file and update ResRef"/>
                             </Grid>
 
-                            <!-- Tag (editable - both UTC and BIC) -->
-                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                            <!-- Tag (UTC only - BIC tags are set by engine) -->
+                            <Grid x:Name="TagRow" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
                                 <TextBlock Grid.Column="0" Text="Tag:"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            VerticalAlignment="Center" Width="100"/>

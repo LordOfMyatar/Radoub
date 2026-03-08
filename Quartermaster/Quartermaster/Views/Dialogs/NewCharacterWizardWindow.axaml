@@ -421,7 +421,7 @@
                                 <StackPanel Spacing="6">
                                     <TextBlock Text="Generated Identifiers" FontWeight="Bold"/>
                                     <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="80,*" RowSpacing="4" ColumnSpacing="10">
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Tag:"
+                                        <TextBlock Grid.Row="0" Grid.Column="0" x:Name="IdentityTagLabelText" Text="Tag:"
                                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                                         <TextBlock Grid.Row="0" Grid.Column="1" x:Name="IdentityGeneratedTagLabel" Text="new_creature"
                                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>

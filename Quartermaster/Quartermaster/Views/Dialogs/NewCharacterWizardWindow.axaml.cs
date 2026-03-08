@@ -181,6 +181,7 @@ public partial class NewCharacterWizardWindow : Window
     private readonly TextBlock _identityVoiceSetLabel;
     private readonly Image _identityPortraitPreviewImage;
     private readonly TextBlock _identityPortraitNameLabel;
+    private readonly TextBlock _identityTagLabelText;
     private readonly TextBlock _identityGeneratedTagLabel;
     private readonly TextBlock _identityGeneratedResRefLabel;
     private readonly TextBlock _identityFilenameWarning;
@@ -420,6 +421,7 @@ public partial class NewCharacterWizardWindow : Window
         _identityVoiceSetLabel = this.FindControl<TextBlock>("IdentityVoiceSetLabel")!;
         _identityPortraitPreviewImage = this.FindControl<Image>("IdentityPortraitPreviewImage")!;
         _identityPortraitNameLabel = this.FindControl<TextBlock>("IdentityPortraitNameLabel")!;
+        _identityTagLabelText = this.FindControl<TextBlock>("IdentityTagLabelText")!;
         _identityGeneratedTagLabel = this.FindControl<TextBlock>("IdentityGeneratedTagLabel")!;
         _identityGeneratedResRefLabel = this.FindControl<TextBlock>("IdentityGeneratedResRefLabel")!;
         _identityFilenameWarning = this.FindControl<TextBlock>("IdentityFilenameWarning")!;

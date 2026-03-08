@@ -23,6 +23,10 @@ public partial class NewCharacterWizardWindow
         _identityAgeNumericUpDown.IsVisible = _isBicFile;
         _identityAgeNote.IsVisible = _isBicFile;
 
+        // Tag visibility (UTC only — BIC tags are set by engine)
+        _identityTagLabelText.IsVisible = !_isBicFile;
+        _identityGeneratedTagLabel.IsVisible = !_isBicFile;
+
         // UTC-only fields visibility
         _identityUtcFieldsPanel.IsVisible = !_isBicFile;
 
