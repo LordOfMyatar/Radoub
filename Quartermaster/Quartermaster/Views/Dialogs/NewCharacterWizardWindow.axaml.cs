@@ -95,7 +95,9 @@ public partial class NewCharacterWizardWindow : Window
     };
     private int _pointBuyTotal = 30; // Default; updated from racialtypes.2da AbilitiesPointBuyNumber
     private const int AbilityMinBase = 8;
-    private const int AbilityMaxBase = 18;
+    private const int AbilityMaxBaseStrict = 18;
+    private const int AbilityMaxBaseUncapped = 99; // Chaotic Evil mode
+    private int AbilityMaxBase => _validationLevel == ValidationLevel.None ? AbilityMaxBaseUncapped : AbilityMaxBaseStrict;
     private static readonly int[] PointBuyCosts = { 0, 1, 2, 3, 4, 5, 6, 8, 10, 13, 16 }; // index = score - 8
     private bool _step5Loaded;
 
@@ -705,8 +707,11 @@ public partial class NewCharacterWizardWindow : Window
         var level = (ValidationLevel)_validationLevelComboBox.SelectedIndex;
         SettingsService.Instance.ValidationLevel = level;
 
-        // Re-validate current step with new validation level
-        ValidateCurrentStep();
+        // Refresh ability step UI if on step 6 (button states depend on validation level)
+        if (_currentStep == 6 && _step5Loaded)
+            UpdateAbilityDisplay();
+        else
+            ValidateCurrentStep();
     }
 
     private void ValidateCurrentStep()

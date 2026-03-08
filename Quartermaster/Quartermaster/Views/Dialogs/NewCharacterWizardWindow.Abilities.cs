@@ -212,11 +212,20 @@ public partial class NewCharacterWizardWindow
                         btn.IsEnabled = baseScore > AbilityMinBase;
                     else if (btn.Content?.ToString() == "+")
                     {
-                        int nextCostIndex = baseScore + 1 - AbilityMinBase;
-                        int nextCost = nextCostIndex < PointBuyCosts.Length ? PointBuyCosts[nextCostIndex] : int.MaxValue;
-                        int currentCost = PointBuyCosts[baseScore - AbilityMinBase];
-                        int costDelta = nextCost - currentCost;
-                        btn.IsEnabled = baseScore < AbilityMaxBase && remaining >= costDelta;
+                        if (_validationLevel == ValidationLevel.None && baseScore >= AbilityMaxBaseStrict)
+                        {
+                            // Chaotic Evil: free increases above normal cap
+                            btn.IsEnabled = baseScore < AbilityMaxBase;
+                        }
+                        else
+                        {
+                            int nextCostIndex = baseScore + 1 - AbilityMinBase;
+                            int nextCost = nextCostIndex < PointBuyCosts.Length ? PointBuyCosts[nextCostIndex] : int.MaxValue;
+                            int currentCostIndex = baseScore - AbilityMinBase;
+                            int currentCost = currentCostIndex >= 0 && currentCostIndex < PointBuyCosts.Length ? PointBuyCosts[currentCostIndex] : 0;
+                            int costDelta = nextCost - currentCost;
+                            btn.IsEnabled = baseScore < AbilityMaxBase && remaining >= costDelta;
+                        }
                     }
                 }
             }
@@ -256,18 +265,28 @@ public partial class NewCharacterWizardWindow
     {
         if (sender is Button btn && btn.Tag is string ability)
         {
-            if (_abilityBaseScores[ability] < AbilityMaxBase)
+            int currentScore = _abilityBaseScores[ability];
+            if (currentScore < AbilityMaxBase)
             {
-                int currentScore = _abilityBaseScores[ability];
-                int nextCostIndex = currentScore + 1 - AbilityMinBase;
-                int nextCost = nextCostIndex < PointBuyCosts.Length ? PointBuyCosts[nextCostIndex] : int.MaxValue;
-                int currentCost = PointBuyCosts[currentScore - AbilityMinBase];
-                int costDelta = nextCost - currentCost;
-
-                if (GetAbilityPointsRemaining() >= costDelta)
+                if (_validationLevel == ValidationLevel.None && currentScore >= AbilityMaxBaseStrict)
                 {
+                    // Chaotic Evil: free increases above normal cap
                     _abilityBaseScores[ability]++;
                     UpdateAbilityDisplay();
+                }
+                else
+                {
+                    int nextCostIndex = currentScore + 1 - AbilityMinBase;
+                    int nextCost = nextCostIndex < PointBuyCosts.Length ? PointBuyCosts[nextCostIndex] : int.MaxValue;
+                    int currentCostIndex = currentScore - AbilityMinBase;
+                    int currentCost = currentCostIndex >= 0 && currentCostIndex < PointBuyCosts.Length ? PointBuyCosts[currentCostIndex] : 0;
+                    int costDelta = nextCost - currentCost;
+
+                    if (GetAbilityPointsRemaining() >= costDelta)
+                    {
+                        _abilityBaseScores[ability]++;
+                        UpdateAbilityDisplay();
+                    }
                 }
             }
         }
