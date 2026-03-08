@@ -15,10 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: NCW UX Polish (Part 2) (#1601)
 
-- [ ] #1598 — NCW Summary/Review should show familiar type and name
-- [ ] #866 — Search/filter for package picker
-- [ ] #1615 — NCW: Show race descriptions on Race & Sex step
-- [ ] #1616 — NCW: Male/Female selection easily missed at bottom of Race & Sex step
+- [x] #1598 — NCW Summary/Review shows familiar type and custom name
+- [x] #866 — Search/filter for package picker (filter by name or ID)
+- [x] #1615 — NCW: Race descriptions already displayed on Race & Sex step (verified)
+- [x] #1616 — NCW: Gender selection moved above race list with visual highlight
 
 ---
 
