@@ -493,6 +493,7 @@ public partial class NewCharacterWizardWindow : Window
         _familiarSelectionPanel = this.FindControl<StackPanel>("FamiliarSelectionPanel")!;
         _familiarComboBox = this.FindControl<ComboBox>("FamiliarComboBox")!;
         _familiarNameTextBox = this.FindControl<TextBox>("FamiliarNameTextBox")!;
+        _familiarNameTextBox.TextChanged += (_, _) => ValidateCurrentStep();
         _classDescriptionLabel = this.FindControl<TextBlock>("ClassDescriptionLabel")!;
         _prestigeToggleArrow = this.FindControl<TextBlock>("PrestigeToggleArrow")!;
         _prestigePlanningContent = this.FindControl<StackPanel>("PrestigePlanningContent")!;
@@ -710,49 +711,87 @@ public partial class NewCharacterWizardWindow : Window
 
     private void ValidateCurrentStep()
     {
-        bool canProceed;
-        if (_validationLevel == ValidationLevel.None)
+        // Strict validation checks (applies to both Warning and Strict modes for status display)
+        bool strictValid = _currentStep switch
         {
-            // Chaotic Evil: only require basic selections (race, class)
-            canProceed = _currentStep switch
+            1 => true,
+            2 => _selectedRaceId != 255,
+            3 => true,
+            4 => true,
+            5 => _selectedClassId >= 0 && !IsFamiliarNameRequired(),
+            6 => GetAbilityPointsRemaining() == 0 || !_isBicFile,
+            7 => IsFeatSelectionComplete(),
+            8 => GetSkillPointsRemaining() >= 0,
+            9 => !_needsSpellSelection || _isDivineCaster || IsSpellSelectionComplete(),
+            10 => true,
+            11 => true,
+            _ => true
+        };
+
+        bool canProceed = _validationLevel switch
+        {
+            // Chaotic Evil: only require basic selections
+            ValidationLevel.None => _currentStep switch
             {
                 2 => _selectedRaceId != 255,
                 5 => _selectedClassId >= 0,
                 _ => true
-            };
-        }
-        else
-        {
-            // Warning (True Neutral) and Strict (Lawful Good): enforce rules
-            canProceed = _currentStep switch
+            },
+            // True Neutral: warn but always allow proceeding
+            ValidationLevel.Warning => _currentStep switch
             {
-                1 => true,
                 2 => _selectedRaceId != 255,
-                3 => true,
-                4 => true,
                 5 => _selectedClassId >= 0,
-                6 => GetAbilityPointsRemaining() == 0 || !_isBicFile,
-                7 => IsFeatSelectionComplete(),
-                8 => GetSkillPointsRemaining() >= 0,
-                9 => !_needsSpellSelection || _isDivineCaster || IsSpellSelectionComplete(),
-                10 => true,
-                11 => true,
                 _ => true
-            };
-        }
+            },
+            // Lawful Good: enforce all rules
+            _ => strictValid
+        };
 
         _nextButton.IsEnabled = canProceed;
         _finishButton.IsEnabled = canProceed;
 
-        _statusLabel.Text = _currentStep switch
+        // Status message: Warning mode shows yellow warnings, Strict mode shows blocking messages
+        if (_validationLevel == ValidationLevel.Warning && !strictValid)
         {
-            2 when !canProceed => "Select a race to continue.",
-            5 when !canProceed => "Select a class to continue.",
-            6 when !canProceed => $"Spend all {_pointBuyTotal} ability points to continue.",
-            7 when !canProceed => $"Select {_featsToChoose - _chosenFeatIds.Count} more feat(s) to continue.",
-            9 when !canProceed => "Select all required spells to continue.",
-            _ => ""
-        };
+            _statusLabel.Foreground = Avalonia.Media.Brushes.Goldenrod;
+            _statusLabel.Text = _currentStep switch
+            {
+                5 when IsFamiliarNameRequired() => "⚠ Familiar name is empty.",
+                6 => $"⚠ {GetAbilityPointsRemaining()} ability point(s) unspent.",
+                7 => $"⚠ {_featsToChoose - _chosenFeatIds.Count} feat(s) not selected.",
+                9 => "⚠ Spell selection incomplete.",
+                _ => ""
+            };
+        }
+        else if (!canProceed)
+        {
+            _statusLabel.ClearValue(Avalonia.Controls.TextBlock.ForegroundProperty);
+            _statusLabel.Text = _currentStep switch
+            {
+                2 => "Select a race to continue.",
+                5 when _selectedClassId < 0 => "Select a class to continue.",
+                5 when IsFamiliarNameRequired() => "Enter a name for your familiar.",
+                6 => $"Spend all {_pointBuyTotal} ability points to continue.",
+                7 => $"Select {_featsToChoose - _chosenFeatIds.Count} more feat(s) to continue.",
+                9 => "Select all required spells to continue.",
+                _ => ""
+            };
+        }
+        else
+        {
+            _statusLabel.ClearValue(Avalonia.Controls.TextBlock.ForegroundProperty);
+            _statusLabel.Text = "";
+        }
+    }
+
+    /// <summary>
+    /// Returns true when familiar panel is visible but no name has been entered.
+    /// </summary>
+    private bool IsFamiliarNameRequired()
+    {
+        return _familiarSelectionPanel.IsVisible
+            && string.IsNullOrWhiteSpace(_familiarNameTextBox.Text);
     }
 
     private void PrepareCurrentStep()

@@ -229,6 +229,17 @@ public partial class CreatureDisplayService
     /// </summary>
     public bool IsDivineCaster(int classId)
     {
+        // Check ArcSpellLvlMod — if present and > 0, this is an arcane caster (Wizard, not divine)
+        var arcMod = _gameDataService.Get2DAValue("classes", classId, "ArcSpellLvlMod");
+        if (!string.IsNullOrEmpty(arcMod) && arcMod != "****" && int.TryParse(arcMod, out int arc) && arc > 0)
+            return false;
+
+        // Check DivSpellLvlMod — if present and > 0, this is definitively a divine caster
+        var divMod = _gameDataService.Get2DAValue("classes", classId, "DivSpellLvlMod");
+        if (!string.IsNullOrEmpty(divMod) && divMod != "****" && int.TryParse(divMod, out int div) && div > 0)
+            return true;
+
+        // Fallback: SpellCaster that memorizes and has no SpellKnownTable
         var spellCaster = _gameDataService.Get2DAValue("classes", classId, "SpellCaster");
         if (spellCaster != "1")
             return false;
@@ -237,7 +248,6 @@ public partial class CreatureDisplayService
         if (string.IsNullOrEmpty(memorizesSpells) || memorizesSpells == "****" || memorizesSpells != "1")
             return false;
 
-        // Divine casters memorize spells but have no SpellKnownTable (they get ALL spells)
         var spellKnownTable = _gameDataService.Get2DAValue("classes", classId, "SpellKnownTable");
         return string.IsNullOrEmpty(spellKnownTable) || spellKnownTable == "****";
     }

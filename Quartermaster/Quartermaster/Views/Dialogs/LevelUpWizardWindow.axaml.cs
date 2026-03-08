@@ -293,41 +293,63 @@ public partial class LevelUpWizardWindow : Window
 
     private void ValidateCurrentStep()
     {
-        bool canProceed;
-        if (_validationLevel == ValidationLevel.None)
+        bool strictValid = _currentStep switch
         {
-            // Chaotic Evil: only require class selection
-            canProceed = _currentStep switch
+            1 => _selectedClassId >= 0,
+            2 => _selectedFeats.Count >= _featsToSelect,
+            3 => GetRemainingSkillPoints() == 0,
+            4 => _isDivineCaster || IsSpellSelectionComplete(),
+            5 => true,
+            _ => false
+        };
+
+        bool canProceed = _validationLevel switch
+        {
+            ValidationLevel.None => _currentStep switch
             {
                 1 => _selectedClassId >= 0,
                 _ => true
-            };
-        }
-        else
-        {
-            canProceed = _currentStep switch
+            },
+            ValidationLevel.Warning => _currentStep switch
             {
                 1 => _selectedClassId >= 0,
-                2 => _selectedFeats.Count >= _featsToSelect,
-                3 => GetRemainingSkillPoints() == 0,
-                4 => _isDivineCaster || IsSpellSelectionComplete(),
-                5 => true,
-                _ => false
-            };
-        }
+                _ => true
+            },
+            _ => strictValid
+        };
 
         _nextButton.IsEnabled = canProceed;
         _finishButton.IsEnabled = canProceed;
 
-        // Update status message
-        _statusLabel.Text = _currentStep switch
+        // Status messages
+        if (_validationLevel == ValidationLevel.Warning && !strictValid)
         {
-            1 when _selectedClassId < 0 => "Select a class to continue.",
-            2 when _selectedFeats.Count < _featsToSelect => $"Select {_featsToSelect - _selectedFeats.Count} more feat(s).",
-            3 when GetRemainingSkillPoints() > 0 => $"Allocate {GetRemainingSkillPoints()} remaining skill point(s).",
-            4 when !_isDivineCaster && !IsSpellSelectionComplete() => "Select spells for each spell level.",
-            _ => ""
-        };
+            _statusLabel.Foreground = Avalonia.Media.Brushes.Goldenrod;
+            _statusLabel.Text = _currentStep switch
+            {
+                2 => $"⚠ {_featsToSelect - _selectedFeats.Count} feat(s) not selected.",
+                3 => $"⚠ {GetRemainingSkillPoints()} skill point(s) unspent.",
+                4 when !_isDivineCaster => "⚠ Spell selection incomplete.",
+                _ => ""
+            };
+        }
+        else if (!canProceed)
+        {
+            _statusLabel.ClearValue(Avalonia.Controls.TextBlock.ForegroundProperty);
+            _statusLabel.Text = _currentStep switch
+            {
+                1 => "Select a class to continue.",
+                2 => $"Select {_featsToSelect - _selectedFeats.Count} more feat(s).",
+                3 => $"Allocate {GetRemainingSkillPoints()} remaining skill point(s).",
+                4 when !_isDivineCaster => "Select spells for each spell level.",
+                _ => ""
+            };
+        }
+        else
+        {
+            _statusLabel.ClearValue(Avalonia.Controls.TextBlock.ForegroundProperty);
+            _statusLabel.Text = "";
+        }
     }
 
     private void OnBackClick(object? sender, RoutedEventArgs e)
