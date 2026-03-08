@@ -22,16 +22,24 @@
     <Grid Margin="15">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <TextBlock Grid.Row="0" Text="Auto-Levelup Packages" FontWeight="SemiBold" Margin="0,0,0,10"/>
+        <TextBlock Grid.Row="0" Text="Auto-Levelup Packages" FontWeight="SemiBold" Margin="0,0,0,5"/>
+
+        <!-- Search -->
+        <TextBox Grid.Row="1" x:Name="PackageSearchBox"
+                 AutomationProperties.AutomationId="PackageSearchBox"
+                 Watermark="Filter packages..."
+                 Margin="0,0,0,5"
+                 TextChanged="OnSearchChanged"/>
 
         <!-- Packages List -->
-        <Border Grid.Row="1" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Padding="5">
+        <Border Grid.Row="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Padding="5">
             <ListBox x:Name="PackagesListBox"
                      AutomationProperties.AutomationId="PackagesListBox"
                      SelectionChanged="OnPackageSelected">
@@ -53,13 +61,13 @@
         </Border>
 
         <!-- Info text -->
-        <TextBlock Grid.Row="2" x:Name="InfoLabel"
+        <TextBlock Grid.Row="3" x:Name="InfoLabel"
                    Text="Packages loaded from packages.2da"
                    FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                    Margin="0,10,0,0"/>
 
         <!-- Buttons -->
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right"
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right"
                     Spacing="10" Margin="0,15,0,0">
             <Button x:Name="OkButton" Content="OK" Width="80"
                     IsEnabled="False" Click="OnOkClick"
