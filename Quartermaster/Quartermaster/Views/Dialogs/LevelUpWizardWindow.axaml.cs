@@ -112,6 +112,10 @@ public partial class LevelUpWizardWindow : Window
     private readonly TextBlock _divineSpellInfoLabel;
     private readonly ItemsControl _divineSpellsList;
 
+    // Validation level (#1503)
+    private readonly ComboBox _validationLevelComboBox;
+    private ValidationLevel _validationLevel => (ValidationLevel)_validationLevelComboBox.SelectedIndex;
+
     // Step 5 controls
     private readonly TextBlock _summaryClassLabel;
     private readonly Border _summaryFeatsPanel;
@@ -217,6 +221,11 @@ public partial class LevelUpWizardWindow : Window
         _summaryBabLabel = this.FindControl<TextBlock>("SummaryBabLabel")!;
         _summarySavesLabel = this.FindControl<TextBlock>("SummarySavesLabel")!;
 
+        // Validation level toggle (#1503)
+        _validationLevelComboBox = this.FindControl<ComboBox>("ValidationLevelComboBox")!;
+        _validationLevelComboBox.SelectedIndex = (int)SettingsService.Instance.ValidationLevel;
+        _validationLevelComboBox.SelectionChanged += OnValidationLevelChanged;
+
         InitializeWizard();
     }
 
@@ -275,17 +284,37 @@ public partial class LevelUpWizardWindow : Window
         ValidateCurrentStep();
     }
 
+    private void OnValidationLevelChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        var level = (ValidationLevel)_validationLevelComboBox.SelectedIndex;
+        SettingsService.Instance.ValidationLevel = level;
+        ValidateCurrentStep();
+    }
+
     private void ValidateCurrentStep()
     {
-        bool canProceed = _currentStep switch
+        bool canProceed;
+        if (_validationLevel == ValidationLevel.None)
         {
-            1 => _selectedClassId >= 0,
-            2 => _selectedFeats.Count >= _featsToSelect,
-            3 => GetRemainingSkillPoints() == 0,
-            4 => _isDivineCaster || IsSpellSelectionComplete(),
-            5 => true,
-            _ => false
-        };
+            // Chaotic Evil: only require class selection
+            canProceed = _currentStep switch
+            {
+                1 => _selectedClassId >= 0,
+                _ => true
+            };
+        }
+        else
+        {
+            canProceed = _currentStep switch
+            {
+                1 => _selectedClassId >= 0,
+                2 => _selectedFeats.Count >= _featsToSelect,
+                3 => GetRemainingSkillPoints() == 0,
+                4 => _isDivineCaster || IsSpellSelectionComplete(),
+                5 => true,
+                _ => false
+            };
+        }
 
         _nextButton.IsEnabled = canProceed;
         _finishButton.IsEnabled = canProceed;

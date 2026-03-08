@@ -512,7 +512,7 @@ public partial class NewCharacterWizardWindow
 
     private void UpdateAlignmentRestrictionWarning()
     {
-        if (_selectedClassId < 0)
+        if (_selectedClassId < 0 || _validationLevel == ValidationLevel.None)
         {
             _alignmentRestrictionWarning.IsVisible = false;
             return;
@@ -553,7 +553,12 @@ public partial class NewCharacterWizardWindow
 
         for (int i = 0; i < _alignmentButtons.Length; i++)
         {
-            if (metadata.AlignmentRestriction != null)
+            if (_validationLevel == ValidationLevel.None)
+            {
+                // Chaotic Evil: all alignments allowed regardless of class
+                _alignmentButtons[i].IsEnabled = true;
+            }
+            else if (metadata.AlignmentRestriction != null)
             {
                 bool allowed = IsAlignmentAllowed(metadata.AlignmentRestriction,
                     AlignmentValues[i].GoodEvil, AlignmentValues[i].LawChaos);
@@ -566,6 +571,7 @@ public partial class NewCharacterWizardWindow
         }
 
         // If current selection is now disabled, auto-select first valid alignment
+        // (only in Warning/Strict modes)
         int currentIndex = GetCurrentAlignmentIndex();
         if (currentIndex >= 0 && !_alignmentButtons[currentIndex].IsEnabled)
         {

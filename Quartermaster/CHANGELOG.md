@@ -15,8 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: NCW Spell Step & Validation (#1602)
 
-- [ ] #1587 — NCW: Wizard spell selection step
-- [ ] #1503 — Validation toggle for NCW and LUW (Chaotic Evil / True Neutral / Lawful Good)
+- [x] #1587 — NCW: Wizard spellbook mechanics (all cantrips + 3+INT mod level-1 spells; LUW: 2 free spells per level-up)
+- [x] #1503 — Validation toggle for NCW and LUW (Chaotic Evil / True Neutral / Lawful Good)
 
 ---
 

@@ -47,7 +47,8 @@ public partial class LevelUpWizardWindow
                 !c.Name.Contains(searchText, System.StringComparison.OrdinalIgnoreCase))
                 return false;
 
-            if (!showUnqualified && c.IsPrestige && !c.CanSelect)
+            // In None mode (Chaotic Evil), always show unqualified prestige classes
+            if (_validationLevel != ValidationLevel.None && !showUnqualified && c.IsPrestige && !c.CanSelect)
                 return false;
 
             return true;
@@ -72,7 +73,7 @@ public partial class LevelUpWizardWindow
         {
             ShowClassDetails(item);
 
-            if (item.CanSelect)
+            if (item.CanSelect || _validationLevel == ValidationLevel.None)
             {
                 _selectedClassId = item.ClassId;
                 _isNewClass = item.CurrentLevel == 0;

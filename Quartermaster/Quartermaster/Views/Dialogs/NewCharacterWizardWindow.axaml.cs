@@ -133,6 +133,10 @@ public partial class NewCharacterWizardWindow : Window
     private byte _paletteId = 1;
     private ushort _selectedFactionId = 1; // Default: Hostile (standard NWN default for NPCs)
 
+    // Validation level (#1503)
+    private readonly ComboBox _validationLevelComboBox;
+    private ValidationLevel _validationLevel => (ValidationLevel)_validationLevelComboBox.SelectedIndex;
+
     // Controls - navigation
     private readonly TextBlock _sidebarTitle;
     private readonly TextBlock _sidebarSummary;
@@ -570,6 +574,11 @@ public partial class NewCharacterWizardWindow : Window
         _summaryFamiliarSection = this.FindControl<Grid>("SummaryFamiliarSection")!;
         _summaryFamiliarLabel = this.FindControl<TextBlock>("SummaryFamiliarLabel")!;
 
+        // Validation level toggle (#1503)
+        _validationLevelComboBox = this.FindControl<ComboBox>("ValidationLevelComboBox")!;
+        _validationLevelComboBox.SelectedIndex = (int)SettingsService.Instance.ValidationLevel;
+        _validationLevelComboBox.SelectionChanged += OnValidationLevelChanged;
+
         UpdateStepDisplay();
     }
 
@@ -690,23 +699,47 @@ public partial class NewCharacterWizardWindow : Window
         UpdateSidebarSummary();
     }
 
+    private void OnValidationLevelChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        var level = (ValidationLevel)_validationLevelComboBox.SelectedIndex;
+        SettingsService.Instance.ValidationLevel = level;
+
+        // Re-validate current step with new validation level
+        ValidateCurrentStep();
+    }
+
     private void ValidateCurrentStep()
     {
-        bool canProceed = _currentStep switch
+        bool canProceed;
+        if (_validationLevel == ValidationLevel.None)
         {
-            1 => true, // File type always has a selection (UTC default)
-            2 => _selectedRaceId != 255, // Must have a race selected
-            3 => true, // Identity always has defaults
-            4 => true, // Appearance always has defaults
-            5 => _selectedClassId >= 0, // Must have a class selected
-            6 => GetAbilityPointsRemaining() == 0 || !_isBicFile, // BIC must spend all points
-            7 => IsFeatSelectionComplete(), // Must choose all available feats
-            8 => GetSkillPointsRemaining() >= 0, // Can't overspend
-            9 => !_needsSpellSelection || _isDivineCaster || IsSpellSelectionComplete(),
-            10 => true, // Equipment is optional
-            11 => true, // Summary is always valid (read-only review)
-            _ => true
-        };
+            // Chaotic Evil: only require basic selections (race, class)
+            canProceed = _currentStep switch
+            {
+                2 => _selectedRaceId != 255,
+                5 => _selectedClassId >= 0,
+                _ => true
+            };
+        }
+        else
+        {
+            // Warning (True Neutral) and Strict (Lawful Good): enforce rules
+            canProceed = _currentStep switch
+            {
+                1 => true,
+                2 => _selectedRaceId != 255,
+                3 => true,
+                4 => true,
+                5 => _selectedClassId >= 0,
+                6 => GetAbilityPointsRemaining() == 0 || !_isBicFile,
+                7 => IsFeatSelectionComplete(),
+                8 => GetSkillPointsRemaining() >= 0,
+                9 => !_needsSpellSelection || _isDivineCaster || IsSpellSelectionComplete(),
+                10 => true,
+                11 => true,
+                _ => true
+            };
+        }
 
         _nextButton.IsEnabled = canProceed;
         _finishButton.IsEnabled = canProceed;
