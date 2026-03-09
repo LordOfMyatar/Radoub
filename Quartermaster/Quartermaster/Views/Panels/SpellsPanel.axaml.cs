@@ -4,6 +4,7 @@ using Avalonia.Media;
 using Quartermaster.Services;
 using Quartermaster.ViewModels;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 using Radoub.Formats.Utc;
 using System;
 using System.Collections.Generic;

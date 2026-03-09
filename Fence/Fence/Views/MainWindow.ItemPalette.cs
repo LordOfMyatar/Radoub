@@ -230,7 +230,8 @@ public partial class MainWindow
                         BaseItemIndex = cached.BaseItemType,
                         BaseValue = (int)cached.BaseValue,
                         Tag = cached.Tag,
-                        IsStandard = cached.IsStandard
+                        IsStandard = cached.IsStandard,
+                        IconBitmap = _itemIconService?.GetItemIcon(cached.BaseItemType)
                     });
                 }
             }
@@ -368,7 +369,8 @@ public partial class MainWindow
                         BaseValue = resolved.BaseCost,
                         Tag = resolved.Tag,
                         IsStandard = false,
-                        IsModuleItem = true
+                        IsModuleItem = true,
+                        IconBitmap = _itemIconService?.GetItemIcon(resolved.BaseItemType)
                     });
                     existingResRefs.Add(resRef);
                     moduleItemCount++;

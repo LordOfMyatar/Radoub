@@ -61,6 +61,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private ItemResolutionService? _itemResolutionService;
     private IGameDataService? _gameDataService;
     private TlkService? _tlkService;
+    private ItemIconService? _itemIconService;
     private bool _servicesInitialized;
 
     // Store palette categories loaded from storepal.itp
@@ -187,6 +188,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _tlkService.EnableSettingsIntegration();
 
             _itemResolutionService = new ItemResolutionService(_gameDataService, _tlkService);
+            if (_gameDataService != null)
+                _itemIconService = new ItemIconService(_gameDataService);
         });
 
         _servicesInitialized = true;

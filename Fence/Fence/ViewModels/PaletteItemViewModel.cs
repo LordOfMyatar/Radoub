@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Avalonia.Media.Imaging;
 
 namespace MerchantEditor.ViewModels;
 
@@ -16,6 +17,7 @@ public class PaletteItemViewModel : INotifyPropertyChanged
     private string _tag = string.Empty;
     private bool _isStandard = true;
     private bool _isModuleItem;
+    private Bitmap? _iconBitmap;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -72,6 +74,15 @@ public class PaletteItemViewModel : INotifyPropertyChanged
     {
         get => _isModuleItem;
         set { if (_isModuleItem != value) { _isModuleItem = value; OnPropertyChanged(); } }
+    }
+
+    /// <summary>
+    /// Icon bitmap loaded from game data by base item type.
+    /// </summary>
+    public Bitmap? IconBitmap
+    {
+        get => _iconBitmap;
+        set { if (_iconBitmap != value) { _iconBitmap = value; OnPropertyChanged(); } }
     }
 
     protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
