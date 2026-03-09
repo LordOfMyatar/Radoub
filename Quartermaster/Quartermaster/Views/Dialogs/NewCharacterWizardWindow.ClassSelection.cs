@@ -8,6 +8,7 @@ using Avalonia.Interactivity;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
+using Radoub.UI.Services;
 
 namespace Quartermaster.Views.Dialogs;
 
@@ -529,7 +530,8 @@ public partial class NewCharacterWizardWindow
         if (!allowed)
         {
             var restrictionText = FormatAlignmentRestriction(metadata.AlignmentRestriction);
-            _alignmentRestrictionWarning.Text = $"Warning: {metadata.Name} requires {restrictionText}";
+            _alignmentRestrictionWarning.Text = $"⚠ {metadata.Name} requires {restrictionText}";
+            _alignmentRestrictionWarning.Foreground = BrushManager.GetWarningBrush(this);
             _alignmentRestrictionWarning.IsVisible = true;
         }
         else
@@ -553,25 +555,22 @@ public partial class NewCharacterWizardWindow
 
         for (int i = 0; i < _alignmentButtons.Length; i++)
         {
-            if (_validationLevel == ValidationLevel.None)
+            if (_validationLevel == ValidationLevel.Strict && metadata.AlignmentRestriction != null)
             {
-                // Chaotic Evil: all alignments allowed regardless of class
-                _alignmentButtons[i].IsEnabled = true;
-            }
-            else if (metadata.AlignmentRestriction != null)
-            {
+                // Lawful Good: disable restricted alignments
                 bool allowed = IsAlignmentAllowed(metadata.AlignmentRestriction,
                     AlignmentValues[i].GoodEvil, AlignmentValues[i].LawChaos);
                 _alignmentButtons[i].IsEnabled = allowed;
             }
             else
             {
+                // CE and TN: all alignments clickable (TN shows warning if restricted)
                 _alignmentButtons[i].IsEnabled = true;
             }
         }
 
         // If current selection is now disabled, auto-select first valid alignment
-        // (only in Warning/Strict modes)
+        // (only in Strict mode)
         int currentIndex = GetCurrentAlignmentIndex();
         if (currentIndex >= 0 && !_alignmentButtons[currentIndex].IsEnabled)
         {

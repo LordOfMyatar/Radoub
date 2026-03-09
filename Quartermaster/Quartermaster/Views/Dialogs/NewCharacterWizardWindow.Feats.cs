@@ -245,7 +245,7 @@ public partial class NewCharacterWizardWindow
         else if (remaining == 0)
             _featSelectionCountLabel.Foreground = BrushManager.GetSuccessBrush(this);
         else
-            _featSelectionCountLabel.ClearValue(TextBlock.ForegroundProperty);
+            _featSelectionCountLabel.Foreground = BrushManager.GetWarningBrush(this);
     }
 
     private bool IsFeatSelectionComplete()

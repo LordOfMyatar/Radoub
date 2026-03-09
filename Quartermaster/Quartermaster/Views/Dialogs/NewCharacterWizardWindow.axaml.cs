@@ -750,11 +750,11 @@ public partial class NewCharacterWizardWindow : Window
                 5 => _selectedClassId >= 0,
                 _ => true
             },
-            // True Neutral: warn but always allow proceeding
+            // True Neutral: warn but allow proceeding (except hard requirements)
             ValidationLevel.Warning => _currentStep switch
             {
                 2 => _selectedRaceId != 255,
-                5 => _selectedClassId >= 0,
+                5 => _selectedClassId >= 0 && !IsFamiliarNameRequired(),
                 _ => true
             },
             // Lawful Good: enforce all rules
