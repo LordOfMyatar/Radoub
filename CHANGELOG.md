@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.84] - 2026-03-08
-**Branch**: `radoub/issue-1578` | **PR**: #TBD
+**Branch**: `radoub/issue-1578` | **PR**: #1631
 
 ### Feature: Shared Item Palette Cache (#1578)
 
