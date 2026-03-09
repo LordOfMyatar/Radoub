@@ -6,6 +6,7 @@ using MerchantEditor.ViewModels;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
+using Radoub.Formats.Settings;
 using Radoub.Formats.Uti;
 using Radoub.UI.Services;
 using System;
@@ -35,6 +36,9 @@ public partial class MainWindow
     };
 
     private readonly ISharedPaletteCacheService _sharedCacheService = new SharedPaletteCacheService();
+
+    // HAK scanner for loading items from module-referenced HAK files
+    private readonly HakPaletteScannerService _hakScanner = new();
 
     // Track which types have been loaded (for on-demand loading)
     private readonly HashSet<string> _loadedItemTypes = new(StringComparer.OrdinalIgnoreCase);
@@ -94,12 +98,18 @@ public partial class MainWindow
                     .Where(i => !ExcludedBaseItemTypes.Contains(i.BaseItemType))
                     .ToList();
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Cache pre-warmed from shared cache: {_cachedPaletteData.Count} items ready");
+
+                // Scan module HAKs in background (skips cached, refreshes stale)
+                _ = ScanModuleHaksAsync();
                 return;
             }
 
             // No shared cache - build it in background
             UnifiedLogger.LogApplication(LogLevel.INFO, "Building palette cache in background...");
             await BuildCacheInBackgroundAsync();
+
+            // Scan module HAKs after building base caches
+            await ScanModuleHaksAsync();
         }
         catch (Exception ex)
         {
@@ -382,6 +392,74 @@ public partial class MainWindow
 
         if (toRemove.Count > 0)
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Cleared {toRemove.Count} module items from palette");
+    }
+
+    /// <summary>
+    /// Scan module HAK files and cache items. Skips HAKs with valid caches.
+    /// After scanning, refreshes the aggregated cache data.
+    /// </summary>
+    private async Task ScanModuleHaksAsync()
+    {
+        var moduleDir = GetModuleWorkingDirectory();
+        if (string.IsNullOrEmpty(moduleDir))
+            return;
+
+        try
+        {
+            var hakSearchPaths = RadoubSettings.Instance.GetAllHakSearchPaths();
+            var result = await _hakScanner.ScanAndCacheModuleHaksAsync(
+                moduleDir, hakSearchPaths, _sharedCacheService, CancellationToken.None);
+
+            if (result.HaksScanned > 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"HAK scan: {result.HaksScanned} scanned, {result.HaksSkipped} cached, {result.TotalItemsScanned} items");
+
+                // Refresh aggregated cache to include HAK items
+                _sharedCacheService.InvalidateAggregatedCache();
+                var aggregated = _sharedCacheService.GetAggregatedCache();
+                if (aggregated != null)
+                {
+                    _cachedPaletteData = aggregated
+                        .Where(i => !ExcludedBaseItemTypes.Contains(i.BaseItemType))
+                        .ToList();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"HAK scan failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Get the module working directory (unpacked module folder).
+    /// Resolves .mod file paths to their unpacked directories.
+    /// </summary>
+    private static string? GetModuleWorkingDirectory()
+    {
+        var modulePath = RadoubSettings.Instance.CurrentModulePath;
+        if (!RadoubSettings.IsValidModulePath(modulePath))
+            return null;
+
+        // If it's a .mod file, look for the unpacked directory alongside it
+        if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
+        {
+            var moduleName = Path.GetFileNameWithoutExtension(modulePath);
+            var moduleDir = Path.GetDirectoryName(modulePath);
+            if (!string.IsNullOrEmpty(moduleDir))
+            {
+                var candidate = Path.Combine(moduleDir, moduleName);
+                if (Directory.Exists(candidate))
+                    return candidate;
+            }
+        }
+
+        // It's already a directory path
+        if (Directory.Exists(modulePath))
+            return modulePath;
+
+        return null;
     }
 
     #endregion
