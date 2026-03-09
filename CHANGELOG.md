@@ -17,6 +17,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.84] - 2026-03-08
+**Branch**: `radoub/issue-1578` | **PR**: #TBD
+
+### Feature: Shared Item Palette Cache (#1578)
+
+- Shared cache format for item palette data across tools (Quartermaster, Fence, future tools)
+- Module-aware caching keyed by module + HAK list combination
+- Cache invalidation when game data or HAKs change
+- Thread-safe reads from multiple tools
+
+---
+
 ## [0.9.83] - TBD
 **Branch**: `radoub/issue-1591` | **PR**: #1599
 
