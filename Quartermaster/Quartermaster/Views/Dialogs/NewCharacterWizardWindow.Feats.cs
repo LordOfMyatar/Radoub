@@ -59,9 +59,13 @@ public partial class NewCharacterWizardWindow
             if (!_displayService.Feats.IsFeatAvailable(tempCreature, featId))
                 continue;
 
-            // Check prerequisites against current wizard state - only show feats that meet prereqs
-            var prereqs = _displayService.Feats.GetFeatPrerequisites(featId);
-            if (!CheckWizardFeatPrereqs(prereqs)) continue;
+            // Check prerequisites against current wizard state
+            // In None mode (Chaotic Evil), skip prereq filtering — show all feats
+            if (_validationLevel != ValidationLevel.None)
+            {
+                var prereqs = _displayService.Feats.GetFeatPrerequisites(featId);
+                if (!CheckWizardFeatPrereqs(prereqs)) continue;
+            }
 
             var name = _displayService.GetFeatName(featId);
             if (string.IsNullOrEmpty(name)) continue;
@@ -241,7 +245,7 @@ public partial class NewCharacterWizardWindow
         else if (remaining == 0)
             _featSelectionCountLabel.Foreground = BrushManager.GetSuccessBrush(this);
         else
-            _featSelectionCountLabel.ClearValue(TextBlock.ForegroundProperty);
+            _featSelectionCountLabel.Foreground = BrushManager.GetWarningBrush(this);
     }
 
     private bool IsFeatSelectionComplete()
@@ -263,7 +267,8 @@ public partial class NewCharacterWizardWindow
 
         foreach (var item in selectedItems)
         {
-            if (_chosenFeatIds.Count >= _featsToChoose) break;
+            // Only Strict (LG) enforces feat count cap
+            if (_validationLevel == ValidationLevel.Strict && _chosenFeatIds.Count >= _featsToChoose) break;
             if (!_chosenFeatIds.Contains(item.FeatId))
             {
                 _chosenFeatIds.Add(item.FeatId);
@@ -290,8 +295,12 @@ public partial class NewCharacterWizardWindow
 
             // Re-add to available list
             var category = _displayService.Feats.GetFeatCategory(item.FeatId);
-            var prereqs = _displayService.Feats.GetFeatPrerequisites(item.FeatId);
-            bool meetsPrereqs = CheckWizardFeatPrereqs(prereqs);
+            bool meetsPrereqs = true;
+            if (_validationLevel != ValidationLevel.None)
+            {
+                var prereqs = _displayService.Feats.GetFeatPrerequisites(item.FeatId);
+                meetsPrereqs = CheckWizardFeatPrereqs(prereqs);
+            }
 
             _availableFeats.Add(new FeatDisplayItem
             {

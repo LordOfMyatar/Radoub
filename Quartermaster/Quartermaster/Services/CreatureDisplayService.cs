@@ -229,17 +229,19 @@ public partial class CreatureDisplayService
     /// </summary>
     public bool IsDivineCaster(int classId)
     {
-        var spellCaster = _gameDataService.Get2DAValue("classes", classId, "SpellCaster");
-        if (spellCaster != "1")
+        // Must be a caster class first
+        if (!Spells.IsCasterClass(classId))
             return false;
 
-        var memorizesSpells = _gameDataService.Get2DAValue("classes", classId, "MemorizesSpells");
-        if (string.IsNullOrEmpty(memorizesSpells) || memorizesSpells == "****" || memorizesSpells != "1")
+        // If it's an arcane caster, it's NOT divine.
+        // This covers base classes (Bard=1, Sorcerer=9, Wizard=10) and
+        // prestige classes with ArcSpellLvlMod > 0.
+        if (Spells.IsArcaneCaster(classId))
             return false;
 
-        // Divine casters memorize spells but have no SpellKnownTable (they get ALL spells)
-        var spellKnownTable = _gameDataService.Get2DAValue("classes", classId, "SpellKnownTable");
-        return string.IsNullOrEmpty(spellKnownTable) || spellKnownTable == "****";
+        // All non-arcane caster classes are divine (Cleric, Druid, Paladin, Ranger,
+        // and prestige classes with DivSpellLvlMod > 0).
+        return true;
     }
 
     /// <summary>

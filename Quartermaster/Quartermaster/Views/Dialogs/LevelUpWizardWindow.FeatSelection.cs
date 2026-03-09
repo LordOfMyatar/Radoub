@@ -113,6 +113,9 @@ public partial class LevelUpWizardWindow
                 c => _displayService.CalculateBaseAttackBonus(c),
                 cid => _displayService.GetClassName(cid));
 
+            // In None mode (Chaotic Evil), all feats are selectable regardless of prereqs
+            bool canSelect = _validationLevel == ValidationLevel.None || prereqResult.AllMet;
+
             _allAvailableFeats.Add(new FeatDisplayItem
             {
                 FeatId = featId,
@@ -122,7 +125,7 @@ public partial class LevelUpWizardWindow
                 MeetsPrereqs = prereqResult.AllMet,
                 PrereqResult = prereqResult,
                 IsClassFeat = isClassFeat && !isUniversal,
-                CanSelect = prereqResult.AllMet
+                CanSelect = canSelect
             });
         }
 

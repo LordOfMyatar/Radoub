@@ -46,6 +46,9 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
     private LevelHistoryEncoding _levelHistoryEncoding = LevelHistoryEncoding.Readable;
     private bool _recordLevelHistory = true;
 
+    // Validation level for wizards (NCW/LUW)
+    private ValidationLevel _validationLevel = ValidationLevel.Warning;
+
     private SettingsService()
     {
         Initialize();
@@ -96,6 +99,16 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
         set { if (SetProperty(ref _recordLevelHistory, value)) SaveSettings(); }
     }
 
+    /// <summary>
+    /// Validation strictness for NCW and LUW character creation rules.
+    /// Default: Warning (True Neutral) — shows warnings but allows rule violations.
+    /// </summary>
+    public ValidationLevel ValidationLevel
+    {
+        get => _validationLevel;
+        set { if (SetProperty(ref _validationLevel, value)) SaveSettings(); }
+    }
+
     protected override void LoadToolSettings(SettingsData settings)
     {
         _leftPanelWidth = Math.Max(200, Math.Min(600, settings.LeftPanelWidth));
@@ -105,6 +118,7 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
         _creatureBrowserPanelVisible = settings.CreatureBrowserPanelVisible;
         _levelHistoryEncoding = settings.LevelHistoryEncoding;
         _recordLevelHistory = settings.RecordLevelHistory;
+        _validationLevel = settings.ValidationLevel;
     }
 
     protected override void SaveToolSettings(SettingsData settings)
@@ -116,6 +130,7 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
         settings.CreatureBrowserPanelVisible = CreatureBrowserPanelVisible;
         settings.LevelHistoryEncoding = LevelHistoryEncoding;
         settings.RecordLevelHistory = RecordLevelHistory;
+        settings.ValidationLevel = ValidationLevel;
     }
 
     public class SettingsData : BaseSettingsData
@@ -130,5 +145,6 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
 
         public LevelHistoryEncoding LevelHistoryEncoding { get; set; } = LevelHistoryEncoding.Readable;
         public bool RecordLevelHistory { get; set; } = true;
+        public ValidationLevel ValidationLevel { get; set; } = ValidationLevel.Warning;
     }
 }

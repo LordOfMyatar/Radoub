@@ -135,26 +135,19 @@ public partial class LevelUpWizardWindow
         }
         else
         {
-            // Wizard - use spell gain table for spellbook additions
-            var slotsAtLevel = _displayService.Spells.GetSpellSlots(_selectedClassId, _newClassLevel);
-            var slotsAtPrevLevel = _newClassLevel > 1 ? _displayService.Spells.GetSpellSlots(_selectedClassId, _newClassLevel - 1) : null;
-
-            if (slotsAtLevel != null)
+            // Wizard spellbook: gets 2 free spells on level-up (NWN convention).
+            // Player distributes them across any castable spell levels.
+            _wizardFreeSpellsRemaining = 2;
+            for (int i = 0; i <= maxSpellLevel; i++)
             {
-                for (int i = 0; i <= maxSpellLevel; i++)
-                {
-                    int prevSlots = slotsAtPrevLevel?[i] ?? 0;
-                    int newSlots = slotsAtLevel[i];
-                    // Wizard gets 2 new spells per level for their spellbook (NWN convention)
-                    // At higher levels, just use delta if any new slots gained
-                    if (newSlots > prevSlots || (_newClassLevel == 1 && newSlots > 0))
-                    {
-                        _newSpellsPerLevel[i] = _newClassLevel == 1 ? newSlots : Math.Max(newSlots - prevSlots, 2);
-                    }
-                }
+                // Allow picking from any castable level — don't pre-allocate per level
+                // The total across all levels is capped at 2
+                var slotsAtLevel = _displayService.Spells.GetSpellSlots(_selectedClassId, _newClassLevel);
+                if (slotsAtLevel != null && i < slotsAtLevel.Length && slotsAtLevel[i] > 0)
+                    _newSpellsPerLevel[i] = 2; // Max 2 at any level, total capped separately
             }
 
-            _spellStepDescription.Text = $"Choose spells to add to your {className}'s spellbook.";
+            _spellStepDescription.Text = $"Choose 2 spells to add to your {className}'s spellbook.";
         }
 
         bool hasNewSpells = _newSpellsPerLevel.Values.Any(v => v > 0);
@@ -282,27 +275,51 @@ public partial class LevelUpWizardWindow
 
         _selectedSpellsListBox.ItemsSource = items;
 
-        int maxForLevel = _newSpellsPerLevel.GetValueOrDefault(_currentSpellLevel, 0);
-        _selectedSpellCountLabel.Text = $"({selectedForLevel.Count} / {maxForLevel})";
-
-        if (selectedForLevel.Count > maxForLevel)
-            _selectedSpellCountLabel.Foreground = BrushManager.GetErrorBrush(this);
-        else if (selectedForLevel.Count == maxForLevel)
-            _selectedSpellCountLabel.ClearValue(TextBlock.ForegroundProperty);
+        if (_wizardFreeSpellsRemaining > 0)
+        {
+            // Wizard: show count at this level, total cap shown separately
+            int totalSelected = GetTotalSelectedSpells();
+            _selectedSpellCountLabel.Text = $"({selectedForLevel.Count} at this level)";
+            if (totalSelected >= _wizardFreeSpellsRemaining)
+                _selectedSpellCountLabel.ClearValue(TextBlock.ForegroundProperty);
+            else
+                _selectedSpellCountLabel.Foreground = BrushManager.GetSuccessBrush(this);
+        }
         else
-            _selectedSpellCountLabel.Foreground = BrushManager.GetSuccessBrush(this);
+        {
+            int maxForLevel = _newSpellsPerLevel.GetValueOrDefault(_currentSpellLevel, 0);
+            _selectedSpellCountLabel.Text = $"({selectedForLevel.Count} / {maxForLevel})";
+
+            if (selectedForLevel.Count > maxForLevel)
+                _selectedSpellCountLabel.Foreground = BrushManager.GetErrorBrush(this);
+            else if (selectedForLevel.Count == maxForLevel)
+                _selectedSpellCountLabel.ClearValue(TextBlock.ForegroundProperty);
+            else
+                _selectedSpellCountLabel.Foreground = BrushManager.GetSuccessBrush(this);
+        }
     }
 
     private void UpdateSpellSelectionCount()
     {
-        int totalSelected = 0;
-        int totalRequired = 0;
-        foreach (var (level, required) in _newSpellsPerLevel)
+        int totalSelected = GetTotalSelectedSpells();
+
+        if (_wizardFreeSpellsRemaining > 0)
         {
-            totalSelected += _selectedSpellsByLevel.GetValueOrDefault(level, new List<int>()).Count;
-            totalRequired += required;
+            // Wizard: show total against free spell budget
+            _spellSelectionCountLabel.Text = $"Total: {totalSelected} / {_wizardFreeSpellsRemaining}";
         }
-        _spellSelectionCountLabel.Text = $"Total: {totalSelected} / {totalRequired}";
+        else
+        {
+            int totalRequired = 0;
+            foreach (var (_, required) in _newSpellsPerLevel)
+                totalRequired += required;
+            _spellSelectionCountLabel.Text = $"Total: {totalSelected} / {totalRequired}";
+        }
+    }
+
+    private int GetTotalSelectedSpells()
+    {
+        return _selectedSpellsByLevel.Values.Sum(list => list.Count);
     }
 
     private void OnAddSpellClick(object? sender, RoutedEventArgs e)
@@ -317,6 +334,8 @@ public partial class LevelUpWizardWindow
         foreach (var spell in selected)
         {
             if (_selectedSpellsByLevel[_currentSpellLevel].Count >= maxForLevel) break;
+            // Wizard: enforce total cap across all levels
+            if (_wizardFreeSpellsRemaining > 0 && GetTotalSelectedSpells() >= _wizardFreeSpellsRemaining) break;
             if (!_selectedSpellsByLevel[_currentSpellLevel].Contains(spell.SpellId))
                 _selectedSpellsByLevel[_currentSpellLevel].Add(spell.SpellId);
         }
@@ -350,6 +369,9 @@ public partial class LevelUpWizardWindow
     {
         var existingSpells = new HashSet<int>(_creature.SpecAbilityList.Select(sa => (int)sa.Spell));
 
+        // For Wizards, limit total across all levels to free spell budget
+        int totalBudget = _wizardFreeSpellsRemaining > 0 ? _wizardFreeSpellsRemaining : int.MaxValue;
+
         var assigned = _displayService.Spells.AutoAssignSpells(
             _selectedClassId,
             _resolvedPackageId,
@@ -358,8 +380,15 @@ public partial class LevelUpWizardWindow
             existingSpells);
 
         _selectedSpellsByLevel.Clear();
-        foreach (var (level, spells) in assigned)
-            _selectedSpellsByLevel[level] = spells;
+        int totalAdded = 0;
+        foreach (var (level, spells) in assigned.OrderBy(kv => kv.Key))
+        {
+            var limitedSpells = spells.Take(totalBudget - totalAdded).ToList();
+            if (limitedSpells.Count > 0)
+                _selectedSpellsByLevel[level] = limitedSpells;
+            totalAdded += limitedSpells.Count;
+            if (totalAdded >= totalBudget) break;
+        }
 
         LoadAvailableSpellsForLevel(_currentSpellLevel);
         UpdateSelectedSpellsDisplay();
@@ -369,6 +398,12 @@ public partial class LevelUpWizardWindow
 
     private bool IsSpellSelectionComplete()
     {
+        if (_wizardFreeSpellsRemaining > 0)
+        {
+            // Wizard: check total across all levels
+            return GetTotalSelectedSpells() >= _wizardFreeSpellsRemaining;
+        }
+
         foreach (var (level, required) in _newSpellsPerLevel)
         {
             int selected = _selectedSpellsByLevel.GetValueOrDefault(level, new List<int>()).Count;

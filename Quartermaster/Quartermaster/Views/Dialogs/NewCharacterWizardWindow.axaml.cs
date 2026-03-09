@@ -95,7 +95,9 @@ public partial class NewCharacterWizardWindow : Window
     };
     private int _pointBuyTotal = 30; // Default; updated from racialtypes.2da AbilitiesPointBuyNumber
     private const int AbilityMinBase = 8;
-    private const int AbilityMaxBase = 18;
+    private const int AbilityMaxBaseStrict = 18;
+    private const int AbilityMaxBaseUncapped = 99; // Chaotic Evil mode
+    private int AbilityMaxBase => _validationLevel == ValidationLevel.None ? AbilityMaxBaseUncapped : AbilityMaxBaseStrict;
     private static readonly int[] PointBuyCosts = { 0, 1, 2, 3, 4, 5, 6, 8, 10, 13, 16 }; // index = score - 8
     private bool _step5Loaded;
 
@@ -132,6 +134,10 @@ public partial class NewCharacterWizardWindow : Window
     private string _characterName = "";
     private byte _paletteId = 1;
     private ushort _selectedFactionId = 1; // Default: Hostile (standard NWN default for NPCs)
+
+    // Validation level (#1503)
+    private readonly ComboBox _validationLevelComboBox;
+    private ValidationLevel _validationLevel => (ValidationLevel)_validationLevelComboBox.SelectedIndex;
 
     // Controls - navigation
     private readonly TextBlock _sidebarTitle;
@@ -489,6 +495,7 @@ public partial class NewCharacterWizardWindow : Window
         _familiarSelectionPanel = this.FindControl<StackPanel>("FamiliarSelectionPanel")!;
         _familiarComboBox = this.FindControl<ComboBox>("FamiliarComboBox")!;
         _familiarNameTextBox = this.FindControl<TextBox>("FamiliarNameTextBox")!;
+        _familiarNameTextBox.TextChanged += (_, _) => ValidateCurrentStep();
         _classDescriptionLabel = this.FindControl<TextBlock>("ClassDescriptionLabel")!;
         _prestigeToggleArrow = this.FindControl<TextBlock>("PrestigeToggleArrow")!;
         _prestigePlanningContent = this.FindControl<StackPanel>("PrestigePlanningContent")!;
@@ -569,6 +576,11 @@ public partial class NewCharacterWizardWindow : Window
         _summaryScriptsLabel = this.FindControl<TextBlock>("SummaryScriptsLabel")!;
         _summaryFamiliarSection = this.FindControl<Grid>("SummaryFamiliarSection")!;
         _summaryFamiliarLabel = this.FindControl<TextBlock>("SummaryFamiliarLabel")!;
+
+        // Validation level toggle (#1503)
+        _validationLevelComboBox = this.FindControl<ComboBox>("ValidationLevelComboBox")!;
+        _validationLevelComboBox.SelectedIndex = (int)SettingsService.Instance.ValidationLevel;
+        _validationLevelComboBox.SelectionChanged += OnValidationLevelChanged;
 
         UpdateStepDisplay();
     }
@@ -690,36 +702,111 @@ public partial class NewCharacterWizardWindow : Window
         UpdateSidebarSummary();
     }
 
+    private void OnValidationLevelChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        var level = (ValidationLevel)_validationLevelComboBox.SelectedIndex;
+        SettingsService.Instance.ValidationLevel = level;
+
+        // Refresh step-specific UI when validation level changes
+        switch (_currentStep)
+        {
+            case 6 when _step5Loaded:
+                UpdateAbilityDisplay(); // Also calls ValidateCurrentStep
+                break;
+            case 8 when _step7Loaded:
+                RenderSkillRows(); // Rebuild buttons with new enabled state; also calls ValidateCurrentStep
+                break;
+            default:
+                ValidateCurrentStep();
+                break;
+        }
+    }
+
     private void ValidateCurrentStep()
     {
-        bool canProceed = _currentStep switch
+        // Strict validation checks (applies to both Warning and Strict modes for status display)
+        bool strictValid = _currentStep switch
         {
-            1 => true, // File type always has a selection (UTC default)
-            2 => _selectedRaceId != 255, // Must have a race selected
-            3 => true, // Identity always has defaults
-            4 => true, // Appearance always has defaults
-            5 => _selectedClassId >= 0, // Must have a class selected
-            6 => GetAbilityPointsRemaining() == 0 || !_isBicFile, // BIC must spend all points
-            7 => IsFeatSelectionComplete(), // Must choose all available feats
-            8 => GetSkillPointsRemaining() >= 0, // Can't overspend
+            1 => true,
+            2 => _selectedRaceId != 255,
+            3 => true,
+            4 => true,
+            5 => _selectedClassId >= 0 && !IsFamiliarNameRequired(),
+            6 => GetAbilityPointsRemaining() == 0 || !_isBicFile,
+            7 => IsFeatSelectionComplete(),
+            8 => GetSkillPointsRemaining() >= 0,
             9 => !_needsSpellSelection || _isDivineCaster || IsSpellSelectionComplete(),
-            10 => true, // Equipment is optional
-            11 => true, // Summary is always valid (read-only review)
+            10 => true,
+            11 => true,
             _ => true
+        };
+
+        bool canProceed = _validationLevel switch
+        {
+            // Chaotic Evil: only require basic selections
+            ValidationLevel.None => _currentStep switch
+            {
+                2 => _selectedRaceId != 255,
+                5 => _selectedClassId >= 0,
+                _ => true
+            },
+            // True Neutral: warn but allow proceeding (except hard requirements)
+            ValidationLevel.Warning => _currentStep switch
+            {
+                2 => _selectedRaceId != 255,
+                5 => _selectedClassId >= 0 && !IsFamiliarNameRequired(),
+                _ => true
+            },
+            // Lawful Good: enforce all rules
+            _ => strictValid
         };
 
         _nextButton.IsEnabled = canProceed;
         _finishButton.IsEnabled = canProceed;
 
-        _statusLabel.Text = _currentStep switch
+        // Status message: Warning mode shows yellow warnings, Strict mode shows blocking messages
+        if (_validationLevel == ValidationLevel.Warning && !strictValid)
         {
-            2 when !canProceed => "Select a race to continue.",
-            5 when !canProceed => "Select a class to continue.",
-            6 when !canProceed => $"Spend all {_pointBuyTotal} ability points to continue.",
-            7 when !canProceed => $"Select {_featsToChoose - _chosenFeatIds.Count} more feat(s) to continue.",
-            9 when !canProceed => "Select all required spells to continue.",
-            _ => ""
-        };
+            _statusLabel.Foreground = BrushManager.GetWarningBrush(this);
+            _statusLabel.Text = _currentStep switch
+            {
+                5 when IsFamiliarNameRequired() => "⚠ Familiar name is empty.",
+                6 => $"⚠ {GetAbilityPointsRemaining()} ability point(s) unspent.",
+                7 => $"⚠ {_featsToChoose - _chosenFeatIds.Count} feat(s) not selected.",
+                9 => "⚠ Spell selection incomplete.",
+                _ => ""
+            };
+        }
+        else if (!canProceed)
+        {
+            _statusLabel.ClearValue(Avalonia.Controls.TextBlock.ForegroundProperty);
+            _statusLabel.Text = _currentStep switch
+            {
+                2 => "Select a race to continue.",
+                5 when _selectedClassId < 0 => "Select a class to continue.",
+                5 when IsFamiliarNameRequired() => "Enter a name for your familiar.",
+                6 => $"Spend all {_pointBuyTotal} ability points to continue.",
+                7 => $"Select {_featsToChoose - _chosenFeatIds.Count} more feat(s) to continue.",
+                9 => "Select all required spells to continue.",
+                _ => ""
+            };
+        }
+        else
+        {
+            _statusLabel.ClearValue(Avalonia.Controls.TextBlock.ForegroundProperty);
+            _statusLabel.Text = "";
+        }
+    }
+
+    /// <summary>
+    /// Returns true when class grants a familiar but no name has been entered.
+    /// Uses class check rather than panel visibility to avoid rendering timing issues.
+    /// </summary>
+    private bool IsFamiliarNameRequired()
+    {
+        return _selectedClassId >= 0
+            && _displayService.ClassGrantsFamiliar(_selectedClassId)
+            && string.IsNullOrWhiteSpace(_familiarNameTextBox.Text);
     }
 
     private void PrepareCurrentStep()

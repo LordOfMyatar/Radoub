@@ -49,6 +49,7 @@ public partial class LevelUpWizardWindow : Window
     private int _maxSpellLevelThisLevel;
     private int _currentSpellLevel;
     private Dictionary<int, int> _newSpellsPerLevel = new(); // spell level -> new spells to pick
+    private int _wizardFreeSpellsRemaining; // Wizard: 2 free spells distributed across levels
     private List<SpellDisplayItem> _availableSpellsForLevel = new();
     private List<SpellDisplayItem> _filteredAvailableSpells = new();
 
@@ -110,6 +111,10 @@ public partial class LevelUpWizardWindow : Window
     private readonly Border _divineSpellInfoPanel;
     private readonly TextBlock _divineSpellInfoLabel;
     private readonly ItemsControl _divineSpellsList;
+
+    // Validation level (#1503)
+    private readonly ComboBox _validationLevelComboBox;
+    private ValidationLevel _validationLevel => (ValidationLevel)_validationLevelComboBox.SelectedIndex;
 
     // Step 5 controls
     private readonly TextBlock _summaryClassLabel;
@@ -216,6 +221,11 @@ public partial class LevelUpWizardWindow : Window
         _summaryBabLabel = this.FindControl<TextBlock>("SummaryBabLabel")!;
         _summarySavesLabel = this.FindControl<TextBlock>("SummarySavesLabel")!;
 
+        // Validation level toggle (#1503)
+        _validationLevelComboBox = this.FindControl<ComboBox>("ValidationLevelComboBox")!;
+        _validationLevelComboBox.SelectedIndex = (int)SettingsService.Instance.ValidationLevel;
+        _validationLevelComboBox.SelectionChanged += OnValidationLevelChanged;
+
         InitializeWizard();
     }
 
@@ -274,9 +284,16 @@ public partial class LevelUpWizardWindow : Window
         ValidateCurrentStep();
     }
 
+    private void OnValidationLevelChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        var level = (ValidationLevel)_validationLevelComboBox.SelectedIndex;
+        SettingsService.Instance.ValidationLevel = level;
+        ValidateCurrentStep();
+    }
+
     private void ValidateCurrentStep()
     {
-        bool canProceed = _currentStep switch
+        bool strictValid = _currentStep switch
         {
             1 => _selectedClassId >= 0,
             2 => _selectedFeats.Count >= _featsToSelect,
@@ -286,18 +303,53 @@ public partial class LevelUpWizardWindow : Window
             _ => false
         };
 
+        bool canProceed = _validationLevel switch
+        {
+            ValidationLevel.None => _currentStep switch
+            {
+                1 => _selectedClassId >= 0,
+                _ => true
+            },
+            ValidationLevel.Warning => _currentStep switch
+            {
+                1 => _selectedClassId >= 0,
+                _ => true
+            },
+            _ => strictValid
+        };
+
         _nextButton.IsEnabled = canProceed;
         _finishButton.IsEnabled = canProceed;
 
-        // Update status message
-        _statusLabel.Text = _currentStep switch
+        // Status messages
+        if (_validationLevel == ValidationLevel.Warning && !strictValid)
         {
-            1 when _selectedClassId < 0 => "Select a class to continue.",
-            2 when _selectedFeats.Count < _featsToSelect => $"Select {_featsToSelect - _selectedFeats.Count} more feat(s).",
-            3 when GetRemainingSkillPoints() > 0 => $"Allocate {GetRemainingSkillPoints()} remaining skill point(s).",
-            4 when !_isDivineCaster && !IsSpellSelectionComplete() => "Select spells for each spell level.",
-            _ => ""
-        };
+            _statusLabel.Foreground = BrushManager.GetWarningBrush(this);
+            _statusLabel.Text = _currentStep switch
+            {
+                2 => $"⚠ {_featsToSelect - _selectedFeats.Count} feat(s) not selected.",
+                3 => $"⚠ {GetRemainingSkillPoints()} skill point(s) unspent.",
+                4 when !_isDivineCaster => "⚠ Spell selection incomplete.",
+                _ => ""
+            };
+        }
+        else if (!canProceed)
+        {
+            _statusLabel.ClearValue(Avalonia.Controls.TextBlock.ForegroundProperty);
+            _statusLabel.Text = _currentStep switch
+            {
+                1 => "Select a class to continue.",
+                2 => $"Select {_featsToSelect - _selectedFeats.Count} more feat(s).",
+                3 => $"Allocate {GetRemainingSkillPoints()} remaining skill point(s).",
+                4 when !_isDivineCaster => "Select spells for each spell level.",
+                _ => ""
+            };
+        }
+        else
+        {
+            _statusLabel.ClearValue(Avalonia.Controls.TextBlock.ForegroundProperty);
+            _statusLabel.Text = "";
+        }
     }
 
     private void OnBackClick(object? sender, RoutedEventArgs e)

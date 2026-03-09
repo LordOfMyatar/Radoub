@@ -77,8 +77,54 @@ public class SpellServiceTests
         _mockGameData.Set2DAValue("classes", 9, "SpellKnownTable", "cls_spkn_sorc");
         _mockGameData.Set2DAValue("classes", 9, "MemorizesSpells", "0");
 
+        // Bard (1): arcane spontaneous caster
+        _mockGameData.Set2DAValue("classes", 1, "SpellGainTable", "cls_spgn_bard");
+        _mockGameData.Set2DAValue("classes", 1, "SpellKnownTable", "cls_spkn_bard");
+        _mockGameData.Set2DAValue("classes", 1, "MemorizesSpells", "0");
+        _mockGameData.Set2DAValue("classes", 1, "ArcSpellLvlMod", "0");
+        _mockGameData.Set2DAValue("classes", 1, "DivSpellLvlMod", "0");
+
+        // Cleric (2): divine prepared caster
+        _mockGameData.Set2DAValue("classes", 2, "SpellGainTable", "cls_spgn_cler");
+        _mockGameData.Set2DAValue("classes", 2, "SpellKnownTable", "****");
+        _mockGameData.Set2DAValue("classes", 2, "MemorizesSpells", "1");
+        _mockGameData.Set2DAValue("classes", 2, "ArcSpellLvlMod", "0");
+        _mockGameData.Set2DAValue("classes", 2, "DivSpellLvlMod", "0");
+
+        // Druid (3): divine prepared caster
+        _mockGameData.Set2DAValue("classes", 3, "SpellGainTable", "cls_spgn_dru");
+        _mockGameData.Set2DAValue("classes", 3, "SpellKnownTable", "****");
+        _mockGameData.Set2DAValue("classes", 3, "MemorizesSpells", "1");
+        _mockGameData.Set2DAValue("classes", 3, "ArcSpellLvlMod", "0");
+        _mockGameData.Set2DAValue("classes", 3, "DivSpellLvlMod", "0");
+
         // Fighter (4): not a caster
         // (no SpellGainTable set)
+
+        // Paladin (6): divine half-caster
+        _mockGameData.Set2DAValue("classes", 6, "SpellGainTable", "cls_spgn_pal");
+        _mockGameData.Set2DAValue("classes", 6, "SpellKnownTable", "****");
+        _mockGameData.Set2DAValue("classes", 6, "MemorizesSpells", "1");
+        _mockGameData.Set2DAValue("classes", 6, "ArcSpellLvlMod", "0");
+        _mockGameData.Set2DAValue("classes", 6, "DivSpellLvlMod", "0");
+
+        // Ranger (7): divine half-caster
+        _mockGameData.Set2DAValue("classes", 7, "SpellGainTable", "cls_spgn_rang");
+        _mockGameData.Set2DAValue("classes", 7, "SpellKnownTable", "****");
+        _mockGameData.Set2DAValue("classes", 7, "MemorizesSpells", "1");
+        _mockGameData.Set2DAValue("classes", 7, "ArcSpellLvlMod", "0");
+        _mockGameData.Set2DAValue("classes", 7, "DivSpellLvlMod", "0");
+
+        // Add ArcSpellLvlMod/DivSpellLvlMod for existing base arcane casters
+        _mockGameData.Set2DAValue("classes", 9, "ArcSpellLvlMod", "0");
+        _mockGameData.Set2DAValue("classes", 9, "DivSpellLvlMod", "0");
+        _mockGameData.Set2DAValue("classes", 10, "ArcSpellLvlMod", "0");
+        _mockGameData.Set2DAValue("classes", 10, "DivSpellLvlMod", "0");
+
+        // Pale Master (24): prestige class advancing arcane casting
+        _mockGameData.Set2DAValue("classes", 24, "SpellGainTable", "****");
+        _mockGameData.Set2DAValue("classes", 24, "ArcSpellLvlMod", "2");
+        _mockGameData.Set2DAValue("classes", 24, "DivSpellLvlMod", "0");
 
         // cls_spgn_wiz: SpellLevel0..SpellLevel9 per class level (row = level-1)
         // Wizard level 1: 3 cantrips, 1 level-1 slot
@@ -347,6 +393,25 @@ public class SpellServiceTests
         {
             Assert.DoesNotContain(3, result[1]); // Should not include Magic Missile
         }
+    }
+
+    #endregion
+
+    #region Arcane Caster Detection
+
+    [Theory]
+    [InlineData(1, true)]   // Bard - base arcane
+    [InlineData(9, true)]   // Sorcerer - base arcane
+    [InlineData(10, true)]  // Wizard - base arcane
+    [InlineData(2, false)]  // Cleric - divine
+    [InlineData(3, false)]  // Druid - divine
+    [InlineData(6, false)]  // Paladin - divine
+    [InlineData(7, false)]  // Ranger - divine
+    [InlineData(4, false)]  // Fighter - not a caster
+    [InlineData(24, true)]  // Pale Master - prestige arcane (ArcSpellLvlMod > 0)
+    public void IsArcaneCaster_ReturnsCorrectResult(int classId, bool expected)
+    {
+        Assert.Equal(expected, _spellService.IsArcaneCaster(classId));
     }
 
     #endregion

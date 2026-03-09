@@ -8,6 +8,7 @@ using Avalonia.Interactivity;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
+using Radoub.UI.Services;
 
 namespace Quartermaster.Views.Dialogs;
 
@@ -512,7 +513,7 @@ public partial class NewCharacterWizardWindow
 
     private void UpdateAlignmentRestrictionWarning()
     {
-        if (_selectedClassId < 0)
+        if (_selectedClassId < 0 || _validationLevel == ValidationLevel.None)
         {
             _alignmentRestrictionWarning.IsVisible = false;
             return;
@@ -529,7 +530,8 @@ public partial class NewCharacterWizardWindow
         if (!allowed)
         {
             var restrictionText = FormatAlignmentRestriction(metadata.AlignmentRestriction);
-            _alignmentRestrictionWarning.Text = $"Warning: {metadata.Name} requires {restrictionText}";
+            _alignmentRestrictionWarning.Text = $"⚠ {metadata.Name} requires {restrictionText}";
+            _alignmentRestrictionWarning.Foreground = BrushManager.GetWarningBrush(this);
             _alignmentRestrictionWarning.IsVisible = true;
         }
         else
@@ -553,19 +555,22 @@ public partial class NewCharacterWizardWindow
 
         for (int i = 0; i < _alignmentButtons.Length; i++)
         {
-            if (metadata.AlignmentRestriction != null)
+            if (_validationLevel == ValidationLevel.Strict && metadata.AlignmentRestriction != null)
             {
+                // Lawful Good: disable restricted alignments
                 bool allowed = IsAlignmentAllowed(metadata.AlignmentRestriction,
                     AlignmentValues[i].GoodEvil, AlignmentValues[i].LawChaos);
                 _alignmentButtons[i].IsEnabled = allowed;
             }
             else
             {
+                // CE and TN: all alignments clickable (TN shows warning if restricted)
                 _alignmentButtons[i].IsEnabled = true;
             }
         }
 
         // If current selection is now disabled, auto-select first valid alignment
+        // (only in Strict mode)
         int currentIndex = GetCurrentAlignmentIndex();
         if (currentIndex >= 0 && !_alignmentButtons[currentIndex].IsEnabled)
         {

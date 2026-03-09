@@ -212,11 +212,21 @@ public partial class NewCharacterWizardWindow
                         btn.IsEnabled = baseScore > AbilityMinBase;
                     else if (btn.Content?.ToString() == "+")
                     {
-                        int nextCostIndex = baseScore + 1 - AbilityMinBase;
-                        int nextCost = nextCostIndex < PointBuyCosts.Length ? PointBuyCosts[nextCostIndex] : int.MaxValue;
-                        int currentCost = PointBuyCosts[baseScore - AbilityMinBase];
-                        int costDelta = nextCost - currentCost;
-                        btn.IsEnabled = baseScore < AbilityMaxBase && remaining >= costDelta;
+                        if (_validationLevel == ValidationLevel.Strict)
+                        {
+                            // Lawful Good: enforce point-buy budget
+                            int nextCostIndex = baseScore + 1 - AbilityMinBase;
+                            int nextCost = nextCostIndex < PointBuyCosts.Length ? PointBuyCosts[nextCostIndex] : int.MaxValue;
+                            int currentCostIndex = baseScore - AbilityMinBase;
+                            int currentCost = currentCostIndex >= 0 && currentCostIndex < PointBuyCosts.Length ? PointBuyCosts[currentCostIndex] : 0;
+                            int costDelta = nextCost - currentCost;
+                            btn.IsEnabled = baseScore < AbilityMaxBase && remaining >= costDelta;
+                        }
+                        else
+                        {
+                            // CE and TN: no point cost, no cap (except absolute max)
+                            btn.IsEnabled = baseScore < AbilityMaxBase;
+                        }
                     }
                 }
             }
@@ -256,16 +266,27 @@ public partial class NewCharacterWizardWindow
     {
         if (sender is Button btn && btn.Tag is string ability)
         {
-            if (_abilityBaseScores[ability] < AbilityMaxBase)
+            int currentScore = _abilityBaseScores[ability];
+            if (currentScore < AbilityMaxBase)
             {
-                int currentScore = _abilityBaseScores[ability];
-                int nextCostIndex = currentScore + 1 - AbilityMinBase;
-                int nextCost = nextCostIndex < PointBuyCosts.Length ? PointBuyCosts[nextCostIndex] : int.MaxValue;
-                int currentCost = PointBuyCosts[currentScore - AbilityMinBase];
-                int costDelta = nextCost - currentCost;
-
-                if (GetAbilityPointsRemaining() >= costDelta)
+                if (_validationLevel == ValidationLevel.Strict)
                 {
+                    // Lawful Good: enforce point-buy budget
+                    int nextCostIndex = currentScore + 1 - AbilityMinBase;
+                    int nextCost = nextCostIndex < PointBuyCosts.Length ? PointBuyCosts[nextCostIndex] : int.MaxValue;
+                    int currentCostIndex = currentScore - AbilityMinBase;
+                    int currentCost = currentCostIndex >= 0 && currentCostIndex < PointBuyCosts.Length ? PointBuyCosts[currentCostIndex] : 0;
+                    int costDelta = nextCost - currentCost;
+
+                    if (GetAbilityPointsRemaining() >= costDelta)
+                    {
+                        _abilityBaseScores[ability]++;
+                        UpdateAbilityDisplay();
+                    }
+                }
+                else
+                {
+                    // CE and TN: free increases, no point cost
                     _abilityBaseScores[ability]++;
                     UpdateAbilityDisplay();
                 }

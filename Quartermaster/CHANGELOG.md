@@ -10,6 +10,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.30-alpha] - 2026-03-08
+**Branch**: `quartermaster/issue-1602` | **PR**: #1627
+
+### Sprint: NCW Spell Step & Validation (#1602)
+
+- [x] #1587 — NCW: Wizard spellbook mechanics (all cantrips + 3+INT mod level-1 spells; LUW: 2 free spells per level-up)
+- [x] #1503 — Validation toggle for NCW and LUW (Chaotic Evil / True Neutral / Lawful Good)
+
+### Bug Fixes
+
+- fix: Wizard no longer misidentified as divine caster in NCW spell step
+  - Added `IsArcaneCaster()` to SpellService (base class IDs + prestige `ArcSpellLvlMod`)
+  - Rewrote `IsDivineCaster()` to delegate to `IsArcaneCaster()` instead of relying on `MemorizesSpells`/`SpellKnownTable`
+- fix: True Neutral validation now warns instead of blocking (yellow ⚠ messages, Next still enabled)
+- fix: Chaotic Evil mode bypasses all point/slot constraints (abilities, feats, skills, spells)
+- fix: Wizard spell step defaults to Level 1 tab (not empty cantrips tab)
+- fix: Familiar name validation clears when switching to non-familiar class
+- fix: Warning (TN) mode allows over-assignment with warnings for abilities, feats, skills, spells
+- fix: Warning (TN) mode allows selecting restricted alignments with warning (only Strict blocks)
+- fix: Warning (TN) mode still requires familiar name (hard requirement — game breaks without it)
+- fix: Feat count label uses warning brush when over limit
+- fix: Alignment restriction warning uses theme-aware warning brush
+- fix: Replaced hardcoded `Brushes.Goldenrod` with `BrushManager.GetWarningBrush()` in NCW and LUW
+
+---
+
 ## [0.2.29-alpha] - 2026-03-07
 **Branch**: `quartermaster/issue-1601` | **PR**: #1625
 
