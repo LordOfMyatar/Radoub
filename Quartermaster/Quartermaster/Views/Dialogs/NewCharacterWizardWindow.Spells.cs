@@ -340,8 +340,8 @@ public partial class NewCharacterWizardWindow
 
         foreach (var spell in selected)
         {
-            // In CE (None) mode, no cap on spell count
-            if (_validationLevel != ValidationLevel.None && _selectedSpellsByLevel[_currentSpellLevel].Count >= maxForLevel)
+            // Only Strict (LG) enforces spell count cap
+            if (_validationLevel == ValidationLevel.Strict && _selectedSpellsByLevel[_currentSpellLevel].Count >= maxForLevel)
                 break;
             if (!_selectedSpellsByLevel[_currentSpellLevel].Contains(spell.SpellId))
                 _selectedSpellsByLevel[_currentSpellLevel].Add(spell.SpellId);

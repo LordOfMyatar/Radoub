@@ -153,7 +153,7 @@ public partial class NewCharacterWizardWindow
                 Width = 28,
                 HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                 Tag = skill.SkillId,
-                IsEnabled = !skill.IsUnavailable && (_validationLevel == ValidationLevel.None || (skill.AllocatedRanks < skill.MaxRanks && GetSkillPointsRemaining() >= skill.Cost))
+                IsEnabled = !skill.IsUnavailable && (_validationLevel != ValidationLevel.Strict || (skill.AllocatedRanks < skill.MaxRanks && GetSkillPointsRemaining() >= skill.Cost))
             };
             increaseBtn.Click += OnSkillIncrease;
             Grid.SetColumn(increaseBtn, 3);
@@ -235,7 +235,7 @@ public partial class NewCharacterWizardWindow
             int cost = isClassSkill ? 1 : 2;
             int maxRanks = CharacterCreationService.CalculateMaxSkillRanks(isClassSkill, characterLevel: 1);
 
-            bool canIncrease = _validationLevel == ValidationLevel.None
+            bool canIncrease = _validationLevel != ValidationLevel.Strict
                 || (GetSkillPointsRemaining() >= cost && _skillRanksAllocated.GetValueOrDefault(skillId, 0) < maxRanks);
 
             if (canIncrease)

@@ -324,7 +324,7 @@ public partial class LevelUpWizardWindow : Window
         // Status messages
         if (_validationLevel == ValidationLevel.Warning && !strictValid)
         {
-            _statusLabel.Foreground = Avalonia.Media.Brushes.Goldenrod;
+            _statusLabel.Foreground = BrushManager.GetWarningBrush(this);
             _statusLabel.Text = _currentStep switch
             {
                 2 => $"⚠ {_featsToSelect - _selectedFeats.Count} feat(s) not selected.",

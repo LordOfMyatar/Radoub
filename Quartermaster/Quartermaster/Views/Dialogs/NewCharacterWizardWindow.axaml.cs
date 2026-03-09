@@ -767,7 +767,7 @@ public partial class NewCharacterWizardWindow : Window
         // Status message: Warning mode shows yellow warnings, Strict mode shows blocking messages
         if (_validationLevel == ValidationLevel.Warning && !strictValid)
         {
-            _statusLabel.Foreground = Avalonia.Media.Brushes.Goldenrod;
+            _statusLabel.Foreground = BrushManager.GetWarningBrush(this);
             _statusLabel.Text = _currentStep switch
             {
                 5 when IsFamiliarNameRequired() => "⚠ Familiar name is empty.",

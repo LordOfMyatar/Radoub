@@ -267,8 +267,8 @@ public partial class NewCharacterWizardWindow
 
         foreach (var item in selectedItems)
         {
-            // In CE (None) mode, no cap on feat count
-            if (_validationLevel != ValidationLevel.None && _chosenFeatIds.Count >= _featsToChoose) break;
+            // Only Strict (LG) enforces feat count cap
+            if (_validationLevel == ValidationLevel.Strict && _chosenFeatIds.Count >= _featsToChoose) break;
             if (!_chosenFeatIds.Contains(item.FeatId))
             {
                 _chosenFeatIds.Add(item.FeatId);

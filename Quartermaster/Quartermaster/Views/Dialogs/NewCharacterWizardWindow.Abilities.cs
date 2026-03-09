@@ -212,19 +212,20 @@ public partial class NewCharacterWizardWindow
                         btn.IsEnabled = baseScore > AbilityMinBase;
                     else if (btn.Content?.ToString() == "+")
                     {
-                        if (_validationLevel == ValidationLevel.None)
+                        if (_validationLevel == ValidationLevel.Strict)
                         {
-                            // Chaotic Evil: no point cost, no cap (except absolute max)
-                            btn.IsEnabled = baseScore < AbilityMaxBase;
-                        }
-                        else
-                        {
+                            // Lawful Good: enforce point-buy budget
                             int nextCostIndex = baseScore + 1 - AbilityMinBase;
                             int nextCost = nextCostIndex < PointBuyCosts.Length ? PointBuyCosts[nextCostIndex] : int.MaxValue;
                             int currentCostIndex = baseScore - AbilityMinBase;
                             int currentCost = currentCostIndex >= 0 && currentCostIndex < PointBuyCosts.Length ? PointBuyCosts[currentCostIndex] : 0;
                             int costDelta = nextCost - currentCost;
                             btn.IsEnabled = baseScore < AbilityMaxBase && remaining >= costDelta;
+                        }
+                        else
+                        {
+                            // CE and TN: no point cost, no cap (except absolute max)
+                            btn.IsEnabled = baseScore < AbilityMaxBase;
                         }
                     }
                 }
@@ -268,14 +269,9 @@ public partial class NewCharacterWizardWindow
             int currentScore = _abilityBaseScores[ability];
             if (currentScore < AbilityMaxBase)
             {
-                if (_validationLevel == ValidationLevel.None)
+                if (_validationLevel == ValidationLevel.Strict)
                 {
-                    // Chaotic Evil: free increases, no point cost
-                    _abilityBaseScores[ability]++;
-                    UpdateAbilityDisplay();
-                }
-                else
-                {
+                    // Lawful Good: enforce point-buy budget
                     int nextCostIndex = currentScore + 1 - AbilityMinBase;
                     int nextCost = nextCostIndex < PointBuyCosts.Length ? PointBuyCosts[nextCostIndex] : int.MaxValue;
                     int currentCostIndex = currentScore - AbilityMinBase;
@@ -287,6 +283,12 @@ public partial class NewCharacterWizardWindow
                         _abilityBaseScores[ability]++;
                         UpdateAbilityDisplay();
                     }
+                }
+                else
+                {
+                    // CE and TN: free increases, no point cost
+                    _abilityBaseScores[ability]++;
+                    UpdateAbilityDisplay();
                 }
             }
         }
