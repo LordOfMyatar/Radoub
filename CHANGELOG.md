@@ -22,10 +22,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Feature: Shared Item Palette Cache (#1578)
 
-- Shared cache format for item palette data across tools (Quartermaster, Fence, future tools)
-- Module-aware caching keyed by module + HAK list combination
-- Cache invalidation when game data or HAKs change
-- Thread-safe reads from multiple tools
+- `SharedPaletteCacheService` with per-source granularity (BIF, Override, per-HAK) in `~/Radoub/Cache/ItemPalette/`
+- `HakPaletteScannerService` scans module.ifo-referenced HAK files for UTI items
+- Module-aware aggregation filters HAK caches to current module's active HAK list
+- Per-HAK cache invalidation based on file modification time
+- Thread-safe concurrent reads across tools
+- Integrated into Quartermaster and Fence (replaces tool-specific cache services)
+- 52 TDD tests covering cache lifecycle, HAK scanning, module filtering, and thread safety
 
 ---
 
