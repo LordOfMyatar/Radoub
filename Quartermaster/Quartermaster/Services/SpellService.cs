@@ -247,6 +247,26 @@ public class SpellService
     }
 
     /// <summary>
+    /// Checks if a class uses an arcane spell column in spells.2da (Bard, Wiz_Sorc).
+    /// Base arcane casters: Bard (1), Sorcerer (9), Wizard (10).
+    /// For prestige classes, checks ArcSpellLvlMod > 0 in classes.2da.
+    /// </summary>
+    public bool IsArcaneCaster(int classId)
+    {
+        // Base arcane caster classes use the Bard or Wiz_Sorc columns in spells.2da.
+        // This matches the mapping in GetSpellInfo().
+        if (classId == 1 || classId == 9 || classId == 10)
+            return true;
+
+        // Prestige classes that advance arcane spellcasting
+        var arcMod = _gameDataService.Get2DAValue("classes", classId, "ArcSpellLvlMod");
+        if (!string.IsNullOrEmpty(arcMod) && arcMod != "****" && int.TryParse(arcMod, out int arc) && arc > 0)
+            return true;
+
+        return false;
+    }
+
+    /// <summary>
     /// Checks if a class is a spontaneous caster (Sorcerer, Bard).
     /// </summary>
     public bool IsSpontaneousCaster(int classId)

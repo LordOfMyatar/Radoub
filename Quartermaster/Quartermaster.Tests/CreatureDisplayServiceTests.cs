@@ -492,4 +492,72 @@ public class CreatureDisplayServiceTests
     }
 
     #endregion
+
+    #region IsDivineCaster
+
+    /// <summary>
+    /// Creates a CreatureDisplayService with caster class data for all base classes
+    /// plus a prestige arcane class (Pale Master, ID 24).
+    /// </summary>
+    private CreatureDisplayService CreateServiceWithCasterData()
+    {
+        var mock = new MockGameDataService(includeSampleData: true);
+
+        // Base arcane casters
+        mock.Set2DAValue("classes", 1, "SpellGainTable", "cls_spgn_bard");
+        mock.Set2DAValue("classes", 1, "ArcSpellLvlMod", "0");
+        mock.Set2DAValue("classes", 1, "DivSpellLvlMod", "0");
+
+        mock.Set2DAValue("classes", 9, "SpellGainTable", "cls_spgn_sorc");
+        mock.Set2DAValue("classes", 9, "ArcSpellLvlMod", "0");
+        mock.Set2DAValue("classes", 9, "DivSpellLvlMod", "0");
+
+        mock.Set2DAValue("classes", 10, "SpellGainTable", "cls_spgn_wiz");
+        mock.Set2DAValue("classes", 10, "ArcSpellLvlMod", "0");
+        mock.Set2DAValue("classes", 10, "DivSpellLvlMod", "0");
+
+        // Base divine casters
+        mock.Set2DAValue("classes", 2, "SpellGainTable", "cls_spgn_cler");
+        mock.Set2DAValue("classes", 2, "ArcSpellLvlMod", "0");
+        mock.Set2DAValue("classes", 2, "DivSpellLvlMod", "0");
+
+        mock.Set2DAValue("classes", 3, "SpellGainTable", "cls_spgn_dru");
+        mock.Set2DAValue("classes", 3, "ArcSpellLvlMod", "0");
+        mock.Set2DAValue("classes", 3, "DivSpellLvlMod", "0");
+
+        mock.Set2DAValue("classes", 6, "SpellGainTable", "cls_spgn_pal");
+        mock.Set2DAValue("classes", 6, "ArcSpellLvlMod", "0");
+        mock.Set2DAValue("classes", 6, "DivSpellLvlMod", "0");
+
+        mock.Set2DAValue("classes", 7, "SpellGainTable", "cls_spgn_rang");
+        mock.Set2DAValue("classes", 7, "ArcSpellLvlMod", "0");
+        mock.Set2DAValue("classes", 7, "DivSpellLvlMod", "0");
+
+        // Prestige arcane class (Pale Master = 24)
+        mock.Set2DAValue("classes", 24, "SpellGainTable", "****");
+        mock.Set2DAValue("classes", 24, "ArcSpellLvlMod", "2");
+        mock.Set2DAValue("classes", 24, "DivSpellLvlMod", "0");
+
+        // Fighter (4): not a caster (no SpellGainTable)
+
+        return new CreatureDisplayService(mock);
+    }
+
+    [Theory]
+    [InlineData(2, true)]   // Cleric - divine
+    [InlineData(3, true)]   // Druid - divine
+    [InlineData(6, true)]   // Paladin - divine
+    [InlineData(7, true)]   // Ranger - divine
+    [InlineData(1, false)]  // Bard - arcane, not divine
+    [InlineData(9, false)]  // Sorcerer - arcane, not divine
+    [InlineData(10, false)] // Wizard - arcane, not divine
+    [InlineData(4, false)]  // Fighter - not a caster at all
+    [InlineData(24, false)] // Pale Master - prestige arcane, not divine
+    public void IsDivineCaster_ReturnsCorrectResult(int classId, bool expected)
+    {
+        var service = CreateServiceWithCasterData();
+        Assert.Equal(expected, service.IsDivineCaster(classId));
+    }
+
+    #endregion
 }
