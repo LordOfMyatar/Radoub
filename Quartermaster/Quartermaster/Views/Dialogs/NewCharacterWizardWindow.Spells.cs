@@ -143,9 +143,11 @@ public partial class NewCharacterWizardWindow
         // Build spell level tabs
         BuildSpellLevelTabs();
 
-        // Default to level 0 (cantrips)
-        _currentSpellLevel = 0;
-        SelectSpellLevelTab(0);
+        // For Wizards (non-spontaneous), default to Level 1 since cantrips are auto-complete.
+        // For spontaneous casters (Bard, Sorcerer), default to cantrips where they have choices.
+        int defaultTab = (!isSpontaneous && _maxSpellLevelForClass >= 1) ? 1 : 0;
+        _currentSpellLevel = defaultTab;
+        SelectSpellLevelTab(defaultTab);
     }
 
     private void BuildSpellLevelTabs()
