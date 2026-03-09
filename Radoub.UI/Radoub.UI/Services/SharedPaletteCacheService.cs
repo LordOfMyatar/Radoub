@@ -241,6 +241,85 @@ public class SharedPaletteCacheService : ISharedPaletteCacheService
         }
     }
 
+    public List<SharedPaletteCacheItem>? GetAggregatedCache(IEnumerable<string>? activeHakPaths)
+    {
+        // null filter = include everything
+        if (activeHakPaths == null)
+            return GetAggregatedCache();
+
+        // Build a set of allowed HAK paths for fast lookup
+        var allowedHaks = new HashSet<string>(
+            activeHakPaths.Select(p => p.ToLowerInvariant()),
+            StringComparer.OrdinalIgnoreCase);
+
+        _lock.EnterReadLock();
+        try
+        {
+            if (!Directory.Exists(_cacheDirectory))
+                return null;
+
+            var allItems = new List<SharedPaletteCacheItem>();
+
+            foreach (var file in Directory.GetFiles(_cacheDirectory, "*.json"))
+            {
+                try
+                {
+                    var json = File.ReadAllText(file);
+                    var cache = JsonSerializer.Deserialize<SourcePaletteCacheWrapper>(json, JsonOptions);
+                    if (cache?.Items == null || cache.Version != CacheVersion)
+                        continue;
+
+                    // HAK caches: only include if in the active HAK list
+                    if (cache.Source == "hak")
+                    {
+                        if (string.IsNullOrEmpty(cache.ValidationPath))
+                            continue;
+
+                        // Check if this HAK is in the active list
+                        if (!allowedHaks.Contains(cache.ValidationPath.ToLowerInvariant()))
+                            continue;
+
+                        // Still validate modification time
+                        if (File.Exists(cache.ValidationPath))
+                        {
+                            var hakModified = File.GetLastWriteTimeUtc(cache.ValidationPath);
+                            if (cache.SourceModified != hakModified)
+                            {
+                                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                                    $"Skipping stale HAK cache: {Path.GetFileName(file)}");
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            continue; // HAK file no longer exists
+                        }
+                    }
+
+                    allItems.AddRange(cache.Items);
+                }
+                catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"Skipping invalid cache file '{Path.GetFileName(file)}': {ex.Message}");
+                }
+            }
+
+            if (allItems.Count > 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Shared palette filtered aggregation: {allItems.Count} items (active HAKs: {allowedHaks.Count})");
+                return allItems;
+            }
+
+            return null;
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
+    }
+
     public void InvalidateAggregatedCache()
     {
         _lock.EnterWriteLock();

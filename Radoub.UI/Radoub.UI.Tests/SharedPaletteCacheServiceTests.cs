@@ -454,4 +454,95 @@ public class SharedPaletteCacheServiceTests : IDisposable
     }
 
     #endregion
+
+    #region Module-Aware Aggregation
+
+    [Fact]
+    public async Task GetAggregatedCache_WithHakFilter_OnlyIncludesSpecifiedHaks()
+    {
+        var hak1 = Path.Combine(_testCacheDir, "cep2_top.hak");
+        var hak2 = Path.Combine(_testCacheDir, "cep2_core.hak");
+        var hak3 = Path.Combine(_testCacheDir, "other_mod.hak");
+        File.WriteAllText(hak1, "fake1");
+        File.WriteAllText(hak2, "fake2");
+        File.WriteAllText(hak3, "fake3");
+
+        // Save BIF + 3 HAK caches
+        await _service.SaveSourceCacheAsync("bif", CreateTestItems(2), validationPath: "/game");
+        await _service.SaveSourceCacheAsync("hak", CreateTestItems(3),
+            validationPath: hak1, sourceModified: File.GetLastWriteTimeUtc(hak1));
+        await _service.SaveSourceCacheAsync("hak", CreateTestItems(4),
+            validationPath: hak2, sourceModified: File.GetLastWriteTimeUtc(hak2));
+        await _service.SaveSourceCacheAsync("hak", CreateTestItems(5),
+            validationPath: hak3, sourceModified: File.GetLastWriteTimeUtc(hak3));
+
+        // Unfiltered should get all 14 items
+        var unfiltered = _service.GetAggregatedCache();
+        Assert.Equal(14, unfiltered!.Count);
+
+        // Filtered to just hak1 + hak2 should get 2 + 3 + 4 = 9 items (BIF + 2 HAKs)
+        _service.InvalidateAggregatedCache();
+        var filtered = _service.GetAggregatedCache(new[] { hak1, hak2 });
+        Assert.Equal(9, filtered!.Count);
+    }
+
+    [Fact]
+    public async Task GetAggregatedCache_WithEmptyHakFilter_ExcludesAllHaks()
+    {
+        var hakPath = Path.Combine(_testCacheDir, "some.hak");
+        File.WriteAllText(hakPath, "fake");
+
+        await _service.SaveSourceCacheAsync("bif", CreateTestItems(3), validationPath: "/game");
+        await _service.SaveSourceCacheAsync("override", CreateTestItems(2), validationPath: "/nwn");
+        await _service.SaveSourceCacheAsync("hak", CreateTestItems(5),
+            validationPath: hakPath, sourceModified: File.GetLastWriteTimeUtc(hakPath));
+
+        _service.InvalidateAggregatedCache();
+        var filtered = _service.GetAggregatedCache(Array.Empty<string>());
+
+        // Should include BIF + Override but no HAKs
+        Assert.Equal(5, filtered!.Count);
+    }
+
+    [Fact]
+    public async Task GetAggregatedCache_WithNullFilter_IncludesAllHaks()
+    {
+        var hakPath = Path.Combine(_testCacheDir, "mod.hak");
+        File.WriteAllText(hakPath, "fake");
+
+        await _service.SaveSourceCacheAsync("bif", CreateTestItems(2), validationPath: "/game");
+        await _service.SaveSourceCacheAsync("hak", CreateTestItems(3),
+            validationPath: hakPath, sourceModified: File.GetLastWriteTimeUtc(hakPath));
+
+        _service.InvalidateAggregatedCache();
+        var result = _service.GetAggregatedCache(null);
+
+        // null filter = include everything (same as parameterless overload)
+        Assert.Equal(5, result!.Count);
+    }
+
+    [Fact]
+    public async Task GetAggregatedCache_WithFilter_DoesNotCacheFilteredResult()
+    {
+        var hak1 = Path.Combine(_testCacheDir, "a.hak");
+        var hak2 = Path.Combine(_testCacheDir, "b.hak");
+        File.WriteAllText(hak1, "fake1");
+        File.WriteAllText(hak2, "fake2");
+
+        await _service.SaveSourceCacheAsync("bif", CreateTestItems(1), validationPath: "/game");
+        await _service.SaveSourceCacheAsync("hak", CreateTestItems(2),
+            validationPath: hak1, sourceModified: File.GetLastWriteTimeUtc(hak1));
+        await _service.SaveSourceCacheAsync("hak", CreateTestItems(3),
+            validationPath: hak2, sourceModified: File.GetLastWriteTimeUtc(hak2));
+
+        // Filtered call with hak1 only
+        var filtered1 = _service.GetAggregatedCache(new[] { hak1 });
+        Assert.Equal(3, filtered1!.Count); // 1 BIF + 2 hak1
+
+        // Different filter with hak2 only should return different result
+        var filtered2 = _service.GetAggregatedCache(new[] { hak2 });
+        Assert.Equal(4, filtered2!.Count); // 1 BIF + 3 hak2
+    }
+
+    #endregion
 }

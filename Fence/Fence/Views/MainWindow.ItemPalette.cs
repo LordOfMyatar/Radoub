@@ -46,6 +46,9 @@ public partial class MainWindow
     private List<SharedPaletteCacheItem>? _cachedPaletteData;
     private string? _lastModuleDirectory;
 
+    // Active HAK paths from current module's IFO (for filtered aggregation)
+    private List<string>? _activeHakPaths;
+
     #region Item Palette
 
     private void PopulateTypeFilter()
@@ -89,8 +92,11 @@ public partial class MainWindow
     {
         try
         {
-            // Try to load from shared cache
-            var aggregated = await Task.Run(() => _sharedCacheService.GetAggregatedCache());
+            // Resolve active HAK paths for module-aware filtering
+            _activeHakPaths = ResolveActiveHakPaths();
+
+            // Try to load from shared cache (filtered to active HAKs)
+            var aggregated = await Task.Run(() => _sharedCacheService.GetAggregatedCache(_activeHakPaths));
             if (aggregated != null)
             {
                 // Filter out excluded base item types
@@ -267,6 +273,7 @@ public partial class MainWindow
     {
         _sharedCacheService.ClearAllCaches();
         _cachedPaletteData = null;
+        _activeHakPaths = null;
         _loadedItemTypes.Clear();
         _allItemsLoaded = false;
         PaletteItems.Clear();
@@ -415,9 +422,9 @@ public partial class MainWindow
                 UnifiedLogger.LogApplication(LogLevel.INFO,
                     $"HAK scan: {result.HaksScanned} scanned, {result.HaksSkipped} cached, {result.TotalItemsScanned} items");
 
-                // Refresh aggregated cache to include HAK items
+                // Refresh aggregated cache to include HAK items (filtered to active HAKs)
                 _sharedCacheService.InvalidateAggregatedCache();
-                var aggregated = _sharedCacheService.GetAggregatedCache();
+                var aggregated = _sharedCacheService.GetAggregatedCache(_activeHakPaths);
                 if (aggregated != null)
                 {
                     _cachedPaletteData = aggregated
@@ -430,6 +437,21 @@ public partial class MainWindow
         {
             UnifiedLogger.LogApplication(LogLevel.WARN, $"HAK scan failed: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Resolve the active HAK file paths from the current module's IFO.
+    /// Returns null if no module is configured (includes all HAKs in aggregation).
+    /// Returns empty list if module has no HAKs (excludes all HAKs from aggregation).
+    /// </summary>
+    private List<string>? ResolveActiveHakPaths()
+    {
+        var moduleDir = GetModuleWorkingDirectory();
+        if (string.IsNullOrEmpty(moduleDir))
+            return null; // No module — include all cached HAKs
+
+        var hakSearchPaths = RadoubSettings.Instance.GetAllHakSearchPaths();
+        return _hakScanner.ResolveModuleHakPaths(moduleDir, hakSearchPaths);
     }
 
     /// <summary>

@@ -41,6 +41,15 @@ public interface ISharedPaletteCacheService
     List<SharedPaletteCacheItem>? GetAggregatedCache();
 
     /// <summary>
+    /// Get aggregated items, filtering HAK caches to only those in the active HAK list.
+    /// BIF and Override caches are always included. HAK caches not in the filter are excluded.
+    /// Pass null to include all HAKs (same as parameterless overload).
+    /// Pass empty to exclude all HAKs.
+    /// Filtered results are NOT cached in memory (different modules = different filters).
+    /// </summary>
+    List<SharedPaletteCacheItem>? GetAggregatedCache(IEnumerable<string>? activeHakPaths);
+
+    /// <summary>
     /// Clear the in-memory aggregated cache (forces reload from disk).
     /// </summary>
     void InvalidateAggregatedCache();

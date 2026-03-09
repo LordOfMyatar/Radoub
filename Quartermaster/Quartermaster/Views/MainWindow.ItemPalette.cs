@@ -34,6 +34,9 @@ public partial class MainWindow
     private List<SharedPaletteCacheItem>? _cachedPaletteData;
     private bool _paletteLoaded;
 
+    // Active HAK paths from current module's IFO (for filtered aggregation)
+    private List<string>? _activeHakPaths;
+
     // Track module directory for clearing stale module items
     private string? _lastModuleDirectory;
 
@@ -67,8 +70,11 @@ public partial class MainWindow
         {
             token.ThrowIfCancellationRequested();
 
-            // Try to load aggregated cache from existing source caches
-            _cachedPaletteData = await Task.Run(() => _sharedCacheService.GetAggregatedCache(), token);
+            // Resolve active HAK paths for module-aware filtering
+            _activeHakPaths = ResolveActiveHakPaths();
+
+            // Try to load aggregated cache from existing source caches (filtered to active HAKs)
+            _cachedPaletteData = await Task.Run(() => _sharedCacheService.GetAggregatedCache(_activeHakPaths), token);
 
             if (_cachedPaletteData != null && _cachedPaletteData.Count > 0)
             {
@@ -142,11 +148,11 @@ public partial class MainWindow
                 await ScanModuleHaksAsync(token);
             }
 
-            // Refresh aggregated cache
+            // Refresh aggregated cache (filtered to active HAKs)
             if (!token.IsCancellationRequested)
             {
                 _sharedCacheService.InvalidateAggregatedCache();
-                _cachedPaletteData = _sharedCacheService.GetAggregatedCache();
+                _cachedPaletteData = _sharedCacheService.GetAggregatedCache(_activeHakPaths);
             }
         }
         catch (OperationCanceledException)
@@ -175,8 +181,8 @@ public partial class MainWindow
             // Scan module HAKs (outside Task.Run — scanner manages its own threading)
             await ScanModuleHaksAsync(token);
 
-            // Load aggregated result
-            _cachedPaletteData = _sharedCacheService.GetAggregatedCache();
+            // Load aggregated result (filtered to active HAKs)
+            _cachedPaletteData = _sharedCacheService.GetAggregatedCache(_activeHakPaths);
             UnifiedLogger.LogInventory(LogLevel.INFO, $"All caches built: {_cachedPaletteData?.Count ?? 0} total items");
         }
         catch (OperationCanceledException)
@@ -416,11 +422,28 @@ public partial class MainWindow
         _cachedPaletteData = null;
         _paletteLoaded = false;
         _lastModuleDirectory = null;
+        _activeHakPaths = null;
         InventoryPanelContent.PaletteItems.Clear();
 
-        // Rebuild cache and reload into UI
+        // Re-resolve active HAKs and rebuild cache
+        _activeHakPaths = ResolveActiveHakPaths();
         await BuildAllCachesAsync(token);
         await LoadPaletteItemsAsync(token);
+    }
+
+    /// <summary>
+    /// Resolve the active HAK file paths from the current module's IFO.
+    /// Returns null if no module is configured (includes all HAKs in aggregation).
+    /// Returns empty list if module has no HAKs (excludes all HAKs from aggregation).
+    /// </summary>
+    private List<string>? ResolveActiveHakPaths()
+    {
+        var moduleDir = GetModuleWorkingDirectory();
+        if (string.IsNullOrEmpty(moduleDir))
+            return null; // No module — include all cached HAKs
+
+        var hakSearchPaths = RadoubSettings.Instance.GetAllHakSearchPaths();
+        return _hakScanner.ResolveModuleHakPaths(moduleDir, hakSearchPaths);
     }
 
     /// <summary>
