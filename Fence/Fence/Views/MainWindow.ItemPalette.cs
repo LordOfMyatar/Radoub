@@ -2,7 +2,6 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
-using MerchantEditor.Services;
 using MerchantEditor.ViewModels;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
@@ -20,7 +19,7 @@ namespace MerchantEditor.Views;
 
 /// <summary>
 /// MainWindow partial: Item Palette loading and filtering
-/// Uses on-demand loading - items are loaded when user selects a type filter.
+/// Uses shared cross-tool palette cache for item data.
 /// </summary>
 public partial class MainWindow
 {
@@ -35,12 +34,12 @@ public partial class MainWindow
         255, // Invalid/special marker
     };
 
-    private readonly PaletteCacheService _paletteCacheService = new();
+    private readonly ISharedPaletteCacheService _sharedCacheService = new SharedPaletteCacheService();
 
     // Track which types have been loaded (for on-demand loading)
     private readonly HashSet<string> _loadedItemTypes = new(StringComparer.OrdinalIgnoreCase);
     private bool _allItemsLoaded;
-    private List<CachedPaletteItem>? _cachedPaletteData;
+    private List<SharedPaletteCacheItem>? _cachedPaletteData;
     private string? _lastModuleDirectory;
 
     #region Item Palette
@@ -80,22 +79,25 @@ public partial class MainWindow
 
     /// <summary>
     /// Pre-warm the cache in background so it's ready when user filters.
+    /// Uses shared cross-tool cache.
     /// </summary>
     private async Task PreWarmCacheAsync()
     {
         try
         {
-            if (_paletteCacheService.HasValidCache())
+            // Try to load from shared cache
+            var aggregated = await Task.Run(() => _sharedCacheService.GetAggregatedCache());
+            if (aggregated != null)
             {
-                _cachedPaletteData = await Task.Run(() => _paletteCacheService.LoadCache());
-                if (_cachedPaletteData != null)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Cache pre-warmed: {_cachedPaletteData.Count} items ready");
-                    return;
-                }
+                // Filter out excluded base item types
+                _cachedPaletteData = aggregated
+                    .Where(i => !ExcludedBaseItemTypes.Contains(i.BaseItemType))
+                    .ToList();
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Cache pre-warmed from shared cache: {_cachedPaletteData.Count} items ready");
+                return;
             }
 
-            // No cache - build it in background
+            // No shared cache - build it in background
             UnifiedLogger.LogApplication(LogLevel.INFO, "Building palette cache in background...");
             await BuildCacheInBackgroundAsync();
         }
@@ -107,10 +109,11 @@ public partial class MainWindow
 
     /// <summary>
     /// Build the full cache in background without displaying items.
+    /// Saves to shared cache location for cross-tool consumption.
     /// </summary>
     private async Task BuildCacheInBackgroundAsync()
     {
-        var cacheItems = new List<CachedPaletteItem>();
+        var cacheItems = new List<SharedPaletteCacheItem>();
 
         await Task.Run(() =>
         {
@@ -127,13 +130,13 @@ public partial class MainWindow
                     var resolved = _itemResolutionService!.ResolveItem(resourceInfo.ResRef);
                     if (resolved != null && !ExcludedBaseItemTypes.Contains(resolved.BaseItemType))
                     {
-                        cacheItems.Add(new CachedPaletteItem
+                        cacheItems.Add(new SharedPaletteCacheItem
                         {
                             ResRef = resolved.ResRef,
                             DisplayName = resolved.DisplayName,
-                            BaseItemType = resolved.BaseItemTypeName,
-                            BaseItemIndex = resolved.BaseItemType,
-                            BaseValue = resolved.BaseCost,
+                            BaseItemTypeName = resolved.BaseItemTypeName,
+                            BaseItemType = resolved.BaseItemType,
+                            BaseValue = (uint)resolved.BaseCost,
                             Tag = resolved.Tag,
                             IsStandard = resourceInfo.Source == GameResourceSource.Bif
                         });
@@ -147,8 +150,16 @@ public partial class MainWindow
             }
         });
 
-        // Save and store
-        await _paletteCacheService.SaveCacheAsync(cacheItems);
+        // Save to shared cache (split by source for cross-tool benefit)
+        var bifItems = cacheItems.Where(i => i.IsStandard).ToList();
+        var customItems = cacheItems.Where(i => !i.IsStandard).ToList();
+
+        var settings = Radoub.Formats.Settings.RadoubSettings.Instance;
+        if (bifItems.Count > 0)
+            await _sharedCacheService.SaveSourceCacheAsync("bif", bifItems, settings.BaseGameInstallPath);
+        if (customItems.Count > 0)
+            await _sharedCacheService.SaveSourceCacheAsync("override", customItems, settings.NeverwinterNightsPath);
+
         _cachedPaletteData = cacheItems;
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Background cache complete: {cacheItems.Count} items");
     }
@@ -182,10 +193,10 @@ public partial class MainWindow
                 return;
             }
 
-            // Filter cached data
+            // Filter cached data - use BaseItemTypeName for type matching
             var itemsToAdd = string.IsNullOrEmpty(typeFilter)
                 ? _cachedPaletteData
-                : _cachedPaletteData.Where(i => i.BaseItemType.Equals(typeFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+                : _cachedPaletteData.Where(i => i.BaseItemTypeName.Equals(typeFilter, StringComparison.OrdinalIgnoreCase)).ToList();
 
             // Convert to view models and add (skip already loaded)
             var existingResRefs = new HashSet<string>(PaletteItems.Select(p => p.ResRef), StringComparer.OrdinalIgnoreCase);
@@ -199,9 +210,9 @@ public partial class MainWindow
                     {
                         ResRef = cached.ResRef,
                         DisplayName = cached.DisplayName,
-                        BaseItemType = cached.BaseItemType,
-                        BaseItemIndex = cached.BaseItemIndex,
-                        BaseValue = cached.BaseValue,
+                        BaseItemType = cached.BaseItemTypeName,
+                        BaseItemIndex = cached.BaseItemType,
+                        BaseValue = (int)cached.BaseValue,
                         Tag = cached.Tag,
                         IsStandard = cached.IsStandard
                     });
@@ -244,7 +255,7 @@ public partial class MainWindow
     /// </summary>
     public Task ClearAndReloadPaletteCacheAsync()
     {
-        _paletteCacheService.ClearCache();
+        _sharedCacheService.ClearAllCaches();
         _cachedPaletteData = null;
         _loadedItemTypes.Clear();
         _allItemsLoaded = false;
@@ -287,9 +298,9 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// Get cache info for display in Settings.
+    /// Get cache statistics for display in Settings.
     /// </summary>
-    public CacheInfo? GetPaletteCacheInfo() => _paletteCacheService.GetCacheInfo();
+    public SharedPaletteCacheStatistics GetPaletteCacheStatistics() => _sharedCacheService.GetCacheStatistics();
 
     /// <summary>
     /// Scan the module directory (sibling folder of opened .utm file) for loose .uti files
