@@ -52,6 +52,12 @@ public partial class ClassesPanel : BasePanelControl
     public event EventHandler? PackageChanged;
     public event EventHandler? ClassesChanged;
 
+    /// <summary>
+    /// Fired when user requests a level-up via the Level Up or Add Class buttons.
+    /// MainWindow handles this by launching the LUW wizard.
+    /// </summary>
+    public event EventHandler? LevelUpRequested;
+
     public ClassesPanel()
     {
         InitializeComponent();
@@ -238,40 +244,14 @@ public partial class ClassesPanel : BasePanelControl
     {
         if (IsLoading || CurrentCreature == null || _displayService == null) return;
 
-        if (sender is Button button && button.Tag is int slotIndex)
-        {
-            LevelUp(slotIndex);
-        }
-    }
-
-    private void LevelUp(int slotIndex)
-    {
-        if (CurrentCreature == null || _displayService == null) return;
-        if (slotIndex < 0 || slotIndex >= CurrentCreature.ClassList.Count) return;
-
         var totalLevel = CalculateTotalLevel();
-        if (totalLevel >= MaxTotalLevel) return; // At cap
+        if (totalLevel >= MaxTotalLevel) return;
 
-        var creatureClass = CurrentCreature.ClassList[slotIndex];
-        var classMaxLevel = _displayService.GetClassMaxLevel(creatureClass.Class);
-
-        // Check prestige class max level
-        if (classMaxLevel > 0 && creatureClass.ClassLevel >= classMaxLevel) return;
-
-        // Increment level
-        creatureClass.ClassLevel++;
-
-        // Recalculate derived stats
-        RecalculateDerivedStats();
-
-        // Refresh UI
-        RefreshClassSlots();
-
-        // Fire change event
-        ClassesChanged?.Invoke(this, EventArgs.Empty);
+        // Delegate to MainWindow which launches the Level Up Wizard
+        LevelUpRequested?.Invoke(this, EventArgs.Empty);
     }
 
-    private async void OnAddClassClick(object? sender, RoutedEventArgs e)
+    private void OnAddClassClick(object? sender, RoutedEventArgs e)
     {
         if (IsLoading || CurrentCreature == null || _displayService == null) return;
 
@@ -279,58 +259,9 @@ public partial class ClassesPanel : BasePanelControl
         if (totalLevel >= MaxTotalLevel) return;
         if (CurrentCreature.ClassList.Count >= MaxClassSlots) return;
 
-        var allClasses = _displayService.GetAllClasses();
-        var picker = new ClassPickerWindow(allClasses);
-
-        var parentWindow = this.VisualRoot as Window;
-        if (parentWindow != null)
-        {
-            await picker.ShowDialog(parentWindow);
-        }
-
-        if (picker.Confirmed && picker.SelectedClassId.HasValue)
-        {
-            AddClass(picker.SelectedClassId.Value);
-        }
-    }
-
-    private void AddClass(int classId)
-    {
-        if (CurrentCreature == null || _displayService == null) return;
-
-        // Check if class already exists on creature
-        foreach (var c in CurrentCreature.ClassList)
-        {
-            if (c.Class == classId)
-            {
-                // Class already exists - just level it up instead
-                var existingIndex = CurrentCreature.ClassList.IndexOf(c);
-                LevelUp(existingIndex);
-                return;
-            }
-        }
-
-        // Add new class at level 1
-        var newClass = new CreatureClass
-        {
-            Class = classId,
-            ClassLevel = 1
-        };
-
-        CurrentCreature.ClassList.Add(newClass);
-
-        // Recalculate derived stats
-        RecalculateDerivedStats();
-
-        // Refresh UI
-        IsLoading = true;
-        RefreshClassSlots();
-        RefreshDomainSection();
-        RefreshFamiliarSection();
-        IsLoading = false;
-
-        // Fire change event
-        ClassesChanged?.Invoke(this, EventArgs.Empty);
+        // Delegate to MainWindow which launches the Level Up Wizard
+        // LUW's class selection step handles both existing and new classes
+        LevelUpRequested?.Invoke(this, EventArgs.Empty);
     }
 
     private void RecalculateDerivedStats()

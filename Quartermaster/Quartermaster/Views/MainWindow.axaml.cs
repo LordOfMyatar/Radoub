@@ -150,6 +150,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         ClassesPanelContent.AlignmentChanged += (s, e) => MarkDirty();
         ClassesPanelContent.PackageChanged += (s, e) => MarkDirty();
         ClassesPanelContent.ClassesChanged += OnClassesChanged;
+        ClassesPanelContent.LevelUpRequested += (s, e) => LaunchLevelUpWizard();
 
         // Initialize feats panel with display service for 2DA/TLK lookups
         FeatsPanelContent.SetDisplayService(DisplayService);
