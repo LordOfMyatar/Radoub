@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.33-alpha] - 2026-03-10
-**Branch**: `quartermaster/issue-1492` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1492` | **PR**: #1643
 
 ### Sprint: Multi-Level Character Creation (#1492)
 
