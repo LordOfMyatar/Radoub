@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.31-alpha] - 2026-03-09
-**Branch**: `quartermaster/issue-1603` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1603` | **PR**: #1638
 
 ### Sprint: LUW Sidebar & Ability Scores (#1603)
 
