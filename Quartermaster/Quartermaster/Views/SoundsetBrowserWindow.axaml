@@ -130,7 +130,7 @@
 
                     <!-- Sound Type Selection -->
                     <StackPanel Grid.Row="1" Margin="10" Spacing="8">
-                        <TextBlock Text="Sound Type:" FontSize="12"/>
+                        <TextBlock Text="Sound Type:" FontSize="{DynamicResource FontSizeXSmall}"/>
                         <ComboBox x:Name="SoundTypeComboBox"
                                   AutomationProperties.AutomationId="SoundTypeComboBox"
                                   HorizontalAlignment="Stretch"

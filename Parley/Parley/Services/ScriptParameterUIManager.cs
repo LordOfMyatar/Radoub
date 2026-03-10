@@ -140,7 +140,7 @@ namespace DialogEditor.Services
                 Content = "X",
                 Width = 25,
                 Height = 25,
-                FontSize = 12,
+                FontSize = Avalonia.Application.Current?.FindResource("FontSizeXSmall") as double? ?? 12,
                 FontWeight = Avalonia.Media.FontWeight.Bold,
                 Padding = new Thickness(0),
                 HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,

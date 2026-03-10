@@ -447,7 +447,7 @@
                                             <Border Background="Transparent" PointerPressed="OnInfiniteCellClicked">
                                                 <TextBlock Text="{Binding Infinite, Converter={StaticResource InfiniteToSymbolConverter}}"
                                                            HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                           FontWeight="Bold" FontSize="16"
+                                                           FontWeight="Bold" FontSize="{DynamicResource FontSizeMedium}"
                                                            Cursor="Hand"
                                                            ToolTip.Tip="Click to toggle infinite stock"/>
                                             </Border>
@@ -592,7 +592,7 @@
                                 <TextBlock x:Name="DetailItemName"
                                            Text=""
                                            FontWeight="SemiBold"
-                                           FontSize="14"
+                                           FontSize="{DynamicResource GlobalFontSize}"
                                            TextWrapping="Wrap"
                                            HorizontalAlignment="Center"
                                            AutomationProperties.AutomationId="DetailItemName"/>

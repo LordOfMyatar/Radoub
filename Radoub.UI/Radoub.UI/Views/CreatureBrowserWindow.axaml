@@ -71,24 +71,24 @@
                            Text="Location:"
                            VerticalAlignment="Center"
                            Margin="0,0,8,0"
-                           FontSize="11"/>
+                           FontSize="{DynamicResource FontSizeSmall}"/>
                 <TextBlock Grid.Column="1"
                            x:Name="LocationPathLabel"
                            Text="(auto-detected)"
                            VerticalAlignment="Center"
-                           FontSize="11"
+                           FontSize="{DynamicResource FontSizeSmall}"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                            TextTrimming="CharacterEllipsis"/>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="5">
                     <Button x:Name="ResetLocationButton"
                             Content="reset"
-                            FontSize="11"
+                            FontSize="{DynamicResource FontSizeSmall}"
                             Padding="8,2"
                             IsVisible="False"
                             Click="OnResetLocationClick"/>
                     <Button x:Name="BrowseLocationButton"
                             Content="Browse..."
-                            FontSize="11"
+                            FontSize="{DynamicResource FontSizeSmall}"
                             Padding="8,2"
                             Click="OnBrowseLocationClick"/>
                 </StackPanel>
@@ -103,7 +103,7 @@
 
             <!-- Source Filter (Checkboxes) -->
             <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,10" Spacing="15">
-                <TextBlock Text="Sources:" VerticalAlignment="Center" FontSize="11"/>
+                <TextBlock Text="Sources:" VerticalAlignment="Center" FontSize="{DynamicResource FontSizeSmall}"/>
                 <CheckBox x:Name="ShowModuleCheck"
                           Content="▢ Module"
                           IsChecked="True"
@@ -150,7 +150,7 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="{Binding TypeIndicator}" Width="80" Foreground="Gray" FontSize="10" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding TypeIndicator}" Width="80" Foreground="Gray" FontSize="{DynamicResource FontSizeXSmall}" VerticalAlignment="Center"/>
                                     <TextBlock Text="{Binding Name}"/>
                                 </StackPanel>
                             </DataTemplate>

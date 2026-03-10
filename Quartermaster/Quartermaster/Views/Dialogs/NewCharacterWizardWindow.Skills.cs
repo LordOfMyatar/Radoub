@@ -128,7 +128,7 @@ public partial class NewCharacterWizardWindow
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
                 Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush,
-                FontSize = 11
+                FontSize = this.FindResource("FontSizeSmall") as double? ?? 13
             };
             Grid.SetColumn(keyLabel, 1);
             row.Children.Add(keyLabel);
@@ -188,7 +188,7 @@ public partial class NewCharacterWizardWindow
             {
                 Text = skill.IsUnavailable ? "Unavailable" : skill.IsClassSkill ? "Class (1 pt)" : "Cross-class (2 pts)",
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                FontSize = 11,
+                FontSize = this.FindResource("FontSizeSmall") as double? ?? 13,
                 Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush
             };
             Grid.SetColumn(typeLabel, 6);

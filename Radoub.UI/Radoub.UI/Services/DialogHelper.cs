@@ -252,7 +252,7 @@ public static class DialogHelper
         messagePanel.Children.Add(new TextBlock
         {
             Text = "⚠",
-            FontSize = 24,
+            FontSize = Avalonia.Application.Current?.FindResource("FontSizeTitle") as double? ?? 24,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top
         });
         messagePanel.Children.Add(new TextBlock
