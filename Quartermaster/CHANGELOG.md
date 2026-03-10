@@ -15,9 +15,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: LUW Sidebar & Ability Scores (#1603)
 
-- [ ] #1502 — Add dynamic sidebar summary to Level Up Wizard
-- [ ] #1501 — Add ability score increase at levels 4/8/12/16/20/24/28/32/36/40
-- [ ] #1155 — Add epic BAB handling for APR calculation
+- [x] #1502 — Add dynamic sidebar summary to Level Up Wizard
+- [x] #1501 — Add ability score increase at levels 4/8/12/16/20/24/28/32/36/40
+- [x] #1155 — Add epic BAB handling for APR calculation
+
+### Infrastructure
+
+- fix: Remove IntegrationTests from Radoub.sln (prevents 15min FlaUI runs during `dotnet test`)
+- fix: Mark Radoub.TestUtilities as non-test project (fixes "Test Run Aborted")
 
 ---
 
