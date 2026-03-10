@@ -45,14 +45,14 @@
                                         <Grid>
                                             <!-- Slot number label -->
                                             <TextBlock Text="{Binding SlotLabel}"
-                                                       FontSize="10"
+                                                       FontSize="{DynamicResource FontSizeXSmall}"
                                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                        HorizontalAlignment="Left"
                                                        VerticalAlignment="Top"
                                                        Margin="3"/>
                                             <!-- Content icon/text -->
                                             <TextBlock Text="{Binding DisplayText}"
-                                                       FontSize="11"
+                                                       FontSize="{DynamicResource FontSizeSmall}"
                                                        TextWrapping="Wrap"
                                                        TextAlignment="Center"
                                                        HorizontalAlignment="Center"
@@ -91,13 +91,13 @@
                                             ToolTip.Tip="{Binding TooltipText}">
                                         <Grid>
                                             <TextBlock Text="{Binding SlotLabel}"
-                                                       FontSize="10"
+                                                       FontSize="{DynamicResource FontSizeXSmall}"
                                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                        HorizontalAlignment="Left"
                                                        VerticalAlignment="Top"
                                                        Margin="3"/>
                                             <TextBlock Text="{Binding DisplayText}"
-                                                       FontSize="11"
+                                                       FontSize="{DynamicResource FontSizeSmall}"
                                                        TextWrapping="Wrap"
                                                        TextAlignment="Center"
                                                        HorizontalAlignment="Center"
@@ -136,13 +136,13 @@
                                             ToolTip.Tip="{Binding TooltipText}">
                                         <Grid>
                                             <TextBlock Text="{Binding SlotLabel}"
-                                                       FontSize="10"
+                                                       FontSize="{DynamicResource FontSizeXSmall}"
                                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                        HorizontalAlignment="Left"
                                                        VerticalAlignment="Top"
                                                        Margin="3"/>
                                             <TextBlock Text="{Binding DisplayText}"
-                                                       FontSize="11"
+                                                       FontSize="{DynamicResource FontSizeSmall}"
                                                        TextWrapping="Wrap"
                                                        TextAlignment="Center"
                                                        HorizontalAlignment="Center"

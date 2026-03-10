@@ -52,12 +52,12 @@
                 <!-- Character Info Header -->
                 <TextBlock x:Name="CharacterNameLabel"
                            Text="Character Name"
-                           FontSize="16"
+                           FontSize="{DynamicResource FontSizeMedium}"
                            FontWeight="Bold"
                            Margin="0,0,0,5"/>
                 <TextBlock x:Name="CharacterLevelLabel"
                            Text="Level X -> Y"
-                           FontSize="12"
+                           FontSize="{DynamicResource FontSizeXSmall}"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                            Margin="0,0,0,20"/>
 
@@ -71,7 +71,7 @@
                             <TextBlock Text="Select Class"/>
                         </StackPanel>
                         <TextBlock x:Name="Step1Summary" Text=""
-                                   FontSize="11" Margin="30,2,0,0"
+                                   FontSize="{DynamicResource FontSizeSmall}" Margin="30,2,0,0"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                 </Border>
@@ -83,7 +83,7 @@
                             <TextBlock Text="Ability Score"/>
                         </StackPanel>
                         <TextBlock x:Name="Step2Summary" Text=""
-                                   FontSize="11" Margin="30,2,0,0"
+                                   FontSize="{DynamicResource FontSizeSmall}" Margin="30,2,0,0"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                 </Border>
@@ -95,7 +95,7 @@
                             <TextBlock Text="Select Feats"/>
                         </StackPanel>
                         <TextBlock x:Name="Step3Summary" Text=""
-                                   FontSize="11" Margin="30,2,0,0"
+                                   FontSize="{DynamicResource FontSizeSmall}" Margin="30,2,0,0"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                 </Border>
@@ -107,7 +107,7 @@
                             <TextBlock Text="Allocate Skills"/>
                         </StackPanel>
                         <TextBlock x:Name="Step4Summary" Text=""
-                                   FontSize="11" Margin="30,2,0,0"
+                                   FontSize="{DynamicResource FontSizeSmall}" Margin="30,2,0,0"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                 </Border>
@@ -119,7 +119,7 @@
                             <TextBlock Text="Select Spells"/>
                         </StackPanel>
                         <TextBlock x:Name="Step5Summary" Text=""
-                                   FontSize="11" Margin="30,2,0,0"
+                                   FontSize="{DynamicResource FontSizeSmall}" Margin="30,2,0,0"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                 </Border>
@@ -156,7 +156,7 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Text="Select Class" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
+                <TextBlock Grid.Row="0" Text="Select Class" FontSize="{DynamicResource FontSizeXLarge}" FontWeight="Bold" Margin="0,0,0,15"/>
 
                 <Grid Grid.Row="1">
                     <Grid.ColumnDefinitions>
@@ -214,7 +214,7 @@
 
                             <TextBlock Grid.Row="0" x:Name="SelectedClassNameLabel"
                                        Text="Select a class"
-                                       FontSize="18" FontWeight="Bold"
+                                       FontSize="{DynamicResource FontSizeLarge}" FontWeight="Bold"
                                        Margin="0,0,0,10"/>
 
                             <StackPanel Grid.Row="1" x:Name="ClassStatsPanel" Orientation="Horizontal" Spacing="20" Margin="0,0,0,10" IsVisible="False">
@@ -266,7 +266,7 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Text="Ability Score Increase" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="0" Text="Ability Score Increase" FontSize="{DynamicResource FontSizeXLarge}" FontWeight="Bold" Margin="0,0,0,10"/>
                 <TextBlock Grid.Row="1" x:Name="AbilityIncreaseDescription"
                            Text="Choose one ability score to increase by +1."
                            Margin="0,0,0,15"/>
@@ -282,7 +282,7 @@
                                     <ColumnDefinition Width="80"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" x:Name="AbilityStrRadio" Text="○" FontSize="16" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="0" x:Name="AbilityStrRadio" Text="○" FontSize="{DynamicResource FontSizeMedium}" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="1" Text="Strength" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="2" x:Name="AbilityStrValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="3" x:Name="AbilityStrChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center"/>
@@ -297,7 +297,7 @@
                                     <ColumnDefinition Width="80"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" x:Name="AbilityDexRadio" Text="○" FontSize="16" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="0" x:Name="AbilityDexRadio" Text="○" FontSize="{DynamicResource FontSizeMedium}" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="1" Text="Dexterity" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="2" x:Name="AbilityDexValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="3" x:Name="AbilityDexChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center"/>
@@ -312,7 +312,7 @@
                                     <ColumnDefinition Width="80"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" x:Name="AbilityConRadio" Text="○" FontSize="16" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="0" x:Name="AbilityConRadio" Text="○" FontSize="{DynamicResource FontSizeMedium}" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="1" Text="Constitution" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="2" x:Name="AbilityConValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="3" x:Name="AbilityConChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center"/>
@@ -327,7 +327,7 @@
                                     <ColumnDefinition Width="80"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" x:Name="AbilityIntRadio" Text="○" FontSize="16" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="0" x:Name="AbilityIntRadio" Text="○" FontSize="{DynamicResource FontSizeMedium}" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="1" Text="Intelligence" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="2" x:Name="AbilityIntValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="3" x:Name="AbilityIntChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center"/>
@@ -342,7 +342,7 @@
                                     <ColumnDefinition Width="80"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" x:Name="AbilityWisRadio" Text="○" FontSize="16" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="0" x:Name="AbilityWisRadio" Text="○" FontSize="{DynamicResource FontSizeMedium}" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="1" Text="Wisdom" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="2" x:Name="AbilityWisValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="3" x:Name="AbilityWisChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center"/>
@@ -357,7 +357,7 @@
                                     <ColumnDefinition Width="80"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" x:Name="AbilityChaRadio" Text="○" FontSize="16" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="0" x:Name="AbilityChaRadio" Text="○" FontSize="{DynamicResource FontSizeMedium}" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="1" Text="Charisma" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="2" x:Name="AbilityChaValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="3" x:Name="AbilityChaChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center"/>
@@ -376,7 +376,7 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Text="Select Feats" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="0" Text="Select Feats" FontSize="{DynamicResource FontSizeXLarge}" FontWeight="Bold" Margin="0,0,0,10"/>
 
                 <TextBlock Grid.Row="1" x:Name="FeatAllocationLabel"
                            Text="You have 1 feat to select."
@@ -464,7 +464,7 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Text="Allocate Skill Points" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="0" Text="Allocate Skill Points" FontSize="{DynamicResource FontSizeXLarge}" FontWeight="Bold" Margin="0,0,0,10"/>
 
                 <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="20" Margin="0,0,0,15">
                     <TextBlock x:Name="SkillPointsRemainingLabel" Text="Points remaining: 5" VerticalAlignment="Center"/>
@@ -510,7 +510,7 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Text="Select Spells" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="0" Text="Select Spells" FontSize="{DynamicResource FontSizeXLarge}" FontWeight="Bold" Margin="0,0,0,10"/>
 
                 <TextBlock Grid.Row="1" x:Name="SpellStepDescription"
                            Text="Select new spells to learn."
@@ -568,7 +568,7 @@
                                             <TextBlock Grid.Column="0" Text="{Binding Name}"/>
                                             <TextBlock Grid.Column="1" Text="{Binding SchoolAbbrev}"
                                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                                       FontSize="11" Margin="5,0,0,0"/>
+                                                       FontSize="{DynamicResource FontSizeSmall}" Margin="5,0,0,0"/>
                                         </Grid>
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
@@ -605,7 +605,7 @@
                                             <TextBlock Grid.Column="0" Text="{Binding Name}"/>
                                             <TextBlock Grid.Column="1" Text="{Binding SchoolAbbrev}"
                                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                                       FontSize="11" Margin="5,0,0,0"/>
+                                                       FontSize="{DynamicResource FontSizeSmall}" Margin="5,0,0,0"/>
                                         </Grid>
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
@@ -634,14 +634,14 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Text="Level Up Summary" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
+                <TextBlock Grid.Row="0" Text="Level Up Summary" FontSize="{DynamicResource FontSizeXLarge}" FontWeight="Bold" Margin="0,0,0,15"/>
 
                 <ScrollViewer Grid.Row="1">
                     <StackPanel x:Name="SummaryPanel" Spacing="15" Margin="0,0,15,0">
                         <!-- Class Section -->
                         <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="15" CornerRadius="4">
                             <StackPanel>
-                                <TextBlock Text="Class" FontWeight="Bold" FontSize="14" Margin="0,0,0,5"/>
+                                <TextBlock Text="Class" FontWeight="Bold" FontSize="{DynamicResource GlobalFontSize}" Margin="0,0,0,5"/>
                                 <TextBlock x:Name="SummaryClassLabel" Text="Fighter 5 -> 6"/>
                             </StackPanel>
                         </Border>
@@ -649,7 +649,7 @@
                         <!-- Ability Score Section -->
                         <Border x:Name="SummaryAbilityPanel" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="15" CornerRadius="4" IsVisible="False">
                             <StackPanel>
-                                <TextBlock Text="Ability Score Increase" FontWeight="Bold" FontSize="14" Margin="0,0,0,5"/>
+                                <TextBlock Text="Ability Score Increase" FontWeight="Bold" FontSize="{DynamicResource GlobalFontSize}" Margin="0,0,0,5"/>
                                 <TextBlock x:Name="SummaryAbilityLabel" Text="Strength 14 -> 15"/>
                             </StackPanel>
                         </Border>
@@ -657,7 +657,7 @@
                         <!-- Feats Section -->
                         <Border x:Name="SummaryFeatsPanel" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="15" CornerRadius="4" IsVisible="False">
                             <StackPanel>
-                                <TextBlock Text="New Feats" FontWeight="Bold" FontSize="14" Margin="0,0,0,5"/>
+                                <TextBlock Text="New Feats" FontWeight="Bold" FontSize="{DynamicResource GlobalFontSize}" Margin="0,0,0,5"/>
                                 <ItemsControl x:Name="SummaryFeatsList"/>
                             </StackPanel>
                         </Border>
@@ -665,7 +665,7 @@
                         <!-- Skills Section -->
                         <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="15" CornerRadius="4">
                             <StackPanel>
-                                <TextBlock Text="Skill Points Allocated" FontWeight="Bold" FontSize="14" Margin="0,0,0,5"/>
+                                <TextBlock Text="Skill Points Allocated" FontWeight="Bold" FontSize="{DynamicResource GlobalFontSize}" Margin="0,0,0,5"/>
                                 <ItemsControl x:Name="SummarySkillsList"/>
                             </StackPanel>
                         </Border>
@@ -673,7 +673,7 @@
                         <!-- Spells Section -->
                         <Border x:Name="SummarySpellsPanel" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="15" CornerRadius="4" IsVisible="False">
                             <StackPanel>
-                                <TextBlock Text="New Spells" FontWeight="Bold" FontSize="14" Margin="0,0,0,5"/>
+                                <TextBlock Text="New Spells" FontWeight="Bold" FontSize="{DynamicResource GlobalFontSize}" Margin="0,0,0,5"/>
                                 <ItemsControl x:Name="SummarySpellsList"/>
                             </StackPanel>
                         </Border>
@@ -681,7 +681,7 @@
                         <!-- Stats Changes -->
                         <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="15" CornerRadius="4">
                             <StackPanel>
-                                <TextBlock Text="Derived Stats" FontWeight="Bold" FontSize="14" Margin="0,0,0,5"/>
+                                <TextBlock Text="Derived Stats" FontWeight="Bold" FontSize="{DynamicResource GlobalFontSize}" Margin="0,0,0,5"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>

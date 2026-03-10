@@ -109,7 +109,7 @@ public partial class NewCharacterWizardWindow
                 Text = item.SlotName,
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
                 Foreground = BrushManager.GetDisabledBrush(this),
-                FontSize = 12
+                FontSize = this.FindResource("FontSizeXSmall") as double? ?? 12
             };
             Grid.SetColumn(slotLabel, 1);
             row.Children.Add(slotLabel);

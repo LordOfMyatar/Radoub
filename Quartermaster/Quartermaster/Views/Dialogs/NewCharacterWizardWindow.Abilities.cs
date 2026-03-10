@@ -62,7 +62,7 @@ public partial class NewCharacterWizardWindow
                 Text = _abilityBaseScores[ability].ToString(),
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                FontSize = 16,
+                FontSize = this.FindResource("FontSizeMedium") as double? ?? 16,
                 FontWeight = FontWeight.Bold,
                 Tag = $"Base_{ability}"
             };
@@ -109,7 +109,7 @@ public partial class NewCharacterWizardWindow
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
                 FontWeight = FontWeight.Bold,
-                FontSize = 16,
+                FontSize = this.FindResource("FontSizeMedium") as double? ?? 16,
                 Tag = $"Total_{ability}"
             };
             Grid.SetColumn(totalLabel, 5);

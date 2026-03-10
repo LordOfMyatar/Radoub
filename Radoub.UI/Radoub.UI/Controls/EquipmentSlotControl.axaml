@@ -17,7 +17,7 @@
           <!-- Slot name on top -->
           <TextBlock x:Name="SlotLabelTop"
                      Text="{Binding Name, FallbackValue=Slot}"
-                     FontSize="10"
+                     FontSize="{DynamicResource FontSizeXSmall}"
                      HorizontalAlignment="Center"
                      Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                      TextTrimming="CharacterEllipsis"
@@ -78,7 +78,7 @@
                       Width="16"
                       Height="16">
                 <TextBlock Text="!"
-                           FontSize="10"
+                           FontSize="{DynamicResource FontSizeXSmall}"
                            FontWeight="Bold"
                            Foreground="{DynamicResource SystemFillColorCautionBrush}"
                            HorizontalAlignment="Center"
@@ -98,7 +98,7 @@
           <!-- Item name below slot (or empty if no item) -->
           <TextBlock x:Name="ItemNameLabel"
                      Text="{Binding EquippedItem.Name, FallbackValue=''}"
-                     FontSize="9"
+                     FontSize="{DynamicResource FontSizeXSmall}"
                      HorizontalAlignment="Center"
                      Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                      TextWrapping="Wrap"

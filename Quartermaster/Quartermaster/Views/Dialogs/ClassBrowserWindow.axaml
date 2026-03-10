@@ -131,7 +131,7 @@
                     <!-- Class Name Header -->
                     <TextBlock Grid.Row="0" x:Name="ClassNameLabel"
                                Text="Select a class"
-                               FontSize="18"
+                               FontSize="{DynamicResource FontSizeLarge}"
                                FontWeight="Bold"
                                Margin="0,0,0,10"/>
 

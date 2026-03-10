@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.32-alpha] - 2026-03-10
+**Branch**: `radoub/issue-1641` | **PR**: #1642
+
+### Sprint: Tech Debt Cleanup (#1641)
+
+- [x] #1641 — Split FeatService.cs (1003 lines) into 3 partial classes: Core (609), Prerequisites (343), LevelUp (230)
+
+---
+
 ## [0.2.31-alpha] - 2026-03-10
 **Branch**: `quartermaster/issue-1603` | **PR**: #1638
 

@@ -80,7 +80,7 @@ public partial class FactionEditorPanel : UserControl
         var cornerLabel = new TextBlock
         {
             Text = "Perceiver ▼",
-            FontSize = 11,
+            FontSize = this.FindResource("FontSizeSmall") as double? ?? 13,
             Opacity = 0.5,
             VerticalAlignment = VerticalAlignment.Bottom,
             HorizontalAlignment = HorizontalAlignment.Left,
@@ -98,7 +98,7 @@ public partial class FactionEditorPanel : UserControl
             {
                 Text = faction.Name,
                 FontWeight = FontWeight.SemiBold,
-                FontSize = 12,
+                FontSize = this.FindResource("FontSizeXSmall") as double? ?? 12,
                 TextAlignment = TextAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Bottom,
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -122,7 +122,7 @@ public partial class FactionEditorPanel : UserControl
             {
                 Text = faction.Name,
                 FontWeight = FontWeight.SemiBold,
-                FontSize = 12,
+                FontSize = this.FindResource("FontSizeXSmall") as double? ?? 12,
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(4, 0, 8, 0),
                 TextTrimming = TextTrimming.CharacterEllipsis,

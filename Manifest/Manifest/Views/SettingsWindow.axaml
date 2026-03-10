@@ -19,7 +19,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <TextBlock Grid.Row="0" Text="Settings" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
+        <TextBlock Grid.Row="0" Text="Settings" FontSize="{DynamicResource FontSizeLarge}" FontWeight="Bold" Margin="0,0,0,15"/>
 
         <!-- Settings Content -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -29,7 +29,7 @@
                     <StackPanel Spacing="8">
                         <TextBlock Text="Module Configuration" FontWeight="Bold"/>
                         <TextBlock Text="Module selection is managed through Trebuchet (the Radoub launcher). All tools share the same active module."
-                                  TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                  TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
 
                         <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto">
                             <TextBlock Grid.Column="0" Text="Active Module: " VerticalAlignment="Center" Margin="0,0,8,0"/>
@@ -44,7 +44,7 @@
                                Click="OnConfigureInTrebuchetClick"
                                HorizontalAlignment="Left" Padding="10,5"/>
                         <TextBlock x:Name="TrebuchetStatusText"
-                                  FontSize="11"
+                                  FontSize="{DynamicResource FontSizeSmall}"
                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                 </Border>
@@ -54,7 +54,7 @@
                     <StackPanel Spacing="8">
                         <TextBlock Text="Game Paths" FontWeight="Bold"/>
                         <TextBlock Text="Configure Neverwinter Nights paths for TLK string resolution and resource loading."
-                                  TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                  TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
 
                         <!-- Base Game Installation -->
                         <TextBlock Text="Base Game Installation (Steam/GOG)" FontWeight="Normal" Margin="0,5,0,0"/>
@@ -69,7 +69,7 @@
                                    Click="OnAutoDetectGamePath" Margin="5,0,0,0" Width="32"/>
                         </Grid>
                         <TextBlock x:Name="GamePathValidationText"
-                                  FontSize="11"
+                                  FontSize="{DynamicResource FontSizeSmall}"
                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
 
                         <!-- User Documents Path -->
@@ -85,7 +85,7 @@
                                    Click="OnAutoDetectUserPath" Margin="5,0,0,0" Width="32"/>
                         </Grid>
                         <TextBlock x:Name="UserPathValidationText"
-                                  FontSize="11"
+                                  FontSize="{DynamicResource FontSizeSmall}"
                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                 </Border>
@@ -95,14 +95,14 @@
                     <StackPanel Spacing="8">
                         <TextBlock Text="Theme" FontWeight="Bold"/>
                         <TextBlock Text="Choose a color theme for Manifest. Accessibility themes are optimized for color blindness."
-                                  TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                  TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
 
                         <ComboBox x:Name="ThemeComboBox" SelectionChanged="OnThemeChanged" HorizontalAlignment="Stretch"/>
 
                         <!-- Theme Description -->
                         <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="8" Margin="0,5,0,0" CornerRadius="3">
                             <StackPanel Spacing="3">
-                                <TextBlock x:Name="ThemeDescriptionText" TextWrapping="Wrap" FontSize="11"/>
+                                <TextBlock x:Name="ThemeDescriptionText" TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -151,7 +151,7 @@
                     <StackPanel Spacing="8">
                         <TextBlock Text="Spell Check" FontWeight="Bold"/>
                         <TextBlock Text="Configure spell-checking for journal text. Custom dictionary is shared with other Radoub tools."
-                                  TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                  TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
 
                         <!-- Enable/Disable -->
                         <CheckBox x:Name="SpellCheckEnabledCheckBox"
@@ -162,7 +162,7 @@
                         <!-- Dictionary Info -->
                         <TextBlock x:Name="DictionaryInfoText"
                                   Text="Custom dictionary: 0 words"
-                                  FontSize="11"
+                                  FontSize="{DynamicResource FontSizeSmall}"
                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                 </Border>
@@ -172,7 +172,7 @@
                     <StackPanel Spacing="8">
                         <TextBlock Text="Dictionaries" FontWeight="Bold"/>
                         <TextBlock Text="Select the language dictionary for spell checking. Add custom dictionaries to ~/Radoub/Dictionaries/."
-                                  TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                  TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
 
                         <!-- Primary Language -->
                         <TextBlock Text="Primary Language" FontWeight="Normal" Margin="0,5,0,0"/>

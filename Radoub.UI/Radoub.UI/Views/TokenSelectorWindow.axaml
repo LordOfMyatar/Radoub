@@ -160,7 +160,7 @@
                                        TextWrapping="Wrap"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                        FontFamily="Consolas"
-                                       FontSize="11"/>
+                                       FontSize="{DynamicResource FontSizeSmall}"/>
                             <TextBlock x:Name="HighlightPreviewFormatted"
                                        Text="[Chef waves]"
                                        TextWrapping="Wrap"
@@ -183,7 +183,7 @@
 
                     <!-- Info Text -->
                     <TextBlock Grid.Row="0" TextWrapping="Wrap" Margin="0,0,0,10"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" FontSize="11">
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" FontSize="{DynamicResource FontSizeSmall}">
                         Custom color tokens require matching SetCustomToken() calls in your module scripts.
                         Configure colors in ~/Radoub/token-colors.json
                     </TextBlock>
@@ -219,7 +219,7 @@
                                                Text="{Binding OpenToken}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                                FontFamily="Consolas"
-                                               FontSize="10"
+                                               FontSize="{DynamicResource FontSizeXSmall}"
                                                VerticalAlignment="Center"/>
                                 </Grid>
                             </DataTemplate>
@@ -237,7 +237,7 @@
                                        TextWrapping="Wrap"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                        FontFamily="Consolas"
-                                       FontSize="11"/>
+                                       FontSize="{DynamicResource FontSizeSmall}"/>
                             <TextBlock x:Name="ColorPreviewSample"
                                        Text="Sample Text"
                                        TextWrapping="Wrap"

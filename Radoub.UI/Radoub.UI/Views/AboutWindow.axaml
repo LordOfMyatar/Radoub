@@ -30,7 +30,7 @@
                 <!-- App Name -->
                 <TextBlock x:Name="AppNameText"
                            Text="Tool Name"
-                           FontSize="24"
+                           FontSize="{DynamicResource FontSizeTitle}"
                            FontWeight="Bold"
                            HorizontalAlignment="Center"
                            Margin="0,0,0,5"/>
@@ -38,14 +38,14 @@
                 <!-- Subtitle -->
                 <TextBlock x:Name="SubtitleText"
                            Text="Part of the Radoub Toolset"
-                           FontSize="14"
+                           FontSize="{DynamicResource GlobalFontSize}"
                            HorizontalAlignment="Center"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                            Margin="0,0,0,10"/>
 
                 <!-- Author -->
                 <TextBlock Text="by Lord"
-                           FontSize="16"
+                           FontSize="{DynamicResource FontSizeMedium}"
                            HorizontalAlignment="Center"
                            Margin="0,0,0,5"/>
 
@@ -62,14 +62,14 @@
                 <!-- Version -->
                 <TextBlock x:Name="VersionText"
                            Text="Version 0.1.0"
-                           FontSize="14"
+                           FontSize="{DynamicResource GlobalFontSize}"
                            HorizontalAlignment="Center"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
 
                 <!-- Additional Info (optional, tool-specific) -->
                 <TextBlock x:Name="AdditionalInfoText"
                            Text=""
-                           FontSize="13"
+                           FontSize="{DynamicResource FontSizeSmall}"
                            TextAlignment="Center"
                            TextWrapping="Wrap"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
@@ -79,7 +79,7 @@
                 <!-- Third-Party Credits Link (optional) -->
                 <TextBlock x:Name="ThirdPartyLinkText"
                            Text=""
-                           FontSize="13"
+                           FontSize="{DynamicResource FontSizeSmall}"
                            TextAlignment="Center"
                            Foreground="{DynamicResource SystemAccentColor}"
                            TextDecorations="Underline"
@@ -94,7 +94,7 @@
                         Padding="0,15,0,0"
                         Margin="0,15,0,0">
                     <TextBlock Text="Special thanks to the&#x0a;Neverwinter Nights modding community"
-                               FontSize="13"
+                               FontSize="{DynamicResource FontSizeSmall}"
                                TextAlignment="Center"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                 </Border>

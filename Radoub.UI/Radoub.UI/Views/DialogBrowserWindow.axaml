@@ -70,24 +70,24 @@
                        Text="Location:"
                        VerticalAlignment="Center"
                        Margin="0,0,8,0"
-                       FontSize="11"/>
+                       FontSize="{DynamicResource FontSizeSmall}"/>
             <TextBlock Grid.Column="1"
                        x:Name="LocationPathLabel"
                        Text="(auto-detected)"
                        VerticalAlignment="Center"
-                       FontSize="11"
+                       FontSize="{DynamicResource FontSizeSmall}"
                        Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                        TextTrimming="CharacterEllipsis"/>
             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="5">
                 <Button x:Name="ResetLocationButton"
                         Content="reset"
-                        FontSize="11"
+                        FontSize="{DynamicResource FontSizeSmall}"
                         Padding="8,2"
                         IsVisible="False"
                         Click="OnResetLocationClick"/>
                 <Button x:Name="BrowseLocationButton"
                         Content="Browse..."
-                        FontSize="11"
+                        FontSize="{DynamicResource FontSizeSmall}"
                         Padding="8,2"
                         Click="OnBrowseLocationClick"/>
             </StackPanel>
