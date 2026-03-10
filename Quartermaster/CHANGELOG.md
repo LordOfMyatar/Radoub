@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Tech Debt Cleanup (#1641)
 
-- [ ] #1641 — Split FeatService.cs into partial classes by functional concern
+- [x] #1641 — Split FeatService.cs (1003 lines) into 3 partial classes: Core (609), Prerequisites (343), LevelUp (230)
 
 ---
 

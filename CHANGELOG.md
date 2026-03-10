@@ -22,8 +22,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Tech Debt Cleanup (#1641, #1636, #1566)
 
-- [ ] #1636 — Standardize ItemIconService logging to `UnifiedLogger.LogApplication()`
-- [ ] #1566 — Replace hardcoded FontSize values with DynamicResource across all tools
+- [x] #1636 — Standardize ItemIconService logging to `UnifiedLogger.LogApplication()`
+- [x] #1566 — Replace 162 hardcoded FontSize values with DynamicResource across all tools (17 AXAML + 4 C# files)
 
 ---
 
