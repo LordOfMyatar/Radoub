@@ -90,6 +90,7 @@ public partial class LevelUpWizardWindow
             _selectedClassId = -1;
         }
 
+        UpdateSidebarSummaries();
         ValidateCurrentStep();
     }
 

@@ -31,6 +31,7 @@ public class LevelUpApplicationService
         public List<int> SelectedFeats { get; set; } = new();
         public Dictionary<int, int> SkillPointsAdded { get; set; } = new();
         public Dictionary<int, List<int>> SelectedSpellsByLevel { get; set; } = new();
+        public int AbilityIncrease { get; set; } = -1; // -1=none, 0=STR, 1=DEX, 2=CON, 3=INT, 4=WIS, 5=CHA
         public bool RecordHistory { get; set; }
         public LevelHistoryEncoding HistoryEncoding { get; set; } = LevelHistoryEncoding.Readable;
     }
@@ -42,6 +43,7 @@ public class LevelUpApplicationService
     public void ApplyLevelUp(UtcFile creature, LevelUpInput input)
     {
         ApplyClassLevel(creature, input.SelectedClassId);
+        ApplyAbilityIncrease(creature, input.AbilityIncrease);
         ApplyFeats(creature, input.SelectedClassId, input.NewClassLevel, input.SelectedFeats);
         ApplySkills(creature, input.SkillPointsAdded);
         ApplySpells(creature, input.SelectedClassId, input.SelectedSpellsByLevel);
@@ -67,6 +69,25 @@ public class LevelUpApplicationService
                 Class = classId,
                 ClassLevel = 1
             });
+        }
+    }
+
+    /// <summary>
+    /// Applies +1 ability score increase at levels 4/8/12/16/20/24/28/32/36/40.
+    /// </summary>
+    public static void ApplyAbilityIncrease(UtcFile creature, int abilityIndex)
+    {
+        if (abilityIndex < 0 || abilityIndex > 5)
+            return;
+
+        switch (abilityIndex)
+        {
+            case 0: creature.Str = (byte)Math.Min(255, creature.Str + 1); break;
+            case 1: creature.Dex = (byte)Math.Min(255, creature.Dex + 1); break;
+            case 2: creature.Con = (byte)Math.Min(255, creature.Con + 1); break;
+            case 3: creature.Int = (byte)Math.Min(255, creature.Int + 1); break;
+            case 4: creature.Wis = (byte)Math.Min(255, creature.Wis + 1); break;
+            case 5: creature.Cha = (byte)Math.Min(255, creature.Cha + 1); break;
         }
     }
 
@@ -201,7 +222,7 @@ public class LevelUpApplicationService
             Skills = input.SkillPointsAdded
                 .Where(kv => kv.Value > 0)
                 .ToDictionary(kv => kv.Key, kv => kv.Value),
-            AbilityIncrease = -1
+            AbilityIncrease = input.AbilityIncrease
         };
 
         var existingHistory = LevelHistoryService.Decode(creature.Comment) ?? new List<LevelRecord>();

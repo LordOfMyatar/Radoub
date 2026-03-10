@@ -10,13 +10,13 @@ using Radoub.Formats.Utc;
 namespace Quartermaster.Views.Dialogs;
 
 /// <summary>
-/// Step 2: Feat selection with prerequisites, bonus feat pools, and auto-assign.
+/// Step 3: Feat selection with prerequisites, bonus feat pools, and auto-assign.
 /// </summary>
 public partial class LevelUpWizardWindow
 {
-    #region Step 2: Feat Selection
+    #region Step 3: Feat Selection
 
-    private void PrepareStep2()
+    private void PrepareStep3()
     {
         // Resolve default package for auto-assign
         var pkgStr = _displayService.GameDataService.Get2DAValue("classes", _selectedClassId, "Package");

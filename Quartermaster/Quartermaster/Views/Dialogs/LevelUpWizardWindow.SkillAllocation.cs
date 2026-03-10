@@ -7,17 +7,17 @@ using Quartermaster.Services;
 namespace Quartermaster.Views.Dialogs;
 
 /// <summary>
-/// Step 3: Skill point allocation with class/cross-class cost tracking and auto-assign.
+/// Step 4: Skill point allocation with class/cross-class cost tracking and auto-assign.
 /// </summary>
 public partial class LevelUpWizardWindow
 {
-    #region Step 3: Skill Allocation
+    #region Step 4: Skill Allocation
 
     // Tracks class skill status for the level being gained
     private HashSet<int> _classSkillIds = new();
     private HashSet<int> _unavailableSkillIds = new();
 
-    private void PrepareStep3()
+    private void PrepareStep4()
     {
         // Delegate skill point calculation to LevelUpApplicationService
         var levelUpService = new LevelUpApplicationService(_displayService);

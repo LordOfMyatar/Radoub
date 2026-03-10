@@ -5,13 +5,13 @@ using Quartermaster.Services;
 namespace Quartermaster.Views.Dialogs;
 
 /// <summary>
-/// Step 5: Summary display, level-up application, and display item classes.
+/// Step 6: Summary display, level-up application, and display item classes.
 /// </summary>
 public partial class LevelUpWizardWindow
 {
-    #region Step 5: Summary
+    #region Step 6: Summary
 
-    private void PrepareStep5()
+    private void PrepareStep6()
     {
         // Class summary
         var className = _displayService.GetClassName(_selectedClassId);
@@ -32,6 +32,20 @@ public partial class LevelUpWizardWindow
                 // Fallback - shouldn't happen but be safe
                 _summaryClassLabel.Text = $"Taking level {_newClassLevel} in {className}";
             }
+        }
+
+        // Ability score increase summary
+        if (_needsAbilityIncrease && _selectedAbilityIncrease >= 0)
+        {
+            _summaryAbilityPanel.IsVisible = true;
+            byte[] scores = { _creature.Str, _creature.Dex, _creature.Con, _creature.Int, _creature.Wis, _creature.Cha };
+            var abilityName = AbilityNames[_selectedAbilityIncrease];
+            var oldScore = scores[_selectedAbilityIncrease];
+            _summaryAbilityLabel.Text = $"{abilityName} {oldScore} -> {oldScore + 1}";
+        }
+        else
+        {
+            _summaryAbilityPanel.IsVisible = false;
         }
 
         // Feats summary (player-selected + auto-granted)
@@ -115,6 +129,7 @@ public partial class LevelUpWizardWindow
             SelectedFeats = _selectedFeats,
             SkillPointsAdded = _skillPointsAdded,
             SelectedSpellsByLevel = _selectedSpellsByLevel,
+            AbilityIncrease = _selectedAbilityIncrease,
             RecordHistory = settings.RecordLevelHistory,
             HistoryEncoding = settings.LevelHistoryEncoding
         });

@@ -65,37 +65,71 @@
                 <TextBlock Text="Steps" FontWeight="SemiBold" Margin="0,0,0,10"/>
 
                 <Border x:Name="Step1Border" Classes="step-indicator current">
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                        <TextBlock x:Name="Step1Number" Text="1" FontWeight="Bold" Width="20"/>
-                        <TextBlock Text="Select Class"/>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock x:Name="Step1Number" Text="1" FontWeight="Bold" Width="20"/>
+                            <TextBlock Text="Select Class"/>
+                        </StackPanel>
+                        <TextBlock x:Name="Step1Summary" Text=""
+                                   FontSize="11" Margin="30,2,0,0"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                 </Border>
 
                 <Border x:Name="Step2Border" Classes="step-indicator">
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                        <TextBlock x:Name="Step2Number" Text="2" FontWeight="Bold" Width="20"/>
-                        <TextBlock Text="Select Feats"/>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock x:Name="Step2Number" Text="2" FontWeight="Bold" Width="20"/>
+                            <TextBlock Text="Ability Score"/>
+                        </StackPanel>
+                        <TextBlock x:Name="Step2Summary" Text=""
+                                   FontSize="11" Margin="30,2,0,0"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                 </Border>
 
                 <Border x:Name="Step3Border" Classes="step-indicator">
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                        <TextBlock x:Name="Step3Number" Text="3" FontWeight="Bold" Width="20"/>
-                        <TextBlock Text="Allocate Skills"/>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock x:Name="Step3Number" Text="3" FontWeight="Bold" Width="20"/>
+                            <TextBlock Text="Select Feats"/>
+                        </StackPanel>
+                        <TextBlock x:Name="Step3Summary" Text=""
+                                   FontSize="11" Margin="30,2,0,0"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                 </Border>
 
                 <Border x:Name="Step4Border" Classes="step-indicator">
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                        <TextBlock x:Name="Step4Number" Text="4" FontWeight="Bold" Width="20"/>
-                        <TextBlock Text="Select Spells"/>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock x:Name="Step4Number" Text="4" FontWeight="Bold" Width="20"/>
+                            <TextBlock Text="Allocate Skills"/>
+                        </StackPanel>
+                        <TextBlock x:Name="Step4Summary" Text=""
+                                   FontSize="11" Margin="30,2,0,0"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                 </Border>
 
                 <Border x:Name="Step5Border" Classes="step-indicator">
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                        <TextBlock x:Name="Step5Number" Text="5" FontWeight="Bold" Width="20"/>
-                        <TextBlock Text="Summary"/>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock x:Name="Step5Number" Text="5" FontWeight="Bold" Width="20"/>
+                            <TextBlock Text="Select Spells"/>
+                        </StackPanel>
+                        <TextBlock x:Name="Step5Summary" Text=""
+                                   FontSize="11" Margin="30,2,0,0"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="Step6Border" Classes="step-indicator">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock x:Name="Step6Number" Text="6" FontWeight="Bold" Width="20"/>
+                            <TextBlock Text="Summary"/>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 
@@ -224,8 +258,117 @@
                 </Grid>
             </Grid>
 
-            <!-- Step 2: Feat Selection (shown when applicable) -->
+            <!-- Step 2: Ability Score Increase (every 4th level) -->
             <Grid x:Name="Step2Panel" IsVisible="False">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="Ability Score Increase" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="1" x:Name="AbilityIncreaseDescription"
+                           Text="Choose one ability score to increase by +1."
+                           Margin="0,0,0,15"/>
+
+                <Border Grid.Row="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="20">
+                    <StackPanel Spacing="8" VerticalAlignment="Center" HorizontalAlignment="Center" Width="400">
+                        <Border x:Name="AbilityStrBorder" Classes="step-indicator"
+                                PointerPressed="OnAbilityBorderClick" Tag="0" Cursor="Hand">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30"/>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" x:Name="AbilityStrRadio" Text="○" FontSize="16" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="Strength" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" x:Name="AbilityStrValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="3" x:Name="AbilityStrChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <Border x:Name="AbilityDexBorder" Classes="step-indicator"
+                                PointerPressed="OnAbilityBorderClick" Tag="1" Cursor="Hand">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30"/>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" x:Name="AbilityDexRadio" Text="○" FontSize="16" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="Dexterity" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" x:Name="AbilityDexValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="3" x:Name="AbilityDexChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <Border x:Name="AbilityConBorder" Classes="step-indicator"
+                                PointerPressed="OnAbilityBorderClick" Tag="2" Cursor="Hand">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30"/>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" x:Name="AbilityConRadio" Text="○" FontSize="16" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="Constitution" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" x:Name="AbilityConValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="3" x:Name="AbilityConChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <Border x:Name="AbilityIntBorder" Classes="step-indicator"
+                                PointerPressed="OnAbilityBorderClick" Tag="3" Cursor="Hand">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30"/>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" x:Name="AbilityIntRadio" Text="○" FontSize="16" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="Intelligence" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" x:Name="AbilityIntValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="3" x:Name="AbilityIntChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <Border x:Name="AbilityWisBorder" Classes="step-indicator"
+                                PointerPressed="OnAbilityBorderClick" Tag="4" Cursor="Hand">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30"/>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" x:Name="AbilityWisRadio" Text="○" FontSize="16" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="Wisdom" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" x:Name="AbilityWisValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="3" x:Name="AbilityWisChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <Border x:Name="AbilityChaBorder" Classes="step-indicator"
+                                PointerPressed="OnAbilityBorderClick" Tag="5" Cursor="Hand">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30"/>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" x:Name="AbilityChaRadio" Text="○" FontSize="16" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="Charisma" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" x:Name="AbilityChaValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="3" x:Name="AbilityChaChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Step 3: Feat Selection (shown when applicable) -->
+            <Grid x:Name="Step3Panel" IsVisible="False">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -299,8 +442,8 @@
                 </Grid>
             </Grid>
 
-            <!-- Step 3: Skill Allocation -->
-            <Grid x:Name="Step3Panel" IsVisible="False">
+            <!-- Step 4: Skill Allocation -->
+            <Grid x:Name="Step4Panel" IsVisible="False">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -344,8 +487,8 @@
                 </Border>
             </Grid>
 
-            <!-- Step 4: Spell Selection (for casters) -->
-            <Grid x:Name="Step4Panel" IsVisible="False">
+            <!-- Step 5: Spell Selection (for casters) -->
+            <Grid x:Name="Step5Panel" IsVisible="False">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -470,8 +613,8 @@
                 </Border>
             </Grid>
 
-            <!-- Step 5: Summary -->
-            <Grid x:Name="Step5Panel" IsVisible="False">
+            <!-- Step 6: Summary -->
+            <Grid x:Name="Step6Panel" IsVisible="False">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
@@ -486,6 +629,14 @@
                             <StackPanel>
                                 <TextBlock Text="Class" FontWeight="Bold" FontSize="14" Margin="0,0,0,5"/>
                                 <TextBlock x:Name="SummaryClassLabel" Text="Fighter 5 -> 6"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Ability Score Section -->
+                        <Border x:Name="SummaryAbilityPanel" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="15" CornerRadius="4" IsVisible="False">
+                            <StackPanel>
+                                <TextBlock Text="Ability Score Increase" FontWeight="Bold" FontSize="14" Margin="0,0,0,5"/>
+                                <TextBlock x:Name="SummaryAbilityLabel" Text="Strength 14 -> 15"/>
                             </StackPanel>
                         </Border>
 

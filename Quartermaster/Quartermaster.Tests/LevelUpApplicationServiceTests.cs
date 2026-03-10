@@ -382,6 +382,68 @@ public class LevelUpApplicationServiceTests
         Assert.Single(creature.FeatList, f => f == 42);
     }
 
+    [Fact]
+    public void ApplyLevelUp_WithAbilityIncrease_IncrementsAbility()
+    {
+        var creature = new CreatureBuilder()
+            .WithClass(CommonClass.Fighter, 3)
+            .WithAbilities(14, 12, 14, 10, 10, 8)
+            .Build();
+
+        var input = new LevelUpApplicationService.LevelUpInput
+        {
+            SelectedClassId = (int)CommonClass.Fighter,
+            NewClassLevel = 4,
+            SelectedFeats = new List<int>(),
+            SkillPointsAdded = new Dictionary<int, int>(),
+            SelectedSpellsByLevel = new Dictionary<int, List<int>>(),
+            AbilityIncrease = 0, // STR
+            RecordHistory = false
+        };
+
+        _service.ApplyLevelUp(creature, input);
+
+        Assert.Equal(15, creature.Str); // 14 + 1
+        Assert.Equal(12, creature.Dex); // Unchanged
+    }
+
+    [Theory]
+    [InlineData(0, 15, 12, 14, 10, 10, 8)]  // STR +1
+    [InlineData(1, 14, 13, 14, 10, 10, 8)]  // DEX +1
+    [InlineData(2, 14, 12, 15, 10, 10, 8)]  // CON +1
+    [InlineData(3, 14, 12, 14, 11, 10, 8)]  // INT +1
+    [InlineData(4, 14, 12, 14, 10, 11, 8)]  // WIS +1
+    [InlineData(5, 14, 12, 14, 10, 10, 9)]  // CHA +1
+    public void ApplyAbilityIncrease_EachAbility_IncrementsCorrectOne(
+        int abilityIndex, int expStr, int expDex, int expCon, int expInt, int expWis, int expCha)
+    {
+        var creature = new CreatureBuilder()
+            .WithAbilities(14, 12, 14, 10, 10, 8)
+            .Build();
+
+        LevelUpApplicationService.ApplyAbilityIncrease(creature, abilityIndex);
+
+        Assert.Equal(expStr, creature.Str);
+        Assert.Equal(expDex, creature.Dex);
+        Assert.Equal(expCon, creature.Con);
+        Assert.Equal(expInt, creature.Int);
+        Assert.Equal(expWis, creature.Wis);
+        Assert.Equal(expCha, creature.Cha);
+    }
+
+    [Fact]
+    public void ApplyAbilityIncrease_NegativeIndex_DoesNothing()
+    {
+        var creature = new CreatureBuilder()
+            .WithAbilities(14, 12, 14, 10, 10, 8)
+            .Build();
+
+        LevelUpApplicationService.ApplyAbilityIncrease(creature, -1);
+
+        Assert.Equal(14, creature.Str);
+        Assert.Equal(12, creature.Dex);
+    }
+
     #endregion
 
     #region CalculateLevelUpSkillPoints
