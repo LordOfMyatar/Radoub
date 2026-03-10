@@ -456,6 +456,30 @@ dotnet nbgv get-version --project [ToolDir]
 
 ---
 
+## Test-Driven Development (TDD) Policy
+
+**Default for new features and projects**: TDD is the standard approach. Write failing tests first, then implement to make them pass.
+
+**Case-by-case for bug fixes**: Use judgment — if the bug is easily reproducible with a test, write the failing test first. For complex bugs requiring investigation, use systematic-debugging first, then add regression tests.
+
+| Scenario | TDD Required? |
+|----------|--------------|
+| New feature / service / parser | Yes — tests first |
+| New shared library or cross-tool code | Yes — tests first |
+| Bug fix (reproducible) | Yes — failing test reproduces bug, then fix |
+| Bug fix (investigation needed) | No — debug first, add regression test after |
+| UI layout / styling | No — manual verification |
+| Config / documentation only | No |
+
+**TDD Workflow**:
+1. Write a failing test that describes the expected behavior
+2. Run the test — confirm it fails for the right reason
+3. Write the minimum code to make the test pass
+4. Refactor if needed (tests still pass)
+5. Repeat
+
+---
+
 ## Testing Requirements
 
 **Before Committing**:

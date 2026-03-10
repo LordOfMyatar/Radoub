@@ -11,6 +11,7 @@ using Avalonia.Media;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
+using Radoub.UI.Services;
 
 namespace Quartermaster.Views;
 

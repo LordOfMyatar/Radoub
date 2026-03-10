@@ -42,15 +42,15 @@ public partial class SettingsWindow : Window
 
     private void UpdateCacheInfo()
     {
-        var cacheInfo = _mainWindow?.GetPaletteCacheInfo();
+        var stats = _mainWindow?.GetPaletteCacheStatistics();
 
-        if (cacheInfo != null)
+        if (stats != null && stats.TotalItems > 0)
         {
             CacheStatusText.Text = "Cached";
             CacheStatusText.Foreground = GetSuccessBrush();
-            CacheItemCountText.Text = $"{cacheInfo.ItemCount:N0}";
-            CacheSizeText.Text = $"{cacheInfo.FileSizeKB:N1} KB";
-            CacheCreatedText.Text = cacheInfo.CreatedAt.ToLocalTime().ToString("g");
+            CacheItemCountText.Text = $"{stats.TotalItems:N0}";
+            CacheSizeText.Text = $"{stats.TotalSizeKB:N1} KB";
+            CacheCreatedText.Text = $"{stats.SourceCounts.Count} source(s)";
         }
         else
         {

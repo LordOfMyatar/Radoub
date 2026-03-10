@@ -17,6 +17,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.84] - 2026-03-09
+**Branch**: `radoub/issue-1578` | **PR**: #1631
+
+### Feature: Shared Item Palette Cache (#1578)
+
+- `SharedPaletteCacheService` with per-source granularity (BIF, Override, per-HAK) in `~/Radoub/Cache/ItemPalette/`
+- `HakPaletteScannerService` scans module.ifo-referenced HAK files for UTI items
+- Module-aware aggregation filters HAK caches to current module's active HAK list
+- Per-HAK cache invalidation based on file modification time
+- Thread-safe concurrent reads across tools
+- Integrated into Quartermaster and Fence (replaces tool-specific cache services)
+- Moved `ItemIconService` to `Radoub.UI` for cross-tool icon sharing
+- Fence palette and details panel now display item icons (#1573, #1192)
+- 52 TDD tests covering cache lifecycle, HAK scanning, module filtering, and thread safety
+
+---
+
 ## [0.9.83] - TBD
 **Branch**: `radoub/issue-1591` | **PR**: #1599
 

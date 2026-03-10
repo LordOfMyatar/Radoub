@@ -1,10 +1,10 @@
 using Radoub.Formats.Logging;
 using Radoub.Formats.Common;
 using Radoub.Formats.Services;
+using Radoub.Formats.Settings;
 using Radoub.Formats.Uti;
 using Radoub.UI.Services;
 using Radoub.UI.ViewModels;
-using Quartermaster.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,20 +16,26 @@ namespace Quartermaster.Views;
 
 /// <summary>
 /// MainWindow partial class for item palette population.
-/// Uses modular per-source caching - each source (BIF, Override, HAK) has independent cache.
+/// Uses shared cross-tool palette cache - each source (BIF, Override, HAK) has independent cache.
 /// Module folder items are scanned fresh (already unpacked files).
 /// </summary>
 public partial class MainWindow
 {
-    // Modular cache service with per-source granularity
-    private readonly ModularPaletteCacheService _modularCacheService = new();
+    // Shared cross-tool cache service with per-source granularity
+    private readonly ISharedPaletteCacheService _sharedCacheService = new SharedPaletteCacheService();
+
+    // HAK scanner for loading items from module-referenced HAK files
+    private readonly HakPaletteScannerService _hakScanner = new();
 
     // Cancellation token for background cache building
     private CancellationTokenSource? _paletteCacheCts;
 
     // Track loaded state
-    private List<CachedPaletteItem>? _cachedPaletteData;
+    private List<SharedPaletteCacheItem>? _cachedPaletteData;
     private bool _paletteLoaded;
+
+    // Active HAK paths from current module's IFO (for filtered aggregation)
+    private List<string>? _activeHakPaths;
 
     // Track module directory for clearing stale module items
     private string? _lastModuleDirectory;
@@ -56,7 +62,7 @@ public partial class MainWindow
 
     /// <summary>
     /// Pre-warm the cache in background so it's ready when user navigates to Inventory.
-    /// Uses modular caching - only rebuilds sources that need updating.
+    /// Uses shared cache - only rebuilds sources that need updating.
     /// </summary>
     private async Task PreWarmCacheAsync(CancellationToken token)
     {
@@ -64,8 +70,11 @@ public partial class MainWindow
         {
             token.ThrowIfCancellationRequested();
 
-            // Try to load aggregated cache from existing source caches
-            _cachedPaletteData = await Task.Run(() => _modularCacheService.GetAggregatedCache(), token);
+            // Resolve active HAK paths for module-aware filtering
+            _activeHakPaths = ResolveActiveHakPaths();
+
+            // Try to load aggregated cache from existing source caches (filtered to active HAKs)
+            _cachedPaletteData = await Task.Run(() => _sharedCacheService.GetAggregatedCache(_activeHakPaths), token);
 
             if (_cachedPaletteData != null && _cachedPaletteData.Count > 0)
             {
@@ -98,19 +107,19 @@ public partial class MainWindow
     /// </summary>
     private async Task RebuildStaleCachesAsync(CancellationToken token)
     {
-        var sourcesToRebuild = new List<GameResourceSource>();
+        var sourcesToRebuild = new List<string>();
 
         // Check which sources need rebuilding
-        if (!_modularCacheService.HasValidSourceCache(GameResourceSource.Bif))
-            sourcesToRebuild.Add(GameResourceSource.Bif);
+        if (!_sharedCacheService.HasValidSourceCache("bif"))
+            sourcesToRebuild.Add("bif");
 
-        if (!_modularCacheService.HasValidSourceCache(GameResourceSource.Override))
-            sourcesToRebuild.Add(GameResourceSource.Override);
+        if (!_sharedCacheService.HasValidSourceCache("override"))
+            sourcesToRebuild.Add("override");
 
-        // HAK caches are validated individually when loading aggregated cache
-        // For now, we'll rebuild all HAKs if any are missing
+        // HAK caches are checked separately via the scanner
+        bool needsHakScan = HasModuleWithHaks();
 
-        if (sourcesToRebuild.Count == 0)
+        if (sourcesToRebuild.Count == 0 && !needsHakScan)
         {
             UnifiedLogger.LogInventory(LogLevel.DEBUG, "All source caches are valid");
             return;
@@ -120,20 +129,30 @@ public partial class MainWindow
 
         try
         {
-            await Task.Run(async () =>
+            if (sourcesToRebuild.Count > 0)
             {
-                foreach (var source in sourcesToRebuild)
+                await Task.Run(async () =>
                 {
-                    token.ThrowIfCancellationRequested();
-                    await BuildSourceCacheAsync(source, token);
-                }
-            }, token);
+                    foreach (var source in sourcesToRebuild)
+                    {
+                        token.ThrowIfCancellationRequested();
+                        var gameSource = source == "bif" ? GameResourceSource.Bif : GameResourceSource.Override;
+                        await BuildSourceCacheAsync(gameSource, source, token);
+                    }
+                }, token);
+            }
 
-            // Refresh aggregated cache
+            // Scan module HAKs (checks validity internally, skips cached)
+            if (needsHakScan)
+            {
+                await ScanModuleHaksAsync(token);
+            }
+
+            // Refresh aggregated cache (filtered to active HAKs)
             if (!token.IsCancellationRequested)
             {
-                _modularCacheService.InvalidateAggregatedCache();
-                _cachedPaletteData = _modularCacheService.GetAggregatedCache();
+                _sharedCacheService.InvalidateAggregatedCache();
+                _cachedPaletteData = _sharedCacheService.GetAggregatedCache(_activeHakPaths);
             }
         }
         catch (OperationCanceledException)
@@ -152,18 +171,18 @@ public partial class MainWindow
             await Task.Run(async () =>
             {
                 // Build each source independently
-                await BuildSourceCacheAsync(GameResourceSource.Bif, token);
+                await BuildSourceCacheAsync(GameResourceSource.Bif, "bif", token);
                 token.ThrowIfCancellationRequested();
 
-                await BuildSourceCacheAsync(GameResourceSource.Override, token);
+                await BuildSourceCacheAsync(GameResourceSource.Override, "override", token);
                 token.ThrowIfCancellationRequested();
-
-                // HAKs would be built here when HAK support is added
-                // For now, HAK items are included with Override
             }, token);
 
-            // Load aggregated result
-            _cachedPaletteData = _modularCacheService.GetAggregatedCache();
+            // Scan module HAKs (outside Task.Run — scanner manages its own threading)
+            await ScanModuleHaksAsync(token);
+
+            // Load aggregated result (filtered to active HAKs)
+            _cachedPaletteData = _sharedCacheService.GetAggregatedCache(_activeHakPaths);
             UnifiedLogger.LogInventory(LogLevel.INFO, $"All caches built: {_cachedPaletteData?.Count ?? 0} total items");
         }
         catch (OperationCanceledException)
@@ -175,16 +194,16 @@ public partial class MainWindow
     /// <summary>
     /// Build cache for a specific source type.
     /// </summary>
-    private async Task BuildSourceCacheAsync(GameResourceSource source, CancellationToken token)
+    private async Task BuildSourceCacheAsync(GameResourceSource gameSource, string cacheSource, CancellationToken token)
     {
-        var cacheItems = new List<CachedPaletteItem>();
+        var cacheItems = new List<SharedPaletteCacheItem>();
         var existingResRefs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         var gameResources = GameData.ListResources(ResourceTypes.Uti)
-            .Where(r => r.Source == source)
+            .Where(r => r.Source == gameSource)
             .ToList();
 
-        UnifiedLogger.LogInventory(LogLevel.INFO, $"Building {source} cache from {gameResources.Count} UTI resources...");
+        UnifiedLogger.LogInventory(LogLevel.INFO, $"Building {cacheSource} cache from {gameResources.Count} UTI resources...");
 
         foreach (var resourceInfo in gameResources)
         {
@@ -203,7 +222,7 @@ public partial class MainWindow
                     var displayName = ItemFactory.GetItemDisplayName(item);
                     var baseItemTypeName = ItemFactory.GetBaseItemTypeName(item.BaseItem);
 
-                    cacheItems.Add(new CachedPaletteItem
+                    cacheItems.Add(new SharedPaletteCacheItem
                     {
                         ResRef = resourceInfo.ResRef,
                         Tag = item.Tag ?? string.Empty,
@@ -211,7 +230,7 @@ public partial class MainWindow
                         BaseItemTypeName = baseItemTypeName,
                         BaseItemType = item.BaseItem,
                         BaseValue = item.Cost,
-                        IsStandard = source == GameResourceSource.Bif
+                        IsStandard = gameSource == GameResourceSource.Bif
                     });
                     existingResRefs.Add(resourceInfo.ResRef);
                 }
@@ -224,8 +243,14 @@ public partial class MainWindow
 
         if (!token.IsCancellationRequested && cacheItems.Count > 0)
         {
-            await _modularCacheService.SaveSourceCacheAsync(source, cacheItems);
-            UnifiedLogger.LogInventory(LogLevel.INFO, $"{source} cache complete: {cacheItems.Count} items");
+            // Determine validation path based on source type
+            var settings = RadoubSettings.Instance;
+            var validationPath = cacheSource == "bif"
+                ? settings.BaseGameInstallPath
+                : settings.NeverwinterNightsPath;
+
+            await _sharedCacheService.SaveSourceCacheAsync(cacheSource, cacheItems, validationPath);
+            UnifiedLogger.LogInventory(LogLevel.INFO, $"{cacheSource} cache complete: {cacheItems.Count} items");
         }
     }
 
@@ -393,21 +418,112 @@ public partial class MainWindow
             : new CancellationTokenSource();
         var token = _paletteCacheCts.Token;
 
-        _modularCacheService.ClearAllCaches();
+        _sharedCacheService.ClearAllCaches();
         _cachedPaletteData = null;
         _paletteLoaded = false;
         _lastModuleDirectory = null;
+        _activeHakPaths = null;
         InventoryPanelContent.PaletteItems.Clear();
 
-        // Rebuild cache and reload into UI
+        // Re-resolve active HAKs and rebuild cache
+        _activeHakPaths = ResolveActiveHakPaths();
         await BuildAllCachesAsync(token);
         await LoadPaletteItemsAsync(token);
     }
 
     /// <summary>
+    /// Resolve the active HAK file paths from the current module's IFO.
+    /// Returns null if no module is configured (includes all HAKs in aggregation).
+    /// Returns empty list if module has no HAKs (excludes all HAKs from aggregation).
+    /// </summary>
+    private List<string>? ResolveActiveHakPaths()
+    {
+        var moduleDir = GetModuleWorkingDirectory();
+        if (string.IsNullOrEmpty(moduleDir))
+            return null; // No module — include all cached HAKs
+
+        var hakSearchPaths = RadoubSettings.Instance.GetAllHakSearchPaths();
+        return _hakScanner.ResolveModuleHakPaths(moduleDir, hakSearchPaths);
+    }
+
+    /// <summary>
+    /// Scan module HAK files and cache items. Skips HAKs with valid caches.
+    /// </summary>
+    private async Task ScanModuleHaksAsync(CancellationToken token)
+    {
+        var moduleDir = GetModuleWorkingDirectory();
+        if (string.IsNullOrEmpty(moduleDir))
+            return;
+
+        var hakSearchPaths = RadoubSettings.Instance.GetAllHakSearchPaths();
+        var result = await _hakScanner.ScanAndCacheModuleHaksAsync(
+            moduleDir, hakSearchPaths, _sharedCacheService, token);
+
+        if (result.HaksScanned > 0)
+        {
+            UnifiedLogger.LogInventory(LogLevel.INFO,
+                $"HAK scan: {result.HaksScanned} scanned, {result.HaksSkipped} cached, {result.TotalItemsScanned} items");
+        }
+    }
+
+    /// <summary>
+    /// Check if the current module has HAK files referenced in its IFO.
+    /// </summary>
+    private bool HasModuleWithHaks()
+    {
+        var moduleDir = GetModuleWorkingDirectory();
+        if (string.IsNullOrEmpty(moduleDir))
+            return false;
+
+        var ifoPath = Path.Combine(moduleDir, "module.ifo");
+        if (!File.Exists(ifoPath))
+            return false;
+
+        try
+        {
+            var ifo = Radoub.Formats.Ifo.IfoReader.Read(ifoPath);
+            return ifo.HakList.Count > 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Get the module working directory (unpacked module folder).
+    /// Resolves .mod file paths to their unpacked directories.
+    /// </summary>
+    private static string? GetModuleWorkingDirectory()
+    {
+        var modulePath = RadoubSettings.Instance.CurrentModulePath;
+        if (!RadoubSettings.IsValidModulePath(modulePath))
+            return null;
+
+        // If it's a .mod file, look for the unpacked directory alongside it
+        if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
+        {
+            var moduleName = Path.GetFileNameWithoutExtension(modulePath);
+            var moduleDir = Path.GetDirectoryName(modulePath);
+            if (!string.IsNullOrEmpty(moduleDir))
+            {
+                var candidate = Path.Combine(moduleDir, moduleName);
+                if (Directory.Exists(candidate))
+                    return candidate;
+            }
+        }
+
+        // It's already a directory path
+        if (Directory.Exists(modulePath))
+            return modulePath;
+
+        return null;
+    }
+
+    /// <summary>
     /// Get cache statistics for display in Settings.
     /// </summary>
-    public CacheStatistics GetPaletteCacheStatistics() => _modularCacheService.GetCacheStatistics();
+    public SharedPaletteCacheStatistics GetPaletteCacheStatistics() => _sharedCacheService.GetCacheStatistics();
 
     /// <summary>
     /// Sets up lazy icon loading for an item ViewModel.

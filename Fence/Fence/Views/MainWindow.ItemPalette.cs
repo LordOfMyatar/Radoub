@@ -2,11 +2,11 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
-using MerchantEditor.Services;
 using MerchantEditor.ViewModels;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
+using Radoub.Formats.Settings;
 using Radoub.Formats.Uti;
 using Radoub.UI.Services;
 using System;
@@ -20,7 +20,7 @@ namespace MerchantEditor.Views;
 
 /// <summary>
 /// MainWindow partial: Item Palette loading and filtering
-/// Uses on-demand loading - items are loaded when user selects a type filter.
+/// Uses shared cross-tool palette cache for item data.
 /// </summary>
 public partial class MainWindow
 {
@@ -35,13 +35,19 @@ public partial class MainWindow
         255, // Invalid/special marker
     };
 
-    private readonly PaletteCacheService _paletteCacheService = new();
+    private readonly ISharedPaletteCacheService _sharedCacheService = new SharedPaletteCacheService();
+
+    // HAK scanner for loading items from module-referenced HAK files
+    private readonly HakPaletteScannerService _hakScanner = new();
 
     // Track which types have been loaded (for on-demand loading)
     private readonly HashSet<string> _loadedItemTypes = new(StringComparer.OrdinalIgnoreCase);
     private bool _allItemsLoaded;
-    private List<CachedPaletteItem>? _cachedPaletteData;
+    private List<SharedPaletteCacheItem>? _cachedPaletteData;
     private string? _lastModuleDirectory;
+
+    // Active HAK paths from current module's IFO (for filtered aggregation)
+    private List<string>? _activeHakPaths;
 
     #region Item Palette
 
@@ -80,24 +86,36 @@ public partial class MainWindow
 
     /// <summary>
     /// Pre-warm the cache in background so it's ready when user filters.
+    /// Uses shared cross-tool cache.
     /// </summary>
     private async Task PreWarmCacheAsync()
     {
         try
         {
-            if (_paletteCacheService.HasValidCache())
+            // Resolve active HAK paths for module-aware filtering
+            _activeHakPaths = ResolveActiveHakPaths();
+
+            // Try to load from shared cache (filtered to active HAKs)
+            var aggregated = await Task.Run(() => _sharedCacheService.GetAggregatedCache(_activeHakPaths));
+            if (aggregated != null)
             {
-                _cachedPaletteData = await Task.Run(() => _paletteCacheService.LoadCache());
-                if (_cachedPaletteData != null)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Cache pre-warmed: {_cachedPaletteData.Count} items ready");
-                    return;
-                }
+                // Filter out excluded base item types
+                _cachedPaletteData = aggregated
+                    .Where(i => !ExcludedBaseItemTypes.Contains(i.BaseItemType))
+                    .ToList();
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Cache pre-warmed from shared cache: {_cachedPaletteData.Count} items ready");
+
+                // Scan module HAKs in background (skips cached, refreshes stale)
+                _ = ScanModuleHaksAsync();
+                return;
             }
 
-            // No cache - build it in background
+            // No shared cache - build it in background
             UnifiedLogger.LogApplication(LogLevel.INFO, "Building palette cache in background...");
             await BuildCacheInBackgroundAsync();
+
+            // Scan module HAKs after building base caches
+            await ScanModuleHaksAsync();
         }
         catch (Exception ex)
         {
@@ -107,10 +125,11 @@ public partial class MainWindow
 
     /// <summary>
     /// Build the full cache in background without displaying items.
+    /// Saves to shared cache location for cross-tool consumption.
     /// </summary>
     private async Task BuildCacheInBackgroundAsync()
     {
-        var cacheItems = new List<CachedPaletteItem>();
+        var cacheItems = new List<SharedPaletteCacheItem>();
 
         await Task.Run(() =>
         {
@@ -127,13 +146,13 @@ public partial class MainWindow
                     var resolved = _itemResolutionService!.ResolveItem(resourceInfo.ResRef);
                     if (resolved != null && !ExcludedBaseItemTypes.Contains(resolved.BaseItemType))
                     {
-                        cacheItems.Add(new CachedPaletteItem
+                        cacheItems.Add(new SharedPaletteCacheItem
                         {
                             ResRef = resolved.ResRef,
                             DisplayName = resolved.DisplayName,
-                            BaseItemType = resolved.BaseItemTypeName,
-                            BaseItemIndex = resolved.BaseItemType,
-                            BaseValue = resolved.BaseCost,
+                            BaseItemTypeName = resolved.BaseItemTypeName,
+                            BaseItemType = resolved.BaseItemType,
+                            BaseValue = (uint)resolved.BaseCost,
                             Tag = resolved.Tag,
                             IsStandard = resourceInfo.Source == GameResourceSource.Bif
                         });
@@ -147,8 +166,16 @@ public partial class MainWindow
             }
         });
 
-        // Save and store
-        await _paletteCacheService.SaveCacheAsync(cacheItems);
+        // Save to shared cache (split by source for cross-tool benefit)
+        var bifItems = cacheItems.Where(i => i.IsStandard).ToList();
+        var customItems = cacheItems.Where(i => !i.IsStandard).ToList();
+
+        var settings = Radoub.Formats.Settings.RadoubSettings.Instance;
+        if (bifItems.Count > 0)
+            await _sharedCacheService.SaveSourceCacheAsync("bif", bifItems, settings.BaseGameInstallPath);
+        if (customItems.Count > 0)
+            await _sharedCacheService.SaveSourceCacheAsync("override", customItems, settings.NeverwinterNightsPath);
+
         _cachedPaletteData = cacheItems;
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Background cache complete: {cacheItems.Count} items");
     }
@@ -182,10 +209,10 @@ public partial class MainWindow
                 return;
             }
 
-            // Filter cached data
+            // Filter cached data - use BaseItemTypeName for type matching
             var itemsToAdd = string.IsNullOrEmpty(typeFilter)
                 ? _cachedPaletteData
-                : _cachedPaletteData.Where(i => i.BaseItemType.Equals(typeFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+                : _cachedPaletteData.Where(i => i.BaseItemTypeName.Equals(typeFilter, StringComparison.OrdinalIgnoreCase)).ToList();
 
             // Convert to view models and add (skip already loaded)
             var existingResRefs = new HashSet<string>(PaletteItems.Select(p => p.ResRef), StringComparer.OrdinalIgnoreCase);
@@ -199,11 +226,12 @@ public partial class MainWindow
                     {
                         ResRef = cached.ResRef,
                         DisplayName = cached.DisplayName,
-                        BaseItemType = cached.BaseItemType,
-                        BaseItemIndex = cached.BaseItemIndex,
-                        BaseValue = cached.BaseValue,
+                        BaseItemType = cached.BaseItemTypeName,
+                        BaseItemIndex = cached.BaseItemType,
+                        BaseValue = (int)cached.BaseValue,
                         Tag = cached.Tag,
-                        IsStandard = cached.IsStandard
+                        IsStandard = cached.IsStandard,
+                        IconBitmap = _itemIconService?.GetItemIcon(cached.BaseItemType)
                     });
                 }
             }
@@ -244,8 +272,9 @@ public partial class MainWindow
     /// </summary>
     public Task ClearAndReloadPaletteCacheAsync()
     {
-        _paletteCacheService.ClearCache();
+        _sharedCacheService.ClearAllCaches();
         _cachedPaletteData = null;
+        _activeHakPaths = null;
         _loadedItemTypes.Clear();
         _allItemsLoaded = false;
         PaletteItems.Clear();
@@ -287,9 +316,9 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// Get cache info for display in Settings.
+    /// Get cache statistics for display in Settings.
     /// </summary>
-    public CacheInfo? GetPaletteCacheInfo() => _paletteCacheService.GetCacheInfo();
+    public SharedPaletteCacheStatistics GetPaletteCacheStatistics() => _sharedCacheService.GetCacheStatistics();
 
     /// <summary>
     /// Scan the module directory (sibling folder of opened .utm file) for loose .uti files
@@ -340,7 +369,8 @@ public partial class MainWindow
                         BaseValue = resolved.BaseCost,
                         Tag = resolved.Tag,
                         IsStandard = false,
-                        IsModuleItem = true
+                        IsModuleItem = true,
+                        IconBitmap = _itemIconService?.GetItemIcon(resolved.BaseItemType)
                     });
                     existingResRefs.Add(resRef);
                     moduleItemCount++;
@@ -371,6 +401,89 @@ public partial class MainWindow
 
         if (toRemove.Count > 0)
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Cleared {toRemove.Count} module items from palette");
+    }
+
+    /// <summary>
+    /// Scan module HAK files and cache items. Skips HAKs with valid caches.
+    /// After scanning, refreshes the aggregated cache data.
+    /// </summary>
+    private async Task ScanModuleHaksAsync()
+    {
+        var moduleDir = GetModuleWorkingDirectory();
+        if (string.IsNullOrEmpty(moduleDir))
+            return;
+
+        try
+        {
+            var hakSearchPaths = RadoubSettings.Instance.GetAllHakSearchPaths();
+            var result = await _hakScanner.ScanAndCacheModuleHaksAsync(
+                moduleDir, hakSearchPaths, _sharedCacheService, CancellationToken.None);
+
+            if (result.HaksScanned > 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"HAK scan: {result.HaksScanned} scanned, {result.HaksSkipped} cached, {result.TotalItemsScanned} items");
+
+                // Refresh aggregated cache to include HAK items (filtered to active HAKs)
+                _sharedCacheService.InvalidateAggregatedCache();
+                var aggregated = _sharedCacheService.GetAggregatedCache(_activeHakPaths);
+                if (aggregated != null)
+                {
+                    _cachedPaletteData = aggregated
+                        .Where(i => !ExcludedBaseItemTypes.Contains(i.BaseItemType))
+                        .ToList();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"HAK scan failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Resolve the active HAK file paths from the current module's IFO.
+    /// Returns null if no module is configured (includes all HAKs in aggregation).
+    /// Returns empty list if module has no HAKs (excludes all HAKs from aggregation).
+    /// </summary>
+    private List<string>? ResolveActiveHakPaths()
+    {
+        var moduleDir = GetModuleWorkingDirectory();
+        if (string.IsNullOrEmpty(moduleDir))
+            return null; // No module — include all cached HAKs
+
+        var hakSearchPaths = RadoubSettings.Instance.GetAllHakSearchPaths();
+        return _hakScanner.ResolveModuleHakPaths(moduleDir, hakSearchPaths);
+    }
+
+    /// <summary>
+    /// Get the module working directory (unpacked module folder).
+    /// Resolves .mod file paths to their unpacked directories.
+    /// </summary>
+    private static string? GetModuleWorkingDirectory()
+    {
+        var modulePath = RadoubSettings.Instance.CurrentModulePath;
+        if (!RadoubSettings.IsValidModulePath(modulePath))
+            return null;
+
+        // If it's a .mod file, look for the unpacked directory alongside it
+        if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
+        {
+            var moduleName = Path.GetFileNameWithoutExtension(modulePath);
+            var moduleDir = Path.GetDirectoryName(modulePath);
+            if (!string.IsNullOrEmpty(moduleDir))
+            {
+                var candidate = Path.Combine(moduleDir, moduleName);
+                if (Directory.Exists(candidate))
+                    return candidate;
+            }
+        }
+
+        // It's already a directory path
+        if (Directory.Exists(modulePath))
+            return modulePath;
+
+        return null;
     }
 
     #endregion

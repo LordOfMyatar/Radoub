@@ -535,6 +535,14 @@
                                 </ContextMenu>
                             </DataGrid.ContextMenu>
                             <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="" Width="32" CanUserResize="False" CanUserSort="False">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Image Source="{Binding IconBitmap}" Width="24" Height="24"
+                                                   Stretch="Uniform" Margin="2,0"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="Name" Width="*" Binding="{Binding DisplayName}"/>
                                 <DataGridTextColumn Header="Type" Width="100" Binding="{Binding BaseItemType}"/>
                                 <DataGridTextColumn Header="Value" Width="60" Binding="{Binding BaseValue}"/>
@@ -573,6 +581,13 @@
                                       VerticalScrollBarVisibility="Auto"
                                       IsVisible="False">
                             <StackPanel x:Name="ItemDetailsContent" Spacing="8" Margin="10">
+                                <!-- Item Icon -->
+                                <Image x:Name="DetailItemIcon"
+                                       Width="48" Height="48"
+                                       Stretch="Uniform"
+                                       HorizontalAlignment="Center"
+                                       AutomationProperties.AutomationId="DetailItemIcon"/>
+
                                 <!-- Item Name -->
                                 <TextBlock x:Name="DetailItemName"
                                            Text=""
