@@ -17,6 +17,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.85] - 2026-03-10
+**Branch**: `radoub/issue-1641` | **PR**: #TBD
+
+### Sprint: Tech Debt Cleanup (#1641, #1636, #1566)
+
+- [ ] #1636 — Standardize ItemIconService logging to `UnifiedLogger.LogApplication()`
+- [ ] #1566 — Replace hardcoded FontSize values with DynamicResource across all tools
+
+---
+
 ## [0.9.84] - 2026-03-09
 **Branch**: `radoub/issue-1578` | **PR**: #1631
 
