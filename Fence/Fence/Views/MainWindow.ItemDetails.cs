@@ -50,6 +50,7 @@ public partial class MainWindow
         NoSelectionText.IsVisible = false;
         ItemDetailsScroll.IsVisible = true;
 
+        DetailItemIcon.Source = _itemIconService?.GetItemIcon(item.BaseItemIndex);
         DetailItemName.Text = item.DisplayName;
         DetailItemType.Text = item.BaseItemType;
         DetailResRef.Text = item.ResRef;
@@ -66,6 +67,7 @@ public partial class MainWindow
         NoSelectionText.IsVisible = false;
         ItemDetailsScroll.IsVisible = true;
 
+        DetailItemIcon.Source = item.IconBitmap ?? _itemIconService?.GetItemIcon(item.BaseItemIndex);
         DetailItemName.Text = item.DisplayName;
         DetailItemType.Text = item.BaseItemType;
         DetailResRef.Text = item.ResRef;
@@ -86,6 +88,7 @@ public partial class MainWindow
     {
         NoSelectionText.IsVisible = true;
         ItemDetailsScroll.IsVisible = false;
+        DetailItemIcon.Source = null;
     }
 
     #endregion

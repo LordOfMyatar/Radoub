@@ -581,6 +581,13 @@
                                       VerticalScrollBarVisibility="Auto"
                                       IsVisible="False">
                             <StackPanel x:Name="ItemDetailsContent" Spacing="8" Margin="10">
+                                <!-- Item Icon -->
+                                <Image x:Name="DetailItemIcon"
+                                       Width="48" Height="48"
+                                       Stretch="Uniform"
+                                       HorizontalAlignment="Center"
+                                       AutomationProperties.AutomationId="DetailItemIcon"/>
+
                                 <!-- Item Name -->
                                 <TextBlock x:Name="DetailItemName"
                                            Text=""

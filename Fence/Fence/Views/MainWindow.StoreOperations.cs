@@ -180,6 +180,7 @@ public partial class MainWindow
                 Infinite = false,
                 PanelId = panelId,
                 BaseItemType = item.BaseItemType,
+                BaseItemIndex = item.BaseItemIndex,
                 BaseValue = item.BaseValue,
                 SellPrice = sellPrice,
                 BuyPrice = buyPrice
