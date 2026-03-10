@@ -560,4 +560,58 @@ public class CreatureDisplayServiceTests
     }
 
     #endregion
+
+    #region Attacks Per Round (Epic BAB)
+
+    [Theory]
+    [InlineData(1, 10, 1)]   // BAB 1, level 10 → 1 APR
+    [InlineData(6, 10, 2)]   // BAB 6, level 10 → 2 APR
+    [InlineData(11, 15, 3)]  // BAB 11, level 15 → 3 APR
+    [InlineData(16, 20, 4)]  // BAB 16, level 20 → 4 APR (max pre-epic)
+    [InlineData(20, 20, 4)]  // BAB 20, level 20 → 4 APR
+    public void CalculateAttacksPerRound_PreEpic_ReturnsCorrectAPR(int bab, int hitDice, int expected)
+    {
+        Assert.Equal(expected, CreatureDisplayService.CalculateAttacksPerRound(bab, hitDice));
+    }
+
+    [Theory]
+    [InlineData(21, 21, 4)]  // BAB 21, level 21 → epicBAB=1, effective=20 → 4 APR
+    [InlineData(23, 25, 4)]  // BAB 23, level 25 → epicBAB=3, effective=20 → 4 APR
+    [InlineData(30, 40, 4)]  // BAB 30, level 40 → epicBAB=10, effective=20 → 4 APR
+    public void CalculateAttacksPerRound_EpicLevels_SubtractsEpicBAB(int bab, int hitDice, int expected)
+    {
+        Assert.Equal(expected, CreatureDisplayService.CalculateAttacksPerRound(bab, hitDice));
+    }
+
+    [Fact]
+    public void CalculateAttacksPerRound_Level20Fighter_Gets4Attacks()
+    {
+        // Level 20 Fighter: BAB 20, not epic → 4 APR
+        Assert.Equal(4, CreatureDisplayService.CalculateAttacksPerRound(20, 20));
+    }
+
+    [Fact]
+    public void CalculateAttacksPerRound_Level40Fighter_StillGets4Attacks()
+    {
+        // Level 40 Fighter: BAB 30, epic → epicBAB = 1+(40-21)/2 = 10
+        // effectiveBab = 30-10 = 20 → 4 APR (epic levels don't add attacks)
+        Assert.Equal(4, CreatureDisplayService.CalculateAttacksPerRound(30, 40));
+    }
+
+    [Fact]
+    public void CalculateAttacksPerRound_HalfCasterEpic_ReducedAPR()
+    {
+        // Level 30 Wizard: BAB 15, epicBAB = 1+(30-21)/2 = 5
+        // effectiveBab = 15-5 = 10 → 2 APR
+        Assert.Equal(2, CreatureDisplayService.CalculateAttacksPerRound(15, 30));
+    }
+
+    [Fact]
+    public void CalculateAttacksPerRound_NoHitDice_LegacyBehavior()
+    {
+        // Default parameter (0 hit dice) → pre-epic behavior
+        Assert.Equal(4, CreatureDisplayService.CalculateAttacksPerRound(20));
+    }
+
+    #endregion
 }

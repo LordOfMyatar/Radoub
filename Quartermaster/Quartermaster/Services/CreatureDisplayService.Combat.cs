@@ -132,8 +132,11 @@ public partial class CreatureDisplayService
 
         stats.TotalBab = stats.BaseBab + stats.EquipmentBonus;
 
-        // Calculate APR from BAB: 1 attack at BAB 1-5, +1 per 5 BAB, max 4 at BAB 16+
-        stats.AttacksPerRound = CalculateAttacksPerRound(stats.TotalBab);
+        // Calculate APR from BAB, accounting for epic levels
+        int totalHitDice = 0;
+        foreach (var c in creature.ClassList)
+            totalHitDice += c.ClassLevel;
+        stats.AttacksPerRound = CalculateAttacksPerRound(stats.TotalBab, totalHitDice);
 
         // Build attack sequence string (e.g., "+16/+11/+6/+1")
         stats.AttackSequence = BuildAttackSequence(stats.TotalBab, stats.AttacksPerRound);
@@ -142,13 +145,23 @@ public partial class CreatureDisplayService
     }
 
     /// <summary>
-    /// Calculates attacks per round from BAB.
-    /// NWN formula: 1 attack at BAB 1-5, +1 attack per 5 BAB, max 4 attacks at BAB 16+.
+    /// Calculates attacks per round from BAB and total hit dice.
+    /// NWN subtracts epic BAB before calculating APR so epic levels
+    /// don't grant extra attacks beyond the pre-epic cap of 4.
+    /// Epic BAB = 1 + (hitDice - 21) / 2 for characters level 21+.
     /// </summary>
-    public static int CalculateAttacksPerRound(int bab)
+    public static int CalculateAttacksPerRound(int bab, int totalHitDice = 0)
     {
         if (bab <= 0) return 1;
-        return 1 + Math.Min(3, (bab - 1) / 5);
+
+        int effectiveBab = bab;
+        if (totalHitDice >= 21)
+        {
+            int epicBab = 1 + (totalHitDice - 21) / 2;
+            effectiveBab = Math.Max(1, bab - epicBab);
+        }
+
+        return 1 + Math.Min(3, (effectiveBab - 1) / 5);
     }
 
     /// <summary>
