@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.2.31-alpha] - 2026-03-09
+## [0.2.31-alpha] - 2026-03-10
 **Branch**: `quartermaster/issue-1603` | **PR**: #1638
 
 ### Sprint: LUW Sidebar & Ability Scores (#1603)
@@ -18,6 +18,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - [x] #1502 — Add dynamic sidebar summary to Level Up Wizard
 - [x] #1501 — Add ability score increase at levels 4/8/12/16/20/24/28/32/36/40
 - [x] #1155 — Add epic BAB handling for APR calculation
+
+### LUW Validation Modes (CE/TN/LG)
+
+- feat: CE mode — multi-ability toggle, unlimited feats/skills, no prereq enforcement
+- feat: CE mode — feat step no longer skipped when no feats granted (e.g., Rogue 11)
+- feat: TN mode — warnings only, never blocks Next button
+- feat: Feat description panel with scrollbar in feat selection step
+- feat: Filter out level-1-only feats (MaxLevel=1) from LUW feat list
+- feat: CON retroactivity — HP recalculated for all previous levels when CON modifier changes
+- test: 5 new unit tests for CON retroactive HP calculation
 
 ### Infrastructure
 
