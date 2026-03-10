@@ -7,17 +7,17 @@ using Quartermaster.Services;
 namespace Quartermaster.Views.Dialogs;
 
 /// <summary>
-/// Step 3: Skill point allocation with class/cross-class cost tracking and auto-assign.
+/// Step 4: Skill point allocation with class/cross-class cost tracking and auto-assign.
 /// </summary>
 public partial class LevelUpWizardWindow
 {
-    #region Step 3: Skill Allocation
+    #region Step 4: Skill Allocation
 
     // Tracks class skill status for the level being gained
     private HashSet<int> _classSkillIds = new();
     private HashSet<int> _unavailableSkillIds = new();
 
-    private void PrepareStep3()
+    private void PrepareStep4()
     {
         // Delegate skill point calculation to LevelUpApplicationService
         var levelUpService = new LevelUpApplicationService(_displayService);
@@ -96,11 +96,14 @@ public partial class LevelUpWizardWindow
             int cost = isClassSkill ? 1 : 2;
             int remaining = GetRemainingSkillPoints();
 
-            if (remaining >= cost)
+            // In CE mode, bypass point cost validation
+            if (_validationLevel == ValidationLevel.None || remaining >= cost)
             {
                 int currentAdded = _skillPointsAdded.GetValueOrDefault(skillId, 0);
                 int currentRanks = skillId < _creature.SkillList.Count ? _creature.SkillList[skillId] : 0;
-                int maxRanks = CalculateMaxRanks(isClassSkill);
+                int maxRanks = _validationLevel == ValidationLevel.None
+                    ? 255 // CE mode: no rank cap
+                    : CalculateMaxRanks(isClassSkill);
 
                 // Check if we can add another rank
                 if (currentRanks + currentAdded < maxRanks)

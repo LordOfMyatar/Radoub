@@ -25,7 +25,7 @@ public partial class LevelUpWizardWindow : Window
 
     // Wizard state
     private int _currentStep = 1;
-    private const int TotalSteps = 5;
+    private const int TotalSteps = 6;
 
     // Level-up choices
     private int _selectedClassId = -1;
@@ -41,6 +41,11 @@ public partial class LevelUpWizardWindow : Window
     private int _bonusFeatsToSelect;
     private int _skillPointsToAllocate;
     private bool _needsSpellSelection;
+    private bool _needsAbilityIncrease;
+    private int _selectedAbilityIncrease = -1; // -1=none, 0=STR, 1=DEX, 2=CON, 3=INT, 4=WIS, 5=CHA
+    private readonly HashSet<int> _ceAbilityIncreases = new(); // CE mode: multiple ability increases
+    private int _hpIncrease; // Pre-calculated HP gain for this level
+    private int _conRetroactiveHp; // Retroactive HP from CON modifier change
     private byte _resolvedPackageId = 255;
 
     // Spell selection state
@@ -72,6 +77,21 @@ public partial class LevelUpWizardWindow : Window
     private readonly Button _finishButton;
     private readonly TextBlock _statusLabel;
 
+    // Sidebar summary labels
+    private readonly TextBlock _step1Summary;
+    private readonly TextBlock _step2Summary;
+    private readonly TextBlock _step3Summary;
+    private readonly TextBlock _step4Summary;
+    private readonly TextBlock _step5Summary;
+
+    // Step 2 (Ability Score) controls
+    private readonly TextBlock _abilityIncreaseDescription;
+    private readonly Border[] _abilityBorders;
+    private readonly TextBlock[] _abilityRadios;
+    private readonly TextBlock[] _abilityValues;
+    private readonly TextBlock[] _abilityChanges;
+    private static readonly string[] AbilityNames = { "Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma" };
+
     // Step 1 controls
     private readonly TextBox _classSearchBox;
     private readonly CheckBox _showUnqualifiedPrestigeCheckBox;
@@ -92,6 +112,7 @@ public partial class LevelUpWizardWindow : Window
     private readonly TextBlock _selectedFeatsHeader;
     private readonly Button _addFeatButton;
     private readonly Button _removeFeatButton;
+    private readonly TextBlock _featDescriptionLabel;
 
     // Step 3 controls
     private readonly TextBlock _skillPointsRemainingLabel;
@@ -116,8 +137,10 @@ public partial class LevelUpWizardWindow : Window
     private readonly ComboBox _validationLevelComboBox;
     private ValidationLevel _validationLevel => (ValidationLevel)_validationLevelComboBox.SelectedIndex;
 
-    // Step 5 controls
+    // Step 6 controls
     private readonly TextBlock _summaryClassLabel;
+    private readonly Border _summaryAbilityPanel;
+    private readonly TextBlock _summaryAbilityLabel;
     private readonly Border _summaryFeatsPanel;
     private readonly ItemsControl _summaryFeatsList;
     private readonly ItemsControl _summarySkillsList;
@@ -153,7 +176,8 @@ public partial class LevelUpWizardWindow : Window
             this.FindControl<Border>("Step2Border")!,
             this.FindControl<Border>("Step3Border")!,
             this.FindControl<Border>("Step4Border")!,
-            this.FindControl<Border>("Step5Border")!
+            this.FindControl<Border>("Step5Border")!,
+            this.FindControl<Border>("Step6Border")!
         };
 
         _stepPanels = new[]
@@ -162,7 +186,54 @@ public partial class LevelUpWizardWindow : Window
             this.FindControl<Grid>("Step2Panel")!,
             this.FindControl<Grid>("Step3Panel")!,
             this.FindControl<Grid>("Step4Panel")!,
-            this.FindControl<Grid>("Step5Panel")!
+            this.FindControl<Grid>("Step5Panel")!,
+            this.FindControl<Grid>("Step6Panel")!
+        };
+
+        // Sidebar summaries
+        _step1Summary = this.FindControl<TextBlock>("Step1Summary")!;
+        _step2Summary = this.FindControl<TextBlock>("Step2Summary")!;
+        _step3Summary = this.FindControl<TextBlock>("Step3Summary")!;
+        _step4Summary = this.FindControl<TextBlock>("Step4Summary")!;
+        _step5Summary = this.FindControl<TextBlock>("Step5Summary")!;
+
+        // Step 2 ability score controls
+        _abilityIncreaseDescription = this.FindControl<TextBlock>("AbilityIncreaseDescription")!;
+        _abilityBorders = new[]
+        {
+            this.FindControl<Border>("AbilityStrBorder")!,
+            this.FindControl<Border>("AbilityDexBorder")!,
+            this.FindControl<Border>("AbilityConBorder")!,
+            this.FindControl<Border>("AbilityIntBorder")!,
+            this.FindControl<Border>("AbilityWisBorder")!,
+            this.FindControl<Border>("AbilityChaBorder")!
+        };
+        _abilityRadios = new[]
+        {
+            this.FindControl<TextBlock>("AbilityStrRadio")!,
+            this.FindControl<TextBlock>("AbilityDexRadio")!,
+            this.FindControl<TextBlock>("AbilityConRadio")!,
+            this.FindControl<TextBlock>("AbilityIntRadio")!,
+            this.FindControl<TextBlock>("AbilityWisRadio")!,
+            this.FindControl<TextBlock>("AbilityChaRadio")!
+        };
+        _abilityValues = new[]
+        {
+            this.FindControl<TextBlock>("AbilityStrValue")!,
+            this.FindControl<TextBlock>("AbilityDexValue")!,
+            this.FindControl<TextBlock>("AbilityConValue")!,
+            this.FindControl<TextBlock>("AbilityIntValue")!,
+            this.FindControl<TextBlock>("AbilityWisValue")!,
+            this.FindControl<TextBlock>("AbilityChaValue")!
+        };
+        _abilityChanges = new[]
+        {
+            this.FindControl<TextBlock>("AbilityStrChange")!,
+            this.FindControl<TextBlock>("AbilityDexChange")!,
+            this.FindControl<TextBlock>("AbilityConChange")!,
+            this.FindControl<TextBlock>("AbilityIntChange")!,
+            this.FindControl<TextBlock>("AbilityWisChange")!,
+            this.FindControl<TextBlock>("AbilityChaChange")!
         };
 
         _backButton = this.FindControl<Button>("BackButton")!;
@@ -182,7 +253,7 @@ public partial class LevelUpWizardWindow : Window
         _classPrereqItems = this.FindControl<ItemsControl>("ClassPrereqItems")!;
         _classDescriptionLabel = this.FindControl<TextBlock>("ClassDescriptionLabel")!;
 
-        // Step 2
+        // Step 3 (Feats)
         _featAllocationLabel = this.FindControl<TextBlock>("FeatAllocationLabel")!;
         _featSearchBox = this.FindControl<TextBox>("FeatSearchBox")!;
         _availableFeatsListBox = this.FindControl<ListBox>("AvailableFeatsListBox")!;
@@ -190,13 +261,14 @@ public partial class LevelUpWizardWindow : Window
         _selectedFeatsHeader = this.FindControl<TextBlock>("SelectedFeatsHeader")!;
         _addFeatButton = this.FindControl<Button>("AddFeatButton")!;
         _removeFeatButton = this.FindControl<Button>("RemoveFeatButton")!;
+        _featDescriptionLabel = this.FindControl<TextBlock>("FeatDescriptionLabel")!;
 
-        // Step 3
+        // Step 4 (Skills)
         _skillPointsRemainingLabel = this.FindControl<TextBlock>("SkillPointsRemainingLabel")!;
         _skillPointsTotalLabel = this.FindControl<TextBlock>("SkillPointsTotalLabel")!;
         _skillsItemsControl = this.FindControl<ItemsControl>("SkillsItemsControl")!;
 
-        // Step 4
+        // Step 5 (Spells)
         _spellStepDescription = this.FindControl<TextBlock>("SpellStepDescription")!;
         _spellTabsBar = this.FindControl<Border>("SpellTabsBar")!;
         _spellLevelTabsPanel = this.FindControl<StackPanel>("SpellLevelTabsPanel")!;
@@ -210,8 +282,10 @@ public partial class LevelUpWizardWindow : Window
         _divineSpellInfoLabel = this.FindControl<TextBlock>("DivineSpellInfoLabel")!;
         _divineSpellsList = this.FindControl<ItemsControl>("DivineSpellsList")!;
 
-        // Step 5
+        // Step 6 (Summary)
         _summaryClassLabel = this.FindControl<TextBlock>("SummaryClassLabel")!;
+        _summaryAbilityPanel = this.FindControl<Border>("SummaryAbilityPanel")!;
+        _summaryAbilityLabel = this.FindControl<TextBlock>("SummaryAbilityLabel")!;
         _summaryFeatsPanel = this.FindControl<Border>("SummaryFeatsPanel")!;
         _summaryFeatsList = this.FindControl<ItemsControl>("SummaryFeatsList")!;
         _summarySkillsList = this.FindControl<ItemsControl>("SummarySkillsList")!;
@@ -280,6 +354,9 @@ public partial class LevelUpWizardWindow : Window
         _nextButton.IsVisible = _currentStep < TotalSteps;
         _finishButton.IsVisible = _currentStep == TotalSteps;
 
+        // Update sidebar summaries (#1502)
+        UpdateSidebarSummaries();
+
         // Validate current step
         ValidateCurrentStep();
     }
@@ -293,13 +370,22 @@ public partial class LevelUpWizardWindow : Window
 
     private void ValidateCurrentStep()
     {
+        // Check if selected class is qualified (for warning display)
+        bool classIsQualified = true;
+        if (_currentStep == 1 && _selectedClassId >= 0)
+        {
+            var selectedClass = _filteredClasses?.FirstOrDefault(c => c.ClassId == _selectedClassId);
+            classIsQualified = selectedClass?.CanSelect ?? true;
+        }
+
         bool strictValid = _currentStep switch
         {
-            1 => _selectedClassId >= 0,
-            2 => _selectedFeats.Count >= _featsToSelect,
-            3 => GetRemainingSkillPoints() == 0,
-            4 => _isDivineCaster || IsSpellSelectionComplete(),
-            5 => true,
+            1 => _selectedClassId >= 0 && classIsQualified,
+            2 => _selectedAbilityIncrease >= 0,
+            3 => _selectedFeats.Count >= _featsToSelect,
+            4 => GetRemainingSkillPoints() == 0,
+            5 => _isDivineCaster || IsSpellSelectionComplete(),
+            6 => true,
             _ => false
         };
 
@@ -308,11 +394,13 @@ public partial class LevelUpWizardWindow : Window
             ValidationLevel.None => _currentStep switch
             {
                 1 => _selectedClassId >= 0,
+                2 => true, // Allow skipping ability selection in CE mode
                 _ => true
             },
             ValidationLevel.Warning => _currentStep switch
             {
-                1 => _selectedClassId >= 0,
+                1 => _selectedClassId >= 0, // Must select something, but warn if unqualified
+                2 => true,
                 _ => true
             },
             _ => strictValid
@@ -327,9 +415,11 @@ public partial class LevelUpWizardWindow : Window
             _statusLabel.Foreground = BrushManager.GetWarningBrush(this);
             _statusLabel.Text = _currentStep switch
             {
-                2 => $"⚠ {_featsToSelect - _selectedFeats.Count} feat(s) not selected.",
-                3 => $"⚠ {GetRemainingSkillPoints()} skill point(s) unspent.",
-                4 when !_isDivineCaster => "⚠ Spell selection incomplete.",
+                1 when !classIsQualified => "⚠ Selected class does not meet prerequisites.",
+                2 => "⚠ No ability score selected.",
+                3 => $"⚠ {_featsToSelect - _selectedFeats.Count} feat(s) not selected.",
+                4 => $"⚠ {GetRemainingSkillPoints()} skill point(s) unspent.",
+                5 when !_isDivineCaster => "⚠ Spell selection incomplete.",
                 _ => ""
             };
         }
@@ -339,9 +429,10 @@ public partial class LevelUpWizardWindow : Window
             _statusLabel.Text = _currentStep switch
             {
                 1 => "Select a class to continue.",
-                2 => $"Select {_featsToSelect - _selectedFeats.Count} more feat(s).",
-                3 => $"Allocate {GetRemainingSkillPoints()} remaining skill point(s).",
-                4 when !_isDivineCaster => "Select spells for each spell level.",
+                2 => "Select an ability score to increase.",
+                3 => $"Select {_featsToSelect - _selectedFeats.Count} more feat(s).",
+                4 => $"Allocate {GetRemainingSkillPoints()} remaining skill point(s).",
+                5 when !_isDivineCaster => "Select spells for each spell level.",
                 _ => ""
             };
         }
@@ -359,9 +450,11 @@ public partial class LevelUpWizardWindow : Window
             _currentStep--;
 
             // Skip steps that don't apply
-            if (_currentStep == 4 && !_needsSpellSelection)
+            if (_currentStep == 5 && !_needsSpellSelection)
                 _currentStep--;
-            if (_currentStep == 2 && _featsToSelect == 0)
+            if (_currentStep == 3 && _featsToSelect == 0 && _validationLevel != ValidationLevel.None)
+                _currentStep--;
+            if (_currentStep == 2 && !_needsAbilityIncrease)
                 _currentStep--;
 
             UpdateStepDisplay();
@@ -386,32 +479,110 @@ public partial class LevelUpWizardWindow : Window
         switch (_currentStep)
         {
             case 2:
-                PrepareStep2(); // Calculate feat requirements
-                // Skip if no feats to select
-                if (_featsToSelect == 0)
+                PrepareStep2_AbilityScore();
+                // Skip if no ability increase at this level
+                if (!_needsAbilityIncrease)
                 {
                     _currentStep++;
-                    PrepareCurrentStep(); // Recursively prepare next step
+                    PrepareCurrentStep();
                 }
                 break;
 
             case 3:
-                PrepareStep3(); // Calculate skill points
+                PrepareStep3(); // Calculate feat requirements
+                // Skip if no feats to select (but CE mode never skips — user can add feats freely)
+                if (_featsToSelect == 0 && _validationLevel != ValidationLevel.None)
+                {
+                    _currentStep++;
+                    PrepareCurrentStep();
+                }
                 break;
 
             case 4:
-                PrepareStep4(); // Check spell requirements
+                PrepareStep4(); // Calculate skill points
+                break;
+
+            case 5:
+                PrepareStep5(); // Check spell requirements
                 // Skip if no spell selection needed
                 if (!_needsSpellSelection)
                 {
                     _currentStep++;
-                    PrepareCurrentStep(); // Recursively prepare next step
+                    PrepareCurrentStep();
                 }
                 break;
 
-            case 5:
-                PrepareStep5(); // Build summary
+            case 6:
+                PrepareStep6(); // Build summary
                 break;
+        }
+    }
+
+    /// <summary>
+    /// Updates sidebar step labels with current choices (#1502).
+    /// </summary>
+    private void UpdateSidebarSummaries()
+    {
+        // Step 1: Class
+        if (_selectedClassId >= 0)
+        {
+            var className = _displayService.GetClassName(_selectedClassId);
+            _step1Summary.Text = _isNewClass
+                ? $"{className} (new)"
+                : $"{className} Lvl {_newClassLevel}";
+        }
+        else
+        {
+            _step1Summary.Text = "";
+        }
+
+        // Step 2: Ability Score
+        if (_needsAbilityIncrease && (_selectedAbilityIncrease >= 0 || _ceAbilityIncreases.Count > 0))
+        {
+            var abilityNames = (_ceAbilityIncreases.Count > 0 ? _ceAbilityIncreases : new HashSet<int> { _selectedAbilityIncrease })
+                .Where(i => i >= 0)
+                .Select(i => $"{AbilityNames[i]} +1");
+            _step2Summary.Text = string.Join(", ", abilityNames);
+        }
+        else
+        {
+            _step2Summary.Text = "";
+        }
+
+        // Step 3: Feats
+        if (_selectedFeats.Count > 0)
+        {
+            _step3Summary.Text = $"{_selectedFeats.Count} selected";
+        }
+        else
+        {
+            _step3Summary.Text = "";
+        }
+
+        // Step 4: Skills
+        int totalSpent = _skillPointsAdded.Values.Sum();
+        if (totalSpent > 0)
+        {
+            _step4Summary.Text = $"{totalSpent} pts spent";
+        }
+        else
+        {
+            _step4Summary.Text = "";
+        }
+
+        // Step 5: Spells
+        int totalSpells = _selectedSpellsByLevel.Values.Sum(list => list.Count);
+        if (_isDivineCaster)
+        {
+            _step5Summary.Text = "Auto-granted";
+        }
+        else if (totalSpells > 0)
+        {
+            _step5Summary.Text = $"{totalSpells} selected";
+        }
+        else
+        {
+            _step5Summary.Text = "";
         }
     }
 
@@ -451,6 +622,12 @@ public partial class LevelUpWizardWindow : Window
         _creature.SkillList = _originalCreature.SkillList;
         _creature.SpecAbilityList = _originalCreature.SpecAbilityList;
         _creature.Comment = _originalCreature.Comment;
+        _creature.Str = _originalCreature.Str;
+        _creature.Dex = _originalCreature.Dex;
+        _creature.Con = _originalCreature.Con;
+        _creature.Int = _originalCreature.Int;
+        _creature.Wis = _originalCreature.Wis;
+        _creature.Cha = _originalCreature.Cha;
     }
 
     #endregion

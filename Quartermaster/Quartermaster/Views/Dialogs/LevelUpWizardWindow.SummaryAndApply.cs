@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Quartermaster.Services;
@@ -5,13 +6,13 @@ using Quartermaster.Services;
 namespace Quartermaster.Views.Dialogs;
 
 /// <summary>
-/// Step 5: Summary display, level-up application, and display item classes.
+/// Step 6: Summary display, level-up application, and display item classes.
 /// </summary>
 public partial class LevelUpWizardWindow
 {
-    #region Step 5: Summary
+    #region Step 6: Summary
 
-    private void PrepareStep5()
+    private void PrepareStep6()
     {
         // Class summary
         var className = _displayService.GetClassName(_selectedClassId);
@@ -32,6 +33,29 @@ public partial class LevelUpWizardWindow
                 // Fallback - shouldn't happen but be safe
                 _summaryClassLabel.Text = $"Taking level {_newClassLevel} in {className}";
             }
+        }
+
+        // Ability score increase summary
+        var allAbilityIncreases = new List<int>();
+        if (_selectedAbilityIncrease >= 0) allAbilityIncreases.Add(_selectedAbilityIncrease);
+        foreach (var extra in _ceAbilityIncreases.Where(i => i != _selectedAbilityIncrease))
+            allAbilityIncreases.Add(extra);
+
+        if (_needsAbilityIncrease && allAbilityIncreases.Count > 0)
+        {
+            _summaryAbilityPanel.IsVisible = true;
+            byte[] scores = { _creature.Str, _creature.Dex, _creature.Con, _creature.Int, _creature.Wis, _creature.Cha };
+            var parts = allAbilityIncreases.Select(idx =>
+            {
+                var name = AbilityNames[idx];
+                var old = scores[idx];
+                return $"{name} {old} -> {old + 1}";
+            });
+            _summaryAbilityLabel.Text = string.Join(", ", parts);
+        }
+        else
+        {
+            _summaryAbilityPanel.IsVisible = false;
         }
 
         // Feats summary (player-selected + auto-granted)
@@ -77,24 +101,58 @@ public partial class LevelUpWizardWindow
             _summarySpellsPanel.IsVisible = false;
         }
 
-        // Derived stats
+        // Derived stats - show totals with change indicators
         int hitDie = _displayService.Classes.GetClassMetadata(_selectedClassId).HitDie;
-        _summaryHpLabel.Text = $"+d{hitDie}";
+        // Account for ability increase if CON was selected (index 2)
+        byte effectiveCon = _creature.Con;
+        if (_needsAbilityIncrease && _selectedAbilityIncrease == 2)
+            effectiveCon = (byte)Math.Min(255, effectiveCon + 1);
+        _hpIncrease = LevelUpApplicationService.CalculateHpIncrease(hitDie, effectiveCon);
 
-        // Calculate BAB change
-        int oldBab = _displayService.GetClassBab(_selectedClassId, _newClassLevel - 1);
-        int newBab = _displayService.GetClassBab(_selectedClassId, _newClassLevel);
-        int babChange = newBab - oldBab;
-        _summaryBabLabel.Text = babChange > 0 ? $"+{babChange}" : "0";
+        // CON retroactivity: if CON modifier changes, all previous levels gain/lose HP
+        int previousLevels = _creature.ClassList.Sum(c => c.ClassLevel);
+        _conRetroactiveHp = _needsAbilityIncrease
+            ? LevelUpApplicationService.CalculateConRetroactiveHp(_selectedAbilityIncrease, _creature.Con, previousLevels)
+            : 0;
 
-        // Calculate save changes
-        var oldSaves = _displayService.GetClassSaves(_selectedClassId, _newClassLevel - 1);
-        var newSaves = _displayService.GetClassSaves(_selectedClassId, _newClassLevel);
-        var saveChanges = new List<string>();
-        if (newSaves.Fortitude > oldSaves.Fortitude) saveChanges.Add($"Fort +{newSaves.Fortitude - oldSaves.Fortitude}");
-        if (newSaves.Reflex > oldSaves.Reflex) saveChanges.Add($"Ref +{newSaves.Reflex - oldSaves.Reflex}");
-        if (newSaves.Will > oldSaves.Will) saveChanges.Add($"Will +{newSaves.Will - oldSaves.Will}");
-        _summarySavesLabel.Text = saveChanges.Count > 0 ? string.Join(", ", saveChanges) : "(none)";
+        int totalHpGain = _hpIncrease + _conRetroactiveHp;
+        int newHp = _creature.MaxHitPoints + totalHpGain;
+        string hpText = $"{_creature.MaxHitPoints} -> {newHp} (+{_hpIncrease}";
+        if (_conRetroactiveHp > 0)
+            hpText += $" +{_conRetroactiveHp} retro CON";
+        else if (_conRetroactiveHp < 0)
+            hpText += $" {_conRetroactiveHp} retro CON";
+        hpText += ")";
+        _summaryHpLabel.Text = hpText;
+
+        // Calculate total BAB (current + new level's contribution)
+        int currentTotalBab = _displayService.CalculateBaseAttackBonus(_creature);
+        int oldClassBab = _displayService.GetClassBab(_selectedClassId, _newClassLevel - 1);
+        int newClassBab = _displayService.GetClassBab(_selectedClassId, _newClassLevel);
+        int babChange = newClassBab - oldClassBab;
+        int newTotalBab = currentTotalBab + babChange;
+        _summaryBabLabel.Text = babChange > 0
+            ? $"{currentTotalBab} -> {newTotalBab} (+{babChange})"
+            : $"{currentTotalBab}";
+
+        // Calculate total saves (current + new level's contribution)
+        var currentSaves = _displayService.CalculateBaseSavingThrows(_creature);
+        var oldClassSaves = _displayService.GetClassSaves(_selectedClassId, _newClassLevel - 1);
+        var newClassSaves = _displayService.GetClassSaves(_selectedClassId, _newClassLevel);
+        int fortChange = newClassSaves.Fortitude - oldClassSaves.Fortitude;
+        int refChange = newClassSaves.Reflex - oldClassSaves.Reflex;
+        int willChange = newClassSaves.Will - oldClassSaves.Will;
+        var saveParts = new List<string>();
+        saveParts.Add(fortChange > 0
+            ? $"Fort {currentSaves.Fortitude}->{currentSaves.Fortitude + fortChange}"
+            : $"Fort {currentSaves.Fortitude}");
+        saveParts.Add(refChange > 0
+            ? $"Ref {currentSaves.Reflex}->{currentSaves.Reflex + refChange}"
+            : $"Ref {currentSaves.Reflex}");
+        saveParts.Add(willChange > 0
+            ? $"Will {currentSaves.Will}->{currentSaves.Will + willChange}"
+            : $"Will {currentSaves.Will}");
+        _summarySavesLabel.Text = string.Join(", ", saveParts);
     }
 
     #endregion
@@ -115,6 +173,12 @@ public partial class LevelUpWizardWindow
             SelectedFeats = _selectedFeats,
             SkillPointsAdded = _skillPointsAdded,
             SelectedSpellsByLevel = _selectedSpellsByLevel,
+            AbilityIncrease = _selectedAbilityIncrease,
+            ExtraAbilityIncreases = _ceAbilityIncreases
+                .Where(i => i != _selectedAbilityIncrease)
+                .ToList(),
+            HpIncrease = _hpIncrease,
+            ConRetroactiveHp = _conRetroactiveHp,
             RecordHistory = settings.RecordLevelHistory,
             HistoryEncoding = settings.LevelHistoryEncoding
         });
@@ -143,6 +207,7 @@ public partial class LevelUpWizardWindow
         public string Badge => CanSelect ? "" : Qualification switch
         {
             ClassQualification.PrerequisitesNotMet => "(prereqs)",
+            ClassQualification.AlignmentRestricted => "(alignment)",
             ClassQualification.MaxLevelReached => "(max)",
             _ => ""
         };

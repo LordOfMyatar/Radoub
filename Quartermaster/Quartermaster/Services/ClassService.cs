@@ -784,8 +784,30 @@ public class ClassService
             }
             else
             {
-                // Base class - always qualified (except at level 1, max 3 base classes in classic NWN)
-                available.Qualification = ClassQualification.Qualified;
+                // Base class - check alignment restrictions (e.g., Monk requires Lawful)
+                if (metadata.AlignmentRestriction != null)
+                {
+                    var alignResult = CheckAlignmentRestriction(creature, metadata.AlignmentRestriction);
+                    if (!alignResult.Met)
+                    {
+                        available.Qualification = ClassQualification.AlignmentRestricted;
+                        available.PrerequisiteResult = new ClassPrereqResult
+                        {
+                            ClassId = metadata.ClassId,
+                            HasPrerequisites = true,
+                            AllMet = false,
+                            OtherRequirements = { (alignResult.Description, false) }
+                        };
+                    }
+                    else
+                    {
+                        available.Qualification = ClassQualification.Qualified;
+                    }
+                }
+                else
+                {
+                    available.Qualification = ClassQualification.Qualified;
+                }
             }
 
             // Check multiclass limit (8 classes max in EE)

@@ -382,6 +382,68 @@ public class LevelUpApplicationServiceTests
         Assert.Single(creature.FeatList, f => f == 42);
     }
 
+    [Fact]
+    public void ApplyLevelUp_WithAbilityIncrease_IncrementsAbility()
+    {
+        var creature = new CreatureBuilder()
+            .WithClass(CommonClass.Fighter, 3)
+            .WithAbilities(14, 12, 14, 10, 10, 8)
+            .Build();
+
+        var input = new LevelUpApplicationService.LevelUpInput
+        {
+            SelectedClassId = (int)CommonClass.Fighter,
+            NewClassLevel = 4,
+            SelectedFeats = new List<int>(),
+            SkillPointsAdded = new Dictionary<int, int>(),
+            SelectedSpellsByLevel = new Dictionary<int, List<int>>(),
+            AbilityIncrease = 0, // STR
+            RecordHistory = false
+        };
+
+        _service.ApplyLevelUp(creature, input);
+
+        Assert.Equal(15, creature.Str); // 14 + 1
+        Assert.Equal(12, creature.Dex); // Unchanged
+    }
+
+    [Theory]
+    [InlineData(0, 15, 12, 14, 10, 10, 8)]  // STR +1
+    [InlineData(1, 14, 13, 14, 10, 10, 8)]  // DEX +1
+    [InlineData(2, 14, 12, 15, 10, 10, 8)]  // CON +1
+    [InlineData(3, 14, 12, 14, 11, 10, 8)]  // INT +1
+    [InlineData(4, 14, 12, 14, 10, 11, 8)]  // WIS +1
+    [InlineData(5, 14, 12, 14, 10, 10, 9)]  // CHA +1
+    public void ApplyAbilityIncrease_EachAbility_IncrementsCorrectOne(
+        int abilityIndex, int expStr, int expDex, int expCon, int expInt, int expWis, int expCha)
+    {
+        var creature = new CreatureBuilder()
+            .WithAbilities(14, 12, 14, 10, 10, 8)
+            .Build();
+
+        LevelUpApplicationService.ApplyAbilityIncrease(creature, abilityIndex);
+
+        Assert.Equal(expStr, creature.Str);
+        Assert.Equal(expDex, creature.Dex);
+        Assert.Equal(expCon, creature.Con);
+        Assert.Equal(expInt, creature.Int);
+        Assert.Equal(expWis, creature.Wis);
+        Assert.Equal(expCha, creature.Cha);
+    }
+
+    [Fact]
+    public void ApplyAbilityIncrease_NegativeIndex_DoesNothing()
+    {
+        var creature = new CreatureBuilder()
+            .WithAbilities(14, 12, 14, 10, 10, 8)
+            .Build();
+
+        LevelUpApplicationService.ApplyAbilityIncrease(creature, -1);
+
+        Assert.Equal(14, creature.Str);
+        Assert.Equal(12, creature.Dex);
+    }
+
     #endregion
 
     #region CalculateLevelUpSkillPoints
@@ -436,6 +498,145 @@ public class LevelUpApplicationServiceTests
         int highPoints = _service.CalculateLevelUpSkillPoints(creatureHighInt, (int)CommonClass.Fighter);
 
         Assert.True(highPoints > lowPoints, $"High INT ({highPoints}) should give more points than low INT ({lowPoints})");
+    }
+
+    #endregion
+
+    #region ApplyHitPoints
+
+    [Fact]
+    public void ApplyHitPoints_IncreasesHpFields()
+    {
+        var creature = new CreatureBuilder()
+            .WithAbilities(con: 14) // CON 14 = +2 mod
+            .Build();
+        creature.HitPoints = 10;
+        creature.MaxHitPoints = 10;
+        creature.CurrentHitPoints = 8;
+
+        LevelUpApplicationService.ApplyHitPoints(creature, 12); // d10 max + CON 2
+
+        Assert.Equal(22, creature.HitPoints);
+        Assert.Equal(22, creature.MaxHitPoints);
+        Assert.Equal(22, creature.CurrentHitPoints); // Restored to max
+    }
+
+    [Fact]
+    public void ApplyHitPoints_MinimumOneHp()
+    {
+        var creature = new CreatureBuilder().Build();
+        creature.HitPoints = 5;
+        creature.MaxHitPoints = 5;
+        creature.CurrentHitPoints = 5;
+
+        LevelUpApplicationService.ApplyHitPoints(creature, -3); // Negative input
+
+        Assert.Equal(6, creature.HitPoints); // Min 1 HP gain
+        Assert.Equal(6, creature.MaxHitPoints);
+    }
+
+    [Theory]
+    [InlineData(10, 14, 12)] // d10 + CON 14 (+2) = 12
+    [InlineData(8, 10, 8)]   // d8 + CON 10 (+0) = 8
+    [InlineData(6, 8, 5)]    // d6 + CON 8 (-1) = 5
+    [InlineData(4, 6, 2)]    // d4 + CON 6 (-2) = 2
+    [InlineData(4, 3, 1)]    // d4 + CON 3 (-4) = min 1
+    public void CalculateHpIncrease_ReturnsExpected(int hitDie, int conScore, int expected)
+    {
+        Assert.Equal(expected, LevelUpApplicationService.CalculateHpIncrease(hitDie, conScore));
+    }
+
+    [Fact]
+    public void ApplyLevelUp_IncludesHpIncrease()
+    {
+        var creature = new CreatureBuilder()
+            .WithClass(CommonClass.Fighter, 3)
+            .WithAbilities(14, 12, 14, 10, 10, 8)
+            .Build();
+        creature.HitPoints = 30;
+        creature.MaxHitPoints = 30;
+        creature.CurrentHitPoints = 25;
+
+        var input = new LevelUpApplicationService.LevelUpInput
+        {
+            SelectedClassId = (int)CommonClass.Fighter,
+            NewClassLevel = 4,
+            HpIncrease = 12, // d10 max + CON 14 (+2)
+            SelectedFeats = new List<int>(),
+            SkillPointsAdded = new Dictionary<int, int>(),
+            SelectedSpellsByLevel = new Dictionary<int, List<int>>(),
+            RecordHistory = false
+        };
+
+        _service.ApplyLevelUp(creature, input);
+
+        Assert.Equal(42, creature.MaxHitPoints); // 30 + 12
+        Assert.Equal(42, creature.CurrentHitPoints); // Restored to max
+    }
+
+    #endregion
+
+    #region CalculateConRetroactiveHp
+
+    [Fact]
+    public void CalculateConRetroactiveHp_ConModChanges_ReturnsRetroactiveHp()
+    {
+        // CON 15 -> 16: mod changes from +2 to +3, 5 previous levels = +5 HP
+        int result = LevelUpApplicationService.CalculateConRetroactiveHp(2, 15, 5);
+        Assert.Equal(5, result);
+    }
+
+    [Fact]
+    public void CalculateConRetroactiveHp_ConModUnchanged_ReturnsZero()
+    {
+        // CON 14 -> 15: mod stays at +2, no retroactive HP
+        int result = LevelUpApplicationService.CalculateConRetroactiveHp(2, 14, 5);
+        Assert.Equal(0, result);
+    }
+
+    [Fact]
+    public void CalculateConRetroactiveHp_NotCon_ReturnsZero()
+    {
+        // STR selected (index 0), not CON
+        int result = LevelUpApplicationService.CalculateConRetroactiveHp(0, 15, 5);
+        Assert.Equal(0, result);
+    }
+
+    [Fact]
+    public void CalculateConRetroactiveHp_NoPreviousLevels_ReturnsZero()
+    {
+        int result = LevelUpApplicationService.CalculateConRetroactiveHp(2, 15, 0);
+        Assert.Equal(0, result);
+    }
+
+    [Fact]
+    public void ApplyLevelUp_WithConRetroactiveHp_AddsToTotal()
+    {
+        var creature = new CreatureBuilder()
+            .WithClass(CommonClass.Fighter, 3)
+            .WithAbilities(14, 12, 15, 10, 10, 8) // CON 15 -> 16 changes mod
+            .Build();
+        creature.HitPoints = 30;
+        creature.MaxHitPoints = 30;
+        creature.CurrentHitPoints = 25;
+
+        var input = new LevelUpApplicationService.LevelUpInput
+        {
+            SelectedClassId = (int)CommonClass.Fighter,
+            NewClassLevel = 4,
+            HpIncrease = 13, // d10 max + CON 16 (+3)
+            ConRetroactiveHp = 3, // 3 previous levels * +1 mod change
+            AbilityIncrease = 2, // CON
+            SelectedFeats = new List<int>(),
+            SkillPointsAdded = new Dictionary<int, int>(),
+            SelectedSpellsByLevel = new Dictionary<int, List<int>>(),
+            RecordHistory = false
+        };
+
+        _service.ApplyLevelUp(creature, input);
+
+        Assert.Equal(46, creature.MaxHitPoints); // 30 + 13 + 3
+        Assert.Equal(46, creature.CurrentHitPoints);
     }
 
     #endregion

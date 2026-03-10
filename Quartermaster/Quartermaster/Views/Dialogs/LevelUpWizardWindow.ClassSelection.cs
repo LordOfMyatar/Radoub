@@ -52,7 +52,13 @@ public partial class LevelUpWizardWindow
                 return false;
 
             return true;
-        }).ToList();
+        })
+        // Current classes first, then qualified, then by name
+        .OrderByDescending(c => c.CurrentLevel > 0)
+        .ThenBy(c => c.Qualification != ClassQualification.Qualified)
+        .ThenBy(c => c.IsPrestige)
+        .ThenBy(c => c.Name)
+        .ToList();
 
         _classListBox.ItemsSource = _filteredClasses;
     }
@@ -73,7 +79,7 @@ public partial class LevelUpWizardWindow
         {
             ShowClassDetails(item);
 
-            if (item.CanSelect || _validationLevel == ValidationLevel.None)
+            if (item.CanSelect || _validationLevel != ValidationLevel.Strict)
             {
                 _selectedClassId = item.ClassId;
                 _isNewClass = item.CurrentLevel == 0;
@@ -90,6 +96,7 @@ public partial class LevelUpWizardWindow
             _selectedClassId = -1;
         }
 
+        UpdateSidebarSummaries();
         ValidateCurrentStep();
     }
 
@@ -100,8 +107,8 @@ public partial class LevelUpWizardWindow
         _classHitDieLabel.Text = $"d{item.HitDie}";
         _classSkillPointsLabel.Text = $"{item.SkillPoints} + INT";
 
-        // Prerequisites
-        if (item.IsPrestige && item.PrerequisiteResult != null)
+        // Prerequisites (prestige classes and alignment-restricted base classes)
+        if (item.PrerequisiteResult != null)
         {
             _classPrereqPanel.IsVisible = true;
             _classPrereqItems.ItemsSource = BuildPrereqDisplay(item.PrerequisiteResult);

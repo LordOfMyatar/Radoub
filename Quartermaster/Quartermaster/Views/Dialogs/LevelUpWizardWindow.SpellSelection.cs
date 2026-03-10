@@ -11,13 +11,13 @@ using Radoub.UI.Services;
 namespace Quartermaster.Views.Dialogs;
 
 /// <summary>
-/// Step 4: Spell selection with divine/spontaneous/prepared caster logic.
+/// Step 5: Spell selection with divine/spontaneous/prepared caster logic.
 /// </summary>
 public partial class LevelUpWizardWindow
 {
-    #region Step 4: Spell Selection
+    #region Step 5: Spell Selection
 
-    private void PrepareStep4()
+    private void PrepareStep5()
     {
         bool isCaster = _displayService.IsCasterClass(_selectedClassId);
         if (!isCaster)
