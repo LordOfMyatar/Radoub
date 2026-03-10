@@ -43,6 +43,9 @@ public partial class LevelUpWizardWindow : Window
     private bool _needsSpellSelection;
     private bool _needsAbilityIncrease;
     private int _selectedAbilityIncrease = -1; // -1=none, 0=STR, 1=DEX, 2=CON, 3=INT, 4=WIS, 5=CHA
+    private readonly HashSet<int> _ceAbilityIncreases = new(); // CE mode: multiple ability increases
+    private int _hpIncrease; // Pre-calculated HP gain for this level
+    private int _conRetroactiveHp; // Retroactive HP from CON modifier change
     private byte _resolvedPackageId = 255;
 
     // Spell selection state
@@ -82,6 +85,7 @@ public partial class LevelUpWizardWindow : Window
     private readonly TextBlock _step5Summary;
 
     // Step 2 (Ability Score) controls
+    private readonly TextBlock _abilityIncreaseDescription;
     private readonly Border[] _abilityBorders;
     private readonly TextBlock[] _abilityRadios;
     private readonly TextBlock[] _abilityValues;
@@ -108,6 +112,7 @@ public partial class LevelUpWizardWindow : Window
     private readonly TextBlock _selectedFeatsHeader;
     private readonly Button _addFeatButton;
     private readonly Button _removeFeatButton;
+    private readonly TextBlock _featDescriptionLabel;
 
     // Step 3 controls
     private readonly TextBlock _skillPointsRemainingLabel;
@@ -193,6 +198,7 @@ public partial class LevelUpWizardWindow : Window
         _step5Summary = this.FindControl<TextBlock>("Step5Summary")!;
 
         // Step 2 ability score controls
+        _abilityIncreaseDescription = this.FindControl<TextBlock>("AbilityIncreaseDescription")!;
         _abilityBorders = new[]
         {
             this.FindControl<Border>("AbilityStrBorder")!,
@@ -255,6 +261,7 @@ public partial class LevelUpWizardWindow : Window
         _selectedFeatsHeader = this.FindControl<TextBlock>("SelectedFeatsHeader")!;
         _addFeatButton = this.FindControl<Button>("AddFeatButton")!;
         _removeFeatButton = this.FindControl<Button>("RemoveFeatButton")!;
+        _featDescriptionLabel = this.FindControl<TextBlock>("FeatDescriptionLabel")!;
 
         // Step 4 (Skills)
         _skillPointsRemainingLabel = this.FindControl<TextBlock>("SkillPointsRemainingLabel")!;
@@ -363,9 +370,17 @@ public partial class LevelUpWizardWindow : Window
 
     private void ValidateCurrentStep()
     {
+        // Check if selected class is qualified (for warning display)
+        bool classIsQualified = true;
+        if (_currentStep == 1 && _selectedClassId >= 0)
+        {
+            var selectedClass = _filteredClasses?.FirstOrDefault(c => c.ClassId == _selectedClassId);
+            classIsQualified = selectedClass?.CanSelect ?? true;
+        }
+
         bool strictValid = _currentStep switch
         {
-            1 => _selectedClassId >= 0,
+            1 => _selectedClassId >= 0 && classIsQualified,
             2 => _selectedAbilityIncrease >= 0,
             3 => _selectedFeats.Count >= _featsToSelect,
             4 => GetRemainingSkillPoints() == 0,
@@ -384,7 +399,7 @@ public partial class LevelUpWizardWindow : Window
             },
             ValidationLevel.Warning => _currentStep switch
             {
-                1 => _selectedClassId >= 0,
+                1 => _selectedClassId >= 0, // Must select something, but warn if unqualified
                 2 => true,
                 _ => true
             },
@@ -400,6 +415,7 @@ public partial class LevelUpWizardWindow : Window
             _statusLabel.Foreground = BrushManager.GetWarningBrush(this);
             _statusLabel.Text = _currentStep switch
             {
+                1 when !classIsQualified => "⚠ Selected class does not meet prerequisites.",
                 2 => "⚠ No ability score selected.",
                 3 => $"⚠ {_featsToSelect - _selectedFeats.Count} feat(s) not selected.",
                 4 => $"⚠ {GetRemainingSkillPoints()} skill point(s) unspent.",
@@ -436,7 +452,7 @@ public partial class LevelUpWizardWindow : Window
             // Skip steps that don't apply
             if (_currentStep == 5 && !_needsSpellSelection)
                 _currentStep--;
-            if (_currentStep == 3 && _featsToSelect == 0)
+            if (_currentStep == 3 && _featsToSelect == 0 && _validationLevel != ValidationLevel.None)
                 _currentStep--;
             if (_currentStep == 2 && !_needsAbilityIncrease)
                 _currentStep--;
@@ -474,8 +490,8 @@ public partial class LevelUpWizardWindow : Window
 
             case 3:
                 PrepareStep3(); // Calculate feat requirements
-                // Skip if no feats to select
-                if (_featsToSelect == 0)
+                // Skip if no feats to select (but CE mode never skips — user can add feats freely)
+                if (_featsToSelect == 0 && _validationLevel != ValidationLevel.None)
                 {
                     _currentStep++;
                     PrepareCurrentStep();
@@ -521,9 +537,12 @@ public partial class LevelUpWizardWindow : Window
         }
 
         // Step 2: Ability Score
-        if (_selectedAbilityIncrease >= 0 && _needsAbilityIncrease)
+        if (_needsAbilityIncrease && (_selectedAbilityIncrease >= 0 || _ceAbilityIncreases.Count > 0))
         {
-            _step2Summary.Text = $"{AbilityNames[_selectedAbilityIncrease]} +1";
+            var abilityNames = (_ceAbilityIncreases.Count > 0 ? _ceAbilityIncreases : new HashSet<int> { _selectedAbilityIncrease })
+                .Where(i => i >= 0)
+                .Select(i => $"{AbilityNames[i]} +1");
+            _step2Summary.Text = string.Join(", ", abilityNames);
         }
         else
         {

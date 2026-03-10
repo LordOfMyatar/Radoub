@@ -135,7 +135,7 @@
 
                 <!-- Validation Level Toggle (#1503) -->
                 <Separator Margin="0,15,0,10"/>
-                <TextBlock Text="Rules" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                <TextBlock Text="Validation Level" FontWeight="SemiBold" Margin="0,0,0,5"/>
                 <ComboBox x:Name="ValidationLevelComboBox"
                           AutomationProperties.AutomationId="ValidationLevelComboBox"
                           HorizontalAlignment="Stretch"
@@ -373,6 +373,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Text="Select Feats" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
@@ -431,7 +432,8 @@
 
                             <TextBlock Grid.Row="0" x:Name="SelectedFeatsHeader" Text="Selected Feats (0/1)" FontWeight="Bold" Margin="0,0,0,5"/>
                             <ListBox Grid.Row="1" x:Name="SelectedFeatsListBox"
-                                     DoubleTapped="OnSelectedFeatDoubleClicked"/>
+                                     DoubleTapped="OnSelectedFeatDoubleClicked"
+                                     SelectionChanged="OnSelectedFeatSelectionChanged"/>
                             <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10" Margin="0,5,0,0">
                                 <Button x:Name="AddFeatButton" Content="Add" Click="OnAddFeatClick" IsEnabled="False"/>
                                 <Button x:Name="RemoveFeatButton" Content="Remove" Click="OnRemoveFeatClick" IsEnabled="False"/>
@@ -440,6 +442,18 @@
                         </Grid>
                     </Border>
                 </Grid>
+
+                <!-- Feat Description -->
+                <Border Grid.Row="3" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="8" Margin="0,5,0,0"
+                        MaxHeight="120">
+                    <ScrollViewer>
+                        <TextBlock x:Name="FeatDescriptionLabel"
+                                   Text="Select a feat to see its description."
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,12,0"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    </ScrollViewer>
+                </Border>
             </Grid>
 
             <!-- Step 4: Skill Allocation -->
@@ -667,7 +681,7 @@
                         <!-- Stats Changes -->
                         <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="15" CornerRadius="4">
                             <StackPanel>
-                                <TextBlock Text="Derived Stats Changes" FontWeight="Bold" FontSize="14" Margin="0,0,0,5"/>
+                                <TextBlock Text="Derived Stats" FontWeight="Bold" FontSize="14" Margin="0,0,0,5"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>

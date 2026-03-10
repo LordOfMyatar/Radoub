@@ -32,6 +32,9 @@ public class LevelUpApplicationService
         public Dictionary<int, int> SkillPointsAdded { get; set; } = new();
         public Dictionary<int, List<int>> SelectedSpellsByLevel { get; set; } = new();
         public int AbilityIncrease { get; set; } = -1; // -1=none, 0=STR, 1=DEX, 2=CON, 3=INT, 4=WIS, 5=CHA
+        public List<int> ExtraAbilityIncreases { get; set; } = new(); // CE mode: additional ability increases
+        public int HpIncrease { get; set; } // Hit die roll + CON modifier (pre-calculated)
+        public int ConRetroactiveHp { get; set; } // Retroactive HP from CON modifier change
         public bool RecordHistory { get; set; }
         public LevelHistoryEncoding HistoryEncoding { get; set; } = LevelHistoryEncoding.Readable;
     }
@@ -44,6 +47,10 @@ public class LevelUpApplicationService
     {
         ApplyClassLevel(creature, input.SelectedClassId);
         ApplyAbilityIncrease(creature, input.AbilityIncrease);
+        // CE mode: apply additional ability increases
+        foreach (var extraAbility in input.ExtraAbilityIncreases)
+            ApplyAbilityIncrease(creature, extraAbility);
+        ApplyHitPoints(creature, input.HpIncrease + input.ConRetroactiveHp);
         ApplyFeats(creature, input.SelectedClassId, input.NewClassLevel, input.SelectedFeats);
         ApplySkills(creature, input.SkillPointsAdded);
         ApplySpells(creature, input.SelectedClassId, input.SelectedSpellsByLevel);
@@ -89,6 +96,48 @@ public class LevelUpApplicationService
             case 4: creature.Wis = (byte)Math.Min(255, creature.Wis + 1); break;
             case 5: creature.Cha = (byte)Math.Min(255, creature.Cha + 1); break;
         }
+    }
+
+    /// <summary>
+    /// Adds HP increase to both HitPoints and MaxHitPoints.
+    /// Uses max hit die roll + CON modifier (pre-calculated by caller).
+    /// Minimum 1 HP per level.
+    /// </summary>
+    public static void ApplyHitPoints(UtcFile creature, int hpIncrease)
+    {
+        int gain = Math.Max(1, hpIncrease);
+        creature.HitPoints = (short)Math.Min(short.MaxValue, creature.HitPoints + gain);
+        creature.MaxHitPoints = (short)Math.Min(short.MaxValue, creature.MaxHitPoints + gain);
+        creature.CurrentHitPoints = creature.MaxHitPoints;
+    }
+
+    /// <summary>
+    /// Calculates HP increase for a level-up: max hit die + CON modifier.
+    /// </summary>
+    public static int CalculateHpIncrease(int hitDie, int conScore)
+    {
+        int conMod = CreatureDisplayService.CalculateAbilityBonus(conScore);
+        return Math.Max(1, hitDie + conMod);
+    }
+
+    /// <summary>
+    /// Calculates retroactive HP adjustment when CON modifier changes.
+    /// In NWN, CON is retroactive: if CON modifier increases by 1, ALL previous levels
+    /// gain 1 HP each. Returns 0 if CON wasn't selected or modifier didn't change.
+    /// </summary>
+    public static int CalculateConRetroactiveHp(int abilityIncreaseIndex, int currentCon, int previousLevelCount)
+    {
+        if (abilityIncreaseIndex != 2 || previousLevelCount <= 0)
+            return 0;
+
+        int oldMod = CreatureDisplayService.CalculateAbilityBonus(currentCon);
+        int newMod = CreatureDisplayService.CalculateAbilityBonus(Math.Min(255, currentCon + 1));
+
+        int modChange = newMod - oldMod;
+        if (modChange == 0)
+            return 0;
+
+        return modChange * previousLevelCount;
     }
 
     /// <summary>

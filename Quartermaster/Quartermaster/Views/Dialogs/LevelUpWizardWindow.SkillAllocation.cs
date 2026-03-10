@@ -96,11 +96,14 @@ public partial class LevelUpWizardWindow
             int cost = isClassSkill ? 1 : 2;
             int remaining = GetRemainingSkillPoints();
 
-            if (remaining >= cost)
+            // In CE mode, bypass point cost validation
+            if (_validationLevel == ValidationLevel.None || remaining >= cost)
             {
                 int currentAdded = _skillPointsAdded.GetValueOrDefault(skillId, 0);
                 int currentRanks = skillId < _creature.SkillList.Count ? _creature.SkillList[skillId] : 0;
-                int maxRanks = CalculateMaxRanks(isClassSkill);
+                int maxRanks = _validationLevel == ValidationLevel.None
+                    ? 255 // CE mode: no rank cap
+                    : CalculateMaxRanks(isClassSkill);
 
                 // Check if we can add another rank
                 if (currentRanks + currentAdded < maxRanks)

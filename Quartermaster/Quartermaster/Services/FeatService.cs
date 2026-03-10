@@ -702,10 +702,32 @@ public class FeatService
             if (!met) result.AllMet = false;
         }
 
-        // Check spell level (simplified - just note requirement)
+        // Check spell level - validate against creature's caster classes
         if (prereqs.MinSpellLevel > 0)
         {
-            result.OtherRequirements.Add(($"Cast level {prereqs.MinSpellLevel} spells", null));
+            bool canCast = false;
+            foreach (var cc in creature.ClassList)
+            {
+                var spellGainTable = _gameDataService.Get2DAValue("classes", cc.Class, "SpellGainTable");
+                if (!string.IsNullOrEmpty(spellGainTable) && spellGainTable != "****")
+                {
+                    // Check if this class grants spells of the required level at current level
+                    int rowIndex = cc.ClassLevel - 1;
+                    if (rowIndex >= 0)
+                    {
+                        var col = $"SpellLevel{prereqs.MinSpellLevel}";
+                        var slotsStr = _gameDataService.Get2DAValue(spellGainTable, rowIndex, col);
+                        if (!string.IsNullOrEmpty(slotsStr) && slotsStr != "****" && slotsStr != "-"
+                            && int.TryParse(slotsStr, out int slots) && slots > 0)
+                        {
+                            canCast = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            result.OtherRequirements.Add(($"Cast level {prereqs.MinSpellLevel} spells", canCast));
+            if (!canCast) result.AllMet = false;
         }
 
         // Check skills

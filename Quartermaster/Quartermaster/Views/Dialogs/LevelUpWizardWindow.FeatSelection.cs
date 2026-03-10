@@ -43,9 +43,14 @@ public partial class LevelUpWizardWindow
         if (featInfo.ClassBonusFeats > 0) parts.Add($"{featInfo.ClassBonusFeats} class bonus (restricted)");
         var breakdown = parts.Count > 1 ? $" ({string.Join(" + ", parts)})" : "";
 
-        _featAllocationLabel.Text = _featsToSelect > 0
-            ? $"You have {_featsToSelect} feat(s) to select{breakdown}."
-            : "No feats to select at this level.";
+        if (_validationLevel == ValidationLevel.None)
+            _featAllocationLabel.Text = _featsToSelect > 0
+                ? $"You have {_featsToSelect} feat(s) to select{breakdown}. (CE mode: no limit)"
+                : "No feats granted at this level. (CE mode: select any feats you want)";
+        else
+            _featAllocationLabel.Text = _featsToSelect > 0
+                ? $"You have {_featsToSelect} feat(s) to select{breakdown}."
+                : "No feats to select at this level.";
 
         // Build the list of available feats
         LoadAvailableFeats();
@@ -95,6 +100,12 @@ public partial class LevelUpWizardWindow
             if (existingFeats.Contains(featId) && !_displayService.CanFeatBeGainedMultipleTimes(featId))
                 continue;
 
+            // Skip level-1-only feats (MaxLevel=1 in feat.2da) — LUW is always level 2+
+            var maxLevelStr = _displayService.GameDataService.Get2DAValue("feat", featId, "MaxLevel");
+            if (!string.IsNullOrEmpty(maxLevelStr) && maxLevelStr != "****" &&
+                int.TryParse(maxLevelStr, out int featMaxLevel) && featMaxLevel == 1)
+                continue;
+
             // Check if feat is available to select (universal or in class table)
             bool isUniversal = _displayService.Feats.IsFeatUniversal(featId);
             bool isClassFeat = classFeatIds.Contains(featId);
@@ -113,8 +124,8 @@ public partial class LevelUpWizardWindow
                 c => _displayService.CalculateBaseAttackBonus(c),
                 cid => _displayService.GetClassName(cid));
 
-            // In None mode (Chaotic Evil), all feats are selectable regardless of prereqs
-            bool canSelect = _validationLevel == ValidationLevel.None || prereqResult.AllMet;
+            // Strict: must meet prereqs. Warning/None: can select regardless
+            bool canSelect = _validationLevel != ValidationLevel.Strict || prereqResult.AllMet;
 
             _allAvailableFeats.Add(new FeatDisplayItem
             {
@@ -168,11 +179,16 @@ public partial class LevelUpWizardWindow
     private void ApplyFeatFilter()
     {
         var searchText = _featSearchBox?.Text?.Trim() ?? "";
+        bool inBonusPhase = IsSelectingBonusFeat();
 
         _filteredAvailableFeats = _allAvailableFeats.Where(f =>
         {
             // Don't show already-selected feats — unless GAINMULTIPLE allows re-selection
             if (_selectedFeats.Contains(f.FeatId) && !_displayService.CanFeatBeGainedMultipleTimes(f.FeatId))
+                return false;
+
+            // In bonus feat phase, only show feats from the restricted pool
+            if (inBonusPhase && _bonusFeatPool != null && !_bonusFeatPool.Contains(f.FeatId))
                 return false;
 
             if (!string.IsNullOrEmpty(searchText) &&
@@ -198,8 +214,14 @@ public partial class LevelUpWizardWindow
 
     private void UpdateFeatSelectionUI()
     {
-        // Show bonus feat phase indicator
-        if (IsSelectingBonusFeat())
+        bool isCeMode = _validationLevel == ValidationLevel.None;
+
+        // Show header with count
+        if (isCeMode)
+        {
+            _selectedFeatsHeader.Text = $"Selected Feats ({_selectedFeats.Count}) - CE mode: no limit";
+        }
+        else if (IsSelectingBonusFeat())
         {
             _selectedFeatsHeader.Text = $"Selected Feats ({_selectedFeats.Count}/{_featsToSelect}) - Bonus Feat (restricted pool)";
         }
@@ -210,12 +232,14 @@ public partial class LevelUpWizardWindow
 
         // Update button states
         var selectedItem = _availableFeatsListBox.SelectedItem as FeatDisplayItem;
-        bool canAdd = selectedItem != null &&
-                      selectedItem.CanSelect &&
-                      _selectedFeats.Count < _featsToSelect;
+        bool canAdd = selectedItem != null && selectedItem.CanSelect;
 
-        // If in bonus feat phase, only allow feats from the bonus pool
-        if (canAdd && IsSelectingBonusFeat() && _bonusFeatPool != null && selectedItem != null)
+        // In non-CE mode, enforce feat count limit
+        if (canAdd && !isCeMode && _selectedFeats.Count >= _featsToSelect)
+            canAdd = false;
+
+        // If in bonus feat phase (non-CE), only allow feats from the bonus pool
+        if (canAdd && !isCeMode && IsSelectingBonusFeat() && _bonusFeatPool != null && selectedItem != null)
         {
             canAdd = _bonusFeatPool.Contains(selectedItem.FeatId);
         }
@@ -233,6 +257,18 @@ public partial class LevelUpWizardWindow
 
     private void OnAvailableFeatSelected(object? sender, SelectionChangedEventArgs e)
     {
+        if (_availableFeatsListBox.SelectedItem is FeatDisplayItem item &&
+            !string.IsNullOrWhiteSpace(item.Description))
+        {
+            _featDescriptionLabel.Text = item.Description;
+            _featDescriptionLabel.ClearValue(Avalonia.Controls.TextBlock.ForegroundProperty);
+        }
+        else
+        {
+            _featDescriptionLabel.Text = "Select a feat to see its description.";
+            _featDescriptionLabel.Foreground = Radoub.UI.Services.BrushManager.GetDisabledBrush(this);
+        }
+
         UpdateFeatSelectionUI();
     }
 
@@ -244,6 +280,11 @@ public partial class LevelUpWizardWindow
     private void OnSelectedFeatDoubleClicked(object? sender, TappedEventArgs e)
     {
         RemoveSelectedFeat();
+    }
+
+    private void OnSelectedFeatSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        UpdateFeatSelectionUI();
     }
 
     private void OnAddFeatClick(object? sender, RoutedEventArgs e)
@@ -261,11 +302,17 @@ public partial class LevelUpWizardWindow
         if (_availableFeatsListBox.SelectedItem is not FeatDisplayItem item)
             return;
 
-        if (!item.CanSelect || _selectedFeats.Count >= _featsToSelect)
+        if (!item.CanSelect)
             return;
 
-        // Enforce bonus feat pool restriction
-        if (IsSelectingBonusFeat() && _bonusFeatPool != null && !_bonusFeatPool.Contains(item.FeatId))
+        bool isCeMode = _validationLevel == ValidationLevel.None;
+
+        // In non-CE mode, enforce feat count limit
+        if (!isCeMode && _selectedFeats.Count >= _featsToSelect)
+            return;
+
+        // Enforce bonus feat pool restriction (non-CE only)
+        if (!isCeMode && IsSelectingBonusFeat() && _bonusFeatPool != null && !_bonusFeatPool.Contains(item.FeatId))
             return;
 
         _selectedFeats.Add(item.FeatId);
@@ -311,7 +358,7 @@ public partial class LevelUpWizardWindow
 
             feat.MeetsPrereqs = prereqResult.AllMet;
             feat.PrereqResult = prereqResult;
-            feat.CanSelect = prereqResult.AllMet;
+            feat.CanSelect = _validationLevel != ValidationLevel.Strict || prereqResult.AllMet;
         }
 
         // Re-sort: selectable first, then by name
