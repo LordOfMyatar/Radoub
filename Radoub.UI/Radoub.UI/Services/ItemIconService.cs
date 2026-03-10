@@ -143,7 +143,7 @@ public class ItemIconService
         }
         catch (Exception ex)
         {
-            UnifiedLogger.Log(LogLevel.ERROR, $"ItemIconService: Exception for {cacheKey}: {ex.Message}", "UI", "[UI]");
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"ItemIconService: Exception for {cacheKey}: {ex.Message}");
             _bitmapCache.TryAdd(cacheKey, null);
             return null;
         }
@@ -202,7 +202,7 @@ public class ItemIconService
         }
         catch (Exception ex)
         {
-            UnifiedLogger.Log(LogLevel.ERROR, $"ImageDataToBitmap: Exception: {ex.Message}", "UI", "[UI]");
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"ImageDataToBitmap: Exception: {ex.Message}");
             return null;
         }
     }
