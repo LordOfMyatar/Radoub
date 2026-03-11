@@ -239,18 +239,18 @@ public class MockGameDataService : IGameDataService
         //   Paladin: 0x15 prohibited on both axes → cannot be N/C/E (must be Lawful Good)
         var classes = new TwoDAFile();
         classes.Columns.AddRange(new[] { "Label", "Name", "HitDie", "AttackBonusTable",
-            "AlignRestrict", "AlignRstrctType", "InvertRestrict" });
-        AddRow(classes, "0", "Barbarian", "40", "12", "CLS_ATK_1", "0x02", "0x01", "0");
-        AddRow(classes, "1", "Bard", "41", "6", "CLS_ATK_2", "0x02", "0x01", "0");
-        AddRow(classes, "2", "Cleric", "42", "8", "CLS_ATK_2", "0x00", "0x00", "0");
-        AddRow(classes, "3", "Druid", "43", "8", "CLS_ATK_2", "0x01", "0x03", "1");
-        AddRow(classes, "4", "Fighter", "44", "10", "CLS_ATK_1", "0x00", "0x01", "0");
-        AddRow(classes, "5", "Monk", "45", "8", "CLS_ATK_2", "0x05", "0x01", "0");
-        AddRow(classes, "6", "Paladin", "46", "10", "CLS_ATK_1", "0x15", "0x03", "0");
-        AddRow(classes, "7", "Ranger", "47", "10", "CLS_ATK_1", "0x00", "0x00", "0");
-        AddRow(classes, "8", "Rogue", "48", "6", "CLS_ATK_2", "0x00", "0x00", "0");
-        AddRow(classes, "9", "Sorcerer", "49", "4", "CLS_ATK_3", "0x00", "0x00", "0");
-        AddRow(classes, "10", "Wizard", "50", "4", "CLS_ATK_3", "0x00", "0x00", "0");
+            "AlignRestrict", "AlignRstrctType", "InvertRestrict", "PlayerClass" });
+        AddRow(classes, "0", "Barbarian", "40", "12", "CLS_ATK_1", "0x02", "0x01", "0", "1");
+        AddRow(classes, "1", "Bard", "41", "6", "CLS_ATK_2", "0x02", "0x01", "0", "1");
+        AddRow(classes, "2", "Cleric", "42", "8", "CLS_ATK_2", "0x00", "0x00", "0", "1");
+        AddRow(classes, "3", "Druid", "43", "8", "CLS_ATK_2", "0x01", "0x03", "1", "1");
+        AddRow(classes, "4", "Fighter", "44", "10", "CLS_ATK_1", "0x00", "0x01", "0", "1");
+        AddRow(classes, "5", "Monk", "45", "8", "CLS_ATK_2", "0x05", "0x01", "0", "1");
+        AddRow(classes, "6", "Paladin", "46", "10", "CLS_ATK_1", "0x15", "0x03", "0", "1");
+        AddRow(classes, "7", "Ranger", "47", "10", "CLS_ATK_1", "0x00", "0x00", "0", "1");
+        AddRow(classes, "8", "Rogue", "48", "6", "CLS_ATK_2", "0x00", "0x00", "0", "1");
+        AddRow(classes, "9", "Sorcerer", "49", "4", "CLS_ATK_3", "0x00", "0x00", "0", "1");
+        AddRow(classes, "10", "Wizard", "50", "4", "CLS_ATK_3", "0x00", "0x00", "0", "1");
         _2daFiles["classes"] = classes;
 
         // gender.2da
