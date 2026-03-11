@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.35-alpha] - 2026-03-10
+**Branch**: `quartermaster/issue-1606` | **PR**: #TBD
+
+### Sprint: LUW Alignment & Followups (#1606)
+
+- [ ] #1589 — Add validation-level tests for alignment restrictions (CE allows, TN warns, LG blocks)
+- [ ] #1018 — Level-Up Wizard followup items
+
+---
+
 ## [0.2.34-alpha] - 2026-03-10
 **Branch**: `quartermaster/issue-1604` | **PR**: #1649
 
