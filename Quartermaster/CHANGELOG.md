@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.36-alpha] - 2026-03-10
+**Branch**: `quartermaster/issue-1608` | **PR**: #TBD
+
+### Sprint: Inventory UX (Part 2) (#1608)
+
+- [ ] #1313 — Drag from item palette to backpack
+- [ ] #1312 — Equipment slot validation by race/class/size
+- [ ] #1035 — Item Palette: Module context tracking
+
+---
+
 ## [0.2.35-alpha] - 2026-03-10
 **Branch**: `quartermaster/issue-1606` | **PR**: #1653
 
