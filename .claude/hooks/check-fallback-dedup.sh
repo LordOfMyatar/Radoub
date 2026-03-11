@@ -5,9 +5,11 @@
 # and name-based dedup silently drops entries from different sources.
 # Force the developer to justify whether a fallback/dedup is correct
 # or if it should be a proper error/distinct entry.
+# Note: Uses grep/cut instead of jq (not available in Windows Git Bash)
+# For content matching, searches raw JSON input (patterns appear in the JSON string)
 
 INPUT=$(cat)
-TOOL=$(echo "$INPUT" | jq -r '.tool_name // empty')
+TOOL=$(echo "$INPUT" | grep -o '"tool_name":"[^"]*"' | head -1 | cut -d'"' -f4)
 
 # Only check Edit and Write tools
 if [ "$TOOL" != "Edit" ] && [ "$TOOL" != "Write" ]; then
@@ -15,7 +17,7 @@ if [ "$TOOL" != "Edit" ] && [ "$TOOL" != "Write" ]; then
 fi
 
 # Get the file path
-FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
+FILE_PATH=$(echo "$INPUT" | grep -o '"file_path":"[^"]*"' | head -1 | cut -d'"' -f4)
 
 # Only check C# files, skip test files
 if ! echo "$FILE_PATH" | grep -qP '\.cs$'; then
@@ -25,40 +27,36 @@ if echo "$FILE_PATH" | grep -qiP '(test|spec)'; then
   exit 0
 fi
 
-# Get the new content
-NEW_STRING=$(echo "$INPUT" | jq -r '.tool_input.new_string // .tool_input.content // empty')
-
-# Skip if content is very short (variable rename, etc.)
-CONTENT_LEN=${#NEW_STRING}
-if [ "$CONTENT_LEN" -lt 50 ]; then
+# Skip if input is very short (variable rename, etc.)
+INPUT_LEN=${#INPUT}
+if [ "$INPUT_LEN" -lt 50 ]; then
   exit 0
 fi
 
 WARNINGS=""
 
-# Check for fallback patterns in code (not comments)
-# Look for: ?? operator with a different service/source, "fall back", "fallback"
-# Skip lines that are purely comments
-CODE_LINES=$(echo "$NEW_STRING" | grep -vP '^\s*//')
+# Search raw INPUT for patterns (content is embedded in the JSON string)
+# Note: We can't filter out comments from raw JSON, but false positives
+# from JSON keys/structure are unlikely to match these specific code patterns
 
 # Pattern 1: Null-coalescing fallback to a different service/instance
 # e.g., _context?.Foo ?? SomeOtherService.Instance.Foo
-if echo "$CODE_LINES" | grep -qP '\?\?.*\.(Instance|Default|Current)'; then
+if echo "$INPUT" | grep -qP '\?\?.*\.(Instance|Default|Current)'; then
   WARNINGS="${WARNINGS}\n- FALLBACK: Null-coalescing to a different service instance detected. Is this masking a missing dependency? Should the caller be required to provide this value instead of silently falling back?"
 fi
 
 # Pattern 2: Explicit fallback language in code
-if echo "$CODE_LINES" | grep -qiP '(fall\s*back|fallback)'; then
+if echo "$INPUT" | grep -qiP '(fall\s*back|fallback)'; then
   WARNINGS="${WARNINGS}\n- FALLBACK: Code uses 'fallback' language. Should this be an error/warning instead? Silent fallbacks can mask configuration problems and make debugging harder."
 fi
 
 # Pattern 3: Dedup by name only (common pattern: .Any(x => x.Name.Equals(...)))
-if echo "$CODE_LINES" | grep -qP '\.Any\(\s*\w+\s*=>\s*\w+\.Name\.(Equals|==)'; then
+if echo "$INPUT" | grep -qP '\.Any\(\s*\w+\s*=>\s*\w+\.Name\.(Equals|==)'; then
   WARNINGS="${WARNINGS}\n- DEDUP: Name-only deduplication detected. Entries from different sources (module/vault/HAK) can share names but be different files. Should this also check Source, FilePath, or another distinguishing field?"
 fi
 
 # Pattern 4: Generic dedup that might lose data
-if echo "$CODE_LINES" | grep -qP '\.Distinct\(\)|\.DistinctBy\(.*Name'; then
+if echo "$INPUT" | grep -qP '\.Distinct\(\)|\.DistinctBy\(.*Name'; then
   WARNINGS="${WARNINGS}\n- DEDUP: Distinct/DistinctBy on Name detected. Will this silently drop entries from different sources that share the same name?"
 fi
 
