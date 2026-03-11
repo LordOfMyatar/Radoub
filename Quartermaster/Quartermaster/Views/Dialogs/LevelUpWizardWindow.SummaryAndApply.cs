@@ -229,6 +229,7 @@ public partial class LevelUpWizardWindow
         public bool IsUnavailable { get; set; }
         public int MaxRanks { get; set; }
         public int Cost { get; set; } = 1;
+        public Avalonia.Media.IBrush? NameBrush { get; set; }
 
         public string ClassSkillIndicator => IsUnavailable ? "(unavailable)" : IsClassSkill ? "(class skill, 1 pt)" : "(cross-class, 2 pts)";
         public bool CanIncrease => !IsUnavailable && CurrentRanks + AddedRanks < MaxRanks;

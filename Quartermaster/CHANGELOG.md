@@ -15,8 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: LUW Skill UX (#1604)
 
-- [ ] #1500 — Add color coding for class skills in Level Up Wizard
-- [ ] #1499 — Add skill search box to Level Up Wizard
+- [x] #1500 — Add color coding for class skills in Level Up Wizard (green for class skills via BrushManager)
+- [x] #1499 — Add skill search box to Level Up Wizard (case-insensitive name filter)
 
 ---
 
