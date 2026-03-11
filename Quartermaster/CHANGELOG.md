@@ -15,8 +15,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: LUW Alignment & Followups (#1606)
 
-- [ ] #1589 — Add validation-level tests for alignment restrictions (CE allows, TN warns, LG blocks)
-- [ ] #1018 — Level-Up Wizard followup items
+- [x] #1589 — Fix alignment restriction double-inversion bug in ClassService
+  - Scale inversion (0=Chaotic treated as Lawful), allowed logic inversion, type=0x03 axis logic
+  - TN creature could take Monk (shouldn't), Paladin LE was allowed (shouldn't)
+  - Description text swapped "Must be"/"Cannot be"
+  - 24 new ClassAlignmentValidationTests exercising real GetAvailableClasses
+- [x] #1018 — Already complete from prior sprints (spell selection, bonus feats, packages, deep copy)
+- [x] Added PlayerClass column to MockGameDataService for proper class filtering tests
+- [x] Test coverage audit identifying 15 services needing TDD backwork
 
 ---
 

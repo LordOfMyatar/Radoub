@@ -98,33 +98,93 @@ Group issues by:
 | #123 | Fix button alignment | 3 | bug |
 ```
 
+### Step 3.5: Languishing Issues Report
+
+**MANDATORY** — before generating sprint options, identify issues that are being neglected.
+
+An issue is **languishing** if:
+- Open 30+ days with no activity (no comments, no PR, no label changes)
+- Open 60+ days regardless of activity (**call out explicitly**)
+- Tagged `bug` and open 14+ days
+- Tagged `security` or `tech-debt` and open 21+ days
+
+```markdown
+## ⚠️ Languishing Issues
+
+These issues need attention — age alone is a signal.
+
+### Critical (60+ days)
+| # | Title | Age | Type | Last Activity |
+|---|-------|-----|------|---------------|
+| #123 | [title] | 72 days | bug | 2025-12-01 |
+
+### Aging (30-59 days)
+| # | Title | Age | Type | Last Activity |
+|---|-------|-----|------|---------------|
+
+### Overdue Bugs (14+ days)
+| # | Title | Age | Assigned? |
+|---|-------|-----|-----------|
+
+**Action Required**: At least ONE languishing issue must be included in a sprint option below, or the user must explicitly acknowledge and defer it.
+```
+
+If no issues are languishing, output: "No languishing issues. 👍"
+
 ### Step 4: Generate Sprint Options
 
-Present 2-3 sprint options based on natural groupings:
+**CRITICAL RULES:**
+
+1. **No overlapping issues** — each issue appears in AT MOST ONE sprint option. If an issue fits multiple themes, pick the best fit. Never duplicate.
+
+2. **Mandatory sprint categories** — always generate exactly 3 sprint options from these categories:
+
+| Category | Description | When to Skip |
+|----------|-------------|--------------|
+| **Feature Sprint** | New functionality, enhancements | Only if zero feature/enhancement issues exist |
+| **Bug/Fix Sprint** | Bug fixes, corrections | Only if zero bug issues exist |
+| **Health Sprint** | Tech debt, security, testing, refactoring | NEVER skip — there is always health work to do |
+
+3. **Anti-recency bias** — for each sprint option, at least ONE issue must be the **oldest qualifying issue** in that category. Do not exclusively pick recent issues. Sort candidates by age (oldest first) when selecting.
+
+4. **Breadth over momentum** — resist grouping issues that were just worked on. If the last 3 sprints touched Quartermaster, prioritize other tools. If the last sprint was a feature, lean toward bug/health.
+
+Present 3 sprint options (one per category):
 
 ```markdown
 ## Sprint Options
 
-### Option A: [Theme]
+### Option A: Feature — [Theme]
 
 **Issues:**
-- #X - [title]
-- #Y - [title]
+- #X - [title] (NN days old)
+- #Y - [title] (NN days old)
 
-**Rationale**: [why these fit together - shared code path, feature + cleanup, etc.]
-
+**Oldest issue included**: #X (NN days)
+**Rationale**: [why these fit together - shared code path, etc.]
 **Complexity**: Small/Medium/Large
 
 ---
 
-### Option B: [Theme]
+### Option B: Bug Fix — [Theme]
 
 **Issues:**
-- #X - [title]
-- #Y - [title]
+- #X - [title] (NN days old)
 
+**Oldest issue included**: #X (NN days)
 **Rationale**: [why these fit together]
+**Complexity**: Small/Medium/Large
 
+---
+
+### Option C: Health — [Theme]
+
+**Issues:**
+- #X - [title] (NN days old)
+- #Y - [title] (NN days old)
+
+**Oldest issue included**: #X (NN days)
+**Rationale**: [tech debt / security / testing justification]
 **Complexity**: Small/Medium/Large
 
 ---
@@ -132,8 +192,15 @@ Present 2-3 sprint options based on natural groupings:
 ## Recommendation
 
 **Option [X]** recommended because:
-1. [reason]
+1. [reason — include age/urgency justification]
 2. [reason]
+
+**Recent sprint history** (last 3):
+- [tool] [type] — [date]
+- [tool] [type] — [date]
+- [tool] [type] — [date]
+
+If the last 3 sprints were the same tool/type, explicitly recommend a different tool/type for balance.
 ```
 
 ### Step 5: Create Sprint Issue (if requested)
@@ -195,6 +262,7 @@ gh project item-add [PROJECT_NUMBER] --owner LordOfMyatar --url https://github.c
 
 **Date**: YYYY-MM-DD
 **Tool Filter**: [all/specific tool]
+**Recent Sprint History**: [last 3 sprints: tool + type + date]
 
 ## Hygiene Summary
 
@@ -202,6 +270,14 @@ gh project item-add [PROJECT_NUMBER] --owner LordOfMyatar --url https://github.c
 - **Missing type label**: N issues
 - **Stale (15+ days)**: N issues
 - **Well-formed**: N issues
+
+[Run `/backlog --full` or `/grooming` for detailed fixes]
+
+---
+
+## ⚠️ Languishing Issues
+
+[Languishing report — see Step 3.5]
 
 ---
 
@@ -219,10 +295,13 @@ gh project item-add [PROJECT_NUMBER] --owner LordOfMyatar --url https://github.c
 
 ## Sprint Options
 
-### Option A: [Theme]
+### Option A: Feature — [Theme]
 ...
 
-### Option B: [Theme]
+### Option B: Bug Fix — [Theme]
+...
+
+### Option C: Health — [Theme]
 ...
 
 ---
@@ -257,9 +336,26 @@ Save output to `NonPublic/backlog.md` (clobber each run).
 - Medium: 2-4 related items, ~2-3 days
 - Large: 4+ items or complex feature, ~week
 
-**Prioritization:**
+**HARD RULES (non-negotiable):**
+
+1. **No issue overlap between sprint options** — an issue can appear in exactly ONE option
+2. **3 categories always** — Feature, Bug Fix, Health (tech debt/security/testing)
+3. **Oldest-first selection** — within each category, start candidate selection from the oldest issues
+4. **Languishing report is mandatory** — never skip Step 3.5
+5. **Include age in all issue listings** — always show "(NN days old)" next to each issue
+6. **Recent sprint awareness** — check last 3 merged PRs for tool/type distribution; if skewed, recommend the underrepresented category
+
+**Prioritization (within each sprint category):**
 1. Blockers first (issues blocking other work)
-2. User-facing bugs over internal cleanup
-3. Aging issues
-4. Natural groupings over isolated tasks
-5. Balance visible progress with foundation work
+2. Languishing issues (30+ days, called out in Step 3.5)
+3. User-facing bugs over internal cleanup
+4. Natural groupings over isolated tasks (same code path = same sprint)
+5. Balance across tools (don't always sprint on the same tool)
+
+**Anti-Patterns to AVOID:**
+- Putting the same issue in multiple sprint options
+- Always recommending the most recently active tool
+- Ignoring issues older than 30 days
+- Creating only feature sprints (health work always exists)
+- Grouping by "momentum" instead of logical code area
+- Never surfacing security or tech-debt issues
