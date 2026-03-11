@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.35-alpha] - 2026-03-10
-**Branch**: `quartermaster/issue-1606` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1606` | **PR**: #1653
 
 ### Sprint: LUW Alignment & Followups (#1606)
 
