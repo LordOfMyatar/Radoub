@@ -54,8 +54,8 @@ public partial class LevelUpWizardWindow
     {
         var skills = new List<SkillDisplayItem>();
         var successBrush = BrushManager.GetSuccessBrush(this);
-        var defaultBrush = (this.TryFindResource("ThemeForegroundBrush", this.ActualThemeVariant, out var res) && res is Avalonia.Media.IBrush b)
-            ? b : Avalonia.Media.Brushes.White;
+        var defaultBrush = (this.TryFindResource("SystemControlForegroundBaseHighBrush", this.ActualThemeVariant, out var res) && res is Avalonia.Media.IBrush b)
+            ? b : Avalonia.Media.Brushes.Black;
 
         int skillCount = _displayService.GetSkillCount();
         for (int i = 0; i < skillCount; i++)
