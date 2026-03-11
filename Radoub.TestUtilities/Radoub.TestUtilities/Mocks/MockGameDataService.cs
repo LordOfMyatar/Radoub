@@ -262,12 +262,56 @@ public class MockGameDataService : IGameDataService
 
         // appearance.2da - sample entries
         var appearance = new TwoDAFile();
-        appearance.Columns.AddRange(new[] { "LABEL", "STRING_REF", "MODELTYPE", "RACE" });
-        AddRow(appearance, "0", "A_Badger", "6798", "F", "****");
-        AddRow(appearance, "1", "A_Bat", "6799", "F", "****");
-        AddRow(appearance, "6", "P_HHF_", "246", "P", "4");  // Halfling female
-        AddRow(appearance, "7", "P_HHM_", "247", "P", "4");  // Halfling male
+        appearance.Columns.AddRange(new[] { "LABEL", "STRING_REF", "MODELTYPE", "RACE", "SIZECATEGORY" });
+        AddRow(appearance, "0", "A_Badger", "6798", "F", "****", "1");    // Tiny
+        AddRow(appearance, "1", "A_Bat", "6799", "F", "****", "1");      // Tiny
+        AddRow(appearance, "6", "P_HHF_", "246", "P", "4", "2");        // Halfling female - Small
+        AddRow(appearance, "7", "P_HHM_", "247", "P", "4", "3");        // Halfling male - Medium
         _2daFiles["appearance"] = appearance;
+
+        // phenotype.2da - body types
+        // Note: real NWN data has row 1 empty, but we pack them for testing
+        // since GetAllPhenotypes breaks at first empty row after finding data
+        var phenotype = new TwoDAFile();
+        phenotype.Columns.AddRange(new[] { "Label", "Name" });
+        AddRow(phenotype, "0", "Normal", "6900");
+        AddRow(phenotype, "2", "Large", "6901");
+        _2daFiles["phenotype"] = phenotype;
+
+        // portraits.2da - portrait entries
+        var portraits = new TwoDAFile();
+        portraits.Columns.AddRange(new[] { "BaseResRef", "Sex" });
+        AddRow(portraits, "0", "hu_m_01_", "0");
+        AddRow(portraits, "1", "hu_f_01_", "1");
+        AddRow(portraits, "2", "****", "****");  // empty row
+        AddRow(portraits, "3", "el_m_01_", "0");
+        _2daFiles["portraits"] = portraits;
+
+        // wingmodel.2da - wing types
+        var wingmodel = new TwoDAFile();
+        wingmodel.Columns.AddRange(new[] { "LABEL" });
+        AddRow(wingmodel, "0", "****");
+        AddRow(wingmodel, "1", "Angel");
+        AddRow(wingmodel, "2", "Demon");
+        AddRow(wingmodel, "3", "Butterfly");
+        _2daFiles["wingmodel"] = wingmodel;
+
+        // tailmodel.2da - tail types
+        var tailmodel = new TwoDAFile();
+        tailmodel.Columns.AddRange(new[] { "LABEL" });
+        AddRow(tailmodel, "0", "****");
+        AddRow(tailmodel, "1", "Lizard");
+        AddRow(tailmodel, "2", "Bone");
+        _2daFiles["tailmodel"] = tailmodel;
+
+        // soundset.2da - sound sets
+        var soundset = new TwoDAFile();
+        soundset.Columns.AddRange(new[] { "LABEL", "STRREF" });
+        AddRow(soundset, "0", "Male_1", "7000");
+        AddRow(soundset, "1", "Female_1", "7001");
+        AddRow(soundset, "2", "****", "****");  // empty row
+        AddRow(soundset, "3", "Male_2", "7002");
+        _2daFiles["soundset"] = soundset;
 
         // domains.2da - sample cleric domains
         // Columns: Label, Name, Description, Level_1..Level_9, GrantedFeat
@@ -461,7 +505,17 @@ public class MockGameDataService : IGameDataService
             (5005, "Panther"),
             (5006, "Giant Spider"),
             (5007, "Dire Wolf"),
-            (5008, "Dire Rat")
+            (5008, "Dire Rat"),
+            // Appearance names
+            (6798, "Badger"),
+            (6799, "Bat"),
+            // Phenotype names
+            (6900, "Normal"),
+            (6901, "Large"),
+            // Sound set names
+            (7000, "Male Voice 1"),
+            (7001, "Female Voice 1"),
+            (7002, "Male Voice 2")
         );
     }
 

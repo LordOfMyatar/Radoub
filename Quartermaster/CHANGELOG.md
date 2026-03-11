@@ -23,6 +23,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - [x] #1018 — Already complete from prior sprints (spell selection, bonus feats, packages, deep copy)
 - [x] Added PlayerClass column to MockGameDataService for proper class filtering tests
 - [x] Test coverage audit identifying 15 services needing TDD backwork
+- [x] TDD backwork: 50 AppearanceService tests (appearance, phenotype, portrait, wing, tail, soundset, faction, package lookups)
+- [x] TDD backwork: 20 FeatCacheService tests (in-memory caching, class/race feat grants, lazy init, clear)
+- [x] Extended MockGameDataService with phenotype, portrait, wingmodel, tailmodel, soundset 2DA data
 
 ---
 
