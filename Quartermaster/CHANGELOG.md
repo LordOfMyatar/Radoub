@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.34-alpha] - 2026-03-10
+**Branch**: `quartermaster/issue-1604` | **PR**: #TBD
+
+### Sprint: LUW Skill UX (#1604)
+
+- [ ] #1500 — Add color coding for class skills in Level Up Wizard
+- [ ] #1499 — Add skill search box to Level Up Wizard
+
+---
+
 ## [0.2.33-alpha] - 2026-03-10
 **Branch**: `quartermaster/issue-1492` | **PR**: #1643
 
