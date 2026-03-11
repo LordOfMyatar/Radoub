@@ -43,7 +43,7 @@ public partial class LevelUpWizardWindow
         UpdateSkillPointsDisplay();
 
         // Clear search filter
-        SkillSearchBox.Text = "";
+        _skillSearchBox.Text = "";
 
         // Build skill list
         _allSkills = BuildSkillList();
@@ -84,7 +84,7 @@ public partial class LevelUpWizardWindow
 
     private void ApplySkillFilter()
     {
-        var filter = SkillSearchBox?.Text?.Trim() ?? "";
+        var filter = _skillSearchBox?.Text?.Trim() ?? "";
 
         if (string.IsNullOrEmpty(filter))
         {

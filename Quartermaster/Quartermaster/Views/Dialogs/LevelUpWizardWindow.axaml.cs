@@ -118,6 +118,7 @@ public partial class LevelUpWizardWindow : Window
     private readonly TextBlock _skillPointsRemainingLabel;
     private readonly TextBlock _skillPointsTotalLabel;
     private readonly ItemsControl _skillsItemsControl;
+    private readonly TextBox _skillSearchBox;
 
     // Step 4 controls
     private readonly TextBlock _spellStepDescription;
@@ -267,6 +268,7 @@ public partial class LevelUpWizardWindow : Window
         _skillPointsRemainingLabel = this.FindControl<TextBlock>("SkillPointsRemainingLabel")!;
         _skillPointsTotalLabel = this.FindControl<TextBlock>("SkillPointsTotalLabel")!;
         _skillsItemsControl = this.FindControl<ItemsControl>("SkillsItemsControl")!;
+        _skillSearchBox = this.FindControl<TextBox>("SkillSearchBox")!;
 
         // Step 5 (Spells)
         _spellStepDescription = this.FindControl<TextBlock>("SpellStepDescription")!;
