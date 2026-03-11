@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.36-alpha] - 2026-03-10
-**Branch**: `quartermaster/issue-1608` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1608` | **PR**: #1655
 
 ### Sprint: Inventory UX (Part 2) (#1608)
 
