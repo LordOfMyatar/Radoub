@@ -41,7 +41,7 @@ public partial class MainWindow
         if (_currentCreature == null)
             return;
 
-        var wizard = new LevelUpWizardWindow(DisplayService, _currentCreature);
+        var wizard = new LevelUpWizardWindow(DisplayService, _currentCreature, _isBicFile);
         await wizard.ShowDialog(this);
 
         if (wizard.Confirmed)

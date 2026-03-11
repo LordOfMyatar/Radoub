@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Quartermaster.Services;
+using Radoub.UI.Services;
 
 namespace Quartermaster.Views.Dialogs;
 
@@ -16,6 +18,7 @@ public partial class LevelUpWizardWindow
     // Tracks class skill status for the level being gained
     private HashSet<int> _classSkillIds = new();
     private HashSet<int> _unavailableSkillIds = new();
+    private List<SkillDisplayItem> _allSkills = new();
 
     private void PrepareStep4()
     {
@@ -39,14 +42,20 @@ public partial class LevelUpWizardWindow
         _skillPointsTotalLabel.Text = $"(Base {basePoints} + INT {intMod}{racialLabel} = {_skillPointsToAllocate})";
         UpdateSkillPointsDisplay();
 
+        // Clear search filter
+        _skillSearchBox.Text = "";
+
         // Build skill list
-        var skills = BuildSkillList();
-        _skillsItemsControl.ItemsSource = skills;
+        _allSkills = BuildSkillList();
+        ApplySkillFilter();
     }
 
     private List<SkillDisplayItem> BuildSkillList()
     {
         var skills = new List<SkillDisplayItem>();
+        var successBrush = BrushManager.GetSuccessBrush(this);
+        var defaultBrush = (this.TryFindResource("SystemControlForegroundBaseHighBrush", this.ActualThemeVariant, out var res) && res is Avalonia.Media.IBrush b)
+            ? b : Avalonia.Media.Brushes.Black; // theme-ok: fallback only if resource lookup fails
 
         int skillCount = _displayService.GetSkillCount();
         for (int i = 0; i < skillCount; i++)
@@ -64,12 +73,34 @@ public partial class LevelUpWizardWindow
                 IsClassSkill = isClassSkill,
                 IsUnavailable = isUnavailable,
                 MaxRanks = isUnavailable ? 0 : CalculateMaxRanks(isClassSkill),
-                Cost = isClassSkill ? 1 : 2
+                Cost = isClassSkill ? 1 : 2,
+                NameBrush = SkillDisplayHelper.ShouldUseClassSkillColor(isClassSkill, isUnavailable) ? successBrush : defaultBrush
             });
         }
 
         // Sort: class skills first, then by name
         return skills.OrderByDescending(s => s.IsClassSkill).ThenBy(s => s.Name).ToList();
+    }
+
+    private void ApplySkillFilter()
+    {
+        var filter = _skillSearchBox?.Text?.Trim() ?? "";
+
+        if (string.IsNullOrEmpty(filter))
+        {
+            _skillsItemsControl.ItemsSource = _allSkills;
+        }
+        else
+        {
+            _skillsItemsControl.ItemsSource = _allSkills
+                .Where(s => s.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+    }
+
+    private void OnSkillSearchChanged(object? sender, TextChangedEventArgs e)
+    {
+        ApplySkillFilter();
     }
 
     private int CalculateMaxRanks(bool isClassSkill)
@@ -109,7 +140,8 @@ public partial class LevelUpWizardWindow
                 if (currentRanks + currentAdded < maxRanks)
                 {
                     _skillPointsAdded[skillId] = currentAdded + 1;
-                    _skillsItemsControl.ItemsSource = BuildSkillList();
+                    _allSkills = BuildSkillList();
+                    ApplySkillFilter();
                     UpdateSkillPointsDisplay();
                 }
             }
@@ -125,7 +157,8 @@ public partial class LevelUpWizardWindow
                 _skillPointsAdded[skillId]--;
                 if (_skillPointsAdded[skillId] == 0)
                     _skillPointsAdded.Remove(skillId);
-                _skillsItemsControl.ItemsSource = BuildSkillList();
+                _allSkills = BuildSkillList();
+                ApplySkillFilter();
                 UpdateSkillPointsDisplay();
             }
         }
@@ -142,7 +175,8 @@ public partial class LevelUpWizardWindow
             totalLevel,
             _creature.SkillList);
 
-        _skillsItemsControl.ItemsSource = BuildSkillList();
+        _allSkills = BuildSkillList();
+        ApplySkillFilter();
         UpdateSkillPointsDisplay();
     }
 

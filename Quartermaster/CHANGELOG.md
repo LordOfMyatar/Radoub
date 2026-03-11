@@ -10,6 +10,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.34-alpha] - 2026-03-10
+**Branch**: `quartermaster/issue-1604` | **PR**: #1649
+
+### Sprint: LUW Skill UX (#1604)
+
+- [x] #1500 — Add color coding for class skills in Level Up Wizard (green for class skills via BrushManager)
+- [x] #1499 — Add skill search box to Level Up Wizard (case-insensitive name filter)
+- fix: LUW feat step crash when filtering available feats (FindControl pattern for AvaloniaXamlLoader)
+- fix: Non-class skills invisible in light mode (use SystemControlForegroundBaseHighBrush)
+- fix: Feat prereqs badge using faint grey instead of warning color (ThemeWarning resource)
+- fix: LUW class selection now shows all classes for UTC files (non-player classes like Animal, Commoner)
+- test: 15 unit tests for SkillDisplayHelper (filter, indicator, color rules)
+- chore: Improved unhandled exception logging with InnerException details
+
+---
+
 ## [0.2.33-alpha] - 2026-03-10
 **Branch**: `quartermaster/issue-1492` | **PR**: #1643
 

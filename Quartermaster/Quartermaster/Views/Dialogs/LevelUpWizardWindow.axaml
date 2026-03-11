@@ -193,7 +193,7 @@
                                             <TextBlock Text="{Binding Icon}" Width="16"/>
                                             <TextBlock Text="{Binding DisplayName}"/>
                                             <TextBlock Text="{Binding Badge}"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                       Foreground="{DynamicResource ThemeWarning}"
                                                        FontStyle="Italic"/>
                                         </StackPanel>
                                     </DataTemplate>
@@ -470,6 +470,7 @@
                     <TextBlock x:Name="SkillPointsRemainingLabel" Text="Points remaining: 5" VerticalAlignment="Center"/>
                     <TextBlock x:Name="SkillPointsTotalLabel" Text="(Base 2 + INT 3 = 5)" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" VerticalAlignment="Center"/>
                     <Button x:Name="SkillAutoAssignButton" Content="Auto-Assign" Click="OnSkillAutoAssignClick"/>
+                    <TextBox x:Name="SkillSearchBox" Watermark="Filter skills..." Width="160" TextChanged="OnSkillSearchChanged"/>
                 </StackPanel>
 
                 <Border Grid.Row="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="5">
@@ -487,7 +488,7 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="0" Text="{Binding Name}" Foreground="{Binding NameBrush}" VerticalAlignment="Center"/>
                                         <TextBlock Grid.Column="1" Text="{Binding CurrentRanks}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         <Button Grid.Column="2" Content="-" Width="25" Click="OnSkillDecrease" Tag="{Binding SkillId}" IsEnabled="{Binding CanDecrease}"/>
                                         <Button Grid.Column="3" Content="+" Width="25" Click="OnSkillIncrease" Tag="{Binding SkillId}" IsEnabled="{Binding CanIncrease}"/>
