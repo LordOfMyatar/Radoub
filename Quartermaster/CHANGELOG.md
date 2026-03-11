@@ -15,9 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Multi-Level Character Creation (#1492)
 
-- [ ] #1431 — NCW support for creating characters above level 1
-- [ ] #1018 (partial) — Level packages support (`packages.2da` integration)
-- [ ] #1617 — Add Class button should launch a class selection sub-wizard (LUW)
+- [x] #1617 — Add Class and Level Up buttons on ClassesPanel now launch Level Up Wizard
+- [x] #1431 — Starting Level spinner on NCW Step 1; LUW loops for levels 2+ (single class)
+- [x] #1018 (partial) — packages.2da auto-assign already integrated in LUW feats/skills/spells
+- test: Multi-level stacking test for LevelUpApplicationService (600 tests passing)
 
 ---
 
