@@ -74,7 +74,7 @@ public partial class LevelUpWizardWindow
                 IsUnavailable = isUnavailable,
                 MaxRanks = isUnavailable ? 0 : CalculateMaxRanks(isClassSkill),
                 Cost = isClassSkill ? 1 : 2,
-                NameBrush = isClassSkill && !isUnavailable ? successBrush : defaultBrush
+                NameBrush = SkillDisplayHelper.ShouldUseClassSkillColor(isClassSkill, isUnavailable) ? successBrush : defaultBrush
             });
         }
 

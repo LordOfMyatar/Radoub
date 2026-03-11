@@ -50,7 +50,8 @@ sealed class Program
         AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
         {
             var ex = e.ExceptionObject as Exception;
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"UNHANDLED EXCEPTION: {ex?.Message}\n{ex?.StackTrace}");
+            var innerMsg = ex?.InnerException != null ? $"\nINNER: {ex.InnerException.Message}\n{ex.InnerException.StackTrace}" : "";
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"UNHANDLED EXCEPTION: {ex?.Message}\n{ex?.StackTrace}{innerMsg}");
         };
 
         System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (sender, e) =>
