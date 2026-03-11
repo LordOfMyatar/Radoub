@@ -98,6 +98,78 @@ public class EquipmentSlotValidator
     }
 
     /// <summary>
+    /// Validates creature compatibility for an equipped item (weapon size vs creature size).
+    /// NWN rule: creature can wield weapons up to 1 size larger (two-handed).
+    /// Weapons 2+ sizes larger than the creature cannot be wielded.
+    /// </summary>
+    /// <param name="slot">The equipment slot to check.</param>
+    /// <param name="creatureSize">Creature size category (1=Tiny, 2=Small, 3=Medium, 4=Large, 5=Huge).</param>
+    /// <returns>Warning message if weapon is too large, null otherwise.</returns>
+    public string? ValidateCreatureCompatibility(EquipmentSlotViewModel slot, int creatureSize)
+    {
+        if (slot.EquippedItem == null)
+            return null;
+
+        var weaponSize = GetWeaponSize(slot.EquippedItem.BaseItem);
+        if (weaponSize == null)
+            return null;
+
+        // Creature can wield weapons up to 1 size larger (two-handed)
+        var sizeDiff = weaponSize.Value - creatureSize;
+        if (sizeDiff > 1)
+        {
+            var sizeName = GetSizeName(weaponSize.Value);
+            var creatureSizeName = GetSizeName(creatureSize);
+            return $"{slot.EquippedItem.BaseItemName} is too large ({sizeName}) for a {creatureSizeName} creature";
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Validates all slots for creature compatibility and sets their warning messages.
+    /// </summary>
+    /// <param name="slots">Equipment slots to validate.</param>
+    /// <param name="creatureSize">Creature size category.</param>
+    public void ValidateAllCreatureCompatibility(IEnumerable<EquipmentSlotViewModel> slots, int creatureSize)
+    {
+        foreach (var slot in slots)
+        {
+            slot.ValidationWarning = ValidateCreatureCompatibility(slot, creatureSize);
+        }
+    }
+
+    /// <summary>
+    /// Gets the weapon size for a base item type from baseitems.2da WeaponSize column.
+    /// </summary>
+    /// <param name="baseItem">Base item index from UTI.</param>
+    /// <returns>Weapon size (1-5), or null if not a weapon or data unavailable.</returns>
+    public int? GetWeaponSize(int baseItem)
+    {
+        var value = _gameData.Get2DAValue("baseitems", baseItem, "WeaponSize");
+        if (string.IsNullOrEmpty(value) || value == "****")
+            return null;
+
+        if (int.TryParse(value, out var size))
+            return size;
+
+        return null;
+    }
+
+    /// <summary>
+    /// Gets a human-readable name for a creature/weapon size category.
+    /// </summary>
+    private static string GetSizeName(int size) => size switch
+    {
+        1 => "Tiny",
+        2 => "Small",
+        3 => "Medium",
+        4 => "Large",
+        5 => "Huge",
+        _ => $"Size {size}"
+    };
+
+    /// <summary>
     /// Gets the list of valid slot names for a base item type.
     /// </summary>
     /// <param name="baseItem">Base item index from UTI.</param>
