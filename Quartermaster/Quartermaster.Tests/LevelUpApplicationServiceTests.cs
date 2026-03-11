@@ -297,6 +297,62 @@ public class LevelUpApplicationServiceTests
 
     #endregion
 
+    #region Multi-Level Stacking
+
+    [Fact]
+    public void ApplyLevelUp_MultipleConsecutiveLevels_StacksCorrectly()
+    {
+        // Simulates NCW multi-level creation: level 1 creature leveled to 5
+        var creature = new CreatureBuilder()
+            .WithClass(CommonClass.Fighter, 1)
+            .WithAbilities(14, 12, 14, 10, 10, 8)
+            .WithSkillRanks(3, 0, 2)
+            .Build();
+        creature.HitPoints = 12;
+        creature.MaxHitPoints = 12;
+        creature.CurrentHitPoints = 12;
+
+        // Apply 4 level-ups (levels 2, 3, 4, 5)
+        for (int level = 2; level <= 5; level++)
+        {
+            var input = new LevelUpApplicationService.LevelUpInput
+            {
+                SelectedClassId = (int)CommonClass.Fighter,
+                NewClassLevel = level,
+                SelectedFeats = new List<int> { level * 10 }, // Unique feat per level
+                SkillPointsAdded = new Dictionary<int, int> { { 0, 1 } }, // 1 skill point to skill 0 each level
+                SelectedSpellsByLevel = new Dictionary<int, List<int>>(),
+                HpIncrease = 12, // d10 + CON 14 (+2)
+                AbilityIncrease = level == 4 ? 0 : -1, // STR +1 at level 4
+                RecordHistory = false
+            };
+
+            _service.ApplyLevelUp(creature, input);
+        }
+
+        // Class level should be 5
+        Assert.Single(creature.ClassList);
+        Assert.Equal(5, creature.ClassList[0].ClassLevel);
+
+        // 4 unique feats added (20, 30, 40, 50)
+        Assert.Contains((ushort)20, creature.FeatList);
+        Assert.Contains((ushort)30, creature.FeatList);
+        Assert.Contains((ushort)40, creature.FeatList);
+        Assert.Contains((ushort)50, creature.FeatList);
+
+        // Skills: 3 base + 4 added = 7
+        Assert.Equal(7, creature.SkillList[0]);
+
+        // HP: 12 base + 4 * 12 = 60
+        Assert.Equal(60, creature.MaxHitPoints);
+
+        // STR: 14 + 1 (at level 4) = 15
+        Assert.Equal(15, creature.Str);
+        Assert.Equal(12, creature.Dex); // Unchanged
+    }
+
+    #endregion
+
     #region ApplyLevelUp Integration
 
     [Fact]

@@ -236,6 +236,21 @@
                                    TextWrapping="Wrap" HorizontalAlignment="Center"
                                    Text="Choose where to save before building your character."/>
                     </StackPanel>
+
+                    <!-- Starting Level -->
+                    <StackPanel Spacing="6" HorizontalAlignment="Center" Margin="0,10,0,0" MaxWidth="580">
+                        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                            <TextBlock Text="Starting Level" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <NumericUpDown x:Name="StartingLevelSpinner"
+                                           Minimum="1" Maximum="40" Value="1"
+                                           Width="100" FormatString="0"/>
+                        </StackPanel>
+                        <TextBlock x:Name="StartingLevelNote" FontSize="{DynamicResource FontSizeSmall}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                   TextWrapping="Wrap" HorizontalAlignment="Center"
+                                   Text="Level 1 character. Change to create at a higher level (single class only)."
+                                   IsVisible="True"/>
+                    </StackPanel>
                 </StackPanel>
             </Grid>
 

@@ -30,7 +30,13 @@ public partial class MainWindow
         DialogHelper.ShowAboutDialog(this);
     }
 
-    private async void OnLevelUpClick(object? sender, RoutedEventArgs e)
+    private void OnLevelUpClick(object? sender, RoutedEventArgs e) => LaunchLevelUpWizard();
+
+    /// <summary>
+    /// Launches the Level Up Wizard for the current creature.
+    /// Called from menu (Ctrl+L), ClassesPanel Level Up button, and Add Class button.
+    /// </summary>
+    private async void LaunchLevelUpWizard()
     {
         if (_currentCreature == null)
             return;

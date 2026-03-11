@@ -36,6 +36,7 @@ public partial class NewCharacterWizardWindow : Window
 
     // Step 1: File Type
     private bool _isBicFile; // false = UTC (default), true = BIC
+    private int _startingLevel = 1; // 1 = normal, >1 = multi-level creation via LUW loop
 
     // Step 2: Race & Sex
     private byte _selectedRaceId; // Set when race is selected in Step 2
@@ -157,6 +158,8 @@ public partial class NewCharacterWizardWindow : Window
     private readonly TextBox _saveLocationTextBox;
     private readonly Button _browseSaveLocationButton;
     private readonly TextBlock _saveLocationNote;
+    private readonly NumericUpDown _startingLevelSpinner;
+    private readonly TextBlock _startingLevelNote;
 
     // Step 2 controls
     private readonly TextBox _raceSearchBox;
@@ -340,6 +343,11 @@ public partial class NewCharacterWizardWindow : Window
     /// </summary>
     public bool Confirmed { get; private set; }
 
+    /// <summary>
+    /// The starting level chosen in Step 1 (1 = normal, >1 = multi-level via LUW loop).
+    /// </summary>
+    public int StartingLevel => _startingLevel;
+
     [Obsolete("Designer use only", error: true)]
     public NewCharacterWizardWindow() => throw new NotSupportedException("Use parameterized constructor");
 
@@ -399,6 +407,9 @@ public partial class NewCharacterWizardWindow : Window
         _saveLocationTextBox = this.FindControl<TextBox>("SaveLocationTextBox")!;
         _browseSaveLocationButton = this.FindControl<Button>("BrowseSaveLocationButton")!;
         _saveLocationNote = this.FindControl<TextBlock>("SaveLocationNote")!;
+        _startingLevelSpinner = this.FindControl<NumericUpDown>("StartingLevelSpinner")!;
+        _startingLevelNote = this.FindControl<TextBlock>("StartingLevelNote")!;
+        _startingLevelSpinner.ValueChanged += OnStartingLevelChanged;
 
         // Step 2 controls
         _raceSearchBox = this.FindControl<TextBox>("RaceSearchBox")!;
@@ -1021,6 +1032,16 @@ public partial class NewCharacterWizardWindow : Window
         _saveLocationTextBox.Text = "";
 
         UpdateSidebarSummary();
+    }
+
+    private void OnStartingLevelChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        _startingLevel = (int)(e.NewValue ?? 1);
+        if (_startingLevel < 1) _startingLevel = 1;
+
+        _startingLevelNote.Text = _startingLevel == 1
+            ? "Level 1 character. Change to create at a higher level (single class only)."
+            : $"Level {_startingLevel} character. After creation, the Level Up Wizard will run {_startingLevel - 1} time(s) to complete leveling.";
     }
 
     private async void OnBrowseSaveLocationClick(object? sender, RoutedEventArgs e)

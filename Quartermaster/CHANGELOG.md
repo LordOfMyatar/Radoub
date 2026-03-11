@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.33-alpha] - 2026-03-10
+**Branch**: `quartermaster/issue-1492` | **PR**: #1643
+
+### Sprint: Multi-Level Character Creation (#1492)
+
+- [x] #1617 — Add Class and Level Up buttons on ClassesPanel now launch Level Up Wizard
+- [x] #1431 — Starting Level spinner on NCW Step 1; LUW loops for levels 2+ (single class)
+- [x] #1018 (partial) — packages.2da auto-assign already integrated in LUW feats/skills/spells
+- test: Multi-level stacking test for LevelUpApplicationService (600 tests passing)
+
+---
+
 ## [0.2.32-alpha] - 2026-03-10
 **Branch**: `radoub/issue-1641` | **PR**: #1642
 
