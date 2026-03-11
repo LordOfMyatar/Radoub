@@ -219,8 +219,14 @@ public partial class LevelUpWizardWindow
         var allSpellIds = _displayService.Spells.GetSpellsForClassAtLevel(_selectedClassId, spellLevel);
         var selectedForLevel = _selectedSpellsByLevel.GetValueOrDefault(spellLevel, new List<int>());
 
-        // Get creature's existing spells to exclude
+        // Get creature's existing spells to exclude (check both SpecAbilityList and KnownSpells)
         var existingSpells = new HashSet<int>(_creature.SpecAbilityList.Select(sa => (int)sa.Spell));
+        var spellClass = _creature.ClassList.FirstOrDefault(c => c.Class == _selectedClassId);
+        if (spellClass != null && spellLevel >= 0 && spellLevel < spellClass.KnownSpells.Length)
+        {
+            foreach (var ks in spellClass.KnownSpells[spellLevel])
+                existingSpells.Add((int)ks.Spell);
+        }
 
         _availableSpellsForLevel = new List<SpellDisplayItem>();
         foreach (var spellId in allSpellIds)
@@ -368,6 +374,14 @@ public partial class LevelUpWizardWindow
     private void OnSpellAutoAssignClick(object? sender, RoutedEventArgs e)
     {
         var existingSpells = new HashSet<int>(_creature.SpecAbilityList.Select(sa => (int)sa.Spell));
+        // Also exclude spells already in KnownSpells for this class
+        var autoSpellClass = _creature.ClassList.FirstOrDefault(c => c.Class == _selectedClassId);
+        if (autoSpellClass != null)
+        {
+            foreach (var knownList in autoSpellClass.KnownSpells)
+                foreach (var ks in knownList)
+                    existingSpells.Add((int)ks.Spell);
+        }
 
         // For Wizards, limit total across all levels to free spell budget
         int totalBudget = _wizardFreeSpellsRemaining > 0 ? _wizardFreeSpellsRemaining : int.MaxValue;
