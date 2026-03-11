@@ -4,7 +4,7 @@ Create and push a version tag to trigger the GitHub Actions release workflow.
 
 ## Overview
 
-Radoub releases include all tools (Parley, Manifest, Fence) in a single bundle. Individual tool releases are not supported - we release the entire Radoub suite together.
+Radoub releases include all tools (Parley, Manifest, Fence, Trebuchet, Quartermaster) in a single bundle. Individual tool releases are not supported - we release the entire Radoub suite together.
 
 ## Versioning Strategy
 
@@ -17,11 +17,32 @@ The version is determined by:
 
 This avoids the need for a separate Radoub CHANGELOG - the tool changelogs track what changed, and the radoub version just increments each release.
 
+## Release Notes Source
+
+**Primary**: `NonPublic/release-notes.md` — accumulated by `/pre-merge` during sprints.
+**Fallback**: Parse tool CHANGELOGs (old behavior, used if NonPublic file doesn't exist).
+
+When `NonPublic/release-notes.md` exists:
+- Read it as the draft release notes
+- Highlights, bug fixes, and tool sections are already populated
+- User has had time to edit/curate between sprints
+- Skip Phase 1 (highlight selection) — already done incrementally
+
 ## Upfront Questions
 
 **IMPORTANT**: Gather user input in phases, not all at once.
 
-### Phase 1: Changelog Highlights Selection
+### Phase 1: Review Draft Release Notes (if NonPublic/release-notes.md exists)
+
+1. Read `NonPublic/release-notes.md`
+2. Show the current draft to the user
+3. Ask: "Release notes look good? [y/edit/regenerate]"
+   - **y** → proceed to Phase 2
+   - **edit** → user edits the file manually, then re-run
+   - **regenerate** → fall back to CHANGELOG parsing (old behavior)
+
+### Phase 1 (Fallback): Changelog Highlights Selection (if no NonPublic/release-notes.md)
+
 After reading changelogs:
 1. Parse unreleased changes from each tool's changelog (entries after last release date)
 2. Present a **numbered list** of all changelog items
@@ -77,71 +98,53 @@ Before releasing:
    - If last was `radoub-v0.8.3`, next is `radoub-v0.8.4` (patch bump)
    - User can request minor bump (0.9.0) or major bump (1.0.0)
 
-3. **Gather Changelog Entries**
+3. **Load Release Notes**
 
-   Find entries in each tool changelog that are newer than the last release:
-   - `Parley/CHANGELOG.md`
-   - `Manifest/CHANGELOG.md`
-   - `Fence/CHANGELOG.md`
-   - `CHANGELOG.md` (repo-level, for shared changes)
+   **If `NonPublic/release-notes.md` exists** (preferred path):
+   - Read the file — it contains curated highlights, bug fixes, and tool sections
+   - Fill in the Tool Versions table with NBGV-computed versions
+   - Show draft to user for review (Phase 1 above)
+   - Copy final content to `release-notes.md` in repo root (read by workflow)
 
-   Look for version sections with dates after the last release date.
+   **If `NonPublic/release-notes.md` does NOT exist** (fallback):
+   - Parse tool CHANGELOGs for entries newer than last release date:
+     - `Parley/CHANGELOG.md`
+     - `Manifest/CHANGELOG.md`
+     - `Quartermaster/CHANGELOG.md`
+     - `Fence/CHANGELOG.md`
+     - `Trebuchet/CHANGELOG.md`
+     - `CHANGELOG.md` (repo-level, for shared changes)
+   - Present numbered list for highlight selection (Phase 1 fallback)
+   - Generate release notes from selection
 
-4. **Present Changelog Items for Selection**
+4. **Write Release Notes File**
 
-   ```
-   ## Changes Since Last Release (radoub-v0.8.3)
-
-   ### Parley v0.1.120-alpha
-   1. [###] Refactor: Tech debt (#719)
-   2. [-] Extracted WindowLayoutService
-
-   ### Fence v0.1.0-alpha
-   3. [###] Sprint: Fence Completion Polish (#1060)
-   4. [-] Name-based store panel mapping
-   5. [-] Infinity symbol toggle for stock
-
-   Which items are highlights? (Enter numbers like 1,3 or 'all' or 'none')
-   ```
-
-5. **Generate Release Notes**
-
-   Based on selection, create structured release notes:
-
-   ```markdown
-   ## What's New
-
-   - **Parley**: Tech debt refactoring (#719)
-   - **Fence**: Fence Completion Polish (#1060)
-
-   ## Tool Versions
-   - Parley: v0.1.120-alpha
-   - Manifest: v0.6.0-alpha
-   - Fence: v0.1.0-alpha
-
-   ## Other Changes
-
-   See individual tool CHANGELOGs for complete details.
-   ```
-
-6. **Write Release Notes File**
-
-   Write the generated notes to `release-notes.md` in repo root.
+   Write the final notes to `release-notes.md` in repo root.
    This file is read by the workflow during release.
 
-7. **Confirm with User**
+5. **Reset NonPublic Draft**
+
+   After writing `release-notes.md`, reset `NonPublic/release-notes.md` with a fresh template for the next release cycle:
+   ```markdown
+   # Release Notes (Draft)
+
+   Accumulated since last release: **radoub-vX.Y.Z** (YYYY-MM-DD)
+   ...
+   ```
+
+6. **Confirm with User**
    - Show the version and generated highlights
    - Show recent commits that will be included
    - Ask user to confirm: "Ready to release radoub-v0.8.4?"
 
-8. **Create and Push Tag**
+7. **Create and Push Tag**
 
    ```bash
    git tag -a radoub-vX.Y.Z -m "Radoub Release vX.Y.Z"
    git push origin radoub-vX.Y.Z
    ```
 
-9. **Provide Release Link**
+8. **Provide Release Link**
    - `https://github.com/LordOfMyatar/Radoub/actions/workflows/radoub-release.yml`
    - Note: Build takes ~10-15 minutes for all platforms
 

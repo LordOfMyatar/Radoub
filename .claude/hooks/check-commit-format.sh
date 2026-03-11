@@ -2,9 +2,10 @@
 # Hook: PreToolUse (Bash)
 # Purpose: Enforce commit message format: [Tool] type: description
 # Only fires on git commit commands
+# Note: Uses grep/cut instead of jq (not available in Windows Git Bash)
 
 INPUT=$(cat)
-COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
+COMMAND=$(echo "$INPUT" | grep -o '"command":"[^"]*"' | head -1 | cut -d'"' -f4)
 
 # Only check git commit commands
 if ! echo "$COMMAND" | grep -q 'git commit'; then

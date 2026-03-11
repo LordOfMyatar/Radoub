@@ -5,6 +5,7 @@ using Radoub.Formats.Common;
 using Radoub.Formats.Services;
 using Radoub.Formats.Uti;
 using Radoub.UI.Controls;
+using Radoub.UI.Services;
 using Radoub.UI.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -63,6 +64,9 @@ public partial class MainWindow
         PopulateItemPalette();
 
         _inventoryModified = false;
+
+        // Validate weapon sizes against creature size on load
+        ValidateEquipmentCreatureCompatibility();
 
         UnifiedLogger.LogInventory(LogLevel.INFO, $"Populated inventory: {_currentCreature.EquipItemList.Count} equipped, {InventoryPanelContent.BackpackItems.Count} in backpack");
     }
@@ -161,6 +165,7 @@ public partial class MainWindow
 
         _inventoryModified = true;
         MarkDirty();
+        ValidateEquipmentCreatureCompatibility();
         UnifiedLogger.LogInventory(LogLevel.INFO, $"Dropped {equippedItem.Name} onto {slot.Name}");
     }
 
@@ -373,6 +378,7 @@ public partial class MainWindow
 
         _inventoryModified = true;
         MarkDirty();
+        ValidateEquipmentCreatureCompatibility();
     }
 
     /// <summary>
@@ -473,6 +479,59 @@ public partial class MainWindow
         MarkDirty();
 
         UnifiedLogger.LogInventory(LogLevel.INFO, $"Unequipped {item.Name} from {slot.Name} to backpack");
+    }
+
+    /// <summary>
+    /// Runs all equipment validation: weapon size compatibility and feat requirements.
+    /// Combines multiple warnings into a single message per slot.
+    /// </summary>
+    private void ValidateEquipmentCreatureCompatibility()
+    {
+        if (_currentCreature == null) return;
+
+        var validator = new EquipmentSlotValidator(GameData);
+        var creatureSize = GetCreatureSizeCategory();
+        var creatureFeats = new HashSet<int>(_currentCreature.FeatList.Select(f => (int)f));
+
+        foreach (var slot in _equipmentSlots)
+        {
+            var warnings = new List<string>();
+
+            // Check weapon size vs creature size
+            if (creatureSize != null)
+            {
+                var sizeWarning = validator.ValidateCreatureCompatibility(slot, creatureSize.Value);
+                if (sizeWarning != null)
+                    warnings.Add(sizeWarning);
+            }
+
+            // Check feat requirements
+            var featWarning = validator.ValidateFeatRequirements(slot, creatureFeats);
+            if (featWarning != null)
+                warnings.Add(featWarning);
+
+            slot.ValidationWarning = warnings.Count > 0
+                ? string.Join("\n", warnings)
+                : null;
+        }
+    }
+
+    /// <summary>
+    /// Gets the creature's size category from appearance.2da SIZECATEGORY column.
+    /// </summary>
+    /// <returns>Size category (1=Tiny, 2=Small, 3=Medium, 4=Large, 5=Huge), or null if unavailable.</returns>
+    private int? GetCreatureSizeCategory()
+    {
+        if (_currentCreature == null) return null;
+
+        var sizeStr = GameData.Get2DAValue("appearance", _currentCreature.AppearanceType, "SIZECATEGORY");
+        if (string.IsNullOrEmpty(sizeStr) || sizeStr == "****")
+            return null;
+
+        if (int.TryParse(sizeStr, out var size))
+            return size;
+
+        return null;
     }
 
     #endregion
