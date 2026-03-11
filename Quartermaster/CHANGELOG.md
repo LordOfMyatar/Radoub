@@ -15,9 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Inventory UX (Part 2) (#1608)
 
-- [ ] #1313 — Drag from item palette to backpack
+- [x] #1313 — Drag from item palette to backpack (completed in prior sprint)
 - [ ] #1312 — Equipment slot validation by race/class/size
-- [ ] #1035 — Item Palette: Module context tracking
+- [x] #1035 — Item Palette: Module context tracking (already implemented)
 
 ---
 

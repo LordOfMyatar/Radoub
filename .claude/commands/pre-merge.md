@@ -175,7 +175,78 @@ Read CHANGELOG and verify:
 
 **Note**: Version numbers are managed by NBGV via `version.json` files — no `.csproj` version properties to check. CHANGELOG versions are for human tracking only and don't need to match computed NBGV versions exactly.
 
-### Step 5: Wiki Freshness Check
+### Step 5: Update Release Notes (NonPublic/release-notes.md)
+
+Append this sprint/PR's accomplishments to the running release notes draft.
+
+**Location**: `NonPublic/release-notes.md` (gitignored — editable between sessions)
+
+1. **Read the current release notes file** (create from template if missing)
+2. **Read the PR's CHANGELOG entries** (the version section for this branch)
+3. **Check for user-reported issues** in this PR:
+   ```bash
+   # Extract issue numbers from PR body "Closes #N" lines
+   # For each, check if labeled 'bug' or created by someone other than LordOfMyatar
+   gh issue view [N] --json labels,author -q '{labels: [.labels[].name], author: .author.login}'
+   ```
+4. **Append new entries** to the appropriate sections:
+   - Bug fixes from user reports → `## Bug Fixes` with 🎯 prefix
+   - Feature highlights → `## Highlights` (ask user which items to highlight, or auto-add sprint titles)
+   - Tool-specific details → `## [Tool Name]` section
+5. **Avoid duplicates** — check if the PR/issue numbers already appear in the file
+6. **Show the user what was added** so they can edit later
+
+**Template** (if file doesn't exist):
+
+```markdown
+# Release Notes (Draft)
+
+Accumulated since last release: **radoub-vX.Y.Z** (YYYY-MM-DD)
+
+Edit freely — this file is in NonPublic (gitignored) and won't be committed.
+The `/release` command reads this file to generate GitHub release notes.
+
+---
+
+## Highlights
+
+<!-- Move the most impressive items here. These appear in the "What's New" section. -->
+<!-- Mark user-reported fixes with 🎯 to show responsiveness -->
+
+## Bug Fixes
+
+<!-- 🎯 = reported by user/community (shows responsiveness) -->
+
+## [Tool Name]
+
+## Radoub (Shared)
+
+## Tool Versions
+
+| Tool | Version | Maturity |
+|------|---------|----------|
+| Parley | TBD | Beta |
+| Manifest | TBD | Beta |
+| Fence | TBD | Alpha |
+| Trebuchet | TBD | Alpha |
+| Quartermaster | TBD | Alpha |
+
+---
+
+## Notes
+
+- Items marked with 🎯 were reported by users/community
+- This file is updated by `/pre-merge` and manually between sprints
+- `/release` reads this file instead of generating from scratch
+```
+
+**User-reported detection**:
+- Issue has `user-requested` label → 🎯 (primary signal, most reliable)
+- Issue has `bug` label AND was NOT created by `LordOfMyatar` → 🎯 (fallback heuristic)
+- Issue has `enhancement` label AND was NOT created by `LordOfMyatar` → 🎯 (fallback heuristic)
+- Issue was created by `LordOfMyatar` without `user-requested` label → internal (no 🎯)
+
+### Step 5b: Wiki Freshness Check
 
 ```bash
 grep "Page freshness:" d:\LOM\workspace\Radoub.wiki\[Tool]-Developer-Architecture.md
