@@ -159,12 +159,15 @@ public partial class LevelUpWizardWindow : Window
     [Obsolete("Designer use only", error: true)]
     public LevelUpWizardWindow() => throw new NotSupportedException("Use parameterized constructor");
 
-    public LevelUpWizardWindow(CreatureDisplayService displayService, UtcFile creature)
+    private readonly bool _isBicFile;
+
+    public LevelUpWizardWindow(CreatureDisplayService displayService, UtcFile creature, bool isBicFile = false)
     {
         InitializeComponent();
 
         _displayService = displayService;
         _creature = creature;
+        _isBicFile = isBicFile;
         _originalCreature = creature.DeepCopy(); // Deep copy for cancel/undo rollback
 
         // Find all controls

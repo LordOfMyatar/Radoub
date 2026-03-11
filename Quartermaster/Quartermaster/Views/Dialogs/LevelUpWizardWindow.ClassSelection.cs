@@ -16,7 +16,7 @@ public partial class LevelUpWizardWindow
 
     private void LoadClassList()
     {
-        var availableClasses = _displayService.Classes.GetAvailableClasses(_creature, includeUnqualified: true);
+        var availableClasses = _displayService.Classes.GetAvailableClasses(_creature, includeUnqualified: true, playerClassesOnly: _isBicFile);
 
         _allClasses = availableClasses.Select(ac => new ClassDisplayItem
         {

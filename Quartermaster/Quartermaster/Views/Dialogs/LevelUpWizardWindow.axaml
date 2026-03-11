@@ -193,7 +193,7 @@
                                             <TextBlock Text="{Binding Icon}" Width="16"/>
                                             <TextBlock Text="{Binding DisplayName}"/>
                                             <TextBlock Text="{Binding Badge}"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                       Foreground="{DynamicResource ThemeWarning}"
                                                        FontStyle="Italic"/>
                                         </StackPanel>
                                     </DataTemplate>

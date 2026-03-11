@@ -727,7 +727,7 @@ public class ClassService
     /// Gets available classes for a creature to level up into.
     /// Filters by prerequisites and marks unqualified prestige classes.
     /// </summary>
-    public List<AvailableClass> GetAvailableClasses(UtcFile creature, bool includeUnqualified = true)
+    public List<AvailableClass> GetAvailableClasses(UtcFile creature, bool includeUnqualified = true, bool playerClassesOnly = true)
     {
         var allClasses = GetAllClassMetadata();
         var result = new List<AvailableClass>();
@@ -735,8 +735,8 @@ public class ClassService
 
         foreach (var metadata in allClasses)
         {
-            // Skip non-player classes
-            if (!metadata.IsPlayerClass)
+            // Skip non-player classes only for BIC files
+            if (playerClassesOnly && !metadata.IsPlayerClass)
                 continue;
 
             var available = new AvailableClass
