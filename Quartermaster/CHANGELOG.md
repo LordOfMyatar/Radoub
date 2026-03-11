@@ -16,11 +16,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Sprint: Inventory UX (Part 2) (#1608)
 
 - [x] #1313 — Drag from item palette to backpack (completed in prior sprint)
-- [x] #1312 — Equipment slot validation by weapon size vs creature size
-  - Added `ValidateCreatureCompatibility` and `GetWeaponSize` to `EquipmentSlotValidator` (Radoub.UI)
-  - NWN rule: creatures can wield weapons up to 1 size larger; 2+ sizes shows warning
+- [x] #1312 — Equipment slot validation by weapon size, feat requirements
+  - Weapon size validation: creatures can wield weapons up to 1 size larger; 2+ sizes shows warning
+  - Feat requirement validation: checks `ReqFeat0`-`ReqFeat4` from `baseitems.2da` against creature's feat list
+  - Resolves feat names from `feat.2da` FEAT column + TLK for human-readable warnings
+  - Warning UI: orange `ThemeWarning` border + badge on equipment slots with validation issues
+  - Combined warnings: multiple issues (size + feats) shown together per slot
   - Validation runs on file load and after every equip operation
-  - 8 unit tests covering size comparisons, edge cases, and batch validation
+  - 32 unit tests (size, feats, edge cases, batch validation)
 - [x] #1035 — Item Palette: Module context tracking (already implemented)
 
 ---

@@ -482,18 +482,38 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// Runs creature compatibility validation on all equipment slots.
-    /// Shows warnings for weapons that are too large for the creature's size.
+    /// Runs all equipment validation: weapon size compatibility and feat requirements.
+    /// Combines multiple warnings into a single message per slot.
     /// </summary>
     private void ValidateEquipmentCreatureCompatibility()
     {
         if (_currentCreature == null) return;
 
-        var creatureSize = GetCreatureSizeCategory();
-        if (creatureSize == null) return;
-
         var validator = new EquipmentSlotValidator(GameData);
-        validator.ValidateAllCreatureCompatibility(_equipmentSlots, creatureSize.Value);
+        var creatureSize = GetCreatureSizeCategory();
+        var creatureFeats = new HashSet<int>(_currentCreature.FeatList.Select(f => (int)f));
+
+        foreach (var slot in _equipmentSlots)
+        {
+            var warnings = new List<string>();
+
+            // Check weapon size vs creature size
+            if (creatureSize != null)
+            {
+                var sizeWarning = validator.ValidateCreatureCompatibility(slot, creatureSize.Value);
+                if (sizeWarning != null)
+                    warnings.Add(sizeWarning);
+            }
+
+            // Check feat requirements
+            var featWarning = validator.ValidateFeatRequirements(slot, creatureFeats);
+            if (featWarning != null)
+                warnings.Add(featWarning);
+
+            slot.ValidationWarning = warnings.Count > 0
+                ? string.Join("\n", warnings)
+                : null;
+        }
     }
 
     /// <summary>

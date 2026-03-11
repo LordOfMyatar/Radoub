@@ -387,6 +387,233 @@ public class EquipmentSlotValidatorTests
 
     #endregion
 
+    #region Feat Requirement Validation
+
+    [Fact]
+    public void GetRequiredFeats_NoReqFeats_ReturnsEmpty()
+    {
+        var mockGameData = new MockGameDataService(includeSampleData: false);
+        // No ReqFeat columns set
+        var validator = new EquipmentSlotValidator(mockGameData);
+
+        var feats = validator.GetRequiredFeats(1);
+
+        Assert.Empty(feats);
+    }
+
+    [Fact]
+    public void GetRequiredFeats_SingleReqFeat_ReturnsFeatWithName()
+    {
+        var mockGameData = new MockGameDataService(includeSampleData: false);
+        // Kama (base item 2) requires feat 105 (Exotic Weapon: Kama)
+        mockGameData.Set2DAValue("baseitems", 2, "ReqFeat0", "105");
+        mockGameData.Set2DAValue("feat", 105, "FEAT", "1000"); // TLK strref
+        mockGameData.SetTlkString(1000, "Exotic Weapon: Kama");
+
+        var validator = new EquipmentSlotValidator(mockGameData);
+
+        var feats = validator.GetRequiredFeats(2);
+
+        Assert.Single(feats);
+        Assert.Equal(105, feats[0].FeatId);
+        Assert.Equal("Exotic Weapon: Kama", feats[0].FeatName);
+    }
+
+    [Fact]
+    public void GetRequiredFeats_MultipleReqFeats_ReturnsAll()
+    {
+        var mockGameData = new MockGameDataService(includeSampleData: false);
+        mockGameData.Set2DAValue("baseitems", 3, "ReqFeat0", "10");
+        mockGameData.Set2DAValue("baseitems", 3, "ReqFeat1", "20");
+        mockGameData.Set2DAValue("feat", 10, "FEAT", "2000");
+        mockGameData.Set2DAValue("feat", 20, "FEAT", "2001");
+        mockGameData.SetTlkString(2000, "Weapon Proficiency: Martial");
+        mockGameData.SetTlkString(2001, "Armor Proficiency: Heavy");
+
+        var validator = new EquipmentSlotValidator(mockGameData);
+
+        var feats = validator.GetRequiredFeats(3);
+
+        Assert.Equal(2, feats.Count);
+    }
+
+    [Fact]
+    public void GetRequiredFeats_StarValues_Skipped()
+    {
+        var mockGameData = new MockGameDataService(includeSampleData: false);
+        mockGameData.Set2DAValue("baseitems", 1, "ReqFeat0", "****");
+        mockGameData.Set2DAValue("baseitems", 1, "ReqFeat1", "10");
+        mockGameData.Set2DAValue("feat", 10, "FEAT", "3000");
+        mockGameData.SetTlkString(3000, "Some Feat");
+
+        var validator = new EquipmentSlotValidator(mockGameData);
+
+        var feats = validator.GetRequiredFeats(1);
+
+        Assert.Single(feats);
+        Assert.Equal(10, feats[0].FeatId);
+    }
+
+    [Fact]
+    public void GetRequiredFeats_NoTlkString_UsesFallbackName()
+    {
+        var mockGameData = new MockGameDataService(includeSampleData: false);
+        mockGameData.Set2DAValue("baseitems", 1, "ReqFeat0", "50");
+        mockGameData.Set2DAValue("feat", 50, "FEAT", "9999"); // No TLK entry
+        // Also set LABEL as fallback
+        mockGameData.Set2DAValue("feat", 50, "LABEL", "WEAPON_PROF_EXOTIC");
+
+        var validator = new EquipmentSlotValidator(mockGameData);
+
+        var feats = validator.GetRequiredFeats(1);
+
+        Assert.Single(feats);
+        Assert.Equal(50, feats[0].FeatId);
+        // Should use LABEL or "Feat 50" as fallback
+        Assert.NotEmpty(feats[0].FeatName);
+    }
+
+    [Fact]
+    public void ValidateFeatRequirements_CreatureHasRequiredFeat_ReturnsNull()
+    {
+        var mockGameData = new MockGameDataService(includeSampleData: false);
+        mockGameData.Set2DAValue("baseitems", 2, "EquipableSlots", "0x10");
+        mockGameData.Set2DAValue("baseitems", 2, "ReqFeat0", "105");
+        mockGameData.Set2DAValue("feat", 105, "FEAT", "1000");
+        mockGameData.SetTlkString(1000, "Exotic Weapon: Kama");
+
+        var validator = new EquipmentSlotValidator(mockGameData);
+        var slot = new EquipmentSlotViewModel(4, 0x10, "Right Hand");
+
+        var item = new UtiFile { BaseItem = 2 };
+        slot.EquippedItem = new ItemViewModel(item, "Kama", "Kama", "");
+
+        // Creature has feat 105
+        var creatureFeats = new HashSet<int> { 105, 1, 2, 3 };
+
+        var warning = validator.ValidateFeatRequirements(slot, creatureFeats);
+
+        Assert.Null(warning);
+    }
+
+    [Fact]
+    public void ValidateFeatRequirements_CreatureMissingRequiredFeat_ReturnsWarning()
+    {
+        var mockGameData = new MockGameDataService(includeSampleData: false);
+        mockGameData.Set2DAValue("baseitems", 2, "EquipableSlots", "0x10");
+        mockGameData.Set2DAValue("baseitems", 2, "ReqFeat0", "105");
+        mockGameData.Set2DAValue("feat", 105, "FEAT", "1000");
+        mockGameData.SetTlkString(1000, "Exotic Weapon: Kama");
+
+        var validator = new EquipmentSlotValidator(mockGameData);
+        var slot = new EquipmentSlotViewModel(4, 0x10, "Right Hand");
+
+        var item = new UtiFile { BaseItem = 2 };
+        slot.EquippedItem = new ItemViewModel(item, "Kama", "Kama", "");
+
+        // Creature does NOT have feat 105
+        var creatureFeats = new HashSet<int> { 1, 2, 3 };
+
+        var warning = validator.ValidateFeatRequirements(slot, creatureFeats);
+
+        Assert.NotNull(warning);
+        Assert.Contains("Kama", warning);
+        Assert.Contains("Exotic Weapon: Kama", warning);
+    }
+
+    [Fact]
+    public void ValidateFeatRequirements_MultipleMissingFeats_ListsAll()
+    {
+        var mockGameData = new MockGameDataService(includeSampleData: false);
+        mockGameData.Set2DAValue("baseitems", 3, "EquipableSlots", "0x10");
+        mockGameData.Set2DAValue("baseitems", 3, "ReqFeat0", "10");
+        mockGameData.Set2DAValue("baseitems", 3, "ReqFeat1", "20");
+        mockGameData.Set2DAValue("feat", 10, "FEAT", "2000");
+        mockGameData.Set2DAValue("feat", 20, "FEAT", "2001");
+        mockGameData.SetTlkString(2000, "Weapon Proficiency: Martial");
+        mockGameData.SetTlkString(2001, "Armor Proficiency: Heavy");
+
+        var validator = new EquipmentSlotValidator(mockGameData);
+        var slot = new EquipmentSlotViewModel(4, 0x10, "Right Hand");
+
+        var item = new UtiFile { BaseItem = 3 };
+        slot.EquippedItem = new ItemViewModel(item, "Halberd", "Halberd", "");
+
+        var creatureFeats = new HashSet<int>(); // No feats
+
+        var warning = validator.ValidateFeatRequirements(slot, creatureFeats);
+
+        Assert.NotNull(warning);
+        Assert.Contains("Weapon Proficiency: Martial", warning);
+        Assert.Contains("Armor Proficiency: Heavy", warning);
+    }
+
+    [Fact]
+    public void ValidateFeatRequirements_NoReqFeats_ReturnsNull()
+    {
+        var mockGameData = new MockGameDataService(includeSampleData: false);
+        mockGameData.Set2DAValue("baseitems", 1, "EquipableSlots", "0x10");
+        // No ReqFeat columns
+
+        var validator = new EquipmentSlotValidator(mockGameData);
+        var slot = new EquipmentSlotViewModel(4, 0x10, "Right Hand");
+
+        var item = new UtiFile { BaseItem = 1 };
+        slot.EquippedItem = new ItemViewModel(item, "Longsword", "Longsword", "");
+
+        var creatureFeats = new HashSet<int>();
+
+        var warning = validator.ValidateFeatRequirements(slot, creatureFeats);
+
+        Assert.Null(warning);
+    }
+
+    [Fact]
+    public void ValidateFeatRequirements_EmptySlot_ReturnsNull()
+    {
+        var mockGameData = new MockGameDataService(includeSampleData: false);
+        var validator = new EquipmentSlotValidator(mockGameData);
+        var slot = new EquipmentSlotViewModel(4, 0x10, "Right Hand");
+
+        var warning = validator.ValidateFeatRequirements(slot, new HashSet<int>());
+
+        Assert.Null(warning);
+    }
+
+    [Fact]
+    public void ValidateAllFeatRequirements_SetsWarningsOnMissingFeats()
+    {
+        var mockGameData = new MockGameDataService(includeSampleData: false);
+        // Kama requires feat 105
+        mockGameData.Set2DAValue("baseitems", 2, "EquipableSlots", "0x10");
+        mockGameData.Set2DAValue("baseitems", 2, "ReqFeat0", "105");
+        mockGameData.Set2DAValue("feat", 105, "FEAT", "1000");
+        mockGameData.SetTlkString(1000, "Exotic Weapon: Kama");
+        // Longsword has no feat requirement
+        mockGameData.Set2DAValue("baseitems", 1, "EquipableSlots", "0x20");
+
+        var validator = new EquipmentSlotValidator(mockGameData);
+
+        var rightSlot = new EquipmentSlotViewModel(4, 0x10, "Right Hand");
+        var leftSlot = new EquipmentSlotViewModel(5, 0x20, "Left Hand");
+
+        var kama = new UtiFile { BaseItem = 2 };
+        rightSlot.EquippedItem = new ItemViewModel(kama, "Kama", "Kama", "");
+
+        var sword = new UtiFile { BaseItem = 1 };
+        leftSlot.EquippedItem = new ItemViewModel(sword, "Longsword", "Longsword", "");
+
+        var creatureFeats = new HashSet<int> { 1, 2, 3 }; // No feat 105
+
+        validator.ValidateAllFeatRequirements(new[] { rightSlot, leftSlot }, creatureFeats);
+
+        Assert.NotNull(rightSlot.ValidationWarning);
+        Assert.Contains("Exotic Weapon: Kama", rightSlot.ValidationWarning);
+        Assert.Null(leftSlot.ValidationWarning);
+    }
+
+    #endregion
+
     [Fact]
     public void ValidateAllSlots_SetsWarningsOnAllSlots()
     {

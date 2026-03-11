@@ -35,7 +35,8 @@
     </Style>
 
     <Style Selector="Border.equipment-slot.has-warning">
-      <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCautionBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource ThemeWarning}"/>
+      <Setter Property="BorderThickness" Value="2"/>
     </Style>
 
     <!-- Slot label style -->
@@ -48,7 +49,7 @@
     <!-- Warning icon style -->
     <Style Selector="TextBlock.warning-icon">
       <Setter Property="FontSize" Value="14"/>
-      <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource ThemeWarning}"/>
     </Style>
 
   </UserControl.Styles>

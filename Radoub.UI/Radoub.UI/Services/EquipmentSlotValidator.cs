@@ -169,6 +169,97 @@ public class EquipmentSlotValidator
         _ => $"Size {size}"
     };
 
+    #region Feat Requirement Validation
+
+    /// <summary>
+    /// Gets the required feats for a base item type from baseitems.2da ReqFeat0-ReqFeat4 columns.
+    /// </summary>
+    /// <param name="baseItem">Base item index from UTI.</param>
+    /// <returns>List of (FeatId, FeatName) tuples for required feats.</returns>
+    public IReadOnlyList<(int FeatId, string FeatName)> GetRequiredFeats(int baseItem)
+    {
+        var result = new List<(int FeatId, string FeatName)>();
+
+        for (int i = 0; i <= 4; i++)
+        {
+            var value = _gameData.Get2DAValue("baseitems", baseItem, $"ReqFeat{i}");
+            if (string.IsNullOrEmpty(value) || value == "****")
+                continue;
+
+            if (!int.TryParse(value, out var featId))
+                continue;
+
+            var featName = ResolveFeatName(featId);
+            result.Add((featId, featName));
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Validates that the creature has the required feats for an equipped item.
+    /// </summary>
+    /// <param name="slot">The equipment slot to check.</param>
+    /// <param name="creatureFeats">Set of feat IDs the creature possesses.</param>
+    /// <returns>Warning message listing missing feats, or null if all requirements met.</returns>
+    public string? ValidateFeatRequirements(EquipmentSlotViewModel slot, IReadOnlySet<int> creatureFeats)
+    {
+        if (slot.EquippedItem == null)
+            return null;
+
+        var requiredFeats = GetRequiredFeats(slot.EquippedItem.BaseItem);
+        if (requiredFeats.Count == 0)
+            return null;
+
+        var missingFeats = requiredFeats
+            .Where(f => !creatureFeats.Contains(f.FeatId))
+            .ToList();
+
+        if (missingFeats.Count == 0)
+            return null;
+
+        var featNames = string.Join(", ", missingFeats.Select(f => f.FeatName));
+        return $"{slot.EquippedItem.BaseItemName} requires: {featNames}";
+    }
+
+    /// <summary>
+    /// Validates all slots for feat requirements and sets their warning messages.
+    /// </summary>
+    /// <param name="slots">Equipment slots to validate.</param>
+    /// <param name="creatureFeats">Set of feat IDs the creature possesses.</param>
+    public void ValidateAllFeatRequirements(IEnumerable<EquipmentSlotViewModel> slots, IReadOnlySet<int> creatureFeats)
+    {
+        foreach (var slot in slots)
+        {
+            slot.ValidationWarning = ValidateFeatRequirements(slot, creatureFeats);
+        }
+    }
+
+    /// <summary>
+    /// Resolves a feat ID to its display name via feat.2da FEAT column + TLK.
+    /// Falls back to LABEL column, then "Feat {id}".
+    /// </summary>
+    private string ResolveFeatName(int featId)
+    {
+        // Try FEAT column (TLK strref)
+        var featStrRef = _gameData.Get2DAValue("feat", featId, "FEAT");
+        if (!string.IsNullOrEmpty(featStrRef) && featStrRef != "****")
+        {
+            var tlkName = _gameData.GetString(featStrRef);
+            if (!string.IsNullOrEmpty(tlkName))
+                return tlkName;
+        }
+
+        // Fallback to LABEL column
+        var label = _gameData.Get2DAValue("feat", featId, "LABEL");
+        if (!string.IsNullOrEmpty(label) && label != "****")
+            return label;
+
+        return $"Feat {featId}";
+    }
+
+    #endregion
+
     /// <summary>
     /// Gets the list of valid slot names for a base item type.
     /// </summary>
