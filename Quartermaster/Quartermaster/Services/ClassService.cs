@@ -503,16 +503,16 @@ public class ClassService
 
     private (string Description, bool Met) CheckAlignmentRestriction(UtcFile creature, AlignmentRestriction restriction)
     {
-        // Decode alignment from creature (UtcFile: 0=Lawful/Good, 100=Chaotic/Evil)
+        // UtcFile alignment scale: LawfulChaotic 100=Lawful, 0=Chaotic; GoodEvil 100=Good, 0=Evil
         int lawChaos = creature.LawfulChaotic;
         int goodEvil = creature.GoodEvil;
 
-        bool isLawful = lawChaos < 30;
-        bool isChaotic = lawChaos > 70;
+        bool isLawful = lawChaos > 70;
+        bool isChaotic = lawChaos < 30;
         bool isNeutralLC = !isLawful && !isChaotic;
 
-        bool isGood = goodEvil < 30;
-        bool isEvil = goodEvil > 70;
+        bool isGood = goodEvil > 70;
+        bool isEvil = goodEvil < 30;
         bool isNeutralGE = !isGood && !isEvil;
 
         int mask = restriction.RestrictionMask;
@@ -524,25 +524,15 @@ public class ClassService
         bool maskHasEvil = (mask & 0x10) != 0;
         bool maskHasNeutral = (mask & 0x01) != 0;
 
-        // Check alignment against restriction using RestrictionType for axis-aware logic
+        // Check alignment against restriction mask
+        // Type determines which axes to check: 0x01=LC only, 0x02=GE only, 0x03=both
         bool matches;
         if (type == 0x03)
         {
             bool lcMatch = (maskHasLawful && isLawful) || (maskHasChaotic && isChaotic);
             bool geMatch = (maskHasGood && isGood) || (maskHasEvil && isEvil);
             bool neutralMatch = maskHasNeutral && (isNeutralLC || isNeutralGE);
-
-            bool hasLcRestriction = maskHasLawful || maskHasChaotic;
-            bool hasGeRestriction = maskHasGood || maskHasEvil;
-
-            if (hasLcRestriction && hasGeRestriction)
-                matches = lcMatch && geMatch || neutralMatch;
-            else if (hasLcRestriction)
-                matches = lcMatch || neutralMatch;
-            else if (hasGeRestriction)
-                matches = geMatch || neutralMatch;
-            else
-                matches = neutralMatch;
+            matches = lcMatch || geMatch || neutralMatch;
         }
         else if (type == 0x01)
         {
@@ -565,7 +555,9 @@ public class ClassService
             matches = (currentMask & mask) != 0;
         }
 
-        bool allowed = restriction.Inverted ? !matches : matches;
+        // Invert=0: mask = prohibited alignments → block if matches
+        // Invert=1: mask = required alignments → allow only if matches
+        bool allowed = restriction.Inverted ? matches : !matches;
 
         // Build description
         var alignDesc = new List<string>();
@@ -575,7 +567,7 @@ public class ClassService
         if (maskHasEvil) alignDesc.Add("Evil");
         if (maskHasNeutral) alignDesc.Add("Neutral");
 
-        string verb = restriction.Inverted ? "Cannot be" : "Must be";
+        string verb = restriction.Inverted ? "Must be" : "Cannot be";
         string description = $"{verb}: {string.Join(" or ", alignDesc)}";
 
         return (description, allowed);

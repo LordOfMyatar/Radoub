@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+- `/backlog` skill: Anti-overlap rule (issues appear in at most one sprint), mandatory 3-category sprint options (Feature/Bug/Health), languishing issues report (30+/60+ days), anti-recency bias (oldest-first selection), recent sprint history awareness
+
 ---
 
 ## [0.9.85] - 2026-03-10

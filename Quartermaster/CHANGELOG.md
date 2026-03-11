@@ -10,6 +10,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.35-alpha] - 2026-03-10
+**Branch**: `quartermaster/issue-1606` | **PR**: #1653
+
+### Sprint: LUW Alignment & Followups (#1606)
+
+- [x] #1589 — Fix alignment restriction double-inversion bug in ClassService
+  - Scale inversion (0=Chaotic treated as Lawful), allowed logic inversion, type=0x03 axis logic
+  - TN creature could take Monk (shouldn't), Paladin LE was allowed (shouldn't)
+  - Description text swapped "Must be"/"Cannot be"
+  - 24 new ClassAlignmentValidationTests exercising real GetAvailableClasses
+- [x] #1018 — Already complete from prior sprints (spell selection, bonus feats, packages, deep copy)
+- [x] Added PlayerClass column to MockGameDataService for proper class filtering tests
+- [x] Test coverage audit identifying 15 services needing TDD backwork
+- [x] TDD backwork: 50 AppearanceService tests (appearance, phenotype, portrait, wing, tail, soundset, faction, package lookups)
+- [x] TDD backwork: 20 FeatCacheService tests (in-memory caching, class/race feat grants, lazy init, clear)
+- [x] Extended MockGameDataService with phenotype, portrait, wingmodel, tailmodel, soundset 2DA data
+
+---
+
 ## [0.2.34-alpha] - 2026-03-10
 **Branch**: `quartermaster/issue-1604` | **PR**: #1649
 
