@@ -253,26 +253,28 @@ public class PaletteColorServiceTests
     }
 
     [Fact]
-    public void GetPaletteGradient_OneStop_DoesNotCrash()
+    public void GetPaletteGradient_OneStop_ClampsToTwo()
     {
-        // numStops=1 causes division by zero in offset calculation: i / (numStops - 1) = 0/0
-        // This is a known edge case — should handle gracefully
+        // numStops=1 would cause division by zero: i / (numStops - 1) = 0/0
+        // Service should clamp to minimum 2 stops
         var service = CreateServiceWithPalette();
 
-        // Should not throw — NaN offset is nonsensical but not a crash
         var stops = service.GetPaletteGradient("pal_skin01", 0, numStops: 1);
 
-        Assert.Single(stops);
+        Assert.Equal(2, stops.Count);
+        Assert.Equal(0.0, stops[0].offset, 5);
+        Assert.Equal(1.0, stops[1].offset, 5);
     }
 
     [Fact]
-    public void GetPaletteGradient_ZeroStops_ReturnsEmpty()
+    public void GetPaletteGradient_ZeroStops_ClampsToTwo()
     {
+        // Zero stops doesn't make sense for a gradient — clamp to 2
         var service = CreateServiceWithPalette();
 
         var stops = service.GetPaletteGradient("pal_skin01", 0, numStops: 0);
 
-        Assert.Empty(stops);
+        Assert.Equal(2, stops.Count);
     }
 
     #endregion
