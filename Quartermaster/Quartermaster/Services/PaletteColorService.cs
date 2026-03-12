@@ -85,6 +85,9 @@ public class PaletteColorService
             return stops;
         }
 
+        // Clamp to minimum 2 stops to avoid division by zero in offset calculation
+        if (numStops < 2) numStops = 2;
+
         // Sample across the X-axis (0-255 is the shading range)
         for (int i = 0; i < numStops; i++)
         {
