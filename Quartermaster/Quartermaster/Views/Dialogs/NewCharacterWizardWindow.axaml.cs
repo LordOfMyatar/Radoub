@@ -236,6 +236,7 @@ public partial class NewCharacterWizardWindow : Window
     private readonly Grid _bodyPartsPanel;
 
     // Step 6 controls (Abilities)
+    private readonly TextBlock _abilityStepSubtitle;
     private readonly TextBlock _abilityPointsRemainingLabel;
     private readonly StackPanel _abilityRowsPanel;
     private readonly Border _prestigeAbilityBanner;
@@ -527,6 +528,7 @@ public partial class NewCharacterWizardWindow : Window
         _alignmentRestrictionWarning = this.FindControl<TextBlock>("AlignmentRestrictionWarning")!;
 
         // Step 6 controls (Abilities)
+        _abilityStepSubtitle = this.FindControl<TextBlock>("AbilityStepSubtitle")!;
         _abilityPointsRemainingLabel = this.FindControl<TextBlock>("AbilityPointsRemainingLabel")!;
         _abilityRowsPanel = this.FindControl<StackPanel>("AbilityRowsPanel")!;
         _prestigeAbilityBanner = this.FindControl<Border>("PrestigeAbilityBanner")!;

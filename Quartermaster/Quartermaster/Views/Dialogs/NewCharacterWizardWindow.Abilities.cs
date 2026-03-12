@@ -23,6 +23,9 @@ public partial class NewCharacterWizardWindow
         // Update point-buy budget from racialtypes.2da (race may have changed since last visit)
         _pointBuyTotal = _displayService.GetRacialAbilitiesPointBuyNumber(_selectedRaceId);
 
+        // Update subtitle to reflect race-specific budget
+        _abilityStepSubtitle.Text = $"Distribute {_pointBuyTotal} points across your abilities. Base scores start at 8. Higher scores cost more points.";
+
         if (!_step5Loaded)
         {
             _step5Loaded = true;
@@ -232,9 +235,9 @@ public partial class NewCharacterWizardWindow
             }
         }
 
-        // Update points remaining
+        // Update points remaining (show remaining / total for clarity)
         int pointsRemaining = GetAbilityPointsRemaining();
-        _abilityPointsRemainingLabel.Text = pointsRemaining.ToString();
+        _abilityPointsRemainingLabel.Text = $"{pointsRemaining} / {_pointBuyTotal}";
 
         if (pointsRemaining > 0)
             _abilityPointsRemainingLabel.Foreground = BrushManager.GetSuccessBrush(this);
