@@ -15,6 +15,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Epic: TDD Backwork — Service Test Coverage Gaps (#1654)
 
+#### Phase 1: Critical Services
+- PaletteColorService: 24 tests (color lookup, gradient generation, caching, edge cases)
+- QuartermasterScriptBrowserContext: 17 tests (path resolution, .mod working dirs, game data delegation)
+- Removed dead ModularPaletteCacheService (replaced by SharedPaletteCacheService in Radoub.UI)
+- Extended MockGameDataService with FindResource/ListResources support
+
+#### Phase 2: Prestige Class Prerequisites
+- PrestigePrerequisiteTests: 28 tests (BAB, feat, skill, FEATOR groups, ARCSPELL, available class filtering)
+
+#### Audit Findings
+- AppearanceService (48 tests), FeatCacheService (20 tests) — already covered, no gaps
+- CharacterSheetService markdown export — already backfilled (10+ tests)
+- FeatService OR-required/epic feats — already tested (10+ tests)
+- SpellService spontaneous vs prepared — already tested (6+ tests)
+- LevelUpApplicationService CON retroactive HP — already tested (5 tests)
+
 ---
 
 ## [0.2.36-alpha] - 2026-03-10
