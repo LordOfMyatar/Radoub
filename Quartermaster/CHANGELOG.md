@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.41-alpha] - 2026-03-12
+**Branch**: `quartermaster/issue-1660` | **PR**: #1669
+
+### Sprint: TDD Backwork Phase 2 — Medium-Lift Service Tests (#1660)
+
+- FeatCacheService: idempotent load, cache hit/miss, IsMemoryCacheLoaded, three in-memory caches
+- CharacterSheetService: markdown export format, stat calculation edge cases
+- LevelUpApplicationService: ability score cap (255), retroactive CON HP adjustment edge cases
+- SpellService: spell slot edge cases, spontaneous vs prepared distinction
+
+---
+
 ## [0.2.40-alpha] - 2026-03-12
 **Branch**: `quartermaster/issue-1658` | **PR**: #1666
 
