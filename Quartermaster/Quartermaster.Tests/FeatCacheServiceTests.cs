@@ -285,4 +285,217 @@ public class FeatCacheServiceTests
     }
 
     #endregion
+
+    #region Multiple Feats and Cache Isolation
+
+    [Fact]
+    public void CacheFeat_MultipleFeats_AllRetrievable()
+    {
+        var service = CreateService();
+        for (int i = 0; i < 50; i++)
+            service.CacheFeat(CreateEntry(i, $"Feat_{i}"));
+
+        for (int i = 0; i < 50; i++)
+        {
+            Assert.True(service.TryGetFeat(i, out var result));
+            Assert.Equal($"Feat_{i}", result!.Name);
+        }
+    }
+
+    [Fact]
+    public void SetAllFeatIds_DoesNotAffectFeatCache()
+    {
+        var service = CreateService();
+        service.SetAllFeatIds(new List<int> { 1, 2, 3 });
+
+        // AllFeatIds is just an ID list — doesn't populate feat cache
+        Assert.False(service.IsMemoryCacheLoaded);
+        Assert.False(service.TryGetFeat(1, out _));
+    }
+
+    [Fact]
+    public void SetAllFeatIds_Overwrite_ReplacesOldList()
+    {
+        var service = CreateService();
+        service.SetAllFeatIds(new List<int> { 1, 2, 3 });
+        service.SetAllFeatIds(new List<int> { 10, 20 });
+
+        var result = service.GetAllFeatIds();
+        Assert.Equal(2, result!.Count);
+        Assert.Contains(10, result);
+        Assert.DoesNotContain(1, result);
+    }
+
+    #endregion
+
+    #region Three Cache Independence
+
+    [Fact]
+    public void ThreeCaches_AreIndependent()
+    {
+        var service = CreateService();
+
+        // Populate feat cache only
+        service.CacheFeat(CreateEntry(1, "Power Attack"));
+
+        // Class and race caches should still be empty
+        Assert.False(service.TryGetClassGrantedFeats(0, out _));
+        Assert.False(service.TryGetRaceGrantedFeats(0, out _));
+
+        // Populate class cache only
+        service.CacheClassGrantedFeats(4, new HashSet<int> { 10 });
+
+        // Race cache should still be empty
+        Assert.False(service.TryGetRaceGrantedFeats(0, out _));
+
+        // Populate race cache
+        service.CacheRaceGrantedFeats(6, new HashSet<int> { 100 });
+
+        // All three should be populated independently
+        Assert.True(service.TryGetFeat(1, out _));
+        Assert.True(service.TryGetClassGrantedFeats(4, out _));
+        Assert.True(service.TryGetRaceGrantedFeats(6, out _));
+    }
+
+    [Fact]
+    public void ClearCache_ThenRepopulate_Works()
+    {
+        var service = CreateService();
+
+        service.CacheFeat(CreateEntry(1));
+        service.CacheClassGrantedFeats(4, new HashSet<int> { 10 });
+        service.CacheRaceGrantedFeats(6, new HashSet<int> { 100 });
+        service.SetAllFeatIds(new List<int> { 1 });
+
+        service.ClearCache();
+
+        // Repopulate after clear
+        service.CacheFeat(CreateEntry(2, "Toughness"));
+        service.CacheClassGrantedFeats(5, new HashSet<int> { 20 });
+        service.CacheRaceGrantedFeats(0, new HashSet<int> { 200 });
+        service.SetAllFeatIds(new List<int> { 2 });
+
+        Assert.True(service.IsMemoryCacheLoaded);
+        Assert.True(service.TryGetFeat(2, out var entry));
+        Assert.Equal("Toughness", entry!.Name);
+        Assert.False(service.TryGetFeat(1, out _)); // Old feat gone
+        Assert.True(service.TryGetClassGrantedFeats(5, out _));
+        Assert.False(service.TryGetClassGrantedFeats(4, out _)); // Old class gone
+        Assert.True(service.TryGetRaceGrantedFeats(0, out _));
+        Assert.Contains(2, service.GetAllFeatIds()!);
+    }
+
+    #endregion
+
+    #region SaveCacheToDisk Edge Cases
+
+    [Fact]
+    public async Task SaveCacheToDiskAsync_EmptyCache_DoesNotThrow()
+    {
+        var service = CreateService();
+        // No feats cached — should silently return
+        await service.SaveCacheToDiskAsync();
+    }
+
+    #endregion
+
+    #region Race Granted Feats Edge Cases
+
+    [Fact]
+    public void CacheRaceGrantedFeats_OverwritesPrevious()
+    {
+        var service = CreateService();
+        service.CacheRaceGrantedFeats(6, new HashSet<int> { 100, 200 });
+        service.CacheRaceGrantedFeats(6, new HashSet<int> { 300 });
+
+        Assert.True(service.TryGetRaceGrantedFeats(6, out var result));
+        Assert.Single(result!);
+        Assert.Contains(300, result);
+    }
+
+    [Fact]
+    public void TryGetRaceGrantedFeats_WrongRace_ReturnsFalse()
+    {
+        var service = CreateService();
+        service.CacheRaceGrantedFeats(6, new HashSet<int> { 100 });
+
+        Assert.False(service.TryGetRaceGrantedFeats(0, out _));
+    }
+
+    #endregion
+
+    #region Multiple Classes and Races
+
+    [Fact]
+    public void CacheClassGrantedFeats_MultipleClasses_IndependentLookup()
+    {
+        var service = CreateService();
+        service.CacheClassGrantedFeats(4, new HashSet<int> { 10, 11 }); // Fighter
+        service.CacheClassGrantedFeats(5, new HashSet<int> { 20 });     // Rogue
+        service.CacheClassGrantedFeats(10, new HashSet<int> { 30, 31, 32 }); // Wizard
+
+        Assert.True(service.TryGetClassGrantedFeats(4, out var fighter));
+        Assert.Equal(2, fighter!.Count);
+
+        Assert.True(service.TryGetClassGrantedFeats(5, out var rogue));
+        Assert.Single(rogue!);
+
+        Assert.True(service.TryGetClassGrantedFeats(10, out var wizard));
+        Assert.Equal(3, wizard!.Count);
+    }
+
+    [Fact]
+    public void CacheRaceGrantedFeats_MultipleRaces_IndependentLookup()
+    {
+        var service = CreateService();
+        service.CacheRaceGrantedFeats(0, new HashSet<int> { 100 });  // Dwarf
+        service.CacheRaceGrantedFeats(1, new HashSet<int> { 200, 201 }); // Elf
+        service.CacheRaceGrantedFeats(6, new HashSet<int> { 300 });  // Human
+
+        Assert.True(service.TryGetRaceGrantedFeats(0, out var dwarf));
+        Assert.Single(dwarf!);
+
+        Assert.True(service.TryGetRaceGrantedFeats(1, out var elf));
+        Assert.Equal(2, elf!.Count);
+
+        Assert.True(service.TryGetRaceGrantedFeats(6, out var human));
+        Assert.Single(human!);
+    }
+
+    #endregion
+
+    #region Empty Set Caching
+
+    [Fact]
+    public void CacheClassGrantedFeats_EmptySet_StillCaches()
+    {
+        var service = CreateService();
+        service.CacheClassGrantedFeats(4, new HashSet<int>());
+
+        Assert.True(service.TryGetClassGrantedFeats(4, out var result));
+        Assert.Empty(result!);
+    }
+
+    [Fact]
+    public void CacheRaceGrantedFeats_EmptySet_StillCaches()
+    {
+        var service = CreateService();
+        service.CacheRaceGrantedFeats(6, new HashSet<int>());
+
+        Assert.True(service.TryGetRaceGrantedFeats(6, out var result));
+        Assert.Empty(result!);
+    }
+
+    [Fact]
+    public void SetAllFeatIds_EmptyList_SetsEmptyList()
+    {
+        var service = CreateService();
+        service.SetAllFeatIds(new List<int>());
+
+        var result = service.GetAllFeatIds();
+        Assert.NotNull(result);
+        Assert.Empty(result!);
+    }
+
+    #endregion
 }

@@ -415,4 +415,274 @@ public class SpellServiceTests
     }
 
     #endregion
+
+    #region GetSpellAndAbilityIds UserType Filtering
+
+    [Fact]
+    public void GetSpellAndAbilityIds_IncludesSpellsAndAbilities_ExcludesFeatsAndItems()
+    {
+        // Setup: Add spells with different UserTypes
+        var mockData = new MockGameDataService(includeSampleData: true);
+
+        // Spell (UserType=1) — should be included
+        mockData.Set2DAValue("spells", 0, "Label", "TestSpell");
+        mockData.Set2DAValue("spells", 0, "Name", "500");
+        mockData.Set2DAValue("spells", 0, "UserType", "1");
+        mockData.SetTlkString(500, "Test Spell");
+
+        // Special ability (UserType=2) — should be included
+        mockData.Set2DAValue("spells", 1, "Label", "TestAbility");
+        mockData.Set2DAValue("spells", 1, "Name", "501");
+        mockData.Set2DAValue("spells", 1, "UserType", "2");
+        mockData.SetTlkString(501, "Test Ability");
+
+        // Feat entry (UserType=3) — should be excluded
+        mockData.Set2DAValue("spells", 2, "Label", "FeatEntry");
+        mockData.Set2DAValue("spells", 2, "Name", "502");
+        mockData.Set2DAValue("spells", 2, "UserType", "3");
+        mockData.SetTlkString(502, "Feat Entry");
+
+        // Item activation (UserType=4) — should be excluded
+        mockData.Set2DAValue("spells", 3, "Label", "ItemEntry");
+        mockData.Set2DAValue("spells", 3, "Name", "503");
+        mockData.Set2DAValue("spells", 3, "UserType", "4");
+        mockData.SetTlkString(503, "Item Entry");
+
+        var service = new SpellService(mockData);
+        var ids = service.GetSpellAndAbilityIds();
+
+        Assert.Contains(0, ids);  // Spell included
+        Assert.Contains(1, ids);  // Ability included
+        Assert.DoesNotContain(2, ids); // Feat excluded
+        Assert.DoesNotContain(3, ids); // Item excluded
+    }
+
+    [Fact]
+    public void GetSpellAndAbilityIds_NoUserType_IncludedByDefault()
+    {
+        // Spells without UserType column are included (backward compatibility)
+        // Our base test spells (0-4) don't have UserType set
+        var ids = _spellService.GetSpellAndAbilityIds();
+
+        // Should include base test spells that lack UserType
+        Assert.Contains(0, ids); // Acid Fog
+        Assert.Contains(3, ids); // Magic Missile
+    }
+
+    #endregion
+
+    #region IsSpontaneousCaster Edge Cases
+
+    [Fact]
+    public void IsSpontaneousCaster_Bard_True()
+    {
+        Assert.True(_spellService.IsSpontaneousCaster(1));
+    }
+
+    [Fact]
+    public void IsSpontaneousCaster_Cleric_False()
+    {
+        Assert.False(_spellService.IsSpontaneousCaster(2));
+    }
+
+    [Fact]
+    public void IsSpontaneousCaster_Fighter_NoMemorizesSpells_DefaultsTrue()
+    {
+        // Fighter has no MemorizesSpells set — IsSpontaneousCaster returns true by default
+        // (which is technically irrelevant since Fighter isn't a caster)
+        Assert.True(_spellService.IsSpontaneousCaster(4));
+    }
+
+    [Fact]
+    public void IsSpontaneousCaster_Paladin_False()
+    {
+        // Paladin memorizes spells (MemorizesSpells=1)
+        Assert.False(_spellService.IsSpontaneousCaster(6));
+    }
+
+    #endregion
+
+    #region Spell Slot Edge Cases
+
+    [Fact]
+    public void GetSpellSlots_ClassLevel0_ReturnsNull()
+    {
+        Assert.Null(_spellService.GetSpellSlots(10, 0));
+    }
+
+    [Fact]
+    public void GetSpellSlots_NegativeLevel_ReturnsNull()
+    {
+        Assert.Null(_spellService.GetSpellSlots(10, -1));
+    }
+
+    [Fact]
+    public void GetSpellSlots_BeyondTableRows_ReturnsZeroSlots()
+    {
+        // Request level 50 — no row in the table
+        var slots = _spellService.GetSpellSlots(10, 50);
+        // May return array of zeros or null depending on whether table row exists
+        if (slots != null)
+        {
+            // All slots should be 0 since there's no data for level 50
+            Assert.All(slots, s => Assert.Equal(0, s));
+        }
+    }
+
+    [Fact]
+    public void GetSpellsKnownLimit_ClassLevel0_ReturnsNull()
+    {
+        Assert.Null(_spellService.GetSpellsKnownLimit(9, 0));
+    }
+
+    [Fact]
+    public void GetSpellsKnownLimit_NegativeLevel_ReturnsNull()
+    {
+        Assert.Null(_spellService.GetSpellsKnownLimit(9, -1));
+    }
+
+    #endregion
+
+    #region GetMaxSpellLevel Edge Cases
+
+    [Fact]
+    public void GetMaxSpellLevel_ClassLevel0_ReturnsMinus1()
+    {
+        Assert.Equal(-1, _spellService.GetMaxSpellLevel(10, 0));
+    }
+
+    [Fact]
+    public void GetMaxSpellLevel_NegativeLevel_ReturnsMinus1()
+    {
+        Assert.Equal(-1, _spellService.GetMaxSpellLevel(10, -1));
+    }
+
+    #endregion
+
+    #region AutoAssignSpells with Package Preferences
+
+    [Fact]
+    public void AutoAssignSpells_WithPackage_PrefersPackageSpells()
+    {
+        // Setup package spell preferences
+        _mockGameData.Set2DAValue("packages", 3, "SpellPref2DA", "cls_sppr_wiz3");
+        _mockGameData.Set2DAValue("cls_sppr_wiz3", 0, "SpellIndex", "3"); // Prefer Magic Missile
+        _mockGameData.Set2DAValue("cls_sppr_wiz3", 1, "SpellIndex", "****"); // End
+
+        var result = _spellService.AutoAssignSpells(
+            classId: 10,
+            packageId: 3,
+            maxSpellLevel: 1,
+            maxPerLevel: level => level == 1 ? 2 : 0,
+            existingSpells: null);
+
+        Assert.True(result.ContainsKey(1));
+        // Magic Missile (3) should be first since it's preferred
+        Assert.Contains(3, result[1]);
+    }
+
+    [Fact]
+    public void AutoAssignSpells_MaxPerLevelZero_ReturnsEmpty()
+    {
+        var result = _spellService.AutoAssignSpells(
+            classId: 10,
+            packageId: 255,
+            maxSpellLevel: 1,
+            maxPerLevel: level => 0, // No slots at any level
+            existingSpells: null);
+
+        // No spell levels should have entries
+        Assert.All(result.Values, list => Assert.Empty(list));
+    }
+
+    [Fact]
+    public void AutoAssignSpells_AllExisting_NoDuplicates()
+    {
+        // All available level-1 wizard spells already known
+        var existing = new HashSet<int> { 3, 4 }; // Magic Missile, Grease
+
+        var result = _spellService.AutoAssignSpells(
+            classId: 10,
+            packageId: 255,
+            maxSpellLevel: 1,
+            maxPerLevel: level => level == 1 ? 5 : 0,
+            existingSpells: existing);
+
+        if (result.ContainsKey(1))
+        {
+            // Should not include any existing spells
+            Assert.DoesNotContain(3, result[1]);
+            Assert.DoesNotContain(4, result[1]);
+        }
+    }
+
+    #endregion
+
+    #region Spontaneous vs Prepared Distinction
+
+    [Fact]
+    public void SorcererIsArcaneSpontaneous()
+    {
+        Assert.True(_spellService.IsArcaneCaster(9));
+        Assert.True(_spellService.IsSpontaneousCaster(9));
+    }
+
+    [Fact]
+    public void WizardIsArcanePrepared()
+    {
+        Assert.True(_spellService.IsArcaneCaster(10));
+        Assert.False(_spellService.IsSpontaneousCaster(10));
+    }
+
+    [Fact]
+    public void ClericIsDivinePrepared()
+    {
+        Assert.False(_spellService.IsArcaneCaster(2));
+        Assert.False(_spellService.IsSpontaneousCaster(2));
+    }
+
+    [Fact]
+    public void BardIsArcaneSpontaneous()
+    {
+        Assert.True(_spellService.IsArcaneCaster(1));
+        Assert.True(_spellService.IsSpontaneousCaster(1));
+    }
+
+    [Fact]
+    public void SorcererHasSpellsKnownLimit_WizardDoesNot()
+    {
+        // Sorcerer: spontaneous — has SpellKnownTable
+        var sorcLimits = _spellService.GetSpellsKnownLimit(9, 1);
+        Assert.NotNull(sorcLimits);
+
+        // Wizard: prepared — SpellKnownTable is "****"
+        var wizLimits = _spellService.GetSpellsKnownLimit(10, 1);
+        Assert.Null(wizLimits);
+    }
+
+    #endregion
+
+    #region SpellInfo Edge Cases
+
+    [Fact]
+    public void GetSpellInfo_Grease_AvailableToBardAndWizard()
+    {
+        var info = _spellService.GetSpellInfo(4);
+        Assert.NotNull(info);
+        Assert.Equal("Grease", info!.Name);
+        Assert.Equal(1, info.GetLevelForClass(1));  // Bard
+        Assert.Equal(1, info.GetLevelForClass(9));  // Sorcerer (via Wiz_Sorc)
+        Assert.Equal(1, info.GetLevelForClass(10)); // Wizard (via Wiz_Sorc)
+    }
+
+    [Fact]
+    public void SpellInfo_GetLevelForClass_NonCasterClass_ReturnsMinus1()
+    {
+        var info = _spellService.GetSpellInfo(0);
+        Assert.NotNull(info);
+        Assert.Equal(-1, info!.GetLevelForClass(4)); // Fighter
+        Assert.Equal(-1, info.GetLevelForClass(999)); // Unknown class
+    }
+
+    #endregion
 }
