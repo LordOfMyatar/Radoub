@@ -81,7 +81,7 @@ public partial class MainWindow
         DetailBuyPrice.Text = $"{(int)System.Math.Floor(item.BaseValue * markDown / 100.0):N0} gp";
         DetailInfinite.Text = "—";
         DetailStorePanel.Text = StorePanels.GetPanelName(
-            GetStorePanelForBaseItemType(item.BaseItemType));
+            GetStorePanelForBaseItemType(item.BaseItemIndex));
     }
 
     private void ClearItemDetails()

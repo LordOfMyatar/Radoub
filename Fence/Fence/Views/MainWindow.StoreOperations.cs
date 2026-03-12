@@ -16,61 +16,16 @@ public partial class MainWindow
 {
     #region Base Item to Store Panel Mapping
 
-    // Store panel mapping by item type NAME (case-insensitive)
-    // This is more robust than hardcoded indices since baseitems.2da row numbers
-    // can vary between NWN versions or with custom content
-    private static readonly HashSet<string> ArmorTypeNames = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "Armor", "Belt", "Boots", "Cloak", "Gloves", "Helmet",
-        "Large Shield", "Small Shield", "Tower Shield", "Bracer",
-        "Light Armor", "Medium Armor", "Heavy Armor"
-    };
-
-    private static readonly HashSet<string> WeaponTypeNames = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "Shortsword", "Longsword", "Battleaxe", "Bastardsword", "Bastard Sword",
-        "Light Flail", "Warhammer", "War Hammer", "Heavy Crossbow", "Light Crossbow",
-        "Longbow", "Long Bow", "Light Mace", "Halberd", "Shortbow", "Short Bow",
-        "Two-Bladed Sword", "Greatsword", "Great Sword", "Bolt", "Bullet",
-        "Dagger", "Arrow", "Greataxe", "Great Axe", "Morningstar", "Morning Star",
-        "Quarterstaff", "Quarter Staff", "Rapier", "Scimitar", "Scythe",
-        "Club", "Sickle", "Spear", "Handaxe", "Hand Axe", "Kama", "Katana",
-        "Kukri", "Nunchaku", "Sai", "Siangham", "Dart", "Light Hammer",
-        "Throwing Axe", "Dire Mace", "Double Axe", "Heavy Flail", "Sling",
-        "Shuriken", "Trident", "Whip", "Dwarven Waraxe", "Dwarven War Axe",
-        "Warmage", "Magic Staff"
-    };
-
-    private static readonly HashSet<string> PotionScrollTypeNames = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "Potion", "Scroll", "Kit", "Trap Kit", "Healer's Kit", "Healers Kit",
-        "Thieves' Tools", "Thieves Tools"
-    };
-
-    private static readonly HashSet<string> RingsAmuletTypeNames = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "Amulet", "Ring"
-    };
-
     /// <summary>
-    /// Determine which store panel an item belongs to based on its base item type NAME.
-    /// Uses name-based matching for compatibility with different baseitems.2da versions.
+    /// Determine which store panel an item belongs to based on its base item type index.
+    /// Reads StorePanel column from baseitems.2da via BaseItemTypeService.
+    /// Falls back to Miscellaneous if the service is unavailable or type is unknown.
     /// </summary>
-    private static int GetStorePanelForBaseItemType(string baseItemTypeName)
+    private int GetStorePanelForBaseItemType(int baseItemIndex)
     {
-        if (string.IsNullOrEmpty(baseItemTypeName))
-            return StorePanels.Miscellaneous;
+        if (_baseItemTypeService != null)
+            return _baseItemTypeService.GetStorePanelForBaseItem(baseItemIndex);
 
-        if (ArmorTypeNames.Contains(baseItemTypeName))
-            return StorePanels.Armor;
-        if (WeaponTypeNames.Contains(baseItemTypeName))
-            return StorePanels.Weapons;
-        if (PotionScrollTypeNames.Contains(baseItemTypeName))
-            return StorePanels.Potions;
-        if (RingsAmuletTypeNames.Contains(baseItemTypeName))
-            return StorePanels.RingsAmulets;
-
-        // Default to Miscellaneous for gems, wands, rods, misc items, etc.
         return StorePanels.Miscellaneous;
     }
 
@@ -166,7 +121,7 @@ public partial class MainWindow
         {
             var sellPrice = (int)Math.Ceiling(item.BaseValue * markUp / 100.0);
             var buyPrice = (int)Math.Floor(item.BaseValue * markDown / 100.0);
-            var panelId = GetStorePanelForBaseItemType(item.BaseItemType);
+            var panelId = GetStorePanelForBaseItemType(item.BaseItemIndex);
 
             // Debug: Log panel assignment for troubleshooting
             Radoub.Formats.Logging.UnifiedLogger.LogApplication(
