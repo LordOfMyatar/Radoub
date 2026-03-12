@@ -10,6 +10,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.37-alpha] - 2026-03-11
+**Branch**: `quartermaster/issue-1654` | **PR**: #TBD
+
+### Epic: TDD Backwork — Service Test Coverage Gaps (#1654)
+
+---
+
 ## [0.2.36-alpha] - 2026-03-10
 **Branch**: `quartermaster/issue-1608` | **PR**: #1655
 
