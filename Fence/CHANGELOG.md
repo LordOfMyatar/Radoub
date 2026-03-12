@@ -15,9 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Fence Tech Debt Cleanup
 
-- [ ] #1634 - Refactor hardcoded weapon/armor type names in StoreOperations to use BaseItemTypeService
-- [ ] #1635 - Add cancellation tokens to fire-and-forget palette tasks
-- [ ] #1637 - Standardize Task type syntax and replace inline error dialog
+- [x] #1634 - Refactor hardcoded weapon/armor type names in StoreOperations to use BaseItemTypeService (reads StorePanel column from baseitems.2da)
+- [x] #1635 - Add cancellation tokens to fire-and-forget palette tasks (CancellationTokenSource on window lifecycle)
+- [x] #1637 - Standardize Task type syntax and replace inline error dialog with DialogHelper.ShowError
 
 ---
 
