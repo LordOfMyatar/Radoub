@@ -276,6 +276,7 @@ public partial class NewCharacterWizardWindow : Window
 
     // Step 11 controls (Summary)
     private ushort _selectedVoiceSetId;
+    private bool _voiceSetSelected;
     private readonly TextBlock _summaryFileTypeLabel;
     private readonly TextBlock _summaryRaceLabel;
     private readonly TextBlock _summaryIdentityLabel;
@@ -679,8 +680,10 @@ public partial class NewCharacterWizardWindow : Window
         if (result.HasValue)
         {
             _selectedVoiceSetId = result.Value;
+            _voiceSetSelected = true;
             var name = _displayService.GetSoundSetName(result.Value);
             _identityVoiceSetLabel.Text = $"{name} ({result.Value})";
+            ValidateCurrentStep();
         }
     }
 
@@ -742,7 +745,7 @@ public partial class NewCharacterWizardWindow : Window
         {
             1 => true,
             2 => _selectedRaceId != 255,
-            3 => true,
+            3 => !_isBicFile || _voiceSetSelected,
             4 => true,
             5 => _selectedClassId >= 0 && !IsFamiliarNameRequired(),
             6 => GetAbilityPointsRemaining() == 0 || !_isBicFile,
@@ -783,6 +786,7 @@ public partial class NewCharacterWizardWindow : Window
             _statusLabel.Foreground = BrushManager.GetWarningBrush(this);
             _statusLabel.Text = _currentStep switch
             {
+                3 when _isBicFile && !_voiceSetSelected => "⚠ No voice set selected. BIC files need a voice set for in-game dialog.",
                 5 when IsFamiliarNameRequired() => "⚠ Familiar name is empty.",
                 6 => $"⚠ {GetAbilityPointsRemaining()} ability point(s) unspent.",
                 7 => $"⚠ {_featsToChoose - _chosenFeatIds.Count} feat(s) not selected.",
@@ -796,6 +800,7 @@ public partial class NewCharacterWizardWindow : Window
             _statusLabel.Text = _currentStep switch
             {
                 2 => "Select a race to continue.",
+                3 => "Select a voice set for your BIC character.",
                 5 when _selectedClassId < 0 => "Select a class to continue.",
                 5 when IsFamiliarNameRequired() => "Enter a name for your familiar.",
                 6 => $"Spend all {_pointBuyTotal} ability points to continue.",
