@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.17-alpha] - 2026-03-11
+**Branch**: `fence/issue-1634` | **PR**: #1661
+
+### Sprint: Fence Tech Debt Cleanup
+
+- [x] #1634 - Refactor hardcoded weapon/armor type names in StoreOperations to use BaseItemTypeService (reads StorePanel column from baseitems.2da)
+- [x] #1635 - Add cancellation tokens to fire-and-forget palette tasks (CancellationTokenSource on window lifecycle)
+- [x] #1637 - Standardize Task type syntax and replace inline error dialog with DialogHelper.ShowError
+
+---
+
 ## [0.1.16-alpha] - 2026-02-27
 **Branch**: `radoub/issue-1560` | **PR**: #1561
 
