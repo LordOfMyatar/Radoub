@@ -66,7 +66,7 @@ public partial class MainWindow
     /// Initialize palette - don't load items yet, just prepare the cache.
     /// Items are loaded on-demand when user filters or searches.
     /// </summary>
-    private void StartItemPaletteLoad()
+    private void StartItemPaletteLoad(CancellationToken token = default)
     {
         if (_gameDataService == null || !_gameDataService.IsConfigured)
         {
@@ -79,7 +79,7 @@ public partial class MainWindow
         ItemPaletteGrid.ItemsSource = PaletteItems;
 
         // Pre-warm cache in background (but don't display items yet)
-        _ = PreWarmCacheAsync();
+        _ = PreWarmCacheAsync(token);
 
         UpdateStatusBar("Ready - select an item type to browse");
     }
@@ -88,15 +88,17 @@ public partial class MainWindow
     /// Pre-warm the cache in background so it's ready when user filters.
     /// Uses shared cross-tool cache.
     /// </summary>
-    private async Task PreWarmCacheAsync()
+    private async Task PreWarmCacheAsync(CancellationToken token = default)
     {
         try
         {
+            token.ThrowIfCancellationRequested();
+
             // Resolve active HAK paths for module-aware filtering
             _activeHakPaths = ResolveActiveHakPaths();
 
             // Try to load from shared cache (filtered to active HAKs)
-            var aggregated = await Task.Run(() => _sharedCacheService.GetAggregatedCache(_activeHakPaths));
+            var aggregated = await Task.Run(() => _sharedCacheService.GetAggregatedCache(_activeHakPaths), token);
             if (aggregated != null)
             {
                 // Filter out excluded base item types
@@ -106,7 +108,7 @@ public partial class MainWindow
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Cache pre-warmed from shared cache: {_cachedPaletteData.Count} items ready");
 
                 // Scan module HAKs in background (skips cached, refreshes stale)
-                _ = ScanModuleHaksAsync();
+                _ = ScanModuleHaksAsync(token);
                 return;
             }
 
@@ -115,7 +117,11 @@ public partial class MainWindow
             await BuildCacheInBackgroundAsync();
 
             // Scan module HAKs after building base caches
-            await ScanModuleHaksAsync();
+            await ScanModuleHaksAsync(token);
+        }
+        catch (OperationCanceledException)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Cache pre-warm cancelled");
         }
         catch (Exception ex)
         {
@@ -407,7 +413,7 @@ public partial class MainWindow
     /// Scan module HAK files and cache items. Skips HAKs with valid caches.
     /// After scanning, refreshes the aggregated cache data.
     /// </summary>
-    private async Task ScanModuleHaksAsync()
+    private async Task ScanModuleHaksAsync(CancellationToken token = default)
     {
         var moduleDir = GetModuleWorkingDirectory();
         if (string.IsNullOrEmpty(moduleDir))
@@ -415,9 +421,11 @@ public partial class MainWindow
 
         try
         {
+            token.ThrowIfCancellationRequested();
+
             var hakSearchPaths = RadoubSettings.Instance.GetAllHakSearchPaths();
             var result = await _hakScanner.ScanAndCacheModuleHaksAsync(
-                moduleDir, hakSearchPaths, _sharedCacheService, CancellationToken.None);
+                moduleDir, hakSearchPaths, _sharedCacheService, token);
 
             if (result.HaksScanned > 0)
             {
@@ -434,6 +442,10 @@ public partial class MainWindow
                         .ToList();
                 }
             }
+        }
+        catch (OperationCanceledException)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "HAK scan cancelled");
         }
         catch (Exception ex)
         {

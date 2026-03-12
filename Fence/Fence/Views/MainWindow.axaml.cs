@@ -18,6 +18,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Collections.Specialized;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Radoub.UI.Services;
 using Radoub.UI.Utils;
@@ -64,6 +65,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private TlkService? _tlkService;
     private ItemIconService? _itemIconService;
     private bool _servicesInitialized;
+
+    // Cancellation token for async operations - cancelled on window close
+    private CancellationTokenSource? _windowCts;
 
     // Store palette categories loaded from storepal.itp
     // Maps dropdown index to category ID for CEP/custom content support
@@ -122,19 +126,25 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         Opened -= OnWindowOpened;
 
+        _windowCts = new CancellationTokenSource();
+
         UpdateStatusBar("Initializing...");
 
         // Fire and forget - don't block UI thread
         // Service init and palette loading happen in background
-        _ = InitializeAndLoadAsync();
+        _ = InitializeAndLoadAsync(_windowCts.Token);
     }
 
-    private async Task InitializeAndLoadAsync()
+    private async Task InitializeAndLoadAsync(CancellationToken token)
     {
         try
         {
+            token.ThrowIfCancellationRequested();
+
             // Initialize services on background thread - this is the expensive part
             await InitializeServicesAsync();
+
+            token.ThrowIfCancellationRequested();
 
             // Load store categories on background thread (triggers KEY cache + BIF metadata load)
             // Then update UI on main thread
@@ -144,7 +154,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     return new List<PaletteCategory>();
 
                 return _gameDataService.GetPaletteCategories(Radoub.Formats.Common.ResourceTypes.Utm).ToList();
-            });
+            }, token);
 
             // Now populate UI with pre-loaded categories (fast - no I/O)
             await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
@@ -153,9 +163,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 PopulateLanguageMenu();
             });
 
+            token.ThrowIfCancellationRequested();
+
             // Start background loading tasks in parallel (fire-and-forget)
-            _ = LoadBaseItemTypesAsync();
-            StartItemPaletteLoad();
+            _ = LoadBaseItemTypesAsync(token);
+            StartItemPaletteLoad(token);
 
             // Handle command line file
             var options = CommandLineService.Options;
@@ -166,6 +178,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     LoadFile(options.FilePath);
                 });
             }
+        }
+        catch (OperationCanceledException)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Initialization cancelled (window closing)");
         }
         catch (Exception ex)
         {
@@ -278,6 +294,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             SaveStoreBrowserPanelSize();
             SaveItemDetailsPanelSize();
 
+            // Cancel all async operations
+            _windowCts?.Cancel();
+            _windowCts?.Dispose();
+
             // Dispose TlkService to unsubscribe from settings events
             _tlkService?.Dispose();
 
@@ -339,7 +359,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         StoreCategoryBox.SelectedIndex = 0;
     }
 
-    private async Task LoadBaseItemTypesAsync()
+    private async Task LoadBaseItemTypesAsync(CancellationToken token = default)
     {
         if (_baseItemTypeService == null) return;
 
@@ -348,9 +368,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             // Load base item types on background thread and create view models there too
             var viewModels = await Task.Run(() =>
             {
+                token.ThrowIfCancellationRequested();
                 var types = _baseItemTypeService.GetBaseItemTypes();
                 return types.Select(t => new SelectableBaseItemTypeViewModel(t.BaseItemIndex, t.DisplayName)).ToList();
-            });
+            }, token);
 
             // Update UI on main thread - batch update to avoid 575 individual collection changes
             await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
@@ -366,6 +387,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 // Populate type filter after base items loaded
                 PopulateTypeFilter();
             });
+        }
+        catch (OperationCanceledException)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Base item type loading cancelled");
         }
         catch (Exception ex)
         {
