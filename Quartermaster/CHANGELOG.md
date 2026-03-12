@@ -15,6 +15,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### TDD: FeatService Advanced Prerequisite Coverage (#1658)
 
+- 65 new tests in FeatServiceAdvancedTests covering all identified coverage gaps
+- OR-required feat chains: 2-option, 5-option, mixed AND+OR, dual AND, all-met/none-met/partial
+- Epic feat validation: level 21 pass, level 20 fail, multiclass total level, epic+ability+feat combos, BAB-met-but-not-epic
+- Spell level prerequisites: Wizard level 3/5 casting, Fighter (no spells), multiclass spell access, level 1 spell threshold
+- Dual skill requirements: both-met, one-met, neither-met, skill index beyond SkillList bounds
+- Level requirements: MinLevel pass/fail, multiclass total level, class-specific level (Fighter 4), wrong class, MaxLevel cap, MinLevel+MaxLevel range
+- Multiple ability prerequisites: dual ability (STR+DEX), all six abilities, single ability failure
+- AutoAssignFeats: no-package alphabetical, package preferences, skip-owned, max count, prereq checker, bonus pool restriction, pool+package interaction, zero max, no duplicates
+- Multiclass feat scenarios: feat in second class table, unavailable cross-class, combined granted union, granting class identification
+- HasPrerequisites flag: no-prereqs false, simple-prereqs true, complex-prereqs true
+- Tooltip formatting: OR section "One of:", multi-requirement-type inclusion
+
 ---
 
 ## [0.2.39-alpha] - 2026-03-12
