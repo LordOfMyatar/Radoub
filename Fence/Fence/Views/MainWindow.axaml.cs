@@ -18,6 +18,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Collections.Specialized;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Radoub.UI.Services;
 using Radoub.UI.Utils;
 using Radoub.UI.Views;
@@ -128,7 +129,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _ = InitializeAndLoadAsync();
     }
 
-    private async System.Threading.Tasks.Task InitializeAndLoadAsync()
+    private async Task InitializeAndLoadAsync()
     {
         try
         {
@@ -137,7 +138,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
             // Load store categories on background thread (triggers KEY cache + BIF metadata load)
             // Then update UI on main thread
-            var categories = await System.Threading.Tasks.Task.Run(() =>
+            var categories = await Task.Run(() =>
             {
                 if (_gameDataService?.IsConfigured != true)
                     return new List<PaletteCategory>();
@@ -173,12 +174,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
-    private async System.Threading.Tasks.Task InitializeServicesAsync()
+    private async Task InitializeServicesAsync()
     {
         if (_servicesInitialized) return;
 
         // Run the expensive GameDataService initialization on a background thread
-        await System.Threading.Tasks.Task.Run(() =>
+        await Task.Run(() =>
         {
             _gameDataService = CreateGameDataService();
             _baseItemTypeService = new BaseItemTypeService(_gameDataService);
@@ -338,14 +339,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         StoreCategoryBox.SelectedIndex = 0;
     }
 
-    private async System.Threading.Tasks.Task LoadBaseItemTypesAsync()
+    private async Task LoadBaseItemTypesAsync()
     {
         if (_baseItemTypeService == null) return;
 
         try
         {
             // Load base item types on background thread and create view models there too
-            var viewModels = await System.Threading.Tasks.Task.Run(() =>
+            var viewModels = await Task.Run(() =>
             {
                 var types = _baseItemTypeService.GetBaseItemTypes();
                 return types.Select(t => new SelectableBaseItemTypeViewModel(t.BaseItemIndex, t.DisplayName)).ToList();
@@ -688,31 +689,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void ShowError(string message)
     {
-        var dialog = new Window
-        {
-            Title = "Error",
-            Width = 400,
-            Height = 150,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            CanResize = false,
-            Content = new StackPanel
-            {
-                Margin = new Thickness(20),
-                Spacing = 12,
-                Children =
-                {
-                    new TextBlock { Text = message, TextWrapping = Avalonia.Media.TextWrapping.Wrap },
-                    new Button { Content = "OK", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right }
-                }
-            }
-        };
-
-        if (dialog.Content is StackPanel panel && panel.Children.LastOrDefault() is Button btn)
-        {
-            btn.Click += (s, e) => dialog.Close();
-        }
-
-        dialog.Show(this); // Non-modal
+        DialogHelper.ShowError(this, "Error", message);
     }
 
     protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)

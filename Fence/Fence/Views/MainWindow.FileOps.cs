@@ -11,6 +11,7 @@ using Radoub.UI.Views;
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace MerchantEditor.Views;
 
@@ -119,7 +120,7 @@ public partial class MainWindow
         }
     }
 
-    private async System.Threading.Tasks.Task PopulateStoreInventoryAsync(string filePath)
+    private async Task PopulateStoreInventoryAsync(string filePath)
     {
         if (_currentStore == null) return;
 
@@ -139,7 +140,7 @@ public partial class MainWindow
             .ToList();
 
         // Resolve items on background thread
-        var resolvedItems = await System.Threading.Tasks.Task.Run(() =>
+        var resolvedItems = await Task.Run(() =>
         {
             var results = new System.Collections.Generic.List<StoreItemViewModel>();
 
@@ -230,7 +231,7 @@ public partial class MainWindow
         }
     }
 
-    private async System.Threading.Tasks.Task SaveFile(string filePath)
+    private async Task SaveFile(string filePath)
     {
         if (_currentStore == null)
             return;
@@ -263,7 +264,7 @@ public partial class MainWindow
             var store = _currentStore;
             try
             {
-                await System.Threading.Tasks.Task.Run(() => UtmWriter.Write(store, tempPath));
+                await Task.Run(() => UtmWriter.Write(store, tempPath));
 
                 // Replace original with temp (atomic on same volume)
                 if (File.Exists(filePath))
@@ -305,7 +306,7 @@ public partial class MainWindow
     /// <summary>
     /// Public async method for auto-save from store browser panel (#1144).
     /// </summary>
-    private System.Threading.Tasks.Task SaveFileAsync(string filePath) => SaveFile(filePath);
+    private Task SaveFileAsync(string filePath) => SaveFile(filePath);
 
     private void UpdateStoreFromUI()
     {
@@ -417,7 +418,7 @@ public partial class MainWindow
             async filePath =>
             {
                 // Check file existence on background thread to avoid blocking on network paths
-                var exists = await System.Threading.Tasks.Task.Run(() => File.Exists(filePath));
+                var exists = await Task.Run(() => File.Exists(filePath));
 
                 if (exists)
                 {
@@ -452,7 +453,7 @@ public partial class MainWindow
     /// <summary>
     /// Renames the current file using a safe save-rename-reload workflow.
     /// </summary>
-    private async System.Threading.Tasks.Task RenameCurrentFileAsync()
+    private async Task RenameCurrentFileAsync()
     {
         if (_currentStore == null || string.IsNullOrEmpty(_currentFilePath))
         {
@@ -519,7 +520,7 @@ public partial class MainWindow
     /// <summary>
     /// Shows a confirmation dialog and returns true if user confirms.
     /// </summary>
-    private System.Threading.Tasks.Task<bool> ShowConfirmationDialogAsync(string title, string message)
+    private Task<bool> ShowConfirmationDialogAsync(string title, string message)
         => DialogHelper.ShowOkCancelAsync(this, title, message);
 
     #endregion
