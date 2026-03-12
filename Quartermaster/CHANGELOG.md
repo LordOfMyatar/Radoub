@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.41-alpha] - 2026-03-12
-**Branch**: `quartermaster/issue-1660` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1660` | **PR**: #1669
 
 ### Sprint: TDD Backwork Phase 2 — Medium-Lift Service Tests (#1660)
 
