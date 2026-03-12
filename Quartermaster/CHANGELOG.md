@@ -10,6 +10,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.39-alpha] - 2026-03-12
+**Branch**: `quartermaster/issue-1657` | **PR**: #TBD
+
+### TDD: AppearanceService Test Coverage (#1657)
+
+---
+
 ## [0.2.38-alpha] - 2026-03-11
 **Branch**: `quartermaster/issue-1659` | **PR**: #1664
 
