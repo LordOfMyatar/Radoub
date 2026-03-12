@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.17-alpha] - 2026-03-11
-**Branch**: `fence/issue-1634` | **PR**: #TBD
+**Branch**: `fence/issue-1634` | **PR**: #1661
 
 ### Sprint: Fence Tech Debt Cleanup
 
