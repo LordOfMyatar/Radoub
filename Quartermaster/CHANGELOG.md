@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.42-alpha] - 2026-03-12
+**Branch**: `quartermaster/issue-1651` | **PR**: #TBD
+
+### Sprint: NCW Hardening (#1651)
+
+- #1639 - NCW: Fighter gets invalid feats (package validation + MinSpellLevel gaps)
+- #1629 - NCW: Require voice set selection for BIC files
+- #1628 - Point buy total may vary by race (27 vs 30)
+
+---
+
 ## [0.2.41-alpha] - 2026-03-12
 **Branch**: `quartermaster/issue-1660` | **PR**: #1669
 
