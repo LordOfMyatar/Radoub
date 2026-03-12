@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+using System.Linq;
 using Quartermaster.Services;
 using Radoub.TestUtilities.Mocks;
 using Xunit;
@@ -48,6 +51,26 @@ public class AppearanceServiceTests
         Assert.Equal("Appearance 999", name);
     }
 
+    [Fact]
+    public void GetAppearanceName_StarStringRef_FallsBackToLabel()
+    {
+        _mockGameData.Set2DAValue("appearance", 15, "STRING_REF", "****");
+        _mockGameData.Set2DAValue("appearance", 15, "LABEL", "MyCreature");
+        _mockGameData.Set2DAValue("appearance", 15, "MODELTYPE", "F");
+
+        Assert.Equal("MyCreature", _service.GetAppearanceName(15));
+    }
+
+    [Fact]
+    public void GetAppearanceName_EmptyStringRef_FallsBackToLabel()
+    {
+        _mockGameData.Set2DAValue("appearance", 16, "STRING_REF", "");
+        _mockGameData.Set2DAValue("appearance", 16, "LABEL", "EmptyRefCreature");
+        _mockGameData.Set2DAValue("appearance", 16, "MODELTYPE", "S");
+
+        Assert.Equal("EmptyRefCreature", _service.GetAppearanceName(16));
+    }
+
     #endregion
 
     #region IsPartBasedAppearance
@@ -70,6 +93,24 @@ public class AppearanceServiceTests
     public void IsPartBasedAppearance_MissingRow_ReturnsFalse()
     {
         Assert.False(_service.IsPartBasedAppearance(999));
+    }
+
+    [Fact]
+    public void IsPartBasedAppearance_LowercaseP_ReturnsTrue()
+    {
+        _mockGameData.Set2DAValue("appearance", 17, "MODELTYPE", "p");
+        _mockGameData.Set2DAValue("appearance", 17, "LABEL", "LowercaseTest");
+
+        Assert.True(_service.IsPartBasedAppearance(17));
+    }
+
+    [Fact]
+    public void IsPartBasedAppearance_NullModelType_ReturnsFalse()
+    {
+        // Row with no MODELTYPE set
+        _mockGameData.Set2DAValue("appearance", 18, "LABEL", "NoModelType");
+
+        Assert.False(_service.IsPartBasedAppearance(18));
     }
 
     #endregion
@@ -107,6 +148,47 @@ public class AppearanceServiceTests
         Assert.Equal(-2, _service.GetSizeAcModifier(21));
     }
 
+    [Fact]
+    public void GetSizeAcModifier_Gargantuan_ReturnsMinusFour()
+    {
+        _mockGameData.Set2DAValue("appearance", 22, "SIZECATEGORY", "6");
+        _mockGameData.Set2DAValue("appearance", 22, "LABEL", "GargantuanCreature");
+        Assert.Equal(-4, _service.GetSizeAcModifier(22));
+    }
+
+    [Fact]
+    public void GetSizeAcModifier_Colossal_ReturnsMinusEight()
+    {
+        _mockGameData.Set2DAValue("appearance", 23, "SIZECATEGORY", "7");
+        _mockGameData.Set2DAValue("appearance", 23, "LABEL", "ColossalCreature");
+        Assert.Equal(-8, _service.GetSizeAcModifier(23));
+    }
+
+    [Fact]
+    public void GetSizeAcModifier_InvalidString_ReturnsZero()
+    {
+        _mockGameData.Set2DAValue("appearance", 24, "SIZECATEGORY", "notanumber");
+        _mockGameData.Set2DAValue("appearance", 24, "LABEL", "BadSize");
+        Assert.Equal(0, _service.GetSizeAcModifier(24));
+    }
+
+    [Fact]
+    public void GetSizeAcModifier_StarValue_ReturnsZero()
+    {
+        _mockGameData.Set2DAValue("appearance", 25, "SIZECATEGORY", "****");
+        _mockGameData.Set2DAValue("appearance", 25, "LABEL", "StarSize");
+        Assert.Equal(0, _service.GetSizeAcModifier(25));
+    }
+
+    [Fact]
+    public void GetSizeAcModifier_UnknownSizeCategory_ReturnsZero()
+    {
+        // Size category 8 doesn't exist in D&D → should return 0
+        _mockGameData.Set2DAValue("appearance", 26, "SIZECATEGORY", "8");
+        _mockGameData.Set2DAValue("appearance", 26, "LABEL", "UnknownSize");
+        Assert.Equal(0, _service.GetSizeAcModifier(26));
+    }
+
     #endregion
 
     #region GetAllAppearances
@@ -131,6 +213,46 @@ public class AppearanceServiceTests
         var badger = appearances.FirstOrDefault(a => a.AppearanceId == 0);
         Assert.NotNull(badger);
         Assert.False(badger!.IsPartBased);
+    }
+
+    [Fact]
+    public void GetAllAppearances_SkipsStarLabelRows()
+    {
+        _mockGameData.Set2DAValue("appearance", 30, "LABEL", "****");
+        _mockGameData.Set2DAValue("appearance", 30, "STRING_REF", "6798");
+        _mockGameData.Set2DAValue("appearance", 30, "MODELTYPE", "F");
+
+        var appearances = _service.GetAllAppearances();
+        Assert.DoesNotContain(appearances, a => a.AppearanceId == 30);
+    }
+
+    [Fact]
+    public void GetAllAppearances_SkipsEmptyLabelRows()
+    {
+        _mockGameData.Set2DAValue("appearance", 31, "LABEL", "");
+        _mockGameData.Set2DAValue("appearance", 31, "STRING_REF", "6798");
+
+        var appearances = _service.GetAllAppearances();
+        Assert.DoesNotContain(appearances, a => a.AppearanceId == 31);
+    }
+
+    [Fact]
+    public void GetAllAppearances_NoData_ReturnsEmptyList()
+    {
+        var emptyMock = new MockGameDataService(includeSampleData: false);
+        var service = new AppearanceService(emptyMock);
+        var appearances = service.GetAllAppearances();
+        Assert.Empty(appearances);
+    }
+
+    [Fact]
+    public void GetAllAppearances_PopulatesAllFields()
+    {
+        var appearances = _service.GetAllAppearances();
+        var badger = appearances.First(a => a.AppearanceId == 0);
+        Assert.Equal("Badger", badger.Name); // TLK name
+        Assert.Equal("A_Badger", badger.Label); // 2DA LABEL
+        Assert.False(badger.IsPartBased);
     }
 
     #endregion
@@ -175,6 +297,39 @@ public class AppearanceServiceTests
         Assert.Equal(2, phenotypes.Count);
         Assert.Equal("Normal", phenotypes[0].Name);
         Assert.Equal("Large", phenotypes[1].Name);
+    }
+
+    [Fact]
+    public void GetAllPhenotypes_FallbackDefaults_HaveCorrectIds()
+    {
+        var service = new AppearanceService(new MockGameDataService(includeSampleData: false));
+        var phenotypes = service.GetAllPhenotypes();
+        Assert.Equal(0, phenotypes[0].PhenotypeId);
+        Assert.Equal(2, phenotypes[1].PhenotypeId);
+    }
+
+    [Fact]
+    public void GetAllPhenotypes_BreaksOnEmptyAfterData()
+    {
+        // After data rows, an empty row should trigger break
+        // Mock has rows 0 and 1 with data, row 2+ empty → should stop
+        var phenotypes = _service.GetAllPhenotypes();
+        // Should have exactly 2 entries (rows 0 and 1 from mock)
+        Assert.Equal(2, phenotypes.Count);
+    }
+
+    [Fact]
+    public void GetAllPhenotypes_SkipsLeadingEmptyRows()
+    {
+        // When row 0 is empty but row 1 has data, it should skip and continue
+        var mock = new MockGameDataService(includeSampleData: false);
+        mock.Set2DAValue("phenotype", 1, "Label", "TestPheno");
+        mock.Set2DAValue("phenotype", 1, "Name", "****");
+        var service = new AppearanceService(mock);
+
+        var phenotypes = service.GetAllPhenotypes();
+        Assert.Single(phenotypes);
+        Assert.Equal(1, phenotypes[0].PhenotypeId);
     }
 
     #endregion
@@ -255,6 +410,30 @@ public class AppearanceServiceTests
         Assert.Null(_service.FindPortraitIdByResRef(""));
     }
 
+    [Fact]
+    public void GetPortraitResRef_StarValue_ReturnsNull()
+    {
+        // Row 2 in mock has "****" for BaseResRef
+        Assert.Null(_service.GetPortraitResRef(2));
+    }
+
+    [Fact]
+    public void GetAllPortraits_SkipsStarAndEmptyRows()
+    {
+        var portraits = _service.GetAllPortraits();
+        // No portrait should have "****" as name
+        Assert.DoesNotContain(portraits, p => p.Name == "****");
+        Assert.DoesNotContain(portraits, p => string.IsNullOrEmpty(p.Name));
+    }
+
+    [Fact]
+    public void FindPortraitIdByResRef_PoPrefixCaseInsensitive_Matches()
+    {
+        // "PO_HU_M_01_" should match "hu_m_01_"
+        var id = _service.FindPortraitIdByResRef("PO_HU_M_01_");
+        Assert.Equal((ushort)0, id);
+    }
+
     #endregion
 
     #region Wings and Tails
@@ -318,6 +497,53 @@ public class AppearanceServiceTests
         Assert.True(wings.Count < 255);
     }
 
+    [Fact]
+    public void GetAllWings_IncludesEntriesAfterSmallGap()
+    {
+        // Add an entry after a gap of 5 empty rows (< 10 threshold)
+        _mockGameData.Set2DAValue("wingmodel", 9, "LABEL", "Dragon");
+
+        var wings = _service.GetAllWings();
+        Assert.Contains(wings, w => w.Name == "Dragon");
+    }
+
+    [Fact]
+    public void GetAllTails_StopsAfterConsecutiveEmptyRows()
+    {
+        var tails = _service.GetAllTails();
+        Assert.True(tails.Count < 255);
+    }
+
+    [Fact]
+    public void GetAllTails_IncludesEntriesAfterSmallGap()
+    {
+        _mockGameData.Set2DAValue("tailmodel", 8, "LABEL", "Scorpion");
+
+        var tails = _service.GetAllTails();
+        Assert.Contains(tails, t => t.Name == "Scorpion");
+    }
+
+    [Fact]
+    public void GetTailName_InvalidId_ReturnsFallback()
+    {
+        Assert.Equal("Tail 250", _service.GetTailName(250));
+    }
+
+    [Fact]
+    public void GetWingName_StarLabel_ReturnsFallback()
+    {
+        // Row with only **** label
+        _mockGameData.Set2DAValue("wingmodel", 50, "LABEL", "****");
+        Assert.Equal("Wings 50", _service.GetWingName(50));
+    }
+
+    [Fact]
+    public void GetTailName_StarLabel_ReturnsFallback()
+    {
+        _mockGameData.Set2DAValue("tailmodel", 50, "LABEL", "****");
+        Assert.Equal("Tail 50", _service.GetTailName(50));
+    }
+
     #endregion
 
     #region Sound Sets
@@ -373,6 +599,48 @@ public class AppearanceServiceTests
         var factions = _service.GetAllFactions("/nonexistent/path");
         Assert.Equal(5, factions.Count);
         Assert.Equal("PC", factions[0].Name);
+    }
+
+    [Fact]
+    public void GetAllFactions_DefaultFactionIds_AreSequential()
+    {
+        var factions = _service.GetAllFactions();
+        for (int i = 0; i < factions.Count; i++)
+        {
+            Assert.Equal((ushort)i, factions[i].Id);
+        }
+    }
+
+    [Fact]
+    public void GetAllFactions_NullModuleDir_ReturnsDefaults()
+    {
+        var factions = _service.GetAllFactions(null);
+        Assert.Equal(5, factions.Count);
+    }
+
+    [Fact]
+    public void GetAllFactions_EmptyModuleDir_ReturnsDefaults()
+    {
+        var factions = _service.GetAllFactions("");
+        Assert.Equal(5, factions.Count);
+    }
+
+    [Fact]
+    public void GetAllFactions_DirWithoutFacFile_ReturnsDefaults()
+    {
+        // Use a real directory that exists but has no repute.fac
+        var tempDir = Path.Combine(Path.GetTempPath(), "radoub_test_nofac_" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var factions = _service.GetAllFactions(tempDir);
+            Assert.Equal(5, factions.Count);
+            Assert.Equal("PC", factions[0].Name);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
     }
 
     #endregion
@@ -439,6 +707,61 @@ public class AppearanceServiceTests
         Assert.Equal(2, wizardPackages.Count);
         // "Abjurer" < "Wizard Default" alphabetically
         Assert.Equal("Abjurer", wizardPackages[0].Name);
+    }
+
+    [Fact]
+    public void GetPackageName_NoData_ReturnsFallback()
+    {
+        Assert.Equal("Package 200", _service.GetPackageName(200));
+    }
+
+    [Fact]
+    public void GetPackagesForClass_StarClassId_SkipsRow()
+    {
+        _mockGameData.Set2DAValue("packages", 11, "Label", "NoClass");
+        _mockGameData.Set2DAValue("packages", 11, "Name", "****");
+        _mockGameData.Set2DAValue("packages", 11, "ClassID", "****");
+
+        var packages = _service.GetPackagesForClass(0);
+        Assert.DoesNotContain(packages, p => p.Name == "NoClass");
+    }
+
+    [Fact]
+    public void GetPackagesForClass_EmptyClassId_SkipsRow()
+    {
+        _mockGameData.Set2DAValue("packages", 12, "Label", "EmptyClass");
+        _mockGameData.Set2DAValue("packages", 12, "Name", "****");
+        _mockGameData.Set2DAValue("packages", 12, "ClassID", "");
+
+        var packages = _service.GetPackagesForClass(0);
+        Assert.DoesNotContain(packages, p => p.Name == "EmptyClass");
+    }
+
+    [Fact]
+    public void GetAllPackages_NoData_ReturnsEmptyList()
+    {
+        var emptyMock = new MockGameDataService(includeSampleData: false);
+        var service = new AppearanceService(emptyMock);
+        var packages = service.GetAllPackages();
+        Assert.Empty(packages);
+    }
+
+    [Fact]
+    public void GetAllSoundSets_NoData_ReturnsEmptyList()
+    {
+        var emptyMock = new MockGameDataService(includeSampleData: false);
+        var service = new AppearanceService(emptyMock);
+        var soundSets = service.GetAllSoundSets();
+        Assert.Empty(soundSets);
+    }
+
+    [Fact]
+    public void GetAllSoundSets_UsesDisplayNameNotLabel()
+    {
+        var soundSets = _service.GetAllSoundSets();
+        // Row 0 has STRREF=7000 → TLK "Male Voice 1", LABEL="Male_1"
+        var first = soundSets.FirstOrDefault(s => s.Id == 0);
+        Assert.Equal("Male Voice 1", first.Name);
     }
 
     #endregion
