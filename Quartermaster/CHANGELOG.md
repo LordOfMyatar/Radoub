@@ -10,6 +10,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.38-alpha] - 2026-03-11
+**Branch**: `quartermaster/issue-1659` | **PR**: #TBD
+
+### TDD: CreatureDisplayService.Combat Test Coverage (#1659)
+
+---
+
 ## [0.2.37-alpha] - 2026-03-11
 **Branch**: `quartermaster/issue-1654` | **PR**: #1656
 
