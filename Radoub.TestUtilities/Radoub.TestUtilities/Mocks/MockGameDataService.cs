@@ -71,11 +71,50 @@ public class MockGameDataService : IGameDataService
 
     #region Resource Access
 
-    public byte[]? FindResource(string resRef, ushort resourceType) => null;
+    private readonly Dictionary<(string resRef, ushort resourceType), byte[]> _resources = new(
+        new ResourceKeyComparer());
+
+    private readonly List<GameResourceInfo> _resourceInfos = new();
+
+    public byte[]? FindResource(string resRef, ushort resourceType)
+    {
+        return _resources.TryGetValue((resRef.ToLowerInvariant(), resourceType), out var data) ? data : null;
+    }
 
     public IEnumerable<GameResourceInfo> ListResources(ushort resourceType)
     {
-        return Enumerable.Empty<GameResourceInfo>();
+        return _resourceInfos.Where(r => r.ResourceType == resourceType);
+    }
+
+    /// <summary>
+    /// Add a resource to the mock for FindResource lookups.
+    /// </summary>
+    public void SetResource(string resRef, ushort resourceType, byte[] data)
+    {
+        _resources[(resRef.ToLowerInvariant(), resourceType)] = data;
+    }
+
+    /// <summary>
+    /// Add a resource info entry for ListResources.
+    /// </summary>
+    public void AddResourceInfo(string resRef, ushort resourceType, string? sourcePath = null)
+    {
+        _resourceInfos.Add(new GameResourceInfo
+        {
+            ResRef = resRef,
+            ResourceType = resourceType,
+            Source = GameResourceSource.Bif,
+            SourcePath = sourcePath
+        });
+    }
+
+    private class ResourceKeyComparer : IEqualityComparer<(string resRef, ushort resourceType)>
+    {
+        public bool Equals((string resRef, ushort resourceType) x, (string resRef, ushort resourceType) y)
+            => string.Equals(x.resRef, y.resRef, StringComparison.OrdinalIgnoreCase) && x.resourceType == y.resourceType;
+
+        public int GetHashCode((string resRef, ushort resourceType) obj)
+            => HashCode.Combine(obj.resRef.ToLowerInvariant(), obj.resourceType);
     }
 
     #endregion
