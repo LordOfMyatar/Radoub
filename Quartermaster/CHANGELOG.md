@@ -10,6 +10,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.38-alpha] - 2026-03-11
+**Branch**: `quartermaster/issue-1659` | **PR**: #1664
+
+### TDD: CreatureDisplayService.Combat Test Coverage (#1659)
+
+- CombatCalculationTests: 110 test cases covering all combat calculation paths
+- BAB via 2DA: full/3-4/half progressions for all base and prestige classes
+- BAB multiclass: independent per-class calculation and summation
+- BAB fallback estimates: reasonableness checks when 2DA unavailable
+- Saving throws via 2DA: all base class progressions (good/poor formulas)
+- Saving throw multiclass: independent summation across classes
+- Equipment attack bonus: enhancement non-stacking, attack bonus stacking, mixed
+- CalculateCombatStats integration: full breakdown with BAB + equipment + APR + sequence
+- BuildAttackSequence: iterative -5 penalty formatting
+- Epic APR: epic BAB doesn't grant extra attacks
+- Edge cases: empty classes, zero levels, null items, negative levels
+
+---
+
 ## [0.2.37-alpha] - 2026-03-11
 **Branch**: `quartermaster/issue-1654` | **PR**: #1656
 
