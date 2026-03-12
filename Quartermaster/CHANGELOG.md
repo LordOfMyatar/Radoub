@@ -15,6 +15,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### TDD: AppearanceService Test Coverage (#1657)
 
+- 85 total tests (35 new) covering all 21 AppearanceService methods
+- GetAppearanceName: TLK resolution, `****` STRING_REF, empty STRING_REF, LABEL fallback
+- IsPartBasedAppearance: uppercase/lowercase "P", null MODELTYPE
+- GetSizeAcModifier: all 7 D&D size categories (Tiny through Colossal), invalid/star/unknown values
+- GetAllAppearances: field population, star/empty label filtering, no-data empty list
+- GetAllPhenotypes: break-on-empty-after-data logic, leading empty row skip, fallback default IDs
+- Portrait methods: star value handling, po_ prefix case insensitivity
+- GetAllWings/Tails: consecutive empty heuristic, entries surviving small gaps, star/invalid fallbacks
+- GetAllFactions: null/empty dir, directory without FAC file, sequential default IDs
+- Package methods: no-data fallback, star/empty ClassID filtering, empty data sets
+- GetAllSoundSets: display name vs label, empty data set
+
 ---
 
 ## [0.2.38-alpha] - 2026-03-11
