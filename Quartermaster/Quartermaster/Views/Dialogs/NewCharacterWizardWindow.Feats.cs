@@ -172,6 +172,22 @@ public partial class NewCharacterWizardWindow
             }
         }
 
+        // Check minimum spell level — creature must be able to cast spells of this level
+        if (prereqs.MinSpellLevel > 0)
+        {
+            int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
+            var spellGainTable = _gameDataService.Get2DAValue("classes", classId, "SpellGainTable");
+            if (string.IsNullOrEmpty(spellGainTable) || spellGainTable == "****")
+                return false; // Non-caster class (e.g., Fighter) — fails all spell level checks
+
+            // Check if this class grants spells of the required level at level 1
+            var col = $"SpellLevel{prereqs.MinSpellLevel}";
+            var slotsStr = _gameDataService.Get2DAValue(spellGainTable, 0, col); // Row 0 = level 1
+            if (string.IsNullOrEmpty(slotsStr) || slotsStr == "****" || slotsStr == "-"
+                || !int.TryParse(slotsStr, out int slots) || slots <= 0)
+                return false;
+        }
+
         // Epic feats not available at level 1
         if (prereqs.RequiresEpic) return false;
 

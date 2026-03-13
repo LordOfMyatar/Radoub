@@ -993,7 +993,7 @@
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Text="Assign Ability Scores" FontSize="{DynamicResource FontSizeXLarge}" FontWeight="Bold" Margin="0,0,0,10"/>
-                <TextBlock Grid.Row="1" Text="Distribute 30 points across your abilities. Base scores start at 8. Higher scores cost more points."
+                <TextBlock Grid.Row="1" x:Name="AbilityStepSubtitle" Text="Distribute 30 points across your abilities. Base scores start at 8. Higher scores cost more points."
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                            TextWrapping="Wrap" Margin="0,0,0,15"/>
 
