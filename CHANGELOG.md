@@ -24,6 +24,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Feature: Module-aware HAK scanning via module.ifo HakList (#1314)
 
+### Feature: Add Spike Solution workflow to development process (#1667)
+
 ---
 
 ## [0.9.85] - 2026-03-10
