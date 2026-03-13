@@ -116,6 +116,16 @@ public partial class ModuleEditorViewModel
             PopulateViewModelFromIfo();
             SyncToRadoubSettings();
             SyncDefaultBicToSettings();
+
+            // Configure module-aware HAK scanning for 2DA/resource resolution (#1314)
+            if (_gameDataService?.IsConfigured == true)
+            {
+                var hakDir = _workingDirectoryPath ?? _modulePath;
+                if (!string.IsNullOrEmpty(hakDir) && Directory.Exists(hakDir))
+                {
+                    await Task.Run(() => _gameDataService.ConfigureModuleHaks(hakDir));
+                }
+            }
             IsModuleLoaded = true;
             IsModuleReadOnly = _isReadOnly;
             IsVersionUnlocked = false;  // Always start with version locked
