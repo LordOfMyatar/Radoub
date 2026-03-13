@@ -448,6 +448,7 @@ public partial class MainWindow
 
     /// <summary>
     /// Scan module HAK files and cache items. Skips HAKs with valid caches.
+    /// After scanning, refreshes the aggregated cache data to include HAK items.
     /// </summary>
     private async Task ScanModuleHaksAsync(CancellationToken token)
     {
@@ -463,6 +464,10 @@ public partial class MainWindow
         {
             UnifiedLogger.LogInventory(LogLevel.INFO,
                 $"HAK scan: {result.HaksScanned} scanned, {result.HaksSkipped} cached, {result.TotalItemsScanned} items");
+
+            // Refresh aggregated cache to include HAK items (filtered to active HAKs)
+            _sharedCacheService.InvalidateAggregatedCache();
+            _cachedPaletteData = _sharedCacheService.GetAggregatedCache(_activeHakPaths);
         }
     }
 
