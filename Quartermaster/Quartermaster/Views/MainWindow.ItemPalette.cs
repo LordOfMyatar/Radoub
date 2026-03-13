@@ -312,16 +312,31 @@ public partial class MainWindow
                 return vms;
             }, token);
 
+            // Collect module directory items (loose UTIs) before SetPaletteItems clears them
+            var moduleDir = string.IsNullOrEmpty(_currentFilePath)
+                ? null
+                : Path.GetDirectoryName(_currentFilePath);
+            var moduleVms = LoadModuleItemViewModels(moduleDir);
+            if (moduleVms.Count > 0)
+            {
+                // Add module items to the batch so they're included in a single SetPaletteItems call
+                var existingResRefs = new HashSet<string>(
+                    viewModels.Select(v => v.ResRef), StringComparer.OrdinalIgnoreCase);
+                foreach (var mvm in moduleVms)
+                {
+                    if (!existingResRefs.Contains(mvm.ResRef))
+                        viewModels.Add(mvm);
+                }
+                _lastModuleDirectory = moduleDir;
+            }
+
             // Set all items at once (efficient - avoids per-item filter updates)
             InventoryPanelContent.SetPaletteItems(viewModels);
-
-            // Re-add module directory items (loose UTIs) that SetPaletteItems cleared
-            PopulateItemPalette();
 
             _paletteLoaded = true;
             var totalItems = InventoryPanelContent.PaletteItems.Count;
             UpdateStatus($"Ready - {totalItems:N0} items loaded");
-            UnifiedLogger.LogInventory(LogLevel.INFO, $"Palette loaded: {viewModels.Count} cached + module items (total: {totalItems})");
+            UnifiedLogger.LogInventory(LogLevel.INFO, $"Palette loaded: {viewModels.Count} items (total: {totalItems})");
         }
         catch (OperationCanceledException)
         {
@@ -334,6 +349,37 @@ public partial class MainWindow
             UpdateStatus("Ready (palette load failed)");
             _paletteLoaded = true;
         }
+    }
+
+    /// <summary>
+    /// Load module directory UTI files into ItemViewModels without adding to palette.
+    /// Used during initial palette build to include module items in the batch.
+    /// </summary>
+    private List<ItemViewModel> LoadModuleItemViewModels(string? moduleDir)
+    {
+        var results = new List<ItemViewModel>();
+        if (string.IsNullOrEmpty(moduleDir) || !Directory.Exists(moduleDir))
+            return results;
+
+        var utiFiles = Directory.GetFiles(moduleDir, "*.uti", SearchOption.TopDirectoryOnly);
+        foreach (var utiPath in utiFiles)
+        {
+            try
+            {
+                var item = UtiReader.Read(utiPath);
+                var viewModel = ItemFactory.Create(item, GameResourceSource.Module);
+                SetupLazyIconLoading(viewModel);
+                results.Add(viewModel);
+            }
+            catch (Exception ex)
+            {
+                var fileName = Path.GetFileName(utiPath);
+                UnifiedLogger.LogInventory(LogLevel.WARN, $"Failed to load UTI {fileName}: {ex.Message}");
+            }
+        }
+
+        UnifiedLogger.LogInventory(LogLevel.INFO, $"Loaded {results.Count} module UTIs from {UnifiedLogger.SanitizePath(moduleDir)}");
+        return results;
     }
 
     /// <summary>
