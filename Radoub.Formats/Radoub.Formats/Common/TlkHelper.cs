@@ -23,16 +23,15 @@ public static class TlkHelper
         var trimmed = value.Trim();
 
         // Common placeholder values in NWN TLK files
-        return !trimmed.Equals("BadStrRef", StringComparison.OrdinalIgnoreCase) &&
-               !trimmed.Equals("BadStreff", StringComparison.OrdinalIgnoreCase) && // Common typo variant
-               !trimmed.Equals("Bad Strref", StringComparison.OrdinalIgnoreCase) &&
-               !trimmed.Equals("DELETED", StringComparison.OrdinalIgnoreCase) &&
-               !trimmed.Equals("DELETE_ME", StringComparison.OrdinalIgnoreCase) &&
-               !trimmed.Equals("Padding", StringComparison.OrdinalIgnoreCase) &&
-               !trimmed.Equals("PAdding", StringComparison.OrdinalIgnoreCase) &&
-               !trimmed.StartsWith("Bad Str", StringComparison.OrdinalIgnoreCase) &&
-               !trimmed.StartsWith("Xp2spec", StringComparison.OrdinalIgnoreCase) &&
-               !trimmed.Contains("deleted", StringComparison.OrdinalIgnoreCase);
+        // Normalize for comparison: collapse whitespace variants
+        var normalized = trimmed.Replace(" ", "").Replace("_", "");
+
+        return !normalized.StartsWith("badstr", StringComparison.OrdinalIgnoreCase) &&
+               !normalized.StartsWith("xp2spec", StringComparison.OrdinalIgnoreCase) &&
+               !trimmed.Contains("deleted", StringComparison.OrdinalIgnoreCase) &&
+               !trimmed.Contains("padding", StringComparison.OrdinalIgnoreCase) &&
+               !trimmed.StartsWith("bio reserved", StringComparison.OrdinalIgnoreCase) &&
+               !trimmed.Equals("DELETE_ME", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -47,7 +46,9 @@ public static class TlkHelper
 
         return label.Contains("deleted", StringComparison.OrdinalIgnoreCase) ||
                label.Contains("padding", StringComparison.OrdinalIgnoreCase) ||
-               label.StartsWith("xp2spec", StringComparison.OrdinalIgnoreCase);
+               label.StartsWith("xp2spec", StringComparison.OrdinalIgnoreCase) ||
+               label.StartsWith("bio_reserved", StringComparison.OrdinalIgnoreCase) ||
+               label.StartsWith("bioreserved", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
