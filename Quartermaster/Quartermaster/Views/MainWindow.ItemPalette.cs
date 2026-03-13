@@ -392,6 +392,15 @@ public partial class MainWindow
             ? null
             : Path.GetDirectoryName(_currentFilePath);
 
+        // Same directory and module items already present — skip rescan
+        if (_lastModuleDirectory == newModuleDir &&
+            InventoryPanelContent.PaletteItems.Any(p => p.Source == GameResourceSource.Module))
+        {
+            UnifiedLogger.LogInventory(LogLevel.DEBUG,
+                "PopulateItemPalette: module items already loaded, skipping rescan");
+            return;
+        }
+
         UnifiedLogger.LogInventory(LogLevel.INFO,
             $"PopulateItemPalette: scanning directory '{(newModuleDir != null ? UnifiedLogger.SanitizePath(newModuleDir) : "(null)")}' for module UTIs");
 
@@ -402,37 +411,20 @@ public partial class MainWindow
             _lastModuleDirectory = newModuleDir;
         }
 
-        var moduleItemCount = 0;
-
-        if (!string.IsNullOrEmpty(newModuleDir) && Directory.Exists(newModuleDir))
+        // Load module items and add in batch (disconnect filter to avoid per-item updates)
+        var moduleVms = LoadModuleItemViewModels(newModuleDir);
+        if (moduleVms.Count > 0)
         {
-            var utiFiles = Directory.GetFiles(newModuleDir, "*.uti", SearchOption.TopDirectoryOnly);
-            UnifiedLogger.LogInventory(LogLevel.INFO, $"Found {utiFiles.Length} .uti files in module directory");
-            foreach (var utiPath in utiFiles)
+            var existingResRefs = new HashSet<string>(
+                InventoryPanelContent.PaletteItems.Select(p => p.ResRef),
+                StringComparer.OrdinalIgnoreCase);
+
+            var toAdd = moduleVms.Where(vm => !existingResRefs.Contains(vm.ResRef)).ToList();
+            if (toAdd.Count > 0)
             {
-                try
-                {
-                    var item = UtiReader.Read(utiPath);
-                    var viewModel = ItemFactory.Create(item, GameResourceSource.Module);
-                    SetupLazyIconLoading(viewModel);
-
-                    if (!InventoryPanelContent.PaletteItems.Any(p => p.ResRef.Equals(viewModel.ResRef, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        InventoryPanelContent.PaletteItems.Add(viewModel);
-                        moduleItemCount++;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    var fileName = Path.GetFileName(utiPath);
-                    UnifiedLogger.LogInventory(LogLevel.WARN, $"Failed to load UTI {fileName}: {ex.Message}");
-                }
+                InventoryPanelContent.AddPaletteItems(toAdd);
+                UnifiedLogger.LogInventory(LogLevel.INFO, $"Added {toAdd.Count} module items to palette");
             }
-        }
-
-        if (moduleItemCount > 0)
-        {
-            UnifiedLogger.LogInventory(LogLevel.INFO, $"Added {moduleItemCount} module items to palette");
         }
     }
 

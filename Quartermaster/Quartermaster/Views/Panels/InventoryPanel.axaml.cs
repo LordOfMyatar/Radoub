@@ -7,6 +7,7 @@ using Radoub.UI.Controls;
 using Radoub.UI.Services;
 using Radoub.UI.ViewModels;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -101,6 +102,24 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
         }
 
         // Reconnect filter and trigger single refresh
+        if (_paletteFilter != null)
+        {
+            _paletteFilter.Items = _paletteItems;
+            _paletteFilter.ApplyFilter();
+        }
+    }
+
+    /// <summary>
+    /// Add items to palette in batch, avoiding per-item filter updates.
+    /// </summary>
+    public void AddPaletteItems(IEnumerable<ItemViewModel> items)
+    {
+        if (_paletteFilter != null)
+            _paletteFilter.Items = null;
+
+        foreach (var item in items)
+            _paletteItems.Add(item);
+
         if (_paletteFilter != null)
         {
             _paletteFilter.Items = _paletteItems;
