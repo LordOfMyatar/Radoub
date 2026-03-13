@@ -129,6 +129,8 @@ namespace Parley.Tests.Mocks
 
         public void ReloadConfiguration() { }
 
+        public void ConfigureModuleHaks(string moduleDirectory) { }
+
         #endregion
 
         public void Dispose() { }

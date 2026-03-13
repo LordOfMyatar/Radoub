@@ -155,6 +155,8 @@ public class MockGameDataService : IGameDataService
 
     public void ReloadConfiguration() { }
 
+    public void ConfigureModuleHaks(string moduleDirectory) { }
+
     public void Dispose() { }
 
     #endregion

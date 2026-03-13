@@ -205,7 +205,7 @@ public class GameResourceResolver : IDisposable
     private ResourceResult? FindInHaks(string resRef, ushort resourceType)
     {
         // Skip HAK scanning if disabled (default for performance)
-        // Future: Trebuchet will read module.ifo for specific HAK list
+        // Use GameDataService.ConfigureModuleHaks() to enable with module-specific HAKs
         if (!_config.EnableHakScanning)
             return null;
 

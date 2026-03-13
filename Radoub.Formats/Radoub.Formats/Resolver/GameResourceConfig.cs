@@ -47,7 +47,7 @@ public class GameResourceConfig
     /// <summary>
     /// Whether to scan HAK files for resources.
     /// Default: false (disabled for performance - scanning 80+ HAKs takes 15+ seconds).
-    /// Future: Trebuchet will read module.ifo for specific HAK list.
+    /// Use GameDataService.ConfigureModuleHaks() to enable with module-specific HAK list.
     /// </summary>
     public bool EnableHakScanning { get; set; } = false;
 

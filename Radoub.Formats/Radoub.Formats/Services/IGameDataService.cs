@@ -157,6 +157,15 @@ public interface IGameDataService : IDisposable
     /// </summary>
     void ReloadConfiguration();
 
+    /// <summary>
+    /// Configure module-aware HAK scanning by reading the module's IFO HakList.
+    /// Only HAK files referenced by the module will be loaded into the resolver,
+    /// avoiding the performance penalty of scanning all HAK files (80+ files, 15+ seconds).
+    /// Clears all caches (2DA, SSF, palette) since resource resolution order changes.
+    /// </summary>
+    /// <param name="moduleDirectory">Path to the unpacked module directory containing module.ifo.</param>
+    void ConfigureModuleHaks(string moduleDirectory);
+
     #endregion
 }
 

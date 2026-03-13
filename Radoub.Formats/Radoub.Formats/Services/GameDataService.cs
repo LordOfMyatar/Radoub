@@ -192,6 +192,44 @@ public class GameDataService : IGameDataService
         }
     }
 
+    public void ConfigureModuleHaks(string moduleDirectory)
+    {
+        if (string.IsNullOrEmpty(moduleDirectory) || !Directory.Exists(moduleDirectory))
+        {
+            UnifiedLogger.Log(LogLevel.DEBUG, "ConfigureModuleHaks: invalid module directory", "GameDataService", "GameData");
+            return;
+        }
+
+        lock (_lock)
+        {
+            var settings = RadoubSettings.Instance;
+            var hakSearchPaths = settings.GetAllHakSearchPaths().ToList();
+
+            var modulePaths = ModuleHakResolver.ResolveModuleHakPaths(moduleDirectory, hakSearchPaths);
+            if (modulePaths.Count == 0)
+            {
+                UnifiedLogger.Log(LogLevel.INFO, "ConfigureModuleHaks: no HAKs referenced by module", "GameDataService", "GameData");
+                return;
+            }
+
+            // Rebuild the resolver config with module-specific HAK paths
+            var config = BuildConfig(settings);
+            config.EnableHakScanning = true;
+            config.HakPaths = modulePaths;
+
+            // Replace resolver
+            _resolver?.Dispose();
+            _resolver = new GameResourceResolver(config);
+
+            // Clear all caches — resource resolution order has changed
+            _twoDACache.Clear();
+            _ssfCache.Clear();
+            _paletteCache.Clear();
+
+            UnifiedLogger.Log(LogLevel.INFO, $"ConfigureModuleHaks: loaded {modulePaths.Count} module-referenced HAKs", "GameDataService", "GameData");
+        }
+    }
+
     #endregion
 
     #region Private Methods
@@ -251,9 +289,9 @@ public class GameDataService : IGameDataService
             }
         }
 
-        // HAK paths - only scan explicitly configured additional paths (not default hak folder)
-        // Scanning all HAKs (80+) takes 15+ seconds and hangs the UI
-        // Future: Read module.ifo HakList to scan only module-required HAKs (#1314)
+        // HAK paths from additional search paths (not default hak folder)
+        // Module-aware HAK scanning is handled by ConfigureModuleHaks() (#1314)
+        // This path only handles explicitly configured additional search paths
         var additionalHakPaths = settings.HakSearchPaths;
         if (additionalHakPaths.Count > 0)
         {
