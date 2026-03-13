@@ -796,7 +796,11 @@ public partial class NewCharacterWizardWindow : Window
         }
         else if (!canProceed)
         {
-            _statusLabel.ClearValue(Avalonia.Controls.TextBlock.ForegroundProperty);
+            // Voice set uses warning brush (advisory, not an error); other blocks use default foreground
+            if (_currentStep == 3 && _isBicFile && !_voiceSetSelected)
+                _statusLabel.Foreground = BrushManager.GetWarningBrush(this);
+            else
+                _statusLabel.ClearValue(Avalonia.Controls.TextBlock.ForegroundProperty);
             _statusLabel.Text = _currentStep switch
             {
                 2 => "Select a race to continue.",
