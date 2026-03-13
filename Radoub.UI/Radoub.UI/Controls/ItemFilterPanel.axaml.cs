@@ -3,6 +3,7 @@ using System.Timers;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Radoub.Formats.Common;
 using Radoub.Formats.Services;
 using Radoub.UI.Models;
 using Radoub.UI.Services;
@@ -363,29 +364,32 @@ public partial class ItemFilterPanel : UserControl
             if (string.IsNullOrEmpty(label) || label == "****")
                 continue;
 
-            // Skip padding and special requirement entries (#773)
-            // These are BioWare placeholder entries that clutter the dropdown
-            var labelLower = label.ToLowerInvariant();
-            if (labelLower.StartsWith("padding") ||
-                labelLower.StartsWith("xp2specreq") ||
-                labelLower.StartsWith("blank") ||
-                labelLower == "invalid")
+            // Skip garbage labels (padding, deleted, xp2spec placeholders)
+            if (TlkHelper.IsGarbageLabel(label))
                 continue;
 
-            // Get display name from TLK
+            var labelLower = label.ToLowerInvariant();
+            if (labelLower.StartsWith("blank") || labelLower == "invalid")
+                continue;
+
+            // Get display name from TLK, validate against placeholder strings
             var nameStrRef = baseItems.GetValue(i, "Name");
             string displayName;
             if (nameStrRef != null && nameStrRef != "****")
             {
-                displayName = GameDataService.GetString(nameStrRef) ?? label;
+                var resolved = GameDataService.GetString(nameStrRef);
+                if (resolved != null && TlkHelper.IsValidTlkString(resolved))
+                    displayName = resolved;
+                else
+                    displayName = TlkHelper.FormatBaseItemLabel(label);
             }
             else
             {
-                displayName = label;
+                displayName = TlkHelper.FormatBaseItemLabel(label);
             }
 
             // Skip entries with no meaningful display name
-            if (string.IsNullOrWhiteSpace(displayName) || displayName == label && labelLower.Contains("padding"))
+            if (string.IsNullOrWhiteSpace(displayName))
                 continue;
 
             ItemTypes.Add(new ItemTypeInfo(i, displayName, label));
