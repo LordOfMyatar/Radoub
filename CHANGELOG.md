@@ -19,6 +19,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.86] - 2026-03-12
+**Branch**: `radoub/issue-1314` | **PR**: #TBD
+
+### Feature: Module-aware HAK scanning via module.ifo HakList (#1314)
+
+---
+
 ## [0.9.85] - 2026-03-10
 **Branch**: `radoub/issue-1641` | **PR**: #1642
 
