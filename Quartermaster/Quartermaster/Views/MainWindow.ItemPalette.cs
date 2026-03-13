@@ -315,9 +315,13 @@ public partial class MainWindow
             // Set all items at once (efficient - avoids per-item filter updates)
             InventoryPanelContent.SetPaletteItems(viewModels);
 
+            // Re-add module directory items (loose UTIs) that SetPaletteItems cleared
+            PopulateItemPalette();
+
             _paletteLoaded = true;
-            UpdateStatus($"Ready - {viewModels.Count:N0} items loaded");
-            UnifiedLogger.LogInventory(LogLevel.INFO, $"Palette loaded: {viewModels.Count} items");
+            var totalItems = InventoryPanelContent.PaletteItems.Count;
+            UpdateStatus($"Ready - {totalItems:N0} items loaded");
+            UnifiedLogger.LogInventory(LogLevel.INFO, $"Palette loaded: {viewModels.Count} cached + module items (total: {totalItems})");
         }
         catch (OperationCanceledException)
         {
