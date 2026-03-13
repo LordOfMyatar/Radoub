@@ -113,6 +113,7 @@ The `/release` command handles:
 ### Next Steps
 
 1. [Suggested next issues to work on]
+2. [If the completed work revealed unexpected complexity, suggest: "Consider `/spike [topic]` before starting [related work]"]
 ```
 
 ## Notes

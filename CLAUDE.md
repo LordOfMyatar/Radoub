@@ -595,6 +595,36 @@ Verify in the running app before `/pre-merge`:
 
 ---
 
+## Spike Solutions
+
+Spikes are **timeboxed throwaway prototypes** (from XP/Extreme Programming) used to reduce uncertainty before committing to an implementation approach.
+
+**When to Spike**:
+
+| Situation | Spike? |
+|-----------|--------|
+| New file format parser (unknown edge cases) | Yes |
+| Unfamiliar 2DA interaction pattern | Yes |
+| UI pattern not yet used in Radoub | Yes |
+| Library evaluation (performance, compatibility) | Yes |
+| Well-understood feature addition | No |
+| Bug fix with clear reproduction | No |
+| Test-only work | No |
+
+**Spike vs Research**:
+- `/research` = information gathering (reading, no code changes)
+- `/spike` = hands-on prototyping (throwaway code on a disposable branch)
+
+**Workflow**: Run `/spike [topic or #issue]` to start. The command creates a throwaway branch, sets a timebox, and on completion generates a findings document in `[Tool]/NonPublic/Research/spike-[topic].md`. The spike branch is **never merged** — it is deleted after findings are captured.
+
+**Rules**:
+- Never merge a spike branch
+- Always capture findings before deleting the branch
+- Respect the timebox — document what you have and stop
+- One question at a time — log new questions for future spikes
+
+---
+
 ## Documentation Standards
 
 Follow the same standards as Parley (see `Parley/CLAUDE.md`):
