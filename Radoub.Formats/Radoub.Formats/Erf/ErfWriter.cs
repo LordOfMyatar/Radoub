@@ -20,7 +20,7 @@ public static class ErfWriter
     /// <param name="resourceData">Dictionary mapping ResRef+Type to resource data bytes.</param>
     public static void Write(ErfFile erf, string filePath, Dictionary<(string ResRef, ushort Type), byte[]> resourceData)
     {
-        using var fs = File.Create(filePath);
+        using var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read);
         Write(erf, fs, resourceData);
     }
 
