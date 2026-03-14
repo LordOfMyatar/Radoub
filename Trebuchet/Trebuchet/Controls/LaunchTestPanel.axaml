@@ -68,7 +68,8 @@
             <StackPanel Spacing="12">
                 <TextBlock Text="Build Status"
                            FontSize="{DynamicResource FontSizeLarge}"
-                           FontWeight="SemiBold"/>
+                           FontWeight="SemiBold"
+                           AutomationProperties.Name="Build Status"/>
 
                 <!-- Build warning indicator -->
                 <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
@@ -196,6 +197,7 @@
                         <CheckBox Content="Compile scripts before saving"
                                   IsChecked="{Binding CompileScriptsEnabled}"
                                   IsEnabled="{Binding IsCompilerAvailable}"
+                                  AutomationProperties.Name="Compile scripts before saving"
                                   ToolTip.Tip="Run the NWScript compiler before packing the module"/>
                         <TextBlock Text="(compiler not found)"
                                    FontSize="{DynamicResource FontSizeSmall}"
