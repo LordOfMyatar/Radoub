@@ -8,7 +8,36 @@ namespace Radoub.Formats.Mdl;
 
 public partial class MdlBinaryReader
 {
+    // Maximum node tree depth to prevent stack overflow from circular references.
+    // Real NWN models rarely exceed depth 10; 128 is generous.
+    private const int MaxNodeDepth = 128;
+
     private MdlNode ParseNode(uint nodeOffset)
+    {
+        var visitedNodeOffsets = new HashSet<uint>();
+        return ParseNodeInternal(nodeOffset, 0, visitedNodeOffsets);
+    }
+
+    private MdlNode ParseNodeInternal(uint nodeOffset, int depth, HashSet<uint> visitedNodeOffsets)
+    {
+        if (depth >= MaxNodeDepth)
+        {
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.WARN,
+                $"[MDL] Node tree exceeded max depth {MaxNodeDepth} at offset 0x{nodeOffset:X8} — returning dummy node");
+            return new MdlNode { Name = "depth_limit", NodeType = MdlNodeType.Dummy };
+        }
+
+        if (!visitedNodeOffsets.Add(nodeOffset))
+        {
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.WARN,
+                $"[MDL] Node tree circular reference detected at offset 0x{nodeOffset:X8} — returning dummy node");
+            return new MdlNode { Name = "circular_ref", NodeType = MdlNodeType.Dummy };
+        }
+
+        return ParseNodeCore(nodeOffset, depth, visitedNodeOffsets);
+    }
+
+    private MdlNode ParseNodeCore(uint nodeOffset, int depth, HashSet<uint> visitedNodeOffsets)
     {
         // Bounds check
         if (nodeOffset + NodeHeaderSize > _modelData.Length)
@@ -104,7 +133,7 @@ public partial class MdlBinaryReader
         // Parse children (pointer already converted above)
         if (childCount > 0 && childArrayBufferOffset != 0xFFFFFFFF && childArrayBufferOffset != uint.MaxValue)
         {
-            ParseChildren(node, childArrayBufferOffset, (int)childCount);
+            ParseChildren(node, childArrayBufferOffset, (int)childCount, depth, visitedNodeOffsets);
         }
 
         return node;
@@ -164,10 +193,10 @@ public partial class MdlBinaryReader
         }
     }
 
-    private void ParseChildren(MdlNode parent, uint arrayOffset, int count)
+    private void ParseChildren(MdlNode parent, uint arrayOffset, int count, int parentDepth, HashSet<uint> visitedNodeOffsets)
     {
         Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
-            $"[MDL] ParseChildren START: parent='{parent.Name}', arrayOffset={arrayOffset}, count={count}, modelDataLen={_modelData.Length}");
+            $"[MDL] ParseChildren START: parent='{parent.Name}', arrayOffset={arrayOffset}, count={count}, depth={parentDepth}, modelDataLen={_modelData.Length}");
 
         // Verify we can read the child array
         if (arrayOffset + count * 4 > _modelData.Length)
@@ -175,6 +204,14 @@ public partial class MdlBinaryReader
             Logging.UnifiedLogger.LogApplication(Logging.LogLevel.WARN,
                 $"[MDL] ParseChildren: Child array out of bounds! arrayOffset={arrayOffset}, count={count}, needed={arrayOffset + count * 4}, available={_modelData.Length}");
             return;
+        }
+
+        // Sanity check child count — corrupted data can have huge values
+        if (count > 10000)
+        {
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.WARN,
+                $"[MDL] ParseChildren: childCount={count} exceeds reasonable limit for '{parent.Name}' — clamping to 10000");
+            count = 10000;
         }
 
         using var stream = new MemoryStream(_modelData);
@@ -193,7 +230,7 @@ public partial class MdlBinaryReader
 
             if (childOffset != 0xFFFFFFFF && childOffset != uint.MaxValue && childOffset < _modelData.Length)
             {
-                var child = ParseNode(childOffset);
+                var child = ParseNodeInternal(childOffset, parentDepth + 1, visitedNodeOffsets);
                 child.Parent = parent;
                 parent.Children.Add(child);
                 Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
