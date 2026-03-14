@@ -184,19 +184,19 @@
                                VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <!-- Build Scripts - compile only, no packing to .mod -->
-                <Button Content="Build Scripts"
-                        Command="{Binding CompileScriptsOnlyCommand}"
-                        IsEnabled="{Binding CanCompileScripts}"
-                        Padding="12,6"
-                        ToolTip.Tip="Compile scripts only — no packing to .mod file"/>
-
-                <!-- Compiler Log Folder button - visible when a log exists from last build -->
-                <Button Content="Open Compiler Log Folder"
-                        Command="{Binding OpenBuildLogFolderCommand}"
-                        IsVisible="{Binding HasBuildLog}"
-                        Padding="12,6"
-                        ToolTip.Tip="Open the folder containing compiler build logs"/>
+                <!-- Build Scripts + Compiler Log -->
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="Build Scripts"
+                            Command="{Binding CompileScriptsOnlyCommand}"
+                            IsEnabled="{Binding CanCompileScripts}"
+                            Padding="12,6"
+                            ToolTip.Tip="Compile scripts only — no packing to .mod file"/>
+                    <Button Content="Open Compiler Log Folder"
+                            Command="{Binding OpenBuildLogFolderCommand}"
+                            IsVisible="{Binding HasBuildLog}"
+                            Padding="12,6"
+                            ToolTip.Tip="Open the folder containing compiler build logs"/>
+                </StackPanel>
 
                 <!-- Build progress -->
                 <StackPanel IsVisible="{Binding IsBuilding}" Spacing="8">
