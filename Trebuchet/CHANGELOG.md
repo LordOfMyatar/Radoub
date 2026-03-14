@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.22.0-alpha] - 2026-03-14
-**Branch**: `trebuchet/issue-1677` | **PR**: #TBD
+**Branch**: `trebuchet/issue-1677` | **PR**: #1679
 
 ### Sprint: UX Fixes — Lock Warning & Test Stability (#1677)
 
