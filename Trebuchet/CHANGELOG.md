@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.22.0-alpha] - 2026-03-14
+**Branch**: `trebuchet/issue-1677` | **PR**: #TBD
+
+### Sprint: UX Fixes — Lock Warning & Test Stability (#1677)
+
+- [ ] #1495 - More noticeable warning when module.ifo is locked by Aurora
+- [ ] #1569 - LaunchTab_HasBuildStatusSection integration test fails
+
+---
+
 ## [1.21.0-alpha] - 2026-02-21
 **Branch**: `trebuchet/issue-1405` | **PR**: #1457
 
