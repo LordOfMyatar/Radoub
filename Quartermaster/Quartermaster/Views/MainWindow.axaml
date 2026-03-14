@@ -122,11 +122,15 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock x:Name="ModuleText" Grid.Column="0" Text="No module selected" FontWeight="Bold"/>
                 <TextBlock x:Name="StatusText" Grid.Column="1" Text="Ready" Margin="20,0,0,0" AutomationProperties.AutomationId="StatusText"/>
                 <TextBlock x:Name="InventoryCountText" Grid.Column="2" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0"/>
-                <TextBlock x:Name="FilePathText" Grid.Column="3" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0"/>
+                <ProgressBar x:Name="LoadingProgressBar" Grid.Column="3" Width="100" Height="16"
+                             IsIndeterminate="True" IsVisible="False" Margin="10,0,0,0"
+                             AutomationProperties.AutomationId="LoadingProgressBar"/>
+                <TextBlock x:Name="FilePathText" Grid.Column="4" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0"/>
             </Grid>
         </Border>
 

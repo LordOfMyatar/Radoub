@@ -125,6 +125,9 @@ public partial class MainWindow
 
         try
         {
+            ShowProgress(true);
+            UpdateStatus("Exporting character sheet...");
+
             var sheetService = new CharacterSheetService(DisplayService);
             var content = isMarkdown
                 ? sheetService.GenerateMarkdownSheet(_currentCreature, _currentFilePath)
@@ -132,11 +135,13 @@ public partial class MainWindow
 
             await File.WriteAllTextAsync(file.Path.LocalPath, content);
 
+            ShowProgress(false);
             UpdateStatus($"Exported: {Path.GetFileName(file.Path.LocalPath)}");
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Exported character sheet: {UnifiedLogger.SanitizePath(file.Path.LocalPath)}");
         }
         catch (Exception ex)
         {
+            ShowProgress(false);
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to export character sheet: {ex.Message}");
             ShowErrorDialog("Export Error", $"Failed to export character sheet:\n{ex.Message}");
         }
@@ -382,6 +387,8 @@ public partial class MainWindow
         {
             // Set loading flag to prevent MarkDirty() from firing during panel population
             _isLoading = true;
+            ShowProgress(true);
+            UpdateStatus($"Loading {Path.GetFileName(filePath)}...");
 
             var extension = Path.GetExtension(filePath).ToLowerInvariant();
             _isBicFile = extension == ".bic";
@@ -417,6 +424,7 @@ public partial class MainWindow
             _isLoading = false;
             _documentState.ClearDirty();
             UpdateTitle();
+            ShowProgress(false);
             UpdateStatus($"Loaded: {Path.GetFileName(filePath)}");
 
             SettingsService.Instance.AddRecentFile(filePath);
@@ -425,6 +433,7 @@ public partial class MainWindow
         catch (Exception ex)
         {
             _isLoading = false;
+            ShowProgress(false);
             UnifiedLogger.LogCreature(LogLevel.ERROR, $"Failed to load creature: {ex.Message}");
             UpdateStatus($"Error loading file: {ex.Message}");
             ShowErrorDialog("Load Error", $"Failed to load creature file:\n{ex.Message}");
@@ -445,6 +454,9 @@ public partial class MainWindow
 
         try
         {
+            ShowProgress(true);
+            UpdateStatus($"Saving {Path.GetFileName(_currentFilePath)}...");
+
             // Sync UI state to creature model before saving
             SyncInventoryToCreature();
             AdvancedPanelContent.UpdateVarTable();
@@ -460,12 +472,14 @@ public partial class MainWindow
 
             _documentState.ClearDirty();
             UpdateTitle();
+            ShowProgress(false);
             UpdateStatus($"Saved: {Path.GetFileName(_currentFilePath)}");
 
             UnifiedLogger.LogCreature(LogLevel.INFO, $"Saved creature: {UnifiedLogger.SanitizePath(_currentFilePath)}");
         }
         catch (Exception ex)
         {
+            ShowProgress(false);
             UnifiedLogger.LogCreature(LogLevel.ERROR, $"Failed to save creature: {ex.Message}");
             UpdateStatus($"Error saving file: {ex.Message}");
             ShowErrorDialog("Save Error", $"Failed to save creature file:\n{ex.Message}");

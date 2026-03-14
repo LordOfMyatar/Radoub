@@ -27,6 +27,7 @@ public partial class MainWindow
         // Create cancellation token for async operations
         _windowCts = new CancellationTokenSource();
 
+        ShowProgress(true);
         UpdateStatus("Initializing...");
         UpdateRecentFilesMenu();
 
@@ -61,6 +62,7 @@ public partial class MainWindow
 
             await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
+                ShowProgress(false);
                 UpdateStatus("Ready");
             });
         }

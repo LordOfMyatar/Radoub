@@ -374,6 +374,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         StatusText.Text = message;
     }
 
+    /// <summary>
+    /// Shows or hides the indeterminate progress bar in the status bar (#817).
+    /// </summary>
+    private void ShowProgress(bool visible)
+    {
+        LoadingProgressBar.IsVisible = visible;
+    }
+
     private void UpdateCharacterHeader()
     {
         try
