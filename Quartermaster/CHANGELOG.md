@@ -18,6 +18,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.44-alpha] - 2026-03-14
+**Branch**: `quartermaster/issue-1610` | **PR**: #1682
+
+### Sprint: File Ops & Validation (#1610)
+
+- Save As dialog now lists current file type first, preserving .bic extension (#1594)
+- Browser panel auto-save documented as intentional design; improved status message (#1535)
+- Indeterminate progress bar in status bar during load, save, export, and initialization (#817)
+
+---
+
 ## [0.2.43-alpha] - 2026-03-14
 **Branch**: `quartermaster/issue-1518` | **PR**: #1680
 
