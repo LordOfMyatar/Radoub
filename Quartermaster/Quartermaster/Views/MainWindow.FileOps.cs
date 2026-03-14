@@ -476,15 +476,18 @@ public partial class MainWindow
     {
         if (_currentCreature == null) return;
 
+        // List the current file type first so the dialog defaults to the correct extension (#1594)
+        var utcType = new FilePickerFileType("Creature Blueprint") { Patterns = new[] { "*.utc" } };
+        var bicType = new FilePickerFileType("Player Character") { Patterns = new[] { "*.bic" } };
+
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = "Save Creature As",
             DefaultExtension = _isBicFile ? ".bic" : ".utc",
-            FileTypeChoices = new[]
-            {
-                new FilePickerFileType("Creature Blueprint") { Patterns = new[] { "*.utc" } },
-                new FilePickerFileType("Player Character") { Patterns = new[] { "*.bic" } }
-            }
+            SuggestedFileName = Path.GetFileNameWithoutExtension(_currentFilePath ?? "creature"),
+            FileTypeChoices = _isBicFile
+                ? new[] { bicType, utcType }
+                : new[] { utcType, bicType }
         });
 
         if (file != null)
