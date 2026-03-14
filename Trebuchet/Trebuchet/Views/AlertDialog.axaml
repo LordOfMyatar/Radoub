@@ -2,11 +2,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="RadoubLauncher.Views.AlertDialog"
         Title="Alert"
-        Width="460" Height="260"
+        Width="460"
+        SizeToContent="Height"
+        MaxHeight="400"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         ShowInTaskbar="False"
-        SystemDecorations="BorderOnly">
+        SystemDecorations="Full">
 
     <Border Padding="20">
         <DockPanel>
@@ -23,15 +25,19 @@
             </StackPanel>
 
             <!-- Message -->
-            <StackPanel Spacing="8" VerticalAlignment="Top">
-                <TextBlock x:Name="TitleText"
-                           FontSize="{DynamicResource FontSizeLarge}"
-                           FontWeight="SemiBold"/>
-                <TextBlock x:Name="MessageText"
-                           TextWrapping="Wrap"
-                           Opacity="0.8"
-                           LineHeight="20"/>
-            </StackPanel>
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto"
+                          MaxHeight="280">
+                <StackPanel Spacing="8">
+                    <TextBlock x:Name="TitleText"
+                               FontSize="{DynamicResource FontSizeLarge}"
+                               FontWeight="SemiBold"/>
+                    <TextBlock x:Name="MessageText"
+                               TextWrapping="Wrap"
+                               Opacity="0.8"
+                               LineHeight="20"/>
+                </StackPanel>
+            </ScrollViewer>
         </DockPanel>
     </Border>
 </Window>

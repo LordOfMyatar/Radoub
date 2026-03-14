@@ -499,11 +499,11 @@ public partial class MainWindowViewModel
     {
         if (_parentWindow == null) return;
 
-        var message = "A module file is locked by another process and cannot be saved.\n\n"
-            + "This usually happens when the Aurora Toolset has the module open.\n\n"
+        var message = "A module file is locked by another process and cannot be written.\n\n"
+            + "This usually means the Aurora Toolset (or another program) still has the .mod file open.\n\n"
             + "To fix this:\n"
             + "  1. Close the module in Aurora Toolset\n"
-            + "  2. Try saving again in Trebuchet\n\n"
+            + "  2. Try building again in Trebuchet\n\n"
             + $"Details: {ex.Message}";
 
         var dialog = new Views.AlertDialog("File Locked", message);
