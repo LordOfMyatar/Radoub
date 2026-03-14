@@ -15,8 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: UX Fixes — Lock Warning & Test Stability (#1677)
 
-- [ ] #1495 - More noticeable warning when module.ifo is locked by Aurora
-- [ ] #1569 - LaunchTab_HasBuildStatusSection integration test fails
+- [x] #1495 - More noticeable warning when module.ifo is locked by Aurora
+- [x] #1569 - LaunchTab_HasBuildStatusSection integration test fails
 
 ---
 
