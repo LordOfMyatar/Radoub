@@ -93,14 +93,16 @@ When UI changes are detected, map changed files to specific FlaUI test categorie
 
 | Changed File Pattern | UIFilter | Rationale |
 |---------------------|----------|-----------|
-| `LaunchTestPanel*` | `Name~LaunchTab` | Only tests that interact with the Launch & Test tab |
+| `LaunchTestPanel*` | `LaunchTab` | Only tests that interact with the Launch & Test tab |
 | `ModuleEditorPanel*` | `Category=Workspace` | Module tab workspace tests |
 | `FactionEditorPanel*` | `Category=Workspace` | Faction tab workspace tests |
 | `MainWindow.axaml*` | `Category=Smoke` | Smoke tests verify top-level layout |
-| `*Toolbar*` | `Name~Toolbar` | Toolbar-specific tests |
-| `*Sidebar*` | `Name~Sidebar` | Sidebar-specific tests |
+| `*Toolbar*` | `Toolbar` | Toolbar-specific tests |
+| `*Sidebar*` | `Sidebar` | Sidebar-specific tests |
 | Multiple UI areas | (no filter — run all tool UI tests) | Broad changes need full coverage |
 | New dialog/view only | (skip FlaUI — no tests exist yet) | Flag for manual verification |
+
+**UIFilter syntax**: Plain keywords (e.g., `LaunchTab`) auto-expand to `FullyQualifiedName~LaunchTab`. For trait-based filters, use `Category=Smoke` or `DisplayName~pattern` explicitly. `Name~` does NOT work with xUnit VSTest adapter.
 
 **Decision logic**:
 1. If `--ui-tests` flag → always include UI tests (all tool tests, no filter)
@@ -126,7 +128,7 @@ If UI tests are auto-included, display:
 powershell -ExecutionPolicy Bypass -File "d:\LOM\workspace\Radoub\Radoub.IntegrationTests\run-tests.ps1" -Tool [detected] [-SkipShared] -UnitOnly -TechDebt
 
 # With UI changes auto-detected — targeted filter
-powershell -ExecutionPolicy Bypass -File "d:\LOM\workspace\Radoub\Radoub.IntegrationTests\run-tests.ps1" -Tool [detected] [-SkipShared] -TechDebt -UIFilter "Name~LaunchTab"
+powershell -ExecutionPolicy Bypass -File "d:\LOM\workspace\Radoub\Radoub.IntegrationTests\run-tests.ps1" -Tool [detected] [-SkipShared] -TechDebt -UIFilter "LaunchTab"
 
 # With --ui-tests flag (all tool UI tests, no filter)
 powershell -ExecutionPolicy Bypass -File "d:\LOM\workspace\Radoub\Radoub.IntegrationTests\run-tests.ps1" -Tool [detected] [-SkipShared] -TechDebt

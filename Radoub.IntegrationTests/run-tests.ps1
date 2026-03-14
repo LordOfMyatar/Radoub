@@ -313,8 +313,10 @@ function Get-TestsToRun {
         if ($toolUiTests.ContainsKey($Tool)) {
             $entry = $toolUiTests[$Tool].Clone()
             # Override filter if custom UIFilter provided
+            # UIFilter values use FullyQualifiedName~ by default (Name~ doesn't work with xUnit VSTest adapter)
             if ($UIFilter) {
-                $entry.Filter = "$($entry.Filter)&$UIFilter"
+                $filterExpr = if ($UIFilter -match '(FullyQualifiedName|DisplayName|Category)') { $UIFilter } else { "FullyQualifiedName~$UIFilter" }
+                $entry.Filter = "$($entry.Filter)&$filterExpr"
                 $entry.Name = "$($entry.Name) (filtered: $UIFilter)"
             }
             $uiTests += $entry
@@ -339,7 +341,8 @@ function Invoke-TestProject {
     $name = $TestInfo.Name
     $path = $TestInfo.Path
     $filter = $TestInfo.Filter
-    $outputFile = "$outputDir\${name}_$timestamp.output"
+    $safeName = $name -replace '[^a-zA-Z0-9._-]', '_'
+    $outputFile = "$outputDir\${safeName}_$timestamp.output"
 
     Write-Host "`n--- $name ---" -ForegroundColor Yellow
 
