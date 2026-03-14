@@ -1,9 +1,8 @@
 // MDL Binary Reader - Offset conversion helpers
 // Partial class for offset validation and conversion
 //
-// Per xoreos reference implementation, all offsets in binary MDL files are
-// buffer-relative (not memory pointers). The uint32 at model data offset 0x00
-// is a function pointer to be skipped, not a "pointer base" for subtraction.
+// NWN compiled binary MDLs may store memory addresses or buffer-relative offsets.
+// Both strategies are attempted for every pointer — order depends on heuristic.
 
 namespace Radoub.Formats.Mdl;
 
@@ -11,16 +10,15 @@ public partial class MdlBinaryReader
 {
     /// <summary>
     /// Whether _pointerBase looks like a real memory address (large value)
-    /// vs a small/zero value that indicates offsets are already buffer-relative.
-    /// NWN compiled binary MDLs store memory addresses from the compilation step.
-    /// Threshold: if base > buffer size, it's clearly a memory address.
+    /// vs a small/zero value that indicates offsets are likely buffer-relative.
+    /// Used to decide which resolution strategy to try FIRST (both are always tried).
     /// </summary>
     private bool HasMemoryPointers => _pointerBase > _modelData.Length;
 
     /// <summary>
     /// Convert a pointer/offset to a model data buffer offset.
-    /// When _pointerBase is a large memory address, pointers need base subtraction.
-    /// When _pointerBase is small/zero (some models), offsets are already buffer-relative.
+    /// Always tries both strategies (direct and base-subtraction).
+    /// HasMemoryPointers controls which is tried first.
     /// </summary>
     private uint PointerToModelOffset(uint pointer)
     {
@@ -31,22 +29,17 @@ public partial class MdlBinaryReader
 
         if (HasMemoryPointers)
         {
-            // Model uses memory pointers — subtract base first
-            if (pointer >= _pointerBase)
-            {
-                var bufferOffset = pointer - _pointerBase;
-                if (bufferOffset < _modelData.Length)
-                    return bufferOffset;
-            }
-            // Fallback: maybe this particular offset is already buffer-relative
-            if (pointer < _modelData.Length)
-                return pointer;
+            // Try base subtraction first, then direct
+            var result = TrySubtractBase(pointer, _pointerBase, (uint)_modelData.Length);
+            if (result != uint.MaxValue) return result;
+            if (pointer < (uint)_modelData.Length) return pointer;
         }
         else
         {
-            // Model uses buffer-relative offsets directly
-            if (pointer < _modelData.Length)
-                return pointer;
+            // Try direct first, then base subtraction as fallback
+            if (pointer < (uint)_modelData.Length) return pointer;
+            var result = TrySubtractBase(pointer, _pointerBase, (uint)_modelData.Length);
+            if (result != uint.MaxValue) return result;
         }
 
         return uint.MaxValue; // Out of bounds
@@ -64,27 +57,38 @@ public partial class MdlBinaryReader
         if (_rawDataFileOffset == 0 || _rawData.Length == 0)
             return uint.MaxValue; // No raw data section
 
+        var rawLen = (uint)_rawData.Length;
+
         if (HasMemoryPointers)
         {
-            // Model uses memory pointers — subtract raw base first
+            // Try base subtraction first, then direct
             var rawBase = _pointerBase + (uint)_modelData.Length;
-            if (pointer >= rawBase)
-            {
-                var bufferOffset = pointer - rawBase;
-                if (bufferOffset < (uint)_rawData.Length)
-                    return bufferOffset;
-            }
-            // Fallback: maybe this particular offset is already buffer-relative
-            if (pointer < (uint)_rawData.Length)
-                return pointer;
+            var result = TrySubtractBase(pointer, rawBase, rawLen);
+            if (result != uint.MaxValue) return result;
+            if (pointer < rawLen) return pointer;
         }
         else
         {
-            // Model uses buffer-relative offsets directly
-            if (pointer < (uint)_rawData.Length)
-                return pointer;
+            // Try direct first, then base subtraction as fallback
+            if (pointer < rawLen) return pointer;
+            var rawBase = _pointerBase + (uint)_modelData.Length;
+            var result = TrySubtractBase(pointer, rawBase, rawLen);
+            if (result != uint.MaxValue) return result;
         }
 
         return uint.MaxValue; // Out of bounds
+    }
+
+    /// <summary>
+    /// Attempt to subtract a base address from a pointer and validate the result.
+    /// Returns uint.MaxValue if subtraction doesn't yield a valid offset.
+    /// </summary>
+    private static uint TrySubtractBase(uint pointer, uint baseAddr, uint bufferLength)
+    {
+        if (baseAddr == 0 || pointer < baseAddr)
+            return uint.MaxValue;
+
+        var offset = pointer - baseAddr;
+        return offset < bufferLength ? offset : uint.MaxValue;
     }
 }
