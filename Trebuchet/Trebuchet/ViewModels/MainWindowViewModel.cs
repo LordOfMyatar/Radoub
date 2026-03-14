@@ -170,7 +170,7 @@ public partial class MainWindowViewModel : ObservableObject
     /// Checks if any file in the working directory is newer than the .mod file,
     /// or if there are stale scripts (.nss newer than .ncs).
     /// </summary>
-    public bool NeedsBuildWarning => IsModuleDirty || HasNewerWorkingFiles || StaleScriptCount > 0 || HasUnsavedModuleEditorChanges || HasUnsavedFactionEditorChanges;
+    public bool NeedsBuildWarning => IsModuleDirty || StaleScriptCount > 0 || HasUnsavedModuleEditorChanges || HasUnsavedFactionEditorChanges;
 
     /// <summary>
     /// Poll the .mod file lock status from a background timer.
@@ -188,20 +188,6 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     /// <summary>
-    /// True when files in the working directory are newer than the packed .mod file.
-    /// </summary>
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(NeedsBuildWarning))]
-    [NotifyPropertyChangedFor(nameof(BuildWarningText))]
-    private bool _hasNewerWorkingFiles;
-
-    /// <summary>
-    /// Number of files in the working directory newer than the .mod file.
-    /// </summary>
-    [ObservableProperty]
-    private int _newerFileCount;
-
-    /// <summary>
     /// Describes why a build is recommended before testing.
     /// </summary>
     public string BuildWarningText
@@ -217,8 +203,6 @@ public partial class MainWindowViewModel : ObservableObject
                 reasons.Add("unsaved faction changes");
             if (IsModuleDirty)
                 reasons.Add("module modified since last build");
-            if (HasNewerWorkingFiles)
-                reasons.Add($"{NewerFileCount} file(s) modified since last build");
             if (StaleScriptCount > 0)
                 reasons.Add($"{StaleScriptCount} script(s) need recompiling");
 
@@ -588,9 +572,8 @@ public partial class MainWindowViewModel : ObservableObject
         // Update module-dependent properties when module changes
         if (e.PropertyName == nameof(RadoubSettings.CurrentModulePath))
         {
-            // New module selected - reset manual dirty state, check file timestamps
+            // New module selected - reset manual dirty state
             IsModuleDirty = false;
-            _lastBuildTimeUtc = null;
             RefreshBuildStatus();
 
             // Reload module editor first (may auto-unpack .mod), then faction editor (#1384)

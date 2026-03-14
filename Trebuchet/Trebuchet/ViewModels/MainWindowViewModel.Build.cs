@@ -19,10 +19,6 @@ public partial class MainWindowViewModel
     private string? _lastBuildLogPath;
     private string? _lastBuildWorkingDir;
 
-    // Timestamp of last successful build to prevent false-positive "newer files" warnings
-    // caused by filesystem timestamp granularity races after packing the .mod file
-    private DateTime? _lastBuildTimeUtc;
-
     [RelayCommand(CanExecute = nameof(CanBuildModule))]
     private async Task BuildModuleAsync()
     {
@@ -120,13 +116,10 @@ public partial class MainWindowViewModel
             UnifiedLogger.LogApplication(LogLevel.INFO,
                 $"Built {resourceCount} resources to {UnifiedLogger.SanitizePath(modFilePath)}");
 
-            _lastBuildTimeUtc = DateTime.UtcNow;
             BuildStatusText = $"Built {resourceCount} files to {Path.GetFileName(modFilePath)}";
             ClearFailedScripts();
             StaleScriptCount = 0;
             IsModuleDirty = false;
-            HasNewerWorkingFiles = false;
-            NewerFileCount = 0;
         }
         catch (Exception ex)
         {
@@ -374,12 +367,9 @@ public partial class MainWindowViewModel
                 if (!string.IsNullOrEmpty(workingDir) && !string.IsNullOrEmpty(modFilePath))
                 {
                     var resourceCount = await Task.Run(() => PackDirectoryToMod(workingDir, modFilePath));
-                    _lastBuildTimeUtc = DateTime.UtcNow;
                     BuildStatusText = $"Built {resourceCount} files to {Path.GetFileName(modFilePath)}";
                     StaleScriptCount = 0;
                     IsModuleDirty = false;
-                    HasNewerWorkingFiles = false;
-                    NewerFileCount = 0;
 
                     UnifiedLogger.LogApplication(LogLevel.INFO,
                         $"Recompile + pack: {resourceCount} resources to {UnifiedLogger.SanitizePath(modFilePath)}");
@@ -442,13 +432,12 @@ public partial class MainWindowViewModel
     }
 
     /// <summary>
-    /// Refresh all build-related checks: stale scripts and newer working files.
+    /// Refresh all build-related checks: stale scripts.
     /// Called on module load, after Module Editor closes, and before launch.
     /// </summary>
     public void RefreshBuildStatus()
     {
         CheckStaleScripts();
-        CheckNewerWorkingFiles();
     }
 
     /// <summary>
@@ -465,44 +454,6 @@ public partial class MainWindowViewModel
 
         var staleScripts = ScriptCompilerService.Instance.FindStaleScripts(workingDir);
         StaleScriptCount = staleScripts.Count;
-    }
-
-    /// <summary>
-    /// Check if any files in the working directory are newer than the .mod file.
-    /// </summary>
-    private void CheckNewerWorkingFiles()
-    {
-        var workingDir = GetWorkingDirectoryPath();
-        var modPath = GetModFilePath();
-
-        if (string.IsNullOrEmpty(workingDir) || string.IsNullOrEmpty(modPath) || !File.Exists(modPath))
-        {
-            HasNewerWorkingFiles = false;
-            NewerFileCount = 0;
-            return;
-        }
-
-        try
-        {
-            var modWriteTime = File.GetLastWriteTimeUtc(modPath);
-
-            // Use the build completion timestamp if it's newer than the .mod file's
-            // filesystem timestamp - prevents false positives from timestamp granularity
-            if (_lastBuildTimeUtc.HasValue && _lastBuildTimeUtc.Value > modWriteTime)
-                modWriteTime = _lastBuildTimeUtc.Value;
-
-            var newerFiles = Directory.GetFiles(workingDir)
-                .Count(f => File.GetLastWriteTimeUtc(f) > modWriteTime);
-
-            NewerFileCount = newerFiles;
-            HasNewerWorkingFiles = newerFiles > 0;
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not check working directory timestamps: {ex.Message}");
-            HasNewerWorkingFiles = false;
-            NewerFileCount = 0;
-        }
     }
 
     /// <summary>
