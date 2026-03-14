@@ -10,8 +10,17 @@ namespace Radoub.Formats.Mdl;
 public partial class MdlBinaryReader
 {
     /// <summary>
-    /// Validate a model data offset. Returns the offset if valid, uint.MaxValue if not.
-    /// All offsets in MDL files are buffer-relative (per xoreos reference).
+    /// Whether _pointerBase looks like a real memory address (large value)
+    /// vs a small/zero value that indicates offsets are already buffer-relative.
+    /// NWN compiled binary MDLs store memory addresses from the compilation step.
+    /// Threshold: if base > buffer size, it's clearly a memory address.
+    /// </summary>
+    private bool HasMemoryPointers => _pointerBase > _modelData.Length;
+
+    /// <summary>
+    /// Convert a pointer/offset to a model data buffer offset.
+    /// When _pointerBase is a large memory address, pointers need base subtraction.
+    /// When _pointerBase is small/zero (some models), offsets are already buffer-relative.
     /// </summary>
     private uint PointerToModelOffset(uint pointer)
     {
@@ -20,28 +29,31 @@ public partial class MdlBinaryReader
         if (pointer == 0)
             return uint.MaxValue; // Null — 0 is the model header, never a valid node/array offset
 
-        if (pointer < _modelData.Length)
-            return pointer;
-
-        // Value exceeds buffer — may be a memory pointer needing base subtraction
-        if (_pointerBase > 0 && pointer >= _pointerBase)
+        if (HasMemoryPointers)
         {
-            var bufferOffset = pointer - _pointerBase;
-            if (bufferOffset < _modelData.Length)
+            // Model uses memory pointers — subtract base first
+            if (pointer >= _pointerBase)
             {
-                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
-                    $"[MDL] PointerToModelOffset: 0x{pointer:X8} resolved via base subtraction (base=0x{_pointerBase:X8}) -> offset={bufferOffset}");
-                return bufferOffset;
+                var bufferOffset = pointer - _pointerBase;
+                if (bufferOffset < _modelData.Length)
+                    return bufferOffset;
             }
+            // Fallback: maybe this particular offset is already buffer-relative
+            if (pointer < _modelData.Length)
+                return pointer;
+        }
+        else
+        {
+            // Model uses buffer-relative offsets directly
+            if (pointer < _modelData.Length)
+                return pointer;
         }
 
-        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.WARN,
-            $"[MDL] PointerToModelOffset: 0x{pointer:X8} out of bounds (modelDataLen={_modelData.Length}, base=0x{_pointerBase:X8})");
         return uint.MaxValue; // Out of bounds
     }
 
     /// <summary>
-    /// Validate a raw data offset. Returns the offset if valid, uint.MaxValue if not.
+    /// Convert a pointer/offset to a raw data buffer offset.
     /// 0xFFFFFFFF means "not present". 0 IS a valid offset (start of raw data).
     /// </summary>
     private uint PointerToRawOffset(uint pointer)
@@ -52,25 +64,27 @@ public partial class MdlBinaryReader
         if (_rawDataFileOffset == 0 || _rawData.Length == 0)
             return uint.MaxValue; // No raw data section
 
-        // 0 IS a valid raw data offset (start of raw data buffer)
-        if (pointer < (uint)_rawData.Length)
-            return pointer;
-
-        // Value exceeds buffer — may be a memory pointer needing base subtraction
-        var rawBase = _pointerBase + (uint)_modelData.Length;
-        if (rawBase > 0 && pointer >= rawBase)
+        if (HasMemoryPointers)
         {
-            var bufferOffset = pointer - rawBase;
-            if (bufferOffset < (uint)_rawData.Length)
+            // Model uses memory pointers — subtract raw base first
+            var rawBase = _pointerBase + (uint)_modelData.Length;
+            if (pointer >= rawBase)
             {
-                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
-                    $"[MDL] PointerToRawOffset: 0x{pointer:X8} resolved via base subtraction (rawBase=0x{rawBase:X8}) -> offset={bufferOffset}");
-                return bufferOffset;
+                var bufferOffset = pointer - rawBase;
+                if (bufferOffset < (uint)_rawData.Length)
+                    return bufferOffset;
             }
+            // Fallback: maybe this particular offset is already buffer-relative
+            if (pointer < (uint)_rawData.Length)
+                return pointer;
+        }
+        else
+        {
+            // Model uses buffer-relative offsets directly
+            if (pointer < (uint)_rawData.Length)
+                return pointer;
         }
 
-        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.WARN,
-            $"[MDL] PointerToRawOffset: 0x{pointer:X8} out of bounds (rawDataLen={_rawData.Length}, rawBase=0x{rawBase:X8})");
         return uint.MaxValue; // Out of bounds
     }
 }
