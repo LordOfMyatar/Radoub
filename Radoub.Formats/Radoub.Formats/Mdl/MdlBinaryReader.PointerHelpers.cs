@@ -12,8 +12,10 @@ public partial class MdlBinaryReader
     /// </summary>
     private uint PointerToModelOffset(uint pointer)
     {
-        if (pointer == 0xFFFFFFFF || pointer == 0)
-            return pointer; // Pass through sentinel values
+        if (pointer == 0xFFFFFFFF)
+            return uint.MaxValue; // Null sentinel
+        if (pointer == 0)
+            return uint.MaxValue; // Null pointer — 0 is never a valid node offset (it's the model header)
 
         // If pointer is already a valid buffer offset (less than buffer size and less than base),
         // use it directly - these are buffer-relative offsets
