@@ -277,6 +277,20 @@ public class ModelService
             return; // 0 often means "none" for optional parts
         }
 
+        try
+        {
+            TryAddBodyPartCore(compositeModel, basePrefix, partType, partNumber);
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"TryAddBodyPart: Failed to add {partType}#{partNumber} for {basePrefix}: {ex.GetType().Name}: {ex.Message}");
+        }
+    }
+
+    private void TryAddBodyPartCore(MdlModel compositeModel, string basePrefix, string partType, byte partNumber)
+    {
+
         // Format: {basePrefix}_{partType}{partNumber:D3}
         // e.g., pfo0_head001
         var partName = $"{basePrefix}_{partType}{partNumber:D3}";

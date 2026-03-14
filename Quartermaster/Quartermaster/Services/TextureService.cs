@@ -83,8 +83,11 @@ public class TextureService
             var pixels = PltReader.Render(pltFile, palettes, layerColors);
             return (pltFile.Width, pltFile.Height, pixels);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                Radoub.Formats.Logging.LogLevel.WARN,
+                $"TextureService.RenderPltTexture: PLT '{pltResRef}' render failed: {ex.GetType().Name}: {ex.Message}");
             return null;
         }
     }

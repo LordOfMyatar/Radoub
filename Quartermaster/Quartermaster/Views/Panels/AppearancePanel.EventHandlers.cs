@@ -8,6 +8,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Quartermaster.Services;
 using Quartermaster.Views.Dialogs;
+using Radoub.Formats.Logging;
 
 namespace Quartermaster.Views.Panels;
 
@@ -66,18 +67,28 @@ public partial class AppearancePanel
     {
         if (_isLoading || _appearanceComboBox?.SelectedItem is not ComboBoxItem item) return;
 
-        if (item.Tag is ushort appearanceId)
+        try
         {
-            var isPartBased = _displayService?.IsPartBasedAppearance(appearanceId) ?? false;
-            UpdateBodyPartsEnabledState(isPartBased);
-
-            if (_currentCreature != null)
+            if (item.Tag is ushort appearanceId)
             {
-                _currentCreature.AppearanceType = appearanceId;
-                UpdateModelPreview();
-            }
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"AppearancePanel: Appearance changed to {appearanceId}");
+                var isPartBased = _displayService?.IsPartBasedAppearance(appearanceId) ?? false;
+                UpdateBodyPartsEnabledState(isPartBased);
 
-            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+                if (_currentCreature != null)
+                {
+                    _currentCreature.AppearanceType = appearanceId;
+                    UpdateModelPreview();
+                }
+
+                AppearanceChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"AppearancePanel: Appearance change failed: {ex.GetType().Name}: {ex.Message}");
         }
     }
 
@@ -85,11 +96,21 @@ public partial class AppearancePanel
     {
         if (_isLoading || _genderComboBox?.SelectedItem is not ComboBoxItem item) return;
 
-        if (item.Tag is byte genderId && _currentCreature != null)
+        try
         {
-            _currentCreature.Gender = genderId;
-            UpdateModelPreview();
-            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+            if (item.Tag is byte genderId && _currentCreature != null)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"AppearancePanel: Gender changed to {genderId}");
+                _currentCreature.Gender = genderId;
+                UpdateModelPreview();
+                AppearanceChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"AppearancePanel: Gender change failed: {ex.GetType().Name}: {ex.Message}");
         }
     }
 
@@ -97,11 +118,21 @@ public partial class AppearancePanel
     {
         if (_isLoading || _phenotypeComboBox?.SelectedItem is not ComboBoxItem item) return;
 
-        if (item.Tag is int phenotypeId && _currentCreature != null)
+        try
         {
-            _currentCreature.Phenotype = phenotypeId;
-            UpdateModelPreview();
-            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+            if (item.Tag is int phenotypeId && _currentCreature != null)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"AppearancePanel: Phenotype changed to {phenotypeId}");
+                _currentCreature.Phenotype = phenotypeId;
+                UpdateModelPreview();
+                AppearanceChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"AppearancePanel: Phenotype change failed: {ex.GetType().Name}: {ex.Message}");
         }
     }
 
@@ -138,11 +169,19 @@ public partial class AppearancePanel
     private void OnHeadSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (_isLoading || _currentCreature == null) return;
-        if (_headComboBox?.SelectedItem is ComboBoxItem item && item.Tag is byte value)
+        try
         {
-            _currentCreature.AppearanceHead = value;
-            UpdateModelPreview();
-            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+            if (_headComboBox?.SelectedItem is ComboBoxItem item && item.Tag is byte value)
+            {
+                _currentCreature.AppearanceHead = value;
+                UpdateModelPreview();
+                AppearanceChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"AppearancePanel: Head change failed: {ex.GetType().Name}: {ex.Message}");
         }
     }
 
@@ -174,29 +213,37 @@ public partial class AppearancePanel
         if (sender is not ComboBox combo || combo.SelectedItem is not ComboBoxItem item || item.Tag is not byte value)
             return;
 
-        // Map combo to creature property
-        if (sender == _neckComboBox) _currentCreature.BodyPart_Neck = value;
-        else if (sender == _torsoComboBox) _currentCreature.BodyPart_Torso = value;
-        else if (sender == _pelvisComboBox) _currentCreature.BodyPart_Pelvis = value;
-        else if (sender == _beltComboBox) _currentCreature.BodyPart_Belt = value;
-        else if (sender == _lShoulComboBox) _currentCreature.BodyPart_LShoul = value;
-        else if (sender == _rShoulComboBox) _currentCreature.BodyPart_RShoul = value;
-        else if (sender == _lBicepComboBox) _currentCreature.BodyPart_LBicep = value;
-        else if (sender == _rBicepComboBox) _currentCreature.BodyPart_RBicep = value;
-        else if (sender == _lFArmComboBox) _currentCreature.BodyPart_LFArm = value;
-        else if (sender == _rFArmComboBox) _currentCreature.BodyPart_RFArm = value;
-        else if (sender == _lHandComboBox) _currentCreature.BodyPart_LHand = value;
-        else if (sender == _rHandComboBox) _currentCreature.BodyPart_RHand = value;
-        else if (sender == _lThighComboBox) _currentCreature.BodyPart_LThigh = value;
-        else if (sender == _rThighComboBox) _currentCreature.BodyPart_RThigh = value;
-        else if (sender == _lShinComboBox) _currentCreature.BodyPart_LShin = value;
-        else if (sender == _rShinComboBox) _currentCreature.BodyPart_RShin = value;
-        else if (sender == _lFootComboBox) _currentCreature.BodyPart_LFoot = value;
-        else if (sender == _rFootComboBox) _currentCreature.BodyPart_RFoot = value;
-        else return; // Unknown combo, don't fire event
+        try
+        {
+            // Map combo to creature property
+            if (sender == _neckComboBox) _currentCreature.BodyPart_Neck = value;
+            else if (sender == _torsoComboBox) _currentCreature.BodyPart_Torso = value;
+            else if (sender == _pelvisComboBox) _currentCreature.BodyPart_Pelvis = value;
+            else if (sender == _beltComboBox) _currentCreature.BodyPart_Belt = value;
+            else if (sender == _lShoulComboBox) _currentCreature.BodyPart_LShoul = value;
+            else if (sender == _rShoulComboBox) _currentCreature.BodyPart_RShoul = value;
+            else if (sender == _lBicepComboBox) _currentCreature.BodyPart_LBicep = value;
+            else if (sender == _rBicepComboBox) _currentCreature.BodyPart_RBicep = value;
+            else if (sender == _lFArmComboBox) _currentCreature.BodyPart_LFArm = value;
+            else if (sender == _rFArmComboBox) _currentCreature.BodyPart_RFArm = value;
+            else if (sender == _lHandComboBox) _currentCreature.BodyPart_LHand = value;
+            else if (sender == _rHandComboBox) _currentCreature.BodyPart_RHand = value;
+            else if (sender == _lThighComboBox) _currentCreature.BodyPart_LThigh = value;
+            else if (sender == _rThighComboBox) _currentCreature.BodyPart_RThigh = value;
+            else if (sender == _lShinComboBox) _currentCreature.BodyPart_LShin = value;
+            else if (sender == _rShinComboBox) _currentCreature.BodyPart_RShin = value;
+            else if (sender == _lFootComboBox) _currentCreature.BodyPart_LFoot = value;
+            else if (sender == _rFootComboBox) _currentCreature.BodyPart_RFoot = value;
+            else return; // Unknown combo, don't fire event
 
-        UpdateModelPreview();
-        AppearanceChanged?.Invoke(this, EventArgs.Empty);
+            UpdateModelPreview();
+            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"AppearancePanel: Body part change failed: {ex.GetType().Name}: {ex.Message}");
+        }
     }
 
     private void OnSkinColorSwatchClicked(object? sender, PointerPressedEventArgs e)
@@ -247,22 +294,30 @@ public partial class AppearancePanel
     {
         if (_paletteColorService == null) return;
 
-        var picker = new ColorPickerWindow(_paletteColorService, paletteName, currentIndex);
+        try
+        {
+            var picker = new ColorPickerWindow(_paletteColorService, paletteName, currentIndex);
 
-        var parentWindow = TopLevel.GetTopLevel(this) as Window;
-        if (parentWindow != null)
-        {
-            await picker.ShowDialog(parentWindow);
-        }
-        else
-        {
-            picker.Show();
-            return;
-        }
+            var parentWindow = TopLevel.GetTopLevel(this) as Window;
+            if (parentWindow != null)
+            {
+                await picker.ShowDialog(parentWindow);
+            }
+            else
+            {
+                picker.Show();
+                return;
+            }
 
-        if (picker.Confirmed)
+            if (picker.Confirmed)
+            {
+                onColorSelected(picker.SelectedColorIndex);
+            }
+        }
+        catch (Exception ex)
         {
-            onColorSelected(picker.SelectedColorIndex);
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"AppearancePanel: Color picker failed for '{paletteName}': {ex.GetType().Name}: {ex.Message}");
         }
     }
 

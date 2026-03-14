@@ -21,7 +21,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.2.43-alpha] - 2026-03-14
 **Branch**: `quartermaster/issue-1518` | **PR**: #1680
 
-### Bug: c_kocrachn model causes crash in MDL reader (#1518)
+### Bug: MDL reader crash + model pipeline error handling hardening (#1518)
+
+- AABB tree recursion depth limit + cycle detection in MDL parser
+- Face index validation rejects bad data instead of just warning
+- Animation event count bounds checking
+- TryAddBodyPart bone math exception handling + logging
+- TextureService bare catch logging in RenderPltTexture
+- ModelPreviewGLControl shader compilation, NaN logging, UpdateTextures safety
+- AppearancePanel async void fix, event handler try-catch, debug logging
 
 ---
 
