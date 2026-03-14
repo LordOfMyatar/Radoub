@@ -1,69 +1,46 @@
-// MDL Binary Reader - Pointer conversion helpers
-// Partial class for memory pointer to buffer offset conversion
+// MDL Binary Reader - Offset conversion helpers
+// Partial class for offset validation and conversion
+//
+// Per xoreos reference implementation, all offsets in binary MDL files are
+// buffer-relative (not memory pointers). The uint32 at model data offset 0x00
+// is a function pointer to be skipped, not a "pointer base" for subtraction.
 
 namespace Radoub.Formats.Mdl;
 
 public partial class MdlBinaryReader
 {
     /// <summary>
-    /// Convert a memory pointer or offset to a model data buffer offset.
-    /// Binary MDL uses a mix: function pointers are memory addresses,
-    /// but internal structure offsets are often buffer-relative.
+    /// Validate a model data offset. Returns the offset if valid, uint.MaxValue if not.
+    /// All offsets in MDL files are buffer-relative (per xoreos reference).
     /// </summary>
     private uint PointerToModelOffset(uint pointer)
     {
         if (pointer == 0xFFFFFFFF)
             return uint.MaxValue; // Null sentinel
         if (pointer == 0)
-            return uint.MaxValue; // Null pointer — 0 is never a valid node offset (it's the model header)
+            return uint.MaxValue; // Null — 0 is the model header, never a valid node/array offset
 
-        // If pointer is already a valid buffer offset (less than buffer size and less than base),
-        // use it directly - these are buffer-relative offsets
-        if (pointer < _pointerBase && pointer < _modelData.Length)
+        if (pointer < _modelData.Length)
             return pointer;
 
-        // Otherwise, treat as a memory pointer and subtract base address
-        if (pointer >= _pointerBase)
-        {
-            var bufferOffset = pointer - _pointerBase;
-            if (bufferOffset < _modelData.Length)
-                return bufferOffset;
-        }
-
-        return uint.MaxValue; // Invalid
+        return uint.MaxValue; // Out of bounds
     }
 
     /// <summary>
-    /// Convert a memory pointer or offset to a raw data buffer offset.
-    /// 0xFFFFFFFF means "not present" (null pointer).
-    /// 0 is a valid offset meaning "start of raw data buffer".
+    /// Validate a raw data offset. Returns the offset if valid, uint.MaxValue if not.
+    /// 0xFFFFFFFF means "not present". 0 IS a valid offset (start of raw data).
     /// </summary>
     private uint PointerToRawOffset(uint pointer)
     {
-        // 0xFFFFFFFF is the null/invalid sentinel - pass through
         if (pointer == 0xFFFFFFFF)
-            return pointer;
-
-        // 0 is a VALID offset meaning "start of raw data buffer"
-        // (unlike model data pointers which may use 0 as null)
+            return uint.MaxValue;
 
         if (_rawDataFileOffset == 0 || _rawData.Length == 0)
             return uint.MaxValue; // No raw data section
 
-        // If pointer is already a valid raw buffer offset (small number),
-        // use it directly
         if (pointer < (uint)_rawData.Length)
             return pointer;
 
-        // Otherwise, treat as a memory pointer and subtract raw base address
-        var rawBase = _pointerBase + (uint)_modelData.Length;
-        if (pointer >= rawBase)
-        {
-            var bufferOffset = pointer - rawBase;
-            if (bufferOffset < (uint)_rawData.Length)
-                return bufferOffset;
-        }
-
-        return uint.MaxValue; // Invalid
+        return uint.MaxValue; // Out of bounds
     }
 }
