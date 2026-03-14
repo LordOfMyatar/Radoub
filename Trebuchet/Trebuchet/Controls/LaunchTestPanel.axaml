@@ -32,6 +32,14 @@
                             ToolTip.Tip="{Binding LoadModuleTooltip}"/>
                 </StackPanel>
 
+                <!-- Warning when .mod is locked or has unsaved changes from another editor -->
+                <TextBlock Text="⚠ Module .mod is locked — save changes from the other editor before building"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           Opacity="0.8"
+                           TextWrapping="Wrap"
+                           IsVisible="{Binding IsModFileLocked}"
+                           x:Name="ModLockedWarning"/>
+
                 <!-- DefaultBic Setting -->
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <CheckBox Content="Use Default Character"
@@ -95,6 +103,11 @@
                                     IsEnabled="{Binding CanBuildModule}"
                                     Padding="12,6"
                                     ToolTip.Tip="Save all changes and pack module to .mod file"/>
+                            <Button Content="Build Scripts"
+                                    Command="{Binding CompileScriptsOnlyCommand}"
+                                    IsEnabled="{Binding CanCompileScripts}"
+                                    Padding="12,6"
+                                    ToolTip.Tip="Compile scripts only — no packing to .mod file"/>
                             <Button Content="Test Anyway"
                                     Command="{Binding LaunchTestModuleCommand}"
                                     IsEnabled="{Binding CanTestModule}"

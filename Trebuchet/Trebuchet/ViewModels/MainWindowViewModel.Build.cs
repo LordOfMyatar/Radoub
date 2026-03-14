@@ -139,6 +139,90 @@ public partial class MainWindowViewModel
         }
     }
 
+    /// <summary>
+    /// Compile scripts only — no packing to .mod.
+    /// Available even when the .mod file is locked by another process.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanCompileScripts))]
+    private async Task CompileScriptsOnlyAsync()
+    {
+        var workingDir = GetWorkingDirectoryPath();
+        if (string.IsNullOrEmpty(workingDir))
+        {
+            BuildStatusText = "Cannot compile: no working directory found";
+            return;
+        }
+
+        var compilerService = ScriptCompilerService.Instance;
+        if (!compilerService.IsCompilerAvailable)
+        {
+            BuildStatusText = "Compiler not found";
+            return;
+        }
+
+        IsBuilding = true;
+
+        try
+        {
+            List<string> scriptsToCompile;
+            if (SettingsService.Instance.BuildUncompiledScriptsEnabled)
+            {
+                scriptsToCompile = Directory.GetFiles(workingDir, "*.nss", SearchOption.TopDirectoryOnly)
+                    .Where(ScriptCompilerService.HasUncommentedEntryPoint)
+                    .ToList();
+            }
+            else
+            {
+                var staleScripts = compilerService.FindStaleScripts(workingDir);
+                scriptsToCompile = staleScripts.Select(s => s.NssPath).ToList();
+            }
+
+            if (scriptsToCompile.Count == 0)
+            {
+                BuildStatusText = "No scripts to compile";
+                return;
+            }
+
+            BuildStatusText = $"Compiling {scriptsToCompile.Count} scripts...";
+
+            var compileResult = await compilerService.CompileScriptsAsync(
+                scriptsToCompile,
+                progress: (current, total, name) =>
+                {
+                    BuildStatusText = $"Compiling {current}/{total}: {name}";
+                });
+
+            var logPath = BuildLogService.WriteCompilationLog(compileResult, workingDir);
+            _lastBuildLogPath = logPath;
+            _lastBuildWorkingDir = workingDir;
+            HasBuildLog = true;
+
+            if (!compileResult.Success)
+            {
+                BuildStatusText = $"Compile failed: {compileResult.FailedScripts.Count} script(s) failed";
+                PopulateFailedScripts(compileResult);
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"Compilation failed for {compileResult.FailedScripts.Count} scripts");
+                return;
+            }
+
+            ClearFailedScripts();
+            StaleScriptCount = 0;
+            BuildStatusText = $"Compiled {compileResult.SuccessCount} scripts successfully";
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Compiled {compileResult.SuccessCount} scripts (compile-only, no pack)");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Compile failed: {ex.Message}");
+            BuildStatusText = $"Compile failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBuilding = false;
+        }
+    }
+
     [RelayCommand]
     private void OpenBuildLogFolder()
     {
