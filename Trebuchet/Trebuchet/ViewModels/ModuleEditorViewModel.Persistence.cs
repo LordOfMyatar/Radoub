@@ -173,8 +173,8 @@ public partial class ModuleEditorViewModel
     {
         if (_parentWindow == null) return;
 
-        var message = "A module file is locked by another process and cannot be saved.\n\n"
-            + "This usually happens when the Aurora Toolset has the module open.\n\n"
+        var message = "module.ifo is locked by another process and cannot be saved.\n\n"
+            + "This usually means Aurora Toolset has the module open and is holding a lock on the file.\n\n"
             + "To fix this:\n"
             + "  1. Close the module in Aurora Toolset\n"
             + "  2. Try saving again in Trebuchet\n\n"
