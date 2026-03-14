@@ -19,7 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.45-alpha] - 2026-03-14
-**Branch**: `quartermaster/issue-1520` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1520` | **PR**: #1684
 
 ### Sprint: Appearance Panel Search & Filter (#1520, #1201)
 
