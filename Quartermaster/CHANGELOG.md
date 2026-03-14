@@ -19,7 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.43-alpha] - 2026-03-14
-**Branch**: `quartermaster/issue-1518` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1518` | **PR**: #1680
 
 ### Bug: c_kocrachn model causes crash in MDL reader (#1518)
 
