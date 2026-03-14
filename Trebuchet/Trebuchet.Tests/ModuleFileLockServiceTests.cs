@@ -38,8 +38,12 @@ public class ModuleFileLockServiceTests : IDisposable
     }
 
     [Fact]
+    [Trait("Platform", "Windows")]
     public void IsFileLocked_FileLockedExclusive_ReturnsTrue()
     {
+        // File locking via FileShare is Windows-only; Linux doesn't enforce sharing violations
+        if (!OperatingSystem.IsWindows()) return;
+
         var path = Path.Combine(_testDirectory, "locked.mod");
         File.WriteAllBytes(path, new byte[] { 0x01, 0x02, 0x03 });
 
@@ -50,8 +54,12 @@ public class ModuleFileLockServiceTests : IDisposable
     }
 
     [Fact]
+    [Trait("Platform", "Windows")]
     public void IsFileLocked_FileLockedReadShareOnly_ReturnsTrue()
     {
+        // File locking via FileShare is Windows-only; Linux doesn't enforce sharing violations
+        if (!OperatingSystem.IsWindows()) return;
+
         var path = Path.Combine(_testDirectory, "locked_readshare.mod");
         File.WriteAllBytes(path, new byte[] { 0x01, 0x02, 0x03 });
 
