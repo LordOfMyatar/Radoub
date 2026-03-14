@@ -23,9 +23,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: File Ops & Validation (#1610)
 
-- [ ] Fix Save As dialog changing .bic extension to .utc during filename validation (#1594)
-- [ ] Resolve inconsistent save behavior: browser panel auto-saves vs close dialog prompts (#1535)
-- [ ] Add loading indicator for file operations (#817)
+- Save As dialog now lists current file type first, preserving .bic extension (#1594)
+- Browser panel auto-save documented as intentional design; improved status message (#1535)
+- Indeterminate progress bar in status bar during load, save, export, and initialization (#817)
 
 ---
 
