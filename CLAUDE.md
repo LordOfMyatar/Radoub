@@ -458,18 +458,18 @@ dotnet nbgv get-version --project [ToolDir]
 
 ## Test-Driven Development (TDD) Policy
 
-**Default for new features and projects**: TDD is the standard approach. Write failing tests first, then implement to make them pass.
+**MANDATORY**: Before writing implementation code, check this table. If TDD is required, write the failing test FIRST. Do not skip this step.
 
-**Case-by-case for bug fixes**: Use judgment — if the bug is easily reproducible with a test, write the failing test first. For complex bugs requiring investigation, use systematic-debugging first, then add regression tests.
+| Scenario | TDD Required? | Action |
+|----------|--------------|--------|
+| New feature / service / parser | **Yes** | Write failing test → implement → verify |
+| New shared library or cross-tool code | **Yes** | Write failing test → implement → verify |
+| Bug fix (reproducible) | **Yes** | Write failing test that reproduces bug → fix → verify |
+| Bug fix (investigation needed) | No | Debug first, add regression test after |
+| UI layout / styling / AXAML only | No | Manual verification |
+| Config / documentation only | No | No tests needed |
 
-| Scenario | TDD Required? |
-|----------|--------------|
-| New feature / service / parser | Yes — tests first |
-| New shared library or cross-tool code | Yes — tests first |
-| Bug fix (reproducible) | Yes — failing test reproduces bug, then fix |
-| Bug fix (investigation needed) | No — debug first, add regression test after |
-| UI layout / styling | No — manual verification |
-| Config / documentation only | No |
+**If you catch yourself writing implementation code without a test for a "Yes" scenario, STOP. Write the test first, then continue.**
 
 **TDD Workflow**:
 1. Write a failing test that describes the expected behavior
@@ -528,6 +528,12 @@ dotnet nbgv get-version --project [ToolDir]
 ---
 
 ## Sprint Workflow
+
+**Per Sprint Item**: For each item, follow this order:
+1. **TDD check** — does this item need tests first? (See TDD Policy table above)
+2. **Implement** — write code (after tests if TDD required)
+3. **Verify** — run tests, confirm build
+4. **Commit and push** — one commit per item
 
 **Commit Between Sprint Items**:
 - Commit after completing each discrete item within a sprint
@@ -1067,7 +1073,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\.claude\scripts\Searc
 
 ## Agent Skills (obra/superpowers)
 
-Installed skills in `.agents/skills/` provide structured methodologies. Claude should follow these skills automatically based on context — no user invocation needed.
+Installed skills in `.agents/skills/` provide structured methodologies. Claude **must** follow these skills when their trigger conditions are met — no user invocation needed, no skipping without explicit user override.
 
 ### Installed Skills
 

@@ -306,9 +306,10 @@ git push
 \`\`\`
 
 ### Next Steps
-1. Begin work immediately (any order) unless user specifies otherwise
-2. Update CHANGELOG entries as completed
-3. Run `/pre-merge` when sprint complete
+1. For each item: check TDD table — write tests first if required
+2. Begin work immediately (any order) unless user specifies otherwise
+3. Update CHANGELOG entries as completed
+4. Run `/pre-merge` when sprint complete
 ```
 
 **For Features/Fixes:**
@@ -320,8 +321,8 @@ git push
 **Issue**: #[issue-number]
 
 ### Next Steps
-1. Implement the [type]
-2. Add tests
+1. Check TDD table — write tests first if required
+2. Implement the [type]
 3. Run `/pre-merge` to verify all checks pass
 4. Mark PR ready for review
 ```
@@ -425,6 +426,7 @@ See `.claude/github-projects-reference.md` for project IDs and field details.
 - For epics, encourage planning before diving into implementation
 - For sprints, all work goes in one PR but **commit and push after each item**
 - Issue number is required - this command won't work without it
+- **TDD is mandatory** — check the TDD Policy table in CLAUDE.md before writing implementation code. Tests first for features, services, parsers, and reproducible bugs.
 
 ## Sprint Workflow Discipline (AI)
 
