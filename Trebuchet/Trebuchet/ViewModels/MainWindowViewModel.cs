@@ -139,7 +139,22 @@ public partial class MainWindowViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(CanBuildModule))]
     [NotifyPropertyChangedFor(nameof(NeedsBuildWarning))]
     [NotifyPropertyChangedFor(nameof(BuildWarningText))]
+    [NotifyPropertyChangedFor(nameof(ModFileLockWarningText))]
     private bool _isModFileLocked;
+
+    /// <summary>
+    /// Warning text shown next to Launch Game when .mod is locked.
+    /// </summary>
+    public string ModFileLockWarningText
+    {
+        get
+        {
+            if (!IsModFileLocked) return "";
+            var modPath = GetModFilePath();
+            var fileName = string.IsNullOrEmpty(modPath) ? "Module" : Path.GetFileName(modPath);
+            return $"{fileName} is locked by another editor. Save your changes in the other editor before testing, or close the other editor.";
+        }
+    }
 
     /// <summary>
     /// True when module IFO has been modified since the last build.
@@ -155,7 +170,7 @@ public partial class MainWindowViewModel : ObservableObject
     /// Checks if any file in the working directory is newer than the .mod file,
     /// or if there are stale scripts (.nss newer than .ncs).
     /// </summary>
-    public bool NeedsBuildWarning => IsModFileLocked || IsModuleDirty || HasNewerWorkingFiles || StaleScriptCount > 0 || HasUnsavedModuleEditorChanges || HasUnsavedFactionEditorChanges;
+    public bool NeedsBuildWarning => IsModuleDirty || HasNewerWorkingFiles || StaleScriptCount > 0 || HasUnsavedModuleEditorChanges || HasUnsavedFactionEditorChanges;
 
     /// <summary>
     /// Poll the .mod file lock status from a background timer.
@@ -193,9 +208,6 @@ public partial class MainWindowViewModel : ObservableObject
     {
         get
         {
-            if (IsModFileLocked)
-                return "Module .mod file is locked by another process (Aurora Toolset?) — Build & Save disabled. You can still compile scripts and launch the game.";
-
             var hasUnsaved = HasUnsavedModuleEditorChanges || HasUnsavedFactionEditorChanges || IsModuleDirty;
             var reasons = new List<string>();
 
