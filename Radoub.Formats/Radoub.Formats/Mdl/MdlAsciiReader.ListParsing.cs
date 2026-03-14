@@ -116,7 +116,10 @@ public partial class MdlAsciiReader
                     VertexIndex0 = ParseInt(parts[0]),
                     VertexIndex1 = ParseInt(parts[1]),
                     VertexIndex2 = ParseInt(parts[2]),
-                    SurfaceId = parts.Length >= 8 ? ParseInt(parts[7]) : 0
+                    SurfaceId = parts.Length >= 8 ? ParseInt(parts[7]) : 0,
+                    TvertIndex0 = parts.Length >= 7 ? ParseInt(parts[4]) : -1,
+                    TvertIndex1 = parts.Length >= 7 ? ParseInt(parts[5]) : -1,
+                    TvertIndex2 = parts.Length >= 7 ? ParseInt(parts[6]) : -1
                 };
 
                 // Calculate face normal from vertices if available
@@ -139,6 +142,105 @@ public partial class MdlAsciiReader
 
         mesh.Faces = faces.ToArray();
         _currentLine--; // Back up so main loop can advance
+    }
+
+    /// <summary>
+    /// Unroll a mesh with split vertex/tvert indexing into unified indexing.
+    /// ASCII MDL allows faces to reference vertex and tvert arrays independently.
+    /// The renderer expects UV[i] to correspond to Vertex[i], so we expand the
+    /// arrays to create one entry per unique (vertexIndex, tvertIndex) pair.
+    /// </summary>
+    internal static void UnrollSplitIndexMesh(MdlTrimeshNode mesh)
+    {
+        if (mesh.Faces.Length == 0 || mesh.Vertices.Length == 0)
+            return;
+
+        // Check if any face has tvert indices set
+        bool hasTvertIndices = false;
+        foreach (var face in mesh.Faces)
+        {
+            if (face.TvertIndex0 >= 0)
+            {
+                hasTvertIndices = true;
+                break;
+            }
+        }
+        if (!hasTvertIndices)
+            return;
+
+        // Check if tvert count already matches vertex count (no unrolling needed)
+        bool needsUnroll = false;
+        if (mesh.TextureCoords.Length > 0 && mesh.TextureCoords[0].Length != mesh.Vertices.Length)
+            needsUnroll = true;
+
+        // Also check if any tvert index differs from vertex index
+        if (!needsUnroll)
+        {
+            foreach (var face in mesh.Faces)
+            {
+                if (face.TvertIndex0 != face.VertexIndex0 ||
+                    face.TvertIndex1 != face.VertexIndex1 ||
+                    face.TvertIndex2 != face.VertexIndex2)
+                {
+                    needsUnroll = true;
+                    break;
+                }
+            }
+        }
+
+        if (!needsUnroll)
+            return;
+
+        var origVertices = mesh.Vertices;
+        var origNormals = mesh.Normals;
+        var origUVs = mesh.TextureCoords.Length > 0 ? mesh.TextureCoords[0] : null;
+        if (origUVs == null)
+            return;
+
+        // Map: (vertexIndex, tvertIndex) -> new unified index
+        var indexMap = new Dictionary<(int, int), int>();
+        var newVertices = new List<Vector3>();
+        var newNormals = new List<Vector3>();
+        var newUVs = new List<Vector2>();
+        var newFaces = new MdlFace[mesh.Faces.Length];
+
+        int GetOrCreateIndex(int vIdx, int tvIdx)
+        {
+            var key = (vIdx, tvIdx);
+            if (indexMap.TryGetValue(key, out var existing))
+                return existing;
+
+            var newIdx = newVertices.Count;
+            indexMap[key] = newIdx;
+
+            newVertices.Add(vIdx < origVertices.Length ? origVertices[vIdx] : Vector3.Zero);
+            if (origNormals.Length > 0)
+                newNormals.Add(vIdx < origNormals.Length ? origNormals[vIdx] : Vector3.UnitZ);
+            newUVs.Add(tvIdx >= 0 && tvIdx < origUVs.Length ? origUVs[tvIdx] : Vector2.Zero);
+
+            return newIdx;
+        }
+
+        for (int i = 0; i < mesh.Faces.Length; i++)
+        {
+            var face = mesh.Faces[i];
+            newFaces[i] = face;
+            newFaces[i].VertexIndex0 = GetOrCreateIndex(face.VertexIndex0, face.TvertIndex0);
+            newFaces[i].VertexIndex1 = GetOrCreateIndex(face.VertexIndex1, face.TvertIndex1);
+            newFaces[i].VertexIndex2 = GetOrCreateIndex(face.VertexIndex2, face.TvertIndex2);
+            // Clear tvert indices since they're now unified
+            newFaces[i].TvertIndex0 = -1;
+            newFaces[i].TvertIndex1 = -1;
+            newFaces[i].TvertIndex2 = -1;
+        }
+
+        mesh.Vertices = newVertices.ToArray();
+        mesh.Normals = newNormals.ToArray();
+        mesh.TextureCoords = new[] { newUVs.ToArray() };
+        mesh.Faces = newFaces;
+
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+            $"[MDL-ASCII] Unrolled mesh '{mesh.Name}': {origVertices.Length} verts + {origUVs.Length} tverts -> {newVertices.Count} unified vertices");
     }
 
     private void ParseColorList(MdlTrimeshNode mesh, string[] tokens)

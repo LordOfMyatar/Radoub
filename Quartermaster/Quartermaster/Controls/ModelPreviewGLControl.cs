@@ -412,36 +412,54 @@ void main()
 
     private uint CompileShader(ShaderType type, string source)
     {
-        var shader = _gl!.CreateShader(type);
-        _gl.ShaderSource(shader, source);
-        _gl.CompileShader(shader);
-
-        _gl.GetShader(shader, ShaderParameterName.CompileStatus, out var status);
-        if (status == 0)
+        try
         {
-            var log = _gl.GetShaderInfoLog(shader);
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Shader compile error ({type}): {log}");
-        }
+            var shader = _gl!.CreateShader(type);
+            _gl.ShaderSource(shader, source);
+            _gl.CompileShader(shader);
 
-        return shader;
+            _gl.GetShader(shader, ShaderParameterName.CompileStatus, out var status);
+            if (status == 0)
+            {
+                var log = _gl.GetShaderInfoLog(shader);
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Shader compile error ({type}): {log}");
+            }
+
+            return shader;
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"CompileShader failed ({type}): {ex.GetType().Name}: {ex.Message}");
+            return 0;
+        }
     }
 
     protected override void OnOpenGlDeinit(GlInterface gl)
     {
-        if (_gl != null)
+        try
         {
-            // Clean up textures
-            foreach (var texId in _textureCache.Values)
+            if (_gl != null)
             {
-                _gl.DeleteTexture(texId);
-            }
-            _textureCache.Clear();
+                // Clean up textures
+                foreach (var texId in _textureCache.Values)
+                {
+                    _gl.DeleteTexture(texId);
+                }
+                _textureCache.Clear();
 
-            // Clean up buffers and program
-            _gl.DeleteBuffer(_vbo);
-            _gl.DeleteBuffer(_ebo);
-            _gl.DeleteVertexArray(_vao);
-            _gl.DeleteProgram(_shaderProgram);
+                // Clean up buffers and program
+                _gl.DeleteBuffer(_vbo);
+                _gl.DeleteBuffer(_ebo);
+                _gl.DeleteVertexArray(_vao);
+                _gl.DeleteProgram(_shaderProgram);
+                _gl = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"OpenGL cleanup error (non-fatal): {ex.GetType().Name}: {ex.Message}");
             _gl = null;
         }
 
@@ -495,7 +513,15 @@ void main()
         // Update textures if needed
         if (_needsTextureUpdate)
         {
-            UpdateTextures();
+            try
+            {
+                UpdateTextures();
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR,
+                    $"UpdateTextures failed for model '{_model?.Name}': {ex.GetType().Name}: {ex.Message}");
+            }
             _needsTextureUpdate = false;
         }
 
@@ -682,8 +708,8 @@ void main()
             }
             if (nanVertexIndices.Count > 0)
             {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"  Mesh {meshIndex} '{mesh.Name}': {nanVertexIndices.Count} NaN vertices will be skipped");
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"  Mesh {meshIndex} '{mesh.Name}': {nanVertexIndices.Count}/{mesh.Vertices.Length} NaN vertices will be skipped — possible parser issue");
             }
             var hasUVs = mesh.TextureCoords.Length > 0 && mesh.TextureCoords[0].Length == mesh.Vertices.Length;
             var hasNormals = mesh.Normals.Length == mesh.Vertices.Length;

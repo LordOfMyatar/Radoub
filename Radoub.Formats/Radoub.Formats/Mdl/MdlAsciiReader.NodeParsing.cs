@@ -60,6 +60,10 @@ public partial class MdlAsciiReader
             _currentLine++;
         }
 
+        // Unroll split vertex/tvert indexing for ASCII meshes
+        if (node is MdlTrimeshNode trimesh)
+            UnrollSplitIndexMesh(trimesh);
+
         return (node, parentName);
     }
 

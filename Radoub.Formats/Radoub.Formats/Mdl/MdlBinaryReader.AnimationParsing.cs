@@ -57,9 +57,27 @@ public partial class MdlBinaryReader
         var eventsBufferOffset = PointerToModelOffset(eventsPointer);
         if (eventsCount > 0 && eventsBufferOffset != 0xFFFFFFFF && eventsBufferOffset != uint.MaxValue)
         {
-            for (int i = 0; i < eventsCount; i++)
+            // Sanity check: cap event count to prevent reading past buffer on corrupted data.
+            // Real NWN animations rarely have more than ~10 events.
+            const uint maxReasonableEvents = 1000;
+            var clampedCount = eventsCount;
+            if (eventsCount > maxReasonableEvents)
             {
-                stream.Position = eventsBufferOffset + i * 36; // 4 + 32 bytes per event
+                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.WARN,
+                    $"[MDL] Animation '{anim.Name}': eventsCount={eventsCount} exceeds reasonable limit, clamping to {maxReasonableEvents}");
+                clampedCount = maxReasonableEvents;
+            }
+
+            for (uint i = 0; i < clampedCount; i++)
+            {
+                var eventOffset = eventsBufferOffset + i * 36;
+                if (eventOffset + 36 > _modelData.Length)
+                {
+                    Logging.UnifiedLogger.LogApplication(Logging.LogLevel.WARN,
+                        $"[MDL] Animation '{anim.Name}': event {i} at offset 0x{eventOffset:X8} would read past buffer — stopping");
+                    break;
+                }
+                stream.Position = eventOffset;
                 var time = reader.ReadSingle();
                 var eventName = ReadFixedString(reader, 32);
                 anim.Events.Add(new MdlAnimationEvent { Time = time, EventName = eventName });

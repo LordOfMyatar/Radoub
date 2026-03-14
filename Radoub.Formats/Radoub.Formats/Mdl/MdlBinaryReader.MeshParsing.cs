@@ -174,30 +174,41 @@ public partial class MdlBinaryReader
         {
             mesh.Faces = ReadFaces(faceArrayBufferOffset, (int)faceCount);
 
-            // Validate face indices against vertex count
+            // Validate face indices against vertex count — reject out-of-bounds faces
             if (mesh.Faces != null && mesh.Vertices != null)
             {
                 int maxIdx = 0;
                 int minIdx = int.MaxValue;
+                int invalidFaceCount = 0;
+                var validFaces = new List<MdlFace>(mesh.Faces.Length);
+
                 foreach (var face in mesh.Faces)
                 {
+                    if (face.VertexIndex0 < 0 || face.VertexIndex0 >= mesh.Vertices.Length ||
+                        face.VertexIndex1 < 0 || face.VertexIndex1 >= mesh.Vertices.Length ||
+                        face.VertexIndex2 < 0 || face.VertexIndex2 >= mesh.Vertices.Length)
+                    {
+                        invalidFaceCount++;
+                        continue;
+                    }
+                    validFaces.Add(face);
                     maxIdx = Math.Max(maxIdx, Math.Max(face.VertexIndex0, Math.Max(face.VertexIndex1, face.VertexIndex2)));
                     minIdx = Math.Min(minIdx, Math.Min(face.VertexIndex0, Math.Min(face.VertexIndex1, face.VertexIndex2)));
                 }
-                if (maxIdx >= mesh.Vertices.Length)
+
+                if (invalidFaceCount > 0)
                 {
                     Logging.UnifiedLogger.LogApplication(Logging.LogLevel.WARN,
-                        $"[MDL] Mesh '{mesh.Name}': Face indices out of bounds! minIndex={minIdx}, maxIndex={maxIdx}, vertexCount={mesh.Vertices.Length}");
+                        $"[MDL] Mesh '{mesh.Name}': Rejected {invalidFaceCount}/{mesh.Faces.Length} faces with out-of-bounds indices (vertexCount={mesh.Vertices.Length})");
+                    mesh.Faces = validFaces.ToArray();
                 }
-                else
+
+                if (validFaces.Count > 0)
                 {
-                    // Log sample face and vertices for debugging
-                    var f0 = mesh.Faces[0];
+                    var f0 = validFaces[0];
                     var v0 = mesh.Vertices[f0.VertexIndex0];
-                    var v1 = mesh.Vertices[f0.VertexIndex1];
-                    var v2 = mesh.Vertices[f0.VertexIndex2];
                     Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
-                        $"[MDL] Mesh '{mesh.Name}': {mesh.Faces.Length} faces, idx range [{minIdx},{maxIdx}], vtxCount={mesh.Vertices.Length}. Face0: [{f0.VertexIndex0},{f0.VertexIndex1},{f0.VertexIndex2}] -> v0=({v0.X:F3},{v0.Y:F3},{v0.Z:F3})");
+                        $"[MDL] Mesh '{mesh.Name}': {validFaces.Count} valid faces, idx range [{minIdx},{maxIdx}], vtxCount={mesh.Vertices.Length}. Face0: [{f0.VertexIndex0},{f0.VertexIndex1},{f0.VertexIndex2}] -> v0=({v0.X:F3},{v0.Y:F3},{v0.Z:F3})");
                 }
             }
         }
@@ -290,9 +301,41 @@ public partial class MdlBinaryReader
         return vertexRawOffset;
     }
 
+    // Maximum AABB tree depth to prevent stack overflow from circular or pathologically deep trees.
+    // Real NWN models rarely exceed depth 20; 64 is generous.
+    private const int MaxAabbDepth = 64;
+
     private MdlAabbEntry? ParseAabbTree(uint offset)
     {
+        var visitedOffsets = new HashSet<uint>();
+        return ParseAabbTreeRecursive(offset, 0, visitedOffsets);
+    }
+
+    private MdlAabbEntry? ParseAabbTreeRecursive(uint offset, int depth, HashSet<uint> visitedOffsets)
+    {
         if (offset == 0xFFFFFFFF || offset >= _modelData.Length) return null;
+
+        if (depth >= MaxAabbDepth)
+        {
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.WARN,
+                $"[MDL] AABB tree exceeded max depth {MaxAabbDepth} at offset 0x{offset:X8} — truncating");
+            return null;
+        }
+
+        if (!visitedOffsets.Add(offset))
+        {
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.WARN,
+                $"[MDL] AABB tree circular reference detected at offset 0x{offset:X8} — truncating");
+            return null;
+        }
+
+        // Ensure enough data to read an AABB entry (6 floats + 4 uint32 = 40 bytes)
+        if (offset + 40 > _modelData.Length)
+        {
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.WARN,
+                $"[MDL] AABB tree entry at offset 0x{offset:X8} would read past buffer end — truncating");
+            return null;
+        }
 
         using var stream = new MemoryStream(_modelData);
         using var reader = new BinaryReader(stream);
@@ -311,9 +354,9 @@ public partial class MdlBinaryReader
         var rightBufferOffset = PointerToModelOffset(rightPointer);
 
         if (leftBufferOffset != 0xFFFFFFFF && leftBufferOffset != uint.MaxValue)
-            entry.Left = ParseAabbTree(leftBufferOffset);
+            entry.Left = ParseAabbTreeRecursive(leftBufferOffset, depth + 1, visitedOffsets);
         if (rightBufferOffset != 0xFFFFFFFF && rightBufferOffset != uint.MaxValue)
-            entry.Right = ParseAabbTree(rightBufferOffset);
+            entry.Right = ParseAabbTreeRecursive(rightBufferOffset, depth + 1, visitedOffsets);
 
         return entry;
     }

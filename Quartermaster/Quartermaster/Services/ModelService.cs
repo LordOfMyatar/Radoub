@@ -216,11 +216,23 @@ public class ModelService
         // Store skeleton for bone position lookup
         _currentSkeleton = skeletonModel;
 
-        // Helper to get body part number, preferring armor override
-        byte GetPartNumber(string armorKey, byte creatureValue) =>
-            (armorOverrides != null && armorOverrides.TryGetValue(armorKey, out var armorValue) && armorValue > 0)
-                ? armorValue
-                : creatureValue;
+        // Helper to get body part number.
+        // Creature value takes precedence — it reflects the user's explicit choice.
+        // Armor overrides only apply when the creature has the default part (non-zero)
+        // and the armor provides an alternative. Setting a body part to 0 = "invisible/none"
+        // and must always be honored regardless of armor.
+        byte GetPartNumber(string armorKey, byte creatureValue)
+        {
+            // If creature explicitly says 0 (none/invisible), honor that
+            if (creatureValue == 0)
+                return 0;
+
+            // If armor provides an override for this part, use it
+            if (armorOverrides != null && armorOverrides.TryGetValue(armorKey, out var armorValue) && armorValue > 0)
+                return armorValue;
+
+            return creatureValue;
+        }
 
         // Load each body part (armor overrides take precedence where applicable)
         // Head is special - uses AppearanceHead, not overridden by armor
@@ -276,6 +288,20 @@ public class ModelService
             UnifiedLogger.LogApplication(LogLevel.INFO, $"TryAddBodyPart: Skipping {partType} (partNumber=0)");
             return; // 0 often means "none" for optional parts
         }
+
+        try
+        {
+            TryAddBodyPartCore(compositeModel, basePrefix, partType, partNumber);
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"TryAddBodyPart: Failed to add {partType}#{partNumber} for {basePrefix}: {ex.GetType().Name}: {ex.Message}");
+        }
+    }
+
+    private void TryAddBodyPartCore(MdlModel compositeModel, string basePrefix, string partType, byte partNumber)
+    {
 
         // Format: {basePrefix}_{partType}{partNumber:D3}
         // e.g., pfo0_head001
