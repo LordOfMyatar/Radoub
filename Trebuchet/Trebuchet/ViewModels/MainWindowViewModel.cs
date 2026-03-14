@@ -23,6 +23,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly ToolLauncherService _toolLauncher;
     private readonly GameLauncherService _gameLauncher;
     private readonly CancellationTokenSource _cts = new();
+    private System.Threading.Timer? _lockPollTimer;
     private Window? _parentWindow;
     private ModuleEditorViewModel? _moduleEditorViewModel;
     private FactionEditorViewModel? _factionEditorViewModel;
@@ -120,9 +121,40 @@ public partial class MainWindowViewModel : ObservableObject
         : "Module not unpacked - unpack first to use DefaultBic";
 
     /// <summary>
-    /// Can build when a module is selected.
+    /// Can build when a module is selected and .mod file is not locked.
     /// </summary>
-    public bool CanBuildModule => IsModuleValid && !string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath);
+    public bool CanBuildModule => IsModuleValid && !string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath) && !IsModFileLocked;
+
+    /// <summary>
+    /// Can compile scripts when a module is selected and compiler is available.
+    /// Works even when .mod is locked — compilation writes to the working directory.
+    /// </summary>
+    public bool CanCompileScripts => IsModuleValid && !string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath) && IsCompilerAvailable;
+
+    /// <summary>
+    /// True when the .mod file is locked by another process (e.g., Aurora Toolset).
+    /// Polled periodically. When locked, Build &amp; Save is disabled.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanBuildModule))]
+    [NotifyPropertyChangedFor(nameof(NeedsBuildWarning))]
+    [NotifyPropertyChangedFor(nameof(BuildWarningText))]
+    [NotifyPropertyChangedFor(nameof(ModFileLockWarningText))]
+    private bool _isModFileLocked;
+
+    /// <summary>
+    /// Warning text shown next to Launch Game when .mod is locked.
+    /// </summary>
+    public string ModFileLockWarningText
+    {
+        get
+        {
+            if (!IsModFileLocked) return "";
+            var modPath = GetModFilePath();
+            var fileName = string.IsNullOrEmpty(modPath) ? "Module" : Path.GetFileName(modPath);
+            return $"{fileName} is locked by another editor. Save your changes in the other editor before testing, or close the other editor.";
+        }
+    }
 
     /// <summary>
     /// True when module IFO has been modified since the last build.
@@ -138,21 +170,22 @@ public partial class MainWindowViewModel : ObservableObject
     /// Checks if any file in the working directory is newer than the .mod file,
     /// or if there are stale scripts (.nss newer than .ncs).
     /// </summary>
-    public bool NeedsBuildWarning => IsModuleDirty || HasNewerWorkingFiles || StaleScriptCount > 0 || HasUnsavedModuleEditorChanges || HasUnsavedFactionEditorChanges;
+    public bool NeedsBuildWarning => IsModuleDirty || StaleScriptCount > 0 || HasUnsavedModuleEditorChanges || HasUnsavedFactionEditorChanges;
 
     /// <summary>
-    /// True when files in the working directory are newer than the packed .mod file.
+    /// Poll the .mod file lock status from a background timer.
+    /// Updates IsModFileLocked on the UI thread.
     /// </summary>
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(NeedsBuildWarning))]
-    [NotifyPropertyChangedFor(nameof(BuildWarningText))]
-    private bool _hasNewerWorkingFiles;
+    private void PollModFileLock()
+    {
+        var modPath = GetModFilePath();
+        var locked = ModuleFileLockService.IsFileLocked(modPath);
 
-    /// <summary>
-    /// Number of files in the working directory newer than the .mod file.
-    /// </summary>
-    [ObservableProperty]
-    private int _newerFileCount;
+        if (locked != IsModFileLocked)
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => IsModFileLocked = locked);
+        }
+    }
 
     /// <summary>
     /// Describes why a build is recommended before testing.
@@ -170,8 +203,6 @@ public partial class MainWindowViewModel : ObservableObject
                 reasons.Add("unsaved faction changes");
             if (IsModuleDirty)
                 reasons.Add("module modified since last build");
-            if (HasNewerWorkingFiles)
-                reasons.Add($"{NewerFileCount} file(s) modified since last build");
             if (StaleScriptCount > 0)
                 reasons.Add($"{StaleScriptCount} script(s) need recompiling");
 
@@ -376,6 +407,13 @@ public partial class MainWindowViewModel : ObservableObject
         // Check for updates on startup (fire and forget)
         _ = CheckForUpdatesAsync(_cts.Token);
 
+        // Poll .mod file lock status every 5 seconds
+        _lockPollTimer = new System.Threading.Timer(
+            _ => PollModFileLock(),
+            null,
+            TimeSpan.FromSeconds(2),
+            TimeSpan.FromSeconds(5));
+
         // Scan for BIC files if a module is already selected at startup
         if (!string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath))
         {
@@ -440,6 +478,7 @@ public partial class MainWindowViewModel : ObservableObject
     /// </summary>
     public void Cleanup()
     {
+        _lockPollTimer?.Dispose();
         _cts.Cancel();
         _cts.Dispose();
         RadoubSettings.Instance.PropertyChanged -= OnSharedSettingsChanged;
@@ -533,9 +572,8 @@ public partial class MainWindowViewModel : ObservableObject
         // Update module-dependent properties when module changes
         if (e.PropertyName == nameof(RadoubSettings.CurrentModulePath))
         {
-            // New module selected - reset manual dirty state, check file timestamps
+            // New module selected - reset manual dirty state
             IsModuleDirty = false;
-            _lastBuildTimeUtc = null;
             RefreshBuildStatus();
 
             // Reload module editor first (may auto-unpack .mod), then faction editor (#1384)

@@ -27,6 +27,7 @@ public partial class LaunchTestPanel : UserControl
         UpdateBuildWarningColors();
         UpdateFailedScriptsColors();
         UpdateStaleScriptText();
+        UpdateModLockedWarningColor();
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -39,6 +40,9 @@ public partial class LaunchTestPanel : UserControl
 
         if (e.PropertyName == nameof(MainWindowViewModel.HasFailedScripts))
             UpdateFailedScriptsColors();
+
+        if (e.PropertyName == nameof(MainWindowViewModel.IsModFileLocked))
+            UpdateModLockedWarningColor();
     }
 
     private void UpdateBuildWarningColors()
@@ -64,6 +68,13 @@ public partial class LaunchTestPanel : UserControl
         var failedIcon = this.FindControl<TextBlock>("FailedScriptsIcon");
         if (failedIcon != null)
             failedIcon.Foreground = BrushManager.GetErrorBrush(this);
+    }
+
+    private void UpdateModLockedWarningColor()
+    {
+        var lockedWarning = this.FindControl<TextBlock>("ModLockedWarning");
+        if (lockedWarning != null)
+            lockedWarning.Foreground = BrushManager.GetWarningBrush(this);
     }
 
     private void UpdateStaleScriptText()

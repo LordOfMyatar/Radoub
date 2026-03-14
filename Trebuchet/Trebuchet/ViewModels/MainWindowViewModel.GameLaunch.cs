@@ -26,11 +26,15 @@ public partial class MainWindowViewModel
             return;
         }
 
-        // Auto-save before testing if enabled
-        if (SettingsService.Instance.AlwaysSaveBeforeTesting && CanBuildModule)
+        // Auto-save before testing if enabled (skip when .mod is locked)
+        if (SettingsService.Instance.AlwaysSaveBeforeTesting && CanBuildModule && !IsModFileLocked)
         {
             UnifiedLogger.LogApplication(LogLevel.INFO, "Auto-saving before test launch (AlwaysSaveBeforeTesting)");
             await BuildModuleAsync();
+        }
+        else if (SettingsService.Instance.AlwaysSaveBeforeTesting && IsModFileLocked)
+        {
+            UnifiedLogger.LogApplication(LogLevel.INFO, "Skipping auto-save: .mod file is locked by another process");
         }
 
         // Block launch if there are unresolved compilation failures

@@ -2,22 +2,23 @@
 
 Perform cleanup tasks after a PR has been merged to main.
 
-## Upfront Questions
+## Defaults & Flags
 
-**IMPORTANT**: Gather ALL required user input at the start, then execute autonomously.
+| Action | Default | Flag to Override |
+|--------|---------|------------------|
+| Branch cleanup | **Yes** — delete local feature branch | `--noclean` to keep it |
+| Release | **No** — skip release creation | `--release` to create one |
 
-Before running any cleanup, collect these answers in ONE interaction:
-
-1. **Branch Cleanup**: "Delete local feature branch?" [y/n]
-2. **Release**: "Create a GitHub release for this version?" [y/n]
-
-After collecting answers, proceed through all steps without further prompts unless errors occur.
+No upfront questions needed — just run and go. Flags override defaults.
 
 ## Usage
 
 ```
 /post-merge
 /post-merge #[pr-number]
+/post-merge --noclean          # keep the local branch
+/post-merge --release          # create a GitHub release
+/post-merge #123 --release     # specific PR + release
 ```
 
 If no PR number provided, uses the most recently merged PR.
@@ -45,7 +46,8 @@ git pull origin main
 
 ### Step 3: Clean Up Local Feature Branch
 
-Based on user's answer:
+**Default: Yes** (skip if `--noclean` flag provided)
+
 ```bash
 git branch -d [branch-name]
 ```
@@ -76,9 +78,11 @@ If found, add completion comment:
 gh issue comment [epic-number] --body "Sprint completed via PR #[pr-number]: [PR title]"
 ```
 
-### Step 6: Create Release (if requested)
+### Step 6: Create Release (if `--release` flag provided)
 
-Based on user's answer, invoke:
+**Default: No** (skip unless `--release` flag provided)
+
+Invoke:
 ```
 /release
 ```
@@ -103,10 +107,10 @@ The `/release` command handles:
 
 | Task | Status |
 |------|--------|
-| Local branch | ✅ Deleted / ⏭️ Kept |
+| Local branch | ✅ Deleted (default) / ⏭️ Kept (--noclean) |
 | Issues closed | ✅ #x, #y / N/A |
 | Epic updated | ✅ #z / N/A |
-| Release | ✅ Created vX.Y.Z / ⏭️ Skipped |
+| Release | ✅ Created vX.Y.Z (--release) / ⏭️ Skipped (default) |
 
 ---
 

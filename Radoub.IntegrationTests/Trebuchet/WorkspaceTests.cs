@@ -1,5 +1,6 @@
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
+using FlaUI.Core.WindowsAPI;
 using Radoub.IntegrationTests.Shared;
 using Xunit;
 
@@ -176,13 +177,20 @@ public class WorkspaceTests : TrebuchetTestBase
         Assert.NotNull(launchTab);
         EnsureFocused();
         launchTab.Click();
-        Thread.Sleep(500);
+        Thread.Sleep(1000); // Allow tab content to render fully
 
-        // Should find "Build Status" heading
+        // The Build Status section may be below the fold in the ScrollViewer.
+        // Scroll down to ensure off-screen elements are realized in the automation tree.
+        EnsureFocused();
+        SendKeyboardShortcut(VirtualKeyShort.NEXT); // Page Down
+        Thread.Sleep(300);
+
+        // Should find "Build Status" heading (explicit AutomationProperties.Name set in AXAML)
         var buildHeading = FindTextBlockContaining("Build Status");
         Assert.NotNull(buildHeading);
 
-        // Should find compile scripts checkbox (CheckBox content, search by name)
+        // Should find compile scripts checkbox
+        // Content is "Compile scripts before saving" — search by partial text
         var compileCheckbox = FindCheckBoxByText("Compile scripts");
         Assert.NotNull(compileCheckbox);
     }

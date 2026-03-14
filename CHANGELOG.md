@@ -16,6 +16,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 - `/backlog` skill: Anti-overlap rule (issues appear in at most one sprint), mandatory 3-category sprint options (Feature/Bug/Health), languishing issues report (30+/60+ days), anti-recency bias (oldest-first selection), recent sprint history awareness
+- `/pre-merge`: Targeted FlaUI test filtering with `-UIFilter` parameter, file-to-test mapping for auto-detected UI changes
+- `/post-merge`: Default cleanup=yes, release=no; added `--noclean` and `--release` flags
+- `/init-item`: TDD enforcement in sprint Next Steps output
+- `CLAUDE.md`: Strengthened TDD policy with MANDATORY language, agent skills "should" → "must"
+- `run-tests.ps1`: Added `-UIFilter` parameter for targeted FlaUI test execution
 
 ---
 

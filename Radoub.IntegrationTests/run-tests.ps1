@@ -19,6 +19,9 @@ param(
     [switch]$UnitOnly,
     [switch]$SkipPrivacy,
     [switch]$TechDebt,
+    # Optional custom filter for UI tests (overrides default tool namespace filter)
+    # Example: "Category=Workspace" or "Name~LaunchTab"
+    [string]$UIFilter,
     # Legacy flags (deprecated, use -Tool instead)
     [switch]$ParleyOnly,
     [switch]$QuartermasterOnly
@@ -308,7 +311,15 @@ function Get-TestsToRun {
             $unitTests += $toolUnitTests[$Tool]
         }
         if ($toolUiTests.ContainsKey($Tool)) {
-            $uiTests += $toolUiTests[$Tool]
+            $entry = $toolUiTests[$Tool].Clone()
+            # Override filter if custom UIFilter provided
+            # UIFilter values use FullyQualifiedName~ by default (Name~ doesn't work with xUnit VSTest adapter)
+            if ($UIFilter) {
+                $filterExpr = if ($UIFilter -match '(FullyQualifiedName|DisplayName|Category)') { $UIFilter } else { "FullyQualifiedName~$UIFilter" }
+                $entry.Filter = "$($entry.Filter)&$filterExpr"
+                $entry.Name = "$($entry.Name) (filtered: $UIFilter)"
+            }
+            $uiTests += $entry
         }
     } else {
         # All tests
@@ -330,7 +341,8 @@ function Invoke-TestProject {
     $name = $TestInfo.Name
     $path = $TestInfo.Path
     $filter = $TestInfo.Filter
-    $outputFile = "$outputDir\${name}_$timestamp.output"
+    $safeName = $name -replace '[^a-zA-Z0-9._-]', '_'
+    $outputFile = "$outputDir\${safeName}_$timestamp.output"
 
     Write-Host "`n--- $name ---" -ForegroundColor Yellow
 

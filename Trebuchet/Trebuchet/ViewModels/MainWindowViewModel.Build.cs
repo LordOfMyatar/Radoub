@@ -19,10 +19,6 @@ public partial class MainWindowViewModel
     private string? _lastBuildLogPath;
     private string? _lastBuildWorkingDir;
 
-    // Timestamp of last successful build to prevent false-positive "newer files" warnings
-    // caused by filesystem timestamp granularity races after packing the .mod file
-    private DateTime? _lastBuildTimeUtc;
-
     [RelayCommand(CanExecute = nameof(CanBuildModule))]
     private async Task BuildModuleAsync()
     {
@@ -120,18 +116,99 @@ public partial class MainWindowViewModel
             UnifiedLogger.LogApplication(LogLevel.INFO,
                 $"Built {resourceCount} resources to {UnifiedLogger.SanitizePath(modFilePath)}");
 
-            _lastBuildTimeUtc = DateTime.UtcNow;
             BuildStatusText = $"Built {resourceCount} files to {Path.GetFileName(modFilePath)}";
             ClearFailedScripts();
             StaleScriptCount = 0;
             IsModuleDirty = false;
-            HasNewerWorkingFiles = false;
-            NewerFileCount = 0;
         }
         catch (Exception ex)
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Build failed: {ex.Message}");
             BuildStatusText = $"Build failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBuilding = false;
+        }
+    }
+
+    /// <summary>
+    /// Compile scripts only — no packing to .mod.
+    /// Available even when the .mod file is locked by another process.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanCompileScripts))]
+    private async Task CompileScriptsOnlyAsync()
+    {
+        var workingDir = GetWorkingDirectoryPath();
+        if (string.IsNullOrEmpty(workingDir))
+        {
+            BuildStatusText = "Cannot compile: no working directory found";
+            return;
+        }
+
+        var compilerService = ScriptCompilerService.Instance;
+        if (!compilerService.IsCompilerAvailable)
+        {
+            BuildStatusText = "Compiler not found";
+            return;
+        }
+
+        IsBuilding = true;
+
+        try
+        {
+            List<string> scriptsToCompile;
+            if (SettingsService.Instance.BuildUncompiledScriptsEnabled)
+            {
+                scriptsToCompile = Directory.GetFiles(workingDir, "*.nss", SearchOption.TopDirectoryOnly)
+                    .Where(ScriptCompilerService.HasUncommentedEntryPoint)
+                    .ToList();
+            }
+            else
+            {
+                var staleScripts = compilerService.FindStaleScripts(workingDir);
+                scriptsToCompile = staleScripts.Select(s => s.NssPath).ToList();
+            }
+
+            if (scriptsToCompile.Count == 0)
+            {
+                BuildStatusText = "No scripts to compile";
+                return;
+            }
+
+            BuildStatusText = $"Compiling {scriptsToCompile.Count} scripts...";
+
+            var compileResult = await compilerService.CompileScriptsAsync(
+                scriptsToCompile,
+                progress: (current, total, name) =>
+                {
+                    BuildStatusText = $"Compiling {current}/{total}: {name}";
+                });
+
+            var logPath = BuildLogService.WriteCompilationLog(compileResult, workingDir);
+            _lastBuildLogPath = logPath;
+            _lastBuildWorkingDir = workingDir;
+            HasBuildLog = true;
+
+            if (!compileResult.Success)
+            {
+                BuildStatusText = $"Compile failed: {compileResult.FailedScripts.Count} script(s) failed";
+                PopulateFailedScripts(compileResult);
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"Compilation failed for {compileResult.FailedScripts.Count} scripts");
+                return;
+            }
+
+            ClearFailedScripts();
+            StaleScriptCount = 0;
+            BuildStatusText = $"Compiled {compileResult.SuccessCount} scripts successfully";
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Compiled {compileResult.SuccessCount} scripts (compile-only, no pack)");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Compile failed: {ex.Message}");
+            BuildStatusText = $"Compile failed: {ex.Message}";
         }
         finally
         {
@@ -290,12 +367,9 @@ public partial class MainWindowViewModel
                 if (!string.IsNullOrEmpty(workingDir) && !string.IsNullOrEmpty(modFilePath))
                 {
                     var resourceCount = await Task.Run(() => PackDirectoryToMod(workingDir, modFilePath));
-                    _lastBuildTimeUtc = DateTime.UtcNow;
                     BuildStatusText = $"Built {resourceCount} files to {Path.GetFileName(modFilePath)}";
                     StaleScriptCount = 0;
                     IsModuleDirty = false;
-                    HasNewerWorkingFiles = false;
-                    NewerFileCount = 0;
 
                     UnifiedLogger.LogApplication(LogLevel.INFO,
                         $"Recompile + pack: {resourceCount} resources to {UnifiedLogger.SanitizePath(modFilePath)}");
@@ -358,13 +432,12 @@ public partial class MainWindowViewModel
     }
 
     /// <summary>
-    /// Refresh all build-related checks: stale scripts and newer working files.
+    /// Refresh all build-related checks: stale scripts.
     /// Called on module load, after Module Editor closes, and before launch.
     /// </summary>
     public void RefreshBuildStatus()
     {
         CheckStaleScripts();
-        CheckNewerWorkingFiles();
     }
 
     /// <summary>
@@ -381,44 +454,6 @@ public partial class MainWindowViewModel
 
         var staleScripts = ScriptCompilerService.Instance.FindStaleScripts(workingDir);
         StaleScriptCount = staleScripts.Count;
-    }
-
-    /// <summary>
-    /// Check if any files in the working directory are newer than the .mod file.
-    /// </summary>
-    private void CheckNewerWorkingFiles()
-    {
-        var workingDir = GetWorkingDirectoryPath();
-        var modPath = GetModFilePath();
-
-        if (string.IsNullOrEmpty(workingDir) || string.IsNullOrEmpty(modPath) || !File.Exists(modPath))
-        {
-            HasNewerWorkingFiles = false;
-            NewerFileCount = 0;
-            return;
-        }
-
-        try
-        {
-            var modWriteTime = File.GetLastWriteTimeUtc(modPath);
-
-            // Use the build completion timestamp if it's newer than the .mod file's
-            // filesystem timestamp - prevents false positives from timestamp granularity
-            if (_lastBuildTimeUtc.HasValue && _lastBuildTimeUtc.Value > modWriteTime)
-                modWriteTime = _lastBuildTimeUtc.Value;
-
-            var newerFiles = Directory.GetFiles(workingDir)
-                .Count(f => File.GetLastWriteTimeUtc(f) > modWriteTime);
-
-            NewerFileCount = newerFiles;
-            HasNewerWorkingFiles = newerFiles > 0;
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not check working directory timestamps: {ex.Message}");
-            HasNewerWorkingFiles = false;
-            NewerFileCount = 0;
-        }
     }
 
     /// <summary>
