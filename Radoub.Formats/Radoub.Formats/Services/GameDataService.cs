@@ -154,6 +154,24 @@ public class GameDataService : IGameDataService
         }
     }
 
+    public byte[]? FindBaseResource(string resRef, ushort resourceType)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        lock (_lock)
+        {
+            if (_resolver == null)
+            {
+                UnifiedLogger.Log(LogLevel.DEBUG, $"FindBaseResource({resRef}, {resourceType}): resolver is null", "GameDataService", "GameData");
+                return null;
+            }
+
+            var result = _resolver.FindBaseResource(resRef, resourceType);
+            UnifiedLogger.Log(LogLevel.DEBUG, $"FindBaseResource({resRef}, {resourceType}): {(result != null ? $"{result.Length} bytes" : "not found")}", "GameDataService", "GameData");
+            return result;
+        }
+    }
+
     public IEnumerable<GameResourceInfo> ListResources(ushort resourceType)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -202,6 +220,12 @@ public class GameDataService : IGameDataService
 
         lock (_lock)
         {
+            if (_resolver == null)
+            {
+                UnifiedLogger.Log(LogLevel.WARN, "ConfigureModuleHaks: resolver not initialized", "GameDataService", "GameData");
+                return;
+            }
+
             var settings = RadoubSettings.Instance;
             var hakSearchPaths = settings.GetAllHakSearchPaths().ToList();
 
@@ -212,16 +236,10 @@ public class GameDataService : IGameDataService
                 return;
             }
 
-            // Rebuild the resolver config with module-specific HAK paths
-            var config = BuildConfig(settings);
-            config.EnableHakScanning = true;
-            config.HakPaths = modulePaths;
+            // Update HAK paths on the existing resolver — preserves KEY/BIF index
+            _resolver.UpdateHakPaths(modulePaths);
 
-            // Replace resolver
-            _resolver?.Dispose();
-            _resolver = new GameResourceResolver(config);
-
-            // Clear all caches — resource resolution order has changed
+            // Clear caches that depend on resource resolution order
             _twoDACache.Clear();
             _ssfCache.Clear();
             _paletteCache.Clear();

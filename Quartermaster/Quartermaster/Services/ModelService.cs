@@ -39,43 +39,52 @@ public class ModelService
     /// </summary>
     public MdlModel? LoadCreatureModel(UtcFile creature)
     {
-        var appearanceId = creature.AppearanceType;
-        var gender = creature.Gender;
-        var phenotype = creature.Phenotype;
-
-        // Log equipped items for debugging
-        UnifiedLogger.LogApplication(LogLevel.INFO,
-            $"LoadCreatureModel: {creature.EquipItemList.Count} equipped items");
-        foreach (var equip in creature.EquipItemList)
+        try
         {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                $"  Slot {equip.Slot}: '{equip.EquipRes}'");
-        }
+            var appearanceId = creature.AppearanceType;
+            var gender = creature.Gender;
+            var phenotype = creature.Phenotype;
 
-        // Check if this is a part-based model
-        var modelType = _gameDataService.Get2DAValue("appearance", appearanceId, "MODELTYPE");
-        if (modelType?.ToUpperInvariant().Contains("P") == true)
-        {
-            // Get armor-provided body part overrides
-            var armorOverrides = GetArmorPartOverrides(creature);
-
-            if (armorOverrides != null)
+            // Log equipped items for debugging
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"LoadCreatureModel: {creature.EquipItemList.Count} equipped items");
+            foreach (var equip in creature.EquipItemList)
             {
-                UnifiedLogger.LogApplication(LogLevel.INFO,
-                    $"LoadCreatureModel: Armor overrides: {string.Join(", ", armorOverrides.Select(kv => $"{kv.Key}={kv.Value}"))}");
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.INFO,
-                    $"LoadCreatureModel: No armor overrides (naked creature or no chest armor)");
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"  Slot {equip.Slot}: '{equip.EquipRes}'");
             }
 
-            // Part-based model - load body parts with armor overrides
-            return LoadPartBasedCreatureModel(creature, armorOverrides);
-        }
+            // Check if this is a part-based model
+            var modelType = _gameDataService.Get2DAValue("appearance", appearanceId, "MODELTYPE");
+            if (modelType?.ToUpperInvariant().Contains("P") == true)
+            {
+                // Get armor-provided body part overrides
+                var armorOverrides = GetArmorPartOverrides(creature);
 
-        // Simple/Full model - load single model
-        return LoadModelForAppearance(appearanceId, gender, phenotype);
+                if (armorOverrides != null)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"LoadCreatureModel: Armor overrides: {string.Join(", ", armorOverrides.Select(kv => $"{kv.Key}={kv.Value}"))}");
+                }
+                else
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"LoadCreatureModel: No armor overrides (naked creature or no chest armor)");
+                }
+
+                // Part-based model - load body parts with armor overrides
+                return LoadPartBasedCreatureModel(creature, armorOverrides);
+            }
+
+            // Simple/Full model - load single model
+            return LoadModelForAppearance(appearanceId, gender, phenotype);
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"LoadCreatureModel failed for appearance {creature.AppearanceType}: {ex.GetType().Name}: {ex.Message}");
+            return null;
+        }
     }
 
     /// <summary>
@@ -172,8 +181,10 @@ public class ModelService
         _meshPartTypes.Clear();
 
         // Load the base skeleton model first - it defines bone positions for body parts
+        // Use LoadSkeletonModel to prefer BIF over HAK — CEP HAKs override standard
+        // skeletons with incompatible versions (#1314)
         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"LoadPartBasedCreatureModel: Attempting to load skeleton model '{basePrefix}'...");
-        var skeletonModel = LoadModel(basePrefix);
+        var skeletonModel = LoadModelPreferBIF(basePrefix);
         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"LoadPartBasedCreatureModel: LoadModel returned {(skeletonModel != null ? "model" : "null")}");
         if (skeletonModel != null)
         {
@@ -269,7 +280,7 @@ public class ModelService
         // Format: {basePrefix}_{partType}{partNumber:D3}
         // e.g., pfo0_head001
         var partName = $"{basePrefix}_{partType}{partNumber:D3}";
-        var partModel = LoadModel(partName);
+        var partModel = LoadModelPreferBIF(partName);
 
         // If not found with race-specific prefix, try human fallback
         // NWN shares many body part models across races using pmh0/pfh0 (human male/female)
@@ -281,7 +292,7 @@ public class ModelService
             if (humanPrefix != basePrefix)
             {
                 var humanPartName = $"{humanPrefix}_{partType}{partNumber:D3}";
-                partModel = LoadModel(humanPartName);
+                partModel = LoadModelPreferBIF(humanPartName);
                 if (partModel != null)
                 {
                     UnifiedLogger.LogApplication(LogLevel.INFO,
@@ -665,7 +676,7 @@ public class ModelService
         }
 
         UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadModelForAppearance: Loading model '{modelName}'");
-        return LoadModel(modelName);
+        return LoadModelPreferBIF(modelName);
     }
 
     /// <summary>
@@ -685,7 +696,7 @@ public class ModelService
             return cached;
         }
 
-        // Try to load from game resources
+        // Try to load from game resources (Override → HAK → BIF)
         var modelData = _gameDataService.FindResource(resRef, ResourceTypes.Mdl);
         if (modelData == null || modelData.Length == 0)
         {
@@ -712,6 +723,66 @@ public class ModelService
             _modelCache[resRef] = null;
             return null;
         }
+    }
+
+    /// <summary>
+    /// Load a model preferring BIF over HAK for part-based creature assembly.
+    /// CEP HAKs override standard race models (skeletons, heads, hands, etc.) with
+    /// versions that our MDL parser doesn't handle correctly — producing garbage data.
+    /// For models that exist in BIF, the BIF version is used.
+    /// For CEP-only models (not in BIF), the HAK version is used.
+    /// </summary>
+    private MdlModel? LoadModelPreferBIF(string resRef)
+    {
+        if (string.IsNullOrEmpty(resRef))
+            return null;
+
+        resRef = resRef.ToLowerInvariant();
+
+        // Check cache (shared with LoadModel)
+        if (_modelCache.TryGetValue(resRef, out var cached))
+        {
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadModelPreferBIF: '{resRef}' from cache");
+            return cached;
+        }
+
+        // Try BIF first (skips HAK overrides)
+        var baseData = _gameDataService.FindBaseResource(resRef, ResourceTypes.Mdl);
+        if (baseData != null && baseData.Length > 0)
+        {
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadModelPreferBIF: '{resRef}' from BIF, {baseData.Length} bytes");
+            try
+            {
+                var model = _mdlReader.Parse(baseData);
+                _modelCache[resRef] = model;
+                return model;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"LoadModelPreferBIF: '{resRef}' BIF parse failed: {ex.Message}");
+            }
+        }
+
+        // Not in BIF (CEP-only creature) — fall back to full resolution
+        var hakData = _gameDataService.FindResource(resRef, ResourceTypes.Mdl);
+        if (hakData != null && hakData.Length > 0)
+        {
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadModelPreferBIF: '{resRef}' from HAK (not in BIF), {hakData.Length} bytes");
+            try
+            {
+                var model = _mdlReader.Parse(hakData);
+                _modelCache[resRef] = model;
+                return model;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"LoadModelPreferBIF: '{resRef}' HAK parse failed: {ex.Message}");
+            }
+        }
+
+        UnifiedLogger.LogApplication(LogLevel.WARN, $"LoadModelPreferBIF: '{resRef}' not found");
+        _modelCache[resRef] = null;
+        return null;
     }
 
     /// <summary>

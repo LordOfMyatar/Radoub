@@ -84,11 +84,22 @@ public interface IGameDataService : IDisposable
 
     /// <summary>
     /// Find a resource by ResRef and type.
+    /// Searches Override → HAK → BIF.
     /// </summary>
     /// <param name="resRef">Resource reference name</param>
     /// <param name="resourceType">Resource type ID</param>
     /// <returns>Resource data, or null if not found</returns>
     byte[]? FindResource(string resRef, ushort resourceType);
+
+    /// <summary>
+    /// Find a resource in Override and BIF only, skipping HAK files.
+    /// Use for resources that must come from the base game regardless of HAK overrides
+    /// (e.g., standard race skeletons that CEP HAKs may replace with incompatible versions).
+    /// </summary>
+    /// <param name="resRef">Resource reference name</param>
+    /// <param name="resourceType">Resource type ID</param>
+    /// <returns>Resource data, or null if not found</returns>
+    byte[]? FindBaseResource(string resRef, ushort resourceType);
 
     /// <summary>
     /// List all resources of a specific type.

@@ -81,6 +81,12 @@ public class MockGameDataService : IGameDataService
         return _resources.TryGetValue((resRef.ToLowerInvariant(), resourceType), out var data) ? data : null;
     }
 
+    public byte[]? FindBaseResource(string resRef, ushort resourceType)
+    {
+        // Mock doesn't distinguish HAK vs BIF — same behavior as FindResource
+        return FindResource(resRef, resourceType);
+    }
+
     public IEnumerable<GameResourceInfo> ListResources(ushort resourceType)
     {
         return _resourceInfos.Where(r => r.ResourceType == resourceType);
