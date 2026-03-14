@@ -57,8 +57,15 @@ public partial class ModuleEditorViewModel
         catch (IOException ioEx) when (IsFileLockException(ioEx))
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Save failed: file locked - {ioEx.Message}");
-            StatusText = "Save failed: file is locked by another process";
-            ShowFileLockWarning(ioEx);
+            StatusText = "Save failed: module.ifo is locked by another process";
+            ShowFileLockWarning(
+                "module.ifo is locked by another process and cannot be saved.\n\n"
+                + "This usually means Aurora Toolset has the module open "
+                + "and is holding a lock on the file.\n\n"
+                + "To fix this:\n"
+                + "  1. Close the module in Aurora Toolset\n"
+                + "  2. Try saving again in Trebuchet\n\n"
+                + $"Details: {ioEx.Message}");
         }
         catch (Exception ex)
         {
@@ -169,16 +176,9 @@ public partial class ModuleEditorViewModel
     /// <summary>
     /// Show a prominent warning dialog when a file is locked by another process.
     /// </summary>
-    private void ShowFileLockWarning(IOException ex)
+    private void ShowFileLockWarning(string message)
     {
         if (_parentWindow == null) return;
-
-        var message = "module.ifo is locked by another process and cannot be saved.\n\n"
-            + "This usually means Aurora Toolset has the module open and is holding a lock on the file.\n\n"
-            + "To fix this:\n"
-            + "  1. Close the module in Aurora Toolset\n"
-            + "  2. Try saving again in Trebuchet\n\n"
-            + $"Details: {ex.Message}";
 
         var dialog = new Views.AlertDialog("File Locked", message);
         dialog.Show(_parentWindow);
