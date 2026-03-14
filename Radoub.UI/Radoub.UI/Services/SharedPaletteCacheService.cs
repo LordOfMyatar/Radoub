@@ -384,7 +384,12 @@ public class SharedPaletteCacheService : ISharedPaletteCacheService
                 {
                     stats.TotalItems += cache.Items.Count;
                     stats.TotalSizeKB += fileInfo.Length / 1024.0;
-                    stats.SourceCounts[cache.Source] = cache.Items.Count;
+
+                    // Accumulate counts per source (HAK caches all use "hak" key)
+                    if (stats.SourceCounts.ContainsKey(cache.Source))
+                        stats.SourceCounts[cache.Source] += cache.Items.Count;
+                    else
+                        stats.SourceCounts[cache.Source] = cache.Items.Count;
                 }
             }
             catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)

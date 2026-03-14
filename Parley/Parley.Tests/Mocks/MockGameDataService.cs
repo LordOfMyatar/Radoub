@@ -77,6 +77,11 @@ namespace Parley.Tests.Mocks
             return _resources.TryGetValue(key, out var data) ? data : null;
         }
 
+        public byte[]? FindBaseResource(string resRef, ushort resourceType)
+        {
+            return FindResource(resRef, resourceType);
+        }
+
         public IEnumerable<GameResourceInfo> ListResources(ushort resourceType)
         {
             return _resources
@@ -128,6 +133,8 @@ namespace Parley.Tests.Mocks
         #region Configuration
 
         public void ReloadConfiguration() { }
+
+        public void ConfigureModuleHaks(string moduleDirectory) { }
 
         #endregion
 

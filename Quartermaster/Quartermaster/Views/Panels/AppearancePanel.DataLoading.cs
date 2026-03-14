@@ -5,6 +5,7 @@ using System;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Quartermaster.Services;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
 
 namespace Quartermaster.Views.Panels;
@@ -24,7 +25,7 @@ public partial class AppearancePanel
             _appearanceComboBox.Items.Clear();
             foreach (var app in _appearances)
             {
-                var displayText = app.IsPartBased
+                var displayText = app.IsPartBased && !app.Name.Contains("(Dynamic)")
                     ? $"(Dynamic) {app.Name}"
                     : app.Name;
                 _appearanceComboBox.Items.Add(new ComboBoxItem
@@ -165,8 +166,10 @@ public partial class AppearancePanel
             var model = _modelService.LoadCreatureModel(_currentCreature);
             _modelPreviewGL.Model = model;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"Model preview failed: {ex.GetType().Name}: {ex.Message}");
             _modelPreviewGL.Model = null;
         }
     }

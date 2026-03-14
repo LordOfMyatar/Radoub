@@ -1,8 +1,11 @@
 using System;
+using System.IO;
 using DialogEditor.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Parley.Services;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
+using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 
 namespace Parley.Views.Helpers
@@ -69,7 +72,46 @@ namespace Parley.Views.Helpers
 
             // Game data services for portrait loading from BIF archives (#916)
             GameData = new GameDataService();
+            if (GameData.IsConfigured)
+            {
+                // Configure module-aware HAK scanning for 2DA/resource resolution (#1314)
+                var moduleDir = ResolveModuleWorkingDirectory();
+                if (!string.IsNullOrEmpty(moduleDir))
+                {
+                    GameData.ConfigureModuleHaks(moduleDir);
+                }
+            }
             ImageService = new ImageService(GameData);
+        }
+
+        /// <summary>
+        /// Resolve the module working directory from RadoubSettings.CurrentModulePath.
+        /// Handles both .mod file paths (resolves to unpacked sibling directory) and direct directory paths.
+        /// </summary>
+        private static string? ResolveModuleWorkingDirectory()
+        {
+            var modulePath = RadoubSettings.Instance.CurrentModulePath;
+            if (string.IsNullOrEmpty(modulePath))
+                return null;
+
+            // If it's a .mod file, look for the unpacked directory alongside it
+            if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
+            {
+                var moduleName = Path.GetFileNameWithoutExtension(modulePath);
+                var moduleDir = Path.GetDirectoryName(modulePath);
+                if (!string.IsNullOrEmpty(moduleDir))
+                {
+                    var candidate = Path.Combine(moduleDir, moduleName);
+                    if (Directory.Exists(candidate))
+                        return candidate;
+                }
+            }
+
+            // It's already a directory path
+            if (Directory.Exists(modulePath))
+                return modulePath;
+
+            return null;
         }
 
         public void Dispose()

@@ -614,6 +614,24 @@ void main()
             return;
         }
 
+        try
+        {
+            UpdateMeshBuffersCore();
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"UpdateMeshBuffers failed for model '{_model?.Name}': {ex.GetType().Name}: {ex.Message}");
+            _meshDrawCalls.Clear();
+            _indexCount = 0;
+            _model = null; // Prevent repeated crash on next render frame
+        }
+    }
+
+    private void UpdateMeshBuffersCore()
+    {
+        if (_gl == null || _model == null) return;
+
         _meshDrawCalls.Clear();
 
         // Two-pass vertex collection:

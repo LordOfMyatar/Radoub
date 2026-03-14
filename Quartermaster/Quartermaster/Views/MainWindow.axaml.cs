@@ -695,6 +695,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             await Task.Run(() =>
             {
                 _gameDataService?.ReloadConfiguration();
+
+                // Re-configure module HAKs after settings reload (#1314)
+                var moduleDir = GetModuleWorkingDirectory();
+                if (!string.IsNullOrEmpty(moduleDir))
+                {
+                    _gameDataService?.ConfigureModuleHaks(moduleDir);
+                }
             });
 
             if (_creatureDisplayService != null)

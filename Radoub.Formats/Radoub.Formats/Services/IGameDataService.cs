@@ -84,11 +84,22 @@ public interface IGameDataService : IDisposable
 
     /// <summary>
     /// Find a resource by ResRef and type.
+    /// Searches Override → HAK → BIF.
     /// </summary>
     /// <param name="resRef">Resource reference name</param>
     /// <param name="resourceType">Resource type ID</param>
     /// <returns>Resource data, or null if not found</returns>
     byte[]? FindResource(string resRef, ushort resourceType);
+
+    /// <summary>
+    /// Find a resource in Override and BIF only, skipping HAK files.
+    /// Use for resources that must come from the base game regardless of HAK overrides
+    /// (e.g., standard race skeletons that CEP HAKs may replace with incompatible versions).
+    /// </summary>
+    /// <param name="resRef">Resource reference name</param>
+    /// <param name="resourceType">Resource type ID</param>
+    /// <returns>Resource data, or null if not found</returns>
+    byte[]? FindBaseResource(string resRef, ushort resourceType);
 
     /// <summary>
     /// List all resources of a specific type.
@@ -156,6 +167,15 @@ public interface IGameDataService : IDisposable
     /// Call after settings change.
     /// </summary>
     void ReloadConfiguration();
+
+    /// <summary>
+    /// Configure module-aware HAK scanning by reading the module's IFO HakList.
+    /// Only HAK files referenced by the module will be loaded into the resolver,
+    /// avoiding the performance penalty of scanning all HAK files (80+ files, 15+ seconds).
+    /// Clears all caches (2DA, SSF, palette) since resource resolution order changes.
+    /// </summary>
+    /// <param name="moduleDirectory">Path to the unpacked module directory containing module.ifo.</param>
+    void ConfigureModuleHaks(string moduleDirectory);
 
     #endregion
 }

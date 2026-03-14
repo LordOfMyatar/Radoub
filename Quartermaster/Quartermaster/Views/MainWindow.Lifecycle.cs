@@ -86,6 +86,13 @@ public partial class MainWindow
             if (_gameDataService.IsConfigured)
             {
                 UnifiedLogger.LogApplication(LogLevel.INFO, "GameDataService initialized - BIF lookup enabled");
+
+                // Configure module-aware HAK scanning for 2DA/resource resolution (#1314)
+                var moduleDir = GetModuleWorkingDirectory();
+                if (!string.IsNullOrEmpty(moduleDir))
+                {
+                    _gameDataService.ConfigureModuleHaks(moduleDir);
+                }
             }
             else
             {

@@ -236,6 +236,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             if (service.IsConfigured)
             {
                 UnifiedLogger.LogApplication(LogLevel.INFO, "Fence: GameDataService initialized successfully - BIF lookup enabled");
+                // Configure module-aware HAK scanning for 2DA/resource resolution (#1314)
+                var moduleDir = GetModuleWorkingDirectory();
+                if (!string.IsNullOrEmpty(moduleDir))
+                {
+                    service.ConfigureModuleHaks(moduleDir);
+                }
             }
             else
             {

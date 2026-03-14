@@ -1,7 +1,7 @@
 using Radoub.Formats.Common;
 using Radoub.Formats.Erf;
-using Radoub.Formats.Ifo;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Resolver;
 using Radoub.Formats.Uti;
 
 namespace Radoub.UI.Services;
@@ -14,55 +14,12 @@ public class HakPaletteScannerService
 {
     /// <summary>
     /// Read module.ifo from the module directory and resolve HAK names to file paths.
-    /// Searches the provided HAK directories in order for each HAK name.
+    /// Delegates to ModuleHakResolver in Radoub.Formats.
     /// Returns resolved paths in module.ifo priority order (first = highest priority).
     /// </summary>
     public List<string> ResolveModuleHakPaths(string moduleDirectory, IEnumerable<string> hakSearchPaths)
     {
-        var ifoPath = Path.Combine(moduleDirectory, "module.ifo");
-        if (!File.Exists(ifoPath))
-        {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                $"No module.ifo found in {moduleDirectory}");
-            return new List<string>();
-        }
-
-        IfoFile ifo;
-        try
-        {
-            ifo = IfoReader.Read(ifoPath);
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogApplication(LogLevel.ERROR,
-                $"Failed to read module.ifo: {ex.Message}");
-            return new List<string>();
-        }
-
-        if (ifo.HakList.Count == 0)
-            return new List<string>();
-
-        var searchDirs = hakSearchPaths.Where(Directory.Exists).ToList();
-        var resolvedPaths = new List<string>();
-
-        foreach (var hakName in ifo.HakList)
-        {
-            var resolved = FindHakFile(hakName, searchDirs);
-            if (resolved != null)
-            {
-                resolvedPaths.Add(resolved);
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN,
-                    $"HAK '{hakName}' referenced in module.ifo not found in search paths");
-            }
-        }
-
-        UnifiedLogger.LogApplication(LogLevel.INFO,
-            $"Resolved {resolvedPaths.Count}/{ifo.HakList.Count} HAK files from module.ifo");
-
-        return resolvedPaths;
+        return ModuleHakResolver.ResolveModuleHakPaths(moduleDirectory, hakSearchPaths);
     }
 
     /// <summary>
@@ -202,40 +159,6 @@ public class HakPaletteScannerService
         return result;
     }
 
-    /// <summary>
-    /// Find a HAK file by name (without extension) in the search directories.
-    /// Case-insensitive search for cross-platform compatibility.
-    /// </summary>
-    private static string? FindHakFile(string hakName, List<string> searchDirs)
-    {
-        var fileName = $"{hakName}.hak";
-
-        foreach (var dir in searchDirs)
-        {
-            // Try exact match first (fast path)
-            var exactPath = Path.Combine(dir, fileName);
-            if (File.Exists(exactPath))
-                return exactPath;
-
-            // Case-insensitive fallback (needed on Linux/case-sensitive filesystems)
-            try
-            {
-                var match = Directory.GetFiles(dir, "*.hak")
-                    .FirstOrDefault(f => Path.GetFileName(f)
-                        .Equals(fileName, StringComparison.OrdinalIgnoreCase));
-
-                if (match != null)
-                    return match;
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"Could not search HAK directory '{dir}': {ex.Message}");
-            }
-        }
-
-        return null;
-    }
 }
 
 /// <summary>

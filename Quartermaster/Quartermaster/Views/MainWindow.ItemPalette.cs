@@ -312,12 +312,31 @@ public partial class MainWindow
                 return vms;
             }, token);
 
+            // Collect module directory items (loose UTIs) before SetPaletteItems clears them
+            var moduleDir = string.IsNullOrEmpty(_currentFilePath)
+                ? null
+                : Path.GetDirectoryName(_currentFilePath);
+            var moduleVms = LoadModuleItemViewModels(moduleDir);
+            if (moduleVms.Count > 0)
+            {
+                // Add module items to the batch so they're included in a single SetPaletteItems call
+                var existingResRefs = new HashSet<string>(
+                    viewModels.Select(v => v.ResRef), StringComparer.OrdinalIgnoreCase);
+                foreach (var mvm in moduleVms)
+                {
+                    if (!existingResRefs.Contains(mvm.ResRef))
+                        viewModels.Add(mvm);
+                }
+                _lastModuleDirectory = moduleDir;
+            }
+
             // Set all items at once (efficient - avoids per-item filter updates)
             InventoryPanelContent.SetPaletteItems(viewModels);
 
             _paletteLoaded = true;
-            UpdateStatus($"Ready - {viewModels.Count:N0} items loaded");
-            UnifiedLogger.LogInventory(LogLevel.INFO, $"Palette loaded: {viewModels.Count} items");
+            var totalItems = InventoryPanelContent.PaletteItems.Count;
+            UpdateStatus($"Ready - {totalItems:N0} items loaded");
+            UnifiedLogger.LogInventory(LogLevel.INFO, $"Palette loaded: {viewModels.Count} items (total: {totalItems})");
         }
         catch (OperationCanceledException)
         {
@@ -333,6 +352,37 @@ public partial class MainWindow
     }
 
     /// <summary>
+    /// Load module directory UTI files into ItemViewModels without adding to palette.
+    /// Used during initial palette build to include module items in the batch.
+    /// </summary>
+    private List<ItemViewModel> LoadModuleItemViewModels(string? moduleDir)
+    {
+        var results = new List<ItemViewModel>();
+        if (string.IsNullOrEmpty(moduleDir) || !Directory.Exists(moduleDir))
+            return results;
+
+        var utiFiles = Directory.GetFiles(moduleDir, "*.uti", SearchOption.TopDirectoryOnly);
+        foreach (var utiPath in utiFiles)
+        {
+            try
+            {
+                var item = UtiReader.Read(utiPath);
+                var viewModel = ItemFactory.Create(item, GameResourceSource.Module);
+                SetupLazyIconLoading(viewModel);
+                results.Add(viewModel);
+            }
+            catch (Exception ex)
+            {
+                var fileName = Path.GetFileName(utiPath);
+                UnifiedLogger.LogInventory(LogLevel.WARN, $"Failed to load UTI {fileName}: {ex.Message}");
+            }
+        }
+
+        UnifiedLogger.LogInventory(LogLevel.INFO, $"Loaded {results.Count} module UTIs from {UnifiedLogger.SanitizePath(moduleDir)}");
+        return results;
+    }
+
+    /// <summary>
     /// Populates the item palette from module directory (loose UTI files).
     /// Called when a creature file is loaded. Module items are NOT cached.
     /// </summary>
@@ -341,6 +391,15 @@ public partial class MainWindow
         var newModuleDir = string.IsNullOrEmpty(_currentFilePath)
             ? null
             : Path.GetDirectoryName(_currentFilePath);
+
+        // Same directory and module items already present — skip rescan
+        if (_lastModuleDirectory == newModuleDir &&
+            InventoryPanelContent.PaletteItems.Any(p => p.Source == GameResourceSource.Module))
+        {
+            UnifiedLogger.LogInventory(LogLevel.DEBUG,
+                "PopulateItemPalette: module items already loaded, skipping rescan");
+            return;
+        }
 
         UnifiedLogger.LogInventory(LogLevel.INFO,
             $"PopulateItemPalette: scanning directory '{(newModuleDir != null ? UnifiedLogger.SanitizePath(newModuleDir) : "(null)")}' for module UTIs");
@@ -352,37 +411,20 @@ public partial class MainWindow
             _lastModuleDirectory = newModuleDir;
         }
 
-        var moduleItemCount = 0;
-
-        if (!string.IsNullOrEmpty(newModuleDir) && Directory.Exists(newModuleDir))
+        // Load module items and add in batch (disconnect filter to avoid per-item updates)
+        var moduleVms = LoadModuleItemViewModels(newModuleDir);
+        if (moduleVms.Count > 0)
         {
-            var utiFiles = Directory.GetFiles(newModuleDir, "*.uti", SearchOption.TopDirectoryOnly);
-            UnifiedLogger.LogInventory(LogLevel.INFO, $"Found {utiFiles.Length} .uti files in module directory");
-            foreach (var utiPath in utiFiles)
+            var existingResRefs = new HashSet<string>(
+                InventoryPanelContent.PaletteItems.Select(p => p.ResRef),
+                StringComparer.OrdinalIgnoreCase);
+
+            var toAdd = moduleVms.Where(vm => !existingResRefs.Contains(vm.ResRef)).ToList();
+            if (toAdd.Count > 0)
             {
-                try
-                {
-                    var item = UtiReader.Read(utiPath);
-                    var viewModel = ItemFactory.Create(item, GameResourceSource.Module);
-                    SetupLazyIconLoading(viewModel);
-
-                    if (!InventoryPanelContent.PaletteItems.Any(p => p.ResRef.Equals(viewModel.ResRef, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        InventoryPanelContent.PaletteItems.Add(viewModel);
-                        moduleItemCount++;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    var fileName = Path.GetFileName(utiPath);
-                    UnifiedLogger.LogInventory(LogLevel.WARN, $"Failed to load UTI {fileName}: {ex.Message}");
-                }
+                InventoryPanelContent.AddPaletteItems(toAdd);
+                UnifiedLogger.LogInventory(LogLevel.INFO, $"Added {toAdd.Count} module items to palette");
             }
-        }
-
-        if (moduleItemCount > 0)
-        {
-            UnifiedLogger.LogInventory(LogLevel.INFO, $"Added {moduleItemCount} module items to palette");
         }
     }
 
@@ -448,6 +490,7 @@ public partial class MainWindow
 
     /// <summary>
     /// Scan module HAK files and cache items. Skips HAKs with valid caches.
+    /// After scanning, refreshes the aggregated cache data to include HAK items.
     /// </summary>
     private async Task ScanModuleHaksAsync(CancellationToken token)
     {
@@ -463,6 +506,10 @@ public partial class MainWindow
         {
             UnifiedLogger.LogInventory(LogLevel.INFO,
                 $"HAK scan: {result.HaksScanned} scanned, {result.HaksSkipped} cached, {result.TotalItemsScanned} items");
+
+            // Refresh aggregated cache to include HAK items (filtered to active HAKs)
+            _sharedCacheService.InvalidateAggregatedCache();
+            _cachedPaletteData = _sharedCacheService.GetAggregatedCache(_activeHakPaths);
         }
     }
 

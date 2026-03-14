@@ -154,6 +154,24 @@ public class GameDataService : IGameDataService
         }
     }
 
+    public byte[]? FindBaseResource(string resRef, ushort resourceType)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        lock (_lock)
+        {
+            if (_resolver == null)
+            {
+                UnifiedLogger.Log(LogLevel.DEBUG, $"FindBaseResource({resRef}, {resourceType}): resolver is null", "GameDataService", "GameData");
+                return null;
+            }
+
+            var result = _resolver.FindBaseResource(resRef, resourceType);
+            UnifiedLogger.Log(LogLevel.DEBUG, $"FindBaseResource({resRef}, {resourceType}): {(result != null ? $"{result.Length} bytes" : "not found")}", "GameDataService", "GameData");
+            return result;
+        }
+    }
+
     public IEnumerable<GameResourceInfo> ListResources(ushort resourceType)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -189,6 +207,44 @@ public class GameDataService : IGameDataService
 
             // Reinitialize from settings
             InitializeFromSettings();
+        }
+    }
+
+    public void ConfigureModuleHaks(string moduleDirectory)
+    {
+        if (string.IsNullOrEmpty(moduleDirectory) || !Directory.Exists(moduleDirectory))
+        {
+            UnifiedLogger.Log(LogLevel.DEBUG, "ConfigureModuleHaks: invalid module directory", "GameDataService", "GameData");
+            return;
+        }
+
+        lock (_lock)
+        {
+            if (_resolver == null)
+            {
+                UnifiedLogger.Log(LogLevel.WARN, "ConfigureModuleHaks: resolver not initialized", "GameDataService", "GameData");
+                return;
+            }
+
+            var settings = RadoubSettings.Instance;
+            var hakSearchPaths = settings.GetAllHakSearchPaths().ToList();
+
+            var modulePaths = ModuleHakResolver.ResolveModuleHakPaths(moduleDirectory, hakSearchPaths);
+            if (modulePaths.Count == 0)
+            {
+                UnifiedLogger.Log(LogLevel.INFO, "ConfigureModuleHaks: no HAKs referenced by module", "GameDataService", "GameData");
+                return;
+            }
+
+            // Update HAK paths on the existing resolver — preserves KEY/BIF index
+            _resolver.UpdateHakPaths(modulePaths);
+
+            // Clear caches that depend on resource resolution order
+            _twoDACache.Clear();
+            _ssfCache.Clear();
+            _paletteCache.Clear();
+
+            UnifiedLogger.Log(LogLevel.INFO, $"ConfigureModuleHaks: loaded {modulePaths.Count} module-referenced HAKs", "GameDataService", "GameData");
         }
     }
 
@@ -251,9 +307,9 @@ public class GameDataService : IGameDataService
             }
         }
 
-        // HAK paths - only scan explicitly configured additional paths (not default hak folder)
-        // Scanning all HAKs (80+) takes 15+ seconds and hangs the UI
-        // Future: Read module.ifo HakList to scan only module-required HAKs (#1314)
+        // HAK paths from additional search paths (not default hak folder)
+        // Module-aware HAK scanning is handled by ConfigureModuleHaks() (#1314)
+        // This path only handles explicitly configured additional search paths
         var additionalHakPaths = settings.HakSearchPaths;
         if (additionalHakPaths.Count > 0)
         {

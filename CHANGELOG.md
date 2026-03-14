@@ -19,6 +19,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.86] - 2026-03-14
+**Branch**: `radoub/issue-1314` | **PR**: #1673
+
+### Feature: Module-aware HAK scanning via module.ifo HakList (#1314)
+
+- `ModuleHakResolver` reads module.ifo HakList to scan only referenced HAKs
+- `UpdateHakPaths()` updates HAK config in-place without replacing the resolver
+- `FindBaseResource()` (Override → BIF, skips HAK) for safe model loading
+- Catch "bio reserved" and more BadStrRef variants in TlkHelper
+- Filter bad StrRef/deleted entries from item type dropdown
+
+### Feature: Add Spike Solution workflow to development process (#1667)
+
+---
+
 ## [0.9.85] - 2026-03-10
 **Branch**: `radoub/issue-1641` | **PR**: #1642
 

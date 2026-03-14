@@ -36,12 +36,41 @@ public class GameResourceResolver : IDisposable
     }
 
     /// <summary>
+    /// Update the HAK paths for resource resolution without replacing the resolver.
+    /// Preserves the KEY/BIF index and override path — only changes HAK scanning.
+    /// Clears the HAK cache so stale entries don't linger.
+    /// </summary>
+    public void UpdateHakPaths(List<string> hakPaths, bool enableScanning = true)
+    {
+        _config.HakPaths = hakPaths ?? new List<string>();
+        _config.EnableHakScanning = enableScanning;
+        _hakCache.Clear();
+    }
+
+    /// <summary>
     /// Find a resource by ResRef and type, returning just the data.
     /// Returns null if not found.
     /// </summary>
     public byte[]? FindResource(string resRef, ushort resourceType)
     {
         return FindResourceWithSource(resRef, resourceType)?.Data;
+    }
+
+    /// <summary>
+    /// Find a resource in Override and BIF only, skipping HAK files.
+    /// Use for resources that should always come from the base game
+    /// (e.g., skeleton models that HAK modifications can break).
+    /// </summary>
+    public byte[]? FindBaseResource(string resRef, ushort resourceType)
+    {
+        // 1. Check override folder
+        var overrideResult = FindInOverride(resRef, resourceType);
+        if (overrideResult != null)
+            return overrideResult.Data;
+
+        // 2. Skip HAKs — go straight to BIF
+        var bifResult = FindInBif(resRef, resourceType);
+        return bifResult?.Data;
     }
 
     /// <summary>
@@ -205,7 +234,7 @@ public class GameResourceResolver : IDisposable
     private ResourceResult? FindInHaks(string resRef, ushort resourceType)
     {
         // Skip HAK scanning if disabled (default for performance)
-        // Future: Trebuchet will read module.ifo for specific HAK list
+        // Use GameDataService.ConfigureModuleHaks() to enable with module-specific HAKs
         if (!_config.EnableHakScanning)
             return null;
 
