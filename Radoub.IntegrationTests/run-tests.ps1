@@ -19,6 +19,9 @@ param(
     [switch]$UnitOnly,
     [switch]$SkipPrivacy,
     [switch]$TechDebt,
+    # Optional custom filter for UI tests (overrides default tool namespace filter)
+    # Example: "Category=Workspace" or "Name~LaunchTab"
+    [string]$UIFilter,
     # Legacy flags (deprecated, use -Tool instead)
     [switch]$ParleyOnly,
     [switch]$QuartermasterOnly
@@ -308,7 +311,13 @@ function Get-TestsToRun {
             $unitTests += $toolUnitTests[$Tool]
         }
         if ($toolUiTests.ContainsKey($Tool)) {
-            $uiTests += $toolUiTests[$Tool]
+            $entry = $toolUiTests[$Tool].Clone()
+            # Override filter if custom UIFilter provided
+            if ($UIFilter) {
+                $entry.Filter = "$($entry.Filter)&$UIFilter"
+                $entry.Name = "$($entry.Name) (filtered: $UIFilter)"
+            }
+            $uiTests += $entry
         }
     } else {
         # All tests

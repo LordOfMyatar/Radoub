@@ -68,7 +68,7 @@ git diff main...HEAD --name-only
 | `Radoub.*/**` | All affected | Yes |
 | Multiple tools | All affected | Yes |
 
-**Auto-detect UI changes** (unless `--no-auto-ui`):
+**Auto-detect UI changes and target FlaUI tests** (unless `--no-auto-ui`):
 
 Check if ANY changed files match UI patterns:
 ```bash
@@ -87,17 +87,34 @@ git diff main...HEAD --name-only | grep -E '\.(axaml|axaml\.cs)$|/Views/|/Contro
 | `*/Windows/*` | Yes |
 | Other `.cs` files | No (unit tests only) |
 
+**Targeted FlaUI test mapping**:
+
+When UI changes are detected, map changed files to specific FlaUI test categories or methods instead of running all UI tests. This keeps FlaUI runs fast and focused.
+
+| Changed File Pattern | UIFilter | Rationale |
+|---------------------|----------|-----------|
+| `LaunchTestPanel*` | `Name~LaunchTab` | Only tests that interact with the Launch & Test tab |
+| `ModuleEditorPanel*` | `Category=Workspace` | Module tab workspace tests |
+| `FactionEditorPanel*` | `Category=Workspace` | Faction tab workspace tests |
+| `MainWindow.axaml*` | `Category=Smoke` | Smoke tests verify top-level layout |
+| `*Toolbar*` | `Name~Toolbar` | Toolbar-specific tests |
+| `*Sidebar*` | `Name~Sidebar` | Sidebar-specific tests |
+| Multiple UI areas | (no filter — run all tool UI tests) | Broad changes need full coverage |
+| New dialog/view only | (skip FlaUI — no tests exist yet) | Flag for manual verification |
+
 **Decision logic**:
-1. If `--ui-tests` flag → always include UI tests
+1. If `--ui-tests` flag → always include UI tests (all tool tests, no filter)
 2. If `--no-auto-ui` flag → never auto-include UI tests
-3. If UI patterns detected → auto-include UI tests
-4. Otherwise → unit tests only
+3. If `--full-tests` flag → run everything (no filter)
+4. If UI patterns detected → auto-include targeted UI tests with `-UIFilter`
+5. Otherwise → unit tests only
 
 **Report auto-detection**:
 If UI tests are auto-included, display:
 ```
-ℹ️ UI changes detected - including integration tests
+ℹ️ UI changes detected - including targeted integration tests
    Changed UI files: [list first 5 files, then "+ N more" if applicable]
+   UIFilter: [filter expression or "all" if no targeting]
 ```
 
 ### Step 3: Build & Test (single script call)
@@ -108,7 +125,10 @@ If UI tests are auto-included, display:
 # Unit tests only (no UI changes detected, no --ui-tests flag)
 powershell -ExecutionPolicy Bypass -File "d:\LOM\workspace\Radoub\Radoub.IntegrationTests\run-tests.ps1" -Tool [detected] [-SkipShared] -UnitOnly -TechDebt
 
-# With --ui-tests flag OR UI changes auto-detected (omit -UnitOnly)
+# With UI changes auto-detected — targeted filter
+powershell -ExecutionPolicy Bypass -File "d:\LOM\workspace\Radoub\Radoub.IntegrationTests\run-tests.ps1" -Tool [detected] [-SkipShared] -TechDebt -UIFilter "Name~LaunchTab"
+
+# With --ui-tests flag (all tool UI tests, no filter)
 powershell -ExecutionPolicy Bypass -File "d:\LOM\workspace\Radoub\Radoub.IntegrationTests\run-tests.ps1" -Tool [detected] [-SkipShared] -TechDebt
 
 # With --full-tests flag
@@ -117,8 +137,9 @@ powershell -ExecutionPolicy Bypass -File "d:\LOM\workspace\Radoub\Radoub.Integra
 
 **Test scope decision**:
 - If `--skip-tests` → skip entirely
-- If `--full-tests` → run everything
-- If `--ui-tests` OR UI changes detected → include UI tests
+- If `--full-tests` → run everything (no filter)
+- If `--ui-tests` → all tool UI tests (no filter)
+- If UI changes detected → targeted UI tests with `-UIFilter`
 - If `--no-auto-ui` → force unit-only even if UI files changed
 - Otherwise → unit tests only
 
@@ -272,6 +293,7 @@ Flag if >30 days old and code changed.
 | UI tests | ⏭️ Skipped / 🔄 Auto-triggered / ✅ N passed / ❌ N failed |
 
 **UI Test Reason**: [Manual --ui-tests / Auto-detected UI changes / Skipped (no UI changes)]
+**UIFilter**: [filter expression / "all" / N/A]
 
 ### Validation
 | Check | Status |
