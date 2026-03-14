@@ -472,5 +472,4 @@ public partial class MainWindowViewModel
 
         return resources.Count;
     }
-
 }

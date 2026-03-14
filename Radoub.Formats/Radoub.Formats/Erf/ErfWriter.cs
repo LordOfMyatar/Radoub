@@ -20,31 +20,8 @@ public static class ErfWriter
     /// <param name="resourceData">Dictionary mapping ResRef+Type to resource data bytes.</param>
     public static void Write(ErfFile erf, string filePath, Dictionary<(string ResRef, ushort Type), byte[]> resourceData)
     {
-        // Write to a temp file first, then use File.Replace to swap it in.
-        // File.Replace uses the Windows ReplaceFile API which can replace a file
-        // even when another process (e.g. Aurora Toolset) holds a read handle on it.
-        var tempPath = filePath + ".tmp";
-        try
-        {
-            using (var fs = File.Create(tempPath))
-            {
-                Write(erf, fs, resourceData);
-            }
-
-            if (File.Exists(filePath))
-            {
-                File.Replace(tempPath, filePath, destinationBackupFileName: null);
-            }
-            else
-            {
-                File.Move(tempPath, filePath);
-            }
-        }
-        catch
-        {
-            try { File.Delete(tempPath); } catch { /* best effort cleanup */ }
-            throw;
-        }
+        using var fs = File.Create(filePath);
+        Write(erf, fs, resourceData);
     }
 
     /// <summary>
