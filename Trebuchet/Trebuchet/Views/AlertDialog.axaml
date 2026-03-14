@@ -1,0 +1,37 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="RadoubLauncher.Views.AlertDialog"
+        Title="Alert"
+        Width="460" Height="260"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        SystemDecorations="BorderOnly">
+
+    <Border Padding="20">
+        <DockPanel>
+            <!-- OK Button -->
+            <StackPanel DockPanel.Dock="Bottom"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Margin="0,16,0,0">
+                <Button Content="OK"
+                        Click="OnOkClick"
+                        IsDefault="True"
+                        IsCancel="True"
+                        Padding="32,6"/>
+            </StackPanel>
+
+            <!-- Message -->
+            <StackPanel Spacing="8" VerticalAlignment="Top">
+                <TextBlock x:Name="TitleText"
+                           FontSize="{DynamicResource FontSizeLarge}"
+                           FontWeight="SemiBold"/>
+                <TextBlock x:Name="MessageText"
+                           TextWrapping="Wrap"
+                           Opacity="0.8"
+                           LineHeight="20"/>
+            </StackPanel>
+        </DockPanel>
+    </Border>
+</Window>

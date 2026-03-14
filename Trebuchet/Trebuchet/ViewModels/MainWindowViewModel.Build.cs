@@ -128,6 +128,12 @@ public partial class MainWindowViewModel
             HasNewerWorkingFiles = false;
             NewerFileCount = 0;
         }
+        catch (IOException ioEx) when (IsFileLockException(ioEx))
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Build failed: file locked - {ioEx.Message}");
+            BuildStatusText = "Build failed: file is locked by another process";
+            ShowFileLockWarning(ioEx);
+        }
         catch (Exception ex)
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Build failed: {ex.Message}");
@@ -471,5 +477,36 @@ public partial class MainWindowViewModel
         ErfWriter.Write(erf, modFilePath, resourceData);
 
         return resources.Count;
+    }
+
+    /// <summary>
+    /// Check if an IOException is caused by a file sharing violation (file locked by another process).
+    /// Windows HRESULT 0x80070020 = ERROR_SHARING_VIOLATION.
+    /// </summary>
+    private static bool IsFileLockException(IOException ex)
+    {
+        // HResult 0x80070020 = ERROR_SHARING_VIOLATION (32)
+        // HResult 0x80070021 = ERROR_LOCK_VIOLATION (33)
+        const int sharingViolation = unchecked((int)0x80070020);
+        const int lockViolation = unchecked((int)0x80070021);
+        return ex.HResult == sharingViolation || ex.HResult == lockViolation;
+    }
+
+    /// <summary>
+    /// Show a prominent warning dialog when a file is locked by another process.
+    /// </summary>
+    private void ShowFileLockWarning(IOException ex)
+    {
+        if (_parentWindow == null) return;
+
+        var message = "A module file is locked by another process and cannot be saved.\n\n"
+            + "This usually happens when the Aurora Toolset has the module open.\n\n"
+            + "To fix this:\n"
+            + "  1. Close the module in Aurora Toolset\n"
+            + "  2. Try saving again in Trebuchet\n\n"
+            + $"Details: {ex.Message}";
+
+        var dialog = new Views.AlertDialog("File Locked", message);
+        dialog.Show(_parentWindow);
     }
 }
