@@ -42,6 +42,8 @@ public enum MdlClassification : byte
 /// </summary>
 public struct MdlFace
 {
+    public MdlFace() { }
+
     /// <summary>Normal vector for the face plane.</summary>
     public Vector3 PlaneNormal;
 
@@ -60,6 +62,15 @@ public struct MdlFace
     public int VertexIndex0;
     public int VertexIndex1;
     public int VertexIndex2;
+
+    /// <summary>
+    /// Texture vertex indices for the three corners.
+    /// -1 means not set (binary format uses shared vertex/UV indexing).
+    /// ASCII MDL format allows separate vertex and tvert index arrays per face.
+    /// </summary>
+    public int TvertIndex0 = -1;
+    public int TvertIndex1 = -1;
+    public int TvertIndex2 = -1;
 }
 
 /// <summary>
