@@ -216,11 +216,23 @@ public class ModelService
         // Store skeleton for bone position lookup
         _currentSkeleton = skeletonModel;
 
-        // Helper to get body part number, preferring armor override
-        byte GetPartNumber(string armorKey, byte creatureValue) =>
-            (armorOverrides != null && armorOverrides.TryGetValue(armorKey, out var armorValue) && armorValue > 0)
-                ? armorValue
-                : creatureValue;
+        // Helper to get body part number.
+        // Creature value takes precedence — it reflects the user's explicit choice.
+        // Armor overrides only apply when the creature has the default part (non-zero)
+        // and the armor provides an alternative. Setting a body part to 0 = "invisible/none"
+        // and must always be honored regardless of armor.
+        byte GetPartNumber(string armorKey, byte creatureValue)
+        {
+            // If creature explicitly says 0 (none/invisible), honor that
+            if (creatureValue == 0)
+                return 0;
+
+            // If armor provides an override for this part, use it
+            if (armorOverrides != null && armorOverrides.TryGetValue(armorKey, out var armorValue) && armorValue > 0)
+                return armorValue;
+
+            return creatureValue;
+        }
 
         // Load each body part (armor overrides take precedence where applicable)
         // Head is special - uses AppearanceHead, not overridden by armor
