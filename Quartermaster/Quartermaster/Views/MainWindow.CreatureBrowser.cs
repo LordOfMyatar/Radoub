@@ -299,10 +299,13 @@ public partial class MainWindow
             return;
         }
 
-        // Auto-save if dirty
+        // Auto-save if dirty — browser panels use silent auto-save for fluid navigation (#1535)
+        // (File > Open and window close use explicit Save/Discard/Cancel prompts instead)
+        string? previousFileName = null;
         if (_isDirty && _currentCreature != null && !string.IsNullOrEmpty(_currentFilePath))
         {
-            UpdateStatus("Auto-saving...");
+            previousFileName = Path.GetFileName(_currentFilePath);
+            UpdateStatus($"Auto-saving {previousFileName}...");
             await SaveFile();
         }
 
