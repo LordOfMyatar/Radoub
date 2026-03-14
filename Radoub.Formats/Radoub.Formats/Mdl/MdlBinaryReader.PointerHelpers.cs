@@ -23,6 +23,20 @@ public partial class MdlBinaryReader
         if (pointer < _modelData.Length)
             return pointer;
 
+        // Value exceeds buffer — may be a memory pointer needing base subtraction
+        if (_pointerBase > 0 && pointer >= _pointerBase)
+        {
+            var bufferOffset = pointer - _pointerBase;
+            if (bufferOffset < _modelData.Length)
+            {
+                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                    $"[MDL] PointerToModelOffset: 0x{pointer:X8} resolved via base subtraction (base=0x{_pointerBase:X8}) -> offset={bufferOffset}");
+                return bufferOffset;
+            }
+        }
+
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.WARN,
+            $"[MDL] PointerToModelOffset: 0x{pointer:X8} out of bounds (modelDataLen={_modelData.Length}, base=0x{_pointerBase:X8})");
         return uint.MaxValue; // Out of bounds
     }
 
@@ -38,9 +52,25 @@ public partial class MdlBinaryReader
         if (_rawDataFileOffset == 0 || _rawData.Length == 0)
             return uint.MaxValue; // No raw data section
 
+        // 0 IS a valid raw data offset (start of raw data buffer)
         if (pointer < (uint)_rawData.Length)
             return pointer;
 
+        // Value exceeds buffer — may be a memory pointer needing base subtraction
+        var rawBase = _pointerBase + (uint)_modelData.Length;
+        if (rawBase > 0 && pointer >= rawBase)
+        {
+            var bufferOffset = pointer - rawBase;
+            if (bufferOffset < (uint)_rawData.Length)
+            {
+                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                    $"[MDL] PointerToRawOffset: 0x{pointer:X8} resolved via base subtraction (rawBase=0x{rawBase:X8}) -> offset={bufferOffset}");
+                return bufferOffset;
+            }
+        }
+
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.WARN,
+            $"[MDL] PointerToRawOffset: 0x{pointer:X8} out of bounds (rawDataLen={_rawData.Length}, rawBase=0x{rawBase:X8})");
         return uint.MaxValue; // Out of bounds
     }
 }

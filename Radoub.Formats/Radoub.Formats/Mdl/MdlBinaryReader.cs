@@ -165,13 +165,13 @@ public partial class MdlBinaryReader
         model.Name = ReadFixedString(reader, 64);
 
         reader.BaseStream.Position = 0x48;
-        var rootNodeOffset = reader.ReadUInt32();
+        var rootNodeRaw = reader.ReadUInt32();
         var nodeCount = reader.ReadUInt32();
 
-        var rootNodeBufferOffset = rootNodeOffset;
+        var rootNodeOffset = PointerToModelOffset(rootNodeRaw);
 
         Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
-            $"[MDL] rootNodeOffset={rootNodeOffset}, nodeCount={nodeCount}, modelDataLen={_modelData.Length}");
+            $"[MDL] rootNodeRaw=0x{rootNodeRaw:X8} -> offset={rootNodeOffset}, nodeCount={nodeCount}, modelDataLen={_modelData.Length}");
 
         reader.BaseStream.Position = 0x70;
 
@@ -191,9 +191,9 @@ public partial class MdlBinaryReader
         model.AnimationScale = reader.ReadSingle();
         model.SuperModel = ReadFixedString(reader, 64);
 
-        if (rootNodeBufferOffset != 0xFFFFFFFF && rootNodeBufferOffset != 0 && rootNodeBufferOffset != uint.MaxValue)
+        if (rootNodeOffset != uint.MaxValue)
         {
-            model.GeometryRoot = ParseNode(rootNodeBufferOffset);
+            model.GeometryRoot = ParseNode(rootNodeOffset);
         }
 
         var animArrayBufferOffset = PointerToModelOffset(animArrayOffset);
