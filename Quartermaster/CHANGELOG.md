@@ -18,6 +18,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.44-alpha] - 2026-03-14
+**Branch**: `quartermaster/issue-1610` | **PR**: #TBD
+
+### Sprint: File Ops & Validation (#1610)
+
+- [ ] Fix Save As dialog changing .bic extension to .utc during filename validation (#1594)
+- [ ] Resolve inconsistent save behavior: browser panel auto-saves vs close dialog prompts (#1535)
+- [ ] Add loading indicator for file operations (#817)
+
+---
+
 ## [0.2.43-alpha] - 2026-03-14
 **Branch**: `quartermaster/issue-1518` | **PR**: #1680
 
