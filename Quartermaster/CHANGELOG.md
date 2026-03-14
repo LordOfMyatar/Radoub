@@ -19,7 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.44-alpha] - 2026-03-14
-**Branch**: `quartermaster/issue-1610` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1610` | **PR**: #1682
 
 ### Sprint: File Ops & Validation (#1610)
 
