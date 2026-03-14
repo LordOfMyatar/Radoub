@@ -494,11 +494,24 @@ public partial class MainWindow
         var utcType = new FilePickerFileType("Creature Blueprint") { Patterns = new[] { "*.utc" } };
         var bicType = new FilePickerFileType("Player Character") { Patterns = new[] { "*.bic" } };
 
+        // Default to the file's current directory so Save As opens where the file lives
+        IStorageFolder? suggestedFolder = null;
+        if (!string.IsNullOrEmpty(_currentFilePath))
+        {
+            var dir = Path.GetDirectoryName(_currentFilePath);
+            if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
+            {
+                try { suggestedFolder = await StorageProvider.TryGetFolderFromPathAsync(dir); }
+                catch { /* fall back to OS default */ }
+            }
+        }
+
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = "Save Creature As",
             DefaultExtension = _isBicFile ? ".bic" : ".utc",
             SuggestedFileName = Path.GetFileNameWithoutExtension(_currentFilePath ?? "creature"),
+            SuggestedStartLocation = suggestedFolder,
             FileTypeChoices = _isBicFile
                 ? new[] { bicType, utcType }
                 : new[] { utcType, bicType }

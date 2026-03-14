@@ -301,16 +301,21 @@ public partial class MainWindow
 
         // Auto-save if dirty — browser panels use silent auto-save for fluid navigation (#1535)
         // (File > Open and window close use explicit Save/Discard/Cancel prompts instead)
-        string? previousFileName = null;
+        string? autoSavedFileName = null;
         if (_isDirty && _currentCreature != null && !string.IsNullOrEmpty(_currentFilePath))
         {
-            previousFileName = Path.GetFileName(_currentFilePath);
-            UpdateStatus($"Auto-saving {previousFileName}...");
+            autoSavedFileName = Path.GetFileName(_currentFilePath);
             await SaveFile();
         }
 
         // Load the selected file
         await LoadFile(e.Entry.FilePath);
+
+        // Show combined status so user sees the auto-save happened
+        if (autoSavedFileName != null)
+        {
+            UpdateStatus($"Auto-saved {autoSavedFileName} · Loaded: {Path.GetFileName(e.Entry.FilePath)}");
+        }
 
         // Update the current file highlight
         UpdateCreatureBrowserCurrentFile(e.Entry.FilePath);
