@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fix: HAK model rendering stability (#1314)
+
+- BIF-first model loading prevents CEP HAK overrides from breaking creature rendering
+- Error handling in UpdateMeshBuffers prevents OpenGL crashes from malformed models
+- Fix "(Dynamic) (Dynamic)" duplicate prefix in appearance dropdown
+- Batch palette item additions to prevent UI thread crash
+- Preserve module items when loading palette cache
+
 ---
 
 ## [0.2.42-alpha] - 2026-03-12
