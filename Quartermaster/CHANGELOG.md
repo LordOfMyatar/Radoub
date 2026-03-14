@@ -21,15 +21,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.2.43-alpha] - 2026-03-14
 **Branch**: `quartermaster/issue-1518` | **PR**: #1680
 
-### Bug: MDL reader crash + model pipeline error handling hardening (#1518)
+### Bug: MDL reader crash + model pipeline hardening (#1518)
 
-- AABB tree recursion depth limit + cycle detection in MDL parser
-- Face index validation rejects bad data instead of just warning
+**MDL Parser Fixes**:
+- Fix StackOverflow crash on c_kocrachn model — node tree depth limit (128) + cycle detection
+- AABB tree recursion depth limit (64) + cycle detection
+- Smart pointer base detection — both direct and base-subtraction strategies tried for every offset
+- Pointer value 0 treated as NULL (was incorrectly used as valid offset, causing cow model circular refs)
+- Face index validation rejects out-of-bounds data instead of rendering garbage
 - Animation event count bounds checking
+- ASCII MDL tvert unrolling — faces with split vertex/tvert indexing now render correctly (fixes wight face)
+
+**Model Pipeline Hardening**:
+- Body part 0 (invisible) now always overrides armor appearance
 - TryAddBodyPart bone math exception handling + logging
-- TextureService bare catch logging in RenderPltTexture
-- ModelPreviewGLControl shader compilation, NaN logging, UpdateTextures safety
-- AppearancePanel async void fix, event handler try-catch, debug logging
+- TextureService bare catch → specific exception logging
+- ModelPreviewGLControl shader compilation, NaN vertex, UpdateTextures error handling
+- AppearancePanel event handler try-catch wrappers
 
 ---
 
