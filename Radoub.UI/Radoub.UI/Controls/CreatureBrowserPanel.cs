@@ -179,6 +179,7 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
         if (_showHakCreatures && !_hakCreaturesLoaded)
         {
             await LoadHakCreaturesAsync();
+            MergeAdditionalEntries(_hakEntries);
         }
 
         OnFilterOptionsChanged();
@@ -192,6 +193,7 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
         if (_showBifCreatures && !_bifCreaturesLoaded)
         {
             await LoadBifCreaturesAsync();
+            MergeAdditionalEntries(_bifEntries);
         }
 
         OnFilterOptionsChanged();
@@ -326,6 +328,7 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
             {
                 try
                 {
+                    int serverVaultCount = 0;
                     foreach (var playerDir in Directory.GetDirectories(serverVaultPath))
                     {
                         var bicFiles = Directory.GetFiles(playerDir, "*.bic", SearchOption.TopDirectoryOnly);
@@ -341,13 +344,21 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
                                 IsFromHak = false,
                                 IsBic = true
                             });
+                            serverVaultCount++;
                         }
                     }
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"CreatureBrowserPanel: Found {serverVaultCount} BICs in servervault ({Directory.GetDirectories(serverVaultPath).Length} player dirs)");
                 }
                 catch (Exception ex)
                 {
                     UnifiedLogger.LogApplication(LogLevel.WARN, $"Error scanning servervault: {ex.Message}");
                 }
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"CreatureBrowserPanel: servervault not found (path: {serverVaultPath ?? "null"})");
             }
         });
     }

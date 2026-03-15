@@ -92,6 +92,7 @@ public class DialogBrowserPanel : FileBrowserPanelBase
         if (_showHakDialogs && !_hakDialogsLoaded)
         {
             await LoadHakDialogsAsync();
+            MergeAdditionalEntries(_hakDialogs);
         }
 
         OnFilterOptionsChanged();

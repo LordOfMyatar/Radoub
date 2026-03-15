@@ -1,11 +1,14 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Radoub.Formats.Common;
 using Radoub.Formats.Ifo;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
+using Radoub.Formats.Utc;
 using Quartermaster.Services;
 using Radoub.UI.Controls;
 using Radoub.UI.Services;
@@ -281,17 +284,9 @@ public partial class MainWindow
     private async void OnCreatureBrowserFileSelected(object? sender, FileSelectedEventArgs e)
     {
         // Only load on single click (per issue requirements)
-        if (e.Entry.IsFromHak)
+        if (e.Entry is CreatureBrowserEntry cbe && (cbe.IsFromBif || e.Entry.IsFromHak))
         {
-            // HAK files can't be edited directly - show info
-            UpdateStatus($"HAK creatures are read-only: {e.Entry.Name}");
-            return;
-        }
-
-        if (e.Entry is CreatureBrowserEntry cbe && cbe.IsFromBif)
-        {
-            // BIF creatures are read-only base game resources
-            UpdateStatus($"Base game creature (read-only): {e.Entry.Name}");
+            await LoadArchiveCreature(cbe);
             return;
         }
 
@@ -328,6 +323,60 @@ public partial class MainWindow
 
         // Update the current file highlight
         UpdateCreatureBrowserCurrentFile(e.Entry.FilePath);
+    }
+
+    /// <summary>
+    /// Loads a HAK or BIF creature for read-only viewing (#1133).
+    /// Extracts UTC data from archive via GameDataService.FindResource
+    /// (searches Override → HAK → BIF in priority order).
+    /// </summary>
+    private Task LoadArchiveCreature(CreatureBrowserEntry entry)
+    {
+        if (_gameDataService == null || !_gameDataService.IsConfigured)
+        {
+            UpdateStatus("Game data not configured — cannot load archive creatures");
+            return Task.CompletedTask;
+        }
+
+        var sourceLabel = entry.IsFromBif ? "base game" : "HAK";
+
+        try
+        {
+            _isLoading = true;
+            ShowProgress(true);
+            UpdateStatus($"Loading {sourceLabel} creature: {entry.Name}...");
+
+            var data = _gameDataService.FindResource(entry.Name, ResourceTypes.Utc);
+            if (data == null)
+            {
+                UpdateStatus($"Could not extract {entry.Name} from {sourceLabel} archives");
+                return Task.CompletedTask;
+            }
+
+            _currentCreature = UtcReader.Read(data);
+            _currentFilePath = null; // No file path — read-only archive resource
+            _isBicFile = false;
+
+            PopulateInventoryUI();
+            UpdateCharacterHeader();
+            LoadAllPanels(_currentCreature);
+            UpdateInventoryCounts();
+            OnPropertyChanged(nameof(HasFile));
+
+            _isLoading = false;
+            _documentState.ClearDirty();
+            UpdateTitle();
+            ShowProgress(false);
+            UpdateStatus($"{sourceLabel} creature (read-only): {entry.Name}");
+        }
+        catch (Exception ex)
+        {
+            _isLoading = false;
+            ShowProgress(false);
+            UnifiedLogger.LogCreature(LogLevel.ERROR, $"Failed to load {sourceLabel} creature {entry.Name}: {ex.Message}");
+            UpdateStatus($"Error loading {sourceLabel} creature: {ex.Message}");
+        }
+        return Task.CompletedTask;
     }
 
     /// <summary>

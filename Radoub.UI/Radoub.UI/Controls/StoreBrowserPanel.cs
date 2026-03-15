@@ -93,6 +93,7 @@ public class StoreBrowserPanel : FileBrowserPanelBase
         if (_showHakStores && !_hakStoresLoaded)
         {
             await LoadHakStoresAsync();
+            MergeAdditionalEntries(_hakStores);
         }
 
         OnFilterOptionsChanged();
