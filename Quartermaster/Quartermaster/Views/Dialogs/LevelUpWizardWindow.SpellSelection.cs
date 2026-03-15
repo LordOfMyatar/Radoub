@@ -428,16 +428,30 @@ public partial class LevelUpWizardWindow
         // For Wizards, limit total across all levels to free spell budget
         int totalBudget = _wizardFreeSpellsRemaining > 0 ? _wizardFreeSpellsRemaining : int.MaxValue;
 
+        // For Wizard consolidated mode, distribute budget across levels evenly
+        // to avoid auto-assign dumping all spells into level 1 (#1645)
+        int perLevelCap(int level)
+        {
+            if (_wizardFreeSpellsRemaining <= 0)
+                return _newSpellsPerLevel.GetValueOrDefault(level, 0);
+            int levelCount = _newSpellsPerLevel.Count;
+            if (levelCount <= 0) return 0;
+            // Distribute evenly, give remainder to highest levels
+            int basePerLevel = _wizardFreeSpellsRemaining / levelCount;
+            return System.Math.Max(basePerLevel, 2); // At least 2 per level
+        }
+
         var assigned = _displayService.Spells.AutoAssignSpells(
             _selectedClassId,
             _resolvedPackageId,
             _maxSpellLevelThisLevel,
-            level => _newSpellsPerLevel.GetValueOrDefault(level, 0),
+            perLevelCap,
             existingSpells);
 
+        // Apply total budget cap (iterating from highest level down for better distribution)
         _selectedSpellsByLevel.Clear();
         int totalAdded = 0;
-        foreach (var (level, spells) in assigned.OrderBy(kv => kv.Key))
+        foreach (var (level, spells) in assigned.OrderByDescending(kv => kv.Key))
         {
             var limitedSpells = spells.Take(totalBudget - totalAdded).ToList();
             if (limitedSpells.Count > 0)

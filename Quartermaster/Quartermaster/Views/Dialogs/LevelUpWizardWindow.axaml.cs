@@ -334,37 +334,29 @@ public partial class LevelUpWizardWindow : Window
 
     /// <summary>
     /// Shows prestige class prerequisite hints on feat/skill steps (#1644).
+    /// Only shows when the creature is actively working toward a prestige class
+    /// (has one in its class list that's below max level).
     /// </summary>
     private void UpdatePrestigeHints()
     {
+        _prestigeHintsLabel.IsVisible = false;
+
         // Only show on feat (3) and skill (4) steps
         if (_currentStep != 3 && _currentStep != 4)
-        {
-            _prestigeHintsLabel.IsVisible = false;
             return;
-        }
+
+        // Only show if creature has a prestige class in progress
+        bool hasPrestigeInProgress = _creature.ClassList.Any(c =>
+            _displayService.Classes.IsPrestigeClass(c.Class) && c.ClassLevel < 10);
+        if (!hasPrestigeInProgress)
+            return;
 
         var hints = _displayService.Classes.GetNearQualifyingPrestigeHints(_creature);
         if (hints.Count == 0)
-        {
-            _prestigeHintsLabel.IsVisible = false;
             return;
-        }
 
-        // Filter to relevant hints: feats on feat step, skills on skill step
-        var relevantHints = hints
-            .Select(h => h.Summary)
-            .ToList();
-
-        if (relevantHints.Count > 0)
-        {
-            _prestigeHintsLabel.Text = "Prestige goals: " + string.Join(" | ", relevantHints);
-            _prestigeHintsLabel.IsVisible = true;
-        }
-        else
-        {
-            _prestigeHintsLabel.IsVisible = false;
-        }
+        _prestigeHintsLabel.Text = "Prestige goals: " + string.Join(" | ", hints.Select(h => h.Summary));
+        _prestigeHintsLabel.IsVisible = true;
     }
 
     private void OnLevelsToAddChanged(object? sender, NumericUpDownValueChangedEventArgs e)

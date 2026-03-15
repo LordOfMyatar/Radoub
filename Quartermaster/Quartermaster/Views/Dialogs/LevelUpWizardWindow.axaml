@@ -230,7 +230,7 @@
                                     <TextBlock Text="Levels:" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                     <NumericUpDown x:Name="LevelsToAddSpinner"
                                                    Value="1" Minimum="1" Maximum="39"
-                                                   Width="80" Height="28"
+                                                   Width="100" Height="28"
                                                    FormatString="0"
                                                    VerticalAlignment="Center"/>
                                 </StackPanel>
