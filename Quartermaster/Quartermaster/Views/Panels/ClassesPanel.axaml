@@ -39,7 +39,7 @@
                                             <TextBlock Grid.Column="0"
                                                        Text="{Binding SlotNumber}"
                                                        FontSize="{DynamicResource FontSizeSmall}"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                        VerticalAlignment="Center"
                                                        Width="20"/>
 
@@ -54,7 +54,7 @@
                                                 <TextBlock Text="{Binding ClassFeatures}"
                                                            FontSize="{DynamicResource FontSizeXSmall}"
                                                            FontStyle="Italic"
-                                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                            TextWrapping="Wrap"/>
                                             </StackPanel>
 
@@ -106,7 +106,7 @@
                         <TextBlock x:Name="NoClassesText"
                                    Text="No classes assigned"
                                    FontStyle="Italic"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                    IsVisible="False"
                                    Margin="0,5,0,0"/>
                     </StackPanel>

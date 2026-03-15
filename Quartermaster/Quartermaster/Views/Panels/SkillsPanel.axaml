@@ -220,7 +220,7 @@
                         <TextBlock x:Name="NoSkillsText"
                                    Text="No skill data available"
                                    FontStyle="Italic"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                    IsVisible="False"
                                    Margin="15,15"/>
                     </StackPanel>
@@ -233,7 +233,7 @@
                        Text="Max ranks: Class skill = Level+3, Cross-class = (Level+3)/2"
                        FontSize="{DynamicResource FontSizeSmall}"
                        FontStyle="Italic"
-                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                        HorizontalAlignment="Center"
                        Margin="0,10,0,0"/>
             </Grid>

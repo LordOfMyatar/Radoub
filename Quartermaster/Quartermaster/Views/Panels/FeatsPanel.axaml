@@ -196,7 +196,7 @@
                            x:Name="NoFeatsText"
                            Text="No feats match the current filter"
                            FontStyle="Italic"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            IsVisible="False"
                            Margin="15,15"/>
 
@@ -204,7 +204,7 @@
                            x:Name="LoadingText"
                            Text="Loading feats..."
                            FontStyle="Italic"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            IsVisible="False"
                            Margin="15,15"/>
             </Grid>

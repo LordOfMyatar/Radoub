@@ -188,7 +188,7 @@
                            TextAlignment="Center"
                            TextTrimming="CharacterEllipsis"
                            Margin="10,5,10,10"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
             </Grid>
         </Border>
 

@@ -90,7 +90,7 @@
                         <TextBlock x:Name="NoScriptsText"
                                    Text="No scripts assigned"
                                    FontStyle="Italic"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                    IsVisible="False"
                                    Margin="0,10"/>
                     </StackPanel>
@@ -100,7 +100,7 @@
                 <TextBlock Text="Script names are limited to 16 characters (Aurora Engine constraint)."
                            FontSize="{DynamicResource FontSizeSmall}"
                            FontStyle="Italic"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            HorizontalAlignment="Center"
                            Margin="0,5,0,0"/>
             </StackPanel>

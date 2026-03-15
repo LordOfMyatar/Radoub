@@ -105,7 +105,7 @@
                                     <TextBlock Text="{Binding DisplayIcon}" Width="16"/>
                                     <TextBlock Text="{Binding DisplayName}"/>
                                     <TextBlock Text="{Binding QualificationBadge}"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                FontStyle="Italic"/>
                                 </StackPanel>
                             </DataTemplate>
@@ -179,7 +179,7 @@
                         <TextBlock x:Name="DescriptionTextBlock"
                                    TextWrapping="Wrap"
                                    Text="Select a class to view its description."
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </ScrollViewer>
                 </Grid>
             </Border>

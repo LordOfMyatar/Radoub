@@ -34,7 +34,7 @@
                             <TextBlock Grid.Column="2"
                                        Text="(?)"
                                        FontSize="{DynamicResource FontSizeSmall}"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"
                                        Margin="0,0,10,0"
                                        Cursor="Help"
@@ -156,19 +156,19 @@
                                                AutomationProperties.AutomationId="BaseHpNumeric"
                                                ToolTip.Tip="Hit points from dice rolls (excluding Con bonus)"/>
                                 <TextBlock x:Name="BaseHpNote" Text="(dice rolls)" FontSize="{DynamicResource FontSizeXSmall}"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Margin="0,0,10,0" AutomationProperties.AutomationId="ConBonusDisplay">
                                 <TextBlock Text="Con Bonus" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <TextBlock x:Name="ConHpBonus" Text="+0" FontSize="{DynamicResource FontSizeLarge}" FontWeight="Bold"/>
                                 <TextBlock x:Name="ConBonusNote" Text="(Con × levels)" FontSize="{DynamicResource FontSizeXSmall}"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2" AutomationProperties.AutomationId="MaxHpDisplay">
                                 <TextBlock Text="Max HP" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <TextBlock x:Name="MaxHpValue" Text="0" FontSize="{DynamicResource FontSizeLarge}" FontWeight="Bold"/>
                                 <TextBlock Text="(Base + Con)" FontSize="{DynamicResource FontSizeXSmall}"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                             </StackPanel>
                         </Grid>
                     </StackPanel>
