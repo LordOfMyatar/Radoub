@@ -40,9 +40,20 @@
                        IsVisible="{Binding !IsLoading}"/>
         </StackPanel>
 
-        <!-- Main Content: Left panel + Right matrix -->
-        <Grid ColumnDefinitions="220,*"
-              IsVisible="{Binding IsModuleLoaded}">
+        <!-- Main Content: Left panel + Right matrix + Status -->
+        <DockPanel IsVisible="{Binding IsModuleLoaded}">
+            <!-- Status Bar (Bottom) -->
+            <Border DockPanel.Dock="Bottom"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                    BorderThickness="0,1,0,0"
+                    Padding="12,4">
+                <TextBlock Text="{Binding StatusText}"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           Opacity="0.6"
+                           VerticalAlignment="Center"/>
+            </Border>
+
+            <Grid ColumnDefinitions="220,*">
             <!-- Left Panel: Faction List + Properties -->
             <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                     BorderThickness="0,0,1,0">
@@ -145,5 +156,6 @@
                       Margin="12"/>
             </ScrollViewer>
         </Grid>
+        </DockPanel>
     </Grid>
 </UserControl>
