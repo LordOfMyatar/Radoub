@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.18-alpha] - 2026-03-15
-**Branch**: `fence/issue-1693` | **PR**: #TBD
+**Branch**: `fence/issue-1693` | **PR**: #1696
 
 ### Sprint: Store Inventory UX
 
