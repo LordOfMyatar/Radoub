@@ -23,6 +23,7 @@ public partial class AppearancePanel : UserControl
     private CheckBox? _showHakCheckBox;
     private CheckBox? _showOverrideCheckBox;
     private TextBlock? _appearanceCountText;
+    private TextBox? _excludePatternBox;
     private ComboBox? _genderComboBox;
     private ComboBox? _phenotypeComboBox;
 
@@ -103,6 +104,7 @@ public partial class AppearancePanel : UserControl
         _showHakCheckBox = this.FindControl<CheckBox>("ShowHakCheckBox");
         _showOverrideCheckBox = this.FindControl<CheckBox>("ShowOverrideCheckBox");
         _appearanceCountText = this.FindControl<TextBlock>("AppearanceCountText");
+        _excludePatternBox = this.FindControl<TextBox>("ExcludePatternBox");
         _genderComboBox = this.FindControl<ComboBox>("GenderComboBox");
         _phenotypeComboBox = this.FindControl<ComboBox>("PhenotypeComboBox");
 

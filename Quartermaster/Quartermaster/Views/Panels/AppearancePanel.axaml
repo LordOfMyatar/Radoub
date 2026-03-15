@@ -52,6 +52,13 @@
                                            VerticalAlignment="Center"/>
                             </StackPanel>
 
+                            <!-- Exclude Patterns -->
+                            <TextBox x:Name="ExcludePatternBox"
+                                     Watermark="Exclude patterns (semicolon-separated)"
+                                     FontSize="{DynamicResource FontSizeXSmall}"
+                                     AutomationProperties.AutomationId="ExcludePatternBox"
+                                     ToolTip.Tip="Hide entries matching these patterns (e.g. Invisible;object). Matches Name and Label, case-insensitive."/>
+
                             <!-- Appearance List (replaces ComboBox for searchability) -->
                             <ListBox x:Name="AppearanceListBox"
                                      MaxHeight="150"

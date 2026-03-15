@@ -29,6 +29,12 @@ public partial class AppearancePanel
         if (_showOverrideCheckBox != null)
             _showOverrideCheckBox.IsCheckedChanged += OnSourceFilterChanged;
 
+        if (_excludePatternBox != null)
+        {
+            _excludePatternBox.Text = SettingsService.Instance.AppearanceExcludeFilter;
+            _excludePatternBox.LostFocus += OnExcludePatternLostFocus;
+        }
+
         if (_genderComboBox != null)
             _genderComboBox.SelectionChanged += OnGenderSelectionChanged;
 
@@ -111,6 +117,14 @@ public partial class AppearancePanel
     private void OnSourceFilterChanged(object? sender, RoutedEventArgs e)
     {
         if (_isLoading) return;
+        RefreshFilteredAppearanceList();
+    }
+
+    private void OnExcludePatternLostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (_isLoading) return;
+        var newValue = _excludePatternBox?.Text ?? "";
+        SettingsService.Instance.AppearanceExcludeFilter = newValue;
         RefreshFilteredAppearanceList();
     }
 

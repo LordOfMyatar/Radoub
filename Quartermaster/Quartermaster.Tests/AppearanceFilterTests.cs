@@ -25,6 +25,12 @@ public class AppearanceFilterTests
             new() { AppearanceId = 101, Name = "CEP Minotaur", Label = "CEP_Minotaur", Race = "MINOTAUR", IsPartBased = false, Source = AppearanceSource.Hak },
             new() { AppearanceId = 200, Name = "Custom Dragon", Label = "Custom_Dragon", Race = "DRAGON", IsPartBased = false, Source = AppearanceSource.Override },
             new() { AppearanceId = 300, Name = "Unknown Source", Label = "Unknown", Race = "MYSTERY", IsPartBased = false, Source = AppearanceSource.Unknown },
+            // Noise entries for exclude filter testing
+            new() { AppearanceId = 569, Name = "Invisible_Dragon_10", Label = "Invisible_Dragon_10", Race = "c_InvDrg_010", IsPartBased = false, Source = AppearanceSource.Bif },
+            new() { AppearanceId = 589, Name = "Invisible_Dwarf_Female_010", Label = "Invisible_Dwarf_Female_010", Race = "invis_fd_010", IsPartBased = false, Source = AppearanceSource.Bif },
+            new() { AppearanceId = 298, Name = "Null Human", Label = "Invisible_Human_Male", Race = "c_invsguy", IsPartBased = false, Source = AppearanceSource.Bif },
+            new() { AppearanceId = 431, Name = "Chair", Label = "ObjectChair", Race = "PLC_X02", IsPartBased = false, Source = AppearanceSource.Bif },
+            new() { AppearanceId = 435, Name = "Magic Sparks", Label = "objectWhite", Race = "PLC_U03", IsPartBased = false, Source = AppearanceSource.Bif },
         };
     }
 
@@ -33,14 +39,14 @@ public class AppearanceFilterTests
     [Fact]
     public void FilterAppearances_EmptySearch_ReturnsAll()
     {
-        var result = AppearanceFilterHelper.Filter(_testAppearances, "", true, true, true);
+        var result = AppearanceFilterHelper.Filter(_testAppearances, "", true, true, true, null);
         Assert.Equal(_testAppearances.Count, result.Count);
     }
 
     [Fact]
     public void FilterAppearances_NullSearch_ReturnsAll()
     {
-        var result = AppearanceFilterHelper.Filter(_testAppearances, null, true, true, true);
+        var result = AppearanceFilterHelper.Filter(_testAppearances, null, true, true, true, null);
         Assert.Equal(_testAppearances.Count, result.Count);
     }
 
@@ -64,9 +70,10 @@ public class AppearanceFilterTests
     public void FilterAppearances_SearchByRace_FindsMatches()
     {
         var result = AppearanceFilterHelper.Filter(_testAppearances, "DRAGON", true, true, true);
-        Assert.Equal(2, result.Count);
+        Assert.Equal(3, result.Count);
         Assert.Contains(result, a => a.Name == "Dragon, Red");
         Assert.Contains(result, a => a.Name == "Custom Dragon");
+        Assert.Contains(result, a => a.Name == "Invisible_Dragon_10");
     }
 
     [Fact]
@@ -94,8 +101,8 @@ public class AppearanceFilterTests
     public void FilterAppearances_BifOnly_ReturnsBifAndUnknownSources()
     {
         var result = AppearanceFilterHelper.Filter(_testAppearances, "", true, false, false);
-        // BIF items + Unknown (always included)
-        Assert.Equal(5, result.Count);
+        // 9 BIF items + 1 Unknown = 10
+        Assert.Equal(10, result.Count);
         Assert.All(result, a => Assert.True(a.Source == AppearanceSource.Bif || a.Source == AppearanceSource.Unknown));
     }
 
@@ -139,10 +146,11 @@ public class AppearanceFilterTests
     [Fact]
     public void FilterAppearances_SearchWithSourceFilter_CombinesBoth()
     {
-        // Search for "dragon" but only in BIF sources
+        // Search for "dragon" but only in BIF sources — matches Dragon, Red and Invisible_Dragon_10
         var result = AppearanceFilterHelper.Filter(_testAppearances, "dragon", true, false, false);
-        Assert.Single(result);
-        Assert.Equal("Dragon, Red", result[0].Name);
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, a => a.Name == "Dragon, Red");
+        Assert.Contains(result, a => a.Name == "Invisible_Dragon_10");
     }
 
     [Fact]
@@ -151,6 +159,102 @@ public class AppearanceFilterTests
         var result = AppearanceFilterHelper.Filter(_testAppearances, "CEP", false, true, false);
         Assert.Equal(2, result.Count);
         Assert.All(result, a => Assert.Equal(AppearanceSource.Hak, a.Source));
+    }
+
+    #endregion
+
+    #region Exclude Patterns
+
+    [Fact]
+    public void FilterAppearances_ExcludeInvisible_RemovesInvisibleEntries()
+    {
+        // "Invisible" matches 3 entries by Name or Label: Invisible_Dragon_10, Invisible_Dwarf_Female_010, Null Human (Label=Invisible_Human_Male)
+        var result = AppearanceFilterHelper.Filter(_testAppearances, "", true, true, true, "Invisible");
+        Assert.Equal(10, result.Count);
+        Assert.DoesNotContain(result, a => a.Name.Contains("Invisible", StringComparison.OrdinalIgnoreCase)
+            || a.Label.Contains("Invisible", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void FilterAppearances_ExcludeMultiplePatterns_RemovesAll()
+    {
+        // "Invisible;object" excludes 3 invisible + 2 object entries = 5 removed, 8 remain
+        var result = AppearanceFilterHelper.Filter(_testAppearances, "", true, true, true, "Invisible;object");
+        Assert.Equal(8, result.Count);
+        Assert.DoesNotContain(result, a => a.Name == "Invisible_Dragon_10");
+        Assert.DoesNotContain(result, a => a.Name == "Null Human");
+        Assert.DoesNotContain(result, a => a.Name == "Chair");
+        Assert.DoesNotContain(result, a => a.Name == "Magic Sparks");
+    }
+
+    [Fact]
+    public void FilterAppearances_ExcludeWithWhitespace_TrimsPatterns()
+    {
+        var result = AppearanceFilterHelper.Filter(_testAppearances, "", true, true, true, "  Invisible  ;  object  ");
+        Assert.Equal(8, result.Count);
+    }
+
+    [Fact]
+    public void FilterAppearances_ExcludeNull_NoExclusion()
+    {
+        var result = AppearanceFilterHelper.Filter(_testAppearances, "", true, true, true, null);
+        Assert.Equal(_testAppearances.Count, result.Count);
+    }
+
+    [Fact]
+    public void FilterAppearances_ExcludeEmpty_NoExclusion()
+    {
+        var result = AppearanceFilterHelper.Filter(_testAppearances, "", true, true, true, "");
+        Assert.Equal(_testAppearances.Count, result.Count);
+    }
+
+    [Fact]
+    public void FilterAppearances_ExcludeOnlySemicolons_NoExclusion()
+    {
+        var result = AppearanceFilterHelper.Filter(_testAppearances, "", true, true, true, ";;;");
+        Assert.Equal(_testAppearances.Count, result.Count);
+    }
+
+    [Fact]
+    public void FilterAppearances_ExcludeCombinedWithSearch_BothApply()
+    {
+        // Search for "dragon" (3 matches) but exclude "Invisible" (removes Invisible_Dragon_10)
+        var result = AppearanceFilterHelper.Filter(_testAppearances, "dragon", true, true, true, "Invisible");
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, a => a.Name == "Dragon, Red");
+        Assert.Contains(result, a => a.Name == "Custom Dragon");
+    }
+
+    [Fact]
+    public void FilterAppearances_ExcludeIsCaseInsensitive()
+    {
+        var result = AppearanceFilterHelper.Filter(_testAppearances, "", true, true, true, "invisible");
+        Assert.Equal(10, result.Count);
+        Assert.DoesNotContain(result, a => a.Label.Contains("Invisible", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void ParseExcludePatterns_VariousInputs()
+    {
+        Assert.Empty(AppearanceFilterHelper.ParseExcludePatterns(null));
+        Assert.Empty(AppearanceFilterHelper.ParseExcludePatterns(""));
+        Assert.Empty(AppearanceFilterHelper.ParseExcludePatterns("  "));
+        Assert.Empty(AppearanceFilterHelper.ParseExcludePatterns(";;;"));
+
+        var single = AppearanceFilterHelper.ParseExcludePatterns("Invisible");
+        Assert.Single(single);
+        Assert.Equal("Invisible", single[0]);
+
+        var multi = AppearanceFilterHelper.ParseExcludePatterns("Invisible;object;PLC");
+        Assert.Equal(3, multi.Length);
+        Assert.Equal("Invisible", multi[0]);
+        Assert.Equal("object", multi[1]);
+        Assert.Equal("PLC", multi[2]);
+
+        var trimmed = AppearanceFilterHelper.ParseExcludePatterns("  Invisible  ;  object  ");
+        Assert.Equal(2, trimmed.Length);
+        Assert.Equal("Invisible", trimmed[0]);
+        Assert.Equal("object", trimmed[1]);
     }
 
     #endregion

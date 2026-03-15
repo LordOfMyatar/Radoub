@@ -26,6 +26,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Text search/filter for model names on the Appearance panel
 - Checkbox filters to toggle visibility by resource source (Standard/BIF, Hak, Override)
 - Search by model name (RACE column) or label
+- Semicolon-separated exclude pattern filter to hide noise entries (default: `Invisible;object`)
+- Exclude filter persists across sessions via SettingsService
 
 ---
 

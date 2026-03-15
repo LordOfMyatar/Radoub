@@ -17,21 +17,24 @@ public static class AppearanceFilterHelper
     /// <param name="showBif">Include appearances from BIF (base game) archives</param>
     /// <param name="showHak">Include appearances from HAK packs</param>
     /// <param name="showOverride">Include appearances from the Override folder</param>
+    /// <param name="excludePatterns">Semicolon-separated patterns to exclude (matched against Name and Label, case-insensitive). Null/empty = no exclusions.</param>
     /// <returns>Filtered list of appearances matching both text and source criteria</returns>
     public static List<AppearanceInfo> Filter(
         List<AppearanceInfo> appearances,
         string? searchText,
         bool showBif,
         bool showHak,
-        bool showOverride)
+        bool showOverride,
+        string? excludePatterns = null)
     {
         if (appearances == null || appearances.Count == 0)
             return new List<AppearanceInfo>();
 
         var noSourceFilter = !showBif && !showHak && !showOverride;
         var noTextFilter = string.IsNullOrWhiteSpace(searchText);
+        var parsedExcludes = ParseExcludePatterns(excludePatterns);
 
-        if (noSourceFilter && noTextFilter)
+        if (noSourceFilter && noTextFilter && parsedExcludes.Length == 0)
             return new List<AppearanceInfo>(appearances);
 
         var result = new List<AppearanceInfo>();
@@ -42,6 +45,9 @@ public static class AppearanceFilterHelper
                 continue;
 
             if (!noTextFilter && !MatchesTextSearch(app, searchText!))
+                continue;
+
+            if (parsedExcludes.Length > 0 && MatchesExcludePattern(app, parsedExcludes))
                 continue;
 
             result.Add(app);
@@ -67,5 +73,35 @@ public static class AppearanceFilterHelper
         return app.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase)
             || app.Label.Contains(searchText, StringComparison.OrdinalIgnoreCase)
             || app.Race.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Parse semicolon-separated exclude patterns into trimmed, non-empty strings.
+    /// </summary>
+    internal static string[] ParseExcludePatterns(string? excludePatterns)
+    {
+        if (string.IsNullOrWhiteSpace(excludePatterns))
+            return Array.Empty<string>();
+
+        var parts = excludePatterns.Split(';', StringSplitOptions.RemoveEmptyEntries);
+        var result = new List<string>();
+        foreach (var part in parts)
+        {
+            var trimmed = part.Trim();
+            if (trimmed.Length > 0)
+                result.Add(trimmed);
+        }
+        return result.ToArray();
+    }
+
+    private static bool MatchesExcludePattern(AppearanceInfo app, string[] excludePatterns)
+    {
+        foreach (var pattern in excludePatterns)
+        {
+            if (app.Name.Contains(pattern, StringComparison.OrdinalIgnoreCase)
+                || app.Label.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
     }
 }

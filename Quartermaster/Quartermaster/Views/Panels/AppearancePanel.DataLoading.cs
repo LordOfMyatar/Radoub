@@ -56,7 +56,8 @@ public partial class AppearancePanel
         var showHak = _showHakCheckBox?.IsChecked ?? true;
         var showOverride = _showOverrideCheckBox?.IsChecked ?? true;
 
-        var filtered = AppearanceFilterHelper.Filter(_appearances, searchText, showBif, showHak, showOverride);
+        var excludePatterns = _excludePatternBox?.Text ?? SettingsService.Instance.AppearanceExcludeFilter;
+        var filtered = AppearanceFilterHelper.Filter(_appearances, searchText, showBif, showHak, showOverride, excludePatterns);
 
         // Remember current selection
         ushort? selectedId = null;
