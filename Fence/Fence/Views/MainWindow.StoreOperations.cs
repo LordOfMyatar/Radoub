@@ -44,8 +44,7 @@ public partial class MainWindow
             StoreItems.Remove(item);
         }
 
-        _isDirty = true;
-        UpdateTitle();
+        _documentState.MarkDirty();
         UpdateItemCount();
 
         // Refresh grid view (re-apply filter if active)
@@ -72,8 +71,7 @@ public partial class MainWindow
             item.Infinite = true;
         }
 
-        _isDirty = true;
-        UpdateTitle();
+        _documentState.MarkDirty();
     }
 
     private void SetInfiniteFlag(bool value)
@@ -87,8 +85,7 @@ public partial class MainWindow
             item.Infinite = value;
         }
 
-        _isDirty = true;
-        UpdateTitle();
+        _documentState.MarkDirty();
     }
 
     private void OnInfiniteCellClicked(object? sender, Avalonia.Input.PointerPressedEventArgs e)
@@ -97,8 +94,7 @@ public partial class MainWindow
         if (sender is Avalonia.Controls.Border border && border.DataContext is StoreItemViewModel item)
         {
             item.Infinite = !item.Infinite;
-            _isDirty = true;
-            UpdateTitle();
+            _documentState.MarkDirty();
         }
     }
 
@@ -142,8 +138,7 @@ public partial class MainWindow
             });
         }
 
-        _isDirty = true;
-        UpdateTitle();
+        _documentState.MarkDirty();
         UpdateItemCount();
 
         // Refresh grid view (re-apply filter if active)
@@ -162,8 +157,7 @@ public partial class MainWindow
             StoreItems.Remove(item);
         }
 
-        _isDirty = true;
-        UpdateTitle();
+        _documentState.MarkDirty();
         UpdateItemCount();
 
         // Refresh grid view (re-apply filter if active)
@@ -201,8 +195,7 @@ public partial class MainWindow
             }
         }
 
-        _isDirty = true;
-        UpdateTitle();
+        _documentState.MarkDirty();
     }
 
     private void OnSelectAllTypes(object? sender, RoutedEventArgs e)
@@ -212,8 +205,7 @@ public partial class MainWindow
             item.IsSelected = true;
         }
 
-        _isDirty = true;
-        UpdateTitle();
+        _documentState.MarkDirty();
     }
 
     private void OnClearAllTypes(object? sender, RoutedEventArgs e)
@@ -223,14 +215,12 @@ public partial class MainWindow
             item.IsSelected = false;
         }
 
-        _isDirty = true;
-        UpdateTitle();
+        _documentState.MarkDirty();
     }
 
     private void OnItemTypeCheckChanged(object? sender, RoutedEventArgs e)
     {
-        _isDirty = true;
-        UpdateTitle();
+        _documentState.MarkDirty();
     }
 
     private void UpdateBuyRestrictions()

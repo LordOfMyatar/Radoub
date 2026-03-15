@@ -208,8 +208,7 @@ public partial class MainWindow
             item.Infinite = !item.Infinite;
         }
 
-        _isDirty = true;
-        UpdateTitle();
+        _documentState.MarkDirty();
 
         // Refresh details if single selection
         if (selectedItems.Count == 1)

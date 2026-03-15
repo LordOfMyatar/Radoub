@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.19-alpha] - 2026-03-15
+**Branch**: `fence/issue-1694` | **PR**: #1698
+
+### Sprint: Core Bug Fixes
+
+- [x] #1568 - PaletteCacheService tests fail (LoadCache_NoCache, GetCacheInfo_NoCache) — verified fixed by prior refactoring (all 7 tests pass)
+- [x] #1536 - No dirty flag or save prompt when closing with unsaved changes — added TextChanged/CheckChanged/SelectionChanged tracking for all store property fields with IsLoading guard during population
+
+---
+
 ## [0.1.18-alpha] - 2026-03-15
 **Branch**: `fence/issue-1693` | **PR**: #1696
 

@@ -105,6 +105,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         StoreInventoryGrid.DoubleTapped += OnStoreInventoryDoubleTapped;
         ItemPaletteGrid.DoubleTapped += OnItemPaletteDoubleTapped;
 
+        // Wire up store property change tracking for dirty flag (#1536)
+        WireUpStorePropertyTracking();
+
         // Track property changes on store items for dirty state and validation
         StoreItems.CollectionChanged += OnStoreItemsCollectionChanged;
 
@@ -278,8 +281,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         WindowPositionHelper.Save(this, SettingsService.Instance);
     }
 
+    private bool _isClosing;
+
     private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
     {
+        // Prevent re-entrant close (HandleClosingAsync cancels then re-calls Close())
+        if (_isClosing)
+            return;
+
         var shouldClose = await FileOperationsHelper.HandleClosingAsync(
             this, e, _documentState.IsDirty, async () =>
             {
@@ -295,6 +304,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         if (shouldClose)
         {
+            _isClosing = true;
             _documentState.ClearDirty();
             SaveWindowPosition();
             SaveStoreBrowserPanelSize();
@@ -526,6 +536,53 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     #endregion
 
+    #region Store Property Change Tracking
+
+    /// <summary>
+    /// Subscribe to TextChanged/CheckChanged events on store property controls
+    /// so that editing any field marks the document dirty (#1536).
+    /// </summary>
+    private void WireUpStorePropertyTracking()
+    {
+        // TextBoxes
+        StoreNameBox.TextChanged += OnStorePropertyTextChanged;
+        StoreTagBox.TextChanged += OnStorePropertyTextChanged;
+        SellMarkupBox.TextChanged += OnStorePropertyTextChanged;
+        BuyMarkdownBox.TextChanged += OnStorePropertyTextChanged;
+        IdentifyPriceBox.TextChanged += OnStorePropertyTextChanged;
+        OnOpenStoreBox.TextChanged += OnStorePropertyTextChanged;
+        OnStoreClosedBox.TextChanged += OnStorePropertyTextChanged;
+        MaxBuyPriceBox.TextChanged += OnStorePropertyTextChanged;
+        StoreGoldBox.TextChanged += OnStorePropertyTextChanged;
+        BlackMarketMarkdownBox.TextChanged += OnStorePropertyTextChanged;
+        CommentBox.TextChanged += OnStorePropertyTextChanged;
+
+        // CheckBoxes
+        BlackMarketCheck.IsCheckedChanged += OnStorePropertyCheckChanged;
+        MaxBuyPriceCheck.IsCheckedChanged += OnStorePropertyCheckChanged;
+        LimitedGoldCheck.IsCheckedChanged += OnStorePropertyCheckChanged;
+
+        // ComboBox
+        StoreCategoryBox.SelectionChanged += OnStorePropertySelectionChanged;
+    }
+
+    private void OnStorePropertyTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        _documentState.MarkDirty();
+    }
+
+    private void OnStorePropertyCheckChanged(object? sender, RoutedEventArgs e)
+    {
+        _documentState.MarkDirty();
+    }
+
+    private void OnStorePropertySelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        _documentState.MarkDirty();
+    }
+
+    #endregion
+
     #region ResRef Change Tracking
 
     private void OnStoreItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -572,8 +629,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         // Mark document dirty
-        _isDirty = true;
-        UpdateTitle();
+        _documentState.MarkDirty();
     }
 
     /// <summary>
