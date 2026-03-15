@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.23.0-alpha] - 2026-03-14
+**Branch**: `trebuchet/issue-1678` | **PR**: #TBD
+
+### Sprint: Area Scanning Infrastructure (#1678)
+
+- [ ] #1320 - AreaScanService — Shared area .git scanning infrastructure
+- [ ] #1317 - Faction Editor: Scan areas on faction delete to reindex creature FactionIDs
+
+---
+
 ## [1.22.0-alpha] - 2026-03-14
 **Branch**: `trebuchet/issue-1677` | **PR**: #1679
 
