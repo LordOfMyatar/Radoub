@@ -138,14 +138,18 @@ public partial class LevelUpWizardWindow
             // Wizard spellbook: gets 2 free spells on level-up (NWN convention).
             // Player distributes them across any castable spell levels.
             _wizardFreeSpellsRemaining = 2;
+            var slotsAtLevel = _displayService.Spells.GetSpellSlots(_selectedClassId, _newClassLevel);
             for (int i = 0; i <= maxSpellLevel; i++)
             {
                 // Allow picking from any castable level — don't pre-allocate per level
                 // The total across all levels is capped at 2
-                var slotsAtLevel = _displayService.Spells.GetSpellSlots(_selectedClassId, _newClassLevel);
                 if (slotsAtLevel != null && i < slotsAtLevel.Length && slotsAtLevel[i] > 0)
                     _newSpellsPerLevel[i] = 2; // Max 2 at any level, total capped separately
             }
+
+            // Remove spell levels where creature already knows all available spells (#1647)
+            // Wizards typically know all cantrips from level 1, so cantrip tabs are irrelevant
+            RemoveFullyKnownSpellLevels();
 
             _spellStepDescription.Text = $"Choose 2 spells to add to your {className}'s spellbook.";
         }
@@ -169,9 +173,43 @@ public partial class LevelUpWizardWindow
         // Build spell level tabs
         BuildSpellLevelTabs();
 
-        // Select first available tab
+        // Default to lowest spell level with available spells.
+        // For Wizards, this skips cantrips (already fully known) and shows the most relevant level.
         _currentSpellLevel = _newSpellsPerLevel.Keys.Min();
         SelectSpellLevelTab(_currentSpellLevel);
+    }
+
+    /// <summary>
+    /// Removes spell levels from _newSpellsPerLevel where the creature already knows
+    /// all available spells. Prevents showing empty tabs (e.g., cantrips for Wizards
+    /// who learn all cantrips at level 1). (#1647)
+    /// </summary>
+    private void RemoveFullyKnownSpellLevels()
+    {
+        var existingSpells = new HashSet<int>(_creature.SpecAbilityList.Select(sa => (int)sa.Spell));
+        var spellClass = _creature.ClassList.FirstOrDefault(c => c.Class == _selectedClassId);
+
+        var levelsToRemove = new List<int>();
+        foreach (var spellLevel in _newSpellsPerLevel.Keys)
+        {
+            // Build the set of spells the creature already knows at this level
+            var knownAtLevel = new HashSet<int>(existingSpells);
+            if (spellClass != null && spellLevel >= 0 && spellLevel < spellClass.KnownSpells.Length)
+            {
+                foreach (var ks in spellClass.KnownSpells[spellLevel])
+                    knownAtLevel.Add((int)ks.Spell);
+            }
+
+            // Check if any spells are available that the creature doesn't know
+            var allSpellIds = _displayService.Spells.GetSpellsForClassAtLevel(_selectedClassId, spellLevel);
+            bool hasNewSpells = allSpellIds.Any(id => !knownAtLevel.Contains(id));
+
+            if (!hasNewSpells)
+                levelsToRemove.Add(spellLevel);
+        }
+
+        foreach (var level in levelsToRemove)
+            _newSpellsPerLevel.Remove(level);
     }
 
     private void BuildSpellLevelTabs()
