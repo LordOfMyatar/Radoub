@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Store Inventory UX
 
-- [ ] #1662 - Store inventory grid column resizing difficult, Name column easily hidden
+- [x] #1662 - Add MinWidth=150 to Name columns on StoreInventoryGrid and ItemPaletteGrid to prevent collapse during resize
 
 ---
 
