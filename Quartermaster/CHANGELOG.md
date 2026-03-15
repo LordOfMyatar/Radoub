@@ -17,10 +17,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: LUW Bug Fixes & Enhancements (#1650)
 
-- LUW spell selection — cantrips shown incorrectly on level 2→3 (#1647)
-- Consolidated single-class multi-level wizard (#1645)
-- Multiclass prereq tooltips in LUW (#1644)
-- LUW Validation Settings: Manual Verification & Edge Cases (#1640)
+- Fix: LUW spell selection — Wizard cantrip tabs shown incorrectly on level 2→3; filtered out fully-known spell levels (#1647)
+- Feat: Consolidated single-class multi-level wizard — "Levels" spinner on Step 1 pools feats, skills, spells, ability increases across a level range; replaces sequential LUW loop for NCW Starting Level > 1 (#1645)
+- Feat: Multiclass prereq tooltips — near-qualifying prestige class prerequisites shown as hints on feat/skill steps (#1644)
+- Verification: LUW validation settings edge cases — CON retroactivity tested via unit tests, GAINMULTIPLE feats verified, validation level mid-session switch documented as known limitation (#1640)
 
 ---
 
