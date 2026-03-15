@@ -260,6 +260,61 @@ public class LevelUpApplicationService
         return totalPoints - spent;
     }
 
+    #region Consolidated Level-Up Helpers (#1645)
+
+    /// <summary>
+    /// Returns character levels within the range that get +1 ability increase (every 4th level).
+    /// </summary>
+    public static List<int> GetAbilityIncreaseLevels(int currentTotalLevel, int levelsToAdd)
+    {
+        var result = new List<int>();
+        for (int i = 1; i <= levelsToAdd; i++)
+        {
+            int charLevel = currentTotalLevel + i;
+            if (charLevel % 4 == 0)
+                result.Add(charLevel);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Calculates total HP gain for multiple levels, accounting for CON increases and retroactive HP.
+    /// conIncreaseLevels: character levels where CON was increased (within the range).
+    /// </summary>
+    public static int CalculateConsolidatedHp(
+        int hitDie, int baseCon, int previousLevelCount,
+        int levelsToAdd, List<int> conIncreaseLevels)
+    {
+        int totalHp = 0;
+        int effectiveCon = baseCon;
+        int levelsBeforeCurrent = previousLevelCount;
+
+        for (int i = 1; i <= levelsToAdd; i++)
+        {
+            int charLevel = previousLevelCount + i;
+
+            // Check if CON increases this level (applied BEFORE HP calc for this level)
+            if (conIncreaseLevels.Contains(charLevel))
+            {
+                int oldMod = CreatureDisplayService.CalculateAbilityBonus(effectiveCon);
+                effectiveCon = Math.Min(255, effectiveCon + 1);
+                int newMod = CreatureDisplayService.CalculateAbilityBonus(effectiveCon);
+                int modChange = newMod - oldMod;
+
+                if (modChange > 0)
+                    totalHp += modChange * levelsBeforeCurrent; // Retro HP
+            }
+
+            int conMod = CreatureDisplayService.CalculateAbilityBonus(effectiveCon);
+            totalHp += Math.Max(1, hitDie + conMod);
+            levelsBeforeCurrent++;
+        }
+
+        return totalHp;
+    }
+
+    #endregion
+
     private void RecordLevelHistory(UtcFile creature, LevelUpInput input)
     {
         var record = new LevelRecord
