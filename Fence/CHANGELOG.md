@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.18-alpha] - 2026-03-15
+**Branch**: `fence/issue-1693` | **PR**: #1696
+
+### Sprint: Store Inventory UX
+
+- [x] #1662 - Add MinWidth=150 to Name columns on StoreInventoryGrid and ItemPaletteGrid to prevent collapse during resize
+
+---
+
 ## [0.1.17-alpha] - 2026-03-11
 **Branch**: `fence/issue-1634` | **PR**: #1661
 

@@ -454,7 +454,7 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="Name" Width="*" Binding="{Binding DisplayName}" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Name" Width="*" MinWidth="150" Binding="{Binding DisplayName}" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="Type" Width="100" Binding="{Binding BaseItemType}" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="Value" Width="60" Binding="{Binding BaseValue}" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="Sell" Width="60" Binding="{Binding SellPrice}" IsReadOnly="True"/>
@@ -543,7 +543,7 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="Name" Width="*" Binding="{Binding DisplayName}"/>
+                                <DataGridTextColumn Header="Name" Width="*" MinWidth="150" Binding="{Binding DisplayName}"/>
                                 <DataGridTextColumn Header="Type" Width="100" Binding="{Binding BaseItemType}"/>
                                 <DataGridTextColumn Header="Value" Width="60" Binding="{Binding BaseValue}"/>
                                 <DataGridTextColumn Header="ResRef" Width="120" Binding="{Binding ResRef}"/>
