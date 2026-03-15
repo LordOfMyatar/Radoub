@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.19-alpha] - 2026-03-15
+**Branch**: `fence/issue-1694` | **PR**: #TBD
+
+### Sprint: Core Bug Fixes
+
+- [ ] #1568 - PaletteCacheService tests fail (LoadCache_NoCache, GetCacheInfo_NoCache)
+- [ ] #1536 - No dirty flag or save prompt when closing with unsaved changes
+
+---
+
 ## [0.1.18-alpha] - 2026-03-15
 **Branch**: `fence/issue-1693` | **PR**: #1696
 
