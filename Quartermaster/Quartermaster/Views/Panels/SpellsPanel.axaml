@@ -315,7 +315,7 @@
                                                Text="—"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                IsVisible="{Binding IsSpontaneousCaster}"
                                                ToolTip.Tip="Spontaneous casters don't memorize spells"/>
 
@@ -366,7 +366,7 @@
                            x:Name="NoSpellsText"
                            Text="No spells match the current filter"
                            FontStyle="Italic"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            IsVisible="False"
                            Margin="15,15"
                            AutomationProperties.AutomationId="NoSpellsText"/>
@@ -375,7 +375,7 @@
                            x:Name="LoadingText"
                            Text="Loading spells..."
                            FontStyle="Italic"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            IsVisible="False"
                            Margin="15,15"/>
             </Grid>

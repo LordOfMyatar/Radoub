@@ -121,7 +121,7 @@
                 <TextBlock x:Name="NoSelectionText"
                            Text="Select an item to view details"
                            FontStyle="Italic"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            VerticalAlignment="Center"
                            HorizontalAlignment="Center"
                            IsVisible="True"

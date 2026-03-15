@@ -160,7 +160,7 @@
                 <TextBlock Text="QuickBar slots are only available for player characters (BIC files)."
                            FontSize="{DynamicResource FontSizeSmall}"
                            FontStyle="Italic"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            HorizontalAlignment="Center"
                            Margin="0,5,0,0"/>
             </StackPanel>

@@ -19,7 +19,7 @@
                        HorizontalAlignment="Center"/>
             <TextBlock Text="This section is not yet implemented."
                        FontSize="{DynamicResource FontSizeSmall}"
-                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                        HorizontalAlignment="Center"/>
         </StackPanel>
     </Border>

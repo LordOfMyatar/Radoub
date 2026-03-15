@@ -424,7 +424,7 @@ public partial class SkillsPanel : BasePanelControl
             Text = "(Estimate - excludes race/feat bonuses)",
             FontSize = smallSize,
             FontStyle = Avalonia.Media.FontStyle.Italic,
-            Foreground = this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush ?? BrushManager.GetDisabledBrush(this),
+            Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush ?? BrushManager.GetDisabledBrush(this),
             Margin = new Avalonia.Thickness(0, 4, 0, 0)
         };
         _skillPointsTablePanel.Children.Add(noteRow);

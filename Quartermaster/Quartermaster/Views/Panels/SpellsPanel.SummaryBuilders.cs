@@ -731,7 +731,7 @@ public partial class SpellsPanel
             {
                 Text = "No metamagic feats",
                 FontStyle = Avalonia.Media.FontStyle.Italic,
-                Foreground = this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush
+                Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush
                              ?? Brushes.Gray,
                 FontSize = this.FindResource("FontSizeNormal") as double? ?? 14
             };
