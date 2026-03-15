@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.46-alpha] - 2026-03-14
-**Branch**: `radoub/issue-1685` | **PR**: #TBD
+**Branch**: `radoub/issue-1685` | **PR**: #1686
 
 ### Sprint: HAK Resource Browsing (#1685, #1133, #1582)
 

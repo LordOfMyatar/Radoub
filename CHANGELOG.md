@@ -25,7 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.87] - 2026-03-14
-**Branch**: `radoub/issue-1685` | **PR**: #TBD
+**Branch**: `radoub/issue-1685` | **PR**: #1686
 
 ### Sprint: HAK Resource Browsing (#1685)
 
