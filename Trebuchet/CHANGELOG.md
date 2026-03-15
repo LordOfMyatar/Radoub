@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.23.0-alpha] - 2026-03-14
-**Branch**: `trebuchet/issue-1678` | **PR**: #TBD
+**Branch**: `trebuchet/issue-1678` | **PR**: #1688
 
 ### Sprint: Area Scanning Infrastructure (#1678)
 
