@@ -15,8 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Core Bug Fixes
 
-- [ ] #1568 - PaletteCacheService tests fail (LoadCache_NoCache, GetCacheInfo_NoCache)
-- [ ] #1536 - No dirty flag or save prompt when closing with unsaved changes
+- [x] #1568 - PaletteCacheService tests fail (LoadCache_NoCache, GetCacheInfo_NoCache) — verified fixed by prior refactoring (all 7 tests pass)
+- [x] #1536 - No dirty flag or save prompt when closing with unsaved changes — added TextChanged/CheckChanged/SelectionChanged tracking for all store property fields with IsLoading guard during population
 
 ---
 

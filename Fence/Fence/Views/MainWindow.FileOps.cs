@@ -380,6 +380,7 @@ public partial class MainWindow
 
     private void ClearStoreProperties()
     {
+        _documentState.IsLoading = true;
         StoreNameBox.Text = "";
         StoreTagBox.Text = "";
         StoreResRefBox.Text = "";
@@ -399,6 +400,7 @@ public partial class MainWindow
         {
             item.IsSelected = false;
         }
+        _documentState.IsLoading = false;
     }
 
     private void OnExitClick(object? sender, RoutedEventArgs e)
