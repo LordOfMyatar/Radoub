@@ -377,6 +377,7 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
         try
         {
             _hakEntries.Clear();
+            var sw = System.Diagnostics.Stopwatch.StartNew();
 
             var hakPaths = new List<string>();
 
@@ -407,7 +408,7 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
             }
 
             ShowLoading($"Scanning {hakPaths.Count} HAK files...");
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"CreatureBrowserPanel: Scanning {hakPaths.Count} HAK files");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"[TIMING] CreatureBrowserPanel: Starting HAK scan of {hakPaths.Count} files");
 
             for (int i = 0; i < hakPaths.Count; i++)
             {
@@ -421,7 +422,8 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
             _hakEntries = _hakEntries.OrderBy(s => s.Name).ToList();
             _hakCreaturesLoaded = true;
 
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"CreatureBrowserPanel: Loaded {_hakEntries.Count} creatures from HAK files");
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"[TIMING] CreatureBrowserPanel: HAK scan complete — {_hakEntries.Count} creatures from {hakPaths.Count} HAKs in {sw.ElapsedMilliseconds}ms (metadata-only)");
         }
         catch (Exception ex)
         {
@@ -530,6 +532,7 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
         try
         {
             _bifEntries.Clear();
+            var sw = System.Diagnostics.Stopwatch.StartNew();
             ShowLoading("Scanning base game creatures...");
 
             await Task.Run(() =>
@@ -551,7 +554,7 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
                 }
 
                 UnifiedLogger.LogApplication(LogLevel.INFO,
-                    $"CreatureBrowserPanel: Found {_bifEntries.Count} creatures in base game BIF files");
+                    $"[TIMING] CreatureBrowserPanel: BIF scan — {_bifEntries.Count} creatures in {sw.ElapsedMilliseconds}ms (KEY cache lookup)");
             });
 
             _bifEntries = _bifEntries.OrderBy(e => e.Name).ToList();

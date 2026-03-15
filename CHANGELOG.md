@@ -29,8 +29,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: HAK Resource Browsing (#1685)
 
-- #1133 — CreatureBrowserWindow should scan HAK files and BIF resources
-- #1582 — Profile HAK scanning performance (QM slowdown vs Fence)
+- CreatureBrowserPanel: BIF creature scanning via GameDataService.ListResources (#1133)
+- CreatureBrowserPanel: "Base Game" checkbox for toggling BIF creature visibility (#1133)
+- CreatureBrowserPanel: `[TIMING]` log markers for HAK and BIF scan performance (#1582)
+- HakPaletteScannerService: `[TIMING]` log markers for per-HAK and aggregate scan timing (#1582)
+- Performance profile document: metadata-only vs full-read scanning comparison (#1582)
 
 ---
 

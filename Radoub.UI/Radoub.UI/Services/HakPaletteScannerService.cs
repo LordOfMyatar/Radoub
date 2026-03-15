@@ -36,6 +36,7 @@ public class HakPaletteScannerService
 
         return await Task.Run(() =>
         {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
             ErfFile hak;
             try
             {
@@ -47,6 +48,7 @@ public class HakPaletteScannerService
                     $"Failed to read HAK '{Path.GetFileName(hakPath)}': {ex.Message}");
                 return items;
             }
+            var readMs = sw.ElapsedMilliseconds;
 
             var utiEntries = hak.GetResourcesByType(ResourceTypes.Uti).ToList();
             if (utiEntries.Count == 0)
@@ -94,7 +96,7 @@ public class HakPaletteScannerService
             }
 
             UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"Scanned HAK '{Path.GetFileName(hakPath)}': {items.Count} items from {utiEntries.Count} UTI resources");
+                $"[TIMING] HakPaletteScanner: '{Path.GetFileName(hakPath)}' — {items.Count}/{utiEntries.Count} items, ERF read {readMs}ms, total {sw.ElapsedMilliseconds}ms (full read + GFF parse)");
 
             return items;
         }, token);
@@ -111,6 +113,7 @@ public class HakPaletteScannerService
         CancellationToken token)
     {
         var result = new HakScanResult();
+        var sw = System.Diagnostics.Stopwatch.StartNew();
 
         var hakPaths = ResolveModuleHakPaths(moduleDirectory, hakSearchPaths);
         if (hakPaths.Count == 0)
@@ -154,7 +157,7 @@ public class HakPaletteScannerService
         }
 
         UnifiedLogger.LogApplication(LogLevel.INFO,
-            $"HAK scan complete: {result.HaksScanned} scanned, {result.HaksSkipped} cached, {result.TotalItemsScanned} items");
+            $"[TIMING] HakPaletteScanner: Total — {result.HaksScanned} scanned, {result.HaksSkipped} cached, {result.TotalItemsScanned} items in {sw.ElapsedMilliseconds}ms");
 
         return result;
     }

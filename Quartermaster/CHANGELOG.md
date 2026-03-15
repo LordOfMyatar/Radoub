@@ -17,6 +17,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: HAK Resource Browsing (#1685, #1133, #1582)
 
+- CreatureBrowser: "Base Game" checkbox shows UTC creatures from BIF archives (#1133)
+- CreatureBrowser: BIF creatures shown as read-only with `[BIF]` type indicator (#1133)
+- CreatureBrowser: GameDataService integration for BIF resource listing (#1133)
+- Performance: `[TIMING]` instrumentation for HAK and BIF scanning (#1582)
+
 - BIF-first model loading prevents CEP HAK overrides from breaking creature rendering
 - Error handling in UpdateMeshBuffers prevents OpenGL crashes from malformed models
 - Fix "(Dynamic) (Dynamic)" duplicate prefix in appearance dropdown
