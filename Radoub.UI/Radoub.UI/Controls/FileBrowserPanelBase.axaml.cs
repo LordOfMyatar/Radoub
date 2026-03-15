@@ -431,5 +431,30 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
         ApplyFilter();
     }
 
+    /// <summary>
+    /// Merge additional entries into the master list (with name-based dedup).
+    /// Call after lazy-loading entries (e.g., on checkbox toggle) so they
+    /// become visible to ApplyFilter/ApplyCustomFilters.
+    /// </summary>
+    protected void MergeAdditionalEntries(IEnumerable<FileBrowserEntry> entries)
+    {
+        MergeEntries(_allEntries, entries);
+    }
+
+    /// <summary>
+    /// Merge source entries into target list, skipping entries whose Name
+    /// already exists (case-insensitive). Extracted for testability.
+    /// </summary>
+    internal static void MergeEntries(List<FileBrowserEntry> target, IEnumerable<FileBrowserEntry> source)
+    {
+        foreach (var entry in source)
+        {
+            if (!target.Any(e => e.Name.Equals(entry.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                target.Add(entry);
+            }
+        }
+    }
+
     #endregion
 }

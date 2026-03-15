@@ -320,6 +320,65 @@ public class GameDataServiceTests : IDisposable
         Assert.All(results, r => Assert.Equal(GameResourceSource.Override, r.Source));
     }
 
+    [Fact]
+    public void ListResources_SourceMapping_OverrideIsCorrect()
+    {
+        File.WriteAllBytes(Path.Combine(_overrideDir, "creature.utc"), new byte[] { 0x01 });
+
+        var config = new GameResourceConfig { OverridePath = _overrideDir };
+        using var service = new GameDataService(config);
+
+        var results = service.ListResources(ResourceTypes.Utc).ToList();
+
+        Assert.Single(results);
+        Assert.Equal(GameResourceSource.Override, results[0].Source);
+    }
+
+    [Fact]
+    public void ListResources_CanFilterBySource()
+    {
+        // Put files in override — verify we can filter by source
+        File.WriteAllBytes(Path.Combine(_overrideDir, "a.utc"), new byte[] { 0x01 });
+        File.WriteAllBytes(Path.Combine(_overrideDir, "b.utc"), new byte[] { 0x02 });
+
+        var config = new GameResourceConfig { OverridePath = _overrideDir };
+        using var service = new GameDataService(config);
+
+        var allResults = service.ListResources(ResourceTypes.Utc).ToList();
+        var bifOnly = allResults.Where(r => r.Source == GameResourceSource.Bif).ToList();
+        var overrideOnly = allResults.Where(r => r.Source == GameResourceSource.Override).ToList();
+
+        Assert.Equal(2, overrideOnly.Count);
+        Assert.Empty(bifOnly); // No BIF files in test config
+    }
+
+    [Fact]
+    public void FindResource_OverrideFile_ReturnsCorrectBytes()
+    {
+        // Simulate what LoadBifCreature does: FindResource returns extractable data
+        var testData = new byte[] { 0xAA, 0xBB, 0xCC, 0xDD };
+        File.WriteAllBytes(Path.Combine(_overrideDir, "nw_test.utc"), testData);
+
+        var config = new GameResourceConfig { OverridePath = _overrideDir };
+        using var service = new GameDataService(config);
+
+        var data = service.FindResource("nw_test", ResourceTypes.Utc);
+
+        Assert.NotNull(data);
+        Assert.Equal(testData, data);
+    }
+
+    [Fact]
+    public void FindResource_MissingResource_ReturnsNull()
+    {
+        var config = new GameResourceConfig { OverridePath = _overrideDir };
+        using var service = new GameDataService(config);
+
+        var data = service.FindResource("nonexistent_creature", ResourceTypes.Utc);
+
+        Assert.Null(data);
+    }
+
     #endregion
 
     #region Disposal Tests

@@ -221,6 +221,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         InventoryPanelContent.UnequipToBackpackRequested += (s, slot) => UnequipToBackpack(slot);
         InventoryPanelContent.EquipFromBackpackRequested += OnEquipFromBackpackRequested;
         InventoryPanelContent.DeleteFromBackpackRequested += OnDeleteFromBackpackRequested;
+
+        // Provide GameDataService to creature browser for BIF scanning (#1133)
+        var creatureBrowserPanel = this.FindControl<CreatureBrowserPanel>("CreatureBrowserPanel");
+        if (creatureBrowserPanel != null)
+        {
+            creatureBrowserPanel.GameDataService = _gameDataService;
+        }
     }
 
     #region Navigation
