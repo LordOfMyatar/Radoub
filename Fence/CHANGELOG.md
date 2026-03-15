@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.19-alpha] - 2026-03-15
-**Branch**: `fence/issue-1694` | **PR**: #TBD
+**Branch**: `fence/issue-1694` | **PR**: #1698
 
 ### Sprint: Core Bug Fixes
 
