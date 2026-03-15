@@ -148,13 +148,21 @@ public partial class FactionEditorViewModel : ObservableObject
     private bool _isLoading;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanSave))]
+    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private bool _isModuleLoaded;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanSave))]
+    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private bool _hasUnsavedChanges;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanSave))]
+    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
     private bool _isModuleReadOnly;
+
+    public bool CanSave => IsModuleLoaded && !IsModuleReadOnly && HasUnsavedChanges;
 
     // Matrix data: [row][col] = cell
     private MatrixCellViewModel[,]? _matrix;
@@ -344,25 +352,26 @@ public partial class FactionEditorViewModel : ObservableObject
             });
         }
 
-        MarkDirty();
+        AutoSave();
     }
 
     internal void MarkDirty()
     {
-        HasUnsavedChanges = true;
+        AutoSave();
     }
 
-    [RelayCommand]
-    private void Save()
+    /// <summary>
+    /// Auto-saves the faction file after any change. Syncs ViewModels to FacFile and writes to disk.
+    /// Pass a custom status message to prevent auto-save from overwriting contextual status (e.g., reindex results).
+    /// </summary>
+    private void AutoSave(string? statusOverride = null)
     {
         if (_facFile == null || _isReadOnly) return;
 
         try
         {
-            // Sync ViewModel changes back to FacFile
             SyncViewModelsToFacFile();
 
-            // Determine save path
             var savePath = _facFilePath;
             if (savePath == null && _workingDirectoryPath != null)
             {
@@ -378,15 +387,24 @@ public partial class FactionEditorViewModel : ObservableObject
             FacWriter.Write(_facFile, savePath);
             _facFilePath = savePath;
             HasUnsavedChanges = false;
-            StatusText = $"Saved: {Path.GetFileName(savePath)}";
-            UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"Saved faction file: {UnifiedLogger.SanitizePath(savePath)}");
+
+            if (statusOverride != null)
+                StatusText = statusOverride;
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"Auto-saved faction file: {UnifiedLogger.SanitizePath(savePath)}");
         }
         catch (Exception ex)
         {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to save factions: {ex.Message}");
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to auto-save factions: {ex.Message}");
             StatusText = $"Save failed: {ex.Message}";
         }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanSave))]
+    private void Save()
+    {
+        AutoSave($"Saved: {Path.GetFileName(_facFilePath ?? "repute.fac")}");
     }
 
     [RelayCommand]
@@ -437,9 +455,8 @@ public partial class FactionEditorViewModel : ObservableObject
 
         BuildViewModels();
         BuildMatrix();
-        MarkDirty();
         SelectedFaction = Factions.LastOrDefault();
-        StatusText = $"Added faction: {name}";
+        AutoSave($"Added faction: {name}");
     }
 
     public bool CanRemoveFaction(FactionViewModel? faction)
@@ -452,6 +469,7 @@ public partial class FactionEditorViewModel : ObservableObject
         if (_facFile == null || faction.IsDefault) return;
 
         int removeIndex = faction.Index;
+        uint parentFactionId = faction.ParentFactionId;
 
         // Remove the faction
         _facFile.FactionList.RemoveAt(removeIndex);
@@ -476,10 +494,61 @@ public partial class FactionEditorViewModel : ObservableObject
                 f.FactionParentID--;
         }
 
+        // Reindex creature/encounter FactionIDs in area .git files (#1317)
+        var reindexResult = ReindexAreaFactions((uint)removeIndex, parentFactionId);
+
         BuildViewModels();
         BuildMatrix();
-        MarkDirty();
-        StatusText = $"Removed faction: {faction.Name}";
+
+        string status;
+        if (reindexResult.TotalReindexed > 0)
+        {
+            var parts = new List<string>();
+            if (reindexResult.CreaturesReindexed > 0)
+                parts.Add($"{reindexResult.CreaturesReindexed} creature(s)");
+            if (reindexResult.EncountersReindexed > 0)
+                parts.Add($"{reindexResult.EncountersReindexed} encounter(s)");
+            if (reindexResult.BlueprintsReindexed > 0)
+                parts.Add($"{reindexResult.BlueprintsReindexed} blueprint(s)");
+
+            status = $"Removed faction: {faction.Name} — reindexed {string.Join(", ", parts)} " +
+                     $"across {reindexResult.FilesModified} file(s)";
+        }
+        else
+        {
+            status = $"Removed faction: {faction.Name}";
+        }
+
+        AutoSave(status);
+    }
+
+    /// <summary>
+    /// Reindexes creature/encounter FactionIDs in area .git files after a faction is deleted.
+    /// </summary>
+    private Services.ReindexResult ReindexAreaFactions(uint deletedIndex, uint parentFactionId)
+    {
+        if (_workingDirectoryPath == null)
+            return new Services.ReindexResult();
+
+        try
+        {
+            var result = Services.AreaScanService.ReindexFactions(
+                _workingDirectoryPath, deletedIndex, parentFactionId);
+
+            if (result.HasErrors)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"Area reindex completed with {result.Errors.Count} error(s)");
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"Failed to reindex area factions: {ex.Message}");
+            return new Services.ReindexResult();
+        }
     }
 
     private void SyncViewModelsToFacFile()
