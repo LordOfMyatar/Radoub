@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.18-alpha] - 2026-03-15
+**Branch**: `fence/issue-1693` | **PR**: #TBD
+
+### Sprint: Store Inventory UX
+
+- [ ] #1662 - Store inventory grid column resizing difficult, Name column easily hidden
+
+---
+
 ## [0.1.17-alpha] - 2026-03-11
 **Branch**: `fence/issue-1634` | **PR**: #1661
 
