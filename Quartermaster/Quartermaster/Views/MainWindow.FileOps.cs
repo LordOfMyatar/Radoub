@@ -198,33 +198,29 @@ public partial class MainWindow
 
         UnifiedLogger.LogCreature(LogLevel.INFO, "Created new creature blueprint");
 
-        // Multi-level creation: loop LUW for levels 2+ (#1431)
+        // Multi-level creation: consolidated LUW instead of loop (#1645, replaces #1431)
         if (wizard.StartingLevel > 1)
         {
             int targetLevel = wizard.StartingLevel;
-            int currentLevel = 1;
+            int levelsToAdd = targetLevel - 1;
+            int classId = _currentCreature.ClassList.FirstOrDefault()?.Class ?? -1;
 
             UpdateStatus($"Multi-level creation: leveling to {targetLevel}...");
 
-            for (int level = 2; level <= targetLevel; level++)
+            var luw = new LevelUpWizardWindow(DisplayService, _currentCreature, _isBicFile,
+                presetClassId: classId, presetLevels: levelsToAdd);
+            await luw.ShowDialog(this);
+
+            if (luw.Confirmed)
             {
-                var luw = new LevelUpWizardWindow(DisplayService, _currentCreature);
-                await luw.ShowDialog(this);
-
-                if (!luw.Confirmed)
-                {
-                    // User cancelled mid-loop — keep progress so far
-                    UpdateStatus($"Multi-level creation stopped at level {level - 1} of {targetLevel}");
-                    break;
-                }
-
-                currentLevel = level;
                 LoadAllPanels(_currentCreature);
                 UpdateCharacterHeader();
-            }
-
-            if (currentLevel == targetLevel)
                 UpdateStatus($"Character created at level {targetLevel}");
+            }
+            else
+            {
+                UpdateStatus("Multi-level creation cancelled");
+            }
 
             MarkDirty();
         }

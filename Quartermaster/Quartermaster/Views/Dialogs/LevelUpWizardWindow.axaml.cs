@@ -578,26 +578,36 @@ public partial class LevelUpWizardWindow : Window
     /// </summary>
     private void UpdateSidebarSummaries()
     {
-        // Step 1: Class
+        // Step 1: Class (#1645 consolidated)
         if (_selectedClassId >= 0)
         {
             var className = _displayService.GetClassName(_selectedClassId);
-            _step1Summary.Text = _isNewClass
-                ? $"{className} (new)"
-                : $"{className} Lvl {_newClassLevel}";
+            if (_levelsToAdd > 1)
+                _step1Summary.Text = $"{className} Lvl {_fromClassLevel}-{_newClassLevel}";
+            else if (_isNewClass)
+                _step1Summary.Text = $"{className} (new)";
+            else
+                _step1Summary.Text = $"{className} Lvl {_newClassLevel}";
         }
         else
         {
             _step1Summary.Text = "";
         }
 
-        // Step 2: Ability Score
+        // Step 2: Ability Score (#1645 consolidated)
         if (_needsAbilityIncrease && (_selectedAbilityIncrease >= 0 || _ceAbilityIncreases.Count > 0))
         {
-            var abilityNames = (_ceAbilityIncreases.Count > 0 ? _ceAbilityIncreases : new HashSet<int> { _selectedAbilityIncrease })
-                .Where(i => i >= 0)
-                .Select(i => $"{AbilityNames[i]} +1");
-            _step2Summary.Text = string.Join(", ", abilityNames);
+            if (_abilityIncreaseLevels.Count > 1 && _selectedAbilityIncrease >= 0)
+            {
+                _step2Summary.Text = $"{AbilityNames[_selectedAbilityIncrease]} +{_abilityIncreaseLevels.Count}";
+            }
+            else
+            {
+                var abilityNames = (_ceAbilityIncreases.Count > 0 ? _ceAbilityIncreases : new HashSet<int> { _selectedAbilityIncrease })
+                    .Where(i => i >= 0)
+                    .Select(i => $"{AbilityNames[i]} +1");
+                _step2Summary.Text = string.Join(", ", abilityNames);
+            }
         }
         else
         {
