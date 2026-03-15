@@ -89,6 +89,8 @@
                 <MenuItem Header="_Delete" Click="OnDeleteClick" InputGesture="Delete" IsEnabled="{Binding HasSelection, ElementName=MainWindowInstance}"/>
             </MenuItem>
             <MenuItem Header="_Character">
+                <MenuItem Header="_New Character..." Click="OnNewClick" InputGesture="Ctrl+N"/>
+                <Separator/>
                 <MenuItem Header="_Level Up..." Click="OnLevelUpClick" InputGesture="Ctrl+L" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
                 <MenuItem Header="_View Level History..." Click="OnViewLevelHistoryClick" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}" ToolTip.Tip="View recorded level-up decisions"/>
                 <Separator/>
