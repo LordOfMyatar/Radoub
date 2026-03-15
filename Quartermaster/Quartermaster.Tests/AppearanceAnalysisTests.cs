@@ -623,6 +623,71 @@ public class AppearanceAnalysisTests
     }
 
     /// <summary>
+    /// Dump every appearance entry: row, label, display name, RACE, MODELTYPE.
+    /// Used to identify filtering candidates (invis, placeholders, CEP noise, etc.)
+    /// </summary>
+    [Fact]
+    public void DumpAllAppearanceLabels()
+    {
+        if (!RadoubSettings.Instance.HasGamePaths)
+        {
+            _output.WriteLine("SKIP: No game paths configured");
+            return;
+        }
+
+        using var gameData = new GameDataService();
+        if (!gameData.IsConfigured)
+        {
+            _output.WriteLine("SKIP: GameDataService not configured");
+            return;
+        }
+
+        var twoDA = gameData.Get2DA("appearance");
+        if (twoDA == null)
+        {
+            _output.WriteLine("SKIP: Could not load appearance.2da");
+            return;
+        }
+
+        var service = new Services.AppearanceService(gameData);
+
+        _output.WriteLine($"=== ALL APPEARANCE ENTRIES ({twoDA.RowCount} rows) ===");
+        _output.WriteLine("Row | Label | DisplayName | RACE | MODELTYPE");
+        _output.WriteLine("--- | ----- | ----------- | ---- | ---------");
+
+        int validCount = 0;
+        var labelPatterns = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+        for (int i = 0; i < twoDA.RowCount; i++)
+        {
+            var label = twoDA.GetValue(i, "LABEL");
+            if (string.IsNullOrEmpty(label) || label == "****")
+                continue;
+
+            validCount++;
+            var race = twoDA.GetValue(i, "RACE") ?? "";
+            var modelType = twoDA.GetValue(i, "MODELTYPE") ?? "";
+            var displayName = service.GetAppearanceName((ushort)i);
+
+            _output.WriteLine($"{i} | {label} | {displayName} | {race} | {modelType}");
+
+            // Track label prefixes for pattern analysis
+            var prefix = label.Contains('_') ? label.Split('_')[0] + "_" : label;
+            if (!labelPatterns.ContainsKey(prefix))
+                labelPatterns[prefix] = 0;
+            labelPatterns[prefix]++;
+        }
+
+        _output.WriteLine("");
+        _output.WriteLine($"=== LABEL PREFIX FREQUENCY ===");
+        _output.WriteLine($"Total valid entries: {validCount}");
+        foreach (var kvp in labelPatterns.OrderByDescending(x => x.Value))
+        {
+            _output.WriteLine($"  '{kvp.Key}': {kvp.Value}");
+        }
+    }
+
+    /// <summary>
     /// Test loading a few specific models to see what fails.
     /// </summary>
     [Fact]
