@@ -1,10 +1,12 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Radoub.Formats.Common;
+using Radoub.Formats.Erf;
 using Radoub.Formats.Ifo;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
@@ -332,12 +334,6 @@ public partial class MainWindow
     /// </summary>
     private Task LoadArchiveCreature(CreatureBrowserEntry entry)
     {
-        if (_gameDataService == null || !_gameDataService.IsConfigured)
-        {
-            UpdateStatus("Game data not configured — cannot load archive creatures");
-            return Task.CompletedTask;
-        }
-
         var sourceLabel = entry.IsFromBif ? "base game" : "HAK";
 
         try
@@ -346,7 +342,24 @@ public partial class MainWindow
             ShowProgress(true);
             UpdateStatus($"Loading {sourceLabel} creature: {entry.Name}...");
 
-            var data = _gameDataService.FindResource(entry.Name, ResourceTypes.Utc);
+            byte[]? data = null;
+
+            // BIF creatures: use GameDataService (searches Override → HAK → BIF)
+            if (entry.IsFromBif)
+            {
+                if (_gameDataService == null || !_gameDataService.IsConfigured)
+                {
+                    UpdateStatus("Game data not configured — cannot load base game creatures");
+                    return Task.CompletedTask;
+                }
+                data = _gameDataService.FindResource(entry.Name, ResourceTypes.Utc);
+            }
+            // HAK creatures: extract directly from HAK file (may not be in module HAKs)
+            else if (entry.IsFromHak && !string.IsNullOrEmpty(entry.HakPath))
+            {
+                data = ExtractFromHak(entry.HakPath, entry.Name, ResourceTypes.Utc);
+            }
+
             if (data == null)
             {
                 UpdateStatus($"Could not extract {entry.Name} from {sourceLabel} archives");
@@ -377,6 +390,31 @@ public partial class MainWindow
             UpdateStatus($"Error loading {sourceLabel} creature: {ex.Message}");
         }
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Extract a single resource from a HAK file by resref and type.
+    /// Uses metadata-only read + targeted extraction to avoid loading entire HAK.
+    /// </summary>
+    private static byte[]? ExtractFromHak(string hakPath, string resRef, ushort resourceType)
+    {
+        try
+        {
+            var erf = ErfReader.ReadMetadataOnly(hakPath);
+            var resourceEntry = erf.Resources
+                .FirstOrDefault(r => r.ResRef.Equals(resRef, StringComparison.OrdinalIgnoreCase)
+                                  && r.ResourceType == resourceType);
+
+            if (resourceEntry == null)
+                return null;
+
+            return ErfReader.ExtractResource(hakPath, resourceEntry);
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogCreature(LogLevel.WARN, $"Failed to extract {resRef} from {Path.GetFileName(hakPath)}: {ex.Message}");
+            return null;
+        }
     }
 
     /// <summary>
