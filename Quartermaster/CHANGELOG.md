@@ -12,6 +12,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.48-alpha] - 2026-03-15
+**Branch**: `quartermaster/issue-1650` | **PR**: #TBD
+
+### Sprint: LUW Bug Fixes & Enhancements (#1650)
+
+- LUW spell selection — cantrips shown incorrectly on level 2→3 (#1647)
+- Consolidated single-class multi-level wizard (#1645)
+- Multiclass prereq tooltips in LUW (#1644)
+- LUW Validation Settings: Manual Verification & Edge Cases (#1640)
+
+---
+
 ## [0.2.47-alpha] - 2026-03-15
 **Branch**: `quartermaster/issue-1630` | **PR**: #1732
 
