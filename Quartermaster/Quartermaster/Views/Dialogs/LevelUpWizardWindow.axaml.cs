@@ -48,6 +48,14 @@ public partial class LevelUpWizardWindow : Window
     private int _conRetroactiveHp; // Retroactive HP from CON modifier change
     private byte _resolvedPackageId = 255;
 
+    // Consolidated level-up (#1645)
+    private int _levelsToAdd = 1;
+    private int _fromClassLevel; // First new class level in range
+    private readonly int _presetClassId;
+    private readonly int _presetLevels;
+    private List<int> _abilityIncreaseLevels = new(); // Character levels with +1 ability
+    private Dictionary<int, int> _abilityIncreasesByLevel = new(); // charLevel -> abilityIndex
+
     // Spell selection state
     private bool _isDivineCaster;
     private bool _isSpontaneousCaster;
@@ -93,6 +101,7 @@ public partial class LevelUpWizardWindow : Window
     private static readonly string[] AbilityNames = { "Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma" };
 
     // Step 1 controls
+    private readonly NumericUpDown _levelsToAddSpinner;
     private readonly TextBox _classSearchBox;
     private readonly CheckBox _showUnqualifiedPrestigeCheckBox;
     private readonly ListBox _classListBox;
@@ -161,7 +170,8 @@ public partial class LevelUpWizardWindow : Window
 
     private readonly bool _isBicFile;
 
-    public LevelUpWizardWindow(CreatureDisplayService displayService, UtcFile creature, bool isBicFile = false)
+    public LevelUpWizardWindow(CreatureDisplayService displayService, UtcFile creature,
+        bool isBicFile = false, int presetClassId = -1, int presetLevels = 1)
     {
         InitializeComponent();
 
@@ -246,6 +256,7 @@ public partial class LevelUpWizardWindow : Window
         _statusLabel = this.FindControl<TextBlock>("StatusLabel")!;
 
         // Step 1
+        _levelsToAddSpinner = this.FindControl<NumericUpDown>("LevelsToAddSpinner")!;
         _classSearchBox = this.FindControl<TextBox>("ClassSearchBox")!;
         _showUnqualifiedPrestigeCheckBox = this.FindControl<CheckBox>("ShowUnqualifiedPrestigeCheckBox")!;
         _classListBox = this.FindControl<ListBox>("ClassListBox")!;
@@ -305,12 +316,36 @@ public partial class LevelUpWizardWindow : Window
         _validationLevelComboBox.SelectedIndex = (int)SettingsService.Instance.ValidationLevel;
         _validationLevelComboBox.SelectionChanged += OnValidationLevelChanged;
 
+        // Consolidated level-up presets (#1645)
+        _presetClassId = presetClassId;
+        _presetLevels = Math.Max(1, presetLevels);
+        _levelsToAddSpinner.Value = _presetLevels;
+        _levelsToAddSpinner.ValueChanged += OnLevelsToAddChanged;
+
         InitializeWizard();
     }
 
     private void InitializeComponent()
     {
         AvaloniaXamlLoader.Load(this);
+    }
+
+    private void OnLevelsToAddChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        _levelsToAdd = (int)(e.NewValue ?? 1);
+        if (_selectedClassId >= 0)
+        {
+            var existingClass = _creature.ClassList.FirstOrDefault(c => c.Class == _selectedClassId);
+            int currentClassLevel = existingClass?.ClassLevel ?? 0;
+            _newClassLevel = currentClassLevel + _levelsToAdd;
+            _fromClassLevel = currentClassLevel + 1;
+        }
+        UpdateSidebarSummaries();
+
+        int currentLevel = _creature.ClassList.Sum(c => c.ClassLevel);
+        _characterLevelLabel.Text = _levelsToAdd > 1
+            ? $"Level {currentLevel} -> {currentLevel + _levelsToAdd}"
+            : $"Level {currentLevel} -> {currentLevel + 1}";
     }
 
     private void InitializeWizard()
@@ -323,10 +358,25 @@ public partial class LevelUpWizardWindow : Window
         _characterNameLabel.Text = fullName;
 
         int currentLevel = _creature.ClassList.Sum(c => c.ClassLevel);
-        _characterLevelLabel.Text = $"Level {currentLevel} -> {currentLevel + 1}";
+        _levelsToAdd = _presetLevels;
+        _characterLevelLabel.Text = _levelsToAdd > 1
+            ? $"Level {currentLevel} -> {currentLevel + _levelsToAdd}"
+            : $"Level {currentLevel} -> {currentLevel + 1}";
 
         // Load classes for Step 1
         LoadClassList();
+
+        // Auto-select preset class if provided (#1645)
+        if (_presetClassId >= 0)
+        {
+            var presetItem = _filteredClasses.FirstOrDefault(c => c.ClassId == _presetClassId);
+            if (presetItem != null)
+            {
+                _classListBox.SelectedItem = presetItem;
+                if (_presetLevels > 1)
+                    _levelsToAddSpinner.IsEnabled = false;
+            }
+        }
 
         // Show Step 1
         UpdateStepDisplay();

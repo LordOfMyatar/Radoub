@@ -226,6 +226,14 @@
                                     <TextBlock Text="Skills:" FontWeight="SemiBold"/>
                                     <TextBlock x:Name="ClassSkillPointsLabel"/>
                                 </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                    <TextBlock Text="Levels:" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    <NumericUpDown x:Name="LevelsToAddSpinner"
+                                                   Value="1" Minimum="1" Maximum="39"
+                                                   Width="80" Height="28"
+                                                   FormatString="0"
+                                                   VerticalAlignment="Center"/>
+                                </StackPanel>
                             </StackPanel>
 
                             <!-- Prerequisites Panel -->
