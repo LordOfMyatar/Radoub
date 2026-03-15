@@ -20,21 +20,7 @@ public partial class AppearancePanel
 
         // Load appearances from 2DA
         _appearances = _displayService.GetAllAppearances();
-        if (_appearanceComboBox != null)
-        {
-            _appearanceComboBox.Items.Clear();
-            foreach (var app in _appearances)
-            {
-                var displayText = app.IsPartBased && !app.Name.Contains("(Dynamic)")
-                    ? $"(Dynamic) {app.Name}"
-                    : app.Name;
-                _appearanceComboBox.Items.Add(new ComboBoxItem
-                {
-                    Content = displayText,
-                    Tag = app.AppearanceId
-                });
-            }
-        }
+        RefreshFilteredAppearanceList();
 
         // Load genders (Male=0, Female=1)
         LoadGenderData();
@@ -55,6 +41,61 @@ public partial class AppearancePanel
         }
 
         _isLoading = false;
+    }
+
+    /// <summary>
+    /// Rebuilds the appearance ListBox based on current search text and source filters.
+    /// Preserves current selection if it's still in the filtered list.
+    /// </summary>
+    private void RefreshFilteredAppearanceList()
+    {
+        if (_appearanceListBox == null || _appearances == null) return;
+
+        var searchText = _appearanceSearchBox?.Text;
+        var showBif = _showBifCheckBox?.IsChecked ?? true;
+        var showHak = _showHakCheckBox?.IsChecked ?? true;
+        var showOverride = _showOverrideCheckBox?.IsChecked ?? true;
+
+        var filtered = AppearanceFilterHelper.Filter(_appearances, searchText, showBif, showHak, showOverride);
+
+        // Remember current selection
+        ushort? selectedId = null;
+        if (_appearanceListBox.SelectedItem is ListBoxItem selectedItem && selectedItem.Tag is ushort id)
+            selectedId = id;
+
+        _appearanceListBox.Items.Clear();
+        foreach (var app in filtered)
+        {
+            var displayText = app.IsPartBased && !app.Name.Contains("(Dynamic)")
+                ? $"(Dynamic) {app.Name}"
+                : app.Name;
+            _appearanceListBox.Items.Add(new ListBoxItem
+            {
+                Content = displayText,
+                Tag = app.AppearanceId
+            });
+        }
+
+        // Restore selection if still present
+        if (selectedId.HasValue)
+        {
+            for (int i = 0; i < _appearanceListBox.Items.Count; i++)
+            {
+                if (_appearanceListBox.Items[i] is ListBoxItem item && item.Tag is ushort itemId && itemId == selectedId.Value)
+                {
+                    _appearanceListBox.SelectedIndex = i;
+                    break;
+                }
+            }
+        }
+
+        // Update count text
+        if (_appearanceCountText != null)
+        {
+            _appearanceCountText.Text = filtered.Count == _appearances.Count
+                ? $"({filtered.Count})"
+                : $"({filtered.Count}/{_appearances.Count})";
+        }
     }
 
     private void LoadGenderData()
@@ -264,25 +305,41 @@ public partial class AppearancePanel
 
     private void SelectAppearance(ushort appearanceId)
     {
-        if (_appearanceComboBox == null || _appearances == null) return;
+        if (_appearanceListBox == null || _appearances == null) return;
 
-        for (int i = 0; i < _appearanceComboBox.Items.Count; i++)
+        for (int i = 0; i < _appearanceListBox.Items.Count; i++)
         {
-            if (_appearanceComboBox.Items[i] is ComboBoxItem item &&
+            if (_appearanceListBox.Items[i] is ListBoxItem item &&
                 item.Tag is ushort id && id == appearanceId)
             {
-                _appearanceComboBox.SelectedIndex = i;
+                _appearanceListBox.SelectedIndex = i;
                 return;
             }
         }
 
-        // If not found, add it
-        _appearanceComboBox.Items.Add(new ComboBoxItem
+        // If not found in filtered list, clear search and try again
+        if (_appearanceSearchBox != null && !string.IsNullOrEmpty(_appearanceSearchBox.Text))
+        {
+            _appearanceSearchBox.Text = "";
+            RefreshFilteredAppearanceList();
+            for (int i = 0; i < _appearanceListBox.Items.Count; i++)
+            {
+                if (_appearanceListBox.Items[i] is ListBoxItem item &&
+                    item.Tag is ushort id && id == appearanceId)
+                {
+                    _appearanceListBox.SelectedIndex = i;
+                    return;
+                }
+            }
+        }
+
+        // Still not found, add it
+        _appearanceListBox.Items.Add(new ListBoxItem
         {
             Content = $"Appearance {appearanceId}",
             Tag = appearanceId
         });
-        _appearanceComboBox.SelectedIndex = _appearanceComboBox.Items.Count - 1;
+        _appearanceListBox.SelectedIndex = _appearanceListBox.Items.Count - 1;
     }
 
     private void SelectGender(byte genderId)

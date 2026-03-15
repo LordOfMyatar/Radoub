@@ -16,8 +16,18 @@ public partial class AppearancePanel
 {
     private void WireEvents()
     {
-        if (_appearanceComboBox != null)
-            _appearanceComboBox.SelectionChanged += OnAppearanceSelectionChanged;
+        if (_appearanceListBox != null)
+            _appearanceListBox.SelectionChanged += OnAppearanceSelectionChanged;
+
+        if (_appearanceSearchBox != null)
+            _appearanceSearchBox.TextChanged += OnAppearanceSearchChanged;
+
+        if (_showBifCheckBox != null)
+            _showBifCheckBox.IsCheckedChanged += OnSourceFilterChanged;
+        if (_showHakCheckBox != null)
+            _showHakCheckBox.IsCheckedChanged += OnSourceFilterChanged;
+        if (_showOverrideCheckBox != null)
+            _showOverrideCheckBox.IsCheckedChanged += OnSourceFilterChanged;
 
         if (_genderComboBox != null)
             _genderComboBox.SelectionChanged += OnGenderSelectionChanged;
@@ -65,7 +75,7 @@ public partial class AppearancePanel
 
     private void OnAppearanceSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (_isLoading || _appearanceComboBox?.SelectedItem is not ComboBoxItem item) return;
+        if (_isLoading || _appearanceListBox?.SelectedItem is not ListBoxItem item) return;
 
         try
         {
@@ -90,6 +100,18 @@ public partial class AppearancePanel
             UnifiedLogger.LogApplication(LogLevel.ERROR,
                 $"AppearancePanel: Appearance change failed: {ex.GetType().Name}: {ex.Message}");
         }
+    }
+
+    private void OnAppearanceSearchChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (_isLoading) return;
+        RefreshFilteredAppearanceList();
+    }
+
+    private void OnSourceFilterChanged(object? sender, RoutedEventArgs e)
+    {
+        if (_isLoading) return;
+        RefreshFilteredAppearanceList();
     }
 
     private void OnGenderSelectionChanged(object? sender, SelectionChangedEventArgs e)

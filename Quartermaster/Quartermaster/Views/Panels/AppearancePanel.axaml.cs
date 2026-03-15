@@ -17,7 +17,12 @@ namespace Quartermaster.Views.Panels;
 public partial class AppearancePanel : UserControl
 {
     // Appearance section
-    private ComboBox? _appearanceComboBox;
+    private TextBox? _appearanceSearchBox;
+    private ListBox? _appearanceListBox;
+    private CheckBox? _showBifCheckBox;
+    private CheckBox? _showHakCheckBox;
+    private CheckBox? _showOverrideCheckBox;
+    private TextBlock? _appearanceCountText;
     private ComboBox? _genderComboBox;
     private ComboBox? _phenotypeComboBox;
 
@@ -92,7 +97,12 @@ public partial class AppearancePanel : UserControl
     private void FindControls()
     {
         // Appearance section
-        _appearanceComboBox = this.FindControl<ComboBox>("AppearanceComboBox");
+        _appearanceSearchBox = this.FindControl<TextBox>("AppearanceSearchBox");
+        _appearanceListBox = this.FindControl<ListBox>("AppearanceListBox");
+        _showBifCheckBox = this.FindControl<CheckBox>("ShowBifCheckBox");
+        _showHakCheckBox = this.FindControl<CheckBox>("ShowHakCheckBox");
+        _showOverrideCheckBox = this.FindControl<CheckBox>("ShowOverrideCheckBox");
+        _appearanceCountText = this.FindControl<TextBlock>("AppearanceCountText");
         _genderComboBox = this.FindControl<ComboBox>("GenderComboBox");
         _phenotypeComboBox = this.FindControl<ComboBox>("PhenotypeComboBox");
 
@@ -147,6 +157,25 @@ public partial class AppearancePanel : UserControl
         _displayService = displayService;
         LoadAppearanceData();
         LoadBodyPartData();
+
+        // Resolve appearance sources asynchronously (non-blocking)
+        if (_appearances != null && _appearances.Count > 0)
+        {
+            _ = System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    displayService.Appearances.ResolveAppearanceSources(_appearances);
+                    Avalonia.Threading.Dispatcher.UIThread.Post(RefreshFilteredAppearanceList);
+                }
+                catch (Exception ex)
+                {
+                    Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                        Radoub.Formats.Logging.LogLevel.WARN,
+                        $"AppearancePanel: Source resolution failed: {ex.Message}");
+                }
+            });
+        }
     }
 
     public void SetPaletteColorService(PaletteColorService paletteColorService)
@@ -196,8 +225,10 @@ public partial class AppearancePanel : UserControl
 
     public void ClearPanel()
     {
-        if (_appearanceComboBox != null)
-            _appearanceComboBox.SelectedIndex = -1;
+        if (_appearanceListBox != null)
+            _appearanceListBox.SelectedIndex = -1;
+        if (_appearanceSearchBox != null)
+            _appearanceSearchBox.Text = "";
         if (_genderComboBox != null)
             _genderComboBox.SelectedIndex = -1;
         if (_phenotypeComboBox != null)
