@@ -46,38 +46,23 @@ public partial class LevelUpWizardWindow
                 _summaryClassLabel.Text = $"Taking level {_newClassLevel} in {className}";
         }
 
-        // Ability score increase summary
-        if (_levelsToAdd > 1 && _abilityIncreasesByLevel.Count > 0 && _selectedAbilityIncrease >= 0)
+        // Ability score increase summary — uses increment-based tracking
+        int totalIncrements = _abilityIncrements.Sum();
+        if (_needsAbilityIncrease && totalIncrements > 0)
         {
             _summaryAbilityPanel.IsVisible = true;
-            var name = AbilityNames[_selectedAbilityIncrease];
             byte[] scores = { _creature.Str, _creature.Dex, _creature.Con, _creature.Int, _creature.Wis, _creature.Cha };
-            int count = _abilityIncreaseLevels.Count;
-            _summaryAbilityLabel.Text = $"{name} {scores[_selectedAbilityIncrease]} -> {scores[_selectedAbilityIncrease] + count} (+{count})";
+            var parts = new List<string>();
+            for (int i = 0; i < 6; i++)
+            {
+                if (_abilityIncrements[i] > 0)
+                    parts.Add($"{AbilityNames[i]} {scores[i]} -> {scores[i] + _abilityIncrements[i]} (+{_abilityIncrements[i]})");
+            }
+            _summaryAbilityLabel.Text = string.Join(", ", parts);
         }
         else
         {
-            var allAbilityIncreases = new List<int>();
-            if (_selectedAbilityIncrease >= 0) allAbilityIncreases.Add(_selectedAbilityIncrease);
-            foreach (var extra in _ceAbilityIncreases.Where(i => i != _selectedAbilityIncrease))
-                allAbilityIncreases.Add(extra);
-
-            if (_needsAbilityIncrease && allAbilityIncreases.Count > 0)
-            {
-                _summaryAbilityPanel.IsVisible = true;
-                byte[] scores = { _creature.Str, _creature.Dex, _creature.Con, _creature.Int, _creature.Wis, _creature.Cha };
-                var parts = allAbilityIncreases.Select(idx =>
-                {
-                    var name = AbilityNames[idx];
-                    var old = scores[idx];
-                    return $"{name} {old} -> {old + 1}";
-                });
-                _summaryAbilityLabel.Text = string.Join(", ", parts);
-            }
-            else
-            {
-                _summaryAbilityPanel.IsVisible = false;
-            }
+            _summaryAbilityPanel.IsVisible = false;
         }
 
         // Feats summary — auto-granted across ALL levels in range (#1645)
@@ -133,9 +118,11 @@ public partial class LevelUpWizardWindow
         if (_levelsToAdd > 1)
         {
             // Consolidated: use iterative HP calculator with CON retroactivity (#1645)
-            var conIncreaseLevels = new List<int>();
-            if (_selectedAbilityIncrease == 2) // CON index
-                conIncreaseLevels.AddRange(_abilityIncreaseLevels);
+            // Find character levels where CON is increased (from _abilityIncreasesByLevel)
+            var conIncreaseLevels = _abilityIncreasesByLevel
+                .Where(kv => kv.Value == 2) // CON = index 2
+                .Select(kv => kv.Key)
+                .ToList();
 
             int totalHpGain = LevelUpApplicationService.CalculateConsolidatedHp(
                 hitDie, _creature.Con, previousLevels, _levelsToAdd, conIncreaseLevels);
@@ -147,14 +134,14 @@ public partial class LevelUpWizardWindow
         }
         else
         {
-            // Single-level HP (existing logic)
+            // Single-level HP
             byte effectiveCon = _creature.Con;
-            if (_needsAbilityIncrease && _selectedAbilityIncrease == 2)
+            if (_needsAbilityIncrease && _abilityIncrements[2] > 0) // CON = index 2
                 effectiveCon = (byte)Math.Min(255, effectiveCon + 1);
             _hpIncrease = LevelUpApplicationService.CalculateHpIncrease(hitDie, effectiveCon);
 
-            _conRetroactiveHp = _needsAbilityIncrease
-                ? LevelUpApplicationService.CalculateConRetroactiveHp(_selectedAbilityIncrease, _creature.Con, previousLevels)
+            _conRetroactiveHp = (_needsAbilityIncrease && _abilityIncrements[2] > 0)
+                ? LevelUpApplicationService.CalculateConRetroactiveHp(2, _creature.Con, previousLevels)
                 : 0;
 
             int totalHpGain = _hpIncrease + _conRetroactiveHp;

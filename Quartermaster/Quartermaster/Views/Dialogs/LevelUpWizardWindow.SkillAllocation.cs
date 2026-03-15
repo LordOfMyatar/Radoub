@@ -26,9 +26,6 @@ public partial class LevelUpWizardWindow
         _skillPointsToAllocate = 0;
         int effectiveInt = _creature.Int;
 
-        // Check if INT was increased in ability step (index 3)
-        bool intIncreased = _selectedAbilityIncrease == 3;
-
         int totalLevel = _creature.ClassList.Sum(c => c.ClassLevel);
         int basePoints = _displayService.GetClassSkillPointBase(_selectedClassId);
         int racialExtra = _displayService.GetRacialExtraSkillPointsPerLevel(_creature.Race);
@@ -37,8 +34,8 @@ public partial class LevelUpWizardWindow
         {
             int charLevel = totalLevel + i;
 
-            // Apply INT increase if it happens at this character level
-            if (intIncreased && _abilityIncreaseLevels.Contains(charLevel))
+            // Apply INT increase if this character level has INT assigned (#1645)
+            if (_abilityIncreasesByLevel.TryGetValue(charLevel, out int abilIdx) && abilIdx == 3)
                 effectiveInt = (byte)System.Math.Min(255, effectiveInt + 1);
 
             int intMod = CreatureDisplayService.CalculateAbilityBonus(effectiveInt);

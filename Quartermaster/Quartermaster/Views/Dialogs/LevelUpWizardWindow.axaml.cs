@@ -55,6 +55,7 @@ public partial class LevelUpWizardWindow : Window
     private readonly int _presetLevels;
     private List<int> _abilityIncreaseLevels = new(); // Character levels with +1 ability
     private Dictionary<int, int> _abilityIncreasesByLevel = new(); // charLevel -> abilityIndex
+    private int[] _abilityIncrements = new int[6]; // Per-ability increment count (STR=0..CHA=5)
 
     // Spell selection state
     private bool _isDivineCaster;
@@ -95,6 +96,7 @@ public partial class LevelUpWizardWindow : Window
 
     // Step 2 (Ability Score) controls
     private readonly TextBlock _abilityIncreaseDescription;
+    private readonly TextBlock _abilityIncreaseRemaining;
     private readonly Border[] _abilityBorders;
     private readonly TextBlock[] _abilityRadios;
     private readonly TextBlock[] _abilityValues;
@@ -214,6 +216,7 @@ public partial class LevelUpWizardWindow : Window
 
         // Step 2 ability score controls
         _abilityIncreaseDescription = this.FindControl<TextBlock>("AbilityIncreaseDescription")!;
+        _abilityIncreaseRemaining = this.FindControl<TextBlock>("AbilityIncreaseRemaining")!;
         _abilityBorders = new[]
         {
             this.FindControl<Border>("AbilityStrBorder")!,
@@ -468,7 +471,7 @@ public partial class LevelUpWizardWindow : Window
         bool strictValid = _currentStep switch
         {
             1 => _selectedClassId >= 0 && classIsQualified,
-            2 => _selectedAbilityIncrease >= 0,
+            2 => _abilityIncrements.Sum() >= (_abilityIncreaseLevels.Count > 0 ? _abilityIncreaseLevels.Count : 1),
             3 => _selectedFeats.Count >= _featsToSelect,
             4 => GetRemainingSkillPoints() == 0,
             5 => _isDivineCaster || IsSpellSelectionComplete(),
@@ -626,20 +629,17 @@ public partial class LevelUpWizardWindow : Window
             _step1Summary.Text = "";
         }
 
-        // Step 2: Ability Score (#1645 consolidated)
-        if (_needsAbilityIncrease && (_selectedAbilityIncrease >= 0 || _ceAbilityIncreases.Count > 0))
+        // Step 2: Ability Score — show per-ability increments
+        int totalIncs = _abilityIncrements.Sum();
+        if (_needsAbilityIncrease && totalIncs > 0)
         {
-            if (_abilityIncreaseLevels.Count > 1 && _selectedAbilityIncrease >= 0)
+            var parts = new List<string>();
+            for (int i = 0; i < 6; i++)
             {
-                _step2Summary.Text = $"{AbilityNames[_selectedAbilityIncrease]} +{_abilityIncreaseLevels.Count}";
+                if (_abilityIncrements[i] > 0)
+                    parts.Add($"{AbilityNames[i]} +{_abilityIncrements[i]}");
             }
-            else
-            {
-                var abilityNames = (_ceAbilityIncreases.Count > 0 ? _ceAbilityIncreases : new HashSet<int> { _selectedAbilityIncrease })
-                    .Where(i => i >= 0)
-                    .Select(i => $"{AbilityNames[i]} +1");
-                _step2Summary.Text = string.Join(", ", abilityNames);
-            }
+            _step2Summary.Text = string.Join(", ", parts);
         }
         else
         {
