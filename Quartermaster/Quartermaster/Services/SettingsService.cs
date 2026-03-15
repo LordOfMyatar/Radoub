@@ -49,6 +49,9 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
     // Validation level for wizards (NCW/LUW)
     private ValidationLevel _validationLevel = ValidationLevel.Warning;
 
+    // Appearance filter exclude patterns (#1520)
+    private string _appearanceExcludeFilter = "Invisible;object";
+
     private SettingsService()
     {
         Initialize();
@@ -109,6 +112,17 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
         set { if (SetProperty(ref _validationLevel, value)) SaveSettings(); }
     }
 
+    /// <summary>
+    /// Semicolon-separated patterns to exclude from appearance list.
+    /// Matches against Name and Label (case-insensitive).
+    /// Default: "Invisible;object" to hide invisible models and placeable objects.
+    /// </summary>
+    public string AppearanceExcludeFilter
+    {
+        get => _appearanceExcludeFilter;
+        set { if (SetProperty(ref _appearanceExcludeFilter, value ?? "")) SaveSettings(); }
+    }
+
     protected override void LoadToolSettings(SettingsData settings)
     {
         _leftPanelWidth = Math.Max(200, Math.Min(600, settings.LeftPanelWidth));
@@ -119,6 +133,7 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
         _levelHistoryEncoding = settings.LevelHistoryEncoding;
         _recordLevelHistory = settings.RecordLevelHistory;
         _validationLevel = settings.ValidationLevel;
+        _appearanceExcludeFilter = settings.AppearanceExcludeFilter ?? "Invisible;object";
     }
 
     protected override void SaveToolSettings(SettingsData settings)
@@ -131,6 +146,7 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
         settings.LevelHistoryEncoding = LevelHistoryEncoding;
         settings.RecordLevelHistory = RecordLevelHistory;
         settings.ValidationLevel = ValidationLevel;
+        settings.AppearanceExcludeFilter = AppearanceExcludeFilter;
     }
 
     public class SettingsData : BaseSettingsData
@@ -146,5 +162,6 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
         public LevelHistoryEncoding LevelHistoryEncoding { get; set; } = LevelHistoryEncoding.Readable;
         public bool RecordLevelHistory { get; set; } = true;
         public ValidationLevel ValidationLevel { get; set; } = ValidationLevel.Warning;
+        public string AppearanceExcludeFilter { get; set; } = "Invisible;object";
     }
 }

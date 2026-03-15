@@ -26,28 +26,59 @@
                         <StackPanel Spacing="8">
                             <TextBlock Text="Model" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
-                            <Grid ColumnDefinitions="70,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="10">
-                                <!-- Appearance Type -->
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Type:"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                           VerticalAlignment="Center" FontSize="{DynamicResource FontSizeSmall}"/>
-                                <ComboBox Grid.Row="0" Grid.Column="1" x:Name="AppearanceComboBox"
-                                          HorizontalAlignment="Stretch" FontSize="{DynamicResource FontSizeSmall}"
-                                          AutomationProperties.AutomationId="AppearanceComboBox"/>
+                            <!-- Search Box -->
+                            <TextBox x:Name="AppearanceSearchBox"
+                                     Watermark="Search appearances..."
+                                     FontSize="{DynamicResource FontSizeSmall}"
+                                     AutomationProperties.AutomationId="AppearanceSearchBox"/>
 
+                            <!-- Source Filters -->
+                            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,2,0,0">
+                                <CheckBox x:Name="ShowBifCheckBox" Content="Standard"
+                                          IsChecked="True" FontSize="{DynamicResource FontSizeXSmall}"
+                                          AutomationProperties.AutomationId="ShowBifCheckBox"
+                                          ToolTip.Tip="Show base game models from BIF archives"/>
+                                <CheckBox x:Name="ShowHakCheckBox" Content="Hak"
+                                          IsChecked="True" FontSize="{DynamicResource FontSizeXSmall}"
+                                          AutomationProperties.AutomationId="ShowHakCheckBox"
+                                          ToolTip.Tip="Show models from loaded HAK packs"/>
+                                <CheckBox x:Name="ShowOverrideCheckBox" Content="Override"
+                                          IsChecked="True" FontSize="{DynamicResource FontSizeXSmall}"
+                                          AutomationProperties.AutomationId="ShowOverrideCheckBox"
+                                          ToolTip.Tip="Show models from the Override directory"/>
+                                <TextBlock x:Name="AppearanceCountText" Text=""
+                                           FontSize="{DynamicResource FontSizeXSmall}"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <!-- Exclude Patterns -->
+                            <TextBox x:Name="ExcludePatternBox"
+                                     Watermark="Exclude patterns (semicolon-separated)"
+                                     FontSize="{DynamicResource FontSizeXSmall}"
+                                     AutomationProperties.AutomationId="ExcludePatternBox"
+                                     ToolTip.Tip="Hide entries matching these patterns (e.g. Invisible;object). Matches Name and Label, case-insensitive."/>
+
+                            <!-- Appearance List (replaces ComboBox for searchability) -->
+                            <ListBox x:Name="AppearanceListBox"
+                                     MaxHeight="150"
+                                     FontSize="{DynamicResource FontSizeSmall}"
+                                     AutomationProperties.AutomationId="AppearanceListBox"/>
+
+                            <Grid ColumnDefinitions="70,*" RowDefinitions="Auto,Auto" RowSpacing="6" ColumnSpacing="10">
                                 <!-- Gender -->
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Gender:"
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Gender:"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            VerticalAlignment="Center" FontSize="{DynamicResource FontSizeSmall}"/>
-                                <ComboBox Grid.Row="1" Grid.Column="1" x:Name="GenderComboBox"
+                                <ComboBox Grid.Row="0" Grid.Column="1" x:Name="GenderComboBox"
                                           HorizontalAlignment="Stretch" FontSize="{DynamicResource FontSizeSmall}"
                                           AutomationProperties.AutomationId="GenderComboBox"/>
 
                                 <!-- Phenotype -->
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Phenotype:"
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Phenotype:"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            VerticalAlignment="Center" FontSize="{DynamicResource FontSizeSmall}"/>
-                                <ComboBox Grid.Row="2" Grid.Column="1" x:Name="PhenotypeComboBox"
+                                <ComboBox Grid.Row="1" Grid.Column="1" x:Name="PhenotypeComboBox"
                                           HorizontalAlignment="Stretch" FontSize="{DynamicResource FontSizeSmall}"
                                           AutomationProperties.AutomationId="PhenotypeComboBox"/>
                             </Grid>

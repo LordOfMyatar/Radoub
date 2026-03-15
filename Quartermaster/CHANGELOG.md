@@ -18,6 +18,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.45-alpha] - 2026-03-14
+**Branch**: `quartermaster/issue-1520` | **PR**: #1684
+
+### Sprint: Appearance Panel Search & Filter (#1520, #1201)
+
+- Text search/filter for model names on the Appearance panel
+- Checkbox filters to toggle visibility by resource source (Standard/BIF, Hak, Override)
+- Search by model name (RACE column) or label
+- Semicolon-separated exclude pattern filter to hide noise entries (default: `Invisible;object`)
+- Exclude filter persists across sessions via SettingsService
+
+---
+
 ## [0.2.44-alpha] - 2026-03-14
 **Branch**: `quartermaster/issue-1610` | **PR**: #1682
 

@@ -98,16 +98,82 @@ public class AppearanceService
             var modelType = _gameDataService.Get2DAValue("appearance", i, "MODELTYPE");
             var isPartBased = modelType?.ToUpperInvariant() == "P";
 
+            var race = _gameDataService.Get2DAValue("appearance", i, "RACE");
+            if (race == "****") race = "";
+
+            var modelResRef = _gameDataService.Get2DAValue("appearance", i, "NWN2_Model_Race");
+            if (string.IsNullOrEmpty(modelResRef) || modelResRef == "****")
+                modelResRef = label;
+
             appearances.Add(new AppearanceInfo
             {
                 AppearanceId = (ushort)i,
                 Name = GetAppearanceName((ushort)i),
                 Label = label,
-                IsPartBased = isPartBased
+                IsPartBased = isPartBased,
+                Race = race ?? "",
+                ModelResRef = modelResRef ?? ""
             });
         }
 
         return appearances;
+    }
+
+    /// <summary>
+    /// Resolves the resource source (BIF/HAK/Override) for each appearance by checking
+    /// where the model file is found in the resource chain.
+    /// Call this asynchronously after initial load for non-blocking source population.
+    /// </summary>
+    public void ResolveAppearanceSources(List<AppearanceInfo> appearances)
+    {
+        // Build a lookup of all MDL resources by resref for O(1) lookups
+        // MDL resource type = 2030
+        var mdlLookup = new Dictionary<string, Radoub.Formats.Services.GameResourceSource>(StringComparer.OrdinalIgnoreCase);
+        foreach (var r in _gameDataService.ListResources(2030))
+        {
+            // First match wins (Override > HAK > BIF priority is already in ListResources order)
+            if (!mdlLookup.ContainsKey(r.ResRef))
+                mdlLookup[r.ResRef] = r.Source;
+        }
+
+        foreach (var app in appearances)
+        {
+            if (string.IsNullOrEmpty(app.Race) && string.IsNullOrEmpty(app.Label))
+            {
+                app.Source = AppearanceSource.Unknown;
+                continue;
+            }
+
+            // For static models, the model resref is the RACE column value (lowercase)
+            // For part-based models, we check the race skeleton model
+            var modelRef = !string.IsNullOrEmpty(app.Race) ? app.Race.ToLowerInvariant() : app.Label.ToLowerInvariant();
+
+            if (mdlLookup.TryGetValue(modelRef, out var source))
+            {
+                app.Source = MapSource(source);
+                continue;
+            }
+
+            // Try with "c_" prefix (common NWN creature model prefix)
+            if (mdlLookup.TryGetValue($"c_{modelRef}", out source))
+            {
+                app.Source = MapSource(source);
+                continue;
+            }
+
+            app.Source = AppearanceSource.Unknown;
+        }
+    }
+
+    private static AppearanceSource MapSource(Radoub.Formats.Services.GameResourceSource source)
+    {
+        return source switch
+        {
+            Radoub.Formats.Services.GameResourceSource.Override => AppearanceSource.Override,
+            Radoub.Formats.Services.GameResourceSource.Hak => AppearanceSource.Hak,
+            Radoub.Formats.Services.GameResourceSource.Bif => AppearanceSource.Bif,
+            _ => AppearanceSource.Unknown
+        };
     }
 
     #endregion
@@ -530,6 +596,20 @@ public class AppearanceInfo
     public string Name { get; set; } = "";
     public string Label { get; set; } = "";
     public bool IsPartBased { get; set; }
+    public string Race { get; set; } = "";
+    public string ModelResRef { get; set; } = "";
+    public AppearanceSource Source { get; set; } = AppearanceSource.Unknown;
+}
+
+/// <summary>
+/// Source of an appearance model resource.
+/// </summary>
+public enum AppearanceSource
+{
+    Unknown,
+    Bif,
+    Hak,
+    Override
 }
 
 /// <summary>
