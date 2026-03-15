@@ -15,8 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Area Scanning Infrastructure (#1678)
 
-- [ ] #1320 - AreaScanService — Shared area .git scanning infrastructure
-- [ ] #1317 - Faction Editor: Scan areas on faction delete to reindex creature FactionIDs
+- [x] #1320 - AreaScanService — Shared area .git scanning infrastructure
+- [x] #1317 - Faction Editor: Scan areas on faction delete to reindex creature FactionIDs
 
 ---
 
