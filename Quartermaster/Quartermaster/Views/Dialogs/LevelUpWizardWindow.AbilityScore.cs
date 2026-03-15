@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Input;
 using Quartermaster.Services;
@@ -6,6 +8,7 @@ namespace Quartermaster.Views.Dialogs;
 
 /// <summary>
 /// Step 2: Ability score increase at levels 4/8/12/16/20/24/28/32/36/40.
+/// Supports consolidated mode: pools ability increases across a level range (#1645).
 /// </summary>
 public partial class LevelUpWizardWindow
 {
@@ -13,16 +16,38 @@ public partial class LevelUpWizardWindow
 
     private void PrepareStep2_AbilityScore()
     {
-        int totalLevel = _creature.ClassList.Sum(c => c.ClassLevel) + 1;
-        _needsAbilityIncrease = _validationLevel == ValidationLevel.None || totalLevel % 4 == 0;
+        int totalLevel = _creature.ClassList.Sum(c => c.ClassLevel);
+
+        if (_validationLevel == ValidationLevel.None)
+        {
+            // CE mode: always show ability step
+            _needsAbilityIncrease = true;
+            _abilityIncreaseLevels = new List<int>();
+        }
+        else
+        {
+            // Consolidated: find all ability increase levels in the range (#1645)
+            _abilityIncreaseLevels = LevelUpApplicationService.GetAbilityIncreaseLevels(totalLevel, _levelsToAdd);
+            _needsAbilityIncrease = _abilityIncreaseLevels.Count > 0;
+        }
 
         if (!_needsAbilityIncrease)
             return;
 
-        // Update description for CE mode
-        _abilityIncreaseDescription.Text = _validationLevel == ValidationLevel.None
-            ? "Select ability scores to increase by +1. (CE mode: no restrictions)"
-            : "Choose one ability score to increase by +1.";
+        // Description
+        if (_validationLevel == ValidationLevel.None)
+        {
+            _abilityIncreaseDescription.Text = "Select ability scores to increase by +1. (CE mode: no restrictions)";
+        }
+        else if (_abilityIncreaseLevels.Count == 1)
+        {
+            _abilityIncreaseDescription.Text = $"Choose one ability score to increase by +1. (Level {_abilityIncreaseLevels[0]})";
+        }
+        else
+        {
+            var levelList = string.Join(", ", _abilityIncreaseLevels.Select(l => $"Lvl {l}"));
+            _abilityIncreaseDescription.Text = $"Choose one ability score to increase by +{_abilityIncreaseLevels.Count}. ({levelList})";
+        }
 
         // Populate current ability scores
         byte[] scores = { _creature.Str, _creature.Dex, _creature.Con, _creature.Int, _creature.Wis, _creature.Cha };
@@ -69,7 +94,7 @@ public partial class LevelUpWizardWindow
             }
             else
             {
-                // Normal mode: radio selection
+                // Normal mode: radio selection (applies to ALL increase levels in consolidated mode)
                 _selectedAbilityIncrease = index;
                 _ceAbilityIncreases.Clear();
                 UpdateAbilitySelection(index);
@@ -82,13 +107,16 @@ public partial class LevelUpWizardWindow
     private void UpdateAbilitySelection(int selectedIndex)
     {
         byte[] scores = { _creature.Str, _creature.Dex, _creature.Con, _creature.Int, _creature.Wis, _creature.Cha };
+        int increaseCount = Math.Max(1, _abilityIncreaseLevels.Count);
 
         for (int i = 0; i < 6; i++)
         {
             if (i == selectedIndex)
             {
                 _abilityRadios[i].Text = "●";
-                _abilityChanges[i].Text = $"{scores[i]} → {scores[i] + 1}";
+                _abilityChanges[i].Text = increaseCount > 1
+                    ? $"{scores[i]} → {scores[i] + increaseCount} (+{increaseCount})"
+                    : $"{scores[i]} → {scores[i] + 1}";
                 _abilityBorders[i].Classes.Set("current", true);
             }
             else

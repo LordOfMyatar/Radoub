@@ -117,41 +117,45 @@ public partial class LevelUpWizardWindow
 
         if (_isSpontaneousCaster)
         {
-            var knownAtLevel = _displayService.Spells.GetSpellsKnownLimit(_selectedClassId, _newClassLevel);
-            var knownAtPrevLevel = _newClassLevel > 1 ? _displayService.Spells.GetSpellsKnownLimit(_selectedClassId, _newClassLevel - 1) : null;
+            // Consolidated: compare known limits at target vs base level (#1645)
+            var knownAtTarget = _displayService.Spells.GetSpellsKnownLimit(_selectedClassId, _newClassLevel);
+            var knownAtBase = _fromClassLevel > 1
+                ? _displayService.Spells.GetSpellsKnownLimit(_selectedClassId, _fromClassLevel - 1)
+                : null;
 
-            if (knownAtLevel != null)
+            if (knownAtTarget != null)
             {
                 for (int i = 0; i <= maxSpellLevel; i++)
                 {
-                    int prevKnown = knownAtPrevLevel?[i] ?? 0;
-                    int newKnown = knownAtLevel[i];
-                    if (newKnown > prevKnown)
-                        _newSpellsPerLevel[i] = newKnown - prevKnown;
+                    int baseKnown = knownAtBase?[i] ?? 0;
+                    int targetKnown = knownAtTarget[i];
+                    if (targetKnown > baseKnown)
+                        _newSpellsPerLevel[i] = targetKnown - baseKnown;
                 }
             }
 
-            _spellStepDescription.Text = $"Choose new spells known for your {className}.";
+            _spellStepDescription.Text = _levelsToAdd > 1
+                ? $"Choose new spells known for your {className} (levels {_fromClassLevel}-{_newClassLevel})."
+                : $"Choose new spells known for your {className}.";
         }
         else
         {
-            // Wizard spellbook: gets 2 free spells on level-up (NWN convention).
-            // Player distributes them across any castable spell levels.
-            _wizardFreeSpellsRemaining = 2;
+            // Wizard spellbook: gets 2 free spells per level gained (NWN convention). (#1645)
+            _wizardFreeSpellsRemaining = 2 * _levelsToAdd;
             var slotsAtLevel = _displayService.Spells.GetSpellSlots(_selectedClassId, _newClassLevel);
             for (int i = 0; i <= maxSpellLevel; i++)
             {
-                // Allow picking from any castable level — don't pre-allocate per level
-                // The total across all levels is capped at 2
+                // Allow picking from any castable level — total across all levels is capped
                 if (slotsAtLevel != null && i < slotsAtLevel.Length && slotsAtLevel[i] > 0)
-                    _newSpellsPerLevel[i] = 2; // Max 2 at any level, total capped separately
+                    _newSpellsPerLevel[i] = _wizardFreeSpellsRemaining;
             }
 
             // Remove spell levels where creature already knows all available spells (#1647)
-            // Wizards typically know all cantrips from level 1, so cantrip tabs are irrelevant
             RemoveFullyKnownSpellLevels();
 
-            _spellStepDescription.Text = $"Choose 2 spells to add to your {className}'s spellbook.";
+            _spellStepDescription.Text = _levelsToAdd > 1
+                ? $"Choose {_wizardFreeSpellsRemaining} spells to add to your {className}'s spellbook ({_levelsToAdd} levels × 2)."
+                : $"Choose 2 spells to add to your {className}'s spellbook.";
         }
 
         bool hasNewSpells = _newSpellsPerLevel.Values.Any(v => v > 0);
