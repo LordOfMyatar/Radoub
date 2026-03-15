@@ -8,6 +8,7 @@ using Avalonia.Controls;
 using Radoub.Formats.Common;
 using Radoub.Formats.Erf;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 
@@ -24,6 +25,11 @@ public class CreatureBrowserEntry : FileBrowserEntry
     public bool IsBic { get; set; }
 
     /// <summary>
+    /// True if this resource is from a base game BIF file.
+    /// </summary>
+    public bool IsFromBif { get; set; }
+
+    /// <summary>
     /// Type indicator for display.
     /// </summary>
     public string TypeIndicator
@@ -31,12 +37,13 @@ public class CreatureBrowserEntry : FileBrowserEntry
         get
         {
             if (IsBic) return $"[BIC:{Source}]";
+            if (IsFromBif) return "[BIF]";
             if (IsFromHak) return "[HAK]";
             return "[UTC]";
         }
     }
 
-    public override string DisplayName => IsFromHak ? $"{Name} {TypeIndicator}" : (IsBic ? $"{Name} {TypeIndicator}" : Name);
+    public override string DisplayName => (IsFromHak || IsFromBif) ? $"{Name} {TypeIndicator}" : (IsBic ? $"{Name} {TypeIndicator}" : Name);
 }
 
 /// <summary>
@@ -60,10 +67,14 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
     private readonly CheckBox _showLocalVaultCheck;
     private readonly CheckBox _showServerVaultCheck;
     private readonly CheckBox _showHakCheck;
+    private readonly CheckBox _showBifCheck;
     private List<CreatureBrowserEntry> _vaultEntries = new();
     private List<CreatureBrowserEntry> _hakEntries = new();
+    private List<CreatureBrowserEntry> _bifEntries = new();
     private bool _showHakCreatures;
     private bool _hakCreaturesLoaded;
+    private bool _showBifCreatures;
+    private bool _bifCreaturesLoaded;
 
     // Static cache for HAK file contents - persists across panel instances
     private static readonly Dictionary<string, CreatureHakCacheEntry> _hakCache = new();
@@ -105,11 +116,18 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
             IsChecked = false
         };
         ToolTip.SetTip(_showHakCheck, "Show .utc files from HAK archives");
+        _showBifCheck = new CheckBox
+        {
+            Content = "Base Game",
+            IsChecked = false
+        };
+        ToolTip.SetTip(_showBifCheck, "Show .utc creature blueprints from base game BIF archives");
 
         _showModuleCheck.IsCheckedChanged += OnFilterChanged;
         _showLocalVaultCheck.IsCheckedChanged += OnFilterChanged;
         _showServerVaultCheck.IsCheckedChanged += OnFilterChanged;
         _showHakCheck.IsCheckedChanged += OnShowHakChanged;
+        _showBifCheck.IsCheckedChanged += OnShowBifChanged;
 
         // Create filter options panel
         var filterPanel = new StackPanel
@@ -121,6 +139,7 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
         filterPanel.Children.Add(_showLocalVaultCheck);
         filterPanel.Children.Add(_showServerVaultCheck);
         filterPanel.Children.Add(_showHakCheck);
+        filterPanel.Children.Add(_showBifCheck);
 
         FilterOptionsContent = filterPanel;
     }
@@ -141,6 +160,12 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
         }
     }
 
+    /// <summary>
+    /// Gets or sets the game data service for BIF resource access.
+    /// Must be set before BIF scanning will work.
+    /// </summary>
+    public IGameDataService? GameDataService { get; set; }
+
     private void OnFilterChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         OnFilterOptionsChanged();
@@ -159,12 +184,27 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
         OnFilterOptionsChanged();
     }
 
+    private async void OnShowBifChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        _showBifCreatures = _showBifCheck.IsChecked == true;
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"CreatureBrowserPanel: Show BIF creatures = {_showBifCreatures}");
+
+        if (_showBifCreatures && !_bifCreaturesLoaded)
+        {
+            await LoadBifCreaturesAsync();
+        }
+
+        OnFilterOptionsChanged();
+    }
+
     protected override async Task<List<FileBrowserEntry>> LoadFilesFromModuleAsync(string modulePath)
     {
-        // Reset vault and HAK entries when module changes
+        // Reset vault, HAK, and BIF entries when module changes
         _vaultEntries.Clear();
         _hakEntries.Clear();
+        _bifEntries.Clear();
         _hakCreaturesLoaded = false;
+        _bifCreaturesLoaded = false;
 
         // Load vault entries here (not in LoadAdditionalFilesAsync) so they bypass
         // the base class name-based dedup. Vault BICs can share names with module UTCs
@@ -230,14 +270,22 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
     protected override async Task<List<FileBrowserEntry>> LoadAdditionalFilesAsync()
     {
         // Vault entries are loaded in LoadFilesFromModuleAsync to bypass base class
-        // name-based dedup. Only HAK entries go through additional loading (HAK dedup
-        // by name IS desired - HAK overrides should merge with module).
+        // name-based dedup. Only HAK/BIF entries go through additional loading (dedup
+        // by name IS desired - HAK/BIF overrides should merge with module).
         if (_showHakCreatures && !_hakCreaturesLoaded)
         {
             await LoadHakCreaturesAsync();
         }
 
-        return _hakEntries.Cast<FileBrowserEntry>().ToList();
+        if (_showBifCreatures && !_bifCreaturesLoaded)
+        {
+            await LoadBifCreaturesAsync();
+        }
+
+        var additional = new List<FileBrowserEntry>();
+        additional.AddRange(_hakEntries);
+        additional.AddRange(_bifEntries);
+        return additional;
     }
 
     private async Task LoadVaultEntriesAsync()
@@ -470,17 +518,69 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
         }
     }
 
+    private async Task LoadBifCreaturesAsync()
+    {
+        if (GameDataService == null || !GameDataService.IsConfigured)
+        {
+            UnifiedLogger.LogApplication(LogLevel.INFO, "CreatureBrowserPanel: GameDataService not available for BIF scanning");
+            _bifCreaturesLoaded = true;
+            return;
+        }
+
+        try
+        {
+            _bifEntries.Clear();
+            ShowLoading("Scanning base game creatures...");
+
+            await Task.Run(() =>
+            {
+                var resources = GameDataService.ListResources(ResourceTypes.Utc)
+                    .Where(r => r.Source == GameResourceSource.Bif)
+                    .ToList();
+
+                foreach (var resource in resources)
+                {
+                    _bifEntries.Add(new CreatureBrowserEntry
+                    {
+                        Name = resource.ResRef,
+                        Source = "Base Game",
+                        IsFromHak = false,
+                        IsFromBif = true,
+                        IsBic = false
+                    });
+                }
+
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"CreatureBrowserPanel: Found {_bifEntries.Count} creatures in base game BIF files");
+            });
+
+            _bifEntries = _bifEntries.OrderBy(e => e.Name).ToList();
+            _bifCreaturesLoaded = true;
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"CreatureBrowserPanel: Failed to load BIF creatures: {ex.Message}");
+        }
+        finally
+        {
+            HideLoading();
+        }
+    }
+
     protected override IEnumerable<FileBrowserEntry> ApplyCustomFilters(IEnumerable<FileBrowserEntry> entries)
     {
         bool showModule = _showModuleCheck.IsChecked == true;
         bool showLocalVault = _showLocalVaultCheck.IsChecked == true;
         bool showServerVault = _showServerVaultCheck.IsChecked == true;
         bool showHak = _showHakCheck.IsChecked == true;
+        bool showBif = _showBifCheck.IsChecked == true;
 
         return entries.Where(e =>
         {
             if (e is CreatureBrowserEntry ce)
             {
+                if (ce.IsFromBif)
+                    return showBif;
                 if (ce.IsFromHak)
                     return showHak;
                 return (ce.Source == "Module" && showModule) ||
@@ -504,8 +604,10 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
         // Compute accurate counts from Source field instead.
         var parts = new List<string>();
 
-        // Module count = total minus vault minus HAK
-        var actualModuleCount = totalCount - hakCount
+        var bifCount = _showBifCreatures ? _bifEntries.Count : 0;
+
+        // Module count = total minus vault minus HAK minus BIF
+        var actualModuleCount = totalCount - hakCount - bifCount
             - _vaultEntries.Count(e => e.Source == "LocalVault" && _showLocalVaultCheck.IsChecked == true)
             - _vaultEntries.Count(e => e.Source == "ServerVault" && _showServerVaultCheck.IsChecked == true);
         if (actualModuleCount > 0 && _showModuleCheck.IsChecked == true)
@@ -521,6 +623,9 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
 
         if (hakCount > 0 && _showHakCheck.IsChecked == true)
             parts.Add($"{hakCount} HAK");
+
+        if (bifCount > 0 && _showBifCheck.IsChecked == true)
+            parts.Add($"{bifCount} base game");
 
         return string.Join(" + ", parts);
     }

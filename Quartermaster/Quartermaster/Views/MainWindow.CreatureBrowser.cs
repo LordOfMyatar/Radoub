@@ -32,6 +32,9 @@ public partial class MainWindow
             return;
         }
 
+        // Provide game data service for BIF resource scanning (#1133)
+        creatureBrowserPanel.GameDataService = _gameDataService;
+
         // Set initial module path from RadoubSettings (set by Trebuchet)
         var modulePath = RadoubSettings.Instance.CurrentModulePath;
         if (RadoubSettings.IsValidModulePath(modulePath))
@@ -283,6 +286,13 @@ public partial class MainWindow
         {
             // HAK files can't be edited directly - show info
             UpdateStatus($"HAK creatures are read-only: {e.Entry.Name}");
+            return;
+        }
+
+        if (e.Entry is CreatureBrowserEntry cbe && cbe.IsFromBif)
+        {
+            // BIF creatures are read-only base game resources
+            UpdateStatus($"Base game creature (read-only): {e.Entry.Name}");
             return;
         }
 
