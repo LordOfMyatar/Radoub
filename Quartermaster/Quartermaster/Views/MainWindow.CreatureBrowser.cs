@@ -32,8 +32,7 @@ public partial class MainWindow
             return;
         }
 
-        // Provide game data service for BIF resource scanning (#1133)
-        creatureBrowserPanel.GameDataService = _gameDataService;
+        // Note: GameDataService is set later in InitializePanels() after services are ready (#1133)
 
         // Set initial module path from RadoubSettings (set by Trebuchet)
         var modulePath = RadoubSettings.Instance.CurrentModulePath;
