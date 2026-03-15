@@ -9,6 +9,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Radoub.UI.Services;
 using RadoubLauncher.ViewModels;
 using RadoubLauncher.Views;
 
@@ -36,6 +37,32 @@ public partial class FactionEditorPanel : UserControl
         viewModel.SetParentWindow(parentWindow);
 
         viewModel.MatrixChanged += OnMatrixChanged;
+        viewModel.PropertyChanged += OnViewModelPropertyChanged;
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(FactionEditorViewModel.StatusText))
+            UpdateStatusBarColor();
+    }
+
+    private void UpdateStatusBarColor()
+    {
+        if (_viewModel == null) return;
+
+        var text = _viewModel.StatusText;
+        if (string.IsNullOrEmpty(text))
+            return;
+
+        if (text.StartsWith("Error") || text.StartsWith("Save failed"))
+            StatusBarText.Foreground = BrushManager.GetErrorBrush(this);
+        else if (text.Contains("reindexed"))
+            StatusBarText.Foreground = BrushManager.GetWarningBrush(this);
+        else if (text.StartsWith("Saved") || text.StartsWith("Added") || text.StartsWith("Removed"))
+            StatusBarText.Foreground = BrushManager.GetInfoBrush(this);
+        else
+            StatusBarText.Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush
+                                       ?? BrushManager.GetDisabledBrush(this);
     }
 
     /// <summary>

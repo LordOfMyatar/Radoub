@@ -47,9 +47,9 @@
                     BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                     BorderThickness="0,1,0,0"
                     Padding="12,4">
-                <TextBlock Text="{Binding StatusText}"
+                <TextBlock x:Name="StatusBarText"
+                           Text="{Binding StatusText}"
                            FontSize="{DynamicResource FontSizeSmall}"
-                           Opacity="0.6"
                            VerticalAlignment="Center"/>
             </Border>
 

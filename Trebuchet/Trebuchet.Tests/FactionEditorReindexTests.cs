@@ -82,17 +82,19 @@ public class FactionEditorReindexTests : IDisposable
     {
         var root = new GffStruct { Type = 0xFFFFFFFF };
 
+        // Creature FactionID is WORD (ushort) in real .git files
         var creatureList = new GffList();
         foreach (var fid in creatureFactionIds)
         {
             var creature = new GffStruct { Type = 4 };
-            GffFieldBuilder.AddDwordField(creature, "FactionID", fid);
+            GffFieldBuilder.AddWordField(creature, "FactionID", (ushort)fid);
             GffFieldBuilder.AddCResRefField(creature, "TemplateResRef", "test_cr");
             creatureList.Elements.Add(creature);
         }
         creatureList.Count = (uint)creatureList.Elements.Count;
         GffFieldBuilder.AddListField(root, "Creature List", creatureList);
 
+        // Encounter Faction is DWORD (uint) in real .git files
         var encounterList = new GffList();
         if (encounterFactions != null)
         {

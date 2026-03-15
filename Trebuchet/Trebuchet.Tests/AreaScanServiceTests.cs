@@ -26,24 +26,26 @@ public class AreaScanServiceTests : IDisposable
 
     /// <summary>
     /// Creates a minimal .git GFF file with specified creature FactionIDs and encounter Factions.
+    /// Creature FactionID is WORD (ushort) matching real .git files.
+    /// Encounter Faction is DWORD (uint) matching real .git files.
     /// </summary>
     private string CreateGitFile(string name, uint[] creatureFactionIds, uint[]? encounterFactions = null)
     {
         var root = new GffStruct { Type = 0xFFFFFFFF };
 
-        // Build Creature List
+        // Build Creature List — FactionID is WORD in real .git files
         var creatureList = new GffList();
         foreach (var factionId in creatureFactionIds)
         {
             var creature = new GffStruct { Type = 4 };
-            GffFieldBuilder.AddDwordField(creature, "FactionID", factionId);
+            GffFieldBuilder.AddWordField(creature, "FactionID", (ushort)factionId);
             GffFieldBuilder.AddCResRefField(creature, "TemplateResRef", "test_creature");
             creatureList.Elements.Add(creature);
         }
         creatureList.Count = (uint)creatureList.Elements.Count;
         GffFieldBuilder.AddListField(root, "Creature List", creatureList);
 
-        // Build Encounter List
+        // Build Encounter List — Faction is DWORD in real .git files
         var encounterList = new GffList();
         if (encounterFactions != null)
         {
@@ -68,6 +70,34 @@ public class AreaScanServiceTests : IDisposable
         var filePath = Path.Combine(_testDirectory, name + ".git");
         GffWriter.Write(gff, filePath);
         return filePath;
+    }
+
+    /// <summary>
+    /// Creates a minimal .utc GFF file with specified FactionID.
+    /// FactionID is WORD (ushort) in UTC files.
+    /// </summary>
+    private string CreateUtcFile(string name, uint factionId)
+    {
+        var root = new GffStruct { Type = 0xFFFFFFFF };
+        GffFieldBuilder.AddWordField(root, "FactionID", (ushort)factionId);
+        GffFieldBuilder.AddCResRefField(root, "TemplateResRef", name);
+
+        var gff = new GffFile
+        {
+            FileType = "UTC ",
+            FileVersion = "V3.2",
+            RootStruct = root
+        };
+
+        var filePath = Path.Combine(_testDirectory, name + ".utc");
+        GffWriter.Write(gff, filePath);
+        return filePath;
+    }
+
+    private uint ReadUtcFactionId(string filePath)
+    {
+        var gff = GffReader.Read(filePath);
+        return gff.RootStruct.GetFieldValue<uint>("FactionID", 0);
     }
 
     /// <summary>
@@ -371,7 +401,7 @@ public class AreaScanServiceTests : IDisposable
     }
 
     [Fact]
-    public void ReindexFactions_ParentIsNoParent_UsesProvidedValue()
+    public void ReindexFactions_ParentIsNoParent_FallsBackToCommoner()
     {
         // Deleting faction 5 with no parent (0xFFFFFFFF)
         var filePath = CreateGitFile("area001", new uint[] { 5 });
@@ -379,9 +409,88 @@ public class AreaScanServiceTests : IDisposable
         var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 0xFFFFFFFF);
 
         var factionIds = ReadCreatureFactionIds(filePath);
-        // 0xFFFFFFFF means "no parent" — use fallback (Hostile = 1 is safe default in NWN)
-        // The service should use a reasonable fallback when parent is 0xFFFFFFFF
-        Assert.Equal(1u, factionIds[0]); // Hostile faction as fallback
+        // 0xFFFFFFFF means "no parent" — fall back to Commoner (2), a safe neutral faction.
+        // PC (0) is not viable. Hostile (1) causes unintended aggression.
+        Assert.Equal(2u, factionIds[0]);
+    }
+
+    [Fact]
+    public void ReindexFactions_PreservesWordType_ForCreatureFactionId()
+    {
+        // Creature FactionID is WORD (ushort) in .git files — verify type preserved after reindex
+        var filePath = CreateGitFile("area001", new uint[] { 5 });
+
+        AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3);
+
+        var gff = GffReader.Read(filePath);
+        var creatureList = gff.RootStruct.GetField("Creature List")?.Value as GffList;
+        var field = creatureList!.Elements[0].GetField("FactionID");
+        Assert.Equal(GffField.WORD, field!.Type);
+        Assert.IsType<ushort>(field.Value);
+        Assert.Equal((ushort)3, field.Value);
+    }
+
+    #endregion
+
+    #region UTC Blueprint Reindexing
+
+    [Fact]
+    public void ReindexFactions_UtcWithDeletedFaction_ReassignedToParent()
+    {
+        var utcPath = CreateUtcFile("bandit001", 5);
+
+        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3);
+
+        Assert.Equal(1, result.BlueprintsReindexed);
+        Assert.Equal(3u, ReadUtcFactionId(utcPath));
+    }
+
+    [Fact]
+    public void ReindexFactions_UtcAboveDeletedIndex_Decremented()
+    {
+        var utcPath = CreateUtcFile("guard001", 7);
+
+        AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3);
+
+        Assert.Equal(6u, ReadUtcFactionId(utcPath));
+    }
+
+    [Fact]
+    public void ReindexFactions_UtcBelowDeletedIndex_Unchanged()
+    {
+        var utcPath = CreateUtcFile("merchant001", 2);
+
+        AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3);
+
+        Assert.Equal(2u, ReadUtcFactionId(utcPath));
+    }
+
+    [Fact]
+    public void ReindexFactions_MixedGitAndUtc_AllReindexed()
+    {
+        var gitPath = CreateGitFile("area001", new uint[] { 5 });
+        var utcPath = CreateUtcFile("bandit001", 5);
+
+        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3);
+
+        Assert.Equal(1, result.CreaturesReindexed);
+        Assert.Equal(1, result.BlueprintsReindexed);
+        Assert.Equal(2, result.FilesModified);
+        Assert.Equal(3u, ReadCreatureFactionIds(gitPath)[0]);
+        Assert.Equal(3u, ReadUtcFactionId(utcPath));
+    }
+
+    [Fact]
+    public void ReindexFactions_UtcPreservesWordType()
+    {
+        var utcPath = CreateUtcFile("bandit001", 5);
+
+        AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3);
+
+        var gff = GffReader.Read(utcPath);
+        var field = gff.RootStruct.GetField("FactionID");
+        Assert.Equal(GffField.WORD, field!.Type);
+        Assert.IsType<ushort>(field.Value);
     }
 
     #endregion

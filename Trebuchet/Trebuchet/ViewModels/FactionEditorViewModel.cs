@@ -486,8 +486,16 @@ public partial class FactionEditorViewModel : ObservableObject
 
         if (reindexResult.TotalReindexed > 0)
         {
-            StatusText = $"Removed faction: {faction.Name} — reindexed {reindexResult.TotalReindexed} " +
-                         $"instance(s) across {reindexResult.FilesModified} area(s)";
+            var parts = new List<string>();
+            if (reindexResult.CreaturesReindexed > 0)
+                parts.Add($"{reindexResult.CreaturesReindexed} creature(s)");
+            if (reindexResult.EncountersReindexed > 0)
+                parts.Add($"{reindexResult.EncountersReindexed} encounter(s)");
+            if (reindexResult.BlueprintsReindexed > 0)
+                parts.Add($"{reindexResult.BlueprintsReindexed} blueprint(s)");
+
+            StatusText = $"Removed faction: {faction.Name} — reindexed {string.Join(", ", parts)} " +
+                         $"across {reindexResult.FilesModified} file(s)";
         }
         else
         {

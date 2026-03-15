@@ -123,11 +123,23 @@ public static class AreaScanService
     }
 
     /// <summary>
+    /// Finds all .utc files in a module working directory.
+    /// </summary>
+    public static string[] FindUtcFiles(string? workingDirectory)
+    {
+        if (string.IsNullOrEmpty(workingDirectory) || !Directory.Exists(workingDirectory))
+            return Array.Empty<string>();
+
+        return Directory.GetFiles(workingDirectory, "*.utc");
+    }
+
+    /// <summary>
     /// Reindexes creature and encounter FactionIDs after a faction is deleted.
+    /// Scans .git files (area instances) and .utc files (blueprints).
     /// Creatures/encounters on the deleted faction are reassigned to the parent faction.
     /// Creatures/encounters above the deleted index are decremented.
     /// </summary>
-    /// <param name="workingDirectory">Module working directory containing .git files</param>
+    /// <param name="workingDirectory">Module working directory containing .git/.utc files</param>
     /// <param name="deletedIndex">Index of the faction being deleted</param>
     /// <param name="parentFactionId">FactionParentID of the deleted faction (for reassignment)</param>
     /// <returns>Summary of changes made</returns>
@@ -138,16 +150,14 @@ public static class AreaScanService
         if (string.IsNullOrEmpty(workingDirectory))
             return result;
 
-        var gitFiles = FindGitFiles(workingDirectory);
-        result.FilesScanned = gitFiles.Length;
-
         // Determine the effective reassignment target.
         // If parent is also above deleted index, it needs decrementing too.
-        // If parent is 0xFFFFFFFF (no parent), fall back to Hostile (1).
+        // If parent is 0xFFFFFFFF (no parent), fall back to Commoner (2) — safe neutral faction.
+        // PC (0) is not a viable faction for NPCs. Hostile (1) causes unintended aggression.
         uint reassignTarget;
         if (parentFactionId == 0xFFFFFFFF)
         {
-            reassignTarget = 1; // Hostile faction as fallback
+            reassignTarget = 2; // Commoner — neutral, non-hostile fallback
         }
         else if (parentFactionId > deletedIndex)
         {
@@ -158,6 +168,26 @@ public static class AreaScanService
             reassignTarget = parentFactionId;
         }
 
+        // Reindex .git files (area creature/encounter instances)
+        ReindexGitFiles(workingDirectory, deletedIndex, reassignTarget, result);
+
+        // Reindex .utc files (creature blueprints)
+        ReindexUtcFiles(workingDirectory, deletedIndex, reassignTarget, result);
+
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"Faction reindex complete: {result.FilesScanned} files scanned, {result.FilesModified} modified, " +
+            $"{result.CreaturesReindexed} creatures + {result.EncountersReindexed} encounters + " +
+            $"{result.BlueprintsReindexed} blueprints reindexed");
+
+        return result;
+    }
+
+    private static void ReindexGitFiles(string workingDirectory, uint deletedIndex,
+        uint reassignTarget, ReindexResult result)
+    {
+        var gitFiles = FindGitFiles(workingDirectory);
+        result.FilesScanned += gitFiles.Length;
+
         foreach (var filePath in gitFiles)
         {
             try
@@ -165,7 +195,7 @@ public static class AreaScanService
                 var gff = GffReader.Read(filePath);
                 bool fileModified = false;
 
-                // Reindex Creature List
+                // Reindex Creature List — FactionID is WORD (ushort) in .git files
                 var creatureListField = gff.RootStruct.GetField("Creature List");
                 if (creatureListField?.Value is GffList creatureList)
                 {
@@ -178,19 +208,19 @@ public static class AreaScanService
 
                         if (factionId == deletedIndex)
                         {
-                            field.Value = reassignTarget;
+                            SetFieldValuePreservingType(field, reassignTarget);
                             result.CreaturesReindexed++;
                             fileModified = true;
                         }
                         else if (factionId > deletedIndex)
                         {
-                            field.Value = factionId - 1;
+                            SetFieldValuePreservingType(field, factionId - 1);
                             fileModified = true;
                         }
                     }
                 }
 
-                // Reindex Encounter List
+                // Reindex Encounter List — Faction is DWORD (uint) in .git files
                 var encounterListField = gff.RootStruct.GetField("Encounter List");
                 if (encounterListField?.Value is GffList encounterList)
                 {
@@ -203,13 +233,13 @@ public static class AreaScanService
 
                         if (faction == deletedIndex)
                         {
-                            field.Value = reassignTarget;
+                            SetFieldValuePreservingType(field, reassignTarget);
                             result.EncountersReindexed++;
                             fileModified = true;
                         }
                         else if (faction > deletedIndex)
                         {
-                            field.Value = faction - 1;
+                            SetFieldValuePreservingType(field, faction - 1);
                             fileModified = true;
                         }
                     }
@@ -230,12 +260,70 @@ public static class AreaScanService
                 result.Errors.Add($"{Path.GetFileName(filePath)}: {ex.Message}");
             }
         }
+    }
 
-        UnifiedLogger.LogApplication(LogLevel.INFO,
-            $"Area scan complete: {result.FilesScanned} files scanned, {result.FilesModified} modified, " +
-            $"{result.CreaturesReindexed} creatures + {result.EncountersReindexed} encounters reindexed");
+    private static void ReindexUtcFiles(string workingDirectory, uint deletedIndex,
+        uint reassignTarget, ReindexResult result)
+    {
+        var utcFiles = FindUtcFiles(workingDirectory);
+        result.FilesScanned += utcFiles.Length;
 
-        return result;
+        foreach (var filePath in utcFiles)
+        {
+            try
+            {
+                var gff = GffReader.Read(filePath);
+                var field = gff.RootStruct.GetField("FactionID");
+                if (field == null) continue;
+
+                var factionId = gff.RootStruct.GetFieldValue<uint>("FactionID", 0);
+                bool modified = false;
+
+                if (factionId == deletedIndex)
+                {
+                    SetFieldValuePreservingType(field, reassignTarget);
+                    result.BlueprintsReindexed++;
+                    modified = true;
+                }
+                else if (factionId > deletedIndex)
+                {
+                    SetFieldValuePreservingType(field, factionId - 1);
+                    modified = true;
+                }
+
+                if (modified)
+                {
+                    GffWriter.Write(gff, filePath);
+                    result.FilesModified++;
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"Reindexed faction in blueprint {Path.GetFileName(filePath)}");
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR,
+                    $"Failed to reindex faction in {Path.GetFileName(filePath)}: {ex.Message}");
+                result.Errors.Add($"{Path.GetFileName(filePath)}: {ex.Message}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Sets a GFF field value while preserving its original type.
+    /// Critical: WORD fields need ushort, DWORD fields need uint, etc.
+    /// Without this, GffWriter.EncodeSimpleValue silently writes 0.
+    /// </summary>
+    private static void SetFieldValuePreservingType(GffField field, uint newValue)
+    {
+        field.Value = field.Type switch
+        {
+            GffField.BYTE => (object)(byte)newValue,
+            GffField.WORD => (object)(ushort)newValue,
+            GffField.SHORT => (object)(short)newValue,
+            GffField.DWORD => (object)newValue,
+            GffField.INT => (object)(int)newValue,
+            _ => (object)newValue
+        };
     }
 }
 
@@ -268,8 +356,9 @@ public class ReindexResult
     public int FilesModified { get; set; }
     public int CreaturesReindexed { get; set; }
     public int EncountersReindexed { get; set; }
+    public int BlueprintsReindexed { get; set; }
     public List<string> Errors { get; set; } = new();
 
     public bool HasErrors => Errors.Count > 0;
-    public int TotalReindexed => CreaturesReindexed + EncountersReindexed;
+    public int TotalReindexed => CreaturesReindexed + EncountersReindexed + BlueprintsReindexed;
 }
