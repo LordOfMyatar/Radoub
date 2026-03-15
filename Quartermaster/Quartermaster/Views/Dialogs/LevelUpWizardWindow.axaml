@@ -728,9 +728,15 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Status Message -->
-                <TextBlock Grid.Column="0" x:Name="StatusLabel"
-                           VerticalAlignment="Center"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                    <TextBlock x:Name="StatusLabel"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    <TextBlock x:Name="PrestigeHintsLabel"
+                               FontSize="{DynamicResource FontSizeSmall}"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               TextWrapping="Wrap"
+                               IsVisible="False"/>
+                </StackPanel>
 
                 <!-- Navigation Buttons -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">

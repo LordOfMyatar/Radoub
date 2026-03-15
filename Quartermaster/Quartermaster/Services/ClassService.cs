@@ -711,6 +711,55 @@ public class ClassService
         return 0;
     }
 
+    /// <summary>
+    /// Gets prestige classes where the creature has met some but not all prerequisites.
+    /// Returns unmet prereq hints grouped by class, for display in LUW tooltip panels (#1644).
+    /// Only returns classes with at least one met and at least one unmet prerequisite.
+    /// </summary>
+    public List<PrestigePrereqHint> GetNearQualifyingPrestigeHints(UtcFile creature)
+    {
+        var hints = new List<PrestigePrereqHint>();
+        var allClasses = GetAllClassMetadata();
+
+        foreach (var metadata in allClasses.Where(c => c.IsPrestige))
+        {
+            var result = CheckPrerequisites(metadata.ClassId, creature);
+            if (!result.HasPrerequisites || result.AllMet) continue;
+
+            // Count met vs total
+            int totalChecks = result.RequiredFeats.Count + result.SkillRequirements.Count + result.OtherRequirements.Count;
+            if (result.OrRequiredFeats.Count > 0) totalChecks++;
+            int metCount = result.RequiredFeats.Count(f => f.Met) +
+                           result.SkillRequirements.Count(s => s.Met) +
+                           result.OtherRequirements.Count(o => o.Met == true) +
+                           (result.OrRequiredFeats.Any(f => f.Met) ? 1 : 0);
+
+            // Only show classes that are partially qualified (at least 1 met)
+            if (metCount == 0 || totalChecks == 0) continue;
+
+            var unmet = new List<string>();
+            foreach (var (_, desc, met) in result.RequiredFeats)
+                if (!met) unmet.Add(desc);
+            foreach (var (desc, met) in result.SkillRequirements)
+                if (!met) unmet.Add(desc);
+            foreach (var (desc, met) in result.OtherRequirements)
+                if (met != true) unmet.Add(desc);
+            if (result.OrRequiredFeats.Count > 0 && !result.OrRequiredFeats.Any(f => f.Met))
+                unmet.Add("One of: " + string.Join(" / ", result.OrRequiredFeats.Select(f => f.Name)));
+
+            hints.Add(new PrestigePrereqHint
+            {
+                ClassName = metadata.Name,
+                ClassId = metadata.ClassId,
+                UnmetPrereqs = unmet,
+                MetCount = metCount,
+                TotalCount = totalChecks
+            });
+        }
+
+        return hints.OrderByDescending(h => (double)h.MetCount / h.TotalCount).Take(3).ToList();
+    }
+
     #endregion
 
     #region Level-Up Validation
@@ -976,6 +1025,20 @@ public class AvailableClass
         ClassQualification.AlignmentRestricted => "Alignment restricted",
         _ => ""
     };
+}
+
+/// <summary>
+/// Hint for a near-qualifying prestige class, showing unmet prerequisites (#1644).
+/// </summary>
+public class PrestigePrereqHint
+{
+    public string ClassName { get; set; } = "";
+    public int ClassId { get; set; }
+    public List<string> UnmetPrereqs { get; set; } = new();
+    public int MetCount { get; set; }
+    public int TotalCount { get; set; }
+
+    public string Summary => $"{ClassName} ({MetCount}/{TotalCount}): Still need {string.Join(", ", UnmetPrereqs)}";
 }
 
 #endregion

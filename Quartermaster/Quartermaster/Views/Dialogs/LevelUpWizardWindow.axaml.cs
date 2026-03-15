@@ -80,6 +80,7 @@ public partial class LevelUpWizardWindow : Window
     private readonly TextBlock _characterLevelLabel;
     private readonly Border[] _stepBorders;
     private readonly Grid[] _stepPanels;
+    private readonly TextBlock _prestigeHintsLabel;
     private readonly Button _backButton;
     private readonly Button _nextButton;
     private readonly Button _finishButton;
@@ -254,6 +255,7 @@ public partial class LevelUpWizardWindow : Window
         _nextButton = this.FindControl<Button>("NextButton")!;
         _finishButton = this.FindControl<Button>("FinishButton")!;
         _statusLabel = this.FindControl<TextBlock>("StatusLabel")!;
+        _prestigeHintsLabel = this.FindControl<TextBlock>("PrestigeHintsLabel")!;
 
         // Step 1
         _levelsToAddSpinner = this.FindControl<NumericUpDown>("LevelsToAddSpinner")!;
@@ -328,6 +330,41 @@ public partial class LevelUpWizardWindow : Window
     private void InitializeComponent()
     {
         AvaloniaXamlLoader.Load(this);
+    }
+
+    /// <summary>
+    /// Shows prestige class prerequisite hints on feat/skill steps (#1644).
+    /// </summary>
+    private void UpdatePrestigeHints()
+    {
+        // Only show on feat (3) and skill (4) steps
+        if (_currentStep != 3 && _currentStep != 4)
+        {
+            _prestigeHintsLabel.IsVisible = false;
+            return;
+        }
+
+        var hints = _displayService.Classes.GetNearQualifyingPrestigeHints(_creature);
+        if (hints.Count == 0)
+        {
+            _prestigeHintsLabel.IsVisible = false;
+            return;
+        }
+
+        // Filter to relevant hints: feats on feat step, skills on skill step
+        var relevantHints = hints
+            .Select(h => h.Summary)
+            .ToList();
+
+        if (relevantHints.Count > 0)
+        {
+            _prestigeHintsLabel.Text = "Prestige goals: " + string.Join(" | ", relevantHints);
+            _prestigeHintsLabel.IsVisible = true;
+        }
+        else
+        {
+            _prestigeHintsLabel.IsVisible = false;
+        }
     }
 
     private void OnLevelsToAddChanged(object? sender, NumericUpDownValueChangedEventArgs e)
@@ -411,6 +448,9 @@ public partial class LevelUpWizardWindow : Window
 
         // Update sidebar summaries (#1502)
         UpdateSidebarSummaries();
+
+        // Show prestige class hints on feat/skill steps (#1644)
+        UpdatePrestigeHints();
 
         // Validate current step
         ValidateCurrentStep();
