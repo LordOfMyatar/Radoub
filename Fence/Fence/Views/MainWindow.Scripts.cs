@@ -19,16 +19,14 @@ public partial class MainWindow
         if (script != null)
         {
             OnOpenStoreBox.Text = script;
-            _isDirty = true;
-            UpdateTitle();
+            _documentState.MarkDirty();
         }
     }
 
     private void OnClearOpenScript(object? sender, RoutedEventArgs e)
     {
         OnOpenStoreBox.Text = "";
-        _isDirty = true;
-        UpdateTitle();
+        _documentState.MarkDirty();
     }
 
     private async void OnBrowseClosedScript(object? sender, RoutedEventArgs e)
@@ -37,16 +35,14 @@ public partial class MainWindow
         if (script != null)
         {
             OnStoreClosedBox.Text = script;
-            _isDirty = true;
-            UpdateTitle();
+            _documentState.MarkDirty();
         }
     }
 
     private void OnClearClosedScript(object? sender, RoutedEventArgs e)
     {
         OnStoreClosedBox.Text = "";
-        _isDirty = true;
-        UpdateTitle();
+        _documentState.MarkDirty();
     }
 
     private async System.Threading.Tasks.Task<string?> BrowseForScript()

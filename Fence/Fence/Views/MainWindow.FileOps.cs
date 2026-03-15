@@ -40,7 +40,7 @@ public partial class MainWindow
         _currentStore.LocName.SetString(0, "New Store");
 
         _currentFilePath = null;
-        _isDirty = true;
+        _documentState.IsLoading = true;
 
         // Clear item resolution context (no file yet)
         _itemResolutionService?.SetCurrentFilePath(null);
@@ -50,10 +50,13 @@ public partial class MainWindow
         StoreItems.Clear();
         Variables.Clear();
         UpdateStatusBar("New store created");
-        UpdateTitle();
         UpdateItemCount();
 
         OnPropertyChanged(nameof(HasFile));
+
+        // End loading state, then mark dirty — new files are always unsaved
+        _documentState.IsLoading = false;
+        _documentState.ForceDirty();
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "Created new store");
     }
@@ -87,7 +90,7 @@ public partial class MainWindow
         {
             _currentStore = UtmReader.Read(filePath);
             _currentFilePath = filePath;
-            _isDirty = false;
+            _documentState.IsLoading = true;
 
             // Update item resolution service with current file context for module-local items
             _itemResolutionService?.SetCurrentFilePath(filePath);
@@ -96,7 +99,6 @@ public partial class MainWindow
             PopulateStoreProperties();
             PopulateVariables();
             UpdateStatusBar($"Loading items...");
-            UpdateTitle();
 
             // Add to recent files
             SettingsService.Instance.AddRecentFile(filePath);
@@ -112,9 +114,15 @@ public partial class MainWindow
 
             // Load inventory async to avoid blocking UI during item resolution
             _ = PopulateStoreInventoryAsync(filePath);
+
+            // End loading state and ensure dirty flag is clean
+            _documentState.IsLoading = false;
+            _documentState.ClearDirty();
+            UpdateTitle();
         }
         catch (Exception ex)
         {
+            _documentState.IsLoading = false;
             ShowError($"Failed to load file: {ex.Message}");
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load store: {ex.Message}");
         }
@@ -364,7 +372,7 @@ public partial class MainWindow
     {
         _currentStore = null;
         _currentFilePath = null;
-        _isDirty = false;
+        _documentState.IsLoading = true;
 
         // Clear item resolution context
         _itemResolutionService?.SetCurrentFilePath(null);
@@ -372,6 +380,9 @@ public partial class MainWindow
         StoreItems.Clear();
         Variables.Clear();
         ClearStoreProperties();
+
+        _documentState.IsLoading = false;
+        _documentState.ClearDirty();
         UpdateStatusBar("Ready");
         UpdateTitle();
 
@@ -380,7 +391,6 @@ public partial class MainWindow
 
     private void ClearStoreProperties()
     {
-        _documentState.IsLoading = true;
         StoreNameBox.Text = "";
         StoreTagBox.Text = "";
         StoreResRefBox.Text = "";
@@ -400,7 +410,6 @@ public partial class MainWindow
         {
             item.IsSelected = false;
         }
-        _documentState.IsLoading = false;
     }
 
     private void OnExitClick(object? sender, RoutedEventArgs e)

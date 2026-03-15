@@ -50,8 +50,7 @@ public partial class MainWindow
     private void OnVariablePropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         // Mark dirty when any variable property changes
-        _isDirty = true;
-        UpdateTitle();
+        _documentState.MarkDirty();
     }
 
     /// <summary>
@@ -100,8 +99,7 @@ public partial class MainWindow
             VariablesGrid.BeginEdit();
         }, Avalonia.Threading.DispatcherPriority.Background);
 
-        _isDirty = true;
-        UpdateTitle();
+        _documentState.MarkDirty();
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "Added new variable (awaiting name)");
     }
@@ -118,8 +116,7 @@ public partial class MainWindow
             Variables.Remove(item);
         }
 
-        _isDirty = true;
-        UpdateTitle();
+        _documentState.MarkDirty();
 
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed {selectedItems.Count} variable(s)");
     }
@@ -127,8 +124,7 @@ public partial class MainWindow
     private void OnVariableTypeChanged(object? sender, SelectionChangedEventArgs e)
     {
         // Type change handled by ViewModel property change notification
-        _isDirty = true;
-        UpdateTitle();
+        _documentState.MarkDirty();
     }
 
     #endregion

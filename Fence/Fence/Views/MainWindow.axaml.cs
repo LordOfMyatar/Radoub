@@ -281,8 +281,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         WindowPositionHelper.Save(this, SettingsService.Instance);
     }
 
+    private bool _isClosing;
+
     private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
     {
+        // Prevent re-entrant close (HandleClosingAsync cancels then re-calls Close())
+        if (_isClosing)
+            return;
+
         var shouldClose = await FileOperationsHelper.HandleClosingAsync(
             this, e, _documentState.IsDirty, async () =>
             {
@@ -298,6 +304,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         if (shouldClose)
         {
+            _isClosing = true;
             _documentState.ClearDirty();
             SaveWindowPosition();
             SaveStoreBrowserPanelSize();
@@ -418,7 +425,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (_currentStore == null) return;
 
-        _documentState.IsLoading = true;
         StoreNameBox.Text = _currentStore.LocName.GetDefault();
         StoreTagBox.Text = _currentStore.Tag;
         StoreResRefBox.Text = _currentStore.ResRef;
@@ -447,7 +453,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Populate buy restrictions
         PopulateBuyRestrictions();
-        _documentState.IsLoading = false;
     }
 
     private void PopulateBuyRestrictions()
@@ -624,8 +629,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         // Mark document dirty
-        _isDirty = true;
-        UpdateTitle();
+        _documentState.MarkDirty();
     }
 
     /// <summary>
