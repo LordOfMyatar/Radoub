@@ -452,6 +452,7 @@ public partial class FactionEditorViewModel : ObservableObject
         if (_facFile == null || faction.IsDefault) return;
 
         int removeIndex = faction.Index;
+        uint parentFactionId = faction.ParentFactionId;
 
         // Remove the faction
         _facFile.FactionList.RemoveAt(removeIndex);
@@ -476,10 +477,51 @@ public partial class FactionEditorViewModel : ObservableObject
                 f.FactionParentID--;
         }
 
+        // Reindex creature/encounter FactionIDs in area .git files (#1317)
+        var reindexResult = ReindexAreaFactions((uint)removeIndex, parentFactionId);
+
         BuildViewModels();
         BuildMatrix();
         MarkDirty();
-        StatusText = $"Removed faction: {faction.Name}";
+
+        if (reindexResult.TotalReindexed > 0)
+        {
+            StatusText = $"Removed faction: {faction.Name} — reindexed {reindexResult.TotalReindexed} " +
+                         $"instance(s) across {reindexResult.FilesModified} area(s)";
+        }
+        else
+        {
+            StatusText = $"Removed faction: {faction.Name}";
+        }
+    }
+
+    /// <summary>
+    /// Reindexes creature/encounter FactionIDs in area .git files after a faction is deleted.
+    /// </summary>
+    private Services.ReindexResult ReindexAreaFactions(uint deletedIndex, uint parentFactionId)
+    {
+        if (_workingDirectoryPath == null)
+            return new Services.ReindexResult();
+
+        try
+        {
+            var result = Services.AreaScanService.ReindexFactions(
+                _workingDirectoryPath, deletedIndex, parentFactionId);
+
+            if (result.HasErrors)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"Area reindex completed with {result.Errors.Count} error(s)");
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"Failed to reindex area factions: {ex.Message}");
+            return new Services.ReindexResult();
+        }
     }
 
     private void SyncViewModelsToFacFile()
