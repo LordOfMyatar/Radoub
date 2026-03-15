@@ -10,6 +10,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fix: HAK model rendering stability (#1314)
 
+---
+
+## [0.2.46-alpha] - 2026-03-14
+**Branch**: `radoub/issue-1685` | **PR**: #TBD
+
+### Sprint: HAK Resource Browsing (#1685, #1133, #1582)
+
 - BIF-first model loading prevents CEP HAK overrides from breaking creature rendering
 - Error handling in UpdateMeshBuffers prevents OpenGL crashes from malformed models
 - Fix "(Dynamic) (Dynamic)" duplicate prefix in appearance dropdown
