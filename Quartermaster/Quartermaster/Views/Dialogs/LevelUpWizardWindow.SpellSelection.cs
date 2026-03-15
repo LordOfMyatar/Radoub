@@ -142,12 +142,35 @@ public partial class LevelUpWizardWindow
         {
             // Wizard spellbook: gets 2 free spells per level gained (NWN convention). (#1645)
             _wizardFreeSpellsRemaining = 2 * _levelsToAdd;
-            var slotsAtLevel = _displayService.Spells.GetSpellSlots(_selectedClassId, _newClassLevel);
-            for (int i = 0; i <= maxSpellLevel; i++)
+
+            if (_validationLevel == ValidationLevel.None)
             {
-                // Allow picking from any castable level — total across all levels is capped
-                if (slotsAtLevel != null && i < slotsAtLevel.Length && slotsAtLevel[i] > 0)
-                    _newSpellsPerLevel[i] = _wizardFreeSpellsRemaining;
+                // CE mode: any castable spell level gets the full budget — no restrictions
+                var slotsAtLevel = _displayService.Spells.GetSpellSlots(_selectedClassId, _newClassLevel);
+                for (int i = 0; i <= maxSpellLevel; i++)
+                {
+                    if (slotsAtLevel != null && i < slotsAtLevel.Length && slotsAtLevel[i] > 0)
+                        _newSpellsPerLevel[i] = _wizardFreeSpellsRemaining;
+                }
+            }
+            else
+            {
+                // LG/TN mode: cap per spell level based on how many class levels in the
+                // range had access to that spell level. A Wizard only gains 2 free spells
+                // per class level, and can only pick from spell levels available at that
+                // class level. E.g., level 4 spells are only available at class level 7+.
+                for (int spellLvl = 0; spellLvl <= maxSpellLevel; spellLvl++)
+                {
+                    int classLevelsWithAccess = 0;
+                    for (int clsLvl = _fromClassLevel; clsLvl <= _newClassLevel; clsLvl++)
+                    {
+                        int maxAtLevel = _displayService.Spells.GetMaxSpellLevel(_selectedClassId, clsLvl);
+                        if (maxAtLevel >= spellLvl)
+                            classLevelsWithAccess++;
+                    }
+                    if (classLevelsWithAccess > 0)
+                        _newSpellsPerLevel[spellLvl] = 2 * classLevelsWithAccess;
+                }
             }
 
             // Remove spell levels where creature already knows all available spells (#1647)
@@ -325,10 +348,10 @@ public partial class LevelUpWizardWindow
 
         if (_wizardFreeSpellsRemaining > 0)
         {
-            // Wizard: show count at this level, total cap shown separately
-            int totalSelected = GetTotalSelectedSpells();
-            _selectedSpellCountLabel.Text = $"({selectedForLevel.Count} at this level)";
-            if (totalSelected >= _wizardFreeSpellsRemaining)
+            // Wizard: show per-level count and cap
+            int maxForLevel = _newSpellsPerLevel.GetValueOrDefault(_currentSpellLevel, 0);
+            _selectedSpellCountLabel.Text = $"({selectedForLevel.Count} / {maxForLevel} at this level)";
+            if (selectedForLevel.Count >= maxForLevel)
                 _selectedSpellCountLabel.ClearValue(TextBlock.ForegroundProperty);
             else
                 _selectedSpellCountLabel.Foreground = BrushManager.GetSuccessBrush(this);
