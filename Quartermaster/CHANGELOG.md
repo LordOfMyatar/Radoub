@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.47-alpha] - 2026-03-15
-**Branch**: `quartermaster/issue-1630` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1630` | **PR**: #1732
 
 ### Enhancement: Review NCW & LUW brush usage for readability (#1630)
 
