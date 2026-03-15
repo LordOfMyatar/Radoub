@@ -8,6 +8,7 @@ using Avalonia.Controls;
 using Radoub.Formats.Common;
 using Radoub.Formats.Erf;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Resolver;
 using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
 using Radoub.UI.Services;
@@ -390,36 +391,26 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
             _hakEntries.Clear();
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
-            var hakPaths = new List<string>();
-
-            // Current module directory
-            if (!string.IsNullOrEmpty(ModulePath) && Directory.Exists(ModulePath))
+            // Only scan HAKs referenced by module.ifo (#1685)
+            if (string.IsNullOrEmpty(ModulePath) || !Directory.Exists(ModulePath))
             {
-                hakPaths.AddRange(GetHakFilesFromPath(ModulePath));
-            }
-
-            // NWN user hak folder - use context if available, otherwise fall back to RadoubSettings
-            var userPath = _context?.NeverwinterNightsPath ?? RadoubSettings.Instance.NeverwinterNightsPath;
-            if (!string.IsNullOrEmpty(userPath) && Directory.Exists(userPath))
-            {
-                var hakFolder = Path.Combine(userPath, "hak");
-                if (Directory.Exists(hakFolder))
-                {
-                    hakPaths.AddRange(GetHakFilesFromPath(hakFolder));
-                }
-            }
-
-            hakPaths = hakPaths.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-
-            if (hakPaths.Count == 0)
-            {
-                UnifiedLogger.LogApplication(LogLevel.INFO, "CreatureBrowserPanel: No HAK files found to scan");
+                UnifiedLogger.LogApplication(LogLevel.INFO, "CreatureBrowserPanel: No module path for HAK scanning");
                 _hakCreaturesLoaded = true;
                 return;
             }
 
-            ShowLoading($"Scanning {hakPaths.Count} HAK files...");
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"[TIMING] CreatureBrowserPanel: Starting HAK scan of {hakPaths.Count} files");
+            var hakSearchPaths = RadoubSettings.Instance.GetAllHakSearchPaths().ToList();
+            var hakPaths = ModuleHakResolver.ResolveModuleHakPaths(ModulePath, hakSearchPaths);
+
+            if (hakPaths.Count == 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO, "CreatureBrowserPanel: No module-referenced HAK files found");
+                _hakCreaturesLoaded = true;
+                return;
+            }
+
+            ShowLoading($"Scanning {hakPaths.Count} module HAK files...");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"[TIMING] CreatureBrowserPanel: Starting HAK scan of {hakPaths.Count} module-referenced files");
 
             for (int i = 0; i < hakPaths.Count; i++)
             {
@@ -444,22 +435,6 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
         {
             HideLoading();
         }
-    }
-
-    private IEnumerable<string> GetHakFilesFromPath(string path)
-    {
-        try
-        {
-            if (Directory.Exists(path))
-            {
-                return Directory.GetFiles(path, "*.hak", SearchOption.TopDirectoryOnly);
-            }
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogApplication(LogLevel.WARN, $"Error scanning for HAKs in {UnifiedLogger.SanitizePath(path)}: {ex.Message}");
-        }
-        return Enumerable.Empty<string>();
     }
 
     private void ScanHakForCreatures(string hakPath)
