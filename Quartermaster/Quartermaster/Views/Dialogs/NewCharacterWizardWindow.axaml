@@ -70,8 +70,8 @@
                            Margin="0,0,0,5"/>
                 <TextBlock x:Name="SidebarSummary"
                            Text="Choose your path..."
-                           FontSize="{DynamicResource FontSizeXSmall}"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            TextWrapping="Wrap"
                            Margin="0,0,0,20"/>
 
@@ -182,7 +182,7 @@
 
                 <TextBlock Grid.Row="0" Text="What are you creating?" FontSize="{DynamicResource FontSizeXLarge}" FontWeight="Bold" Margin="0,0,0,10"/>
                 <TextBlock Grid.Row="1" Text="Choose the type of character file. This determines which options are available."
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            TextWrapping="Wrap" Margin="0,0,0,25"/>
 
                 <StackPanel Grid.Row="2" Spacing="20" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -192,10 +192,10 @@
                             <StackPanel Spacing="10">
                                 <TextBlock Text="NPC" FontSize="{DynamicResource FontSizeTitle}" FontWeight="Bold" HorizontalAlignment="Center"/>
                                 <TextBlock Text="Creature Blueprint (.utc)" FontSize="{DynamicResource GlobalFontSize}" HorizontalAlignment="Center"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,5"/>
-                                <TextBlock TextWrapping="Wrap" TextAlignment="Center" FontSize="{DynamicResource FontSizeXSmall}"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                <TextBlock TextWrapping="Wrap" TextAlignment="Center" FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            Text="A creature blueprint for module building. All races and classes available. Stats editable after creation."/>
                             </StackPanel>
                         </Border>
@@ -205,10 +205,10 @@
                             <StackPanel Spacing="10">
                                 <TextBlock Text="PC" FontSize="{DynamicResource FontSizeTitle}" FontWeight="Bold" HorizontalAlignment="Center"/>
                                 <TextBlock Text="Player Character (.bic)" FontSize="{DynamicResource GlobalFontSize}" HorizontalAlignment="Center"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <Border Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,5"/>
-                                <TextBlock TextWrapping="Wrap" TextAlignment="Center" FontSize="{DynamicResource FontSizeXSmall}"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                <TextBlock TextWrapping="Wrap" TextAlignment="Center" FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            Text="A player character file. Uses player races and classes only, with standard 30-point ability buy."/>
                             </StackPanel>
                         </Border>
@@ -232,7 +232,7 @@
                                     Content="Browse..." Click="OnBrowseSaveLocationClick"/>
                         </Grid>
                         <TextBlock x:Name="SaveLocationNote" FontSize="{DynamicResource FontSizeSmall}"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                    TextWrapping="Wrap" HorizontalAlignment="Center"
                                    Text="Choose where to save before building your character."/>
                     </StackPanel>
@@ -246,7 +246,7 @@
                                            Width="100" FormatString="0"/>
                         </StackPanel>
                         <TextBlock x:Name="StartingLevelNote" FontSize="{DynamicResource FontSizeSmall}"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                    TextWrapping="Wrap" HorizontalAlignment="Center"
                                    Text="Level 1 character. Change to create at a higher level (single class only)."
                                    IsVisible="True"/>
@@ -264,7 +264,7 @@
 
                 <TextBlock Grid.Row="0" Text="Choose Race &amp; Sex" FontSize="{DynamicResource FontSizeXLarge}" FontWeight="Bold" Margin="0,0,0,10"/>
                 <TextBlock Grid.Row="1" Text="Your race determines ability modifiers, size, and favored class."
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            TextWrapping="Wrap" Margin="0,0,0,15"/>
 
                 <Grid Grid.Row="2">
@@ -373,7 +373,7 @@
                                 <TextBlock x:Name="RaceDescriptionLabel"
                                            TextWrapping="Wrap"
                                            Text="Select a race to see its details."
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                             </ScrollViewer>
                         </Grid>
                     </Border>
@@ -390,7 +390,7 @@
 
                 <TextBlock Grid.Row="0" Text="Character Identity" FontSize="{DynamicResource FontSizeXLarge}" FontWeight="Bold" Margin="0,0,0,10"/>
                 <TextBlock Grid.Row="1" Text="Name your character, choose a portrait and voice set."
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            TextWrapping="Wrap" Margin="0,0,0,15"/>
 
                 <ScrollViewer Grid.Row="2">
@@ -423,7 +423,7 @@
                                                        FormatString="0"/>
                                         <TextBlock x:Name="IdentityAgeNote" Text="(BIC only)"
                                                    VerticalAlignment="Center" FontSize="{DynamicResource FontSizeSmall}"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                     </StackPanel>
 
                                     <TextBlock Grid.Row="3" Grid.Column="0" Text="Description:" VerticalAlignment="Top" Margin="0,4,0,0"/>
@@ -452,13 +452,13 @@
                                     <TextBlock Text="Generated Identifiers" FontWeight="Bold"/>
                                     <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="80,*" RowSpacing="4" ColumnSpacing="10">
                                         <TextBlock Grid.Row="0" Grid.Column="0" x:Name="IdentityTagLabelText" Text="Tag:"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                         <TextBlock Grid.Row="0" Grid.Column="1" x:Name="IdentityGeneratedTagLabel" Text="new_creature"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                         <TextBlock Grid.Row="1" Grid.Column="0" Text="ResRef:"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                         <TextBlock Grid.Row="1" Grid.Column="1" x:Name="IdentityGeneratedResRefLabel" Text="new_creature"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                     </Grid>
                                     <TextBlock x:Name="IdentityFilenameWarning" TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}"
                                                IsVisible="False"/>
@@ -471,13 +471,13 @@
                                 <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="100,*" RowSpacing="8" ColumnSpacing="10">
                                     <TextBlock Grid.Row="0" Grid.Column="0" x:Name="IdentityPaletteIdLabelText" Text="Palette:"
                                                VerticalAlignment="Center"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                     <ComboBox Grid.Row="0" Grid.Column="1" x:Name="IdentityPaletteIdComboBox"
                                               HorizontalAlignment="Left" MinWidth="250"/>
 
                                     <TextBlock Grid.Row="1" Grid.Column="0" x:Name="IdentityFactionLabelText" Text="Faction:"
                                                VerticalAlignment="Center"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                     <ComboBox Grid.Row="1" Grid.Column="1" x:Name="IdentityFactionComboBox"
                                               HorizontalAlignment="Left" MinWidth="250"
                                               SelectionChanged="OnFactionSelectionChanged"/>
@@ -495,8 +495,8 @@
                                     <Image x:Name="IdentityPortraitPreviewImage" Stretch="Uniform"/>
                                 </Border>
                                 <TextBlock x:Name="IdentityPortraitNameLabel" Text="No portrait selected"
-                                           HorizontalAlignment="Center" FontSize="{DynamicResource FontSizeXSmall}"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                           HorizontalAlignment="Center" FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            TextWrapping="Wrap" TextAlignment="Center"/>
                                 <Button x:Name="IdentityBrowsePortraitButton" Content="Browse..."
                                         Click="OnBrowsePortraitClick" HorizontalAlignment="Center"/>
@@ -517,7 +517,7 @@
 
                 <TextBlock Grid.Row="0" Text="Customize Appearance" FontSize="{DynamicResource FontSizeXLarge}" FontWeight="Bold" Margin="0,0,0,10"/>
                 <TextBlock Grid.Row="1" Text="Choose your character's appearance type, phenotype, and body details."
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            TextWrapping="Wrap" Margin="0,0,0,15"/>
 
                 <Grid Grid.Row="2">
@@ -708,7 +708,7 @@
                                     <TextBlock x:Name="BodyPartsNotApplicableLabel"
                                                Text="Body part customization is only available for humanoid appearance types."
                                                TextWrapping="Wrap" IsVisible="False"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                FontStyle="Italic" Margin="0,6"/>
                                 </StackPanel>
                             </ScrollViewer>
@@ -720,8 +720,8 @@
                 <Border Grid.Row="3" Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                         Padding="8" CornerRadius="4" Margin="0,8,0,0">
                     <TextBlock Text="More visualization options (3D preview, head gallery) are available on the Appearance panel after creating the character."
-                               TextWrapping="Wrap" FontSize="{DynamicResource FontSizeXSmall}" FontStyle="Italic"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                               TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}" FontStyle="Italic"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                 </Border>
             </Grid>
 
@@ -736,7 +736,7 @@
 
                 <TextBlock Grid.Row="0" Text="Choose Class &amp; Package" FontSize="{DynamicResource FontSizeXLarge}" FontWeight="Bold" Margin="0,0,0,10"/>
                 <TextBlock Grid.Row="1" Text="Select your starting class. The package determines recommended skills and feats."
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            TextWrapping="Wrap" Margin="0,0,0,15"/>
 
                 <Grid Grid.Row="2">
@@ -822,7 +822,7 @@
                                         <TextBlock Grid.Column="0" Grid.Row="1" x:Name="ClassPrimaryAbilityLabel" Text="Primary: —" FontWeight="SemiBold" Margin="0,2"/>
                                         <TextBlock Grid.Column="1" Grid.Row="1" x:Name="ClassCasterLabel" Text="Spellcasting: None" FontWeight="SemiBold" Margin="0,2"/>
                                         <TextBlock Grid.Column="0" Grid.Row="2" x:Name="ClassAlignmentLabel" Text="" Margin="0,2"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" TextWrapping="Wrap"
                                                    Grid.ColumnSpan="2"/>
                                     </Grid>
                                 </Border>
@@ -859,9 +859,9 @@
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
                                         <TextBlock Grid.Column="0" Grid.Row="0" Text="Domain 1" Margin="0,0,0,3"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                         <TextBlock Grid.Column="2" Grid.Row="0" Text="Domain 2" Margin="0,0,0,3"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                         <ComboBox Grid.Column="0" Grid.Row="1" x:Name="Domain1ComboBox" HorizontalAlignment="Stretch"
                                                  SelectionChanged="OnDomainSelectionChanged"/>
                                         <ComboBox Grid.Column="2" Grid.Row="1" x:Name="Domain2ComboBox" HorizontalAlignment="Stretch"
@@ -884,7 +884,7 @@
                                     </StackPanel>
                                     <TextBlock Text="Your familiar is a magical companion that aids you."
                                                FontSize="{DynamicResource FontSizeSmall}" TextWrapping="Wrap"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 </StackPanel>
 
                                 <!-- Alignment Selection -->
@@ -904,11 +904,11 @@
                                         </Grid.RowDefinitions>
                                         <!-- Column headers -->
                                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Lawful" HorizontalAlignment="Center" FontSize="{DynamicResource FontSizeSmall}"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,0,0,3"/>
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="0,0,0,3"/>
                                         <TextBlock Grid.Row="0" Grid.Column="1" Text="Neutral" HorizontalAlignment="Center" FontSize="{DynamicResource FontSizeSmall}"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,0,0,3"/>
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="0,0,0,3"/>
                                         <TextBlock Grid.Row="0" Grid.Column="2" Text="Chaotic" HorizontalAlignment="Center" FontSize="{DynamicResource FontSizeSmall}"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,0,0,3"/>
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="0,0,0,3"/>
                                         <!-- Row 1: Good -->
                                         <ToggleButton Grid.Row="1" Grid.Column="0" x:Name="AlignLG" Content="LG" Width="80" HorizontalContentAlignment="Center"
                                                       Margin="2" Click="OnAlignmentClick" ToolTip.Tip="Lawful Good"/>
@@ -932,7 +932,7 @@
                                                       Margin="2" Click="OnAlignmentClick" ToolTip.Tip="Chaotic Evil"/>
                                     </Grid>
                                     <TextBlock x:Name="AlignmentRestrictionWarning" TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                IsVisible="False"/>
                                 </StackPanel>
 
@@ -941,7 +941,7 @@
                                     <TextBlock x:Name="ClassDescriptionLabel"
                                                TextWrapping="Wrap"
                                                Text="Select a class to see its details."
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 </ScrollViewer>
                             </Grid>
                         </ScrollViewer>
@@ -956,15 +956,15 @@
                         <StackPanel Orientation="Horizontal" Spacing="5">
                             <TextBlock x:Name="PrestigeToggleArrow" Text="▸" FontWeight="Bold" VerticalAlignment="Center"/>
                             <TextBlock Text="Prestige Planning (Advisory)" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
                         </StackPanel>
                         <Border x:Name="PrestigeToggleClickArea" Background="Transparent" Margin="-10,-5,-10,0" Padding="10,5,10,0"
                                 PointerPressed="OnPrestigePlanningToggle" Cursor="Hand" Height="5"/>
                         <StackPanel x:Name="PrestigePlanningContent" IsVisible="False" Margin="0,5,0,0" Spacing="5">
                             <TextBlock Text="Select a prestige class goal to see its prerequisites:"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                       FontSize="{DynamicResource FontSizeXSmall}"/>
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       FontSize="{DynamicResource FontSizeSmall}"/>
                             <ComboBox x:Name="PrestigeClassComboBox" HorizontalAlignment="Stretch"
                                       SelectionChanged="OnPrestigeClassSelectionChanged">
                                 <ComboBox.ItemTemplate>
@@ -974,8 +974,8 @@
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
                             <TextBlock x:Name="PrestigePrereqLabel"
-                                       TextWrapping="Wrap" FontSize="{DynamicResource FontSizeXSmall}"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                       TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>
@@ -994,7 +994,7 @@
 
                 <TextBlock Grid.Row="0" Text="Assign Ability Scores" FontSize="{DynamicResource FontSizeXLarge}" FontWeight="Bold" Margin="0,0,0,10"/>
                 <TextBlock Grid.Row="1" x:Name="AbilityStepSubtitle" Text="Distribute 30 points across your abilities. Base scores start at 8. Higher scores cost more points."
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            TextWrapping="Wrap" Margin="0,0,0,15"/>
 
                 <!-- Points Remaining -->
@@ -1017,8 +1017,8 @@
                 <Border Grid.Row="3" x:Name="PrestigeAbilityBanner"
                         Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                         Padding="8" CornerRadius="4" Margin="0,0,0,10" IsVisible="False">
-                    <TextBlock x:Name="PrestigeAbilityBannerLabel" TextWrapping="Wrap" FontSize="{DynamicResource FontSizeXSmall}" FontStyle="Italic"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                    <TextBlock x:Name="PrestigeAbilityBannerLabel" TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}" FontStyle="Italic"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                 </Border>
 
                 <!-- Ability Score Grid -->
@@ -1060,7 +1060,7 @@
                         Padding="8" CornerRadius="4" Margin="0,8,0,0">
                     <TextBlock Text="Cost table: 8→0  9→1  10→2  11→3  12→4  13→5  14→6  15→8  16→10  17→13  18→16"
                                FontSize="{DynamicResource FontSizeSmall}" FontFamily="Consolas"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                 </Border>
             </Grid>
 
@@ -1077,7 +1077,7 @@
                 <TextBlock Grid.Row="0" Text="Select Feats" FontSize="{DynamicResource FontSizeXLarge}" FontWeight="Bold" Margin="0,0,0,10"/>
                 <TextBlock Grid.Row="1" x:Name="FeatStepDescription"
                            Text="Choose your starting feats. Granted feats from your race and class are pre-selected."
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            TextWrapping="Wrap" Margin="0,0,0,15"/>
 
                 <!-- Feat Selection Counter + Auto-Assign -->
@@ -1127,7 +1127,7 @@
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center"/>
                                             <TextBlock Grid.Column="1" Text="{Binding CategoryAbbrev}" FontSize="{DynamicResource FontSizeXSmall}"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                        VerticalAlignment="Center" Margin="8,0,0,0"/>
                                         </Grid>
                                     </DataTemplate>
@@ -1153,7 +1153,7 @@
                         <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,5">
                             <TextBlock Text="Selected Feats" FontWeight="Bold" VerticalAlignment="Center"/>
                             <TextBlock x:Name="SelectedFeatCountLabel" Text="(0 chosen + 0 granted)"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
                         </StackPanel>
                         <Border Grid.Row="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
@@ -1169,7 +1169,7 @@
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center"/>
                                             <TextBlock Grid.Column="1" Text="{Binding SourceLabel}" FontSize="{DynamicResource FontSizeXSmall}"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                        VerticalAlignment="Center" Margin="8,0,0,0"/>
                                         </Grid>
                                     </DataTemplate>
@@ -1186,8 +1186,8 @@
                         <StackPanel Spacing="2">
                             <TextBlock x:Name="FeatDescriptionTitle" FontWeight="Bold" FontSize="{DynamicResource FontSizeSmall}"
                                        Text="Select a feat to see its description"/>
-                            <TextBlock x:Name="FeatDescriptionText" TextWrapping="Wrap" FontSize="{DynamicResource FontSizeXSmall}"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                            <TextBlock x:Name="FeatDescriptionText" TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                         </StackPanel>
                     </ScrollViewer>
                 </Border>
@@ -1204,7 +1204,7 @@
 
                 <TextBlock Grid.Row="0" Text="Allocate Skills" FontSize="{DynamicResource FontSizeXLarge}" FontWeight="Bold" Margin="0,0,0,10"/>
                 <TextBlock Grid.Row="1" Text="Spend skill points on your character's abilities. Class skills cost 1 point, cross-class skills cost 2."
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            TextWrapping="Wrap" Margin="0,0,0,15"/>
 
                 <!-- Points Remaining -->
@@ -1275,7 +1275,7 @@
                 <TextBlock Grid.Row="0" Text="Select Spells" FontSize="{DynamicResource FontSizeXLarge}" FontWeight="Bold" Margin="0,0,0,10"/>
                 <TextBlock Grid.Row="1" x:Name="SpellStepDescription"
                            Text="Choose spells known for your class."
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            TextWrapping="Wrap" Margin="0,0,0,15"/>
 
                 <!-- Spell Level Tabs + Selection Counter + Auto-Assign -->
@@ -1324,7 +1324,7 @@
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center"/>
                                             <TextBlock Grid.Column="1" Text="{Binding SchoolAbbrev}" FontSize="{DynamicResource FontSizeXSmall}"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                        VerticalAlignment="Center" Margin="8,0,0,0"/>
                                         </Grid>
                                     </DataTemplate>
@@ -1350,7 +1350,7 @@
                         <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,5">
                             <TextBlock Text="Selected Spells" FontWeight="Bold" VerticalAlignment="Center"/>
                             <TextBlock x:Name="SelectedSpellCountLabel" Text="(0 / 0)"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
                         </StackPanel>
                         <Border Grid.Row="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
@@ -1365,7 +1365,7 @@
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center"/>
                                             <TextBlock Grid.Column="1" Text="{Binding SchoolAbbrev}" FontSize="{DynamicResource FontSizeXSmall}"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                        VerticalAlignment="Center" Margin="8,0,0,0"/>
                                         </Grid>
                                     </DataTemplate>
@@ -1384,7 +1384,7 @@
                                    FontSize="{DynamicResource GlobalFontSize}"/>
                         <TextBlock Text="No spell selection is needed — your spells will be available automatically."
                                    TextWrapping="Wrap" TextAlignment="Center"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                 </Border>
             </Grid>
@@ -1401,7 +1401,7 @@
                 <TextBlock Grid.Row="0" Text="Starting Equipment" FontSize="{DynamicResource FontSizeXLarge}" FontWeight="Bold" Margin="0,0,0,10"/>
                 <TextBlock Grid.Row="1" x:Name="EquipmentStepDescription"
                            Text="Equip your character with starting gear from the package defaults, or skip to equip later."
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            TextWrapping="Wrap" Margin="0,0,0,15"/>
 
                 <!-- Equipment Actions -->
@@ -1453,7 +1453,7 @@
                         <TextBlock x:Name="EquipmentEmptyLabel" Grid.Row="1"
                                    Text="No equipment selected. Click 'Load Package Defaults' to auto-equip, or skip this step to equip later in the editor."
                                    TextWrapping="Wrap" FontStyle="Italic"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Margin="20"/>
                     </Grid>
@@ -1470,7 +1470,7 @@
 
                 <TextBlock Grid.Row="0" Text="Review &amp; Create" FontSize="{DynamicResource FontSizeXLarge}" FontWeight="Bold" Margin="0,0,0,10"/>
                 <TextBlock Grid.Row="1" Text="Review your choices and create your character."
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            TextWrapping="Wrap" Margin="0,0,0,15"/>
 
                 <ScrollViewer Grid.Row="2">
@@ -1636,7 +1636,7 @@
                 <!-- Status Message -->
                 <TextBlock Grid.Column="0" x:Name="StatusLabel"
                            VerticalAlignment="Center"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
 
                 <!-- Navigation Buttons -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">

@@ -133,7 +133,7 @@ public partial class NewCharacterWizardWindow
             {
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Foreground = this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush,
+                Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush,
                 Tag = $"Cost_{ability}"
             };
             Grid.SetColumn(costLabel, 7);

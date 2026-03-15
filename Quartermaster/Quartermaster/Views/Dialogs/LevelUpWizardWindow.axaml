@@ -57,8 +57,8 @@
                            Margin="0,0,0,5"/>
                 <TextBlock x:Name="CharacterLevelLabel"
                            Text="Level X -> Y"
-                           FontSize="{DynamicResource FontSizeXSmall}"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            Margin="0,0,0,20"/>
 
                 <!-- Step Indicators -->
@@ -251,7 +251,7 @@
                                 <TextBlock x:Name="ClassDescriptionLabel"
                                            TextWrapping="Wrap"
                                            Text="Select a class to see its description."
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                             </ScrollViewer>
                         </Grid>
                     </Border>
@@ -468,7 +468,7 @@
 
                 <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="20" Margin="0,0,0,15">
                     <TextBlock x:Name="SkillPointsRemainingLabel" Text="Points remaining: 5" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="SkillPointsTotalLabel" Text="(Base 2 + INT 3 = 5)" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="SkillPointsTotalLabel" Text="(Base 2 + INT 3 = 5)" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
                     <Button x:Name="SkillAutoAssignButton" Content="Auto-Assign" Click="OnSkillAutoAssignClick"/>
                     <TextBox x:Name="SkillSearchBox" Watermark="Filter skills..." Width="160" TextChanged="OnSkillSearchChanged"/>
                 </StackPanel>
@@ -568,7 +568,7 @@
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Grid.Column="0" Text="{Binding Name}"/>
                                             <TextBlock Grid.Column="1" Text="{Binding SchoolAbbrev}"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                        FontSize="{DynamicResource FontSizeSmall}" Margin="5,0,0,0"/>
                                         </Grid>
                                     </DataTemplate>
@@ -605,7 +605,7 @@
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Grid.Column="0" Text="{Binding Name}"/>
                                             <TextBlock Grid.Column="1" Text="{Binding SchoolAbbrev}"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                        FontSize="{DynamicResource FontSizeSmall}" Margin="5,0,0,0"/>
                                         </Grid>
                                     </DataTemplate>
@@ -722,7 +722,7 @@
                 <!-- Status Message -->
                 <TextBlock Grid.Column="0" x:Name="StatusLabel"
                            VerticalAlignment="Center"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
 
                 <!-- Navigation Buttons -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
