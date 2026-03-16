@@ -304,8 +304,11 @@ public partial class MdlBinaryReader
 
         if (vertexCount > 0 && boneIndicesRawOffset != uint.MaxValue && boneWeightsRawOffset != uint.MaxValue)
         {
-            var indicesRequired = (uint)(vertexCount * 4 * sizeof(short));  // 8 bytes/vertex
-            var weightsRequired = (uint)(vertexCount * 4 * sizeof(float));  // 16 bytes/vertex
+            // Bone indices: 4 x int16 per vertex, but stride is 16 bytes (8 bytes padding)
+            // Bone weights: 4 x float per vertex = 16 bytes/vertex
+            var indicesStride = 16;  // 8 bytes data + 8 bytes padding per vertex
+            var indicesRequired = (uint)(vertexCount * indicesStride);
+            var weightsRequired = (uint)(vertexCount * 4 * sizeof(float));
 
             if (boneIndicesRawOffset + indicesRequired <= _rawData.Length &&
                 boneWeightsRawOffset + weightsRequired <= _rawData.Length)
@@ -314,8 +317,8 @@ public partial class MdlBinaryReader
 
                 for (int i = 0; i < vertexCount; i++)
                 {
-                    var idxOff = (int)boneIndicesRawOffset + i * 8;  // 4 int16 = 8 bytes
-                    var wtOff = (int)boneWeightsRawOffset + i * 16;  // 4 float = 16 bytes
+                    var idxOff = (int)boneIndicesRawOffset + i * indicesStride;
+                    var wtOff = (int)boneWeightsRawOffset + i * 16;
 
                     weights[i] = new MdlBoneWeight
                     {
