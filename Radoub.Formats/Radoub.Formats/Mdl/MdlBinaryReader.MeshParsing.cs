@@ -321,7 +321,52 @@ public partial class MdlBinaryReader
         var boneIndicesRawOffset = PointerToRawOffset(skinWeightsPtr);
         var boneWeightsRawOffset = PointerToRawOffset(skinBoneRefsPtr);
         Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
-            $"[MDL] Skin '{skin.Name}': boneIndicesRawOff={boneIndicesRawOffset}, boneWeightsRawOff={boneWeightsRawOffset}, rawDataLen={_rawData.Length}");
+            $"[MDL] Skin '{skin.Name}': boneIndicesRawOff={boneIndicesRawOffset}, boneWeightsRawOff={boneWeightsRawOffset}, rawDataLen={_rawData.Length}, gap={boneWeightsRawOffset - boneIndicesRawOffset}");
+
+        // Dump 48 bytes from weightsPtr to see full vertex layout
+        if (boneIndicesRawOffset != uint.MaxValue && boneIndicesRawOffset + 48 <= _rawData.Length)
+        {
+            var dump = new byte[48];
+            Array.Copy(_rawData, (int)boneIndicesRawOffset, dump, 0, 48);
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
+                $"[MDL] Skin '{skin.Name}' weightsPtr dump (48 bytes): {BitConverter.ToString(dump)}");
+            // Interpret as: [4×int16][4×float][4×int16][4×float]
+            var b0 = BitConverter.ToInt16(dump, 0);
+            var b1 = BitConverter.ToInt16(dump, 2);
+            var b2 = BitConverter.ToInt16(dump, 4);
+            var b3 = BitConverter.ToInt16(dump, 6);
+            var w0 = BitConverter.ToSingle(dump, 8);
+            var w1 = BitConverter.ToSingle(dump, 12);
+            var w2 = BitConverter.ToSingle(dump, 16);
+            var w3 = BitConverter.ToSingle(dump, 20);
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
+                $"[MDL] Skin '{skin.Name}' v0 as [4xi16+4xf32] 24B: bones=({b0},{b1},{b2},{b3}) weights=({w0:F4},{w1:F4},{w2:F4},{w3:F4}) sum={w0+w1+w2+w3:F4}");
+            // Also try 16-byte stride for indices (4×int16 + 8 bytes padding)
+            var b0b = BitConverter.ToInt16(dump, 16);  // vertex 1 at stride 16
+            var b1b = BitConverter.ToInt16(dump, 18);
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
+                $"[MDL] Skin '{skin.Name}' v1@stride16: bones=({b0b},{b1b},...)");
+        }
+        // Dump 32 bytes from boneRefsPtr
+        if (boneWeightsRawOffset != uint.MaxValue && boneWeightsRawOffset + 32 <= _rawData.Length)
+        {
+            var dump = new byte[32];
+            Array.Copy(_rawData, (int)boneWeightsRawOffset, dump, 0, 32);
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
+                $"[MDL] Skin '{skin.Name}' boneRefsPtr dump (32 bytes): {BitConverter.ToString(dump)}");
+            var w0 = BitConverter.ToSingle(dump, 0);
+            var w1 = BitConverter.ToSingle(dump, 4);
+            var w2 = BitConverter.ToSingle(dump, 8);
+            var w3 = BitConverter.ToSingle(dump, 12);
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
+                $"[MDL] Skin '{skin.Name}' boneRefsPtr as 4xfloat: ({w0:F6},{w1:F6},{w2:F6},{w3:F6}) sum={w0+w1+w2+w3:F6}");
+            var s0 = BitConverter.ToInt16(dump, 0);
+            var s1 = BitConverter.ToInt16(dump, 2);
+            var s2 = BitConverter.ToInt16(dump, 4);
+            var s3 = BitConverter.ToInt16(dump, 6);
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
+                $"[MDL] Skin '{skin.Name}' boneRefsPtr as 4xint16: ({s0},{s1},{s2},{s3})");
+        }
 
         if (vertexCount > 0 && boneIndicesRawOffset != uint.MaxValue && boneWeightsRawOffset != uint.MaxValue)
         {
