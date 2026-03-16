@@ -12,6 +12,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.49-alpha] - 2026-03-15
+**Branch**: `quartermaster/issue-1741` | **PR**: #TBD
+
+### Sprint: LUW & Validation Bug Fixes (#1741)
+
+- Fix: Consolidated LUW saves may be calculated incorrectly at high levels (#1740)
+- Fix: LUW auto-assign may use wrong package for feat/ability suggestions (#1737)
+- Fix: Rogue weapon proficiency validation incorrect for short swords (#1675)
+
+---
+
 ## [0.2.48-alpha] - 2026-03-15
 **Branch**: `quartermaster/issue-1650` | **PR**: #1733
 
