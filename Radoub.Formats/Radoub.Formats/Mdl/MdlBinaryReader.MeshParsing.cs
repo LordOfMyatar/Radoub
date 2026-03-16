@@ -231,6 +231,154 @@ public partial class MdlBinaryReader
                 aabb.RootAabb = ParseAabbTree(aabbTreeBufferOffset);
             }
         }
+
+        // Skin node extension data (0x64 bytes after mesh header, at nodeOffset + 0x270)
+        if ((flags & NodeFlagHasSkin) != 0 && mesh is MdlSkinNode skin)
+        {
+            ParseSkinNode(skin, reader, meshHeaderStart, vertexCount);
+        }
+    }
+
+    /// <summary>
+    /// Parse skin mesh extension data: bone weights, bone refs, and inverse bind-pose transforms.
+    /// The skin extension is 0x64 bytes starting at mesh header + 0x200 (i.e., nodeOffset + 0x270).
+    /// Layout based on nwnexplorer CNwnMdlSkinMeshNode structure.
+    /// </summary>
+    private void ParseSkinNode(MdlSkinNode skin, BinaryReader reader, long meshHeaderStart, int vertexCount)
+    {
+        // Skin extension starts at meshHeaderStart + 0x200
+        var skinExtStart = meshHeaderStart + 0x200;
+        reader.BaseStream.Position = skinExtStart;
+
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+            $"[MDL] ParseSkinNode '{skin.Name}': skinExtStart=0x{skinExtStart:X4}, vertexCount={vertexCount}");
+
+        // 0x000: m_aWeights array header (12 bytes) — string-based weight data in model data, skip
+        reader.BaseStream.Position += 12;
+
+        // 0x00C: m_pafSkinWeights — pointer to raw data: 4 floats per vertex (bone weights)
+        var skinWeightsPtr = reader.ReadUInt32();
+
+        // 0x010: m_pasSkinBoneRefs — pointer to raw data: 4 int16s per vertex (bone indices)
+        var skinBoneRefsPtr = reader.ReadUInt32();
+
+        // 0x014: m_pasNodeToBoneMap — pointer to model data (int16 array), skip
+        reader.ReadUInt32();
+        // 0x018: m_ulNodeToBoneCount
+        reader.ReadUInt32();
+
+        // 0x01C: m_aQBoneRefInv — array of inverse bind-pose quaternions (CNwnArray: offset, count, allocated)
+        var qBoneArrayOffset = reader.ReadUInt32();
+        var qBoneCount = reader.ReadUInt32();
+        reader.ReadUInt32(); // allocated
+
+        // 0x028: m_aTBoneRefInv — array of inverse bind-pose translations (CNwnArray: offset, count, allocated)
+        var tBoneArrayOffset = reader.ReadUInt32();
+        var tBoneCount = reader.ReadUInt32();
+        reader.ReadUInt32(); // allocated
+
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+            $"[MDL] Skin '{skin.Name}': weightsPtr=0x{skinWeightsPtr:X8}, boneRefsPtr=0x{skinBoneRefsPtr:X8}, " +
+            $"qBonePtr=0x{qBoneArrayOffset:X8} count={qBoneCount}, tBonePtr=0x{tBoneArrayOffset:X8} count={tBoneCount}");
+
+        // Read per-vertex bone weights from raw data (4 floats per vertex)
+        var weightsRawOffset = PointerToRawOffset(skinWeightsPtr);
+        if (vertexCount > 0 && weightsRawOffset != uint.MaxValue)
+        {
+            var requiredBytes = (uint)(vertexCount * 4 * sizeof(float));
+            if (weightsRawOffset + requiredBytes <= _rawData.Length)
+            {
+                var weights = new MdlBoneWeight[vertexCount];
+
+                // Read per-vertex bone refs from raw data (4 int16s per vertex)
+                var refsRawOffset = PointerToRawOffset(skinBoneRefsPtr);
+                short[]? boneRefs = null;
+                if (refsRawOffset != uint.MaxValue)
+                {
+                    var refsRequired = (uint)(vertexCount * 4 * sizeof(short));
+                    if (refsRawOffset + refsRequired <= _rawData.Length)
+                    {
+                        boneRefs = new short[vertexCount * 4];
+                        Buffer.BlockCopy(_rawData, (int)refsRawOffset, boneRefs, 0, (int)refsRequired);
+                    }
+                }
+
+                for (int i = 0; i < vertexCount; i++)
+                {
+                    var baseOff = (int)weightsRawOffset + i * 16; // 4 floats = 16 bytes
+                    weights[i] = new MdlBoneWeight
+                    {
+                        Weight0 = BitConverter.ToSingle(_rawData, baseOff),
+                        Weight1 = BitConverter.ToSingle(_rawData, baseOff + 4),
+                        Weight2 = BitConverter.ToSingle(_rawData, baseOff + 8),
+                        Weight3 = BitConverter.ToSingle(_rawData, baseOff + 12),
+                        Bone0 = boneRefs != null ? boneRefs[i * 4] : -1,
+                        Bone1 = boneRefs != null ? boneRefs[i * 4 + 1] : -1,
+                        Bone2 = boneRefs != null ? boneRefs[i * 4 + 2] : -1,
+                        Bone3 = boneRefs != null ? boneRefs[i * 4 + 3] : -1,
+                    };
+                }
+
+                skin.BoneWeights = weights;
+                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                    $"[MDL] Skin '{skin.Name}': Read {vertexCount} bone weight entries");
+            }
+            else
+            {
+                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.WARN,
+                    $"[MDL] Skin '{skin.Name}': Bone weights would read past raw data (offset={weightsRawOffset}, need={requiredBytes}, have={_rawData.Length})");
+            }
+        }
+
+        // Read inverse bind-pose quaternions from model data
+        var qBoneBufferOffset = PointerToModelOffset(qBoneArrayOffset);
+        if (qBoneCount > 0 && qBoneBufferOffset != uint.MaxValue)
+        {
+            var requiredBytes = qBoneCount * 16; // 4 floats per quaternion
+            if (qBoneBufferOffset + requiredBytes <= _modelData.Length)
+            {
+                skin.BoneQuaternions = new Quaternion[qBoneCount];
+                using var qStream = new MemoryStream(_modelData);
+                using var qReader = new BinaryReader(qStream);
+                qStream.Position = qBoneBufferOffset;
+
+                for (int i = 0; i < (int)qBoneCount; i++)
+                {
+                    // Inverse bind-pose quaternions — read 4 floats
+                    // Try same order as controller quaternions (X, Y, Z, W) first
+                    var f0 = qReader.ReadSingle();
+                    var f1 = qReader.ReadSingle();
+                    var f2 = qReader.ReadSingle();
+                    var f3 = qReader.ReadSingle();
+                    skin.BoneQuaternions[i] = new Quaternion(f0, f1, f2, f3);
+                }
+
+                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                    $"[MDL] Skin '{skin.Name}': Read {qBoneCount} inverse bind-pose quaternions");
+            }
+        }
+
+        // Read inverse bind-pose translations from model data
+        var tBoneBufferOffset = PointerToModelOffset(tBoneArrayOffset);
+        if (tBoneCount > 0 && tBoneBufferOffset != uint.MaxValue)
+        {
+            var requiredBytes = tBoneCount * 12; // 3 floats per Vector3
+            if (tBoneBufferOffset + requiredBytes <= _modelData.Length)
+            {
+                skin.BoneTranslations = new Vector3[tBoneCount];
+                using var tStream = new MemoryStream(_modelData);
+                using var tReader = new BinaryReader(tStream);
+                tStream.Position = tBoneBufferOffset;
+
+                for (int i = 0; i < (int)tBoneCount; i++)
+                {
+                    skin.BoneTranslations[i] = ReadVector3(tReader);
+                }
+
+                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                    $"[MDL] Skin '{skin.Name}': Read {tBoneCount} inverse bind-pose translations");
+            }
+        }
     }
 
     /// <summary>

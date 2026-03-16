@@ -364,6 +364,62 @@ void main()
         return Vector3.Normalize(transformed);
     }
 
+    /// <summary>
+    /// Apply bone-weighted skinning transform to a vertex position.
+    /// Uses inverse bind-pose quaternions and translations stored in the skin node.
+    /// Formula: finalPos = Σ weight[j] * (rotate(vertex, Q[bone]) + T[bone])
+    /// </summary>
+    private static Vector3 ApplySkinTransform(Vector3 vertex, int vertexIndex, Radoub.Formats.Mdl.MdlSkinNode skin)
+    {
+        var bw = skin.BoneWeights[vertexIndex];
+        var result = Vector3.Zero;
+
+        void Accumulate(int boneIndex, float weight)
+        {
+            if (weight <= 0 || boneIndex < 0) return;
+            if (boneIndex >= skin.BoneQuaternions.Length || boneIndex >= skin.BoneTranslations.Length) return;
+
+            var q = skin.BoneQuaternions[boneIndex];
+            var t = skin.BoneTranslations[boneIndex];
+            var rotated = Vector3.Transform(vertex, q);
+            result += weight * (rotated + t);
+        }
+
+        Accumulate(bw.Bone0, bw.Weight0);
+        Accumulate(bw.Bone1, bw.Weight1);
+        Accumulate(bw.Bone2, bw.Weight2);
+        Accumulate(bw.Bone3, bw.Weight3);
+
+        return result;
+    }
+
+    /// <summary>
+    /// Apply bone-weighted skinning rotation to a normal vector.
+    /// Only applies the rotation component (no translation for normals).
+    /// </summary>
+    private static Vector3 ApplySkinNormalTransform(Vector3 normal, int vertexIndex, Radoub.Formats.Mdl.MdlSkinNode skin)
+    {
+        var bw = skin.BoneWeights[vertexIndex];
+        var result = Vector3.Zero;
+
+        void Accumulate(int boneIndex, float weight)
+        {
+            if (weight <= 0 || boneIndex < 0) return;
+            if (boneIndex >= skin.BoneQuaternions.Length) return;
+
+            var q = skin.BoneQuaternions[boneIndex];
+            result += weight * Vector3.Transform(normal, q);
+        }
+
+        Accumulate(bw.Bone0, bw.Weight0);
+        Accumulate(bw.Bone1, bw.Weight1);
+        Accumulate(bw.Bone2, bw.Weight2);
+        Accumulate(bw.Bone3, bw.Weight3);
+
+        var len = result.Length();
+        return len > 0.0001f ? result / len : Vector3.UnitZ;
+    }
+
     protected override void OnOpenGlInit(GlInterface gl)
     {
         base.OnOpenGlInit(gl);
@@ -683,9 +739,14 @@ void main()
             }
 
             // Determine transform strategy based on mesh type:
-            // - Skin meshes (MdlSkinNode): vertices in bind-pose/model space, no transform needed
+            // - Skin meshes (MdlSkinNode): vertices need bone weight transforms applied
+            //   using inverse bind-pose quaternions and translations
             // - Trimesh: vertices in local node space, need full world transform (T*R*S hierarchy)
             bool isSkinMesh = mesh is Radoub.Formats.Mdl.MdlSkinNode;
+            var skinNode = mesh as Radoub.Formats.Mdl.MdlSkinNode;
+            bool hasSkinTransforms = skinNode?.BoneWeights?.Length > 0
+                && skinNode?.BoneQuaternions?.Length > 0
+                && skinNode?.BoneTranslations?.Length > 0;
 
             // For non-skin meshes: compute full world transform matrix from hierarchy
             var worldTransform = Matrix4x4.Identity;
@@ -768,9 +829,15 @@ void main()
                 var localVertex = mesh.Vertices[i];
 
                 Vector3 v;
-                if (isSkinMesh)
+                if (isSkinMesh && hasSkinTransforms)
                 {
-                    // Skin mesh: vertices already in model space, use as-is
+                    // Skin mesh: apply bone weight transforms using inverse bind-pose data
+                    // Formula: finalPos = Σ weight[j] * (rotate(vertex, QBoneRefInv[bone]) + TBoneRefInv[bone])
+                    v = ApplySkinTransform(localVertex, i, skinNode!);
+                }
+                else if (isSkinMesh)
+                {
+                    // Skin mesh without bone data: use as-is (fallback)
                     v = localVertex;
                 }
                 else
@@ -789,7 +856,12 @@ void main()
                 if (hasNormals)
                 {
                     normal = mesh.Normals[i];
-                    if (hasWorldTransform && !isSkinMesh)
+                    if (isSkinMesh && hasSkinTransforms)
+                    {
+                        // Rotate normal by bone transforms (same weighting as position)
+                        normal = ApplySkinNormalTransform(normal, i, skinNode!);
+                    }
+                    else if (hasWorldTransform && !isSkinMesh)
                     {
                         normal = TransformNormal(normal, worldTransform);
                     }
