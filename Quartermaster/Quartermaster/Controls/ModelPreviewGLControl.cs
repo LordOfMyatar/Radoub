@@ -764,7 +764,15 @@ void main()
 
                 if (hasSkinTransforms && skinNode.BoneQuaternions!.Length > 0)
                 {
-                    for (int b = 0; b < Math.Min(3, skinNode.BoneQuaternions!.Length); b++)
+                    // Dump bones 0-7 and any referenced by first vertex
+                    var bonesToDump = new HashSet<int> { 0, 1, 2, 3, 4, 5, 6, 7 };
+                    if (skinNode.BoneWeights!.Length > 0)
+                    {
+                        var bw0 = skinNode.BoneWeights[0];
+                        bonesToDump.Add(bw0.Bone0); bonesToDump.Add(bw0.Bone1);
+                        bonesToDump.Add(bw0.Bone2); bonesToDump.Add(bw0.Bone3);
+                    }
+                    foreach (var b in bonesToDump.Where(b => b >= 0 && b < skinNode.BoneQuaternions!.Length).OrderBy(b => b))
                     {
                         var q = skinNode.BoneQuaternions[b];
                         var t = skinNode.BoneTranslations![b];
