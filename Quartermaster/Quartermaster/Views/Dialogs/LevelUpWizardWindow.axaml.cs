@@ -69,6 +69,7 @@ public partial class LevelUpWizardWindow : Window
 
     // Bonus feat restriction
     private HashSet<int>? _bonusFeatPool;
+    private int _projectedBab; // BAB after all consolidated levels applied (#1741)
 
     // UI state
     private List<ClassDisplayItem> _allClasses = new();

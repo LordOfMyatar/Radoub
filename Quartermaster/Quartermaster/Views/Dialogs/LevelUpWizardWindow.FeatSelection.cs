@@ -21,6 +21,12 @@ public partial class LevelUpWizardWindow
         // Apply pending ability increments so feat prereqs see projected scores (#1737)
         ApplyAbilityIncrementsToCreature();
 
+        // Calculate projected BAB for feat prereqs in consolidated mode (#1741)
+        int currentBab = _displayService.CalculateBaseAttackBonus(_creature);
+        int oldClassBab = _displayService.GetClassBab(_selectedClassId, _fromClassLevel - 1);
+        int newClassBab = _displayService.GetClassBab(_selectedClassId, _newClassLevel);
+        _projectedBab = currentBab + (newClassBab - oldClassBab);
+
         // Resolve default package for auto-assign
         var pkgStr = _displayService.GameDataService.Get2DAValue("classes", _selectedClassId, "Package");
         _resolvedPackageId = (!string.IsNullOrEmpty(pkgStr) && pkgStr != "****" && byte.TryParse(pkgStr, out byte pkgId))
@@ -130,7 +136,7 @@ public partial class LevelUpWizardWindow
                 _creature,
                 featId,
                 currentFeats,
-                c => _displayService.CalculateBaseAttackBonus(c),
+                c => _projectedBab,
                 cid => _displayService.GetClassName(cid));
 
             // Strict: must meet prereqs. Warning/None: can select regardless
@@ -362,7 +368,7 @@ public partial class LevelUpWizardWindow
                 _creature,
                 feat.FeatId,
                 currentFeats,
-                c => _displayService.CalculateBaseAttackBonus(c),
+                c => _projectedBab,
                 cid => _displayService.GetClassName(cid));
 
             feat.MeetsPrereqs = prereqResult.AllMet;
@@ -388,7 +394,7 @@ public partial class LevelUpWizardWindow
         {
             var result = _displayService.Feats.CheckFeatPrerequisites(
                 _creature, featId, currentFeats,
-                c => _displayService.CalculateBaseAttackBonus(c),
+                c => _projectedBab,
                 cid => _displayService.GetClassName(cid));
             return result.AllMet;
         }
