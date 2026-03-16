@@ -314,7 +314,7 @@ void main()
     /// For hierarchical transforms: Parent * Child
     /// So a vertex transforms as: RootTransform * ... * ParentTransform * NodeTransform * vertex
     /// </summary>
-    private static Matrix4x4 GetWorldTransform(MdlNode node)
+    private static Matrix4x4 GetWorldTransform(MdlNode? node)
     {
         // System.Numerics uses row-major convention where Vector3.Transform(v, M) = v * M
         // For hierarchical transforms: v_world = v_local * NodeLocal * ParentLocal * ... * RootLocal
@@ -839,7 +839,7 @@ void main()
                     parentChain.Append($"{p.Name}(pos={p.Position}, rot={p.Orientation})");
                     p = p.Parent;
                 }
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                UnifiedLogger.LogApplication(isSkinMesh ? LogLevel.INFO : LogLevel.DEBUG,
                     $"  MESH '{mesh.Name}': bitmap='{mesh.Bitmap}', isSkin={isSkinMesh}, hasXform={hasWorldTransform}, " +
                     $"verts={mesh.Vertices.Length}, faces={mesh.Faces.Length}, chain=[{parentChain}]");
             }
