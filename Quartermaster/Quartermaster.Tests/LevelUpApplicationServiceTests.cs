@@ -1074,6 +1074,111 @@ public class LevelUpApplicationServiceTests
 
     #endregion
 
+    #region Saving Throw Updates (#1740)
+
+    [Fact]
+    public void ApplyLevelUp_UpdatesSavingThrows_SingleLevel()
+    {
+        // Fighter 3 -> 4: Fort should go from good@3 to good@4
+        // Good save at level 3 = 2 + 3/2 = 3, at level 4 = 2 + 4/2 = 4
+        var creature = new CreatureBuilder()
+            .WithClass(CommonClass.Fighter, 3)
+            .WithAbilities(14, 12, 14, 10, 10, 8)
+            .Build();
+        creature.FortBonus = 3; // Correct for Fighter 3
+        creature.RefBonus = 1;
+        creature.WillBonus = 1;
+
+        var input = new LevelUpApplicationService.LevelUpInput
+        {
+            SelectedClassId = (int)CommonClass.Fighter,
+            NewClassLevel = 4,
+            SelectedFeats = new List<int>(),
+            SkillPointsAdded = new Dictionary<int, int>(),
+            SelectedSpellsByLevel = new Dictionary<int, List<int>>(),
+            HpIncrease = 12,
+            RecordHistory = false
+        };
+
+        _service.ApplyLevelUp(creature, input);
+
+        // After level-up, saves should be recalculated from class levels
+        // Fighter 4: Fort = 2 + 4/2 = 4 (good), Ref = 4/3 = 1 (poor), Will = 4/3 = 1 (poor)
+        Assert.Equal(4, creature.FortBonus);
+        Assert.Equal(1, creature.RefBonus);
+        Assert.Equal(1, creature.WillBonus);
+    }
+
+    [Fact]
+    public void ApplyLevelUp_UpdatesSavingThrows_HighLevel()
+    {
+        // Fighter 15 -> 16: Fort good changes from 2+15/2=9 to 2+16/2=10
+        var creature = new CreatureBuilder()
+            .WithClass(CommonClass.Fighter, 15)
+            .WithAbilities(14, 12, 14, 10, 10, 8)
+            .Build();
+        creature.FortBonus = 9;  // Correct for Fighter 15: 2 + 15/2 = 9
+        creature.RefBonus = 5;   // 15/3 = 5
+        creature.WillBonus = 5;
+
+        var input = new LevelUpApplicationService.LevelUpInput
+        {
+            SelectedClassId = (int)CommonClass.Fighter,
+            NewClassLevel = 16,
+            SelectedFeats = new List<int>(),
+            SkillPointsAdded = new Dictionary<int, int>(),
+            SelectedSpellsByLevel = new Dictionary<int, List<int>>(),
+            HpIncrease = 12,
+            RecordHistory = false
+        };
+
+        _service.ApplyLevelUp(creature, input);
+
+        // Fighter 16: Fort = 2 + 16/2 = 10 (good), Ref = 16/3 = 5 (poor), Will = 16/3 = 5 (poor)
+        Assert.Equal(10, creature.FortBonus);
+        Assert.Equal(5, creature.RefBonus);
+        Assert.Equal(5, creature.WillBonus);
+    }
+
+    [Fact]
+    public void ApplyLevelUp_UpdatesSavingThrows_Multiclass()
+    {
+        // Fighter 5 / Rogue 4 -> Rogue 5
+        // Fighter 5: Fort=4, Ref=1, Will=1
+        // Rogue 5: Fort=1, Ref=4, Will=1
+        // Total: Fort=5, Ref=5, Will=2
+        var creature = new CreatureBuilder()
+            .WithClass(CommonClass.Fighter, 5)
+            .WithClass(CommonClass.Rogue, 4)
+            .WithAbilities(14, 14, 14, 10, 10, 8)
+            .Build();
+        creature.FortBonus = 5; // Fighter 5 Fort=4 + Rogue 4 Fort=1
+        creature.RefBonus = 4;  // Fighter 5 Ref=1 + Rogue 4 Ref=4
+        creature.WillBonus = 2; // Fighter 5 Will=1 + Rogue 4 Will=1
+
+        var input = new LevelUpApplicationService.LevelUpInput
+        {
+            SelectedClassId = (int)CommonClass.Rogue,
+            NewClassLevel = 5,
+            SelectedFeats = new List<int>(),
+            SkillPointsAdded = new Dictionary<int, int>(),
+            SelectedSpellsByLevel = new Dictionary<int, List<int>>(),
+            HpIncrease = 8,
+            RecordHistory = false
+        };
+
+        _service.ApplyLevelUp(creature, input);
+
+        // Fighter 5: Fort=4(good), Ref=1(poor), Will=1(poor)
+        // Rogue 5:   Fort=1(poor), Ref=4(good), Will=1(poor)
+        // Total:     Fort=5, Ref=5, Will=2
+        Assert.Equal(5, creature.FortBonus);
+        Assert.Equal(5, creature.RefBonus);
+        Assert.Equal(2, creature.WillBonus);
+    }
+
+    #endregion
+
     #region Test Data Setup
 
     private void ConfigureClassData()
@@ -1086,6 +1191,33 @@ public class LevelUpApplicationServiceTests
         // Racial extra skill points (Human gets 1 extra per level)
         _mockGameData.Set2DAValue("racialtypes", (int)CommonRace.Human, "ExtraSkillPointsPerLvl", "1");
         _mockGameData.Set2DAValue("racialtypes", (int)CommonRace.Elf, "ExtraSkillPointsPerLvl", "0");
+
+        // Save tables for Fighter and Rogue (#1740)
+        ConfigureSaveTableData();
+    }
+
+    private void ConfigureSaveTableData()
+    {
+        // Fighter: Fort good, Ref/Will poor
+        _mockGameData.Set2DAValue("classes", (int)CommonClass.Fighter, "SavingThrowTable", "cls_savthr_figh");
+        // Rogue: Ref good, Fort/Will poor
+        _mockGameData.Set2DAValue("classes", (int)CommonClass.Rogue, "SavingThrowTable", "cls_savthr_rog");
+
+        for (int level = 1; level <= 40; level++)
+        {
+            int goodSave = 2 + level / 2;
+            int poorSave = level / 3;
+
+            // Fighter saves
+            _mockGameData.Set2DAValue("cls_savthr_figh", level - 1, "FortSave", goodSave.ToString());
+            _mockGameData.Set2DAValue("cls_savthr_figh", level - 1, "RefSave", poorSave.ToString());
+            _mockGameData.Set2DAValue("cls_savthr_figh", level - 1, "WillSave", poorSave.ToString());
+
+            // Rogue saves
+            _mockGameData.Set2DAValue("cls_savthr_rog", level - 1, "FortSave", poorSave.ToString());
+            _mockGameData.Set2DAValue("cls_savthr_rog", level - 1, "RefSave", goodSave.ToString());
+            _mockGameData.Set2DAValue("cls_savthr_rog", level - 1, "WillSave", poorSave.ToString());
+        }
     }
 
     #endregion

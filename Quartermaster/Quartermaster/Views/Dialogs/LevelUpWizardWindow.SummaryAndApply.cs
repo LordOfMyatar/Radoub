@@ -262,6 +262,9 @@ public partial class LevelUpWizardWindow
         LevelUpApplicationService.ApplySkills(_creature, _skillPointsAdded);
         LevelUpApplicationService.ApplySpells(_creature, _selectedClassId, _selectedSpellsByLevel);
 
+        // 4.5. Recalculate saves from updated class levels (#1740)
+        service.UpdateSavingThrows(_creature);
+
         // 5. Record level history — one record per level for fidelity
         if (settings.RecordLevelHistory)
         {
