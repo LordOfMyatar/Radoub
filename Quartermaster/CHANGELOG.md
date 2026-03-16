@@ -12,6 +12,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.49-alpha] - 2026-03-15
+**Branch**: `quartermaster/issue-1741` | **PR**: #1742
+
+### Sprint: LUW & Validation Bug Fixes (#1741)
+
+- Fix: LUW saves not updated on creature after level-up — added `UpdateSavingThrows()` to both single-level and consolidated paths (#1740)
+- Fix: Auto-assign fallback prefers class feats over universal feats in consolidated mode (#1737)
+- Fix: NCW ability auto-assign priority — WIS deprioritized for martial classes, INT raised for feat prereqs (#1737)
+- Fix: LUW feat prereqs now see projected ability scores from Step 2 increments (e.g., INT 13 unlocks Expertise) (#1737)
+- Fix: Weapon proficiency validation recognizes class-specific proficiency feats (Rogue/Wizard/Monk/Druid/Elf) as equivalent to general proficiency (#1675)
+- Fix: WeaponType fallback for proficiency validation when baseitems.2da lacks ReqFeat columns (#1675)
+- Fix: LUW feat prereqs now use projected BAB for consolidated mode (e.g., Spring Attack BAB 4+ check) (#1744)
+- Fix: Proficiency feat IDs resolved from feat.2da LABEL instead of hardcoded values (#1675)
+
+---
+
 ## [0.2.48-alpha] - 2026-03-15
 **Branch**: `quartermaster/issue-1650` | **PR**: #1733
 

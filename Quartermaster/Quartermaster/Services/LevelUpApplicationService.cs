@@ -54,6 +54,7 @@ public class LevelUpApplicationService
         ApplyFeats(creature, input.SelectedClassId, input.NewClassLevel, input.SelectedFeats);
         ApplySkills(creature, input.SkillPointsAdded);
         ApplySpells(creature, input.SelectedClassId, input.SelectedSpellsByLevel);
+        UpdateSavingThrows(creature);
 
         if (input.RecordHistory)
             RecordLevelHistory(creature, input);
@@ -207,6 +208,18 @@ public class LevelUpApplicationService
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Recalculates base saving throws from class levels and writes to creature fields.
+    /// Must be called after class levels change to keep FortBonus/RefBonus/WillBonus in sync.
+    /// </summary>
+    public void UpdateSavingThrows(UtcFile creature)
+    {
+        var saves = _displayService.CalculateBaseSavingThrows(creature);
+        creature.FortBonus = (short)saves.Fortitude;
+        creature.RefBonus = (short)saves.Reflex;
+        creature.WillBonus = (short)saves.Will;
     }
 
     /// <summary>

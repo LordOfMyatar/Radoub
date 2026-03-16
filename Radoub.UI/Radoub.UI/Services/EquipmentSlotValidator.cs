@@ -1,3 +1,4 @@
+using System.Linq;
 using Radoub.Formats.Services;
 using Radoub.UI.ViewModels;
 
@@ -198,6 +199,8 @@ public class EquipmentSlotValidator
 
     /// <summary>
     /// Validates that the creature has the required feats for an equipped item.
+    /// Accounts for class-specific weapon proficiency feats that satisfy general
+    /// proficiency requirements (e.g., Rogue proficiency covers short swords). (#1675)
     /// </summary>
     /// <param name="slot">The equipment slot to check.</param>
     /// <param name="creatureFeats">Set of feat IDs the creature possesses.</param>
@@ -207,19 +210,141 @@ public class EquipmentSlotValidator
         if (slot.EquippedItem == null)
             return null;
 
-        var requiredFeats = GetRequiredFeats(slot.EquippedItem.BaseItem);
-        if (requiredFeats.Count == 0)
+        var baseItem = slot.EquippedItem.BaseItem;
+        var requiredFeats = GetRequiredFeats(baseItem);
+
+        if (requiredFeats.Count > 0)
+        {
+            // Explicit ReqFeat columns — check each with equivalence
+            var missingFeats = requiredFeats
+                .Where(f => !IsProficiencySatisfied(f.FeatId, baseItem, creatureFeats))
+                .ToList();
+
+            if (missingFeats.Count == 0)
+                return null;
+
+            var featNames = string.Join(", ", missingFeats.Select(f => f.FeatName));
+            return $"{slot.EquippedItem.BaseItemName} requires: {featNames}";
+        }
+
+        // No ReqFeat columns — check class-specific proficiency by base item ID
+        // NWN doesn't have a "proficiency category" column in baseitems.2da;
+        // the engine handles this internally. We check known class weapon mappings.
+        var coveringFeats = GetEquivalentProficiencyFeats(baseItem);
+        if (coveringFeats.Count == 0)
+            return null; // Not a known weapon or no proficiency data
+
+        if (coveringFeats.Any(creatureFeats.Contains))
             return null;
 
-        var missingFeats = requiredFeats
-            .Where(f => !creatureFeats.Contains(f.FeatId))
-            .ToList();
+        return $"{slot.EquippedItem.BaseItemName} requires weapon proficiency";
+    }
 
-        if (missingFeats.Count == 0)
-            return null;
+    /// <summary>
+    /// Checks if a required feat is satisfied, including class-specific proficiency equivalences.
+    /// NWN class weapon proficiency feats (Rogue, Wizard, Monk, Druid) grant proficiency with
+    /// specific weapons that would otherwise require general Simple/Martial proficiency.
+    /// </summary>
+    private bool IsProficiencySatisfied(int requiredFeatId, int baseItem, IReadOnlySet<int> creatureFeats)
+    {
+        // Direct match — creature has the exact required feat
+        if (creatureFeats.Contains(requiredFeatId))
+            return true;
 
-        var featNames = string.Join(", ", missingFeats.Select(f => f.FeatName));
-        return $"{slot.EquippedItem.BaseItemName} requires: {featNames}";
+        // Check if any class-specific proficiency feat covers this weapon
+        // Class proficiency feats map to specific base items they cover:
+        var equivalentFeats = GetEquivalentProficiencyFeats(baseItem);
+        return equivalentFeats.Any(creatureFeats.Contains);
+    }
+
+    /// <summary>
+    /// Gets class-specific weapon proficiency feat IDs that cover a given base item.
+    /// These are read from baseitems.2da columns that map weapon types to proficiency feats,
+    /// falling back to the NWN engine's standard proficiency mappings.
+    /// </summary>
+    private List<int> GetEquivalentProficiencyFeats(int baseItem)
+    {
+        var result = new List<int>();
+
+        // Look up proficiency feat IDs from feat.2da by LABEL.
+        // Never hardcode feat IDs — they vary between game versions and custom content.
+        int? profRogue = ResolveFeatIdByLabel("Weapon_Proficiency_Rogue");
+        int? profWizard = ResolveFeatIdByLabel("Weapon_Proficiency_Wizard");
+        int? profElf = ResolveFeatIdByLabel("Weapon_Proficiency_Elf");
+        int? profDruid = ResolveFeatIdByLabel("Weapon_Proficiency_Druid");
+        int? profMonk = ResolveFeatIdByLabel("Weapon_Proficiency_Monk");
+        int? profCreature = ResolveFeatIdByLabel("Weapon_Proficiency_Creature");
+        int? profSimple = ResolveFeatIdByLabel("Weapon_Proficiency_Simple");
+        int? profMartial = ResolveFeatIdByLabel("Weapon_Proficiency_Martial");
+        int? profExotic = ResolveFeatIdByLabel("Weapon_Proficiency_Exotic");
+
+        // Derive general proficiency category from the ReqFeat columns themselves.
+        var reqFeats = GetRequiredFeats(baseItem);
+        foreach (var (featId, _) in reqFeats)
+        {
+            if ((profSimple.HasValue && featId == profSimple.Value) ||
+                (profMartial.HasValue && featId == profMartial.Value) ||
+                (profExotic.HasValue && featId == profExotic.Value))
+                result.Add(featId);
+        }
+
+        // Class-specific proficiency feats that cover subsets of weapons.
+        // These mappings are from the NWN engine — class proficiency feats grant
+        // proficiency with specific base items regardless of general category.
+        // Rogue: rapier=37, shortsword=22, handcrossbow=69, shortbow=36
+        if (profRogue.HasValue && baseItem is 37 or 22 or 69 or 36)
+            result.Add(profRogue.Value);
+
+        // Wizard: club=28, dagger=3, heavycrossbow=6, lightcrossbow=7, quarterstaff=10
+        if (profWizard.HasValue && baseItem is 28 or 3 or 6 or 7 or 10)
+            result.Add(profWizard.Value);
+
+        // Elf: longsword=1, longbow=8, rapier=37, shortbow=36
+        if (profElf.HasValue && baseItem is 1 or 8 or 37 or 36)
+            result.Add(profElf.Value);
+
+        // Druid: club=28, dagger=3, dart=31, quarterstaff=10, scimitar=23,
+        //        sickle=60, sling=61, spear=63
+        if (profDruid.HasValue && baseItem is 28 or 3 or 31 or 10 or 23 or 60 or 61 or 63)
+            result.Add(profDruid.Value);
+
+        // Monk: club=28, dagger=3, handaxe=65, kama=2, quarterstaff=10, shuriken=59
+        if (profMonk.HasValue && baseItem is 28 or 3 or 65 or 2 or 10 or 59)
+            result.Add(profMonk.Value);
+
+        // Creature: creature weapons
+        if (profCreature.HasValue && baseItem is 72 or 73 or 74 or 75)
+            result.Add(profCreature.Value);
+
+        return result;
+    }
+
+    /// <summary>
+    /// Looks up a feat ID by its LABEL in feat.2da. Scans the table for a matching label.
+    /// Returns null if not found. Results are cached for performance.
+    /// </summary>
+    private readonly Dictionary<string, int?> _featLabelCache = new();
+
+    private int? ResolveFeatIdByLabel(string label)
+    {
+        if (_featLabelCache.TryGetValue(label, out var cached))
+            return cached;
+
+        var twoDA = _gameData.Get2DA("feat");
+        int rowCount = twoDA?.RowCount ?? 1200;
+
+        for (int row = 0; row < rowCount; row++)
+        {
+            var rowLabel = _gameData.Get2DAValue("feat", row, "LABEL");
+            if (string.Equals(rowLabel, label, StringComparison.OrdinalIgnoreCase))
+            {
+                _featLabelCache[label] = row;
+                return row;
+            }
+        }
+
+        _featLabelCache[label] = null;
+        return null;
     }
 
     /// <summary>

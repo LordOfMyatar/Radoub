@@ -332,15 +332,18 @@ public partial class NewCharacterWizardWindow
 
             // Distribute remaining points across other abilities
             // Priority: CON > DEX > other stats
+            // Secondary ability priority: CON/DEX are universally useful,
+            // then spread across stats relevant to the primary ability.
+            // Avoid pumping WIS/CHA/INT unnecessarily for martial classes. (#1737)
             var priorityOrder = primaryAbility switch
             {
-                "STR" => new[] { "CON", "DEX", "WIS", "INT", "CHA" },
-                "DEX" => new[] { "CON", "STR", "WIS", "INT", "CHA" },
-                "CON" => new[] { "STR", "DEX", "WIS", "INT", "CHA" },
-                "INT" => new[] { "CON", "DEX", "WIS", "STR", "CHA" },
-                "WIS" => new[] { "CON", "DEX", "INT", "STR", "CHA" },
-                "CHA" => new[] { "CON", "DEX", "WIS", "INT", "STR" },
-                _ => new[] { "CON", "DEX", "WIS", "INT", "CHA" }
+                "STR" => new[] { "CON", "DEX", "INT", "WIS", "CHA" },
+                "DEX" => new[] { "CON", "STR", "INT", "WIS", "CHA" },
+                "CON" => new[] { "STR", "DEX", "INT", "WIS", "CHA" },
+                "INT" => new[] { "DEX", "CON", "STR", "WIS", "CHA" },
+                "WIS" => new[] { "CON", "DEX", "STR", "INT", "CHA" },
+                "CHA" => new[] { "CON", "DEX", "STR", "INT", "WIS" },
+                _ => new[] { "CON", "DEX", "INT", "WIS", "CHA" }
             };
 
             // Try to raise each secondary ability to 14 (cost 6), then 12 (cost 4)

@@ -16,6 +16,9 @@ public partial class LevelUpWizardWindow
 
     private void PrepareStep6()
     {
+        // Unapply tentative ability increments — summary displays base→projected (#1737)
+        UnapplyAbilityIncrementsFromCreature();
+
         var className = _displayService.GetClassName(_selectedClassId);
 
         // Build ability increases map for consolidated apply (#1645)
@@ -191,6 +194,9 @@ public partial class LevelUpWizardWindow
 
     private void ApplyLevelUp()
     {
+        // Unapply tentative ability increments before final apply to avoid double-applying (#1737)
+        UnapplyAbilityIncrementsFromCreature();
+
         var service = new LevelUpApplicationService(_displayService);
         var settings = SettingsService.Instance;
 
@@ -261,6 +267,9 @@ public partial class LevelUpWizardWindow
         // 4. Apply pooled skills and spells
         LevelUpApplicationService.ApplySkills(_creature, _skillPointsAdded);
         LevelUpApplicationService.ApplySpells(_creature, _selectedClassId, _selectedSpellsByLevel);
+
+        // 4.5. Recalculate saves from updated class levels (#1740)
+        service.UpdateSavingThrows(_creature);
 
         // 5. Record level history — one record per level for fidelity
         if (settings.RecordLevelHistory)

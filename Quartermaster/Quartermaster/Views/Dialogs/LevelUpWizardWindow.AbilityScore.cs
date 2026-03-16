@@ -196,5 +196,35 @@ public partial class LevelUpWizardWindow
     private void UpdateAbilitySelection(int selectedIndex) { }
     private void UpdateAbilityToggle(int index, bool selected) { }
 
+    /// <summary>
+    /// Temporarily applies ability increments to creature so feat prereqs see projected scores.
+    /// Called when entering Step 3 (feats). Safe to call multiple times — tracks applied state.
+    /// </summary>
+    private bool _abilityIncrementsApplied;
+
+    private void ApplyAbilityIncrementsToCreature()
+    {
+        if (_abilityIncrementsApplied) return;
+        _creature.Str = (byte)Math.Min(255, _creature.Str + _abilityIncrements[0]);
+        _creature.Dex = (byte)Math.Min(255, _creature.Dex + _abilityIncrements[1]);
+        _creature.Con = (byte)Math.Min(255, _creature.Con + _abilityIncrements[2]);
+        _creature.Int = (byte)Math.Min(255, _creature.Int + _abilityIncrements[3]);
+        _creature.Wis = (byte)Math.Min(255, _creature.Wis + _abilityIncrements[4]);
+        _creature.Cha = (byte)Math.Min(255, _creature.Cha + _abilityIncrements[5]);
+        _abilityIncrementsApplied = true;
+    }
+
+    private void UnapplyAbilityIncrementsFromCreature()
+    {
+        if (!_abilityIncrementsApplied) return;
+        _creature.Str = (byte)Math.Max(0, _creature.Str - _abilityIncrements[0]);
+        _creature.Dex = (byte)Math.Max(0, _creature.Dex - _abilityIncrements[1]);
+        _creature.Con = (byte)Math.Max(0, _creature.Con - _abilityIncrements[2]);
+        _creature.Int = (byte)Math.Max(0, _creature.Int - _abilityIncrements[3]);
+        _creature.Wis = (byte)Math.Max(0, _creature.Wis - _abilityIncrements[4]);
+        _creature.Cha = (byte)Math.Max(0, _creature.Cha - _abilityIncrements[5]);
+        _abilityIncrementsApplied = false;
+    }
+
     #endregion
 }
