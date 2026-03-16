@@ -1017,6 +1017,63 @@ public class LevelUpApplicationServiceTests
 
     #endregion
 
+    #region Consolidated Level-Up Helpers (#1645)
+
+    [Theory]
+    [InlineData(1, 6, new[] { 4 })]           // Levels 2-7, char level 4 gets increase
+    [InlineData(1, 8, new[] { 4, 8 })]        // Levels 2-9, char levels 4 and 8
+    [InlineData(4, 4, new[] { 8 })]           // Levels 5-8, char level 8 gets increase
+    [InlineData(1, 1, new int[0])]            // Level 2 only, no increase
+    [InlineData(1, 3, new[] { 4 })]           // Levels 2-4, char level 4 gets increase
+    [InlineData(0, 4, new[] { 4 })]           // Levels 1-4, char level 4 gets increase
+    [InlineData(3, 1, new[] { 4 })]           // Level 4 exactly
+    [InlineData(4, 1, new int[0])]            // Level 5, no increase
+    public void GetAbilityIncreaseLevels_ReturnsCorrectLevels(int currentTotalLevel, int levelsToAdd, int[] expected)
+    {
+        var result = LevelUpApplicationService.GetAbilityIncreaseLevels(currentTotalLevel, levelsToAdd);
+        Assert.Equal(expected, result.ToArray());
+    }
+
+    [Fact]
+    public void CalculateConsolidatedHp_NoConIncrease_SumsPerLevel()
+    {
+        // 3 levels of Fighter (d10), CON 14 (mod +2), no CON increases
+        // Each level: max(1, 10 + 2) = 12. Total = 36
+        int result = LevelUpApplicationService.CalculateConsolidatedHp(
+            hitDie: 10, baseCon: 14, previousLevelCount: 1,
+            levelsToAdd: 3, conIncreaseLevels: new List<int>());
+        Assert.Equal(36, result);
+    }
+
+    [Fact]
+    public void CalculateConsolidatedHp_ConIncreaseAtLevel4_AddsRetroHp()
+    {
+        // Creature at level 1, adding 4 levels (to level 5)
+        // CON 13 (mod +1). CON increase at char level 4 → CON 14 (mod +2)
+        // Levels 2,3: 10 + 1 = 11 each = 22
+        // Level 4: CON goes 13→14, mod +1→+2. Retro: 3 prev levels × 1 = 3. This level: 10 + 2 = 12.
+        // Level 5: 10 + 2 = 12
+        // Total: 22 + 3 + 12 + 12 = 49
+        int result = LevelUpApplicationService.CalculateConsolidatedHp(
+            hitDie: 10, baseCon: 13, previousLevelCount: 1,
+            levelsToAdd: 4, conIncreaseLevels: new List<int> { 4 });
+        Assert.Equal(49, result);
+    }
+
+    [Fact]
+    public void CalculateConsolidatedHp_NoModChange_NoRetroHp()
+    {
+        // CON 14 (mod +2). CON increase at char level 4 → CON 15 (mod still +2)
+        // No retro HP because modifier doesn't change
+        // 3 levels: 10 + 2 = 12 each = 36
+        int result = LevelUpApplicationService.CalculateConsolidatedHp(
+            hitDie: 10, baseCon: 14, previousLevelCount: 1,
+            levelsToAdd: 3, conIncreaseLevels: new List<int> { 4 });
+        Assert.Equal(36, result);
+    }
+
+    #endregion
+
     #region Test Data Setup
 
     private void ConfigureClassData()

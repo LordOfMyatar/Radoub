@@ -23,13 +23,20 @@ public partial class LevelUpWizardWindow
         _resolvedPackageId = (!string.IsNullOrEmpty(pkgStr) && pkgStr != "****" && byte.TryParse(pkgStr, out byte pkgId))
             ? pkgId : (byte)255;
 
-        // Use shared FeatService calculation for consistency with NCW
-        var featInfo = _displayService.Feats.GetLevelUpFeatCount(_creature, _selectedClassId, _newClassLevel);
-        _featsToSelect = featInfo.TotalFeats;
-        _generalFeatsToSelect = featInfo.GeneralFeats + featInfo.RacialBonusFeats;
-        _bonusFeatsToSelect = featInfo.ClassBonusFeats;
+        // Pool feat allocations across all levels in range (#1645)
+        _featsToSelect = 0;
+        _generalFeatsToSelect = 0;
+        _bonusFeatsToSelect = 0;
 
-        // Get the bonus feat pool if class grants bonus feats
+        for (int lvl = _fromClassLevel; lvl <= _newClassLevel; lvl++)
+        {
+            var featInfo = _displayService.Feats.GetLevelUpFeatCount(_creature, _selectedClassId, lvl);
+            _generalFeatsToSelect += featInfo.GeneralFeats + featInfo.RacialBonusFeats;
+            _bonusFeatsToSelect += featInfo.ClassBonusFeats;
+        }
+        _featsToSelect = _generalFeatsToSelect + _bonusFeatsToSelect;
+
+        // Get the bonus feat pool (union across all levels — usually same pool)
         _bonusFeatPool = _bonusFeatsToSelect > 0
             ? _displayService.Feats.GetClassBonusFeatPool(_selectedClassId)
             : null;
@@ -38,9 +45,8 @@ public partial class LevelUpWizardWindow
 
         // Show breakdown if multiple sources contribute
         var parts = new List<string>();
-        if (featInfo.GeneralFeats > 0) parts.Add($"{featInfo.GeneralFeats} general");
-        if (featInfo.RacialBonusFeats > 0) parts.Add($"{featInfo.RacialBonusFeats} racial bonus");
-        if (featInfo.ClassBonusFeats > 0) parts.Add($"{featInfo.ClassBonusFeats} class bonus (restricted)");
+        if (_generalFeatsToSelect > 0) parts.Add($"{_generalFeatsToSelect} general");
+        if (_bonusFeatsToSelect > 0) parts.Add($"{_bonusFeatsToSelect} class bonus (restricted)");
         var breakdown = parts.Count > 1 ? $" ({string.Join(" + ", parts)})" : "";
 
         if (_validationLevel == ValidationLevel.None)

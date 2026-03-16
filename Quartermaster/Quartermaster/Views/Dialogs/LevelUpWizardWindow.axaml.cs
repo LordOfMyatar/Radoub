@@ -48,6 +48,15 @@ public partial class LevelUpWizardWindow : Window
     private int _conRetroactiveHp; // Retroactive HP from CON modifier change
     private byte _resolvedPackageId = 255;
 
+    // Consolidated level-up (#1645)
+    private int _levelsToAdd = 1;
+    private int _fromClassLevel; // First new class level in range
+    private readonly int _presetClassId;
+    private readonly int _presetLevels;
+    private List<int> _abilityIncreaseLevels = new(); // Character levels with +1 ability
+    private Dictionary<int, int> _abilityIncreasesByLevel = new(); // charLevel -> abilityIndex
+    private int[] _abilityIncrements = new int[6]; // Per-ability increment count (STR=0..CHA=5)
+
     // Spell selection state
     private bool _isDivineCaster;
     private bool _isSpontaneousCaster;
@@ -72,6 +81,7 @@ public partial class LevelUpWizardWindow : Window
     private readonly TextBlock _characterLevelLabel;
     private readonly Border[] _stepBorders;
     private readonly Grid[] _stepPanels;
+    private readonly TextBlock _prestigeHintsLabel;
     private readonly Button _backButton;
     private readonly Button _nextButton;
     private readonly Button _finishButton;
@@ -86,6 +96,7 @@ public partial class LevelUpWizardWindow : Window
 
     // Step 2 (Ability Score) controls
     private readonly TextBlock _abilityIncreaseDescription;
+    private readonly TextBlock _abilityIncreaseRemaining;
     private readonly Border[] _abilityBorders;
     private readonly TextBlock[] _abilityRadios;
     private readonly TextBlock[] _abilityValues;
@@ -93,6 +104,7 @@ public partial class LevelUpWizardWindow : Window
     private static readonly string[] AbilityNames = { "Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma" };
 
     // Step 1 controls
+    private readonly NumericUpDown _levelsToAddSpinner;
     private readonly TextBox _classSearchBox;
     private readonly CheckBox _showUnqualifiedPrestigeCheckBox;
     private readonly ListBox _classListBox;
@@ -161,7 +173,8 @@ public partial class LevelUpWizardWindow : Window
 
     private readonly bool _isBicFile;
 
-    public LevelUpWizardWindow(CreatureDisplayService displayService, UtcFile creature, bool isBicFile = false)
+    public LevelUpWizardWindow(CreatureDisplayService displayService, UtcFile creature,
+        bool isBicFile = false, int presetClassId = -1, int presetLevels = 1)
     {
         InitializeComponent();
 
@@ -203,6 +216,7 @@ public partial class LevelUpWizardWindow : Window
 
         // Step 2 ability score controls
         _abilityIncreaseDescription = this.FindControl<TextBlock>("AbilityIncreaseDescription")!;
+        _abilityIncreaseRemaining = this.FindControl<TextBlock>("AbilityIncreaseRemaining")!;
         _abilityBorders = new[]
         {
             this.FindControl<Border>("AbilityStrBorder")!,
@@ -244,8 +258,10 @@ public partial class LevelUpWizardWindow : Window
         _nextButton = this.FindControl<Button>("NextButton")!;
         _finishButton = this.FindControl<Button>("FinishButton")!;
         _statusLabel = this.FindControl<TextBlock>("StatusLabel")!;
+        _prestigeHintsLabel = this.FindControl<TextBlock>("PrestigeHintsLabel")!;
 
         // Step 1
+        _levelsToAddSpinner = this.FindControl<NumericUpDown>("LevelsToAddSpinner")!;
         _classSearchBox = this.FindControl<TextBox>("ClassSearchBox")!;
         _showUnqualifiedPrestigeCheckBox = this.FindControl<CheckBox>("ShowUnqualifiedPrestigeCheckBox")!;
         _classListBox = this.FindControl<ListBox>("ClassListBox")!;
@@ -305,12 +321,63 @@ public partial class LevelUpWizardWindow : Window
         _validationLevelComboBox.SelectedIndex = (int)SettingsService.Instance.ValidationLevel;
         _validationLevelComboBox.SelectionChanged += OnValidationLevelChanged;
 
+        // Consolidated level-up presets (#1645)
+        _presetClassId = presetClassId;
+        _presetLevels = Math.Max(1, presetLevels);
+        _levelsToAddSpinner.Value = _presetLevels;
+        _levelsToAddSpinner.ValueChanged += OnLevelsToAddChanged;
+
         InitializeWizard();
     }
 
     private void InitializeComponent()
     {
         AvaloniaXamlLoader.Load(this);
+    }
+
+    /// <summary>
+    /// Shows prestige class prerequisite hints on feat/skill steps (#1644).
+    /// Only shows when the creature is actively working toward a prestige class
+    /// (has one in its class list that's below max level).
+    /// </summary>
+    private void UpdatePrestigeHints()
+    {
+        _prestigeHintsLabel.IsVisible = false;
+
+        // Only show on feat (3) and skill (4) steps
+        if (_currentStep != 3 && _currentStep != 4)
+            return;
+
+        // Only show if creature has a prestige class in progress
+        bool hasPrestigeInProgress = _creature.ClassList.Any(c =>
+            _displayService.Classes.IsPrestigeClass(c.Class) && c.ClassLevel < 10);
+        if (!hasPrestigeInProgress)
+            return;
+
+        var hints = _displayService.Classes.GetNearQualifyingPrestigeHints(_creature);
+        if (hints.Count == 0)
+            return;
+
+        _prestigeHintsLabel.Text = "Prestige goals: " + string.Join(" | ", hints.Select(h => h.Summary));
+        _prestigeHintsLabel.IsVisible = true;
+    }
+
+    private void OnLevelsToAddChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        _levelsToAdd = (int)(e.NewValue ?? 1);
+        if (_selectedClassId >= 0)
+        {
+            var existingClass = _creature.ClassList.FirstOrDefault(c => c.Class == _selectedClassId);
+            int currentClassLevel = existingClass?.ClassLevel ?? 0;
+            _newClassLevel = currentClassLevel + _levelsToAdd;
+            _fromClassLevel = currentClassLevel + 1;
+        }
+        UpdateSidebarSummaries();
+
+        int currentLevel = _creature.ClassList.Sum(c => c.ClassLevel);
+        _characterLevelLabel.Text = _levelsToAdd > 1
+            ? $"Level {currentLevel} -> {currentLevel + _levelsToAdd}"
+            : $"Level {currentLevel} -> {currentLevel + 1}";
     }
 
     private void InitializeWizard()
@@ -323,10 +390,25 @@ public partial class LevelUpWizardWindow : Window
         _characterNameLabel.Text = fullName;
 
         int currentLevel = _creature.ClassList.Sum(c => c.ClassLevel);
-        _characterLevelLabel.Text = $"Level {currentLevel} -> {currentLevel + 1}";
+        _levelsToAdd = _presetLevels;
+        _characterLevelLabel.Text = _levelsToAdd > 1
+            ? $"Level {currentLevel} -> {currentLevel + _levelsToAdd}"
+            : $"Level {currentLevel} -> {currentLevel + 1}";
 
         // Load classes for Step 1
         LoadClassList();
+
+        // Auto-select preset class if provided (#1645)
+        if (_presetClassId >= 0)
+        {
+            var presetItem = _filteredClasses.FirstOrDefault(c => c.ClassId == _presetClassId);
+            if (presetItem != null)
+            {
+                _classListBox.SelectedItem = presetItem;
+                if (_presetLevels > 1)
+                    _levelsToAddSpinner.IsEnabled = false;
+            }
+        }
 
         // Show Step 1
         UpdateStepDisplay();
@@ -362,6 +444,9 @@ public partial class LevelUpWizardWindow : Window
         // Update sidebar summaries (#1502)
         UpdateSidebarSummaries();
 
+        // Show prestige class hints on feat/skill steps (#1644)
+        UpdatePrestigeHints();
+
         // Validate current step
         ValidateCurrentStep();
     }
@@ -386,7 +471,7 @@ public partial class LevelUpWizardWindow : Window
         bool strictValid = _currentStep switch
         {
             1 => _selectedClassId >= 0 && classIsQualified,
-            2 => _selectedAbilityIncrease >= 0,
+            2 => _abilityIncrements.Sum() >= (_abilityIncreaseLevels.Count > 0 ? _abilityIncreaseLevels.Count : 1),
             3 => _selectedFeats.Count >= _featsToSelect,
             4 => GetRemainingSkillPoints() == 0,
             5 => _isDivineCaster || IsSpellSelectionComplete(),
@@ -528,26 +613,33 @@ public partial class LevelUpWizardWindow : Window
     /// </summary>
     private void UpdateSidebarSummaries()
     {
-        // Step 1: Class
+        // Step 1: Class (#1645 consolidated)
         if (_selectedClassId >= 0)
         {
             var className = _displayService.GetClassName(_selectedClassId);
-            _step1Summary.Text = _isNewClass
-                ? $"{className} (new)"
-                : $"{className} Lvl {_newClassLevel}";
+            if (_levelsToAdd > 1)
+                _step1Summary.Text = $"{className} Lvl {_fromClassLevel}-{_newClassLevel}";
+            else if (_isNewClass)
+                _step1Summary.Text = $"{className} (new)";
+            else
+                _step1Summary.Text = $"{className} Lvl {_newClassLevel}";
         }
         else
         {
             _step1Summary.Text = "";
         }
 
-        // Step 2: Ability Score
-        if (_needsAbilityIncrease && (_selectedAbilityIncrease >= 0 || _ceAbilityIncreases.Count > 0))
+        // Step 2: Ability Score — show per-ability increments
+        int totalIncs = _abilityIncrements.Sum();
+        if (_needsAbilityIncrease && totalIncs > 0)
         {
-            var abilityNames = (_ceAbilityIncreases.Count > 0 ? _ceAbilityIncreases : new HashSet<int> { _selectedAbilityIncrease })
-                .Where(i => i >= 0)
-                .Select(i => $"{AbilityNames[i]} +1");
-            _step2Summary.Text = string.Join(", ", abilityNames);
+            var parts = new List<string>();
+            for (int i = 0; i < 6; i++)
+            {
+                if (_abilityIncrements[i] > 0)
+                    parts.Add($"{AbilityNames[i]} +{_abilityIncrements[i]}");
+            }
+            _step2Summary.Text = string.Join(", ", parts);
         }
         else
         {

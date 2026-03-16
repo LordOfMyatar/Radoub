@@ -12,6 +12,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.48-alpha] - 2026-03-15
+**Branch**: `quartermaster/issue-1650` | **PR**: #1733
+
+### Sprint: LUW Bug Fixes & Enhancements (#1650)
+
+- Fix: LUW spell selection — Wizard cantrip tabs shown incorrectly on level 2→3; filtered out fully-known spell levels (#1647)
+- Feat: Consolidated single-class multi-level wizard — "Levels" spinner on Step 1 pools feats, skills, spells, ability increases across a level range; replaces sequential LUW loop for NCW Starting Level > 1 (#1645)
+- Feat: Ability score step uses +/- increment buttons — distribute multiple increases across different abilities
+- Feat: Wizard spell per-level caps respect validation mode (LG/TN enforce progression table, CE unrestricted)
+- Feat: Multiclass prereq tooltips — near-qualifying prestige class prerequisites shown as hints on feat/skill steps (#1644)
+- Feat: "New Character" added to Character menu for discoverability
+- Fix: NCW starting level messaging updated for consolidated flow; warning brush for single-class-only
+- Verification: LUW validation settings edge cases — CON retroactivity tested via unit tests, GAINMULTIPLE feats verified, validation level mid-session switch documented as known limitation (#1640)
+
+---
+
 ## [0.2.47-alpha] - 2026-03-15
 **Branch**: `quartermaster/issue-1630` | **PR**: #1732
 

@@ -1050,9 +1050,16 @@ public partial class NewCharacterWizardWindow : Window
         _startingLevel = (int)(e.NewValue ?? 1);
         if (_startingLevel < 1) _startingLevel = 1;
 
-        _startingLevelNote.Text = _startingLevel == 1
-            ? "Level 1 character. Change to create at a higher level (single class only)."
-            : $"Level {_startingLevel} character. After creation, the Level Up Wizard will run {_startingLevel - 1} time(s) to complete leveling.";
+        if (_startingLevel == 1)
+        {
+            _startingLevelNote.Text = "Level 1 character.";
+            _startingLevelNote.ClearValue(Avalonia.Controls.TextBlock.ForegroundProperty);
+        }
+        else
+        {
+            _startingLevelNote.Text = $"⚠ Level {_startingLevel} — single class only. The Level Up Wizard will open after creation to complete {_startingLevel - 1} level(s) in one pass.";
+            _startingLevelNote.Foreground = Radoub.UI.Services.BrushManager.GetWarningBrush(this);
+        }
     }
 
     private async void OnBrowseSaveLocationClick(object? sender, RoutedEventArgs e)

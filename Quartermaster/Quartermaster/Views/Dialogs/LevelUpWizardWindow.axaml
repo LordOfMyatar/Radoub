@@ -226,6 +226,14 @@
                                     <TextBlock Text="Skills:" FontWeight="SemiBold"/>
                                     <TextBlock x:Name="ClassSkillPointsLabel"/>
                                 </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                    <TextBlock Text="Levels:" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    <NumericUpDown x:Name="LevelsToAddSpinner"
+                                                   Value="1" Minimum="1" Maximum="39"
+                                                   Width="100" Height="28"
+                                                   FormatString="0"
+                                                   VerticalAlignment="Center"/>
+                                </StackPanel>
                             </StackPanel>
 
                             <!-- Prerequisites Panel -->
@@ -263,104 +271,126 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Text="Ability Score Increase" FontSize="{DynamicResource FontSizeXLarge}" FontWeight="Bold" Margin="0,0,0,10"/>
                 <TextBlock Grid.Row="1" x:Name="AbilityIncreaseDescription"
                            Text="Choose one ability score to increase by +1."
-                           Margin="0,0,0,15"/>
+                           Margin="0,0,0,5"/>
+                <TextBlock Grid.Row="2" x:Name="AbilityIncreaseRemaining"
+                           Text="Remaining: 0"
+                           FontWeight="Bold" Margin="0,0,0,10"/>
 
-                <Border Grid.Row="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="20">
-                    <StackPanel Spacing="8" VerticalAlignment="Center" HorizontalAlignment="Center" Width="400">
-                        <Border x:Name="AbilityStrBorder" Classes="step-indicator"
-                                PointerPressed="OnAbilityBorderClick" Tag="0" Cursor="Hand">
+                <Border Grid.Row="3" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="20">
+                    <StackPanel Spacing="8" VerticalAlignment="Center" HorizontalAlignment="Center" Width="500">
+                        <Border x:Name="AbilityStrBorder" Classes="step-indicator" Tag="0">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="30"/>
                                     <ColumnDefinition Width="120"/>
-                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="30"/>
+                                    <ColumnDefinition Width="40"/>
+                                    <ColumnDefinition Width="30"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" x:Name="AbilityStrRadio" Text="○" FontSize="{DynamicResource FontSizeMedium}" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="1" Text="Strength" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="2" x:Name="AbilityStrValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="3" x:Name="AbilityStrChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="0" Text="Strength" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" x:Name="AbilityStrValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Button Grid.Column="2" Content="-" Tag="0" Click="OnAbilityDecrease" Width="28" Height="28" HorizontalContentAlignment="Center" Padding="0"/>
+                                <TextBlock Grid.Column="3" x:Name="AbilityStrRadio" Text="0" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold"/>
+                                <Button Grid.Column="4" Content="+" Tag="0" Click="OnAbilityIncrease" Width="28" Height="28" HorizontalContentAlignment="Center" Padding="0"/>
+                                <TextBlock Grid.Column="5" x:Name="AbilityStrChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center" Margin="10,0,0,0"/>
                             </Grid>
                         </Border>
-                        <Border x:Name="AbilityDexBorder" Classes="step-indicator"
-                                PointerPressed="OnAbilityBorderClick" Tag="1" Cursor="Hand">
+                        <Border x:Name="AbilityDexBorder" Classes="step-indicator" Tag="1">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="30"/>
                                     <ColumnDefinition Width="120"/>
-                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="30"/>
+                                    <ColumnDefinition Width="40"/>
+                                    <ColumnDefinition Width="30"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" x:Name="AbilityDexRadio" Text="○" FontSize="{DynamicResource FontSizeMedium}" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="1" Text="Dexterity" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="2" x:Name="AbilityDexValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="3" x:Name="AbilityDexChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="0" Text="Dexterity" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" x:Name="AbilityDexValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Button Grid.Column="2" Content="-" Tag="1" Click="OnAbilityDecrease" Width="28" Height="28" HorizontalContentAlignment="Center" Padding="0"/>
+                                <TextBlock Grid.Column="3" x:Name="AbilityDexRadio" Text="0" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold"/>
+                                <Button Grid.Column="4" Content="+" Tag="1" Click="OnAbilityIncrease" Width="28" Height="28" HorizontalContentAlignment="Center" Padding="0"/>
+                                <TextBlock Grid.Column="5" x:Name="AbilityDexChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center" Margin="10,0,0,0"/>
                             </Grid>
                         </Border>
-                        <Border x:Name="AbilityConBorder" Classes="step-indicator"
-                                PointerPressed="OnAbilityBorderClick" Tag="2" Cursor="Hand">
+                        <Border x:Name="AbilityConBorder" Classes="step-indicator" Tag="2">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="30"/>
                                     <ColumnDefinition Width="120"/>
-                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="30"/>
+                                    <ColumnDefinition Width="40"/>
+                                    <ColumnDefinition Width="30"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" x:Name="AbilityConRadio" Text="○" FontSize="{DynamicResource FontSizeMedium}" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="1" Text="Constitution" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="2" x:Name="AbilityConValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="3" x:Name="AbilityConChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="0" Text="Constitution" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" x:Name="AbilityConValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Button Grid.Column="2" Content="-" Tag="2" Click="OnAbilityDecrease" Width="28" Height="28" HorizontalContentAlignment="Center" Padding="0"/>
+                                <TextBlock Grid.Column="3" x:Name="AbilityConRadio" Text="0" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold"/>
+                                <Button Grid.Column="4" Content="+" Tag="2" Click="OnAbilityIncrease" Width="28" Height="28" HorizontalContentAlignment="Center" Padding="0"/>
+                                <TextBlock Grid.Column="5" x:Name="AbilityConChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center" Margin="10,0,0,0"/>
                             </Grid>
                         </Border>
-                        <Border x:Name="AbilityIntBorder" Classes="step-indicator"
-                                PointerPressed="OnAbilityBorderClick" Tag="3" Cursor="Hand">
+                        <Border x:Name="AbilityIntBorder" Classes="step-indicator" Tag="3">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="30"/>
                                     <ColumnDefinition Width="120"/>
-                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="30"/>
+                                    <ColumnDefinition Width="40"/>
+                                    <ColumnDefinition Width="30"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" x:Name="AbilityIntRadio" Text="○" FontSize="{DynamicResource FontSizeMedium}" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="1" Text="Intelligence" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="2" x:Name="AbilityIntValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="3" x:Name="AbilityIntChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="0" Text="Intelligence" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" x:Name="AbilityIntValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Button Grid.Column="2" Content="-" Tag="3" Click="OnAbilityDecrease" Width="28" Height="28" HorizontalContentAlignment="Center" Padding="0"/>
+                                <TextBlock Grid.Column="3" x:Name="AbilityIntRadio" Text="0" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold"/>
+                                <Button Grid.Column="4" Content="+" Tag="3" Click="OnAbilityIncrease" Width="28" Height="28" HorizontalContentAlignment="Center" Padding="0"/>
+                                <TextBlock Grid.Column="5" x:Name="AbilityIntChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center" Margin="10,0,0,0"/>
                             </Grid>
                         </Border>
-                        <Border x:Name="AbilityWisBorder" Classes="step-indicator"
-                                PointerPressed="OnAbilityBorderClick" Tag="4" Cursor="Hand">
+                        <Border x:Name="AbilityWisBorder" Classes="step-indicator" Tag="4">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="30"/>
                                     <ColumnDefinition Width="120"/>
-                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="30"/>
+                                    <ColumnDefinition Width="40"/>
+                                    <ColumnDefinition Width="30"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" x:Name="AbilityWisRadio" Text="○" FontSize="{DynamicResource FontSizeMedium}" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="1" Text="Wisdom" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="2" x:Name="AbilityWisValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="3" x:Name="AbilityWisChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="0" Text="Wisdom" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" x:Name="AbilityWisValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Button Grid.Column="2" Content="-" Tag="4" Click="OnAbilityDecrease" Width="28" Height="28" HorizontalContentAlignment="Center" Padding="0"/>
+                                <TextBlock Grid.Column="3" x:Name="AbilityWisRadio" Text="0" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold"/>
+                                <Button Grid.Column="4" Content="+" Tag="4" Click="OnAbilityIncrease" Width="28" Height="28" HorizontalContentAlignment="Center" Padding="0"/>
+                                <TextBlock Grid.Column="5" x:Name="AbilityWisChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center" Margin="10,0,0,0"/>
                             </Grid>
                         </Border>
-                        <Border x:Name="AbilityChaBorder" Classes="step-indicator"
-                                PointerPressed="OnAbilityBorderClick" Tag="5" Cursor="Hand">
+                        <Border x:Name="AbilityChaBorder" Classes="step-indicator" Tag="5">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="30"/>
                                     <ColumnDefinition Width="120"/>
-                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="30"/>
+                                    <ColumnDefinition Width="40"/>
+                                    <ColumnDefinition Width="30"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" x:Name="AbilityChaRadio" Text="○" FontSize="{DynamicResource FontSizeMedium}" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="1" Text="Charisma" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="2" x:Name="AbilityChaValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="3" x:Name="AbilityChaChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="0" Text="Charisma" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" x:Name="AbilityChaValue" Text="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Button Grid.Column="2" Content="-" Tag="5" Click="OnAbilityDecrease" Width="28" Height="28" HorizontalContentAlignment="Center" Padding="0"/>
+                                <TextBlock Grid.Column="3" x:Name="AbilityChaRadio" Text="0" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold"/>
+                                <Button Grid.Column="4" Content="+" Tag="5" Click="OnAbilityIncrease" Width="28" Height="28" HorizontalContentAlignment="Center" Padding="0"/>
+                                <TextBlock Grid.Column="5" x:Name="AbilityChaChange" Text="" Foreground="{DynamicResource ThemeSuccess}" VerticalAlignment="Center" Margin="10,0,0,0"/>
                             </Grid>
                         </Border>
                     </StackPanel>
@@ -720,9 +750,15 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Status Message -->
-                <TextBlock Grid.Column="0" x:Name="StatusLabel"
-                           VerticalAlignment="Center"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                    <TextBlock x:Name="StatusLabel"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    <TextBlock x:Name="PrestigeHintsLabel"
+                               FontSize="{DynamicResource FontSizeSmall}"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               TextWrapping="Wrap"
+                               IsVisible="False"/>
+                </StackPanel>
 
                 <!-- Navigation Buttons -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
@@ -83,7 +84,15 @@ public partial class LevelUpWizardWindow
             {
                 _selectedClassId = item.ClassId;
                 _isNewClass = item.CurrentLevel == 0;
-                _newClassLevel = item.CurrentLevel + 1;
+
+                // Consolidated level-up: use spinner value for level range (#1645)
+                _levelsToAdd = (int)(_levelsToAddSpinner.Value ?? 1);
+                _newClassLevel = item.CurrentLevel + _levelsToAdd;
+                _fromClassLevel = item.CurrentLevel + 1;
+
+                // Update spinner max based on class max level
+                int maxLevelsForClass = (item.MaxLevel > 0 ? item.MaxLevel : 40) - item.CurrentLevel;
+                _levelsToAddSpinner.Maximum = Math.Max(1, maxLevelsForClass);
             }
             else
             {
