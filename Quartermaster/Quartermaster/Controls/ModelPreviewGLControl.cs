@@ -396,6 +396,10 @@ void main()
         Accumulate(bw.Bone2, bw.Weight2);
         Accumulate(bw.Bone3, bw.Weight3);
 
+        // Guard against NaN from invalid bone data or degenerate transforms
+        if (float.IsNaN(result.X) || float.IsNaN(result.Y) || float.IsNaN(result.Z))
+            return vertex; // Fall back to raw vertex
+
         return result;
     }
 
