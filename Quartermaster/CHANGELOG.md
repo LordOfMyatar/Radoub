@@ -23,6 +23,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fix: LUW feat prereqs now see projected ability scores from Step 2 increments (e.g., INT 13 unlocks Expertise) (#1737)
 - Fix: Weapon proficiency validation recognizes class-specific proficiency feats (Rogue/Wizard/Monk/Druid/Elf) as equivalent to general proficiency (#1675)
 - Fix: WeaponType fallback for proficiency validation when baseitems.2da lacks ReqFeat columns (#1675)
+- Fix: LUW feat prereqs now use projected BAB for consolidated mode (e.g., Spring Attack BAB 4+ check) (#1744)
+- Fix: Proficiency feat IDs resolved from feat.2da LABEL instead of hardcoded values (#1675)
 
 ---
 
