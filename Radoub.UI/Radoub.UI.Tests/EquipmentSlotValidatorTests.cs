@@ -549,8 +549,30 @@ public class EquipmentSlotValidatorTests
     }
 
     [Fact]
-    public void ValidateFeatRequirements_NoReqFeats_ReturnsNull()
+    public void ValidateFeatRequirements_NoReqFeats_UnknownBaseItem_ReturnsNull()
     {
+        // Unknown/custom base item with no ReqFeat and not in any proficiency mapping
+        var mockGameData = new MockGameDataService(includeSampleData: false);
+        mockGameData.Set2DAValue("baseitems", 200, "EquipableSlots", "0x10");
+        // No ReqFeat columns, base item 200 not in any class proficiency mapping
+
+        var validator = new EquipmentSlotValidator(mockGameData);
+        var slot = new EquipmentSlotViewModel(4, 0x10, "Right Hand");
+
+        var item = new UtiFile { BaseItem = 200 };
+        slot.EquippedItem = new ItemViewModel(item, "Custom Weapon", "Custom Weapon", "");
+
+        var creatureFeats = new HashSet<int>();
+
+        var warning = validator.ValidateFeatRequirements(slot, creatureFeats);
+
+        Assert.Null(warning); // Unknown base items can't be validated
+    }
+
+    [Fact]
+    public void ValidateFeatRequirements_NoReqFeats_KnownWeapon_WarnsIfNoProficiency()
+    {
+        // Longsword (base item 1) has no ReqFeat but is in Elf proficiency mapping
         var mockGameData = new MockGameDataService(includeSampleData: false);
         mockGameData.Set2DAValue("baseitems", 1, "EquipableSlots", "0x10");
         // No ReqFeat columns
@@ -561,11 +583,11 @@ public class EquipmentSlotValidatorTests
         var item = new UtiFile { BaseItem = 1 };
         slot.EquippedItem = new ItemViewModel(item, "Longsword", "Longsword", "");
 
-        var creatureFeats = new HashSet<int>();
+        var creatureFeats = new HashSet<int>(); // No proficiency feats
 
         var warning = validator.ValidateFeatRequirements(slot, creatureFeats);
 
-        Assert.Null(warning);
+        Assert.NotNull(warning); // Should warn — known weapon needs proficiency
     }
 
     [Fact]
@@ -589,8 +611,8 @@ public class EquipmentSlotValidatorTests
         mockGameData.Set2DAValue("baseitems", 2, "ReqFeat0", "105");
         mockGameData.Set2DAValue("feat", 105, "FEAT", "1000");
         mockGameData.SetTlkString(1000, "Exotic Weapon: Kama");
-        // Longsword has no feat requirement
-        mockGameData.Set2DAValue("baseitems", 1, "EquipableSlots", "0x20");
+        // Custom item (base 200) has no feat requirement and no known proficiency mapping
+        mockGameData.Set2DAValue("baseitems", 200, "EquipableSlots", "0x20");
 
         var validator = new EquipmentSlotValidator(mockGameData);
 
@@ -600,16 +622,16 @@ public class EquipmentSlotValidatorTests
         var kama = new UtiFile { BaseItem = 2 };
         rightSlot.EquippedItem = new ItemViewModel(kama, "Kama", "Kama", "");
 
-        var sword = new UtiFile { BaseItem = 1 };
-        leftSlot.EquippedItem = new ItemViewModel(sword, "Longsword", "Longsword", "");
+        var customItem = new UtiFile { BaseItem = 200 };
+        leftSlot.EquippedItem = new ItemViewModel(customItem, "Custom Item", "Custom Item", "");
 
-        var creatureFeats = new HashSet<int> { 1, 2, 3 }; // No feat 105
+        var creatureFeats = new HashSet<int> { 1, 2, 3 }; // No feat 105, no proficiency feats
 
         validator.ValidateAllFeatRequirements(new[] { rightSlot, leftSlot }, creatureFeats);
 
         Assert.NotNull(rightSlot.ValidationWarning);
         Assert.Contains("Exotic Weapon: Kama", rightSlot.ValidationWarning);
-        Assert.Null(leftSlot.ValidationWarning);
+        Assert.Null(leftSlot.ValidationWarning); // Custom item (base 200) — no known proficiency mapping
     }
 
     #endregion
@@ -746,14 +768,14 @@ public class EquipmentSlotValidatorTests
     }
 
     [Fact]
-    public void ValidateFeatRequirements_FighterWithKama_NoReqFeat_WarnsViaWeaponType()
+    public void ValidateFeatRequirements_FighterWithKama_NoReqFeat_WarnsViaMappings()
     {
-        // Kama (base item 2) has no ReqFeat columns but WeaponType=3 (exotic)
+        // Kama (base item 2) has no ReqFeat columns
         // A Fighter (has feat 45 Martial, not 46 Exotic or 51 Monk) should get a warning
+        // because kama is in the Monk proficiency list, not Martial
         var mockGameData = new MockGameDataService(includeSampleData: false);
         mockGameData.Set2DAValue("baseitems", 2, "EquipableSlots", "0x30");
-        // No ReqFeat0 — relying on WeaponType fallback
-        mockGameData.Set2DAValue("baseitems", 2, "WeaponType", "3"); // Exotic
+        // No ReqFeat0 — relies on class-specific base item mappings
 
         var validator = new EquipmentSlotValidator(mockGameData);
         var slot = new EquipmentSlotViewModel(4, 0x10, "Right Hand");
@@ -767,7 +789,7 @@ public class EquipmentSlotValidatorTests
         var warning = validator.ValidateFeatRequirements(slot, creatureFeats);
 
         Assert.NotNull(warning);
-        Assert.Contains("Exotic", warning);
+        Assert.Contains("proficiency", warning, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -776,7 +798,7 @@ public class EquipmentSlotValidatorTests
         // Monk (feat 51) covers kama (base item 2)
         var mockGameData = new MockGameDataService(includeSampleData: false);
         mockGameData.Set2DAValue("baseitems", 2, "EquipableSlots", "0x30");
-        mockGameData.Set2DAValue("baseitems", 2, "WeaponType", "3"); // Exotic
+        // No ReqFeat0
 
         var validator = new EquipmentSlotValidator(mockGameData);
         var slot = new EquipmentSlotViewModel(4, 0x10, "Right Hand");

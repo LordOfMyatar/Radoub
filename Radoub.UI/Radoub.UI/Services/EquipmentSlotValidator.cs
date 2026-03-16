@@ -227,45 +227,17 @@ public class EquipmentSlotValidator
             return $"{slot.EquippedItem.BaseItemName} requires: {featNames}";
         }
 
-        // No ReqFeat columns — check WeaponType for implicit proficiency requirement
-        return ValidateWeaponTypeProficiency(slot, baseItem, creatureFeats);
-    }
-
-    /// <summary>
-    /// Validates weapon proficiency based on baseitems.2da WeaponType when no explicit
-    /// ReqFeat columns exist. Many NWN weapons rely on engine-internal proficiency
-    /// checks rather than ReqFeat, so we validate via WeaponType + class proficiency feats.
-    /// </summary>
-    private string? ValidateWeaponTypeProficiency(EquipmentSlotViewModel slot, int baseItem,
-        IReadOnlySet<int> creatureFeats)
-    {
-        var weaponTypeStr = _gameData.Get2DAValue("baseitems", baseItem, "WeaponType");
-        if (string.IsNullOrEmpty(weaponTypeStr) || weaponTypeStr == "****")
-            return null; // Not a weapon or no data — can't validate
-
-        if (!int.TryParse(weaponTypeStr, out int weaponType) || weaponType == 0)
-            return null; // WeaponType 0 = not a weapon
-
-        // Get all proficiency feats that cover this weapon (general + class-specific)
+        // No ReqFeat columns — check class-specific proficiency by base item ID
+        // NWN doesn't have a "proficiency category" column in baseitems.2da;
+        // the engine handles this internally. We check known class weapon mappings.
         var coveringFeats = GetEquivalentProficiencyFeats(baseItem);
         if (coveringFeats.Count == 0)
-            return null; // No known proficiency feats for this weapon type
+            return null; // Not a known weapon or no proficiency data
 
-        // Check if creature has any covering feat
         if (coveringFeats.Any(creatureFeats.Contains))
             return null;
 
-        // Build warning with the general proficiency name
-        var profName = weaponType switch
-        {
-            1 => "Weapon Proficiency (Simple)",
-            2 => "Weapon Proficiency (Martial)",
-            3 => "Weapon Proficiency (Exotic)",
-            4 => "Weapon Proficiency (Druid)",
-            _ => $"Weapon Proficiency (type {weaponType})"
-        };
-
-        return $"{slot.EquippedItem.BaseItemName} requires: {profName}";
+        return $"{slot.EquippedItem.BaseItemName} requires weapon proficiency";
     }
 
     /// <summary>
@@ -294,14 +266,6 @@ public class EquipmentSlotValidator
     {
         var result = new List<int>();
 
-        // Read WeaponType from baseitems.2da to determine weapon category
-        var weaponTypeStr = _gameData.Get2DAValue("baseitems", baseItem, "WeaponType");
-        if (string.IsNullOrEmpty(weaponTypeStr) || weaponTypeStr == "****")
-            return result;
-
-        if (!int.TryParse(weaponTypeStr, out int weaponType))
-            return result;
-
         // NWN proficiency feat IDs (standard across all NWN versions)
         const int ProfSimple = 44;
         const int ProfMartial = 45;
@@ -313,26 +277,19 @@ public class EquipmentSlotValidator
         const int ProfMonk = 51;
         const int ProfElf = 52;
 
-        // General category proficiencies — if the creature has these, they cover the weapon
-        switch (weaponType)
+        // Derive general proficiency category from the ReqFeat columns themselves.
+        // baseitems.2da WeaponType is damage type (piercing/slashing/etc), NOT proficiency
+        // category, so we use ReqFeat to determine which general proficiency applies.
+        var reqFeats = GetRequiredFeats(baseItem);
+        foreach (var (featId, _) in reqFeats)
         {
-            case 1: // Simple weapon
-                result.Add(ProfSimple);
-                break;
-            case 2: // Martial weapon
-                result.Add(ProfMartial);
-                break;
-            case 3: // Exotic weapon
-                result.Add(ProfExotic);
-                break;
-            case 4: // Druid weapon
-                result.Add(ProfDruid);
-                break;
+            if (featId == ProfSimple || featId == ProfMartial || featId == ProfExotic)
+                result.Add(featId);
         }
 
         // Class-specific proficiency feats that cover subsets of weapons.
         // These mappings are from the NWN engine — class proficiency feats grant
-        // proficiency with specific base items regardless of WeaponType category.
+        // proficiency with specific base items regardless of general category.
         // Rogue (48): rapier=37, shortsword=22, handcrossbow=69, shortbow=36
         if (baseItem is 37 or 22 or 69 or 36)
             result.Add(ProfRogue);
