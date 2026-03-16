@@ -1256,6 +1256,31 @@ public class FeatServiceAdvancedTests
         Assert.Equal(assigned.Count, assigned.Distinct().Count());
     }
 
+    [Fact]
+    public void AutoAssignFeats_Fallback_PrefersClassFeatsOverUniversal()
+    {
+        // Set up: universal feat "AAA_Universal" (alphabetically first)
+        // Existing class feats in Fighter table should be preferred over universals
+        _mockGameData.Set2DAValue("feat", 80, "LABEL", "AAA_Universal");
+        _mockGameData.Set2DAValue("feat", 80, "FEAT", "480");
+        _mockGameData.Set2DAValue("feat", 80, "ALLCLASSESCANUSE", "1");
+        _mockGameData.Set2DAValue("feat", 80, "TOOLSCATEGORIES", "6");
+        _mockGameData.SetTlkString(480, "AAA Universal Feat");
+
+        var creature = new CreatureBuilder()
+            .WithAbilities(14, 14, 10, 10, 10, 10)
+            .WithClass(4, 1) // Fighter
+            .Build();
+
+        // No package (255) — forces fallback
+        var assigned = _featService.AutoAssignFeats(
+            creature, 4, 255, new HashSet<int>(), 1, null, _ => true);
+
+        // Should prefer a class feat (e.g., Blind-Fight/5) over AAA Universal (80)
+        Assert.Single(assigned);
+        Assert.NotEqual(80, assigned[0]); // NOT the alphabetically-first universal feat
+    }
+
     #endregion
 
     #region Multiclass Feat Scenarios

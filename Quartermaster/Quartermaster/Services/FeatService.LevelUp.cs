@@ -186,17 +186,18 @@ public partial class FeatService
                 assigned.Add(featId);
         }
 
-        // Second pass: fill remaining alphabetically from all available feats
+        // Second pass: fill remaining from all available feats, preferring class feats (#1737)
         if (assigned.Count < maxCount)
         {
             var allFeatIds = GetAllFeatIds();
             var remaining = allFeatIds
                 .Where(IsAvailableAndValid)
-                .Select(id => (Id: id, Name: GetFeatName(id)))
+                .Select(id => (Id: id, Name: GetFeatName(id), IsClassFeat: IsFeatInClassTable(classId, id)))
                 .Where(f => !string.IsNullOrEmpty(f.Name))
-                .OrderBy(f => f.Name);
+                .OrderByDescending(f => f.IsClassFeat) // Class feats first
+                .ThenBy(f => f.Name);
 
-            foreach (var (id, _) in remaining)
+            foreach (var (id, _, _) in remaining)
             {
                 if (assigned.Count >= maxCount) break;
                 assigned.Add(id);
