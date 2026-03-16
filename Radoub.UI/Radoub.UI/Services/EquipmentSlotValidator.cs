@@ -1,3 +1,4 @@
+using System.Linq;
 using Radoub.Formats.Services;
 using Radoub.UI.ViewModels;
 
@@ -198,6 +199,8 @@ public class EquipmentSlotValidator
 
     /// <summary>
     /// Validates that the creature has the required feats for an equipped item.
+    /// Accounts for class-specific weapon proficiency feats that satisfy general
+    /// proficiency requirements (e.g., Rogue proficiency covers short swords). (#1675)
     /// </summary>
     /// <param name="slot">The equipment slot to check.</param>
     /// <param name="creatureFeats">Set of feat IDs the creature possesses.</param>
@@ -212,7 +215,7 @@ public class EquipmentSlotValidator
             return null;
 
         var missingFeats = requiredFeats
-            .Where(f => !creatureFeats.Contains(f.FeatId))
+            .Where(f => !IsProficiencySatisfied(f.FeatId, slot.EquippedItem.BaseItem, creatureFeats))
             .ToList();
 
         if (missingFeats.Count == 0)
@@ -220,6 +223,99 @@ public class EquipmentSlotValidator
 
         var featNames = string.Join(", ", missingFeats.Select(f => f.FeatName));
         return $"{slot.EquippedItem.BaseItemName} requires: {featNames}";
+    }
+
+    /// <summary>
+    /// Checks if a required feat is satisfied, including class-specific proficiency equivalences.
+    /// NWN class weapon proficiency feats (Rogue, Wizard, Monk, Druid) grant proficiency with
+    /// specific weapons that would otherwise require general Simple/Martial proficiency.
+    /// </summary>
+    private bool IsProficiencySatisfied(int requiredFeatId, int baseItem, IReadOnlySet<int> creatureFeats)
+    {
+        // Direct match — creature has the exact required feat
+        if (creatureFeats.Contains(requiredFeatId))
+            return true;
+
+        // Check if any class-specific proficiency feat covers this weapon
+        // Class proficiency feats map to specific base items they cover:
+        var equivalentFeats = GetEquivalentProficiencyFeats(baseItem);
+        return equivalentFeats.Any(creatureFeats.Contains);
+    }
+
+    /// <summary>
+    /// Gets class-specific weapon proficiency feat IDs that cover a given base item.
+    /// These are read from baseitems.2da columns that map weapon types to proficiency feats,
+    /// falling back to the NWN engine's standard proficiency mappings.
+    /// </summary>
+    private List<int> GetEquivalentProficiencyFeats(int baseItem)
+    {
+        var result = new List<int>();
+
+        // Read WeaponType from baseitems.2da to determine weapon category
+        var weaponTypeStr = _gameData.Get2DAValue("baseitems", baseItem, "WeaponType");
+        if (string.IsNullOrEmpty(weaponTypeStr) || weaponTypeStr == "****")
+            return result;
+
+        if (!int.TryParse(weaponTypeStr, out int weaponType))
+            return result;
+
+        // NWN proficiency feat IDs (standard across all NWN versions)
+        const int ProfSimple = 44;
+        const int ProfMartial = 45;
+        const int ProfExotic = 46;
+        const int ProfCreature = 47;
+        const int ProfRogue = 48;
+        const int ProfWizard = 49;
+        const int ProfDruid = 50;
+        const int ProfMonk = 51;
+        const int ProfElf = 52;
+
+        // General category proficiencies — if the creature has these, they cover the weapon
+        switch (weaponType)
+        {
+            case 1: // Simple weapon
+                result.Add(ProfSimple);
+                break;
+            case 2: // Martial weapon
+                result.Add(ProfMartial);
+                break;
+            case 3: // Exotic weapon
+                result.Add(ProfExotic);
+                break;
+            case 4: // Druid weapon
+                result.Add(ProfDruid);
+                break;
+        }
+
+        // Class-specific proficiency feats that cover subsets of weapons.
+        // These mappings are from the NWN engine — class proficiency feats grant
+        // proficiency with specific base items regardless of WeaponType category.
+        // Rogue (48): rapier=37, shortsword=22, handcrossbow=69, shortbow=36
+        if (baseItem is 37 or 22 or 69 or 36)
+            result.Add(ProfRogue);
+
+        // Wizard (49): club=28, dagger=3, heavycrossbow=6, lightcrossbow=7, quarterstaff=10
+        if (baseItem is 28 or 3 or 6 or 7 or 10)
+            result.Add(ProfWizard);
+
+        // Elf (52): longsword=1, longbow=8, rapier=37, shortbow=36
+        if (baseItem is 1 or 8 or 37 or 36)
+            result.Add(ProfElf);
+
+        // Druid (50): club=28, dagger=3, dart=31, quarterstaff=10, scimitar=23,
+        //             sickle=60, sling=61, spear=63
+        if (baseItem is 28 or 3 or 31 or 10 or 23 or 60 or 61 or 63)
+            result.Add(ProfDruid);
+
+        // Monk (51): club=28, dagger=3, handaxe=65, kama=2, quarterstaff=10, shuriken=59
+        if (baseItem is 28 or 3 or 65 or 2 or 10 or 59)
+            result.Add(ProfMonk);
+
+        // Creature (47): creature weapons
+        if (baseItem is 72 or 73 or 74 or 75)
+            result.Add(ProfCreature);
+
+        return result;
     }
 
     /// <summary>

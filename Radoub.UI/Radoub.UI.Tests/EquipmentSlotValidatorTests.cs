@@ -641,4 +641,133 @@ public class EquipmentSlotValidatorTests
         Assert.NotNull(headSlot.ValidationWarning);
         Assert.Null(rightHandSlot.ValidationWarning);
     }
+
+    #region Class-Specific Weapon Proficiency Equivalence (#1675)
+
+    [Fact]
+    public void ValidateFeatRequirements_RogueWithShortSword_NoWarning()
+    {
+        // Short sword (base item 22) requires feat 45 (Weapon Proficiency: Martial)
+        // Rogue has feat 48 (Weapon Proficiency: Rogue) which covers short swords
+        var mockGameData = new MockGameDataService(includeSampleData: false);
+        mockGameData.Set2DAValue("baseitems", 22, "EquipableSlots", "0x30");
+        mockGameData.Set2DAValue("baseitems", 22, "ReqFeat0", "45"); // Martial proficiency
+        mockGameData.Set2DAValue("baseitems", 22, "WeaponType", "2"); // Martial weapon
+        mockGameData.Set2DAValue("feat", 45, "FEAT", "5000");
+        mockGameData.SetTlkString(5000, "Weapon Proficiency: Martial");
+
+        var validator = new EquipmentSlotValidator(mockGameData);
+        var slot = new EquipmentSlotViewModel(4, 0x10, "Right Hand");
+
+        var item = new UtiFile { BaseItem = 22 };
+        slot.EquippedItem = new ItemViewModel(item, "Short Sword", "Short Sword", "");
+
+        // Rogue has feat 48 (Rogue proficiency) — NOT feat 45 (Martial)
+        var creatureFeats = new HashSet<int> { 48 };
+
+        var warning = validator.ValidateFeatRequirements(slot, creatureFeats);
+
+        Assert.Null(warning); // Should not warn — Rogue proficiency covers short swords
+    }
+
+    [Fact]
+    public void ValidateFeatRequirements_FighterWithShortSword_NoWarning()
+    {
+        // Fighter has feat 45 (Martial) directly
+        var mockGameData = new MockGameDataService(includeSampleData: false);
+        mockGameData.Set2DAValue("baseitems", 22, "EquipableSlots", "0x30");
+        mockGameData.Set2DAValue("baseitems", 22, "ReqFeat0", "45");
+        mockGameData.Set2DAValue("baseitems", 22, "WeaponType", "2");
+        mockGameData.Set2DAValue("feat", 45, "FEAT", "5000");
+        mockGameData.SetTlkString(5000, "Weapon Proficiency: Martial");
+
+        var validator = new EquipmentSlotValidator(mockGameData);
+        var slot = new EquipmentSlotViewModel(4, 0x10, "Right Hand");
+
+        var item = new UtiFile { BaseItem = 22 };
+        slot.EquippedItem = new ItemViewModel(item, "Short Sword", "Short Sword", "");
+
+        var creatureFeats = new HashSet<int> { 45 }; // Has Martial directly
+
+        var warning = validator.ValidateFeatRequirements(slot, creatureFeats);
+
+        Assert.Null(warning);
+    }
+
+    [Fact]
+    public void ValidateFeatRequirements_WizardWithDagger_NoWarning()
+    {
+        // Dagger (base item 3) requires feat 44 (Simple proficiency)
+        // Wizard has feat 49 (Wizard proficiency) which covers daggers
+        var mockGameData = new MockGameDataService(includeSampleData: false);
+        mockGameData.Set2DAValue("baseitems", 3, "EquipableSlots", "0x30");
+        mockGameData.Set2DAValue("baseitems", 3, "ReqFeat0", "44"); // Simple proficiency
+        mockGameData.Set2DAValue("baseitems", 3, "WeaponType", "1"); // Simple weapon
+        mockGameData.Set2DAValue("feat", 44, "FEAT", "5001");
+        mockGameData.SetTlkString(5001, "Weapon Proficiency: Simple");
+
+        var validator = new EquipmentSlotValidator(mockGameData);
+        var slot = new EquipmentSlotViewModel(4, 0x10, "Right Hand");
+
+        var item = new UtiFile { BaseItem = 3 };
+        slot.EquippedItem = new ItemViewModel(item, "Dagger", "Dagger", "");
+
+        // Wizard has feat 49 (Wizard proficiency) — NOT feat 44 (Simple)
+        var creatureFeats = new HashSet<int> { 49 };
+
+        var warning = validator.ValidateFeatRequirements(slot, creatureFeats);
+
+        Assert.Null(warning);
+    }
+
+    [Fact]
+    public void ValidateFeatRequirements_NoProficiency_StillWarns()
+    {
+        // Creature with no weapon proficiency feats should still get warning
+        var mockGameData = new MockGameDataService(includeSampleData: false);
+        mockGameData.Set2DAValue("baseitems", 22, "EquipableSlots", "0x30");
+        mockGameData.Set2DAValue("baseitems", 22, "ReqFeat0", "45");
+        mockGameData.Set2DAValue("baseitems", 22, "WeaponType", "2");
+        mockGameData.Set2DAValue("feat", 45, "FEAT", "5000");
+        mockGameData.SetTlkString(5000, "Weapon Proficiency: Martial");
+
+        var validator = new EquipmentSlotValidator(mockGameData);
+        var slot = new EquipmentSlotViewModel(4, 0x10, "Right Hand");
+
+        var item = new UtiFile { BaseItem = 22 };
+        slot.EquippedItem = new ItemViewModel(item, "Short Sword", "Short Sword", "");
+
+        var creatureFeats = new HashSet<int>(); // No proficiency feats at all
+
+        var warning = validator.ValidateFeatRequirements(slot, creatureFeats);
+
+        Assert.NotNull(warning);
+        Assert.Contains("Weapon Proficiency: Martial", warning);
+    }
+
+    [Fact]
+    public void ValidateFeatRequirements_ElfWithLongsword_NoWarning()
+    {
+        // Elf has feat 52 (Elf proficiency) which covers longswords
+        var mockGameData = new MockGameDataService(includeSampleData: false);
+        mockGameData.Set2DAValue("baseitems", 1, "EquipableSlots", "0x30");
+        mockGameData.Set2DAValue("baseitems", 1, "ReqFeat0", "45"); // Martial
+        mockGameData.Set2DAValue("baseitems", 1, "WeaponType", "2");
+        mockGameData.Set2DAValue("feat", 45, "FEAT", "5000");
+        mockGameData.SetTlkString(5000, "Weapon Proficiency: Martial");
+
+        var validator = new EquipmentSlotValidator(mockGameData);
+        var slot = new EquipmentSlotViewModel(4, 0x10, "Right Hand");
+
+        var item = new UtiFile { BaseItem = 1 };
+        slot.EquippedItem = new ItemViewModel(item, "Longsword", "Longsword", "");
+
+        var creatureFeats = new HashSet<int> { 52 }; // Elf proficiency
+
+        var warning = validator.ValidateFeatRequirements(slot, creatureFeats);
+
+        Assert.Null(warning);
+    }
+
+    #endregion
 }
