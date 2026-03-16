@@ -17,9 +17,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: LUW & Validation Bug Fixes (#1741)
 
-- Fix: Consolidated LUW saves may be calculated incorrectly at high levels (#1740)
-- Fix: LUW auto-assign may use wrong package for feat/ability suggestions (#1737)
-- Fix: Rogue weapon proficiency validation incorrect for short swords (#1675)
+- Fix: LUW saves not updated on creature after level-up — added `UpdateSavingThrows()` to both single-level and consolidated paths (#1740)
+- Fix: Auto-assign fallback prefers class feats over universal feats in consolidated mode (#1737)
+- Fix: NCW ability auto-assign priority — WIS deprioritized for martial classes, INT raised for feat prereqs (#1737)
+- Fix: LUW feat prereqs now see projected ability scores from Step 2 increments (e.g., INT 13 unlocks Expertise) (#1737)
+- Fix: Weapon proficiency validation recognizes class-specific proficiency feats (Rogue/Wizard/Monk/Druid/Elf) as equivalent to general proficiency (#1675)
+- Fix: WeaponType fallback for proficiency validation when baseitems.2da lacks ReqFeat columns (#1675)
 
 ---
 

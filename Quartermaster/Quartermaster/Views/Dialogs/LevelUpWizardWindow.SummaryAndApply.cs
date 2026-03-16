@@ -16,6 +16,9 @@ public partial class LevelUpWizardWindow
 
     private void PrepareStep6()
     {
+        // Unapply tentative ability increments — summary displays base→projected (#1737)
+        UnapplyAbilityIncrementsFromCreature();
+
         var className = _displayService.GetClassName(_selectedClassId);
 
         // Build ability increases map for consolidated apply (#1645)
@@ -191,6 +194,9 @@ public partial class LevelUpWizardWindow
 
     private void ApplyLevelUp()
     {
+        // Unapply tentative ability increments before final apply to avoid double-applying (#1737)
+        UnapplyAbilityIncrementsFromCreature();
+
         var service = new LevelUpApplicationService(_displayService);
         var settings = SettingsService.Instance;
 

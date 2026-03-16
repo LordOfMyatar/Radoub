@@ -537,6 +537,10 @@ public partial class LevelUpWizardWindow : Window
     {
         if (_currentStep > 1)
         {
+            // Unapply projected ability increments when going back to step 2 or earlier (#1737)
+            if (_currentStep == 3)
+                UnapplyAbilityIncrementsFromCreature();
+
             _currentStep--;
 
             // Skip steps that don't apply
@@ -545,7 +549,10 @@ public partial class LevelUpWizardWindow : Window
             if (_currentStep == 3 && _featsToSelect == 0 && _validationLevel != ValidationLevel.None)
                 _currentStep--;
             if (_currentStep == 2 && !_needsAbilityIncrease)
+            {
+                UnapplyAbilityIncrementsFromCreature();
                 _currentStep--;
+            }
 
             UpdateStepDisplay();
         }
@@ -704,6 +711,8 @@ public partial class LevelUpWizardWindow : Window
 
     private void OnCancelClick(object? sender, RoutedEventArgs e)
     {
+        // Restore creature state in case tentative ability increments were applied (#1737)
+        UnapplyAbilityIncrementsFromCreature();
         Confirmed = false;
         Close();
     }

@@ -18,6 +18,9 @@ public partial class LevelUpWizardWindow
 
     private void PrepareStep3()
     {
+        // Apply pending ability increments so feat prereqs see projected scores (#1737)
+        ApplyAbilityIncrementsToCreature();
+
         // Resolve default package for auto-assign
         var pkgStr = _displayService.GameDataService.Get2DAValue("classes", _selectedClassId, "Package");
         _resolvedPackageId = (!string.IsNullOrEmpty(pkgStr) && pkgStr != "****" && byte.TryParse(pkgStr, out byte pkgId))
