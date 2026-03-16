@@ -368,34 +368,32 @@ public partial class MdlBinaryReader
                 $"[MDL] Skin '{skin.Name}' boneRefsPtr as 4xint16: ({s0},{s1},{s2},{s3})");
         }
 
-        if (vertexCount > 0 && boneIndicesRawOffset != uint.MaxValue && boneWeightsRawOffset != uint.MaxValue)
+        if (vertexCount > 0 && boneIndicesRawOffset != uint.MaxValue)
         {
-            // Two SEPARATE arrays in raw data:
-            //   weightsPtr  -> bone indices: 4 x int16 per vertex = 8 bytes/vertex
-            //   boneRefsPtr -> bone weights: 4 x float per vertex = 16 bytes/vertex
-            var indicesRequired = (uint)(vertexCount * 8);
-            var weightsRequired = (uint)(vertexCount * 16);
+            // Interleaved per-vertex bone data at weightsPtr:
+            //   [4 x int16 bone indices (8 bytes)] [4 x float weights (16 bytes)] = 24 bytes/vertex
+            // boneRefsPtr is NOT used (points to unrelated data)
+            var bytesPerVertex = 24;
+            var requiredBytes = (uint)(vertexCount * bytesPerVertex);
 
-            if (boneIndicesRawOffset + indicesRequired <= _rawData.Length &&
-                boneWeightsRawOffset + weightsRequired <= _rawData.Length)
+            if (boneIndicesRawOffset + requiredBytes <= _rawData.Length)
             {
                 var weights = new MdlBoneWeight[vertexCount];
 
                 for (int i = 0; i < vertexCount; i++)
                 {
-                    var idxOff = (int)boneIndicesRawOffset + i * 8;
-                    var wtOff = (int)boneWeightsRawOffset + i * 16;
+                    var off = (int)boneIndicesRawOffset + i * bytesPerVertex;
 
                     weights[i] = new MdlBoneWeight
                     {
-                        Bone0 = BitConverter.ToInt16(_rawData, idxOff),
-                        Bone1 = BitConverter.ToInt16(_rawData, idxOff + 2),
-                        Bone2 = BitConverter.ToInt16(_rawData, idxOff + 4),
-                        Bone3 = BitConverter.ToInt16(_rawData, idxOff + 6),
-                        Weight0 = BitConverter.ToSingle(_rawData, wtOff),
-                        Weight1 = BitConverter.ToSingle(_rawData, wtOff + 4),
-                        Weight2 = BitConverter.ToSingle(_rawData, wtOff + 8),
-                        Weight3 = BitConverter.ToSingle(_rawData, wtOff + 12),
+                        Bone0 = BitConverter.ToInt16(_rawData, off),
+                        Bone1 = BitConverter.ToInt16(_rawData, off + 2),
+                        Bone2 = BitConverter.ToInt16(_rawData, off + 4),
+                        Bone3 = BitConverter.ToInt16(_rawData, off + 6),
+                        Weight0 = BitConverter.ToSingle(_rawData, off + 8),
+                        Weight1 = BitConverter.ToSingle(_rawData, off + 12),
+                        Weight2 = BitConverter.ToSingle(_rawData, off + 16),
+                        Weight3 = BitConverter.ToSingle(_rawData, off + 20),
                     };
                 }
 
@@ -411,7 +409,7 @@ public partial class MdlBinaryReader
                 }
 
                 Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
-                    $"[MDL] Skin '{skin.Name}': Read {vertexCount} bone weight entries (separate arrays)");
+                    $"[MDL] Skin '{skin.Name}': Read {vertexCount} bone weight entries (24B interleaved)");
             }
             else
             {
