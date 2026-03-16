@@ -293,86 +293,61 @@ public partial class MdlBinaryReader
                 $"[MDL] Skin '{skin.Name}' extension raw (0x{dumpStart:X4}, {dumpLen} bytes): {BitConverter.ToString(dumpBytes)}");
         }
 
-        // Read per-vertex bone weights from raw data (4 floats per vertex)
-        var weightsRawOffset = PointerToRawOffset(skinWeightsPtr);
-        var refsRawOffsetCheck = PointerToRawOffset(skinBoneRefsPtr);
+        // Read per-vertex bone data from raw data
+        // Data is INTERLEAVED: [4 x int16 boneIndices][4 x float weights] = 24 bytes per vertex
+        // The weightsPtr points to the START of this interleaved structure
+        var boneDataRawOffset = PointerToRawOffset(skinWeightsPtr);
         Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
-            $"[MDL] Skin '{skin.Name}': weightsRawOff={weightsRawOffset}, boneRefsRawOff={refsRawOffsetCheck}, rawDataLen={_rawData.Length}");
+            $"[MDL] Skin '{skin.Name}': boneDataRawOff={boneDataRawOffset}, rawDataLen={_rawData.Length}");
 
-        // Dump first 32 bytes at weight and bone ref offsets
-        if (weightsRawOffset != uint.MaxValue && weightsRawOffset + 32 <= _rawData.Length)
+        if (vertexCount > 0 && boneDataRawOffset != uint.MaxValue)
         {
-            var wb = new byte[32];
-            Array.Copy(_rawData, (int)weightsRawOffset, wb, 0, 32);
-            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
-                $"[MDL] Skin '{skin.Name}' raw weights bytes: {BitConverter.ToString(wb)}");
-            // Interpret as floats
-            var f0 = BitConverter.ToSingle(_rawData, (int)weightsRawOffset);
-            var f1 = BitConverter.ToSingle(_rawData, (int)weightsRawOffset + 4);
-            var f2 = BitConverter.ToSingle(_rawData, (int)weightsRawOffset + 8);
-            var f3 = BitConverter.ToSingle(_rawData, (int)weightsRawOffset + 12);
-            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
-                $"[MDL] Skin '{skin.Name}' weights[0] as floats: ({f0:F6},{f1:F6},{f2:F6},{f3:F6})");
-        }
-        if (refsRawOffsetCheck != uint.MaxValue && refsRawOffsetCheck + 16 <= _rawData.Length)
-        {
-            var rb = new byte[16];
-            Array.Copy(_rawData, (int)refsRawOffsetCheck, rb, 0, 16);
-            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
-                $"[MDL] Skin '{skin.Name}' raw boneRefs bytes: {BitConverter.ToString(rb)}");
-            // Interpret as int16s
-            var s0 = BitConverter.ToInt16(_rawData, (int)refsRawOffsetCheck);
-            var s1 = BitConverter.ToInt16(_rawData, (int)refsRawOffsetCheck + 2);
-            var s2 = BitConverter.ToInt16(_rawData, (int)refsRawOffsetCheck + 4);
-            var s3 = BitConverter.ToInt16(_rawData, (int)refsRawOffsetCheck + 6);
-            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
-                $"[MDL] Skin '{skin.Name}' boneRefs[0] as int16: ({s0},{s1},{s2},{s3})");
-        }
-
-        if (vertexCount > 0 && weightsRawOffset != uint.MaxValue)
-        {
-            var requiredBytes = (uint)(vertexCount * 4 * sizeof(float));
-            if (weightsRawOffset + requiredBytes <= _rawData.Length)
+            // 24 bytes per vertex: 4 int16 (8 bytes) + 4 float (16 bytes)
+            var bytesPerVertex = 24;
+            var requiredBytes = (uint)(vertexCount * bytesPerVertex);
+            if (boneDataRawOffset + requiredBytes <= _rawData.Length)
             {
                 var weights = new MdlBoneWeight[vertexCount];
 
-                // Read per-vertex bone refs from raw data (4 int16s per vertex)
-                var refsRawOffset = PointerToRawOffset(skinBoneRefsPtr);
-                short[]? boneRefs = null;
-                if (refsRawOffset != uint.MaxValue)
-                {
-                    var refsRequired = (uint)(vertexCount * 4 * sizeof(short));
-                    if (refsRawOffset + refsRequired <= _rawData.Length)
-                    {
-                        boneRefs = new short[vertexCount * 4];
-                        Buffer.BlockCopy(_rawData, (int)refsRawOffset, boneRefs, 0, (int)refsRequired);
-                    }
-                }
-
                 for (int i = 0; i < vertexCount; i++)
                 {
-                    var baseOff = (int)weightsRawOffset + i * 16; // 4 floats = 16 bytes
+                    var baseOff = (int)boneDataRawOffset + i * bytesPerVertex;
+                    // First 8 bytes: 4 x int16 bone indices
+                    var bone0 = BitConverter.ToInt16(_rawData, baseOff);
+                    var bone1 = BitConverter.ToInt16(_rawData, baseOff + 2);
+                    var bone2 = BitConverter.ToInt16(_rawData, baseOff + 4);
+                    var bone3 = BitConverter.ToInt16(_rawData, baseOff + 6);
+                    // Next 16 bytes: 4 x float weights
+                    var w0 = BitConverter.ToSingle(_rawData, baseOff + 8);
+                    var w1 = BitConverter.ToSingle(_rawData, baseOff + 12);
+                    var w2 = BitConverter.ToSingle(_rawData, baseOff + 16);
+                    var w3 = BitConverter.ToSingle(_rawData, baseOff + 20);
+
                     weights[i] = new MdlBoneWeight
                     {
-                        Weight0 = BitConverter.ToSingle(_rawData, baseOff),
-                        Weight1 = BitConverter.ToSingle(_rawData, baseOff + 4),
-                        Weight2 = BitConverter.ToSingle(_rawData, baseOff + 8),
-                        Weight3 = BitConverter.ToSingle(_rawData, baseOff + 12),
-                        Bone0 = boneRefs != null ? boneRefs[i * 4] : -1,
-                        Bone1 = boneRefs != null ? boneRefs[i * 4 + 1] : -1,
-                        Bone2 = boneRefs != null ? boneRefs[i * 4 + 2] : -1,
-                        Bone3 = boneRefs != null ? boneRefs[i * 4 + 3] : -1,
+                        Bone0 = bone0, Bone1 = bone1, Bone2 = bone2, Bone3 = bone3,
+                        Weight0 = w0, Weight1 = w1, Weight2 = w2, Weight3 = w3,
                     };
                 }
 
                 skin.BoneWeights = weights;
-                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
-                    $"[MDL] Skin '{skin.Name}': Read {vertexCount} bone weight entries");
+
+                // Log first vertex for verification
+                if (vertexCount > 0)
+                {
+                    var bw0 = weights[0];
+                    Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
+                        $"[MDL] Skin '{skin.Name}': vertex[0] bones=({bw0.Bone0},{bw0.Bone1},{bw0.Bone2},{bw0.Bone3}) " +
+                        $"weights=({bw0.Weight0:F4},{bw0.Weight1:F4},{bw0.Weight2:F4},{bw0.Weight3:F4})");
+                }
+
+                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
+                    $"[MDL] Skin '{skin.Name}': Read {vertexCount} bone weight entries (interleaved format)");
             }
             else
             {
                 Logging.UnifiedLogger.LogApplication(Logging.LogLevel.WARN,
-                    $"[MDL] Skin '{skin.Name}': Bone weights would read past raw data (offset={weightsRawOffset}, need={requiredBytes}, have={_rawData.Length})");
+                    $"[MDL] Skin '{skin.Name}': Bone data would read past raw data (offset={boneDataRawOffset}, need={requiredBytes}, have={_rawData.Length})");
             }
         }
 
