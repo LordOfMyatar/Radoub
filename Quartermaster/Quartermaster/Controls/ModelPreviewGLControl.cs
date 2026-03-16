@@ -380,13 +380,15 @@ void main()
             if (weight <= 0 || boneIndex < 0) return;
             if (boneIndex >= skin.BoneQuaternions.Length || boneIndex >= skin.BoneTranslations.Length) return;
 
-            // Q_inv and T_inv are stored on disk (inverse bind-pose: world→bone)
-            // To go bone→world: v_world = conjugate(Q_inv) * (v_bone - T_inv)
-            var qInv = skin.BoneQuaternions[boneIndex];
-            var tInv = skin.BoneTranslations[boneIndex];
-            var qFwd = Quaternion.Conjugate(qInv);
-            var transformed = Vector3.Transform(vertex - tInv, qFwd);
-            result += weight * transformed;
+            // The on-disk "BoneRefInv" arrays were pre-inverted during compilation:
+            // Phase 1: accumulate forward (Q_fwd, T_fwd)
+            // Phase 2: conjugate Q, compute T_inv = conjugate(Q_fwd) * (-T_fwd)
+            // So on disk: Q_stored = conjugate(Q_fwd), T_stored = Q_stored.Rotate(-T_fwd)
+            // To reconstruct world position: v_world = Q_stored * v + T_stored
+            var q = skin.BoneQuaternions[boneIndex];
+            var t = skin.BoneTranslations[boneIndex];
+            var rotated = Vector3.Transform(vertex, q);
+            result += weight * (rotated + t);
         }
 
         Accumulate(bw.Bone0, bw.Weight0);
@@ -411,9 +413,8 @@ void main()
             if (weight <= 0 || boneIndex < 0) return;
             if (boneIndex >= skin.BoneQuaternions.Length) return;
 
-            var qInv = skin.BoneQuaternions[boneIndex];
-            var qFwd = Quaternion.Conjugate(qInv);
-            result += weight * Vector3.Transform(normal, qFwd);
+            var q = skin.BoneQuaternions[boneIndex];
+            result += weight * Vector3.Transform(normal, q);
         }
 
         Accumulate(bw.Bone0, bw.Weight0);

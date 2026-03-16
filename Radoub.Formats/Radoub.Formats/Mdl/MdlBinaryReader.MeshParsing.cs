@@ -344,13 +344,16 @@ public partial class MdlBinaryReader
 
                 for (int i = 0; i < (int)qBoneCount; i++)
                 {
-                    // Inverse bind-pose quaternions stored as (W, X, Y, Z) per nwnexplorer CQuaternion
-                    // System.Numerics.Quaternion constructor takes (X, Y, Z, W)
-                    var w = qReader.ReadSingle();
-                    var x = qReader.ReadSingle();
-                    var y = qReader.ReadSingle();
-                    var z = qReader.ReadSingle();
-                    skin.BoneQuaternions[i] = new Quaternion(x, y, z, w);
+                    // On-disk order after nwnexplorer's reorder step: (W, X, Y, Z)
+                    // But the reorder swaps from CQuaternion's (X,Y,Z,W) to disk (W,X,Y,Z)
+                    // System.Numerics.Quaternion constructor: (X, Y, Z, W)
+                    // Reading raw floats and trying both interpretations
+                    var f0 = qReader.ReadSingle();
+                    var f1 = qReader.ReadSingle();
+                    var f2 = qReader.ReadSingle();
+                    var f3 = qReader.ReadSingle();
+                    // Disk format (W,X,Y,Z) -> Quaternion(X,Y,Z,W) = Quaternion(f1,f2,f3,f0)
+                    skin.BoneQuaternions[i] = new Quaternion(f1, f2, f3, f0);
                 }
 
                 Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
