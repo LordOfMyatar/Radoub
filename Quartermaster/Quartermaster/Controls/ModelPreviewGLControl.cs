@@ -366,8 +366,9 @@ void main()
 
     /// <summary>
     /// Apply bone-weighted skinning transform to a vertex position.
-    /// Uses inverse bind-pose quaternions and translations stored in the skin node.
-    /// Formula: finalPos = Σ weight[j] * (rotate(vertex, Q[bone]) + T[bone])
+    /// The on-disk data contains INVERSE bind-pose transforms (world→bone space).
+    /// To display in world space, we invert: v_world = Q_fwd * (v_local - T_inv)
+    /// where Q_fwd = conjugate(Q_inv).
     /// </summary>
     private static Vector3 ApplySkinTransform(Vector3 vertex, int vertexIndex, Radoub.Formats.Mdl.MdlSkinNode skin)
     {
@@ -379,10 +380,13 @@ void main()
             if (weight <= 0 || boneIndex < 0) return;
             if (boneIndex >= skin.BoneQuaternions.Length || boneIndex >= skin.BoneTranslations.Length) return;
 
-            var q = skin.BoneQuaternions[boneIndex];
-            var t = skin.BoneTranslations[boneIndex];
-            var rotated = Vector3.Transform(vertex, q);
-            result += weight * (rotated + t);
+            // Q_inv and T_inv are stored on disk (inverse bind-pose: world→bone)
+            // To go bone→world: v_world = conjugate(Q_inv) * (v_bone - T_inv)
+            var qInv = skin.BoneQuaternions[boneIndex];
+            var tInv = skin.BoneTranslations[boneIndex];
+            var qFwd = Quaternion.Conjugate(qInv);
+            var transformed = Vector3.Transform(vertex - tInv, qFwd);
+            result += weight * transformed;
         }
 
         Accumulate(bw.Bone0, bw.Weight0);
@@ -407,8 +411,9 @@ void main()
             if (weight <= 0 || boneIndex < 0) return;
             if (boneIndex >= skin.BoneQuaternions.Length) return;
 
-            var q = skin.BoneQuaternions[boneIndex];
-            result += weight * Vector3.Transform(normal, q);
+            var qInv = skin.BoneQuaternions[boneIndex];
+            var qFwd = Quaternion.Conjugate(qInv);
+            result += weight * Vector3.Transform(normal, qFwd);
         }
 
         Accumulate(bw.Bone0, bw.Weight0);
