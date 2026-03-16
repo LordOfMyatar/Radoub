@@ -323,47 +323,50 @@ public partial class MdlBinaryReader
         Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
             $"[MDL] Skin '{skin.Name}': boneIndicesRawOff={boneIndicesRawOffset}, boneWeightsRawOff={boneWeightsRawOffset}, rawDataLen={_rawData.Length}");
 
-        if (vertexCount > 0 && boneIndicesRawOffset != uint.MaxValue)
+        if (vertexCount > 0 && boneIndicesRawOffset != uint.MaxValue && boneWeightsRawOffset != uint.MaxValue)
         {
-            // Per-vertex bone data is interleaved at weightsPtr:
-            //   [4 x int16 boneIndices (8 bytes)] [4 x float weights (16 bytes)] = 24 bytes/vertex
-            var bytesPerVertex = 24;
-            var requiredBytes = (uint)(vertexCount * bytesPerVertex);
+            // Two SEPARATE arrays in raw data:
+            //   weightsPtr  -> bone indices: 4 x int16 per vertex = 8 bytes/vertex
+            //   boneRefsPtr -> bone weights: 4 x float per vertex = 16 bytes/vertex
+            var indicesRequired = (uint)(vertexCount * 8);
+            var weightsRequired = (uint)(vertexCount * 16);
 
-            if (boneIndicesRawOffset + requiredBytes <= _rawData.Length)
+            if (boneIndicesRawOffset + indicesRequired <= _rawData.Length &&
+                boneWeightsRawOffset + weightsRequired <= _rawData.Length)
             {
                 var weights = new MdlBoneWeight[vertexCount];
 
                 for (int i = 0; i < vertexCount; i++)
                 {
-                    var baseOff = (int)boneIndicesRawOffset + i * bytesPerVertex;
+                    var idxOff = (int)boneIndicesRawOffset + i * 8;
+                    var wtOff = (int)boneWeightsRawOffset + i * 16;
 
                     weights[i] = new MdlBoneWeight
                     {
-                        Bone0 = BitConverter.ToInt16(_rawData, baseOff),
-                        Bone1 = BitConverter.ToInt16(_rawData, baseOff + 2),
-                        Bone2 = BitConverter.ToInt16(_rawData, baseOff + 4),
-                        Bone3 = BitConverter.ToInt16(_rawData, baseOff + 6),
-                        Weight0 = BitConverter.ToSingle(_rawData, baseOff + 8),
-                        Weight1 = BitConverter.ToSingle(_rawData, baseOff + 12),
-                        Weight2 = BitConverter.ToSingle(_rawData, baseOff + 16),
-                        Weight3 = BitConverter.ToSingle(_rawData, baseOff + 20),
+                        Bone0 = BitConverter.ToInt16(_rawData, idxOff),
+                        Bone1 = BitConverter.ToInt16(_rawData, idxOff + 2),
+                        Bone2 = BitConverter.ToInt16(_rawData, idxOff + 4),
+                        Bone3 = BitConverter.ToInt16(_rawData, idxOff + 6),
+                        Weight0 = BitConverter.ToSingle(_rawData, wtOff),
+                        Weight1 = BitConverter.ToSingle(_rawData, wtOff + 4),
+                        Weight2 = BitConverter.ToSingle(_rawData, wtOff + 8),
+                        Weight3 = BitConverter.ToSingle(_rawData, wtOff + 12),
                     };
                 }
 
                 skin.BoneWeights = weights;
 
-                // Log first 2 vertices for verification
-                for (int v = 0; v < Math.Min(2, vertexCount); v++)
+                // Log first 3 vertices for verification
+                for (int v = 0; v < Math.Min(3, vertexCount); v++)
                 {
                     var bw = weights[v];
                     Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
                         $"[MDL] Skin '{skin.Name}': vertex[{v}] bones=({bw.Bone0},{bw.Bone1},{bw.Bone2},{bw.Bone3}) " +
-                        $"weights=({bw.Weight0:F4},{bw.Weight1:F4},{bw.Weight2:F4},{bw.Weight3:F4})");
+                        $"weights=({bw.Weight0:F4},{bw.Weight1:F4},{bw.Weight2:F4},{bw.Weight3:F4}) sum={bw.Weight0+bw.Weight1+bw.Weight2+bw.Weight3:F4}");
                 }
 
                 Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
-                    $"[MDL] Skin '{skin.Name}': Read {vertexCount} bone weight entries");
+                    $"[MDL] Skin '{skin.Name}': Read {vertexCount} bone weight entries (separate arrays)");
             }
             else
             {
