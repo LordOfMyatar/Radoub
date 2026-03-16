@@ -794,14 +794,12 @@ void main()
                 }
             }
 
-            // For non-skin meshes: compute full world transform matrix from hierarchy
-            var worldTransform = Matrix4x4.Identity;
-            bool hasWorldTransform = false;
-            if (!isSkinMesh)
-            {
-                worldTransform = GetWorldTransform(mesh);
-                hasWorldTransform = worldTransform != Matrix4x4.Identity;
-            }
+            // Compute full world transform for all meshes (both skin and trimesh).
+            // Skin mesh vertices are stored in model/bind-pose space. For static rest-pose
+            // display the bind pose IS the rest pose, so no bone transforms are needed —
+            // just apply the node hierarchy transform like any trimesh.
+            var worldTransform = GetWorldTransform(mesh);
+            bool hasWorldTransform = worldTransform != Matrix4x4.Identity;
 
             // Count NaN vertices - we'll skip them during rendering
             var nanVertexIndices = new HashSet<int>();
@@ -874,23 +872,10 @@ void main()
                 // Get vertex in local mesh space
                 var localVertex = mesh.Vertices[i];
 
-                Vector3 v;
-                if (isSkinMesh && hasSkinTransforms)
-                {
-                    // Skin mesh: apply bone weight transforms using inverse bind-pose data
-                    // Formula: finalPos = Σ weight[j] * (rotate(vertex, QBoneRefInv[bone]) + TBoneRefInv[bone])
-                    v = ApplySkinTransform(localVertex, i, skinNode!);
-                }
-                else if (isSkinMesh)
-                {
-                    // Skin mesh without bone data: use as-is (fallback)
-                    v = localVertex;
-                }
-                else
-                {
-                    // Trimesh: apply full world transform (handles hierarchy rotations + positions)
-                    v = hasWorldTransform ? TransformPosition(localVertex, worldTransform) : localVertex;
-                }
+                // All meshes (skin and trimesh): apply node hierarchy world transform.
+                // Skin vertices are in model/bind-pose space; for static rest-pose display
+                // bind pose == rest pose so no bone weighting is needed.
+                Vector3 v = hasWorldTransform ? TransformPosition(localVertex, worldTransform) : localVertex;
 
                 // Position
                 vertices.Add(v.X);
@@ -902,12 +887,7 @@ void main()
                 if (hasNormals)
                 {
                     normal = mesh.Normals[i];
-                    if (isSkinMesh && hasSkinTransforms)
-                    {
-                        // Rotate normal by bone transforms (same weighting as position)
-                        normal = ApplySkinNormalTransform(normal, i, skinNode!);
-                    }
-                    else if (hasWorldTransform && !isSkinMesh)
+                    if (hasWorldTransform)
                     {
                         normal = TransformNormal(normal, worldTransform);
                     }
