@@ -262,10 +262,11 @@ public partial class MdlBinaryReader
         // 0x010: m_pasSkinBoneRefs — pointer to raw data: 4 int16s per vertex (bone indices)
         var skinBoneRefsPtr = reader.ReadUInt32();
 
-        // 0x014: m_pasNodeToBoneMap — pointer to model data (int16 array), skip
-        reader.ReadUInt32();
+        // 0x014: m_pasNodeToBoneMap — pointer to model data (int16 array)
+        // Maps node indices to bone slot indices for Q/T array lookup
+        var nodeToBoneMapPtr = reader.ReadUInt32();
         // 0x018: m_ulNodeToBoneCount
-        reader.ReadUInt32();
+        var nodeToBoneCount = reader.ReadUInt32();
 
         // 0x01C: m_aQBoneRefInv — array of inverse bind-pose quaternions (CNwnArray: offset, count, allocated)
         var qBoneArrayOffset = reader.ReadUInt32();
@@ -279,7 +280,27 @@ public partial class MdlBinaryReader
 
         Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
             $"[MDL] Skin '{skin.Name}': weightsPtr=0x{skinWeightsPtr:X8}, boneRefsPtr=0x{skinBoneRefsPtr:X8}, " +
+            $"nodeToBonePtr=0x{nodeToBoneMapPtr:X8} count={nodeToBoneCount}, " +
             $"qBonePtr=0x{qBoneArrayOffset:X8} count={qBoneCount}, tBonePtr=0x{tBoneArrayOffset:X8} count={tBoneCount}");
+
+        // Read NodeToBoneMap from model data
+        short[]? nodeToBoneMap = null;
+        var nodeToBoneMapOffset = PointerToModelOffset(nodeToBoneMapPtr);
+        if (nodeToBoneCount > 0 && nodeToBoneMapOffset != uint.MaxValue)
+        {
+            var mapRequired = nodeToBoneCount * sizeof(short);
+            if (nodeToBoneMapOffset + mapRequired <= _modelData.Length)
+            {
+                nodeToBoneMap = new short[nodeToBoneCount];
+                Buffer.BlockCopy(_modelData, (int)nodeToBoneMapOffset, nodeToBoneMap, 0, (int)mapRequired);
+                skin.NodeToBoneMap = nodeToBoneMap;
+
+                // Log first entries for debugging
+                var mapPreview = string.Join(",", nodeToBoneMap.Take(10).Select(x => x.ToString()));
+                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
+                    $"[MDL] Skin '{skin.Name}': NodeToBoneMap[0..{Math.Min(10, nodeToBoneCount)-1}] = [{mapPreview}]");
+            }
+        }
 
         // Dump raw bytes at skin extension start for debugging
         {

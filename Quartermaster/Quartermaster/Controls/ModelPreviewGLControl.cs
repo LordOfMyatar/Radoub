@@ -375,18 +375,23 @@ void main()
         var bw = skin.BoneWeights[vertexIndex];
         var result = Vector3.Zero;
 
-        void Accumulate(int boneIndex, float weight)
+        void Accumulate(int boneRef, float weight)
         {
-            if (weight <= 0 || boneIndex < 0) return;
-            if (boneIndex >= skin.BoneQuaternions.Length || boneIndex >= skin.BoneTranslations.Length) return;
+            if (weight <= 0 || boneRef < 0) return;
 
-            // The on-disk "BoneRefInv" arrays were pre-inverted during compilation:
-            // Phase 1: accumulate forward (Q_fwd, T_fwd)
-            // Phase 2: conjugate Q, compute T_inv = conjugate(Q_fwd) * (-T_fwd)
-            // So on disk: Q_stored = conjugate(Q_fwd), T_stored = Q_stored.Rotate(-T_fwd)
-            // To reconstruct world position: v_world = Q_stored * v + T_stored
-            var q = skin.BoneQuaternions[boneIndex];
-            var t = skin.BoneTranslations[boneIndex];
+            // Bone refs in weight data are node indices — remap through NodeToBoneMap
+            int boneSlot = boneRef;
+            if (skin.NodeToBoneMap.Length > 0)
+            {
+                if (boneRef >= skin.NodeToBoneMap.Length) return;
+                boneSlot = skin.NodeToBoneMap[boneRef];
+                if (boneSlot < 0) return;
+            }
+
+            if (boneSlot >= skin.BoneQuaternions.Length || boneSlot >= skin.BoneTranslations.Length) return;
+
+            var q = skin.BoneQuaternions[boneSlot];
+            var t = skin.BoneTranslations[boneSlot];
             var rotated = Vector3.Transform(vertex, q);
             result += weight * (rotated + t);
         }
@@ -412,12 +417,21 @@ void main()
         var bw = skin.BoneWeights[vertexIndex];
         var result = Vector3.Zero;
 
-        void Accumulate(int boneIndex, float weight)
+        void Accumulate(int boneRef, float weight)
         {
-            if (weight <= 0 || boneIndex < 0) return;
-            if (boneIndex >= skin.BoneQuaternions.Length) return;
+            if (weight <= 0 || boneRef < 0) return;
 
-            var q = skin.BoneQuaternions[boneIndex];
+            int boneSlot = boneRef;
+            if (skin.NodeToBoneMap.Length > 0)
+            {
+                if (boneRef >= skin.NodeToBoneMap.Length) return;
+                boneSlot = skin.NodeToBoneMap[boneRef];
+                if (boneSlot < 0) return;
+            }
+
+            if (boneSlot >= skin.BoneQuaternions.Length) return;
+
+            var q = skin.BoneQuaternions[boneSlot];
             result += weight * Vector3.Transform(normal, q);
         }
 
