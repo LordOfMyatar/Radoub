@@ -210,19 +210,62 @@ public class EquipmentSlotValidator
         if (slot.EquippedItem == null)
             return null;
 
-        var requiredFeats = GetRequiredFeats(slot.EquippedItem.BaseItem);
-        if (requiredFeats.Count == 0)
+        var baseItem = slot.EquippedItem.BaseItem;
+        var requiredFeats = GetRequiredFeats(baseItem);
+
+        if (requiredFeats.Count > 0)
+        {
+            // Explicit ReqFeat columns — check each with equivalence
+            var missingFeats = requiredFeats
+                .Where(f => !IsProficiencySatisfied(f.FeatId, baseItem, creatureFeats))
+                .ToList();
+
+            if (missingFeats.Count == 0)
+                return null;
+
+            var featNames = string.Join(", ", missingFeats.Select(f => f.FeatName));
+            return $"{slot.EquippedItem.BaseItemName} requires: {featNames}";
+        }
+
+        // No ReqFeat columns — check WeaponType for implicit proficiency requirement
+        return ValidateWeaponTypeProficiency(slot, baseItem, creatureFeats);
+    }
+
+    /// <summary>
+    /// Validates weapon proficiency based on baseitems.2da WeaponType when no explicit
+    /// ReqFeat columns exist. Many NWN weapons rely on engine-internal proficiency
+    /// checks rather than ReqFeat, so we validate via WeaponType + class proficiency feats.
+    /// </summary>
+    private string? ValidateWeaponTypeProficiency(EquipmentSlotViewModel slot, int baseItem,
+        IReadOnlySet<int> creatureFeats)
+    {
+        var weaponTypeStr = _gameData.Get2DAValue("baseitems", baseItem, "WeaponType");
+        if (string.IsNullOrEmpty(weaponTypeStr) || weaponTypeStr == "****")
+            return null; // Not a weapon or no data — can't validate
+
+        if (!int.TryParse(weaponTypeStr, out int weaponType) || weaponType == 0)
+            return null; // WeaponType 0 = not a weapon
+
+        // Get all proficiency feats that cover this weapon (general + class-specific)
+        var coveringFeats = GetEquivalentProficiencyFeats(baseItem);
+        if (coveringFeats.Count == 0)
+            return null; // No known proficiency feats for this weapon type
+
+        // Check if creature has any covering feat
+        if (coveringFeats.Any(creatureFeats.Contains))
             return null;
 
-        var missingFeats = requiredFeats
-            .Where(f => !IsProficiencySatisfied(f.FeatId, slot.EquippedItem.BaseItem, creatureFeats))
-            .ToList();
+        // Build warning with the general proficiency name
+        var profName = weaponType switch
+        {
+            1 => "Weapon Proficiency (Simple)",
+            2 => "Weapon Proficiency (Martial)",
+            3 => "Weapon Proficiency (Exotic)",
+            4 => "Weapon Proficiency (Druid)",
+            _ => $"Weapon Proficiency (type {weaponType})"
+        };
 
-        if (missingFeats.Count == 0)
-            return null;
-
-        var featNames = string.Join(", ", missingFeats.Select(f => f.FeatName));
-        return $"{slot.EquippedItem.BaseItemName} requires: {featNames}";
+        return $"{slot.EquippedItem.BaseItemName} requires: {profName}";
     }
 
     /// <summary>

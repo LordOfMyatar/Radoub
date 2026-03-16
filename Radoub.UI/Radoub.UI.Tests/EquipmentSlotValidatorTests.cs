@@ -746,6 +746,52 @@ public class EquipmentSlotValidatorTests
     }
 
     [Fact]
+    public void ValidateFeatRequirements_FighterWithKama_NoReqFeat_WarnsViaWeaponType()
+    {
+        // Kama (base item 2) has no ReqFeat columns but WeaponType=3 (exotic)
+        // A Fighter (has feat 45 Martial, not 46 Exotic or 51 Monk) should get a warning
+        var mockGameData = new MockGameDataService(includeSampleData: false);
+        mockGameData.Set2DAValue("baseitems", 2, "EquipableSlots", "0x30");
+        // No ReqFeat0 — relying on WeaponType fallback
+        mockGameData.Set2DAValue("baseitems", 2, "WeaponType", "3"); // Exotic
+
+        var validator = new EquipmentSlotValidator(mockGameData);
+        var slot = new EquipmentSlotViewModel(4, 0x10, "Right Hand");
+
+        var item = new UtiFile { BaseItem = 2 };
+        slot.EquippedItem = new ItemViewModel(item, "Kama", "Kama", "");
+
+        // Fighter has Martial (45) but NOT Exotic (46) or Monk (51)
+        var creatureFeats = new HashSet<int> { 45 };
+
+        var warning = validator.ValidateFeatRequirements(slot, creatureFeats);
+
+        Assert.NotNull(warning);
+        Assert.Contains("Exotic", warning);
+    }
+
+    [Fact]
+    public void ValidateFeatRequirements_MonkWithKama_NoReqFeat_NoWarning()
+    {
+        // Monk (feat 51) covers kama (base item 2)
+        var mockGameData = new MockGameDataService(includeSampleData: false);
+        mockGameData.Set2DAValue("baseitems", 2, "EquipableSlots", "0x30");
+        mockGameData.Set2DAValue("baseitems", 2, "WeaponType", "3"); // Exotic
+
+        var validator = new EquipmentSlotValidator(mockGameData);
+        var slot = new EquipmentSlotViewModel(4, 0x10, "Right Hand");
+
+        var item = new UtiFile { BaseItem = 2 };
+        slot.EquippedItem = new ItemViewModel(item, "Kama", "Kama", "");
+
+        var creatureFeats = new HashSet<int> { 51 }; // Monk proficiency
+
+        var warning = validator.ValidateFeatRequirements(slot, creatureFeats);
+
+        Assert.Null(warning); // Monk proficiency covers kama
+    }
+
+    [Fact]
     public void ValidateFeatRequirements_ElfWithLongsword_NoWarning()
     {
         // Elf has feat 52 (Elf proficiency) which covers longswords
