@@ -754,6 +754,39 @@ void main()
                 && skinNode?.BoneQuaternions?.Length > 0
                 && skinNode?.BoneTranslations?.Length > 0;
 
+            // Diagnostic: dump skin mesh bone data for debugging
+            if (isSkinMesh && skinNode != null)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"  SKIN '{mesh.Name}': hasBoneData={hasSkinTransforms}, " +
+                    $"weights={skinNode.BoneWeights?.Length ?? 0}, " +
+                    $"qBones={skinNode.BoneQuaternions?.Length ?? 0}, " +
+                    $"tBones={skinNode.BoneTranslations?.Length ?? 0}");
+
+                if (hasSkinTransforms && skinNode.BoneQuaternions!.Length > 0)
+                {
+                    for (int b = 0; b < Math.Min(3, skinNode.BoneQuaternions!.Length); b++)
+                    {
+                        var q = skinNode.BoneQuaternions[b];
+                        var t = skinNode.BoneTranslations![b];
+                        UnifiedLogger.LogApplication(LogLevel.INFO,
+                            $"    Bone[{b}]: Q=({q.X:F4},{q.Y:F4},{q.Z:F4},{q.W:F4}) T=({t.X:F4},{t.Y:F4},{t.Z:F4})");
+                    }
+                    // Sample first vertex bone weights
+                    if (skinNode.BoneWeights!.Length > 0)
+                    {
+                        var bw0 = skinNode.BoneWeights[0];
+                        UnifiedLogger.LogApplication(LogLevel.INFO,
+                            $"    Vertex[0] weights: bones=({bw0.Bone0},{bw0.Bone1},{bw0.Bone2},{bw0.Bone3}) " +
+                            $"weights=({bw0.Weight0:F3},{bw0.Weight1:F3},{bw0.Weight2:F3},{bw0.Weight3:F3})");
+                        // Show raw and transformed position
+                        var rawV = mesh.Vertices[0];
+                        UnifiedLogger.LogApplication(LogLevel.INFO,
+                            $"    Vertex[0] raw=({rawV.X:F4},{rawV.Y:F4},{rawV.Z:F4})");
+                    }
+                }
+            }
+
             // For non-skin meshes: compute full world transform matrix from hierarchy
             var worldTransform = Matrix4x4.Identity;
             bool hasWorldTransform = false;
