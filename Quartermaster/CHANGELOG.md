@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.51-alpha] - 2026-03-17
-**Branch**: `quartermaster/issue-1768` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1768` | **PR**: #1769
 
 ### Sprint: Tech Debt & Hardcoded Data Cleanup (#1768)
 
