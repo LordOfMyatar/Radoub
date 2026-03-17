@@ -205,9 +205,10 @@
                                     <controls:SpellCheckTextBox x:Name="EntryTextBox" Height="200" AcceptsReturn="True" TextWrapping="Wrap"
                                              ScrollViewer.VerticalScrollBarVisibility="Auto"/>
                                     <!-- Token Preview -->
-                                    <Expander Header="Token Preview" IsExpanded="False" Padding="0">
+                                    <Expander x:Name="TokenPreviewExpander" Header="Token Preview" IsExpanded="False" Padding="0">
                                         <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="8" Margin="0,5,0,0">
-                                            <uicontrols:TokenTextBlock x:Name="EntryTokenPreview" TextWrapping="Wrap" MinHeight="40"/>
+                                            <uicontrols:TokenTextBlock x:Name="EntryTokenPreview" TextWrapping="Wrap" MinHeight="40"
+                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                                         </Border>
                                     </Expander>
                                 </StackPanel>
