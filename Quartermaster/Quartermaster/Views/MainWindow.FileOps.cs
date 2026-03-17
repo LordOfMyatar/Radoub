@@ -586,6 +586,12 @@ public partial class MainWindow
             SettingsService.Instance.AddRecentFile(_currentFilePath);
             UpdateRecentFilesMenu();
 
+            // Refresh creature browser so the new file appears (#1690)
+            UpdateCreatureBrowserCurrentFile(_currentFilePath);
+            var creatureBrowserPanel = this.FindControl<CreatureBrowserPanel>("CreatureBrowserPanel");
+            if (creatureBrowserPanel != null)
+                await creatureBrowserPanel.RefreshAsync();
+
             // If format was converted, reload panels to reflect the new file type
             if (wasConverted)
             {
