@@ -5,8 +5,7 @@
         Width="350" Height="180"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
-        ShowInTaskbar="False"
-        SystemDecorations="BorderOnly">
+        ShowInTaskbar="False">
 
     <Border Padding="16">
         <DockPanel>

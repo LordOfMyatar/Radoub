@@ -5,8 +5,7 @@
         Width="350" Height="280"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
-        ShowInTaskbar="False"
-        SystemDecorations="BorderOnly">
+        ShowInTaskbar="False">
 
     <Border Padding="16">
         <StackPanel Spacing="12">
