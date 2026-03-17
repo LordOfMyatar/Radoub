@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.15.4-alpha] - 2026-03-17
-**Branch**: `radoub/issue-1767` | **PR**: #TBD
+**Branch**: `radoub/issue-1767` | **PR**: #1770
 
 ### Sprint: Cross-Tool & Trebuchet Bug Sweep (#1767)
 
