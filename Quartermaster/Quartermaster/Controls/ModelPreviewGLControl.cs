@@ -750,60 +750,11 @@ void main()
                 continue;
             }
 
-            // Determine transform strategy based on mesh type:
-            // - Skin meshes (MdlSkinNode): vertices need bone weight transforms applied
-            //   using inverse bind-pose quaternions and translations
-            // - Trimesh: vertices in local node space, need full world transform (T*R*S hierarchy)
             bool isSkinMesh = mesh is Radoub.Formats.Mdl.MdlSkinNode;
-            var skinNode = mesh as Radoub.Formats.Mdl.MdlSkinNode;
-            bool hasSkinTransforms = skinNode?.BoneWeights?.Length > 0
-                && skinNode?.BoneQuaternions?.Length > 0
-                && skinNode?.BoneTranslations?.Length > 0;
-
-            // Diagnostic: dump skin mesh bone data for debugging
-            if (isSkinMesh && skinNode != null)
-            {
-                UnifiedLogger.LogApplication(LogLevel.INFO,
-                    $"  SKIN '{mesh.Name}': hasBoneData={hasSkinTransforms}, " +
-                    $"weights={skinNode.BoneWeights?.Length ?? 0}, " +
-                    $"qBones={skinNode.BoneQuaternions?.Length ?? 0}, " +
-                    $"tBones={skinNode.BoneTranslations?.Length ?? 0}");
-
-                if (hasSkinTransforms && skinNode.BoneQuaternions!.Length > 0)
-                {
-                    // Dump bones 0-7 and any referenced by first vertex
-                    var bonesToDump = new HashSet<int> { 0, 1, 2, 3, 4, 5, 6, 7 };
-                    if (skinNode.BoneWeights!.Length > 0)
-                    {
-                        var bw0 = skinNode.BoneWeights[0];
-                        bonesToDump.Add(bw0.Bone0); bonesToDump.Add(bw0.Bone1);
-                        bonesToDump.Add(bw0.Bone2); bonesToDump.Add(bw0.Bone3);
-                    }
-                    foreach (var b in bonesToDump.Where(b => b >= 0 && b < skinNode.BoneQuaternions!.Length).OrderBy(b => b))
-                    {
-                        var q = skinNode.BoneQuaternions[b];
-                        var t = skinNode.BoneTranslations![b];
-                        UnifiedLogger.LogApplication(LogLevel.INFO,
-                            $"    Bone[{b}]: Q=({q.X:F4},{q.Y:F4},{q.Z:F4},{q.W:F4}) T=({t.X:F4},{t.Y:F4},{t.Z:F4})");
-                    }
-                    // Sample first vertex bone weights
-                    if (skinNode.BoneWeights!.Length > 0)
-                    {
-                        var bw0 = skinNode.BoneWeights[0];
-                        UnifiedLogger.LogApplication(LogLevel.INFO,
-                            $"    Vertex[0] weights: bones=({bw0.Bone0},{bw0.Bone1},{bw0.Bone2},{bw0.Bone3}) " +
-                            $"weights=({bw0.Weight0:F3},{bw0.Weight1:F3},{bw0.Weight2:F3},{bw0.Weight3:F3})");
-                        // Show raw and transformed position
-                        var rawV = mesh.Vertices[0];
-                        UnifiedLogger.LogApplication(LogLevel.INFO,
-                            $"    Vertex[0] raw=({rawV.X:F4},{rawV.Y:F4},{rawV.Z:F4})");
-                    }
-                }
-            }
 
             // All meshes: apply full hierarchy world transform.
-            // Skin mesh vertices are in skin-node local space. Apply bone weights to move
-            // them into the weighted bone space, then apply the node hierarchy transform.
+            // Skin mesh vertices (m_pavVerts) are in bind-pose space — same treatment as trimesh.
+            // m_aQBoneRefInv/m_aTBoneRefInv are inverse bind-pose matrices for runtime animation, not static display.
             var worldTransform = GetWorldTransform(mesh);
             bool hasWorldTransform = worldTransform != Matrix4x4.Identity;
 
@@ -835,28 +786,9 @@ void main()
                 UnifiedLogger.LogApplication(LogLevel.WARN, $"  Mesh {meshIndex} '{mesh.Name}' normal count mismatch: {mesh.Normals.Length} normals vs {mesh.Vertices.Length} vertices");
             }
 
-            // Log mesh hierarchy for debugging transforms
-            {
-                var parentChain = new System.Text.StringBuilder();
-                MdlNode? p = mesh;
-                while (p != null)
-                {
-                    if (parentChain.Length > 0) parentChain.Append(" -> ");
-                    parentChain.Append($"{p.Name}(pos={p.Position}, rot={p.Orientation})");
-                    p = p.Parent;
-                }
-                UnifiedLogger.LogApplication(isSkinMesh ? LogLevel.INFO : LogLevel.DEBUG,
-                    $"  MESH '{mesh.Name}': bitmap='{mesh.Bitmap}', isSkin={isSkinMesh}, hasXform={hasWorldTransform}, " +
-                    $"verts={mesh.Vertices.Length}, faces={mesh.Faces.Length}, chain=[{parentChain}]");
-            if (isSkinMesh)
-            {
-                var t = worldTransform.Translation;
-                UnifiedLogger.LogApplication(LogLevel.INFO,
-                    $"  SKIN '{mesh.Name}' worldTransform.Translation=({t.X:F4},{t.Y:F4},{t.Z:F4}), " +
-                    $"nodePos=({mesh.Position.X:F4},{mesh.Position.Y:F4},{mesh.Position.Z:F4}), " +
-                    $"nodeOri=({mesh.Orientation.X:F4},{mesh.Orientation.Y:F4},{mesh.Orientation.Z:F4},{mesh.Orientation.W:F4})");
-            }
-            }
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"  MESH '{mesh.Name}': bitmap='{mesh.Bitmap}', isSkin={isSkinMesh}, hasXform={hasWorldTransform}, " +
+                $"verts={mesh.Vertices.Length}, faces={mesh.Faces.Length}");
 
             // Resolve texture name: use mesh bitmap, falling back to model name for
             // empty/NULL bitmaps (common in skin meshes and some simple creatures)
@@ -870,9 +802,6 @@ void main()
                 IndexOffset = indices.Count * sizeof(uint),
                 TextureName = rawBitmap
             };
-
-            // Track output vertices for skin mesh diagnosis
-            int _skinOutputDumpCount = 0;
 
             // Add vertices (position, normal, texcoord)
             for (int i = 0; i < mesh.Vertices.Length; i++)
@@ -894,14 +823,6 @@ void main()
                 // the node hierarchy transform exactly like NWNExplorer does (no bone weighting
                 // needed for static bind-pose display; Q/T arrays are for runtime animation).
                 Vector3 v = hasWorldTransform ? TransformPosition(localVertex, worldTransform) : localVertex;
-
-                // Log first 10 output positions for skin meshes
-                if (isSkinMesh && _skinOutputDumpCount < 10)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.INFO,
-                        $"  SKIN '{mesh.Name}' OUT v[{i}] = ({v.X:F4},{v.Y:F4},{v.Z:F4})");
-                    _skinOutputDumpCount++;
-                }
 
                 // Position
                 vertices.Add(v.X);

@@ -104,36 +104,8 @@ public partial class MdlBinaryReader
         var vertexRawOffset = PointerToRawOffset(vertexDataOffset);
         var normalsRawOffset = PointerToRawOffset(normalsOffset);
 
-        if ((flags & NodeFlagHasSkin) != 0)
-        {
-            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
-                $"[MDL] SKIN '{mesh.Name}': vertexDataPtr=0x{vertexDataOffset:X8} -> rawOffset={vertexRawOffset}, " +
-                $"vertexCount={vertexCount}, rawDataLen={_rawData.Length}, pointerBase=0x{_pointerBase:X8}");
-            // Dump first 36 bytes at the raw vertex offset (3 vertices worth)
-            if (vertexRawOffset != uint.MaxValue && vertexRawOffset + 36 <= _rawData.Length)
-            {
-                var f0 = BitConverter.ToSingle(_rawData, (int)vertexRawOffset);
-                var f1 = BitConverter.ToSingle(_rawData, (int)vertexRawOffset + 4);
-                var f2 = BitConverter.ToSingle(_rawData, (int)vertexRawOffset + 8);
-                var f3 = BitConverter.ToSingle(_rawData, (int)vertexRawOffset + 12);
-                var f4 = BitConverter.ToSingle(_rawData, (int)vertexRawOffset + 16);
-                var f5 = BitConverter.ToSingle(_rawData, (int)vertexRawOffset + 20);
-                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
-                    $"[MDL] SKIN '{mesh.Name}' raw[0]=({f0:F4},{f1:F4},{f2:F4}) raw[1]=({f3:F4},{f4:F4},{f5:F4})");
-            }
-        }
-
         Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
             $"[MDL] Mesh '{mesh.Name}': vertexDataPtr=0x{vertexDataOffset:X8} -> rawOffset={vertexRawOffset}, normalsPtr=0x{normalsOffset:X8} -> rawOffset={normalsRawOffset}, vertexCount={vertexCount}, faceCount={faceCount}, rawDataLen={_rawData.Length}");
-
-        // Log raw bytes at vertex offset for debugging
-        if (vertexRawOffset != 0xFFFFFFFF && vertexRawOffset != uint.MaxValue && vertexRawOffset + 24 <= _rawData.Length)
-        {
-            var rawBytes = new byte[24];
-            Array.Copy(_rawData, (int)vertexRawOffset, rawBytes, 0, 24);
-            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
-                $"[MDL] Mesh '{mesh.Name}': raw bytes at vertexOffset: {BitConverter.ToString(rawBytes)}");
-        }
 
         // Detect and skip average normal header if present.
         // Skin nodes never have this header — skip detection for them to avoid false positives.
@@ -299,7 +271,7 @@ public partial class MdlBinaryReader
         var tBoneCount = reader.ReadUInt32();
         reader.ReadUInt32(); // allocated
 
-        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
             $"[MDL] Skin '{skin.Name}': weightsPtr=0x{skinWeightsPtr:X8}, boneRefsPtr=0x{skinBoneRefsPtr:X8}, " +
             $"nodeToBonePtr=0x{nodeToBoneMapPtr:X8} count={nodeToBoneCount}, " +
             $"qBonePtr=0x{qBoneArrayOffset:X8} count={qBoneCount}, tBonePtr=0x{tBoneArrayOffset:X8} count={tBoneCount}");
@@ -318,21 +290,9 @@ public partial class MdlBinaryReader
 
                 // Log first entries for debugging
                 var mapPreview = string.Join(",", nodeToBoneMap.Take(10).Select(x => x.ToString()));
-                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
+                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
                     $"[MDL] Skin '{skin.Name}': NodeToBoneMap[0..{Math.Min(10, nodeToBoneCount)-1}] = [{mapPreview}]");
             }
-        }
-
-        // Dump raw bytes at skin extension start for debugging
-        {
-            var dumpStart = skinExtStart;
-            var dumpLen = Math.Min(0x64, reader.BaseStream.Length - dumpStart);
-            var savedPos = reader.BaseStream.Position;
-            reader.BaseStream.Position = dumpStart;
-            var dumpBytes = reader.ReadBytes((int)dumpLen);
-            reader.BaseStream.Position = savedPos;
-            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
-                $"[MDL] Skin '{skin.Name}' extension raw (0x{dumpStart:X4}, {dumpLen} bytes): {BitConverter.ToString(dumpBytes)}");
         }
 
         // Read per-vertex bone data from two separate raw arrays:
@@ -381,17 +341,8 @@ public partial class MdlBinaryReader
 
                 skin.BoneWeights = boneWeights;
 
-                // Log first 3 vertices for verification
-                for (int v = 0; v < Math.Min(3, vertexCount); v++)
-                {
-                    var bw = boneWeights[v];
-                    Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
-                        $"[MDL] Skin '{skin.Name}': vertex[{v}] bones=({bw.Bone0},{bw.Bone1},{bw.Bone2},{bw.Bone3}) " +
-                        $"weights=({bw.Weight0:F4},{bw.Weight1:F4},{bw.Weight2:F4},{bw.Weight3:F4}) sum={bw.Weight0+bw.Weight1+bw.Weight2+bw.Weight3:F4}");
-                }
-
-                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.INFO,
-                    $"[MDL] Skin '{skin.Name}': Read {vertexCount} bone weight entries (separate arrays)");
+                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                    $"[MDL] Skin '{skin.Name}': Read {vertexCount} bone weight entries");
             }
             else
             {
