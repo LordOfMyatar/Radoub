@@ -794,10 +794,9 @@ void main()
                 }
             }
 
-            // Compute full world transform for all meshes (both skin and trimesh).
-            // Skin mesh vertices are stored in model/bind-pose space. For static rest-pose
-            // display the bind pose IS the rest pose, so no bone transforms are needed —
-            // just apply the node hierarchy transform like any trimesh.
+            // All meshes: apply full hierarchy world transform.
+            // Skin mesh vertices are in skin-node local space (same as trimesh).
+            // At rest/bind pose, bone weights are not needed — just apply GetWorldTransform.
             var worldTransform = GetWorldTransform(mesh);
             bool hasWorldTransform = worldTransform != Matrix4x4.Identity;
 
