@@ -20,6 +20,12 @@ public class ClassService
     // Cache for class metadata (loaded once)
     private Dictionary<int, ClassMetadata>? _classCache;
 
+    // Cached class ID lookups by LABEL from classes.2da
+    private readonly Dictionary<string, int?> _classLabelCache = new(StringComparer.OrdinalIgnoreCase);
+
+    // Cached set of base arcane caster class IDs
+    private HashSet<int>? _baseArcaneCasterIds;
+
     public ClassService(IGameDataService gameDataService, SkillService skillService, FeatService featService)
     {
         ArgumentNullException.ThrowIfNull(gameDataService);
@@ -29,6 +35,50 @@ public class ClassService
         _gameDataService = gameDataService;
         _skillService = skillService;
         _featService = featService;
+    }
+
+    /// <summary>
+    /// Resolves a class ID from classes.2da by LABEL column.
+    /// Returns null if not found. Results are cached.
+    /// </summary>
+    private int? ResolveClassIdByLabel(string label)
+    {
+        if (_classLabelCache.TryGetValue(label, out var cached))
+            return cached;
+
+        var twoDA = _gameDataService.Get2DA("classes");
+        int rowCount = twoDA?.RowCount ?? 0;
+
+        for (int row = 0; row < rowCount; row++)
+        {
+            var rowLabel = _gameDataService.Get2DAValue("classes", row, "Label");
+            if (string.Equals(rowLabel, label, StringComparison.OrdinalIgnoreCase))
+            {
+                _classLabelCache[label] = row;
+                return row;
+            }
+        }
+
+        _classLabelCache[label] = null;
+        return null;
+    }
+
+    /// <summary>
+    /// Gets the set of base arcane caster class IDs resolved from classes.2da LABELs.
+    /// </summary>
+    private HashSet<int> GetBaseArcaneCasterIds()
+    {
+        if (_baseArcaneCasterIds != null)
+            return _baseArcaneCasterIds;
+
+        _baseArcaneCasterIds = new HashSet<int>();
+        foreach (var label in new[] { "Bard", "Sorcerer", "Wizard" })
+        {
+            var id = ResolveClassIdByLabel(label);
+            if (id.HasValue)
+                _baseArcaneCasterIds.Add(id.Value);
+        }
+        return _baseArcaneCasterIds;
     }
 
     #region Class Metadata
@@ -633,8 +683,8 @@ public class ClassService
 
     private bool CanCastArcaneSpells(UtcFile creature, int minLevel)
     {
-        // Arcane casters: Bard (1), Sorcerer (9), Wizard (10)
-        var arcaneCasterIds = new HashSet<int> { 1, 9, 10 };
+        // Resolve arcane caster class IDs from classes.2da LABEL column
+        var arcaneCasterIds = GetBaseArcaneCasterIds();
 
         foreach (var creatureClass in creature.ClassList)
         {
@@ -644,6 +694,18 @@ public class ClassService
                     return true;
 
                 // Check if class level grants spells of the required level
+                int maxSpellLevel = GetMaxCasterSpellLevel(creatureClass.Class, creatureClass.ClassLevel);
+                if (maxSpellLevel >= minLevel)
+                    return true;
+            }
+
+            // Also check prestige classes with ArcSpellLvlMod > 0
+            var arcMod = _gameDataService.Get2DAValue("classes", creatureClass.Class, "ArcSpellLvlMod");
+            if (!string.IsNullOrEmpty(arcMod) && arcMod != "****" && int.TryParse(arcMod, out int arc) && arc > 0)
+            {
+                if (minLevel <= 0)
+                    return true;
+
                 int maxSpellLevel = GetMaxCasterSpellLevel(creatureClass.Class, creatureClass.ClassLevel);
                 if (maxSpellLevel >= minLevel)
                     return true;

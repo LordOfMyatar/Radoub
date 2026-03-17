@@ -14,9 +14,63 @@ public class SpellService
 {
     private readonly IGameDataService _gameDataService;
 
+    /// <summary>
+    /// Cached class ID lookups by LABEL from classes.2da.
+    /// </summary>
+    private readonly Dictionary<string, int?> _classLabelCache = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Cached set of base arcane caster class IDs (Bard, Sorcerer, Wizard), resolved from LABEL.
+    /// </summary>
+    private HashSet<int>? _baseArcaneCasterIds;
+
     public SpellService(IGameDataService gameDataService)
     {
         _gameDataService = gameDataService;
+    }
+
+    /// <summary>
+    /// Resolves a class ID from classes.2da by LABEL column.
+    /// Returns null if not found. Results are cached.
+    /// </summary>
+    private int? ResolveClassIdByLabel(string label)
+    {
+        if (_classLabelCache.TryGetValue(label, out var cached))
+            return cached;
+
+        var twoDA = _gameDataService.Get2DA("classes");
+        int rowCount = twoDA?.RowCount ?? 0;
+
+        for (int row = 0; row < rowCount; row++)
+        {
+            var rowLabel = _gameDataService.Get2DAValue("classes", row, "Label");
+            if (string.Equals(rowLabel, label, StringComparison.OrdinalIgnoreCase))
+            {
+                _classLabelCache[label] = row;
+                return row;
+            }
+        }
+
+        _classLabelCache[label] = null;
+        return null;
+    }
+
+    /// <summary>
+    /// Gets the set of base arcane caster class IDs resolved from classes.2da LABELs.
+    /// </summary>
+    private HashSet<int> GetBaseArcaneCasterIds()
+    {
+        if (_baseArcaneCasterIds != null)
+            return _baseArcaneCasterIds;
+
+        _baseArcaneCasterIds = new HashSet<int>();
+        foreach (var label in new[] { "Bard", "Sorcerer", "Wizard" })
+        {
+            var id = ResolveClassIdByLabel(label);
+            if (id.HasValue)
+                _baseArcaneCasterIds.Add(id.Value);
+        }
+        return _baseArcaneCasterIds;
     }
 
     /// <summary>
@@ -152,10 +206,13 @@ public class SpellService
             };
         }
 
-        // Class spell levels
+        // Class spell levels — resolve class IDs from classes.2da LABEL
         var bardLevel = _gameDataService.Get2DAValue("spells", spellId, "Bard");
         if (!string.IsNullOrEmpty(bardLevel) && bardLevel != "****" && int.TryParse(bardLevel, out int bard))
-            info.ClassLevels[1] = bard;
+        {
+            var bardId = ResolveClassIdByLabel("Bard");
+            if (bardId.HasValue) info.ClassLevels[bardId.Value] = bard;
+        }
 
         var clericLevel = _gameDataService.Get2DAValue("spells", spellId, "Cleric");
         if (!string.IsNullOrEmpty(clericLevel) && clericLevel != "****" && int.TryParse(clericLevel, out int cleric))
@@ -176,8 +233,11 @@ public class SpellService
         var wizSorcLevel = _gameDataService.Get2DAValue("spells", spellId, "Wiz_Sorc");
         if (!string.IsNullOrEmpty(wizSorcLevel) && wizSorcLevel != "****" && int.TryParse(wizSorcLevel, out int wizsorc))
         {
-            info.ClassLevels[9] = wizsorc;  // Sorcerer
-            info.ClassLevels[10] = wizsorc; // Wizard
+            // Resolve Sorcerer and Wizard class IDs from classes.2da LABEL
+            var sorcId = ResolveClassIdByLabel("Sorcerer");
+            var wizId = ResolveClassIdByLabel("Wizard");
+            if (sorcId.HasValue) info.ClassLevels[sorcId.Value] = wizsorc;
+            if (wizId.HasValue) info.ClassLevels[wizId.Value] = wizsorc;
         }
 
         return info;
@@ -248,14 +308,13 @@ public class SpellService
 
     /// <summary>
     /// Checks if a class uses an arcane spell column in spells.2da (Bard, Wiz_Sorc).
-    /// Base arcane casters: Bard (1), Sorcerer (9), Wizard (10).
+    /// Base arcane casters resolved from classes.2da LABEL: Bard, Sorcerer, Wizard.
     /// For prestige classes, checks ArcSpellLvlMod > 0 in classes.2da.
     /// </summary>
     public bool IsArcaneCaster(int classId)
     {
-        // Base arcane caster classes use the Bard or Wiz_Sorc columns in spells.2da.
-        // This matches the mapping in GetSpellInfo().
-        if (classId == 1 || classId == 9 || classId == 10)
+        // Base arcane caster classes resolved from classes.2da LABEL column
+        if (GetBaseArcaneCasterIds().Contains(classId))
             return true;
 
         // Prestige classes that advance arcane spellcasting
