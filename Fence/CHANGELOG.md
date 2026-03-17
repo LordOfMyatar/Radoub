@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.20-alpha] - 2026-03-17
+**Branch**: `radoub/issue-1767` | **PR**: #TBD
+
+### Sprint: Cross-Tool & Trebuchet Bug Sweep (#1767)
+
+- [ ] #1743 - Loading UTM sets dirty flag without changes
+
+---
+
 ## [0.1.19-alpha] - 2026-03-15
 **Branch**: `fence/issue-1694` | **PR**: #1698
 

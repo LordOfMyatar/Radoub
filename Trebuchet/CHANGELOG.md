@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.24.0-alpha] - 2026-03-17
+**Branch**: `radoub/issue-1767` | **PR**: #TBD
+
+### Sprint: Cross-Tool & Trebuchet Bug Sweep (#1767)
+
+- [ ] #1689 - Pop-up windows lack borders and cannot be moved
+- [ ] #1690 - Palette needs rebuild after creating UTC files
+- [ ] #1699 - Log level preferences not propagating to launched tools
+
+---
+
 ## [1.23.0-alpha] - 2026-03-14
 **Branch**: `trebuchet/issue-1678` | **PR**: #1688
 
