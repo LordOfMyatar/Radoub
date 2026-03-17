@@ -2,7 +2,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Quartermaster.Services;
+using Radoub.Formats.Services;
 using Radoub.UI.Services;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -682,19 +684,52 @@ public partial class SpellsPanel
     }
 
     /// <summary>
-    /// Engine-hardcoded metamagic feat ID to SpellMetaMagic flag mapping.
-    /// Feat IDs 18-23 are fixed in the NWN engine; the flag byte values are also engine constants.
-    /// Feat names are loaded from 2DA/TLK at runtime to support custom TLK overrides.
+    /// Metamagic LABEL-to-flag mapping. Flags and level costs are engine constants;
+    /// feat IDs are resolved from feat.2da LABEL column at runtime to support custom content.
     /// </summary>
-    private static readonly (int FeatId, byte Flag, int LevelCost)[] MetamagicFeatDefinitions =
+    private static readonly (string Label, byte Flag, int LevelCost)[] MetamagicLabelDefinitions =
     {
-        (11, 0x01, 2),  // Empower Spell  (feat.2da row 11)
-        (12, 0x02, 1),  // Extend Spell   (feat.2da row 12)
-        (25, 0x04, 3),  // Maximize Spell (feat.2da row 25)
-        (29, 0x08, 4),  // Quicken Spell  (feat.2da row 29)
-        (33, 0x10, 1),  // Silent Spell   (feat.2da row 33)
-        (37, 0x20, 1),  // Still Spell    (feat.2da row 37)
+        ("EmpowerSpell",  0x01, 2),
+        ("ExtendSpell",   0x02, 1),
+        ("MaximizeSpell", 0x04, 3),
+        ("QuickenSpell",  0x08, 4),
+        ("SilentSpell",   0x10, 1),
+        ("StillSpell",    0x20, 1),
     };
+
+    /// <summary>
+    /// Cached resolved metamagic feat definitions (populated on first use from feat.2da).
+    /// </summary>
+    private List<MetamagicFeatDef>? _resolvedMetamagicDefs;
+
+    /// <summary>
+    /// Resolves metamagic feat IDs from feat.2da by LABEL column.
+    /// Returns only metamagic feats that exist in the current feat.2da.
+    /// </summary>
+    public static List<MetamagicFeatDef> ResolveMetamagicFeatDefinitions(IGameDataService? gameData)
+    {
+        var result = new List<MetamagicFeatDef>();
+        if (gameData == null) return result;
+
+        var twoDA = gameData.Get2DA("feat");
+        int rowCount = twoDA?.RowCount ?? 0;
+        if (rowCount == 0) return result;
+
+        foreach (var (label, flag, levelCost) in MetamagicLabelDefinitions)
+        {
+            for (int row = 0; row < rowCount; row++)
+            {
+                var rowLabel = gameData.Get2DAValue("feat", row, "LABEL");
+                if (string.Equals(rowLabel, label, StringComparison.OrdinalIgnoreCase))
+                {
+                    result.Add(new MetamagicFeatDef(row, flag, levelCost));
+                    break;
+                }
+            }
+        }
+
+        return result;
+    }
 
     /// <summary>
     /// Detects which metamagic feats the creature possesses and populates _creatureMetamagicFeats.
@@ -705,13 +740,16 @@ public partial class SpellsPanel
 
         if (_currentCreature == null) return;
 
-        foreach (var (featId, flag, levelCost) in MetamagicFeatDefinitions)
+        // Resolve feat IDs from 2DA on first use (cached for subsequent calls)
+        _resolvedMetamagicDefs ??= ResolveMetamagicFeatDefinitions(_displayService?.GameDataService);
+
+        foreach (var def in _resolvedMetamagicDefs)
         {
-            if (_currentCreature.FeatList.Contains((ushort)featId))
+            if (_currentCreature.FeatList.Contains((ushort)def.FeatId))
             {
                 // Load name from FeatService (supports custom TLK), with hardcoded fallback
-                var name = _displayService?.GetFeatName(featId) ?? GetMetamagicName(flag);
-                _creatureMetamagicFeats.Add((name, flag, levelCost));
+                var name = _displayService?.GetFeatName(def.FeatId) ?? GetMetamagicName(def.Flag);
+                _creatureMetamagicFeats.Add((name, def.Flag, def.LevelCost));
             }
         }
     }
@@ -901,3 +939,8 @@ public partial class SpellsPanel
         _domainSpellsBorder.IsVisible = hasDomainContent;
     }
 }
+
+/// <summary>
+/// Resolved metamagic feat definition: feat ID (from 2DA), engine flag, and level cost.
+/// </summary>
+public record MetamagicFeatDef(int FeatId, byte Flag, int LevelCost);
