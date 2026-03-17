@@ -889,25 +889,17 @@ void main()
                 // Get vertex in local mesh space
                 var localVertex = mesh.Vertices[i];
 
-                // Apply bone weighting for skin meshes to get world-space positions
-                Vector3 v;
-                if (isSkinMesh && hasSkinTransforms)
-                {
-                    var boned = ApplySkinTransform(localVertex, i, skinNode!);
-                    v = hasWorldTransform ? TransformPosition(boned, worldTransform) : boned;
-                }
-                else
-                {
-                    v = hasWorldTransform ? TransformPosition(localVertex, worldTransform) : localVertex;
-                }
+                // Apply world transform to get world-space positions.
+                // Skin mesh vertices (m_pavVerts) are stored in bind-pose space — apply
+                // the node hierarchy transform exactly like NWNExplorer does (no bone weighting
+                // needed for static bind-pose display; Q/T arrays are for runtime animation).
+                Vector3 v = hasWorldTransform ? TransformPosition(localVertex, worldTransform) : localVertex;
 
                 // Log first 10 output positions for skin meshes
                 if (isSkinMesh && _skinOutputDumpCount < 10)
                 {
-                    var bw = hasSkinTransforms ? skinNode!.BoneWeights[i] : default;
                     UnifiedLogger.LogApplication(LogLevel.INFO,
-                        $"  SKIN '{mesh.Name}' OUT v[{i}] = ({v.X:F4},{v.Y:F4},{v.Z:F4})" +
-                        (hasSkinTransforms ? $" bone0={bw.Bone0}(w={bw.Weight0:F3}) bone1={bw.Bone1}(w={bw.Weight1:F3})" : ""));
+                        $"  SKIN '{mesh.Name}' OUT v[{i}] = ({v.X:F4},{v.Y:F4},{v.Z:F4})");
                     _skinOutputDumpCount++;
                 }
 
