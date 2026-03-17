@@ -628,8 +628,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             UpdateStatusBar("Ready");
         }
 
-        // Mark document dirty
-        _documentState.MarkDirty();
+        // Mark document dirty (guard against load-time property changes #1743)
+        if (!_documentState.IsLoading)
+            _documentState.MarkDirty();
     }
 
     /// <summary>
