@@ -15,9 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Cross-Tool & Trebuchet Bug Sweep (#1767)
 
-- [ ] #1689 - Pop-up windows lack borders and cannot be moved
-- [ ] #1690 - Palette needs rebuild after creating UTC files
-- [ ] #1699 - Log level preferences not propagating to launched tools
+- [x] #1689 - Pop-up windows lack borders and cannot be moved — removed SystemDecorations="BorderOnly" from ConfirmDialog and AddFactionDialog
+- [x] #1690 - Palette needs rebuild after creating UTC files — added RefreshAsync() to Quartermaster SaveFileAs
+- [x] #1699 - Log level preferences not propagating to launched tools — BaseToolSettingsService now reads SharedLogLevel from RadoubSettings when UseSharedLogging is enabled
 
 ---
 

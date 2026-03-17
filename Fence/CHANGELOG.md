@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Cross-Tool & Trebuchet Bug Sweep (#1767)
 
-- [ ] #1743 - Loading UTM sets dirty flag without changes
+- [x] #1743 - Loading UTM sets dirty flag without changes — deferred IsLoading=false until async inventory load completes, added IsLoading guards to event handlers
 
 ---
 

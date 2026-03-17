@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Cross-Tool & Trebuchet Bug Sweep (#1767)
 
-- [ ] #1511 - Token preview not displaying correctly
+- [x] #1511 - Token preview not displaying correctly — added explicit Foreground brush, re-render on expander open
 
 ---
 
