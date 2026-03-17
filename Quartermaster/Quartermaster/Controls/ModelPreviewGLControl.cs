@@ -380,6 +380,10 @@ void main()
             if (weight <= 0 || boneIndex < 0) return;
             if (boneIndex >= skin.BoneQuaternions.Length || boneIndex >= skin.BoneTranslations.Length) return;
 
+            // NWN runtime skinning formula: v_world = Q_stored * v_local + T_stored
+            // Q_stored has W=-1 for identity-rotation bones, which causes Vector3.Transform
+            // to NEGATE the vertex. This is intentional — the stored T compensates.
+            // Use quaternion as-is (do NOT normalize W to +1).
             var q = skin.BoneQuaternions[boneIndex];
             var t = skin.BoneTranslations[boneIndex];
             var rotated = Vector3.Transform(vertex, q);
@@ -412,6 +416,7 @@ void main()
             if (weight <= 0 || boneIndex < 0) return;
             if (boneIndex >= skin.BoneQuaternions.Length) return;
 
+            // Use stored Q as-is — same formula as position transform (Q negates for W=-1 bones)
             var q = skin.BoneQuaternions[boneIndex];
             result += weight * Vector3.Transform(normal, q);
         }
@@ -733,7 +738,9 @@ void main()
 
         int meshIndex = 0;
         int skippedMeshes = 0;
-        foreach (var mesh in _model.GetMeshNodes())
+        var allMeshes = _model.GetMeshNodes().ToList();
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"  Model '{_model.Name}': {allMeshes.Count} mesh nodes: {string.Join(", ", allMeshes.Select(m => m.Name))}");
+        foreach (var mesh in allMeshes)
         {
             meshIndex++;
             if (mesh.Vertices.Length == 0 || mesh.Faces.Length == 0)
@@ -795,8 +802,8 @@ void main()
             }
 
             // All meshes: apply full hierarchy world transform.
-            // Skin mesh vertices are in skin-node local space (same as trimesh).
-            // At rest/bind pose, bone weights are not needed — just apply GetWorldTransform.
+            // Skin mesh vertices are in skin-node local space. Apply bone weights to move
+            // them into the weighted bone space, then apply the node hierarchy transform.
             var worldTransform = GetWorldTransform(mesh);
             bool hasWorldTransform = worldTransform != Matrix4x4.Identity;
 
@@ -841,6 +848,14 @@ void main()
                 UnifiedLogger.LogApplication(isSkinMesh ? LogLevel.INFO : LogLevel.DEBUG,
                     $"  MESH '{mesh.Name}': bitmap='{mesh.Bitmap}', isSkin={isSkinMesh}, hasXform={hasWorldTransform}, " +
                     $"verts={mesh.Vertices.Length}, faces={mesh.Faces.Length}, chain=[{parentChain}]");
+            if (isSkinMesh)
+            {
+                var t = worldTransform.Translation;
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"  SKIN '{mesh.Name}' worldTransform.Translation=({t.X:F4},{t.Y:F4},{t.Z:F4}), " +
+                    $"nodePos=({mesh.Position.X:F4},{mesh.Position.Y:F4},{mesh.Position.Z:F4}), " +
+                    $"nodeOri=({mesh.Orientation.X:F4},{mesh.Orientation.Y:F4},{mesh.Orientation.Z:F4},{mesh.Orientation.W:F4})");
+            }
             }
 
             // Resolve texture name: use mesh bitmap, falling back to model name for
@@ -855,6 +870,9 @@ void main()
                 IndexOffset = indices.Count * sizeof(uint),
                 TextureName = rawBitmap
             };
+
+            // Track output vertices for skin mesh diagnosis
+            int _skinOutputDumpCount = 0;
 
             // Add vertices (position, normal, texcoord)
             for (int i = 0; i < mesh.Vertices.Length; i++)
@@ -871,10 +889,27 @@ void main()
                 // Get vertex in local mesh space
                 var localVertex = mesh.Vertices[i];
 
-                // All meshes (skin and trimesh): apply node hierarchy world transform.
-                // Skin vertices are in model/bind-pose space; for static rest-pose display
-                // bind pose == rest pose so no bone weighting is needed.
-                Vector3 v = hasWorldTransform ? TransformPosition(localVertex, worldTransform) : localVertex;
+                // Apply bone weighting for skin meshes to get world-space positions
+                Vector3 v;
+                if (isSkinMesh && hasSkinTransforms)
+                {
+                    var boned = ApplySkinTransform(localVertex, i, skinNode!);
+                    v = hasWorldTransform ? TransformPosition(boned, worldTransform) : boned;
+                }
+                else
+                {
+                    v = hasWorldTransform ? TransformPosition(localVertex, worldTransform) : localVertex;
+                }
+
+                // Log first 10 output positions for skin meshes
+                if (isSkinMesh && _skinOutputDumpCount < 10)
+                {
+                    var bw = hasSkinTransforms ? skinNode!.BoneWeights[i] : default;
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"  SKIN '{mesh.Name}' OUT v[{i}] = ({v.X:F4},{v.Y:F4},{v.Z:F4})" +
+                        (hasSkinTransforms ? $" bone0={bw.Bone0}(w={bw.Weight0:F3}) bone1={bw.Bone1}(w={bw.Weight1:F3})" : ""));
+                    _skinOutputDumpCount++;
+                }
 
                 // Position
                 vertices.Add(v.X);
@@ -887,9 +922,7 @@ void main()
                 {
                     normal = mesh.Normals[i];
                     if (hasWorldTransform)
-                    {
                         normal = TransformNormal(normal, worldTransform);
-                    }
                 }
                 else
                 {
