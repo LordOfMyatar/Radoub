@@ -71,15 +71,17 @@ public partial class MdlBinaryReader
             throw new InvalidDataException($"Raw data offset {rawDataOffsetInFile} exceeds file length {streamLength}");
         }
 
+        // ulRawDataOffset (header[1]) = model data size, NOT a file offset.
+        // Raw data starts at file position: FileHeaderSize + ulRawDataOffset.
+        // See NwnModel.h: GetRawData() = GetData(sizeof(Header) + ulRawDataOffset + nOffset)
         uint modelDataSize;
-        if (rawDataOffsetInFile == 0 || rawDataOffsetInFile <= FileHeaderSize)
+        if (rawDataOffsetInFile == 0)
         {
             modelDataSize = (uint)(streamLength - FileHeaderSize);
-            rawDataOffsetInFile = 0;
         }
         else
         {
-            modelDataSize = rawDataOffsetInFile - FileHeaderSize;
+            modelDataSize = rawDataOffsetInFile;
         }
 
         if (modelDataSize < GeometryHeaderSize)

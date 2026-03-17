@@ -314,7 +314,7 @@ void main()
     /// For hierarchical transforms: Parent * Child
     /// So a vertex transforms as: RootTransform * ... * ParentTransform * NodeTransform * vertex
     /// </summary>
-    private static Matrix4x4 GetWorldTransform(MdlNode node)
+    private static Matrix4x4 GetWorldTransform(MdlNode? node)
     {
         // System.Numerics uses row-major convention where Vector3.Transform(v, M) = v * M
         // For hierarchical transforms: v_world = v_local * NodeLocal * ParentLocal * ... * RootLocal
@@ -362,6 +362,72 @@ void main()
         // Extract rotation/scale portion and transform
         var transformed = Vector3.TransformNormal(normal, matrix);
         return Vector3.Normalize(transformed);
+    }
+
+    /// <summary>
+    /// Apply bone-weighted skinning transform to a vertex position.
+    /// The on-disk data contains INVERSE bind-pose transforms (world→bone space).
+    /// To display in world space, we invert: v_world = Q_fwd * (v_local - T_inv)
+    /// where Q_fwd = conjugate(Q_inv).
+    /// </summary>
+    private static Vector3 ApplySkinTransform(Vector3 vertex, int vertexIndex, Radoub.Formats.Mdl.MdlSkinNode skin)
+    {
+        var bw = skin.BoneWeights[vertexIndex];
+        var result = Vector3.Zero;
+
+        void Accumulate(int boneIndex, float weight)
+        {
+            if (weight <= 0 || boneIndex < 0) return;
+            if (boneIndex >= skin.BoneQuaternions.Length || boneIndex >= skin.BoneTranslations.Length) return;
+
+            // NWN runtime skinning formula: v_world = Q_stored * v_local + T_stored
+            // Q_stored has W=-1 for identity-rotation bones, which causes Vector3.Transform
+            // to NEGATE the vertex. This is intentional — the stored T compensates.
+            // Use quaternion as-is (do NOT normalize W to +1).
+            var q = skin.BoneQuaternions[boneIndex];
+            var t = skin.BoneTranslations[boneIndex];
+            var rotated = Vector3.Transform(vertex, q);
+            result += weight * (rotated + t);
+        }
+
+        Accumulate(bw.Bone0, bw.Weight0);
+        Accumulate(bw.Bone1, bw.Weight1);
+        Accumulate(bw.Bone2, bw.Weight2);
+        Accumulate(bw.Bone3, bw.Weight3);
+
+        // Guard against NaN from invalid bone data or degenerate transforms
+        if (float.IsNaN(result.X) || float.IsNaN(result.Y) || float.IsNaN(result.Z))
+            return vertex; // Fall back to raw vertex
+
+        return result;
+    }
+
+    /// <summary>
+    /// Apply bone-weighted skinning rotation to a normal vector.
+    /// Only applies the rotation component (no translation for normals).
+    /// </summary>
+    private static Vector3 ApplySkinNormalTransform(Vector3 normal, int vertexIndex, Radoub.Formats.Mdl.MdlSkinNode skin)
+    {
+        var bw = skin.BoneWeights[vertexIndex];
+        var result = Vector3.Zero;
+
+        void Accumulate(int boneIndex, float weight)
+        {
+            if (weight <= 0 || boneIndex < 0) return;
+            if (boneIndex >= skin.BoneQuaternions.Length) return;
+
+            // Use stored Q as-is — same formula as position transform (Q negates for W=-1 bones)
+            var q = skin.BoneQuaternions[boneIndex];
+            result += weight * Vector3.Transform(normal, q);
+        }
+
+        Accumulate(bw.Bone0, bw.Weight0);
+        Accumulate(bw.Bone1, bw.Weight1);
+        Accumulate(bw.Bone2, bw.Weight2);
+        Accumulate(bw.Bone3, bw.Weight3);
+
+        var len = result.Length();
+        return len > 0.0001f ? result / len : Vector3.UnitZ;
     }
 
     protected override void OnOpenGlInit(GlInterface gl)
@@ -672,7 +738,9 @@ void main()
 
         int meshIndex = 0;
         int skippedMeshes = 0;
-        foreach (var mesh in _model.GetMeshNodes())
+        var allMeshes = _model.GetMeshNodes().ToList();
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"  Model '{_model.Name}': {allMeshes.Count} mesh nodes: {string.Join(", ", allMeshes.Select(m => m.Name))}");
+        foreach (var mesh in allMeshes)
         {
             meshIndex++;
             if (mesh.Vertices.Length == 0 || mesh.Faces.Length == 0)
@@ -682,19 +750,13 @@ void main()
                 continue;
             }
 
-            // Determine transform strategy based on mesh type:
-            // - Skin meshes (MdlSkinNode): vertices in bind-pose/model space, no transform needed
-            // - Trimesh: vertices in local node space, need full world transform (T*R*S hierarchy)
             bool isSkinMesh = mesh is Radoub.Formats.Mdl.MdlSkinNode;
 
-            // For non-skin meshes: compute full world transform matrix from hierarchy
-            var worldTransform = Matrix4x4.Identity;
-            bool hasWorldTransform = false;
-            if (!isSkinMesh)
-            {
-                worldTransform = GetWorldTransform(mesh);
-                hasWorldTransform = worldTransform != Matrix4x4.Identity;
-            }
+            // All meshes: apply full hierarchy world transform.
+            // Skin mesh vertices (m_pavVerts) are in bind-pose space — same treatment as trimesh.
+            // m_aQBoneRefInv/m_aTBoneRefInv are inverse bind-pose matrices for runtime animation, not static display.
+            var worldTransform = GetWorldTransform(mesh);
+            bool hasWorldTransform = worldTransform != Matrix4x4.Identity;
 
             // Count NaN vertices - we'll skip them during rendering
             var nanVertexIndices = new HashSet<int>();
@@ -724,20 +786,9 @@ void main()
                 UnifiedLogger.LogApplication(LogLevel.WARN, $"  Mesh {meshIndex} '{mesh.Name}' normal count mismatch: {mesh.Normals.Length} normals vs {mesh.Vertices.Length} vertices");
             }
 
-            // Log mesh hierarchy for debugging transforms
-            {
-                var parentChain = new System.Text.StringBuilder();
-                MdlNode? p = mesh;
-                while (p != null)
-                {
-                    if (parentChain.Length > 0) parentChain.Append(" -> ");
-                    parentChain.Append($"{p.Name}(pos={p.Position}, rot={p.Orientation})");
-                    p = p.Parent;
-                }
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"  MESH '{mesh.Name}': bitmap='{mesh.Bitmap}', isSkin={isSkinMesh}, hasXform={hasWorldTransform}, " +
-                    $"verts={mesh.Vertices.Length}, faces={mesh.Faces.Length}, chain=[{parentChain}]");
-            }
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"  MESH '{mesh.Name}': bitmap='{mesh.Bitmap}', isSkin={isSkinMesh}, hasXform={hasWorldTransform}, " +
+                $"verts={mesh.Vertices.Length}, faces={mesh.Faces.Length}");
 
             // Resolve texture name: use mesh bitmap, falling back to model name for
             // empty/NULL bitmaps (common in skin meshes and some simple creatures)
@@ -767,17 +818,11 @@ void main()
                 // Get vertex in local mesh space
                 var localVertex = mesh.Vertices[i];
 
-                Vector3 v;
-                if (isSkinMesh)
-                {
-                    // Skin mesh: vertices already in model space, use as-is
-                    v = localVertex;
-                }
-                else
-                {
-                    // Trimesh: apply full world transform (handles hierarchy rotations + positions)
-                    v = hasWorldTransform ? TransformPosition(localVertex, worldTransform) : localVertex;
-                }
+                // Apply world transform to get world-space positions.
+                // Skin mesh vertices (m_pavVerts) are stored in bind-pose space — apply
+                // the node hierarchy transform exactly like NWNExplorer does (no bone weighting
+                // needed for static bind-pose display; Q/T arrays are for runtime animation).
+                Vector3 v = hasWorldTransform ? TransformPosition(localVertex, worldTransform) : localVertex;
 
                 // Position
                 vertices.Add(v.X);
@@ -789,10 +834,8 @@ void main()
                 if (hasNormals)
                 {
                     normal = mesh.Normals[i];
-                    if (hasWorldTransform && !isSkinMesh)
-                    {
+                    if (hasWorldTransform)
                         normal = TransformNormal(normal, worldTransform);
-                    }
                 }
                 else
                 {

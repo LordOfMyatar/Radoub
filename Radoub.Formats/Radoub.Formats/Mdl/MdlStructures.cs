@@ -191,6 +191,14 @@ public class MdlSkinNode : MdlTrimeshNode
 
     /// <summary>Translation offsets for bones.</summary>
     public Vector3[] BoneTranslations { get; set; } = Array.Empty<Vector3>();
+
+    /// <summary>
+    /// Node-to-bone mapping table. Maps node indices to bone slot indices.
+    /// nodeToBoneMap[nodeIndex] = boneSlotIndex (-1 if not a bone).
+    /// Used to translate per-vertex bone refs (which are node indices) to
+    /// indices into BoneQuaternions/BoneTranslations arrays.
+    /// </summary>
+    public short[] NodeToBoneMap { get; set; } = Array.Empty<short>();
 }
 
 /// <summary>

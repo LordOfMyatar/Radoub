@@ -12,6 +12,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.50-alpha] - 2026-03-17
+**Branch**: `quartermaster/issue-1519` | **PR**: #1748
+
+### Bug: Dragon model wings not attached in preview (#1519)
+
+- Fix: Binary MDL raw data offset — header field 2 is model data SIZE, not a file offset; raw section starts at `12 + modelDataSize` (#1519)
+- Fix: Skin mesh bone weight arrays parsed as two separate raw arrays (`m_pafSkinWeights` = 4 floats/vertex, `m_pasSkinBoneRefs` = 4 int16s/vertex) instead of assumed interleaved 24-byte records (#1519)
+- Fix: Skin mesh vertices rendered with world transform only (matching NWNExplorer); `m_aQBoneRefInv`/`m_aTBoneRefInv` are runtime animation data, not needed for static bind-pose display (#1519)
+
+---
+
 ## [0.2.49-alpha] - 2026-03-15
 **Branch**: `quartermaster/issue-1741` | **PR**: #1742
 
