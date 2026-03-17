@@ -662,6 +662,71 @@ public class SpellServiceTests
 
     #endregion
 
+    #region Arcane Caster Detection via 2DA Label
+
+    [Fact]
+    public void IsArcaneCaster_CustomContent_DetectsByLabel()
+    {
+        // Custom content: Bard at row 50, Sorcerer at row 60, Wizard at row 70
+        var mockData = new MockGameDataService(includeSampleData: false);
+
+        // Set up classes with LABEL column — non-standard row IDs
+        mockData.Set2DAValue("classes", 50, "Label", "Bard");
+        mockData.Set2DAValue("classes", 50, "SpellGainTable", "cls_spgn_bard");
+        mockData.Set2DAValue("classes", 50, "ArcSpellLvlMod", "0");
+        mockData.Set2DAValue("classes", 50, "DivSpellLvlMod", "0");
+
+        mockData.Set2DAValue("classes", 60, "Label", "Sorcerer");
+        mockData.Set2DAValue("classes", 60, "SpellGainTable", "cls_spgn_sorc");
+        mockData.Set2DAValue("classes", 60, "ArcSpellLvlMod", "0");
+        mockData.Set2DAValue("classes", 60, "DivSpellLvlMod", "0");
+
+        mockData.Set2DAValue("classes", 70, "Label", "Wizard");
+        mockData.Set2DAValue("classes", 70, "SpellGainTable", "cls_spgn_wiz");
+        mockData.Set2DAValue("classes", 70, "ArcSpellLvlMod", "0");
+        mockData.Set2DAValue("classes", 70, "DivSpellLvlMod", "0");
+
+        // Fighter at row 4 — not arcane
+        mockData.Set2DAValue("classes", 4, "Label", "Fighter");
+
+        var service = new SpellService(mockData);
+
+        Assert.True(service.IsArcaneCaster(50));   // Bard at custom row
+        Assert.True(service.IsArcaneCaster(60));   // Sorcerer at custom row
+        Assert.True(service.IsArcaneCaster(70));   // Wizard at custom row
+        Assert.False(service.IsArcaneCaster(4));    // Fighter — not arcane
+    }
+
+    [Fact]
+    public void GetSpellInfo_CustomContent_WizSorcMapsToResolvedClassIds()
+    {
+        // Custom content: Sorcerer at row 60, Wizard at row 70
+        var mockData = new MockGameDataService(includeSampleData: false);
+
+        mockData.Set2DAValue("classes", 60, "Label", "Sorcerer");
+        mockData.Set2DAValue("classes", 60, "SpellGainTable", "cls_spgn_sorc");
+        mockData.Set2DAValue("classes", 70, "Label", "Wizard");
+        mockData.Set2DAValue("classes", 70, "SpellGainTable", "cls_spgn_wiz");
+
+        // Spell with Wiz_Sorc column
+        mockData.Set2DAValue("spells", 0, "Label", "Test_Spell");
+        mockData.Set2DAValue("spells", 0, "Name", "500");
+        mockData.Set2DAValue("spells", 0, "Innate", "3");
+        mockData.Set2DAValue("spells", 0, "Wiz_Sorc", "3");
+        mockData.SetTlkString(500, "Test Spell");
+
+        var service = new SpellService(mockData);
+        var info = service.GetSpellInfo(0);
+
+        Assert.NotNull(info);
+        Assert.Equal(3, info!.GetLevelForClass(60));  // Sorcerer at custom row
+        Assert.Equal(3, info.GetLevelForClass(70));    // Wizard at custom row
+        Assert.Equal(-1, info.GetLevelForClass(9));    // Old row 9 — no longer valid
+        Assert.Equal(-1, info.GetLevelForClass(10));   // Old row 10 — no longer valid
+    }
+
+    #endregion
+
     #region SpellInfo Edge Cases
 
     [Fact]

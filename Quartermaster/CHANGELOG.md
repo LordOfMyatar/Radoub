@@ -12,6 +12,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.51-alpha] - 2026-03-17
+**Branch**: `quartermaster/issue-1768` | **PR**: #1769
+
+### Sprint: Tech Debt & Hardcoded Data Cleanup (#1768)
+
+- Look up metamagic feat IDs from feat.2da instead of hardcoding (#1746)
+- Look up arcane caster class IDs from classes.2da instead of hardcoding (#1747)
+- Split FeatServiceAdvancedTests.cs (1224 lines) (#1745)
+- Split NewCharacterWizardWindow.axaml.cs (1002 lines) (#1672)
+
+---
+
 ## [0.2.50-alpha] - 2026-03-17
 **Branch**: `quartermaster/issue-1519` | **PR**: #1748
 

@@ -1,5 +1,6 @@
 using Quartermaster.Views.Panels;
 using Radoub.Formats.Utc;
+using Radoub.TestUtilities.Mocks;
 using Xunit;
 
 namespace Quartermaster.Tests;
@@ -220,5 +221,89 @@ public class MetamagicTests
 
         Assert.Equal(1, counts[(100, 0x01)]);
         Assert.Equal(3, counts[(200, 0x01)]);
+    }
+
+    // --- ResolveMetamagicFeatDefinitions tests (2DA label lookup) ---
+
+    [Fact]
+    public void ResolveMetamagicFeatDefinitions_FromLabels_ReturnsCorrectFeatIds()
+    {
+        var mockData = new MockGameDataService(includeSampleData: false);
+
+        // Set up feat.2da with metamagic feats at standard NWN rows
+        mockData.Set2DAValue("feat", 11, "LABEL", "EmpowerSpell");
+        mockData.Set2DAValue("feat", 12, "LABEL", "ExtendSpell");
+        mockData.Set2DAValue("feat", 25, "LABEL", "MaximizeSpell");
+        mockData.Set2DAValue("feat", 29, "LABEL", "QuickenSpell");
+        mockData.Set2DAValue("feat", 33, "LABEL", "SilentSpell");
+        mockData.Set2DAValue("feat", 37, "LABEL", "StillSpell");
+
+        var defs = SpellsPanel.ResolveMetamagicFeatDefinitions(mockData);
+
+        Assert.Equal(6, defs.Count);
+        Assert.Contains(defs, d => d.FeatId == 11 && d.Flag == 0x01 && d.LevelCost == 2);
+        Assert.Contains(defs, d => d.FeatId == 12 && d.Flag == 0x02 && d.LevelCost == 1);
+        Assert.Contains(defs, d => d.FeatId == 25 && d.Flag == 0x04 && d.LevelCost == 3);
+        Assert.Contains(defs, d => d.FeatId == 29 && d.Flag == 0x08 && d.LevelCost == 4);
+        Assert.Contains(defs, d => d.FeatId == 33 && d.Flag == 0x10 && d.LevelCost == 1);
+        Assert.Contains(defs, d => d.FeatId == 37 && d.Flag == 0x20 && d.LevelCost == 1);
+    }
+
+    [Fact]
+    public void ResolveMetamagicFeatDefinitions_CustomContent_UsesModifiedRows()
+    {
+        var mockData = new MockGameDataService(includeSampleData: false);
+
+        // Custom content: metamagic feats at non-standard rows (e.g., PRC/CEP)
+        mockData.Set2DAValue("feat", 500, "LABEL", "EmpowerSpell");
+        mockData.Set2DAValue("feat", 501, "LABEL", "ExtendSpell");
+        mockData.Set2DAValue("feat", 502, "LABEL", "MaximizeSpell");
+        mockData.Set2DAValue("feat", 503, "LABEL", "QuickenSpell");
+        mockData.Set2DAValue("feat", 504, "LABEL", "SilentSpell");
+        mockData.Set2DAValue("feat", 505, "LABEL", "StillSpell");
+
+        var defs = SpellsPanel.ResolveMetamagicFeatDefinitions(mockData);
+
+        Assert.Equal(6, defs.Count);
+        Assert.Contains(defs, d => d.FeatId == 500 && d.Flag == 0x01);
+        Assert.Contains(defs, d => d.FeatId == 501 && d.Flag == 0x02);
+        Assert.Contains(defs, d => d.FeatId == 502 && d.Flag == 0x04);
+        Assert.Contains(defs, d => d.FeatId == 503 && d.Flag == 0x08);
+        Assert.Contains(defs, d => d.FeatId == 504 && d.Flag == 0x10);
+        Assert.Contains(defs, d => d.FeatId == 505 && d.Flag == 0x20);
+    }
+
+    [Fact]
+    public void ResolveMetamagicFeatDefinitions_MissingLabels_ReturnsPartialResults()
+    {
+        var mockData = new MockGameDataService(includeSampleData: false);
+
+        // Only Empower and Extend exist
+        mockData.Set2DAValue("feat", 11, "LABEL", "EmpowerSpell");
+        mockData.Set2DAValue("feat", 12, "LABEL", "ExtendSpell");
+
+        var defs = SpellsPanel.ResolveMetamagicFeatDefinitions(mockData);
+
+        Assert.Equal(2, defs.Count);
+        Assert.Contains(defs, d => d.FeatId == 11 && d.Flag == 0x01);
+        Assert.Contains(defs, d => d.FeatId == 12 && d.Flag == 0x02);
+    }
+
+    [Fact]
+    public void ResolveMetamagicFeatDefinitions_NoGameData_ReturnsEmpty()
+    {
+        var mockData = new MockGameDataService(includeSampleData: false);
+
+        var defs = SpellsPanel.ResolveMetamagicFeatDefinitions(mockData);
+
+        Assert.Empty(defs);
+    }
+
+    [Fact]
+    public void ResolveMetamagicFeatDefinitions_NullGameData_ReturnsEmpty()
+    {
+        var defs = SpellsPanel.ResolveMetamagicFeatDefinitions(null);
+
+        Assert.Empty(defs);
     }
 }
