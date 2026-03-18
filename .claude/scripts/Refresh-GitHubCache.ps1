@@ -50,7 +50,7 @@ Write-Host "Fetching GitHub data via GraphQL..."
 $query = @'
 {
   repository(owner: "LordOfMyatar", name: "Radoub") {
-    issues(first: 200, states: OPEN, orderBy: {field: UPDATED_AT, direction: DESC}) {
+    issues(first: 100, states: OPEN, orderBy: {field: UPDATED_AT, direction: DESC}) {
       totalCount
       nodes {
         number
