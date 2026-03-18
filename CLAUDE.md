@@ -14,6 +14,7 @@ Project guidance for Claude Code sessions working with the Radoub multi-tool rep
 - **Manifest**: Journal editor (`.jrl` files) - See `Manifest/CLAUDE.md` for tool-specific guidance
 - **Quartermaster**: Creature/inventory editor (`.utc`, `.bic` files) - See `Quartermaster/CLAUDE.md` for tool-specific guidance
 - **Fence**: Merchant/store editor (`.utm` files) - See `Fence/CLAUDE.md` for tool-specific guidance
+- **ItemEditor**: Item blueprint editor (`.uti` files) - See `ItemEditor/CLAUDE.md` for tool-specific guidance
 - **Trebuchet**: Radoub launcher/hub - See `Trebuchet/CLAUDE.md` for tool-specific guidance
 
 ### Shared Libraries
@@ -65,6 +66,11 @@ Radoub/
 │   ├── CHANGELOG.md (Fence-specific changes)
 │   ├── Fence/ (source code)
 │   └── Fence.Tests/ (unit tests)
+├── ItemEditor/ (item blueprint editor)
+│   ├── CLAUDE.md (ItemEditor-specific guidance)
+│   ├── CHANGELOG.md (ItemEditor-specific changes)
+│   ├── ItemEditor/ (source code)
+│   └── ItemEditor.Tests/ (unit tests)
 ├── Trebuchet/ (launcher/hub)
 │   ├── CLAUDE.md (Trebuchet-specific guidance)
 │   ├── CHANGELOG.md (Trebuchet-specific changes)
@@ -652,6 +658,7 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 | **Manifest** | `Manifest/CHANGELOG.md` | Manifest-specific changes: features, fixes, UI updates |
 | **Quartermaster** | `Quartermaster/CHANGELOG.md` | Quartermaster-specific changes |
 | **Fence** | `Fence/CHANGELOG.md` | Fence-specific changes |
+| **ItemEditor** | `ItemEditor/CHANGELOG.md` | ItemEditor-specific changes |
 | **Trebuchet** | `Trebuchet/CHANGELOG.md` | Trebuchet-specific changes |
 
 **Rules**:

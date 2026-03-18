@@ -108,6 +108,13 @@ public class ToolLauncherService
                 Description = "Merchant Editor",
                 FileTypes = ".utm",
                 Maturity = ToolMaturity.Alpha
+            },
+            new ToolInfo
+            {
+                Name = "ItemEditor",
+                Description = "Item Blueprint Editor",
+                FileTypes = ".uti",
+                Maturity = ToolMaturity.Alpha
             }
         };
 
@@ -310,6 +317,7 @@ public class ToolLauncherService
             "manifest" => RadoubSettings.Instance.ManifestPath,
             "quartermaster" => RadoubSettings.Instance.QuartermasterPath,
             "fence" => RadoubSettings.Instance.FencePath,
+            "itemeditor" => RadoubSettings.Instance.ItemEditorPath,
             _ => null
         };
     }

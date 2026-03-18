@@ -83,6 +83,7 @@ public partial class RadoubSettings
                     _quartermasterPath = PathHelper.ExpandPath(data.QuartermasterPath ?? "");
                     _fencePath = PathHelper.ExpandPath(data.FencePath ?? "");
                     _trebuchetPath = PathHelper.ExpandPath(data.TrebuchetPath ?? "");
+                    _itemEditorPath = PathHelper.ExpandPath(data.ItemEditorPath ?? "");
                 }
             }
         }
@@ -130,7 +131,8 @@ public partial class RadoubSettings
                 ManifestPath = PathHelper.ContractPath(_manifestPath),
                 QuartermasterPath = PathHelper.ContractPath(_quartermasterPath),
                 FencePath = PathHelper.ContractPath(_fencePath),
-                TrebuchetPath = PathHelper.ContractPath(_trebuchetPath)
+                TrebuchetPath = PathHelper.ContractPath(_trebuchetPath),
+                ItemEditorPath = PathHelper.ContractPath(_itemEditorPath)
             };
 
             var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
@@ -172,5 +174,6 @@ public partial class RadoubSettings
         public string? QuartermasterPath { get; set; }
         public string? FencePath { get; set; }
         public string? TrebuchetPath { get; set; }
+        public string? ItemEditorPath { get; set; }
     }
 }

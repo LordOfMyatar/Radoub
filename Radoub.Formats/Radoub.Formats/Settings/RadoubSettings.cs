@@ -91,6 +91,7 @@ public partial class RadoubSettings : INotifyPropertyChanged
     private string _quartermasterPath = "";
     private string _fencePath = "";
     private string _trebuchetPath = "";
+    private string _itemEditorPath = "";
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -453,6 +454,15 @@ public partial class RadoubSettings : INotifyPropertyChanged
     {
         get => _trebuchetPath;
         set { if (SetProperty(ref _trebuchetPath, value ?? "")) SaveSettings(); }
+    }
+
+    /// <summary>
+    /// Path to ItemEditor.exe. Auto-set when ItemEditor runs.
+    /// </summary>
+    public string ItemEditorPath
+    {
+        get => _itemEditorPath;
+        set { if (SetProperty(ref _itemEditorPath, value ?? "")) SaveSettings(); }
     }
 
     /// <summary>
