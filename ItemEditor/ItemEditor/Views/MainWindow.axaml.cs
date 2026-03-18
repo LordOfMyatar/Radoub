@@ -268,6 +268,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _currentItem = item;
             _currentFilePath = filePath;
             _documentState.ClearDirty();
+            // Always update title — ClearDirty only fires when transitioning from dirty
+            Title = _documentState.GetTitle();
 
             PopulateEditor();
             OnPropertyChanged(nameof(HasFile));
@@ -503,6 +505,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 Value = _itemViewModel.GetArmorPart(partName),
                 Minimum = 0,
                 Maximum = 255,
+                FormatString = "N0",
                 Margin = new Thickness(0, 0, 0, 8)
             };
             var capturedPartName = partName;
