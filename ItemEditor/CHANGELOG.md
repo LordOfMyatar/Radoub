@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.5.0-alpha] - 2026-03-17
+**Branch**: `itemeditor/issue-1723` | **PR**: #TBD
+
+### Sprint 5: Descriptions, Appearance, Scripts, and Variables (#1723)
+
+- [ ] #1724 — Description fields with spell-check and token support
+- [ ] #1725 — Item Type Description from 2DA (read-only)
+- [ ] #1726 — Appearance section (model parts numeric, colors)
+- [ ] #1727 — Scripts, local variables, and comments sections
+
+---
+
 ## [0.4.0-alpha] - 2026-03-17
 **Branch**: `itemeditor/issue-1717` | **PR**: #1777
 
