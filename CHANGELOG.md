@@ -24,6 +24,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.88] - TBD
+**Branch**: `radoub/issue-1750` | **PR**: #1772
+
+### Sprint: Dependabot Dependency Updates (#1750)
+
+- Bump Microsoft.Extensions.DependencyInjection 10.0.3 → 10.0.5 (#1750)
+- Bump Microsoft.Extensions.Logging 10.0.3 → 10.0.5 (#1750)
+- Bump NAudio 2.2.1 → 2.3.0 (#1751)
+- Bump Svg.Controls.Skia.Avalonia 11.3.9.3 → 11.3.9.4 (#1752)
+- Bump System.Text.Json 10.0.3 → 10.0.5 (#1753)
+
+---
+
 ## [0.9.87] - 2026-03-14
 **Branch**: `radoub/issue-1685` | **PR**: #1686
 
