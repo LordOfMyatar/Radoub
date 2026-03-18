@@ -447,7 +447,7 @@
                                         <TextBlock DockPanel.Dock="Top" Text="Assigned Properties"
                                                    FontWeight="SemiBold" Margin="0,0,0,4"/>
                                         <ListBox x:Name="AssignedPropertiesList"
-                                                 SelectionMode="Toggle"
+                                                 SelectionMode="Multiple,Toggle"
                                                  SelectionChanged="OnAssignedPropertySelectionChanged"/>
                                     </DockPanel>
                                 </Border>
