@@ -1,0 +1,503 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
+using ItemEditor.Services;
+using Radoub.Formats.Logging;
+using Radoub.Formats.Settings;
+using Radoub.Formats.Uti;
+using Radoub.UI.Services;
+using System;
+using System.ComponentModel;
+using System.IO;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+
+namespace ItemEditor.Views;
+
+public partial class MainWindow : Window, INotifyPropertyChanged
+{
+    private UtiFile? _currentItem;
+    private readonly DocumentState _documentState = new("ItemEditor");
+
+    // Convenience accessors for document state
+    private string? _currentFilePath
+    {
+        get => _documentState.CurrentFilePath;
+        set => _documentState.CurrentFilePath = value;
+    }
+    private bool _isDirty => _documentState.IsDirty;
+    private bool _isLoading
+    {
+        get => _documentState.IsLoading;
+        set => _documentState.IsLoading = value;
+    }
+
+    public bool HasFile => _currentItem != null;
+
+    public new event PropertyChangedEventHandler? PropertyChanged;
+
+    public MainWindow()
+    {
+        InitializeComponent();
+
+        // Wire up shared document state for title bar updates
+        _documentState.DirtyStateChanged += () => Title = _documentState.GetTitle();
+
+        RestoreWindowPosition();
+        UpdateModuleIndicator();
+        PopulateRecentFiles();
+
+        Closing += OnWindowClosing;
+        Opened += OnWindowOpened;
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, "ItemEditor MainWindow initialized");
+    }
+
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    private void MarkDirty()
+    {
+        _documentState.MarkDirty();
+    }
+
+    // --- Window Lifecycle ---
+
+    private async void OnWindowOpened(object? sender, EventArgs e)
+    {
+        Opened -= OnWindowOpened;
+
+        // Handle startup file from command line
+        var options = CommandLineService.Options;
+        if (!string.IsNullOrEmpty(options.FilePath) && File.Exists(options.FilePath))
+        {
+            await OpenFileAsync(options.FilePath);
+        }
+
+        UpdateStatus("Ready");
+    }
+
+    private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
+    {
+        if (_isDirty)
+        {
+            e.Cancel = true;
+            var result = await PromptSaveChangesAsync();
+            if (result == SavePromptResult.Cancel)
+                return;
+
+            if (result == SavePromptResult.Save)
+            {
+                if (!await SaveCurrentFileAsync())
+                    return;
+            }
+
+            _documentState.ClearDirty();
+            Close();
+        }
+
+        SaveWindowPosition();
+    }
+
+    // --- File Operations ---
+
+    private async Task<bool> OpenFileAsync(string filePath)
+    {
+        try
+        {
+            _isLoading = true;
+            UpdateStatus($"Opening {Path.GetFileName(filePath)}...");
+
+            var item = UtiReader.Read(filePath);
+            _currentItem = item;
+            _currentFilePath = filePath;
+            _documentState.ClearDirty();
+
+            PopulateEditor();
+            OnPropertyChanged(nameof(HasFile));
+            AddRecentFile(filePath);
+
+            UpdateStatus("Ready");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Opened: {UnifiedLogger.SanitizePath(filePath)}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            UpdateStatus("Error opening file");
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open {UnifiedLogger.SanitizePath(filePath)}: {ex.Message}");
+            await ShowErrorAsync($"Failed to open file:\n{ex.Message}");
+            return false;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task<bool> SaveCurrentFileAsync()
+    {
+        if (_currentItem == null || string.IsNullOrEmpty(_currentFilePath))
+            return false;
+
+        try
+        {
+            UpdateStatus("Saving...");
+            UtiWriter.Write(_currentItem, _currentFilePath);
+            _documentState.ClearDirty();
+
+            UpdateStatus("Ready");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Saved: {UnifiedLogger.SanitizePath(_currentFilePath)}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            UpdateStatus("Error saving file");
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to save {UnifiedLogger.SanitizePath(_currentFilePath)}: {ex.Message}");
+            await ShowErrorAsync($"Failed to save file:\n{ex.Message}");
+            return false;
+        }
+    }
+
+    private async Task<bool> SaveAsAsync()
+    {
+        if (_currentItem == null)
+            return false;
+
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Save Item As",
+            DefaultExtension = "uti",
+            FileTypeChoices = new[]
+            {
+                new FilePickerFileType("Item Blueprint") { Patterns = new[] { "*.uti" } },
+                new FilePickerFileType("All Files") { Patterns = new[] { "*.*" } }
+            },
+            SuggestedFileName = Path.GetFileName(_currentFilePath ?? "item.uti")
+        });
+
+        if (file == null)
+            return false;
+
+        var path = file.Path.LocalPath;
+        _currentFilePath = path;
+
+        var result = await SaveCurrentFileAsync();
+        if (result)
+        {
+            AddRecentFile(path);
+        }
+        return result;
+    }
+
+    private void PopulateEditor()
+    {
+        if (_currentItem == null)
+        {
+            EmptyStatePanel.IsVisible = true;
+            EditorContent.IsVisible = false;
+            return;
+        }
+
+        EmptyStatePanel.IsVisible = false;
+        EditorContent.IsVisible = true;
+
+        // Display basic item info
+        var name = _currentItem.LocalizedName?.GetString() ?? "(unnamed)";
+        ItemNameDisplay.Text = name;
+
+        var baseItem = _currentItem.BaseItem;
+        var tag = _currentItem.Tag ?? "";
+        ItemInfoDisplay.Text = $"Base Item: {baseItem}  |  Tag: {tag}  |  Cost: {_currentItem.Cost}  |  Stack: {_currentItem.StackSize}";
+
+        FilePathText.Text = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : "";
+    }
+
+    // --- Menu Handlers ---
+
+    private async void OnOpenClick(object? sender, RoutedEventArgs e)
+    {
+        if (_isDirty)
+        {
+            var result = await PromptSaveChangesAsync();
+            if (result == SavePromptResult.Cancel) return;
+            if (result == SavePromptResult.Save && !await SaveCurrentFileAsync()) return;
+        }
+
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Open Item Blueprint",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("Item Blueprint") { Patterns = new[] { "*.uti" } },
+                new FilePickerFileType("All Files") { Patterns = new[] { "*.*" } }
+            }
+        });
+
+        if (files.Count > 0)
+        {
+            await OpenFileAsync(files[0].Path.LocalPath);
+        }
+    }
+
+    private async void OnSaveClick(object? sender, RoutedEventArgs e)
+    {
+        if (_currentItem != null && !string.IsNullOrEmpty(_currentFilePath))
+        {
+            await SaveCurrentFileAsync();
+        }
+        else if (_currentItem != null)
+        {
+            await SaveAsAsync();
+        }
+    }
+
+    private async void OnSaveAsClick(object? sender, RoutedEventArgs e)
+    {
+        await SaveAsAsync();
+    }
+
+    private async void OnCloseFileClick(object? sender, RoutedEventArgs e)
+    {
+        if (_isDirty)
+        {
+            var result = await PromptSaveChangesAsync();
+            if (result == SavePromptResult.Cancel) return;
+            if (result == SavePromptResult.Save && !await SaveCurrentFileAsync()) return;
+        }
+
+        _currentItem = null;
+        _currentFilePath = null;
+        _documentState.ClearDirty();
+        PopulateEditor();
+        OnPropertyChanged(nameof(HasFile));
+        UpdateStatus("Ready");
+    }
+
+    private void OnExitClick(object? sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+
+    private void OnToggleItemBrowserClick(object? sender, RoutedEventArgs e)
+    {
+        ItemBrowserPanel.IsVisible = !ItemBrowserPanel.IsVisible;
+    }
+
+    private void OnSettingsClick(object? sender, RoutedEventArgs e)
+    {
+        // TODO (#1706): Settings window
+        UpdateStatus("Settings not yet implemented");
+    }
+
+    private void OnAboutClick(object? sender, RoutedEventArgs e)
+    {
+        var aboutWindow = Radoub.UI.Views.AboutWindow.Create(new Radoub.UI.Views.AboutWindowConfig
+        {
+            ToolName = "ItemEditor",
+            Version = Radoub.UI.Utils.VersionHelper.GetVersion()
+        });
+        aboutWindow.Show(this);
+    }
+
+    // --- Keyboard Shortcuts ---
+
+    private void OnWindowKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.KeyModifiers == KeyModifiers.Control)
+        {
+            switch (e.Key)
+            {
+                case Key.O:
+                    OnOpenClick(sender, e);
+                    e.Handled = true;
+                    break;
+                case Key.S:
+                    if (e.KeyModifiers.HasFlag(KeyModifiers.Shift))
+                        OnSaveAsClick(sender, e);
+                    else
+                        OnSaveClick(sender, e);
+                    e.Handled = true;
+                    break;
+            }
+        }
+    }
+
+    // --- Title Bar ---
+
+    private void OnTitleBarPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        {
+            BeginMoveDrag(e);
+        }
+    }
+
+    private void OnTitleBarDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        WindowState = WindowState == WindowState.Maximized
+            ? WindowState.Normal
+            : WindowState.Maximized;
+    }
+
+    // --- Utility Methods ---
+
+    private void UpdateStatus(string text)
+    {
+        StatusText.Text = text;
+    }
+
+    private void UpdateModuleIndicator()
+    {
+        var modulePath = RadoubSettings.Instance.CurrentModulePath;
+        if (!string.IsNullOrEmpty(modulePath))
+        {
+            var name = Path.GetFileNameWithoutExtension(modulePath);
+            ModuleIndicator.Text = $"Module: {name}";
+        }
+        else
+        {
+            ModuleIndicator.Text = "No module";
+        }
+    }
+
+    private async Task<SavePromptResult> PromptSaveChangesAsync()
+    {
+        var dialog = new Window
+        {
+            Title = "Save Changes?",
+            Width = 350,
+            Height = 150,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false
+        };
+
+        var result = SavePromptResult.Cancel;
+
+        var panel = new StackPanel { Margin = new Thickness(16) };
+        panel.Children.Add(new TextBlock { Text = "Save changes before closing?", Margin = new Thickness(0, 0, 0, 16) });
+
+        var buttons = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right, Spacing = 8 };
+
+        var saveBtn = new Button { Content = "Save" };
+        saveBtn.Click += (_, _) => { result = SavePromptResult.Save; dialog.Close(); };
+
+        var dontSaveBtn = new Button { Content = "Don't Save" };
+        dontSaveBtn.Click += (_, _) => { result = SavePromptResult.DontSave; dialog.Close(); };
+
+        var cancelBtn = new Button { Content = "Cancel" };
+        cancelBtn.Click += (_, _) => { result = SavePromptResult.Cancel; dialog.Close(); };
+
+        buttons.Children.Add(saveBtn);
+        buttons.Children.Add(dontSaveBtn);
+        buttons.Children.Add(cancelBtn);
+        panel.Children.Add(buttons);
+
+        dialog.Content = panel;
+        await dialog.ShowDialog(this);
+        return result;
+    }
+
+    private async Task ShowErrorAsync(string message)
+    {
+        var dialog = new Window
+        {
+            Title = "Error",
+            Width = 400,
+            Height = 150,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false
+        };
+
+        var panel = new StackPanel { Margin = new Thickness(16) };
+        panel.Children.Add(new TextBlock { Text = message, TextWrapping = Avalonia.Media.TextWrapping.Wrap });
+
+        var okBtn = new Button { Content = "OK", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right, Margin = new Thickness(0, 16, 0, 0) };
+        okBtn.Click += (_, _) => dialog.Close();
+        panel.Children.Add(okBtn);
+
+        dialog.Content = panel;
+        await dialog.ShowDialog(this);
+    }
+
+    // --- Recent Files ---
+
+    private void PopulateRecentFiles()
+    {
+        RecentFilesMenu.Items.Clear();
+        var recentFiles = SettingsService.Instance.RecentFiles;
+
+        if (recentFiles.Count == 0)
+        {
+            var emptyItem = new MenuItem { Header = "(none)", IsEnabled = false };
+            RecentFilesMenu.Items.Add(emptyItem);
+            return;
+        }
+
+        foreach (var path in recentFiles)
+        {
+            var menuItem = new MenuItem
+            {
+                Header = Path.GetFileName(path),
+                Tag = path
+            };
+            ToolTip.SetTip(menuItem, UnifiedLogger.SanitizePath(path));
+            menuItem.Click += async (_, _) =>
+            {
+                if (_isDirty)
+                {
+                    var result = await PromptSaveChangesAsync();
+                    if (result == SavePromptResult.Cancel) return;
+                    if (result == SavePromptResult.Save && !await SaveCurrentFileAsync()) return;
+                }
+                await OpenFileAsync((string)menuItem.Tag!);
+            };
+            RecentFilesMenu.Items.Add(menuItem);
+        }
+    }
+
+    private void AddRecentFile(string filePath)
+    {
+        SettingsService.Instance.AddRecentFile(filePath);
+        PopulateRecentFiles();
+    }
+
+    // --- Window Position ---
+
+    private void RestoreWindowPosition()
+    {
+        var settings = SettingsService.Instance;
+        if (settings.WindowWidth > 0 && settings.WindowHeight > 0)
+        {
+            Width = settings.WindowWidth;
+            Height = settings.WindowHeight;
+        }
+        if (settings.WindowLeft >= 0 && settings.WindowTop >= 0)
+        {
+            Position = new PixelPoint((int)settings.WindowLeft, (int)settings.WindowTop);
+        }
+    }
+
+    private void SaveWindowPosition()
+    {
+        var settings = SettingsService.Instance;
+        if (WindowState == WindowState.Normal)
+        {
+            settings.WindowWidth = Width;
+            settings.WindowHeight = Height;
+            settings.WindowLeft = Position.X;
+            settings.WindowTop = Position.Y;
+        }
+    }
+}
+
+internal enum SavePromptResult
+{
+    Save,
+    DontSave,
+    Cancel
+}

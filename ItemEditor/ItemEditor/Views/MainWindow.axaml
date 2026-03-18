@@ -1,0 +1,147 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="using:Radoub.UI.Controls"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
+        x:Class="ItemEditor.Views.MainWindow"
+        x:Name="MainWindowInstance"
+        Title="ItemEditor"
+        Width="1000" Height="700"
+        MinWidth="700" MinHeight="500"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="PreferSystemChrome"
+        ExtendClientAreaTitleBarHeightHint="30"
+        KeyDown="OnWindowKeyDown">
+
+    <DockPanel>
+        <!-- Custom Title Bar -->
+        <Border DockPanel.Dock="Top" Background="{DynamicResource ThemeTitleBar}"
+                Height="30"
+                x:Name="TitleBar"
+                PointerPressed="OnTitleBarPointerPressed"
+                DoubleTapped="OnTitleBarDoubleTapped">
+            <StackPanel Orientation="Horizontal"
+                        VerticalAlignment="Center"
+                        Margin="8,0,0,0"
+                        IsHitTestVisible="False">
+                <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource ThemeTitleBarForeground}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Menu Bar -->
+        <Menu DockPanel.Dock="Top" AutomationProperties.AutomationId="MainMenu">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Open..." Click="OnOpenClick" InputGesture="Ctrl+O"/>
+                <MenuItem Header="Open _Recent" x:Name="RecentFilesMenu"/>
+                <Separator/>
+                <MenuItem Header="_Save" Click="OnSaveClick" InputGesture="Ctrl+S"
+                          IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
+                <MenuItem Header="Save _As..." Click="OnSaveAsClick" InputGesture="Ctrl+Shift+S"
+                          IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
+                <Separator/>
+                <MenuItem Header="_Close" Click="OnCloseFileClick"
+                          IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
+                <MenuItem Header="E_xit" Click="OnExitClick" InputGesture="Alt+F4"/>
+            </MenuItem>
+            <MenuItem Header="_Edit">
+                <MenuItem Header="_Undo" InputGesture="Ctrl+Z" IsEnabled="False" ToolTip.Tip="Not yet implemented"/>
+                <MenuItem Header="_Redo" InputGesture="Ctrl+Y" IsEnabled="False" ToolTip.Tip="Not yet implemented"/>
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem x:Name="ItemBrowserMenuItem" Header="_Item Browser" Click="OnToggleItemBrowserClick" InputGesture="F4"/>
+                <Separator/>
+                <MenuItem x:Name="LanguageMenu" Header="_Language" AutomationProperties.AutomationId="LanguageMenu"/>
+                <Separator/>
+                <MenuItem Header="_Settings..." Click="OnSettingsClick"/>
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About ItemEditor" Click="OnAboutClick"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- Status Bar -->
+        <Border DockPanel.Dock="Bottom"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="8,4">
+            <Grid ColumnDefinitions="Auto,8,*,8,Auto">
+                <!-- Module indicator -->
+                <TextBlock Grid.Column="0" x:Name="ModuleIndicator"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+
+                <!-- Status text -->
+                <TextBlock Grid.Column="2" x:Name="StatusText"
+                           Text="Ready"
+                           VerticalAlignment="Center"/>
+
+                <!-- File path -->
+                <TextBlock Grid.Column="4" x:Name="FilePathText"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+            </Grid>
+        </Border>
+
+        <!-- Main Content Area -->
+        <Grid ColumnDefinitions="Auto,4,*">
+            <!-- Item Browser Panel (left sidebar) -->
+            <Border Grid.Column="0" x:Name="ItemBrowserPanel"
+                    Width="250"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                    BorderThickness="0,0,1,0">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Item Browser"
+                               FontWeight="SemiBold" Margin="8,8,8,4"/>
+                    <TextBox DockPanel.Dock="Top" x:Name="BrowserSearchBox"
+                             Watermark="Search items..."
+                             Margin="8,4"/>
+                    <TreeView x:Name="ItemBrowserTree" Margin="4,4">
+                        <!-- Will be populated when module is loaded -->
+                    </TreeView>
+                </DockPanel>
+            </Border>
+
+            <!-- Splitter -->
+            <GridSplitter Grid.Column="1" Width="4"
+                          Background="Transparent"
+                          ResizeDirection="Columns"/>
+
+            <!-- Editor Area -->
+            <Border Grid.Column="2">
+                <Panel>
+                    <!-- Empty state message -->
+                    <StackPanel x:Name="EmptyStatePanel"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                IsVisible="True">
+                        <TextBlock Text="No item loaded"
+                                   FontSize="20"
+                                   HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        <TextBlock Text="Open a .uti file to begin editing"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,8,0,0"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                        <Button Content="Open File..."
+                                Click="OnOpenClick"
+                                HorizontalAlignment="Center"
+                                Margin="0,16,0,0"/>
+                    </StackPanel>
+
+                    <!-- Editor content (shown when file is loaded) -->
+                    <ScrollViewer x:Name="EditorContent" IsVisible="False">
+                        <StackPanel Margin="16">
+                            <TextBlock x:Name="ItemNameDisplay" FontSize="20" FontWeight="Bold" Margin="0,0,0,8"/>
+                            <TextBlock x:Name="ItemInfoDisplay"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Panel>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>
