@@ -34,6 +34,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private ItemStatisticsService? _itemStatisticsService;
     private PropertyTypeInfo? _selectedPropertyType;
     private int _editingPropertyIndex = -1; // -1 = add mode, >= 0 = editing that index
+    private readonly HashSet<int> _checkedPropertyIndices = new();
 
     // Convenience accessors for document state
     private string? _currentFilePath
@@ -361,6 +362,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _selectedPropertyType = null;
             _editingPropertyIndex = -1;
             AddPropertyButton.IsEnabled = false;
+            AddCheckedButton.IsEnabled = false;
             EditPropertyButton.IsEnabled = false;
             RemovePropertyButton.IsEnabled = false;
             ClearAllPropertiesButton.IsEnabled = false;
@@ -749,6 +751,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void PopulateAvailableProperties(string? searchFilter = null)
     {
         AvailablePropertiesTree.Items.Clear();
+        _checkedPropertyIndices.Clear();
+        UpdateAddCheckedButton();
 
         if (_itemPropertyService == null)
             return;
@@ -759,9 +763,25 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         foreach (var type in types)
         {
+            var checkBox = new CheckBox
+            {
+                Content = type.DisplayName,
+                Tag = type,
+                Margin = new Thickness(0)
+            };
+            var capturedType = type;
+            checkBox.IsCheckedChanged += (_, _) =>
+            {
+                if (checkBox.IsChecked == true)
+                    _checkedPropertyIndices.Add(capturedType.PropertyIndex);
+                else
+                    _checkedPropertyIndices.Remove(capturedType.PropertyIndex);
+                UpdateAddCheckedButton();
+            };
+
             var node = new TreeViewItem
             {
-                Header = type.DisplayName,
+                Header = checkBox,
                 Tag = type
             };
 
@@ -781,6 +801,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
             AvailablePropertiesTree.Items.Add(node);
         }
+    }
+
+    private void UpdateAddCheckedButton()
+    {
+        AddCheckedButton.IsEnabled = _checkedPropertyIndices.Count > 0 && _currentItem != null;
     }
 
     private void OnPropertySearchTextChanged(object? sender, TextChangedEventArgs e)
@@ -931,6 +956,40 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         MarkDirty();
 
         UpdateStatus($"Added property: {_selectedPropertyType.DisplayName}");
+    }
+
+    private void OnAddCheckedClick(object? sender, RoutedEventArgs e)
+    {
+        if (_currentItem == null || _itemPropertyService == null || _checkedPropertyIndices.Count == 0)
+            return;
+
+        var types = _itemPropertyService.GetAvailablePropertyTypes();
+        int added = 0;
+
+        foreach (var propIndex in _checkedPropertyIndices)
+        {
+            var type = types.FirstOrDefault(t => t.PropertyIndex == propIndex);
+            if (type == null) continue;
+
+            // Add with default subtype (0), cost (0), no param
+            var property = _itemPropertyService.CreateItemProperty(propIndex, 0, 0, null);
+            _currentItem.Properties.Add(property);
+            added++;
+        }
+
+        if (added > 0)
+        {
+            RefreshAssignedProperties();
+            MarkDirty();
+            UpdateStatus($"Added {added} properties");
+        }
+
+        // Uncheck all after adding
+        foreach (var item in AvailablePropertiesTree.Items)
+        {
+            if (item is TreeViewItem node && node.Header is CheckBox cb)
+                cb.IsChecked = false;
+        }
     }
 
     private void OnRemovePropertyClick(object? sender, RoutedEventArgs e)

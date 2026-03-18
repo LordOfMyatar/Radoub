@@ -414,7 +414,16 @@
                                             Width="80"
                                             HorizontalContentAlignment="Center"
                                             Margin="0,0,0,8"
-                                            IsEnabled="False"/>
+                                            IsEnabled="False"
+                                            ToolTip.Tip="Add selected property with configured values"/>
+                                    <Button x:Name="AddCheckedButton"
+                                            Content="Add Checked &gt;"
+                                            Click="OnAddCheckedClick"
+                                            Width="100"
+                                            HorizontalContentAlignment="Center"
+                                            Margin="0,0,0,8"
+                                            IsEnabled="False"
+                                            ToolTip.Tip="Add all checked properties with default values"/>
                                     <Button x:Name="EditPropertyButton"
                                             Content="Edit"
                                             Click="OnEditPropertyClick"
