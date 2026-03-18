@@ -306,6 +306,64 @@ public class ItemPropertyOperationTests
 
     #endregion
 
+    #region Edit Property
+
+    [Fact]
+    public void EditProperty_UpdateSubtype_Preserved()
+    {
+        var mock = CreateMock();
+        var service = new ItemPropertyService(mock);
+        var uti = CreateBaseItem();
+
+        // Add Ability Bonus STR +2
+        uti.Properties.Add(service.CreateItemProperty(0, 0, 2, null));
+        Assert.Equal(0, uti.Properties[0].Subtype); // STR
+
+        // Edit: change subtype to DEX (1)
+        var edited = service.CreateItemProperty(0, 1, 2, null);
+        uti.Properties[0] = edited;
+
+        Assert.Equal(1, uti.Properties[0].Subtype); // DEX
+    }
+
+    [Fact]
+    public void EditProperty_UpdateCostValue_Preserved()
+    {
+        var mock = CreateMock();
+        var service = new ItemPropertyService(mock);
+        var uti = CreateBaseItem();
+
+        // Add Enhancement +1
+        uti.Properties.Add(service.CreateItemProperty(6, 0, 1, null));
+        Assert.Equal(1, uti.Properties[0].CostValue); // +1
+
+        // Edit: change cost to +3
+        var edited = service.CreateItemProperty(6, 0, 3, null);
+        uti.Properties[0] = edited;
+
+        Assert.Equal(3, uti.Properties[0].CostValue); // +3
+    }
+
+    [Fact]
+    public void RoundTrip_EditedProperty_Preserved()
+    {
+        var mock = CreateMock();
+        var service = new ItemPropertyService(mock);
+        var uti = CreateBaseItem();
+
+        // Add Enhancement +1, then edit to +3
+        uti.Properties.Add(service.CreateItemProperty(6, 0, 1, null));
+        uti.Properties[0] = service.CreateItemProperty(6, 0, 3, null);
+
+        var result = WriteAndReadBack(uti);
+
+        Assert.Single(result.Properties);
+        Assert.Equal(6, result.Properties[0].PropertyName);
+        Assert.Equal(3, result.Properties[0].CostValue);
+    }
+
+    #endregion
+
     #region Helpers
 
     private static UtiFile CreateBaseItem()

@@ -406,6 +406,13 @@
                                             HorizontalContentAlignment="Center"
                                             Margin="0,0,0,8"
                                             IsEnabled="False"/>
+                                    <Button x:Name="EditPropertyButton"
+                                            Content="Edit"
+                                            Click="OnEditPropertyClick"
+                                            Width="80"
+                                            HorizontalContentAlignment="Center"
+                                            Margin="0,0,0,8"
+                                            IsEnabled="False"/>
                                     <Button x:Name="RemovePropertyButton"
                                             Content="&lt; Remove"
                                             Click="OnRemovePropertyClick"
@@ -436,7 +443,7 @@
                                     CornerRadius="4"
                                     Padding="8"
                                     Margin="0,0,0,8">
-                                <Grid ColumnDefinitions="100,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                                <Grid ColumnDefinitions="100,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
                                     <Grid.Styles>
                                         <Style Selector="TextBlock.config-label">
                                             <Setter Property="VerticalAlignment" Value="Center"/>
@@ -467,6 +474,15 @@
                                                Text="Parameter" Classes="config-label"/>
                                     <ComboBox Grid.Row="3" Grid.Column="1" x:Name="ParamValueComboBox"
                                               HorizontalAlignment="Stretch" Margin="0,0,0,8"/>
+
+                                    <!-- Apply Edit button (only visible in edit mode) -->
+                                    <Button Grid.Row="4" Grid.Column="1"
+                                            x:Name="ApplyEditButton"
+                                            Content="Apply Changes"
+                                            Click="OnApplyEditClick"
+                                            HorizontalAlignment="Left"
+                                            IsVisible="False"
+                                            Margin="0,0,0,4"/>
                                 </Grid>
                             </Border>
 
