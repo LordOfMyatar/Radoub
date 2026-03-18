@@ -4,13 +4,18 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using ItemEditor.Services;
+using ItemEditor.ViewModels;
+using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
 using Radoub.Formats.Uti;
 using Radoub.UI.Services;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
@@ -19,7 +24,11 @@ namespace ItemEditor.Views;
 public partial class MainWindow : Window, INotifyPropertyChanged
 {
     private UtiFile? _currentItem;
+    private ItemViewModel? _itemViewModel;
     private readonly DocumentState _documentState = new("ItemEditor");
+    private IGameDataService? _gameDataService;
+    private List<BaseItemTypeInfo>? _baseItemTypes;
+    private List<PaletteCategory> _paletteCategories = new();
 
     // Convenience accessors for document state
     private string? _currentFilePath
@@ -71,6 +80,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         Opened -= OnWindowOpened;
 
+        // Initialize game data service for base item type resolution
+        await InitializeGameDataAsync();
+
         // Handle startup file from command line
         var options = CommandLineService.Options;
         if (!string.IsNullOrEmpty(options.FilePath) && File.Exists(options.FilePath))
@@ -79,6 +91,130 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         UpdateStatus("Ready");
+    }
+
+    private Task InitializeGameDataAsync()
+    {
+        try
+        {
+            _gameDataService = new GameDataService();
+            if (_gameDataService.IsConfigured)
+            {
+                LoadBaseItemTypes();
+                UnifiedLogger.LogApplication(LogLevel.INFO, "Game data service initialized");
+            }
+            else
+            {
+                LoadBaseItemTypes(); // Will use hardcoded fallback
+                UnifiedLogger.LogApplication(LogLevel.WARN, "Game data service not configured, using hardcoded base item types");
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to initialize game data: {ex.Message}");
+            LoadBaseItemTypes();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void LoadBaseItemTypes()
+    {
+        var service = new BaseItemTypeService(_gameDataService);
+        _baseItemTypes = service.GetBaseItemTypes();
+        PopulateBaseItemComboBox();
+        LoadPaletteCategories();
+    }
+
+    private void PopulateBaseItemComboBox()
+    {
+        BaseItemComboBox.Items.Clear();
+        if (_baseItemTypes == null) return;
+
+        foreach (var type in _baseItemTypes)
+        {
+            BaseItemComboBox.Items.Add(new ComboBoxItem
+            {
+                Content = type.DisplayName,
+                Tag = type.BaseItemIndex
+            });
+        }
+    }
+
+    private void LoadPaletteCategories()
+    {
+        _paletteCategories.Clear();
+        PaletteCategoryComboBox.Items.Clear();
+
+        if (_gameDataService != null && _gameDataService.IsConfigured)
+        {
+            try
+            {
+                var categories = _gameDataService.GetPaletteCategories(Radoub.Formats.Common.ResourceTypes.Uti).ToList();
+                _paletteCategories = categories;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to load palette categories: {ex.Message}");
+            }
+        }
+
+        // Hardcoded fallback if no categories loaded
+        if (_paletteCategories.Count == 0)
+        {
+            _paletteCategories = GetHardcodedPaletteCategories();
+        }
+
+        foreach (var cat in _paletteCategories)
+        {
+            PaletteCategoryComboBox.Items.Add(new ComboBoxItem
+            {
+                Content = cat.Name,
+                Tag = cat.Id
+            });
+        }
+    }
+
+    private static List<PaletteCategory> GetHardcodedPaletteCategories()
+    {
+        return new List<PaletteCategory>
+        {
+            new() { Id = 0, Name = "Miscellaneous" },
+            new() { Id = 1, Name = "Armor" },
+            new() { Id = 2, Name = "Weapons" },
+            new() { Id = 3, Name = "Potions" },
+            new() { Id = 4, Name = "Other" },
+        };
+    }
+
+    private void SelectPaletteCategoryInComboBox(byte paletteId)
+    {
+        for (int i = 0; i < PaletteCategoryComboBox.Items.Count; i++)
+        {
+            if (PaletteCategoryComboBox.Items[i] is ComboBoxItem item && item.Tag is byte id && id == paletteId)
+            {
+                _isLoading = true;
+                PaletteCategoryComboBox.SelectedIndex = i;
+                _isLoading = false;
+                return;
+            }
+        }
+        // Not found — select first item if available
+        if (PaletteCategoryComboBox.Items.Count > 0)
+        {
+            _isLoading = true;
+            PaletteCategoryComboBox.SelectedIndex = 0;
+            _isLoading = false;
+        }
+    }
+
+    private void OnPaletteCategorySelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoading || _itemViewModel == null) return;
+        if (PaletteCategoryComboBox.SelectedItem is ComboBoxItem item && item.Tag is byte id)
+        {
+            _itemViewModel.PaletteID = id;
+        }
     }
 
     private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
@@ -199,21 +335,162 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             EmptyStatePanel.IsVisible = true;
             EditorContent.IsVisible = false;
+            ModelPartsPanel.IsVisible = false;
+            ColorsPanel.IsVisible = false;
+            ArmorPartsPanel.IsVisible = false;
+            _itemViewModel = null;
+            EditorContent.DataContext = null;
             return;
         }
 
         EmptyStatePanel.IsVisible = false;
         EditorContent.IsVisible = true;
 
-        // Display basic item info
-        var name = _currentItem.LocalizedName?.GetString() ?? "(unnamed)";
-        ItemNameDisplay.Text = name;
+        // Create ViewModel and bind
+        _itemViewModel = new ItemViewModel(_currentItem);
+        EditorContent.DataContext = _itemViewModel;
 
-        var baseItem = _currentItem.BaseItem;
-        var tag = _currentItem.Tag ?? "";
-        ItemInfoDisplay.Text = $"Base Item: {baseItem}  |  Tag: {tag}  |  Cost: {_currentItem.Cost}  |  Stack: {_currentItem.StackSize}";
+        // Wire up dirty tracking from ViewModel property changes
+        _itemViewModel.PropertyChanged += OnItemPropertyChanged;
+
+        // Select the correct base item type and palette category
+        SelectBaseItemInComboBox(_currentItem.BaseItem);
+        UpdateConditionalFields(_currentItem.BaseItem);
+        SelectPaletteCategoryInComboBox(_currentItem.PaletteID);
 
         FilePathText.Text = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : "";
+    }
+
+    private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (!_isLoading)
+        {
+            MarkDirty();
+        }
+    }
+
+    private void SelectBaseItemInComboBox(int baseItemIndex)
+    {
+        for (int i = 0; i < BaseItemComboBox.Items.Count; i++)
+        {
+            if (BaseItemComboBox.Items[i] is ComboBoxItem item && item.Tag is int index && index == baseItemIndex)
+            {
+                _isLoading = true;
+                BaseItemComboBox.SelectedIndex = i;
+                _isLoading = false;
+                return;
+            }
+        }
+
+        // Base item not in list — add an "Unknown" entry
+        var unknownItem = new ComboBoxItem
+        {
+            Content = $"Unknown ({baseItemIndex})",
+            Tag = baseItemIndex
+        };
+        BaseItemComboBox.Items.Add(unknownItem);
+        _isLoading = true;
+        BaseItemComboBox.SelectedItem = unknownItem;
+        _isLoading = false;
+    }
+
+    private void OnBaseItemSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoading || _itemViewModel == null) return;
+        if (BaseItemComboBox.SelectedItem is ComboBoxItem item && item.Tag is int index)
+        {
+            _itemViewModel.BaseItem = index;
+            UpdateConditionalFields(index);
+        }
+    }
+
+    private void UpdateConditionalFields(int baseItemIndex)
+    {
+        var typeInfo = _baseItemTypes?.FirstOrDefault(t => t.BaseItemIndex == baseItemIndex);
+
+        // Model Parts: show for types 0, 1, 2 (Simple, Layered, Composite)
+        bool showModelParts = typeInfo?.HasModelParts ?? false;
+        bool showMultipleParts = typeInfo?.HasMultipleModelParts ?? false;
+        ModelPartsPanel.IsVisible = showModelParts;
+        if (showModelParts)
+        {
+            // Parts 2 & 3 only for Composite (ModelType 2)
+            ModelPart2Label.IsVisible = showMultipleParts;
+            ModelPart2UpDown.IsVisible = showMultipleParts;
+            ModelPart3Label.IsVisible = showMultipleParts;
+            ModelPart3UpDown.IsVisible = showMultipleParts;
+        }
+
+        // Colors: show for Layered (1) and Armor (3)
+        ColorsPanel.IsVisible = typeInfo?.HasColorFields ?? false;
+
+        // Armor Parts: show for Armor (3) only
+        bool showArmorParts = typeInfo?.HasArmorParts ?? false;
+        ArmorPartsPanel.IsVisible = showArmorParts;
+        if (showArmorParts)
+        {
+            PopulateArmorPartsGrid();
+        }
+    }
+
+    private static readonly string[] ArmorPartNames = new[]
+    {
+        "Torso", "Belt", "Pelvis", "Neck", "Robe",
+        "LBicep", "RBicep", "LFArm", "RFArm",
+        "LHand", "RHand", "LShoul", "RShoul",
+        "LThigh", "RThigh", "LShin", "RShin",
+        "LFoot", "RFoot"
+    };
+
+    private void PopulateArmorPartsGrid()
+    {
+        if (_itemViewModel == null) return;
+
+        ArmorPartsGrid.Children.Clear();
+        ArmorPartsGrid.RowDefinitions.Clear();
+
+        // Layout: 2 columns of label+value pairs, ~10 rows
+        int row = 0;
+        for (int i = 0; i < ArmorPartNames.Length; i++)
+        {
+            var partName = ArmorPartNames[i];
+            int col = (i % 2 == 0) ? 0 : 3;
+            if (i % 2 == 0)
+            {
+                ArmorPartsGrid.RowDefinitions.Add(new RowDefinition(Avalonia.Controls.GridLength.Auto));
+            }
+
+            var label = new TextBlock
+            {
+                Text = partName,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 8, 8)
+            };
+            Grid.SetRow(label, row);
+            Grid.SetColumn(label, col);
+            ArmorPartsGrid.Children.Add(label);
+
+            var upDown = new NumericUpDown
+            {
+                Value = _itemViewModel.GetArmorPart(partName),
+                Minimum = 0,
+                Maximum = 255,
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+            var capturedPartName = partName;
+            upDown.ValueChanged += (_, args) =>
+            {
+                if (_isLoading || _itemViewModel == null) return;
+                _itemViewModel.SetArmorPart(capturedPartName, (byte)(args.NewValue ?? 0));
+            };
+            Grid.SetRow(upDown, row);
+            Grid.SetColumn(upDown, col + 1);
+            ArmorPartsGrid.Children.Add(upDown);
+
+            if (i % 2 == 1) row++;
+        }
+        // Handle odd count
+        if (ArmorPartNames.Length % 2 == 1) row++;
     }
 
     // --- Menu Handlers ---
@@ -270,8 +547,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             if (result == SavePromptResult.Save && !await SaveCurrentFileAsync()) return;
         }
 
+        // Unhook ViewModel events before clearing
+        if (_itemViewModel != null)
+        {
+            _itemViewModel.PropertyChanged -= OnItemPropertyChanged;
+        }
+
         _currentItem = null;
         _currentFilePath = null;
+        _itemViewModel = null;
         _documentState.ClearDirty();
         PopulateEditor();
         OnPropertyChanged(nameof(HasFile));
