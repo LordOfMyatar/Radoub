@@ -13,6 +13,7 @@ using Radoub.Formats.Uti;
 using Radoub.UI.Services;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -29,6 +30,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private IGameDataService? _gameDataService;
     private List<BaseItemTypeInfo>? _baseItemTypes;
     private List<PaletteCategory> _paletteCategories = new();
+    private ItemPropertyService? _itemPropertyService;
+    private PropertyTypeInfo? _selectedPropertyType;
 
     // Convenience accessors for document state
     private string? _currentFilePath
@@ -101,6 +104,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             if (_gameDataService.IsConfigured)
             {
                 LoadBaseItemTypes();
+                InitializePropertyServices();
                 UnifiedLogger.LogApplication(LogLevel.INFO, "Game data service initialized");
             }
             else
@@ -115,7 +119,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             LoadBaseItemTypes();
         }
 
+        InitializePropertySearchHandler();
         return Task.CompletedTask;
+    }
+
+    private void InitializePropertyServices()
+    {
+        if (_gameDataService == null) return;
+
+        _itemPropertyService = new ItemPropertyService(_gameDataService);
+        PopulateAvailableProperties();
     }
 
     private void LoadBaseItemTypes()
@@ -338,6 +351,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             ModelPartsPanel.IsVisible = false;
             ColorsPanel.IsVisible = false;
             ArmorPartsPanel.IsVisible = false;
+            PropertyConfigPanel.IsVisible = false;
+            AssignedPropertiesList.Items.Clear();
+            _selectedPropertyType = null;
+            AddPropertyButton.IsEnabled = false;
+            RemovePropertyButton.IsEnabled = false;
             _itemViewModel = null;
             EditorContent.DataContext = null;
             return;
@@ -357,6 +375,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         SelectBaseItemInComboBox(_currentItem.BaseItem);
         UpdateConditionalFields(_currentItem.BaseItem);
         SelectPaletteCategoryInComboBox(_currentItem.PaletteID);
+
+        // Populate assigned properties list
+        RefreshAssignedProperties();
 
         FilePathText.Text = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : "";
     }
@@ -706,6 +727,278 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         dialog.Content = panel;
         await dialog.ShowDialog(this);
+    }
+
+    // --- Item Properties UI ---
+
+    private void InitializePropertySearchHandler()
+    {
+        PropertySearchBox.TextChanged += OnPropertySearchTextChanged;
+    }
+
+    private void PopulateAvailableProperties(string? searchFilter = null)
+    {
+        AvailablePropertiesTree.Items.Clear();
+
+        if (_itemPropertyService == null)
+            return;
+
+        var types = string.IsNullOrWhiteSpace(searchFilter)
+            ? _itemPropertyService.GetAvailablePropertyTypes()
+            : _itemPropertyService.SearchProperties(searchFilter);
+
+        foreach (var type in types)
+        {
+            var node = new TreeViewItem
+            {
+                Header = type.DisplayName,
+                Tag = type
+            };
+
+            // Add subtypes as children if this property has them
+            if (type.HasSubtypes)
+            {
+                var subtypes = _itemPropertyService.GetSubtypes(type.PropertyIndex);
+                foreach (var subtype in subtypes)
+                {
+                    node.Items.Add(new TreeViewItem
+                    {
+                        Header = subtype.DisplayName,
+                        Tag = subtype
+                    });
+                }
+            }
+
+            AvailablePropertiesTree.Items.Add(node);
+        }
+    }
+
+    private void OnPropertySearchTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        var filter = PropertySearchBox.Text;
+        PopulateAvailableProperties(filter);
+    }
+
+    private void OnAvailablePropertySelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (AvailablePropertiesTree.SelectedItem is TreeViewItem selectedNode)
+        {
+            PropertyTypeInfo? propertyType = null;
+
+            if (selectedNode.Tag is PropertyTypeInfo type)
+            {
+                propertyType = type;
+            }
+            else if (selectedNode.Tag is TwoDAEntry && selectedNode.Parent is TreeViewItem parentNode && parentNode.Tag is PropertyTypeInfo parentType)
+            {
+                propertyType = parentType;
+                // Auto-select the subtype in dropdown
+            }
+
+            if (propertyType != null)
+            {
+                _selectedPropertyType = propertyType;
+                UpdatePropertyConfigPanel(propertyType);
+                AddPropertyButton.IsEnabled = _currentItem != null;
+
+                // If a subtype child node was selected, pre-select it in the dropdown
+                if (selectedNode.Tag is TwoDAEntry subtypeEntry && SubtypeComboBox.IsVisible)
+                {
+                    for (int i = 0; i < SubtypeComboBox.Items.Count; i++)
+                    {
+                        if (SubtypeComboBox.Items[i] is ComboBoxItem item && item.Tag is int idx && idx == subtypeEntry.Index)
+                        {
+                            SubtypeComboBox.SelectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            _selectedPropertyType = null;
+            PropertyConfigPanel.IsVisible = false;
+            AddPropertyButton.IsEnabled = false;
+        }
+    }
+
+    private void UpdatePropertyConfigPanel(PropertyTypeInfo propertyType)
+    {
+        PropertyConfigPanel.IsVisible = true;
+        SelectedPropertyName.Text = propertyType.DisplayName;
+
+        // Subtypes
+        bool hasSubtypes = propertyType.HasSubtypes;
+        SubtypeLabel.IsVisible = hasSubtypes;
+        SubtypeComboBox.IsVisible = hasSubtypes;
+        SubtypeComboBox.Items.Clear();
+        if (hasSubtypes && _itemPropertyService != null)
+        {
+            var subtypes = _itemPropertyService.GetSubtypes(propertyType.PropertyIndex);
+            foreach (var sub in subtypes)
+            {
+                SubtypeComboBox.Items.Add(new ComboBoxItem
+                {
+                    Content = sub.DisplayName,
+                    Tag = sub.Index
+                });
+            }
+            if (SubtypeComboBox.Items.Count > 0)
+                SubtypeComboBox.SelectedIndex = 0;
+        }
+
+        // Cost values
+        bool hasCost = propertyType.HasCostTable;
+        CostValueLabel.IsVisible = hasCost;
+        CostValueComboBox.IsVisible = hasCost;
+        CostValueComboBox.Items.Clear();
+        if (hasCost && _itemPropertyService != null)
+        {
+            var costValues = _itemPropertyService.GetCostValues(propertyType.PropertyIndex);
+            foreach (var cost in costValues)
+            {
+                CostValueComboBox.Items.Add(new ComboBoxItem
+                {
+                    Content = cost.DisplayName,
+                    Tag = cost.Index
+                });
+            }
+            if (CostValueComboBox.Items.Count > 0)
+                CostValueComboBox.SelectedIndex = 0;
+        }
+
+        // Param values
+        bool hasParam = propertyType.HasParamTable;
+        ParamValueLabel.IsVisible = hasParam;
+        ParamValueComboBox.IsVisible = hasParam;
+        ParamValueComboBox.Items.Clear();
+        if (hasParam && _itemPropertyService != null)
+        {
+            var paramValues = _itemPropertyService.GetParamValues(propertyType.PropertyIndex);
+            foreach (var param in paramValues)
+            {
+                ParamValueComboBox.Items.Add(new ComboBoxItem
+                {
+                    Content = param.DisplayName,
+                    Tag = param.Index
+                });
+            }
+            if (ParamValueComboBox.Items.Count > 0)
+                ParamValueComboBox.SelectedIndex = 0;
+        }
+    }
+
+    private void OnAddPropertyClick(object? sender, RoutedEventArgs e)
+    {
+        if (_currentItem == null || _itemPropertyService == null || _selectedPropertyType == null)
+            return;
+
+        int subtypeIndex = 0;
+        if (SubtypeComboBox.IsVisible && SubtypeComboBox.SelectedItem is ComboBoxItem subItem && subItem.Tag is int subIdx)
+            subtypeIndex = subIdx;
+
+        int costValueIndex = 0;
+        if (CostValueComboBox.IsVisible && CostValueComboBox.SelectedItem is ComboBoxItem costItem && costItem.Tag is int costIdx)
+            costValueIndex = costIdx;
+
+        int? paramValueIndex = null;
+        if (ParamValueComboBox.IsVisible && ParamValueComboBox.SelectedItem is ComboBoxItem paramItem && paramItem.Tag is int paramIdx)
+            paramValueIndex = paramIdx;
+
+        var property = _itemPropertyService.CreateItemProperty(
+            _selectedPropertyType.PropertyIndex,
+            subtypeIndex,
+            costValueIndex,
+            paramValueIndex);
+
+        _currentItem.Properties.Add(property);
+        RefreshAssignedProperties();
+        MarkDirty();
+
+        UpdateStatus($"Added property: {_selectedPropertyType.DisplayName}");
+    }
+
+    private void OnRemovePropertyClick(object? sender, RoutedEventArgs e)
+    {
+        if (_currentItem == null || AssignedPropertiesList.SelectedIndex < 0)
+            return;
+
+        var index = AssignedPropertiesList.SelectedIndex;
+        if (index < _currentItem.Properties.Count)
+        {
+            _currentItem.Properties.RemoveAt(index);
+            RefreshAssignedProperties();
+            MarkDirty();
+            UpdateStatus("Property removed");
+        }
+    }
+
+    private void OnAssignedPropertySelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        RemovePropertyButton.IsEnabled = AssignedPropertiesList.SelectedIndex >= 0;
+    }
+
+    private void RefreshAssignedProperties()
+    {
+        AssignedPropertiesList.Items.Clear();
+
+        if (_currentItem == null)
+            return;
+
+        foreach (var prop in _currentItem.Properties)
+        {
+            var displayText = ResolvePropertyDisplayText(prop);
+            AssignedPropertiesList.Items.Add(new ListBoxItem
+            {
+                Content = displayText,
+                Tag = prop
+            });
+        }
+
+        RemovePropertyButton.IsEnabled = false;
+    }
+
+    private string ResolvePropertyDisplayText(ItemProperty prop)
+    {
+        if (_itemPropertyService == null)
+            return $"Property {prop.PropertyName} (Sub:{prop.Subtype} Cost:{prop.CostValue})";
+
+        // Build display from service data
+        var types = _itemPropertyService.GetAvailablePropertyTypes();
+        var type = types.FirstOrDefault(t => t.PropertyIndex == prop.PropertyName);
+        var name = type?.DisplayName ?? $"Property {prop.PropertyName}";
+
+        var parts = new List<string> { name };
+
+        // Resolve subtype
+        if (type?.HasSubtypes == true)
+        {
+            var subtypes = _itemPropertyService.GetSubtypes(prop.PropertyName);
+            var subtype = subtypes.FirstOrDefault(s => s.Index == prop.Subtype);
+            if (subtype != null)
+                parts.Add(subtype.DisplayName);
+        }
+
+        // Resolve cost value
+        if (type?.HasCostTable == true)
+        {
+            var costValues = _itemPropertyService.GetCostValues(prop.PropertyName);
+            var cost = costValues.FirstOrDefault(c => c.Index == prop.CostValue);
+            if (cost != null)
+                parts.Add(cost.DisplayName);
+        }
+
+        // Resolve param value
+        if (type?.HasParamTable == true && prop.Param1 != 0xFF)
+        {
+            var paramValues = _itemPropertyService.GetParamValues(prop.PropertyName);
+            var param = paramValues.FirstOrDefault(p => p.Index == prop.Param1Value);
+            if (param != null)
+                parts.Add(param.DisplayName);
+        }
+
+        return string.Join(" ", parts);
     }
 
     // --- Recent Files ---

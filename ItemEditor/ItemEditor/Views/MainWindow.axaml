@@ -364,6 +364,104 @@
                                 </Grid>
                             </StackPanel>
 
+                            <Separator/>
+
+                            <!-- Item Properties Editor -->
+                            <TextBlock Text="Item Properties" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+
+                            <Grid ColumnDefinitions="*,Auto,*" RowDefinitions="Auto,*" MinHeight="300" Margin="0,0,0,8">
+                                <!-- Left: Available Properties -->
+                                <Border Grid.Column="0" Grid.RowSpan="2"
+                                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        Padding="8">
+                                    <DockPanel>
+                                        <TextBlock DockPanel.Dock="Top" Text="Available Properties"
+                                                   FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                        <TextBox DockPanel.Dock="Top" x:Name="PropertySearchBox"
+                                                 Watermark="Search properties..."
+                                                 Margin="0,0,0,4"/>
+                                        <TreeView x:Name="AvailablePropertiesTree"
+                                                  SelectionChanged="OnAvailablePropertySelectionChanged"/>
+                                    </DockPanel>
+                                </Border>
+
+                                <!-- Center: Add/Remove buttons -->
+                                <StackPanel Grid.Column="1" Grid.RowSpan="2"
+                                            VerticalAlignment="Center"
+                                            Margin="8,0">
+                                    <Button x:Name="AddPropertyButton"
+                                            Content="Add &gt;"
+                                            Click="OnAddPropertyClick"
+                                            Width="80"
+                                            HorizontalContentAlignment="Center"
+                                            Margin="0,0,0,8"
+                                            IsEnabled="False"/>
+                                    <Button x:Name="RemovePropertyButton"
+                                            Content="&lt; Remove"
+                                            Click="OnRemovePropertyClick"
+                                            Width="80"
+                                            HorizontalContentAlignment="Center"
+                                            IsEnabled="False"/>
+                                </StackPanel>
+
+                                <!-- Right: Assigned Properties -->
+                                <Border Grid.Column="2" Grid.RowSpan="2"
+                                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        Padding="8">
+                                    <DockPanel>
+                                        <TextBlock DockPanel.Dock="Top" Text="Assigned Properties"
+                                                   FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                        <ListBox x:Name="AssignedPropertiesList"
+                                                 SelectionChanged="OnAssignedPropertySelectionChanged"/>
+                                    </DockPanel>
+                                </Border>
+                            </Grid>
+
+                            <!-- Cascading Dropdowns for property configuration -->
+                            <Border x:Name="PropertyConfigPanel" IsVisible="False"
+                                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Padding="8"
+                                    Margin="0,0,0,8">
+                                <Grid ColumnDefinitions="100,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                                    <Grid.Styles>
+                                        <Style Selector="TextBlock.config-label">
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="Margin" Value="0,0,8,8"/>
+                                        </Style>
+                                    </Grid.Styles>
+
+                                    <!-- Selected property type name -->
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Property" Classes="config-label"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" x:Name="SelectedPropertyName"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center" Margin="0,0,0,8"/>
+
+                                    <!-- Subtype dropdown -->
+                                    <TextBlock Grid.Row="1" Grid.Column="0" x:Name="SubtypeLabel"
+                                               Text="Subtype" Classes="config-label"/>
+                                    <ComboBox Grid.Row="1" Grid.Column="1" x:Name="SubtypeComboBox"
+                                              HorizontalAlignment="Stretch" Margin="0,0,0,8"/>
+
+                                    <!-- Cost Value dropdown -->
+                                    <TextBlock Grid.Row="2" Grid.Column="0" x:Name="CostValueLabel"
+                                               Text="Value" Classes="config-label"/>
+                                    <ComboBox Grid.Row="2" Grid.Column="1" x:Name="CostValueComboBox"
+                                              HorizontalAlignment="Stretch" Margin="0,0,0,8"/>
+
+                                    <!-- Param Value dropdown -->
+                                    <TextBlock Grid.Row="3" Grid.Column="0" x:Name="ParamValueLabel"
+                                               Text="Parameter" Classes="config-label"/>
+                                    <ComboBox Grid.Row="3" Grid.Column="1" x:Name="ParamValueComboBox"
+                                              HorizontalAlignment="Stretch" Margin="0,0,0,8"/>
+                                </Grid>
+                            </Border>
+
                         </StackPanel>
                     </ScrollViewer>
                 </Panel>
