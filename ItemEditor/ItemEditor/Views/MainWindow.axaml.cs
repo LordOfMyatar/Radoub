@@ -357,6 +357,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             EmptyStatePanel.IsVisible = true;
             EditorContent.IsVisible = false;
+            AppearanceExpander.IsVisible = false;
             ModelPartsPanel.IsVisible = false;
             ColorsPanel.IsVisible = false;
             ArmorPartsPanel.IsVisible = false;
@@ -446,9 +447,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Item Type Description from 2DA (read-only)
         BaseItemDescriptionText.Text = typeInfo?.DescriptionText ?? string.Empty;
 
-        // Model Parts: show for types 0, 1, 2 (Simple, Layered, Composite)
+        // Appearance section: show if any sub-section is visible
         bool showModelParts = typeInfo?.HasModelParts ?? false;
         bool showMultipleParts = typeInfo?.HasMultipleModelParts ?? false;
+        bool showColors = typeInfo?.HasColorFields ?? false;
+        bool showArmorParts = typeInfo?.HasArmorParts ?? false;
+
+        AppearanceExpander.IsVisible = showModelParts || showColors || showArmorParts;
+
+        // Model Parts: show for types 0, 1, 2 (Simple, Layered, Composite)
         ModelPartsPanel.IsVisible = showModelParts;
         if (showModelParts)
         {
@@ -460,10 +467,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         // Colors: show for Layered (1) and Armor (3)
-        ColorsPanel.IsVisible = typeInfo?.HasColorFields ?? false;
+        ColorsPanel.IsVisible = showColors;
 
         // Armor Parts: show for Armor (3) only
-        bool showArmorParts = typeInfo?.HasArmorParts ?? false;
         ArmorPartsPanel.IsVisible = showArmorParts;
         if (showArmorParts)
         {
