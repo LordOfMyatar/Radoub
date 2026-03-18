@@ -257,6 +257,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             EmptyStatePanel.IsVisible = true;
             EditorContent.IsVisible = false;
+            ModelPartsPanel.IsVisible = false;
+            ColorsPanel.IsVisible = false;
+            ArmorPartsPanel.IsVisible = false;
             _itemViewModel = null;
             EditorContent.DataContext = null;
             return;
@@ -274,6 +277,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Select the correct base item type in the combo box
         SelectBaseItemInComboBox(_currentItem.BaseItem);
+        UpdateConditionalFields(_currentItem.BaseItem);
 
         FilePathText.Text = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : "";
     }
@@ -317,7 +321,97 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (BaseItemComboBox.SelectedItem is ComboBoxItem item && item.Tag is int index)
         {
             _itemViewModel.BaseItem = index;
+            UpdateConditionalFields(index);
         }
+    }
+
+    private void UpdateConditionalFields(int baseItemIndex)
+    {
+        var typeInfo = _baseItemTypes?.FirstOrDefault(t => t.BaseItemIndex == baseItemIndex);
+
+        // Model Parts: show for types 0, 1, 2 (Simple, Layered, Composite)
+        bool showModelParts = typeInfo?.HasModelParts ?? false;
+        bool showMultipleParts = typeInfo?.HasMultipleModelParts ?? false;
+        ModelPartsPanel.IsVisible = showModelParts;
+        if (showModelParts)
+        {
+            // Parts 2 & 3 only for Composite (ModelType 2)
+            ModelPart2Label.IsVisible = showMultipleParts;
+            ModelPart2UpDown.IsVisible = showMultipleParts;
+            ModelPart3Label.IsVisible = showMultipleParts;
+            ModelPart3UpDown.IsVisible = showMultipleParts;
+        }
+
+        // Colors: show for Layered (1) and Armor (3)
+        ColorsPanel.IsVisible = typeInfo?.HasColorFields ?? false;
+
+        // Armor Parts: show for Armor (3) only
+        bool showArmorParts = typeInfo?.HasArmorParts ?? false;
+        ArmorPartsPanel.IsVisible = showArmorParts;
+        if (showArmorParts)
+        {
+            PopulateArmorPartsGrid();
+        }
+    }
+
+    private static readonly string[] ArmorPartNames = new[]
+    {
+        "Torso", "Belt", "Pelvis", "Neck", "Robe",
+        "LBicep", "RBicep", "LFArm", "RFArm",
+        "LHand", "RHand", "LShoul", "RShoul",
+        "LThigh", "RThigh", "LShin", "RShin",
+        "LFoot", "RFoot"
+    };
+
+    private void PopulateArmorPartsGrid()
+    {
+        if (_itemViewModel == null) return;
+
+        ArmorPartsGrid.Children.Clear();
+        ArmorPartsGrid.RowDefinitions.Clear();
+
+        // Layout: 2 columns of label+value pairs, ~10 rows
+        int row = 0;
+        for (int i = 0; i < ArmorPartNames.Length; i++)
+        {
+            var partName = ArmorPartNames[i];
+            int col = (i % 2 == 0) ? 0 : 3;
+            if (i % 2 == 0)
+            {
+                ArmorPartsGrid.RowDefinitions.Add(new RowDefinition(Avalonia.Controls.GridLength.Auto));
+            }
+
+            var label = new TextBlock
+            {
+                Text = partName,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 8, 8)
+            };
+            Grid.SetRow(label, row);
+            Grid.SetColumn(label, col);
+            ArmorPartsGrid.Children.Add(label);
+
+            var upDown = new NumericUpDown
+            {
+                Value = _itemViewModel.GetArmorPart(partName),
+                Minimum = 0,
+                Maximum = 255,
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+            var capturedPartName = partName;
+            upDown.ValueChanged += (_, args) =>
+            {
+                if (_isLoading || _itemViewModel == null) return;
+                _itemViewModel.SetArmorPart(capturedPartName, (byte)(args.NewValue ?? 0));
+            };
+            Grid.SetRow(upDown, row);
+            Grid.SetColumn(upDown, col + 1);
+            ArmorPartsGrid.Children.Add(upDown);
+
+            if (i % 2 == 1) row++;
+        }
+        // Handle odd count
+        if (ArmorPartNames.Length % 2 == 1) row++;
     }
 
     // --- Menu Handlers ---

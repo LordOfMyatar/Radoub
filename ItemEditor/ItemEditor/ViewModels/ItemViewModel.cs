@@ -164,6 +164,122 @@ public class ItemViewModel : INotifyPropertyChanged
         }
     }
 
+    // --- Model Part Properties (conditional on ModelType) ---
+
+    public byte ModelPart1
+    {
+        get => _uti.ModelPart1;
+        set
+        {
+            if (_uti.ModelPart1 == value) return;
+            _uti.ModelPart1 = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public byte ModelPart2
+    {
+        get => _uti.ModelPart2;
+        set
+        {
+            if (_uti.ModelPart2 == value) return;
+            _uti.ModelPart2 = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public byte ModelPart3
+    {
+        get => _uti.ModelPart3;
+        set
+        {
+            if (_uti.ModelPart3 == value) return;
+            _uti.ModelPart3 = value;
+            OnPropertyChanged();
+        }
+    }
+
+    // --- Color Properties (conditional on ModelType 1 or 3) ---
+
+    public byte Cloth1Color
+    {
+        get => _uti.Cloth1Color;
+        set
+        {
+            if (_uti.Cloth1Color == value) return;
+            _uti.Cloth1Color = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public byte Cloth2Color
+    {
+        get => _uti.Cloth2Color;
+        set
+        {
+            if (_uti.Cloth2Color == value) return;
+            _uti.Cloth2Color = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public byte Leather1Color
+    {
+        get => _uti.Leather1Color;
+        set
+        {
+            if (_uti.Leather1Color == value) return;
+            _uti.Leather1Color = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public byte Leather2Color
+    {
+        get => _uti.Leather2Color;
+        set
+        {
+            if (_uti.Leather2Color == value) return;
+            _uti.Leather2Color = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public byte Metal1Color
+    {
+        get => _uti.Metal1Color;
+        set
+        {
+            if (_uti.Metal1Color == value) return;
+            _uti.Metal1Color = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public byte Metal2Color
+    {
+        get => _uti.Metal2Color;
+        set
+        {
+            if (_uti.Metal2Color == value) return;
+            _uti.Metal2Color = value;
+            OnPropertyChanged();
+        }
+    }
+
+    // --- Armor Part Accessors ---
+
+    public byte GetArmorPart(string partName)
+    {
+        return _uti.ArmorParts.TryGetValue(partName, out var value) ? value : (byte)0;
+    }
+
+    public void SetArmorPart(string partName, byte value)
+    {
+        _uti.ArmorParts[partName] = value;
+        OnPropertyChanged($"ArmorPart_{partName}");
+    }
+
     protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
