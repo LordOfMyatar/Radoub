@@ -15,11 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint 2: Basic Field Editing (#1706)
 
-- [ ] #1707 — Basic properties panel (name, tag, ResRef, base type, cost, weight)
-- [ ] #1708 — Flags, charges, and stack size editing
-- [ ] #1709 — Conditional fields (armor/weapon) based on base item type
-- [ ] #1710 — Palette category dropdown
-- [ ] #1711 — Round-trip unit tests for basic editing
+- [x] #1707 — Basic properties panel (name, tag, ResRef, base type, cost, weight)
+- [x] #1708 — Flags, charges, and stack size editing
+- [x] #1709 — Conditional fields (armor/weapon) based on base item type
+- [x] #1710 — Palette category dropdown
+- [x] #1711 — Round-trip unit tests for basic editing
 
 ---
 
