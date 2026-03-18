@@ -31,6 +31,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private List<BaseItemTypeInfo>? _baseItemTypes;
     private List<PaletteCategory> _paletteCategories = new();
     private ItemPropertyService? _itemPropertyService;
+    private ItemStatisticsService? _itemStatisticsService;
     private PropertyTypeInfo? _selectedPropertyType;
     private int _editingPropertyIndex = -1; // -1 = add mode, >= 0 = editing that index
 
@@ -129,6 +130,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (_gameDataService == null) return;
 
         _itemPropertyService = new ItemPropertyService(_gameDataService);
+        _itemStatisticsService = new ItemStatisticsService(_itemPropertyService);
         PopulateAvailableProperties();
     }
 
@@ -360,6 +362,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             EditPropertyButton.IsEnabled = false;
             RemovePropertyButton.IsEnabled = false;
             ClearAllPropertiesButton.IsEnabled = false;
+            ItemStatisticsPanel.IsVisible = false;
             _itemViewModel = null;
             EditorContent.DataContext = null;
             return;
@@ -1081,6 +1084,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         RemovePropertyButton.IsEnabled = false;
         EditPropertyButton.IsEnabled = false;
         ClearAllPropertiesButton.IsEnabled = _currentItem.Properties.Count > 0;
+
+        RefreshStatistics();
     }
 
     private string ResolvePropertyDisplayText(ItemProperty prop)
@@ -1123,6 +1128,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         return string.Join(" ", parts);
+    }
+
+    private void RefreshStatistics()
+    {
+        if (_currentItem == null || _itemStatisticsService == null)
+        {
+            ItemStatisticsPanel.IsVisible = false;
+            return;
+        }
+
+        var stats = _itemStatisticsService.GenerateStatistics(_currentItem.Properties);
+        ItemStatisticsText.Text = stats;
+        ItemStatisticsPanel.IsVisible = true;
     }
 
     // --- Recent Files ---

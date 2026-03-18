@@ -494,6 +494,19 @@
                                 </Grid>
                             </Border>
 
+                            <!-- Item Statistics -->
+                            <StackPanel x:Name="ItemStatisticsPanel" IsVisible="False">
+                                <TextBlock Text="Item Statistics" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <TextBox x:Name="ItemStatisticsText"
+                                         IsReadOnly="True"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         MinHeight="60"
+                                         MaxHeight="200"
+                                         Watermark="No properties assigned"
+                                         Margin="0,0,0,8"/>
+                            </StackPanel>
+
                         </StackPanel>
                     </ScrollViewer>
                 </Panel>
