@@ -34,15 +34,22 @@ ItemEditor/
 │   ├── app.manifest
 │   ├── Services/
 │   │   ├── CommandLineService.cs
-│   │   └── SettingsService.cs
+│   │   ├── SettingsService.cs
+│   │   ├── BaseItemTypeService.cs
+│   │   └── ItemPropertyService.cs
 │   ├── Views/
 │   │   └── MainWindow.axaml(.cs)
 │   ├── ViewModels/
+│   │   └── ItemViewModel.cs
 │   └── Assets/
 └── ItemEditor.Tests/
     ├── ItemEditor.Tests.csproj
     ├── CommandLineServiceTests.cs
-    └── SettingsServiceTests.cs
+    ├── SettingsServiceTests.cs
+    └── ViewModels/
+        ├── ItemViewModelTests.cs
+        ├── ItemViewModelConditionalTests.cs
+        └── ItemEditingRoundTripTests.cs
 ```
 
 ---
@@ -69,7 +76,20 @@ UTI files are GFF-based item blueprints. The parser/writer is in `Radoub.Formats
 
 ### Item Properties
 - `PropertiesList` - List of enchantments/abilities
-- Each property: Type, SubType, CostTable, CostValue, Param1, Param1Value
+- Each property: PropertyName, Subtype, CostTable, CostValue, Param1, Param1Value
+
+### Item Property 2DA Cascade
+```
+PropertyName (ushort) → index into itempropdef.2da
+  ├─ SubTypeResRef → iprp_[subtype].2da[Subtype]
+  ├─ CostTableResRef → iprp_costtable.2da[CostTable] → iprp_[cost].2da[CostValue]
+  └─ Param1ResRef → iprp_paramtable.2da[Param1] → iprp_[param].2da[Param1Value]
+```
+
+Key classes in Radoub.Formats:
+- `ItemProperty` (UtiFile.cs) — raw property data struct
+- `ItemPropertyResolver` — resolves indices to human-readable strings via 2DA/TLK
+- `IGameDataService` — interface for 2DA/TLK access (Get2DA, GetString)
 
 ### Appearance
 - `ModelPart1/2/3` - Model part indices

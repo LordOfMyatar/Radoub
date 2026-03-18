@@ -1,0 +1,328 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Radoub.Formats.Logging;
+using Radoub.Formats.Services;
+using Radoub.Formats.TwoDA;
+using Radoub.Formats.Uti;
+
+namespace ItemEditor.Services;
+
+/// <summary>
+/// Drives the item property editor UI by walking the itempropdef.2da cascade chain.
+/// Provides available property types, subtypes, cost values, and param values
+/// for building the add/edit property workflow.
+/// </summary>
+public class ItemPropertyService
+{
+    private readonly IGameDataService _gameDataService;
+    private List<PropertyTypeInfo>? _cachedPropertyTypes;
+
+    public ItemPropertyService(IGameDataService gameDataService)
+    {
+        _gameDataService = gameDataService ?? throw new ArgumentNullException(nameof(gameDataService));
+    }
+
+    /// <summary>
+    /// Get all available property types from itempropdef.2da, sorted by display name.
+    /// </summary>
+    public List<PropertyTypeInfo> GetAvailablePropertyTypes()
+    {
+        if (_cachedPropertyTypes != null)
+            return _cachedPropertyTypes;
+
+        _cachedPropertyTypes = new List<PropertyTypeInfo>();
+
+        if (!_gameDataService.IsConfigured)
+            return _cachedPropertyTypes;
+
+        var propDef = _gameDataService.Get2DA("itempropdef");
+        if (propDef == null)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, "Could not load itempropdef.2da");
+            return _cachedPropertyTypes;
+        }
+
+        for (int i = 0; i < propDef.RowCount; i++)
+        {
+            var label = propDef.GetValue(i, "Label");
+            if (string.IsNullOrEmpty(label) || label == "****")
+                continue;
+
+            var gameStrRef = propDef.GetValue(i, "GameStrRef");
+            var nameStrRef = propDef.GetValue(i, "Name");
+            var displayName = _gameDataService.GetString(gameStrRef)
+                              ?? _gameDataService.GetString(nameStrRef)
+                              ?? label;
+
+            var subtypeResRef = propDef.GetValue(i, "SubTypeResRef");
+            var costTableResRef = propDef.GetValue(i, "CostTableResRef");
+            var param1ResRef = propDef.GetValue(i, "Param1ResRef");
+
+            _cachedPropertyTypes.Add(new PropertyTypeInfo(
+                propertyIndex: i,
+                displayName: displayName,
+                label: label,
+                subtypeResRef: IsValid(subtypeResRef) ? subtypeResRef! : null,
+                costTableIndex: ParseIntOrNull(costTableResRef),
+                paramTableIndex: ParseIntOrNull(param1ResRef)));
+        }
+
+        _cachedPropertyTypes = _cachedPropertyTypes.OrderBy(t => t.DisplayName).ToList();
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {_cachedPropertyTypes.Count} property types from itempropdef.2da");
+        return _cachedPropertyTypes;
+    }
+
+    /// <summary>
+    /// Get subtypes for a property type (e.g., ability types for Ability Bonus).
+    /// </summary>
+    public List<TwoDAEntry> GetSubtypes(int propertyIndex)
+    {
+        var subtypeResRef = GetSubtypeResRef(propertyIndex);
+        if (subtypeResRef == null)
+            return new List<TwoDAEntry>();
+
+        return LoadTwoDAEntries(subtypeResRef);
+    }
+
+    /// <summary>
+    /// Get cost values for a property type by resolving through iprp_costtable.2da.
+    /// </summary>
+    public List<TwoDAEntry> GetCostValues(int propertyIndex)
+    {
+        var costTableIndex = GetCostTableIndex(propertyIndex);
+        if (costTableIndex == null)
+            return new List<TwoDAEntry>();
+
+        var costTable = _gameDataService.Get2DA("iprp_costtable");
+        if (costTable == null)
+            return new List<TwoDAEntry>();
+
+        var costResRef = costTable.GetValue(costTableIndex.Value, "Name");
+        if (!IsValid(costResRef))
+            return new List<TwoDAEntry>();
+
+        return LoadTwoDAEntries(costResRef!);
+    }
+
+    /// <summary>
+    /// Get param values for a property type by resolving through iprp_paramtable.2da.
+    /// </summary>
+    public List<TwoDAEntry> GetParamValues(int propertyIndex)
+    {
+        var paramTableIndex = GetParamTableIndex(propertyIndex);
+        if (paramTableIndex == null)
+            return new List<TwoDAEntry>();
+
+        var paramTable = _gameDataService.Get2DA("iprp_paramtable");
+        if (paramTable == null)
+            return new List<TwoDAEntry>();
+
+        var paramResRef = paramTable.GetValue(paramTableIndex.Value, "TableResRef");
+        if (!IsValid(paramResRef))
+            return new List<TwoDAEntry>();
+
+        return LoadTwoDAEntries(paramResRef!);
+    }
+
+    /// <summary>
+    /// Check if a property type has subtypes.
+    /// </summary>
+    public bool HasSubtypes(int propertyIndex) => GetSubtypeResRef(propertyIndex) != null;
+
+    /// <summary>
+    /// Check if a property type has a cost table.
+    /// </summary>
+    public bool HasCostTable(int propertyIndex) => GetCostTableIndex(propertyIndex) != null;
+
+    /// <summary>
+    /// Check if a property type has a param table.
+    /// </summary>
+    public bool HasParamTable(int propertyIndex) => GetParamTableIndex(propertyIndex) != null;
+
+    /// <summary>
+    /// Search property types by name or subtype name. Case-insensitive.
+    /// </summary>
+    public List<PropertyTypeInfo> SearchProperties(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            return GetAvailablePropertyTypes();
+
+        var types = GetAvailablePropertyTypes();
+        var results = new List<PropertyTypeInfo>();
+
+        foreach (var type in types)
+        {
+            if (type.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase))
+            {
+                results.Add(type);
+                continue;
+            }
+
+            // Search subtypes
+            if (type.SubtypeResRef != null)
+            {
+                var subtypes = GetSubtypes(type.PropertyIndex);
+                if (subtypes.Any(s => s.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase)))
+                {
+                    results.Add(type);
+                }
+            }
+        }
+
+        return results;
+    }
+
+    /// <summary>
+    /// Create an ItemProperty with correct indices from user selections.
+    /// </summary>
+    public ItemProperty CreateItemProperty(int propertyIndex, int subtypeIndex, int costValueIndex, int? paramValueIndex)
+    {
+        var prop = new ItemProperty
+        {
+            PropertyName = (ushort)propertyIndex,
+            Subtype = (ushort)subtypeIndex,
+            CostValue = (ushort)costValueIndex,
+            ChanceAppear = 100
+        };
+
+        // Set CostTable from itempropdef
+        var costTableIndex = GetCostTableIndex(propertyIndex);
+        prop.CostTable = costTableIndex.HasValue ? (byte)costTableIndex.Value : (byte)0;
+
+        // Set Param1 from itempropdef
+        var paramTableIndex = GetParamTableIndex(propertyIndex);
+        if (paramTableIndex.HasValue && paramValueIndex.HasValue)
+        {
+            prop.Param1 = (byte)paramTableIndex.Value;
+            prop.Param1Value = (byte)paramValueIndex.Value;
+        }
+        else
+        {
+            prop.Param1 = 0xFF;
+            prop.Param1Value = 0;
+        }
+
+        return prop;
+    }
+
+    #region Private helpers
+
+    private string? GetSubtypeResRef(int propertyIndex)
+    {
+        var propDef = _gameDataService.Get2DA("itempropdef");
+        if (propDef == null || propertyIndex >= propDef.RowCount)
+            return null;
+
+        var value = propDef.GetValue(propertyIndex, "SubTypeResRef");
+        return IsValid(value) ? value : null;
+    }
+
+    private int? GetCostTableIndex(int propertyIndex)
+    {
+        var propDef = _gameDataService.Get2DA("itempropdef");
+        if (propDef == null || propertyIndex >= propDef.RowCount)
+            return null;
+
+        var value = propDef.GetValue(propertyIndex, "CostTableResRef");
+        return ParseIntOrNull(value);
+    }
+
+    private int? GetParamTableIndex(int propertyIndex)
+    {
+        var propDef = _gameDataService.Get2DA("itempropdef");
+        if (propDef == null || propertyIndex >= propDef.RowCount)
+            return null;
+
+        var value = propDef.GetValue(propertyIndex, "Param1ResRef");
+        return ParseIntOrNull(value);
+    }
+
+    private List<TwoDAEntry> LoadTwoDAEntries(string twoDAName)
+    {
+        var twoDA = _gameDataService.Get2DA(twoDAName);
+        if (twoDA == null)
+            return new List<TwoDAEntry>();
+
+        var entries = new List<TwoDAEntry>();
+        for (int i = 0; i < twoDA.RowCount; i++)
+        {
+            var nameStrRef = twoDA.GetValue(i, "Name");
+            if (!IsValid(nameStrRef))
+                continue;
+
+            var displayName = _gameDataService.GetString(nameStrRef);
+            if (string.IsNullOrEmpty(displayName))
+            {
+                // Fallback to Label column
+                var label = twoDA.GetValue(i, "Label");
+                if (IsValid(label))
+                    displayName = label;
+                else
+                    continue;
+            }
+
+            entries.Add(new TwoDAEntry(i, displayName!));
+        }
+
+        return entries;
+    }
+
+    private static bool IsValid(string? value) => !string.IsNullOrEmpty(value) && value != "****";
+
+    private static int? ParseIntOrNull(string? value)
+    {
+        if (!IsValid(value))
+            return null;
+        return int.TryParse(value, out int result) ? result : null;
+    }
+
+    #endregion
+}
+
+/// <summary>
+/// Represents a property type from itempropdef.2da.
+/// </summary>
+public class PropertyTypeInfo
+{
+    public int PropertyIndex { get; }
+    public string DisplayName { get; }
+    public string Label { get; }
+    public string? SubtypeResRef { get; }
+    public int? CostTableIndex { get; }
+    public int? ParamTableIndex { get; }
+
+    public bool HasSubtypes => SubtypeResRef != null;
+    public bool HasCostTable => CostTableIndex != null;
+    public bool HasParamTable => ParamTableIndex != null;
+
+    public PropertyTypeInfo(int propertyIndex, string displayName, string label,
+        string? subtypeResRef, int? costTableIndex, int? paramTableIndex)
+    {
+        PropertyIndex = propertyIndex;
+        DisplayName = displayName;
+        Label = label;
+        SubtypeResRef = subtypeResRef;
+        CostTableIndex = costTableIndex;
+        ParamTableIndex = paramTableIndex;
+    }
+
+    public override string ToString() => DisplayName;
+}
+
+/// <summary>
+/// A single entry from a 2DA table (subtype, cost value, or param value).
+/// </summary>
+public class TwoDAEntry
+{
+    public int Index { get; }
+    public string DisplayName { get; }
+
+    public TwoDAEntry(int index, string displayName)
+    {
+        Index = index;
+        DisplayName = displayName;
+    }
+
+    public override string ToString() => DisplayName;
+}
