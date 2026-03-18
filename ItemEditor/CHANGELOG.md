@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.3.0-alpha] - 2026-03-17
-**Branch**: `itemeditor/issue-1712` | **PR**: #TBD
+**Branch**: `itemeditor/issue-1712` | **PR**: #1775
 
 ### Sprint 3: Item Property Display and Add/Remove (#1712)
 
