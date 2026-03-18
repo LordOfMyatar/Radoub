@@ -277,6 +277,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             // Always update title — ClearDirty only fires when transitioning from dirty
             Title = _documentState.GetTitle();
 
+            // Sync ResRef from filename (Aurora Engine requires they match)
+            var fileResRef = Path.GetFileNameWithoutExtension(filePath).ToLowerInvariant();
+            if (_currentItem.TemplateResRef != fileResRef)
+            {
+                _currentItem.TemplateResRef = fileResRef;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Synced ResRef to filename: {fileResRef}");
+            }
+
             PopulateEditor();
             OnPropertyChanged(nameof(HasFile));
             AddRecentFile(filePath);
@@ -305,7 +313,31 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         try
         {
+            // Validate variables before save
+            var varError = ValidateVariables();
+            if (varError != null && varError.Contains("Duplicate"))
+            {
+                await ShowErrorAsync(varError);
+                return false;
+            }
+            if (varError != null)
+            {
+                // Warn about empty names but allow save
+                UnifiedLogger.LogApplication(LogLevel.WARN, varError);
+            }
+
             UpdateStatus("Saving...");
+
+            // Sync ResRef to match filename (Aurora Engine requires they match)
+            var saveResRef = Path.GetFileNameWithoutExtension(_currentFilePath).ToLowerInvariant();
+            _currentItem.TemplateResRef = saveResRef;
+            if (_itemViewModel != null)
+            {
+                _isLoading = true;
+                _itemViewModel.ResRef = saveResRef;
+                _isLoading = false;
+            }
+
             UpdateVarTable();
             UtiWriter.Write(_currentItem, _currentFilePath);
             _documentState.ClearDirty();
@@ -1328,7 +1360,41 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         _currentItem.VarTable.Clear();
         foreach (var vm in _variables)
-            _currentItem.VarTable.Add(vm.ToVariable());
+        {
+            // Skip variables with empty names
+            if (!string.IsNullOrWhiteSpace(vm.Name))
+                _currentItem.VarTable.Add(vm.ToVariable());
+        }
+    }
+
+    /// <summary>
+    /// Validate local variables before save. Returns error message or null if valid.
+    /// </summary>
+    private string? ValidateVariables()
+    {
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var emptyCount = 0;
+
+        foreach (var vm in _variables)
+        {
+            if (string.IsNullOrWhiteSpace(vm.Name))
+            {
+                emptyCount++;
+                continue;
+            }
+
+            if (!names.Add(vm.Name))
+            {
+                return $"Duplicate variable name: \"{vm.Name}\". Each variable must have a unique name.";
+            }
+        }
+
+        if (emptyCount > 0)
+        {
+            return $"{emptyCount} variable(s) have no name and will be removed on save.";
+        }
+
+        return null;
     }
 
     private void OnAddVariable(object? sender, RoutedEventArgs e)

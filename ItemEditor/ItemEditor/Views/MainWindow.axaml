@@ -166,13 +166,16 @@
                                          MaxLength="32"
                                          Watermark="Item tag (max 32 chars)"/>
 
-                                <!-- ResRef -->
+                                <!-- ResRef (synced from filename, read-only) -->
                                 <TextBlock Grid.Row="2" Grid.Column="0" Text="ResRef" Classes="label"/>
                                 <TextBox Grid.Row="2" Grid.Column="1"
                                          x:Name="ResRefTextBox"
-                                         Text="{Binding ResRef, Mode=TwoWay}"
+                                         Text="{Binding ResRef, Mode=OneWay}"
+                                         IsReadOnly="True"
                                          MaxLength="16"
-                                         Watermark="Resource reference (max 16 chars)"/>
+                                         Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                         ToolTip.Tip="Resource reference (auto-set from filename). Use Save As to change."
+                                         Watermark="(set from filename)"/>
 
                                 <!-- Base Item Type -->
                                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Base Type" Classes="label"/>
@@ -221,40 +224,37 @@
                                          Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                             </Grid>
 
-                            <!-- Descriptions -->
-                            <Expander Header="Descriptions" IsExpanded="True" Margin="0,0,0,8">
-                                <StackPanel Spacing="8" Margin="0,4,0,0">
-                                    <!-- Unidentified Description -->
-                                    <TextBlock Text="Unidentified Description" FontWeight="SemiBold" Margin="0,0,0,2"/>
-                                    <TextBlock Text="Shown to players before the item is identified"
-                                               FontSize="11"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                               Margin="0,0,0,4"/>
-                                    <controls:SpellCheckTextBox
-                                        x:Name="DescriptionTextBox"
-                                        Text="{Binding Description, Mode=TwoWay}"
-                                        AcceptsReturn="True"
-                                        TextWrapping="Wrap"
-                                        MinHeight="60"
-                                        MaxHeight="200"
-                                        Watermark="Unidentified description (visible before Lore check)"/>
+                            <!-- Unidentified Description -->
+                            <TextBlock Text="Unidentified Description" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,2"/>
+                            <TextBlock Text="Shown to players before the item is identified"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       Margin="0,0,0,4"/>
+                            <controls:SpellCheckTextBox
+                                x:Name="DescriptionTextBox"
+                                Text="{Binding Description, Mode=TwoWay}"
+                                AcceptsReturn="True"
+                                TextWrapping="Wrap"
+                                MinHeight="60"
+                                MaxHeight="200"
+                                Watermark="Unidentified description (visible before Lore check)"
+                                Margin="0,0,0,8"/>
 
-                                    <!-- Identified Description -->
-                                    <TextBlock Text="Identified Description" FontWeight="SemiBold" Margin="0,8,0,2"/>
-                                    <TextBlock Text="Shown to players after the item is identified"
-                                               FontSize="11"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                               Margin="0,0,0,4"/>
-                                    <controls:SpellCheckTextBox
-                                        x:Name="DescIdentifiedTextBox"
-                                        Text="{Binding DescIdentified, Mode=TwoWay}"
-                                        AcceptsReturn="True"
-                                        TextWrapping="Wrap"
-                                        MinHeight="60"
-                                        MaxHeight="200"
-                                        Watermark="Identified description (visible after Lore check)"/>
-                                </StackPanel>
-                            </Expander>
+                            <!-- Identified Description -->
+                            <TextBlock Text="Identified Description" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,2"/>
+                            <TextBlock Text="Shown to players after the item is identified"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       Margin="0,0,0,4"/>
+                            <controls:SpellCheckTextBox
+                                x:Name="DescIdentifiedTextBox"
+                                Text="{Binding DescIdentified, Mode=TwoWay}"
+                                AcceptsReturn="True"
+                                TextWrapping="Wrap"
+                                MinHeight="60"
+                                MaxHeight="200"
+                                Watermark="Identified description (visible after Lore check)"
+                                Margin="0,0,0,8"/>
 
                             <Separator/>
 

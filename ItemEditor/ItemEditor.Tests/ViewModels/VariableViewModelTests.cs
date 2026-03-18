@@ -151,6 +151,34 @@ public class VariableViewModelTests
     }
 
     [Fact]
+    public void ToVariable_EmptyName_StillCreatesVariable()
+    {
+        // Validation happens at the UI layer, not the ViewModel
+        var vm = new VariableViewModel
+        {
+            Name = "",
+            Type = VariableType.Int,
+            IntValue = 0
+        };
+
+        var variable = vm.ToVariable();
+        Assert.Equal("", variable.Name);
+    }
+
+    [Fact]
+    public void FromVariable_AndBackToVariable_PreservesData()
+    {
+        var original = Variable.CreateFloat("fMultiplier", 1.234f);
+
+        var vm = VariableViewModel.FromVariable(original);
+        var result = vm.ToVariable();
+
+        Assert.Equal(original.Name, result.Name);
+        Assert.Equal(original.Type, result.Type);
+        Assert.Equal(original.GetFloat(), result.GetFloat(), 0.001f);
+    }
+
+    [Fact]
     public void TypeChange_RaisesMultiplePropertyChanged()
     {
         var vm = new VariableViewModel { Type = VariableType.Int };
