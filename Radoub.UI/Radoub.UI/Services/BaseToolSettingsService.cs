@@ -347,15 +347,15 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
                     _loggingSettings.LogRetentionSessions = settings.LogRetentionSessions;
                     _loggingSettings.LogLevel = settings.LogLevel;
                     _loggingSettings.Normalize();
+                    _loggingSettings.ApplyToLogger();
 
-                    // If shared logging is enabled, use RadoubSettings log level
-                    // instead of the tool's local setting (#1699)
+                    // If shared logging is enabled, apply RadoubSettings log level
+                    // to the logger without changing the persisted setting (#1699)
                     var shared = RadoubSettings.Instance;
                     if (shared.UseSharedLogging)
                     {
-                        _loggingSettings.LogLevel = shared.SharedLogLevel;
+                        UnifiedLogger.SetLogLevel(shared.SharedLogLevel);
                     }
-                    _loggingSettings.ApplyToLogger();
 
                     // Load recent files
                     _recentFiles = PathHelper.ExpandPaths(settings.RecentFiles ?? new List<string>()).ToList();
