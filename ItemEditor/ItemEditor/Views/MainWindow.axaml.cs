@@ -443,6 +443,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         var typeInfo = _baseItemTypes?.FirstOrDefault(t => t.BaseItemIndex == baseItemIndex);
 
+        // Item Type Description from 2DA (read-only)
+        BaseItemDescriptionText.Text = typeInfo?.DescriptionText ?? string.Empty;
+
         // Model Parts: show for types 0, 1, 2 (Simple, Layered, Composite)
         bool showModelParts = typeInfo?.HasModelParts ?? false;
         bool showMultipleParts = typeInfo?.HasMultipleModelParts ?? false;

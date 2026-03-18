@@ -200,23 +200,25 @@
                                                    Watermark="Additional cost"/>
                                 </Grid>
 
-                                <!-- Comment -->
-                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Comment" Classes="label"/>
-                                <TextBox Grid.Row="5" Grid.Column="1"
-                                         x:Name="CommentTextBox"
-                                         Text="{Binding Comment, Mode=TwoWay}"
-                                         Watermark="Designer comment (not visible in-game)"
-                                         AcceptsReturn="True"
-                                         Height="60"
-                                         TextWrapping="Wrap"/>
-
                                 <!-- Palette Category -->
-                                <TextBlock Grid.Row="6" Grid.Column="0" Text="Category" Classes="label"/>
-                                <ComboBox Grid.Row="6" Grid.Column="1"
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Category" Classes="label"/>
+                                <ComboBox Grid.Row="5" Grid.Column="1"
                                           x:Name="PaletteCategoryComboBox"
                                           HorizontalAlignment="Stretch"
                                           Margin="0,0,0,8"
                                           SelectionChanged="OnPaletteCategorySelectionChanged"/>
+
+                                <!-- Item Type Description (read-only from 2DA) -->
+                                <TextBlock Grid.Row="6" Grid.Column="0" Text="Type Info" Classes="label"/>
+                                <TextBox Grid.Row="6" Grid.Column="1"
+                                         x:Name="BaseItemDescriptionText"
+                                         IsReadOnly="True"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         MinHeight="40"
+                                         MaxHeight="120"
+                                         Watermark="(no description available)"
+                                         Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                             </Grid>
 
                             <!-- Descriptions -->
