@@ -193,6 +193,24 @@ public class ItemEditingRoundTripTests
     }
 
     [Fact]
+    public void RoundTrip_EditIdentifiedAndDropableFlags_Preserved()
+    {
+        var uti = CreateBaseItem();
+        var vm = new ItemViewModel(uti);
+
+        vm.Identified = true;
+        vm.Dropable = false;
+        vm.Plot = true;
+        vm.Cursed = true;
+
+        var result = WriteAndReadBack(uti);
+        Assert.True(result.Identified);
+        Assert.False(result.Dropable);
+        Assert.True(result.Plot);
+        Assert.True(result.Cursed);
+    }
+
+    [Fact]
     public void RoundTrip_MultipleEdits_AllPreserved()
     {
         var uti = CreateBaseItem();

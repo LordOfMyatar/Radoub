@@ -144,6 +144,47 @@ public class ItemStatisticsServiceTests
     }
 
     [Fact]
+    public void GenerateStatistics_AfterPropertyRemoved_UpdatesOutput()
+    {
+        var mock = CreateMock();
+        var propService = new ItemPropertyService(mock);
+        var statsService = new ItemStatisticsService(propService);
+
+        var props = new List<ItemProperty>
+        {
+            propService.CreateItemProperty(6, 0, 2, null),  // Enhancement +2
+            propService.CreateItemProperty(0, 0, 3, null),  // Ability STR +3
+        };
+
+        var before = statsService.GenerateStatistics(props);
+        Assert.Equal(2, before.Split(Environment.NewLine).Length);
+
+        props.RemoveAt(0); // Remove Enhancement
+        var after = statsService.GenerateStatistics(props);
+
+        Assert.Equal("Ability Bonus Strength +3", after);
+    }
+
+    [Fact]
+    public void GenerateStatistics_AfterPropertyEdited_ReflectsNewValue()
+    {
+        var mock = CreateMock();
+        var propService = new ItemPropertyService(mock);
+        var statsService = new ItemStatisticsService(propService);
+
+        var props = new List<ItemProperty>
+        {
+            propService.CreateItemProperty(6, 0, 1, null),  // Enhancement +1
+        };
+
+        Assert.Equal("Enhancement Bonus +1", statsService.GenerateStatistics(props));
+
+        // Edit to +3
+        props[0] = propService.CreateItemProperty(6, 0, 3, null);
+        Assert.Equal("Enhancement Bonus +3", statsService.GenerateStatistics(props));
+    }
+
+    [Fact]
     public void GenerateStatistics_UnknownProperty_ShowsIndex()
     {
         var mock = CreateMock();
