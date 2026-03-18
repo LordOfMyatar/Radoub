@@ -153,7 +153,7 @@
 
                                 <!-- Name -->
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" Classes="label"/>
-                                <TextBox Grid.Row="0" Grid.Column="1"
+                                <controls:SpellCheckTextBox Grid.Row="0" Grid.Column="1"
                                          x:Name="NameTextBox"
                                          Text="{Binding Name, Mode=TwoWay}"
                                          Watermark="Item name"/>
@@ -218,6 +218,41 @@
                                           Margin="0,0,0,8"
                                           SelectionChanged="OnPaletteCategorySelectionChanged"/>
                             </Grid>
+
+                            <!-- Descriptions -->
+                            <Expander Header="Descriptions" IsExpanded="True" Margin="0,0,0,8">
+                                <StackPanel Spacing="8" Margin="0,4,0,0">
+                                    <!-- Unidentified Description -->
+                                    <TextBlock Text="Unidentified Description" FontWeight="SemiBold" Margin="0,0,0,2"/>
+                                    <TextBlock Text="Shown to players before the item is identified"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               Margin="0,0,0,4"/>
+                                    <controls:SpellCheckTextBox
+                                        x:Name="DescriptionTextBox"
+                                        Text="{Binding Description, Mode=TwoWay}"
+                                        AcceptsReturn="True"
+                                        TextWrapping="Wrap"
+                                        MinHeight="60"
+                                        MaxHeight="200"
+                                        Watermark="Unidentified description (visible before Lore check)"/>
+
+                                    <!-- Identified Description -->
+                                    <TextBlock Text="Identified Description" FontWeight="SemiBold" Margin="0,8,0,2"/>
+                                    <TextBlock Text="Shown to players after the item is identified"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               Margin="0,0,0,4"/>
+                                    <controls:SpellCheckTextBox
+                                        x:Name="DescIdentifiedTextBox"
+                                        Text="{Binding DescIdentified, Mode=TwoWay}"
+                                        AcceptsReturn="True"
+                                        TextWrapping="Wrap"
+                                        MinHeight="60"
+                                        MaxHeight="200"
+                                        Watermark="Identified description (visible after Lore check)"/>
+                                </StackPanel>
+                            </Expander>
 
                             <Separator/>
 

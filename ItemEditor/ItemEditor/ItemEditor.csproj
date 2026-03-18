@@ -50,6 +50,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Radoub.Dictionary\Radoub.Dictionary\Radoub.Dictionary.csproj" />
     <ProjectReference Include="..\..\Radoub.Formats\Radoub.Formats\Radoub.Formats.csproj" />
     <ProjectReference Include="..\..\Radoub.UI\Radoub.UI\Radoub.UI.csproj" />
   </ItemGroup>

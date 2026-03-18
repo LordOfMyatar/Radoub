@@ -1,5 +1,8 @@
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Radoub.Formats.Gff;
 using Radoub.Formats.Uti;
 
 namespace ItemEditor.ViewModels;
@@ -28,6 +31,32 @@ public class ItemViewModel : INotifyPropertyChanged
             if (current == value) return;
             _uti.LocalizedName ??= new Radoub.Formats.Gff.CExoLocString();
             _uti.LocalizedName.SetString(0, value);
+            OnPropertyChanged();
+        }
+    }
+
+    public string Description
+    {
+        get => _uti.Description?.GetDefault() ?? string.Empty;
+        set
+        {
+            var current = _uti.Description?.GetDefault() ?? string.Empty;
+            if (current == value) return;
+            _uti.Description ??= new CExoLocString();
+            _uti.Description.SetString(0, value);
+            OnPropertyChanged();
+        }
+    }
+
+    public string DescIdentified
+    {
+        get => _uti.DescIdentified?.GetDefault() ?? string.Empty;
+        set
+        {
+            var current = _uti.DescIdentified?.GetDefault() ?? string.Empty;
+            if (current == value) return;
+            _uti.DescIdentified ??= new CExoLocString();
+            _uti.DescIdentified.SetString(0, value);
             OnPropertyChanged();
         }
     }

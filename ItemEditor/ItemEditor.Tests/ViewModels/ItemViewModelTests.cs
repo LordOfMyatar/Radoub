@@ -242,6 +242,98 @@ public class ItemViewModelTests
         Assert.False(vm.Identified);
     }
 
+    [Fact]
+    public void Constructor_LoadsDescription()
+    {
+        var uti = CreateTestItem();
+        uti.Description.SetString(0, "An unidentified blade.");
+
+        var vm = new ItemViewModel(uti);
+
+        Assert.Equal("An unidentified blade.", vm.Description);
+    }
+
+    [Fact]
+    public void Constructor_LoadsDescIdentified()
+    {
+        var uti = CreateTestItem();
+        uti.DescIdentified.SetString(0, "A magical longsword.");
+
+        var vm = new ItemViewModel(uti);
+
+        Assert.Equal("A magical longsword.", vm.DescIdentified);
+    }
+
+    [Fact]
+    public void SetDescription_UpdatesUtiFile()
+    {
+        var uti = CreateTestItem();
+        var vm = new ItemViewModel(uti);
+
+        vm.Description = "New unidentified description";
+
+        Assert.Equal("New unidentified description", uti.Description.GetDefault());
+    }
+
+    [Fact]
+    public void SetDescIdentified_UpdatesUtiFile()
+    {
+        var uti = CreateTestItem();
+        var vm = new ItemViewModel(uti);
+
+        vm.DescIdentified = "New identified description";
+
+        Assert.Equal("New identified description", uti.DescIdentified.GetDefault());
+    }
+
+    [Fact]
+    public void SetDescription_RaisesPropertyChanged()
+    {
+        var uti = CreateTestItem();
+        var vm = new ItemViewModel(uti);
+        string? changedProperty = null;
+        vm.PropertyChanged += (_, e) => changedProperty = e.PropertyName;
+
+        vm.Description = "Changed";
+
+        Assert.Equal(nameof(ItemViewModel.Description), changedProperty);
+    }
+
+    [Fact]
+    public void SetDescIdentified_RaisesPropertyChanged()
+    {
+        var uti = CreateTestItem();
+        var vm = new ItemViewModel(uti);
+        string? changedProperty = null;
+        vm.PropertyChanged += (_, e) => changedProperty = e.PropertyName;
+
+        vm.DescIdentified = "Changed";
+
+        Assert.Equal(nameof(ItemViewModel.DescIdentified), changedProperty);
+    }
+
+    [Fact]
+    public void Constructor_WithNullDescription_ReturnsEmpty()
+    {
+        var uti = new UtiFile();
+        var vm = new ItemViewModel(uti);
+
+        Assert.Equal(string.Empty, vm.Description);
+        Assert.Equal(string.Empty, vm.DescIdentified);
+    }
+
+    [Fact]
+    public void SetDescription_WhenNull_CreatesLocString()
+    {
+        var uti = new UtiFile();
+        var vm = new ItemViewModel(uti);
+
+        vm.Description = "Test description";
+
+        Assert.False(uti.Description.IsEmpty);
+        Assert.Equal("Test description", uti.Description.GetDefault());
+    }
+
     #region Test Helpers
 
     private static UtiFile CreateTestItem()

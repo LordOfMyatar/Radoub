@@ -89,6 +89,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Initialize game data service for base item type resolution
         await InitializeGameDataAsync();
 
+        // Initialize spell-check service (fire-and-forget)
+        _ = Radoub.UI.Services.SpellCheckService.Instance.InitializeAsync();
+
         // Handle startup file from command line
         var options = CommandLineService.Options;
         if (!string.IsNullOrEmpty(options.FilePath) && File.Exists(options.FilePath))

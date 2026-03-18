@@ -108,6 +108,9 @@ public static class UtiWriter
         // Properties list
         AddPropertiesList(root, uti.Properties);
 
+        // Local variables
+        VarTableHelper.WriteVarTable(root, uti.VarTable);
+
         return root;
     }
 
