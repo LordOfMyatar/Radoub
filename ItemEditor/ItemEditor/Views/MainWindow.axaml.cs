@@ -6,6 +6,7 @@ using Avalonia.Platform.Storage;
 using ItemEditor.Services;
 using ItemEditor.ViewModels;
 using Radoub.Formats.Common;
+using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
@@ -35,6 +36,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private PropertyTypeInfo? _selectedPropertyType;
     private int _editingPropertyIndex = -1; // -1 = add mode, >= 0 = editing that index
     private readonly HashSet<int> _checkedPropertyIndices = new();
+    private readonly ObservableCollection<VariableViewModel> _variables = new();
 
     // Convenience accessors for document state
     private string? _currentFilePath
@@ -304,6 +306,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         try
         {
             UpdateStatus("Saving...");
+            UpdateVarTable();
             UtiWriter.Write(_currentItem, _currentFilePath);
             _documentState.ClearDirty();
 
@@ -393,6 +396,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Populate assigned properties list
         RefreshAssignedProperties();
+
+        // Populate local variables
+        PopulateVariables();
 
         FilePathText.Text = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : "";
     }
@@ -1285,6 +1291,83 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             settings.WindowLeft = Position.X;
             settings.WindowTop = Position.Y;
         }
+    }
+
+    // --- Local Variables ---
+
+    private void PopulateVariables()
+    {
+        VariablesGrid.ItemsSource = null;
+
+        foreach (var vm in _variables)
+            vm.PropertyChanged -= OnVariablePropertyChanged;
+
+        _variables.Clear();
+
+        if (_currentItem == null) return;
+
+        foreach (var variable in _currentItem.VarTable)
+        {
+            var vm = VariableViewModel.FromVariable(variable);
+            vm.PropertyChanged += OnVariablePropertyChanged;
+            _variables.Add(vm);
+        }
+
+        VariablesGrid.ItemsSource = _variables;
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {_variables.Count} local variables");
+    }
+
+    private void OnVariablePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (!_isLoading) MarkDirty();
+    }
+
+    private void UpdateVarTable()
+    {
+        if (_currentItem == null) return;
+
+        _currentItem.VarTable.Clear();
+        foreach (var vm in _variables)
+            _currentItem.VarTable.Add(vm.ToVariable());
+    }
+
+    private void OnAddVariable(object? sender, RoutedEventArgs e)
+    {
+        if (_currentItem == null) return;
+
+        var newVar = new VariableViewModel
+        {
+            Name = string.Empty,
+            Type = VariableType.Int,
+            IntValue = 0
+        };
+
+        newVar.PropertyChanged += OnVariablePropertyChanged;
+        _variables.Add(newVar);
+        VariablesGrid.SelectedItem = newVar;
+
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            VariablesGrid.ScrollIntoView(newVar, VariablesGrid.Columns[0]);
+            VariablesGrid.BeginEdit();
+        }, Avalonia.Threading.DispatcherPriority.Background);
+
+        MarkDirty();
+    }
+
+    private void OnRemoveVariable(object? sender, RoutedEventArgs e)
+    {
+        var selectedItems = VariablesGrid.SelectedItems?.Cast<VariableViewModel>().ToList();
+        if (selectedItems == null || selectedItems.Count == 0) return;
+
+        foreach (var item in selectedItems)
+        {
+            item.PropertyChanged -= OnVariablePropertyChanged;
+            _variables.Remove(item);
+        }
+
+        MarkDirty();
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed {selectedItems.Count} variable(s)");
     }
 }
 
