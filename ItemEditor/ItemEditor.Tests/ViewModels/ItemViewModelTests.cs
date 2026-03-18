@@ -202,6 +202,46 @@ public class ItemViewModelTests
         Assert.Equal("New Item", uti.LocalizedName.GetDefault());
     }
 
+    [Fact]
+    public void SetIdentified_UpdatesUtiFile()
+    {
+        var uti = CreateTestItem();
+        var vm = new ItemViewModel(uti);
+
+        vm.Identified = true;
+
+        Assert.True(uti.Identified);
+    }
+
+    [Fact]
+    public void SetDropable_UpdatesUtiFile()
+    {
+        var uti = CreateTestItem();
+        var vm = new ItemViewModel(uti);
+
+        vm.Dropable = false;
+
+        Assert.False(uti.Dropable);
+    }
+
+    [Fact]
+    public void Dropable_DefaultsToTrue()
+    {
+        var uti = new UtiFile();
+        var vm = new ItemViewModel(uti);
+
+        Assert.True(vm.Dropable);
+    }
+
+    [Fact]
+    public void Identified_DefaultsToFalse()
+    {
+        var uti = new UtiFile();
+        var vm = new ItemViewModel(uti);
+
+        Assert.False(vm.Identified);
+    }
+
     #region Test Helpers
 
     private static UtiFile CreateTestItem()

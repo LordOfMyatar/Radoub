@@ -232,6 +232,41 @@ public class ItemEditingRoundTripTests
     }
 
     [Fact]
+    public void RoundTrip_EditIdentified_Preserved()
+    {
+        var uti = CreateBaseItem();
+        var vm = new ItemViewModel(uti);
+
+        vm.Identified = true;
+
+        var result = WriteAndReadBack(uti);
+        Assert.True(result.Identified);
+    }
+
+    [Fact]
+    public void RoundTrip_EditDropable_Preserved()
+    {
+        var uti = CreateBaseItem();
+        var vm = new ItemViewModel(uti);
+
+        vm.Dropable = false;
+
+        var result = WriteAndReadBack(uti);
+        Assert.False(result.Dropable);
+    }
+
+    [Fact]
+    public void RoundTrip_DropableDefaultTrue_Preserved()
+    {
+        var uti = CreateBaseItem();
+        // Dropable defaults to true — verify it round-trips
+        Assert.True(uti.Dropable);
+
+        var result = WriteAndReadBack(uti);
+        Assert.True(result.Dropable);
+    }
+
+    [Fact]
     public void RoundTrip_ClearName_PreservesEmptyState()
     {
         var uti = CreateBaseItem();

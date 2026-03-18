@@ -242,6 +242,14 @@
                                               Content="Stolen"
                                               IsChecked="{Binding Stolen, Mode=TwoWay}"
                                               ToolTip.Tip="Marked as stolen"/>
+                                    <CheckBox x:Name="IdentifiedCheckBox"
+                                              Content="Identified"
+                                              IsChecked="{Binding Identified, Mode=TwoWay}"
+                                              ToolTip.Tip="Already identified (no lore check needed)"/>
+                                    <CheckBox x:Name="DropableCheckBox"
+                                              Content="Droppable"
+                                              IsChecked="{Binding Dropable, Mode=TwoWay}"
+                                              ToolTip.Tip="Item can be dropped from inventory"/>
                                 </StackPanel>
 
                                 <!-- Stack Size -->

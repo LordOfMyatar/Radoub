@@ -142,6 +142,28 @@ public class ItemViewModel : INotifyPropertyChanged
         }
     }
 
+    public bool Identified
+    {
+        get => _uti.Identified;
+        set
+        {
+            if (_uti.Identified == value) return;
+            _uti.Identified = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool Dropable
+    {
+        get => _uti.Dropable;
+        set
+        {
+            if (_uti.Dropable == value) return;
+            _uti.Dropable = value;
+            OnPropertyChanged();
+        }
+    }
+
     public string Comment
     {
         get => _uti.Comment;

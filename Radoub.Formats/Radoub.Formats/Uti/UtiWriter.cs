@@ -64,6 +64,8 @@ public static class UtiWriter
         AddByteField(root, "Cursed", (byte)(uti.Cursed ? 1 : 0));
         AddByteField(root, "Plot", (byte)(uti.Plot ? 1 : 0));
         AddByteField(root, "Stolen", (byte)(uti.Stolen ? 1 : 0));
+        AddByteField(root, "Identified", (byte)(uti.Identified ? 1 : 0));
+        AddByteField(root, "Dropable", (byte)(uti.Dropable ? 1 : 0));
 
         // Localized strings
         AddLocStringField(root, "LocalizedName", uti.LocalizedName);

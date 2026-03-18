@@ -66,6 +66,8 @@ public static class UtiReader
             Cursed = root.GetFieldValue<byte>("Cursed", 0) != 0,
             Plot = root.GetFieldValue<byte>("Plot", 0) != 0,
             Stolen = root.GetFieldValue<byte>("Stolen", 0) != 0,
+            Identified = root.GetFieldValue<byte>("Identified", 0) != 0,
+            Dropable = root.GetFieldValue<byte>("Dropable", 1) != 0,
 
             // Blueprint fields (Table 2.2)
             Comment = root.GetFieldValue<string>("Comment", string.Empty),
