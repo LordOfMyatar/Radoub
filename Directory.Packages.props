@@ -21,21 +21,21 @@
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.0" />
 
     <!-- Serialization -->
-    <PackageVersion Include="System.Text.Json" Version="10.0.3" />
+    <PackageVersion Include="System.Text.Json" Version="10.0.5" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
 
     <!-- DI / Logging -->
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.5" />
 
     <!-- Audio -->
-    <PackageVersion Include="NAudio" Version="2.2.1" />
+    <PackageVersion Include="NAudio" Version="2.3.0" />
     <PackageVersion Include="System.Speech" Version="9.0.0" />
 
     <!-- Graphics / Rendering -->
     <PackageVersion Include="Pfim" Version="0.11.4" />
     <PackageVersion Include="Silk.NET.OpenGL" Version="2.22.0" />
-    <PackageVersion Include="Svg.Controls.Skia.Avalonia" Version="11.3.9.3" />
+    <PackageVersion Include="Svg.Controls.Skia.Avalonia" Version="11.3.9.4" />
 
     <!-- Spell-checking -->
     <PackageVersion Include="WeCantSpell.Hunspell" Version="7.0.1" />
