@@ -195,7 +195,8 @@ public partial class MainWindow
             }
         }
 
-        _documentState.MarkDirty();
+        if (!_documentState.IsLoading)
+            _documentState.MarkDirty();
     }
 
     private void OnSelectAllTypes(object? sender, RoutedEventArgs e)
@@ -220,7 +221,8 @@ public partial class MainWindow
 
     private void OnItemTypeCheckChanged(object? sender, RoutedEventArgs e)
     {
-        _documentState.MarkDirty();
+        if (!_documentState.IsLoading)
+            _documentState.MarkDirty();
     }
 
     private void UpdateBuyRestrictions()

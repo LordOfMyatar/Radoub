@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.15.4-alpha] - 2026-03-17
+**Branch**: `radoub/issue-1767` | **PR**: #1770
+
+### Sprint: Cross-Tool & Trebuchet Bug Sweep (#1767)
+
+- [x] #1511 - Token preview not displaying correctly — added explicit Foreground brush, re-render on expander open
+
+---
+
 ## [0.15.3-alpha] - 2026-02-27
 **Branch**: `radoub/issue-1555` | **PR**: #1559
 

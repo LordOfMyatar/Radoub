@@ -65,6 +65,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Handle command line file on startup
         Opened += OnWindowOpened;
 
+        // Re-render token preview when expander opens (#1511)
+        TokenPreviewExpander.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == Expander.IsExpandedProperty)
+                OnTokenPreviewExpanded(null, null!);
+        };
+
         UnifiedLogger.LogApplication(LogLevel.INFO, "Manifest MainWindow initialized");
     }
 

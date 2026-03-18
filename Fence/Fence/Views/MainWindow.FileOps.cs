@@ -113,12 +113,17 @@ public partial class MainWindow
             PopulateModuleItems();
 
             // Load inventory async to avoid blocking UI during item resolution
-            _ = PopulateStoreInventoryAsync(filePath);
-
-            // End loading state and ensure dirty flag is clean
-            _documentState.IsLoading = false;
-            _documentState.ClearDirty();
-            UpdateTitle();
+            // Keep IsLoading true until inventory is fully populated to prevent
+            // collection change events from marking the document dirty (#1743)
+            _ = PopulateStoreInventoryAsync(filePath).ContinueWith(_ =>
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    _documentState.IsLoading = false;
+                    _documentState.ClearDirty();
+                    UpdateTitle();
+                });
+            });
         }
         catch (Exception ex)
         {

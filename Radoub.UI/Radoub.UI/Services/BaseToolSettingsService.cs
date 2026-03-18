@@ -349,6 +349,14 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
                     _loggingSettings.Normalize();
                     _loggingSettings.ApplyToLogger();
 
+                    // If shared logging is enabled, apply RadoubSettings log level
+                    // to the logger without changing the persisted setting (#1699)
+                    var shared = RadoubSettings.Instance;
+                    if (shared.UseSharedLogging)
+                    {
+                        UnifiedLogger.SetLogLevel(shared.SharedLogLevel);
+                    }
+
                     // Load recent files
                     _recentFiles = PathHelper.ExpandPaths(settings.RecentFiles ?? new List<string>()).ToList();
                     _maxRecentFiles = settings.MaxRecentFiles > 0 && settings.MaxRecentFiles <= 20

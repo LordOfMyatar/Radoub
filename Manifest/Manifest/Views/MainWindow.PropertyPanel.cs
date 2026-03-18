@@ -495,6 +495,19 @@ public partial class MainWindow
         }
     }
 
+    /// <summary>
+    /// Re-render token preview when the expander is opened, since Inlines populated
+    /// while collapsed may not layout correctly in Avalonia (#1511).
+    /// </summary>
+    private void OnTokenPreviewExpanded(object? sender, RoutedEventArgs e)
+    {
+        if (TokenPreviewExpander.IsExpanded)
+        {
+            EntryTokenPreview.InvalidateMeasure();
+            EntryTokenPreview.InvalidateVisual();
+        }
+    }
+
     private void UpdateTokenPreview()
     {
         // Load user color config BEFORE setting text
