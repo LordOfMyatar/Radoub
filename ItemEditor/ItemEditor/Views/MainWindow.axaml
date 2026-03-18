@@ -134,10 +134,141 @@
 
                     <!-- Editor content (shown when file is loaded) -->
                     <ScrollViewer x:Name="EditorContent" IsVisible="False">
-                        <StackPanel Margin="16">
-                            <TextBlock x:Name="ItemNameDisplay" FontSize="20" FontWeight="Bold" Margin="0,0,0,8"/>
-                            <TextBlock x:Name="ItemInfoDisplay"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        <StackPanel Margin="16" Spacing="16">
+
+                            <!-- Basic Properties -->
+                            <TextBlock Text="Basic Properties" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+
+                            <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+                                  Margin="0,0,0,8">
+                                <Grid.Styles>
+                                    <Style Selector="TextBlock.label">
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="Margin" Value="0,0,8,8"/>
+                                    </Style>
+                                    <Style Selector="TextBox">
+                                        <Setter Property="Margin" Value="0,0,0,8"/>
+                                    </Style>
+                                </Grid.Styles>
+
+                                <!-- Name -->
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" Classes="label"/>
+                                <TextBox Grid.Row="0" Grid.Column="1"
+                                         x:Name="NameTextBox"
+                                         Text="{Binding Name, Mode=TwoWay}"
+                                         Watermark="Item name"/>
+
+                                <!-- Tag -->
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Tag" Classes="label"/>
+                                <TextBox Grid.Row="1" Grid.Column="1"
+                                         x:Name="TagTextBox"
+                                         Text="{Binding Tag, Mode=TwoWay}"
+                                         MaxLength="32"
+                                         Watermark="Item tag (max 32 chars)"/>
+
+                                <!-- ResRef -->
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="ResRef" Classes="label"/>
+                                <TextBox Grid.Row="2" Grid.Column="1"
+                                         x:Name="ResRefTextBox"
+                                         Text="{Binding ResRef, Mode=TwoWay}"
+                                         MaxLength="16"
+                                         Watermark="Resource reference (max 16 chars)"/>
+
+                                <!-- Base Item Type -->
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Base Type" Classes="label"/>
+                                <ComboBox Grid.Row="3" Grid.Column="1"
+                                          x:Name="BaseItemComboBox"
+                                          HorizontalAlignment="Stretch"
+                                          Margin="0,0,0,8"
+                                          SelectionChanged="OnBaseItemSelectionChanged"/>
+
+                                <!-- Cost -->
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Cost" Classes="label"/>
+                                <Grid Grid.Row="4" Grid.Column="1" ColumnDefinitions="*,16,Auto,*" Margin="0,0,0,8">
+                                    <NumericUpDown Grid.Column="0"
+                                                   x:Name="CostUpDown"
+                                                   Value="{Binding Cost, Mode=TwoWay}"
+                                                   Minimum="0" Maximum="999999999"
+                                                   FormatString="N0"
+                                                   Watermark="Base cost"/>
+                                    <TextBlock Grid.Column="2" Text="Additional" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <NumericUpDown Grid.Column="3"
+                                                   x:Name="AddCostUpDown"
+                                                   Value="{Binding AddCost, Mode=TwoWay}"
+                                                   Minimum="0" Maximum="999999999"
+                                                   FormatString="N0"
+                                                   Watermark="Additional cost"/>
+                                </Grid>
+
+                                <!-- Comment -->
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Comment" Classes="label"/>
+                                <TextBox Grid.Row="5" Grid.Column="1"
+                                         x:Name="CommentTextBox"
+                                         Text="{Binding Comment, Mode=TwoWay}"
+                                         Watermark="Designer comment (not visible in-game)"
+                                         AcceptsReturn="True"
+                                         Height="60"
+                                         TextWrapping="Wrap"/>
+                            </Grid>
+
+                            <Separator/>
+
+                            <!-- Flags & Quantities -->
+                            <TextBlock Text="Flags and Quantities" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+
+                            <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto"
+                                  Margin="0,0,0,8">
+                                <!-- Flags row -->
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Flags"
+                                           VerticalAlignment="Center" Margin="0,0,8,8"/>
+                                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="16" Margin="0,0,0,8">
+                                    <CheckBox x:Name="PlotCheckBox"
+                                              Content="Plot"
+                                              IsChecked="{Binding Plot, Mode=TwoWay}"
+                                              ToolTip.Tip="Cannot be dropped or sold"/>
+                                    <CheckBox x:Name="CursedCheckBox"
+                                              Content="Cursed"
+                                              IsChecked="{Binding Cursed, Mode=TwoWay}"
+                                              ToolTip.Tip="Cannot be unequipped"/>
+                                    <CheckBox x:Name="StolenCheckBox"
+                                              Content="Stolen"
+                                              IsChecked="{Binding Stolen, Mode=TwoWay}"
+                                              ToolTip.Tip="Marked as stolen"/>
+                                </StackPanel>
+
+                                <!-- Stack Size -->
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Stack Size"
+                                           VerticalAlignment="Center" Margin="0,0,8,8"/>
+                                <NumericUpDown Grid.Row="1" Grid.Column="1"
+                                               x:Name="StackSizeUpDown"
+                                               Value="{Binding StackSize, Mode=TwoWay}"
+                                               Minimum="1" Maximum="65535"
+                                               FormatString="N0"
+                                               HorizontalAlignment="Left"
+                                               Width="150"
+                                               Margin="0,0,0,8"/>
+
+                                <!-- Charges -->
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Charges"
+                                           VerticalAlignment="Center" Margin="0,0,8,8"/>
+                                <NumericUpDown Grid.Row="2" Grid.Column="1"
+                                               x:Name="ChargesUpDown"
+                                               Value="{Binding Charges, Mode=TwoWay}"
+                                               Minimum="0" Maximum="255"
+                                               FormatString="N0"
+                                               HorizontalAlignment="Left"
+                                               Width="150"
+                                               Margin="0,0,0,8"/>
+                            </Grid>
+
+                            <Separator/>
+
+                            <!-- Conditional Fields (armor/weapon) - populated dynamically -->
+                            <StackPanel x:Name="ConditionalFieldsPanel" IsVisible="False">
+                                <TextBlock x:Name="ConditionalFieldsHeader" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <Grid x:Name="ConditionalFieldsGrid" Margin="0,0,0,8"/>
+                            </StackPanel>
+
                         </StackPanel>
                     </ScrollViewer>
                 </Panel>

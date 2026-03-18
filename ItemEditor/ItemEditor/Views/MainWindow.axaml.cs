@@ -4,13 +4,18 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using ItemEditor.Services;
+using ItemEditor.ViewModels;
+using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
 using Radoub.Formats.Uti;
 using Radoub.UI.Services;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
@@ -19,7 +24,10 @@ namespace ItemEditor.Views;
 public partial class MainWindow : Window, INotifyPropertyChanged
 {
     private UtiFile? _currentItem;
+    private ItemViewModel? _itemViewModel;
     private readonly DocumentState _documentState = new("ItemEditor");
+    private IGameDataService? _gameDataService;
+    private List<BaseItemTypeInfo>? _baseItemTypes;
 
     // Convenience accessors for document state
     private string? _currentFilePath
@@ -71,6 +79,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         Opened -= OnWindowOpened;
 
+        // Initialize game data service for base item type resolution
+        await InitializeGameDataAsync();
+
         // Handle startup file from command line
         var options = CommandLineService.Options;
         if (!string.IsNullOrEmpty(options.FilePath) && File.Exists(options.FilePath))
@@ -79,6 +90,53 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         UpdateStatus("Ready");
+    }
+
+    private Task InitializeGameDataAsync()
+    {
+        try
+        {
+            _gameDataService = new GameDataService();
+            if (_gameDataService.IsConfigured)
+            {
+                LoadBaseItemTypes();
+                UnifiedLogger.LogApplication(LogLevel.INFO, "Game data service initialized");
+            }
+            else
+            {
+                LoadBaseItemTypes(); // Will use hardcoded fallback
+                UnifiedLogger.LogApplication(LogLevel.WARN, "Game data service not configured, using hardcoded base item types");
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to initialize game data: {ex.Message}");
+            LoadBaseItemTypes();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void LoadBaseItemTypes()
+    {
+        var service = new BaseItemTypeService(_gameDataService);
+        _baseItemTypes = service.GetBaseItemTypes();
+        PopulateBaseItemComboBox();
+    }
+
+    private void PopulateBaseItemComboBox()
+    {
+        BaseItemComboBox.Items.Clear();
+        if (_baseItemTypes == null) return;
+
+        foreach (var type in _baseItemTypes)
+        {
+            BaseItemComboBox.Items.Add(new ComboBoxItem
+            {
+                Content = type.DisplayName,
+                Tag = type.BaseItemIndex
+            });
+        }
     }
 
     private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
@@ -199,21 +257,67 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             EmptyStatePanel.IsVisible = true;
             EditorContent.IsVisible = false;
+            _itemViewModel = null;
+            EditorContent.DataContext = null;
             return;
         }
 
         EmptyStatePanel.IsVisible = false;
         EditorContent.IsVisible = true;
 
-        // Display basic item info
-        var name = _currentItem.LocalizedName?.GetString() ?? "(unnamed)";
-        ItemNameDisplay.Text = name;
+        // Create ViewModel and bind
+        _itemViewModel = new ItemViewModel(_currentItem);
+        EditorContent.DataContext = _itemViewModel;
 
-        var baseItem = _currentItem.BaseItem;
-        var tag = _currentItem.Tag ?? "";
-        ItemInfoDisplay.Text = $"Base Item: {baseItem}  |  Tag: {tag}  |  Cost: {_currentItem.Cost}  |  Stack: {_currentItem.StackSize}";
+        // Wire up dirty tracking from ViewModel property changes
+        _itemViewModel.PropertyChanged += OnItemPropertyChanged;
+
+        // Select the correct base item type in the combo box
+        SelectBaseItemInComboBox(_currentItem.BaseItem);
 
         FilePathText.Text = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : "";
+    }
+
+    private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (!_isLoading)
+        {
+            MarkDirty();
+        }
+    }
+
+    private void SelectBaseItemInComboBox(int baseItemIndex)
+    {
+        for (int i = 0; i < BaseItemComboBox.Items.Count; i++)
+        {
+            if (BaseItemComboBox.Items[i] is ComboBoxItem item && item.Tag is int index && index == baseItemIndex)
+            {
+                _isLoading = true;
+                BaseItemComboBox.SelectedIndex = i;
+                _isLoading = false;
+                return;
+            }
+        }
+
+        // Base item not in list — add an "Unknown" entry
+        var unknownItem = new ComboBoxItem
+        {
+            Content = $"Unknown ({baseItemIndex})",
+            Tag = baseItemIndex
+        };
+        BaseItemComboBox.Items.Add(unknownItem);
+        _isLoading = true;
+        BaseItemComboBox.SelectedItem = unknownItem;
+        _isLoading = false;
+    }
+
+    private void OnBaseItemSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoading || _itemViewModel == null) return;
+        if (BaseItemComboBox.SelectedItem is ComboBoxItem item && item.Tag is int index)
+        {
+            _itemViewModel.BaseItem = index;
+        }
     }
 
     // --- Menu Handlers ---
@@ -270,8 +374,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             if (result == SavePromptResult.Save && !await SaveCurrentFileAsync()) return;
         }
 
+        // Unhook ViewModel events before clearing
+        if (_itemViewModel != null)
+        {
+            _itemViewModel.PropertyChanged -= OnItemPropertyChanged;
+        }
+
         _currentItem = null;
         _currentFilePath = null;
+        _itemViewModel = null;
         _documentState.ClearDirty();
         PopulateEditor();
         OnPropertyChanged(nameof(HasFile));
