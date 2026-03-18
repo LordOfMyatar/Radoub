@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.5.0-alpha] - 2026-03-17
-**Branch**: `itemeditor/issue-1723` | **PR**: #TBD
+**Branch**: `itemeditor/issue-1723` | **PR**: #1779
 
 ### Sprint 5: Descriptions, Appearance, Scripts, and Variables (#1723)
 
