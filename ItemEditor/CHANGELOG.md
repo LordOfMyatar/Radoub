@@ -15,10 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint 3: Item Property Display and Add/Remove (#1712)
 
-- [ ] #1713 — ItemPropertyService (2DA cascade for editing)
-- [ ] #1714 — Available Properties panel with tree view and search
-- [ ] #1715 — Assigned Properties panel and Add/Remove flow with cascading dropdowns
-- [ ] #1716 — Unit tests for ItemPropertyService and property operations
+- [x] #1713 — ItemPropertyService (2DA cascade for editing)
+- [x] #1714 — Available Properties panel with tree view and search
+- [x] #1715 — Assigned Properties panel and Add/Remove flow with cascading dropdowns
+- [x] #1716 — Unit tests for ItemPropertyService and property operations
 
 ---
 
