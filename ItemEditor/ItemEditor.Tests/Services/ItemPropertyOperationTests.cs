@@ -306,6 +306,71 @@ public class ItemPropertyOperationTests
 
     #endregion
 
+    #region Bulk Operations
+
+    [Fact]
+    public void BulkRemove_MultipleIndices_RemovesCorrectProperties()
+    {
+        var mock = CreateMock();
+        var service = new ItemPropertyService(mock);
+        var uti = CreateBaseItem();
+
+        uti.Properties.Add(service.CreateItemProperty(6, 0, 1, null));   // Enhancement +1
+        uti.Properties.Add(service.CreateItemProperty(0, 0, 2, null));   // Ability STR +2
+        uti.Properties.Add(service.CreateItemProperty(15, 0, 1, null));  // Cast Spell
+        uti.Properties.Add(service.CreateItemProperty(16, 5, 2, null));  // Damage Bonus Fire 1d6
+
+        Assert.Equal(4, uti.Properties.Count);
+
+        // Remove indices 1 and 3 (descending order to avoid index shifting)
+        var indicesToRemove = new[] { 3, 1 };
+        foreach (var idx in indicesToRemove.OrderByDescending(i => i))
+        {
+            uti.Properties.RemoveAt(idx);
+        }
+
+        Assert.Equal(2, uti.Properties.Count);
+        Assert.Equal(6, uti.Properties[0].PropertyName);   // Enhancement remains
+        Assert.Equal(15, uti.Properties[1].PropertyName);   // Cast Spell remains
+    }
+
+    [Fact]
+    public void BulkRemove_AllProperties_ListEmpty()
+    {
+        var mock = CreateMock();
+        var service = new ItemPropertyService(mock);
+        var uti = CreateBaseItem();
+
+        uti.Properties.Add(service.CreateItemProperty(6, 0, 1, null));
+        uti.Properties.Add(service.CreateItemProperty(0, 0, 2, null));
+
+        uti.Properties.Clear();
+
+        Assert.Empty(uti.Properties);
+    }
+
+    [Fact]
+    public void RoundTrip_BulkRemoved_Preserved()
+    {
+        var mock = CreateMock();
+        var service = new ItemPropertyService(mock);
+        var uti = CreateBaseItem();
+
+        uti.Properties.Add(service.CreateItemProperty(6, 0, 1, null));
+        uti.Properties.Add(service.CreateItemProperty(0, 0, 2, null));
+        uti.Properties.Add(service.CreateItemProperty(15, 0, 1, null));
+
+        // Bulk remove first and last
+        uti.Properties.RemoveAt(2);
+        uti.Properties.RemoveAt(0);
+
+        var result = WriteAndReadBack(uti);
+        Assert.Single(result.Properties);
+        Assert.Equal(0, result.Properties[0].PropertyName); // Only Ability Bonus remains
+    }
+
+    #endregion
+
     #region Edit Property
 
     [Fact]

@@ -359,6 +359,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             AddPropertyButton.IsEnabled = false;
             EditPropertyButton.IsEnabled = false;
             RemovePropertyButton.IsEnabled = false;
+            ClearAllPropertiesButton.IsEnabled = false;
             _itemViewModel = null;
             EditorContent.DataContext = null;
             return;
@@ -928,24 +929,49 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnRemovePropertyClick(object? sender, RoutedEventArgs e)
     {
-        if (_currentItem == null || AssignedPropertiesList.SelectedIndex < 0)
+        if (_currentItem == null)
             return;
 
-        var index = AssignedPropertiesList.SelectedIndex;
-        if (index < _currentItem.Properties.Count)
+        // Get all selected indices, sorted descending so removal doesn't shift indices
+        var selectedIndices = AssignedPropertiesList.Selection.SelectedIndexes
+            .Where(i => i >= 0 && i < _currentItem.Properties.Count)
+            .OrderByDescending(i => i)
+            .ToList();
+
+        if (selectedIndices.Count == 0)
+            return;
+
+        foreach (var index in selectedIndices)
         {
             _currentItem.Properties.RemoveAt(index);
-            RefreshAssignedProperties();
-            MarkDirty();
-            UpdateStatus("Property removed");
         }
+
+        RefreshAssignedProperties();
+        MarkDirty();
+
+        var count = selectedIndices.Count;
+        UpdateStatus(count == 1 ? "Property removed" : $"{count} properties removed");
+    }
+
+    private void OnClearAllPropertiesClick(object? sender, RoutedEventArgs e)
+    {
+        if (_currentItem == null || _currentItem.Properties.Count == 0)
+            return;
+
+        var count = _currentItem.Properties.Count;
+        _currentItem.Properties.Clear();
+        RefreshAssignedProperties();
+        MarkDirty();
+        UpdateStatus($"Cleared {count} properties");
     }
 
     private void OnAssignedPropertySelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        bool hasSelection = AssignedPropertiesList.SelectedIndex >= 0;
+        var selectedCount = AssignedPropertiesList.Selection.SelectedIndexes.Count();
+        bool hasSelection = selectedCount > 0;
         RemovePropertyButton.IsEnabled = hasSelection;
-        EditPropertyButton.IsEnabled = hasSelection;
+        // Edit only enabled for single selection
+        EditPropertyButton.IsEnabled = selectedCount == 1;
     }
 
     private void OnEditPropertyClick(object? sender, RoutedEventArgs e)
@@ -1053,6 +1079,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         RemovePropertyButton.IsEnabled = false;
+        EditPropertyButton.IsEnabled = false;
+        ClearAllPropertiesButton.IsEnabled = _currentItem.Properties.Count > 0;
     }
 
     private string ResolvePropertyDisplayText(ItemProperty prop)

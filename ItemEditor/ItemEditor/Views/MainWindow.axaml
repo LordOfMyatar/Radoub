@@ -418,6 +418,13 @@
                                             Click="OnRemovePropertyClick"
                                             Width="80"
                                             HorizontalContentAlignment="Center"
+                                            Margin="0,0,0,8"
+                                            IsEnabled="False"/>
+                                    <Button x:Name="ClearAllPropertiesButton"
+                                            Content="Clear All"
+                                            Click="OnClearAllPropertiesClick"
+                                            Width="80"
+                                            HorizontalContentAlignment="Center"
                                             IsEnabled="False"/>
                                 </StackPanel>
 
@@ -431,6 +438,7 @@
                                         <TextBlock DockPanel.Dock="Top" Text="Assigned Properties"
                                                    FontWeight="SemiBold" Margin="0,0,0,4"/>
                                         <ListBox x:Name="AssignedPropertiesList"
+                                                 SelectionMode="Multiple"
                                                  SelectionChanged="OnAssignedPropertySelectionChanged"/>
                                     </DockPanel>
                                 </Border>
