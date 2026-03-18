@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.0-alpha] - 2026-03-17
-**Branch**: `itemeditor/issue-1706` | **PR**: #TBD
+**Branch**: `itemeditor/issue-1706` | **PR**: #1774
 
 ### Sprint 2: Basic Field Editing (#1706)
 
