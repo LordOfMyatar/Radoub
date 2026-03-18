@@ -28,6 +28,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private readonly DocumentState _documentState = new("ItemEditor");
     private IGameDataService? _gameDataService;
     private List<BaseItemTypeInfo>? _baseItemTypes;
+    private List<PaletteCategory> _paletteCategories = new();
 
     // Convenience accessors for document state
     private string? _currentFilePath
@@ -122,6 +123,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var service = new BaseItemTypeService(_gameDataService);
         _baseItemTypes = service.GetBaseItemTypes();
         PopulateBaseItemComboBox();
+        LoadPaletteCategories();
     }
 
     private void PopulateBaseItemComboBox()
@@ -136,6 +138,82 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 Content = type.DisplayName,
                 Tag = type.BaseItemIndex
             });
+        }
+    }
+
+    private void LoadPaletteCategories()
+    {
+        _paletteCategories.Clear();
+        PaletteCategoryComboBox.Items.Clear();
+
+        if (_gameDataService != null && _gameDataService.IsConfigured)
+        {
+            try
+            {
+                var categories = _gameDataService.GetPaletteCategories(Radoub.Formats.Common.ResourceTypes.Uti).ToList();
+                _paletteCategories = categories;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to load palette categories: {ex.Message}");
+            }
+        }
+
+        // Hardcoded fallback if no categories loaded
+        if (_paletteCategories.Count == 0)
+        {
+            _paletteCategories = GetHardcodedPaletteCategories();
+        }
+
+        foreach (var cat in _paletteCategories)
+        {
+            PaletteCategoryComboBox.Items.Add(new ComboBoxItem
+            {
+                Content = cat.Name,
+                Tag = cat.Id
+            });
+        }
+    }
+
+    private static List<PaletteCategory> GetHardcodedPaletteCategories()
+    {
+        return new List<PaletteCategory>
+        {
+            new() { Id = 0, Name = "Miscellaneous" },
+            new() { Id = 1, Name = "Armor" },
+            new() { Id = 2, Name = "Weapons" },
+            new() { Id = 3, Name = "Potions" },
+            new() { Id = 4, Name = "Other" },
+        };
+    }
+
+    private void SelectPaletteCategoryInComboBox(byte paletteId)
+    {
+        for (int i = 0; i < PaletteCategoryComboBox.Items.Count; i++)
+        {
+            if (PaletteCategoryComboBox.Items[i] is ComboBoxItem item && item.Tag is byte id && id == paletteId)
+            {
+                _isLoading = true;
+                PaletteCategoryComboBox.SelectedIndex = i;
+                _isLoading = false;
+                return;
+            }
+        }
+        // Not found — select first item if available
+        if (PaletteCategoryComboBox.Items.Count > 0)
+        {
+            _isLoading = true;
+            PaletteCategoryComboBox.SelectedIndex = 0;
+            _isLoading = false;
+        }
+    }
+
+    private void OnPaletteCategorySelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoading || _itemViewModel == null) return;
+        if (PaletteCategoryComboBox.SelectedItem is ComboBoxItem item && item.Tag is byte id)
+        {
+            _itemViewModel.PaletteID = id;
         }
     }
 
@@ -275,9 +353,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Wire up dirty tracking from ViewModel property changes
         _itemViewModel.PropertyChanged += OnItemPropertyChanged;
 
-        // Select the correct base item type in the combo box
+        // Select the correct base item type and palette category
         SelectBaseItemInComboBox(_currentItem.BaseItem);
         UpdateConditionalFields(_currentItem.BaseItem);
+        SelectPaletteCategoryInComboBox(_currentItem.PaletteID);
 
         FilePathText.Text = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : "";
     }

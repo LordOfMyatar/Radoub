@@ -139,7 +139,7 @@
                             <!-- Basic Properties -->
                             <TextBlock Text="Basic Properties" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
 
-                            <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+                            <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
                                   Margin="0,0,0,8">
                                 <Grid.Styles>
                                     <Style Selector="TextBlock.label">
@@ -209,6 +209,14 @@
                                          AcceptsReturn="True"
                                          Height="60"
                                          TextWrapping="Wrap"/>
+
+                                <!-- Palette Category -->
+                                <TextBlock Grid.Row="6" Grid.Column="0" Text="Category" Classes="label"/>
+                                <ComboBox Grid.Row="6" Grid.Column="1"
+                                          x:Name="PaletteCategoryComboBox"
+                                          HorizontalAlignment="Stretch"
+                                          Margin="0,0,0,8"
+                                          SelectionChanged="OnPaletteCategorySelectionChanged"/>
                             </Grid>
 
                             <Separator/>
