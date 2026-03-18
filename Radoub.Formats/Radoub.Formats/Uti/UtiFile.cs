@@ -85,6 +85,16 @@ public class UtiFile
     public bool Stolen { get; set; }
 
     /// <summary>
+    /// True if item has been identified (no lore check needed)
+    /// </summary>
+    public bool Identified { get; set; }
+
+    /// <summary>
+    /// True if item can be dropped (default true). Note: BioWare misspells as "Dropable".
+    /// </summary>
+    public bool Dropable { get; set; } = true;
+
+    /// <summary>
     /// List of item properties (enchantments, abilities)
     /// </summary>
     public List<ItemProperty> Properties { get; set; } = new();

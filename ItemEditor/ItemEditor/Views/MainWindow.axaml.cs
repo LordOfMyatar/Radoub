@@ -31,7 +31,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private List<BaseItemTypeInfo>? _baseItemTypes;
     private List<PaletteCategory> _paletteCategories = new();
     private ItemPropertyService? _itemPropertyService;
+    private ItemStatisticsService? _itemStatisticsService;
     private PropertyTypeInfo? _selectedPropertyType;
+    private int _editingPropertyIndex = -1; // -1 = add mode, >= 0 = editing that index
+    private readonly HashSet<int> _checkedPropertyIndices = new();
 
     // Convenience accessors for document state
     private string? _currentFilePath
@@ -128,6 +131,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (_gameDataService == null) return;
 
         _itemPropertyService = new ItemPropertyService(_gameDataService);
+        _itemStatisticsService = new ItemStatisticsService(_itemPropertyService);
         PopulateAvailableProperties();
     }
 
@@ -265,6 +269,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _currentItem = item;
             _currentFilePath = filePath;
             _documentState.ClearDirty();
+            // Always update title — ClearDirty only fires when transitioning from dirty
+            Title = _documentState.GetTitle();
 
             PopulateEditor();
             OnPropertyChanged(nameof(HasFile));
@@ -354,8 +360,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             PropertyConfigPanel.IsVisible = false;
             AssignedPropertiesList.Items.Clear();
             _selectedPropertyType = null;
+            _editingPropertyIndex = -1;
             AddPropertyButton.IsEnabled = false;
+            AddCheckedButton.IsEnabled = false;
+            EditPropertyButton.IsEnabled = false;
             RemovePropertyButton.IsEnabled = false;
+            ClearAllPropertiesButton.IsEnabled = false;
+            ItemStatisticsPanel.IsVisible = false;
             _itemViewModel = null;
             EditorContent.DataContext = null;
             return;
@@ -496,6 +507,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 Value = _itemViewModel.GetArmorPart(partName),
                 Minimum = 0,
                 Maximum = 255,
+                FormatString = "N0",
                 Margin = new Thickness(0, 0, 0, 8)
             };
             var capturedPartName = partName;
@@ -739,6 +751,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void PopulateAvailableProperties(string? searchFilter = null)
     {
         AvailablePropertiesTree.Items.Clear();
+        _checkedPropertyIndices.Clear();
+        UpdateAddCheckedButton();
 
         if (_itemPropertyService == null)
             return;
@@ -749,9 +763,25 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         foreach (var type in types)
         {
+            var checkBox = new CheckBox
+            {
+                Content = type.DisplayName,
+                Tag = type,
+                Margin = new Thickness(0)
+            };
+            var capturedType = type;
+            checkBox.IsCheckedChanged += (_, _) =>
+            {
+                if (checkBox.IsChecked == true)
+                    _checkedPropertyIndices.Add(capturedType.PropertyIndex);
+                else
+                    _checkedPropertyIndices.Remove(capturedType.PropertyIndex);
+                UpdateAddCheckedButton();
+            };
+
             var node = new TreeViewItem
             {
-                Header = type.DisplayName,
+                Header = checkBox,
                 Tag = type
             };
 
@@ -773,6 +803,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
+    private void UpdateAddCheckedButton()
+    {
+        AddCheckedButton.IsEnabled = _checkedPropertyIndices.Count > 0 && _currentItem != null;
+    }
+
     private void OnPropertySearchTextChanged(object? sender, TextChangedEventArgs e)
     {
         var filter = PropertySearchBox.Text;
@@ -781,6 +816,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnAvailablePropertySelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
+        // Selecting from Available tree exits edit mode
+        _editingPropertyIndex = -1;
+        ApplyEditButton.IsVisible = false;
+
         if (AvailablePropertiesTree.SelectedItem is TreeViewItem selectedNode)
         {
             PropertyTypeInfo? propertyType = null;
@@ -919,24 +958,172 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         UpdateStatus($"Added property: {_selectedPropertyType.DisplayName}");
     }
 
-    private void OnRemovePropertyClick(object? sender, RoutedEventArgs e)
+    private void OnAddCheckedClick(object? sender, RoutedEventArgs e)
     {
-        if (_currentItem == null || AssignedPropertiesList.SelectedIndex < 0)
+        if (_currentItem == null || _itemPropertyService == null || _checkedPropertyIndices.Count == 0)
             return;
 
-        var index = AssignedPropertiesList.SelectedIndex;
-        if (index < _currentItem.Properties.Count)
+        var types = _itemPropertyService.GetAvailablePropertyTypes();
+        int added = 0;
+
+        foreach (var propIndex in _checkedPropertyIndices)
         {
-            _currentItem.Properties.RemoveAt(index);
+            var type = types.FirstOrDefault(t => t.PropertyIndex == propIndex);
+            if (type == null) continue;
+
+            // Add with default subtype (0), cost (0), no param
+            var property = _itemPropertyService.CreateItemProperty(propIndex, 0, 0, null);
+            _currentItem.Properties.Add(property);
+            added++;
+        }
+
+        if (added > 0)
+        {
             RefreshAssignedProperties();
             MarkDirty();
-            UpdateStatus("Property removed");
+            UpdateStatus($"Added {added} properties");
         }
+
+        // Uncheck all after adding
+        foreach (var item in AvailablePropertiesTree.Items)
+        {
+            if (item is TreeViewItem node && node.Header is CheckBox cb)
+                cb.IsChecked = false;
+        }
+    }
+
+    private void OnRemovePropertyClick(object? sender, RoutedEventArgs e)
+    {
+        if (_currentItem == null)
+            return;
+
+        // Get all selected indices, sorted descending so removal doesn't shift indices
+        var selectedIndices = AssignedPropertiesList.Selection.SelectedIndexes
+            .Where(i => i >= 0 && i < _currentItem.Properties.Count)
+            .OrderByDescending(i => i)
+            .ToList();
+
+        if (selectedIndices.Count == 0)
+            return;
+
+        foreach (var index in selectedIndices)
+        {
+            _currentItem.Properties.RemoveAt(index);
+        }
+
+        RefreshAssignedProperties();
+        MarkDirty();
+
+        var count = selectedIndices.Count;
+        UpdateStatus(count == 1 ? "Property removed" : $"{count} properties removed");
+    }
+
+    private void OnClearAllPropertiesClick(object? sender, RoutedEventArgs e)
+    {
+        if (_currentItem == null || _currentItem.Properties.Count == 0)
+            return;
+
+        var count = _currentItem.Properties.Count;
+        _currentItem.Properties.Clear();
+        RefreshAssignedProperties();
+        MarkDirty();
+        UpdateStatus($"Cleared {count} properties");
     }
 
     private void OnAssignedPropertySelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        RemovePropertyButton.IsEnabled = AssignedPropertiesList.SelectedIndex >= 0;
+        var selectedCount = AssignedPropertiesList.Selection.SelectedIndexes.Count();
+        bool hasSelection = selectedCount > 0;
+        RemovePropertyButton.IsEnabled = hasSelection;
+        // Edit only enabled for single selection
+        EditPropertyButton.IsEnabled = selectedCount == 1;
+    }
+
+    private void OnEditPropertyClick(object? sender, RoutedEventArgs e)
+    {
+        if (_currentItem == null || _itemPropertyService == null || AssignedPropertiesList.SelectedIndex < 0)
+            return;
+
+        var index = AssignedPropertiesList.SelectedIndex;
+        if (index >= _currentItem.Properties.Count)
+            return;
+
+        var prop = _currentItem.Properties[index];
+        _editingPropertyIndex = index;
+
+        // Find the property type info
+        var types = _itemPropertyService.GetAvailablePropertyTypes();
+        var type = types.FirstOrDefault(t => t.PropertyIndex == prop.PropertyName);
+        if (type == null)
+        {
+            UpdateStatus($"Unknown property type: {prop.PropertyName}");
+            return;
+        }
+
+        _selectedPropertyType = type;
+        UpdatePropertyConfigPanel(type);
+
+        // Pre-select current values in dropdowns
+        SelectComboBoxByTag(SubtypeComboBox, prop.Subtype);
+        SelectComboBoxByTag(CostValueComboBox, prop.CostValue);
+        if (prop.Param1 != 0xFF)
+            SelectComboBoxByTag(ParamValueComboBox, prop.Param1Value);
+
+        // Show Apply button, hide Add
+        ApplyEditButton.IsVisible = true;
+        AddPropertyButton.IsEnabled = false;
+
+        UpdateStatus($"Editing: {type.DisplayName}");
+    }
+
+    private void OnApplyEditClick(object? sender, RoutedEventArgs e)
+    {
+        if (_currentItem == null || _itemPropertyService == null || _selectedPropertyType == null)
+            return;
+
+        if (_editingPropertyIndex < 0 || _editingPropertyIndex >= _currentItem.Properties.Count)
+            return;
+
+        int subtypeIndex = 0;
+        if (SubtypeComboBox.IsVisible && SubtypeComboBox.SelectedItem is ComboBoxItem subItem && subItem.Tag is int subIdx)
+            subtypeIndex = subIdx;
+
+        int costValueIndex = 0;
+        if (CostValueComboBox.IsVisible && CostValueComboBox.SelectedItem is ComboBoxItem costItem && costItem.Tag is int costIdx)
+            costValueIndex = costIdx;
+
+        int? paramValueIndex = null;
+        if (ParamValueComboBox.IsVisible && ParamValueComboBox.SelectedItem is ComboBoxItem paramItem && paramItem.Tag is int paramIdx)
+            paramValueIndex = paramIdx;
+
+        var property = _itemPropertyService.CreateItemProperty(
+            _selectedPropertyType.PropertyIndex,
+            subtypeIndex,
+            costValueIndex,
+            paramValueIndex);
+
+        _currentItem.Properties[_editingPropertyIndex] = property;
+        RefreshAssignedProperties();
+        MarkDirty();
+
+        // Exit edit mode
+        _editingPropertyIndex = -1;
+        ApplyEditButton.IsVisible = false;
+        PropertyConfigPanel.IsVisible = false;
+
+        UpdateStatus($"Updated property: {_selectedPropertyType.DisplayName}");
+    }
+
+    private static void SelectComboBoxByTag(ComboBox comboBox, int tagValue)
+    {
+        for (int i = 0; i < comboBox.Items.Count; i++)
+        {
+            if (comboBox.Items[i] is ComboBoxItem item && item.Tag is int idx && idx == tagValue)
+            {
+                comboBox.SelectedIndex = i;
+                return;
+            }
+        }
     }
 
     private void RefreshAssignedProperties()
@@ -957,6 +1144,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         RemovePropertyButton.IsEnabled = false;
+        EditPropertyButton.IsEnabled = false;
+        ClearAllPropertiesButton.IsEnabled = _currentItem.Properties.Count > 0;
+
+        RefreshStatistics();
     }
 
     private string ResolvePropertyDisplayText(ItemProperty prop)
@@ -999,6 +1190,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         return string.Join(" ", parts);
+    }
+
+    private void RefreshStatistics()
+    {
+        if (_currentItem == null || _itemStatisticsService == null)
+        {
+            ItemStatisticsPanel.IsVisible = false;
+            return;
+        }
+
+        var stats = _itemStatisticsService.GenerateStatistics(_currentItem.Properties);
+        ItemStatisticsText.Text = stats;
+        ItemStatisticsPanel.IsVisible = true;
     }
 
     // --- Recent Files ---

@@ -242,6 +242,14 @@
                                               Content="Stolen"
                                               IsChecked="{Binding Stolen, Mode=TwoWay}"
                                               ToolTip.Tip="Marked as stolen"/>
+                                    <CheckBox x:Name="IdentifiedCheckBox"
+                                              Content="Identified"
+                                              IsChecked="{Binding Identified, Mode=TwoWay}"
+                                              ToolTip.Tip="Already identified (no lore check needed)"/>
+                                    <CheckBox x:Name="DropableCheckBox"
+                                              Content="Droppable"
+                                              IsChecked="{Binding Dropable, Mode=TwoWay}"
+                                              ToolTip.Tip="Item can be dropped from inventory"/>
                                 </StackPanel>
 
                                 <!-- Stack Size -->
@@ -281,6 +289,7 @@
                                                    x:Name="ModelPart1UpDown"
                                                    Value="{Binding ModelPart1, Mode=TwoWay}"
                                                    Minimum="0" Maximum="255"
+                                                   FormatString="N0"
                                                    HorizontalAlignment="Left" Width="150"
                                                    Margin="0,0,0,8"/>
 
@@ -291,6 +300,7 @@
                                                    x:Name="ModelPart2UpDown"
                                                    Value="{Binding ModelPart2, Mode=TwoWay}"
                                                    Minimum="0" Maximum="255"
+                                                   FormatString="N0"
                                                    HorizontalAlignment="Left" Width="150"
                                                    Margin="0,0,0,8"/>
 
@@ -301,6 +311,7 @@
                                                    x:Name="ModelPart3UpDown"
                                                    Value="{Binding ModelPart3, Mode=TwoWay}"
                                                    Minimum="0" Maximum="255"
+                                                   FormatString="N0"
                                                    HorizontalAlignment="Left" Width="150"
                                                    Margin="0,0,0,8"/>
                                 </Grid>
@@ -316,6 +327,7 @@
                                     <NumericUpDown Grid.Row="0" Grid.Column="1"
                                                    Value="{Binding Cloth1Color, Mode=TwoWay}"
                                                    Minimum="0" Maximum="255"
+                                                   FormatString="N0"
                                                    Margin="0,0,0,8"/>
 
                                     <TextBlock Grid.Row="0" Grid.Column="3" Text="Cloth 2"
@@ -323,6 +335,7 @@
                                     <NumericUpDown Grid.Row="0" Grid.Column="4"
                                                    Value="{Binding Cloth2Color, Mode=TwoWay}"
                                                    Minimum="0" Maximum="255"
+                                                   FormatString="N0"
                                                    Margin="0,0,0,8"/>
 
                                     <TextBlock Grid.Row="1" Grid.Column="0" Text="Leather 1"
@@ -330,6 +343,7 @@
                                     <NumericUpDown Grid.Row="1" Grid.Column="1"
                                                    Value="{Binding Leather1Color, Mode=TwoWay}"
                                                    Minimum="0" Maximum="255"
+                                                   FormatString="N0"
                                                    Margin="0,0,0,8"/>
 
                                     <TextBlock Grid.Row="1" Grid.Column="3" Text="Leather 2"
@@ -337,6 +351,7 @@
                                     <NumericUpDown Grid.Row="1" Grid.Column="4"
                                                    Value="{Binding Leather2Color, Mode=TwoWay}"
                                                    Minimum="0" Maximum="255"
+                                                   FormatString="N0"
                                                    Margin="0,0,0,8"/>
 
                                     <TextBlock Grid.Row="2" Grid.Column="0" Text="Metal 1"
@@ -344,6 +359,7 @@
                                     <NumericUpDown Grid.Row="2" Grid.Column="1"
                                                    Value="{Binding Metal1Color, Mode=TwoWay}"
                                                    Minimum="0" Maximum="255"
+                                                   FormatString="N0"
                                                    Margin="0,0,0,8"/>
 
                                     <TextBlock Grid.Row="2" Grid.Column="3" Text="Metal 2"
@@ -351,6 +367,7 @@
                                     <NumericUpDown Grid.Row="2" Grid.Column="4"
                                                    Value="{Binding Metal2Color, Mode=TwoWay}"
                                                    Minimum="0" Maximum="255"
+                                                   FormatString="N0"
                                                    Margin="0,0,0,8"/>
                                 </Grid>
                                 <Separator/>
@@ -397,10 +414,33 @@
                                             Width="80"
                                             HorizontalContentAlignment="Center"
                                             Margin="0,0,0,8"
+                                            IsEnabled="False"
+                                            ToolTip.Tip="Add selected property with configured values"/>
+                                    <Button x:Name="AddCheckedButton"
+                                            Content="Add Checked &gt;"
+                                            Click="OnAddCheckedClick"
+                                            Width="100"
+                                            HorizontalContentAlignment="Center"
+                                            Margin="0,0,0,8"
+                                            IsEnabled="False"
+                                            ToolTip.Tip="Add all checked properties with default values"/>
+                                    <Button x:Name="EditPropertyButton"
+                                            Content="Edit"
+                                            Click="OnEditPropertyClick"
+                                            Width="80"
+                                            HorizontalContentAlignment="Center"
+                                            Margin="0,0,0,8"
                                             IsEnabled="False"/>
                                     <Button x:Name="RemovePropertyButton"
                                             Content="&lt; Remove"
                                             Click="OnRemovePropertyClick"
+                                            Width="80"
+                                            HorizontalContentAlignment="Center"
+                                            Margin="0,0,0,8"
+                                            IsEnabled="False"/>
+                                    <Button x:Name="ClearAllPropertiesButton"
+                                            Content="Clear All"
+                                            Click="OnClearAllPropertiesClick"
                                             Width="80"
                                             HorizontalContentAlignment="Center"
                                             IsEnabled="False"/>
@@ -416,6 +456,7 @@
                                         <TextBlock DockPanel.Dock="Top" Text="Assigned Properties"
                                                    FontWeight="SemiBold" Margin="0,0,0,4"/>
                                         <ListBox x:Name="AssignedPropertiesList"
+                                                 SelectionMode="Multiple,Toggle"
                                                  SelectionChanged="OnAssignedPropertySelectionChanged"/>
                                     </DockPanel>
                                 </Border>
@@ -428,7 +469,7 @@
                                     CornerRadius="4"
                                     Padding="8"
                                     Margin="0,0,0,8">
-                                <Grid ColumnDefinitions="100,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                                <Grid ColumnDefinitions="100,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
                                     <Grid.Styles>
                                         <Style Selector="TextBlock.config-label">
                                             <Setter Property="VerticalAlignment" Value="Center"/>
@@ -459,8 +500,30 @@
                                                Text="Parameter" Classes="config-label"/>
                                     <ComboBox Grid.Row="3" Grid.Column="1" x:Name="ParamValueComboBox"
                                               HorizontalAlignment="Stretch" Margin="0,0,0,8"/>
+
+                                    <!-- Apply Edit button (only visible in edit mode) -->
+                                    <Button Grid.Row="4" Grid.Column="1"
+                                            x:Name="ApplyEditButton"
+                                            Content="Apply Changes"
+                                            Click="OnApplyEditClick"
+                                            HorizontalAlignment="Left"
+                                            IsVisible="False"
+                                            Margin="0,0,0,4"/>
                                 </Grid>
                             </Border>
+
+                            <!-- Item Statistics -->
+                            <StackPanel x:Name="ItemStatisticsPanel" IsVisible="False">
+                                <TextBlock Text="Item Statistics" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <TextBox x:Name="ItemStatisticsText"
+                                         IsReadOnly="True"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         MinHeight="60"
+                                         MaxHeight="200"
+                                         Watermark="No properties assigned"
+                                         Margin="0,0,0,8"/>
+                            </StackPanel>
 
                         </StackPanel>
                     </ScrollViewer>
