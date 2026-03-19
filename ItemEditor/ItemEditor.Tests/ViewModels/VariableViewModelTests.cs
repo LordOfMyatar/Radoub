@@ -142,12 +142,13 @@ public class VariableViewModelTests
     public void PropertyChanged_RaisedOnNameChange()
     {
         var vm = new VariableViewModel();
-        string? changed = null;
-        vm.PropertyChanged += (_, e) => changed = e.PropertyName;
+        var changedProperties = new System.Collections.Generic.List<string>();
+        vm.PropertyChanged += (_, e) => { if (e.PropertyName != null) changedProperties.Add(e.PropertyName); };
 
         vm.Name = "test";
 
-        Assert.Equal(nameof(VariableViewModel.Name), changed);
+        Assert.Contains(nameof(VariableViewModel.Name), changedProperties);
+        Assert.Contains(nameof(VariableViewModel.HasEmptyName), changedProperties);
     }
 
     [Fact]
@@ -176,6 +177,51 @@ public class VariableViewModelTests
         Assert.Equal(original.Name, result.Name);
         Assert.Equal(original.Type, result.Type);
         Assert.Equal(original.GetFloat(), result.GetFloat(), 0.001f);
+    }
+
+    [Fact]
+    public void HasEmptyName_TrueWhenEmpty()
+    {
+        var vm = new VariableViewModel { Name = "" };
+        Assert.True(vm.HasEmptyName);
+    }
+
+    [Fact]
+    public void HasEmptyName_FalseWhenSet()
+    {
+        var vm = new VariableViewModel { Name = "nCount" };
+        Assert.False(vm.HasEmptyName);
+    }
+
+    [Fact]
+    public void HasError_DefaultsFalse()
+    {
+        var vm = new VariableViewModel();
+        Assert.False(vm.HasError);
+        Assert.Equal(string.Empty, vm.ErrorMessage);
+    }
+
+    [Fact]
+    public void HasError_CanBeSetExternally()
+    {
+        var vm = new VariableViewModel();
+        vm.HasError = true;
+        vm.ErrorMessage = "Duplicate name";
+
+        Assert.True(vm.HasError);
+        Assert.Equal("Duplicate name", vm.ErrorMessage);
+    }
+
+    [Fact]
+    public void HasError_RaisesPropertyChanged()
+    {
+        var vm = new VariableViewModel();
+        string? changed = null;
+        vm.PropertyChanged += (_, e) => changed = e.PropertyName;
+
+        vm.HasError = true;
+
+        Assert.Equal(nameof(VariableViewModel.HasError), changed);
     }
 
     [Fact]

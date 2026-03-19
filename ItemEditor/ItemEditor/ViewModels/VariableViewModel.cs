@@ -15,14 +15,37 @@ public class VariableViewModel : INotifyPropertyChanged
     private int _intValue;
     private float _floatValue;
     private string _stringValue = string.Empty;
+    private bool _hasError;
+    private string _errorMessage = string.Empty;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public string Name
     {
         get => _name;
-        set { if (_name != value) { _name = value; OnPropertyChanged(); } }
+        set { if (_name != value) { _name = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasEmptyName)); } }
     }
+
+    /// <summary>
+    /// Whether this variable has a validation error (empty name, duplicate name).
+    /// Set by the parent view's validation logic.
+    /// </summary>
+    public bool HasError
+    {
+        get => _hasError;
+        set { if (_hasError != value) { _hasError = value; OnPropertyChanged(); } }
+    }
+
+    /// <summary>
+    /// Description of the validation error.
+    /// </summary>
+    public string ErrorMessage
+    {
+        get => _errorMessage;
+        set { if (_errorMessage != value) { _errorMessage = value; OnPropertyChanged(); } }
+    }
+
+    public bool HasEmptyName => string.IsNullOrWhiteSpace(_name);
 
     public VariableType Type
     {

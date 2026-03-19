@@ -568,9 +568,16 @@
                                 <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                         BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,4,0,0">
                                     <DockPanel>
-                                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
-                                            <Button Content="Add" Click="OnAddVariable"/>
-                                            <Button Content="Remove" Click="OnRemoveVariable"/>
+                                        <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="0,8,0,0">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <Button Content="Add" Click="OnAddVariable"/>
+                                                <Button Content="Remove" Click="OnRemoveVariable"/>
+                                            </StackPanel>
+                                            <TextBlock x:Name="VariableValidationText"
+                                                       Foreground="#FF4444"
+                                                       FontSize="11"
+                                                       TextWrapping="Wrap"
+                                                       IsVisible="False"/>
                                         </StackPanel>
 
                                         <DataGrid x:Name="VariablesGrid"
@@ -583,7 +590,23 @@
                                                   GridLinesVisibility="Horizontal"
                                                   MaxHeight="180">
                                             <DataGrid.Columns>
-                                                <DataGridTextColumn Header="Name" Width="120" Binding="{Binding Name}"/>
+                                                <DataGridTemplateColumn Header="Name" Width="120">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0">
+                                                                <TextBlock Text="⚠ " IsVisible="{Binding HasError}"
+                                                                           Foreground="#FF4444"
+                                                                           ToolTip.Tip="{Binding ErrorMessage}"/>
+                                                                <TextBlock Text="{Binding Name}"/>
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                    <DataGridTemplateColumn.CellEditingTemplate>
+                                                        <DataTemplate>
+                                                            <TextBox Text="{Binding Name}"/>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                                </DataGridTemplateColumn>
                                                 <DataGridTemplateColumn Header="Type" Width="70">
                                                     <DataGridTemplateColumn.CellTemplate>
                                                         <DataTemplate>

@@ -1352,6 +1352,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void OnVariablePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (!_isLoading) MarkDirty();
+
+        // Re-validate on name changes
+        if (e.PropertyName == nameof(VariableViewModel.Name))
+            ValidateVariablesRealTime();
     }
 
     private void UpdateVarTable()
@@ -1397,6 +1401,59 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         return null;
     }
 
+    /// <summary>
+    /// Real-time validation: mark variables with errors for visual feedback.
+    /// Called on every name change.
+    /// </summary>
+    private void ValidateVariablesRealTime()
+    {
+        // Count occurrences of each name (case-insensitive)
+        var nameCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var vm in _variables)
+        {
+            if (string.IsNullOrWhiteSpace(vm.Name)) continue;
+            nameCounts.TryGetValue(vm.Name, out var count);
+            nameCounts[vm.Name] = count + 1;
+        }
+
+        var errors = new List<string>();
+        foreach (var vm in _variables)
+        {
+            if (string.IsNullOrWhiteSpace(vm.Name))
+            {
+                vm.HasError = true;
+                vm.ErrorMessage = "Variable name is required";
+            }
+            else if (nameCounts.TryGetValue(vm.Name, out var count) && count > 1)
+            {
+                vm.HasError = true;
+                vm.ErrorMessage = $"Duplicate name: \"{vm.Name}\"";
+                if (!errors.Contains($"Duplicate: \"{vm.Name}\""))
+                    errors.Add($"Duplicate: \"{vm.Name}\"");
+            }
+            else
+            {
+                vm.HasError = false;
+                vm.ErrorMessage = string.Empty;
+            }
+        }
+
+        // Update validation summary
+        var emptyCount = _variables.Count(v => string.IsNullOrWhiteSpace(v.Name));
+        if (emptyCount > 0)
+            errors.Insert(0, $"{emptyCount} variable(s) missing name");
+
+        if (errors.Count > 0)
+        {
+            VariableValidationText.Text = string.Join(" | ", errors);
+            VariableValidationText.IsVisible = true;
+        }
+        else
+        {
+            VariableValidationText.IsVisible = false;
+        }
+    }
+
     private void OnAddVariable(object? sender, RoutedEventArgs e)
     {
         if (_currentItem == null) return;
@@ -1419,6 +1476,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }, Avalonia.Threading.DispatcherPriority.Background);
 
         MarkDirty();
+        ValidateVariablesRealTime();
     }
 
     private void OnRemoveVariable(object? sender, RoutedEventArgs e)
@@ -1433,6 +1491,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         MarkDirty();
+        ValidateVariablesRealTime();
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed {selectedItems.Count} variable(s)");
     }
 }
