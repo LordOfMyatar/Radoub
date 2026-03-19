@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.21-alpha] - 2026-03-19
-**Branch**: `radoub/issue-1825` | **PR**: #TBD
+**Branch**: `radoub/issue-1825` | **PR**: #1834
 
 ### Sprint: Legacy Code & Unused Package Cleanup (#1825)
 
