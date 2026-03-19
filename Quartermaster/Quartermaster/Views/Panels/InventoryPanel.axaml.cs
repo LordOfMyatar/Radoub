@@ -3,6 +3,7 @@ using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
+using Radoub.Formats.Settings;
 using Radoub.UI.Controls;
 using Radoub.UI.Services;
 using Radoub.UI.ViewModels;
@@ -183,6 +184,7 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
             _backpackList.ItemDropped += OnBackpackItemDropped;
             _backpackList.EquipRequested += OnBackpackEquipRequested;
             _backpackList.DeleteRequested += OnBackpackDeleteRequested;
+            _backpackList.ItemEditRequested += OnBackpackItemEditInItemEditor;
         }
 
         // Set up palette filter and list
@@ -347,6 +349,46 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
     private void OnBackpackDeleteRequested(object? sender, ItemViewModel item)
     {
         DeleteFromBackpackRequested?.Invoke(this, item);
+    }
+
+    private void OnBackpackItemEditInItemEditor(object? sender, ItemViewModel item)
+    {
+        var resRef = item?.ResRef;
+        if (string.IsNullOrEmpty(resRef))
+        {
+            UnifiedLogger.LogUI(LogLevel.WARN, "Edit in ItemEditor: item has no ResRef");
+            return;
+        }
+
+        var modulePath = RadoubSettings.Instance.CurrentModulePath;
+        if (!RadoubSettings.IsValidModulePath(modulePath))
+        {
+            UnifiedLogger.LogUI(LogLevel.WARN, "Edit in ItemEditor: no valid module path configured");
+            return;
+        }
+
+        // Resolve module directory (handle .mod → unpacked directory)
+        var moduleDir = modulePath;
+        if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
+        {
+            var moduleName = Path.GetFileNameWithoutExtension(modulePath);
+            var parentDir = Path.GetDirectoryName(modulePath);
+            if (!string.IsNullOrEmpty(parentDir))
+            {
+                var candidate = Path.Combine(parentDir, moduleName);
+                if (Directory.Exists(candidate))
+                    moduleDir = candidate;
+            }
+        }
+
+        var utiPath = ItemEditorLauncher.ResolveUtiPath(resRef, moduleDir);
+        if (utiPath == null)
+        {
+            UnifiedLogger.LogUI(LogLevel.WARN, $"Edit in ItemEditor: '{resRef}.uti' not found in module directory");
+            return;
+        }
+
+        ItemEditorLauncher.LaunchWithFile(utiPath);
     }
 
     private void OnDeleteSelectedClick(object? sender, RoutedEventArgs e)

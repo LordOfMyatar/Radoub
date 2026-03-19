@@ -100,6 +100,8 @@
             <MenuItem Header="_View">
                 <MenuItem x:Name="CreatureBrowserMenuItem" Header="_Creature Browser" Click="OnToggleCreatureBrowserClick" InputGesture="F4"/>
                 <Separator/>
+                <MenuItem Header="_Refresh Item Palette" Click="OnRefreshItemPaletteClick"/>
+                <Separator/>
                 <MenuItem x:Name="LanguageMenu" Header="_Language" AutomationProperties.AutomationId="LanguageMenu"/>
                 <Separator/>
                 <MenuItem Header="_Settings..." Click="OnSettingsClick"/>

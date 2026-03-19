@@ -1,3 +1,4 @@
+using Avalonia.Interactivity;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Common;
 using Radoub.Formats.Services;
@@ -571,6 +572,23 @@ public partial class MainWindow
     /// Get cache statistics for display in Settings.
     /// </summary>
     public SharedPaletteCacheStatistics GetPaletteCacheStatistics() => _sharedCacheService.GetCacheStatistics();
+
+    /// <summary>
+    /// Handles the Refresh Item Palette menu item. Clears and reloads all palette caches.
+    /// </summary>
+    private async void OnRefreshItemPaletteClick(object? sender, RoutedEventArgs e)
+    {
+        UpdateStatus("Refreshing item palette...");
+        ShowProgress(true);
+        try
+        {
+            await ClearAndReloadPaletteCacheAsync();
+        }
+        finally
+        {
+            ShowProgress(false);
+        }
+    }
 
     /// <summary>
     /// Sets up lazy icon loading for an item ViewModel.
