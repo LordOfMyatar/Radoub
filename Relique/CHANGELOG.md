@@ -16,8 +16,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Rename product to Relique (#1784)
 
 - Rename user-facing product name from ItemEditor to Relique
-- Update UI strings, window titles, About dialog, settings paths
-- Update documentation references
+- Rename directories: `ItemEditor/` → `Relique/Relique/` (matches tool convention)
+- Rename settings: `ItemEditorPath` → `ReliquePath` with migration for old JSON key
+- Update UI strings, window titles, About dialog, help output, settings paths
+- Update Trebuchet tool card, Fence context menu, cross-tool launcher
+- Fix flaky CommandLine test race condition (`[Collection]`)
 - Namespace stays `ItemEditor` (no code-level rename)
 
 ---
