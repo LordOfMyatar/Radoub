@@ -63,7 +63,7 @@ public static class ItemEditorLauncher
     private static string? FindItemEditorExe()
     {
         // 1. Check RadoubSettings
-        var settingsPath = RadoubSettings.Instance.ItemEditorPath;
+        var settingsPath = RadoubSettings.Instance.ReliquePath;
         if (!string.IsNullOrEmpty(settingsPath) && File.Exists(settingsPath))
             return settingsPath;
 

@@ -189,7 +189,7 @@ public partial class App : Application
             var exePath = Environment.ProcessPath;
             if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
             {
-                Radoub.Formats.Settings.RadoubSettings.Instance.ItemEditorPath = exePath;
+                Radoub.Formats.Settings.RadoubSettings.Instance.ReliquePath = exePath;
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Registered Relique path in shared settings: {UnifiedLogger.SanitizePath(exePath)}");
             }
         }

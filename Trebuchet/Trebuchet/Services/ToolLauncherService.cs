@@ -324,7 +324,7 @@ public class ToolLauncherService
             "manifest" => RadoubSettings.Instance.ManifestPath,
             "quartermaster" => RadoubSettings.Instance.QuartermasterPath,
             "fence" => RadoubSettings.Instance.FencePath,
-            "relique" or "itemeditor" => RadoubSettings.Instance.ItemEditorPath,
+            "relique" or "itemeditor" => RadoubSettings.Instance.ReliquePath,
             _ => null
         };
     }
