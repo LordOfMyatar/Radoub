@@ -14,6 +14,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.21-alpha] - 2026-03-19
+**Branch**: `radoub/issue-1825` | **PR**: #TBD
+
+### Sprint: Legacy Code & Unused Package Cleanup (#1825)
+
+- [ ] #1795 - Remove unused CommunityToolkit.Mvvm and System.Text.Json packages
+
+---
+
 ## [0.1.20-alpha] - 2026-03-17
 **Branch**: `radoub/issue-1767` | **PR**: #1770
 

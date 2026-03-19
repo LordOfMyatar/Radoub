@@ -8,11 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-### Retrospective: 6-Month Architecture Review
+---
 
-- [x] #1790 - Remove legacy `~/Parley` → `~/Radoub/Parley` migration code (settings folder migration + game paths migration, ~200 lines removed)
-- [x] #1791 - Defer GameDataService initialization (KEY/BIF/TLK I/O) from constructor to `OnWindowOpened` for faster window render
-- [x] #1789 - Investigated SettingsService migration to `BaseToolSettingsService<T>` — closed as won't-fix; sub-service architecture is correct for Parley's complexity
+## [0.1.156-alpha] - 2026-03-19
+**Branch**: `radoub/issue-1825` | **PR**: #TBD
+
+### Sprint: Legacy Code & Unused Package Cleanup (#1825)
+
+- [ ] #1790 - Remove legacy `~/Parley` → `~/Radoub/Parley` migration code
+- [ ] #1791 - Lighten MainWindow constructor (defer GameDataService init)
 
 ---
 
