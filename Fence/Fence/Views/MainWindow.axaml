@@ -68,6 +68,8 @@
                 <MenuItem x:Name="LanguageMenu" Header="_Language" AutomationProperties.AutomationId="LanguageMenu"/>
                 <Separator/>
                 <MenuItem Header="_Settings..." Click="OnSettingsClick"/>
+                <Separator/>
+                <MenuItem Header="_Refresh Item Palette" Click="OnRefreshItemPalette"/>
             </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="_About Fence" Click="OnAboutClick"/>
@@ -433,6 +435,8 @@
                                     <MenuItem Header="Remove from Store" Click="OnRemoveFromStore"/>
                                     <Separator/>
                                     <MenuItem Header="Select All" Click="OnSelectAllStoreItems"/>
+                                    <Separator/>
+                                    <MenuItem Header="Edit in Item Editor" Click="OnEditInItemEditor"/>
                                 </ContextMenu>
                             </DataGrid.ContextMenu>
                             <DataGrid.Columns>

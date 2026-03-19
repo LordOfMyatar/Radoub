@@ -3,6 +3,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using MerchantEditor.ViewModels;
 using Radoub.Formats.Utm;
+using Radoub.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -178,6 +179,45 @@ public partial class MainWindow
     private void OnSelectAllStoreItems(object? sender, RoutedEventArgs e)
     {
         StoreInventoryGrid.SelectAll();
+    }
+
+    private void OnEditInItemEditor(object? sender, RoutedEventArgs e)
+    {
+        var selected = StoreInventoryGrid.SelectedItem as StoreItemViewModel;
+        if (selected == null) return;
+
+        var resRef = selected.ResRef;
+        if (string.IsNullOrEmpty(resRef))
+        {
+            UpdateStatusBar("No ResRef available for selected item");
+            return;
+        }
+
+        var moduleDir = GetModuleWorkingDirectory();
+        if (string.IsNullOrEmpty(moduleDir))
+        {
+            UpdateStatusBar("No module directory configured");
+            return;
+        }
+
+        var utiPath = ItemEditorLauncher.ResolveUtiPath(resRef, moduleDir);
+        if (utiPath == null)
+        {
+            UpdateStatusBar($"Item blueprint '{resRef}.uti' not found in module directory");
+            return;
+        }
+
+        if (ItemEditorLauncher.LaunchWithFile(utiPath))
+            UpdateStatusBar($"Opened '{resRef}.uti' in ItemEditor");
+        else
+            UpdateStatusBar("Failed to launch ItemEditor");
+    }
+
+    private async void OnRefreshItemPalette(object? sender, RoutedEventArgs e)
+    {
+        UpdateStatusBar("Refreshing item palette...");
+        await ClearAndReloadPaletteCacheAsync();
+        UpdateStatusBar("Item palette refreshed");
     }
 
     #endregion
