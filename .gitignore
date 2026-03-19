@@ -1,6 +1,9 @@
 # Radoub Toolset .gitignore
 # Root-level gitignore for multi-tool repository
 
+# Superpowers brainstorming sessions
+.superpowers/
+
 # Build Output
 [Bb]in/
 [Oo]bj/
