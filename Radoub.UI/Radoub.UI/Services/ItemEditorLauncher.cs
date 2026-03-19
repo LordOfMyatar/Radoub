@@ -70,11 +70,11 @@ public static class ItemEditorLauncher
         var exeName = OperatingSystem.IsWindows() ? "ItemEditor.exe" : "ItemEditor";
         var currentExeDir = AppContext.BaseDirectory;
 
-        // 2. Check sibling dev directory (e.g. bin/Debug/net9.0/ → ../../ItemEditor/bin/Debug/net9.0/)
+        // 2. Check sibling dev directory (e.g. bin/Debug/net9.0/ → ../../Relique/Relique/bin/Debug/net9.0/)
         var siblingDirs = new[]
         {
-            Path.Combine(currentExeDir, "..", "..", "..", "..", "ItemEditor", "ItemEditor", "bin", "Debug", "net9.0"),
-            Path.Combine(currentExeDir, "..", "..", "..", "..", "ItemEditor", "ItemEditor", "bin", "Release", "net9.0"),
+            Path.Combine(currentExeDir, "..", "..", "..", "..", "Relique", "Relique", "bin", "Debug", "net9.0"),
+            Path.Combine(currentExeDir, "..", "..", "..", "..", "Relique", "Relique", "bin", "Release", "net9.0"),
         };
         foreach (var dir in siblingDirs)
         {

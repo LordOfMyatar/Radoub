@@ -22,13 +22,13 @@ Tool-specific guidance for Claude Code sessions working on Relique (ItemEditor n
 
 ### Project Structure
 ```
-ItemEditor/
+Relique/
 ├── CHANGELOG.md
 ├── CLAUDE.md (this file)
 ├── README.md
 ├── version.json
-├── ItemEditor/
-│   ├── ItemEditor.csproj
+├── Relique/                          (namespace: ItemEditor)
+│   ├── Relique.csproj
 │   ├── Program.cs
 │   ├── App.axaml(.cs)
 │   ├── app.manifest
@@ -42,8 +42,8 @@ ItemEditor/
 │   ├── ViewModels/
 │   │   └── ItemViewModel.cs
 │   └── Assets/
-└── ItemEditor.Tests/
-    ├── ItemEditor.Tests.csproj
+└── Relique.Tests/                    (namespace: ItemEditor.Tests)
+    ├── Relique.Tests.csproj
     ├── CommandLineServiceTests.cs
     ├── SettingsServiceTests.cs
     └── ViewModels/
@@ -102,17 +102,17 @@ Key classes in Radoub.Formats:
 
 ### Build Commands
 ```bash
-# Build ItemEditor only
-dotnet build ItemEditor/ItemEditor/ItemEditor.csproj
+# Build Relique only
+dotnet build Relique/Relique/Relique.csproj
 
 # Build all tools
 dotnet build Radoub.sln
 
-# Run ItemEditor
-dotnet run --project ItemEditor/ItemEditor/ItemEditor.csproj
+# Run Relique
+dotnet run --project Relique/Relique/Relique.csproj
 
 # Run tests
-dotnet test ItemEditor/ItemEditor.Tests
+dotnet test Relique/Relique.Tests
 ```
 
 ### UI Patterns
@@ -141,14 +141,14 @@ Exception: Save confirmation dialogs may be modal.
 
 ## Commit Conventions
 
-Use `[ItemEditor]` prefix:
+Use `[Relique]` prefix:
 
 ```bash
-[ItemEditor] fix: Correct item property save (#123)
-[ItemEditor] feat: Add enchantment editor (#456)
+[Relique] fix: Correct item property save (#123)
+[Relique] feat: Add enchantment editor (#456)
 ```
 
-Changes go in `ItemEditor/CHANGELOG.md` (not Radoub CHANGELOG).
+Changes go in `Relique/CHANGELOG.md` (not Radoub CHANGELOG).
 
 ---
 
@@ -163,9 +163,9 @@ Changes go in `ItemEditor/CHANGELOG.md` (not Radoub CHANGELOG).
 
 ## Resources
 
-- [ItemEditor CHANGELOG](CHANGELOG.md)
+- [Relique CHANGELOG](CHANGELOG.md)
 - [UTI Parser](../Radoub.Formats/Radoub.Formats/Uti/)
 - [Epic #1576 - Item Creation & Editing](https://github.com/LordOfMyatar/Radoub/issues/1576)
-- NonPublic docs: `NonPublic/ItemEditor/` (specs, plans, research — NOT in tool directory)
+- NonPublic docs: `NonPublic/Relique/` (specs, plans, research — NOT in tool directory)
 
 ---

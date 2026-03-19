@@ -55,11 +55,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Radoub.Dictionary.Tests", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trebuchet.Tests", "Trebuchet\Trebuchet.Tests\Trebuchet.Tests.csproj", "{7A180433-E6EE-4BA9-9B54-6F204123823F}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ItemEditor", "ItemEditor", "{282F1081-B9B9-401E-1EB7-94CDE023F481}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Relique", "Relique", "{282F1081-B9B9-401E-1EB7-94CDE023F481}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ItemEditor", "ItemEditor\ItemEditor\ItemEditor.csproj", "{1215C23C-553B-4A48-9AA4-ADAB02BF174C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Relique", "Relique\Relique\Relique.csproj", "{1215C23C-553B-4A48-9AA4-ADAB02BF174C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ItemEditor.Tests", "ItemEditor\ItemEditor.Tests\ItemEditor.Tests.csproj", "{D9A1DF00-3D8C-4693-8B4F-967B9B323B50}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Relique.Tests", "Relique\Relique.Tests\Relique.Tests.csproj", "{D9A1DF00-3D8C-4693-8B4F-967B9B323B50}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

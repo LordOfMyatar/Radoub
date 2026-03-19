@@ -16,7 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="ItemEditor.Tests" />
+    <InternalsVisibleTo Include="Relique.Tests" />
   </ItemGroup>
 
   <ItemGroup>
