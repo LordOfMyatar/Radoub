@@ -24,6 +24,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.89] - 2026-03-19
+**Branch**: `radoub/issue-1695` | **PR**: #TBD
+
+### Sprint: Cross-Tool Bug Fixes (#1208, #1533, #1781)
+
+- #1208: F4 creature panel requires Trebuchet settings (QM/Fence/Parley)
+- #1533: Tool-specific theme override ignored when shared theme is active
+- #1781: Add --project switch to all tools for shorter CLI invocations
+
+---
+
 ## [0.9.88] - TBD
 **Branch**: `radoub/issue-1750` | **PR**: #1772
 
