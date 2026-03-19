@@ -3,6 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="using:Radoub.UI.Controls"
+        xmlns:vm="using:ItemEditor.ViewModels"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
         x:Class="ItemEditor.Views.MainWindow"
         x:Name="MainWindowInstance"
@@ -589,47 +590,41 @@
                                                   SelectionMode="Extended"
                                                   GridLinesVisibility="Horizontal"
                                                   MaxHeight="180">
+                                            <DataGrid.Resources>
+                                                <vm:BoolToErrorBrushConverter x:Key="BoolToErrorBrushConverter"/>
+                                            </DataGrid.Resources>
                                             <DataGrid.Columns>
                                                 <DataGridTemplateColumn Header="Name" Width="120">
                                                     <DataGridTemplateColumn.CellTemplate>
                                                         <DataTemplate>
-                                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0">
-                                                                <TextBlock Text="⚠ " IsVisible="{Binding HasError}"
-                                                                           Foreground="#FF4444"
-                                                                           ToolTip.Tip="{Binding ErrorMessage}"/>
-                                                                <TextBlock Text="{Binding Name}"/>
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <TextBox Text="{Binding Name}"
+                                                                         HorizontalAlignment="Stretch"
+                                                                         MinWidth="80"
+                                                                         BorderBrush="{Binding HasError, Converter={StaticResource BoolToErrorBrushConverter}}"/>
+                                                                <TextBlock Text="{Binding ErrorMessage}"
+                                                                           Foreground="{DynamicResource ThemeError}"
+                                                                           FontSize="11"
+                                                                           VerticalAlignment="Center"
+                                                                           IsVisible="{Binding HasError}"/>
                                                             </StackPanel>
                                                         </DataTemplate>
                                                     </DataGridTemplateColumn.CellTemplate>
-                                                    <DataGridTemplateColumn.CellEditingTemplate>
-                                                        <DataTemplate>
-                                                            <TextBox Text="{Binding Name}"/>
-                                                        </DataTemplate>
-                                                    </DataGridTemplateColumn.CellEditingTemplate>
                                                 </DataGridTemplateColumn>
-                                                <DataGridTemplateColumn Header="Type" Width="70">
+                                                <DataGridTemplateColumn Header="Type" Width="80">
                                                     <DataGridTemplateColumn.CellTemplate>
                                                         <DataTemplate>
-                                                            <TextBlock Text="{Binding TypeDisplay}" VerticalAlignment="Center" Margin="4,0"/>
-                                                        </DataTemplate>
-                                                    </DataGridTemplateColumn.CellTemplate>
-                                                    <DataGridTemplateColumn.CellEditingTemplate>
-                                                        <DataTemplate>
-                                                            <ComboBox SelectedIndex="{Binding TypeIndex}" Margin="0">
+                                                            <ComboBox SelectedIndex="{Binding TypeIndex}" Margin="0"
+                                                                      HorizontalAlignment="Stretch">
                                                                 <ComboBoxItem Content="Int"/>
                                                                 <ComboBoxItem Content="Float"/>
                                                                 <ComboBoxItem Content="String"/>
                                                             </ComboBox>
                                                         </DataTemplate>
-                                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
                                                 </DataGridTemplateColumn>
                                                 <DataGridTemplateColumn Header="Value" Width="*">
                                                     <DataGridTemplateColumn.CellTemplate>
-                                                        <DataTemplate>
-                                                            <TextBlock Text="{Binding ValueDisplay}" VerticalAlignment="Center" Margin="4,0"/>
-                                                        </DataTemplate>
-                                                    </DataGridTemplateColumn.CellTemplate>
-                                                    <DataGridTemplateColumn.CellEditingTemplate>
                                                         <DataTemplate>
                                                             <Grid>
                                                                 <NumericUpDown Value="{Binding IntValue}" IsVisible="{Binding IsIntType}" Minimum="-2147483648" Maximum="2147483647"/>
@@ -637,7 +632,7 @@
                                                                 <TextBox Text="{Binding StringValue}" IsVisible="{Binding IsStringType}"/>
                                                             </Grid>
                                                         </DataTemplate>
-                                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
                                                 </DataGridTemplateColumn>
                                             </DataGrid.Columns>
                                         </DataGrid>
