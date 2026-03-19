@@ -297,6 +297,88 @@ public class ItemEditingRoundTripTests
         Assert.Equal("", result.LocalizedName.GetDefault());
     }
 
+    [Fact]
+    public void RoundTrip_EditDescription_Preserved()
+    {
+        var uti = CreateBaseItem();
+        var vm = new ItemViewModel(uti);
+
+        vm.Description = "A mysterious blade shrouded in darkness.";
+
+        var result = WriteAndReadBack(uti);
+        Assert.Equal("A mysterious blade shrouded in darkness.", result.Description.GetDefault());
+    }
+
+    [Fact]
+    public void RoundTrip_EditDescIdentified_Preserved()
+    {
+        var uti = CreateBaseItem();
+        var vm = new ItemViewModel(uti);
+
+        vm.DescIdentified = "The legendary Sword of Shadows, forged in the Underdark.";
+
+        var result = WriteAndReadBack(uti);
+        Assert.Equal("The legendary Sword of Shadows, forged in the Underdark.", result.DescIdentified.GetDefault());
+    }
+
+    [Fact]
+    public void RoundTrip_BothDescriptions_Preserved()
+    {
+        var uti = CreateBaseItem();
+        var vm = new ItemViewModel(uti);
+
+        vm.Description = "Unidentified: glowing blade";
+        vm.DescIdentified = "Identified: Moonblade +3";
+
+        var result = WriteAndReadBack(uti);
+        Assert.Equal("Unidentified: glowing blade", result.Description.GetDefault());
+        Assert.Equal("Identified: Moonblade +3", result.DescIdentified.GetDefault());
+    }
+
+    [Fact]
+    public void RoundTrip_VarTable_IntVariable_Preserved()
+    {
+        var uti = CreateBaseItem();
+        uti.VarTable.Add(Variable.CreateInt("nQuestState", 42));
+
+        var result = WriteAndReadBack(uti);
+
+        Assert.Single(result.VarTable);
+        Assert.Equal("nQuestState", result.VarTable[0].Name);
+        Assert.Equal(VariableType.Int, result.VarTable[0].Type);
+        Assert.Equal(42, result.VarTable[0].GetInt());
+    }
+
+    [Fact]
+    public void RoundTrip_VarTable_MultipleVariables_Preserved()
+    {
+        var uti = CreateBaseItem();
+        uti.VarTable.Add(Variable.CreateInt("nCount", 10));
+        uti.VarTable.Add(Variable.CreateFloat("fDamage", 2.5f));
+        uti.VarTable.Add(Variable.CreateString("sOwner", "Drizzt"));
+
+        var result = WriteAndReadBack(uti);
+
+        Assert.Equal(3, result.VarTable.Count);
+        Assert.Equal("nCount", result.VarTable[0].Name);
+        Assert.Equal(10, result.VarTable[0].GetInt());
+        Assert.Equal("fDamage", result.VarTable[1].Name);
+        Assert.Equal(2.5f, result.VarTable[1].GetFloat(), 0.001f);
+        Assert.Equal("sOwner", result.VarTable[2].Name);
+        Assert.Equal("Drizzt", result.VarTable[2].GetString());
+    }
+
+    [Fact]
+    public void RoundTrip_EmptyVarTable_Preserved()
+    {
+        var uti = CreateBaseItem();
+        // VarTable starts empty
+
+        var result = WriteAndReadBack(uti);
+
+        Assert.Empty(result.VarTable);
+    }
+
     #region Helpers
 
     private static UtiFile CreateBaseItem()

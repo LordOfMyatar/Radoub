@@ -158,6 +158,14 @@ public class UtiFile
     /// </summary>
     public Dictionary<string, byte> ArmorParts { get; set; } = new();
 
+    // Local variables (used by scripting)
+
+    /// <summary>
+    /// Local variables attached to the item blueprint.
+    /// Used for scripting and module-specific data.
+    /// </summary>
+    public List<Variable> VarTable { get; set; } = new();
+
     // Blueprint-only fields
 
     /// <summary>

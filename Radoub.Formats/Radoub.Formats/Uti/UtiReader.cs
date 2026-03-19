@@ -98,6 +98,9 @@ public static class UtiReader
         // Properties list (Table 2.1.3)
         ParsePropertiesList(root, uti);
 
+        // Local variables
+        uti.VarTable = VarTableHelper.ReadVarTable(root);
+
         return uti;
     }
 

@@ -6,6 +6,7 @@ using Avalonia.Platform.Storage;
 using ItemEditor.Services;
 using ItemEditor.ViewModels;
 using Radoub.Formats.Common;
+using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
@@ -35,6 +36,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private PropertyTypeInfo? _selectedPropertyType;
     private int _editingPropertyIndex = -1; // -1 = add mode, >= 0 = editing that index
     private readonly HashSet<int> _checkedPropertyIndices = new();
+    private readonly ObservableCollection<VariableViewModel> _variables = new();
 
     // Convenience accessors for document state
     private string? _currentFilePath
@@ -88,6 +90,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Initialize game data service for base item type resolution
         await InitializeGameDataAsync();
+
+        // Initialize spell-check service (fire-and-forget)
+        _ = Radoub.UI.Services.SpellCheckService.Instance.InitializeAsync();
 
         // Handle startup file from command line
         var options = CommandLineService.Options;
@@ -272,6 +277,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             // Always update title — ClearDirty only fires when transitioning from dirty
             Title = _documentState.GetTitle();
 
+            // Sync ResRef from filename (Aurora Engine requires they match)
+            var fileResRef = Path.GetFileNameWithoutExtension(filePath).ToLowerInvariant();
+            if (_currentItem.TemplateResRef != fileResRef)
+            {
+                _currentItem.TemplateResRef = fileResRef;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Synced ResRef to filename: {fileResRef}");
+            }
+
             PopulateEditor();
             OnPropertyChanged(nameof(HasFile));
             AddRecentFile(filePath);
@@ -300,7 +313,32 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         try
         {
+            // Validate variables before save
+            var varError = ValidateVariables();
+            if (varError != null && varError.Contains("Duplicate"))
+            {
+                await ShowErrorAsync(varError);
+                return false;
+            }
+            if (varError != null)
+            {
+                // Warn about empty names but allow save
+                UnifiedLogger.LogApplication(LogLevel.WARN, varError);
+            }
+
             UpdateStatus("Saving...");
+
+            // Sync ResRef to match filename (Aurora Engine requires they match)
+            var saveResRef = Path.GetFileNameWithoutExtension(_currentFilePath).ToLowerInvariant();
+            _currentItem.TemplateResRef = saveResRef;
+            if (_itemViewModel != null)
+            {
+                _isLoading = true;
+                _itemViewModel.ResRef = saveResRef;
+                _isLoading = false;
+            }
+
+            UpdateVarTable();
             UtiWriter.Write(_currentItem, _currentFilePath);
             _documentState.ClearDirty();
 
@@ -354,6 +392,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             EmptyStatePanel.IsVisible = true;
             EditorContent.IsVisible = false;
+            AppearanceExpander.IsVisible = false;
             ModelPartsPanel.IsVisible = false;
             ColorsPanel.IsVisible = false;
             ArmorPartsPanel.IsVisible = false;
@@ -389,6 +428,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Populate assigned properties list
         RefreshAssignedProperties();
+
+        // Populate local variables
+        PopulateVariables();
 
         FilePathText.Text = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : "";
     }
@@ -440,9 +482,18 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         var typeInfo = _baseItemTypes?.FirstOrDefault(t => t.BaseItemIndex == baseItemIndex);
 
-        // Model Parts: show for types 0, 1, 2 (Simple, Layered, Composite)
+        // Item Type Description from 2DA (read-only)
+        BaseItemDescriptionText.Text = typeInfo?.DescriptionText ?? string.Empty;
+
+        // Appearance section: show if any sub-section is visible
         bool showModelParts = typeInfo?.HasModelParts ?? false;
         bool showMultipleParts = typeInfo?.HasMultipleModelParts ?? false;
+        bool showColors = typeInfo?.HasColorFields ?? false;
+        bool showArmorParts = typeInfo?.HasArmorParts ?? false;
+
+        AppearanceExpander.IsVisible = showModelParts || showColors || showArmorParts;
+
+        // Model Parts: show for types 0, 1, 2 (Simple, Layered, Composite)
         ModelPartsPanel.IsVisible = showModelParts;
         if (showModelParts)
         {
@@ -454,10 +505,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         // Colors: show for Layered (1) and Armor (3)
-        ColorsPanel.IsVisible = typeInfo?.HasColorFields ?? false;
+        ColorsPanel.IsVisible = showColors;
 
         // Armor Parts: show for Armor (3) only
-        bool showArmorParts = typeInfo?.HasArmorParts ?? false;
         ArmorPartsPanel.IsVisible = showArmorParts;
         if (showArmorParts)
         {
@@ -1273,6 +1323,176 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             settings.WindowLeft = Position.X;
             settings.WindowTop = Position.Y;
         }
+    }
+
+    // --- Local Variables ---
+
+    private void PopulateVariables()
+    {
+        VariablesGrid.ItemsSource = null;
+
+        foreach (var vm in _variables)
+            vm.PropertyChanged -= OnVariablePropertyChanged;
+
+        _variables.Clear();
+
+        if (_currentItem == null) return;
+
+        foreach (var variable in _currentItem.VarTable)
+        {
+            var vm = VariableViewModel.FromVariable(variable);
+            vm.PropertyChanged += OnVariablePropertyChanged;
+            _variables.Add(vm);
+        }
+
+        VariablesGrid.ItemsSource = _variables;
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {_variables.Count} local variables");
+    }
+
+    private void OnVariablePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (!_isLoading) MarkDirty();
+
+        // Re-validate on name changes
+        if (e.PropertyName == nameof(VariableViewModel.Name))
+            ValidateVariablesRealTime();
+    }
+
+    private void UpdateVarTable()
+    {
+        if (_currentItem == null) return;
+
+        _currentItem.VarTable.Clear();
+        foreach (var vm in _variables)
+        {
+            // Skip variables with empty names
+            if (!string.IsNullOrWhiteSpace(vm.Name))
+                _currentItem.VarTable.Add(vm.ToVariable());
+        }
+    }
+
+    /// <summary>
+    /// Validate local variables before save. Returns error message or null if valid.
+    /// </summary>
+    private string? ValidateVariables()
+    {
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var emptyCount = 0;
+
+        foreach (var vm in _variables)
+        {
+            if (string.IsNullOrWhiteSpace(vm.Name))
+            {
+                emptyCount++;
+                continue;
+            }
+
+            if (!names.Add(vm.Name))
+            {
+                return $"Duplicate variable name: \"{vm.Name}\". Each variable must have a unique name.";
+            }
+        }
+
+        if (emptyCount > 0)
+        {
+            return $"{emptyCount} variable(s) have no name and will be removed on save.";
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Real-time validation: mark variables with errors for visual feedback.
+    /// Called on every name change.
+    /// </summary>
+    private void ValidateVariablesRealTime()
+    {
+        // Count occurrences of each name (case-insensitive)
+        var nameCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var vm in _variables)
+        {
+            if (string.IsNullOrWhiteSpace(vm.Name)) continue;
+            nameCounts.TryGetValue(vm.Name, out var count);
+            nameCounts[vm.Name] = count + 1;
+        }
+
+        var errors = new List<string>();
+        foreach (var vm in _variables)
+        {
+            if (string.IsNullOrWhiteSpace(vm.Name))
+            {
+                vm.HasError = true;
+                vm.ErrorMessage = "Variable name is required";
+            }
+            else if (nameCounts.TryGetValue(vm.Name, out var count) && count > 1)
+            {
+                vm.HasError = true;
+                vm.ErrorMessage = $"Duplicate name: \"{vm.Name}\"";
+                if (!errors.Contains($"Duplicate: \"{vm.Name}\""))
+                    errors.Add($"Duplicate: \"{vm.Name}\"");
+            }
+            else
+            {
+                vm.HasError = false;
+                vm.ErrorMessage = string.Empty;
+            }
+        }
+
+        // Update validation summary
+        var emptyCount = _variables.Count(v => string.IsNullOrWhiteSpace(v.Name));
+        if (emptyCount > 0)
+            errors.Insert(0, $"{emptyCount} variable(s) missing name");
+
+        if (errors.Count > 0)
+        {
+            VariableValidationText.Text = string.Join(" | ", errors);
+            VariableValidationText.IsVisible = true;
+        }
+        else
+        {
+            VariableValidationText.IsVisible = false;
+        }
+    }
+
+    private void OnAddVariable(object? sender, RoutedEventArgs e)
+    {
+        if (_currentItem == null) return;
+
+        var newVar = new VariableViewModel
+        {
+            Name = string.Empty,
+            Type = VariableType.Int,
+            IntValue = 0
+        };
+
+        newVar.PropertyChanged += OnVariablePropertyChanged;
+        _variables.Add(newVar);
+        VariablesGrid.SelectedItem = newVar;
+
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            VariablesGrid.ScrollIntoView(newVar, VariablesGrid.Columns[0]);
+            VariablesGrid.BeginEdit();
+        }, Avalonia.Threading.DispatcherPriority.Background);
+
+        MarkDirty();
+        ValidateVariablesRealTime();
+    }
+
+    private void OnRemoveVariable(object? sender, RoutedEventArgs e)
+    {
+        var selectedItems = VariablesGrid.SelectedItems?.Cast<VariableViewModel>().ToList();
+        if (selectedItems == null || selectedItems.Count == 0) return;
+
+        foreach (var item in selectedItems)
+        {
+            item.PropertyChanged -= OnVariablePropertyChanged;
+            _variables.Remove(item);
+        }
+
+        MarkDirty();
+        ValidateVariablesRealTime();
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed {selectedItems.Count} variable(s)");
     }
 }
 

@@ -66,7 +66,17 @@ public class BaseItemTypeService
             if (modelTypeStr != null && modelTypeStr != "****" && int.TryParse(modelTypeStr, out var mt))
                 modelType = mt;
 
-            _cachedTypes.Add(new BaseItemTypeInfo(i, displayName, label, modelType));
+            // Read Description column → TLK string
+            string descriptionText = string.Empty;
+            var descStrRef = baseItems.GetValue(i, "Description");
+            if (descStrRef != null && descStrRef != "****")
+            {
+                var tlkDesc = _gameDataService.GetString(descStrRef);
+                if (TlkHelper.IsValidTlkString(tlkDesc))
+                    descriptionText = tlkDesc!;
+            }
+
+            _cachedTypes.Add(new BaseItemTypeInfo(i, displayName, label, modelType, descriptionText));
         }
 
         _cachedTypes = _cachedTypes.OrderBy(t => t.DisplayName).ToList();
@@ -157,17 +167,24 @@ public class BaseItemTypeInfo
     /// </summary>
     public int ModelType { get; }
 
+    /// <summary>
+    /// Item type description from baseitems.2da Description column → TLK.
+    /// Provides context about the item category (read-only in UI).
+    /// </summary>
+    public string DescriptionText { get; }
+
     public bool HasColorFields => ModelType is 1 or 3;
     public bool HasArmorParts => ModelType == 3;
     public bool HasModelParts => ModelType is 0 or 1 or 2;
     public bool HasMultipleModelParts => ModelType == 2;
 
-    public BaseItemTypeInfo(int baseItemIndex, string displayName, string label, int modelType = 0)
+    public BaseItemTypeInfo(int baseItemIndex, string displayName, string label, int modelType = 0, string descriptionText = "")
     {
         BaseItemIndex = baseItemIndex;
         DisplayName = displayName;
         Label = label;
         ModelType = modelType;
+        DescriptionText = descriptionText;
     }
 
     public override string ToString() => DisplayName;

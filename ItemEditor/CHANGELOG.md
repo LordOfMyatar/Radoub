@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.5.0-alpha] - 2026-03-17
+**Branch**: `itemeditor/issue-1723` | **PR**: #1779
+
+### Sprint 5: Descriptions, Appearance, Variables, and Comments (#1723)
+
+- [x] #1724 — Description fields with spell-check and token support
+- [x] #1725 — Item Type Description from 2DA (read-only)
+- [x] #1726 — Appearance section in collapsible Expander
+- [x] #1727 — Local variables DataGrid and collapsible comments section
+
+---
+
 ## [0.4.0-alpha] - 2026-03-17
 **Branch**: `itemeditor/issue-1717` | **PR**: #1777
 

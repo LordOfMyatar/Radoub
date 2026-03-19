@@ -3,6 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="using:Radoub.UI.Controls"
+        xmlns:vm="using:ItemEditor.ViewModels"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
         x:Class="ItemEditor.Views.MainWindow"
         x:Name="MainWindowInstance"
@@ -153,7 +154,7 @@
 
                                 <!-- Name -->
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" Classes="label"/>
-                                <TextBox Grid.Row="0" Grid.Column="1"
+                                <controls:SpellCheckTextBox Grid.Row="0" Grid.Column="1"
                                          x:Name="NameTextBox"
                                          Text="{Binding Name, Mode=TwoWay}"
                                          Watermark="Item name"/>
@@ -166,13 +167,16 @@
                                          MaxLength="32"
                                          Watermark="Item tag (max 32 chars)"/>
 
-                                <!-- ResRef -->
+                                <!-- ResRef (synced from filename, read-only) -->
                                 <TextBlock Grid.Row="2" Grid.Column="0" Text="ResRef" Classes="label"/>
                                 <TextBox Grid.Row="2" Grid.Column="1"
                                          x:Name="ResRefTextBox"
-                                         Text="{Binding ResRef, Mode=TwoWay}"
+                                         Text="{Binding ResRef, Mode=OneWay}"
+                                         IsReadOnly="True"
                                          MaxLength="16"
-                                         Watermark="Resource reference (max 16 chars)"/>
+                                         Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                         ToolTip.Tip="Resource reference (auto-set from filename). Use Save As to change."
+                                         Watermark="(set from filename)"/>
 
                                 <!-- Base Item Type -->
                                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Base Type" Classes="label"/>
@@ -200,24 +204,58 @@
                                                    Watermark="Additional cost"/>
                                 </Grid>
 
-                                <!-- Comment -->
-                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Comment" Classes="label"/>
-                                <TextBox Grid.Row="5" Grid.Column="1"
-                                         x:Name="CommentTextBox"
-                                         Text="{Binding Comment, Mode=TwoWay}"
-                                         Watermark="Designer comment (not visible in-game)"
-                                         AcceptsReturn="True"
-                                         Height="60"
-                                         TextWrapping="Wrap"/>
-
                                 <!-- Palette Category -->
-                                <TextBlock Grid.Row="6" Grid.Column="0" Text="Category" Classes="label"/>
-                                <ComboBox Grid.Row="6" Grid.Column="1"
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Category" Classes="label"/>
+                                <ComboBox Grid.Row="5" Grid.Column="1"
                                           x:Name="PaletteCategoryComboBox"
                                           HorizontalAlignment="Stretch"
                                           Margin="0,0,0,8"
                                           SelectionChanged="OnPaletteCategorySelectionChanged"/>
+
+                                <!-- Item Type Description (read-only from 2DA) -->
+                                <TextBlock Grid.Row="6" Grid.Column="0" Text="Type Info" Classes="label"/>
+                                <TextBox Grid.Row="6" Grid.Column="1"
+                                         x:Name="BaseItemDescriptionText"
+                                         IsReadOnly="True"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         MinHeight="40"
+                                         MaxHeight="120"
+                                         Watermark="(no description available)"
+                                         Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                             </Grid>
+
+                            <!-- Unidentified Description -->
+                            <TextBlock Text="Unidentified Description" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,2"/>
+                            <TextBlock Text="Shown to players before the item is identified"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       Margin="0,0,0,4"/>
+                            <controls:SpellCheckTextBox
+                                x:Name="DescriptionTextBox"
+                                Text="{Binding Description, Mode=TwoWay}"
+                                AcceptsReturn="True"
+                                TextWrapping="Wrap"
+                                MinHeight="60"
+                                MaxHeight="200"
+                                Watermark="Unidentified description (visible before Lore check)"
+                                Margin="0,0,0,8"/>
+
+                            <!-- Identified Description -->
+                            <TextBlock Text="Identified Description" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,2"/>
+                            <TextBlock Text="Shown to players after the item is identified"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       Margin="0,0,0,4"/>
+                            <controls:SpellCheckTextBox
+                                x:Name="DescIdentifiedTextBox"
+                                Text="{Binding DescIdentified, Mode=TwoWay}"
+                                AcceptsReturn="True"
+                                TextWrapping="Wrap"
+                                MinHeight="60"
+                                MaxHeight="200"
+                                Watermark="Identified description (visible after Lore check)"
+                                Margin="0,0,0,8"/>
 
                             <Separator/>
 
@@ -277,111 +315,112 @@
                                                Margin="0,0,0,8"/>
                             </Grid>
 
-                            <Separator/>
+                            <!-- Appearance (collapsible, conditional on base item type) -->
+                            <Expander x:Name="AppearanceExpander" Header="Appearance" IsExpanded="True" IsVisible="False" Margin="0,0,0,8">
+                                <StackPanel Spacing="8" Margin="0,4,0,0">
 
-                            <!-- Model Parts (ModelType 0/1/2) -->
-                            <StackPanel x:Name="ModelPartsPanel" IsVisible="False">
-                                <TextBlock Text="Model Parts" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                                <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto" Margin="0,0,0,8">
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Part 1"
-                                               VerticalAlignment="Center" Margin="0,0,8,8"/>
-                                    <NumericUpDown Grid.Row="0" Grid.Column="1"
-                                                   x:Name="ModelPart1UpDown"
-                                                   Value="{Binding ModelPart1, Mode=TwoWay}"
-                                                   Minimum="0" Maximum="255"
-                                                   FormatString="N0"
-                                                   HorizontalAlignment="Left" Width="150"
-                                                   Margin="0,0,0,8"/>
+                                    <!-- Model Parts (ModelType 0/1/2) -->
+                                    <StackPanel x:Name="ModelPartsPanel" IsVisible="False">
+                                        <TextBlock Text="Model Parts" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                        <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto" Margin="0,0,0,8">
+                                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Part 1"
+                                                       VerticalAlignment="Center" Margin="0,0,8,8"/>
+                                            <NumericUpDown Grid.Row="0" Grid.Column="1"
+                                                           x:Name="ModelPart1UpDown"
+                                                           Value="{Binding ModelPart1, Mode=TwoWay}"
+                                                           Minimum="0" Maximum="255"
+                                                           FormatString="N0"
+                                                           HorizontalAlignment="Left" Width="150"
+                                                           Margin="0,0,0,8"/>
 
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Part 2"
-                                               x:Name="ModelPart2Label"
-                                               VerticalAlignment="Center" Margin="0,0,8,8"/>
-                                    <NumericUpDown Grid.Row="1" Grid.Column="1"
-                                                   x:Name="ModelPart2UpDown"
-                                                   Value="{Binding ModelPart2, Mode=TwoWay}"
-                                                   Minimum="0" Maximum="255"
-                                                   FormatString="N0"
-                                                   HorizontalAlignment="Left" Width="150"
-                                                   Margin="0,0,0,8"/>
+                                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Part 2"
+                                                       x:Name="ModelPart2Label"
+                                                       VerticalAlignment="Center" Margin="0,0,8,8"/>
+                                            <NumericUpDown Grid.Row="1" Grid.Column="1"
+                                                           x:Name="ModelPart2UpDown"
+                                                           Value="{Binding ModelPart2, Mode=TwoWay}"
+                                                           Minimum="0" Maximum="255"
+                                                           FormatString="N0"
+                                                           HorizontalAlignment="Left" Width="150"
+                                                           Margin="0,0,0,8"/>
 
-                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Part 3"
-                                               x:Name="ModelPart3Label"
-                                               VerticalAlignment="Center" Margin="0,0,8,8"/>
-                                    <NumericUpDown Grid.Row="2" Grid.Column="1"
-                                                   x:Name="ModelPart3UpDown"
-                                                   Value="{Binding ModelPart3, Mode=TwoWay}"
-                                                   Minimum="0" Maximum="255"
-                                                   FormatString="N0"
-                                                   HorizontalAlignment="Left" Width="150"
-                                                   Margin="0,0,0,8"/>
-                                </Grid>
-                                <Separator/>
-                            </StackPanel>
+                                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Part 3"
+                                                       x:Name="ModelPart3Label"
+                                                       VerticalAlignment="Center" Margin="0,0,8,8"/>
+                                            <NumericUpDown Grid.Row="2" Grid.Column="1"
+                                                           x:Name="ModelPart3UpDown"
+                                                           Value="{Binding ModelPart3, Mode=TwoWay}"
+                                                           Minimum="0" Maximum="255"
+                                                           FormatString="N0"
+                                                           HorizontalAlignment="Left" Width="150"
+                                                           Margin="0,0,0,8"/>
+                                        </Grid>
+                                    </StackPanel>
 
-                            <!-- Colors (ModelType 1 or 3) -->
-                            <StackPanel x:Name="ColorsPanel" IsVisible="False">
-                                <TextBlock Text="Colors" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                                <Grid ColumnDefinitions="120,*,16,120,*" RowDefinitions="Auto,Auto,Auto" Margin="0,0,0,8">
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Cloth 1"
-                                               VerticalAlignment="Center" Margin="0,0,8,8"/>
-                                    <NumericUpDown Grid.Row="0" Grid.Column="1"
-                                                   Value="{Binding Cloth1Color, Mode=TwoWay}"
-                                                   Minimum="0" Maximum="255"
-                                                   FormatString="N0"
-                                                   Margin="0,0,0,8"/>
+                                    <!-- Colors (ModelType 1 or 3) -->
+                                    <StackPanel x:Name="ColorsPanel" IsVisible="False">
+                                        <TextBlock Text="Colors" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                        <Grid ColumnDefinitions="120,*,16,120,*" RowDefinitions="Auto,Auto,Auto" Margin="0,0,0,8">
+                                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Cloth 1"
+                                                       VerticalAlignment="Center" Margin="0,0,8,8"/>
+                                            <NumericUpDown Grid.Row="0" Grid.Column="1"
+                                                           Value="{Binding Cloth1Color, Mode=TwoWay}"
+                                                           Minimum="0" Maximum="255"
+                                                           FormatString="N0"
+                                                           Margin="0,0,0,8"/>
 
-                                    <TextBlock Grid.Row="0" Grid.Column="3" Text="Cloth 2"
-                                               VerticalAlignment="Center" Margin="0,0,8,8"/>
-                                    <NumericUpDown Grid.Row="0" Grid.Column="4"
-                                                   Value="{Binding Cloth2Color, Mode=TwoWay}"
-                                                   Minimum="0" Maximum="255"
-                                                   FormatString="N0"
-                                                   Margin="0,0,0,8"/>
+                                            <TextBlock Grid.Row="0" Grid.Column="3" Text="Cloth 2"
+                                                       VerticalAlignment="Center" Margin="0,0,8,8"/>
+                                            <NumericUpDown Grid.Row="0" Grid.Column="4"
+                                                           Value="{Binding Cloth2Color, Mode=TwoWay}"
+                                                           Minimum="0" Maximum="255"
+                                                           FormatString="N0"
+                                                           Margin="0,0,0,8"/>
 
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Leather 1"
-                                               VerticalAlignment="Center" Margin="0,0,8,8"/>
-                                    <NumericUpDown Grid.Row="1" Grid.Column="1"
-                                                   Value="{Binding Leather1Color, Mode=TwoWay}"
-                                                   Minimum="0" Maximum="255"
-                                                   FormatString="N0"
-                                                   Margin="0,0,0,8"/>
+                                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Leather 1"
+                                                       VerticalAlignment="Center" Margin="0,0,8,8"/>
+                                            <NumericUpDown Grid.Row="1" Grid.Column="1"
+                                                           Value="{Binding Leather1Color, Mode=TwoWay}"
+                                                           Minimum="0" Maximum="255"
+                                                           FormatString="N0"
+                                                           Margin="0,0,0,8"/>
 
-                                    <TextBlock Grid.Row="1" Grid.Column="3" Text="Leather 2"
-                                               VerticalAlignment="Center" Margin="0,0,8,8"/>
-                                    <NumericUpDown Grid.Row="1" Grid.Column="4"
-                                                   Value="{Binding Leather2Color, Mode=TwoWay}"
-                                                   Minimum="0" Maximum="255"
-                                                   FormatString="N0"
-                                                   Margin="0,0,0,8"/>
+                                            <TextBlock Grid.Row="1" Grid.Column="3" Text="Leather 2"
+                                                       VerticalAlignment="Center" Margin="0,0,8,8"/>
+                                            <NumericUpDown Grid.Row="1" Grid.Column="4"
+                                                           Value="{Binding Leather2Color, Mode=TwoWay}"
+                                                           Minimum="0" Maximum="255"
+                                                           FormatString="N0"
+                                                           Margin="0,0,0,8"/>
 
-                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Metal 1"
-                                               VerticalAlignment="Center" Margin="0,0,8,8"/>
-                                    <NumericUpDown Grid.Row="2" Grid.Column="1"
-                                                   Value="{Binding Metal1Color, Mode=TwoWay}"
-                                                   Minimum="0" Maximum="255"
-                                                   FormatString="N0"
-                                                   Margin="0,0,0,8"/>
+                                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Metal 1"
+                                                       VerticalAlignment="Center" Margin="0,0,8,8"/>
+                                            <NumericUpDown Grid.Row="2" Grid.Column="1"
+                                                           Value="{Binding Metal1Color, Mode=TwoWay}"
+                                                           Minimum="0" Maximum="255"
+                                                           FormatString="N0"
+                                                           Margin="0,0,0,8"/>
 
-                                    <TextBlock Grid.Row="2" Grid.Column="3" Text="Metal 2"
-                                               VerticalAlignment="Center" Margin="0,0,8,8"/>
-                                    <NumericUpDown Grid.Row="2" Grid.Column="4"
-                                                   Value="{Binding Metal2Color, Mode=TwoWay}"
-                                                   Minimum="0" Maximum="255"
-                                                   FormatString="N0"
-                                                   Margin="0,0,0,8"/>
-                                </Grid>
-                                <Separator/>
-                            </StackPanel>
+                                            <TextBlock Grid.Row="2" Grid.Column="3" Text="Metal 2"
+                                                       VerticalAlignment="Center" Margin="0,0,8,8"/>
+                                            <NumericUpDown Grid.Row="2" Grid.Column="4"
+                                                           Value="{Binding Metal2Color, Mode=TwoWay}"
+                                                           Minimum="0" Maximum="255"
+                                                           FormatString="N0"
+                                                           Margin="0,0,0,8"/>
+                                        </Grid>
+                                    </StackPanel>
 
-                            <!-- Armor Parts (ModelType 3 only) -->
-                            <StackPanel x:Name="ArmorPartsPanel" IsVisible="False">
-                                <TextBlock Text="Armor Parts" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                                <Grid x:Name="ArmorPartsGrid" ColumnDefinitions="120,*,16,120,*" Margin="0,0,0,8">
-                                    <!-- Populated dynamically in code-behind -->
-                                </Grid>
-                            </StackPanel>
+                                    <!-- Armor Parts (ModelType 3 only) -->
+                                    <StackPanel x:Name="ArmorPartsPanel" IsVisible="False">
+                                        <TextBlock Text="Armor Parts" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                        <Grid x:Name="ArmorPartsGrid" ColumnDefinitions="120,*,16,120,*" Margin="0,0,0,8">
+                                            <!-- Populated dynamically in code-behind -->
+                                        </Grid>
+                                    </StackPanel>
 
-                            <Separator/>
+                                </StackPanel>
+                            </Expander>
 
                             <!-- Item Properties Editor -->
                             <TextBlock Text="Item Properties" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
@@ -524,6 +563,94 @@
                                          Watermark="No properties assigned"
                                          Margin="0,0,0,8"/>
                             </StackPanel>
+
+                            <!-- Local Variables -->
+                            <Expander Header="Local Variables" IsExpanded="False" Margin="0,0,0,8">
+                                <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                        BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,4,0,0">
+                                    <DockPanel>
+                                        <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="0,8,0,0">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <Button Content="Add" Click="OnAddVariable"/>
+                                                <Button Content="Remove" Click="OnRemoveVariable"/>
+                                            </StackPanel>
+                                            <TextBlock x:Name="VariableValidationText"
+                                                       Foreground="#FF4444"
+                                                       FontSize="11"
+                                                       TextWrapping="Wrap"
+                                                       IsVisible="False"/>
+                                        </StackPanel>
+
+                                        <DataGrid x:Name="VariablesGrid"
+                                                  AutoGenerateColumns="False"
+                                                  CanUserReorderColumns="True"
+                                                  CanUserResizeColumns="True"
+                                                  CanUserSortColumns="True"
+                                                  IsReadOnly="False"
+                                                  SelectionMode="Extended"
+                                                  GridLinesVisibility="Horizontal"
+                                                  MaxHeight="180">
+                                            <DataGrid.Resources>
+                                                <vm:BoolToErrorBrushConverter x:Key="BoolToErrorBrushConverter"/>
+                                            </DataGrid.Resources>
+                                            <DataGrid.Columns>
+                                                <DataGridTemplateColumn Header="Name" Width="120">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <TextBox Text="{Binding Name}"
+                                                                         HorizontalAlignment="Stretch"
+                                                                         MinWidth="80"
+                                                                         BorderBrush="{Binding HasError, Converter={StaticResource BoolToErrorBrushConverter}}"/>
+                                                                <TextBlock Text="{Binding ErrorMessage}"
+                                                                           Foreground="{DynamicResource ThemeError}"
+                                                                           FontSize="11"
+                                                                           VerticalAlignment="Center"
+                                                                           IsVisible="{Binding HasError}"/>
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTemplateColumn Header="Type" Width="80">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <ComboBox SelectedIndex="{Binding TypeIndex}" Margin="0"
+                                                                      HorizontalAlignment="Stretch">
+                                                                <ComboBoxItem Content="Int"/>
+                                                                <ComboBoxItem Content="Float"/>
+                                                                <ComboBoxItem Content="String"/>
+                                                            </ComboBox>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTemplateColumn Header="Value" Width="*">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <Grid>
+                                                                <NumericUpDown Value="{Binding IntValue}" IsVisible="{Binding IsIntType}" Minimum="-2147483648" Maximum="2147483647"/>
+                                                                <NumericUpDown Value="{Binding FloatValue}" IsVisible="{Binding IsFloatType}" Increment="0.001" FormatString="F3"/>
+                                                                <TextBox Text="{Binding StringValue}" IsVisible="{Binding IsStringType}"/>
+                                                            </Grid>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </DockPanel>
+                                </Border>
+                            </Expander>
+
+                            <!-- Developer Comments -->
+                            <Expander Header="Developer Comments" IsExpanded="False" Margin="0,0,0,8">
+                                <TextBox x:Name="CommentTextBox"
+                                         Text="{Binding Comment, Mode=TwoWay}"
+                                         Watermark="Designer comment (not visible in-game)"
+                                         AcceptsReturn="True"
+                                         MinHeight="60"
+                                         MaxHeight="200"
+                                         TextWrapping="Wrap"
+                                         Margin="0,4,0,0"/>
+                            </Expander>
 
                         </StackPanel>
                     </ScrollViewer>
