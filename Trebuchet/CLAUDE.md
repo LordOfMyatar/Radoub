@@ -23,7 +23,6 @@ Project guidance for Claude Code sessions working with the Trebuchet (Radoub Lau
 Trebuchet/
 ├── CHANGELOG.md
 ├── CLAUDE.md (this file)
-├── NonPublic/           # Research docs, not published
 ├── Trebuchet/
 │   ├── Trebuchet.csproj
 │   ├── App.axaml(.cs)

@@ -43,6 +43,12 @@ Radoub/
 ├── About/ (project history and AI collaboration documentation)
 │   ├── CLAUDE_DEVELOPMENT_TIMELINE.md
 │   └── ON_USING_CLAUDE.md
+├── NonPublic/ (private docs, specs, research — NOT in git)
+│   ├── ItemEditor/ (ItemEditor specs, plans, research)
+│   ├── Parley/ (Parley specs, plans, research)
+│   ├── Quartermaster/ (QM specs, plans, research)
+│   ├── Fence/ (Fence assets, research)
+│   └── Trebuchet/ (Trebuchet research)
 ├── Parley/ (dialog editor)
 │   ├── README.md
 │   ├── CLAUDE.md (Parley-specific guidance)
@@ -50,7 +56,6 @@ Radoub/
 │   ├── Parley/ (source code)
 │   ├── TestingTools/
 │   ├── Documentation/ (Approved Parley-specific docs)
-│   ├── NonPublic/ (To be approved documents)
 ├── Manifest/ (journal editor)
 │   ├── CLAUDE.md (Manifest-specific guidance)
 │   ├── CHANGELOG.md (Manifest-specific changes)
@@ -132,8 +137,13 @@ When working on a specific tool (e.g., Parley):
 - Never edit ON_USING_CLAUDE.md; only Lord makes changes to that.
 
 **NonPublic Docs**
-- When you right something put it in the project's NonPublic docs folder.
-- The human will move it to public after review
+- **All NonPublic docs go in the root `NonPublic/` directory**, organized by tool:
+  - `NonPublic/ItemEditor/` — ItemEditor specs, plans, follow-ups
+  - `NonPublic/Parley/` — Parley specs, research
+  - `NonPublic/Quartermaster/` — QM specs, research
+  - etc.
+- **NEVER create a `NonPublic/` folder inside a tool directory** (e.g., `Parley/NonPublic/` is WRONG)
+- The human will move approved docs to public after review
 
 ### Cross-Tool Work
 
@@ -627,7 +637,7 @@ Spikes are **timeboxed throwaway prototypes** (from XP/Extreme Programming) used
 - `/research` = information gathering (reading, no code changes)
 - `/spike` = hands-on prototyping (throwaway code on a disposable branch)
 
-**Workflow**: Run `/spike [topic or #issue]` to start. The command creates a throwaway branch, sets a timebox, and on completion generates a findings document in `[Tool]/NonPublic/Research/spike-[topic].md`. The spike branch is **never merged** — it is deleted after findings are captured.
+**Workflow**: Run `/spike [topic or #issue]` to start. The command creates a throwaway branch, sets a timebox, and on completion generates a findings document in `NonPublic/[Tool]/Research/spike-[topic].md`. The spike branch is **never merged** — it is deleted after findings are captured.
 
 **Rules**:
 - Never merge a spike branch

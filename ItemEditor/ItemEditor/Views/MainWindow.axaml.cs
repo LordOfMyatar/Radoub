@@ -100,6 +100,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             await OpenFileAsync(options.FilePath);
         }
+        // Handle --new flag
+        else if (options.NewItem)
+        {
+            await ShowNewItemWizard();
+        }
 
         UpdateStatus("Ready");
     }
@@ -577,6 +582,30 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     }
 
     // --- Menu Handlers ---
+
+    private async void OnNewItemClick(object? sender, RoutedEventArgs e)
+    {
+        if (_isDirty)
+        {
+            var result = await PromptSaveChangesAsync();
+            if (result == SavePromptResult.Cancel) return;
+            if (result == SavePromptResult.Save && !await SaveCurrentFileAsync()) return;
+        }
+        await ShowNewItemWizard();
+    }
+
+    private async Task ShowNewItemWizard()
+    {
+        var wizard = new NewItemWizardWindow(_gameDataService, _baseItemTypes);
+        await wizard.ShowDialog(this);
+
+        if (!string.IsNullOrEmpty(wizard.CreatedFilePath))
+        {
+            if (wizard.OpenInEditor)
+                await OpenFileAsync(wizard.CreatedFilePath);
+            UpdateStatus($"Created: {Path.GetFileName(wizard.CreatedFilePath)}");
+        }
+    }
 
     private async void OnOpenClick(object? sender, RoutedEventArgs e)
     {

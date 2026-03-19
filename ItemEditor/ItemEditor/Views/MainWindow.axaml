@@ -35,6 +35,8 @@
         <!-- Menu Bar -->
         <Menu DockPanel.Dock="Top" AutomationProperties.AutomationId="MainMenu">
             <MenuItem Header="_File">
+                <MenuItem Header="_New Item..." Click="OnNewItemClick" InputGesture="Ctrl+N"/>
+                <Separator/>
                 <MenuItem Header="_Open..." Click="OnOpenClick" InputGesture="Ctrl+O"/>
                 <MenuItem Header="Open _Recent" x:Name="RecentFilesMenu"/>
                 <Separator/>

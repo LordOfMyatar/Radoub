@@ -166,5 +166,6 @@ Changes go in `ItemEditor/CHANGELOG.md` (not Radoub CHANGELOG).
 - [ItemEditor CHANGELOG](CHANGELOG.md)
 - [UTI Parser](../Radoub.Formats/Radoub.Formats/Uti/)
 - [Epic #1576 - Item Creation & Editing](https://github.com/LordOfMyatar/Radoub/issues/1576)
+- NonPublic docs: `NonPublic/ItemEditor/` (specs, plans, research — NOT in tool directory)
 
 ---
