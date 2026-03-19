@@ -27,7 +27,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 {
     private UtiFile? _currentItem;
     private ItemViewModel? _itemViewModel;
-    private readonly DocumentState _documentState = new("ItemEditor");
+    private readonly DocumentState _documentState = new("Relique");
     private IGameDataService? _gameDataService;
     private List<BaseItemTypeInfo>? _baseItemTypes;
     private List<PaletteCategory> _paletteCategories = new();
@@ -69,7 +69,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         Closing += OnWindowClosing;
         Opened += OnWindowOpened;
 
-        UnifiedLogger.LogApplication(LogLevel.INFO, "ItemEditor MainWindow initialized");
+        UnifiedLogger.LogApplication(LogLevel.INFO, "Relique MainWindow initialized");
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
@@ -694,7 +694,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         var aboutWindow = Radoub.UI.Views.AboutWindow.Create(new Radoub.UI.Views.AboutWindowConfig
         {
-            ToolName = "ItemEditor",
+            ToolName = "Relique",
             Version = Radoub.UI.Utils.VersionHelper.GetVersion()
         });
         aboutWindow.Show(this);

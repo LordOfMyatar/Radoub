@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 
@@ -83,7 +84,7 @@ public partial class RadoubSettings
                     _quartermasterPath = PathHelper.ExpandPath(data.QuartermasterPath ?? "");
                     _fencePath = PathHelper.ExpandPath(data.FencePath ?? "");
                     _trebuchetPath = PathHelper.ExpandPath(data.TrebuchetPath ?? "");
-                    _itemEditorPath = PathHelper.ExpandPath(data.ItemEditorPath ?? "");
+                    _reliquePath = PathHelper.ExpandPath(data.ReliquePath ?? "");
                 }
             }
         }
@@ -132,7 +133,7 @@ public partial class RadoubSettings
                 QuartermasterPath = PathHelper.ContractPath(_quartermasterPath),
                 FencePath = PathHelper.ContractPath(_fencePath),
                 TrebuchetPath = PathHelper.ContractPath(_trebuchetPath),
-                ItemEditorPath = PathHelper.ContractPath(_itemEditorPath)
+                ReliquePath = PathHelper.ContractPath(_reliquePath)
             };
 
             var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
@@ -174,6 +175,22 @@ public partial class RadoubSettings
         public string? QuartermasterPath { get; set; }
         public string? FencePath { get; set; }
         public string? TrebuchetPath { get; set; }
-        public string? ItemEditorPath { get; set; }
+        public string? ReliquePath { get; set; }
+
+        /// <summary>
+        /// Legacy key — reads old "ItemEditorPath" from JSON and migrates to ReliquePath.
+        /// Never serialized (getter returns null, WhenWritingNull suppresses output).
+        /// </summary>
+        [JsonPropertyName("ItemEditorPath")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? LegacyItemEditorPath
+        {
+            get => null;
+            set
+            {
+                if (value != null && ReliquePath == null)
+                    ReliquePath = value;
+            }
+        }
     }
 }

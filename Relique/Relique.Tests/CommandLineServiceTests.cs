@@ -2,6 +2,7 @@ using ItemEditor.Services;
 
 namespace ItemEditor.Tests;
 
+[Collection("CommandLine")]
 public class CommandLineServiceTests
 {
     [Fact]

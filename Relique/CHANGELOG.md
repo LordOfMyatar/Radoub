@@ -1,12 +1,27 @@
-# Changelog - ItemEditor
+# Changelog - Relique
 
-All notable changes to ItemEditor (Item Editor) will be documented in this file.
+All notable changes to Relique (Item Blueprint Editor) will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
 ## [Unreleased]
+
+---
+
+## [0.7.0-alpha] - 2026-03-18
+**Branch**: `itemeditor/issue-1784` | **PR**: #1788
+
+### Rename product to Relique (#1784)
+
+- Rename user-facing product name from ItemEditor to Relique
+- Rename directories: `ItemEditor/` → `Relique/Relique/` (matches tool convention)
+- Rename settings: `ItemEditorPath` → `ReliquePath` with migration for old JSON key
+- Update UI strings, window titles, About dialog, help output, settings paths
+- Update Trebuchet tool card, Fence context menu, cross-tool launcher
+- Fix flaky CommandLine test race condition (`[Collection]`)
+- Namespace stays `ItemEditor` (no code-level rename)
 
 ---
 

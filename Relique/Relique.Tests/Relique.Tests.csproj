@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <RootNamespace>ItemEditor.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ItemEditor\ItemEditor.csproj" />
+    <ProjectReference Include="..\Relique\Relique.csproj" />
     <ProjectReference Include="..\..\Radoub.TestUtilities\Radoub.TestUtilities\Radoub.TestUtilities.csproj" />
   </ItemGroup>
 

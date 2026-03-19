@@ -44,7 +44,7 @@ public static class CommandLineService
 
     public static void PrintHelp()
     {
-        Console.WriteLine("ItemEditor - Item Blueprint Editor for Neverwinter Nights");
+        Console.WriteLine("Relique - Item Blueprint Editor for Neverwinter Nights");
         Console.WriteLine();
         Console.WriteLine("Usage: ItemEditor [options] [file]");
         Console.WriteLine();

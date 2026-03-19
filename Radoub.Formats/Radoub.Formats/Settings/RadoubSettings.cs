@@ -91,7 +91,7 @@ public partial class RadoubSettings : INotifyPropertyChanged
     private string _quartermasterPath = "";
     private string _fencePath = "";
     private string _trebuchetPath = "";
-    private string _itemEditorPath = "";
+    private string _reliquePath = "";
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -457,12 +457,12 @@ public partial class RadoubSettings : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Path to ItemEditor.exe. Auto-set when ItemEditor runs.
+    /// Path to Relique (ItemEditor) executable. Auto-set when Relique runs.
     /// </summary>
-    public string ItemEditorPath
+    public string ReliquePath
     {
-        get => _itemEditorPath;
-        set { if (SetProperty(ref _itemEditorPath, value ?? "")) SaveSettings(); }
+        get => _reliquePath;
+        set { if (SetProperty(ref _reliquePath, value ?? "")) SaveSettings(); }
     }
 
     /// <summary>

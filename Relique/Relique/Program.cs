@@ -30,18 +30,18 @@ sealed class Program
         // SafeMode: Reset visual settings to defaults (theme, fonts)
         if (options.SafeMode)
         {
-            SafeMode = new SafeModeService("ItemEditor");
+            SafeMode = new SafeModeService("Relique");
             SafeMode.ActivateSafeMode(clearParameterCache: false, clearPluginData: false);
         }
 
         // Set app name early so any pre-configuration logging goes to correct directory
-        UnifiedLogger.SetAppName("ItemEditor");
+        UnifiedLogger.SetAppName("Relique");
 
         // Initialize unified logging with shared settings
         var sharedSettings = RadoubSettings.Instance;
         UnifiedLogger.Configure(new LoggerConfig
         {
-            AppName = "ItemEditor",
+            AppName = "Relique",
             LogLevel = sharedSettings.UseSharedLogging ? sharedSettings.SharedLogLevel : LogLevel.INFO,
             RetainSessions = sharedSettings.SharedLogRetentionSessions
         });

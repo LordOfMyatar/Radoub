@@ -208,9 +208,9 @@ public partial class MainWindow
         }
 
         if (ItemEditorLauncher.LaunchWithFile(utiPath))
-            UpdateStatusBar($"Opened '{resRef}.uti' in ItemEditor");
+            UpdateStatusBar($"Opened '{resRef}.uti' in Relique");
         else
-            UpdateStatusBar("Failed to launch ItemEditor");
+            UpdateStatusBar("Failed to launch Relique");
     }
 
     private async void OnRefreshItemPalette(object? sender, RoutedEventArgs e)

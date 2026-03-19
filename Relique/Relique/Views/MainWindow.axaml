@@ -7,7 +7,7 @@
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
         x:Class="ItemEditor.Views.MainWindow"
         x:Name="MainWindowInstance"
-        Title="ItemEditor"
+        Title="Relique"
         Width="1000" Height="700"
         MinWidth="700" MinHeight="500"
         ExtendClientAreaToDecorationsHint="True"
@@ -61,7 +61,7 @@
                 <MenuItem Header="_Settings..." Click="OnSettingsClick"/>
             </MenuItem>
             <MenuItem Header="_Help">
-                <MenuItem Header="_About ItemEditor" Click="OnAboutClick"/>
+                <MenuItem Header="_About Relique" Click="OnAboutClick"/>
             </MenuItem>
         </Menu>
 

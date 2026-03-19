@@ -8,12 +8,12 @@
 #   .\run-tests.ps1 -Tool Manifest -UnitOnly  # Manifest unit tests only
 #   .\run-tests.ps1 -Tool Fence               # Fence + shared library tests
 #   .\run-tests.ps1 -Tool Trebuchet           # Trebuchet UI tests + shared library tests
-#   .\run-tests.ps1 -Tool ItemEditor          # ItemEditor + shared library tests
+#   .\run-tests.ps1 -Tool Relique             # Relique + shared library tests
 #   .\run-tests.ps1 -UnitOnly                 # All unit tests, no UI tests
 #   .\run-tests.ps1 -TechDebt                 # Include tech debt scan (large files)
 
 param(
-    [ValidateSet("Parley", "Quartermaster", "Manifest", "Fence", "Trebuchet", "ItemEditor")]
+    [ValidateSet("Parley", "Quartermaster", "Manifest", "Fence", "Trebuchet", "Relique")]
     [string]$Tool,
     [switch]$SkipShared,
     [switch]$UIOnly,
@@ -53,7 +53,7 @@ function Invoke-PrivacyScan {
     Write-Host "`n=== Privacy Scan ===" -ForegroundColor Magenta
     Write-Host "Checking for hardcoded paths..." -ForegroundColor Yellow
 
-    $searchDirs = @("Parley", "Radoub.Formats", "Radoub.UI", "Radoub.Dictionary", "Manifest", "Quartermaster", "Fence", "Trebuchet", "ItemEditor")
+    $searchDirs = @("Parley", "Radoub.Formats", "Radoub.UI", "Radoub.Dictionary", "Manifest", "Quartermaster", "Fence", "Trebuchet", "Relique")
 
     $patterns = @(
         'C:\\Users\\[A-Za-z]',
@@ -155,7 +155,7 @@ function Invoke-ThemeCompatScan {
             $scanDirs += @("Radoub.UI", "Radoub.Formats", "Radoub.Dictionary")
         }
     } else {
-        $scanDirs = @("Parley", "Manifest", "Quartermaster", "Fence", "Trebuchet", "ItemEditor", "Radoub.UI", "Radoub.Formats", "Radoub.Dictionary")
+        $scanDirs = @("Parley", "Manifest", "Quartermaster", "Fence", "Trebuchet", "Relique", "Radoub.UI", "Radoub.Formats", "Radoub.Dictionary")
     }
 
     # Patterns to detect in .cs files
@@ -288,7 +288,7 @@ $toolUnitTests = @{
     "Quartermaster" = @{ Name = "Quartermaster.Tests"; Path = "Quartermaster\Quartermaster.Tests" }
     "Fence" = @{ Name = "Fence.Tests"; Path = "Fence\Fence.Tests" }
     "Trebuchet" = @{ Name = "Trebuchet.Tests"; Path = "Trebuchet\Trebuchet.Tests" }
-    "ItemEditor" = @{ Name = "ItemEditor.Tests"; Path = "ItemEditor\ItemEditor.Tests" }
+    "Relique" = @{ Name = "Relique.Tests"; Path = "Relique\Relique.Tests" }
 }
 
 $toolUiTests = @{

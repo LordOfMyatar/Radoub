@@ -28,6 +28,11 @@ public class ToolInfo
     public required string Description { get; init; }
     public required string FileTypes { get; init; }
     public required ToolMaturity Maturity { get; init; }
+    /// <summary>
+    /// Assembly/executable base name when it differs from the display Name.
+    /// Used for exe discovery and directory lookup. Null means Name is used.
+    /// </summary>
+    public string? AssemblyName { get; init; }
     public string? ExecutablePath { get; set; }
     public bool IsAvailable => !string.IsNullOrEmpty(ExecutablePath) && File.Exists(ExecutablePath);
     public string StatusText => IsAvailable ? "Ready" : "Not Found";
@@ -111,10 +116,11 @@ public class ToolLauncherService
             },
             new ToolInfo
             {
-                Name = "ItemEditor",
+                Name = "Relique",
                 Description = "Item Blueprint Editor",
                 FileTypes = ".uti",
-                Maturity = ToolMaturity.Alpha
+                Maturity = ToolMaturity.Alpha,
+                AssemblyName = "ItemEditor"
             }
         };
 
@@ -210,7 +216,8 @@ public class ToolLauncherService
 
         foreach (var tool in _tools)
         {
-            tool.ExecutablePath = DiscoverToolPath(tool.Name, trebuchetDir);
+            var assemblyName = tool.AssemblyName ?? tool.Name;
+            tool.ExecutablePath = DiscoverToolPath(tool.Name, assemblyName, trebuchetDir);
 
             if (tool.IsAvailable)
             {
@@ -223,10 +230,10 @@ public class ToolLauncherService
         }
     }
 
-    private string? DiscoverToolPath(string toolName, string? trebuchetDir)
+    private string? DiscoverToolPath(string directoryName, string assemblyName, string? trebuchetDir)
     {
         // 1. Check RadoubSettings (tool registered its path when it last ran)
-        var settingsPath = GetToolPathFromSettings(toolName);
+        var settingsPath = GetToolPathFromSettings(directoryName);
         if (!string.IsNullOrEmpty(settingsPath) && File.Exists(settingsPath))
         {
             return settingsPath;
@@ -235,7 +242,7 @@ public class ToolLauncherService
         // 2. Check same directory as Trebuchet
         if (!string.IsNullOrEmpty(trebuchetDir))
         {
-            var sameDirPath = Path.Combine(trebuchetDir, GetExecutableName(toolName));
+            var sameDirPath = Path.Combine(trebuchetDir, GetExecutableName(assemblyName));
             if (File.Exists(sameDirPath))
             {
                 return sameDirPath;
@@ -243,14 +250,14 @@ public class ToolLauncherService
         }
 
         // 3. Check development paths (sibling project directories)
-        var devPath = DiscoverDevelopmentPath(toolName);
+        var devPath = DiscoverDevelopmentPath(directoryName, assemblyName);
         if (!string.IsNullOrEmpty(devPath))
         {
             return devPath;
         }
 
         // 4. Check common installation locations
-        var commonPaths = GetCommonInstallPaths(toolName);
+        var commonPaths = GetCommonInstallPaths(assemblyName);
         foreach (var path in commonPaths)
         {
             if (File.Exists(path))
@@ -262,11 +269,11 @@ public class ToolLauncherService
         return null;
     }
 
-    private string? DiscoverDevelopmentPath(string toolName)
+    private string? DiscoverDevelopmentPath(string directoryName, string assemblyName)
     {
         // In development, tools are in sibling directories like:
         // Radoub/Parley/Parley/bin/Debug/net9.0/Parley.exe
-        // Radoub/Trebuchet/Trebuchet/bin/Debug/net9.0/Trebuchet.exe
+        // Radoub/Relique/Relique/bin/Debug/net9.0/ItemEditor.exe
 
         try
         {
@@ -284,7 +291,7 @@ public class ToolLauncherService
             var radoubRoot = Path.GetFullPath(Path.Combine(assemblyDir, "..", "..", "..", "..", ".."));
 
             // Check for the tool in its project directory
-            var exeName = GetExecutableName(toolName);
+            var exeName = GetExecutableName(assemblyName);
             var configs = new[] { "Debug", "Release" };
             var frameworks = new[] { "net9.0", "net8.0", "net7.0" };
 
@@ -292,10 +299,10 @@ public class ToolLauncherService
             {
                 foreach (var framework in frameworks)
                 {
-                    var toolPath = Path.Combine(radoubRoot, toolName, toolName, "bin", config, framework, exeName);
+                    var toolPath = Path.Combine(radoubRoot, directoryName, directoryName, "bin", config, framework, exeName);
                     if (File.Exists(toolPath))
                     {
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Found {toolName} in development path: {UnifiedLogger.SanitizePath(toolPath)}");
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Found {directoryName} in development path: {UnifiedLogger.SanitizePath(toolPath)}");
                         return toolPath;
                     }
                 }
@@ -303,7 +310,7 @@ public class ToolLauncherService
         }
         catch (Exception ex)
         {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Error discovering development path for {toolName}: {ex.Message}");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Error discovering development path for {directoryName}: {ex.Message}");
         }
 
         return null;
@@ -317,7 +324,7 @@ public class ToolLauncherService
             "manifest" => RadoubSettings.Instance.ManifestPath,
             "quartermaster" => RadoubSettings.Instance.QuartermasterPath,
             "fence" => RadoubSettings.Instance.FencePath,
-            "itemeditor" => RadoubSettings.Instance.ItemEditorPath,
+            "relique" or "itemeditor" => RadoubSettings.Instance.ReliquePath,
             _ => null
         };
     }

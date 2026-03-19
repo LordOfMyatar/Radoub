@@ -35,7 +35,7 @@ public static class ItemEditorLauncher
         var exePath = FindItemEditorExe();
         if (string.IsNullOrEmpty(exePath))
         {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, "ItemEditor executable not found");
+            UnifiedLogger.LogApplication(LogLevel.ERROR, "Relique executable not found");
             return false;
         }
 
@@ -50,12 +50,12 @@ public static class ItemEditorLauncher
             };
             Process.Start(startInfo)?.Dispose();
             UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"Launched ItemEditor: {UnifiedLogger.SanitizePath(utiFilePath)}");
+                $"Launched Relique: {UnifiedLogger.SanitizePath(utiFilePath)}");
             return true;
         }
         catch (Exception ex)
         {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to launch ItemEditor: {ex.Message}");
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to launch Relique: {ex.Message}");
             return false;
         }
     }
@@ -63,18 +63,18 @@ public static class ItemEditorLauncher
     private static string? FindItemEditorExe()
     {
         // 1. Check RadoubSettings
-        var settingsPath = RadoubSettings.Instance.ItemEditorPath;
+        var settingsPath = RadoubSettings.Instance.ReliquePath;
         if (!string.IsNullOrEmpty(settingsPath) && File.Exists(settingsPath))
             return settingsPath;
 
         var exeName = OperatingSystem.IsWindows() ? "ItemEditor.exe" : "ItemEditor";
         var currentExeDir = AppContext.BaseDirectory;
 
-        // 2. Check sibling dev directory (e.g. bin/Debug/net9.0/ → ../../ItemEditor/bin/Debug/net9.0/)
+        // 2. Check sibling dev directory (e.g. bin/Debug/net9.0/ → ../../Relique/Relique/bin/Debug/net9.0/)
         var siblingDirs = new[]
         {
-            Path.Combine(currentExeDir, "..", "..", "..", "..", "ItemEditor", "ItemEditor", "bin", "Debug", "net9.0"),
-            Path.Combine(currentExeDir, "..", "..", "..", "..", "ItemEditor", "ItemEditor", "bin", "Release", "net9.0"),
+            Path.Combine(currentExeDir, "..", "..", "..", "..", "Relique", "Relique", "bin", "Debug", "net9.0"),
+            Path.Combine(currentExeDir, "..", "..", "..", "..", "Relique", "Relique", "bin", "Release", "net9.0"),
         };
         foreach (var dir in siblingDirs)
         {

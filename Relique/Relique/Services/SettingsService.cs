@@ -5,8 +5,8 @@ using Radoub.UI.Services;
 namespace ItemEditor.Services;
 
 /// <summary>
-/// Settings service for ItemEditor.
-/// Stores tool-specific settings in ~/Radoub/ItemEditor/ItemEditorSettings.json
+/// Settings service for Relique.
+/// Stores tool-specific settings in ~/Radoub/Relique/ReliqueSettings.json
 /// Game paths and TLK settings are in shared RadoubSettings.
 /// </summary>
 public class SettingsService : BaseToolSettingsService<SettingsService.SettingsData>
@@ -31,7 +31,7 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
 
     protected override string ToolName => "ItemEditor";
     protected override string SettingsEnvironmentVariable => "ITEMEDITOR_SETTINGS_DIR";
-    protected override string SettingsFileName => "ItemEditorSettings.json";
+    protected override string SettingsFileName => "ReliqueSettings.json";
 
     // Panel settings
     private double _browserPanelWidth = 250;

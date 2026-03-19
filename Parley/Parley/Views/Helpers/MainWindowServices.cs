@@ -23,8 +23,9 @@ namespace Parley.Views.Helpers
         public CreatureService Creature { get; }
 
         // Game data services for BIF/TLK lookups (#916)
-        public IGameDataService GameData { get; }
-        public IImageService ImageService { get; }
+        // #1791: Deferred from constructor to InitializeGameData() for faster window show
+        public IGameDataService GameData { get; private set; } = null!;
+        public IImageService ImageService { get; private set; } = null!;
 
         // DI-resolved services (#1232, #1233)
         public ISettingsService Settings { get; }
@@ -69,8 +70,14 @@ namespace Parley.Views.Helpers
             Creature = new CreatureService();
             KeyboardShortcuts = new KeyboardShortcutManager();
             DragDrop = new TreeViewDragDropService();
+        }
 
-            // Game data services for portrait loading from BIF archives (#916)
+        /// <summary>
+        /// Initializes GameDataService and ImageService. Call from OnWindowOpened
+        /// to defer KEY/BIF/TLK I/O until after the window is visible (#1791).
+        /// </summary>
+        public void InitializeGameData()
+        {
             GameData = new GameDataService();
             if (GameData.IsConfigured)
             {

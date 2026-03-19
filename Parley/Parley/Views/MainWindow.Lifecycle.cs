@@ -22,6 +22,10 @@ namespace DialogEditor.Views
         /// </summary>
         private async void OnWindowOpened(object? sender, EventArgs e)
         {
+            // #1791: Deferred from constructor — KEY/BIF/TLK I/O happens after window is visible
+            _services.InitializeGameData();
+            ConnectGameDataServices();
+
             await _services.WindowPersistence.RestoreWindowPositionAsync();
             PopulateRecentFilesMenu();
             _services.ResourceBrowser.UpdateRecentCreatureTagsDropdown(); // #1244
