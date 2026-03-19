@@ -89,8 +89,7 @@ namespace DialogEditor.Views
         {
             // Property services
             _services.PropertyPopulator = new PropertyPanelPopulator(this, _services.Settings, _services.Journal);
-            _services.PropertyPopulator.SetImageService(_services.ImageService);
-            _services.PropertyPopulator.SetGameDataService(_services.GameData);
+            // #1791: GameData/ImageService wired in ConnectGameDataServices() after deferred init
             _services.PropertyPopulator.SetCurrentSoundsetId = id => _currentSoundsetId = id;
             _services.PropertyAutoSave = new PropertyAutoSaveService(
                 findControl: this.FindControl<Control>,
@@ -112,6 +111,7 @@ namespace DialogEditor.Views
                 findControl: this.FindControl<Control>,
                 saveCurrentNodeProperties: SaveCurrentNodeProperties,
                 triggerAutoSave: TriggerDebouncedAutoSave);
+            // #1791: GameData not yet initialized — wired in ConnectGameDataServices() after deferred init
             _services.ResourceBrowser = new ResourceBrowserManager(
                 audioService: _services.Audio,
                 creatureService: _services.Creature,
@@ -120,8 +120,7 @@ namespace DialogEditor.Views
                 setStatusMessage: msg => _viewModel.StatusMessage = msg,
                 autoSaveProperty: AutoSaveProperty,
                 getSelectedNode: () => _selectedNode,
-                getCurrentFilePath: () => _viewModel.CurrentFilePath,
-                gameDataService: _services.GameData);
+                getCurrentFilePath: () => _viewModel.CurrentFilePath);
             _services.KeyboardShortcuts.RegisterShortcuts(this);
 
             // Window services
@@ -176,6 +175,7 @@ namespace DialogEditor.Views
                 getIsSettingSelectionProgrammatically: () => _uiState.IsSettingSelectionProgrammatically,
                 syncSelectionToFlowcharts: node => _controllers.Flowchart.SyncSelectionToFlowcharts(node));
 
+            // #1791: GameData not yet initialized — wired in ConnectGameDataServices() after deferred init
             _controllers.ScriptBrowser = new ScriptBrowserController(
                 window: this,
                 controls: _controls,
@@ -183,8 +183,7 @@ namespace DialogEditor.Views
                 getSelectedNode: () => _selectedNode,
                 autoSaveProperty: AutoSaveProperty,
                 settings: _services.Settings,
-                externalEditorService: Program.Services.GetRequiredService<ExternalEditorService>(),
-                gameDataService: _services.GameData);
+                externalEditorService: Program.Services.GetRequiredService<ExternalEditorService>());
 
             _controllers.ParameterBrowser = new ParameterBrowserController(
                 controls: _controls,
@@ -295,6 +294,16 @@ namespace DialogEditor.Views
         private void InitializeComponent()
         {
             AvaloniaXamlLoader.Load(this);
+        }
+
+        /// <summary>
+        /// Wires up GameData and ImageService references to services/controllers
+        /// after deferred initialization in OnWindowOpened (#1791).
+        /// </summary>
+        private void ConnectGameDataServices()
+        {
+            _services.PropertyPopulator.SetImageService(_services.ImageService);
+            _services.PropertyPopulator.SetGameDataService(_services.GameData);
         }
 
         public void AddDebugMessage(string message) => _services.DebugLogging.AddDebugMessage(message);

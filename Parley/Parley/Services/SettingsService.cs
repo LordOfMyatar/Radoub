@@ -67,20 +67,7 @@ namespace DialogEditor.Services
             }
         }
 
-        /// <summary>
-        /// Legacy settings directory (~/Parley) - used for migration
-        /// </summary>
-        private static string LegacySettingsDirectory
-        {
-            get
-            {
-                var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                return Path.Combine(userProfile, "Parley");
-            }
-        }
-
         private static string SettingsFilePath => Path.Combine(SettingsDirectory, "ParleySettings.json");
-        private static string LegacySettingsFilePath => Path.Combine(LegacySettingsDirectory, "ParleySettings.json");
         private const int DefaultMaxRecentFiles = 10;
 
         // NPC Speaker Visual Preferences (Issue #16, #36)
@@ -123,9 +110,7 @@ namespace DialogEditor.Services
             _modulePaths.SettingsChanged += SaveSettings;
             _editorPreferences.SettingsChanged += SaveSettings;
 
-            // Migrate from legacy ~/Parley to new ~/Radoub/Parley location (#472)
-            MigrateLegacySettingsFolder();
-
+            // 2026-03-18: Removed legacy ~/Parley → ~/Radoub/Parley migration (#472, #1790)
             LoadSettings();
 
             // Phase 2: Auto-detect resource paths on first run
@@ -137,123 +122,6 @@ namespace DialogEditor.Services
             }
 
             UnifiedLogger.LogApplication(LogLevel.INFO, "Parley SettingsService initialized");
-        }
-
-        /// <summary>
-        /// Migrates settings from legacy ~/Parley folder to new ~/Radoub/Parley location.
-        /// This is a one-time migration that runs on first startup after the update.
-        /// </summary>
-        private void MigrateLegacySettingsFolder()
-        {
-            try
-            {
-                // Check if legacy folder exists and new folder doesn't have settings yet
-                if (!Directory.Exists(LegacySettingsDirectory))
-                {
-                    return; // No legacy settings to migrate
-                }
-
-                // Ensure new directory structure exists
-                Directory.CreateDirectory(SettingsDirectory);
-
-                // Check if migration is needed (new location doesn't have settings file)
-                if (File.Exists(SettingsFilePath))
-                {
-                    // New settings already exist - no migration needed
-                    // User may have run a newer version already
-                    return;
-                }
-
-                // Log migration start (can't use UnifiedLogger yet - it depends on this service)
-                Console.WriteLine($"[Parley] Migrating settings from ~/Parley to ~/Radoub/Parley...");
-
-                // Migrate settings files from legacy folder to new folder
-                // 2026-01-16: Removed PluginSettings.json - plugin infrastructure removed in v0.1.115
-                var settingsToMigrate = new[]
-                {
-                    "ParleySettings.json",
-                    "SpeakerPreferences.json"
-                };
-
-                foreach (var fileName in settingsToMigrate)
-                {
-                    var legacyPath = Path.Combine(LegacySettingsDirectory, fileName);
-                    var newPath = Path.Combine(SettingsDirectory, fileName);
-
-                    if (File.Exists(legacyPath) && !File.Exists(newPath))
-                    {
-                        File.Copy(legacyPath, newPath);
-                        Console.WriteLine($"  Migrated: {fileName}");
-                    }
-                }
-
-                // Migrate cache files to Cache subfolder
-                var cacheDir = Path.Combine(SettingsDirectory, "Cache");
-                Directory.CreateDirectory(cacheDir);
-                var cacheFilesToMigrate = new[]
-                {
-                    "parameter_cache.json",
-                    "scrap.json"
-                };
-
-                foreach (var fileName in cacheFilesToMigrate)
-                {
-                    var legacyPath = Path.Combine(LegacySettingsDirectory, fileName);
-                    var newPath = Path.Combine(cacheDir, fileName);
-
-                    if (File.Exists(legacyPath) && !File.Exists(newPath))
-                    {
-                        File.Copy(legacyPath, newPath);
-                        Console.WriteLine($"  Migrated: {fileName} -> Cache/");
-                    }
-                }
-
-                // Migrate Themes folder
-                var legacyThemesDir = Path.Combine(LegacySettingsDirectory, "Themes");
-                var newThemesDir = Path.Combine(SettingsDirectory, "Themes");
-                if (Directory.Exists(legacyThemesDir) && !Directory.Exists(newThemesDir))
-                {
-                    CopyDirectory(legacyThemesDir, newThemesDir);
-                    Console.WriteLine($"  Migrated: Themes folder");
-                }
-
-                // Don't migrate Logs folder - old logs can stay in legacy location
-                // New logs will be created in new location
-
-                // Create a marker file in legacy folder to indicate migration completed
-                var markerPath = Path.Combine(LegacySettingsDirectory, ".migrated_to_radoub");
-                File.WriteAllText(markerPath,
-                    $"Parley settings migrated to ~/Radoub/Parley on {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n" +
-                    $"This folder can be safely deleted if you don't need old log files.\n");
-
-                Console.WriteLine($"[Parley] Settings migration complete.");
-            }
-            catch (Exception ex)
-            {
-                // Don't fail startup if migration fails - just log and continue
-                Console.WriteLine($"[Parley] Warning: Settings migration failed: {ex.Message}");
-                Console.WriteLine($"[Parley] Settings will be created in new location.");
-            }
-        }
-
-        /// <summary>
-        /// Recursively copies a directory and its contents.
-        /// </summary>
-        private static void CopyDirectory(string sourceDir, string destDir)
-        {
-            Directory.CreateDirectory(destDir);
-
-            foreach (var file in Directory.GetFiles(sourceDir))
-            {
-                var destFile = Path.Combine(destDir, Path.GetFileName(file));
-                File.Copy(file, destFile, overwrite: false);
-            }
-
-            foreach (var subDir in Directory.GetDirectories(sourceDir))
-            {
-                var destSubDir = Path.Combine(destDir, Path.GetFileName(subDir));
-                CopyDirectory(subDir, destSubDir);
-            }
         }
 
         /// <summary>
@@ -276,59 +144,7 @@ namespace DialogEditor.Services
             }
         }
 
-        /// <summary>
-        /// Migrates game paths from old ParleySettings.json to shared RadoubSettings (#412).
-        /// This is a one-time migration that runs on first startup after the update.
-        /// Only migrates if RadoubSettings doesn't already have values.
-        /// </summary>
-        private void MigrateGamePathsToSharedSettings(SettingsData settings)
-        {
-            bool migrated = false;
-
-            // Migrate NeverwinterNightsPath
-            if (string.IsNullOrEmpty(SharedSettings.NeverwinterNightsPath) &&
-                !string.IsNullOrEmpty(settings.NeverwinterNightsPath))
-            {
-                SharedSettings.NeverwinterNightsPath = SharedPathHelper.ExpandPath(settings.NeverwinterNightsPath);
-                migrated = true;
-            }
-
-            // Migrate BaseGameInstallPath
-            if (string.IsNullOrEmpty(SharedSettings.BaseGameInstallPath) &&
-                !string.IsNullOrEmpty(settings.BaseGameInstallPath))
-            {
-                SharedSettings.BaseGameInstallPath = SharedPathHelper.ExpandPath(settings.BaseGameInstallPath);
-                migrated = true;
-            }
-
-            // Migrate CurrentModulePath
-            if (string.IsNullOrEmpty(SharedSettings.CurrentModulePath) &&
-                !string.IsNullOrEmpty(settings.CurrentModulePath))
-            {
-                SharedSettings.CurrentModulePath = SharedPathHelper.ExpandPath(settings.CurrentModulePath);
-                migrated = true;
-            }
-
-            // Migrate TLK settings
-            if (string.IsNullOrEmpty(SharedSettings.TlkLanguage) &&
-                !string.IsNullOrEmpty(settings.TlkLanguage))
-            {
-                SharedSettings.TlkLanguage = settings.TlkLanguage;
-                migrated = true;
-            }
-
-            // Migrate TlkUseFemale (only if it was explicitly set to true in old settings)
-            if (settings.TlkUseFemale && !SharedSettings.TlkUseFemale)
-            {
-                SharedSettings.TlkUseFemale = true;
-                migrated = true;
-            }
-
-            if (migrated)
-            {
-                UnifiedLogger.LogApplication(LogLevel.INFO, "Migrated game paths from ParleySettings to shared RadoubSettings");
-            }
-        }
+        // 2026-03-18: Removed MigrateGamePathsToSharedSettings (#412, #1790) — migration window expired
 
         // Recent files - DELEGATED to RecentFilesService (#719)
         public List<string> RecentFiles => _recentFiles.RecentFiles;
@@ -785,9 +601,6 @@ namespace DialogEditor.Services
                             _speakerPreferences.MigrateFromSettingsData(_legacyNpcSpeakerPreferences);
                             _legacyNpcSpeakerPreferences = null;
                         }
-
-                        // Issue #412: Migrate game paths from ParleySettings to shared RadoubSettings
-                        MigrateGamePathsToSharedSettings(settings);
 
                         // Initialize ModulePathsService (#1269)
                         _modulePaths.Initialize(
