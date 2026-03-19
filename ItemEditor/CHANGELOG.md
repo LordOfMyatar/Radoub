@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.7.0-alpha] - 2026-03-18
+**Branch**: `itemeditor/issue-1784` | **PR**: #TBD
+
+### Rename product to Relique (#1784)
+
+- Rename user-facing product name from ItemEditor to Relique
+- Update UI strings, window titles, About dialog, settings paths
+- Update documentation references
+- Namespace stays `ItemEditor` (no code-level rename)
+
+---
+
 ## [0.6.0-alpha] - 2026-03-17
 **Branch**: `itemeditor/issue-1728` | **PR**: #1783
 
