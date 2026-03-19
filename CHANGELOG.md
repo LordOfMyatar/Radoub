@@ -25,7 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.89] - 2026-03-19
-**Branch**: `radoub/issue-1695` | **PR**: #TBD
+**Branch**: `radoub/issue-1695` | **PR**: #1858
 
 ### Sprint: Cross-Tool Bug Fixes (#1208, #1533, #1781)
 
