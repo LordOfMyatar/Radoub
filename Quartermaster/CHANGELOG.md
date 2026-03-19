@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- Edit in ItemEditor for backpack items (#1731)
+- Refresh Item Palette menu item in View menu (#1731)
+
 ### Fix: HAK model rendering stability (#1314)
 
 ---

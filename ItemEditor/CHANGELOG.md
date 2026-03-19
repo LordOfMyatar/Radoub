@@ -15,9 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint 6: Item Wizard and Cross-Tool Launch Integration (#1728)
 
-- [ ] #1729 — Item creation wizard (type → name → palette → finish)
-- [ ] #1730 — Fence integration (Edit Item context menu + Refresh Palette)
-- [ ] #1731 — Quartermaster integration (Edit Item context menu + Refresh Palette)
+- [x] #1729 — Item creation wizard (type → name → palette → finish)
+- [x] #1730 — Fence integration (Edit Item context menu + Refresh Palette)
+- [x] #1731 — Quartermaster integration (Edit Item context menu + Refresh Palette)
 
 ---
 
