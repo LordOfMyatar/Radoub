@@ -19,7 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Legacy Code & Unused Package Cleanup (#1825)
 
-- [ ] #1795 - Remove unused CommunityToolkit.Mvvm and System.Text.Json packages
+- [x] #1795 - Remove unused CommunityToolkit.Mvvm and System.Text.Json packages
 
 ---
 

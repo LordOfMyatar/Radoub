@@ -15,8 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Legacy Code & Unused Package Cleanup (#1825)
 
-- [ ] #1790 - Remove legacy `~/Parley` → `~/Radoub/Parley` migration code
-- [ ] #1791 - Lighten MainWindow constructor (defer GameDataService init)
+- [x] #1790 - Remove legacy `~/Parley` → `~/Radoub/Parley` migration code (tombstone comments cleaned up; methods removed in retrospective)
+- [x] #1791 - Lighten MainWindow constructor (GameDataService init deferred to OnWindowOpened; already implemented in retrospective)
 
 ---
 
