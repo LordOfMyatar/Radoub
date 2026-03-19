@@ -35,4 +35,10 @@ public class SettingsServiceTests
         settings.BrowserPanelWidth = 300;
         Assert.Equal(300, settings.BrowserPanelWidth);
     }
+
+    [Fact]
+    public void OpenInEditorAfterCreate_DefaultsToTrue()
+    {
+        Assert.True(SettingsService.Instance.OpenInEditorAfterCreate);
+    }
 }
