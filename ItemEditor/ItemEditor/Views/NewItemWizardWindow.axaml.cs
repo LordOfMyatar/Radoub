@@ -122,19 +122,30 @@ public partial class NewItemWizardWindow : Window
 
     private void InitializeDefaults()
     {
-        // Save location default
+        // Save location default: module working directory (unpacked module folder)
+        // NWN modules live at: ~/Documents/Neverwinter Nights/modules/{moduleName}/
         var modulePath = RadoubSettings.Instance.CurrentModulePath;
-        if (!string.IsNullOrEmpty(modulePath) && Directory.Exists(modulePath))
+        if (RadoubSettings.IsValidModulePath(modulePath))
         {
-            SaveLocationTextBox.Text = modulePath;
+            // If it's a .mod file, use the unpacked directory alongside it
+            if (modulePath!.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
+            {
+                var unpackedDir = Path.ChangeExtension(modulePath, null);
+                SaveLocationTextBox.Text = Directory.Exists(unpackedDir) ? unpackedDir : Path.GetDirectoryName(modulePath) ?? modulePath;
+            }
+            else
+            {
+                SaveLocationTextBox.Text = modulePath;
+            }
         }
         else
         {
-            var nwnDocs = Path.Combine(
+            // Fallback: NWN modules directory (not root — user must pick a module folder)
+            var nwnModules = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                "Neverwinter Nights");
-            if (Directory.Exists(nwnDocs))
-                SaveLocationTextBox.Text = nwnDocs;
+                "Neverwinter Nights", "modules");
+            if (Directory.Exists(nwnModules))
+                SaveLocationTextBox.Text = nwnModules;
             else
                 SaveLocationTextBox.Text = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
         }
