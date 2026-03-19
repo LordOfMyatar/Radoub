@@ -110,7 +110,6 @@ namespace DialogEditor.Services
             _modulePaths.SettingsChanged += SaveSettings;
             _editorPreferences.SettingsChanged += SaveSettings;
 
-            // 2026-03-18: Removed legacy ~/Parley → ~/Radoub/Parley migration (#472, #1790)
             LoadSettings();
 
             // Phase 2: Auto-detect resource paths on first run
@@ -143,8 +142,6 @@ namespace DialogEditor.Services
                 }
             }
         }
-
-        // 2026-03-18: Removed MigrateGamePathsToSharedSettings (#412, #1790) — migration window expired
 
         // Recent files - DELEGATED to RecentFilesService (#719)
         public List<string> RecentFiles => _recentFiles.RecentFiles;
