@@ -1,10 +1,10 @@
-# ItemEditor
+# Relique
 
 Item Blueprint Editor for Neverwinter Nights. Part of the [Radoub](../README.md) toolset.
 
 ## Overview
 
-ItemEditor creates and edits `.uti` (Item Blueprint) files for Neverwinter Nights. It provides a visual editor for item properties, stats, and enchantments.
+Relique creates and edits `.uti` (Item Blueprint) files for Neverwinter Nights. It provides a visual editor for item properties, stats, and enchantments.
 
 ## Features (Sprint 1 - Bootstrap)
 

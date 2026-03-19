@@ -436,7 +436,7 @@
                                     <Separator/>
                                     <MenuItem Header="Select All" Click="OnSelectAllStoreItems"/>
                                     <Separator/>
-                                    <MenuItem Header="Edit in Item Editor" Click="OnEditInItemEditor"/>
+                                    <MenuItem Header="Edit in Relique" Click="OnEditInItemEditor"/>
                                 </ContextMenu>
                             </DataGrid.ContextMenu>
                             <DataGrid.Columns>

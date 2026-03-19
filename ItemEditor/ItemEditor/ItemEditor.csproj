@@ -8,7 +8,7 @@
     <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
 
     <!-- Product Information -->
-    <Product>ItemEditor - Item Blueprint Editor for Neverwinter Nights</Product>
+    <Product>Relique - Item Blueprint Editor for Neverwinter Nights</Product>
     <Company>LNS Development</Company>
     <Copyright>Copyright 2025</Copyright>
     <AssemblyName>ItemEditor</AssemblyName>

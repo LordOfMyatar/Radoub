@@ -35,7 +35,7 @@ public static class ItemEditorLauncher
         var exePath = FindItemEditorExe();
         if (string.IsNullOrEmpty(exePath))
         {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, "ItemEditor executable not found");
+            UnifiedLogger.LogApplication(LogLevel.ERROR, "Relique executable not found");
             return false;
         }
 
@@ -50,12 +50,12 @@ public static class ItemEditorLauncher
             };
             Process.Start(startInfo)?.Dispose();
             UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"Launched ItemEditor: {UnifiedLogger.SanitizePath(utiFilePath)}");
+                $"Launched Relique: {UnifiedLogger.SanitizePath(utiFilePath)}");
             return true;
         }
         catch (Exception ex)
         {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to launch ItemEditor: {ex.Message}");
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to launch Relique: {ex.Message}");
             return false;
         }
     }

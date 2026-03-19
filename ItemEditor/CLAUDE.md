@@ -1,6 +1,6 @@
-# CLAUDE.md - ItemEditor
+# CLAUDE.md - Relique
 
-Tool-specific guidance for Claude Code sessions working on ItemEditor.
+Tool-specific guidance for Claude Code sessions working on Relique (ItemEditor namespace).
 
 **Read the repository-level [CLAUDE.md](../CLAUDE.md) first** for shared conventions.
 
@@ -8,10 +8,10 @@ Tool-specific guidance for Claude Code sessions working on ItemEditor.
 
 ## Overview
 
-**ItemEditor** is an item blueprint editor for Neverwinter Nights UTI (Item Blueprint) files. Part of the Radoub toolset.
+**Relique** is an item blueprint editor for Neverwinter Nights UTI (Item Blueprint) files. Part of the Radoub toolset.
 
 ### Key Information
-- **Tool Name**: ItemEditor
+- **Tool Name**: Relique
 - **File Type**: `.uti` (Item Blueprint)
 - **Internal Namespace**: `ItemEditor`
 - **Current Version**: See `CHANGELOG.md` for latest version

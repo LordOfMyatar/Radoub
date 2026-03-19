@@ -28,6 +28,11 @@ public class ToolInfo
     public required string Description { get; init; }
     public required string FileTypes { get; init; }
     public required ToolMaturity Maturity { get; init; }
+    /// <summary>
+    /// Assembly/executable base name when it differs from the display Name.
+    /// Used for exe discovery and directory lookup. Null means Name is used.
+    /// </summary>
+    public string? AssemblyName { get; init; }
     public string? ExecutablePath { get; set; }
     public bool IsAvailable => !string.IsNullOrEmpty(ExecutablePath) && File.Exists(ExecutablePath);
     public string StatusText => IsAvailable ? "Ready" : "Not Found";
@@ -111,10 +116,11 @@ public class ToolLauncherService
             },
             new ToolInfo
             {
-                Name = "ItemEditor",
+                Name = "Relique",
                 Description = "Item Blueprint Editor",
                 FileTypes = ".uti",
-                Maturity = ToolMaturity.Alpha
+                Maturity = ToolMaturity.Alpha,
+                AssemblyName = "ItemEditor"
             }
         };
 
@@ -210,7 +216,7 @@ public class ToolLauncherService
 
         foreach (var tool in _tools)
         {
-            tool.ExecutablePath = DiscoverToolPath(tool.Name, trebuchetDir);
+            tool.ExecutablePath = DiscoverToolPath(tool.AssemblyName ?? tool.Name, trebuchetDir);
 
             if (tool.IsAvailable)
             {
@@ -317,7 +323,7 @@ public class ToolLauncherService
             "manifest" => RadoubSettings.Instance.ManifestPath,
             "quartermaster" => RadoubSettings.Instance.QuartermasterPath,
             "fence" => RadoubSettings.Instance.FencePath,
-            "itemeditor" => RadoubSettings.Instance.ItemEditorPath,
+            "relique" or "itemeditor" => RadoubSettings.Instance.ItemEditorPath,
             _ => null
         };
     }

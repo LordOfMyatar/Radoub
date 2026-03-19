@@ -35,10 +35,10 @@ public partial class App : Application
         }
 
         // Record tool launch for easter egg tracking
-        EasterEggService.Instance.RecordToolLaunch("ItemEditor");
+        EasterEggService.Instance.RecordToolLaunch("Relique");
 
         // Initialize and discover themes
-        ThemeManager.Initialize("ItemEditor");
+        ThemeManager.Initialize("Relique");
         ThemeManager.Instance.DiscoverThemes();
 
         string themeId;
@@ -190,7 +190,7 @@ public partial class App : Application
             if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
             {
                 Radoub.Formats.Settings.RadoubSettings.Instance.ItemEditorPath = exePath;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Registered ItemEditor path in shared settings: {UnifiedLogger.SanitizePath(exePath)}");
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Registered Relique path in shared settings: {UnifiedLogger.SanitizePath(exePath)}");
             }
         }
         catch (Exception ex)
