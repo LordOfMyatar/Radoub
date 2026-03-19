@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.6.0-alpha] - 2026-03-17
+**Branch**: `itemeditor/issue-1728` | **PR**: #TBD
+
+### Sprint 6: Item Wizard and Cross-Tool Launch Integration (#1728)
+
+- [ ] #1729 — Item creation wizard (type → name → palette → finish)
+- [ ] #1730 — Fence integration (Edit Item context menu + Refresh Palette)
+- [ ] #1731 — Quartermaster integration (Edit Item context menu + Refresh Palette)
+
+---
+
 ## [0.5.0-alpha] - 2026-03-17
 **Branch**: `itemeditor/issue-1723` | **PR**: #1779
 
