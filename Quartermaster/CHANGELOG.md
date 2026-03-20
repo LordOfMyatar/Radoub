@@ -16,6 +16,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.52-alpha] - 2026-03-19
+**Branch**: `quartermaster/issue-1818` | **PR**: #1862
+
+### Sprint: Panel Layout & Spacing Uniformity (#1818)
+
+- Add scrollbar accommodation padding (25px right) to FeatsPanel and SpellsPanel rows (#1191, #1486)
+- Remove MaxHeight constraints from FeatsPanel sidebar — grows naturally with panel (#1191)
+- Add ItemContainerTheme to FeatsPanel ListBox for consistent row height (#1620)
+- Normalize SpellsPanel row padding from 4px to 6px vertical (#1486, #1620)
+- Add row separator borders to FeatsPanel and SpellsPanel matching SkillsPanel (#1620)
+- Default SkillsPanel sort to "Class Skills First" (#1505)
+- Add skill point usage to SkillsPanel summary line (#1621)
+- Convert StatsPanel ability/save grids to Auto columns with SharedSizeGroup for font scaling (#1619)
+- Fix SpecialAbilitiesPanel asymmetric outer padding to uniform 20px (#1620)
+- Add scrollbar margin to ClassesPanel (#1818)
+- Add padding to FileBrowserPanelBase list items for consistent sidebar spacing (#1623)
+- Default SpellsPanel sort to known spells first (#1818)
+- Default FeatsPanel sort to assigned feats first (#1818)
+
+---
+
 ## [0.2.51-alpha] - 2026-03-17
 **Branch**: `quartermaster/issue-1768` | **PR**: #1769
 

@@ -17,7 +17,6 @@
                     Padding="10"
                     Margin="0,0,15,0"
                     MinWidth="180"
-                    MaxHeight="500"
                     IsVisible="False"
                     AutomationProperties.AutomationId="AssignedFeatsListSection">
                 <StackPanel>
@@ -26,7 +25,7 @@
                                FontSize="{DynamicResource FontSizeNormal}"
                                Margin="0,0,0,10"/>
                     <!-- Scrollable list of assigned feats grouped by class -->
-                    <ScrollViewer MaxHeight="450" VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel x:Name="AssignedFeatsListPanel">
                             <!-- Dynamically populated with feat names grouped by class -->
                         </StackPanel>
@@ -140,10 +139,19 @@
                          BorderThickness="1,0,1,1"
                          Background="Transparent"
                          SelectionMode="Single">
+                    <ListBox.ItemContainerTheme>
+                        <ControlTheme TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Margin" Value="0"/>
+                            <Setter Property="MinHeight" Value="0"/>
+                        </ControlTheme>
+                    </ListBox.ItemContainerTheme>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Border Background="{Binding RowBackground}"
-                                    Padding="10,6,10,6"
+                                    Padding="10,6,25,6"
+                                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                                    BorderThickness="0,0,0,1"
                                     ToolTip.Tip="{Binding Description}">
                                 <Grid ColumnDefinitions="32,35,*,120,100">
                                     <!-- Icon -->

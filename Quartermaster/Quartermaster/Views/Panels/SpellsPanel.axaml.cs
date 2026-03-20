@@ -291,6 +291,11 @@ public partial class SpellsPanel : UserControl
             _ => filtered.Where(s => !s.IsBlocked)        // All (excludes blocked)
         };
 
+        // Sort: known spells first, then alphabetical within each group
+        filtered = filtered
+            .OrderByDescending(s => s.IsKnown)
+            .ThenBy(s => s.SpellName);
+
         // Update display
         UnifiedLogger.LogUI(LogLevel.INFO, $"SpellsPanel.ApplyFilters: Clearing displayedSpells...");
         _displayedSpells.Clear();

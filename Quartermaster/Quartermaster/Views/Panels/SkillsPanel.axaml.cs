@@ -314,8 +314,12 @@ public partial class SkillsPanel : BasePanelControl
         var maxClassSkillRank = _totalLevel + 3;
         var maxCrossClassRank = (_totalLevel + 3) / 2;
 
+        // Include skill point usage
+        var (totalPoints, totalSpent) = ComputeSkillPointTotals();
+        var pointsNote = totalPoints > 0 ? $" | ~{totalSpent}/{totalPoints} pts" : "";
+
         SetText(_skillsSummaryText,
-            $"Level {_totalLevel}: {skillsWithRanks} skills with ranks ({totalRanks} total) | Max: {maxClassSkillRank} class / {maxCrossClassRank} cross{filterNote}");
+            $"Level {_totalLevel}: {skillsWithRanks} skills with ranks ({totalRanks} total) | Max: {maxClassSkillRank} class / {maxCrossClassRank} cross{pointsNote}{filterNote}");
 
         // Update skill points table
         UpdateSkillPointsTable();
@@ -338,8 +342,7 @@ public partial class SkillsPanel : BasePanelControl
 
         _skillPointsTableBorder.IsVisible = true;
 
-        var totalSkillPoints = 0;
-        var totalRanksSpent = _allSkills.Sum(s => s.Ranks);
+        var (totalSkillPoints, totalRanksSpent) = ComputeSkillPointTotals();
 
         foreach (var classEntry in CurrentCreature.ClassList)
         {
@@ -360,8 +363,6 @@ public partial class SkillsPanel : BasePanelControl
             {
                 classPoints = pointsPerLevel * classEntry.ClassLevel;
             }
-
-            totalSkillPoints += classPoints;
 
             // Create row for this class
             var row = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Margin = new Avalonia.Thickness(0, 2) };
@@ -428,6 +429,38 @@ public partial class SkillsPanel : BasePanelControl
             Margin = new Avalonia.Thickness(0, 4, 0, 0)
         };
         _skillPointsTablePanel.Children.Add(noteRow);
+    }
+
+    /// <summary>
+    /// Computes total skill points available and total ranks spent.
+    /// Returns (totalPoints, totalRanksSpent). Points is approximate (excludes race/feat bonuses).
+    /// </summary>
+    private (int totalPoints, int totalSpent) ComputeSkillPointTotals()
+    {
+        var totalRanksSpent = _allSkills.Sum(s => s.Ranks);
+
+        if (CurrentCreature == null || CurrentCreature.ClassList.Count == 0)
+            return (0, totalRanksSpent);
+
+        var totalSkillPoints = 0;
+        foreach (var classEntry in CurrentCreature.ClassList)
+        {
+            var skillPointBase = GetClassSkillPointBase(classEntry.Class);
+            var intModifier = CreatureDisplayService.CalculateAbilityBonus(CurrentCreature.Int);
+            var pointsPerLevel = Math.Max(1, skillPointBase + intModifier);
+            var firstLevelPoints = pointsPerLevel * 4;
+            var additionalLevelPoints = pointsPerLevel * (classEntry.ClassLevel - 1);
+            var classPoints = firstLevelPoints + additionalLevelPoints;
+
+            if (CurrentCreature.ClassList.IndexOf(classEntry) > 0)
+            {
+                classPoints = pointsPerLevel * classEntry.ClassLevel;
+            }
+
+            totalSkillPoints += classPoints;
+        }
+
+        return (totalSkillPoints, totalRanksSpent);
     }
 
     /// <summary>
