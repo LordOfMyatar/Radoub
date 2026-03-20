@@ -78,7 +78,67 @@ If found, add completion comment:
 gh issue comment [epic-number] --body "Sprint completed via PR #[pr-number]: [PR title]"
 ```
 
-### Step 6: Create Release (if `--release` flag provided)
+### Step 6: Update Developer Documentation
+
+**MANDATORY** — do not skip this step.
+
+**Wiki repo**: `d:\LOM\workspace\Radoub.wiki\`
+
+#### 6a: Map CHANGELOG to Wiki Pages
+
+Read the CHANGELOG entries for this PR/sprint. Map changes to wiki pages:
+
+| CHANGELOG / Code Area | Wiki Page |
+|---|---|
+| Parley services/viewmodels | Parley-Developer-Architecture |
+| Parley copy/paste | Parley-Developer-CopyPaste |
+| Parley delete behavior | Parley-Developer-Delete-Behavior |
+| Parley scrap system | Parley-Developer-Scrap-System |
+| Parley tests | Parley-Developer-Testing |
+| Manifest services | Manifest-Developer-Architecture |
+| Quartermaster | Quartermaster-Developer-Architecture |
+| Fence | Fence-Developer-Architecture |
+| Trebuchet | Trebuchet-Developer-Architecture |
+| Relique | Relique-Developer-Architecture |
+| Radoub.Formats | Radoub-Formats (+ specific format pages) |
+| Radoub.UI | Radoub-UI-Developer |
+
+If a mapped wiki page does not exist yet, create it from the developer architecture template in the wiki's CLAUDE.md.
+
+#### 6b: Update Mapped Dev Doc Pages
+
+For each mapped page:
+1. Read the current wiki page
+2. Update architecture/data flow sections to reflect code changes from this sprint
+3. Update Mermaid diagrams if component relationships changed
+4. Set `*Page freshness: YYYY-MM-DD*` to today's date
+
+**Style**: Clinical, terse. No marketing speak. Technical accuracy over readability.
+
+#### 6c: 30-Day Freshness Sweep
+
+Check ALL wiki pages with freshness dates:
+
+```bash
+grep -r "Page freshness:" d:/LOM/workspace/Radoub.wiki/*.md
+```
+
+**Dev doc pages** (`*-Developer-*`) older than 30 days:
+- Review content against current source code
+- Update content if stale, update freshness date to today
+
+**User doc pages** (non-developer pages) older than 30 days:
+- Cut a GitHub issue per stale page
+- **Title**: `[Docs] Review stale wiki page: {Page-Name}`
+- **Labels**: `docs` + tool label (e.g., `parley`)
+- **Body**: Page name, current freshness date, days since last update
+- **Dedup**: Check for existing open issue with same title before creating
+
+#### 6d: No Push Required
+
+Changes stay local in the wiki repo. Do not push.
+
+### Step 7: Create Release (if `--release` flag provided)
 
 **Default: No** (skip unless `--release` flag provided)
 
@@ -92,7 +152,7 @@ The `/release` command handles:
 - Creating GitHub release with proper tagging
 - Generating release assets if configured
 
-### Step 7: Generate Summary
+### Step 8: Generate Summary
 
 ```markdown
 ## Post-Merge Summary
@@ -110,6 +170,8 @@ The `/release` command handles:
 | Local branch | ✅ Deleted (default) / ⏭️ Kept (--noclean) |
 | Issues closed | ✅ #x, #y / N/A |
 | Epic updated | ✅ #z / N/A |
+| Dev docs updated | ✅ [list pages] / ⏭️ No mapped pages |
+| Stale user docs | ✅ Issues cut: #a, #b / ⏭️ None stale |
 | Release | ✅ Created vX.Y.Z (--release) / ⏭️ Skipped (default) |
 
 ---

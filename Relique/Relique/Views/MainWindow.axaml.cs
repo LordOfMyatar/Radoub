@@ -63,6 +63,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _documentState.DirtyStateChanged += () => Title = _documentState.GetTitle();
 
         RestoreWindowPosition();
+        UpdateUseRadoubThemeMenuState();
         UpdateModuleIndicator();
         PopulateRecentFiles();
 
@@ -688,6 +689,21 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         // TODO (#1706): Settings window
         UpdateStatus("Settings not yet implemented");
+    }
+
+    private void OnToggleUseRadoubThemeClick(object? sender, RoutedEventArgs e)
+    {
+        var settings = SettingsService.Instance;
+        settings.UseSharedTheme = !settings.UseSharedTheme;
+        UpdateUseRadoubThemeMenuState();
+        Radoub.UI.Services.ThemeManager.Instance.ApplyEffectiveTheme(settings.CurrentThemeId, settings.UseSharedTheme);
+    }
+
+    private void UpdateUseRadoubThemeMenuState()
+    {
+        var menuItem = this.FindControl<MenuItem>("UseRadoubThemeMenuItem");
+        if (menuItem != null)
+            menuItem.Icon = SettingsService.Instance.UseSharedTheme ? new TextBlock { Text = "✓" } : null;
     }
 
     private void OnAboutClick(object? sender, RoutedEventArgs e)

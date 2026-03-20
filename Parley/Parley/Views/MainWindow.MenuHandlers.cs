@@ -181,6 +181,21 @@ namespace DialogEditor.Views
             _viewModel.StatusMessage = "Settings updated";
         }
 
+        private void OnToggleUseRadoubThemeClick(object? sender, RoutedEventArgs e)
+        {
+            var settings = _services.Settings;
+            settings.UseSharedTheme = !settings.UseSharedTheme;
+            UpdateUseRadoubThemeMenuState();
+            Radoub.UI.Services.ThemeManager.Instance.ApplyEffectiveTheme(settings.CurrentThemeId, settings.UseSharedTheme);
+        }
+
+        private void UpdateUseRadoubThemeMenuState()
+        {
+            var menuItem = this.FindControl<MenuItem>("UseRadoubThemeMenuItem");
+            if (menuItem != null)
+                menuItem.Icon = _services.Settings.UseSharedTheme ? new TextBlock { Text = "✓" } : null;
+        }
+
         private void OnPreferencesClick(object? sender, RoutedEventArgs e)
         {
             try

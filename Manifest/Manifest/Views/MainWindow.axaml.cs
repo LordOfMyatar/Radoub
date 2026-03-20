@@ -56,6 +56,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Wire up shared document state for title bar updates
         _documentState.DirtyStateChanged += () => Title = _documentState.GetTitle();
 
+        // Initialize theme menu state (#1533)
+        UpdateUseRadoubThemeMenuState();
+
         // Restore window position
         RestoreWindowPosition();
 
@@ -370,6 +373,21 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         var settingsWindow = new SettingsWindow();
         settingsWindow.Show(this);
+    }
+
+    private void OnToggleUseRadoubThemeClick(object? sender, RoutedEventArgs e)
+    {
+        var settings = SettingsService.Instance;
+        settings.UseSharedTheme = !settings.UseSharedTheme;
+        UpdateUseRadoubThemeMenuState();
+        Radoub.UI.Services.ThemeManager.Instance.ApplyEffectiveTheme(settings.CurrentThemeId, settings.UseSharedTheme);
+    }
+
+    private void UpdateUseRadoubThemeMenuState()
+    {
+        var menuItem = this.FindControl<MenuItem>("UseRadoubThemeMenuItem");
+        if (menuItem != null)
+            menuItem.Icon = SettingsService.Instance.UseSharedTheme ? new TextBlock { Text = "✓" } : null;
     }
 
     private void OnAboutClick(object? sender, RoutedEventArgs e)

@@ -286,6 +286,7 @@ namespace DialogEditor.Views
         {
             _services.WindowPersistence.LoadAnimationValues();
             ApplySavedTheme();
+            UpdateUseRadoubThemeMenuState();
             HideDebugConsoleByDefault();
             SetupKeyboardShortcuts();
             _controllers.TreeView.SetupTreeViewDragDrop();

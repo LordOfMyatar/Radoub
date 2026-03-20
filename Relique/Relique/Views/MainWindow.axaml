@@ -58,6 +58,8 @@
                 <Separator/>
                 <MenuItem x:Name="LanguageMenu" Header="_Language" AutomationProperties.AutomationId="LanguageMenu"/>
                 <Separator/>
+                <MenuItem x:Name="UseRadoubThemeMenuItem" Header="Use _Radoub Theme" Click="OnToggleUseRadoubThemeClick"/>
+                <Separator/>
                 <MenuItem Header="_Settings..." Click="OnSettingsClick"/>
             </MenuItem>
             <MenuItem Header="_Help">

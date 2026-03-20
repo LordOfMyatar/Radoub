@@ -95,6 +95,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         Loaded += OnWindowLoaded;
         Opened += OnWindowOpened;
 
+        // Initialize theme menu state (#1533)
+        UpdateUseRadoubThemeMenuState();
+
         // Restore window position from settings
         RestoreWindowPosition();
 
@@ -687,6 +690,21 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var settingsWindow = new SettingsWindow();
         settingsWindow.SetMainWindow(this);
         settingsWindow.Show(this); // Non-modal
+    }
+
+    private void OnToggleUseRadoubThemeClick(object? sender, RoutedEventArgs e)
+    {
+        var settings = SettingsService.Instance;
+        settings.UseSharedTheme = !settings.UseSharedTheme;
+        UpdateUseRadoubThemeMenuState();
+        Radoub.UI.Services.ThemeManager.Instance.ApplyEffectiveTheme(settings.CurrentThemeId, settings.UseSharedTheme);
+    }
+
+    private void UpdateUseRadoubThemeMenuState()
+    {
+        var menuItem = this.FindControl<MenuItem>("UseRadoubThemeMenuItem");
+        if (menuItem != null)
+            menuItem.Icon = SettingsService.Instance.UseSharedTheme ? new TextBlock { Text = "✓" } : null;
     }
 
     private void OnAboutClick(object? sender, RoutedEventArgs e)
