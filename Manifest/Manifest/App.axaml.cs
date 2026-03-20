@@ -54,8 +54,8 @@ public partial class App : Application
             themeId = SettingsService.Instance.CurrentThemeId;
         }
 
-        // Use ApplyEffectiveTheme to check for shared Radoub-level theme first
-        if (!ThemeManager.Instance.ApplyEffectiveTheme(themeId))
+        // Use ApplyEffectiveTheme to check for shared Radoub-level theme first (#1533)
+        if (!ThemeManager.Instance.ApplyEffectiveTheme(themeId, SettingsService.Instance.UseSharedTheme))
         {
             // Fallback to light theme
             ThemeManager.Instance.ApplyTheme("org.radoub.theme.light");
@@ -131,7 +131,9 @@ public partial class App : Application
         switch (e.PropertyName)
         {
             case nameof(SettingsService.CurrentThemeId):
-                ThemeManager.Instance.ApplyTheme(SettingsService.Instance.CurrentThemeId);
+                ThemeManager.Instance.ApplyEffectiveTheme(
+                    SettingsService.Instance.CurrentThemeId,
+                    SettingsService.Instance.UseSharedTheme);
                 ApplyFontSettings(); // Re-apply font overrides after theme change
                 break;
             case nameof(SettingsService.FontSize):

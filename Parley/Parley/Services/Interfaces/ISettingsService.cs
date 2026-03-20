@@ -32,6 +32,7 @@ namespace DialogEditor.Services
         string FontFamily { get; set; }
         bool IsDarkTheme { get; set; }
         string CurrentThemeId { get; set; }
+        bool UseSharedTheme { get; set; }
         string FlowchartLayout { get; set; }
         bool AllowScrollbarAutoHide { get; set; }
         int FlowchartNodeMaxLines { get; set; }

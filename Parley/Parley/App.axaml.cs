@@ -72,8 +72,8 @@ public partial class App : Application
             }
         }
 
-        // Use ApplyEffectiveTheme to check for shared Radoub-level theme first
-        if (!ThemeManager.Instance.ApplyEffectiveTheme(themeId))
+        // Use ApplyEffectiveTheme to check for shared Radoub-level theme first (#1533)
+        if (!ThemeManager.Instance.ApplyEffectiveTheme(themeId, _settings.UseSharedTheme))
         {
             // If preferred theme fails, try default light theme
             ThemeManager.Instance.ApplyTheme("org.radoub.theme.light");
@@ -171,11 +171,11 @@ public partial class App : Application
         }
         else if (e.PropertyName == nameof(SettingsService.CurrentThemeId))
         {
-            // Theme changed - apply new theme
+            // Theme changed - apply new theme (#1533)
             var themeId = _settings.CurrentThemeId;
             if (!string.IsNullOrEmpty(themeId))
             {
-                ThemeManager.Instance.ApplyTheme(themeId);
+                ThemeManager.Instance.ApplyEffectiveTheme(themeId, _settings.UseSharedTheme);
             }
         }
         else if (e.PropertyName == nameof(SettingsService.AllowScrollbarAutoHide))

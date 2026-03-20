@@ -56,7 +56,7 @@ public partial class App : Application
             themeId = SettingsService.Instance.CurrentThemeId;
         }
 
-        if (!ThemeManager.Instance.ApplyTheme(themeId))
+        if (!ThemeManager.Instance.ApplyEffectiveTheme(themeId, SettingsService.Instance.UseSharedTheme))
         {
             UnifiedLogger.LogApplication(LogLevel.WARN, $"Theme '{themeId}' failed to apply, falling back to light theme");
             if (!ThemeManager.Instance.ApplyTheme("org.radoub.theme.light"))
@@ -127,7 +127,9 @@ public partial class App : Application
         switch (e.PropertyName)
         {
             case nameof(SettingsService.CurrentThemeId):
-                if (!ThemeManager.Instance.ApplyTheme(SettingsService.Instance.CurrentThemeId))
+                if (!ThemeManager.Instance.ApplyEffectiveTheme(
+                    SettingsService.Instance.CurrentThemeId,
+                    SettingsService.Instance.UseSharedTheme))
                 {
                     UnifiedLogger.LogApplication(LogLevel.WARN,
                         $"Failed to apply theme '{SettingsService.Instance.CurrentThemeId}' on settings change");

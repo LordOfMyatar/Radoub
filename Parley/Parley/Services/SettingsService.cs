@@ -237,6 +237,12 @@ namespace DialogEditor.Services
             set => _uiSettings.CurrentThemeId = value;
         }
 
+        public bool UseSharedTheme
+        {
+            get => _uiSettings.UseSharedTheme;
+            set => _uiSettings.UseSharedTheme = value;
+        }
+
         /// <summary>
         /// Flowchart layout mode: "Floating" (separate window), "SideBySide" (split view), "Tabbed" (tab in main area)
         /// </summary>
@@ -589,7 +595,8 @@ namespace DialogEditor.Services
                             settings.FlowchartLayout ?? "Floating",
                             settings.AllowScrollbarAutoHide,
                             settings.FlowchartNodeMaxLines,
-                            settings.TreeViewWordWrap);
+                            settings.TreeViewWordWrap,
+                            settings.UseSharedTheme);
 
                         // Issue #179: Migrate speaker preferences to separate file
                         _legacyNpcSpeakerPreferences = settings.NpcSpeakerPreferences;
@@ -669,6 +676,7 @@ namespace DialogEditor.Services
                     FontFamily = FontFamily,
                     IsDarkTheme = IsDarkTheme,
                     CurrentThemeId = CurrentThemeId,
+                    UseSharedTheme = UseSharedTheme,
                     FlowchartLayout = FlowchartLayout,
                     FlowchartWindowLeft = FlowchartWindowLeft,
                     FlowchartWindowTop = FlowchartWindowTop,
@@ -759,6 +767,7 @@ namespace DialogEditor.Services
             public string FontFamily { get; set; } = "";
             public bool IsDarkTheme { get; set; } = false;
             public string? CurrentThemeId { get; set; } = "org.radoub.theme.light";
+            public bool UseSharedTheme { get; set; } = true;
             public string FlowchartLayout { get; set; } = "Floating";
             public double FlowchartWindowLeft { get; set; } = 100;
             public double FlowchartWindowTop { get; set; } = 100;
