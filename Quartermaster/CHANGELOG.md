@@ -16,6 +16,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.52-alpha] - 2026-03-19
+**Branch**: `quartermaster/issue-1818` | **PR**: #TBD
+
+### Sprint: Panel Layout & Spacing Uniformity (#1818)
+
+- Reduce vertical padding between feats in FeatsPanel (#1191)
+- Feats & Spells pages should match Skills page spacing (#1486)
+- Default skills panel sort order to class skills first (#1505)
+- Feats, Spell-Like Abilities, and Spells panels need layout uniformity with Skills (#1620)
+- Skills panel needs a selection summary (like Feats and Spells) (#1621)
+- Tighten Stats panel layout (#1619)
+- Creatures Select Panel: Tighten line spacing (#1623)
+
+---
+
 ## [0.2.51-alpha] - 2026-03-17
 **Branch**: `quartermaster/issue-1768` | **PR**: #1769
 
