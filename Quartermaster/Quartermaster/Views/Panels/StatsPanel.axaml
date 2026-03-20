@@ -20,7 +20,7 @@
                         CornerRadius="4"
                         Padding="15"
                         AutomationProperties.AutomationId="AbilityScoresSection">
-                    <StackPanel Spacing="10">
+                    <StackPanel Spacing="10" Grid.IsSharedSizeScope="True">
                         <Grid ColumnDefinitions="Auto,*,Auto">
                             <TextBlock Grid.Column="0" Text="Ability Scores" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
                             <TextBlock Grid.Column="1" x:Name="AbilityPointsSummary"
@@ -43,7 +43,14 @@
                         </Grid>
 
                         <!-- Column Headers -->
-                        <Grid ColumnDefinitions="130,140,60,60,60">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" MinWidth="90" SharedSizeGroup="AbilityLabel"/>
+                                <ColumnDefinition Width="Auto" MinWidth="135" SharedSizeGroup="AbilityBase"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="AbilityRacial"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="AbilityTotal"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="AbilityBonus"/>
+                            </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="Ability" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                             <TextBlock Grid.Column="1" Text="Base" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
@@ -57,7 +64,14 @@
                         </Grid>
 
                         <!-- Strength Row -->
-                        <Grid ColumnDefinitions="130,140,60,60,60" AutomationProperties.AutomationId="StrRow">
+                        <Grid AutomationProperties.AutomationId="StrRow">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" MinWidth="90" SharedSizeGroup="AbilityLabel"/>
+                                <ColumnDefinition Width="Auto" MinWidth="135" SharedSizeGroup="AbilityBase"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="AbilityRacial"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="AbilityTotal"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="AbilityBonus"/>
+                            </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="Strength" VerticalAlignment="Center"/>
                             <NumericUpDown x:Name="StrBase" Grid.Column="1" Value="10" Minimum="1" Maximum="255" Increment="1"
                                            FormatString="0" MinWidth="135"
@@ -69,7 +83,14 @@
                         </Grid>
 
                         <!-- Dexterity Row -->
-                        <Grid ColumnDefinitions="130,140,60,60,60" AutomationProperties.AutomationId="DexRow">
+                        <Grid AutomationProperties.AutomationId="DexRow">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" MinWidth="90" SharedSizeGroup="AbilityLabel"/>
+                                <ColumnDefinition Width="Auto" MinWidth="135" SharedSizeGroup="AbilityBase"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="AbilityRacial"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="AbilityTotal"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="AbilityBonus"/>
+                            </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="Dexterity" VerticalAlignment="Center"/>
                             <NumericUpDown x:Name="DexBase" Grid.Column="1" Value="10" Minimum="1" Maximum="255" Increment="1"
                                            FormatString="0" MinWidth="135"
@@ -81,7 +102,14 @@
                         </Grid>
 
                         <!-- Constitution Row -->
-                        <Grid ColumnDefinitions="130,140,60,60,60" AutomationProperties.AutomationId="ConRow">
+                        <Grid AutomationProperties.AutomationId="ConRow">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" MinWidth="90" SharedSizeGroup="AbilityLabel"/>
+                                <ColumnDefinition Width="Auto" MinWidth="135" SharedSizeGroup="AbilityBase"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="AbilityRacial"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="AbilityTotal"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="AbilityBonus"/>
+                            </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="Constitution" VerticalAlignment="Center"/>
                             <NumericUpDown x:Name="ConBase" Grid.Column="1" Value="10" Minimum="1" Maximum="255" Increment="1"
                                            FormatString="0" MinWidth="135"
@@ -93,7 +121,14 @@
                         </Grid>
 
                         <!-- Intelligence Row -->
-                        <Grid ColumnDefinitions="130,140,60,60,60" AutomationProperties.AutomationId="IntRow">
+                        <Grid AutomationProperties.AutomationId="IntRow">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" MinWidth="90" SharedSizeGroup="AbilityLabel"/>
+                                <ColumnDefinition Width="Auto" MinWidth="135" SharedSizeGroup="AbilityBase"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="AbilityRacial"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="AbilityTotal"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="AbilityBonus"/>
+                            </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="Intelligence" VerticalAlignment="Center"/>
                             <NumericUpDown x:Name="IntBase" Grid.Column="1" Value="10" Minimum="1" Maximum="255" Increment="1"
                                            FormatString="0" MinWidth="135"
@@ -105,7 +140,14 @@
                         </Grid>
 
                         <!-- Wisdom Row -->
-                        <Grid ColumnDefinitions="130,140,60,60,60" AutomationProperties.AutomationId="WisRow">
+                        <Grid AutomationProperties.AutomationId="WisRow">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" MinWidth="90" SharedSizeGroup="AbilityLabel"/>
+                                <ColumnDefinition Width="Auto" MinWidth="135" SharedSizeGroup="AbilityBase"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="AbilityRacial"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="AbilityTotal"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="AbilityBonus"/>
+                            </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="Wisdom" VerticalAlignment="Center"/>
                             <NumericUpDown x:Name="WisBase" Grid.Column="1" Value="10" Minimum="1" Maximum="255" Increment="1"
                                            FormatString="0" MinWidth="135"
@@ -117,7 +159,14 @@
                         </Grid>
 
                         <!-- Charisma Row -->
-                        <Grid ColumnDefinitions="130,140,60,60,60" AutomationProperties.AutomationId="ChaRow">
+                        <Grid AutomationProperties.AutomationId="ChaRow">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" MinWidth="90" SharedSizeGroup="AbilityLabel"/>
+                                <ColumnDefinition Width="Auto" MinWidth="135" SharedSizeGroup="AbilityBase"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="AbilityRacial"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="AbilityTotal"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="AbilityBonus"/>
+                            </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="Charisma" VerticalAlignment="Center"/>
                             <NumericUpDown x:Name="ChaBase" Grid.Column="1" Value="10" Minimum="1" Maximum="255" Increment="1"
                                            FormatString="0" MinWidth="135"
@@ -273,11 +322,18 @@
                         CornerRadius="4"
                         Padding="15"
                         AutomationProperties.AutomationId="SavingThrowsSection">
-                    <StackPanel Spacing="10">
+                    <StackPanel Spacing="10" Grid.IsSharedSizeScope="True">
                         <TextBlock Text="Saving Throws" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
                         <!-- Column Headers -->
-                        <Grid ColumnDefinitions="90,50,50,140,60">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" MinWidth="70" SharedSizeGroup="SaveLabel"/>
+                                <ColumnDefinition Width="Auto" MinWidth="45" SharedSizeGroup="SaveAbility"/>
+                                <ColumnDefinition Width="Auto" MinWidth="45" SharedSizeGroup="SaveTotal"/>
+                                <ColumnDefinition Width="Auto" MinWidth="135" SharedSizeGroup="SaveBase"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="SaveExtra"/>
+                            </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="Save" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                             <TextBlock Grid.Column="1" Text="Ability" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
@@ -291,7 +347,14 @@
                         </Grid>
 
                         <!-- Fortitude Row -->
-                        <Grid ColumnDefinitions="90,50,50,140,60" AutomationProperties.AutomationId="FortRow">
+                        <Grid AutomationProperties.AutomationId="FortRow">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" MinWidth="70" SharedSizeGroup="SaveLabel"/>
+                                <ColumnDefinition Width="Auto" MinWidth="45" SharedSizeGroup="SaveAbility"/>
+                                <ColumnDefinition Width="Auto" MinWidth="45" SharedSizeGroup="SaveTotal"/>
+                                <ColumnDefinition Width="Auto" MinWidth="135" SharedSizeGroup="SaveBase"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="SaveExtra"/>
+                            </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="Fortitude" VerticalAlignment="Center"/>
                             <TextBlock x:Name="FortAbility" Grid.Column="1" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
@@ -302,7 +365,14 @@
                         </Grid>
 
                         <!-- Reflex Row -->
-                        <Grid ColumnDefinitions="90,50,50,140,60" AutomationProperties.AutomationId="RefRow">
+                        <Grid AutomationProperties.AutomationId="RefRow">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" MinWidth="70" SharedSizeGroup="SaveLabel"/>
+                                <ColumnDefinition Width="Auto" MinWidth="45" SharedSizeGroup="SaveAbility"/>
+                                <ColumnDefinition Width="Auto" MinWidth="45" SharedSizeGroup="SaveTotal"/>
+                                <ColumnDefinition Width="Auto" MinWidth="135" SharedSizeGroup="SaveBase"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="SaveExtra"/>
+                            </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="Reflex" VerticalAlignment="Center"/>
                             <TextBlock x:Name="RefAbility" Grid.Column="1" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
@@ -313,7 +383,14 @@
                         </Grid>
 
                         <!-- Will Row -->
-                        <Grid ColumnDefinitions="90,50,50,140,60" AutomationProperties.AutomationId="WillRow">
+                        <Grid AutomationProperties.AutomationId="WillRow">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" MinWidth="70" SharedSizeGroup="SaveLabel"/>
+                                <ColumnDefinition Width="Auto" MinWidth="45" SharedSizeGroup="SaveAbility"/>
+                                <ColumnDefinition Width="Auto" MinWidth="45" SharedSizeGroup="SaveTotal"/>
+                                <ColumnDefinition Width="Auto" MinWidth="135" SharedSizeGroup="SaveBase"/>
+                                <ColumnDefinition Width="Auto" MinWidth="50" SharedSizeGroup="SaveExtra"/>
+                            </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="Will" VerticalAlignment="Center"/>
                             <TextBlock x:Name="WillAbility" Grid.Column="1" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
