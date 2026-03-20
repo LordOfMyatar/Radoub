@@ -46,20 +46,14 @@ git pull origin main
 
 ### Step 3: Fetch Issue Details and Check for Duplicates
 
-**First, check the GitHub cache** (`.claude/cache/github-data.json`):
+**Cache-first**: Refresh cache if stale, then read all data from cache. No direct `gh issue view` calls.
 
 ```bash
-# Check cache freshness (should be <1 hour old from /backlog run)
-stat -c %Y .claude/cache/github-data.json 2>/dev/null || echo "cache missing"
-```
+# Ensure cache is fresh (auto-refreshes if >1 hour old)
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1"
 
-**If cache is fresh** (<1 hour), use it for:
-1. Issue details lookup
-2. Similar/duplicate issue search
-
-**If cache is stale or missing**, fall back to GitHub API:
-```bash
-gh issue view [number] --json title,labels,body,milestone
+# Get issue details from cache
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View issue -Number [number]
 ```
 
 **Extract from issue**:
@@ -74,10 +68,10 @@ Extract key terms from the issue title (remove prefixes like `[Tool]`, `feat:`, 
 
 ```bash
 # Search cache for issues with similar keywords
-pwsh -File .claude/scripts/Get-CacheData.ps1 -View search -Query "keyword"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View search -Query "keyword"
 
 # Filter by tool if needed
-pwsh -File .claude/scripts/Get-CacheData.ps1 -View search -Query "keyword" -Tool parley
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View search -Query "keyword" -Tool parley
 ```
 
 **Patterns to detect**:
@@ -249,6 +243,14 @@ git commit -m "[tool] chore: Add PR number to CHANGELOG"
 git push
 ```
 
+### Step 10b: Refresh Cache
+
+After all mutations (PR created, project board updated), refresh the cache so subsequent commands see fresh state:
+
+```bash
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1" -Force
+```
+
 ### Step 11: Report Summary
 
 Output format varies by type:
@@ -337,12 +339,7 @@ git push
 
 ## Label Detection Examples
 
-```bash
-# Get labels for detection logic
-gh issue view 37 --json labels -q '.labels[].name'
-```
-
-Common label patterns:
+Labels are extracted from the cache data (no API call needed). Common label patterns:
 - `epic`, `Epic`, `type:epic` → Epic
 - `sprint`, `Sprint`, `type:sprint` → Sprint
 - `bug`, `Bug`, `type:bug` → Fix
@@ -377,7 +374,7 @@ ITEM_JSON=$(gh project item-add 3 --owner LordOfMyatar --url https://github.com/
 
 # Parse item ID (no jq on this system - use grep/sed or parse from gh output)
 # The gh output includes "id" field. Extract with:
-ITEM_ID=$(echo "$ITEM_JSON" | pwsh -Command '$input | ConvertFrom-Json | Select-Object -ExpandProperty id')
+ITEM_ID=$(echo "$ITEM_JSON" | powershell.exe -NoProfile -Command '$input | ConvertFrom-Json | Select-Object -ExpandProperty id')
 # Or parse directly from JSON output (id is always returned):
 # ITEM_ID=$(echo "$ITEM_JSON" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
 
