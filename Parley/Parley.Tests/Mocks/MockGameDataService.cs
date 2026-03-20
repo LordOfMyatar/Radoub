@@ -77,6 +77,13 @@ namespace Parley.Tests.Mocks
             return _resources.TryGetValue(key, out var data) ? data : null;
         }
 
+        public Radoub.Formats.Resolver.ResourceResult? FindResourceWithSource(string resRef, ushort resourceType)
+        {
+            var data = FindResource(resRef, resourceType);
+            if (data == null) return null;
+            return new Radoub.Formats.Resolver.ResourceResult(data, Radoub.Formats.Resolver.ResourceSource.Bif, "mock.bif", resRef, resourceType);
+        }
+
         public byte[]? FindBaseResource(string resRef, ushort resourceType)
         {
             return FindResource(resRef, resourceType);

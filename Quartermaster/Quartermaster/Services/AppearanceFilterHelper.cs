@@ -30,18 +30,19 @@ public static class AppearanceFilterHelper
         if (appearances == null || appearances.Count == 0)
             return new List<AppearanceInfo>();
 
-        var noSourceFilter = !showBif && !showHak && !showOverride;
+        var allSourcesUnchecked = !showBif && !showHak && !showOverride;
         var noTextFilter = string.IsNullOrWhiteSpace(searchText);
         var parsedExcludes = ParseExcludePatterns(excludePatterns);
 
-        if (noSourceFilter && noTextFilter && parsedExcludes.Length == 0)
-            return new List<AppearanceInfo>(appearances);
+        // All sources unchecked = show nothing (user explicitly deselected all)
+        if (allSourcesUnchecked)
+            return new List<AppearanceInfo>();
 
         var result = new List<AppearanceInfo>();
 
         foreach (var app in appearances)
         {
-            if (!noSourceFilter && !MatchesSourceFilter(app.Source, showBif, showHak, showOverride))
+            if (!MatchesSourceFilter(app.Source, showBif, showHak, showOverride))
                 continue;
 
             if (!noTextFilter && !MatchesTextSearch(app, searchText!))

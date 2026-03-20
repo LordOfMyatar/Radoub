@@ -123,12 +123,11 @@ public class AppearanceFilterTests
     }
 
     [Fact]
-    public void FilterAppearances_AllSourcesUnchecked_ReturnsOnlyUnknown()
+    public void FilterAppearances_AllSourcesUnchecked_ReturnsEmpty()
     {
         var result = AppearanceFilterHelper.Filter(_testAppearances, "", false, false, false);
-        // Unknown source items always shown when no filters are checked (show all behavior)
-        // Actually, if all unchecked, show nothing? Or show all? Let's define: all unchecked = show all (no filtering)
-        Assert.Equal(_testAppearances.Count, result.Count);
+        // All sources unchecked = show nothing (user explicitly deselected all)
+        Assert.Empty(result);
     }
 
     [Fact]

@@ -16,6 +16,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.62-alpha] - 2026-03-20
+**Branch**: `quartermaster/issue-1754` | **PR**: #1866
+
+### Fix: Standalone model rendering (#1754)
+
+- Honor MDL `Render` flag — skip meshes with `Render=false` during 3D preview (146/486 standalone models affected)
+- Fix appearance filter showing everything when all source checkboxes unchecked
+- Log source file (BIF/HAK name) for model loading to aid debugging
+- Bat and giant models confirmed rendering correctly with clean module launch
+- Diagnostic test suite for standalone model parsing added
+
+---
+
 ## [0.2.52-alpha] - 2026-03-19
 **Branch**: `quartermaster/issue-1818` | **PR**: #1862
 
