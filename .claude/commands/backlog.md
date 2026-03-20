@@ -35,12 +35,12 @@ Collect in ONE interaction:
 
 ```bash
 # Auto-refresh if cache is stale (>1 hour) or missing
-pwsh -File .claude/scripts/Refresh-GitHubCache.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1"
 ```
 
 If `--refresh` flag is passed, force refresh:
 ```bash
-pwsh -File .claude/scripts/Refresh-GitHubCache.ps1 -Force
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1" -Force
 ```
 
 ### Step 1: Load Issues from Cache
@@ -51,10 +51,10 @@ Use the helper script to get a compact view (~25KB instead of 220KB):
 
 ```bash
 # Get list view (no bodies) - filtered by tool if specified
-pwsh -File .claude/scripts/Get-CacheData.ps1 -View list [-Tool parley]
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View list [-Tool parley]
 
 # Or just summary stats
-pwsh -File .claude/scripts/Get-CacheData.ps1 -View summary
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View summary
 ```
 
 The list view includes: number, title, updatedAt, author, labels (comma-separated).
@@ -72,10 +72,10 @@ Count issues with problems (don't detail each one unless `--full`):
 - **Stale (15+ days)**: 5 issues
 - **Well-formed**: 18 issues
 
-[Run `/backlog --full` or `/grooming` for detailed fixes]
+[Run `/backlog --full` for detailed fixes]
 ```
 
-If `--full` flag: Include per-issue recommendations like `/grooming` does.
+If `--full` flag: Include per-issue recommendations (label fixes, title standardization).
 
 ### Step 3: Categorize by Epic/Area
 
@@ -271,7 +271,7 @@ gh project item-add [PROJECT_NUMBER] --owner LordOfMyatar --url https://github.c
 - **Stale (15+ days)**: N issues
 - **Well-formed**: N issues
 
-[Run `/backlog --full` or `/grooming` for detailed fixes]
+[Run `/backlog --full` for detailed fixes]
 
 ---
 
@@ -316,7 +316,7 @@ gh project item-add [PROJECT_NUMBER] --owner LordOfMyatar --url https://github.c
 ## Next Steps
 
 - To start selected sprint: `/init-item #[sprint-issue-number]`
-- For detailed grooming: `/grooming` or `/backlog --full`
+- For detailed grooming: `/backlog --full`
 ```
 
 ## Save to File
