@@ -259,8 +259,11 @@ public partial class FeatsPanel : UserControl
             }
         }
 
-        // Sort by name
-        _allFeats = _allFeats.OrderBy(f => f.FeatName).ToList();
+        // Sort: assigned feats first, then alphabetical within each group
+        _allFeats = _allFeats
+            .OrderByDescending(f => f.IsAssigned)
+            .ThenBy(f => f.FeatName)
+            .ToList();
     }
 
     /// <summary>
