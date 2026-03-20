@@ -40,9 +40,9 @@ public static class CommandLineService
         var parsed = CommandLineParser.Parse<TrebuchetOptions>(args, HandleCustomFlag);
 
         // --project resolves to a module path for Trebuchet
-        if (!string.IsNullOrEmpty(parsed.ProjectPath) && string.IsNullOrEmpty(parsed.ModulePath))
+        if (!string.IsNullOrEmpty(parsed.ModuleName) && string.IsNullOrEmpty(parsed.ModulePath))
         {
-            var modulePath = ProjectPathResolver.ResolveModulePath(parsed.ProjectPath);
+            var modulePath = ProjectPathResolver.ResolveModulePath(parsed.ModuleName);
             if (!string.IsNullOrEmpty(modulePath))
             {
                 parsed.ModulePath = modulePath;
@@ -57,7 +57,6 @@ public static class CommandLineService
     {
         switch (flag.ToLowerInvariant())
         {
-            case "-m":
             case "--module":
                 if (currentIndex + 1 < args.Length)
                 {
@@ -80,12 +79,12 @@ public static class CommandLineService
         Console.WriteLine("  -h, --help             Show this help message");
         Console.WriteLine("  --safemode             Start with default theme and font settings");
         Console.WriteLine("  -m, --module <path>    Path to module file to open");
-        Console.WriteLine("  -p, --project <name>   Open module by name (resolves from modules directory)");
+        Console.WriteLine("  --mod <name>             Open module by name (resolves from modules directory)");
         Console.WriteLine();
         Console.WriteLine("Examples:");
         Console.WriteLine("  Trebuchet");
         Console.WriteLine("  Trebuchet --module \"~/modules/my_module.mod\"");
-        Console.WriteLine("  Trebuchet -p LNS");
+        Console.WriteLine("  Trebuchet --mod LNS");
         Console.WriteLine("  Trebuchet --safemode");
     }
 }

@@ -40,7 +40,7 @@ public static class CommandLineService
                 return 0;
             },
             fileExtension: ".uti");
-        ResolveProjectPath(Options);
+        ResolveModuleName(Options);
         return Options;
     }
 
@@ -52,7 +52,7 @@ public static class CommandLineService
         Console.WriteLine();
         Console.WriteLine("Options:");
         Console.WriteLine("  --file, -f <path>      Open the specified UTI file");
-        Console.WriteLine("  --project, -p <name>   Set module context (resolves relative --file paths)");
+        Console.WriteLine("  --mod, -m <name>       Set module context (resolves relative --file paths)");
         Console.WriteLine("  --new, -n              Open the New Item wizard on startup");
         Console.WriteLine("  --safemode, -s         Start in SafeMode (reset theme and fonts to defaults)");
         Console.WriteLine("  --help, -h             Show this help message");
@@ -61,21 +61,21 @@ public static class CommandLineService
         Console.WriteLine("  ItemEditor                             Start with empty editor");
         Console.WriteLine("  ItemEditor sword.uti                   Open sword.uti");
         Console.WriteLine("  ItemEditor --file armor.uti            Open armor.uti");
-        Console.WriteLine("  ItemEditor -p LNS --file sword.uti     Open LNS/sword.uti");
+        Console.WriteLine("  ItemEditor -m LNS --file sword.uti     Open LNS/sword.uti");
         Console.WriteLine("  ItemEditor --new                       Open the New Item wizard");
         Console.WriteLine("  ItemEditor --safemode                  Start with default visual settings");
     }
 
-    private static void ResolveProjectPath(CommandLineOptions options)
+    private static void ResolveModuleName(CommandLineOptions options)
     {
-        if (string.IsNullOrEmpty(options.ProjectPath))
+        if (string.IsNullOrEmpty(options.ModuleName))
             return;
 
-        var resolved = ProjectPathResolver.ResolveFilePath(options.ProjectPath, options.FilePath);
+        var resolved = ProjectPathResolver.ResolveFilePath(options.ModuleName, options.FilePath);
         if (resolved != null)
             options.FilePath = resolved;
 
-        var modulePath = ProjectPathResolver.ResolveModulePath(options.ProjectPath);
+        var modulePath = ProjectPathResolver.ResolveModulePath(options.ModuleName);
         if (!string.IsNullOrEmpty(modulePath))
             RadoubSettings.Instance.CurrentModulePath = modulePath;
     }

@@ -36,11 +36,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Auto-disables shared theme when user explicitly changes theme in Settings
 - Parley: Added `UseSharedTheme` to `ISettingsService`/`UISettingsService` interface chain
 
-#### #1781: Add --project/-p CLI switch
-- Added `ProjectPath` to shared `CommandLineOptions` and `CommandLineParser`
+#### #1781: Add --mod/-m CLI switch
+- Added `ModuleName` to shared `CommandLineOptions` and `CommandLineParser`
 - Created `ProjectPathResolver` for resolving module name + relative file to absolute path
-- Integrated `--project`/`-p` into all 6 tools' `CommandLineService`
-- Sets `RadoubSettings.CurrentModulePath` when project specified
+- Integrated `--mod`/`-m` into all 6 tools' `CommandLineService`
+- Sets `RadoubSettings.CurrentModulePath` when module specified
+- Trebuchet: `-m` now means module name (short); `--module` still accepts full paths
 
 ---
 

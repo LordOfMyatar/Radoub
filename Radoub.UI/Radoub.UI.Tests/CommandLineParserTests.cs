@@ -4,56 +4,56 @@ using Xunit;
 namespace Radoub.UI.Tests;
 
 /// <summary>
-/// Tests for the shared CommandLineParser, specifically the --project flag (#1781).
+/// Tests for the shared CommandLineParser, specifically the --mod flag (#1781).
 /// </summary>
 public class CommandLineParserTests
 {
     [Fact]
-    public void Parse_ProjectFlag_SetsProjectPath()
+    public void Parse_ModFlag_SetsModuleName()
     {
-        var args = new[] { "--project", "LNS" };
+        var args = new[] { "--mod", "LNS" };
         var options = CommandLineParser.Parse<CommandLineOptions>(args);
-        Assert.Equal("LNS", options.ProjectPath);
+        Assert.Equal("LNS", options.ModuleName);
     }
 
     [Fact]
-    public void Parse_ProjectShortFlag_SetsProjectPath()
+    public void Parse_ModShortFlag_SetsModuleName()
     {
-        var args = new[] { "-p", "LNS" };
+        var args = new[] { "-m", "LNS" };
         var options = CommandLineParser.Parse<CommandLineOptions>(args);
-        Assert.Equal("LNS", options.ProjectPath);
+        Assert.Equal("LNS", options.ModuleName);
     }
 
     [Fact]
-    public void Parse_ProjectAndFile_SetsBoth()
+    public void Parse_ModAndFile_SetsBoth()
     {
-        var args = new[] { "--project", "LNS", "--file", "dialog.dlg" };
+        var args = new[] { "--mod", "LNS", "--file", "dialog.dlg" };
         var options = CommandLineParser.Parse<CommandLineOptions>(args);
-        Assert.Equal("LNS", options.ProjectPath);
+        Assert.Equal("LNS", options.ModuleName);
         Assert.Equal("dialog.dlg", options.FilePath);
     }
 
     [Fact]
-    public void Parse_ProjectFlag_WithoutValue_DoesNotThrow()
+    public void Parse_ModFlag_WithoutValue_DoesNotThrow()
     {
-        var args = new[] { "--project" };
+        var args = new[] { "--mod" };
         var options = CommandLineParser.Parse<CommandLineOptions>(args);
-        Assert.Null(options.ProjectPath);
+        Assert.Null(options.ModuleName);
     }
 
     [Fact]
-    public void Parse_ProjectFlag_CaseInsensitive()
+    public void Parse_ModFlag_CaseInsensitive()
     {
-        var args = new[] { "--PROJECT", "MyMod" };
+        var args = new[] { "--MOD", "MyMod" };
         var options = CommandLineParser.Parse<CommandLineOptions>(args);
-        Assert.Equal("MyMod", options.ProjectPath);
+        Assert.Equal("MyMod", options.ModuleName);
     }
 
     [Fact]
-    public void Parse_NoProjectFlag_ProjectPathIsNull()
+    public void Parse_NoModFlag_ModuleNameIsNull()
     {
         var args = new[] { "--file", "test.utc" };
         var options = CommandLineParser.Parse<CommandLineOptions>(args);
-        Assert.Null(options.ProjectPath);
+        Assert.Null(options.ModuleName);
     }
 }

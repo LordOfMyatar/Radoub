@@ -44,12 +44,10 @@ public class CommandLineServiceTests
         Assert.True(options.SafeMode);
     }
 
-    [Theory]
-    [InlineData("--module")]
-    [InlineData("-m")]
-    public void Parse_ModuleFlag_SetsModulePath(string moduleArg)
+    [Fact]
+    public void Parse_ModuleFlag_SetsModulePath()
     {
-        var args = new[] { moduleArg, "mymodule.mod" };
+        var args = new[] { "--module", "mymodule.mod" };
 
         var options = CommandLineService.Parse(args);
 
@@ -104,7 +102,7 @@ public class CommandLineServiceTests
     [Fact]
     public void Parse_ModulePathWithSpaces_Preserved()
     {
-        var args = new[] { "-m", "path with spaces/mymodule.mod" };
+        var args = new[] { "--module", "path with spaces/mymodule.mod" };
 
         var options = CommandLineService.Parse(args);
 
