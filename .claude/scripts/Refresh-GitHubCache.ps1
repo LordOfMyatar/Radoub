@@ -6,7 +6,7 @@
     Single GraphQL query fetches all open issues and PRs with labels,
     project board status, milestones, etc. Saves to .claude/cache/github-data.json.
 
-    Used by /backlog, /sprint-planning, and /grooming skills.
+    Used by /backlog, /init-item, /pre-merge, and /research commands.
 
 .PARAMETER Force
     Refresh even if cache is fresh (< 4 hours old).
@@ -50,7 +50,7 @@ Write-Host "Fetching GitHub data via GraphQL..."
 $query = @'
 {
   repository(owner: "LordOfMyatar", name: "Radoub") {
-    issues(first: 100, states: OPEN, orderBy: {field: UPDATED_AT, direction: DESC}) {
+    issues(first: 200, states: OPEN, orderBy: {field: UPDATED_AT, direction: DESC}) {
       totalCount
       nodes {
         number
