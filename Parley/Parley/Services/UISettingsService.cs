@@ -137,6 +137,12 @@ namespace DialogEditor.Services
                 {
                     // Update legacy IsDarkTheme for compatibility
                     _isDarkTheme = value.Contains("dark", StringComparison.OrdinalIgnoreCase);
+                    // User explicitly changed theme — disable shared theme (#1533)
+                    if (_useSharedTheme)
+                    {
+                        _useSharedTheme = false;
+                        OnPropertyChanged(nameof(UseSharedTheme));
+                    }
                     SettingsChanged?.Invoke();
                 }
             }

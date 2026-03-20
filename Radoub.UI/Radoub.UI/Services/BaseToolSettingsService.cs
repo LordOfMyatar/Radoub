@@ -187,7 +187,20 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
     public string CurrentThemeId
     {
         get => _currentThemeId;
-        set { if (SetProperty(ref _currentThemeId, value ?? "org.radoub.theme.light")) SaveSettings(); }
+        set
+        {
+            if (SetProperty(ref _currentThemeId, value ?? "org.radoub.theme.light"))
+            {
+                // User explicitly changed theme — disable shared theme so this
+                // tool keeps its chosen theme on next startup (#1533)
+                if (_useSharedTheme)
+                {
+                    _useSharedTheme = false;
+                    OnPropertyChanged(nameof(UseSharedTheme));
+                }
+                SaveSettings();
+            }
+        }
     }
 
     public bool UseSharedTheme
