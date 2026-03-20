@@ -105,10 +105,23 @@ public class AppearanceService
             if (string.IsNullOrEmpty(modelResRef) || modelResRef == "****")
                 modelResRef = label;
 
+            var name = GetAppearanceName((ushort)i);
+
+            // Log wraith/spectre rows to debug model name mapping (#1761)
+            if (label.IndexOf("wraith", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                label.IndexOf("spectre", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                (name.IndexOf("wraith", StringComparison.OrdinalIgnoreCase) >= 0) ||
+                (name.IndexOf("spectre", StringComparison.OrdinalIgnoreCase) >= 0))
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"[Appearance2DA] Row {i}: LABEL='{label}', RACE='{race}', MODELTYPE='{modelType}', " +
+                    $"name='{name}'");
+            }
+
             appearances.Add(new AppearanceInfo
             {
                 AppearanceId = (ushort)i,
-                Name = GetAppearanceName((ushort)i),
+                Name = name,
                 Label = label,
                 IsPartBased = isPartBased,
                 Race = race ?? "",

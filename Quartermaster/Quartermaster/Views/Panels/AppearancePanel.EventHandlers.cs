@@ -88,7 +88,7 @@ public partial class AppearancePanel
             if (item.Tag is ushort appearanceId)
             {
                 UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"AppearancePanel: Appearance changed to {appearanceId}");
+                    $"AppearancePanel: Appearance changed to {appearanceId}, displayText='{item.Content}'");
                 var isPartBased = _displayService?.IsPartBasedAppearance(appearanceId) ?? false;
                 UpdateBodyPartsEnabledState(isPartBased);
 

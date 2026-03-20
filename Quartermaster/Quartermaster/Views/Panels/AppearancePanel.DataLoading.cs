@@ -67,14 +67,19 @@ public partial class AppearancePanel
         _appearanceListBox.Items.Clear();
         foreach (var app in filtered)
         {
-            var displayText = app.IsPartBased && !app.Name.Contains("(Dynamic)")
+            var baseName = app.IsPartBased && !app.Name.Contains("(Dynamic)")
                 ? $"(Dynamic) {app.Name}"
                 : app.Name;
-            _appearanceListBox.Items.Add(new ListBoxItem
+            // Show appearance ID in display, model name in tooltip for debugging
+            var modelRef = !string.IsNullOrEmpty(app.Race) ? app.Race : app.Label;
+            var displayText = $"[{app.AppearanceId}] {baseName}";
+            var item = new ListBoxItem
             {
                 Content = displayText,
                 Tag = app.AppearanceId
-            });
+            };
+            Avalonia.Controls.ToolTip.SetTip(item, $"ID: {app.AppearanceId} | Model: {modelRef} | Type: {(app.IsPartBased ? "Part-Based" : "Static")} | Label: {app.Label}");
+            _appearanceListBox.Items.Add(item);
         }
 
         // Restore selection if still present

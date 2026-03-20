@@ -16,6 +16,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.63-alpha] - 2026-03-20
+**Branch**: `quartermaster/issue-1761` | **PR**: #1872
+
+### Appearance Panel Diagnostic Improvements (#1761)
+
+- Show appearance ID prefix `[ID]` in appearance list for quick identification
+- Add tooltip on each appearance entry showing model name (RACE), type, and label
+- Log display text alongside appearance ID on selection change
+- Log wraith/spectre 2DA rows at startup to trace model name mapping
+- Investigation: "bones only" wraith models are a CEP 2DA data issue, not a rendering bug (see #1873)
+
+---
+
 ## [0.2.62-alpha] - 2026-03-20
 **Branch**: `quartermaster/issue-1754` | **PR**: #1866
 
