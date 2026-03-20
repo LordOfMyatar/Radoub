@@ -256,7 +256,7 @@
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Border Background="{Binding RowBackground}"
-                                    Padding="10,4,10,4"
+                                    Padding="10,6,25,6"
                                     ToolTip.Tip="{Binding Description}">
                                 <Grid ColumnDefinitions="32,35,70,*,60,100,80,80">
                                     <!-- Icon -->
