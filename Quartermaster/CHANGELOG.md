@@ -16,6 +16,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.62-alpha] - 2026-03-19
+**Branch**: `quartermaster/issue-1754` | **PR**: #TBD
+
+### Fix: Models with standalone flag render incorrectly (#1754)
+
+- Bat and giant models have rendering issues related to standalone model flag
+- Investigate standalone flag semantics and transform/vertex handling
+
+---
+
 ## [0.2.52-alpha] - 2026-03-19
 **Branch**: `quartermaster/issue-1818` | **PR**: #1862
 
