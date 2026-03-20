@@ -89,7 +89,8 @@
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding DisplayName}"
-                                       TextTrimming="CharacterEllipsis"/>
+                                       TextTrimming="CharacterEllipsis"
+                                       Padding="4,2"/>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
