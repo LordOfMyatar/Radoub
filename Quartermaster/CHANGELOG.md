@@ -17,7 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.63-alpha] - 2026-03-20
-**Branch**: `quartermaster/issue-1761` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1761` | **PR**: #1872
 
 ### Fix: Wraith spectre 2 (hooded) and wraith allp 2 — bones only, no skin mesh (#1761)
 
