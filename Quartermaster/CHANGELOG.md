@@ -16,14 +16,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.2.62-alpha] - 2026-03-19
+## [0.2.62-alpha] - 2026-03-20
 **Branch**: `quartermaster/issue-1754` | **PR**: #1866
 
-### Fix: Honor MDL Render flag in model preview (#1754)
+### Fix: Standalone model rendering (#1754)
 
-- Skip meshes with `Render=false` during 3D preview — 146/486 standalone models affected
-- Fixes doubled geometry on curst warriors, excessive mesh rendering on cobras/beholders/dragons
-- Diagnostic scan: bat and giant model data parses correctly (no NaN, valid hierarchy)
+- Honor MDL `Render` flag — skip meshes with `Render=false` during 3D preview (146/486 standalone models affected)
+- Fix appearance filter showing everything when all source checkboxes unchecked
+- Log source file (BIF/HAK name) for model loading to aid debugging
+- Bat and giant models confirmed rendering correctly with clean module launch
+- Diagnostic test suite for standalone model parsing added
 
 ---
 
