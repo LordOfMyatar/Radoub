@@ -19,10 +19,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.2.62-alpha] - 2026-03-19
 **Branch**: `quartermaster/issue-1754` | **PR**: #1866
 
-### Fix: Models with standalone flag render incorrectly (#1754)
+### Fix: Honor MDL Render flag in model preview (#1754)
 
-- Bat and giant models have rendering issues related to standalone model flag
-- Investigate standalone flag semantics and transform/vertex handling
+- Skip meshes with `Render=false` during 3D preview — 146/486 standalone models affected
+- Fixes doubled geometry on curst warriors, excessive mesh rendering on cobras/beholders/dragons
+- Diagnostic scan: bat and giant model data parses correctly (no NaN, valid hierarchy)
 
 ---
 
