@@ -24,6 +24,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.90] - 2026-03-20
+**Branch**: `radoub/issue-1822` | **PR**: #TBD
+
+### Sprint: Multi-Tool CLAUDE.md & Dependency Cleanup (#1822)
+
+- [ ] #1797 - QM: Update CLAUDE.md — services, tests, and project structure are stale
+- [ ] #1794 - Fence: Update CLAUDE.md project structure listing
+- [ ] #1792 - Manifest: Fix stale log path in CLAUDE.md
+- [ ] #1793 - Manifest: Remove unused CommunityToolkit.Mvvm dependency
+
+---
+
 ## [0.9.89] - 2026-03-19
 **Branch**: `radoub/issue-1695` | **PR**: #1858
 
