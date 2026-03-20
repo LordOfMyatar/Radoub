@@ -743,6 +743,16 @@ void main()
         foreach (var mesh in allMeshes)
         {
             meshIndex++;
+
+            // Honor the MDL Render flag — meshes with Render=false are invisible
+            // (e.g., animation-only geometry, hidden internal meshes, stale body parts)
+            if (!mesh.Render)
+            {
+                skippedMeshes++;
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Skipping mesh {meshIndex} '{mesh.Name}': Render=false");
+                continue;
+            }
+
             if (mesh.Vertices.Length == 0 || mesh.Faces.Length == 0)
             {
                 skippedMeshes++;
