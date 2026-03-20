@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using DialogEditor.Models;
 using DialogEditor.Services;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 
 namespace DialogEditor.Services
@@ -44,6 +45,7 @@ namespace DialogEditor.Services
         public static ParleyCommandLineOptions Parse(string[] args)
         {
             _options = CommandLineParser.Parse<ParleyCommandLineOptions>(args, HandleCustomFlag, ".dlg");
+            ResolveProjectPath(_options);
             return _options;
         }
 
@@ -82,17 +84,33 @@ namespace DialogEditor.Services
 Usage: Parley [options] [file.dlg]
 
 Options:
-  -h, --help          Show this help message
-  -s, --safemode      Start in SafeMode (reset theme/fonts, clear caches)
-  --screenplay        Export dialog as screenplay text and exit
-  -o, --output FILE   Output file for screenplay (default: stdout)
+  -h, --help              Show this help message
+  -s, --safemode          Start in SafeMode (reset theme/fonts, clear caches)
+  -p, --project <name>    Set module context (resolves relative --file paths)
+  --screenplay            Export dialog as screenplay text and exit
+  -o, --output FILE       Output file for screenplay (default: stdout)
 
 Examples:
-  Parley dialog.dlg           Open dialog.dlg in editor
-  Parley --safemode           Start in SafeMode with default settings
-  Parley --screenplay test.dlg    Export dialog as screenplay
+  Parley dialog.dlg                        Open dialog.dlg in editor
+  Parley -p LNS --file conv_smith.dlg      Open LNS/conv_smith.dlg
+  Parley --safemode                        Start in SafeMode with default settings
+  Parley --screenplay test.dlg             Export dialog as screenplay
   Parley --screenplay -o out.txt dialog.dlg   Export to file
 ");
+        }
+
+        private static void ResolveProjectPath(CommandLineOptions options)
+        {
+            if (string.IsNullOrEmpty(options.ProjectPath))
+                return;
+
+            var resolved = ProjectPathResolver.ResolveFilePath(options.ProjectPath, options.FilePath);
+            if (resolved != null)
+                options.FilePath = resolved;
+
+            var modulePath = ProjectPathResolver.ResolveModulePath(options.ProjectPath);
+            if (!string.IsNullOrEmpty(modulePath))
+                RadoubSettings.Instance.CurrentModulePath = modulePath;
         }
 
         /// <summary>

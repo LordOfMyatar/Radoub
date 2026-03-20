@@ -1,4 +1,5 @@
 using System;
+using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 
 namespace RadoubLauncher.Services;
@@ -37,6 +38,18 @@ public static class CommandLineService
     public static Options Parse(string[] args)
     {
         var parsed = CommandLineParser.Parse<TrebuchetOptions>(args, HandleCustomFlag);
+
+        // --project resolves to a module path for Trebuchet
+        if (!string.IsNullOrEmpty(parsed.ProjectPath) && string.IsNullOrEmpty(parsed.ModulePath))
+        {
+            var modulePath = ProjectPathResolver.ResolveModulePath(parsed.ProjectPath);
+            if (!string.IsNullOrEmpty(modulePath))
+            {
+                parsed.ModulePath = modulePath;
+                RadoubSettings.Instance.CurrentModulePath = modulePath;
+            }
+        }
+
         return Options.FromParsed(parsed);
     }
 
@@ -64,13 +77,15 @@ public static class CommandLineService
         Console.WriteLine("Usage: Trebuchet [options]");
         Console.WriteLine();
         Console.WriteLine("Options:");
-        Console.WriteLine("  -h, --help        Show this help message");
-        Console.WriteLine("  --safemode        Start with default theme and font settings");
-        Console.WriteLine("  -m, --module      Path to module file to open");
+        Console.WriteLine("  -h, --help             Show this help message");
+        Console.WriteLine("  --safemode             Start with default theme and font settings");
+        Console.WriteLine("  -m, --module <path>    Path to module file to open");
+        Console.WriteLine("  -p, --project <name>   Open module by name (resolves from modules directory)");
         Console.WriteLine();
         Console.WriteLine("Examples:");
         Console.WriteLine("  Trebuchet");
         Console.WriteLine("  Trebuchet --module \"~/modules/my_module.mod\"");
+        Console.WriteLine("  Trebuchet -p LNS");
         Console.WriteLine("  Trebuchet --safemode");
     }
 }
