@@ -12,6 +12,7 @@ public class CommandLineOptions
     public bool ShowHelp { get; set; }
     public bool SafeMode { get; set; }
     public string? FilePath { get; set; }
+    public string? ModuleName { get; set; }
 }
 
 /// <summary>
@@ -64,6 +65,14 @@ public static class CommandLineParser
                     if (i + 1 < args.Length)
                     {
                         options.FilePath = args[++i];
+                    }
+                    break;
+
+                case "--mod":
+                case "-m":
+                    if (i + 1 < args.Length)
+                    {
+                        options.ModuleName = args[++i];
                     }
                     break;
 

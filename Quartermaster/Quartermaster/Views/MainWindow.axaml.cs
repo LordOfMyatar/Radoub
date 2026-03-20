@@ -106,6 +106,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Initialize creature browser panel (#1145)
         InitializeCreatureBrowserPanel();
 
+        // Initialize theme menu state (#1533)
+        UpdateUseRadoubThemeMenuState();
+
         // Show module context in status bar (#1003)
         UpdateModuleIndicator();
 

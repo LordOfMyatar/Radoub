@@ -1,4 +1,5 @@
 using System;
+using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 
 namespace MerchantEditor.Services;
@@ -14,6 +15,7 @@ public static class CommandLineService
     public static CommandLineOptions Parse(string[] args)
     {
         Options = CommandLineParser.Parse<CommandLineOptions>(args);
+        ResolveModuleName(Options);
         return Options;
     }
 
@@ -24,14 +26,30 @@ public static class CommandLineService
         Console.WriteLine("Usage: Fence [options] [file]");
         Console.WriteLine();
         Console.WriteLine("Options:");
-        Console.WriteLine("  --file, -f <path>  Open the specified UTM file");
-        Console.WriteLine("  --safemode, -s     Start in SafeMode (reset theme and fonts to defaults)");
-        Console.WriteLine("  --help, -h         Show this help message");
+        Console.WriteLine("  --file, -f <path>      Open the specified UTM file");
+        Console.WriteLine("  --mod, -m <name>       Set module context (resolves relative --file paths)");
+        Console.WriteLine("  --safemode, -s         Start in SafeMode (reset theme and fonts to defaults)");
+        Console.WriteLine("  --help, -h             Show this help message");
         Console.WriteLine();
         Console.WriteLine("Examples:");
-        Console.WriteLine("  Fence                     Start with empty editor");
-        Console.WriteLine("  Fence merchant.utm        Open merchant.utm");
-        Console.WriteLine("  Fence --file store.utm    Open store.utm");
-        Console.WriteLine("  Fence --safemode          Start with default visual settings");
+        Console.WriteLine("  Fence                              Start with empty editor");
+        Console.WriteLine("  Fence merchant.utm                 Open merchant.utm");
+        Console.WriteLine("  Fence --file store.utm             Open store.utm");
+        Console.WriteLine("  Fence -m LNS --file store.utm      Open LNS/store.utm");
+        Console.WriteLine("  Fence --safemode                   Start with default visual settings");
+    }
+
+    private static void ResolveModuleName(CommandLineOptions options)
+    {
+        if (string.IsNullOrEmpty(options.ModuleName))
+            return;
+
+        var resolved = ProjectPathResolver.ResolveFilePath(options.ModuleName, options.FilePath);
+        if (resolved != null)
+            options.FilePath = resolved;
+
+        var modulePath = ProjectPathResolver.ResolveModulePath(options.ModuleName);
+        if (!string.IsNullOrEmpty(modulePath))
+            RadoubSettings.Instance.CurrentModulePath = modulePath;
     }
 }

@@ -39,6 +39,7 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
     private double _fontSize = 14;
     private string _fontFamily = "";
     private string _currentThemeId = "org.radoub.theme.light";
+    private bool _useSharedTheme = true;
 
     // Logging settings
     private readonly LoggingSettings _loggingSettings = new();
@@ -186,7 +187,26 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
     public string CurrentThemeId
     {
         get => _currentThemeId;
-        set { if (SetProperty(ref _currentThemeId, value ?? "org.radoub.theme.light")) SaveSettings(); }
+        set
+        {
+            if (SetProperty(ref _currentThemeId, value ?? "org.radoub.theme.light"))
+            {
+                // User explicitly changed theme — disable shared theme so this
+                // tool keeps its chosen theme on next startup (#1533)
+                if (_useSharedTheme)
+                {
+                    _useSharedTheme = false;
+                    OnPropertyChanged(nameof(UseSharedTheme));
+                }
+                SaveSettings();
+            }
+        }
+    }
+
+    public bool UseSharedTheme
+    {
+        get => _useSharedTheme;
+        set { if (SetProperty(ref _useSharedTheme, value)) SaveSettings(); }
     }
 
     #endregion
@@ -343,6 +363,7 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
                     _currentThemeId = !string.IsNullOrEmpty(settings.CurrentThemeId)
                         ? settings.CurrentThemeId
                         : "org.radoub.theme.light";
+                    _useSharedTheme = settings.UseSharedTheme;
 
                     _loggingSettings.LogRetentionSessions = settings.LogRetentionSessions;
                     _loggingSettings.LogLevel = settings.LogLevel;
@@ -403,6 +424,7 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
             settings.FontSize = FontSize;
             settings.FontFamily = FontFamily;
             settings.CurrentThemeId = CurrentThemeId;
+            settings.UseSharedTheme = UseSharedTheme;
             settings.LogRetentionSessions = _loggingSettings.LogRetentionSessions;
             settings.LogLevel = _loggingSettings.LogLevel;
             settings.RecentFiles = PathHelper.ContractPaths(_recentFiles).ToList();
@@ -477,6 +499,7 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
         public double FontSize { get; set; } = 14;
         public string FontFamily { get; set; } = "";
         public string CurrentThemeId { get; set; } = "org.radoub.theme.light";
+        public bool UseSharedTheme { get; set; } = true;
 
         public int LogRetentionSessions { get; set; } = 3;
         public LogLevel LogLevel { get; set; } = LogLevel.INFO;

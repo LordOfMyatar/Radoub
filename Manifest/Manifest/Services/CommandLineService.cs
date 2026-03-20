@@ -1,4 +1,5 @@
 using System;
+using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 
 namespace Manifest.Services;
@@ -46,6 +47,7 @@ public static class CommandLineService
     public static ManifestCommandLineOptions Parse(string[] args)
     {
         _options = CommandLineParser.Parse<ManifestCommandLineOptions>(args, HandleCustomFlag, ".jrl");
+        ResolveModuleName(_options);
         return _options;
     }
 
@@ -94,15 +96,31 @@ Options:
   -h, --help              Show this help message
   -s, --safemode          Start in SafeMode (reset theme and fonts to defaults)
   -f, --file <path>       Path to JRL file to open
+  -m, --mod <name>        Set module context (resolves relative --file paths)
   -q, --quest <tag>       Quest tag to navigate to after opening
   -e, --entry <id>        Entry ID to select (requires --quest)
 
 Examples:
   Manifest module.jrl                    Open journal file
   Manifest --file module.jrl             Same as above
+  Manifest -m LNS --file module.jrl      Open LNS/module.jrl
   Manifest --safemode                    Start with default visual settings
   Manifest module.jrl --quest my_quest   Open and navigate to quest
   Manifest module.jrl -q my_quest -e 100 Open, navigate to quest, select entry 100
 ");
+    }
+
+    private static void ResolveModuleName(CommandLineOptions options)
+    {
+        if (string.IsNullOrEmpty(options.ModuleName))
+            return;
+
+        var resolved = ProjectPathResolver.ResolveFilePath(options.ModuleName, options.FilePath);
+        if (resolved != null)
+            options.FilePath = resolved;
+
+        var modulePath = ProjectPathResolver.ResolveModulePath(options.ModuleName);
+        if (!string.IsNullOrEmpty(modulePath))
+            RadoubSettings.Instance.CurrentModulePath = modulePath;
     }
 }

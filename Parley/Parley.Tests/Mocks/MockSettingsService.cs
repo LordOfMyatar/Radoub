@@ -37,6 +37,7 @@ namespace Parley.Tests.Mocks
         public string FontFamily { get; set; } = "Segoe UI";
         public bool IsDarkTheme { get; set; } = false;
         public string CurrentThemeId { get; set; } = "light";
+        public bool UseSharedTheme { get; set; } = true;
         public string FlowchartLayout { get; set; } = "TopToBottom";
         public bool AllowScrollbarAutoHide { get; set; } = true;
         public int FlowchartNodeMaxLines { get; set; } = 3;

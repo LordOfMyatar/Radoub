@@ -24,6 +24,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.89] - 2026-03-19
+**Branch**: `radoub/issue-1695` | **PR**: #1858
+
+### Sprint: Cross-Tool Bug Fixes (#1533, #1781)
+
+#### #1533: Tool-specific theme override
+- Added `UseSharedTheme` property to `BaseToolSettingsService` (default: `true`)
+- Updated `ThemeManager.GetEffectiveThemeId()` to accept per-tool override flag
+- Fixed all 6 tools' `App.axaml.cs` to use `ApplyEffectiveTheme` with `UseSharedTheme`
+- Auto-disables shared theme when user explicitly changes theme in Settings
+- Parley: Added `UseSharedTheme` to `ISettingsService`/`UISettingsService` interface chain
+
+#### #1781: Add --mod/-m CLI switch
+- Added `ModuleName` to shared `CommandLineOptions` and `CommandLineParser`
+- Created `ProjectPathResolver` for resolving module name + relative file to absolute path
+- Integrated `--mod`/`-m` into all 6 tools' `CommandLineService`
+- Sets `RadoubSettings.CurrentModulePath` when module specified
+- Trebuchet: `-m` now means module name (short); `--module` still accepts full paths
+
+---
+
 ## [0.9.88] - TBD
 **Branch**: `radoub/issue-1750` | **PR**: #1772
 

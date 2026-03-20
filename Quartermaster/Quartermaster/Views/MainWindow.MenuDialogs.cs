@@ -25,6 +25,27 @@ public partial class MainWindow
         settingsWindow.Show(this);
     }
 
+    private void OnToggleUseRadoubThemeClick(object? sender, RoutedEventArgs e)
+    {
+        var settings = SettingsService.Instance;
+        settings.UseSharedTheme = !settings.UseSharedTheme;
+        UpdateUseRadoubThemeMenuState();
+
+        // Re-apply theme with updated preference
+        var themeId = settings.CurrentThemeId;
+        Radoub.UI.Services.ThemeManager.Instance.ApplyEffectiveTheme(themeId, settings.UseSharedTheme);
+    }
+
+    private void UpdateUseRadoubThemeMenuState()
+    {
+        var menuItem = this.FindControl<MenuItem>("UseRadoubThemeMenuItem");
+        if (menuItem != null)
+        {
+            var isUsing = SettingsService.Instance.UseSharedTheme;
+            menuItem.Icon = isUsing ? new TextBlock { Text = "✓" } : null;
+        }
+    }
+
     private void OnAboutClick(object? sender, RoutedEventArgs e)
     {
         DialogHelper.ShowAboutDialog(this);

@@ -300,10 +300,13 @@ public partial class ThemeManager
     /// returns the shared theme ID. Otherwise returns the provided tool-specific theme ID.
     /// </summary>
     /// <param name="toolThemeId">The tool's configured theme ID</param>
+    /// <param name="useSharedTheme">If specified, overrides the instance-level _useSharedTheme setting.
+    /// Pass the tool's SettingsService.UseSharedTheme to respect per-tool override (#1533).</param>
     /// <returns>The effective theme ID to apply</returns>
-    public string GetEffectiveThemeId(string toolThemeId)
+    public string GetEffectiveThemeId(string toolThemeId, bool? useSharedTheme = null)
     {
-        if (_useSharedTheme && RadoubSettings.Instance.HasSharedTheme)
+        var effectiveUseShared = useSharedTheme ?? _useSharedTheme;
+        if (effectiveUseShared && RadoubSettings.Instance.HasSharedTheme)
         {
             var sharedThemeId = RadoubSettings.Instance.SharedThemeId;
             bool found;
@@ -329,10 +332,11 @@ public partial class ThemeManager
     /// Checks shared settings first if useSharedTheme is enabled.
     /// </summary>
     /// <param name="toolThemeId">The tool's configured theme ID as fallback</param>
+    /// <param name="useSharedTheme">If specified, overrides the instance-level setting (#1533).</param>
     /// <returns>True if a theme was applied successfully</returns>
-    public bool ApplyEffectiveTheme(string toolThemeId)
+    public bool ApplyEffectiveTheme(string toolThemeId, bool? useSharedTheme = null)
     {
-        var effectiveThemeId = GetEffectiveThemeId(toolThemeId);
+        var effectiveThemeId = GetEffectiveThemeId(toolThemeId, useSharedTheme);
         return ApplyTheme(effectiveThemeId);
     }
 

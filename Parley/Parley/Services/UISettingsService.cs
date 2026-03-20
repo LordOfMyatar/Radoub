@@ -20,6 +20,7 @@ namespace DialogEditor.Services
         // Theme settings
         private bool _isDarkTheme = false; // DEPRECATED: Use CurrentThemeId instead
         private string _currentThemeId = "org.radoub.theme.light"; // Default theme
+        private bool _useSharedTheme = true; // Per-tool shared theme override (#1533)
 
         // Layout settings
         private string _flowchartLayout = "Floating"; // "Floating", "SideBySide", "Tabbed"
@@ -60,7 +61,8 @@ namespace DialogEditor.Services
             string flowchartLayout,
             bool allowScrollbarAutoHide,
             int flowchartNodeMaxLines = 3,
-            bool treeViewWordWrap = false)
+            bool treeViewWordWrap = false,
+            bool useSharedTheme = true)
         {
             _fontSize = Math.Max(8, Math.Min(24, fontSize));
             _fontFamily = fontFamily ?? "";
@@ -82,6 +84,7 @@ namespace DialogEditor.Services
             _allowScrollbarAutoHide = allowScrollbarAutoHide;
             _flowchartNodeMaxLines = Math.Max(1, Math.Min(6, flowchartNodeMaxLines));
             _treeViewWordWrap = treeViewWordWrap;
+            _useSharedTheme = useSharedTheme;
         }
 
         public double FontSize
@@ -134,8 +137,28 @@ namespace DialogEditor.Services
                 {
                     // Update legacy IsDarkTheme for compatibility
                     _isDarkTheme = value.Contains("dark", StringComparison.OrdinalIgnoreCase);
+                    // User explicitly changed theme — disable shared theme (#1533)
+                    if (_useSharedTheme)
+                    {
+                        _useSharedTheme = false;
+                        OnPropertyChanged(nameof(UseSharedTheme));
+                    }
                     SettingsChanged?.Invoke();
                 }
+            }
+        }
+
+        /// <summary>
+        /// Per-tool shared theme override. When true, tool inherits Trebuchet's shared theme.
+        /// When false, tool uses its own CurrentThemeId regardless of shared theme (#1533).
+        /// </summary>
+        public bool UseSharedTheme
+        {
+            get => _useSharedTheme;
+            set
+            {
+                if (SetProperty(ref _useSharedTheme, value))
+                    SettingsChanged?.Invoke();
             }
         }
 
