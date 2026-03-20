@@ -42,7 +42,11 @@ Developer documentation updates should be checked when:
 - Parley code changes
 - Manifest code changes
 - Quartermaster code changes
+- Fence code changes
+- Relique code changes
+- Trebuchet code changes
 - Radoub.Formats changes
+- Radoub.UI changes
 - Refactors (change relationships/references)
 
 ## Workflow
@@ -69,7 +73,9 @@ Categorize by tool:
 | `Parley/Parley/Views/` | Parley-Developer-Architecture (UI section) |
 | `Manifest/Manifest/Services/` | Manifest-Developer-Architecture |
 | `Quartermaster/Quartermaster/` | Quartermaster-Developer-Architecture |
+| `Relique/Relique/` | Relique-Developer-Architecture |
 | `Radoub.Formats/Radoub.Formats/` | Radoub-Formats |
+| `Radoub.UI/` | Radoub-UI-Developer |
 | Copy/paste logic | Parley-Developer-CopyPaste |
 | Delete behavior | Parley-Developer-Delete-Behavior |
 | Scrap system | Parley-Developer-Scrap-System |
@@ -155,7 +161,7 @@ Pages updated:
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
-Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>"
 git push
 ```
 
