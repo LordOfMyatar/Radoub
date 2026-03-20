@@ -154,6 +154,17 @@ public class GameDataService : IGameDataService
         }
     }
 
+    public Resolver.ResourceResult? FindResourceWithSource(string resRef, ushort resourceType)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        lock (_lock)
+        {
+            if (_resolver == null) return null;
+            return _resolver.FindResourceWithSource(resRef, resourceType);
+        }
+    }
+
     public byte[]? FindBaseResource(string resRef, ushort resourceType)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);

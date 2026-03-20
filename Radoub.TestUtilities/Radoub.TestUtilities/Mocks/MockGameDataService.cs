@@ -81,6 +81,13 @@ public class MockGameDataService : IGameDataService
         return _resources.TryGetValue((resRef.ToLowerInvariant(), resourceType), out var data) ? data : null;
     }
 
+    public Radoub.Formats.Resolver.ResourceResult? FindResourceWithSource(string resRef, ushort resourceType)
+    {
+        var data = FindResource(resRef, resourceType);
+        if (data == null) return null;
+        return new Radoub.Formats.Resolver.ResourceResult(data, Radoub.Formats.Resolver.ResourceSource.Bif, "mock.bif", resRef, resourceType);
+    }
+
     public byte[]? FindBaseResource(string resRef, ushort resourceType)
     {
         // Mock doesn't distinguish HAK vs BIF — same behavior as FindResource

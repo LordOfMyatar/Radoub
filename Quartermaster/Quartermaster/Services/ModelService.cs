@@ -723,15 +723,17 @@ public class ModelService
         }
 
         // Try to load from game resources (Override → HAK → BIF)
-        var modelData = _gameDataService.FindResource(resRef, ResourceTypes.Mdl);
-        if (modelData == null || modelData.Length == 0)
+        var resourceResult = _gameDataService.FindResourceWithSource(resRef, ResourceTypes.Mdl);
+        if (resourceResult == null || resourceResult.Data.Length == 0)
         {
             UnifiedLogger.LogApplication(LogLevel.WARN, $"LoadModel: '{resRef}' not found in game resources");
             _modelCache[resRef] = null;
             return null;
         }
 
-        UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadModel: '{resRef}' found, {modelData.Length} bytes");
+        var modelData = resourceResult.Data;
+        var sourceFile = System.IO.Path.GetFileName(resourceResult.SourcePath);
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadModel: '{resRef}' from {resourceResult.Source} ({sourceFile}), {modelData.Length} bytes");
 
         try
         {
@@ -776,7 +778,10 @@ public class ModelService
         var baseData = _gameDataService.FindBaseResource(resRef, ResourceTypes.Mdl);
         if (baseData != null && baseData.Length > 0)
         {
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadModelPreferBIF: '{resRef}' from BIF, {baseData.Length} bytes");
+            // Log source file for debugging
+            var sourceInfo = _gameDataService.FindResourceWithSource(resRef, ResourceTypes.Mdl);
+            var sourceFile = sourceInfo != null ? System.IO.Path.GetFileName(sourceInfo.SourcePath) : "BIF";
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadModelPreferBIF: '{resRef}' from BIF ({sourceFile}), {baseData.Length} bytes");
             try
             {
                 var model = _mdlReader.Parse(baseData);
@@ -790,19 +795,20 @@ public class ModelService
         }
 
         // Not in BIF (CEP-only creature) — fall back to full resolution
-        var hakData = _gameDataService.FindResource(resRef, ResourceTypes.Mdl);
-        if (hakData != null && hakData.Length > 0)
+        var hakResult = _gameDataService.FindResourceWithSource(resRef, ResourceTypes.Mdl);
+        if (hakResult != null && hakResult.Data.Length > 0)
         {
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadModelPreferBIF: '{resRef}' from HAK (not in BIF), {hakData.Length} bytes");
+            var sourceFile = System.IO.Path.GetFileName(hakResult.SourcePath);
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadModelPreferBIF: '{resRef}' from {hakResult.Source} ({sourceFile}), {hakResult.Data.Length} bytes");
             try
             {
-                var model = _mdlReader.Parse(hakData);
+                var model = _mdlReader.Parse(hakResult.Data);
                 _modelCache[resRef] = model;
                 return model;
             }
             catch (Exception ex)
             {
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"LoadModelPreferBIF: '{resRef}' HAK parse failed: {ex.Message}");
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"LoadModelPreferBIF: '{resRef}' {hakResult.Source} parse failed: {ex.Message}");
             }
         }
 

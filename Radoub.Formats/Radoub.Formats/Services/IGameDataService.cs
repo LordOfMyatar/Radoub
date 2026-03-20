@@ -102,6 +102,12 @@ public interface IGameDataService : IDisposable
     byte[]? FindBaseResource(string resRef, ushort resourceType);
 
     /// <summary>
+    /// Find a resource including source information (which file it came from).
+    /// Resolution order: Override → HAK → BIF.
+    /// </summary>
+    Radoub.Formats.Resolver.ResourceResult? FindResourceWithSource(string resRef, ushort resourceType);
+
+    /// <summary>
     /// List all resources of a specific type.
     /// </summary>
     /// <param name="resourceType">Resource type ID</param>
