@@ -5,6 +5,7 @@ using Avalonia.Platform.Storage;
 using MerchantEditor.Services;
 using MerchantEditor.ViewModels;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Settings;
 using Radoub.Formats.Utm;
 using Radoub.UI.Services;
 using Radoub.UI.Views;
@@ -91,6 +92,9 @@ public partial class MainWindow
             _currentStore = UtmReader.Read(filePath);
             _currentFilePath = filePath;
             _documentState.IsLoading = true;
+
+            // Infer module path from file location (#1208)
+            RadoubSettings.Instance.TryInferModuleFromFile(filePath);
 
             // Update item resolution service with current file context for module-local items
             _itemResolutionService?.SetCurrentFilePath(filePath);
