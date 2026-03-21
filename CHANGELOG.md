@@ -22,9 +22,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Shared Infrastructure (#1828)
 
-- [ ] #653 - File locking / session management for multi-instance safety
+- [x] #653 - File locking / session management for multi-instance safety
 - [x] #1781 - Add --project switch to all tools for shorter CLI invocations (completed in prior sprint)
-- [ ] #1780 - Shared variable validation for all tools
+- [x] #1780 - Shared variable validation for all tools
 
 ---
 
