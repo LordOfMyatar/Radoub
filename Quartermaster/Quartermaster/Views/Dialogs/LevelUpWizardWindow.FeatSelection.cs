@@ -16,6 +16,9 @@ public partial class LevelUpWizardWindow
 {
     #region Step 3: Feat Selection
 
+    // Projected state overrides for feat prereqs in consolidated mode (#1744, #1738)
+    private FeatPrereqOverrides? _prereqOverrides;
+
     private void PrepareStep3()
     {
         // Apply pending ability increments so feat prereqs see projected scores (#1737)
@@ -26,6 +29,27 @@ public partial class LevelUpWizardWindow
         int oldClassBab = _displayService.GetClassBab(_selectedClassId, _fromClassLevel - 1);
         int newClassBab = _displayService.GetClassBab(_selectedClassId, _newClassLevel);
         _projectedBab = currentBab + (newClassBab - oldClassBab);
+
+        // Build projected state overrides for class levels and total level (#1744)
+        var classLevelOverrides = new Dictionary<int, int>();
+        foreach (var cc in _creature.ClassList)
+        {
+            classLevelOverrides[cc.Class] = cc.Class == _selectedClassId
+                ? _newClassLevel
+                : cc.ClassLevel;
+        }
+        // If leveling a new class not yet in ClassList, add it
+        if (!classLevelOverrides.ContainsKey(_selectedClassId))
+            classLevelOverrides[_selectedClassId] = _newClassLevel;
+
+        int projectedTotalLevel = _creature.ClassList.Sum(c => c.ClassLevel)
+            + (_newClassLevel - (_creature.ClassList.FirstOrDefault(c => c.Class == _selectedClassId)?.ClassLevel ?? 0));
+
+        _prereqOverrides = new FeatPrereqOverrides
+        {
+            ClassLevelOverrides = classLevelOverrides,
+            TotalLevelOverride = projectedTotalLevel
+        };
 
         // Resolve default package for auto-assign
         var pkgStr = _displayService.GameDataService.Get2DAValue("classes", _selectedClassId, "Package");
@@ -131,13 +155,14 @@ public partial class LevelUpWizardWindow
             // Get feat info
             var featInfo = _displayService.Feats.GetFeatInfo(featId);
 
-            // Check prerequisites
+            // Check prerequisites with projected state (#1744)
             var prereqResult = _displayService.Feats.CheckFeatPrerequisites(
                 _creature,
                 featId,
                 currentFeats,
                 c => _projectedBab,
-                cid => _displayService.GetClassName(cid));
+                cid => _displayService.GetClassName(cid),
+                _prereqOverrides);
 
             // Strict: must meet prereqs. Warning/None: can select regardless
             bool canSelect = _validationLevel != ValidationLevel.Strict || prereqResult.AllMet;
@@ -361,7 +386,7 @@ public partial class LevelUpWizardWindow
         foreach (var sf in _selectedFeats)
             currentFeats.Add((ushort)sf);
 
-        // Re-check prerequisites for all feats
+        // Re-check prerequisites for all feats with projected state (#1744)
         foreach (var feat in _allAvailableFeats)
         {
             var prereqResult = _displayService.Feats.CheckFeatPrerequisites(
@@ -369,7 +394,8 @@ public partial class LevelUpWizardWindow
                 feat.FeatId,
                 currentFeats,
                 c => _projectedBab,
-                cid => _displayService.GetClassName(cid));
+                cid => _displayService.GetClassName(cid),
+                _prereqOverrides);
 
             feat.MeetsPrereqs = prereqResult.AllMet;
             feat.PrereqResult = prereqResult;
@@ -395,7 +421,8 @@ public partial class LevelUpWizardWindow
             var result = _displayService.Feats.CheckFeatPrerequisites(
                 _creature, featId, currentFeats,
                 c => _projectedBab,
-                cid => _displayService.GetClassName(cid));
+                cid => _displayService.GetClassName(cid),
+                _prereqOverrides);
             return result.AllMet;
         }
 

@@ -527,6 +527,31 @@ public class FeatInfo
 }
 
 /// <summary>
+/// Optional overrides for projected creature state during feat prerequisite checks.
+/// Used by LUW and NCW to project class levels, skill ranks, and ability scores
+/// that the creature will have after the wizard completes (#1744, #1738, #1800).
+/// </summary>
+public class FeatPrereqOverrides
+{
+    /// <summary>Projected class levels: classId -> projectedLevel. Overrides creature.ClassList levels.</summary>
+    public Dictionary<int, int>? ClassLevelOverrides { get; set; }
+
+    /// <summary>Projected total character level. Overrides sum of creature.ClassList levels.</summary>
+    public int? TotalLevelOverride { get; set; }
+
+    /// <summary>Projected skill ranks: skillId -> projectedRanks. Overrides creature.SkillList.</summary>
+    public Dictionary<int, int>? SkillRankOverrides { get; set; }
+
+    /// <summary>Projected ability scores. Each null property falls back to creature value.</summary>
+    public int? StrOverride { get; set; }
+    public int? DexOverride { get; set; }
+    public int? ConOverride { get; set; }
+    public int? IntOverride { get; set; }
+    public int? WisOverride { get; set; }
+    public int? ChaOverride { get; set; }
+}
+
+/// <summary>
 /// Raw prerequisites data from feat.2da.
 /// </summary>
 public class FeatPrerequisites
