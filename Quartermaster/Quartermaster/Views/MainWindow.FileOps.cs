@@ -479,6 +479,13 @@ public partial class MainWindow
             return;
         }
 
+        // Block save if duplicate variable names exist
+        if (AdvancedPanelContent.HasDuplicateVariableErrors())
+        {
+            UpdateStatus("Cannot save: duplicate variable names. Fix variable names before saving.");
+            return;
+        }
+
         try
         {
             ShowProgress(true);

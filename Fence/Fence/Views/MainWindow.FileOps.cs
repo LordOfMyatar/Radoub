@@ -253,6 +253,14 @@ public partial class MainWindow
         if (_currentStore == null)
             return;
 
+        // Block save if duplicate variable names exist
+        var varError = ValidateVariablesForSave();
+        if (varError != null)
+        {
+            UpdateStatusBar(varError);
+            return;
+        }
+
         try
         {
             // Update store from UI
