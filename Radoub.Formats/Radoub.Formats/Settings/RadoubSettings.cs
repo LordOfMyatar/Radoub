@@ -502,6 +502,32 @@ public partial class RadoubSettings : INotifyPropertyChanged
     }
 
     /// <summary>
+    /// Infer and set the current module path from a file being opened.
+    /// If the file's directory is a valid module (contains module.ifo),
+    /// sets CurrentModulePath. Only updates if not already set or if
+    /// the new path is different from the current one.
+    /// Returns true if the module path was updated.
+    /// </summary>
+    public bool TryInferModuleFromFile(string filePath)
+    {
+        var directory = Path.GetDirectoryName(filePath);
+        if (string.IsNullOrEmpty(directory))
+            return false;
+
+        if (!IsValidModulePath(directory))
+            return false;
+
+        // Already pointing to this module
+        if (string.Equals(_currentModulePath, directory, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        CurrentModulePath = directory;
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"Module path inferred from opened file: {UnifiedLogger.SanitizePath(directory)}");
+        return true;
+    }
+
+    /// <summary>
     /// Get the path to the game data folder (contains BIF files).
     /// Returns null if not configured.
     /// </summary>

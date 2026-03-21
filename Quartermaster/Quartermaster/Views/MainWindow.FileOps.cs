@@ -409,6 +409,14 @@ public partial class MainWindow
 
             _currentFilePath = filePath;
 
+            // Infer module path from file location (#1208)
+            if (RadoubSettings.Instance.TryInferModuleFromFile(filePath))
+            {
+                var panel = this.FindControl<CreatureBrowserPanel>("CreatureBrowserPanel");
+                if (panel != null)
+                    panel.ModulePath = Path.GetDirectoryName(filePath);
+            }
+
             // Update panels with current file context for dialog/script browsing
             CharacterPanelContent.SetCurrentFilePath(_currentFilePath);
             ScriptsPanelContent.SetCurrentFilePath(_currentFilePath);

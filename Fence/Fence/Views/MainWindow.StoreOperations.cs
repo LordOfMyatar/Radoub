@@ -193,24 +193,9 @@ public partial class MainWindow
             return;
         }
 
-        var moduleDir = GetModuleWorkingDirectory();
-        if (string.IsNullOrEmpty(moduleDir))
-        {
-            UpdateStatusBar("No module directory configured");
-            return;
-        }
-
-        var utiPath = ItemEditorLauncher.ResolveUtiPath(resRef, moduleDir);
-        if (utiPath == null)
-        {
-            UpdateStatusBar($"Item blueprint '{resRef}.uti' not found in module directory");
-            return;
-        }
-
-        if (ItemEditorLauncher.LaunchWithFile(utiPath))
-            UpdateStatusBar($"Opened '{resRef}.uti' in Relique");
-        else
-            UpdateStatusBar("Failed to launch Relique");
+        var moduleDir = ItemEditorLauncher.GetModuleWorkingDirectory();
+        var status = ItemEditorLauncher.ResolveAndLaunch(resRef, moduleDir, _gameDataService);
+        UpdateStatusBar(status);
     }
 
     private async void OnRefreshItemPalette(object? sender, RoutedEventArgs e)

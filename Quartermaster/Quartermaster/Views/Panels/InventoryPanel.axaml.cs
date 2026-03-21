@@ -19,6 +19,7 @@ namespace Quartermaster.Views.Panels;
 
 public partial class InventoryPanel : UserControl, INotifyPropertyChanged
 {
+    private IGameDataService? _gameDataService;
     private ObservableCollection<EquipmentSlotViewModel> _equipmentSlots = new();
     private ObservableCollection<ItemViewModel> _backpackItems = new();
     private ObservableCollection<ItemViewModel> _paletteItems = new();
@@ -184,7 +185,7 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
             _backpackList.ItemDropped += OnBackpackItemDropped;
             _backpackList.EquipRequested += OnBackpackEquipRequested;
             _backpackList.DeleteRequested += OnBackpackDeleteRequested;
-            _backpackList.ItemEditRequested += OnBackpackItemEditInItemEditor;
+            _backpackList.ItemEditRequested += OnItemEditInItemEditor;
         }
 
         // Set up palette filter and list
@@ -200,6 +201,7 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
             _paletteList.DragStarting += OnPaletteDragStarting;
             _paletteList.AddToBackpackRequested += OnPaletteAddToBackpackRequested;
             _paletteList.EquipRequested += OnPaletteEquipRequested;
+            _paletteList.ItemEditRequested += OnItemEditInItemEditor;
         }
 
         // Wire up bulk property checkboxes
@@ -211,6 +213,7 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
 
     public void SetGameDataService(IGameDataService gameDataService)
     {
+        _gameDataService = gameDataService;
         if (_paletteFilter != null)
             _paletteFilter.GameDataService = gameDataService;
     }
@@ -351,7 +354,7 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
         DeleteFromBackpackRequested?.Invoke(this, item);
     }
 
-    private void OnBackpackItemEditInItemEditor(object? sender, ItemViewModel item)
+    private void OnItemEditInItemEditor(object? sender, ItemViewModel item)
     {
         var resRef = item?.ResRef;
         if (string.IsNullOrEmpty(resRef))
@@ -360,35 +363,9 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
             return;
         }
 
-        var modulePath = RadoubSettings.Instance.CurrentModulePath;
-        if (!RadoubSettings.IsValidModulePath(modulePath))
-        {
-            UnifiedLogger.LogUI(LogLevel.WARN, "Edit in ItemEditor: no valid module path configured");
-            return;
-        }
-
-        // Resolve module directory (handle .mod → unpacked directory)
-        var moduleDir = modulePath;
-        if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
-        {
-            var moduleName = Path.GetFileNameWithoutExtension(modulePath);
-            var parentDir = Path.GetDirectoryName(modulePath);
-            if (!string.IsNullOrEmpty(parentDir))
-            {
-                var candidate = Path.Combine(parentDir, moduleName);
-                if (Directory.Exists(candidate))
-                    moduleDir = candidate;
-            }
-        }
-
-        var utiPath = ItemEditorLauncher.ResolveUtiPath(resRef, moduleDir);
-        if (utiPath == null)
-        {
-            UnifiedLogger.LogUI(LogLevel.WARN, $"Edit in ItemEditor: '{resRef}.uti' not found in module directory");
-            return;
-        }
-
-        ItemEditorLauncher.LaunchWithFile(utiPath);
+        var moduleDir = ItemEditorLauncher.GetModuleWorkingDirectory();
+        var status = ItemEditorLauncher.ResolveAndLaunch(resRef, moduleDir, _gameDataService);
+        UnifiedLogger.LogUI(LogLevel.INFO, $"Edit in ItemEditor: {status}");
     }
 
     private void OnDeleteSelectedClick(object? sender, RoutedEventArgs e)

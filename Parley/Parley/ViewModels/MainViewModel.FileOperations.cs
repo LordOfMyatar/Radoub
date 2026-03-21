@@ -5,6 +5,7 @@ using DialogEditor.Models;
 using DialogEditor.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Settings;
 
 namespace DialogEditor.ViewModels
 {
@@ -44,6 +45,7 @@ namespace DialogEditor.ViewModels
                     SelectedTreeNode = null;
 
                     CurrentFileName = filePath;
+                    RadoubSettings.Instance.TryInferModuleFromFile(filePath); // (#1208)
                     HasUnsavedChanges = false; // Clear dirty flag when loading
                     LastSavedTime = ""; // Clear last saved time on load
                     StatusMessage = $"Dialog loaded successfully: {CurrentDialog.Entries.Count} entries, {CurrentDialog.Replies.Count} replies";
