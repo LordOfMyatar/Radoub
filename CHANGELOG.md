@@ -17,6 +17,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.92] - 2026-03-21
+**Branch**: `radoub/issue-1821` | **PR**: #TBD
+
+### Sprint: Cross-Tool Launch Bug Fixes (#1821)
+
+- [ ] #1786 - Edit in ItemEditor not working from QM item palette
+- [ ] #1785 - Fence: Edit in ItemEditor needs blueprint resolution from store inventory
+- [ ] #1208 - F4 creature panel requires Trebuchet settings
+
+---
+
 ## [0.9.91] - 2026-03-21
 **Branch**: `radoub/issue-1876-1884` | **PR**: #1885
 
