@@ -12,6 +12,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.65-alpha] - 2026-03-20
+**Branch**: `radoub/issue-1824` | **PR**: #1879
+
+### Sprint: Aging Bugs Sweep (#1824)
+
+- [x] #1624 - Fix NCW voice set play button reliability (stop residual playback, defensive event cleanup, unique temp files)
+- [x] #1683 - Add DM vault option in creature browser; server vault filter logic verified correct
+
+---
+
 ## [0.2.64-alpha] - 2026-03-20
 **Branch**: `quartermaster/issue-1867` | **PR**: #1877
 

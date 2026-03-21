@@ -67,6 +67,7 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
     private readonly CheckBox _showModuleCheck;
     private readonly CheckBox _showLocalVaultCheck;
     private readonly CheckBox _showServerVaultCheck;
+    private readonly CheckBox _showDmVaultCheck;
     private readonly CheckBox _showHakCheck;
     private readonly CheckBox _showBifCheck;
     private List<CreatureBrowserEntry> _vaultEntries = new();
@@ -111,6 +112,12 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
             IsChecked = false
         };
         ToolTip.SetTip(_showServerVaultCheck, "Show .bic files from servervault subdirectories");
+        _showDmVaultCheck = new CheckBox
+        {
+            Content = "DM Vault",
+            IsChecked = false
+        };
+        ToolTip.SetTip(_showDmVaultCheck, "Show .bic files from dmvault");
         _showHakCheck = new CheckBox
         {
             Content = "HAK",
@@ -127,6 +134,7 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
         _showModuleCheck.IsCheckedChanged += OnFilterChanged;
         _showLocalVaultCheck.IsCheckedChanged += OnFilterChanged;
         _showServerVaultCheck.IsCheckedChanged += OnFilterChanged;
+        _showDmVaultCheck.IsCheckedChanged += OnFilterChanged;
         _showHakCheck.IsCheckedChanged += OnShowHakChanged;
         _showBifCheck.IsCheckedChanged += OnShowBifChanged;
 
@@ -139,6 +147,7 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
         filterPanel.Children.Add(_showModuleCheck);
         filterPanel.Children.Add(_showLocalVaultCheck);
         filterPanel.Children.Add(_showServerVaultCheck);
+        filterPanel.Children.Add(_showDmVaultCheck);
         filterPanel.Children.Add(_showHakCheck);
         filterPanel.Children.Add(_showBifCheck);
 
@@ -361,6 +370,37 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
                 UnifiedLogger.LogApplication(LogLevel.DEBUG,
                     $"CreatureBrowserPanel: servervault not found (path: {serverVaultPath ?? "null"})");
             }
+
+            // Load from dmvault (#1683)
+            var dmVaultPath = GetDmVaultPath();
+            if (!string.IsNullOrEmpty(dmVaultPath) && Directory.Exists(dmVaultPath))
+            {
+                try
+                {
+                    var bicFiles = Directory.GetFiles(dmVaultPath, "*.bic", SearchOption.TopDirectoryOnly);
+                    foreach (var file in bicFiles)
+                    {
+                        _vaultEntries.Add(new CreatureBrowserEntry
+                        {
+                            Name = Path.GetFileNameWithoutExtension(file),
+                            FilePath = file,
+                            Source = "DmVault",
+                            IsFromHak = false,
+                            IsBic = true
+                        });
+                    }
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"CreatureBrowserPanel: Found {bicFiles.Length} BICs in dmvault");
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Error scanning dmvault: {ex.Message}");
+                }
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"CreatureBrowserPanel: dmvault not found (path: {dmVaultPath ?? "null"})");
+            }
         });
     }
 
@@ -382,6 +422,16 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
 
         var serverVault = Path.Combine(nwnPath, "servervault");
         return Directory.Exists(serverVault) ? serverVault : null;
+    }
+
+    private string? GetDmVaultPath()
+    {
+        var nwnPath = _context?.NeverwinterNightsPath ?? RadoubSettings.Instance.NeverwinterNightsPath;
+        if (string.IsNullOrEmpty(nwnPath))
+            return null;
+
+        var dmVault = Path.Combine(nwnPath, "dmvault");
+        return Directory.Exists(dmVault) ? dmVault : null;
     }
 
     private async Task LoadHakCreaturesAsync()
@@ -561,6 +611,7 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
         bool showModule = _showModuleCheck.IsChecked == true;
         bool showLocalVault = _showLocalVaultCheck.IsChecked == true;
         bool showServerVault = _showServerVaultCheck.IsChecked == true;
+        bool showDmVault = _showDmVaultCheck.IsChecked == true;
         bool showHak = _showHakCheck.IsChecked == true;
         bool showBif = _showBifCheck.IsChecked == true;
 
@@ -574,7 +625,8 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
                     return showHak;
                 return (ce.Source == "Module" && showModule) ||
                        (ce.Source == "LocalVault" && showLocalVault) ||
-                       (ce.Source == "ServerVault" && showServerVault);
+                       (ce.Source == "ServerVault" && showServerVault) ||
+                       (ce.Source == "DmVault" && showDmVault);
             }
             return showModule; // Default to module filter for base entries
         });
@@ -598,7 +650,8 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
         // Module count = total minus vault minus HAK minus BIF
         var actualModuleCount = totalCount - hakCount - bifCount
             - _vaultEntries.Count(e => e.Source == "LocalVault" && _showLocalVaultCheck.IsChecked == true)
-            - _vaultEntries.Count(e => e.Source == "ServerVault" && _showServerVaultCheck.IsChecked == true);
+            - _vaultEntries.Count(e => e.Source == "ServerVault" && _showServerVaultCheck.IsChecked == true)
+            - _vaultEntries.Count(e => e.Source == "DmVault" && _showDmVaultCheck.IsChecked == true);
         if (actualModuleCount > 0 && _showModuleCheck.IsChecked == true)
             parts.Add($"{actualModuleCount} module");
 
@@ -609,6 +662,10 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
         var serverCount = _vaultEntries.Count(e => e.Source == "ServerVault");
         if (serverCount > 0 && _showServerVaultCheck.IsChecked == true)
             parts.Add($"{serverCount} server");
+
+        var dmCount = _vaultEntries.Count(e => e.Source == "DmVault");
+        if (dmCount > 0 && _showDmVaultCheck.IsChecked == true)
+            parts.Add($"{dmCount} DM");
 
         if (hakCount > 0 && _showHakCheck.IsChecked == true)
             parts.Add($"{hakCount} HAK");
