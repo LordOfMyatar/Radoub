@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.8.0-alpha] - 2026-03-21
+**Branch**: `relique/issue-1830` | **PR**: #TBD
+
+### Sprint: Properties Tree & Search UX (#1830)
+
+- [ ] #1811 — Fix "On Hit" appearing 3 times in Available Properties tree
+- [ ] #1812 — Search auto-expands matching subcategories
+- [ ] #1813 — Available Properties tree UX — filtering and right-click add
+
+---
+
 ## [0.7.0-alpha] - 2026-03-18
 **Branch**: `itemeditor/issue-1784` | **PR**: #1788
 
