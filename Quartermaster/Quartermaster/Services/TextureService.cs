@@ -64,20 +64,7 @@ public class TextureService
                     palettes[layerId] = palette;
             }
 
-            // Set up color indices for each layer
-            var layerColors = new Dictionary<int, int>
-            {
-                [PltLayers.Skin] = colorIndices.Skin,
-                [PltLayers.Hair] = colorIndices.Hair,
-                [PltLayers.Metal1] = colorIndices.Metal1,
-                [PltLayers.Metal2] = colorIndices.Metal2,
-                [PltLayers.Cloth1] = colorIndices.Cloth1,
-                [PltLayers.Cloth2] = colorIndices.Cloth2,
-                [PltLayers.Leather1] = colorIndices.Leather1,
-                [PltLayers.Leather2] = colorIndices.Leather2,
-                [PltLayers.Tattoo1] = colorIndices.Tattoo1,
-                [PltLayers.Tattoo2] = colorIndices.Tattoo2
-            };
+            var layerColors = BuildLayerColors(colorIndices);
 
             // Render the PLT
             var pixels = PltReader.Render(pltFile, palettes, layerColors);
@@ -304,6 +291,137 @@ public class TextureService
         }
 
         return output;
+    }
+
+    /// <summary>
+    /// Load a texture preferring BIF over HAK (Override → BIF, skip HAK).
+    /// For base game creatures, the BIF version is used to avoid CEP texture incompatibilities.
+    /// For CEP-only textures (not in BIF), falls back to full resolution.
+    /// Mirrors the LoadModelPreferBIF pattern in ModelService (#1867).
+    /// </summary>
+    public (int width, int height, byte[] pixels)? LoadTexturePreferBIF(
+        string resRef,
+        PltColorIndices? colorIndices = null)
+    {
+        if (string.IsNullOrEmpty(resRef))
+            return null;
+
+        colorIndices ??= new PltColorIndices();
+        resRef = resRef.ToLowerInvariant();
+
+        // Try BIF first (Override → BIF, skip HAK)
+        var bifResult = LoadTextureFromBase(resRef, colorIndices);
+        if (bifResult.HasValue)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"TextureService.LoadTexturePreferBIF: '{resRef}' from BIF");
+            return bifResult;
+        }
+
+        // Not in BIF — fall back to full resolution (CEP-only texture)
+        var fullResult = LoadTexture(resRef, colorIndices);
+        if (fullResult.HasValue)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"TextureService.LoadTexturePreferBIF: '{resRef}' from HAK (CEP-only)");
+        }
+        return fullResult;
+    }
+
+    /// <summary>
+    /// Load a texture from base game resources only (Override → BIF, skip HAK).
+    /// Tries PLT, TGA, DDS in order using FindBaseResource.
+    /// </summary>
+    private (int width, int height, byte[] pixels)? LoadTextureFromBase(
+        string resRef,
+        PltColorIndices colorIndices)
+    {
+        // Try PLT
+        var pltData = _gameDataService.FindBaseResource(resRef, ResourceTypes.Plt);
+        if (pltData != null && pltData.Length > 0)
+        {
+            try
+            {
+                var pltFile = PltReader.Read(pltData);
+                var palettes = new Dictionary<int, PaletteData>();
+                for (int layerId = 0; layerId <= 9; layerId++)
+                {
+                    var palette = LoadPalette(PltLayers.GetPaletteResRef(layerId));
+                    if (palette != null)
+                        palettes[layerId] = palette;
+                }
+                var layerColors = BuildLayerColors(colorIndices);
+                var pixels = PltReader.Render(pltFile, palettes, layerColors);
+                return (pltFile.Width, pltFile.Height, pixels);
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"TextureService.LoadTextureFromBase: PLT '{resRef}' render failed: {ex.Message}");
+            }
+        }
+
+        // Try TGA
+        var tgaData = _gameDataService.FindBaseResource(resRef, ResourceTypes.Tga);
+        if (tgaData != null && tgaData.Length > 0)
+        {
+            try
+            {
+                var tgaImage = TgaReader.Read(tgaData);
+                return (tgaImage.Width, tgaImage.Height, tgaImage.Pixels);
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"TextureService.LoadTextureFromBase: TGA '{resRef}' decode failed: {ex.Message}");
+            }
+        }
+
+        // Try DDS
+        var ddsData = _gameDataService.FindBaseResource(resRef, ResourceTypes.Dds);
+        if (ddsData != null && ddsData.Length > 0)
+        {
+            bool isBiowareDds = ddsData.Length >= 20 &&
+                !(ddsData[0] == 0x44 && ddsData[1] == 0x44 && ddsData[2] == 0x53 && ddsData[3] == 0x20);
+            byte[]? decodableData = isBiowareDds ? ConvertBiowareDdsToStandard(ddsData) : ddsData;
+            if (decodableData != null)
+            {
+                try
+                {
+                    using var stream = new MemoryStream(decodableData);
+                    using var image = Pfimage.FromStream(stream);
+                    byte[] rgbaPixels = ConvertPfimToRgba(image);
+                    return (image.Width, image.Height, rgbaPixels);
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"TextureService.LoadTextureFromBase: DDS '{resRef}' decode failed: {ex.Message}");
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Build layer color mapping from PltColorIndices.
+    /// </summary>
+    private static Dictionary<int, int> BuildLayerColors(PltColorIndices colorIndices)
+    {
+        return new Dictionary<int, int>
+        {
+            [PltLayers.Skin] = colorIndices.Skin,
+            [PltLayers.Hair] = colorIndices.Hair,
+            [PltLayers.Metal1] = colorIndices.Metal1,
+            [PltLayers.Metal2] = colorIndices.Metal2,
+            [PltLayers.Cloth1] = colorIndices.Cloth1,
+            [PltLayers.Cloth2] = colorIndices.Cloth2,
+            [PltLayers.Leather1] = colorIndices.Leather1,
+            [PltLayers.Leather2] = colorIndices.Leather2,
+            [PltLayers.Tattoo1] = colorIndices.Tattoo1,
+            [PltLayers.Tattoo2] = colorIndices.Tattoo2
+        };
     }
 
     /// <summary>

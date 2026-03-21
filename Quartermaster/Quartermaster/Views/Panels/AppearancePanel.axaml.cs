@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using Quartermaster.Controls;
 using Quartermaster.Services;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Mdl;
 using Radoub.Formats.Utc;
 
@@ -223,6 +224,18 @@ public partial class AppearancePanel : UserControl
 
         // Defer clearing _isLoading until after dispatcher processes queued SelectionChanged events
         Avalonia.Threading.Dispatcher.UIThread.Post(() => _isLoading = false, Avalonia.Threading.DispatcherPriority.Background);
+    }
+
+    /// <summary>
+    /// Clear model and texture caches. Call when module context changes
+    /// to prevent stale HAK resources from being used (#1867, #1869).
+    /// </summary>
+    public void ClearResourceCaches()
+    {
+        _modelService?.ClearCache();
+        _textureService?.ClearCache();
+        _modelPreviewGL?.ClearTextureCache();
+        UnifiedLogger.LogApplication(LogLevel.INFO, "AppearancePanel: Cleared model/texture caches (module switch)");
     }
 
     public void ClearPanel()

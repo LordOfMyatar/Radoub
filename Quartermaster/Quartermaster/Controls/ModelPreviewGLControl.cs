@@ -43,6 +43,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
 
     private MdlModel? _model;
     private TextureService? _textureService;
+    private bool _preferBifTextures;
     private float _rotationY = MathF.PI; // Default 180° so model faces camera
     private float _rotationX;
     private float _zoom = 1.0f;
@@ -178,6 +179,25 @@ void main()
     }
 
     /// <summary>
+    /// When true, textures are loaded preferring BIF over HAK (Override → BIF, skip HAK).
+    /// Set this for base game creatures to avoid CEP texture incompatibilities (#1867).
+    /// </summary>
+    public bool PreferBifTextures
+    {
+        get => _preferBifTextures;
+        set
+        {
+            if (_preferBifTextures != value)
+            {
+                _preferBifTextures = value;
+                _needsTextureUpdate = true;
+                ClearTextureCache();
+                RequestNextFrameRendering();
+            }
+        }
+    }
+
+    /// <summary>
     /// Set the texture service for loading textures.
     /// </summary>
     public void SetTextureService(TextureService textureService)
@@ -244,8 +264,9 @@ void main()
 
     /// <summary>
     /// Clears the GPU texture cache so textures reload with current color indices.
+    /// Also called on module switch to clear stale HAK textures (#1867).
     /// </summary>
-    private void ClearTextureCache()
+    public void ClearTextureCache()
     {
         if (_gl != null)
         {
@@ -1048,7 +1069,9 @@ void main()
 
             try
             {
-                var textureData = _textureService.LoadTexture(texName, _colorIndices);
+                var textureData = _preferBifTextures
+                    ? _textureService.LoadTexturePreferBIF(texName, _colorIndices)
+                    : _textureService.LoadTexture(texName, _colorIndices);
                 if (textureData == null)
                 {
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Texture '{texName}' returned null");
@@ -1079,7 +1102,9 @@ void main()
             var modelTexture = _model.Name?.ToLowerInvariant();
             if (!string.IsNullOrEmpty(modelTexture) && !_textureCache.ContainsKey(modelTexture))
             {
-                var fallbackData = _textureService.LoadTexture(modelTexture, _colorIndices);
+                var fallbackData = _preferBifTextures
+                    ? _textureService.LoadTexturePreferBIF(modelTexture, _colorIndices)
+                    : _textureService.LoadTexture(modelTexture, _colorIndices);
                 if (fallbackData != null)
                 {
                     var (w, h, px) = fallbackData.Value;

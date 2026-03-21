@@ -24,8 +24,15 @@ namespace Quartermaster.Views;
 /// File operations: Open, Save, Load, New, Export, Recent files, Close.
 /// Partial classes: FileValidation (Aurora filename, BIC class, rename).
 /// </summary>
+/// <remarks>
+/// Module switch detection: tracks _lastLoadedModuleDir to reconfigure HAKs
+/// when files are loaded from different modules (#1867, #1869).
+/// </remarks>
 public partial class MainWindow
 {
+    // Tracks the module directory of the last loaded file for HAK reconfiguration (#1867, #1869)
+    private string? _lastLoadedModuleDir;
+
     #region Recent Files Menu
 
     private void UpdateRecentFilesMenu()
@@ -409,6 +416,22 @@ public partial class MainWindow
             // Update advanced panel with module directory for faction loading
             var moduleDirectory = Path.GetDirectoryName(_currentFilePath);
             AdvancedPanelContent.SetModuleDirectory(moduleDirectory);
+
+            // Detect module switch and reconfigure HAKs (#1867, #1869)
+            // When loading a file from a different module, stale HAK resources
+            // (textures, models) can cause rendering issues like reversed bat wings.
+            if (_gameDataService != null && moduleDirectory != null &&
+                !string.Equals(_lastLoadedModuleDir, moduleDirectory, StringComparison.OrdinalIgnoreCase))
+            {
+                if (_lastLoadedModuleDir != null)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"Module switch detected: reconfiguring HAKs for {Path.GetFileName(moduleDirectory)}");
+                    _gameDataService.ConfigureModuleHaks(moduleDirectory);
+                    AppearancePanelContent.ClearResourceCaches();
+                }
+                _lastLoadedModuleDir = moduleDirectory;
+            }
 
             PopulateInventoryUI();
             UpdateCharacterHeader();
