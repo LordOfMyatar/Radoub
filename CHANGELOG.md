@@ -24,6 +24,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.91] - 2026-03-21
+**Branch**: `radoub/issue-1876-1884` | **PR**: #TBD
+
+### Sprint: Post-Merge Dedup Fix & Create-Issue Command (#1876, #1884)
+
+- Fix: Post-merge freshness sweep checks for existing issues before cutting new ones (#1876)
+- Enhancement: Add `/create-issue` slash command for structured GitHub issue creation (#1884)
+
+---
+
 ## [0.9.90] - 2026-03-20
 **Branch**: `radoub/issue-1822` | **PR**: #1875
 
