@@ -101,8 +101,11 @@ uniform vec3 flatColor;
 
 void main()
 {
+    // Two-sided lighting: use abs() so thin surfaces (bat wings, dragon
+    // membranes) are lit from both sides. The Aurora Engine renders these
+    // single-layer polygons visible from both directions (#1867).
     vec3 norm = normalize(Normal);
-    float diff = max(dot(norm, lightDir), 0.0);
+    float diff = abs(dot(norm, lightDir));
     vec3 diffuse = diff * lightColor;
     vec3 ambient = ambientColor;
 
@@ -895,7 +898,7 @@ void main()
                 {
                     var uv = mesh.TextureCoords[0][i];
                     vertices.Add(uv.X);
-                    vertices.Add(1.0f - uv.Y); // Flip V
+                    vertices.Add(uv.Y); // No V-flip — matches nwnexplorer (raw UVs)
                 }
                 else
                 {
