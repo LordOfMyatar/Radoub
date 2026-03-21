@@ -70,6 +70,11 @@ public partial class SoundsetBrowserWindow : Window
         _gameDataService = gameDataService ?? throw new ArgumentNullException(nameof(gameDataService));
         _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
 
+        // Stop any residual playback from a previous browser instance (#1624)
+        _audioService.Stop();
+
+        // Defensive unsubscribe-before-subscribe to prevent duplicate handlers (#1624)
+        _audioService.PlaybackStopped -= OnPlaybackStopped;
         _audioService.PlaybackStopped += OnPlaybackStopped;
 
         InitializeGenderFilter();
@@ -355,6 +360,9 @@ public partial class SoundsetBrowserWindow : Window
             return;
         }
 
+        // Stop any current playback before starting new (#1624)
+        _audioService.Stop();
+
         _playButton.IsEnabled = false;
         _stopButton.IsEnabled = true;
 
@@ -364,7 +372,8 @@ public partial class SoundsetBrowserWindow : Window
             var soundData = _gameDataService.FindResource(entry.ResRef, ResourceTypes.Wav);
             if (soundData != null)
             {
-                var tempPath = Path.Combine(Path.GetTempPath(), $"ssf_{entry.ResRef}.wav");
+                // Use unique temp file to avoid file lock conflicts from prior playback (#1624)
+                var tempPath = Path.Combine(Path.GetTempPath(), $"ssf_{entry.ResRef}_{Guid.NewGuid():N}.wav");
                 await File.WriteAllBytesAsync(tempPath, soundData);
                 _audioService.Play(tempPath);
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Playing: {entry.ResRef}");

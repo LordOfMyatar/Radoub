@@ -25,6 +25,12 @@ public partial class CharacterPanel
     /// </summary>
     public void SetAudioService(AudioService? service)
     {
+        // Unsubscribe from previous service if any (#1624)
+        if (_audioService != null)
+        {
+            _audioService.PlaybackStopped -= OnPlaybackStopped;
+        }
+
         _audioService = service;
         if (_audioService != null)
         {
@@ -213,7 +219,8 @@ public partial class CharacterPanel
                 var ascii = new string(headerBytes.Select(b => b >= 32 && b < 127 ? (char)b : '.').ToArray());
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Found sound in BIF: {entry.ResRef} ({soundData.Length} bytes) - Header: {hex} | {ascii}");
                 // Extract to temp file and play
-                var tempPath = Path.Combine(Path.GetTempPath(), $"ssf_{entry.ResRef}.wav");
+                // Use unique temp file to avoid file lock conflicts (#1624)
+                var tempPath = Path.Combine(Path.GetTempPath(), $"ssf_{entry.ResRef}_{Guid.NewGuid():N}.wav");
                 await File.WriteAllBytesAsync(tempPath, soundData);
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Wrote temp file: {tempPath}");
                 _audioService.Play(tempPath);
