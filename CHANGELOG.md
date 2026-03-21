@@ -25,7 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.91] - 2026-03-21
-**Branch**: `radoub/issue-1876-1884` | **PR**: #TBD
+**Branch**: `radoub/issue-1876-1884` | **PR**: #1885
 
 ### Sprint: Post-Merge Dedup Fix & Create-Issue Command (#1876, #1884)
 
