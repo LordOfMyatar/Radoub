@@ -46,6 +46,12 @@ public interface IDocumentState
     void ClearDirty();
 
     /// <summary>
+    /// Whether the document is in read-only mode (locked by another process).
+    /// When true, MarkDirty is blocked and save operations should be disabled.
+    /// </summary>
+    bool IsReadOnly { get; set; }
+
+    /// <summary>
     /// Raised when the dirty state changes. Subscribe to update the title bar.
     /// </summary>
     event Action? DirtyStateChanged;
@@ -78,12 +84,19 @@ public class DocumentState : IDocumentState
 
     public bool IsDirty => _isDirty;
     public bool IsLoading { get; set; }
+    public bool IsReadOnly { get; set; }
     public string? CurrentFilePath { get; set; }
 
     public event Action? DirtyStateChanged;
 
     public void MarkDirty([CallerMemberName] string? caller = null)
     {
+        if (IsReadOnly)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"MarkDirty: Blocked (read-only) from {caller}");
+            return;
+        }
+
         if (IsLoading)
         {
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"MarkDirty: Blocked (isLoading=true) from {caller}");
@@ -142,7 +155,8 @@ public class DocumentState : IDocumentState
 
         var displayPath = UnifiedLogger.SanitizePath(CurrentFilePath);
         var dirty = _isDirty ? "*" : "";
+        var readOnly = IsReadOnly ? " [Read-Only]" : "";
         var extraSuffix = extraInfo ?? "";
-        return $"{_toolName} - {displayPath}{extraSuffix}{dirty}";
+        return $"{_toolName} - {displayPath}{extraSuffix}{readOnly}{dirty}";
     }
 }
