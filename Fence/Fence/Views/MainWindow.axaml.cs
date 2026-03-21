@@ -5,6 +5,7 @@ using Avalonia.Interactivity;
 using MerchantEditor.Services;
 using MerchantEditor.ViewModels;
 using Radoub.Formats.Common;
+using Radoub.UI.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
@@ -309,6 +310,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             _isClosing = true;
             _documentState.ClearDirty();
+            FileSessionLockService.ReleaseAllLocks();
             SaveWindowPosition();
             SaveStoreBrowserPanelSize();
             SaveItemDetailsPanelSize();

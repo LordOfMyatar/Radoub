@@ -33,6 +33,7 @@ namespace DialogEditor.ViewModels
         private ObservableCollection<string> _debugMessages = new();
         private ObservableCollection<TreeViewSafeNode> _dialogNodes = new();
         private bool _hasUnsavedChanges;
+        private bool _isFileReadOnly;
         private ScrapEntry? _selectedScrapEntry;
         private TreeViewSafeNode? _selectedTreeNode;
 
@@ -111,7 +112,7 @@ namespace DialogEditor.ViewModels
         public bool ClipboardWasCut => _clipboardService.WasCutOperation;
 
         public string WindowTitle => CurrentFileName != null
-            ? $"Parley v{VersionHelper.GetVersion()} - {System.IO.Path.GetFileName(CurrentFileName)}{(HasUnsavedChanges ? "*" : "")}"
+            ? $"Parley v{VersionHelper.GetVersion()} - {System.IO.Path.GetFileName(CurrentFileName)}{(HasUnsavedChanges ? "*" : "")}{(IsFileReadOnly ? " [Read-Only]" : "")}"
             : $"Parley v{VersionHelper.GetVersion()}";
 
         public bool IsLoading
@@ -137,6 +138,21 @@ namespace DialogEditor.ViewModels
                     }, DispatcherPriority.Send);
 
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"HasUnsavedChanges = {value}, WindowTitle = '{WindowTitle}'");
+                }
+            }
+        }
+
+        /// <summary>
+        /// True when the file is locked by another tool and opened read-only.
+        /// </summary>
+        public bool IsFileReadOnly
+        {
+            get => _isFileReadOnly;
+            set
+            {
+                if (SetProperty(ref _isFileReadOnly, value))
+                {
+                    OnPropertyChanged(nameof(WindowTitle));
                 }
             }
         }

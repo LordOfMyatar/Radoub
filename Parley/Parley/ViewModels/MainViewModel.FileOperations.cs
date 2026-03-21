@@ -6,6 +6,7 @@ using DialogEditor.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
+using Radoub.UI.Services;
 
 namespace DialogEditor.ViewModels
 {
@@ -20,6 +21,23 @@ namespace DialogEditor.ViewModels
             {
                 IsLoading = true;
                 StatusMessage = $"Loading {System.IO.Path.GetFileName(filePath)}...";
+
+                // Release lock on previous file before loading new one
+                if (!string.IsNullOrEmpty(CurrentFileName))
+                {
+                    FileSessionLockService.ReleaseLock(CurrentFileName);
+                    IsFileReadOnly = false;
+                }
+
+                // Acquire lock on new file
+                var lockResult = FileSessionLockService.AcquireLock(filePath, "Parley");
+                if (lockResult == LockResult.LockedByOther)
+                {
+                    var lockInfo = FileSessionLockService.CheckLock(filePath);
+                    var toolName = lockInfo?.ToolName ?? "another tool";
+                    StatusMessage = $"File is open in {toolName} — opening read-only";
+                    IsFileReadOnly = true;
+                }
 
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Loading dialog from: {UnifiedLogger.SanitizePath(filePath)}");
 
@@ -104,6 +122,12 @@ namespace DialogEditor.ViewModels
                 return false;
             }
 
+            if (IsFileReadOnly)
+            {
+                StatusMessage = "Cannot save: file is open read-only (locked by another tool)";
+                return false;
+            }
+
             try
             {
                 IsLoading = true;
@@ -147,6 +171,13 @@ namespace DialogEditor.ViewModels
             {
                 UnifiedLogger.LogApplication(LogLevel.INFO, "Creating new blank dialog");
 
+                // Release lock on previous file
+                if (!string.IsNullOrEmpty(CurrentFileName))
+                {
+                    FileSessionLockService.ReleaseLock(CurrentFileName);
+                }
+                IsFileReadOnly = false;
+
                 // Create blank dialog with root structure
                 CurrentDialog = new Models.Dialog();
                 CurrentFileName = null; // No filename until user saves (this will also clear scrap via setter)
@@ -174,6 +205,13 @@ namespace DialogEditor.ViewModels
 
         public void CloseDialog()
         {
+            // Release lock on current file
+            if (!string.IsNullOrEmpty(CurrentFileName))
+            {
+                FileSessionLockService.ReleaseLock(CurrentFileName);
+            }
+            IsFileReadOnly = false;
+
             CurrentDialog = null;
             CurrentFileName = null;
             HasUnsavedChanges = false;

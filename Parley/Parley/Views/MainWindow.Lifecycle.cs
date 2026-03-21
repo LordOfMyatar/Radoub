@@ -7,6 +7,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using DialogEditor.Services;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
 
 namespace DialogEditor.Views
@@ -304,6 +305,9 @@ namespace DialogEditor.Views
         {
             _autoSaveTimer?.Stop();
             _autoSaveTimer?.Dispose();
+
+            // Release all file session locks
+            FileSessionLockService.ReleaseAllLocks();
 
             // Unsubscribe from singleton events to prevent memory leaks (#1282)
             ThemeManager.Instance.ThemeApplied -= OnThemeApplied;

@@ -264,6 +264,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             Close();
         }
 
+        FileSessionLockService.ReleaseAllLocks();
         SaveWindowPosition();
     }
 
@@ -275,6 +276,23 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             _isLoading = true;
             UpdateStatus($"Opening {Path.GetFileName(filePath)}...");
+
+            // Release lock on previous file if any
+            if (!string.IsNullOrEmpty(_currentFilePath))
+            {
+                FileSessionLockService.ReleaseLock(_currentFilePath);
+                _documentState.IsReadOnly = false;
+            }
+
+            // Check for file lock from another tool instance
+            var lockResult = FileSessionLockService.AcquireLock(filePath, "Relique");
+            if (lockResult == LockResult.LockedByOther)
+            {
+                var lockInfo = FileSessionLockService.CheckLock(filePath);
+                var toolName = lockInfo?.ToolName ?? "another tool";
+                UpdateStatus($"File is open in {toolName} — opening read-only");
+                _documentState.IsReadOnly = true;
+            }
 
             var item = UtiReader.Read(filePath);
             _currentItem = item;
@@ -316,6 +334,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (_currentItem == null || string.IsNullOrEmpty(_currentFilePath))
             return false;
+
+        if (_documentState.IsReadOnly)
+        {
+            UpdateStatus("Cannot save: file is open read-only (locked by another tool).");
+            return false;
+        }
 
         try
         {
