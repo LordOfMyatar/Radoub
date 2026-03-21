@@ -4,8 +4,6 @@ using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Quartermaster.Services;
-using Radoub.Formats.Gff;
-using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
 using Radoub.UI.Services;
 
@@ -22,9 +20,8 @@ public partial class NewCharacterWizardWindow
     {
         int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
 
-        // Calculate how many feats the player gets to choose
-        // Build a temp creature to use ExpectedFeatCount
-        var tempCreature = new UtcFile
+        // Build temp creature for feat availability and prereq checks (#1800)
+        _tempCreature = new UtcFile
         {
             Race = _selectedRaceId,
             ClassList = new List<CreatureClass>
@@ -33,7 +30,7 @@ public partial class NewCharacterWizardWindow
             }
         };
 
-        var expectedInfo = _displayService.Feats.GetExpectedFeatCount(tempCreature);
+        var expectedInfo = _displayService.Feats.GetExpectedFeatCount(_tempCreature);
         _featsToChoose = expectedInfo.TotalExpected;
 
         // Get granted feats (auto-assigned, not choosable)
@@ -56,15 +53,14 @@ public partial class NewCharacterWizardWindow
             if (_chosenFeatIds.Contains(featId)) continue;
 
             // Check if feat is available to this class
-            if (!_displayService.Feats.IsFeatAvailable(tempCreature, featId))
+            if (!_displayService.Feats.IsFeatAvailable(_tempCreature, featId))
                 continue;
 
-            // Check prerequisites against current wizard state
+            // Check prerequisites against current wizard state via FeatService (#1800)
             // In None mode (Chaotic Evil), skip prereq filtering — show all feats
             if (_validationLevel != ValidationLevel.None)
             {
-                var prereqs = _displayService.Feats.GetFeatPrerequisites(featId);
-                if (!CheckWizardFeatPrereqs(prereqs)) continue;
+                if (!CheckFeatPrereqsForWizard(featId)) continue;
             }
 
             var name = _displayService.GetFeatName(featId);
@@ -102,96 +98,47 @@ public partial class NewCharacterWizardWindow
         _featStepDescription.Text = $"Choose {_featsToChoose} feat(s){breakdown}. Granted feats from your race and class are shown as pre-selected.";
     }
 
-    private bool CheckWizardFeatPrereqs(FeatPrerequisites prereqs)
+    /// <summary>
+    /// Checks feat prerequisites using FeatService with projected wizard state (#1800).
+    /// Replaces inline CheckWizardFeatPrereqs — delegates to shared service method.
+    /// </summary>
+    private bool CheckFeatPrereqsForWizard(int featId)
     {
-        // No prerequisites at all - always available
-        bool hasAny = prereqs.RequiredFeats.Count > 0 ||
-                      prereqs.OrRequiredFeats.Count > 0 ||
-                      prereqs.MinStr > 0 || prereqs.MinDex > 0 || prereqs.MinCon > 0 ||
-                      prereqs.MinInt > 0 || prereqs.MinWis > 0 || prereqs.MinCha > 0 ||
-                      prereqs.MinBab > 0 || prereqs.MinSpellLevel > 0 ||
-                      prereqs.RequiredSkills.Count > 0 ||
-                      prereqs.MinLevel > 0 || prereqs.MaxLevel > 0 ||
-                      prereqs.RequiresEpic;
-        if (!hasAny) return true;
-
-        // Check ability score prerequisites
+        int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
         var racialMods = _displayService.GetRacialModifiers(_selectedRaceId);
-        int strTotal = _abilityBaseScores["STR"] + racialMods.Str;
-        int dexTotal = _abilityBaseScores["DEX"] + racialMods.Dex;
-        int conTotal = _abilityBaseScores["CON"] + racialMods.Con;
-        int intTotal = _abilityBaseScores["INT"] + racialMods.Int;
-        int wisTotal = _abilityBaseScores["WIS"] + racialMods.Wis;
-        int chaTotal = _abilityBaseScores["CHA"] + racialMods.Cha;
 
-        if (prereqs.MinStr > 0 && strTotal < prereqs.MinStr) return false;
-        if (prereqs.MinDex > 0 && dexTotal < prereqs.MinDex) return false;
-        if (prereqs.MinCon > 0 && conTotal < prereqs.MinCon) return false;
-        if (prereqs.MinInt > 0 && intTotal < prereqs.MinInt) return false;
-        if (prereqs.MinWis > 0 && wisTotal < prereqs.MinWis) return false;
-        if (prereqs.MinCha > 0 && chaTotal < prereqs.MinCha) return false;
-
-        // Check BAB (level 1 = BAB from class)
-        if (prereqs.MinBab > 0)
+        var overrides = new FeatPrereqOverrides
         {
-            int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
-            int bab = _displayService.GetClassBab(classId, 1);
-            if (bab < prereqs.MinBab) return false;
-        }
+            StrOverride = _abilityBaseScores["STR"] + racialMods.Str,
+            DexOverride = _abilityBaseScores["DEX"] + racialMods.Dex,
+            ConOverride = _abilityBaseScores["CON"] + racialMods.Con,
+            IntOverride = _abilityBaseScores["INT"] + racialMods.Int,
+            WisOverride = _abilityBaseScores["WIS"] + racialMods.Wis,
+            ChaOverride = _abilityBaseScores["CHA"] + racialMods.Cha,
+            TotalLevelOverride = 1,
+            ClassLevelOverrides = new Dictionary<int, int> { { classId, 1 } },
+            SkillRankOverrides = new Dictionary<int, int>(_skillRanksAllocated)
+        };
 
-        // Check level (wizard is always level 1)
-        if (prereqs.MinLevel > 1) return false;
-        if (prereqs.MaxLevel > 0 && prereqs.MaxLevel < 1) return false;
+        // Build current feats set from granted + chosen
+        var grantedFeats = GetGrantedFeatIds();
+        var currentFeats = new HashSet<ushort>();
+        foreach (var gf in grantedFeats)
+            currentFeats.Add((ushort)gf);
+        foreach (var cf in _chosenFeatIds)
+            currentFeats.Add((ushort)cf);
 
-        // Check required feats (AND logic) — must have all
-        if (prereqs.RequiredFeats.Count > 0)
-        {
-            var grantedFeats = GetGrantedFeatIds();
-            foreach (var reqFeatId in prereqs.RequiredFeats)
-            {
-                if (!grantedFeats.Contains(reqFeatId) && !_chosenFeatIds.Contains(reqFeatId))
-                    return false;
-            }
-        }
+        int bab = _displayService.GetClassBab(classId, 1);
 
-        // Check OR required feats — must have at least one
-        if (prereqs.OrRequiredFeats.Count > 0)
-        {
-            var grantedFeats = GetGrantedFeatIds();
-            bool hasOne = prereqs.OrRequiredFeats.Any(id => grantedFeats.Contains(id) || _chosenFeatIds.Contains(id));
-            if (!hasOne) return false;
-        }
+        var result = _displayService.Feats.CheckFeatPrerequisites(
+            _tempCreature,
+            featId,
+            currentFeats,
+            c => bab,
+            cid => _displayService.GetClassName(cid),
+            overrides);
 
-        // Check skill requirements
-        if (prereqs.RequiredSkills.Count > 0)
-        {
-            foreach (var (skillId, minRanks) in prereqs.RequiredSkills)
-            {
-                int allocated = _skillRanksAllocated.GetValueOrDefault(skillId, 0);
-                if (allocated < minRanks) return false;
-            }
-        }
-
-        // Check minimum spell level — creature must be able to cast spells of this level
-        if (prereqs.MinSpellLevel > 0)
-        {
-            int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
-            var spellGainTable = _gameDataService.Get2DAValue("classes", classId, "SpellGainTable");
-            if (string.IsNullOrEmpty(spellGainTable) || spellGainTable == "****")
-                return false; // Non-caster class (e.g., Fighter) — fails all spell level checks
-
-            // Check if this class grants spells of the required level at level 1
-            var col = $"SpellLevel{prereqs.MinSpellLevel}";
-            var slotsStr = _gameDataService.Get2DAValue(spellGainTable, 0, col); // Row 0 = level 1
-            if (string.IsNullOrEmpty(slotsStr) || slotsStr == "****" || slotsStr == "-"
-                || !int.TryParse(slotsStr, out int slots) || slots <= 0)
-                return false;
-        }
-
-        // Epic feats not available at level 1
-        if (prereqs.RequiresEpic) return false;
-
-        return true;
+        return result.AllMet;
     }
 
     private void ApplyFeatFilter()
@@ -314,8 +261,7 @@ public partial class NewCharacterWizardWindow
             bool meetsPrereqs = true;
             if (_validationLevel != ValidationLevel.None)
             {
-                var prereqs = _displayService.Feats.GetFeatPrerequisites(item.FeatId);
-                meetsPrereqs = CheckWizardFeatPrereqs(prereqs);
+                meetsPrereqs = CheckFeatPrereqsForWizard(item.FeatId);
             }
 
             _availableFeats.Add(new FeatDisplayItem
@@ -345,30 +291,17 @@ public partial class NewCharacterWizardWindow
         _chosenFeatIds.Clear();
 
         int classId = _selectedClassId >= 0 ? _selectedClassId : 0;
-        var tempCreature = new UtcFile
-        {
-            Race = _selectedRaceId,
-            ClassList = new List<CreatureClass>
-            {
-                new CreatureClass { Class = classId, ClassLevel = 1 }
-            }
-        };
-
         var grantedFeatIds = GetGrantedFeatIds();
 
-        // Use shared service method with NCW prereq checker
+        // Use shared service method with FeatService prereq checker (#1800)
         var assigned = _displayService.Feats.AutoAssignFeats(
-            tempCreature,
+            _tempCreature,
             classId,
             _selectedPackageId,
             grantedFeatIds,
             _featsToChoose,
             bonusFeatPool: null,
-            prereqChecker: featId =>
-            {
-                var prereqs = _displayService.Feats.GetFeatPrerequisites(featId);
-                return CheckWizardFeatPrereqs(prereqs);
-            });
+            prereqChecker: CheckFeatPrereqsForWizard);
 
         foreach (var featId in assigned)
         {

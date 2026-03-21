@@ -107,6 +107,7 @@ public partial class NewCharacterWizardWindow : Window
     private List<FeatDisplayItem> _availableFeats = new();
     private List<FeatDisplayItem> _filteredAvailableFeats = new();
     private int _featsToChoose; // Number of feats the player gets to pick
+    private UtcFile _tempCreature = new(); // Temp creature for feat availability checks
 
     // Step 7: Skills (was Step 6)
     private int _skillPointsTotal;
