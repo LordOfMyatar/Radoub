@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.157-alpha] - 2026-03-20
+**Branch**: `radoub/issue-1824` | **PR**: #TBD
+
+### Sprint: Aging Bugs Sweep (#1824)
+
+- [ ] #603 - Fix NPC-to-NPC links visual bug (⚠ icon shifting TreeView content)
+
+---
+
 ## [0.1.156-alpha] - 2026-03-19
 **Branch**: `radoub/issue-1825` | **PR**: #1834
 
