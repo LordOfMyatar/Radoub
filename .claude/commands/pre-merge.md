@@ -44,10 +44,10 @@ This prevents validating a PR that doesn't contain all local commits.
 
 ### Step 1: Get PR Info (from cache)
 
-**Cache-first**: Refresh cache, then read PR info from cache. No direct `gh pr view` call.
+**Cache-first**: Refresh cache once here, then read from cache for all subsequent steps (tech debt dedup, stale unreleased check, etc.). Do NOT call the refresh script again during reads — only Step 7b refreshes again if mutations occurred.
 
 ```bash
-# Ensure cache is fresh
+# Ensure cache is fresh (ONE call for the entire pre-merge run)
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1"
 ```
 
