@@ -35,6 +35,7 @@ namespace DialogEditor.ViewModels
                 {
                     var lockInfo = FileSessionLockService.CheckLock(filePath);
                     var toolName = lockInfo?.ToolName ?? "another tool";
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"File locked by {toolName} — opening read-only: {UnifiedLogger.SanitizePath(filePath)}");
                     StatusMessage = $"File is open in {toolName} — opening read-only";
                     IsFileReadOnly = true;
                 }
@@ -124,6 +125,7 @@ namespace DialogEditor.ViewModels
 
             if (IsFileReadOnly)
             {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Save blocked: file is read-only (locked by another tool): {UnifiedLogger.SanitizePath(CurrentFileName)}");
                 StatusMessage = "Cannot save: file is open read-only (locked by another tool)";
                 return false;
             }

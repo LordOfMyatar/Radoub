@@ -402,6 +402,7 @@ public partial class MainWindow
             {
                 var lockInfo = FileSessionLockService.CheckLock(filePath);
                 var toolName = lockInfo?.ToolName ?? "another tool";
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"File locked by {toolName} — opening read-only: {UnifiedLogger.SanitizePath(filePath)}");
                 UpdateStatus($"File is open in {toolName} — opening read-only");
                 _documentState.IsReadOnly = true;
             }
@@ -499,6 +500,7 @@ public partial class MainWindow
 
         if (_documentState.IsReadOnly)
         {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Save blocked: file is read-only (locked by another tool): {UnifiedLogger.SanitizePath(_currentFilePath)}");
             UpdateStatus("Cannot save: file is open read-only (locked by another tool).");
             return;
         }
