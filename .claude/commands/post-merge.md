@@ -138,6 +138,14 @@ grep -r "Page freshness:" d:/LOM/workspace/Radoub.wiki/*.md
 
 Changes stay local in the wiki repo. Do not push.
 
+### Step 6e: Refresh Cache
+
+After all mutations (issues closed, epic commented, stale doc issues created), refresh the cache:
+
+```bash
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1" -Force
+```
+
 ### Step 7: Create Release (if `--release` flag provided)
 
 **Default: No** (skip unless `--release` flag provided)
@@ -179,7 +187,7 @@ The `/release` command handles:
 ### Next Steps
 
 1. [Suggested next issues to work on]
-2. [If the completed work revealed unexpected complexity, suggest: "Consider `/spike [topic]` before starting [related work]"]
+2. [If the completed work revealed unexpected complexity, suggest: "Consider `/research --spike [topic]` before starting [related work]"]
 ```
 
 ## Notes

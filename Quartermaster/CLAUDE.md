@@ -245,27 +245,34 @@ To add a new panel:
 
 ## Services
 
-18 services in the `Services/` directory:
+26 services in the `Services/` directory:
 
-| Service | Lines | Purpose |
-|---------|-------|---------|
-| CommandLineService | 37 | CLI argument parsing (--file, --safemode) |
-| SettingsService | 471 | User preferences, singleton with env var override |
-| CreatureDisplayService | 655+272 | Creature display state + combat stats (2 partials) |
-| CharacterSheetService | 773 | Character sheet calculations |
-| ClassService | 873 | NWN class data, levels, abilities |
-| FeatService | 920 | Feat lookup and validation |
-| FeatCacheService | 178 | Feat data caching |
-| SkillService | 262 | Skill calculations |
-| SpellService | 339 | Spell lookup |
-| AppearanceService | 551 | Appearance/color data |
-| ModelService | 554 | 3D model loading |
-| TextureService | 303 | Texture loading and caching |
-| ItemIconService | 251 | Item icon management |
-| LevelHistoryService | 503 | Level/class progression tracking |
-| ModularPaletteCacheService | 390 | Multi-source item caching (BIF/Override/HAK) |
-| PaletteColorService | 153 | Palette color utilities |
-| QuartermasterScriptBrowserContext | 111 | Script browser integration |
+| Service | Purpose |
+|---------|---------|
+| AbilityPointBuyService | D&D 3.5e point-buy ability allocation |
+| AppearanceFilterHelper | Appearance filtering utilities |
+| AppearanceService | Appearance/color data from appearance.2da |
+| CharacterCreationService | Character creation logic (extracted from wizard) |
+| CharacterSheetService | Character sheet calculations |
+| ClassService | NWN class data, levels, abilities |
+| CommandLineService | CLI argument parsing (--file, --safemode) |
+| CreatureDisplayService | Creature display state + combat stats (2 partials) |
+| DomainService | Domain info from domains.2da |
+| FeatCacheService | Feat data caching |
+| FeatService | Feat lookup and validation (+ LevelUp, Prerequisites partials) |
+| ItemIconService | Item icon management |
+| LevelHistoryService | Level/class progression tracking |
+| LevelUpApplicationService | Level-up application (extracted from wizard) |
+| ModelService | 3D model loading (+ RenderDebug partial) |
+| ModularPaletteCacheService | Multi-source item caching (BIF/Override/HAK) |
+| PaletteColorService | Palette color utilities |
+| QuartermasterScriptBrowserContext | Script browser integration |
+| ScriptTemplateService | Script templates for events |
+| SettingsService | User preferences, singleton with env var override |
+| SkillService | Skill calculations |
+| SpellService | Spell lookup |
+| TextureService | Texture loading and caching |
+| ValidationLevel | Validation helper enum |
 
 Service patterns:
 - **Singleton** with `Instance` property
@@ -292,9 +299,14 @@ Items are resolved in this order:
 dotnet test Quartermaster/Quartermaster.Tests
 ```
 
-21+ tests covering:
-- CommandLineService argument parsing
-- SettingsService property constraints
+35+ test files covering:
+- AbilityPointBuyService, AlignmentRestriction, Appearance (3 variants)
+- CharacterCreation, CharacterSheet, ClassAlignment, ClassDomain, Combat
+- CreatureDisplay, Domain, FeatCache, FeatService (4 variants)
+- LevelHistory, LevelUpApplication, LevelUpSkillDisplay, Metamagic
+- ModelService (2 variants), NcwHardening, PaletteColor
+- PrestigePrerequisite, RoundTripValidation, ScriptBrowserContext
+- ScriptTemplate, SkillService, SpellService, CommandLineService, SettingsService
 
 ### Integration Tests
 

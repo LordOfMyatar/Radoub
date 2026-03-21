@@ -635,9 +635,9 @@ Spikes are **timeboxed throwaway prototypes** (from XP/Extreme Programming) used
 
 **Spike vs Research**:
 - `/research` = information gathering (reading, no code changes)
-- `/spike` = hands-on prototyping (throwaway code on a disposable branch)
+- `/research --spike` = hands-on prototyping (throwaway code on a disposable branch)
 
-**Workflow**: Run `/spike [topic or #issue]` to start. The command creates a throwaway branch, sets a timebox, and on completion generates a findings document in `NonPublic/[Tool]/Research/spike-[topic].md`. The spike branch is **never merged** — it is deleted after findings are captured.
+**Workflow**: Run `/research --spike [topic or #issue]` to start. Creates a throwaway branch, sets a timebox, and on completion generates a findings document in `NonPublic/[Tool]/Research/spike-[topic].md`. The spike branch is **never merged** — it is deleted after findings are captured.
 
 **Rules**:
 - Never merge a spike branch
@@ -730,16 +730,16 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 
 ### Prefer Script Files Over Inline Commands
 
-**DO**: Use `-File` with PowerShell scripts
+**DO**: Use `powershell.exe -File` with PowerShell scripts (NEVER use `pwsh` — it launches Microsoft Store)
 ```bash
-pwsh -File .claude/scripts/Get-CacheData.ps1 -View status
-pwsh -File .claude/scripts/Refresh-GitHubCache.ps1 -Force
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View status
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1" -Force
 ```
 
 **AVOID**: Inline PowerShell with `-Command` (escaping nightmare)
 ```bash
 # BAD - requires \$ escaping, breaks easily
-pwsh -Command "\$data = Get-Content file.json | ConvertFrom-Json; \$data.property"
+powershell.exe -Command "\$data = Get-Content file.json | ConvertFrom-Json; \$data.property"
 ```
 
 ### When to Use Each Shell
@@ -779,7 +779,7 @@ Write-Host "Found $($results.Count) items"
 ```
 
 **Avoid in slash commands**:
-- Inline `pwsh -Command "..."` blocks with variable escaping
+- Inline `powershell.exe -Command "..."` blocks with variable escaping
 - Multi-line PowerShell embedded in markdown
 - Complex logic that should be in a script file
 
@@ -1023,32 +1023,42 @@ private async Task LoadAsync(CancellationToken token)
 
 ## GitHub Issue Cache
 
-A local cache of GitHub issues/PRs is available for quick lookups without API calls.
+**Strategy**: Cache-first. All commands read GitHub data from the local cache — never call `gh issue view` or `gh pr view` directly for reads. Mutations (`gh issue create`, `gh pr create`, `gh issue close`) trigger a cache refresh afterward.
 
 **Location**: `.claude/cache/github-data.json`
 
 **Refresh Cache**:
-```powershell
-.\.claude\scripts\Refresh-GitHubCache.ps1        # Only if stale (>1 hour)
-.\.claude\scripts\Refresh-GitHubCache.ps1 -Force # Force refresh
+```bash
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1"        # Only if stale (>1 hour)
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1" -Force # Force refresh
 ```
 
-**Use Cases**:
-- Check if tech debt issue exists for a file before creating duplicate
-- Find related issues when investigating a bug
-- Review open PRs before starting new work
-- Check issue labels and status
+**Read Cache**:
+```bash
+# Issue details
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View issue -Number 123
+
+# Search issues
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View search -Query "keyword"
+
+# List view (no bodies, ~25KB)
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View list
+
+# Summary stats (~1KB)
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View summary
+```
 
 **Cache Contents**:
-- Open issues with labels, assignees, milestones
-- Open PRs with status and review state
+- Up to 200 open issues with labels, assignees, milestones, comments
+- Up to 20 open PRs with status and review state
 - Summary stats (stale issues, missing labels)
-- Refreshes automatically when >1 hour old
+- Auto-refreshes when >1 hour old
 
-**Example**: Before creating a tech debt issue for `CharacterPanel.axaml.cs`, search the cache:
-```powershell
-Select-String "CharacterPanel" .\.claude\cache\github-data.json
-```
+**Commands that use cache**: `/backlog`, `/init-item`, `/pre-merge`, `/research`
+
+**Commands that trigger post-mutation refresh**: `/init-item` (after PR create), `/pre-merge` (after tech debt issue create), `/post-merge` (after issue close/comment)
+
+**Exception**: `/dependabot` uses direct `gh pr list` (infrequent, needs freshest PR state)
 
 ---
 

@@ -3,13 +3,14 @@
     Fetches GitHub issue and PR data via GraphQL and caches locally.
 
 .DESCRIPTION
-    Single GraphQL query fetches all open issues and PRs with labels,
-    project board status, milestones, etc. Saves to .claude/cache/github-data.json.
+    Paginated GraphQL queries fetch all open issues (in pages of 100) and
+    PRs with labels, project board status, milestones, etc.
+    Saves to .claude/cache/github-data.json.
 
-    Used by /backlog, /sprint-planning, and /grooming skills.
+    Used by /backlog, /init-item, /pre-merge, and /research commands.
 
 .PARAMETER Force
-    Refresh even if cache is fresh (< 4 hours old).
+    Refresh even if cache is fresh (< 1 hour old).
 
 .EXAMPLE
     .\Refresh-GitHubCache.ps1
@@ -46,12 +47,41 @@ if (-not $Force -and (Test-Path $CacheFile)) {
 
 Write-Host "Fetching GitHub data via GraphQL..."
 
-# GraphQL query - fetches everything skills need in one call
-$query = @'
+# Helper: execute a GraphQL query via temp file (avoids PowerShell quote-stripping)
+function Invoke-GraphQL {
+    param([string]$Query)
+    $tempFile = [System.IO.Path]::GetTempFileName()
+    try {
+        [System.IO.File]::WriteAllText($tempFile, $Query, [System.Text.UTF8Encoding]::new($false))
+        $response = gh api graphql -F query="@$tempFile" 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "GraphQL query failed: $response"
+            exit 1
+        }
+        return ($response | ConvertFrom-Json)
+    }
+    finally {
+        Remove-Item -Path $tempFile -ErrorAction SilentlyContinue
+    }
+}
+
+# --- Fetch issues with pagination (100 per page, GitHub max) ---
+$allIssues = @()
+$hasNextPage = $true
+$cursor = $null
+$totalCount = 0
+$page = 0
+
+while ($hasNextPage) {
+    $page++
+    $afterClause = if ($cursor) { ", after: `"$cursor`"" } else { "" }
+
+    $query = @"
 {
   repository(owner: "LordOfMyatar", name: "Radoub") {
-    issues(first: 100, states: OPEN, orderBy: {field: UPDATED_AT, direction: DESC}) {
+    issues(first: 100, states: OPEN, orderBy: {field: UPDATED_AT, direction: DESC}$afterClause) {
       totalCount
+      pageInfo { hasNextPage endCursor }
       nodes {
         number
         title
@@ -86,6 +116,32 @@ $query = @'
         }
       }
     }
+  }
+}
+"@
+
+    $data = Invoke-GraphQL -Query $query
+    $issueData = $data.data.repository.issues
+    $totalCount = $issueData.totalCount
+    $allIssues += $issueData.nodes
+    $hasNextPage = $issueData.pageInfo.hasNextPage
+    $cursor = $issueData.pageInfo.endCursor
+
+    if ($page -gt 1) {
+        Write-Host "  Page ${page}: fetched $($allIssues.Count) of $totalCount issues..."
+    }
+
+    # Safety: max 5 pages (500 issues)
+    if ($page -ge 5) {
+        Write-Host "  Warning: stopped at 500 issues (safety limit)"
+        break
+    }
+}
+
+# --- Fetch PRs (single page, 20 is plenty) ---
+$prQuery = @'
+{
+  repository(owner: "LordOfMyatar", name: "Radoub") {
     pullRequests(first: 20, states: OPEN, orderBy: {field: UPDATED_AT, direction: DESC}) {
       totalCount
       nodes {
@@ -105,33 +161,16 @@ $query = @'
 }
 '@
 
-# Execute GraphQL query
-try {
-    $response = gh api graphql -f query=$query 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "GraphQL query failed: $response"
-        exit 1
-    }
-}
-catch {
-    Write-Error "Failed to execute gh api: $_"
-    exit 1
-}
+$prData = Invoke-GraphQL -Query $prQuery
+$prs = $prData.data.repository.pullRequests.nodes
+$prTotalCount = $prData.data.repository.pullRequests.totalCount
 
-# Parse response
-$data = $response | ConvertFrom-Json
-
-# Build cache object with metadata
-$now = Get-Date -Format "o"
-$issues = $data.data.repository.issues.nodes
-$prs = $data.data.repository.pullRequests.nodes
-
-# Calculate summary statistics
+# --- Calculate summary statistics ---
 $labelCounts = @{}
 $toolLabels = @("parley", "quartermaster", "manifest", "fence", "radoub", "Trebuchet")
 $typeLabels = @("bug", "enhancement", "epic", "sprint", "tech-debt", "documentation", "refactor", "testing", "research")
 
-foreach ($issue in $issues) {
+foreach ($issue in $allIssues) {
     foreach ($label in $issue.labels.nodes) {
         $labelName = $label.name
         if (-not $labelCounts.ContainsKey($labelName)) {
@@ -143,32 +182,33 @@ foreach ($issue in $issues) {
 
 # Count stale issues (15+ days)
 $staleThreshold = (Get-Date).AddDays(-15)
-$staleCount = ($issues | Where-Object {
+$staleCount = ($allIssues | Where-Object {
     [DateTime]::Parse($_.updatedAt) -lt $staleThreshold
 }).Count
 
 # Count issues missing tool labels
-$missingToolLabel = ($issues | Where-Object {
+$missingToolLabel = ($allIssues | Where-Object {
     $issueLabels = $_.labels.nodes.name
     -not ($toolLabels | Where-Object { $issueLabels -contains $_ })
 }).Count
 
 # Count issues missing type labels
-$missingTypeLabel = ($issues | Where-Object {
+$missingTypeLabel = ($allIssues | Where-Object {
     $issueLabels = $_.labels.nodes.name
     -not ($typeLabels | Where-Object { $issueLabels -contains $_ })
 }).Count
 
 # Build final cache structure
+$now = Get-Date -Format "o"
 $cache = @{
     fetchedAt = $now
     repository = "LordOfMyatar/Radoub"
     maxAgeHours = 1
-    issues = $issues
+    issues = $allIssues
     pullRequests = $prs
     summary = @{
-        totalOpenIssues = $data.data.repository.issues.totalCount
-        totalOpenPRs = $data.data.repository.pullRequests.totalCount
+        totalOpenIssues = $totalCount
+        totalOpenPRs = $prTotalCount
         staleIssues = $staleCount
         missingToolLabel = $missingToolLabel
         missingTypeLabel = $missingTypeLabel
@@ -180,7 +220,7 @@ $cache = @{
 $cache | ConvertTo-Json -Depth 20 | Set-Content -Path $CacheFile -Encoding UTF8
 
 Write-Host "Cache updated: $CacheFile"
-Write-Host "  Issues: $($cache.summary.totalOpenIssues) open ($staleCount stale)"
-Write-Host "  PRs: $($cache.summary.totalOpenPRs) open"
+Write-Host "  Issues: $totalCount open, $($allIssues.Count) cached ($staleCount stale)"
+Write-Host "  PRs: $prTotalCount open"
 Write-Host "  Missing tool label: $missingToolLabel"
 Write-Host "  Missing type label: $missingTypeLabel"

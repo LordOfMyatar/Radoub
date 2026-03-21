@@ -42,10 +42,21 @@ git log origin/$(git branch --show-current)..HEAD --oneline
 
 This prevents validating a PR that doesn't contain all local commits.
 
-### Step 1: Get PR Info (single gh call)
+### Step 1: Get PR Info (from cache)
+
+**Cache-first**: Refresh cache, then read PR info from cache. No direct `gh pr view` call.
 
 ```bash
-gh pr view --json number,title,state,baseRefName,isDraft,body
+# Ensure cache is fresh
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1"
+```
+
+Match the current branch name against cached PRs to find the PR for this branch. The cache includes: number, title, isDraft, headRefName, reviewDecision.
+
+For PR body (needed for release notes), use:
+```bash
+# Only if PR body is needed and not in cache
+gh pr view --json body -q '.body'
 ```
 
 If no PR exists, warn and stop.
@@ -161,7 +172,7 @@ For files exceeding **1000 lines**, do NOT assume they are pre-existing. For eac
 
 1. Search the GitHub issue cache for an existing tech debt issue (includes both open and closed):
    ```bash
-   pwsh -File .claude/scripts/Get-CacheData.ps1 -View search -Query "[filename without path]"
+   powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View search -Query "[filename without path]"
    ```
 
 2. **If an open issue exists**: Report as tracked tech debt with issue number
@@ -318,6 +329,14 @@ gh pr edit [number] --body "[generated body]" && gh pr ready [number] 2>/dev/nul
 
 The `|| true` handles case where PR is already ready.
 
+### Step 7b: Refresh Cache (if mutations occurred)
+
+If any tech debt issues were created (`gh issue create`) or the PR was edited, refresh the cache:
+
+```bash
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1" -Force
+```
+
 ## Test Script Reference
 
 ```powershell
@@ -330,7 +349,7 @@ powershell -ExecutionPolicy Bypass -File "d:\LOM\workspace\Radoub\Radoub.Integra
 
 ## Notes
 
-- **`jq` not available**: This environment does not have `jq` installed. Commands and hooks that parse JSON should use PowerShell (`ConvertFrom-Json`, `Select-String`) or `gh`'s built-in `--jq` flag instead. If a command fails with `jq: command not found`, switch to a PowerShell equivalent or use `gh` query flags (e.g., `gh project item-add ... --format json` then parse with `pwsh -Command`).
+- **`jq` not available**: Use PowerShell (`ConvertFrom-Json`, `Select-String`) or `gh`'s built-in `--jq` flag for JSON parsing. Always use `powershell.exe` (not `pwsh`).
 - Default: unit tests only (fast), unless UI changes detected
 - UI tests auto-triggered when `.axaml`, `Views/`, `Controls/`, `Dialogs/`, or `Windows/` files change
 - Use `--no-auto-ui` to disable auto-detection (force unit-only)

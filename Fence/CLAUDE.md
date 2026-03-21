@@ -25,23 +25,45 @@ Tool-specific guidance for Claude Code sessions working on Fence.
 Fence/
 ├── CHANGELOG.md
 ├── CLAUDE.md (this file)
+├── README.md
+├── version.json
 ├── Fence/
 │   ├── Fence.csproj
 │   ├── Program.cs
 │   ├── App.axaml[.cs]
+│   ├── Assets/ (fence.ico)
+│   ├── Converters/
+│   │   └── InfiniteToSymbolConverter.cs
 │   ├── Services/
+│   │   ├── BaseItemTypeService.cs      # Base item types from baseitems.2da
 │   │   ├── CommandLineService.cs
+│   │   ├── FenceScriptBrowserContext.cs # IScriptBrowserContext for shared browser
 │   │   ├── ItemResolutionService.cs
-│   │   ├── PaletteCacheService.cs     # Cached palette loading
+│   │   ├── PaletteCacheService.cs      # Cached palette loading
 │   │   └── SettingsService.cs
 │   ├── Views/
 │   │   ├── MainWindow.axaml[.cs]
+│   │   ├── MainWindow.FileOps.cs       # File open/save/new
+│   │   ├── MainWindow.ItemDetails.cs   # Item detail panel
+│   │   ├── MainWindow.ItemPalette.cs   # Palette search/filter
+│   │   ├── MainWindow.LanguageMenu.cs  # TLK language selection
+│   │   ├── MainWindow.Scripts.cs       # Script assignment
+│   │   ├── MainWindow.StoreBrowser.cs  # Collapsible store browser (F4)
+│   │   ├── MainWindow.StoreOperations.cs # Store properties
+│   │   ├── MainWindow.Variables.cs     # Local variables
 │   │   └── SettingsWindow.axaml[.cs]
-│   ├── ViewModels/
-│   │   ├── StoreItemViewModel.cs
-│   │   └── PaletteItemViewModel.cs
-│   └── Themes/
-└── Fence.Tests/ (future)
+│   └── ViewModels/
+│       ├── PaletteItemViewModel.cs
+│       ├── SelectableBaseItemTypeViewModel.cs
+│       ├── StoreItemViewModel.cs
+│       └── VariableViewModel.cs
+└── Fence.Tests/
+    ├── BaseItemTypeServiceTests.cs
+    ├── CommandLineServiceTests.cs
+    ├── ItemResolutionServiceTests.cs
+    ├── PaletteCacheServiceTests.cs
+    ├── SettingsServiceTests.cs
+    └── UtmRoundTripTests.cs
 ```
 
 ### Key Design Decisions

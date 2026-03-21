@@ -1,6 +1,6 @@
 # Research Task
 
-Investigate a GitHub issue or feature request and produce a research summary.
+Investigate a GitHub issue or feature request and produce a research summary. Optionally spike with throwaway code on a disposable branch.
 
 ## Upfront Questions
 
@@ -19,30 +19,52 @@ After collecting answers, proceed through all exploration and analysis without f
 ```
 /research #[issue-number]
 /research [topic description]
+/research --spike #[issue-number]     # Create throwaway branch for prototyping
+/research --spike [topic] --timebox 2h
 ```
+
+**Flags**:
+- `--spike` - Create a throwaway branch for hands-on prototyping (branch is deleted after findings captured)
+- `--timebox [duration]` - Set spike timebox (default: 2h, options: 1h/2h/4h)
 
 ## Workflow
 
 ### Step 0: Ensure Cache is Fresh
 
 ```bash
-pwsh -File .claude/scripts/Refresh-GitHubCache.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1"
+```
+
+### Step 0b: Create Spike Branch (if `--spike` flag)
+
+If `--spike` is passed, create a throwaway branch before starting:
+
+```bash
+git stash  # if needed
+git checkout main
+git checkout -b spike/[short-topic]
+```
+
+Display spike context:
+```markdown
+## Spike Started
+
+**Topic**: [topic]
+**Question(s)**: [what we're trying to answer]
+**Timebox**: [duration, default 2h]
+**Started**: [timestamp]
 ```
 
 ### Step 1: Understand the Request
 
-If issue number provided, check cache first:
+**Cache-first**: Always read from cache. No direct `gh issue view` calls.
+
 ```bash
-# Get issue details from cache (avoids API call)
-pwsh -File .claude/scripts/Get-CacheData.ps1 -View issue -Number [number]
+# Get issue details from cache
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View issue -Number [number]
 
 # Search for related issues
-pwsh -File .claude/scripts/Get-CacheData.ps1 -View search -Query "[keyword]"
-```
-
-**Fallback** (if issue not in cache - closed issues, etc.):
-```bash
-gh issue view [number] --json title,body,labels,comments
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View search -Query "[keyword]"
 ```
 
 Parse the issue to identify:
@@ -92,7 +114,7 @@ Wait for user response before continuing.
 
 ### Step 5: Generate Research Notes
 
-Create notes in `Parley/NonPublic/Research/` (or tool-appropriate folder):
+Create notes in `NonPublic/[Tool]/Research/` (per CLAUDE.md rules — NonPublic is always at repo root):
 
 ```markdown
 # Research: [Issue/Topic Title]
@@ -139,14 +161,35 @@ Summarize findings concisely and present options.
 
 ## Output Location
 
-Research notes go in:
-- `Parley/NonPublic/Research/` for Parley-related topics
-- `[Tool]/NonPublic/Research/` for other tool research
-- `Documentation/Research/` for cross-tool or format research
+Research notes go in `NonPublic/[Tool]/Research/`:
+- `NonPublic/Parley/Research/` for Parley-related topics
+- `NonPublic/Quartermaster/Research/` for QM research
+- `NonPublic/Radoub/Research/` for cross-tool or format research
+
+For spikes, use: `NonPublic/[Tool]/Research/spike-[topic].md`
+
+## Spike Cleanup (if `--spike` flag was used)
+
+After capturing findings:
+
+```bash
+# Switch back to previous branch
+git checkout -  # or git checkout main
+
+# Delete the spike branch (local and remote if pushed)
+git branch -D spike/[short-topic]
+git push origin --delete spike/[short-topic] 2>/dev/null  # ignore if not pushed
+```
+
+**Important rules for spikes:**
+- **Never merge a spike branch** — spikes are throwaway
+- **Always capture findings** before deleting the branch
+- **Respect the timebox** — if time runs out, document what you have and stop
+- **One question at a time** — log new questions as open questions for future research
 
 ## Notes
 
-- Research is read-only - no code changes
+- Research is read-only — no code changes (unless `--spike` flag, which allows throwaway prototyping)
 - Ask before making assumptions
 - Document sources for future reference
 - Keep notes even if approach is rejected (prevents re-research)

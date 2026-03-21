@@ -21,12 +21,24 @@ Tool-specific guidance for Manifest, the journal editor for Neverwinter Nights.
 Manifest/
 ├── CHANGELOG.md
 ├── CLAUDE.md (this file)
+├── README.md
+├── version.json
 ├── Manifest/
-│   ├── Views/MainWindow.axaml(.cs)
-│   ├── Models/ (ViewModels for categories/entries)
-│   ├── Services/ (SettingsService, ThemeManager)
-│   └── Themes/
+│   ├── Program.cs
+│   ├── App.axaml(.cs)
+│   ├── Assets/ (manifest.ico)
+│   ├── Controls/ (SpellCheckTextBox)
+│   ├── Services/
+│   │   ├── CommandLineService.cs
+│   │   ├── ManifestBrowserContext.cs
+│   │   ├── SettingsService.cs
+│   │   ├── SpellCheckService.cs
+│   │   └── TlkService.cs
+│   └── Views/
+│       ├── MainWindow.axaml(.cs) + partials (FileOps, Navigation, SpellCheck, TreeViewOps)
+│       └── SettingsWindow.axaml(.cs) + partials
 └── Manifest.Tests/ (unit tests)
+    └── TestData/
 ```
 
 ---
@@ -114,7 +126,7 @@ Changes go in `Manifest/CHANGELOG.md` (not Radoub CHANGELOG).
 ## Logging
 
 - Logs are privacy-scrubbed (paths show `~`)
-- Location: `~/Manifest/Logs/[session]/`
+- Location: `~/Radoub/Manifest/Logs/Session_YYYYMMDD_HHMMSS/`
 - Uses shared UnifiedLogger from Radoub.Formats
 
 ---
