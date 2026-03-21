@@ -12,6 +12,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.67-alpha] - 2026-03-21
+**Branch**: `quartermaster/issue-1819` | **PR**: #TBD
+
+### Sprint: Misc UI Polish (#1819)
+
+- [ ] #1622 - Rename Identity panel header to 'File and Metadata'
+- [ ] #1618 - Alignment panel should allow direct integer input
+- [x] #1624 - NCW voice set play button fix (completed in #1879)
+
+---
+
 ## [0.2.66-alpha] - 2026-03-21
 **Branch**: `quartermaster/issue-1823` | **PR**: #1880
 
