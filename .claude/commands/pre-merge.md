@@ -207,6 +207,21 @@ Read CHANGELOG and verify:
 - PR number filled in (not TBD)
 - Date is today or earlier
 
+**Stale [Unreleased] check**:
+
+Check ALL affected CHANGELOG files (root `CHANGELOG.md` + tool-specific) for non-empty `[Unreleased]` sections. If `[Unreleased]` contains bullet points:
+
+1. For each item, search `git log main --oneline --grep="<keyword>"` to find which commit/PR introduced it
+2. Check if that PR is already merged to main (i.e., the item should be in a versioned section, not Unreleased)
+3. Report as:
+   ```
+   ⚠️ Stale [Unreleased] items found in [CHANGELOG file]:
+     - "[item text]" → should be in [version] (PR #NNN, merged YYYY-MM-DD)
+   ```
+4. **Do NOT auto-fix** — flag for the user to confirm placement before moving items
+
+This prevents items from being silently left behind when CHANGELOGs are updated during sprints.
+
 **Note**: Version numbers are managed by NBGV via `version.json` files — no `.csproj` version properties to check. CHANGELOG versions are for human tracking only and don't need to match computed NBGV versions exactly.
 
 ### Step 5: Update Release Notes (NonPublic/release-notes.md)
@@ -312,6 +327,7 @@ Flag if >30 days old and code changed.
 | Check | Status |
 |-------|--------|
 | CHANGELOG | ✅/⚠️ |
+| Unreleased items | ✅ Empty / ⚠️ N stale items need placement |
 | Wiki | ✅ Current / ⚠️ Stale |
 
 ### Status

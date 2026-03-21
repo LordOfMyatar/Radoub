@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Fix: Post-merge freshness sweep checks for existing issues before cutting new ones (#1876)
 - Enhancement: Add `/create-issue` slash command for structured GitHub issue creation (#1884)
+- `/pre-merge`: Added stale `[Unreleased]` items check — flags items that belong in versioned sections
 
 ---
 
