@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.66-alpha] - 2026-03-21
-**Branch**: `quartermaster/issue-1823` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1823` | **PR**: #1880
 
 ### Sprint: LUW Feat Prerequisite Fixes (#1823)
 
