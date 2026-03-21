@@ -25,9 +25,9 @@ public partial class ClassesPanel : BasePanelControl
     private TextBlock? _noClassesText;
     private TextBlock? _alignmentName;
     private Slider? _goodEvilSlider;
-    private TextBlock? _goodEvilValue;
+    private NumericUpDown? _goodEvilNumeric;
     private Slider? _lawChaosSlider;
-    private TextBlock? _lawChaosValue;
+    private NumericUpDown? _lawChaosNumeric;
     private TextBlock? _packageText;
     private Button? _packagePickerButton;
     private Button? _levelupWizardButton;
@@ -73,9 +73,9 @@ public partial class ClassesPanel : BasePanelControl
         _noClassesText = this.FindControl<TextBlock>("NoClassesText");
         _alignmentName = this.FindControl<TextBlock>("AlignmentName");
         _goodEvilSlider = this.FindControl<Slider>("GoodEvilSlider");
-        _goodEvilValue = this.FindControl<TextBlock>("GoodEvilValue");
+        _goodEvilNumeric = this.FindControl<NumericUpDown>("GoodEvilNumeric");
         _lawChaosSlider = this.FindControl<Slider>("LawChaosSlider");
-        _lawChaosValue = this.FindControl<TextBlock>("LawChaosValue");
+        _lawChaosNumeric = this.FindControl<NumericUpDown>("LawChaosNumeric");
         _packageText = this.FindControl<TextBlock>("PackageText");
         _packagePickerButton = this.FindControl<Button>("PackagePickerButton");
         _levelupWizardButton = this.FindControl<Button>("LevelupWizardButton");
@@ -98,6 +98,10 @@ public partial class ClassesPanel : BasePanelControl
             _goodEvilSlider.ValueChanged += OnAlignmentSliderChanged;
         if (_lawChaosSlider != null)
             _lawChaosSlider.ValueChanged += OnAlignmentSliderChanged;
+        if (_goodEvilNumeric != null)
+            _goodEvilNumeric.ValueChanged += OnAlignmentNumericChanged;
+        if (_lawChaosNumeric != null)
+            _lawChaosNumeric.ValueChanged += OnAlignmentNumericChanged;
 
         if (_packagePickerButton != null)
             _packagePickerButton.Click += OnPackagePickerClick;
@@ -287,10 +291,10 @@ public partial class ClassesPanel : BasePanelControl
     private void LoadAlignment(byte goodEvil, byte lawChaotic)
     {
         if (_goodEvilSlider != null) _goodEvilSlider.Value = goodEvil;
-        SetText(_goodEvilValue, goodEvil.ToString());
+        if (_goodEvilNumeric != null) _goodEvilNumeric.Value = goodEvil;
 
         if (_lawChaosSlider != null) _lawChaosSlider.Value = lawChaotic;
-        SetText(_lawChaosValue, lawChaotic.ToString());
+        if (_lawChaosNumeric != null) _lawChaosNumeric.Value = lawChaotic;
 
         SetText(_alignmentName, GetAlignmentName(goodEvil, lawChaotic));
     }
@@ -305,8 +309,27 @@ public partial class ClassesPanel : BasePanelControl
         CurrentCreature.GoodEvil = goodEvil;
         CurrentCreature.LawfulChaotic = lawChaotic;
 
-        SetText(_goodEvilValue, goodEvil.ToString());
-        SetText(_lawChaosValue, lawChaotic.ToString());
+        // Sync numeric inputs with slider values
+        if (_goodEvilNumeric != null) _goodEvilNumeric.Value = goodEvil;
+        if (_lawChaosNumeric != null) _lawChaosNumeric.Value = lawChaotic;
+        SetText(_alignmentName, GetAlignmentName(goodEvil, lawChaotic));
+
+        AlignmentChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnAlignmentNumericChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (IsLoading || CurrentCreature == null) return;
+
+        var goodEvil = (byte)(_goodEvilNumeric?.Value ?? 50);
+        var lawChaotic = (byte)(_lawChaosNumeric?.Value ?? 50);
+
+        CurrentCreature.GoodEvil = goodEvil;
+        CurrentCreature.LawfulChaotic = lawChaotic;
+
+        // Sync sliders with numeric values
+        if (_goodEvilSlider != null) _goodEvilSlider.Value = goodEvil;
+        if (_lawChaosSlider != null) _lawChaosSlider.Value = lawChaotic;
         SetText(_alignmentName, GetAlignmentName(goodEvil, lawChaotic));
 
         AlignmentChanged?.Invoke(this, EventArgs.Empty);

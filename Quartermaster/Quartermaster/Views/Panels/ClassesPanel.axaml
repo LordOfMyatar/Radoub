@@ -206,12 +206,13 @@
                                     <TextBlock Grid.Column="0" Text="Evil" FontSize="{DynamicResource FontSizeSmall}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Column="1" x:Name="GoodEvilValue"
-                                               Text="50"
-                                               FontSize="{DynamicResource FontSizeSmall}"
-                                               FontWeight="SemiBold"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"/>
+                                    <NumericUpDown Grid.Column="1" x:Name="GoodEvilNumeric"
+                                                   Value="50" Minimum="0" Maximum="100"
+                                                   Increment="1" FormatString="0"
+                                                   Width="90"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   AutomationProperties.AutomationId="GoodEvilNumeric"/>
                                     <TextBlock Grid.Column="2" Text="Good" FontSize="{DynamicResource FontSizeSmall}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                VerticalAlignment="Center"/>
@@ -228,12 +229,13 @@
                                     <TextBlock Grid.Column="0" Text="Chaotic" FontSize="{DynamicResource FontSizeSmall}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Column="1" x:Name="LawChaosValue"
-                                               Text="50"
-                                               FontSize="{DynamicResource FontSizeSmall}"
-                                               FontWeight="SemiBold"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"/>
+                                    <NumericUpDown Grid.Column="1" x:Name="LawChaosNumeric"
+                                                   Value="50" Minimum="0" Maximum="100"
+                                                   Increment="1" FormatString="0"
+                                                   Width="90"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   AutomationProperties.AutomationId="LawChaosNumeric"/>
                                     <TextBlock Grid.Column="2" Text="Lawful" FontSize="{DynamicResource FontSizeSmall}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                VerticalAlignment="Center"/>
