@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.65-alpha] - 2026-03-20
-**Branch**: `radoub/issue-1824` | **PR**: #TBD
+**Branch**: `radoub/issue-1824` | **PR**: #1879
 
 ### Sprint: Aging Bugs Sweep (#1824)
 
