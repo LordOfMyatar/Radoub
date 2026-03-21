@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.8.0-alpha] - 2026-03-21
-**Branch**: `relique/issue-1830` | **PR**: #TBD
+**Branch**: `relique/issue-1830` | **PR**: #1898
 
 ### Sprint: Properties Tree & Search UX (#1830)
 
