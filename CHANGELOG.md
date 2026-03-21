@@ -22,9 +22,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Cross-Tool Launch Bug Fixes (#1821)
 
-- [ ] #1786 - Edit in ItemEditor not working from QM item palette
-- [ ] #1785 - Fence: Edit in ItemEditor needs blueprint resolution from store inventory
-- [ ] #1208 - F4 creature panel requires Trebuchet settings
+- [x] #1786 - Edit in ItemEditor not working from QM item palette
+- [x] #1785 - Fence: Edit in ItemEditor needs blueprint resolution from store inventory
+- [x] #1208 - F4 creature panel requires Trebuchet settings
 
 ---
 
