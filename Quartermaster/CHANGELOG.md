@@ -17,9 +17,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: LUW Feat Prerequisite Fixes (#1823)
 
-- [ ] #1744 - LUW consolidated mode feat prereqs use pre-level-up creature state
-- [ ] #1738 - Calculate projected BAB earlier in LUW for feat prereqs
-- [ ] #1800 - NCW delegate feat prereq checking to FeatService
+- [x] #1744 - LUW consolidated mode feat prereqs use pre-level-up creature state
+- [x] #1738 - Calculate projected BAB earlier in LUW for feat prereqs
+- [x] #1800 - NCW delegate feat prereq checking to FeatService
 
 ---
 
