@@ -321,8 +321,9 @@ public partial class ClassesPanel : BasePanelControl
     {
         if (IsLoading || CurrentCreature == null) return;
 
-        var goodEvil = (byte)(_goodEvilNumeric?.Value ?? 50);
-        var lawChaotic = (byte)(_lawChaosNumeric?.Value ?? 50);
+        // Truncate to integer — alignment values are whole numbers (byte)
+        var goodEvil = (byte)Math.Clamp((int)(_goodEvilNumeric?.Value ?? 50), 0, 100);
+        var lawChaotic = (byte)Math.Clamp((int)(_lawChaosNumeric?.Value ?? 50), 0, 100);
 
         CurrentCreature.GoodEvil = goodEvil;
         CurrentCreature.LawfulChaotic = lawChaotic;
