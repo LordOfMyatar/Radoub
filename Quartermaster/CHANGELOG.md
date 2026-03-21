@@ -8,10 +8,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-### Added
-- Edit in ItemEditor for backpack items (#1731)
-- Refresh Item Palette menu item in View menu (#1731)
-
 ### Fix: HAK model rendering stability (#1314)
 
 ---
@@ -26,6 +22,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fix BioWare DDS R↔B channel swap — brown creatures (satyr, horse) no longer render as blue
 - Detect module switch on file load — reconfigure HAKs and clear model/texture caches (#1869)
 - Add BIF-preference texture loading matching existing LoadModelPreferBIF pattern
+- Edit in ItemEditor for backpack items (#1731)
+- Refresh Item Palette menu item in View menu (#1731)
 
 ---
 
