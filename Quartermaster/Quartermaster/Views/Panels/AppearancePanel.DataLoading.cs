@@ -210,6 +210,10 @@ public partial class AppearancePanel
                     armorColors.Value.leather1, armorColors.Value.leather2);
             }
 
+            // Prefer BIF textures for creature models to avoid CEP texture
+            // incompatibilities (e.g., reversed bat wings from CEP texture) (#1867)
+            _modelPreviewGL.PreferBifTextures = true;
+
             var model = _modelService.LoadCreatureModel(_currentCreature);
             _modelPreviewGL.Model = model;
         }

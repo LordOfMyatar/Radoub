@@ -64,23 +64,11 @@ public class TextureService
                     palettes[layerId] = palette;
             }
 
-            // Set up color indices for each layer
-            var layerColors = new Dictionary<int, int>
-            {
-                [PltLayers.Skin] = colorIndices.Skin,
-                [PltLayers.Hair] = colorIndices.Hair,
-                [PltLayers.Metal1] = colorIndices.Metal1,
-                [PltLayers.Metal2] = colorIndices.Metal2,
-                [PltLayers.Cloth1] = colorIndices.Cloth1,
-                [PltLayers.Cloth2] = colorIndices.Cloth2,
-                [PltLayers.Leather1] = colorIndices.Leather1,
-                [PltLayers.Leather2] = colorIndices.Leather2,
-                [PltLayers.Tattoo1] = colorIndices.Tattoo1,
-                [PltLayers.Tattoo2] = colorIndices.Tattoo2
-            };
+            var layerColors = BuildLayerColors(colorIndices);
 
-            // Render the PLT
+            // Render the PLT and flip to OpenGL orientation (bottom-up)
             var pixels = PltReader.Render(pltFile, palettes, layerColors);
+            FlipVertically(pixels, pltFile.Width, pltFile.Height);
             return (pltFile.Width, pltFile.Height, pixels);
         }
         catch (Exception ex)
@@ -133,6 +121,8 @@ public class TextureService
         try
         {
             var tgaImage = TgaReader.Read(tgaData);
+            // Flip to OpenGL orientation (bottom-up) — TGA output is top-down
+            FlipVertically(tgaImage.Pixels, tgaImage.Width, tgaImage.Height);
             return (tgaImage.Width, tgaImage.Height, tgaImage.Pixels);
         }
         catch (Exception ex)
@@ -170,7 +160,17 @@ public class TextureService
             using var stream = new MemoryStream(decodableData);
             using var image = Pfimage.FromStream(stream);
 
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"TextureService.LoadDdsTexture: DDS '{ddsResRef}' {(isBiowareDds ? "BioWare" : "standard")} format, " +
+                $"Pfim decoded as {image.Format}, {image.Width}x{image.Height}");
             byte[] pixels = ConvertPfimToRgba(image);
+
+            // BioWare DDS stores DXT color endpoints as BGR 5:6:5, but Pfim
+            // decodes assuming standard RGB 5:6:5, producing swapped R↔B.
+            // Swap channels to correct this (#1867).
+            if (isBiowareDds)
+                SwapRedBlue(pixels);
+
             return (image.Width, image.Height, pixels);
         }
         catch (Exception ex)
@@ -269,10 +269,12 @@ public class TextureService
         switch (image.Format)
         {
             case Pfim.ImageFormat.Rgba32:
+                // Pfim DXT decode outputs RGBA byte order — direct copy
                 Array.Copy(src, output, Math.Min(src.Length, output.Length));
                 break;
 
             case Pfim.ImageFormat.Rgb24:
+                // Pfim outputs RGB byte order — add alpha channel
                 for (int i = 0, j = 0; i < output.Length && j < src.Length - 2; i += 4, j += 3)
                 {
                     output[i] = src[j];
@@ -304,6 +306,141 @@ public class TextureService
         }
 
         return output;
+    }
+
+    /// <summary>
+    /// Load a texture preferring BIF over HAK (Override → BIF, skip HAK).
+    /// For base game creatures, the BIF version is used to avoid CEP texture incompatibilities.
+    /// For CEP-only textures (not in BIF), falls back to full resolution.
+    /// Mirrors the LoadModelPreferBIF pattern in ModelService (#1867).
+    /// </summary>
+    public (int width, int height, byte[] pixels)? LoadTexturePreferBIF(
+        string resRef,
+        PltColorIndices? colorIndices = null)
+    {
+        if (string.IsNullOrEmpty(resRef))
+            return null;
+
+        colorIndices ??= new PltColorIndices();
+        resRef = resRef.ToLowerInvariant();
+
+        // Try BIF first (Override → BIF, skip HAK)
+        var bifResult = LoadTextureFromBase(resRef, colorIndices);
+        if (bifResult.HasValue)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"TextureService.LoadTexturePreferBIF: '{resRef}' from BIF");
+            return bifResult;
+        }
+
+        // Not in BIF — fall back to full resolution (CEP-only texture)
+        var fullResult = LoadTexture(resRef, colorIndices);
+        if (fullResult.HasValue)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"TextureService.LoadTexturePreferBIF: '{resRef}' from HAK (CEP-only)");
+        }
+        return fullResult;
+    }
+
+    /// <summary>
+    /// Load a texture from base game resources only (Override → BIF, skip HAK).
+    /// Tries PLT, TGA, DDS in order using FindBaseResource.
+    /// </summary>
+    private (int width, int height, byte[] pixels)? LoadTextureFromBase(
+        string resRef,
+        PltColorIndices colorIndices)
+    {
+        // Try PLT
+        var pltData = _gameDataService.FindBaseResource(resRef, ResourceTypes.Plt);
+        if (pltData != null && pltData.Length > 0)
+        {
+            try
+            {
+                var pltFile = PltReader.Read(pltData);
+                var palettes = new Dictionary<int, PaletteData>();
+                for (int layerId = 0; layerId <= 9; layerId++)
+                {
+                    var palette = LoadPalette(PltLayers.GetPaletteResRef(layerId));
+                    if (palette != null)
+                        palettes[layerId] = palette;
+                }
+                var layerColors = BuildLayerColors(colorIndices);
+                var pixels = PltReader.Render(pltFile, palettes, layerColors);
+                FlipVertically(pixels, pltFile.Width, pltFile.Height);
+                return (pltFile.Width, pltFile.Height, pixels);
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"TextureService.LoadTextureFromBase: PLT '{resRef}' render failed: {ex.Message}");
+            }
+        }
+
+        // Try TGA
+        var tgaData = _gameDataService.FindBaseResource(resRef, ResourceTypes.Tga);
+        if (tgaData != null && tgaData.Length > 0)
+        {
+            try
+            {
+                var tgaImage = TgaReader.Read(tgaData);
+                FlipVertically(tgaImage.Pixels, tgaImage.Width, tgaImage.Height);
+                return (tgaImage.Width, tgaImage.Height, tgaImage.Pixels);
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"TextureService.LoadTextureFromBase: TGA '{resRef}' decode failed: {ex.Message}");
+            }
+        }
+
+        // Try DDS
+        var ddsData = _gameDataService.FindBaseResource(resRef, ResourceTypes.Dds);
+        if (ddsData != null && ddsData.Length > 0)
+        {
+            bool isBiowareDds = ddsData.Length >= 20 &&
+                !(ddsData[0] == 0x44 && ddsData[1] == 0x44 && ddsData[2] == 0x53 && ddsData[3] == 0x20);
+            byte[]? decodableData = isBiowareDds ? ConvertBiowareDdsToStandard(ddsData) : ddsData;
+            if (decodableData != null)
+            {
+                try
+                {
+                    using var stream = new MemoryStream(decodableData);
+                    using var image = Pfimage.FromStream(stream);
+                    byte[] rgbaPixels = ConvertPfimToRgba(image);
+                    if (isBiowareDds)
+                        SwapRedBlue(rgbaPixels);
+                    return (image.Width, image.Height, rgbaPixels);
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"TextureService.LoadTextureFromBase: DDS '{resRef}' decode failed: {ex.Message}");
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Build layer color mapping from PltColorIndices.
+    /// </summary>
+    private static Dictionary<int, int> BuildLayerColors(PltColorIndices colorIndices)
+    {
+        return new Dictionary<int, int>
+        {
+            [PltLayers.Skin] = colorIndices.Skin,
+            [PltLayers.Hair] = colorIndices.Hair,
+            [PltLayers.Metal1] = colorIndices.Metal1,
+            [PltLayers.Metal2] = colorIndices.Metal2,
+            [PltLayers.Cloth1] = colorIndices.Cloth1,
+            [PltLayers.Cloth2] = colorIndices.Cloth2,
+            [PltLayers.Leather1] = colorIndices.Leather1,
+            [PltLayers.Leather2] = colorIndices.Leather2,
+            [PltLayers.Tattoo1] = colorIndices.Tattoo1,
+            [PltLayers.Tattoo2] = colorIndices.Tattoo2
+        };
     }
 
     /// <summary>
@@ -410,6 +547,40 @@ public class TextureService
     {
         _paletteCache.Clear();
         _renderedTextureCache.Clear();
+    }
+
+    /// <summary>
+    /// Swap red and blue channels in RGBA pixel data in-place.
+    /// BioWare's proprietary DDS format stores DXT color endpoints as BGR 5:6:5,
+    /// but Pfim's DXT decoder assumes standard RGB 5:6:5 ordering.
+    /// This produces R↔B swapped output for BioWare DDS only (#1867).
+    /// </summary>
+    private static void SwapRedBlue(byte[] rgba)
+    {
+        for (int i = 0; i < rgba.Length - 2; i += 4)
+        {
+            (rgba[i], rgba[i + 2]) = (rgba[i + 2], rgba[i]);
+        }
+    }
+
+    /// <summary>
+    /// Flip RGBA pixel data vertically in-place for OpenGL orientation.
+    /// TGA and PLT textures are decoded top-down (row 0 = top), but OpenGL
+    /// expects bottom-up (row 0 = bottom). DDS textures via Pfim are already
+    /// in OpenGL orientation and should NOT be flipped (#1867).
+    /// </summary>
+    private static void FlipVertically(byte[] rgba, int width, int height)
+    {
+        int rowBytes = width * 4;
+        var tempRow = new byte[rowBytes];
+        for (int y = 0; y < height / 2; y++)
+        {
+            int topOffset = y * rowBytes;
+            int bottomOffset = (height - 1 - y) * rowBytes;
+            Array.Copy(rgba, topOffset, tempRow, 0, rowBytes);
+            Array.Copy(rgba, bottomOffset, rgba, topOffset, rowBytes);
+            Array.Copy(tempRow, 0, rgba, bottomOffset, rowBytes);
+        }
     }
 }
 
