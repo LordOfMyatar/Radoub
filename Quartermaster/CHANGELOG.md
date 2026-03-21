@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.67-alpha] - 2026-03-21
-**Branch**: `quartermaster/issue-1819` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1819` | **PR**: #1886
 
 ### Sprint: Misc UI Polish (#1819)
 
