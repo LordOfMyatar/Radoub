@@ -50,7 +50,7 @@ Write-Host "Fetching GitHub data via GraphQL..."
 $query = @'
 {
   repository(owner: "LordOfMyatar", name: "Radoub") {
-    issues(first: 200, states: OPEN, orderBy: {field: UPDATED_AT, direction: DESC}) {
+    issues(first: 100, states: OPEN, orderBy: {field: UPDATED_AT, direction: DESC}) {
       totalCount
       nodes {
         number
@@ -105,9 +105,11 @@ $query = @'
 }
 '@
 
-# Execute GraphQL query
+# Execute GraphQL query via temp file (avoids PowerShell quote-stripping)
+$tempFile = [System.IO.Path]::GetTempFileName()
 try {
-    $response = gh api graphql -f query=$query 2>&1
+    [System.IO.File]::WriteAllText($tempFile, $query, [System.Text.UTF8Encoding]::new($false))
+    $response = gh api graphql -F query="@$tempFile" 2>&1
     if ($LASTEXITCODE -ne 0) {
         Write-Error "GraphQL query failed: $response"
         exit 1
@@ -116,6 +118,9 @@ try {
 catch {
     Write-Error "Failed to execute gh api: $_"
     exit 1
+}
+finally {
+    Remove-Item -Path $tempFile -ErrorAction SilentlyContinue
 }
 
 # Parse response
