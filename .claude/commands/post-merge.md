@@ -128,11 +128,28 @@ grep -r "Page freshness:" d:/LOM/workspace/Radoub.wiki/*.md
 - Update content if stale, update freshness date to today
 
 **User doc pages** (non-developer pages) older than 30 days:
-- Cut a GitHub issue per stale page
-- **Title**: `[Docs] Review stale wiki page: {Page-Name}`
-- **Labels**: `docs` + tool label (e.g., `parley`)
-- **Body**: Page name, current freshness date, days since last update
-- **Dedup**: Check for existing open issue with same title before creating
+
+For **each** stale user doc page, follow this procedure:
+
+1. **Search cache for existing issue** before creating:
+   ```bash
+   powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-CacheData.ps1" -View search -Query "Review stale wiki page: {Page-Name}"
+   ```
+
+2. **If an open issue exists**: Report as already tracked — do NOT create a duplicate
+   ```
+   ⏭️ {Page-Name} (stale {N} days) — already tracked in #{existing-number}
+   ```
+
+3. **If no open issue exists**: Create a new tracking issue
+   - **Title**: `[Docs] Review stale wiki page: {Page-Name}`
+   - **Labels**: `docs` + tool label (e.g., `parley`)
+   - **Body**: Page name, current freshness date, days since last update
+   ```
+   ✅ {Page-Name} (stale {N} days) — NEW issue created: #{new-number}
+   ```
+
+**IMPORTANT**: Always run the sweep. Never skip it because "we already have some freshness tickets." The sweep must check **every** stale page individually — some may be tracked while others are not.
 
 #### 6d: No Push Required
 
