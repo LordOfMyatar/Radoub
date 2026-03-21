@@ -298,7 +298,7 @@ public partial class CharacterPanel : UserControl
         if (_lastNameTextBox != null)
             _lastNameTextBox.Text = creature.LastName?.GetString(0) ?? "";
 
-        // Identity
+        // File and Metadata
         SelectRace(creature.Race);
         if (_subraceTextBox != null)
             _subraceTextBox.Text = creature.Subrace ?? "";
