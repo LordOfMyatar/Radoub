@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Aging Bugs Sweep (#1824)
 
-- [ ] #603 - Fix NPC-to-NPC links visual bug (⚠ icon shifting TreeView content)
+- [x] #603 - Fix NPC-to-NPC links visual bug (⚠ icon moved to end of TreeView line)
 
 ---
 

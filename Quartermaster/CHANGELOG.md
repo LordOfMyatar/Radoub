@@ -17,8 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Aging Bugs Sweep (#1824)
 
-- [ ] #1624 - Fix NCW voice set play button intermittently failing when navigating back
-- [ ] #1683 - Fix server vault checkbox non-functional + add DM vault option in creature browser
+- [x] #1624 - Fix NCW voice set play button reliability (stop residual playback, defensive event cleanup, unique temp files)
+- [x] #1683 - Add DM vault option in creature browser; server vault filter logic verified correct
 
 ---
 
