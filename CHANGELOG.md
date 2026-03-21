@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.93] - 2026-03-21
-**Branch**: `radoub/issue-1828` | **PR**: #TBD
+**Branch**: `radoub/issue-1828` | **PR**: #1888
 
 ### Sprint: Shared Infrastructure (#1828)
 
