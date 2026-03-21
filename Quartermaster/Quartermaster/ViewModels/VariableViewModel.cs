@@ -13,11 +13,32 @@ public class VariableViewModel : BindableBase
     private int _intValue;
     private float _floatValue;
     private string _stringValue = string.Empty;
+    private bool _hasError;
+    private string _errorMessage = string.Empty;
 
     public string Name
     {
         get => _name;
         set => SetProperty(ref _name, value);
+    }
+
+    /// <summary>
+    /// Whether this variable has a validation error (empty name, duplicate name).
+    /// Set by the parent view's validation logic.
+    /// </summary>
+    public bool HasError
+    {
+        get => _hasError;
+        set => SetProperty(ref _hasError, value);
+    }
+
+    /// <summary>
+    /// Description of the validation error.
+    /// </summary>
+    public string ErrorMessage
+    {
+        get => _errorMessage;
+        set => SetProperty(ref _errorMessage, value);
     }
 
     public VariableType Type
