@@ -8,10 +8,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-### Added
-- Edit in ItemEditor context menu for store inventory items (#1730)
-- Refresh Item Palette menu item in View menu (#1730)
-
 ---
 
 ## [0.1.21-alpha] - 2026-03-19
@@ -29,6 +25,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Sprint: Cross-Tool & Trebuchet Bug Sweep (#1767)
 
 - [x] #1743 - Loading UTM sets dirty flag without changes — deferred IsLoading=false until async inventory load completes, added IsLoading guards to event handlers
+- Edit in ItemEditor context menu for store inventory items (#1730)
+- Refresh Item Palette menu item in View menu (#1730)
 
 ---
 
