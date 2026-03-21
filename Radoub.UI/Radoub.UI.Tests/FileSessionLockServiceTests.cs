@@ -110,4 +110,27 @@ public class FileSessionLockServiceTests : IDisposable
         var result2 = FileSessionLockService.AcquireLock(null!, "Fence");
         Assert.Equal(LockResult.Acquired, result2);
     }
+
+    [Fact]
+    public void AcquireLock_WritesProcessName()
+    {
+        FileSessionLockService.AcquireLock(_testFile, "Fence");
+        var info = FileSessionLockService.CheckLock(_testFile);
+        Assert.NotNull(info);
+        Assert.False(string.IsNullOrEmpty(info!.ProcessName));
+    }
+
+    [Fact]
+    public void AcquireLock_StaleLock_WrongProcessName_CleanedUp()
+    {
+        // Write a lock with the current PID but a fake process name.
+        // The PID is alive (it's us!) but the process name won't match,
+        // so the lock should be treated as stale (PID reuse scenario).
+        var lockPath = FileSessionLockService.GetLockFilePath(Path.GetFullPath(_testFile));
+        var fakeLock = $"{{\"pid\":{System.Environment.ProcessId},\"tool\":\"OtherTool\",\"processName\":\"definitely_not_a_real_process_xyzzy\",\"timestamp\":\"2026-01-01T00:00:00Z\",\"machine\":\"TEST\"}}";
+        File.WriteAllText(lockPath, fakeLock);
+
+        var result = FileSessionLockService.AcquireLock(_testFile, "Fence");
+        Assert.Equal(LockResult.Acquired, result);
+    }
 }

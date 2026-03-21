@@ -18,6 +18,7 @@ public class LockInfo
 {
     public int Pid { get; set; }
     public string ToolName { get; set; } = string.Empty;
+    public string ProcessName { get; set; } = string.Empty;
     public string Timestamp { get; set; } = string.Empty;
     public string Machine { get; set; } = string.Empty;
 }
@@ -61,7 +62,7 @@ public static class FileSessionLockService
         var existing = ReadLockFile(lockPath);
         if (existing != null)
         {
-            if (IsProcessRunning(existing.Pid))
+            if (IsLockHolderRunning(existing.Pid, existing.ProcessName))
                 return LockResult.LockedByOther;
 
             // Stale lock — clean it up
@@ -75,6 +76,7 @@ public static class FileSessionLockService
         {
             Pid = Environment.ProcessId,
             ToolName = toolName,
+            ProcessName = GetCurrentProcessName(),
             Timestamp = DateTime.UtcNow.ToString("O"),
             Machine = Environment.MachineName
         };
@@ -155,7 +157,7 @@ public static class FileSessionLockService
         var info = ReadLockFile(lockPath);
         if (info == null) return null;
 
-        if (!IsProcessRunning(info.Pid))
+        if (!IsLockHolderRunning(info.Pid, info.ProcessName))
         {
             TryDeleteLockFile(lockPath);
             return null;
@@ -182,12 +184,43 @@ public static class FileSessionLockService
         }
     }
 
-    private static bool IsProcessRunning(int pid)
+    /// <summary>
+    /// Check if the process that created the lock is still running.
+    /// Uses both PID and process name to guard against PID reuse
+    /// (especially on Linux where PIDs are recycled aggressively).
+    /// </summary>
+    private static bool IsLockHolderRunning(int pid, string? expectedProcessName)
     {
         try
         {
             var process = Process.GetProcessById(pid);
-            return !process.HasExited;
+            if (process.HasExited)
+                return false;
+
+            // If we have an expected process name, verify it matches.
+            // This guards against PID reuse: if the PID now belongs to
+            // a different process (e.g., "firefox" instead of "Parley"),
+            // the lock is stale.
+            if (!string.IsNullOrEmpty(expectedProcessName))
+            {
+                try
+                {
+                    var actualName = process.ProcessName;
+                    if (!string.Equals(actualName, expectedProcessName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.INFO,
+                            $"PID {pid} is running but process name mismatch: expected '{expectedProcessName}', got '{actualName}' — treating as stale lock");
+                        return false;
+                    }
+                }
+                catch (InvalidOperationException)
+                {
+                    // Process exited between checks
+                    return false;
+                }
+            }
+
+            return true;
         }
         catch (ArgumentException)
         {
@@ -196,6 +229,18 @@ public static class FileSessionLockService
         catch (InvalidOperationException)
         {
             return false; // Process has exited
+        }
+    }
+
+    private static string GetCurrentProcessName()
+    {
+        try
+        {
+            return Process.GetCurrentProcess().ProcessName;
+        }
+        catch
+        {
+            return string.Empty;
         }
     }
 
