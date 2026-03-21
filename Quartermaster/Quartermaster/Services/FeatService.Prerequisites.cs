@@ -172,12 +172,14 @@ public partial class FeatService
     /// <param name="creatureFeats">The creature's current feats</param>
     /// <param name="calculateBab">Function to calculate BAB (injected to avoid circular dependency)</param>
     /// <param name="getClassName">Function to get class name (injected to avoid circular dependency)</param>
+    /// <param name="overrides">Optional projected state overrides for wizard prereq checks (#1744)</param>
     public FeatPrereqResult CheckFeatPrerequisites(
         UtcFile creature,
         int featId,
         HashSet<ushort> creatureFeats,
         System.Func<UtcFile, int> calculateBab,
-        System.Func<int, string> getClassName)
+        System.Func<int, string> getClassName,
+        FeatPrereqOverrides? overrides = null)
     {
         var prereqs = GetFeatPrerequisites(featId);
         var result = new FeatPrereqResult { FeatId = featId };
@@ -203,40 +205,48 @@ public partial class FeatService
             if (!anyMet) result.AllMet = false;
         }
 
+        // Resolve ability scores — use overrides if provided (#1744, #1800)
+        int str = overrides?.StrOverride ?? creature.Str;
+        int dex = overrides?.DexOverride ?? creature.Dex;
+        int con = overrides?.ConOverride ?? creature.Con;
+        int intel = overrides?.IntOverride ?? creature.Int;
+        int wis = overrides?.WisOverride ?? creature.Wis;
+        int cha = overrides?.ChaOverride ?? creature.Cha;
+
         // Check ability scores
         if (prereqs.MinStr > 0)
         {
-            var met = creature.Str >= prereqs.MinStr;
+            var met = str >= prereqs.MinStr;
             result.AbilityRequirements.Add(($"STR {prereqs.MinStr}+", met));
             if (!met) result.AllMet = false;
         }
         if (prereqs.MinDex > 0)
         {
-            var met = creature.Dex >= prereqs.MinDex;
+            var met = dex >= prereqs.MinDex;
             result.AbilityRequirements.Add(($"DEX {prereqs.MinDex}+", met));
             if (!met) result.AllMet = false;
         }
         if (prereqs.MinInt > 0)
         {
-            var met = creature.Int >= prereqs.MinInt;
+            var met = intel >= prereqs.MinInt;
             result.AbilityRequirements.Add(($"INT {prereqs.MinInt}+", met));
             if (!met) result.AllMet = false;
         }
         if (prereqs.MinWis > 0)
         {
-            var met = creature.Wis >= prereqs.MinWis;
+            var met = wis >= prereqs.MinWis;
             result.AbilityRequirements.Add(($"WIS {prereqs.MinWis}+", met));
             if (!met) result.AllMet = false;
         }
         if (prereqs.MinCon > 0)
         {
-            var met = creature.Con >= prereqs.MinCon;
+            var met = con >= prereqs.MinCon;
             result.AbilityRequirements.Add(($"CON {prereqs.MinCon}+", met));
             if (!met) result.AllMet = false;
         }
         if (prereqs.MinCha > 0)
         {
-            var met = creature.Cha >= prereqs.MinCha;
+            var met = cha >= prereqs.MinCha;
             result.AbilityRequirements.Add(($"CHA {prereqs.MinCha}+", met));
             if (!met) result.AllMet = false;
         }
@@ -251,6 +261,7 @@ public partial class FeatService
         }
 
         // Check spell level - validate against creature's caster classes
+        // Use class level overrides for projected state (#1744)
         if (prereqs.MinSpellLevel > 0)
         {
             bool canCast = false;
@@ -259,8 +270,14 @@ public partial class FeatService
                 var spellGainTable = _gameDataService.Get2DAValue("classes", cc.Class, "SpellGainTable");
                 if (!string.IsNullOrEmpty(spellGainTable) && spellGainTable != "****")
                 {
-                    // Check if this class grants spells of the required level at current level
-                    int rowIndex = cc.ClassLevel - 1;
+                    int classLevel = cc.ClassLevel;
+                    if (overrides?.ClassLevelOverrides != null &&
+                        overrides.ClassLevelOverrides.TryGetValue(cc.Class, out int projectedLevel))
+                    {
+                        classLevel = projectedLevel;
+                    }
+
+                    int rowIndex = classLevel - 1;
                     if (rowIndex >= 0)
                     {
                         var col = $"SpellLevel{prereqs.MinSpellLevel}";
@@ -278,15 +295,27 @@ public partial class FeatService
             if (!canCast) result.AllMet = false;
         }
 
-        // Check skills
+        // Check skills — use overrides if provided (#1744)
         foreach (var (skillId, minRanks) in prereqs.RequiredSkills)
         {
             var skillName = _skillService.GetSkillName(skillId);
-            var ranks = skillId < creature.SkillList.Count ? creature.SkillList[skillId] : 0;
+            int ranks;
+            if (overrides?.SkillRankOverrides != null &&
+                overrides.SkillRankOverrides.TryGetValue(skillId, out int projectedRanks))
+            {
+                ranks = projectedRanks;
+            }
+            else
+            {
+                ranks = skillId < creature.SkillList.Count ? creature.SkillList[skillId] : 0;
+            }
             var met = ranks >= minRanks;
             result.SkillRequirements.Add(($"{skillName} {minRanks}+", met));
             if (!met) result.AllMet = false;
         }
+
+        // Resolve total level — use override if provided (#1744)
+        int totalLevel = overrides?.TotalLevelOverride ?? creature.ClassList.Sum(c => c.ClassLevel);
 
         // Check level
         if (prereqs.MinLevel > 0)
@@ -294,17 +323,25 @@ public partial class FeatService
             if (prereqs.MinLevelClass.HasValue)
             {
                 var className = getClassName(prereqs.MinLevelClass.Value);
-                var classLevel = creature.ClassList
-                    .Where(c => c.Class == prereqs.MinLevelClass.Value)
-                    .Select(c => (int)c.ClassLevel)
-                    .FirstOrDefault();
+                int classLevel;
+                if (overrides?.ClassLevelOverrides != null &&
+                    overrides.ClassLevelOverrides.TryGetValue(prereqs.MinLevelClass.Value, out int projectedClassLevel))
+                {
+                    classLevel = projectedClassLevel;
+                }
+                else
+                {
+                    classLevel = creature.ClassList
+                        .Where(c => c.Class == prereqs.MinLevelClass.Value)
+                        .Select(c => (int)c.ClassLevel)
+                        .FirstOrDefault();
+                }
                 var met = classLevel >= prereqs.MinLevel;
                 result.OtherRequirements.Add(($"{className} level {prereqs.MinLevel}+", met));
                 if (!met) result.AllMet = false;
             }
             else
             {
-                var totalLevel = creature.ClassList.Sum(c => c.ClassLevel);
                 var met = totalLevel >= prereqs.MinLevel;
                 result.OtherRequirements.Add(($"Character level {prereqs.MinLevel}+", met));
                 if (!met) result.AllMet = false;
@@ -313,7 +350,6 @@ public partial class FeatService
 
         if (prereqs.MaxLevel > 0)
         {
-            var totalLevel = creature.ClassList.Sum(c => c.ClassLevel);
             var met = totalLevel <= prereqs.MaxLevel;
             result.OtherRequirements.Add(($"Max level {prereqs.MaxLevel}", met));
             if (!met) result.AllMet = false;
@@ -322,7 +358,6 @@ public partial class FeatService
         // Epic requirement
         if (prereqs.RequiresEpic)
         {
-            var totalLevel = creature.ClassList.Sum(c => c.ClassLevel);
             var met = totalLevel >= 21;
             result.OtherRequirements.Add(("Epic (level 21+)", met));
             if (!met) result.AllMet = false;
