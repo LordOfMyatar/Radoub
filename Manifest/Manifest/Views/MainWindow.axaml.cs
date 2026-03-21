@@ -122,6 +122,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (shouldClose)
         {
             _documentState.ClearDirty();
+            Radoub.UI.Services.FileSessionLockService.ReleaseAllLocks();
             SaveWindowPosition();
             if (e.Cancel)
             {

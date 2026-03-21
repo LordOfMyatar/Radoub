@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Avalonia.Controls;
@@ -50,6 +51,7 @@ public partial class AdvancedPanel : BasePanelControl
     private DataGrid? _variablesGrid;
     private Button? _addVariableButton;
     private Button? _removeVariableButton;
+    private TextBlock? _variableValidationText;
 
     private CreatureDisplayService? _displayService;
     private string? _currentModuleDirectory;
@@ -111,6 +113,7 @@ public partial class AdvancedPanel : BasePanelControl
         _variablesGrid = this.FindControl<DataGrid>("VariablesGrid");
         _addVariableButton = this.FindControl<Button>("AddVariableButton");
         _removeVariableButton = this.FindControl<Button>("RemoveVariableButton");
+        _variableValidationText = this.FindControl<TextBlock>("VariableValidationText");
 
         // Wire up events
         if (_copyResRefButton != null)
@@ -560,6 +563,8 @@ public partial class AdvancedPanel : BasePanelControl
             Variables.Add(vm);
         }
 
+        ValidateVariablesRealTime();
+
         // Rebind grid after population complete
         if (_variablesGrid != null)
             _variablesGrid.ItemsSource = Variables;
@@ -571,11 +576,18 @@ public partial class AdvancedPanel : BasePanelControl
     {
         if (IsLoading) return;
         VariablesChanged?.Invoke(this, EventArgs.Empty);
+
+        if (e.PropertyName == nameof(VariableViewModel.Name))
+            ValidateVariablesRealTime();
     }
 
     /// <summary>
     /// Update the current creature's VarTable from the Variables collection.
     /// Call this before saving.
+    /// </summary>
+    /// <summary>
+    /// Update the current creature's VarTable from the Variables collection.
+    /// Empty-name variables are stripped on save.
     /// </summary>
     public void UpdateVarTable()
     {
@@ -584,7 +596,8 @@ public partial class AdvancedPanel : BasePanelControl
         CurrentCreature.VarTable.Clear();
         foreach (var vm in Variables)
         {
-            CurrentCreature.VarTable.Add(vm.ToVariable());
+            if (!string.IsNullOrWhiteSpace(vm.Name))
+                CurrentCreature.VarTable.Add(vm.ToVariable());
         }
     }
 
@@ -617,6 +630,7 @@ public partial class AdvancedPanel : BasePanelControl
             _variablesGrid.SelectedItem = newVar;
 
         VariablesChanged?.Invoke(this, EventArgs.Empty);
+        ValidateVariablesRealTime();
         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added new variable: {name}");
     }
 
@@ -635,7 +649,75 @@ public partial class AdvancedPanel : BasePanelControl
         }
 
         VariablesChanged?.Invoke(this, EventArgs.Empty);
+        ValidateVariablesRealTime();
         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed {selectedItems.Count} variable(s)");
+    }
+
+    /// <summary>
+    /// Returns true if any variable has a duplicate name error.
+    /// Empty-name variables are stripped on save and don't block.
+    /// </summary>
+    public bool HasDuplicateVariableErrors()
+    {
+        return Variables.Any(v => v.HasError && !string.IsNullOrWhiteSpace(v.Name));
+    }
+
+    /// <summary>
+    /// Real-time validation: mark variables with errors for visual feedback.
+    /// </summary>
+    private void ValidateVariablesRealTime()
+    {
+        var nameCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var vm in Variables)
+        {
+            if (string.IsNullOrWhiteSpace(vm.Name)) continue;
+            nameCounts.TryGetValue(vm.Name, out var count);
+            nameCounts[vm.Name] = count + 1;
+        }
+
+        foreach (var vm in Variables)
+        {
+            if (string.IsNullOrWhiteSpace(vm.Name))
+            {
+                vm.HasError = true;
+                vm.ErrorMessage = "Variable name is required";
+            }
+            else if (nameCounts.TryGetValue(vm.Name, out var count) && count > 1)
+            {
+                vm.HasError = true;
+                vm.ErrorMessage = $"Duplicate name: \"{vm.Name}\"";
+            }
+            else
+            {
+                vm.HasError = false;
+                vm.ErrorMessage = string.Empty;
+            }
+        }
+
+        // Update validation summary
+        if (_variableValidationText == null) return;
+
+        var errors = new List<string>();
+        var emptyCount = Variables.Count(v => string.IsNullOrWhiteSpace(v.Name));
+        if (emptyCount > 0)
+            errors.Add($"{emptyCount} variable(s) missing name");
+
+        var dupNames = Variables
+            .Where(v => v.HasError && !string.IsNullOrWhiteSpace(v.Name))
+            .Select(v => v.Name)
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+        foreach (var dup in dupNames)
+            errors.Add($"Duplicate: \"{dup}\"");
+
+        if (errors.Count > 0)
+        {
+            _variableValidationText.Text = string.Join(" | ", errors);
+            _variableValidationText.IsVisible = true;
+        }
+        else
+        {
+            _variableValidationText.IsVisible = false;
+        }
     }
 
     private void ClearVariables()

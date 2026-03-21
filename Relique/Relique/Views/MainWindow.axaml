@@ -3,7 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="using:Radoub.UI.Controls"
-        xmlns:vm="using:ItemEditor.ViewModels"
+        xmlns:converters="using:Radoub.UI.Converters"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
         x:Class="ItemEditor.Views.MainWindow"
         x:Name="MainWindowInstance"
@@ -595,7 +595,7 @@
                                                   GridLinesVisibility="Horizontal"
                                                   MaxHeight="180">
                                             <DataGrid.Resources>
-                                                <vm:BoolToErrorBrushConverter x:Key="BoolToErrorBrushConverter"/>
+                                                <converters:BoolToErrorBrushConverter x:Key="BoolToErrorBrushConverter"/>
                                             </DataGrid.Resources>
                                             <DataGrid.Columns>
                                                 <DataGridTemplateColumn Header="Name" Width="120">

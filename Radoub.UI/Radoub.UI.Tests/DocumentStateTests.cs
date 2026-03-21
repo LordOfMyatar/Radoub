@@ -137,4 +137,31 @@ public class DocumentStateTests
         var state = new DocumentState("Fence", " - Merchant Editor");
         Assert.Equal("Fence - Merchant Editor", state.GetTitle());
     }
+
+    [Fact]
+    public void MarkDirty_WhenReadOnly_DoesNotSetDirty()
+    {
+        var state = new DocumentState("TestTool");
+        state.CurrentFilePath = "/test/file.dlg";
+        state.IsReadOnly = true;
+        state.MarkDirty();
+        Assert.False(state.IsDirty);
+    }
+
+    [Fact]
+    public void GetTitle_WhenReadOnly_ShowsIndicator()
+    {
+        var state = new DocumentState("TestTool");
+        state.CurrentFilePath = "/test/file.dlg";
+        state.IsReadOnly = true;
+        var title = state.GetTitle();
+        Assert.Contains("[Read-Only]", title);
+    }
+
+    [Fact]
+    public void IsReadOnly_DefaultsFalse()
+    {
+        var state = new DocumentState("TestTool");
+        Assert.False(state.IsReadOnly);
+    }
 }

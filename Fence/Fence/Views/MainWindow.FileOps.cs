@@ -25,6 +25,11 @@ public partial class MainWindow
 
     private void OnNewClick(object? sender, RoutedEventArgs e)
     {
+        // Release lock on previous file
+        if (!string.IsNullOrEmpty(_currentFilePath))
+            FileSessionLockService.ReleaseLock(_currentFilePath);
+        _documentState.IsReadOnly = false;
+
         // Create a new empty store
         _currentStore = new UtmFile
         {
@@ -89,6 +94,24 @@ public partial class MainWindow
     {
         try
         {
+            // Release lock on previous file if any
+            if (!string.IsNullOrEmpty(_currentFilePath))
+            {
+                FileSessionLockService.ReleaseLock(_currentFilePath);
+                _documentState.IsReadOnly = false;
+            }
+
+            // Check for file lock from another tool instance
+            var lockResult = FileSessionLockService.AcquireLock(filePath, "Fence");
+            if (lockResult == LockResult.LockedByOther)
+            {
+                var lockInfo = FileSessionLockService.CheckLock(filePath);
+                var toolName = lockInfo?.ToolName ?? "another tool";
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"File locked by {toolName} — opening read-only: {UnifiedLogger.SanitizePath(filePath)}");
+                UpdateStatusBar($"File is open in {toolName} — opening read-only");
+                _documentState.IsReadOnly = true;
+            }
+
             _currentStore = UtmReader.Read(filePath);
             _currentFilePath = filePath;
             _documentState.IsLoading = true;
@@ -252,6 +275,21 @@ public partial class MainWindow
     {
         if (_currentStore == null)
             return;
+
+        if (_documentState.IsReadOnly)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Save blocked: file is read-only (locked by another tool): {UnifiedLogger.SanitizePath(filePath)}");
+            UpdateStatusBar("Cannot save: file is open read-only (locked by another tool).");
+            return;
+        }
+
+        // Block save if duplicate variable names exist
+        var varError = ValidateVariablesForSave();
+        if (varError != null)
+        {
+            UpdateStatusBar(varError);
+            return;
+        }
 
         try
         {

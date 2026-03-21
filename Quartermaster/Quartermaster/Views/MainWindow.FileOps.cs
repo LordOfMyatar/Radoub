@@ -11,6 +11,7 @@ using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
 using Radoub.Formats.Utc;
 using Radoub.UI.Controls;
+using Radoub.UI.Services;
 using Radoub.UI.Views;
 using System;
 using System.Collections.Generic;
@@ -388,6 +389,24 @@ public partial class MainWindow
     {
         try
         {
+            // Release lock on previous file if any
+            if (!string.IsNullOrEmpty(_currentFilePath))
+            {
+                FileSessionLockService.ReleaseLock(_currentFilePath);
+                _documentState.IsReadOnly = false;
+            }
+
+            // Check for file lock from another tool instance
+            var lockResult = FileSessionLockService.AcquireLock(filePath, "Quartermaster");
+            if (lockResult == LockResult.LockedByOther)
+            {
+                var lockInfo = FileSessionLockService.CheckLock(filePath);
+                var toolName = lockInfo?.ToolName ?? "another tool";
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"File locked by {toolName} — opening read-only: {UnifiedLogger.SanitizePath(filePath)}");
+                UpdateStatus($"File is open in {toolName} — opening read-only");
+                _documentState.IsReadOnly = true;
+            }
+
             // Set loading flag to prevent MarkDirty() from firing during panel population
             _isLoading = true;
             ShowProgress(true);
@@ -476,6 +495,20 @@ public partial class MainWindow
         if (string.IsNullOrEmpty(_currentFilePath))
         {
             await SaveFileAs();
+            return;
+        }
+
+        if (_documentState.IsReadOnly)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Save blocked: file is read-only (locked by another tool): {UnifiedLogger.SanitizePath(_currentFilePath)}");
+            UpdateStatus("Cannot save: file is open read-only (locked by another tool).");
+            return;
+        }
+
+        // Block save if duplicate variable names exist
+        if (AdvancedPanelContent.HasDuplicateVariableErrors())
+        {
+            UpdateStatus("Cannot save: duplicate variable names. Fix variable names before saving.");
             return;
         }
 

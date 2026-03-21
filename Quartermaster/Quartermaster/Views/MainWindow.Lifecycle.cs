@@ -183,6 +183,7 @@ public partial class MainWindow
         if (shouldClose)
         {
             _documentState.ClearDirty();
+            Radoub.UI.Services.FileSessionLockService.ReleaseAllLocks();
 
             // Cancel all async operations
             _windowCts?.Cancel();

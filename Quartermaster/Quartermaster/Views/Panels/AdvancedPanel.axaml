@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:converters="using:Radoub.UI.Converters"
              mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="900"
              x:Class="Quartermaster.Views.Panels.AdvancedPanel">
 
@@ -178,6 +179,15 @@
                                         AutomationProperties.AutomationId="RemoveVariableButton"/>
                             </StackPanel>
 
+                            <!-- Validation Summary -->
+                            <TextBlock x:Name="VariableValidationText"
+                                       DockPanel.Dock="Bottom"
+                                       Foreground="{DynamicResource ThemeError}"
+                                       FontSize="11"
+                                       TextWrapping="Wrap"
+                                       IsVisible="False"
+                                       Margin="0,4,0,0"/>
+
                             <!-- Variables DataGrid -->
                             <DataGrid x:Name="VariablesGrid"
                                       AutoGenerateColumns="False"
@@ -189,8 +199,27 @@
                                       GridLinesVisibility="Horizontal"
                                       MaxHeight="200"
                                       AutomationProperties.AutomationId="VariablesGrid">
+                                <DataGrid.Resources>
+                                    <converters:BoolToErrorBrushConverter x:Key="BoolToErrorBrushConverter"/>
+                                </DataGrid.Resources>
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Name" Width="140" Binding="{Binding Name}"/>
+                                    <DataGridTemplateColumn Header="Name" Width="140">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                    <TextBox Text="{Binding Name}"
+                                                             HorizontalAlignment="Stretch"
+                                                             MinWidth="80"
+                                                             BorderBrush="{Binding HasError, Converter={StaticResource BoolToErrorBrushConverter}}"/>
+                                                    <TextBlock Text="{Binding ErrorMessage}"
+                                                               Foreground="{DynamicResource ThemeError}"
+                                                               FontSize="11"
+                                                               VerticalAlignment="Center"
+                                                               IsVisible="{Binding HasError}"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
                                     <DataGridTemplateColumn Header="Type" Width="80">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>

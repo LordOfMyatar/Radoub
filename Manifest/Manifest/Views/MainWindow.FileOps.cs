@@ -7,6 +7,8 @@ using Radoub.Formats.Logging;
 using Radoub.UI.Views;
 using DirtyCheckResult = Radoub.UI.Services.DirtyCheckResult;
 using FileOperationsHelper = Radoub.UI.Services.FileOperationsHelper;
+using FileSessionLockService = Radoub.UI.Services.FileSessionLockService;
+using LockResult = Radoub.UI.Services.LockResult;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -117,6 +119,24 @@ public partial class MainWindow
         await Task.CompletedTask; // Async signature preserved for future async I/O
         try
         {
+            // Release lock on previous file if any
+            if (!string.IsNullOrEmpty(_documentState.CurrentFilePath))
+            {
+                FileSessionLockService.ReleaseLock(_documentState.CurrentFilePath);
+                _documentState.IsReadOnly = false;
+            }
+
+            // Check for file lock from another tool instance
+            var lockResult = FileSessionLockService.AcquireLock(filePath, "Manifest");
+            if (lockResult == LockResult.LockedByOther)
+            {
+                var lockInfo = FileSessionLockService.CheckLock(filePath);
+                var toolName = lockInfo?.ToolName ?? "another tool";
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"File locked by {toolName} — opening read-only: {UnifiedLogger.SanitizePath(filePath)}");
+                UpdateStatus($"File is open in {toolName} — opening read-only");
+                _documentState.IsReadOnly = true;
+            }
+
             _currentJrl = JrlReader.Read(filePath);
             _documentState.CurrentFilePath = filePath;
             _documentState.ClearDirty();
@@ -172,6 +192,13 @@ public partial class MainWindow
         await Task.CompletedTask; // Async signature preserved for future async I/O
         if (_currentJrl == null || string.IsNullOrEmpty(_currentFilePath)) return;
 
+        if (_documentState.IsReadOnly)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Save blocked: file is read-only (locked by another tool): {UnifiedLogger.SanitizePath(_currentFilePath)}");
+            UpdateStatus("Cannot save: file is open read-only (locked by another tool).");
+            return;
+        }
+
         try
         {
             JrlWriter.Write(_currentJrl, _currentFilePath);
@@ -195,6 +222,11 @@ public partial class MainWindow
         var dirtyResult = await FileOperationsHelper.CheckDirtyAsync(this, _documentState);
         if (dirtyResult == DirtyCheckResult.Cancel) return;
         if (dirtyResult == DirtyCheckResult.Save) await SaveFile();
+
+        // Release lock on previous file
+        if (!string.IsNullOrEmpty(_currentFilePath))
+            FileSessionLockService.ReleaseLock(_currentFilePath);
+        _documentState.IsReadOnly = false;
 
         // Prompt for save location with default filename
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions

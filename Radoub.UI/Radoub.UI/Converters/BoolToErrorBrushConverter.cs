@@ -4,11 +4,12 @@ using Avalonia.Data.Converters;
 using Avalonia.Media;
 using Radoub.UI.Services;
 
-namespace ItemEditor.ViewModels;
+namespace Radoub.UI.Converters;
 
 /// <summary>
-/// Converts HasError bool to border brush for validation feedback.
-/// True = Error brush, False = Transparent.
+/// Converts HasErrors/HasError bool to border brush for validation feedback.
+/// True (has errors) = Error brush, False = Transparent (default border).
+/// Uses theme resources via BrushManager for colorblind accessibility.
 /// </summary>
 public class BoolToErrorBrushConverter : IValueConverter
 {
@@ -16,9 +17,9 @@ public class BoolToErrorBrushConverter : IValueConverter
 
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is bool hasError)
+        if (value is bool hasErrors)
         {
-            return hasError ? BrushManager.GetErrorBrush() : Brushes.Transparent;
+            return hasErrors ? BrushManager.GetErrorBrush() : Brushes.Transparent;
         }
         return Brushes.Transparent;
     }
