@@ -15,12 +15,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-- `/backlog` skill: Anti-overlap rule (issues appear in at most one sprint), mandatory 3-category sprint options (Feature/Bug/Health), languishing issues report (30+/60+ days), anti-recency bias (oldest-first selection), recent sprint history awareness
-- `/pre-merge`: Targeted FlaUI test filtering with `-UIFilter` parameter, file-to-test mapping for auto-detected UI changes
-- `/post-merge`: Default cleanup=yes, release=no; added `--noclean` and `--release` flags
-- `/init-item`: TDD enforcement in sprint Next Steps output
-- `CLAUDE.md`: Strengthened TDD policy with MANDATORY language, agent skills "should" → "must"
-- `run-tests.ps1`: Added `-UIFilter` parameter for targeted FlaUI test execution
+---
+
+## [0.9.91] - 2026-03-21
+**Branch**: `radoub/issue-1876-1884` | **PR**: #1885
+
+### Sprint: Post-Merge Dedup Fix & Create-Issue Command (#1876, #1884)
+
+- Fix: Post-merge freshness sweep checks for existing issues before cutting new ones (#1876)
+- Enhancement: Add `/create-issue` slash command for structured GitHub issue creation (#1884)
+- `/pre-merge`: Added stale `[Unreleased]` items check — flags items that belong in versioned sections
 
 ---
 
@@ -40,7 +44,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - [x] `/init-item`: drop `gh issue view`, use cache, fix `pwsh` → `powershell.exe`
 - [x] `/pre-merge`: drop `gh pr view`, use cache for PR info, post-mutation refresh
 - [x] `/post-merge`: add post-mutation cache refresh after all mutations
-- [x] `/backlog`: fix `pwsh` → `powershell.exe`, remove stale `/grooming` refs
+- [x] `/backlog`: fix `pwsh` → `powershell.exe`, remove stale `/grooming` refs; anti-overlap rule, mandatory 3-category sprint options (Feature/Bug/Health), languishing issues report (30+/60+ days), anti-recency bias, recent sprint history awareness
+- [x] `/init-item`: TDD enforcement in sprint Next Steps output
 - [x] `/research`: drop API fallback, fix output paths, absorb `/spike` as `--spike` flag
 - [x] `/spike`: deleted — merged into `/research --spike`
 - [x] `/cache`: deleted — redundant with auto-refresh
@@ -94,6 +99,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - CreatureBrowserPanel: `[TIMING]` log markers for HAK and BIF scan performance (#1582)
 - HakPaletteScannerService: `[TIMING]` log markers for per-HAK and aggregate scan timing (#1582)
 - Performance profile document: metadata-only vs full-read scanning comparison (#1582)
+
+### Also shipped: Radoub tooling updates (via Trebuchet Sprint PR #1679)
+
+- `/pre-merge`: Targeted FlaUI test filtering with `-UIFilter` parameter, file-to-test mapping for auto-detected UI changes
+- `/post-merge`: Default cleanup=yes, release=no; added `--noclean` and `--release` flags
+- `CLAUDE.md`: Strengthened TDD policy with MANDATORY language, agent skills "should" → "must"
+- `run-tests.ps1`: Added `-UIFilter` parameter for targeted FlaUI test execution
 
 ---
 
