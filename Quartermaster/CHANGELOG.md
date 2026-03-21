@@ -12,6 +12,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.66-alpha] - 2026-03-21
+**Branch**: `quartermaster/issue-1823` | **PR**: #TBD
+
+### Sprint: LUW Feat Prerequisite Fixes (#1823)
+
+- [ ] #1744 - LUW consolidated mode feat prereqs use pre-level-up creature state
+- [ ] #1738 - Calculate projected BAB earlier in LUW for feat prereqs
+- [ ] #1800 - NCW delegate feat prereq checking to FeatService
+
+---
+
 ## [0.2.65-alpha] - 2026-03-20
 **Branch**: `radoub/issue-1824` | **PR**: #1879
 
