@@ -27,12 +27,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.9.90] - 2026-03-20
 **Branch**: `radoub/issue-1822` | **PR**: #1875
 
-### Sprint: Multi-Tool CLAUDE.md & Dependency Cleanup (#1822)
+### Sprint: Multi-Tool CLAUDE.md, Dependency & Command Cleanup (#1822)
 
-- [ ] #1797 - QM: Update CLAUDE.md — services, tests, and project structure are stale
-- [ ] #1794 - Fence: Update CLAUDE.md project structure listing
-- [ ] #1792 - Manifest: Fix stale log path in CLAUDE.md
-- [ ] #1793 - Manifest: Remove unused CommunityToolkit.Mvvm dependency
+#### CLAUDE.md & Dependencies
+- [x] #1797 - QM: Update CLAUDE.md — services 18→26, tests 21→35+, project structure
+- [x] #1794 - Fence: Update CLAUDE.md — full project structure with partials, converters, tests
+- [x] #1792 - Manifest: Fix stale log path `~/Manifest` → `~/Radoub/Manifest`
+- [x] #1793 - Manifest: Remove unused CommunityToolkit.Mvvm dependency
+
+#### Command & Cache Review
+- [x] Cache-first strategy: all commands read from cache, post-mutation refresh
+- [x] `/init-item`: drop `gh issue view`, use cache, fix `pwsh` → `powershell.exe`
+- [x] `/pre-merge`: drop `gh pr view`, use cache for PR info, post-mutation refresh
+- [x] `/post-merge`: add post-mutation cache refresh after all mutations
+- [x] `/backlog`: fix `pwsh` → `powershell.exe`, remove stale `/grooming` refs
+- [x] `/research`: drop API fallback, fix output paths, absorb `/spike` as `--spike` flag
+- [x] `/spike`: deleted — merged into `/research --spike`
+- [x] `/cache`: deleted — redundant with auto-refresh
+- [x] Delete dead scripts (`Get-BacklogAnalysis.ps1`, `Analyze-Labels.ps1`)
+- [x] Bump cache issue limit 100 → 200, fix stale synopsis in refresh script
+- [x] Update CLAUDE.md cache documentation, shell usage, spike refs
 
 ---
 
