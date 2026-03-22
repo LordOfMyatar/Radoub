@@ -907,18 +907,33 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             };
 
             // Add subtypes as children if this property has them
+            var hasMatchingSubtype = false;
             if (type.HasSubtypes)
             {
                 var subtypes = _itemPropertyService.GetSubtypes(type.PropertyIndex);
                 foreach (var subtype in subtypes)
                 {
-                    node.Items.Add(new TreeViewItem
+                    var subtypeNode = new TreeViewItem
                     {
                         Header = subtype.DisplayName,
                         Tag = subtype
-                    });
+                    };
+
+                    // Bold matching subtypes when search is active
+                    if (!string.IsNullOrWhiteSpace(searchFilter) &&
+                        subtype.DisplayName.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasMatchingSubtype = true;
+                        subtypeNode.FontWeight = Avalonia.Media.FontWeight.Bold;
+                    }
+
+                    node.Items.Add(subtypeNode);
                 }
             }
+
+            // Auto-expand when a subtype matched the search
+            if (hasMatchingSubtype)
+                node.IsExpanded = true;
 
             AvailablePropertiesTree.Items.Add(node);
         }
