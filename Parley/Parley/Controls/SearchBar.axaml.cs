@@ -26,6 +26,15 @@ namespace DialogEditor.Controls
         public SearchBar()
         {
             InitializeComponent();
+
+            // Wire events in code-behind as a safety net — AXAML event wiring
+            // may not connect reliably inside TabItem deferred content
+            var textBox = this.FindControl<TextBox>("SearchTextBox");
+            if (textBox != null)
+            {
+                textBox.TextChanged += OnSearchTextChanged;
+                textBox.KeyDown += OnSearchTextKeyDown;
+            }
         }
 
         /// <summary>
@@ -35,8 +44,9 @@ namespace DialogEditor.Controls
         {
             _currentFilePath = filePath;
             IsVisible = true;
-            SearchTextBox.Focus();
-            SearchTextBox.SelectAll();
+            var textBox = GetSearchTextBox();
+            textBox?.Focus();
+            textBox?.SelectAll();
         }
 
         /// <summary>
@@ -74,9 +84,18 @@ namespace DialogEditor.Controls
             NavigateToMatch?.Invoke(this, match);
         }
 
+        // Resolve named controls — auto-generated fields may be null inside TabItem
+        private TextBox? GetSearchTextBox() => this.FindControl<TextBox>("SearchTextBox");
+        private TextBlock? GetMatchCountText() => this.FindControl<TextBlock>("MatchCountText");
+        private ComboBox? GetFieldFilterCombo() => this.FindControl<ComboBox>("FieldFilterCombo");
+        private CheckBox? GetRegexCheck() => this.FindControl<CheckBox>("RegexCheck");
+        private CheckBox? GetCaseSensitiveCheck() => this.FindControl<CheckBox>("CaseSensitiveCheck");
+
         private void ExecuteSearch()
         {
-            var pattern = SearchTextBox?.Text;
+            var textBox = GetSearchTextBox();
+            var pattern = textBox?.Text;
+
             if (string.IsNullOrEmpty(pattern) || string.IsNullOrEmpty(_currentFilePath))
             {
                 _searchService.Clear();
@@ -102,7 +121,7 @@ namespace DialogEditor.Controls
             SearchFieldCategory[]? categoryFilter = null;
 
             // Apply field category filter based on combo selection
-            if (FieldFilterCombo?.SelectedItem is ComboBoxItem item && item.Tag is string categoryTag)
+            if (GetFieldFilterCombo()?.SelectedItem is ComboBoxItem item && item.Tag is string categoryTag)
             {
                 if (Enum.TryParse<SearchFieldCategory>(categoryTag, out var category))
                 {
@@ -113,22 +132,23 @@ namespace DialogEditor.Controls
             return new SearchCriteria
             {
                 Pattern = pattern,
-                IsRegex = RegexCheck?.IsChecked == true,
-                CaseSensitive = CaseSensitiveCheck?.IsChecked == true,
+                IsRegex = GetRegexCheck()?.IsChecked == true,
+                CaseSensitive = GetCaseSensitiveCheck()?.IsChecked == true,
                 CategoryFilter = categoryFilter
             };
         }
 
         private void UpdateMatchCount()
         {
-            if (MatchCountText == null) return;
+            var matchCountText = GetMatchCountText();
+            if (matchCountText == null) return;
 
             var count = _searchService.MatchCount;
             var index = _searchService.CurrentIndex;
 
-            MatchCountText.Text = count switch
+            matchCountText.Text = count switch
             {
-                0 when string.IsNullOrEmpty(SearchTextBox?.Text) => "",
+                0 when string.IsNullOrEmpty(GetSearchTextBox()?.Text) => "",
                 0 => "No matches",
                 _ => $"{index + 1} of {count}"
             };
@@ -165,13 +185,13 @@ namespace DialogEditor.Controls
 
         private void OnFieldFilterChanged(object? sender, SelectionChangedEventArgs e)
         {
-            if (IsVisible && !string.IsNullOrEmpty(SearchTextBox?.Text))
+            if (IsVisible && !string.IsNullOrEmpty(GetSearchTextBox()?.Text))
                 ExecuteSearch();
         }
 
         private void OnOptionsChanged(object? sender, RoutedEventArgs e)
         {
-            if (IsVisible && !string.IsNullOrEmpty(SearchTextBox?.Text))
+            if (IsVisible && !string.IsNullOrEmpty(GetSearchTextBox()?.Text))
                 ExecuteSearch();
         }
 
