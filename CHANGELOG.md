@@ -24,7 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Added `GarbageFilters` to shared `RadoubSettings.json` — users can add/remove filter patterns
 - Supports substring match (bare string) and exact match (`=` prefix)
-- Defaults: `deleted`, `padding`, `reserved`, `xp2spec`, `=User`, `=****`, `blank`, `=invalid`
+- Defaults: `deleted`, `padding`, `reserved`, `xp2spec`, `=User`, `=****`, `=blank`, `=invalid`
 - New `GarbageFilterService` in Radoub.Formats — `TlkHelper.IsGarbageLabel()` now delegates to it
 - Removed duplicate private `IsGarbageLabel` from `ItemViewModelFactory` — uses shared TlkHelper
 - Removed extra `blank`/`invalid` checks from `ItemFilterPanel` — now in default filter list

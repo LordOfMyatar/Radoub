@@ -17,9 +17,6 @@ public class GarbageFilterServiceTests
     [InlineData("CEP Reserved", true)]
     [InlineData("xp2spec1", true)]
     [InlineData("XP2SPEC_PLACEHOLDER", true)]
-    [InlineData("blank", true)]
-    [InlineData("BlankItem", true)]
-    [InlineData("blank_weapon", true)]
     public void IsGarbageLabel_SubstringPatterns_MatchCorrectly(string label, bool expected)
     {
         var service = CreateServiceWithDefaults();
@@ -37,6 +34,10 @@ public class GarbageFilterServiceTests
     [InlineData("UserDefined", false)]
     [InlineData("PowerUser", false)]
     [InlineData("****", true)]
+    [InlineData("blank", true)]
+    [InlineData("BLANK", true)]
+    [InlineData("BlankItem", false)]
+    [InlineData("blank_weapon", false)]
     [InlineData("invalid", true)]
     [InlineData("InvalidEntry", false)]
     public void IsGarbageLabel_ExactPatterns_MatchCorrectly(string label, bool expected)
@@ -146,7 +147,7 @@ public class GarbageFilterServiceTests
         return new GarbageFilterService(new List<string>
         {
             "deleted", "padding", "reserved", "xp2spec",
-            "=User", "=****", "blank", "=invalid"
+            "=User", "=****", "=blank", "=invalid"
         });
     }
 }

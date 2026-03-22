@@ -101,7 +101,7 @@ public partial class RadoubSettings : INotifyPropertyChanged
         "xp2spec",   // substring: xp2spec1, Xp2spec99, etc.
         "=User",     // exact: CEP placeholder rows 214-509
         "=****",     // exact: 2DA null placeholder
-        "blank",     // substring: blank, BlankItem, etc. (matches old startsWith behavior)
+        "=blank",    // exact: matches legacy ItemFilterPanel check
         "=invalid",  // exact: ItemFilterPanel extra check
     };
 
