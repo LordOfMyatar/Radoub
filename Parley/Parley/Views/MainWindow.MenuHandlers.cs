@@ -424,7 +424,8 @@ namespace DialogEditor.Views
 
         private void OnFindClick(object? sender, RoutedEventArgs e)
         {
-            DialogSearchBar?.Show(_viewModel.CurrentFileName);
+            var searchBar = this.FindControl<Controls.SearchBar>("DialogSearchBar");
+            searchBar?.Show(_viewModel.CurrentFileName);
         }
 
         private void OnSearchModuleClick(object? sender, RoutedEventArgs e)

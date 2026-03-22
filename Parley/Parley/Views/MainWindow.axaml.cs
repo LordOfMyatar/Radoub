@@ -386,8 +386,8 @@ namespace DialogEditor.Views
 
         // Search - Issue #1842: Find in dialog (Ctrl+F, F3, Shift+F3)
         void IKeyboardShortcutHandler.OnFind() => OnFindClick(null, null!);
-        void IKeyboardShortcutHandler.OnFindNext() => DialogSearchBar?.FindNext();
-        void IKeyboardShortcutHandler.OnFindPrevious() => DialogSearchBar?.FindPrevious();
+        void IKeyboardShortcutHandler.OnFindNext() => this.FindControl<Controls.SearchBar>("DialogSearchBar")?.FindNext();
+        void IKeyboardShortcutHandler.OnFindPrevious() => this.FindControl<Controls.SearchBar>("DialogSearchBar")?.FindPrevious();
         void IKeyboardShortcutHandler.OnSearchModule() => OnSearchModuleClick(null, null!);
 
         #endregion
