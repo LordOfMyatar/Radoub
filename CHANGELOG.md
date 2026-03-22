@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.96] - 2026-03-22
-**Branch**: `radoub/issue-1856` | **PR**: #TBD
+**Branch**: `radoub/issue-1856` | **PR**: #1923
 
 ### Sprint: Multi-Type Search Providers (Phase 2) (#1856)
 
