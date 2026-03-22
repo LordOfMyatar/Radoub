@@ -419,6 +419,155 @@ namespace DialogEditor.Views
             => _controllers.EditMenu.OnPasteAsLinkClick(sender, e);
 
         #endregion
+
+        #region Search Handlers (#1842, #1843)
+
+        private void OnFindClick(object? sender, RoutedEventArgs e)
+        {
+            var searchBar = this.FindControl<Controls.SearchBar>("DialogSearchBar");
+            searchBar?.Show(_viewModel.CurrentFileName);
+        }
+
+        private void OnSearchModuleClick(object? sender, RoutedEventArgs e)
+        {
+            // #1843: Module-wide search — implemented in next sprint item
+            if (string.IsNullOrEmpty(_viewModel.CurrentFileName))
+            {
+                _viewModel.StatusMessage = "Open a dialog file first to search the module.";
+                return;
+            }
+
+            var moduleDir = System.IO.Path.GetDirectoryName(_viewModel.CurrentFileName);
+            if (string.IsNullOrEmpty(moduleDir))
+            {
+                _viewModel.StatusMessage = "Cannot determine module directory.";
+                return;
+            }
+
+            var searchWindow = new ModuleSearchWindow();
+            searchWindow.Initialize(moduleDir, _viewModel.CurrentFileName);
+            searchWindow.Show(this);
+        }
+
+        private void OnSearchNavigateToMatch(object? sender, Radoub.Formats.Search.SearchMatch? match)
+        {
+            if (match?.Location is not Radoub.Formats.Search.DlgMatchLocation dlgLoc)
+                return;
+
+            // Navigate to the matching node in the tree
+            NavigateToDialogNode(dlgLoc, match);
+        }
+
+        private void NavigateToDialogNode(
+            Radoub.Formats.Search.DlgMatchLocation location,
+            Radoub.Formats.Search.SearchMatch? match = null)
+        {
+            if (_viewModel.CurrentDialog == null || location.NodeIndex == null)
+                return;
+
+            var targetIndex = location.NodeIndex.Value;
+
+            // Get the target DialogNode from the Dialog's Entries/Replies list by index
+            DialogEditor.Models.DialogNode? targetDialogNode = null;
+            if (location.NodeType == Radoub.Formats.Search.DlgNodeType.Entry &&
+                targetIndex < _viewModel.CurrentDialog.Entries.Count)
+            {
+                targetDialogNode = _viewModel.CurrentDialog.Entries[targetIndex];
+            }
+            else if (location.NodeType == Radoub.Formats.Search.DlgNodeType.Reply &&
+                     targetIndex < _viewModel.CurrentDialog.Replies.Count)
+            {
+                targetDialogNode = _viewModel.CurrentDialog.Replies[targetIndex];
+            }
+
+            if (targetDialogNode == null) return;
+
+            var treeView = this.FindControl<Avalonia.Controls.TreeView>("DialogTreeView");
+            if (treeView == null) return;
+
+            // Find the first TreeViewSafeNode that wraps this DialogNode (by reference)
+            var treeNode = FindTreeNodeByReference(_viewModel.DialogNodes, targetDialogNode);
+            if (treeNode != null)
+            {
+                ExpandToNode(treeNode);
+                treeView.SelectedItem = treeNode;
+
+                // Show which field matched and the matched text in the status bar
+                if (match != null)
+                {
+                    var fieldName = match.Field.Name;
+                    var matchedText = match.MatchedText;
+                    var preview = match.FullFieldValue.Length > 60
+                        ? match.FullFieldValue[..60] + "..."
+                        : match.FullFieldValue;
+                    _viewModel.StatusMessage = $"Found \"{matchedText}\" in {fieldName} \u2014 {location.DisplayPath}: {preview}";
+                }
+                else
+                {
+                    _viewModel.StatusMessage = $"Found: {location.DisplayPath}";
+                }
+            }
+        }
+
+        /// <summary>
+        /// Find a TreeViewSafeNode by its underlying DialogNode reference.
+        /// Forces lazy-load of children at each level to traverse collapsed nodes.
+        /// </summary>
+        private Models.TreeViewSafeNode? FindTreeNodeByReference(
+            System.Collections.ObjectModel.ObservableCollection<Models.TreeViewSafeNode> nodes,
+            Models.DialogNode target)
+        {
+            foreach (var node in nodes)
+            {
+                if (ReferenceEquals(node.OriginalNode, target))
+                    return node;
+
+                // Force lazy-load so we can search collapsed subtrees
+                node.PopulateChildren();
+
+                if (node.Children == null || node.Children.Count == 0) continue;
+                var found = FindTreeNodeByReference(node.Children, target);
+                if (found != null)
+                    return found;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Expand all ancestors of the target node so it becomes visible in the tree.
+        /// </summary>
+        private void ExpandToNode(Models.TreeViewSafeNode targetNode)
+        {
+            var path = new System.Collections.Generic.List<Models.TreeViewSafeNode>();
+            FindNodePath(_viewModel.DialogNodes, targetNode, path);
+
+            foreach (var ancestor in path)
+                ancestor.IsExpanded = true;
+        }
+
+        private bool FindNodePath(
+            System.Collections.ObjectModel.ObservableCollection<Models.TreeViewSafeNode> nodes,
+            Models.TreeViewSafeNode target,
+            System.Collections.Generic.List<Models.TreeViewSafeNode> path)
+        {
+            foreach (var node in nodes)
+            {
+                if (ReferenceEquals(node, target))
+                    return true;
+
+                // Force lazy-load for path finding too
+                node.PopulateChildren();
+
+                if (node.Children == null || node.Children.Count == 0) continue;
+                path.Add(node);
+                if (FindNodePath(node.Children, target, path))
+                    return true;
+                path.RemoveAt(path.Count - 1);
+            }
+            return false;
+        }
+
+        #endregion
     }
 }
 
