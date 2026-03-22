@@ -2,8 +2,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="ItemEditor.Views.NewItemWizardWindow"
         Title="New Item — Step 1 of 3: Item Type"
-        Width="520" Height="580"
-        CanResize="False"
+        Width="700" Height="600"
+        CanResize="True"
         WindowStartupLocation="CenterOwner"
         AutomationProperties.AutomationId="NewItemWizardWindow">
 
@@ -72,10 +72,29 @@
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            Margin="0,0,0,4"/>
 
-                <!-- Item type list -->
-                <ListBox x:Name="TypeListBox"
-                         SelectionChanged="OnTypeSelectionChanged"
-                         AutomationProperties.AutomationId="TypeListBox"/>
+                <!-- Type list + icon variations side by side -->
+                <Grid ColumnDefinitions="*,*" RowDefinitions="*">
+                    <!-- Item type list -->
+                    <ListBox Grid.Column="0" x:Name="TypeListBox"
+                             SelectionChanged="OnTypeSelectionChanged"
+                             Margin="0,0,4,0"
+                             AutomationProperties.AutomationId="TypeListBox"/>
+
+                    <!-- Icon variations for selected type -->
+                    <Border Grid.Column="1"
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                            BorderThickness="1" CornerRadius="4">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top" x:Name="IconPanelTitle"
+                                       Text="Select an item type to browse icons"
+                                       FontSize="11" Margin="8,4"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <ScrollViewer>
+                                <WrapPanel x:Name="IconGridPanel" Margin="4"/>
+                            </ScrollViewer>
+                        </DockPanel>
+                    </Border>
+                </Grid>
             </DockPanel>
 
             <!-- Step 2: Name & Identity -->

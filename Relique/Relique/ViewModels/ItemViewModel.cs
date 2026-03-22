@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -14,17 +15,19 @@ namespace ItemEditor.ViewModels;
 public class ItemViewModel : INotifyPropertyChanged
 {
     private readonly UtiFile _uti;
+    private readonly Func<uint, string?>? _tlkResolver;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public ItemViewModel(UtiFile uti)
+    public ItemViewModel(UtiFile uti, Func<uint, string?>? tlkResolver = null)
     {
         _uti = uti;
+        _tlkResolver = tlkResolver;
     }
 
     public string Name
     {
-        get => _uti.LocalizedName?.GetDefault() ?? string.Empty;
+        get => GetLocString(_uti.LocalizedName);
         set
         {
             var current = _uti.LocalizedName?.GetDefault() ?? string.Empty;
@@ -37,7 +40,7 @@ public class ItemViewModel : INotifyPropertyChanged
 
     public string Description
     {
-        get => _uti.Description?.GetDefault() ?? string.Empty;
+        get => GetLocString(_uti.Description);
         set
         {
             var current = _uti.Description?.GetDefault() ?? string.Empty;
@@ -50,7 +53,7 @@ public class ItemViewModel : INotifyPropertyChanged
 
     public string DescIdentified
     {
-        get => _uti.DescIdentified?.GetDefault() ?? string.Empty;
+        get => GetLocString(_uti.DescIdentified);
         set
         {
             var current = _uti.DescIdentified?.GetDefault() ?? string.Empty;
@@ -329,6 +332,19 @@ public class ItemViewModel : INotifyPropertyChanged
     {
         _uti.ArmorParts[partName] = value;
         OnPropertyChanged($"ArmorPart_{partName}");
+    }
+
+    private string GetLocString(CExoLocString? locString)
+    {
+        if (locString == null) return string.Empty;
+
+        var embedded = locString.GetDefault();
+        if (!string.IsNullOrEmpty(embedded)) return embedded;
+
+        if (_tlkResolver != null && locString.StrRef != 0xFFFFFFFF)
+            return _tlkResolver(locString.StrRef) ?? string.Empty;
+
+        return string.Empty;
     }
 
     protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)

@@ -1,5 +1,10 @@
+using Avalonia;
 using Avalonia.Controls;
+
 using Avalonia.Interactivity;
+using Avalonia.Layout;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using ItemEditor.Services;
@@ -8,6 +13,7 @@ using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
 using Radoub.Formats.Uti;
+using Radoub.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -27,6 +33,8 @@ public partial class NewItemWizardWindow : Window
     private BaseItemTypeInfo? _selectedType;
     private readonly Dictionary<ItemCategory, CheckBox> _categoryCheckBoxes = new();
     private CancellationTokenSource? _searchDebounce;
+    private ItemIconService? _iconService;
+    private byte _selectedModelPart1 = 1;
 
     /// <summary>
     /// Path to the created .uti file, or null if cancelled.
@@ -256,6 +264,8 @@ public partial class NewItemWizardWindow : Window
 
         TypeCountText.Text = $"Showing {filtered.Count} of {_allBaseItemTypes.Count} types";
         UpdateNextEnabled();
+
+        PopulateIconVariations();
     }
 
     private void OnTypeSelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -263,12 +273,14 @@ public partial class NewItemWizardWindow : Window
         if (TypeListBox.SelectedItem is ListBoxItem item && item.Tag is BaseItemTypeInfo type)
         {
             _selectedType = type;
+            _selectedModelPart1 = 1; // Reset to default when type changes
         }
         else
         {
             _selectedType = null;
         }
         UpdateNextEnabled();
+        PopulateIconVariations();
     }
 
     private void OnTypeSearchTextChanged(object? sender, TextChangedEventArgs e)
@@ -302,6 +314,104 @@ public partial class NewItemWizardWindow : Window
         var noneChecked = _categoryCheckBoxes.Values.All(cb => cb.IsChecked != true);
         SelectAllCheckBox.IsChecked = allChecked ? true : noneChecked ? false : null;
         FilterTypeList();
+    }
+
+    private void InitializeIconService()
+    {
+        if (_iconService != null) return;
+        if (_gameDataService != null && _gameDataService.IsConfigured)
+        {
+            _iconService = new ItemIconService(_gameDataService);
+        }
+    }
+
+    private void PopulateIconVariations()
+    {
+        IconGridPanel.Children.Clear();
+
+        if (_selectedType == null || _gameDataService == null || !_gameDataService.IsConfigured)
+        {
+            IconPanelTitle.Text = "Select an item type to browse icons";
+            return;
+        }
+
+        InitializeIconService();
+        if (_iconService == null) return;
+
+        var baseIdx = _selectedType.BaseItemIndex;
+        var minStr = _gameDataService.Get2DAValue("baseitems", baseIdx, "MinRange");
+        var maxStr = _gameDataService.Get2DAValue("baseitems", baseIdx, "MaxRange");
+
+        int minRange = 0, maxRange = 0;
+        if (int.TryParse(minStr, out int mn)) minRange = mn;
+        if (int.TryParse(maxStr, out int mx)) maxRange = mx;
+
+        // Cap to avoid UI lag
+        if (maxRange - minRange > 300) maxRange = minRange + 300;
+
+        int iconCount = 0;
+        int start = minRange == 0 ? 1 : minRange;
+
+        for (int modelNum = start; modelNum <= maxRange; modelNum++)
+        {
+            var icon = _iconService.GetItemIcon(baseIdx, modelNum);
+            if (icon == null) continue;
+
+            iconCount++;
+            AddIconButton(icon, (byte)modelNum, $"{_selectedType.DisplayName} #{modelNum}");
+        }
+
+        if (iconCount == 0)
+        {
+            // No numbered icons — show the default icon (fixed icon type)
+            var defaultIcon = _iconService.GetItemIcon(baseIdx);
+            if (defaultIcon != null)
+            {
+                AddIconButton(defaultIcon, 1, $"{_selectedType.DisplayName}");
+                iconCount = 1;
+            }
+        }
+
+        IconPanelTitle.Text = iconCount > 1
+            ? $"{_selectedType.DisplayName} — {iconCount} icons"
+            : iconCount == 1
+                ? $"{_selectedType.DisplayName} — fixed icon (model varies)"
+                : $"{_selectedType.DisplayName} — no icons found";
+    }
+
+    private void AddIconButton(Bitmap icon, byte modelPart, string tooltip)
+    {
+        var button = new Button
+        {
+            Width = 48,
+            Height = 48,
+            Margin = new Thickness(2),
+            Padding = new Thickness(2),
+            Tag = modelPart,
+        };
+        ToolTip.SetTip(button, tooltip);
+
+        button.Content = new Image
+        {
+            Source = icon,
+            Width = 40,
+            Height = 40,
+            Stretch = Stretch.Uniform
+        };
+
+        if (_selectedModelPart1 == modelPart)
+        {
+            button.BorderBrush = new SolidColorBrush(Colors.DodgerBlue);
+            button.BorderThickness = new Thickness(2);
+        }
+
+        button.Click += (_, _) =>
+        {
+            _selectedModelPart1 = modelPart;
+            PopulateIconVariations();
+        };
+
+        IconGridPanel.Children.Add(button);
     }
 
     private void UpdateNextEnabled()
@@ -474,7 +584,7 @@ public partial class NewItemWizardWindow : Window
                 BaseItem = _selectedType.BaseItemIndex,
                 Identified = true,
                 Dropable = true,
-                ModelPart1 = 1,
+                ModelPart1 = _selectedModelPart1,
                 PaletteID = paletteId,
             };
             uti.LocalizedName.SetString(0, name);

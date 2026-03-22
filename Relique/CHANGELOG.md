@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.0-alpha] - 2026-03-21
+**Branch**: `relique/issue-1833` | **PR**: #1899
+
+### Sprint: TLK Resolution, Wizard Icons, and MainWindow Split (#1833)
+
+- [x] #1805 — Item Name TLK resolution for base game items
+- [x] #1815 — Wizard: Search by item icon/image
+- [x] #1796 — Split MainWindow.axaml.cs into 6 partial files (82 + 196 + 205 + 401 + 588 + 269)
+
+---
+
 ## [0.8.0-alpha] - 2026-03-21
 **Branch**: `relique/issue-1830` | **PR**: #1898
 
