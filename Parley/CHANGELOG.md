@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.158-alpha] - 2026-03-22
-**Branch**: `parley/issue-1855` | **PR**: #TBD
+**Branch**: `parley/issue-1855` | **PR**: #1920
 
 ### Sprint: Search Integration (Phase 1) (#1855)
 
