@@ -455,10 +455,12 @@ namespace DialogEditor.Views
                 return;
 
             // Navigate to the matching node in the tree
-            NavigateToDialogNode(dlgLoc);
+            NavigateToDialogNode(dlgLoc, match);
         }
 
-        private void NavigateToDialogNode(Radoub.Formats.Search.DlgMatchLocation location)
+        private void NavigateToDialogNode(
+            Radoub.Formats.Search.DlgMatchLocation location,
+            Radoub.Formats.Search.SearchMatch? match = null)
         {
             if (_viewModel.CurrentDialog == null || location.NodeIndex == null)
                 return;
@@ -489,7 +491,21 @@ namespace DialogEditor.Views
             {
                 ExpandToNode(treeNode);
                 treeView.SelectedItem = treeNode;
-                _viewModel.StatusMessage = $"Found: {location.DisplayPath}";
+
+                // Show which field matched and the matched text in the status bar
+                if (match != null)
+                {
+                    var fieldName = match.Field.Name;
+                    var matchedText = match.MatchedText;
+                    var preview = match.FullFieldValue.Length > 60
+                        ? match.FullFieldValue[..60] + "..."
+                        : match.FullFieldValue;
+                    _viewModel.StatusMessage = $"Found \"{matchedText}\" in {fieldName} \u2014 {location.DisplayPath}: {preview}";
+                }
+                else
+                {
+                    _viewModel.StatusMessage = $"Found: {location.DisplayPath}";
+                }
             }
         }
 
