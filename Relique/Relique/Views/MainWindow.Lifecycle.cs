@@ -2,6 +2,7 @@ using ItemEditor.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
+using Radoub.UI.Controls;
 using Radoub.UI.Services;
 using System;
 using System.IO;
@@ -19,6 +20,9 @@ public partial class MainWindow
 
         // Initialize game data service for base item type resolution
         await InitializeGameDataAsync();
+
+        // Initialize item browser panel
+        InitializeItemBrowserPanel();
 
         // Initialize spell-check service (fire-and-forget)
         _ = Radoub.UI.Services.SpellCheckService.Instance.InitializeAsync();
@@ -126,6 +130,173 @@ public partial class MainWindow
             new() { Id = 3, Name = "Potions" },
             new() { Id = 4, Name = "Other" },
         };
+    }
+
+    // --- Item Browser Panel ---
+
+    private void InitializeItemBrowserPanel()
+    {
+        // Set initial module path from RadoubSettings (set by Trebuchet)
+        var modulePath = RadoubSettings.Instance.CurrentModulePath;
+        if (RadoubSettings.IsValidModulePath(modulePath))
+        {
+            // If it's a .mod file, find the working directory
+            if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
+            {
+                modulePath = FindWorkingDirectory(modulePath);
+            }
+
+            if (!string.IsNullOrEmpty(modulePath) && Directory.Exists(modulePath))
+            {
+                ItemBrowserPanel.ModulePath = modulePath;
+                UnifiedLogger.LogUI(LogLevel.INFO, "ItemBrowserPanel initialized with module path");
+            }
+        }
+
+        // Subscribe to events
+        ItemBrowserPanel.FileSelected += OnItemBrowserFileSelected;
+        ItemBrowserPanel.FileDeleteRequested += OnItemBrowserFileDeleteRequested;
+        ItemBrowserPanel.CollapsedChanged += (_, isCollapsed) => SetItemBrowserPanelVisible(!isCollapsed);
+
+        UpdateItemBrowserMenuState();
+        UnifiedLogger.LogUI(LogLevel.INFO, "ItemBrowserPanel initialized");
+    }
+
+    private static string? FindWorkingDirectory(string modFilePath)
+    {
+        var moduleName = Path.GetFileNameWithoutExtension(modFilePath);
+        var moduleDir = Path.GetDirectoryName(modFilePath);
+
+        if (string.IsNullOrEmpty(moduleDir))
+            return null;
+
+        var candidates = new[]
+        {
+            Path.Combine(moduleDir, moduleName),
+            Path.Combine(moduleDir, "temp0"),
+            Path.Combine(moduleDir, "temp1")
+        };
+
+        foreach (var candidate in candidates)
+        {
+            if (Directory.Exists(candidate))
+                return candidate;
+        }
+
+        return null;
+    }
+
+    private async void OnItemBrowserFileSelected(object? sender, FileSelectedEventArgs e)
+    {
+        try
+        {
+            if (e.Entry.IsFromHak)
+            {
+                UpdateStatus($"HAK items are read-only: {e.Entry.Name}");
+                return;
+            }
+
+            if (string.IsNullOrEmpty(e.Entry.FilePath))
+                return;
+
+            // Skip if already loaded
+            if (string.Equals(_currentFilePath, e.Entry.FilePath, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            // Prompt save if dirty
+            if (_isDirty)
+            {
+                var result = await PromptSaveChangesAsync();
+                if (result == SavePromptResult.Cancel) return;
+                if (result == SavePromptResult.Save && !await SaveCurrentFileAsync()) return;
+            }
+
+            await OpenFileAsync(e.Entry.FilePath);
+            ItemBrowserPanel.CurrentFilePath = e.Entry.FilePath;
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error loading item from browser: {ex.Message}");
+            UpdateStatus($"Error: {ex.Message}");
+        }
+    }
+
+    private async void OnItemBrowserFileDeleteRequested(object? sender, FileDeleteRequestedEventArgs e)
+    {
+        var entry = e.Entry;
+        if (string.IsNullOrEmpty(entry.FilePath) || !File.Exists(entry.FilePath))
+        {
+            UpdateStatus("File not found on disk");
+            return;
+        }
+
+        var fileName = Path.GetFileName(entry.FilePath);
+
+        // Confirm deletion (destructive action — modal OK per CLAUDE.md)
+        var dialog = new Avalonia.Controls.Window
+        {
+            Title = "Confirm Delete",
+            Width = 380,
+            Height = 150,
+            WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.CenterOwner,
+            CanResize = false
+        };
+
+        var confirmed = false;
+        var panel = new Avalonia.Controls.StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 16 };
+        panel.Children.Add(new Avalonia.Controls.TextBlock
+        {
+            Text = $"Delete \"{fileName}\" from disk?\n\nThis cannot be undone.",
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap
+        });
+
+        var buttons = new Avalonia.Controls.StackPanel
+        {
+            Orientation = Avalonia.Layout.Orientation.Horizontal,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+            Spacing = 8
+        };
+        var deleteBtn = new Avalonia.Controls.Button { Content = "Delete", Width = 80 };
+        deleteBtn.Click += (_, _) => { confirmed = true; dialog.Close(); };
+        var cancelBtn = new Avalonia.Controls.Button { Content = "Cancel", Width = 80 };
+        cancelBtn.Click += (_, _) => dialog.Close();
+        buttons.Children.Add(deleteBtn);
+        buttons.Children.Add(cancelBtn);
+        panel.Children.Add(buttons);
+        dialog.Content = panel;
+
+        await dialog.ShowDialog(this);
+
+        if (!confirmed)
+            return;
+
+        try
+        {
+            var isDeletingCurrent = string.Equals(_currentFilePath, entry.FilePath, StringComparison.OrdinalIgnoreCase);
+
+            File.Delete(entry.FilePath);
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Deleted item file: {fileName}");
+
+            if (isDeletingCurrent)
+            {
+                if (_itemViewModel != null)
+                    _itemViewModel.PropertyChanged -= OnItemPropertyChanged;
+
+                _currentItem = null;
+                _currentFilePath = null;
+                _documentState.ClearDirty();
+                PopulateEditor();
+                OnPropertyChanged(nameof(HasFile));
+            }
+
+            UpdateStatus($"Deleted {fileName}");
+            await ItemBrowserPanel.RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to delete {fileName}: {ex.Message}");
+            UpdateStatus($"Delete failed: {ex.Message}");
+        }
     }
 
     private async void OnWindowClosing(object? sender, Avalonia.Controls.WindowClosingEventArgs e)
