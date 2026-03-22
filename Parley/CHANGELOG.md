@@ -15,9 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Search Integration (Phase 1) (#1855)
 
-- [ ] #1841 - ModuleSearchService (Radoub.UI orchestration)
-- [ ] #1842 - Parley single-file search (Ctrl+F)
-- [ ] #1843 - Parley multi-file module search UI
+- [x] #1841 - ModuleSearchService (Radoub.UI orchestration)
+- [x] #1842 - Parley single-file search (Ctrl+F)
+- [x] #1843 - Parley multi-file module search UI
 
 ---
 
