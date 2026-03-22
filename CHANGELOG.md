@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.95] - 2026-03-22
-**Branch**: `radoub/issue-1854` | **PR**: #TBD
+**Branch**: `radoub/issue-1854` | **PR**: #1919
 
 ### Sprint: Search Engine Foundation (Phase 0) (#1854)
 
