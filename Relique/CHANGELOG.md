@@ -15,9 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Browsing & Selection Controls (#1832)
 
-- [ ] #1807 — Searchable Base Type dropdown
-- [ ] #1808 — Item portrait/icon chooser
-- [ ] #1816 — Use standardized file browser instead of OS file picker
+- [x] #1807 — Searchable Base Type dropdown
+- [x] #1808 — Item portrait/icon chooser
+- [x] #1816 — Use standardized file browser instead of OS file picker
 
 ---
 
