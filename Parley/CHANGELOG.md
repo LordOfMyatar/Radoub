@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.158-alpha] - 2026-03-22
+**Branch**: `parley/issue-1855` | **PR**: #TBD
+
+### Sprint: Search Integration (Phase 1) (#1855)
+
+- [ ] #1841 - ModuleSearchService (Radoub.UI orchestration)
+- [ ] #1842 - Parley single-file search (Ctrl+F)
+- [ ] #1843 - Parley multi-file module search UI
+
+---
+
 ## [0.1.157-alpha] - 2026-03-20
 **Branch**: `radoub/issue-1824` | **PR**: #1879
 
