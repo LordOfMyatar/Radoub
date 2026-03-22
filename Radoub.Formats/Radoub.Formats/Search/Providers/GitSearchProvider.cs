@@ -129,13 +129,60 @@ public class GitSearchProvider : SearchProviderBase, IFileSearchProvider
 
     public IReadOnlyList<ReplaceResult> Replace(GffFile gffFile, IReadOnlyList<ReplaceOperation> operations)
     {
-        // Phase 3
-        return operations.Select(op => new ReplaceResult
+        if (operations.Count == 0) return Array.Empty<ReplaceResult>();
+
+        var sorted = SortReverseOffset(operations);
+        var results = new List<ReplaceResult>();
+
+        foreach (var op in sorted)
         {
-            Success = false, Field = op.Match.Field,
-            OldValue = op.Match.FullFieldValue, NewValue = op.ReplacementText,
-            Skipped = true, SkipReason = "Replace not yet implemented for GIT provider"
-        }).ToList();
+            if (op.Match.Location is not GitMatchLocation loc)
+            {
+                results.Add(new ReplaceResult
+                {
+                    Success = false, Field = op.Match.Field,
+                    OldValue = op.Match.FullFieldValue, NewValue = op.ReplacementText,
+                    Skipped = true, SkipReason = "Missing GIT location info"
+                });
+                continue;
+            }
+
+            // Find the instance struct
+            var instanceStruct = FindInstanceStruct(gffFile.RootStruct, loc);
+            if (instanceStruct == null)
+            {
+                results.Add(new ReplaceResult
+                {
+                    Success = false, Field = op.Match.Field,
+                    OldValue = op.Match.FullFieldValue, NewValue = op.ReplacementText,
+                    Skipped = true, SkipReason = $"Instance not found: {loc.DisplayPath}"
+                });
+                continue;
+            }
+
+            var result = op.Match.Field.FieldType switch
+            {
+                SearchFieldType.LocString => ReplaceLocStringField(instanceStruct, op.Match.Field.GffPath, op),
+                _ => ReplaceStringField(instanceStruct, op.Match.Field.GffPath, op)
+            };
+            results.Add(result);
+        }
+
+        return results;
+    }
+
+    private static GffStruct? FindInstanceStruct(GffStruct root, GitMatchLocation loc)
+    {
+        // Map type name back to list label
+        var listLabel = InstanceLists.FirstOrDefault(il => il.TypeName == loc.InstanceType).ListLabel;
+        if (listLabel == null) return null;
+
+        var listField = root.Fields?.FirstOrDefault(f => f.Label == listLabel);
+        if (listField?.Value is not GffList list) return null;
+
+        if (loc.InstanceIndex < 0 || loc.InstanceIndex >= list.Elements.Count) return null;
+
+        return list.Elements[loc.InstanceIndex];
     }
 }
 

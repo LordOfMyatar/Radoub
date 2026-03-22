@@ -48,12 +48,22 @@ public class UtiSearchProvider : SearchProviderBase, IFileSearchProvider
 
     public IReadOnlyList<ReplaceResult> Replace(GffFile gffFile, IReadOnlyList<ReplaceOperation> operations)
     {
-        // Phase 3
-        return operations.Select(op => new ReplaceResult
+        if (operations.Count == 0) return Array.Empty<ReplaceResult>();
+
+        var sorted = SortReverseOffset(operations);
+        var results = new List<ReplaceResult>();
+
+        foreach (var op in sorted)
         {
-            Success = false, Field = op.Match.Field,
-            OldValue = op.Match.FullFieldValue, NewValue = op.ReplacementText,
-            Skipped = true, SkipReason = "Replace not yet implemented for UTI provider"
-        }).ToList();
+            var gffPath = op.Match.Field.GffPath;
+            var result = op.Match.Field.FieldType switch
+            {
+                SearchFieldType.LocString => ReplaceLocStringField(gffFile.RootStruct, gffPath, op),
+                _ => ReplaceStringField(gffFile.RootStruct, gffPath, op)
+            };
+            results.Add(result);
+        }
+
+        return results;
     }
 }

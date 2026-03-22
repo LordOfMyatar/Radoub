@@ -60,13 +60,107 @@ public class DlgSearchProvider : SearchProviderBase, IFileSearchProvider
 
     public IReadOnlyList<ReplaceResult> Replace(GffFile gffFile, IReadOnlyList<ReplaceOperation> operations)
     {
-        // Phase 3
-        return operations.Select(op => new ReplaceResult
+        if (operations.Count == 0) return Array.Empty<ReplaceResult>();
+
+        var sorted = SortReverseOffset(operations);
+        var results = new List<ReplaceResult>();
+
+        foreach (var op in sorted)
         {
-            Success = false, Field = op.Match.Field,
-            OldValue = op.Match.FullFieldValue, NewValue = op.ReplacementText,
-            Skipped = true, SkipReason = "Replace not yet implemented for DLG provider"
-        }).ToList();
+            if (op.Match.Location is not DlgMatchLocation loc)
+            {
+                results.Add(new ReplaceResult
+                {
+                    Success = false, Field = op.Match.Field,
+                    OldValue = op.Match.FullFieldValue, NewValue = op.ReplacementText,
+                    Skipped = true, SkipReason = "Missing DLG location info"
+                });
+                continue;
+            }
+
+            var targetStruct = FindTargetStruct(gffFile.RootStruct, loc);
+            if (targetStruct == null)
+            {
+                results.Add(new ReplaceResult
+                {
+                    Success = false, Field = op.Match.Field,
+                    OldValue = op.Match.FullFieldValue, NewValue = op.ReplacementText,
+                    Skipped = true, SkipReason = $"Could not locate target struct: {loc.DisplayPath}"
+                });
+                continue;
+            }
+
+            var result = op.Match.Field.FieldType switch
+            {
+                SearchFieldType.LocString => ReplaceLocStringField(targetStruct, op.Match.Field.GffPath, op),
+                _ => ReplaceStringField(targetStruct, op.Match.Field.GffPath, op)
+            };
+            results.Add(result);
+        }
+
+        return results;
+    }
+
+    /// <summary>
+    /// Navigate the GFF tree to find the struct that contains the field to replace.
+    /// </summary>
+    private static GffStruct? FindTargetStruct(GffStruct root, DlgMatchLocation loc)
+    {
+        // Root-level fields (EndConversation, EndConverAbort) — NodeIndex is null
+        if (loc.NodeIndex == null && !loc.IsOnLink)
+            return root;
+
+        // Get the appropriate list (EntryList or ReplyList or StartingList)
+        if (loc.IsOnLink)
+            return FindLinkStruct(root, loc);
+
+        var listLabel = loc.NodeType == DlgNodeType.Entry ? "EntryList" : "ReplyList";
+        var listField = root.GetField(listLabel);
+        if (listField?.Value is not GffList list) return null;
+
+        var nodeIndex = loc.NodeIndex!.Value;
+        if (nodeIndex < 0 || nodeIndex >= list.Elements.Count) return null;
+
+        return list.Elements[nodeIndex];
+    }
+
+    /// <summary>
+    /// Navigate to a link struct within an entry's RepliesList, a reply's EntriesList,
+    /// or the root StartingList.
+    /// </summary>
+    private static GffStruct? FindLinkStruct(GffStruct root, DlgMatchLocation loc)
+    {
+        if (loc.LinkIndex == null) return null;
+
+        GffStruct parentStruct;
+
+        if (loc.NodeType == DlgNodeType.StartingLink)
+        {
+            // Links on StartingList are at root level
+            parentStruct = root;
+        }
+        else
+        {
+            // Links on Entry or Reply — find the parent node first
+            var listLabel = loc.NodeType == DlgNodeType.Entry ? "EntryList" : "ReplyList";
+            var listField = root.GetField(listLabel);
+            if (listField?.Value is not GffList list) return null;
+
+            if (loc.NodeIndex == null || loc.NodeIndex.Value < 0 || loc.NodeIndex.Value >= list.Elements.Count)
+                return null;
+
+            parentStruct = list.Elements[loc.NodeIndex.Value];
+        }
+
+        // Now find the link list within the parent
+        var linkListLabel = loc.NodeType == DlgNodeType.Entry ? "RepliesList" :
+                            loc.NodeType == DlgNodeType.Reply ? "EntriesList" : "StartingList";
+        var linkListField = parentStruct.GetField(linkListLabel);
+        if (linkListField?.Value is not GffList linkList) return null;
+
+        if (loc.LinkIndex.Value < 0 || loc.LinkIndex.Value >= linkList.Elements.Count) return null;
+
+        return linkList.Elements[loc.LinkIndex.Value];
     }
 
     private void SearchEntry(DlgEntry entry, int index, SearchCriteria criteria, Regex regex, List<SearchMatch> matches)
