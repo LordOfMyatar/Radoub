@@ -189,8 +189,9 @@ public class ModuleSearchServiceTests : IDisposable
 
         var criteria = new SearchCriteria { Pattern = "Text content" };
 
-        await Assert.ThrowsAsync<OperationCanceledException>(
+        var ex = await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => _service.ScanModuleAsync(_tempDir, criteria, progress, cts.Token));
+        Assert.True(ex is OperationCanceledException);
     }
 
     #endregion
