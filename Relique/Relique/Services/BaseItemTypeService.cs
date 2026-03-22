@@ -60,6 +60,10 @@ public class BaseItemTypeService
                 displayName = TlkHelper.FormatBaseItemLabel(label);
             }
 
+            // Filter by resolved display name (TLK may resolve to placeholder like "User")
+            if (TlkHelper.IsGarbageLabel(displayName))
+                continue;
+
             // Read ModelType column for conditional field display
             var modelTypeStr = baseItems.GetValue(i, "ModelType");
             int modelType = 0;

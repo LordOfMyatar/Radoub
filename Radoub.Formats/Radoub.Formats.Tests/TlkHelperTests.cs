@@ -115,6 +115,9 @@ public class TlkHelperTests
     [InlineData("CEPReserved")]
     [InlineData("CEP Reserved")]
     [InlineData("Reserved")]
+    [InlineData("User")]
+    [InlineData("user")]
+    [InlineData("USER")]
     public void IsGarbageLabel_ReservedLabels_ReturnsTrue(string label)
     {
         Assert.True(TlkHelper.IsGarbageLabel(label));

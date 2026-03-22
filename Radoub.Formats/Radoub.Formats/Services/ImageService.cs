@@ -90,6 +90,15 @@ public class ImageService : IImageService
         if (string.IsNullOrEmpty(iconResRef))
             return null;
 
+        // Warn on placeholder/invalid icons — these are intentional game placeholders
+        // that indicate missing content (useful for HAK developers)
+        if (iconResRef.Contains("invalid", StringComparison.OrdinalIgnoreCase))
+        {
+            UnifiedLogger.Log(LogLevel.WARN,
+                $"Resolved to placeholder icon '{iconResRef}' for base type {baseItemType} model {modelNumber} — likely missing custom icon",
+                "ImageService", "Image");
+        }
+
         // Try TGA first (most common)
         var image = LoadImage(iconResRef, ResourceTypes.Tga);
         if (image != null)
