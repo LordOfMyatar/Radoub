@@ -17,6 +17,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.97] - 2026-03-22
+**Branch**: `radoub/issue-1857` | **PR**: #TBD
+
+### Sprint: Replace Engine and Tool Dispatch (Phase 3) (#1857)
+
+- #1849 — Replace methods for search providers
+- #1850 — BackupService (shadow files + archive backup)
+- #1851 — BatchReplaceService (preview + execute)
+- #1852 — ToolDispatchService (launch tool for file type)
+- #1853 — Replace UI in Parley
+
+---
+
 ## [0.9.96] - 2026-03-22
 **Branch**: `radoub/issue-1856` | **PR**: #1923
 
