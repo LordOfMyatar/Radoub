@@ -1,6 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
+
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -34,8 +34,7 @@ public partial class NewItemWizardWindow : Window
     private readonly Dictionary<ItemCategory, CheckBox> _categoryCheckBoxes = new();
     private CancellationTokenSource? _searchDebounce;
     private ItemIconService? _iconService;
-    private bool _isIconView;
-    private bool _iconsLoaded;
+    private byte _selectedModelPart1 = 1;
 
     /// <summary>
     /// Path to the created .uti file, or null if cancelled.
@@ -266,8 +265,7 @@ public partial class NewItemWizardWindow : Window
         TypeCountText.Text = $"Showing {filtered.Count} of {_allBaseItemTypes.Count} types";
         UpdateNextEnabled();
 
-        if (_isIconView)
-            PopulateIconGrid();
+        PopulateIconVariations();
     }
 
     private void OnTypeSelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -275,12 +273,14 @@ public partial class NewItemWizardWindow : Window
         if (TypeListBox.SelectedItem is ListBoxItem item && item.Tag is BaseItemTypeInfo type)
         {
             _selectedType = type;
+            _selectedModelPart1 = 1; // Reset to default when type changes
         }
         else
         {
             _selectedType = null;
         }
         UpdateNextEnabled();
+        PopulateIconVariations();
     }
 
     private void OnTypeSearchTextChanged(object? sender, TextChangedEventArgs e)
@@ -316,72 +316,49 @@ public partial class NewItemWizardWindow : Window
         FilterTypeList();
     }
 
-    private void OnListViewToggle(object? sender, RoutedEventArgs e)
-    {
-        _isIconView = false;
-        ListViewToggle.IsChecked = true;
-        IconViewToggle.IsChecked = false;
-        TypeListBox.IsVisible = true;
-        IconScrollViewer.IsVisible = false;
-    }
-
-    private void OnIconViewToggle(object? sender, RoutedEventArgs e)
-    {
-        _isIconView = true;
-        ListViewToggle.IsChecked = false;
-        IconViewToggle.IsChecked = true;
-        TypeListBox.IsVisible = false;
-        IconScrollViewer.IsVisible = true;
-
-        if (!_iconsLoaded)
-        {
-            _iconsLoaded = true;
-            InitializeIconService();
-        }
-
-        PopulateIconGrid();
-    }
-
     private void InitializeIconService()
     {
+        if (_iconService != null) return;
         if (_gameDataService != null && _gameDataService.IsConfigured)
         {
             _iconService = new ItemIconService(_gameDataService);
         }
     }
 
-    private void PopulateIconGrid()
+    private void PopulateIconVariations()
     {
         IconGridPanel.Children.Clear();
 
-        var searchText = TypeSearchBox.Text?.Trim() ?? string.Empty;
-        var enabledCategories = _categoryCheckBoxes
-            .Where(kvp => kvp.Value.IsChecked == true)
-            .Select(kvp => kvp.Key)
-            .ToHashSet();
-
-        var filtered = _allBaseItemTypes.Where(t =>
+        if (_selectedType == null || _gameDataService == null || !_gameDataService.IsConfigured)
         {
-            if (_gameDataService != null && _gameDataService.IsConfigured)
-            {
-                var category = _categoryService.CategorizeBaseItem(t.BaseItemIndex, _gameDataService);
-                if (!enabledCategories.Contains(category))
-                    return false;
-            }
+            IconPanelTitle.Text = "Select an item type to browse icons";
+            return;
+        }
 
-            if (!string.IsNullOrEmpty(searchText))
-            {
-                if (!t.DisplayName.Contains(searchText, StringComparison.OrdinalIgnoreCase) &&
-                    !t.Label.Contains(searchText, StringComparison.OrdinalIgnoreCase))
-                    return false;
-            }
+        InitializeIconService();
+        if (_iconService == null) return;
 
-            return true;
-        }).ToList();
+        var baseIdx = _selectedType.BaseItemIndex;
+        var minStr = _gameDataService.Get2DAValue("baseitems", baseIdx, "MinRange");
+        var maxStr = _gameDataService.Get2DAValue("baseitems", baseIdx, "MaxRange");
 
-        foreach (var type in filtered)
+        int minRange = 0, maxRange = 0;
+        if (int.TryParse(minStr, out int mn)) minRange = mn;
+        if (int.TryParse(maxStr, out int mx)) maxRange = mx;
+
+        // Cap at reasonable limit to avoid UI lag
+        if (maxRange - minRange > 300) maxRange = minRange + 300;
+
+        int iconCount = 0;
+        int start = minRange == 0 ? 1 : minRange; // 0 often has no icon
+
+        for (int modelNum = start; modelNum <= maxRange; modelNum++)
         {
-            var icon = _iconService?.GetItemIcon(type.BaseItemIndex);
+            var icon = _iconService.GetItemIcon(baseIdx, modelNum);
+            if (icon == null) continue;
+
+            iconCount++;
+            var capturedModel = (byte)modelNum;
 
             var button = new Button
             {
@@ -389,33 +366,19 @@ public partial class NewItemWizardWindow : Window
                 Height = 48,
                 Margin = new Thickness(2),
                 Padding = new Thickness(2),
-                Tag = type,
+                Tag = capturedModel,
             };
-            ToolTip.SetTip(button, type.DisplayName);
+            ToolTip.SetTip(button, $"{_selectedType.DisplayName} #{modelNum}");
 
-            if (icon != null)
+            button.Content = new Image
             {
-                button.Content = new Image
-                {
-                    Source = icon,
-                    Width = 40,
-                    Height = 40,
-                    Stretch = Stretch.Uniform
-                };
-            }
-            else
-            {
-                button.Content = new TextBlock
-                {
-                    Text = type.DisplayName.Length > 3 ? type.DisplayName[..3] : type.DisplayName,
-                    FontSize = 10,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    TextTrimming = TextTrimming.CharacterEllipsis
-                };
-            }
+                Source = icon,
+                Width = 40,
+                Height = 40,
+                Stretch = Stretch.Uniform
+            };
 
-            if (_selectedType != null && _selectedType.BaseItemIndex == type.BaseItemIndex)
+            if (_selectedModelPart1 == capturedModel)
             {
                 button.BorderBrush = new SolidColorBrush(Colors.DodgerBlue);
                 button.BorderThickness = new Thickness(2);
@@ -423,15 +386,16 @@ public partial class NewItemWizardWindow : Window
 
             button.Click += (_, _) =>
             {
-                _selectedType = type;
-                UpdateNextEnabled();
-                PopulateIconGrid(); // Refresh selection highlight
+                _selectedModelPart1 = capturedModel;
+                PopulateIconVariations();
             };
 
             IconGridPanel.Children.Add(button);
         }
 
-        TypeCountText.Text = $"Showing {filtered.Count} of {_allBaseItemTypes.Count} types";
+        IconPanelTitle.Text = iconCount > 0
+            ? $"{_selectedType.DisplayName} — {iconCount} icons"
+            : $"{_selectedType.DisplayName} — no icons found";
     }
 
     private void UpdateNextEnabled()
@@ -604,7 +568,7 @@ public partial class NewItemWizardWindow : Window
                 BaseItem = _selectedType.BaseItemIndex,
                 Identified = true,
                 Dropable = true,
-                ModelPart1 = 1,
+                ModelPart1 = _selectedModelPart1,
                 PaletteID = paletteId,
             };
             uti.LocalizedName.SetString(0, name);

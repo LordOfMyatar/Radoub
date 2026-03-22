@@ -2,8 +2,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="ItemEditor.Views.NewItemWizardWindow"
         Title="New Item — Step 1 of 3: Item Type"
-        Width="520" Height="580"
-        CanResize="False"
+        Width="700" Height="600"
+        CanResize="True"
         WindowStartupLocation="CenterOwner"
         AutomationProperties.AutomationId="NewItemWizardWindow">
 
@@ -66,29 +66,35 @@
                          Margin="0,4,0,4"
                          AutomationProperties.AutomationId="TypeSearchBox"/>
 
-                <!-- Counter and view toggle -->
-                <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,4">
-                    <TextBlock Grid.Column="0" x:Name="TypeCountText"
-                               FontSize="11"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                               VerticalAlignment="Center"/>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
-                        <ToggleButton x:Name="ListViewToggle" Content="☰" ToolTip.Tip="List View"
-                                      IsChecked="True" Click="OnListViewToggle" Width="28" Height="28" Padding="0"/>
-                        <ToggleButton x:Name="IconViewToggle" Content="▦" ToolTip.Tip="Icon View"
-                                      IsChecked="False" Click="OnIconViewToggle" Width="28" Height="28" Padding="0"/>
-                    </StackPanel>
+                <!-- Counter -->
+                <TextBlock DockPanel.Dock="Top" x:Name="TypeCountText"
+                           FontSize="11"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           Margin="0,0,0,4"/>
+
+                <!-- Type list + icon variations side by side -->
+                <Grid ColumnDefinitions="*,*" RowDefinitions="*">
+                    <!-- Item type list -->
+                    <ListBox Grid.Column="0" x:Name="TypeListBox"
+                             SelectionChanged="OnTypeSelectionChanged"
+                             Margin="0,0,4,0"
+                             AutomationProperties.AutomationId="TypeListBox"/>
+
+                    <!-- Icon variations for selected type -->
+                    <Border Grid.Column="1"
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                            BorderThickness="1" CornerRadius="4">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top" x:Name="IconPanelTitle"
+                                       Text="Select an item type to browse icons"
+                                       FontSize="11" Margin="8,4"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <ScrollViewer>
+                                <WrapPanel x:Name="IconGridPanel" Margin="4"/>
+                            </ScrollViewer>
+                        </DockPanel>
+                    </Border>
                 </Grid>
-
-                <!-- Item type list (list view) -->
-                <ListBox x:Name="TypeListBox"
-                         SelectionChanged="OnTypeSelectionChanged"
-                         AutomationProperties.AutomationId="TypeListBox"/>
-
-                <!-- Icon grid (icon view) -->
-                <ScrollViewer x:Name="IconScrollViewer" IsVisible="False">
-                    <WrapPanel x:Name="IconGridPanel" Margin="4"/>
-                </ScrollViewer>
             </DockPanel>
 
             <!-- Step 2: Name & Identity -->
