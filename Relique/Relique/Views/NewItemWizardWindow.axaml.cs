@@ -339,6 +339,25 @@ public partial class NewItemWizardWindow : Window
         if (_iconService == null) return;
 
         var baseIdx = _selectedType.BaseItemIndex;
+        var defaultIcon = _gameDataService.Get2DAValue("baseitems", baseIdx, "DefaultIcon");
+
+        // If DefaultIcon is set (not "****"), all variations share the same icon.
+        // ModelPart1 only changes the 3D model, not the inventory icon.
+        bool hasIconVariety = string.IsNullOrEmpty(defaultIcon) || defaultIcon == "****";
+
+        if (!hasIconVariety)
+        {
+            // Show single icon with explanation
+            var icon = _iconService.GetItemIcon(baseIdx);
+            if (icon != null)
+            {
+                AddIconButton(icon, 1, $"{_selectedType.DisplayName}");
+            }
+            IconPanelTitle.Text = $"{_selectedType.DisplayName} — fixed icon (model varies)";
+            return;
+        }
+
+        // DefaultIcon is "****" — each ModelPart1 value has a unique icon
         var minStr = _gameDataService.Get2DAValue("baseitems", baseIdx, "MinRange");
         var maxStr = _gameDataService.Get2DAValue("baseitems", baseIdx, "MaxRange");
 
@@ -346,11 +365,11 @@ public partial class NewItemWizardWindow : Window
         if (int.TryParse(minStr, out int mn)) minRange = mn;
         if (int.TryParse(maxStr, out int mx)) maxRange = mx;
 
-        // Cap at reasonable limit to avoid UI lag
+        // Cap to avoid UI lag
         if (maxRange - minRange > 300) maxRange = minRange + 300;
 
         int iconCount = 0;
-        int start = minRange == 0 ? 1 : minRange; // 0 often has no icon
+        int start = minRange == 0 ? 1 : minRange;
 
         for (int modelNum = start; modelNum <= maxRange; modelNum++)
         {
@@ -358,44 +377,47 @@ public partial class NewItemWizardWindow : Window
             if (icon == null) continue;
 
             iconCount++;
-            var capturedModel = (byte)modelNum;
-
-            var button = new Button
-            {
-                Width = 48,
-                Height = 48,
-                Margin = new Thickness(2),
-                Padding = new Thickness(2),
-                Tag = capturedModel,
-            };
-            ToolTip.SetTip(button, $"{_selectedType.DisplayName} #{modelNum}");
-
-            button.Content = new Image
-            {
-                Source = icon,
-                Width = 40,
-                Height = 40,
-                Stretch = Stretch.Uniform
-            };
-
-            if (_selectedModelPart1 == capturedModel)
-            {
-                button.BorderBrush = new SolidColorBrush(Colors.DodgerBlue);
-                button.BorderThickness = new Thickness(2);
-            }
-
-            button.Click += (_, _) =>
-            {
-                _selectedModelPart1 = capturedModel;
-                PopulateIconVariations();
-            };
-
-            IconGridPanel.Children.Add(button);
+            AddIconButton(icon, (byte)modelNum, $"{_selectedType.DisplayName} #{modelNum}");
         }
 
         IconPanelTitle.Text = iconCount > 0
             ? $"{_selectedType.DisplayName} — {iconCount} icons"
             : $"{_selectedType.DisplayName} — no icons found";
+    }
+
+    private void AddIconButton(Bitmap icon, byte modelPart, string tooltip)
+    {
+        var button = new Button
+        {
+            Width = 48,
+            Height = 48,
+            Margin = new Thickness(2),
+            Padding = new Thickness(2),
+            Tag = modelPart,
+        };
+        ToolTip.SetTip(button, tooltip);
+
+        button.Content = new Image
+        {
+            Source = icon,
+            Width = 40,
+            Height = 40,
+            Stretch = Stretch.Uniform
+        };
+
+        if (_selectedModelPart1 == modelPart)
+        {
+            button.BorderBrush = new SolidColorBrush(Colors.DodgerBlue);
+            button.BorderThickness = new Thickness(2);
+        }
+
+        button.Click += (_, _) =>
+        {
+            _selectedModelPart1 = modelPart;
+            PopulateIconVariations();
+        };
+
+        IconGridPanel.Children.Add(button);
     }
 
     private void UpdateNextEnabled()
