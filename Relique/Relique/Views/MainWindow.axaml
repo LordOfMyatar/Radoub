@@ -327,14 +327,29 @@
                                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                        DockPanel.Dock="Left"/>
                                         </DockPanel>
-                                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                                BorderThickness="1" CornerRadius="4"
-                                                MinHeight="60" MaxHeight="180"
-                                                Padding="4">
-                                            <ScrollViewer>
-                                                <WrapPanel x:Name="IconChooserGrid" Margin="2"/>
-                                            </ScrollViewer>
-                                        </Border>
+                                        <Grid ColumnDefinitions="Auto,8,*" Margin="0,0,0,4">
+                                            <!-- Selected icon preview -->
+                                            <Border Grid.Column="0"
+                                                    BorderBrush="{DynamicResource ThemeAccent}"
+                                                    BorderThickness="2" CornerRadius="4"
+                                                    Width="72" Height="72"
+                                                    VerticalAlignment="Top">
+                                                <Image x:Name="SelectedIconPreview"
+                                                       Width="64" Height="64"
+                                                       Stretch="Uniform"
+                                                       RenderOptions.BitmapInterpolationMode="HighQuality"/>
+                                            </Border>
+                                            <!-- Icon grid -->
+                                            <Border Grid.Column="2"
+                                                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                    BorderThickness="1" CornerRadius="4"
+                                                    MinHeight="60" MaxHeight="180"
+                                                    Padding="4">
+                                                <ScrollViewer>
+                                                    <WrapPanel x:Name="IconChooserGrid" Margin="2"/>
+                                                </ScrollViewer>
+                                            </Border>
+                                        </Grid>
                                     </StackPanel>
 
                                     <!-- Model Parts (ModelType 0/1/2) -->

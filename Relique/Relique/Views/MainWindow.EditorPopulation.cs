@@ -26,6 +26,7 @@ public partial class MainWindow
             ArmorPartsPanel.IsVisible = false;
             IconChooserPanel.IsVisible = false;
             IconChooserGrid.Children.Clear();
+            SelectedIconPreview.Source = null;
             PropertyConfigPanel.IsVisible = false;
             AssignedPropertiesList.Items.Clear();
             _selectedPropertyType = null;
@@ -247,6 +248,7 @@ public partial class MainWindow
     private void PopulateIconChooser(int baseItemIndex)
     {
         IconChooserGrid.Children.Clear();
+        SelectedIconPreview.Source = null;
 
         if (_itemIconService == null || _itemViewModel == null)
         {
@@ -292,6 +294,14 @@ public partial class MainWindow
             }
         }
 
+        // If no icon in the grid matched the current selection, try to show a preview anyway
+        if (SelectedIconPreview.Source == null && _itemIconService != null)
+        {
+            var currentIcon = _itemIconService.GetItemIcon(baseItemIndex, currentModelPart1);
+            if (currentIcon != null)
+                SelectedIconPreview.Source = currentIcon;
+        }
+
         IconChooserInfoLabel.Text = iconCount > 1
             ? $"({iconCount} variations)"
             : iconCount == 1
@@ -304,15 +314,17 @@ public partial class MainWindow
         var image = new Avalonia.Controls.Image
         {
             Source = icon,
-            Width = 48,
-            Height = 48
+            Width = 40,
+            Height = 40,
+            Stretch = Avalonia.Media.Stretch.Uniform
         };
+        Avalonia.Media.RenderOptions.SetBitmapInterpolationMode(image, Avalonia.Media.Imaging.BitmapInterpolationMode.HighQuality);
 
         var button = new Button
         {
             Content = image,
-            Width = 56,
-            Height = 56,
+            Width = 48,
+            Height = 48,
             Margin = new Thickness(2),
             Padding = new Thickness(2),
             Tag = modelPart
@@ -324,6 +336,9 @@ public partial class MainWindow
         {
             button.BorderBrush = Avalonia.Media.Brushes.DodgerBlue;
             button.BorderThickness = new Thickness(2);
+
+            // Update the selected icon preview
+            SelectedIconPreview.Source = icon;
         }
 
         button.Click += OnIconChooserButtonClick;
