@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.97] - 2026-03-22
-**Branch**: `radoub/issue-1857` | **PR**: #TBD
+**Branch**: `radoub/issue-1857` | **PR**: #1924
 
 ### Sprint: Replace Engine and Tool Dispatch (Phase 3) (#1857)
 
