@@ -9,11 +9,12 @@
 #   .\run-tests.ps1 -Tool Fence               # Fence + shared library tests
 #   .\run-tests.ps1 -Tool Trebuchet           # Trebuchet UI tests + shared library tests
 #   .\run-tests.ps1 -Tool Relique             # Relique + shared library tests
+#   .\run-tests.ps1 -Tool Radoub              # Shared library tests only (Formats, UI, Dictionary)
 #   .\run-tests.ps1 -UnitOnly                 # All unit tests, no UI tests
 #   .\run-tests.ps1 -TechDebt                 # Include tech debt scan (large files)
 
 param(
-    [ValidateSet("Parley", "Quartermaster", "Manifest", "Fence", "Trebuchet", "Relique")]
+    [ValidateSet("Parley", "Quartermaster", "Manifest", "Fence", "Trebuchet", "Relique", "Radoub")]
     [string]$Tool,
     [switch]$SkipShared,
     [switch]$UIOnly,
