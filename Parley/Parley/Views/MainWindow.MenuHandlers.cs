@@ -493,6 +493,10 @@ namespace DialogEditor.Views
             }
         }
 
+        /// <summary>
+        /// Find a TreeViewSafeNode by its underlying DialogNode reference.
+        /// Forces lazy-load of children at each level to traverse collapsed nodes.
+        /// </summary>
         private Models.TreeViewSafeNode? FindTreeNodeByReference(
             System.Collections.ObjectModel.ObservableCollection<Models.TreeViewSafeNode> nodes,
             Models.DialogNode target)
@@ -502,7 +506,10 @@ namespace DialogEditor.Views
                 if (ReferenceEquals(node.OriginalNode, target))
                     return node;
 
-                if (node.Children == null) continue;
+                // Force lazy-load so we can search collapsed subtrees
+                node.PopulateChildren();
+
+                if (node.Children == null || node.Children.Count == 0) continue;
                 var found = FindTreeNodeByReference(node.Children, target);
                 if (found != null)
                     return found;
@@ -510,9 +517,11 @@ namespace DialogEditor.Views
             return null;
         }
 
+        /// <summary>
+        /// Expand all ancestors of the target node so it becomes visible in the tree.
+        /// </summary>
         private void ExpandToNode(Models.TreeViewSafeNode targetNode)
         {
-            // Walk up the tree to expand all ancestors
             var path = new System.Collections.Generic.List<Models.TreeViewSafeNode>();
             FindNodePath(_viewModel.DialogNodes, targetNode, path);
 
@@ -530,7 +539,10 @@ namespace DialogEditor.Views
                 if (ReferenceEquals(node, target))
                     return true;
 
-                if (node.Children == null) continue;
+                // Force lazy-load for path finding too
+                node.PopulateChildren();
+
+                if (node.Children == null || node.Children.Count == 0) continue;
                 path.Add(node);
                 if (FindNodePath(node.Children, target, path))
                     return true;
