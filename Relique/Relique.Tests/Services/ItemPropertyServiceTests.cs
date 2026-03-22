@@ -199,6 +199,39 @@ public class ItemPropertyServiceTests
     }
 
     [Fact]
+    public void GetAvailablePropertyTypes_DisambiguatesVsVariants_BaseKeepsCleanName()
+    {
+        var mock = CreateMockWithItemPropertyData();
+
+        // Add AC Bonus vs. variants that share the same TLK display name as row 1
+        mock.Set2DAValue("itempropdef", 2, "Name", "101");  // Same TLK string as AC Bonus
+        mock.Set2DAValue("itempropdef", 2, "Label", "IP_CONST_ACBONUS_VS_ALIGN");
+        mock.Set2DAValue("itempropdef", 2, "SubTypeResRef", "iprp_aligngrp");
+        mock.Set2DAValue("itempropdef", 2, "CostTableResRef", "2");
+        mock.Set2DAValue("itempropdef", 2, "Param1ResRef", "****");
+        mock.Set2DAValue("itempropdef", 2, "GameStrRef", "101");
+
+        mock.Set2DAValue("itempropdef", 4, "Name", "101");  // Same TLK string
+        mock.Set2DAValue("itempropdef", 4, "Label", "IP_CONST_ACBONUS_VS_RACE");
+        mock.Set2DAValue("itempropdef", 4, "SubTypeResRef", "iprp_racialtype");
+        mock.Set2DAValue("itempropdef", 4, "CostTableResRef", "2");
+        mock.Set2DAValue("itempropdef", 4, "Param1ResRef", "****");
+        mock.Set2DAValue("itempropdef", 4, "GameStrRef", "101");
+
+        var service = new ItemPropertyService(mock);
+        var types = service.GetAvailablePropertyTypes();
+
+        var acTypes = types.Where(t => t.DisplayName.Contains("AC Bonus")).ToList();
+        Assert.Equal(3, acTypes.Count);
+
+        // Base property keeps clean name (empty suffix in constants map)
+        Assert.Contains(acTypes, t => t.PropertyIndex == 1 && t.DisplayName == "AC Bonus");
+        // Variants get "vs." suffixes
+        Assert.Contains(acTypes, t => t.PropertyIndex == 2 && t.DisplayName == "AC Bonus (vs. Alignment Group)");
+        Assert.Contains(acTypes, t => t.PropertyIndex == 4 && t.DisplayName == "AC Bonus (vs. Racial Group)");
+    }
+
+    [Fact]
     public void GetAvailablePropertyTypes_FallsBackToLabelForUnknownDuplicates()
     {
         var mock = CreateMockWithItemPropertyData();

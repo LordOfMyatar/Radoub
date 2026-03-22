@@ -289,7 +289,9 @@ public class ItemPropertyService
                 var suffix = ItemPropertyConstants.TryGetValue(type.PropertyIndex, out var name)
                     ? name
                     : FormatLabel(type.Label);
-                type.DisplayName = $"{type.DisplayName} ({suffix})";
+
+                if (!string.IsNullOrEmpty(suffix))
+                    type.DisplayName = $"{type.DisplayName} ({suffix})";
             }
         }
     }
@@ -317,10 +319,43 @@ public class ItemPropertyService
     /// </summary>
     private static readonly Dictionary<int, string> ItemPropertyConstants = new()
     {
-        // "On Hit" group — three properties that all resolve to "On Hit" in TLK
-        { 48, "Properties" },        // ITEM_PROPERTY_ON_HIT_PROPERTIES — effects like Stun, Sleep, Hold
-        { 72, "Monster Hit" },       // ITEM_PROPERTY_ON_MONSTER_HIT — monster-specific on-hit effects
-        { 82, "Cast Spell" },        // ITEM_PROPERTY_ONHITCASTSPELL — cast spell on hit
+        // AC Bonus group
+        { 1, "" },                           // ITEM_PROPERTY_AC_BONUS (base)
+        { 2, "vs. Alignment Group" },        // ITEM_PROPERTY_AC_BONUS_VS_ALIGNMENT_GROUP
+        { 3, "vs. Damage Type" },            // ITEM_PROPERTY_AC_BONUS_VS_DAMAGE_TYPE
+        { 4, "vs. Racial Group" },           // ITEM_PROPERTY_AC_BONUS_VS_RACIAL_GROUP
+        { 5, "vs. Specific Alignment" },     // ITEM_PROPERTY_AC_BONUS_VS_SPECIFIC_ALIGNMENT
+
+        // Enhancement Bonus group
+        { 6, "" },                           // ITEM_PROPERTY_ENHANCEMENT_BONUS (base)
+        { 7, "vs. Alignment Group" },        // ITEM_PROPERTY_ENHANCEMENT_BONUS_VS_ALIGNMENT_GROUP
+        { 8, "vs. Racial Group" },           // ITEM_PROPERTY_ENHANCEMENT_BONUS_VS_RACIAL_GROUP
+        { 9, "vs. Specific Alignment" },     // ITEM_PROPERTY_ENHANCEMENT_BONUS_VS_SPECIFIC_ALIGNEMENT
+
+        // Damage Bonus group
+        { 16, "" },                          // ITEM_PROPERTY_DAMAGE_BONUS (base)
+        { 17, "vs. Alignment Group" },       // ITEM_PROPERTY_DAMAGE_BONUS_VS_ALIGNMENT_GROUP
+        { 18, "vs. Racial Group" },          // ITEM_PROPERTY_DAMAGE_BONUS_VS_RACIAL_GROUP
+        { 19, "vs. Specific Alignment" },    // ITEM_PROPERTY_DAMAGE_BONUS_VS_SPECIFIC_ALIGNMENT
+
+        // Saving Throw Bonus group
+        { 40, "" },                          // ITEM_PROPERTY_SAVING_THROW_BONUS (base)
+        { 41, "Specific" },                  // ITEM_PROPERTY_SAVING_THROW_BONUS_SPECIFIC
+
+        // Decreased Saving Throws group
+        { 49, "" },                          // ITEM_PROPERTY_DECREASED_SAVING_THROWS (base)
+        { 50, "Specific" },                  // ITEM_PROPERTY_DECREASED_SAVING_THROWS_SPECIFIC
+
+        // "On Hit" group
+        { 48, "Properties" },               // ITEM_PROPERTY_ON_HIT_PROPERTIES — effects like Stun, Sleep, Hold
+        { 72, "Monster Hit" },              // ITEM_PROPERTY_ON_MONSTER_HIT — monster-specific on-hit effects
+        { 82, "Cast Spell" },               // ITEM_PROPERTY_ONHITCASTSPELL — cast spell on hit
+
+        // Attack Bonus group
+        { 56, "" },                          // ITEM_PROPERTY_ATTACK_BONUS (base)
+        { 57, "vs. Alignment Group" },       // ITEM_PROPERTY_ATTACK_BONUS_VS_ALIGNMENT_GROUP
+        { 58, "vs. Racial Group" },          // ITEM_PROPERTY_ATTACK_BONUS_VS_RACIAL_GROUP
+        { 59, "vs. Specific Alignment" },    // ITEM_PROPERTY_ATTACK_BONUS_VS_SPECIFIC_ALIGNMENT
     };
 
     private static bool IsValid(string? value) => !string.IsNullOrEmpty(value) && value != "****";
