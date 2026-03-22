@@ -159,6 +159,9 @@ public abstract class SearchProviderBase
     /// <summary>
     /// Apply a text replacement to a ResRef value with 16-char length validation.
     /// Returns the new value and an optional warning if truncated.
+    /// Note: This changes the reference field only — it does NOT rename the
+    /// actual resource file on disk. The caller must rename files separately
+    /// if the referenced resource (e.g., a .utc blueprint) needs to match.
     /// </summary>
     protected static (string newValue, string? warning) ReplaceResRef(string value, ReplaceOperation op)
     {
