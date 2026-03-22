@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.0-alpha] - 2026-03-21
-**Branch**: `relique/issue-1833` | **PR**: #TBD
+**Branch**: `relique/issue-1833` | **PR**: #1899
 
 ### Sprint: TLK Resolution, Wizard Icons, and MainWindow Split (#1833)
 
