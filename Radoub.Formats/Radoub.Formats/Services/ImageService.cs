@@ -101,7 +101,14 @@ public class ImageService : IImageService
             return image;
 
         // Try DDS as fallback
-        return LoadImage(iconResRef, ResourceTypes.Dds);
+        image = LoadImage(iconResRef, ResourceTypes.Dds);
+        if (image != null)
+            return image;
+
+        UnifiedLogger.Log(LogLevel.WARN,
+            $"Icon not found in any format (TGA/PLT/DDS): {iconResRef} (base type {baseItemType}, model {modelNumber})",
+            "ImageService", "Image");
+        return null;
     }
 
     /// <inheritdoc/>

@@ -46,9 +46,8 @@ public static class TlkHelper
 
         return label.Contains("deleted", StringComparison.OrdinalIgnoreCase) ||
                label.Contains("padding", StringComparison.OrdinalIgnoreCase) ||
-               label.StartsWith("xp2spec", StringComparison.OrdinalIgnoreCase) ||
-               label.StartsWith("bio_reserved", StringComparison.OrdinalIgnoreCase) ||
-               label.StartsWith("bioreserved", StringComparison.OrdinalIgnoreCase);
+               label.Contains("reserved", StringComparison.OrdinalIgnoreCase) ||
+               label.StartsWith("xp2spec", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>

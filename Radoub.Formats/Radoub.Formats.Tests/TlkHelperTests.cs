@@ -108,6 +108,19 @@ public class TlkHelperTests
     }
 
     [Theory]
+    [InlineData("bio_reserved")]
+    [InlineData("BioReserved")]
+    [InlineData("BIORESERVED_01")]
+    [InlineData("cep_reserved")]
+    [InlineData("CEPReserved")]
+    [InlineData("CEP Reserved")]
+    [InlineData("Reserved")]
+    public void IsGarbageLabel_ReservedLabels_ReturnsTrue(string label)
+    {
+        Assert.True(TlkHelper.IsGarbageLabel(label));
+    }
+
+    [Theory]
     [InlineData(null)]
     [InlineData("")]
     public void IsGarbageLabel_NullOrEmpty_ReturnsTrue(string? label)
