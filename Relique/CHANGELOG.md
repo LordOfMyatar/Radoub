@@ -15,9 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Properties Tree & Search UX (#1830)
 
-- [ ] #1811 — Fix "On Hit" appearing 3 times in Available Properties tree
-- [ ] #1812 — Search auto-expands matching subcategories
-- [ ] #1813 — Available Properties tree UX — filtering and right-click add
+- [x] #1811 — Disambiguate "On Hit" entries using nwscript.nss constants (Properties, Monster Hit, Cast Spell)
+- [x] #1812 — Search auto-expands matching subcategories with bold highlighting
+- [x] #1813 — Category filter ComboBox, right-click "Add to Item" context menu, property count label
 
 ---
 
