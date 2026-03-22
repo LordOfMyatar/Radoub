@@ -68,6 +68,9 @@ public class ItemPropertyService
                 paramTableIndex: ParseIntOrNull(param1ResRef)));
         }
 
+        // Disambiguate duplicate display names by appending context from Label
+        DisambiguateDuplicateNames(_cachedPropertyTypes);
+
         _cachedPropertyTypes = _cachedPropertyTypes.OrderBy(t => t.DisplayName).ToList();
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {_cachedPropertyTypes.Count} property types from itempropdef.2da");
         return _cachedPropertyTypes;
@@ -268,6 +271,93 @@ public class ItemPropertyService
         return entries;
     }
 
+    /// <summary>
+    /// When multiple property types share the same display name (e.g., "On Hit" appears
+    /// for OnHit, OnHitCastSpell, and OnMonsterHit), append a suffix derived from
+    /// the nwscript.nss ITEM_PROPERTY_* constant names to make each entry distinguishable.
+    /// </summary>
+    private static void DisambiguateDuplicateNames(List<PropertyTypeInfo> types)
+    {
+        var duplicateGroups = types.GroupBy(t => t.DisplayName)
+            .Where(g => g.Count() > 1);
+
+        foreach (var group in duplicateGroups)
+        {
+            foreach (var type in group)
+            {
+                // Try the known constant map first, fall back to label-based suffix
+                var suffix = ItemPropertyConstants.TryGetValue(type.PropertyIndex, out var name)
+                    ? name
+                    : FormatLabel(type.Label);
+
+                if (!string.IsNullOrEmpty(suffix))
+                    type.DisplayName = $"{type.DisplayName} ({suffix})";
+            }
+        }
+    }
+
+    /// <summary>
+    /// Fallback: strip IP_CONST_ prefix and format underscored label as title case.
+    /// Used when a property index isn't in the known constants map.
+    /// </summary>
+    private static string FormatLabel(string label)
+    {
+        var stripped = label;
+        if (stripped.StartsWith("IP_CONST_", StringComparison.OrdinalIgnoreCase))
+            stripped = stripped.Substring("IP_CONST_".Length);
+
+        var words = stripped.Split('_', StringSplitOptions.RemoveEmptyEntries);
+        return string.Join(" ", words.Select(w =>
+            w.Length <= 1 ? w.ToUpperInvariant() :
+            char.ToUpperInvariant(w[0]) + w.Substring(1).ToLowerInvariant()));
+    }
+
+    /// <summary>
+    /// Known ITEM_PROPERTY_* constants from nwscript.nss that share TLK display names.
+    /// Maps itempropdef.2da row index → human-readable disambiguation suffix.
+    /// Source: nwscript.nss (stable game constants).
+    /// </summary>
+    private static readonly Dictionary<int, string> ItemPropertyConstants = new()
+    {
+        // AC Bonus group
+        { 1, "" },                           // ITEM_PROPERTY_AC_BONUS (base)
+        { 2, "vs. Alignment Group" },        // ITEM_PROPERTY_AC_BONUS_VS_ALIGNMENT_GROUP
+        { 3, "vs. Damage Type" },            // ITEM_PROPERTY_AC_BONUS_VS_DAMAGE_TYPE
+        { 4, "vs. Racial Group" },           // ITEM_PROPERTY_AC_BONUS_VS_RACIAL_GROUP
+        { 5, "vs. Specific Alignment" },     // ITEM_PROPERTY_AC_BONUS_VS_SPECIFIC_ALIGNMENT
+
+        // Enhancement Bonus group
+        { 6, "" },                           // ITEM_PROPERTY_ENHANCEMENT_BONUS (base)
+        { 7, "vs. Alignment Group" },        // ITEM_PROPERTY_ENHANCEMENT_BONUS_VS_ALIGNMENT_GROUP
+        { 8, "vs. Racial Group" },           // ITEM_PROPERTY_ENHANCEMENT_BONUS_VS_RACIAL_GROUP
+        { 9, "vs. Specific Alignment" },     // ITEM_PROPERTY_ENHANCEMENT_BONUS_VS_SPECIFIC_ALIGNEMENT
+
+        // Damage Bonus group
+        { 16, "" },                          // ITEM_PROPERTY_DAMAGE_BONUS (base)
+        { 17, "vs. Alignment Group" },       // ITEM_PROPERTY_DAMAGE_BONUS_VS_ALIGNMENT_GROUP
+        { 18, "vs. Racial Group" },          // ITEM_PROPERTY_DAMAGE_BONUS_VS_RACIAL_GROUP
+        { 19, "vs. Specific Alignment" },    // ITEM_PROPERTY_DAMAGE_BONUS_VS_SPECIFIC_ALIGNMENT
+
+        // Saving Throw Bonus group
+        { 40, "" },                          // ITEM_PROPERTY_SAVING_THROW_BONUS (base)
+        { 41, "Specific" },                  // ITEM_PROPERTY_SAVING_THROW_BONUS_SPECIFIC
+
+        // Decreased Saving Throws group
+        { 49, "" },                          // ITEM_PROPERTY_DECREASED_SAVING_THROWS (base)
+        { 50, "Specific" },                  // ITEM_PROPERTY_DECREASED_SAVING_THROWS_SPECIFIC
+
+        // "On Hit" group
+        { 48, "Properties" },               // ITEM_PROPERTY_ON_HIT_PROPERTIES — effects like Stun, Sleep, Hold
+        { 72, "Monster Hit" },              // ITEM_PROPERTY_ON_MONSTER_HIT — monster-specific on-hit effects
+        { 82, "Cast Spell" },               // ITEM_PROPERTY_ONHITCASTSPELL — cast spell on hit
+
+        // Attack Bonus group
+        { 56, "" },                          // ITEM_PROPERTY_ATTACK_BONUS (base)
+        { 57, "vs. Alignment Group" },       // ITEM_PROPERTY_ATTACK_BONUS_VS_ALIGNMENT_GROUP
+        { 58, "vs. Racial Group" },          // ITEM_PROPERTY_ATTACK_BONUS_VS_RACIAL_GROUP
+        { 59, "vs. Specific Alignment" },    // ITEM_PROPERTY_ATTACK_BONUS_VS_SPECIFIC_ALIGNMENT
+    };
+
     private static bool IsValid(string? value) => !string.IsNullOrEmpty(value) && value != "****";
 
     private static int? ParseIntOrNull(string? value)
@@ -286,7 +376,7 @@ public class ItemPropertyService
 public class PropertyTypeInfo
 {
     public int PropertyIndex { get; }
-    public string DisplayName { get; }
+    public string DisplayName { get; internal set; }
     public string Label { get; }
     public string? SubtypeResRef { get; }
     public int? CostTableIndex { get; }

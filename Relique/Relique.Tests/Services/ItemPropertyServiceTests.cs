@@ -150,6 +150,133 @@ public class ItemPropertyServiceTests
     }
 
     [Fact]
+    public void GetAvailablePropertyTypes_DisambiguatesDuplicateDisplayNames()
+    {
+        var mock = CreateMockWithItemPropertyData();
+
+        // Add three "On Hit" entries with different Labels but same TLK display name
+        mock.Set2DAValue("itempropdef", 48, "Name", "700");
+        mock.Set2DAValue("itempropdef", 48, "Label", "IP_CONST_ONHIT");
+        mock.Set2DAValue("itempropdef", 48, "SubTypeResRef", "iprp_onhit");
+        mock.Set2DAValue("itempropdef", 48, "CostTableResRef", "****");
+        mock.Set2DAValue("itempropdef", 48, "Param1ResRef", "****");
+        mock.Set2DAValue("itempropdef", 48, "GameStrRef", "700");
+
+        mock.Set2DAValue("itempropdef", 72, "Name", "701");
+        mock.Set2DAValue("itempropdef", 72, "Label", "IP_CONST_ONMONSTERHIT");
+        mock.Set2DAValue("itempropdef", 72, "SubTypeResRef", "iprp_monsterhit");
+        mock.Set2DAValue("itempropdef", 72, "CostTableResRef", "****");
+        mock.Set2DAValue("itempropdef", 72, "Param1ResRef", "****");
+        mock.Set2DAValue("itempropdef", 72, "GameStrRef", "701");
+
+        mock.Set2DAValue("itempropdef", 82, "Name", "702");
+        mock.Set2DAValue("itempropdef", 82, "Label", "IP_CONST_ONHITCASTSPELL");
+        mock.Set2DAValue("itempropdef", 82, "SubTypeResRef", "iprp_onhitspell");
+        mock.Set2DAValue("itempropdef", 82, "CostTableResRef", "****");
+        mock.Set2DAValue("itempropdef", 82, "Param1ResRef", "****");
+        mock.Set2DAValue("itempropdef", 82, "GameStrRef", "702");
+
+        // All three resolve to the same TLK string "On Hit"
+        mock.SetTlkString(700, "On Hit");
+        mock.SetTlkString(701, "On Hit");
+        mock.SetTlkString(702, "On Hit");
+
+        var service = new ItemPropertyService(mock);
+        var types = service.GetAvailablePropertyTypes();
+
+        // All three should have unique display names
+        var onHitTypes = types.Where(t => t.DisplayName.Contains("On Hit")).ToList();
+        Assert.Equal(3, onHitTypes.Count);
+
+        // Display names must be distinct
+        var distinctNames = onHitTypes.Select(t => t.DisplayName).Distinct().ToList();
+        Assert.Equal(3, distinctNames.Count);
+
+        // Each should use nwscript.nss constant names for disambiguation
+        Assert.Contains(onHitTypes, t => t.PropertyIndex == 48 && t.DisplayName == "On Hit (Properties)");
+        Assert.Contains(onHitTypes, t => t.PropertyIndex == 72 && t.DisplayName == "On Hit (Monster Hit)");
+        Assert.Contains(onHitTypes, t => t.PropertyIndex == 82 && t.DisplayName == "On Hit (Cast Spell)");
+    }
+
+    [Fact]
+    public void GetAvailablePropertyTypes_DisambiguatesVsVariants_BaseKeepsCleanName()
+    {
+        var mock = CreateMockWithItemPropertyData();
+
+        // Add AC Bonus vs. variants that share the same TLK display name as row 1
+        mock.Set2DAValue("itempropdef", 2, "Name", "101");  // Same TLK string as AC Bonus
+        mock.Set2DAValue("itempropdef", 2, "Label", "IP_CONST_ACBONUS_VS_ALIGN");
+        mock.Set2DAValue("itempropdef", 2, "SubTypeResRef", "iprp_aligngrp");
+        mock.Set2DAValue("itempropdef", 2, "CostTableResRef", "2");
+        mock.Set2DAValue("itempropdef", 2, "Param1ResRef", "****");
+        mock.Set2DAValue("itempropdef", 2, "GameStrRef", "101");
+
+        mock.Set2DAValue("itempropdef", 4, "Name", "101");  // Same TLK string
+        mock.Set2DAValue("itempropdef", 4, "Label", "IP_CONST_ACBONUS_VS_RACE");
+        mock.Set2DAValue("itempropdef", 4, "SubTypeResRef", "iprp_racialtype");
+        mock.Set2DAValue("itempropdef", 4, "CostTableResRef", "2");
+        mock.Set2DAValue("itempropdef", 4, "Param1ResRef", "****");
+        mock.Set2DAValue("itempropdef", 4, "GameStrRef", "101");
+
+        var service = new ItemPropertyService(mock);
+        var types = service.GetAvailablePropertyTypes();
+
+        var acTypes = types.Where(t => t.DisplayName.Contains("AC Bonus")).ToList();
+        Assert.Equal(3, acTypes.Count);
+
+        // Base property keeps clean name (empty suffix in constants map)
+        Assert.Contains(acTypes, t => t.PropertyIndex == 1 && t.DisplayName == "AC Bonus");
+        // Variants get "vs." suffixes
+        Assert.Contains(acTypes, t => t.PropertyIndex == 2 && t.DisplayName == "AC Bonus (vs. Alignment Group)");
+        Assert.Contains(acTypes, t => t.PropertyIndex == 4 && t.DisplayName == "AC Bonus (vs. Racial Group)");
+    }
+
+    [Fact]
+    public void GetAvailablePropertyTypes_FallsBackToLabelForUnknownDuplicates()
+    {
+        var mock = CreateMockWithItemPropertyData();
+
+        // Two custom properties with the same TLK name but not in known constants map
+        mock.Set2DAValue("itempropdef", 90, "Name", "800");
+        mock.Set2DAValue("itempropdef", 90, "Label", "IP_CONST_CUSTOM_FIRE");
+        mock.Set2DAValue("itempropdef", 90, "SubTypeResRef", "****");
+        mock.Set2DAValue("itempropdef", 90, "CostTableResRef", "****");
+        mock.Set2DAValue("itempropdef", 90, "Param1ResRef", "****");
+        mock.Set2DAValue("itempropdef", 90, "GameStrRef", "800");
+
+        mock.Set2DAValue("itempropdef", 91, "Name", "801");
+        mock.Set2DAValue("itempropdef", 91, "Label", "IP_CONST_CUSTOM_ICE");
+        mock.Set2DAValue("itempropdef", 91, "SubTypeResRef", "****");
+        mock.Set2DAValue("itempropdef", 91, "CostTableResRef", "****");
+        mock.Set2DAValue("itempropdef", 91, "Param1ResRef", "****");
+        mock.Set2DAValue("itempropdef", 91, "GameStrRef", "801");
+
+        mock.SetTlkString(800, "Custom Effect");
+        mock.SetTlkString(801, "Custom Effect");
+
+        var service = new ItemPropertyService(mock);
+        var types = service.GetAvailablePropertyTypes();
+
+        var customs = types.Where(t => t.DisplayName.Contains("Custom Effect")).ToList();
+        Assert.Equal(2, customs.Count);
+        Assert.Contains(customs, t => t.DisplayName == "Custom Effect (Custom Fire)");
+        Assert.Contains(customs, t => t.DisplayName == "Custom Effect (Custom Ice)");
+    }
+
+    [Fact]
+    public void GetAvailablePropertyTypes_DoesNotDisambiguateUniqueNames()
+    {
+        var mock = CreateMockWithItemPropertyData();
+        var service = new ItemPropertyService(mock);
+
+        var types = service.GetAvailablePropertyTypes();
+
+        // Unique names should remain unchanged
+        Assert.Contains(types, t => t.DisplayName == "Ability Bonus");
+        Assert.Contains(types, t => t.DisplayName == "Enhancement Bonus");
+    }
+
+    [Fact]
     public void GetAvailablePropertyTypes_ReturnsSortedByDisplayName()
     {
         var mock = CreateMockWithItemPropertyData();

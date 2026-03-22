@@ -864,10 +864,44 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     // --- Item Properties UI ---
 
+    private string? _selectedCategory;
+
     private void InitializePropertySearchHandler()
     {
         PropertySearchBox.TextChanged += OnPropertySearchTextChanged;
+        InitializeCategoryFilter();
     }
+
+    private void InitializeCategoryFilter()
+    {
+        CategoryFilterComboBox.Items.Clear();
+        CategoryFilterComboBox.Items.Add(new ComboBoxItem { Content = "All Categories", Tag = (string?)null });
+
+        // Categories based on common item property groupings from nwscript.nss
+        var categories = new (string Label, string[] Keywords)[]
+        {
+            ("Bonus/Enhancement", new[] { "Bonus", "Enhancement", "Mighty", "Keen" }),
+            ("Damage", new[] { "Damage", "Massive Critical" }),
+            ("Defense/AC", new[] { "AC", "Saving Throw", "Spell Resistance", "Immunity", "Damage Reduction", "Damage Resistance" }),
+            ("On Hit", new[] { "On Hit", "On Monster" }),
+            ("Cast Spell", new[] { "Cast Spell" }),
+            ("Penalty/Decreased", new[] { "Decreased", "Vulnerability", "No Damage" }),
+            ("Skill/Ability", new[] { "Skill", "Ability" }),
+            ("Use Limitation", new[] { "Use Limitation" }),
+            ("Miscellaneous", new[] { "Regeneration", "Haste", "Darkvision", "Light", "True Seeing", "Freedom", "Trap", "Poison", "Visual", "Weight", "Material", "Quality" }),
+        };
+
+        foreach (var (label, _) in categories)
+        {
+            CategoryFilterComboBox.Items.Add(new ComboBoxItem { Content = label, Tag = label });
+        }
+
+        _categoryKeywords = categories.ToDictionary(c => c.Label, c => c.Keywords);
+        CategoryFilterComboBox.SelectedIndex = 0;
+        CategoryFilterComboBox.SelectionChanged += OnCategoryFilterChanged;
+    }
+
+    private Dictionary<string, string[]> _categoryKeywords = new();
 
     private void PopulateAvailableProperties(string? searchFilter = null)
     {
@@ -881,6 +915,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var types = string.IsNullOrWhiteSpace(searchFilter)
             ? _itemPropertyService.GetAvailablePropertyTypes()
             : _itemPropertyService.SearchProperties(searchFilter);
+
+        // Apply category filter
+        if (_selectedCategory != null && _categoryKeywords.TryGetValue(_selectedCategory, out var keywords))
+        {
+            types = types.Where(t =>
+                keywords.Any(k => t.DisplayName.Contains(k, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+        }
+
+        PropertyCountLabel.Text = $"({types.Count})";
 
         foreach (var type in types)
         {
@@ -907,18 +951,33 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             };
 
             // Add subtypes as children if this property has them
+            var hasMatchingSubtype = false;
             if (type.HasSubtypes)
             {
                 var subtypes = _itemPropertyService.GetSubtypes(type.PropertyIndex);
                 foreach (var subtype in subtypes)
                 {
-                    node.Items.Add(new TreeViewItem
+                    var subtypeNode = new TreeViewItem
                     {
                         Header = subtype.DisplayName,
                         Tag = subtype
-                    });
+                    };
+
+                    // Bold matching subtypes when search is active
+                    if (!string.IsNullOrWhiteSpace(searchFilter) &&
+                        subtype.DisplayName.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasMatchingSubtype = true;
+                        subtypeNode.FontWeight = Avalonia.Media.FontWeight.Bold;
+                    }
+
+                    node.Items.Add(subtypeNode);
                 }
             }
+
+            // Auto-expand when a subtype matched the search
+            if (hasMatchingSubtype)
+                node.IsExpanded = true;
 
             AvailablePropertiesTree.Items.Add(node);
         }
@@ -931,8 +990,72 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnPropertySearchTextChanged(object? sender, TextChangedEventArgs e)
     {
-        var filter = PropertySearchBox.Text;
-        PopulateAvailableProperties(filter);
+        PopulateAvailableProperties(PropertySearchBox.Text);
+    }
+
+    private void OnCategoryFilterChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (CategoryFilterComboBox.SelectedItem is ComboBoxItem item)
+        {
+            _selectedCategory = item.Tag as string;
+            PopulateAvailableProperties(PropertySearchBox.Text);
+        }
+    }
+
+    private void OnContextMenuAddToItem(object? sender, RoutedEventArgs e)
+    {
+        if (_currentItem == null || _itemPropertyService == null)
+            return;
+
+        // Get the selected tree item
+        PropertyTypeInfo? propertyType = null;
+        int subtypeIndex = 0;
+
+        if (AvailablePropertiesTree.SelectedItem is TreeViewItem selectedNode)
+        {
+            if (selectedNode.Tag is PropertyTypeInfo type)
+            {
+                propertyType = type;
+            }
+            else if (selectedNode.Tag is TwoDAEntry subtypeEntry &&
+                     selectedNode.Parent is TreeViewItem parentNode &&
+                     parentNode.Tag is PropertyTypeInfo parentType)
+            {
+                propertyType = parentType;
+                subtypeIndex = subtypeEntry.Index;
+            }
+        }
+
+        if (propertyType == null)
+            return;
+
+        // Add with default values (first cost value, specified or first subtype)
+        int costValueIndex = 0;
+        if (propertyType.HasCostTable)
+        {
+            var costValues = _itemPropertyService.GetCostValues(propertyType.PropertyIndex);
+            if (costValues.Count > 0)
+                costValueIndex = costValues[0].Index;
+        }
+
+        if (subtypeIndex == 0 && propertyType.HasSubtypes)
+        {
+            var subtypes = _itemPropertyService.GetSubtypes(propertyType.PropertyIndex);
+            if (subtypes.Count > 0)
+                subtypeIndex = subtypes[0].Index;
+        }
+
+        var property = _itemPropertyService.CreateItemProperty(
+            propertyType.PropertyIndex,
+            subtypeIndex,
+            costValueIndex,
+            paramValueIndex: null);
+
+        _currentItem.Properties.Add(property);
+        RefreshAssignedProperties();
+        MarkDirty();
+
+        UpdateStatus($"Added property: {propertyType.DisplayName}");
     }
 
     private void OnAvailablePropertySelectionChanged(object? sender, SelectionChangedEventArgs e)

@@ -437,13 +437,28 @@
                                         CornerRadius="4"
                                         Padding="8">
                                     <DockPanel>
-                                        <TextBlock DockPanel.Dock="Top" Text="Available Properties"
-                                                   FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,4">
+                                            <TextBlock Text="Available Properties"
+                                                       FontWeight="SemiBold"/>
+                                            <TextBlock x:Name="PropertyCountLabel"
+                                                       Margin="4,0,0,0"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                        </DockPanel>
+                                        <ComboBox DockPanel.Dock="Top" x:Name="CategoryFilterComboBox"
+                                                  Margin="0,0,0,4"/>
                                         <TextBox DockPanel.Dock="Top" x:Name="PropertySearchBox"
                                                  Watermark="Search properties..."
                                                  Margin="0,0,0,4"/>
                                         <TreeView x:Name="AvailablePropertiesTree"
-                                                  SelectionChanged="OnAvailablePropertySelectionChanged"/>
+                                                  SelectionChanged="OnAvailablePropertySelectionChanged">
+                                            <TreeView.ContextMenu>
+                                                <ContextMenu>
+                                                    <MenuItem x:Name="AddToItemMenuItem"
+                                                              Header="Add to Item (Default Values)"
+                                                              Click="OnContextMenuAddToItem"/>
+                                                </ContextMenu>
+                                            </TreeView.ContextMenu>
+                                        </TreeView>
                                     </DockPanel>
                                 </Border>
 

@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.8.0-alpha] - 2026-03-21
+**Branch**: `relique/issue-1830` | **PR**: #1898
+
+### Sprint: Properties Tree & Search UX (#1830)
+
+- [x] #1811 — Disambiguate "On Hit" entries using nwscript.nss constants (Properties, Monster Hit, Cast Spell)
+- [x] #1812 — Search auto-expands matching subcategories with bold highlighting
+- [x] #1813 — Category filter ComboBox, right-click "Add to Item" context menu, property count label
+
+---
+
 ## [0.7.0-alpha] - 2026-03-18
 **Branch**: `itemeditor/issue-1784` | **PR**: #1788
 
