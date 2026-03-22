@@ -446,8 +446,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         EmptyStatePanel.IsVisible = false;
         EditorContent.IsVisible = true;
 
-        // Create ViewModel and bind
-        _itemViewModel = new ItemViewModel(_currentItem);
+        // Create ViewModel and bind (pass TLK resolver for base game items with StrRef names)
+        Func<uint, string?>? tlkResolver = _gameDataService?.IsConfigured == true
+            ? strRef => _gameDataService.GetString(strRef)
+            : null;
+        _itemViewModel = new ItemViewModel(_currentItem, tlkResolver);
         EditorContent.DataContext = _itemViewModel;
 
         // Wire up dirty tracking from ViewModel property changes

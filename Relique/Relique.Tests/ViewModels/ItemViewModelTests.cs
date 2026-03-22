@@ -334,6 +334,96 @@ public class ItemViewModelTests
         Assert.Equal("Test description", uti.Description.GetDefault());
     }
 
+    #region TLK Name Resolution (#1805)
+
+    [Fact]
+    public void Name_WithStrRefAndNoLocalizedStrings_ResolvesFromTlk()
+    {
+        var uti = new UtiFile();
+        uti.LocalizedName = new CExoLocString { StrRef = 1234 };
+        Func<uint, string?> tlk = strRef => strRef == 1234 ? "Longsword" : null;
+
+        var vm = new ItemViewModel(uti, tlk);
+
+        Assert.Equal("Longsword", vm.Name);
+    }
+
+    [Fact]
+    public void Name_WithLocalizedStrings_IgnoresTlk()
+    {
+        var uti = new UtiFile();
+        uti.LocalizedName = new CExoLocString { StrRef = 1234 };
+        uti.LocalizedName.SetString(0, "Custom Name");
+        Func<uint, string?> tlk = strRef => strRef == 1234 ? "Longsword" : null;
+
+        var vm = new ItemViewModel(uti, tlk);
+
+        Assert.Equal("Custom Name", vm.Name);
+    }
+
+    [Fact]
+    public void Name_WithStrRefAndNoTlkResolver_ReturnsEmpty()
+    {
+        var uti = new UtiFile();
+        uti.LocalizedName = new CExoLocString { StrRef = 1234 };
+
+        var vm = new ItemViewModel(uti);
+
+        Assert.Equal(string.Empty, vm.Name);
+    }
+
+    [Fact]
+    public void Name_WithStrRefAndTlkReturnsNull_ReturnsEmpty()
+    {
+        var uti = new UtiFile();
+        uti.LocalizedName = new CExoLocString { StrRef = 9999 };
+        Func<uint, string?> tlk = _ => null;
+
+        var vm = new ItemViewModel(uti, tlk);
+
+        Assert.Equal(string.Empty, vm.Name);
+    }
+
+    [Fact]
+    public void Description_WithStrRefAndNoLocalizedStrings_ResolvesFromTlk()
+    {
+        var uti = new UtiFile();
+        uti.Description = new CExoLocString { StrRef = 5678 };
+        Func<uint, string?> tlk = strRef => strRef == 5678 ? "A sharp blade." : null;
+
+        var vm = new ItemViewModel(uti, tlk);
+
+        Assert.Equal("A sharp blade.", vm.Description);
+    }
+
+    [Fact]
+    public void DescIdentified_WithStrRefAndNoLocalizedStrings_ResolvesFromTlk()
+    {
+        var uti = new UtiFile();
+        uti.DescIdentified = new CExoLocString { StrRef = 9012 };
+        Func<uint, string?> tlk = strRef => strRef == 9012 ? "This is a +1 longsword." : null;
+
+        var vm = new ItemViewModel(uti, tlk);
+
+        Assert.Equal("This is a +1 longsword.", vm.DescIdentified);
+    }
+
+    [Fact]
+    public void SetName_OnTlkResolvedItem_OverridesWithLocalizedString()
+    {
+        var uti = new UtiFile();
+        uti.LocalizedName = new CExoLocString { StrRef = 1234 };
+        Func<uint, string?> tlk = strRef => strRef == 1234 ? "Longsword" : null;
+        var vm = new ItemViewModel(uti, tlk);
+
+        vm.Name = "Custom Longsword";
+
+        Assert.Equal("Custom Longsword", vm.Name);
+        Assert.Equal("Custom Longsword", uti.LocalizedName.GetDefault());
+    }
+
+    #endregion
+
     #region Test Helpers
 
     private static UtiFile CreateTestItem()
