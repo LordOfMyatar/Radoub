@@ -46,12 +46,11 @@ public class SearchProviderFactory
     {
         var factory = new SearchProviderFactory();
         factory.Register(new DlgSearchProvider());
-        // Phase 2 providers will be added as implemented:
-        // factory.Register(new UtcSearchProvider());
-        // factory.Register(new UtiSearchProvider());
-        // factory.Register(new UtmSearchProvider());
-        // factory.Register(new JrlSearchProvider());
-        // factory.Register(new GitSearchProvider());
+        factory.Register(new UtcSearchProvider());
+        factory.Register(new UtiSearchProvider());
+        factory.Register(new UtmSearchProvider());
+        factory.Register(new JrlSearchProvider());
+        factory.Register(new GitSearchProvider());
         factory.SetFallback(new GenericGffSearchProvider());
         return factory;
     }

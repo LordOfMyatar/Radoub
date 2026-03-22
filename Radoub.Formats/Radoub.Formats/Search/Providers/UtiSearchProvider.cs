@@ -1,0 +1,59 @@
+using System.Text.RegularExpressions;
+using Radoub.Formats.Common;
+using Radoub.Formats.Gff;
+using Radoub.Formats.Uti;
+
+namespace Radoub.Formats.Search;
+
+/// <summary>
+/// Search provider for UTI (item blueprint) files.
+/// Searches names, descriptions, tag, template, and comment.
+/// </summary>
+public class UtiSearchProvider : SearchProviderBase, IFileSearchProvider
+{
+    private static readonly FieldDefinition NameField = new() { Name = "Name", GffPath = "LocalizedName", FieldType = SearchFieldType.LocString, Category = SearchFieldCategory.Content, Description = "Item name" };
+    private static readonly FieldDefinition DescriptionField = new() { Name = "Description", GffPath = "Description", FieldType = SearchFieldType.LocString, Category = SearchFieldCategory.Content, Description = "Unidentified description" };
+    private static readonly FieldDefinition DescIdentifiedField = new() { Name = "Identified Description", GffPath = "DescIdentified", FieldType = SearchFieldType.LocString, Category = SearchFieldCategory.Content, Description = "Identified item description" };
+    private static readonly FieldDefinition TagField = new() { Name = "Tag", GffPath = "Tag", FieldType = SearchFieldType.Tag, Category = SearchFieldCategory.Identity, Description = "Item tag" };
+    private static readonly FieldDefinition TemplateResRefField = new() { Name = "Template ResRef", GffPath = "TemplateResRef", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Blueprint resource reference" };
+    private static readonly FieldDefinition CommentField = new() { Name = "Comment", GffPath = "Comment", FieldType = SearchFieldType.Text, Category = SearchFieldCategory.Metadata, Description = "Toolset comment" };
+
+    public ushort FileType => ResourceTypes.Uti;
+
+    public IReadOnlyList<string> Extensions => new[] { ".uti" };
+
+    public IReadOnlyList<SearchMatch> Search(GffFile gffFile, SearchCriteria criteria)
+    {
+        var bytes = GffWriter.Write(gffFile);
+        var uti = UtiReader.Read(bytes);
+
+        var regex = criteria.ToRegex();
+        var matches = new List<SearchMatch>();
+
+        if (criteria.MatchesField(NameField))
+            matches.AddRange(SearchLocString(uti.LocalizedName, NameField, regex, "LocalizedName"));
+        if (criteria.MatchesField(DescriptionField))
+            matches.AddRange(SearchLocString(uti.Description, DescriptionField, regex, "Description"));
+        if (criteria.MatchesField(DescIdentifiedField))
+            matches.AddRange(SearchLocString(uti.DescIdentified, DescIdentifiedField, regex, "DescIdentified"));
+        if (criteria.MatchesField(TagField))
+            matches.AddRange(SearchString(uti.Tag, TagField, regex, "Tag"));
+        if (criteria.MatchesField(TemplateResRefField))
+            matches.AddRange(SearchString(uti.TemplateResRef, TemplateResRefField, regex, "TemplateResRef"));
+        if (criteria.MatchesField(CommentField))
+            matches.AddRange(SearchString(uti.Comment, CommentField, regex, "Comment"));
+
+        return matches;
+    }
+
+    public IReadOnlyList<ReplaceResult> Replace(GffFile gffFile, IReadOnlyList<ReplaceOperation> operations)
+    {
+        // Phase 3
+        return operations.Select(op => new ReplaceResult
+        {
+            Success = false, Field = op.Match.Field,
+            OldValue = op.Match.FullFieldValue, NewValue = op.ReplacementText,
+            Skipped = true, SkipReason = "Replace not yet implemented for UTI provider"
+        }).ToList();
+    }
+}

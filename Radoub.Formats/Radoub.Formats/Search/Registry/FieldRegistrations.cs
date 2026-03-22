@@ -16,6 +16,7 @@ public static class FieldRegistrations
         RegisterUtm(registry);
         RegisterJrl(registry);
         RegisterIfo(registry);
+        RegisterGit(registry);
     }
 
     private static void RegisterDlg(SearchFieldRegistry registry)
@@ -170,6 +171,16 @@ public static class FieldRegistrations
             new FieldDefinition { Name = "Category Tag", GffPath = "Tag", FieldType = SearchFieldType.Tag, Category = SearchFieldCategory.Identity, Description = "Quest tag" },
             new FieldDefinition { Name = "Entry Text", GffPath = "Text", FieldType = SearchFieldType.LocString, Category = SearchFieldCategory.Content, Description = "Journal entry text" },
             new FieldDefinition { Name = "Comment", GffPath = "Comment", FieldType = SearchFieldType.Text, Category = SearchFieldCategory.Metadata, Description = "Toolset comment" }
+        );
+    }
+
+    private static void RegisterGit(SearchFieldRegistry registry)
+    {
+        registry.RegisterFileType(ResourceTypes.Git,
+            new FieldDefinition { Name = "Tag", GffPath = "Tag", FieldType = SearchFieldType.Tag, Category = SearchFieldCategory.Identity, Description = "Instance tag" },
+            new FieldDefinition { Name = "Name", GffPath = "LocName", FieldType = SearchFieldType.LocString, Category = SearchFieldCategory.Content, Description = "Instance name" },
+            new FieldDefinition { Name = "Template ResRef", GffPath = "TemplateResRef", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Blueprint resource reference" },
+            new FieldDefinition { Name = "Local Variables", GffPath = "VarTable", FieldType = SearchFieldType.Variable, Category = SearchFieldCategory.Variable, Description = "Instance local variables" }
         );
     }
 

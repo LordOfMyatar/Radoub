@@ -77,6 +77,19 @@ public class FieldRegistrationsTests
     }
 
     [Fact]
+    public void RegisterAll_RegistersGitFields()
+    {
+        var registry = new SearchFieldRegistry();
+        FieldRegistrations.RegisterAll(registry);
+        var fields = registry.GetSearchableFields(ResourceTypes.Git);
+        Assert.NotEmpty(fields);
+        Assert.Contains(fields, f => f.Name == "Tag" && f.FieldType == SearchFieldType.Tag);
+        Assert.Contains(fields, f => f.Name == "Name" && f.FieldType == SearchFieldType.LocString);
+        Assert.Contains(fields, f => f.Name == "Template ResRef" && f.FieldType == SearchFieldType.ResRef);
+        Assert.Contains(fields, f => f.Name == "Local Variables" && f.FieldType == SearchFieldType.Variable);
+    }
+
+    [Fact]
     public void RegisterAll_RegistersIfoFields()
     {
         var registry = new SearchFieldRegistry();

@@ -69,8 +69,21 @@ public class SearchProviderFactoryTests
     {
         var factory = SearchProviderFactory.CreateDefault();
         // Any unregistered type should get the fallback
-        var provider = factory.GetProvider(ResourceTypes.Utc);
+        var provider = factory.GetProvider(ResourceTypes.Ifo);
         Assert.NotNull(provider);
-        Assert.False(factory.HasDedicatedProvider(ResourceTypes.Utc));
+        Assert.False(factory.HasDedicatedProvider(ResourceTypes.Ifo));
+    }
+
+    [Theory]
+    [InlineData(ResourceTypes.Utc)]
+    [InlineData(ResourceTypes.Uti)]
+    [InlineData(ResourceTypes.Utm)]
+    [InlineData(ResourceTypes.Jrl)]
+    [InlineData(ResourceTypes.Git)]
+    public void CreateDefault_HasDedicatedProvider(ushort resourceType)
+    {
+        var factory = SearchProviderFactory.CreateDefault();
+        Assert.True(factory.HasDedicatedProvider(resourceType));
+        Assert.NotNull(factory.GetProvider(resourceType));
     }
 }
