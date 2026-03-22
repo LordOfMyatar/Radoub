@@ -78,6 +78,11 @@ public partial class RadoubSettings
                     _sharedLogRetentionSessions = Math.Max(1, Math.Min(10, data.SharedLogRetentionSessions));
                     _useSharedLogging = data.UseSharedLogging;
 
+                    // Garbage filters
+                    if (data.GarbageFilters != null && data.GarbageFilters.Count > 0)
+                        _garbageFilters = data.GarbageFilters.Where(f => !string.IsNullOrWhiteSpace(f)).ToList();
+                    // else: keep defaults from field initializer
+
                     // Tool paths
                     _parleyPath = PathHelper.ExpandPath(data.ParleyPath ?? "");
                     _manifestPath = PathHelper.ExpandPath(data.ManifestPath ?? "");
@@ -133,7 +138,10 @@ public partial class RadoubSettings
                 QuartermasterPath = PathHelper.ContractPath(_quartermasterPath),
                 FencePath = PathHelper.ContractPath(_fencePath),
                 TrebuchetPath = PathHelper.ContractPath(_trebuchetPath),
-                ReliquePath = PathHelper.ContractPath(_reliquePath)
+                ReliquePath = PathHelper.ContractPath(_reliquePath),
+
+                // Garbage filters
+                GarbageFilters = _garbageFilters,
             };
 
             var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
@@ -168,6 +176,9 @@ public partial class RadoubSettings
         public LogLevel SharedLogLevel { get; set; } = LogLevel.INFO;
         public int SharedLogRetentionSessions { get; set; } = 3;
         public bool UseSharedLogging { get; set; } = true;
+
+        // Garbage label filters (shared across all tools)
+        public List<string>? GarbageFilters { get; set; }
 
         // Tool paths for cross-tool discovery
         public string? ParleyPath { get; set; }

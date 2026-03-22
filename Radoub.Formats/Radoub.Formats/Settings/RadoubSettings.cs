@@ -85,6 +85,26 @@ public partial class RadoubSettings : INotifyPropertyChanged
     private int _sharedLogRetentionSessions = 3;
     private bool _useSharedLogging = true;  // If true, tools use shared logging settings
 
+    // Garbage label filters (shared across all tools)
+    private List<string> _garbageFilters = GetDefaultGarbageFilters();
+
+    /// <summary>
+    /// Default garbage label filters matching legacy IsGarbageLabel behavior.
+    /// Bare strings = case-insensitive substring match.
+    /// "=" prefix = case-insensitive exact match.
+    /// </summary>
+    private static List<string> GetDefaultGarbageFilters() => new()
+    {
+        "deleted",   // substring: Deleted_Nunchaku, BIORESERVED_DELETED, etc.
+        "padding",   // substring: Padding, PAdding, etc.
+        "reserved",  // substring: bio_reserved, CEP Reserved, etc.
+        "xp2spec",   // substring: xp2spec1, Xp2spec99, etc.
+        "=User",     // exact: CEP placeholder rows 214-509
+        "=****",     // exact: 2DA null placeholder
+        "blank",     // substring: blank, BlankItem, etc. (matches old startsWith behavior)
+        "=invalid",  // exact: ItemFilterPanel extra check
+    };
+
     // Tool paths - auto-populated when tools run, used for cross-tool integration
     private string _parleyPath = "";
     private string _manifestPath = "";
@@ -393,6 +413,23 @@ public partial class RadoubSettings : INotifyPropertyChanged
             LogLevel = _sharedLogLevel,
             LogRetentionSessions = _sharedLogRetentionSessions
         };
+    }
+
+    /// <summary>
+    /// User-configurable garbage label filters for 2DA entries.
+    /// Bare strings = case-insensitive substring match (e.g., "deleted" matches any label containing "deleted").
+    /// "=" prefix = case-insensitive exact match (e.g., "=User" matches only "User").
+    /// </summary>
+    public IReadOnlyList<string> GarbageFilters => _garbageFilters.AsReadOnly();
+
+    /// <summary>
+    /// Replace all garbage filters.
+    /// </summary>
+    public void SetGarbageFilters(IEnumerable<string> filters)
+    {
+        _garbageFilters = filters.Where(f => !string.IsNullOrWhiteSpace(f)).ToList();
+        OnPropertyChanged(nameof(GarbageFilters));
+        SaveSettings();
     }
 
     /// <summary>
