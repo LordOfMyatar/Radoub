@@ -4,6 +4,8 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using ItemEditor.Services;
 using Radoub.Formats.Settings;
+using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -149,6 +151,30 @@ public partial class MainWindow
     {
         // TODO (#1706): Settings window
         UpdateStatus("Settings not yet implemented");
+    }
+
+    private void OnEditSettingsFileClick(object? sender, RoutedEventArgs e)
+    {
+        var settingsPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "Radoub", "RadoubSettings.json");
+
+        if (!File.Exists(settingsPath))
+        {
+            UpdateStatus("Settings file not found");
+            return;
+        }
+
+        try
+        {
+            Process.Start(new ProcessStartInfo(settingsPath) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                Radoub.Formats.Logging.LogLevel.WARN, $"Failed to open settings file: {ex.Message}");
+            UpdateStatus("Could not open settings file");
+        }
     }
 
     private void OnToggleUseRadoubThemeClick(object? sender, RoutedEventArgs e)

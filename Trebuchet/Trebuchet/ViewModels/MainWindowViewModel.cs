@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -682,6 +683,30 @@ public partial class MainWindowViewModel : ObservableObject
         UnifiedLogger.LogApplication(LogLevel.INFO, "Opening settings window");
         var settingsWindow = new SettingsWindow();
         settingsWindow.Show(_parentWindow);  // Non-modal settings window
+    }
+
+    [RelayCommand]
+    private void EditSettingsFile()
+    {
+        var settingsPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "Radoub", "RadoubSettings.json");
+
+        if (!File.Exists(settingsPath))
+        {
+            UpdateStatusText = "Settings file not found";
+            return;
+        }
+
+        try
+        {
+            Process.Start(new ProcessStartInfo(settingsPath) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to open settings file: {ex.Message}");
+            UpdateStatusText = "Could not open settings file";
+        }
     }
 
     [RelayCommand]

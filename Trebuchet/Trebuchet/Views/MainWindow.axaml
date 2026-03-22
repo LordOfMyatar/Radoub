@@ -119,6 +119,9 @@
                     <Button Content="Settings"
                             Command="{Binding OpenSettingsCommand}"
                             Padding="8,4"/>
+                    <Button Content="Edit Settings File"
+                            Command="{Binding EditSettingsFileCommand}"
+                            Padding="8,4"/>
                 </StackPanel>
             </Grid>
         </Border>

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
@@ -23,6 +25,29 @@ public partial class MainWindow
         var settingsWindow = new SettingsWindow();
         settingsWindow.SetMainWindow(this);
         settingsWindow.Show(this);
+    }
+
+    private void OnEditSettingsFileClick(object? sender, RoutedEventArgs e)
+    {
+        var settingsPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "Radoub", "RadoubSettings.json");
+
+        if (!File.Exists(settingsPath))
+        {
+            UpdateStatus("Settings file not found");
+            return;
+        }
+
+        try
+        {
+            Process.Start(new ProcessStartInfo(settingsPath) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to open settings file: {ex.Message}");
+            UpdateStatus("Could not open settings file");
+        }
     }
 
     private void OnToggleUseRadoubThemeClick(object? sender, RoutedEventArgs e)
