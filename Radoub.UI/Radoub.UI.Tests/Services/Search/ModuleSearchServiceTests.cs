@@ -278,7 +278,7 @@ public class ModuleSearchServiceTests : IDisposable
     {
         var result = new FileSearchResult
         {
-            FilePath = @"C:\modules\test\merchant.dlg",
+            FilePath = Path.Combine("C:", "modules", "test", "merchant.dlg"),
             ResourceType = ResourceTypes.Dlg,
             Matches = Array.Empty<SearchMatch>()
         };
