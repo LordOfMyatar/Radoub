@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.10.0-alpha] - 2026-03-21
-**Branch**: `relique/issue-1832` | **PR**: #TBD
+**Branch**: `relique/issue-1832` | **PR**: #1904
 
 ### Sprint: Browsing & Selection Controls (#1832)
 
