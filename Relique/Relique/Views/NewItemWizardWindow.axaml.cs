@@ -339,25 +339,6 @@ public partial class NewItemWizardWindow : Window
         if (_iconService == null) return;
 
         var baseIdx = _selectedType.BaseItemIndex;
-        var defaultIcon = _gameDataService.Get2DAValue("baseitems", baseIdx, "DefaultIcon");
-
-        // If DefaultIcon is set (not "****"), all variations share the same icon.
-        // ModelPart1 only changes the 3D model, not the inventory icon.
-        bool hasIconVariety = string.IsNullOrEmpty(defaultIcon) || defaultIcon == "****";
-
-        if (!hasIconVariety)
-        {
-            // Show single icon with explanation
-            var icon = _iconService.GetItemIcon(baseIdx);
-            if (icon != null)
-            {
-                AddIconButton(icon, 1, $"{_selectedType.DisplayName}");
-            }
-            IconPanelTitle.Text = $"{_selectedType.DisplayName} — fixed icon (model varies)";
-            return;
-        }
-
-        // DefaultIcon is "****" — each ModelPart1 value has a unique icon
         var minStr = _gameDataService.Get2DAValue("baseitems", baseIdx, "MinRange");
         var maxStr = _gameDataService.Get2DAValue("baseitems", baseIdx, "MaxRange");
 
@@ -380,9 +361,22 @@ public partial class NewItemWizardWindow : Window
             AddIconButton(icon, (byte)modelNum, $"{_selectedType.DisplayName} #{modelNum}");
         }
 
-        IconPanelTitle.Text = iconCount > 0
+        if (iconCount == 0)
+        {
+            // No numbered icons — show the default icon (fixed icon type)
+            var defaultIcon = _iconService.GetItemIcon(baseIdx);
+            if (defaultIcon != null)
+            {
+                AddIconButton(defaultIcon, 1, $"{_selectedType.DisplayName}");
+                iconCount = 1;
+            }
+        }
+
+        IconPanelTitle.Text = iconCount > 1
             ? $"{_selectedType.DisplayName} — {iconCount} icons"
-            : $"{_selectedType.DisplayName} — no icons found";
+            : iconCount == 1
+                ? $"{_selectedType.DisplayName} — fixed icon (model varies)"
+                : $"{_selectedType.DisplayName} — no icons found";
     }
 
     private void AddIconButton(Bitmap icon, byte modelPart, string tooltip)
