@@ -331,6 +331,25 @@
                             <Expander x:Name="AppearanceExpander" Header="Appearance" IsExpanded="True" IsVisible="False" Margin="0,0,0,8">
                                 <StackPanel Spacing="8" Margin="0,4,0,0">
 
+                                    <!-- Icon/Portrait Chooser -->
+                                    <StackPanel x:Name="IconChooserPanel" IsVisible="False">
+                                        <DockPanel Margin="0,0,0,4">
+                                            <TextBlock Text="Item Icon" FontWeight="SemiBold" DockPanel.Dock="Left"/>
+                                            <TextBlock x:Name="IconChooserInfoLabel"
+                                                       Margin="8,0,0,0"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                       DockPanel.Dock="Left"/>
+                                        </DockPanel>
+                                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                BorderThickness="1" CornerRadius="4"
+                                                MinHeight="60" MaxHeight="180"
+                                                Padding="4">
+                                            <ScrollViewer>
+                                                <WrapPanel x:Name="IconChooserGrid" Margin="2"/>
+                                            </ScrollViewer>
+                                        </Border>
+                                    </StackPanel>
+
                                     <!-- Model Parts (ModelType 0/1/2) -->
                                     <StackPanel x:Name="ModelPartsPanel" IsVisible="False">
                                         <TextBlock Text="Model Parts" FontWeight="SemiBold" Margin="0,0,0,4"/>

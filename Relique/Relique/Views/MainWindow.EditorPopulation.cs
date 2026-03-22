@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Media.Imaging;
 using ItemEditor.ViewModels;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
@@ -23,6 +24,8 @@ public partial class MainWindow
             ModelPartsPanel.IsVisible = false;
             ColorsPanel.IsVisible = false;
             ArmorPartsPanel.IsVisible = false;
+            IconChooserPanel.IsVisible = false;
+            IconChooserGrid.Children.Clear();
             PropertyConfigPanel.IsVisible = false;
             AssignedPropertiesList.Items.Clear();
             _selectedPropertyType = null;
@@ -146,7 +149,15 @@ public partial class MainWindow
         bool showColors = typeInfo?.HasColorFields ?? false;
         bool showArmorParts = typeInfo?.HasArmorParts ?? false;
 
-        AppearanceExpander.IsVisible = showModelParts || showColors || showArmorParts;
+        // Icon chooser: show when icon service is available and base type has model parts
+        bool showIconChooser = _itemIconService != null && showModelParts;
+        IconChooserPanel.IsVisible = showIconChooser;
+        if (showIconChooser)
+        {
+            PopulateIconChooser(baseItemIndex);
+        }
+
+        AppearanceExpander.IsVisible = showModelParts || showColors || showArmorParts || showIconChooser;
 
         // Model Parts: show for types 0, 1, 2 (Simple, Layered, Composite)
         ModelPartsPanel.IsVisible = showModelParts;
@@ -229,6 +240,92 @@ public partial class MainWindow
         }
         // Handle odd count
         if (ArmorPartNames.Length % 2 == 1) row++;
+    }
+
+    // --- Icon Chooser ---
+
+    private void PopulateIconChooser(int baseItemIndex)
+    {
+        IconChooserGrid.Children.Clear();
+
+        if (_itemIconService == null || _itemViewModel == null)
+        {
+            IconChooserInfoLabel.Text = "(no game data)";
+            return;
+        }
+
+        int iconCount = 0;
+        byte currentModelPart1 = _itemViewModel.ModelPart1;
+
+        // Scan model variations (1-255, most items have <50)
+        for (int modelNum = 1; modelNum <= 255; modelNum++)
+        {
+            var icon = _itemIconService.GetItemIcon(baseItemIndex, modelNum);
+            if (icon == null) continue;
+
+            iconCount++;
+            AddIconChooserButton(icon, (byte)modelNum, $"Model #{modelNum}", currentModelPart1 == modelNum);
+        }
+
+        if (iconCount == 0)
+        {
+            // Try default icon (model 0)
+            var defaultIcon = _itemIconService.GetItemIcon(baseItemIndex);
+            if (defaultIcon != null)
+            {
+                AddIconChooserButton(defaultIcon, 1, "Default", currentModelPart1 == 1);
+                iconCount = 1;
+            }
+        }
+
+        IconChooserInfoLabel.Text = iconCount > 0
+            ? $"({iconCount} variation{(iconCount != 1 ? "s" : "")})"
+            : "(no icons found)";
+    }
+
+    private void AddIconChooserButton(Bitmap icon, byte modelPart, string tooltip, bool isSelected)
+    {
+        var image = new Avalonia.Controls.Image
+        {
+            Source = icon,
+            Width = 48,
+            Height = 48
+        };
+
+        var button = new Button
+        {
+            Content = image,
+            Width = 56,
+            Height = 56,
+            Margin = new Thickness(2),
+            Padding = new Thickness(2),
+            Tag = modelPart
+        };
+        Avalonia.Controls.ToolTip.SetTip(button, tooltip);
+
+        // Highlight selected icon
+        if (isSelected)
+        {
+            button.BorderBrush = Avalonia.Media.Brushes.DodgerBlue;
+            button.BorderThickness = new Thickness(2);
+        }
+
+        button.Click += OnIconChooserButtonClick;
+        IconChooserGrid.Children.Add(button);
+    }
+
+    private void OnIconChooserButtonClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (sender is not Button button || button.Tag is not byte modelPart) return;
+        if (_itemViewModel == null) return;
+
+        _itemViewModel.ModelPart1 = modelPart;
+
+        // Refresh the icon grid to update selection highlight
+        if (_currentItem != null)
+        {
+            PopulateIconChooser(_currentItem.BaseItem);
+        }
     }
 
     // --- Local Variables ---
