@@ -27,6 +27,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private int _editingPropertyIndex = -1; // -1 = add mode, >= 0 = editing that index
     private readonly HashSet<int> _checkedPropertyIndices = new();
     private readonly ObservableCollection<VariableViewModel> _variables = new();
+    private ItemIconService? _itemIconService;
 
     // Convenience accessors for document state
     private string? _currentFilePath

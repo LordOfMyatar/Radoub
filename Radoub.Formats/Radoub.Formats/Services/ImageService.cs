@@ -90,6 +90,15 @@ public class ImageService : IImageService
         if (string.IsNullOrEmpty(iconResRef))
             return null;
 
+        // Warn on placeholder/invalid icons — these are intentional game placeholders
+        // that indicate missing content (useful for HAK developers)
+        if (iconResRef.Contains("invalid", StringComparison.OrdinalIgnoreCase))
+        {
+            UnifiedLogger.Log(LogLevel.WARN,
+                $"Resolved to placeholder icon '{iconResRef}' for base type {baseItemType} model {modelNumber} — likely missing custom icon",
+                "ImageService", "Image");
+        }
+
         // Try TGA first (most common)
         var image = LoadImage(iconResRef, ResourceTypes.Tga);
         if (image != null)
@@ -101,7 +110,14 @@ public class ImageService : IImageService
             return image;
 
         // Try DDS as fallback
-        return LoadImage(iconResRef, ResourceTypes.Dds);
+        image = LoadImage(iconResRef, ResourceTypes.Dds);
+        if (image != null)
+            return image;
+
+        UnifiedLogger.Log(LogLevel.WARN,
+            $"Icon not found in any format (TGA/PLT/DDS): {iconResRef} (base type {baseItemType}, model {modelNumber})",
+            "ImageService", "Image");
+        return null;
     }
 
     /// <inheritdoc/>

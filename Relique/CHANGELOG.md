@@ -10,6 +10,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.0-alpha] - 2026-03-22
+**Branch**: `relique/issue-1832` | **PR**: #1904
+
+### Sprint: Browsing & Selection Controls (#1832)
+
+- [x] #1807 — Searchable Base Type dropdown
+- [x] #1808 — Item portrait/icon chooser (inline grid; full picker deferred to #1911/#1912)
+- [x] #1816 — Use standardized file browser instead of OS file picker
+
+### Additional Fixes
+
+- Load module HAK files for CEP-extended base item types (was showing 91 types, now full set)
+- Filter reserved/placeholder entries from base type picker and item properties (BioWare Reserved, CEP Reserved, User slots 214-509)
+- Icon scan uses MinRange/MaxRange from baseitems.2da (was scanning 1-255)
+- Selected icon preview slot with proper Stretch=Uniform scaling
+- F4 keyboard shortcut for item browser toggle
+- WARN logging for placeholder icons (iinvalid_2x2) and failed icon lookups
+
+---
+
 ## [0.9.0-alpha] - 2026-03-21
 **Branch**: `relique/issue-1833` | **PR**: #1899
 

@@ -57,6 +57,12 @@ public class ItemIconService
         if (imageData != null)
         {
             bitmap = ImageDataToBitmap(imageData);
+            if (bitmap == null)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"ItemIconService: Failed to convert icon for base type {baseItemType} model {modelNumber} " +
+                    $"({imageData.Width}x{imageData.Height}) to bitmap");
+            }
         }
 
         _bitmapCache.TryAdd(cacheKey, bitmap);

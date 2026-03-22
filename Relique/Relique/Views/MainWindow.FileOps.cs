@@ -57,6 +57,14 @@ public partial class MainWindow
             OnPropertyChanged(nameof(HasFile));
             AddRecentFile(filePath);
 
+            // Update item browser panel
+            ItemBrowserPanel.CurrentFilePath = filePath;
+            var moduleDir = Path.GetDirectoryName(filePath);
+            if (!string.IsNullOrEmpty(moduleDir))
+            {
+                ItemBrowserPanel.ModulePath = moduleDir;
+            }
+
             UpdateStatus("Ready");
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Opened: {UnifiedLogger.SanitizePath(filePath)}");
             return true;

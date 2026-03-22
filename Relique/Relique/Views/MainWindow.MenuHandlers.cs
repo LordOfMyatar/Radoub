@@ -111,7 +111,38 @@ public partial class MainWindow
 
     private void OnToggleItemBrowserClick(object? sender, RoutedEventArgs e)
     {
-        ItemBrowserPanel.IsVisible = !ItemBrowserPanel.IsVisible;
+        SetItemBrowserPanelVisible(!ItemBrowserPanel.IsVisible);
+    }
+
+    private void SetItemBrowserPanelVisible(bool visible)
+    {
+        var browserColumn = OuterContentGrid.ColumnDefinitions[0];
+        var splitterColumn = OuterContentGrid.ColumnDefinitions[1];
+
+        if (visible)
+        {
+            browserColumn.Width = new Avalonia.Controls.GridLength(250, Avalonia.Controls.GridUnitType.Pixel);
+            splitterColumn.Width = new Avalonia.Controls.GridLength(4, Avalonia.Controls.GridUnitType.Pixel);
+            ItemBrowserPanel.IsVisible = true;
+            ItemBrowserSplitter.IsVisible = true;
+        }
+        else
+        {
+            browserColumn.Width = new Avalonia.Controls.GridLength(0, Avalonia.Controls.GridUnitType.Pixel);
+            splitterColumn.Width = new Avalonia.Controls.GridLength(0, Avalonia.Controls.GridUnitType.Pixel);
+            ItemBrowserPanel.IsVisible = false;
+            ItemBrowserSplitter.IsVisible = false;
+        }
+
+        UpdateItemBrowserMenuState();
+    }
+
+    private void UpdateItemBrowserMenuState()
+    {
+        if (ItemBrowserMenuItem != null)
+        {
+            ItemBrowserMenuItem.Icon = ItemBrowserPanel.IsVisible ? new TextBlock { Text = "✓" } : null;
+        }
     }
 
     private void OnSettingsClick(object? sender, RoutedEventArgs e)
@@ -149,6 +180,14 @@ public partial class MainWindow
 
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)
     {
+        // F4 — toggle item browser (no modifier)
+        if (e.Key == Key.F4 && e.KeyModifiers == KeyModifiers.None)
+        {
+            OnToggleItemBrowserClick(sender, e);
+            e.Handled = true;
+            return;
+        }
+
         if (e.KeyModifiers == KeyModifiers.Control)
         {
             switch (e.Key)

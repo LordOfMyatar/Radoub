@@ -49,11 +49,19 @@ public class ItemPropertyService
             if (string.IsNullOrEmpty(label) || label == "****")
                 continue;
 
+            // Skip reserved/placeholder entries (BioWare Reserved, CEP Reserved, etc.)
+            if (Radoub.Formats.Common.TlkHelper.IsGarbageLabel(label))
+                continue;
+
             var gameStrRef = propDef.GetValue(i, "GameStrRef");
             var nameStrRef = propDef.GetValue(i, "Name");
             var displayName = _gameDataService.GetString(gameStrRef)
                               ?? _gameDataService.GetString(nameStrRef)
                               ?? label;
+
+            // Also filter by resolved display name (TLK may say "Reserved" even if label is clean)
+            if (Radoub.Formats.Common.TlkHelper.IsGarbageLabel(displayName))
+                continue;
 
             var subtypeResRef = propDef.GetValue(i, "SubTypeResRef");
             var costTableResRef = propDef.GetValue(i, "CostTableResRef");

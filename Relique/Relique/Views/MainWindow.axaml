@@ -92,26 +92,13 @@
         </Border>
 
         <!-- Main Content Area -->
-        <Grid ColumnDefinitions="Auto,4,*">
+        <Grid x:Name="OuterContentGrid" ColumnDefinitions="250,4,*">
             <!-- Item Browser Panel (left sidebar) -->
-            <Border Grid.Column="0" x:Name="ItemBrowserPanel"
-                    Width="250"
-                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                    BorderThickness="0,0,1,0">
-                <DockPanel>
-                    <TextBlock DockPanel.Dock="Top" Text="Item Browser"
-                               FontWeight="SemiBold" Margin="8,8,8,4"/>
-                    <TextBox DockPanel.Dock="Top" x:Name="BrowserSearchBox"
-                             Watermark="Search items..."
-                             Margin="8,4"/>
-                    <TreeView x:Name="ItemBrowserTree" Margin="4,4">
-                        <!-- Will be populated when module is loaded -->
-                    </TreeView>
-                </DockPanel>
-            </Border>
+            <controls:ItemBrowserPanel Grid.Column="0" x:Name="ItemBrowserPanel"/>
 
             <!-- Splitter -->
-            <GridSplitter Grid.Column="1" Width="4"
+            <GridSplitter Grid.Column="1" x:Name="ItemBrowserSplitter"
+                          Width="4"
                           Background="Transparent"
                           ResizeDirection="Columns"/>
 
@@ -184,11 +171,19 @@
 
                                 <!-- Base Item Type -->
                                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Base Type" Classes="label"/>
-                                <ComboBox Grid.Row="3" Grid.Column="1"
-                                          x:Name="BaseItemComboBox"
-                                          HorizontalAlignment="Stretch"
-                                          Margin="0,0,0,8"
-                                          SelectionChanged="OnBaseItemSelectionChanged"/>
+                                <Grid Grid.Row="3" Grid.Column="1" ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+                                    <TextBox Grid.Column="0"
+                                             x:Name="BaseItemTypeTextBox"
+                                             IsReadOnly="True"
+                                             Watermark="(no base type selected)"
+                                             PointerPressed="OnBaseItemTypeTextBoxClicked"/>
+                                    <Button Grid.Column="1"
+                                            Content="..."
+                                            Width="30"
+                                            Margin="4,0,0,0"
+                                            ToolTip.Tip="Browse base item types"
+                                            Click="OnBrowseBaseItemTypeClick"/>
+                                </Grid>
 
                                 <!-- Cost -->
                                 <TextBlock Grid.Row="4" Grid.Column="0" Text="Cost" Classes="label"/>
@@ -322,6 +317,40 @@
                             <!-- Appearance (collapsible, conditional on base item type) -->
                             <Expander x:Name="AppearanceExpander" Header="Appearance" IsExpanded="True" IsVisible="False" Margin="0,0,0,8">
                                 <StackPanel Spacing="8" Margin="0,4,0,0">
+
+                                    <!-- Icon/Portrait Chooser -->
+                                    <StackPanel x:Name="IconChooserPanel" IsVisible="False">
+                                        <DockPanel Margin="0,0,0,4">
+                                            <TextBlock Text="Item Icon" FontWeight="SemiBold" DockPanel.Dock="Left"/>
+                                            <TextBlock x:Name="IconChooserInfoLabel"
+                                                       Margin="8,0,0,0"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                       DockPanel.Dock="Left"/>
+                                        </DockPanel>
+                                        <Grid ColumnDefinitions="Auto,8,*" Margin="0,0,0,4">
+                                            <!-- Selected icon preview -->
+                                            <Border Grid.Column="0"
+                                                    BorderBrush="{DynamicResource ThemeAccent}"
+                                                    BorderThickness="2" CornerRadius="4"
+                                                    Width="72" Height="72"
+                                                    VerticalAlignment="Top">
+                                                <Image x:Name="SelectedIconPreview"
+                                                       Width="64" Height="64"
+                                                       Stretch="Uniform"
+                                                       RenderOptions.BitmapInterpolationMode="HighQuality"/>
+                                            </Border>
+                                            <!-- Icon grid -->
+                                            <Border Grid.Column="2"
+                                                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                    BorderThickness="1" CornerRadius="4"
+                                                    MinHeight="60" MaxHeight="180"
+                                                    Padding="4">
+                                                <ScrollViewer>
+                                                    <WrapPanel x:Name="IconChooserGrid" Margin="2"/>
+                                                </ScrollViewer>
+                                            </Border>
+                                        </Grid>
+                                    </StackPanel>
 
                                     <!-- Model Parts (ModelType 0/1/2) -->
                                     <StackPanel x:Name="ModelPartsPanel" IsVisible="False">
