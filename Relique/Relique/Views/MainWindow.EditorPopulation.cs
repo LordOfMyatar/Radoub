@@ -257,8 +257,22 @@ public partial class MainWindow
         int iconCount = 0;
         byte currentModelPart1 = _itemViewModel.ModelPart1;
 
-        // Scan model variations (1-255, most items have <50)
-        for (int modelNum = 1; modelNum <= 255; modelNum++)
+        // Use MinRange/MaxRange from baseitems.2da to limit scan (matches wizard pattern)
+        int minRange = 0, maxRange = 0;
+        if (_gameDataService != null && _gameDataService.IsConfigured)
+        {
+            var minStr = _gameDataService.Get2DAValue("baseitems", baseItemIndex, "MinRange");
+            var maxStr = _gameDataService.Get2DAValue("baseitems", baseItemIndex, "MaxRange");
+            if (int.TryParse(minStr, out int mn)) minRange = mn;
+            if (int.TryParse(maxStr, out int mx)) maxRange = mx;
+        }
+
+        // Cap to avoid UI lag
+        if (maxRange - minRange > 300) maxRange = minRange + 300;
+
+        int start = minRange == 0 ? 1 : minRange;
+
+        for (int modelNum = start; modelNum <= maxRange; modelNum++)
         {
             var icon = _itemIconService.GetItemIcon(baseItemIndex, modelNum);
             if (icon == null) continue;
@@ -269,7 +283,7 @@ public partial class MainWindow
 
         if (iconCount == 0)
         {
-            // Try default icon (model 0)
+            // No numbered icons — show the default icon (fixed icon type)
             var defaultIcon = _itemIconService.GetItemIcon(baseItemIndex);
             if (defaultIcon != null)
             {
@@ -278,9 +292,11 @@ public partial class MainWindow
             }
         }
 
-        IconChooserInfoLabel.Text = iconCount > 0
-            ? $"({iconCount} variation{(iconCount != 1 ? "s" : "")})"
-            : "(no icons found)";
+        IconChooserInfoLabel.Text = iconCount > 1
+            ? $"({iconCount} variations)"
+            : iconCount == 1
+                ? "(fixed icon)"
+                : "(no icons found)";
     }
 
     private void AddIconChooserButton(Bitmap icon, byte modelPart, string tooltip, bool isSelected)

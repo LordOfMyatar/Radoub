@@ -180,6 +180,14 @@ public partial class MainWindow
 
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)
     {
+        // F4 — toggle item browser (no modifier)
+        if (e.Key == Key.F4 && e.KeyModifiers == KeyModifiers.None)
+        {
+            OnToggleItemBrowserClick(sender, e);
+            e.Handled = true;
+            return;
+        }
+
         if (e.KeyModifiers == KeyModifiers.Control)
         {
             switch (e.Key)
