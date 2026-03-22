@@ -49,6 +49,14 @@ public partial class MainWindow
             _gameDataService = new GameDataService();
             if (_gameDataService.IsConfigured)
             {
+                // Configure module HAKs before loading 2DA data (CEP extends baseitems.2da etc.)
+                var modulePath = RadoubSettings.Instance.CurrentModulePath;
+                var moduleDir = GetModuleWorkingDirectory(modulePath);
+                if (!string.IsNullOrEmpty(moduleDir))
+                {
+                    _gameDataService.ConfigureModuleHaks(moduleDir);
+                }
+
                 LoadBaseItemTypes();
                 InitializePropertyServices();
                 _itemIconService = new Radoub.UI.Services.ItemIconService(_gameDataService);
@@ -137,20 +145,11 @@ public partial class MainWindow
     private void InitializeItemBrowserPanel()
     {
         // Set initial module path from RadoubSettings (set by Trebuchet)
-        var modulePath = RadoubSettings.Instance.CurrentModulePath;
-        if (RadoubSettings.IsValidModulePath(modulePath))
+        var moduleDir = GetModuleWorkingDirectory(RadoubSettings.Instance.CurrentModulePath);
+        if (!string.IsNullOrEmpty(moduleDir))
         {
-            // If it's a .mod file, find the working directory
-            if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
-            {
-                modulePath = FindWorkingDirectory(modulePath);
-            }
-
-            if (!string.IsNullOrEmpty(modulePath) && Directory.Exists(modulePath))
-            {
-                ItemBrowserPanel.ModulePath = modulePath;
-                UnifiedLogger.LogUI(LogLevel.INFO, "ItemBrowserPanel initialized with module path");
-            }
+            ItemBrowserPanel.ModulePath = moduleDir;
+            UnifiedLogger.LogUI(LogLevel.INFO, "ItemBrowserPanel initialized with module path");
         }
 
         // Subscribe to events
@@ -160,6 +159,20 @@ public partial class MainWindow
 
         UpdateItemBrowserMenuState();
         UnifiedLogger.LogUI(LogLevel.INFO, "ItemBrowserPanel initialized");
+    }
+
+    private static string? GetModuleWorkingDirectory(string? modulePath)
+    {
+        if (string.IsNullOrEmpty(modulePath) || !RadoubSettings.IsValidModulePath(modulePath))
+            return null;
+
+        if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
+            return FindWorkingDirectory(modulePath);
+
+        if (Directory.Exists(modulePath))
+            return modulePath;
+
+        return null;
     }
 
     private static string? FindWorkingDirectory(string modFilePath)
