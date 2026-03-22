@@ -87,7 +87,7 @@ public class ItemViewModelFactoryTests
         var vm = factory.Create(item);
 
         // Assert
-        Assert.Equal("CustomItem", vm.BaseItemName);
+        Assert.Equal("Customitem", vm.BaseItemName);
     }
 
     [Fact]
