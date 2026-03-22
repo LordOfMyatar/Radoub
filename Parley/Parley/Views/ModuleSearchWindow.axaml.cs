@@ -29,6 +29,14 @@ namespace DialogEditor.Views
         public ModuleSearchWindow()
         {
             InitializeComponent();
+
+            Opened += (_, _) =>
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    SearchPatternBox?.Focus();
+                }, Avalonia.Threading.DispatcherPriority.Input);
+            };
         }
 
         /// <summary>
@@ -42,8 +50,6 @@ namespace DialogEditor.Views
             var dirName = Path.GetFileName(modulePath);
             Title = $"Search Module \u2014 {dirName}";
             ModulePathText.Text = modulePath;
-
-            SearchPatternBox.Focus();
         }
 
         private async void OnSearchClick(object? sender, RoutedEventArgs e)

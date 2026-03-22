@@ -48,9 +48,14 @@ namespace DialogEditor.Controls
         {
             _currentFilePath = filePath;
             IsVisible = true;
-            var textBox = GetSearchTextBox();
-            textBox?.Focus();
-            textBox?.SelectAll();
+
+            // Defer focus — control must be visible and rendered first
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                var textBox = GetSearchTextBox();
+                textBox?.Focus();
+                textBox?.SelectAll();
+            }, Avalonia.Threading.DispatcherPriority.Input);
         }
 
         /// <summary>
