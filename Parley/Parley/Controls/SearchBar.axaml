@@ -6,56 +6,72 @@
             BorderThickness="0,0,0,1"
             Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
             Padding="5,3">
-        <DockPanel>
-            <!-- Close button -->
-            <Button DockPanel.Dock="Right" Content="✕" Click="OnCloseClick"
-                    Padding="6,2" Margin="3,0,0,0"
-                    ToolTip.Tip="Close (Escape)"
-                    Background="Transparent" BorderThickness="0"/>
+        <StackPanel Spacing="3">
+            <!-- Search row -->
+            <DockPanel>
+                <!-- Close button -->
+                <Button DockPanel.Dock="Right" Content="✕" Click="OnCloseClick"
+                        Padding="6,2" Margin="3,0,0,0"
+                        ToolTip.Tip="Close (Escape)"
+                        Background="Transparent" BorderThickness="0"/>
 
-            <!-- Match count -->
-            <TextBlock x:Name="MatchCountText" DockPanel.Dock="Right"
-                       VerticalAlignment="Center" Margin="8,0"
-                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                       Text="No matches"/>
+                <!-- Match count -->
+                <TextBlock x:Name="MatchCountText" DockPanel.Dock="Right"
+                           VerticalAlignment="Center" Margin="8,0"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           Text="No matches"/>
 
-            <!-- Navigation buttons -->
-            <Button DockPanel.Dock="Right" Content="▼" Click="OnNextClick"
-                    Padding="6,2" Margin="2,0"
-                    ToolTip.Tip="Next match (F3)"
-                    Background="Transparent" BorderThickness="0"/>
-            <Button DockPanel.Dock="Right" Content="▲" Click="OnPreviousClick"
-                    Padding="6,2" Margin="2,0"
-                    ToolTip.Tip="Previous match (Shift+F3)"
-                    Background="Transparent" BorderThickness="0"/>
+                <!-- Navigation buttons -->
+                <Button DockPanel.Dock="Right" Content="▼" Click="OnNextClick"
+                        Padding="6,2" Margin="2,0"
+                        ToolTip.Tip="Next match (F3)"
+                        Background="Transparent" BorderThickness="0"/>
+                <Button DockPanel.Dock="Right" Content="▲" Click="OnPreviousClick"
+                        Padding="6,2" Margin="2,0"
+                        ToolTip.Tip="Previous match (Shift+F3)"
+                        Background="Transparent" BorderThickness="0"/>
 
-            <!-- Field filter -->
-            <ComboBox x:Name="FieldFilterCombo" DockPanel.Dock="Right"
-                      SelectedIndex="0" Margin="5,0" MinWidth="100"
-                      SelectionChanged="OnFieldFilterChanged"
-                      ToolTip.Tip="Filter by field type">
-                <ComboBoxItem Content="All Fields"/>
-                <ComboBoxItem Content="Text" Tag="Content"/>
-                <ComboBoxItem Content="Speaker" Tag="Identity"/>
-                <ComboBoxItem Content="Scripts" Tag="Script"/>
-                <ComboBoxItem Content="Metadata" Tag="Metadata"/>
-            </ComboBox>
+                <!-- Field filter -->
+                <ComboBox x:Name="FieldFilterCombo" DockPanel.Dock="Right"
+                          SelectedIndex="0" Margin="5,0" MinWidth="100"
+                          SelectionChanged="OnFieldFilterChanged"
+                          ToolTip.Tip="Filter by field type">
+                    <ComboBoxItem Content="All Fields"/>
+                    <ComboBoxItem Content="Text" Tag="Content"/>
+                    <ComboBoxItem Content="Speaker" Tag="Identity"/>
+                    <ComboBoxItem Content="Scripts" Tag="Script"/>
+                    <ComboBoxItem Content="Metadata" Tag="Metadata"/>
+                </ComboBox>
 
-            <!-- Options -->
-            <CheckBox x:Name="CaseSensitiveCheck" DockPanel.Dock="Right"
-                      Content="Aa" Margin="5,0" VerticalAlignment="Center"
-                      ToolTip.Tip="Case sensitive"
-                      IsCheckedChanged="OnOptionsChanged"/>
+                <!-- Options -->
+                <CheckBox x:Name="CaseSensitiveCheck" DockPanel.Dock="Right"
+                          Content="Aa" Margin="5,0" VerticalAlignment="Center"
+                          ToolTip.Tip="Case sensitive"
+                          IsCheckedChanged="OnOptionsChanged"/>
 
-            <CheckBox x:Name="RegexCheck" DockPanel.Dock="Right"
-                      Content=".*" Margin="5,0" VerticalAlignment="Center"
-                      ToolTip.Tip="Regular expression"
-                      IsCheckedChanged="OnOptionsChanged"/>
+                <CheckBox x:Name="RegexCheck" DockPanel.Dock="Right"
+                          Content=".*" Margin="5,0" VerticalAlignment="Center"
+                          ToolTip.Tip="Regular expression"
+                          IsCheckedChanged="OnOptionsChanged"/>
 
-            <!-- Search text box (events wired in code-behind for TabItem compatibility) -->
-            <TextBox x:Name="SearchTextBox"
-                     Watermark="Find in dialog... (Ctrl+F)"
-                     Margin="0,0,5,0"/>
-        </DockPanel>
+                <!-- Search text box (events wired in code-behind for TabItem compatibility) -->
+                <TextBox x:Name="SearchTextBox"
+                         Watermark="Find in dialog... (Ctrl+F)"
+                         Margin="0,0,5,0"/>
+            </DockPanel>
+
+            <!-- Replace row (hidden by default, toggled with Ctrl+H) -->
+            <DockPanel x:Name="ReplaceRow" IsVisible="False">
+                <Button DockPanel.Dock="Right" Content="Replace All" Click="OnReplaceAllClick"
+                        Padding="8,2" Margin="3,0,0,0"
+                        ToolTip.Tip="Replace all matches"/>
+                <Button DockPanel.Dock="Right" Content="Replace" Click="OnReplaceClick"
+                        Padding="8,2" Margin="3,0,0,0"
+                        ToolTip.Tip="Replace current match"/>
+                <TextBox x:Name="ReplaceTextBox"
+                         Watermark="Replace with..."
+                         Margin="0,0,5,0"/>
+            </DockPanel>
+        </StackPanel>
     </Border>
 </UserControl>

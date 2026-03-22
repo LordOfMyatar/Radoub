@@ -22,13 +22,20 @@ namespace DialogEditor.Views
     public partial class ModuleSearchWindow : Window
     {
         private readonly ModuleSearchService _searchService = new();
+        private readonly BatchReplaceService _batchReplaceService;
         private string _modulePath = "";
         private string? _currentFilePath;
         private CancellationTokenSource? _searchCts;
+        private ModuleSearchResults? _lastResults;
+
+        /// <summary>Fired when files are modified by replace operations</summary>
+        public event EventHandler? FilesModified;
 
         public ModuleSearchWindow()
         {
             InitializeComponent();
+            var backupService = new BackupService();
+            _batchReplaceService = new BatchReplaceService(backupService);
 
             Opened += (_, _) =>
             {
@@ -153,6 +160,10 @@ namespace DialogEditor.Views
 
         private void DisplayResults(ModuleSearchResults results)
         {
+            _lastResults = results;
+            ReplaceAllButton.IsEnabled = results.TotalMatches > 0;
+            ReplaceSelectedButton.IsEnabled = results.TotalMatches > 0;
+
             var duration = results.Duration;
             DurationText.Text = duration.TotalSeconds < 1
                 ? $"{duration.TotalMilliseconds:F0}ms"
@@ -254,6 +265,57 @@ namespace DialogEditor.Views
             {
                 UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to open file: {ex.Message}");
                 StatusText.Text = $"Could not open: {Path.GetFileName(filePath)}";
+            }
+        }
+
+        private async void OnReplaceAllClick(object? sender, RoutedEventArgs e)
+        {
+            await ExecuteReplaceAsync(selectAll: true);
+        }
+
+        private async void OnReplaceSelectedClick(object? sender, RoutedEventArgs e)
+        {
+            await ExecuteReplaceAsync(selectAll: true); // For now, replace all; checkbox selection is Phase 4
+        }
+
+        private async Task ExecuteReplaceAsync(bool selectAll)
+        {
+            var replaceText = ReplacePatternBox?.Text ?? "";
+            if (_lastResults == null || _lastResults.TotalMatches == 0)
+                return;
+
+            var filesWithMatches = _lastResults.Files.Where(f => f.MatchCount > 0).ToList();
+            if (filesWithMatches.Count == 0) return;
+
+            // Confirmation for large operations
+            if (_lastResults.TotalMatches > 50)
+            {
+                StatusText.Text = $"Replacing {_lastResults.TotalMatches} matches in {filesWithMatches.Count} files...";
+            }
+
+            var moduleName = Path.GetFileName(_modulePath);
+
+            try
+            {
+                var preview = _batchReplaceService.PreviewReplace(filesWithMatches, replaceText);
+                var result = await _batchReplaceService.ExecuteReplaceAsync(preview, moduleName);
+
+                if (result.Success)
+                {
+                    StatusText.Text = $"Replaced {result.ReplacementsMade} matches in {result.FilesModified} files. Backup created.";
+                    ReplaceAllButton.IsEnabled = false;
+                    ReplaceSelectedButton.IsEnabled = false;
+                    FilesModified?.Invoke(this, EventArgs.Empty);
+                }
+                else
+                {
+                    StatusText.Text = $"Replace failed: {result.Error}";
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Module replace failed: {ex.Message}");
+                StatusText.Text = $"Error: {ex.Message}";
             }
         }
 

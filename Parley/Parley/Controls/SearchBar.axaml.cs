@@ -96,8 +96,31 @@ namespace DialogEditor.Controls
             NavigateToMatch?.Invoke(this, match);
         }
 
+        /// <summary>Fired when the file is modified by a replace operation</summary>
+        public event EventHandler? FileModified;
+
+        /// <summary>
+        /// Show the search bar in replace mode (Ctrl+H).
+        /// </summary>
+        public void ShowReplace(string? filePath)
+        {
+            Show(filePath);
+            var replaceRow = this.FindControl<DockPanel>("ReplaceRow");
+            if (replaceRow != null) replaceRow.IsVisible = true;
+        }
+
+        /// <summary>
+        /// Toggle replace row visibility.
+        /// </summary>
+        public void ToggleReplace()
+        {
+            var replaceRow = this.FindControl<DockPanel>("ReplaceRow");
+            if (replaceRow != null) replaceRow.IsVisible = !replaceRow.IsVisible;
+        }
+
         // Resolve named controls — auto-generated fields may be null inside TabItem
         private TextBox? GetSearchTextBox() => this.FindControl<TextBox>("SearchTextBox");
+        private TextBox? GetReplaceTextBox() => this.FindControl<TextBox>("ReplaceTextBox");
         private TextBlock? GetMatchCountText() => this.FindControl<TextBlock>("MatchCountText");
         private ComboBox? GetFieldFilterCombo() => this.FindControl<ComboBox>("FieldFilterCombo");
         private CheckBox? GetRegexCheck() => this.FindControl<CheckBox>("RegexCheck");
@@ -213,6 +236,45 @@ namespace DialogEditor.Controls
         private void OnNextClick(object? sender, RoutedEventArgs e) => FindNext();
         private void OnPreviousClick(object? sender, RoutedEventArgs e) => FindPrevious();
         private void OnCloseClick(object? sender, RoutedEventArgs e) => Hide();
+
+        private void OnReplaceClick(object? sender, RoutedEventArgs e)
+        {
+            var replaceText = GetReplaceTextBox()?.Text ?? "";
+            var pattern = GetSearchTextBox()?.Text;
+            if (string.IsNullOrEmpty(pattern) || string.IsNullOrEmpty(_currentFilePath))
+                return;
+
+            var criteria = BuildCriteria(pattern);
+            var result = _searchService.ReplaceCurrent(_currentFilePath, replaceText, criteria);
+
+            if (result?.Success == true)
+            {
+                UpdateMatchCount();
+                SearchResultsChanged?.Invoke(this, _searchService.Matches);
+                FileModified?.Invoke(this, EventArgs.Empty);
+
+                if (_searchService.MatchCount > 0)
+                    NavigateToMatch?.Invoke(this, _searchService.CurrentMatch);
+            }
+        }
+
+        private void OnReplaceAllClick(object? sender, RoutedEventArgs e)
+        {
+            var replaceText = GetReplaceTextBox()?.Text ?? "";
+            var pattern = GetSearchTextBox()?.Text;
+            if (string.IsNullOrEmpty(pattern) || string.IsNullOrEmpty(_currentFilePath))
+                return;
+
+            var criteria = BuildCriteria(pattern);
+            var count = _searchService.ReplaceAll(_currentFilePath, replaceText, criteria);
+
+            if (count > 0)
+            {
+                UpdateMatchCount();
+                SearchResultsChanged?.Invoke(this, _searchService.Matches);
+                FileModified?.Invoke(this, EventArgs.Empty);
+            }
+        }
 
         private void OnFieldFilterChanged(object? sender, SelectionChangedEventArgs e)
         {
