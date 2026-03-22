@@ -184,11 +184,19 @@
 
                                 <!-- Base Item Type -->
                                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Base Type" Classes="label"/>
-                                <ComboBox Grid.Row="3" Grid.Column="1"
-                                          x:Name="BaseItemComboBox"
-                                          HorizontalAlignment="Stretch"
-                                          Margin="0,0,0,8"
-                                          SelectionChanged="OnBaseItemSelectionChanged"/>
+                                <Grid Grid.Row="3" Grid.Column="1" ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+                                    <TextBox Grid.Column="0"
+                                             x:Name="BaseItemTypeTextBox"
+                                             IsReadOnly="True"
+                                             Watermark="(no base type selected)"
+                                             PointerPressed="OnBaseItemTypeTextBoxClicked"/>
+                                    <Button Grid.Column="1"
+                                            Content="..."
+                                            Width="30"
+                                            Margin="4,0,0,0"
+                                            ToolTip.Tip="Browse base item types"
+                                            Click="OnBrowseBaseItemTypeClick"/>
+                                </Grid>
 
                                 <!-- Cost -->
                                 <TextBlock Grid.Row="4" Grid.Column="0" Text="Cost" Classes="label"/>

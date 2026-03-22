@@ -78,23 +78,7 @@ public partial class MainWindow
     {
         var service = new BaseItemTypeService(_gameDataService);
         _baseItemTypes = service.GetBaseItemTypes();
-        PopulateBaseItemComboBox();
         LoadPaletteCategories();
-    }
-
-    private void PopulateBaseItemComboBox()
-    {
-        BaseItemComboBox.Items.Clear();
-        if (_baseItemTypes == null) return;
-
-        foreach (var type in _baseItemTypes)
-        {
-            BaseItemComboBox.Items.Add(new Avalonia.Controls.ComboBoxItem
-            {
-                Content = type.DisplayName,
-                Tag = type.BaseItemIndex
-            });
-        }
     }
 
     private void LoadPaletteCategories()

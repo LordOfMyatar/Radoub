@@ -51,8 +51,8 @@ public partial class MainWindow
         // Wire up dirty tracking from ViewModel property changes
         _itemViewModel.PropertyChanged += OnItemPropertyChanged;
 
-        // Select the correct base item type and palette category
-        SelectBaseItemInComboBox(_currentItem.BaseItem);
+        // Display the correct base item type and palette category
+        DisplayBaseItemType(_currentItem.BaseItem);
         UpdateConditionalFields(_currentItem.BaseItem);
         SelectPaletteCategoryInComboBox(_currentItem.PaletteID);
 
@@ -73,39 +73,32 @@ public partial class MainWindow
         }
     }
 
-    private void SelectBaseItemInComboBox(int baseItemIndex)
+    private void DisplayBaseItemType(int baseItemIndex)
     {
-        for (int i = 0; i < BaseItemComboBox.Items.Count; i++)
-        {
-            if (BaseItemComboBox.Items[i] is ComboBoxItem item && item.Tag is int index && index == baseItemIndex)
-            {
-                _isLoading = true;
-                BaseItemComboBox.SelectedIndex = i;
-                _isLoading = false;
-                return;
-            }
-        }
-
-        // Base item not in list — add an "Unknown" entry
-        var unknownItem = new ComboBoxItem
-        {
-            Content = $"Unknown ({baseItemIndex})",
-            Tag = baseItemIndex
-        };
-        BaseItemComboBox.Items.Add(unknownItem);
-        _isLoading = true;
-        BaseItemComboBox.SelectedItem = unknownItem;
-        _isLoading = false;
+        var typeInfo = _baseItemTypes?.FirstOrDefault(t => t.BaseItemIndex == baseItemIndex);
+        BaseItemTypeTextBox.Text = typeInfo != null
+            ? typeInfo.DisplayName
+            : $"Unknown ({baseItemIndex})";
     }
 
-    private void OnBaseItemSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    private async void OnBrowseBaseItemTypeClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        if (_isLoading || _itemViewModel == null) return;
-        if (BaseItemComboBox.SelectedItem is ComboBoxItem item && item.Tag is int index)
+        if (_itemViewModel == null || _baseItemTypes == null) return;
+
+        var picker = new BaseItemTypePickerWindow(_baseItemTypes, _itemViewModel.BaseItem);
+        await picker.ShowDialog(this);
+
+        if (picker.Confirmed && picker.SelectedBaseItemIndex.HasValue)
         {
-            _itemViewModel.BaseItem = index;
-            UpdateConditionalFields(index);
+            _itemViewModel.BaseItem = picker.SelectedBaseItemIndex.Value;
+            DisplayBaseItemType(picker.SelectedBaseItemIndex.Value);
+            UpdateConditionalFields(picker.SelectedBaseItemIndex.Value);
         }
+    }
+
+    private void OnBaseItemTypeTextBoxClicked(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    {
+        OnBrowseBaseItemTypeClick(sender, new Avalonia.Interactivity.RoutedEventArgs());
     }
 
     private void SelectPaletteCategoryInComboBox(byte paletteId)
