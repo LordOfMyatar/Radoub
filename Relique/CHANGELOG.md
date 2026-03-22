@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.0-alpha] - 2026-03-21
+**Branch**: `relique/issue-1832` | **PR**: #TBD
+
+### Sprint: Browsing & Selection Controls (#1832)
+
+- [ ] #1807 — Searchable Base Type dropdown
+- [ ] #1808 — Item portrait/icon chooser
+- [ ] #1816 — Use standardized file browser instead of OS file picker
+
+---
+
 ## [0.9.0-alpha] - 2026-03-21
 **Branch**: `relique/issue-1833` | **PR**: #1899
 
