@@ -429,31 +429,30 @@ public class ImageService : IImageService
         if (string.IsNullOrEmpty(itemClass) && string.IsNullOrEmpty(defaultIcon))
             return null;
 
-        // If we have a DefaultIcon, use it directly
+        // Try numbered icon from ItemClass pattern first (e.g., iit_smlmisc_005)
+        // This gives each model variation its own icon (food, gems, keys, etc.)
+        if (!string.IsNullOrEmpty(itemClass) && itemClass != "****")
+        {
+            string? minRangeStr = _gameData.Get2DAValue("baseitems", baseItemType, "MinRange");
+            string? maxRangeStr = _gameData.Get2DAValue("baseitems", baseItemType, "MaxRange");
+
+            int minRange = 1;
+            int maxRange = 1;
+            if (int.TryParse(minRangeStr, out int min)) minRange = min;
+            if (int.TryParse(maxRangeStr, out int max)) maxRange = max;
+
+            int iconNum = Math.Clamp(modelNumber, minRange, maxRange);
+            if (iconNum == 0) iconNum = minRange;
+
+            return $"i{itemClass}_{iconNum:D3}";
+        }
+
+        // Fall back to DefaultIcon (fixed icon for all variations)
         if (!string.IsNullOrEmpty(defaultIcon) && defaultIcon != "****")
         {
             return defaultIcon;
         }
 
-        // Otherwise, construct from ItemClass pattern
-        // Format: i<ItemClass>_<number>.tga
-        if (string.IsNullOrEmpty(itemClass) || itemClass == "****")
-            return null;
-
-        // Get model range for this base item
-        string? minRangeStr = _gameData.Get2DAValue("baseitems", baseItemType, "MinRange");
-        string? maxRangeStr = _gameData.Get2DAValue("baseitems", baseItemType, "MaxRange");
-
-        int minRange = 1;
-        int maxRange = 1;
-        if (int.TryParse(minRangeStr, out int min)) minRange = min;
-        if (int.TryParse(maxRangeStr, out int max)) maxRange = max;
-
-        // Clamp model number to valid range
-        int iconNum = Math.Clamp(modelNumber, minRange, maxRange);
-        if (iconNum == 0) iconNum = minRange;
-
-        // Build icon ResRef: i<ItemClass>_<number>
-        return $"i{itemClass}_{iconNum:D3}";
+        return null;
     }
 }
