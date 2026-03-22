@@ -445,9 +445,7 @@
                                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                         </DockPanel>
                                         <ComboBox DockPanel.Dock="Top" x:Name="CategoryFilterComboBox"
-                                                  Margin="0,0,0,4"
-                                                  SelectedIndex="0"
-                                                  SelectionChanged="OnCategoryFilterChanged"/>
+                                                  Margin="0,0,0,4"/>
                                         <TextBox DockPanel.Dock="Top" x:Name="PropertySearchBox"
                                                  Watermark="Search properties..."
                                                  Margin="0,0,0,4"/>

@@ -898,6 +898,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         _categoryKeywords = categories.ToDictionary(c => c.Label, c => c.Keywords);
         CategoryFilterComboBox.SelectedIndex = 0;
+        CategoryFilterComboBox.SelectionChanged += OnCategoryFilterChanged;
     }
 
     private Dictionary<string, string[]> _categoryKeywords = new();
