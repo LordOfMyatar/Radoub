@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.94] - 2026-03-22
-**Branch**: `radoub/issue-1910` | **PR**: #TBD
+**Branch**: `radoub/issue-1910` | **PR**: #1916
 
 ### Feature: Use ITP palette as authority for valid base item types (#1910)
 
