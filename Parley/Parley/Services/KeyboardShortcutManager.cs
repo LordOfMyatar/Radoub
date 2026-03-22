@@ -48,7 +48,8 @@ namespace DialogEditor.Services
             _ctrlShortcuts[Key.W] = handler.OnCollapseSubnodes;
             _ctrlShortcuts[Key.J] = handler.OnGoToParentNode; // Issue #149: Jump from link to parent
             _ctrlShortcuts[Key.T] = handler.OnInsertToken; // Issue #753: Insert token
-            _ctrlShortcuts[Key.F] = handler.OnFind; // Issue #1842: Find in dialog
+            // Note: Ctrl+F is handled in tunneling phase (see _ctrlTunnelingShortcuts)
+            // to intercept before TextBox's built-in Ctrl+F handler
 
             // Ctrl+Shift shortcuts
             _ctrlShiftShortcuts[Key.D] = handler.OnAddSiblingNode; // Issue #150: Add sibling node
@@ -61,6 +62,7 @@ namespace DialogEditor.Services
             // This ensures global undo/redo instead of TextBox's character-level undo
             _ctrlTunnelingShortcuts[Key.Z] = handler.OnUndo;
             _ctrlTunnelingShortcuts[Key.Y] = handler.OnRedo;
+            _ctrlTunnelingShortcuts[Key.F] = handler.OnFind; // Issue #1842: Find in dialog (tunneling to beat TextBox)
 
             // Ctrl+Shift tunneling shortcuts (intercept before TreeView)
             _ctrlShiftTunnelingShortcuts[Key.Up] = handler.OnMoveNodeUp;
