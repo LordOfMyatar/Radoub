@@ -1,10 +1,12 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using DialogEditor.Services;
 using Radoub.Formats.Search;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace DialogEditor.Controls
 {
@@ -16,6 +18,7 @@ namespace DialogEditor.Controls
     {
         private readonly DialogSearchService _searchService = new();
         private string? _currentFilePath;
+        private CancellationTokenSource? _debounceCts;
 
         /// <summary>Fired when the user navigates to a match</summary>
         public event EventHandler<SearchMatch?>? NavigateToMatch;
@@ -167,7 +170,26 @@ namespace DialogEditor.Controls
 
         private void OnSearchTextChanged(object? sender, TextChangedEventArgs e)
         {
-            ExecuteSearch();
+            // Debounce: wait 300ms after last keystroke before searching.
+            // Prevents searching partial words ("t", "te", "tes") and
+            // avoids re-reading the file from disk on every keystroke.
+            _debounceCts?.Cancel();
+            _debounceCts = new CancellationTokenSource();
+            var token = _debounceCts.Token;
+
+            Dispatcher.UIThread.InvokeAsync(async () =>
+            {
+                try
+                {
+                    await System.Threading.Tasks.Task.Delay(300, token);
+                    if (!token.IsCancellationRequested)
+                        ExecuteSearch();
+                }
+                catch (OperationCanceledException)
+                {
+                    // Expected — user typed another character
+                }
+            });
         }
 
         private void OnSearchTextKeyDown(object? sender, KeyEventArgs e)
