@@ -429,7 +429,7 @@ public class ImageService : IImageService
         if (string.IsNullOrEmpty(itemClass) && string.IsNullOrEmpty(defaultIcon))
             return null;
 
-        // Try numbered icon from ItemClass pattern first (e.g., iit_smlmisc_005)
+        // Try numbered icon from ItemClass pattern (e.g., iit_smlmisc_005)
         // This gives each model variation its own icon (food, gems, keys, etc.)
         if (!string.IsNullOrEmpty(itemClass) && itemClass != "****")
         {
@@ -444,10 +444,18 @@ public class ImageService : IImageService
             int iconNum = Math.Clamp(modelNumber, minRange, maxRange);
             if (iconNum == 0) iconNum = minRange;
 
-            return $"i{itemClass}_{iconNum:D3}";
+            var numberedRef = $"i{itemClass}_{iconNum:D3}".ToLowerInvariant();
+
+            // Check if the numbered icon actually exists before returning it
+            if (_gameData.FindResource(numberedRef, Common.ResourceTypes.Tga) != null ||
+                _gameData.FindResource(numberedRef, Common.ResourceTypes.Plt) != null ||
+                _gameData.FindResource(numberedRef, Common.ResourceTypes.Dds) != null)
+            {
+                return numberedRef;
+            }
         }
 
-        // Fall back to DefaultIcon (fixed icon for all variations)
+        // Fall back to DefaultIcon (composite weapons, cloaks, etc.)
         if (!string.IsNullOrEmpty(defaultIcon) && defaultIcon != "****")
         {
             return defaultIcon;
