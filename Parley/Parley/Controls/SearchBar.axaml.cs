@@ -27,14 +27,18 @@ namespace DialogEditor.Controls
         {
             InitializeComponent();
 
-            // Wire events in code-behind as a safety net — AXAML event wiring
-            // may not connect reliably inside TabItem deferred content
-            var textBox = this.FindControl<TextBox>("SearchTextBox");
-            if (textBox != null)
+            // Wire events in code-behind — AXAML event wiring doesn't connect
+            // reliably when UserControl is inside TabItem deferred content.
+            // Use Initialized event to ensure controls are resolved.
+            Initialized += (_, _) =>
             {
-                textBox.TextChanged += OnSearchTextChanged;
-                textBox.KeyDown += OnSearchTextKeyDown;
-            }
+                var textBox = GetSearchTextBox();
+                if (textBox != null)
+                {
+                    textBox.TextChanged += OnSearchTextChanged;
+                    textBox.KeyDown += OnSearchTextKeyDown;
+                }
+            };
         }
 
         /// <summary>

@@ -52,11 +52,9 @@
                       ToolTip.Tip="Regular expression"
                       IsCheckedChanged="OnOptionsChanged"/>
 
-            <!-- Search text box -->
+            <!-- Search text box (events wired in code-behind for TabItem compatibility) -->
             <TextBox x:Name="SearchTextBox"
                      Watermark="Find in dialog... (Ctrl+F)"
-                     KeyDown="OnSearchTextKeyDown"
-                     TextChanged="OnSearchTextChanged"
                      Margin="0,0,5,0"/>
         </DockPanel>
     </Border>
