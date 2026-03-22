@@ -17,6 +17,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.95] - 2026-03-22
+**Branch**: `radoub/issue-1854` | **PR**: #TBD
+
+### Sprint: Search Engine Foundation (Phase 0) (#1854)
+
+- #1836 — Search models (SearchCriteria, SearchMatch, FieldDefinition)
+- #1837 — SearchFieldRegistry with field definitions per file type
+- #1838 — IFileSearchProvider interface, SearchProviderBase, and factory
+- #1839 — GenericGffSearchProvider (fallback for any GFF)
+- #1840 — DlgSearchProvider (dialog tree search with location tracking)
+
+---
+
 ## [0.9.94] - 2026-03-22
 **Branch**: `radoub/issue-1910` | **PR**: #1916
 
