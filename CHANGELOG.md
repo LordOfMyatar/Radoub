@@ -17,6 +17,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.94] - 2026-03-22
+**Branch**: `radoub/issue-1910` | **PR**: #1916
+
+### Feature: User-configurable garbage label filter for 2DA entries (#1910)
+
+- Added `GarbageFilters` to shared `RadoubSettings.json` — users can add/remove filter patterns
+- Supports substring match (bare string) and exact match (`=` prefix)
+- Defaults: `deleted`, `padding`, `reserved`, `xp2spec`, `=User`, `=****`, `=blank`, `=invalid`
+- New `GarbageFilterService` in Radoub.Formats — `TlkHelper.IsGarbageLabel()` now delegates to it
+- Removed duplicate private `IsGarbageLabel` from `ItemViewModelFactory` — uses shared TlkHelper
+- Removed extra `blank`/`invalid` checks from `ItemFilterPanel` — now in default filter list
+- Fixed Fence `BaseItemTypeService` missing display name filter (now matches Relique)
+- Added "Edit Settings File..." menu item to all tools
+
+---
+
 ## [0.9.93] - 2026-03-21
 **Branch**: `radoub/issue-1828` | **PR**: #1888
 

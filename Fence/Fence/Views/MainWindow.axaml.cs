@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -692,6 +693,29 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var settingsWindow = new SettingsWindow();
         settingsWindow.SetMainWindow(this);
         settingsWindow.Show(this); // Non-modal
+    }
+
+    private void OnEditSettingsFileClick(object? sender, RoutedEventArgs e)
+    {
+        var settingsPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "Radoub", "RadoubSettings.json");
+
+        if (!File.Exists(settingsPath))
+        {
+            UpdateStatusBar("Settings file not found");
+            return;
+        }
+
+        try
+        {
+            Process.Start(new ProcessStartInfo(settingsPath) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to open settings file: {ex.Message}");
+            UpdateStatusBar("Could not open settings file");
+        }
     }
 
     private void OnToggleUseRadoubThemeClick(object? sender, RoutedEventArgs e)

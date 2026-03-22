@@ -1,4 +1,6 @@
 using System;
+using System.Diagnostics;
+using System.IO;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using DialogEditor.Models;
@@ -194,6 +196,29 @@ namespace DialogEditor.Views
             var menuItem = this.FindControl<MenuItem>("UseRadoubThemeMenuItem");
             if (menuItem != null)
                 menuItem.Icon = _services.Settings.UseSharedTheme ? new TextBlock { Text = "✓" } : null;
+        }
+
+        private void OnEditSettingsFileClick(object? sender, RoutedEventArgs e)
+        {
+            var settingsPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Radoub", "RadoubSettings.json");
+
+            if (!File.Exists(settingsPath))
+            {
+                _viewModel.StatusMessage = "Settings file not found";
+                return;
+            }
+
+            try
+            {
+                Process.Start(new ProcessStartInfo(settingsPath) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to open settings file: {ex.Message}");
+                _viewModel.StatusMessage = "Could not open settings file";
+            }
         }
 
         private void OnPreferencesClick(object? sender, RoutedEventArgs e)

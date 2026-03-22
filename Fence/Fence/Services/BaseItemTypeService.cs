@@ -67,6 +67,10 @@ public class BaseItemTypeService
                 displayName = TlkHelper.FormatBaseItemLabel(label);
             }
 
+            // Filter by resolved display name (TLK may resolve to placeholder like "User")
+            if (TlkHelper.IsGarbageLabel(displayName))
+                continue;
+
             // Read StorePanel column (2DA values: 0=armor, 1=weapons, 2=potions, 3=scrolls, 4=misc)
             var storePanelStr = baseItems.GetValue(i, "StorePanel");
             var storePanel = 4; // Default to miscellaneous

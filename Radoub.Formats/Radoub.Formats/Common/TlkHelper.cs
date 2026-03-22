@@ -41,14 +41,7 @@ public static class TlkHelper
     /// <returns>True if the label represents deleted/padding content</returns>
     public static bool IsGarbageLabel(string label)
     {
-        if (string.IsNullOrEmpty(label))
-            return true;
-
-        return label.Contains("deleted", StringComparison.OrdinalIgnoreCase) ||
-               label.Contains("padding", StringComparison.OrdinalIgnoreCase) ||
-               label.Contains("reserved", StringComparison.OrdinalIgnoreCase) ||
-               label.StartsWith("xp2spec", StringComparison.OrdinalIgnoreCase) ||
-               label.Equals("User", StringComparison.OrdinalIgnoreCase);
+        return Radoub.Formats.Services.GarbageFilterService.Instance.IsGarbageLabel(label);
     }
 
     /// <summary>

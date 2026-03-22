@@ -72,6 +72,8 @@
                 <Separator/>
                 <MenuItem Header="_Settings..." Click="OnSettingsClick"/>
                 <Separator/>
+                <MenuItem Header="Edit Settings _File..." Click="OnEditSettingsFileClick"/>
+                <Separator/>
                 <MenuItem Header="_Refresh Item Palette" Click="OnRefreshItemPalette"/>
             </MenuItem>
             <MenuItem Header="_Help">

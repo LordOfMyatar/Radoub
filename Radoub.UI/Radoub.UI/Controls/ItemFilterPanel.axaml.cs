@@ -368,10 +368,6 @@ public partial class ItemFilterPanel : UserControl
             if (TlkHelper.IsGarbageLabel(label))
                 continue;
 
-            var labelLower = label.ToLowerInvariant();
-            if (labelLower.StartsWith("blank") || labelLower == "invalid")
-                continue;
-
             // Get display name from TLK, validate against placeholder strings
             var nameStrRef = baseItems.GetValue(i, "Name");
             string displayName;

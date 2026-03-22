@@ -61,6 +61,8 @@
                 <MenuItem x:Name="UseRadoubThemeMenuItem" Header="Use _Radoub Theme" Click="OnToggleUseRadoubThemeClick"/>
                 <Separator/>
                 <MenuItem Header="_Settings..." Click="OnSettingsClick"/>
+                <Separator/>
+                <MenuItem Header="Edit Settings _File..." Click="OnEditSettingsFileClick"/>
             </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="_About Relique" Click="OnAboutClick"/>
