@@ -24,6 +24,7 @@ namespace DialogEditor.Services
         private readonly Dictionary<Key, ShortcutAction> _ctrlShiftShortcuts = new();
         private readonly Dictionary<Key, ShortcutAction> _ctrlTunnelingShortcuts = new();
         private readonly Dictionary<Key, ShortcutAction> _ctrlShiftTunnelingShortcuts = new();
+        private readonly Dictionary<Key, ShortcutAction> _shiftShortcuts = new();
         private readonly Dictionary<Key, ShortcutAction> _noModifierShortcuts = new();
 
         /// <summary>
@@ -47,12 +48,14 @@ namespace DialogEditor.Services
             _ctrlShortcuts[Key.W] = handler.OnCollapseSubnodes;
             _ctrlShortcuts[Key.J] = handler.OnGoToParentNode; // Issue #149: Jump from link to parent
             _ctrlShortcuts[Key.T] = handler.OnInsertToken; // Issue #753: Insert token
+            _ctrlShortcuts[Key.F] = handler.OnFind; // Issue #1842: Find in dialog
 
             // Ctrl+Shift shortcuts
             _ctrlShiftShortcuts[Key.D] = handler.OnAddSiblingNode; // Issue #150: Add sibling node
             _ctrlShiftShortcuts[Key.T] = handler.OnCopyNodeText;
             _ctrlShiftShortcuts[Key.P] = handler.OnCopyNodeProperties;
             _ctrlShiftShortcuts[Key.S] = handler.OnCopyTreeStructure;
+            _ctrlShiftShortcuts[Key.F] = handler.OnSearchModule; // Issue #1843: Search module
 
             // Ctrl tunneling shortcuts (intercept before TextBox handles them)
             // This ensures global undo/redo instead of TextBox's character-level undo
@@ -65,6 +68,10 @@ namespace DialogEditor.Services
 
             // No modifier shortcuts
             _noModifierShortcuts[Key.Delete] = handler.OnDeleteNode;
+            _noModifierShortcuts[Key.F3] = handler.OnFindNext; // Issue #1842: Next match
+
+            // Shift-only shortcuts
+            _shiftShortcuts[Key.F3] = handler.OnFindPrevious; // Issue #1842: Previous match
             _noModifierShortcuts[Key.F4] = handler.OnToggleDialogBrowser; // Issue #1143: F4 to toggle dialog browser panel
             _noModifierShortcuts[Key.F5] = handler.OnOpenFlowchart; // Issue #339: F5 to open flowchart
             _noModifierShortcuts[Key.F6] = handler.OnOpenConversationSimulator; // Issue #478: F6 to open conversation simulator
@@ -140,6 +147,16 @@ namespace DialogEditor.Services
                     return true;
                 }
             }
+            // Shift-only shortcuts
+            else if (!ctrlPressed && shiftPressed && !altPressed)
+            {
+                if (_shiftShortcuts.TryGetValue(e.Key, out var action))
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Shift+{e.Key} detected");
+                    action();
+                    return true;
+                }
+            }
             // No modifier shortcuts
             else if (!ctrlPressed && !shiftPressed && !altPressed)
             {
@@ -202,6 +219,12 @@ namespace DialogEditor.Services
             // Text editing
             shortcuts.Add("Ctrl+T - Insert Token");
 
+            // Search
+            shortcuts.Add("Ctrl+F - Find in Dialog");
+            shortcuts.Add("F3 - Find Next");
+            shortcuts.Add("Shift+F3 - Find Previous");
+            shortcuts.Add("Ctrl+Shift+F - Search Module");
+
             return shortcuts;
         }
     }
@@ -252,5 +275,11 @@ namespace DialogEditor.Services
 
         // Text editing
         void OnInsertToken(); // Issue #753: Insert token (Ctrl+T)
+
+        // Search (#1842: Ctrl+F, F3, Shift+F3)
+        void OnFind();
+        void OnFindNext();
+        void OnFindPrevious();
+        void OnSearchModule(); // #1843: Ctrl+Shift+F
     }
 }

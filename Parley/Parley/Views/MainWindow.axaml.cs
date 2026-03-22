@@ -384,6 +384,12 @@ namespace DialogEditor.Views
         // Text editing - Issue #753: Insert token (Ctrl+T)
         void IKeyboardShortcutHandler.OnInsertToken() => OnInsertTokenClick(null, null!);
 
+        // Search - Issue #1842: Find in dialog (Ctrl+F, F3, Shift+F3)
+        void IKeyboardShortcutHandler.OnFind() => OnFindClick(null, null!);
+        void IKeyboardShortcutHandler.OnFindNext() => DialogSearchBar?.FindNext();
+        void IKeyboardShortcutHandler.OnFindPrevious() => DialogSearchBar?.FindPrevious();
+        void IKeyboardShortcutHandler.OnSearchModule() => OnSearchModuleClick(null, null!);
+
         #endregion
 
         #region Event Bus Handlers

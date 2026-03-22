@@ -419,6 +419,126 @@ namespace DialogEditor.Views
             => _controllers.EditMenu.OnPasteAsLinkClick(sender, e);
 
         #endregion
+
+        #region Search Handlers (#1842, #1843)
+
+        private void OnFindClick(object? sender, RoutedEventArgs e)
+        {
+            DialogSearchBar?.Show(_viewModel.CurrentFileName);
+        }
+
+        private void OnSearchModuleClick(object? sender, RoutedEventArgs e)
+        {
+            // #1843: Module-wide search — implemented in next sprint item
+            if (string.IsNullOrEmpty(_viewModel.CurrentFileName))
+            {
+                _viewModel.StatusMessage = "Open a dialog file first to search the module.";
+                return;
+            }
+
+            var moduleDir = System.IO.Path.GetDirectoryName(_viewModel.CurrentFileName);
+            if (string.IsNullOrEmpty(moduleDir))
+            {
+                _viewModel.StatusMessage = "Cannot determine module directory.";
+                return;
+            }
+
+            var searchWindow = new ModuleSearchWindow();
+            searchWindow.Initialize(moduleDir, _viewModel.CurrentFileName);
+            searchWindow.Show(this);
+        }
+
+        private void OnSearchNavigateToMatch(object? sender, Radoub.Formats.Search.SearchMatch? match)
+        {
+            if (match?.Location is not Radoub.Formats.Search.DlgMatchLocation dlgLoc)
+                return;
+
+            // Navigate to the matching node in the tree
+            NavigateToDialogNode(dlgLoc);
+        }
+
+        private void NavigateToDialogNode(Radoub.Formats.Search.DlgMatchLocation location)
+        {
+            if (_viewModel.CurrentDialog == null || location.NodeIndex == null)
+                return;
+
+            var targetIndex = location.NodeIndex.Value;
+
+            // Get the target DialogNode from the Dialog's Entries/Replies list by index
+            DialogEditor.Models.DialogNode? targetDialogNode = null;
+            if (location.NodeType == Radoub.Formats.Search.DlgNodeType.Entry &&
+                targetIndex < _viewModel.CurrentDialog.Entries.Count)
+            {
+                targetDialogNode = _viewModel.CurrentDialog.Entries[targetIndex];
+            }
+            else if (location.NodeType == Radoub.Formats.Search.DlgNodeType.Reply &&
+                     targetIndex < _viewModel.CurrentDialog.Replies.Count)
+            {
+                targetDialogNode = _viewModel.CurrentDialog.Replies[targetIndex];
+            }
+
+            if (targetDialogNode == null) return;
+
+            var treeView = this.FindControl<Avalonia.Controls.TreeView>("DialogTreeView");
+            if (treeView == null) return;
+
+            // Find the first TreeViewSafeNode that wraps this DialogNode (by reference)
+            var treeNode = FindTreeNodeByReference(_viewModel.DialogNodes, targetDialogNode);
+            if (treeNode != null)
+            {
+                ExpandToNode(treeNode);
+                treeView.SelectedItem = treeNode;
+                _viewModel.StatusMessage = $"Found: {location.DisplayPath}";
+            }
+        }
+
+        private Models.TreeViewSafeNode? FindTreeNodeByReference(
+            System.Collections.ObjectModel.ObservableCollection<Models.TreeViewSafeNode> nodes,
+            Models.DialogNode target)
+        {
+            foreach (var node in nodes)
+            {
+                if (ReferenceEquals(node.OriginalNode, target))
+                    return node;
+
+                if (node.Children == null) continue;
+                var found = FindTreeNodeByReference(node.Children, target);
+                if (found != null)
+                    return found;
+            }
+            return null;
+        }
+
+        private void ExpandToNode(Models.TreeViewSafeNode targetNode)
+        {
+            // Walk up the tree to expand all ancestors
+            var path = new System.Collections.Generic.List<Models.TreeViewSafeNode>();
+            FindNodePath(_viewModel.DialogNodes, targetNode, path);
+
+            foreach (var ancestor in path)
+                ancestor.IsExpanded = true;
+        }
+
+        private bool FindNodePath(
+            System.Collections.ObjectModel.ObservableCollection<Models.TreeViewSafeNode> nodes,
+            Models.TreeViewSafeNode target,
+            System.Collections.Generic.List<Models.TreeViewSafeNode> path)
+        {
+            foreach (var node in nodes)
+            {
+                if (ReferenceEquals(node, target))
+                    return true;
+
+                if (node.Children == null) continue;
+                path.Add(node);
+                if (FindNodePath(node.Children, target, path))
+                    return true;
+                path.RemoveAt(path.Count - 1);
+            }
+            return false;
+        }
+
+        #endregion
     }
 }
 
