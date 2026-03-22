@@ -15,9 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: TLK Resolution, Wizard Icons, and MainWindow Split (#1833)
 
-- [ ] #1805 — Item Name TLK resolution for base game items
-- [ ] #1815 — Wizard: Search by item icon/image
-- [ ] #1796 — Split MainWindow.axaml.cs (1306 lines)
+- [x] #1805 — Item Name TLK resolution for base game items
+- [x] #1815 — Wizard: Search by item icon/image
+- [x] #1796 — Split MainWindow.axaml.cs into 6 partial files (82 + 196 + 205 + 401 + 588 + 269)
 
 ---
 
