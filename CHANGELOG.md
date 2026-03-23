@@ -17,6 +17,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.99] - 2026-03-22
+**Branch**: `radoub/issue-1936` | **PR**: #1938
+
+### Sprint: Marlinspike Ctrl+F/H Rollout (#1936)
+
+- [x] Extract SearchBar and FileSearchService to Radoub.UI as shared controls
+- [x] Refactor Parley to use shared SearchBar (removed DialogSearchService)
+
+---
+
 ## [0.9.98] - 2026-03-22
 **Branch**: `radoub/issue-1928` | **PR**: #1934
 

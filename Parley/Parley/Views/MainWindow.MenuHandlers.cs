@@ -424,13 +424,13 @@ namespace DialogEditor.Views
 
         private void OnFindClick(object? sender, RoutedEventArgs e)
         {
-            var searchBar = this.FindControl<Controls.SearchBar>("DialogSearchBar");
+            var searchBar = this.FindControl<Radoub.UI.Controls.SearchBar>("DialogSearchBar");
             searchBar?.Show(_viewModel.CurrentFileName);
         }
 
         private void OnFindReplaceClick(object? sender, RoutedEventArgs e)
         {
-            var searchBar = this.FindControl<Controls.SearchBar>("DialogSearchBar");
+            var searchBar = this.FindControl<Radoub.UI.Controls.SearchBar>("DialogSearchBar");
             searchBar?.ShowReplace(_viewModel.CurrentFileName);
         }
 

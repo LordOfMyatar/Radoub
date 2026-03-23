@@ -2,9 +2,12 @@ using Avalonia.Controls;
 using ItemEditor.Services;
 using ItemEditor.ViewModels;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Search;
 using Radoub.Formats.Services;
 using Radoub.Formats.Uti;
+using Radoub.UI.Controls;
 using Radoub.UI.Services;
+using Radoub.UI.Services.Search;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -57,6 +60,21 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         UpdateUseRadoubThemeMenuState();
         UpdateModuleIndicator();
         PopulateRecentFiles();
+
+        // Initialize search bar with UTI search provider
+        var searchBar = this.FindControl<SearchBar>("FileSearchBar");
+        searchBar?.Initialize(
+            new FileSearchService(new UtiSearchProvider()),
+            new (string, SearchFieldCategory)[]
+            {
+                ("Text", SearchFieldCategory.Content),
+                ("Tags", SearchFieldCategory.Identity),
+                ("Metadata", SearchFieldCategory.Metadata),
+            });
+        if (searchBar != null)
+        {
+            searchBar.FileModified += OnSearchFileModified;
+        }
 
         Closing += OnWindowClosing;
         Opened += OnWindowOpened;

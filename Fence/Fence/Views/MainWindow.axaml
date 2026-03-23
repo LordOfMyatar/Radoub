@@ -61,6 +61,9 @@
                 <MenuItem Header="_Redo" InputGesture="Ctrl+Y" IsEnabled="False" ToolTip.Tip="Not yet implemented"/>
                 <Separator/>
                 <MenuItem Header="_Delete Selected" Click="OnDeleteClick" InputGesture="Delete" IsEnabled="{Binding HasSelection, ElementName=MainWindowInstance}"/>
+                <Separator/>
+                <MenuItem Header="_Find..." Click="OnFindClick" InputGesture="Ctrl+F" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
+                <MenuItem Header="_Replace..." Click="OnFindReplaceClick" InputGesture="Ctrl+H" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
             </MenuItem>
             <MenuItem Header="_View">
                 <MenuItem x:Name="StoreBrowserMenuItem" Header="_Store Browser" Click="OnToggleStoreBrowserClick" InputGesture="F4"/>
@@ -80,6 +83,9 @@
                 <MenuItem Header="_About Fence" Click="OnAboutClick"/>
             </MenuItem>
         </Menu>
+
+        <!-- Search Bar (Ctrl+F / Ctrl+H) -->
+        <controls:SearchBar x:Name="FileSearchBar" DockPanel.Dock="Top"/>
 
         <!-- Status Bar (top position for visibility during loading) -->
         <Border DockPanel.Dock="Top"

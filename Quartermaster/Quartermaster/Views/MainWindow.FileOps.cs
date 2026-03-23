@@ -475,6 +475,9 @@ public partial class MainWindow
 
             SettingsService.Instance.AddRecentFile(filePath);
             UpdateRecentFilesMenu();
+
+            // Update search bar file path
+            this.FindControl<SearchBar>("FileSearchBar")?.UpdateFilePath(filePath);
         }
         catch (Exception ex)
         {
