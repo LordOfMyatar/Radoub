@@ -17,6 +17,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.98] - 2026-03-22
+**Branch**: `radoub/issue-1928` | **PR**: #1934
+
+### Sprint: Remaining GFF Parsers (UTP, UTD, ARE) (#1928)
+
+- [x] #1541 — UTP (Placeable) reader/writer + UtpSearchProvider
+- [x] #1542 — UTD (Door) reader/writer + UtdSearchProvider
+- [x] #1579 — ARE (.are) reader/writer (area properties + tile layout)
+
+---
+
 ## [0.9.97] - 2026-03-22
 **Branch**: `radoub/issue-1857` | **PR**: #1924
 
