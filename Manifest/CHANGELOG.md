@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.15.5-alpha] - 2026-03-22
-**Branch**: `radoub/issue-1936` | **PR**: #TBD
+**Branch**: `radoub/issue-1936` | **PR**: #1938
 
 ### Sprint: Marlinspike Ctrl+F/H Rollout (#1936)
 
