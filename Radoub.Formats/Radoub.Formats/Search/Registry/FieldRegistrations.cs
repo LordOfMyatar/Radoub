@@ -15,6 +15,7 @@ public static class FieldRegistrations
         RegisterUti(registry);
         RegisterUtm(registry);
         RegisterUtp(registry);
+        RegisterUtd(registry);
         RegisterJrl(registry);
         RegisterIfo(registry);
         RegisterGit(registry);
@@ -189,6 +190,34 @@ public static class FieldRegistrations
             new FieldDefinition { Name = "OnUnlock", GffPath = "OnUnlock", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnUnlock event script" },
             new FieldDefinition { Name = "OnUserDefined", GffPath = "OnUserDefined", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnUserDefined event script" },
             new FieldDefinition { Name = "OnUsed", GffPath = "OnUsed", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnUsed event script" },
+            new FieldDefinition { Name = "Local Variables", GffPath = "VarTable", FieldType = SearchFieldType.Variable, Category = SearchFieldCategory.Variable, Description = "Local variable names and string values" }
+        );
+    }
+
+    private static void RegisterUtd(SearchFieldRegistry registry)
+    {
+        registry.RegisterFileType(ResourceTypes.Utd,
+            new FieldDefinition { Name = "Name", GffPath = "LocName", FieldType = SearchFieldType.LocString, Category = SearchFieldCategory.Content, Description = "Door name" },
+            new FieldDefinition { Name = "Description", GffPath = "Description", FieldType = SearchFieldType.LocString, Category = SearchFieldCategory.Content, Description = "Door description" },
+            new FieldDefinition { Name = "Tag", GffPath = "Tag", FieldType = SearchFieldType.Tag, Category = SearchFieldCategory.Identity, Description = "Door tag" },
+            new FieldDefinition { Name = "ResRef", GffPath = "TemplateResRef", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Door resource reference", IsReplaceable = false },
+            new FieldDefinition { Name = "Comment", GffPath = "Comment", FieldType = SearchFieldType.Text, Category = SearchFieldCategory.Metadata, Description = "Toolset comment" },
+            new FieldDefinition { Name = "Conversation", GffPath = "Conversation", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Metadata, Description = "Conversation file reference", IsReplaceable = false },
+            new FieldDefinition { Name = "LinkedTo", GffPath = "LinkedTo", FieldType = SearchFieldType.Tag, Category = SearchFieldCategory.Metadata, Description = "Area transition target tag" },
+            new FieldDefinition { Name = "OnClick", GffPath = "OnClick", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnAreaTransitionClick event script" },
+            new FieldDefinition { Name = "OnClosed", GffPath = "OnClosed", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnClosed event script" },
+            new FieldDefinition { Name = "OnDamaged", GffPath = "OnDamaged", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnDamaged event script" },
+            new FieldDefinition { Name = "OnDeath", GffPath = "OnDeath", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnDeath event script" },
+            new FieldDefinition { Name = "OnDisarm", GffPath = "OnDisarm", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnDisarm event script" },
+            new FieldDefinition { Name = "OnFailToOpen", GffPath = "OnFailToOpen", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnFailToOpen event script" },
+            new FieldDefinition { Name = "OnHeartbeat", GffPath = "OnHeartbeat", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnHeartbeat event script" },
+            new FieldDefinition { Name = "OnLock", GffPath = "OnLock", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnLock event script" },
+            new FieldDefinition { Name = "OnMeleeAttacked", GffPath = "OnMeleeAttacked", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnPhysicalAttacked event script" },
+            new FieldDefinition { Name = "OnOpen", GffPath = "OnOpen", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnOpen event script" },
+            new FieldDefinition { Name = "OnSpellCastAt", GffPath = "OnSpellCastAt", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnSpellCastAt event script" },
+            new FieldDefinition { Name = "OnTrapTriggered", GffPath = "OnTrapTriggered", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnTrapTriggered event script" },
+            new FieldDefinition { Name = "OnUnlock", GffPath = "OnUnlock", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnUnlock event script" },
+            new FieldDefinition { Name = "OnUserDefined", GffPath = "OnUserDefined", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnUserDefined event script" },
             new FieldDefinition { Name = "Local Variables", GffPath = "VarTable", FieldType = SearchFieldType.Variable, Category = SearchFieldCategory.Variable, Description = "Local variable names and string values" }
         );
     }
