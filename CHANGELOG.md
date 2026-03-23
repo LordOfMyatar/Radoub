@@ -22,9 +22,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Remaining GFF Parsers (UTP, UTD, ARE) (#1928)
 
-- [ ] #1541 — UTP (Placeable) reader/writer + UtpSearchProvider
-- [ ] #1542 — UTD (Door) reader/writer + UtdSearchProvider
-- [ ] #1579 — ARE (.are) reader/writer (research — complex, .are + .git + .gic)
+- [x] #1541 — UTP (Placeable) reader/writer + UtpSearchProvider
+- [x] #1542 — UTD (Door) reader/writer + UtdSearchProvider
+- [x] #1579 — ARE (.are) reader/writer (area properties + tile layout)
 
 ---
 
