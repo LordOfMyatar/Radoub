@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.22-alpha] - 2026-03-22
+**Branch**: `radoub/issue-1936` | **PR**: #TBD
+
+### Sprint: Marlinspike Ctrl+F/H Rollout (#1936)
+
+- [ ] #1931 — Ctrl+F search and Ctrl+H replace for store files
+
+---
+
 ## [0.1.21-alpha] - 2026-03-19
 **Branch**: `radoub/issue-1825` | **PR**: #1834
 
