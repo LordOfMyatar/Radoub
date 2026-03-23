@@ -211,7 +211,11 @@ namespace Radoub.UI.Controls
         private void UpdateMatchCount()
         {
             var matchCountText = GetMatchCountText();
-            if (matchCountText == null) return;
+            if (matchCountText == null)
+            {
+                UnifiedLogger.LogUI(LogLevel.WARN, "SearchBar.UpdateMatchCount: MatchCountText control not found");
+                return;
+            }
 
             var count = _searchService?.MatchCount ?? 0;
             var index = _searchService?.CurrentIndex ?? -1;
@@ -222,6 +226,7 @@ namespace Radoub.UI.Controls
                 0 => "No matches",
                 _ => $"{index + 1} of {count}"
             };
+            UnifiedLogger.LogUI(LogLevel.DEBUG, $"SearchBar.UpdateMatchCount: '{matchCountText.Text}'");
         }
 
         #region Event Handlers
