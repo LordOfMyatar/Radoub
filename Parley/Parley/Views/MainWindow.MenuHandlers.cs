@@ -428,6 +428,12 @@ namespace DialogEditor.Views
             searchBar?.Show(_viewModel.CurrentFileName);
         }
 
+        private void OnFindReplaceClick(object? sender, RoutedEventArgs e)
+        {
+            var searchBar = this.FindControl<Controls.SearchBar>("DialogSearchBar");
+            searchBar?.ShowReplace(_viewModel.CurrentFileName);
+        }
+
         private void OnSearchModuleClick(object? sender, RoutedEventArgs e)
         {
             // #1843: Module-wide search — implemented in next sprint item
@@ -447,6 +453,16 @@ namespace DialogEditor.Views
             var searchWindow = new ModuleSearchWindow();
             searchWindow.Initialize(moduleDir, _viewModel.CurrentFileName);
             searchWindow.Show(this);
+        }
+
+        private async void OnSearchFileModified(object? sender, EventArgs e)
+        {
+            // Reload the file after a replace operation modified it on disk
+            if (!string.IsNullOrEmpty(_viewModel.CurrentFileName))
+            {
+                await _viewModel.LoadDialogAsync(_viewModel.CurrentFileName);
+                _viewModel.StatusMessage = "File reloaded after replace.";
+            }
         }
 
         private void OnSearchNavigateToMatch(object? sender, Radoub.Formats.Search.SearchMatch? match)

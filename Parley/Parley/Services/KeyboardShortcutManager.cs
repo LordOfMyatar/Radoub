@@ -63,6 +63,7 @@ namespace DialogEditor.Services
             _ctrlTunnelingShortcuts[Key.Z] = handler.OnUndo;
             _ctrlTunnelingShortcuts[Key.Y] = handler.OnRedo;
             _ctrlTunnelingShortcuts[Key.F] = handler.OnFind; // Issue #1842: Find in dialog (tunneling to beat TextBox)
+            _ctrlTunnelingShortcuts[Key.H] = handler.OnFindReplace; // Issue #1853: Find & Replace (tunneling to beat TextBox)
 
             // Ctrl+Shift tunneling shortcuts (intercept before TreeView)
             _ctrlShiftTunnelingShortcuts[Key.Up] = handler.OnMoveNodeUp;
@@ -280,6 +281,7 @@ namespace DialogEditor.Services
 
         // Search (#1842: Ctrl+F, F3, Shift+F3)
         void OnFind();
+        void OnFindReplace(); // #1853: Ctrl+H — Find & Replace
         void OnFindNext();
         void OnFindPrevious();
         void OnSearchModule(); // #1843: Ctrl+Shift+F

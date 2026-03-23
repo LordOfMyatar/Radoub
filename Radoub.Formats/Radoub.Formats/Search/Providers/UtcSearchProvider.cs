@@ -18,13 +18,13 @@ public class UtcSearchProvider : SearchProviderBase, IFileSearchProvider
 
     // Identity fields
     private static readonly FieldDefinition TagField = new() { Name = "Tag", GffPath = "Tag", FieldType = SearchFieldType.Tag, Category = SearchFieldCategory.Identity, Description = "Creature tag" };
-    private static readonly FieldDefinition TemplateResRefField = new() { Name = "Template ResRef", GffPath = "TemplateResRef", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Blueprint resource reference" };
+    private static readonly FieldDefinition TemplateResRefField = new() { Name = "Template ResRef", GffPath = "TemplateResRef", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Blueprint resource reference", IsReplaceable = false };
     private static readonly FieldDefinition SubraceField = new() { Name = "Subrace", GffPath = "Subrace", FieldType = SearchFieldType.Text, Category = SearchFieldCategory.Identity, Description = "Creature subrace" };
     private static readonly FieldDefinition DeityField = new() { Name = "Deity", GffPath = "Deity", FieldType = SearchFieldType.Text, Category = SearchFieldCategory.Identity, Description = "Creature deity" };
 
     // Metadata fields
     private static readonly FieldDefinition CommentField = new() { Name = "Comment", GffPath = "Comment", FieldType = SearchFieldType.Text, Category = SearchFieldCategory.Metadata, Description = "Toolset comment" };
-    private static readonly FieldDefinition ConversationField = new() { Name = "Conversation", GffPath = "Conversation", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Metadata, Description = "Default conversation file" };
+    private static readonly FieldDefinition ConversationField = new() { Name = "Conversation", GffPath = "Conversation", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Metadata, Description = "Default conversation file", IsReplaceable = false };
 
     // Script fields
     private static readonly FieldDefinition ScriptAttackedField = new() { Name = "ScriptAttacked", GffPath = "ScriptAttacked", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnPhysicalAttacked event script" };
@@ -117,12 +117,22 @@ public class UtcSearchProvider : SearchProviderBase, IFileSearchProvider
 
     public IReadOnlyList<ReplaceResult> Replace(GffFile gffFile, IReadOnlyList<ReplaceOperation> operations)
     {
-        // Phase 3
-        return operations.Select(op => new ReplaceResult
+        if (operations.Count == 0) return Array.Empty<ReplaceResult>();
+
+        var sorted = SortReverseOffset(operations);
+        var results = new List<ReplaceResult>();
+
+        foreach (var op in sorted)
         {
-            Success = false, Field = op.Match.Field,
-            OldValue = op.Match.FullFieldValue, NewValue = op.ReplacementText,
-            Skipped = true, SkipReason = "Replace not yet implemented for UTC provider"
-        }).ToList();
+            var gffPath = op.Match.Field.GffPath;
+            var result = op.Match.Field.FieldType switch
+            {
+                SearchFieldType.LocString => ReplaceLocStringField(gffFile.RootStruct, gffPath, op),
+                _ => ReplaceStringField(gffFile.RootStruct, gffPath, op)
+            };
+            results.Add(result);
+        }
+
+        return results;
     }
 }

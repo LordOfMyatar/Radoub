@@ -66,13 +66,102 @@ public class JrlSearchProvider : SearchProviderBase, IFileSearchProvider
 
     public IReadOnlyList<ReplaceResult> Replace(GffFile gffFile, IReadOnlyList<ReplaceOperation> operations)
     {
-        // Phase 3
-        return operations.Select(op => new ReplaceResult
+        if (operations.Count == 0) return Array.Empty<ReplaceResult>();
+
+        var sorted = SortReverseOffset(operations);
+        var results = new List<ReplaceResult>();
+
+        // Get Categories list from root
+        var categoriesField = gffFile.RootStruct.GetField("Categories");
+        if (categoriesField?.Value is not GffList categoriesList)
         {
-            Success = false, Field = op.Match.Field,
-            OldValue = op.Match.FullFieldValue, NewValue = op.ReplacementText,
-            Skipped = true, SkipReason = "Replace not yet implemented for JRL provider"
-        }).ToList();
+            return operations.Select(op => new ReplaceResult
+            {
+                Success = false, Field = op.Match.Field,
+                OldValue = op.Match.FullFieldValue, NewValue = op.ReplacementText,
+                Skipped = true, SkipReason = "Categories list not found in GFF"
+            }).ToList();
+        }
+
+        foreach (var op in sorted)
+        {
+            if (op.Match.Location is not JrlMatchLocation loc)
+            {
+                results.Add(new ReplaceResult
+                {
+                    Success = false, Field = op.Match.Field,
+                    OldValue = op.Match.FullFieldValue, NewValue = op.ReplacementText,
+                    Skipped = true, SkipReason = "Missing JRL location info"
+                });
+                continue;
+            }
+
+            if (loc.CategoryIndex < 0 || loc.CategoryIndex >= categoriesList.Elements.Count)
+            {
+                results.Add(new ReplaceResult
+                {
+                    Success = false, Field = op.Match.Field,
+                    OldValue = op.Match.FullFieldValue, NewValue = op.ReplacementText,
+                    Skipped = true, SkipReason = $"Category index {loc.CategoryIndex} out of range"
+                });
+                continue;
+            }
+
+            var categoryStruct = categoriesList.Elements[loc.CategoryIndex];
+
+            if (loc.EntryId != null)
+            {
+                // Target is an entry within the category
+                var entryStruct = FindEntryStruct(categoryStruct, loc.EntryId.Value);
+                if (entryStruct == null)
+                {
+                    results.Add(new ReplaceResult
+                    {
+                        Success = false, Field = op.Match.Field,
+                        OldValue = op.Match.FullFieldValue, NewValue = op.ReplacementText,
+                        Skipped = true, SkipReason = $"Entry ID {loc.EntryId} not found in category"
+                    });
+                    continue;
+                }
+
+                var result = op.Match.Field.FieldType switch
+                {
+                    SearchFieldType.LocString => ReplaceLocStringField(entryStruct, op.Match.Field.GffPath, op),
+                    _ => ReplaceStringField(entryStruct, op.Match.Field.GffPath, op)
+                };
+                results.Add(result);
+            }
+            else
+            {
+                // Target is on the category itself
+                var result = op.Match.Field.FieldType switch
+                {
+                    SearchFieldType.LocString => ReplaceLocStringField(categoryStruct, op.Match.Field.GffPath, op),
+                    _ => ReplaceStringField(categoryStruct, op.Match.Field.GffPath, op)
+                };
+                results.Add(result);
+            }
+        }
+
+        return results;
+    }
+
+    private static GffStruct? FindEntryStruct(GffStruct categoryStruct, uint entryId)
+    {
+        var entryListField = categoryStruct.GetField("EntryList");
+        if (entryListField?.Value is not GffList entryList) return null;
+
+        foreach (var entryStruct in entryList.Elements)
+        {
+            var idField = entryStruct.GetField("ID");
+            if (idField != null)
+            {
+                var id = Convert.ToUInt32(idField.Value);
+                if (id == entryId) return entryStruct;
+            }
+        }
+
+        return null;
     }
 }
 

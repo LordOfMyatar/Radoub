@@ -15,7 +15,7 @@ public class UtiSearchProvider : SearchProviderBase, IFileSearchProvider
     private static readonly FieldDefinition DescriptionField = new() { Name = "Description", GffPath = "Description", FieldType = SearchFieldType.LocString, Category = SearchFieldCategory.Content, Description = "Unidentified description" };
     private static readonly FieldDefinition DescIdentifiedField = new() { Name = "Identified Description", GffPath = "DescIdentified", FieldType = SearchFieldType.LocString, Category = SearchFieldCategory.Content, Description = "Identified item description" };
     private static readonly FieldDefinition TagField = new() { Name = "Tag", GffPath = "Tag", FieldType = SearchFieldType.Tag, Category = SearchFieldCategory.Identity, Description = "Item tag" };
-    private static readonly FieldDefinition TemplateResRefField = new() { Name = "Template ResRef", GffPath = "TemplateResRef", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Blueprint resource reference" };
+    private static readonly FieldDefinition TemplateResRefField = new() { Name = "Template ResRef", GffPath = "TemplateResRef", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Blueprint resource reference", IsReplaceable = false };
     private static readonly FieldDefinition CommentField = new() { Name = "Comment", GffPath = "Comment", FieldType = SearchFieldType.Text, Category = SearchFieldCategory.Metadata, Description = "Toolset comment" };
 
     public ushort FileType => ResourceTypes.Uti;
@@ -48,12 +48,22 @@ public class UtiSearchProvider : SearchProviderBase, IFileSearchProvider
 
     public IReadOnlyList<ReplaceResult> Replace(GffFile gffFile, IReadOnlyList<ReplaceOperation> operations)
     {
-        // Phase 3
-        return operations.Select(op => new ReplaceResult
+        if (operations.Count == 0) return Array.Empty<ReplaceResult>();
+
+        var sorted = SortReverseOffset(operations);
+        var results = new List<ReplaceResult>();
+
+        foreach (var op in sorted)
         {
-            Success = false, Field = op.Match.Field,
-            OldValue = op.Match.FullFieldValue, NewValue = op.ReplacementText,
-            Skipped = true, SkipReason = "Replace not yet implemented for UTI provider"
-        }).ToList();
+            var gffPath = op.Match.Field.GffPath;
+            var result = op.Match.Field.FieldType switch
+            {
+                SearchFieldType.LocString => ReplaceLocStringField(gffFile.RootStruct, gffPath, op),
+                _ => ReplaceStringField(gffFile.RootStruct, gffPath, op)
+            };
+            results.Add(result);
+        }
+
+        return results;
     }
 }

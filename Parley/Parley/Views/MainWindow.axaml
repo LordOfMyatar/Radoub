@@ -96,6 +96,7 @@
                 <MenuItem Header="_Redo" InputGesture="Ctrl+Y" Click="OnRedoClick"/>
                 <Separator/>
                 <MenuItem Header="_Find..." InputGesture="Ctrl+F" Click="OnFindClick"/>
+                <MenuItem Header="_Replace..." InputGesture="Ctrl+H" Click="OnFindReplaceClick"/>
                 <MenuItem Header="Search _Module..." InputGesture="Ctrl+Shift+F" Click="OnSearchModuleClick"/>
                 <Separator/>
                 <MenuItem Header="Cu_t Node" InputGesture="Ctrl+X" Click="OnCutNodeClick"/>
@@ -256,7 +257,8 @@
 
                             <!-- Search Bar (Ctrl+F) -->
                             <controls:SearchBar x:Name="DialogSearchBar" DockPanel.Dock="Top"
-                                                NavigateToMatch="OnSearchNavigateToMatch"/>
+                                                NavigateToMatch="OnSearchNavigateToMatch"
+                                                FileModified="OnSearchFileModified"/>
 
                             <!-- DRAGON: DialogTreeView binding and event handlers connect to orphan handling, cut/copy/paste logic -->
                             <!-- DRAGON: Do not modify ItemsSource binding, SelectionChanged, or context menu Click handlers -->

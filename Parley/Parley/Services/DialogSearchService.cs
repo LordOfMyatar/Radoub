@@ -103,6 +103,81 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
+        /// Replace the current match in the file on disk.
+        /// Returns the result, and re-runs search to update matches.
+        /// </summary>
+        public ReplaceResult? ReplaceCurrent(string filePath, string replacementText, SearchCriteria criteria)
+        {
+            var match = CurrentMatch;
+            if (match == null || string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+                return null;
+
+            try
+            {
+                var gffFile = GffReader.Read(filePath);
+                var ops = new[] { new ReplaceOperation { Match = match, ReplacementText = replacementText } };
+                var results = _provider.Replace(gffFile, ops);
+                var result = results.FirstOrDefault();
+
+                if (result?.Success == true)
+                {
+                    // Write modified file back to disk
+                    var bytes = GffWriter.Write(gffFile);
+                    File.WriteAllBytes(filePath, bytes);
+
+                    // Re-search to update match list
+                    Search(filePath, criteria);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Replace failed: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Replace all current matches in the file on disk.
+        /// Returns the number of successful replacements.
+        /// </summary>
+        public int ReplaceAll(string filePath, string replacementText, SearchCriteria criteria)
+        {
+            if (_currentMatches.Count == 0 || string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+                return 0;
+
+            try
+            {
+                var gffFile = GffReader.Read(filePath);
+                var ops = _currentMatches.Select(m => new ReplaceOperation
+                {
+                    Match = m,
+                    ReplacementText = replacementText
+                }).ToList();
+
+                var results = _provider.Replace(gffFile, ops);
+                var successCount = results.Count(r => r.Success);
+
+                if (successCount > 0)
+                {
+                    var bytes = GffWriter.Write(gffFile);
+                    File.WriteAllBytes(filePath, bytes);
+
+                    // Re-search to update (should now find fewer/no matches)
+                    Search(filePath, criteria);
+                }
+
+                return successCount;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Replace all failed: {ex.Message}");
+                return 0;
+            }
+        }
+
+        /// <summary>
         /// Get a display-friendly location string for a match.
         /// </summary>
         public static string GetMatchLocationText(SearchMatch match)
