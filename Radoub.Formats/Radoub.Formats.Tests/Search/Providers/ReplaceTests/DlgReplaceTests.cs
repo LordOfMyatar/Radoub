@@ -208,7 +208,7 @@ public class DlgReplaceTests
     }
 
     [Fact]
-    public void Replace_Sound_ResRef()
+    public void Replace_Sound_ResRef_Skipped()
     {
         var provider = new DlgSearchProvider();
         var gff = DlgToGff(CreateTestDlg());
@@ -221,10 +221,12 @@ public class DlgReplaceTests
         gff = DlgToGff(CreateTestDlg());
         var results = provider.Replace(gff, ops);
 
-        Assert.All(results, r => Assert.True(r.Success));
-
-        var dlg = GffToDlg(gff);
-        Assert.Equal("vo_marcel_01", dlg.Entries[0].Sound);
+        // Sound is a ResRef — skipped because file rename not supported
+        Assert.All(results, r =>
+        {
+            Assert.True(r.Skipped);
+            Assert.False(r.Success);
+        });
     }
 
     [Fact]

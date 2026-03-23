@@ -87,7 +87,7 @@ public class UtiReplaceTests
     }
 
     [Fact]
-    public void Replace_ResRef_WithTruncation()
+    public void Replace_ResRef_Skipped_FileRenameRequired()
     {
         var provider = new UtiSearchProvider();
         var gff = UtiToGff(CreateTestUti());
@@ -95,14 +95,11 @@ public class UtiReplaceTests
         var resRefMatch = matches.First(m => m.Field.Name == "Template ResRef");
 
         gff = UtiToGff(CreateTestUti());
-        var results = provider.Replace(gff, new[] { new ReplaceOperation { Match = resRefMatch, ReplacementText = "very_long_resref_name" } });
+        var results = provider.Replace(gff, new[] { new ReplaceOperation { Match = resRefMatch, ReplacementText = "marcel_scythe" } });
 
         var result = Assert.Single(results);
-        Assert.True(result.Success);
-        Assert.NotNull(result.Warning);
-
-        var bytes = GffWriter.Write(gff);
-        var uti = UtiReader.Read(bytes);
-        Assert.Equal(16, uti.TemplateResRef.Length);
+        Assert.True(result.Skipped);
+        Assert.False(result.Success);
+        Assert.Contains("file rename", result.SkipReason, StringComparison.OrdinalIgnoreCase);
     }
 }

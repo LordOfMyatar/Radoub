@@ -104,38 +104,25 @@ public class UtcReplaceTests
     }
 
     [Fact]
-    public void Replace_ResRef_TemplateResRef()
+    public void Replace_ResRef_TemplateResRef_SkippedBecauseFileRenameRequired()
     {
         var (gff, ops) = SearchAndBuildOps("louis_romain", "marcel_ice", "Template ResRef");
 
         var provider = new UtcSearchProvider();
         var results = provider.Replace(gff, ops);
 
-        Assert.All(results, r => Assert.True(r.Success));
-
-        var bytes = GffWriter.Write(gff);
-        var utc = UtcReader.Read(bytes);
-        Assert.Equal("marcel_ice", utc.TemplateResRef);
-    }
-
-    [Fact]
-    public void Replace_ResRef_TruncatesWithWarning()
-    {
-        var (gff, ops) = SearchAndBuildOps("louis_romain", "this_is_way_too_long_name", "Template ResRef");
-
-        var provider = new UtcSearchProvider();
-        var results = provider.Replace(gff, ops);
-
+        // ResRef fields are not replaceable — changing a ResRef without renaming the file breaks the reference
         Assert.All(results, r =>
         {
-            Assert.True(r.Success);
-            Assert.NotNull(r.Warning);
-            Assert.Contains("truncated", r.Warning, StringComparison.OrdinalIgnoreCase);
+            Assert.True(r.Skipped);
+            Assert.False(r.Success);
+            Assert.Contains("file rename", r.SkipReason, StringComparison.OrdinalIgnoreCase);
         });
 
+        // Verify the GFF was NOT mutated
         var bytes = GffWriter.Write(gff);
         var utc = UtcReader.Read(bytes);
-        Assert.Equal(16, utc.TemplateResRef.Length);
+        Assert.Equal("louis_romain", utc.TemplateResRef);
     }
 
     [Fact]

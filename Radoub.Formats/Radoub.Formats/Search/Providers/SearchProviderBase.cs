@@ -183,6 +183,18 @@ public abstract class SearchProviderBase
     /// </summary>
     protected static ReplaceResult ReplaceStringField(GffStruct gffStruct, string fieldLabel, ReplaceOperation op)
     {
+        // ResRef fields are not replaceable — changing a ResRef without renaming
+        // the referenced file on disk would silently break the reference.
+        if (!op.Match.Field.IsReplaceable)
+        {
+            return new ReplaceResult
+            {
+                Success = false, Field = op.Match.Field,
+                OldValue = op.Match.FullFieldValue, NewValue = op.ReplacementText,
+                Skipped = true, SkipReason = "ResRef fields require file rename (not yet supported)"
+            };
+        }
+
         var field = gffStruct.GetField(fieldLabel);
         if (field == null || field.Value is not string currentValue)
         {
@@ -194,26 +206,14 @@ public abstract class SearchProviderBase
             };
         }
 
-        string? warning = null;
-        string newValue;
-
-        if (field.Type == GffField.CResRef || op.Match.Field.FieldType == SearchFieldType.ResRef)
-        {
-            (newValue, warning) = ReplaceResRef(currentValue, op);
-        }
-        else
-        {
-            newValue = ReplaceInString(currentValue, op);
-        }
-
+        var newValue = ReplaceInString(currentValue, op);
         var oldValue = currentValue;
         field.Value = newValue;
 
         return new ReplaceResult
         {
             Success = true, Field = op.Match.Field,
-            OldValue = oldValue, NewValue = newValue,
-            Warning = warning
+            OldValue = oldValue, NewValue = newValue
         };
     }
 

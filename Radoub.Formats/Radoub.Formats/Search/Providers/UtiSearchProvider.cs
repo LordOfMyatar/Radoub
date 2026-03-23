@@ -15,7 +15,7 @@ public class UtiSearchProvider : SearchProviderBase, IFileSearchProvider
     private static readonly FieldDefinition DescriptionField = new() { Name = "Description", GffPath = "Description", FieldType = SearchFieldType.LocString, Category = SearchFieldCategory.Content, Description = "Unidentified description" };
     private static readonly FieldDefinition DescIdentifiedField = new() { Name = "Identified Description", GffPath = "DescIdentified", FieldType = SearchFieldType.LocString, Category = SearchFieldCategory.Content, Description = "Identified item description" };
     private static readonly FieldDefinition TagField = new() { Name = "Tag", GffPath = "Tag", FieldType = SearchFieldType.Tag, Category = SearchFieldCategory.Identity, Description = "Item tag" };
-    private static readonly FieldDefinition TemplateResRefField = new() { Name = "Template ResRef", GffPath = "TemplateResRef", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Blueprint resource reference" };
+    private static readonly FieldDefinition TemplateResRefField = new() { Name = "Template ResRef", GffPath = "TemplateResRef", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Blueprint resource reference", IsReplaceable = false };
     private static readonly FieldDefinition CommentField = new() { Name = "Comment", GffPath = "Comment", FieldType = SearchFieldType.Text, Category = SearchFieldCategory.Metadata, Description = "Toolset comment" };
 
     public ushort FileType => ResourceTypes.Uti;

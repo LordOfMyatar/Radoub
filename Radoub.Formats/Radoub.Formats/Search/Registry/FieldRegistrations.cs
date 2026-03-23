@@ -87,7 +87,8 @@ public static class FieldRegistrations
                 Name = "Sound", GffPath = "Sound",
                 FieldType = SearchFieldType.ResRef,
                 Category = SearchFieldCategory.Metadata,
-                Description = "Sound file reference"
+                Description = "Sound file reference",
+                IsReplaceable = false
             },
             new FieldDefinition
             {
@@ -113,11 +114,11 @@ public static class FieldRegistrations
             new FieldDefinition { Name = "Last Name", GffPath = "LastName", FieldType = SearchFieldType.LocString, Category = SearchFieldCategory.Content, Description = "Creature last name" },
             new FieldDefinition { Name = "Description", GffPath = "Description", FieldType = SearchFieldType.LocString, Category = SearchFieldCategory.Content, Description = "Creature description" },
             new FieldDefinition { Name = "Tag", GffPath = "Tag", FieldType = SearchFieldType.Tag, Category = SearchFieldCategory.Identity, Description = "Creature tag" },
-            new FieldDefinition { Name = "Template ResRef", GffPath = "TemplateResRef", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Blueprint resource reference" },
+            new FieldDefinition { Name = "Template ResRef", GffPath = "TemplateResRef", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Blueprint resource reference", IsReplaceable = false },
             new FieldDefinition { Name = "Comment", GffPath = "Comment", FieldType = SearchFieldType.Text, Category = SearchFieldCategory.Metadata, Description = "Toolset comment" },
             new FieldDefinition { Name = "Subrace", GffPath = "Subrace", FieldType = SearchFieldType.Text, Category = SearchFieldCategory.Identity, Description = "Creature subrace" },
             new FieldDefinition { Name = "Deity", GffPath = "Deity", FieldType = SearchFieldType.Text, Category = SearchFieldCategory.Identity, Description = "Creature deity" },
-            new FieldDefinition { Name = "Conversation", GffPath = "Conversation", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Metadata, Description = "Default conversation file" },
+            new FieldDefinition { Name = "Conversation", GffPath = "Conversation", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Metadata, Description = "Default conversation file", IsReplaceable = false },
             new FieldDefinition { Name = "Local Variables", GffPath = "VarTable", FieldType = SearchFieldType.Variable, Category = SearchFieldCategory.Variable, Description = "Local variable names and string values" },
             new FieldDefinition { Name = "ScriptAttacked", GffPath = "ScriptAttacked", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnPhysicalAttacked event script" },
             new FieldDefinition { Name = "ScriptDamaged", GffPath = "ScriptDamaged", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnDamaged event script" },
@@ -146,7 +147,7 @@ public static class FieldRegistrations
             new FieldDefinition { Name = "Description", GffPath = "Description", FieldType = SearchFieldType.LocString, Category = SearchFieldCategory.Content, Description = "Unidentified description" },
             new FieldDefinition { Name = "Identified Description", GffPath = "DescIdentified", FieldType = SearchFieldType.LocString, Category = SearchFieldCategory.Content, Description = "Identified item description" },
             new FieldDefinition { Name = "Tag", GffPath = "Tag", FieldType = SearchFieldType.Tag, Category = SearchFieldCategory.Identity, Description = "Item tag" },
-            new FieldDefinition { Name = "Template ResRef", GffPath = "TemplateResRef", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Blueprint resource reference" },
+            new FieldDefinition { Name = "Template ResRef", GffPath = "TemplateResRef", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Blueprint resource reference", IsReplaceable = false },
             new FieldDefinition { Name = "Comment", GffPath = "Comment", FieldType = SearchFieldType.Text, Category = SearchFieldCategory.Metadata, Description = "Toolset comment" }
         );
     }
@@ -156,7 +157,7 @@ public static class FieldRegistrations
         registry.RegisterFileType(ResourceTypes.Utm,
             new FieldDefinition { Name = "Name", GffPath = "LocName", FieldType = SearchFieldType.LocString, Category = SearchFieldCategory.Content, Description = "Store name" },
             new FieldDefinition { Name = "Tag", GffPath = "Tag", FieldType = SearchFieldType.Tag, Category = SearchFieldCategory.Identity, Description = "Store tag" },
-            new FieldDefinition { Name = "ResRef", GffPath = "ResRef", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Store resource reference" },
+            new FieldDefinition { Name = "ResRef", GffPath = "ResRef", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Store resource reference", IsReplaceable = false },
             new FieldDefinition { Name = "Comment", GffPath = "Comment", FieldType = SearchFieldType.Text, Category = SearchFieldCategory.Metadata, Description = "Toolset comment" },
             new FieldDefinition { Name = "OnOpenStore", GffPath = "OnOpenStore", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script when store opened" },
             new FieldDefinition { Name = "OnStoreClosed", GffPath = "OnStoreClosed", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script when store closed" },
@@ -179,7 +180,7 @@ public static class FieldRegistrations
         registry.RegisterFileType(ResourceTypes.Git,
             new FieldDefinition { Name = "Tag", GffPath = "Tag", FieldType = SearchFieldType.Tag, Category = SearchFieldCategory.Identity, Description = "Instance tag" },
             new FieldDefinition { Name = "Name", GffPath = "LocName", FieldType = SearchFieldType.LocString, Category = SearchFieldCategory.Content, Description = "Instance name" },
-            new FieldDefinition { Name = "Template ResRef", GffPath = "TemplateResRef", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Blueprint resource reference" },
+            new FieldDefinition { Name = "Template ResRef", GffPath = "TemplateResRef", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Blueprint resource reference", IsReplaceable = false },
             new FieldDefinition { Name = "Local Variables", GffPath = "VarTable", FieldType = SearchFieldType.Variable, Category = SearchFieldCategory.Variable, Description = "Instance local variables" }
         );
     }
