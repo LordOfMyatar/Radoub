@@ -289,6 +289,15 @@ public partial class MainWindow
         }
     }
 
+    private void OnSearchNavigateToMatch(object? sender, Radoub.Formats.Search.SearchMatch? match)
+    {
+        if (match == null) return;
+        var preview = match.FullFieldValue.Length > 60
+            ? match.FullFieldValue[..60] + "..."
+            : match.FullFieldValue;
+        UpdateStatus($"Found \"{match.MatchedText}\" in {match.Field.Name}: {preview}");
+    }
+
     #endregion
 
     // --- Title Bar ---

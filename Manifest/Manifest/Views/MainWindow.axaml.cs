@@ -92,6 +92,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (searchBar != null)
         {
             searchBar.FileModified += OnSearchFileModified;
+            searchBar.NavigateToMatch += OnSearchNavigateToMatch;
         }
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "Manifest MainWindow initialized");
@@ -416,6 +417,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             await LoadFile(_currentFilePath);
             UpdateStatus("File reloaded after replace.");
         }
+    }
+
+    private void OnSearchNavigateToMatch(object? sender, Radoub.Formats.Search.SearchMatch? match)
+    {
+        if (match == null) return;
+        var preview = match.FullFieldValue.Length > 60
+            ? match.FullFieldValue[..60] + "..."
+            : match.FullFieldValue;
+        var locationText = match.Location switch
+        {
+            Radoub.Formats.Search.JrlMatchLocation jrl => jrl.DisplayPath,
+            _ => ""
+        };
+        UpdateStatus($"Found \"{match.MatchedText}\" in {match.Field.Name}{(locationText.Length > 0 ? $" — {locationText}" : "")}: {preview}");
     }
 
     #endregion

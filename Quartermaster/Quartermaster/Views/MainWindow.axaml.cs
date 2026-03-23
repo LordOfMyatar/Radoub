@@ -129,6 +129,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (searchBar != null)
         {
             searchBar.FileModified += OnSearchFileModified;
+            searchBar.NavigateToMatch += OnSearchNavigateToMatch;
         }
 
         Closing += OnWindowClosing;
@@ -693,6 +694,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             await LoadFile(_currentFilePath);
             UpdateStatus("File reloaded after replace.");
         }
+    }
+
+    private void OnSearchNavigateToMatch(object? sender, Radoub.Formats.Search.SearchMatch? match)
+    {
+        if (match == null) return;
+        var preview = match.FullFieldValue.Length > 60
+            ? match.FullFieldValue[..60] + "..."
+            : match.FullFieldValue;
+        UpdateStatus($"Found \"{match.MatchedText}\" in {match.Field.Name}: {preview}");
     }
 
     #endregion
