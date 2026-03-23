@@ -181,10 +181,9 @@ namespace Radoub.UI.Controls
             UpdateMatchCount();
             SearchResultsChanged?.Invoke(this, _searchService.Matches);
 
-            if (_searchService.MatchCount > 0)
-            {
-                NavigateToMatch?.Invoke(this, _searchService.CurrentMatch);
-            }
+            // Always fire NavigateToMatch — with match on success, null on no matches
+            // so tools can update/clear their status bar
+            NavigateToMatch?.Invoke(this, _searchService.MatchCount > 0 ? _searchService.CurrentMatch : null);
         }
 
         private SearchCriteria BuildCriteria(string pattern)

@@ -888,7 +888,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnSearchNavigateToMatch(object? sender, Radoub.Formats.Search.SearchMatch? match)
     {
-        if (match == null) return;
+        if (match == null) { UpdateStatusBar("No matches"); return; }
         var preview = match.FullFieldValue.Length > 60
             ? match.FullFieldValue[..60] + "..."
             : match.FullFieldValue;

@@ -291,7 +291,7 @@ public partial class MainWindow
 
     private void OnSearchNavigateToMatch(object? sender, Radoub.Formats.Search.SearchMatch? match)
     {
-        if (match == null) return;
+        if (match == null) { UpdateStatus("No matches"); return; }
         var preview = match.FullFieldValue.Length > 60
             ? match.FullFieldValue[..60] + "..."
             : match.FullFieldValue;
