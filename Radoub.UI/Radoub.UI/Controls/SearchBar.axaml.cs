@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Search;
 using Radoub.UI.Services.Search;
 using System;
@@ -19,6 +20,7 @@ namespace Radoub.UI.Controls
         private FileSearchService? _searchService;
         private string? _currentFilePath;
         private CancellationTokenSource? _debounceCts;
+        private bool _textBoxEventsWired;
 
         /// <summary>Fired when the user navigates to a match</summary>
         public event EventHandler<SearchMatch?>? NavigateToMatch;
@@ -33,15 +35,25 @@ namespace Radoub.UI.Controls
         {
             InitializeComponent();
 
-            Initialized += (_, _) =>
+            Initialized += (_, _) => WireTextBoxEvents("Initialized");
+            Loaded += (_, _) => WireTextBoxEvents("Loaded");
+        }
+
+        private void WireTextBoxEvents(string source)
+        {
+            if (_textBoxEventsWired) return;
+            var textBox = GetSearchTextBox();
+            if (textBox != null)
             {
-                var textBox = GetSearchTextBox();
-                if (textBox != null)
-                {
-                    textBox.TextChanged += OnSearchTextChanged;
-                    textBox.KeyDown += OnSearchTextKeyDown;
-                }
-            };
+                textBox.TextChanged += OnSearchTextChanged;
+                textBox.KeyDown += OnSearchTextKeyDown;
+                _textBoxEventsWired = true;
+                UnifiedLogger.LogUI(LogLevel.DEBUG, $"SearchBar: TextBox events wired via {source}");
+            }
+            else
+            {
+                UnifiedLogger.LogUI(LogLevel.WARN, $"SearchBar: TextBox NOT found during {source}");
+            }
         }
 
         /// <summary>
@@ -55,6 +67,7 @@ namespace Radoub.UI.Controls
             IReadOnlyList<(string Label, SearchFieldCategory Category)>? fieldFilters = null)
         {
             _searchService = searchService;
+            UnifiedLogger.LogUI(LogLevel.INFO, "SearchBar: Initialized with search service");
 
             var combo = GetFieldFilterCombo();
             if (combo != null && fieldFilters != null)
@@ -75,6 +88,7 @@ namespace Radoub.UI.Controls
         {
             _currentFilePath = filePath;
             IsVisible = true;
+            UnifiedLogger.LogUI(LogLevel.DEBUG, $"SearchBar.Show: filePath={(!string.IsNullOrEmpty(filePath) ? UnifiedLogger.SanitizePath(filePath) : "(null)")}, searchService={((_searchService != null) ? "set" : "NULL")}");
 
             Dispatcher.UIThread.Post(() =>
             {
@@ -141,21 +155,29 @@ namespace Radoub.UI.Controls
 
         private void ExecuteSearch()
         {
-            if (_searchService == null) return;
+            if (_searchService == null)
+            {
+                UnifiedLogger.LogUI(LogLevel.WARN, "SearchBar.ExecuteSearch: _searchService is null — Initialize() not called?");
+                return;
+            }
 
             var textBox = GetSearchTextBox();
             var pattern = textBox?.Text;
 
             if (string.IsNullOrEmpty(pattern) || string.IsNullOrEmpty(_currentFilePath))
             {
+                if (string.IsNullOrEmpty(_currentFilePath))
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, "SearchBar.ExecuteSearch: _currentFilePath is null/empty — no file loaded?");
                 _searchService.Clear();
                 UpdateMatchCount();
                 SearchResultsChanged?.Invoke(this, Array.Empty<SearchMatch>());
                 return;
             }
 
+            UnifiedLogger.LogUI(LogLevel.DEBUG, $"SearchBar.ExecuteSearch: pattern='{pattern}', file='{UnifiedLogger.SanitizePath(_currentFilePath)}'");
             var criteria = BuildCriteria(pattern);
             _searchService.Search(_currentFilePath, criteria);
+            UnifiedLogger.LogUI(LogLevel.DEBUG, $"SearchBar.ExecuteSearch: {_searchService.MatchCount} matches found");
             UpdateMatchCount();
             SearchResultsChanged?.Invoke(this, _searchService.Matches);
 

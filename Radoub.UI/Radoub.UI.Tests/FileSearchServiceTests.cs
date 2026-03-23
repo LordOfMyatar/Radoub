@@ -1,6 +1,9 @@
 using Radoub.Formats.Dlg;
 using Radoub.Formats.Gff;
+using Radoub.Formats.Jrl;
 using Radoub.Formats.Search;
+using Radoub.Formats.Utc;
+using Radoub.Formats.Uti;
 using Radoub.UI.Services.Search;
 using Xunit;
 
@@ -233,5 +236,132 @@ public class FileSearchServiceTests : IDisposable
         var verifyService = new FileSearchService(new DlgSearchProvider());
         Assert.Equal(2, verifyService.Search(filePath, new SearchCriteria { Pattern = "NPC_SOLDIER" }));
         Assert.Equal(0, verifyService.Search(filePath, new SearchCriteria { Pattern = "NPC_GUARD" }));
+    }
+
+    // === UTC (Quartermaster) tests ===
+
+    private string CreateTestUtcFile()
+    {
+        var utc = new UtcFile
+        {
+            Tag = "NPC_GUARD",
+            FirstName = new CExoLocString { LocalizedStrings = new Dictionary<uint, string> { [0] = "Guard Captain" } },
+            LastName = new CExoLocString { LocalizedStrings = new Dictionary<uint, string> { [0] = "Ironforge" } },
+            Description = new CExoLocString { LocalizedStrings = new Dictionary<uint, string> { [0] = "A stern guard." } },
+        };
+        var bytes = UtcWriter.Write(utc);
+        var filePath = Path.Combine(_tempDir, "test.utc");
+        File.WriteAllBytes(filePath, bytes);
+        return filePath;
+    }
+
+    [Fact]
+    public void UtcSearch_FindsFirstName()
+    {
+        var filePath = CreateTestUtcFile();
+        var service = new FileSearchService(new UtcSearchProvider());
+        Assert.Equal(1, service.Search(filePath, new SearchCriteria { Pattern = "Guard Captain" }));
+    }
+
+    [Fact]
+    public void UtcSearch_FindsTag()
+    {
+        var filePath = CreateTestUtcFile();
+        var service = new FileSearchService(new UtcSearchProvider());
+        Assert.Equal(1, service.Search(filePath, new SearchCriteria { Pattern = "NPC_GUARD" }));
+    }
+
+    // === UTI (Relique) tests ===
+
+    private string CreateTestUtiFile()
+    {
+        var uti = new UtiFile
+        {
+            Tag = "sword_01",
+            TemplateResRef = "sword_01",
+            LocalizedName = new CExoLocString { LocalizedStrings = new Dictionary<uint, string> { [0] = "Longsword +1" } },
+            Description = new CExoLocString { LocalizedStrings = new Dictionary<uint, string> { [0] = "A fine blade." } },
+        };
+        var bytes = UtiWriter.Write(uti);
+        var filePath = Path.Combine(_tempDir, "test.uti");
+        File.WriteAllBytes(filePath, bytes);
+        return filePath;
+    }
+
+    [Fact]
+    public void UtiSearch_FindsName()
+    {
+        var filePath = CreateTestUtiFile();
+        var service = new FileSearchService(new UtiSearchProvider());
+        Assert.Equal(1, service.Search(filePath, new SearchCriteria { Pattern = "Longsword" }));
+    }
+
+    [Fact]
+    public void UtiSearch_FindsTag()
+    {
+        var filePath = CreateTestUtiFile();
+        var service = new FileSearchService(new UtiSearchProvider());
+        // Tag "sword_01" and TemplateResRef "sword_01" should both match
+        Assert.True(service.Search(filePath, new SearchCriteria { Pattern = "sword_01" }) >= 1);
+    }
+
+    // === JRL (Manifest) tests ===
+
+    private string CreateTestJrlFile()
+    {
+        var jrl = new JrlFile
+        {
+            Categories = new List<JournalCategory>
+            {
+                new JournalCategory
+                {
+                    Name = new CExoLocString { LocalizedStrings = new Dictionary<uint, string> { [0] = "Main Quest" } },
+                    Tag = "q_main",
+                    Entries = new List<JournalEntry>
+                    {
+                        new JournalEntry { ID = 1, Text = new CExoLocString { LocalizedStrings = new Dictionary<uint, string> { [0] = "Find the lost amulet." } } },
+                        new JournalEntry { ID = 2, Text = new CExoLocString { LocalizedStrings = new Dictionary<uint, string> { [0] = "Return the amulet to the wizard." } } },
+                    }
+                }
+            }
+        };
+        var bytes = JrlWriter.Write(jrl);
+        var filePath = Path.Combine(_tempDir, "test.jrl");
+        File.WriteAllBytes(filePath, bytes);
+        return filePath;
+    }
+
+    [Fact]
+    public void JrlSearch_FindsEntryText()
+    {
+        var filePath = CreateTestJrlFile();
+        var service = new FileSearchService(new JrlSearchProvider());
+        Assert.Equal(2, service.Search(filePath, new SearchCriteria { Pattern = "amulet" }));
+    }
+
+    [Fact]
+    public void JrlSearch_FindsCategoryTag()
+    {
+        var filePath = CreateTestJrlFile();
+        var service = new FileSearchService(new JrlSearchProvider());
+        Assert.Equal(1, service.Search(filePath, new SearchCriteria { Pattern = "q_main" }));
+    }
+
+    [Fact]
+    public void JrlReplaceAll_ModifiesFile()
+    {
+        var filePath = CreateTestJrlFile();
+        var service = new FileSearchService(new JrlSearchProvider());
+        var criteria = new SearchCriteria { Pattern = "amulet" };
+        service.Search(filePath, criteria);
+
+        Assert.Equal(2, service.MatchCount);
+        var count = service.ReplaceAll(filePath, "ring", criteria);
+        Assert.Equal(2, count);
+
+        // Verify: "ring" found, "amulet" gone
+        var verify = new FileSearchService(new JrlSearchProvider());
+        Assert.Equal(2, verify.Search(filePath, new SearchCriteria { Pattern = "ring" }));
+        Assert.Equal(0, verify.Search(filePath, new SearchCriteria { Pattern = "amulet" }));
     }
 }
