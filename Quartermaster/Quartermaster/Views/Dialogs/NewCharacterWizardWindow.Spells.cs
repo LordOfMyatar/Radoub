@@ -227,19 +227,7 @@ public partial class NewCharacterWizardWindow
 
     private void ApplySpellFilter()
     {
-        var filter = _spellSearchBox2?.Text?.Trim() ?? "";
-
-        if (string.IsNullOrEmpty(filter))
-        {
-            _filteredAvailableSpells = new List<SpellDisplayItem>(_availableSpellsForLevel);
-        }
-        else
-        {
-            _filteredAvailableSpells = _availableSpellsForLevel
-                .Where(s => s.Name.Contains(filter, System.StringComparison.OrdinalIgnoreCase))
-                .ToList();
-        }
-
+        _filteredAvailableSpells = SkillDisplayHelper.FilterByName(_availableSpellsForLevel, _spellSearchBox2?.Text?.Trim());
         _availableSpellsListBox.ItemsSource = _filteredAvailableSpells;
     }
 

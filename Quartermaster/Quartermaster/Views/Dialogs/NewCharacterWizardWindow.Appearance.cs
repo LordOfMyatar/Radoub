@@ -48,19 +48,9 @@ public partial class NewCharacterWizardWindow
 
     private void OnAppearanceSearchChanged(object? sender, TextChangedEventArgs e)
     {
-        var filter = _appearanceSearchBox.Text?.Trim() ?? "";
-        if (string.IsNullOrEmpty(filter))
-        {
-            _filteredAppearances = new List<AppearanceInfo>(_allAppearances);
-        }
-        else
-        {
-            _filteredAppearances = _allAppearances
-                .Where(a => a.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-        }
-
         var previousSelection = _appearanceListBox.SelectedItem as AppearanceInfo;
+
+        _filteredAppearances = SkillDisplayHelper.FilterByName(_allAppearances, _appearanceSearchBox.Text?.Trim());
         _appearanceListBox.ItemsSource = _filteredAppearances;
 
         // Restore selection if still in filtered list

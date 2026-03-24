@@ -19,13 +19,13 @@ public partial class NewCharacterWizardWindow
 
     #region Display Items
 
-    private class RaceDisplayItem
+    private class RaceDisplayItem : Services.SkillDisplayHelper.INamedItem
     {
         public byte Id { get; init; }
         public string Name { get; init; } = "";
     }
 
-    private class ClassDisplayItem
+    private class ClassDisplayItem : Services.SkillDisplayHelper.INamedItem
     {
         public int Id { get; init; }
         public string Name { get; init; } = "";
@@ -38,7 +38,7 @@ public partial class NewCharacterWizardWindow
         public string Name { get; init; } = "";
     }
 
-    private class SkillDisplayItem
+    private class SkillDisplayItem : Services.SkillDisplayHelper.INamedItem
     {
         public int SkillId { get; set; }
         public string Name { get; set; } = "";
@@ -50,14 +50,14 @@ public partial class NewCharacterWizardWindow
         public int Cost { get; set; } = 1;
     }
 
-    private class SpellDisplayItem
+    private class SpellDisplayItem : Services.SkillDisplayHelper.INamedItem
     {
         public int SpellId { get; set; }
         public string Name { get; set; } = "";
         public string SchoolAbbrev { get; set; } = "";
     }
 
-    private class FeatDisplayItem
+    private class FeatDisplayItem : Services.SkillDisplayHelper.INamedItem
     {
         public int FeatId { get; set; }
         public string Name { get; set; } = "";
