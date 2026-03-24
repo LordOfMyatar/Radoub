@@ -221,6 +221,15 @@ public partial class MainWindow
             StoreInventoryGrid.ItemsSource = StoreItems;
             UpdateItemCount();
             UpdateStatusBar($"Loaded: {Path.GetFileName(filePath)}");
+
+            // Populate icons on UI thread
+            if (_itemIconService != null)
+            {
+                foreach (var item in StoreItems)
+                {
+                    item.IconBitmap = _itemIconService.GetItemIcon(item.BaseItemIndex);
+                }
+            }
         });
 
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded store: {UnifiedLogger.SanitizePath(filePath)} ({resolvedItems.Count} items)");
