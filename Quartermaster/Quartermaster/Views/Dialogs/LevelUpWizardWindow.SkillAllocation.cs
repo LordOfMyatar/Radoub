@@ -101,18 +101,7 @@ public partial class LevelUpWizardWindow
 
     private void ApplySkillFilter()
     {
-        var filter = _skillSearchBox?.Text?.Trim() ?? "";
-
-        if (string.IsNullOrEmpty(filter))
-        {
-            _skillsItemsControl.ItemsSource = _allSkills;
-        }
-        else
-        {
-            _skillsItemsControl.ItemsSource = _allSkills
-                .Where(s => s.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-        }
+        _skillsItemsControl.ItemsSource = SkillDisplayHelper.FilterByName(_allSkills, _skillSearchBox?.Text?.Trim());
     }
 
     private void OnSkillSearchChanged(object? sender, TextChangedEventArgs e)

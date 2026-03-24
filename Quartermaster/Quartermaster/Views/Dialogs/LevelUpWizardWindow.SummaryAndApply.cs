@@ -338,7 +338,7 @@ public partial class LevelUpWizardWindow
         public string Text { get; set; } = "";
     }
 
-    private class SkillDisplayItem
+    private class SkillDisplayItem : Services.SkillDisplayHelper.INamedItem
     {
         public int SkillId { get; set; }
         public string Name { get; set; } = "";
@@ -372,7 +372,7 @@ public partial class LevelUpWizardWindow
         public string Badge => !MeetsPrereqs ? "(prereqs)" : IsClassFeat ? "(class)" : "";
     }
 
-    private class SpellDisplayItem
+    private class SpellDisplayItem : Services.SkillDisplayHelper.INamedItem
     {
         public int SpellId { get; set; }
         public string Name { get; set; } = "";
