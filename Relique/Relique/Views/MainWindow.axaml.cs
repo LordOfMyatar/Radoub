@@ -63,17 +63,23 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Initialize search bar with UTI search provider
         var searchBar = this.FindControl<SearchBar>("FileSearchBar");
-        searchBar?.Initialize(
-            new FileSearchService(new UtiSearchProvider()),
-            new (string, SearchFieldCategory)[]
-            {
-                ("Text", SearchFieldCategory.Content),
-                ("Tags", SearchFieldCategory.Identity),
-                ("Metadata", SearchFieldCategory.Metadata),
-            });
         if (searchBar != null)
         {
+            searchBar.Initialize(
+                new FileSearchService(new UtiSearchProvider()),
+                new (string, SearchFieldCategory)[]
+                {
+                    ("Text", SearchFieldCategory.Content),
+                    ("Tags", SearchFieldCategory.Identity),
+                    ("Metadata", SearchFieldCategory.Metadata),
+                });
             searchBar.FileModified += OnSearchFileModified;
+            searchBar.NavigateToMatch += OnSearchNavigateToMatch;
+            UnifiedLogger.LogApplication(LogLevel.INFO, "Relique: SearchBar found and events wired");
+        }
+        else
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, "Relique: SearchBar 'FileSearchBar' NOT found — search will not work");
         }
 
         Closing += OnWindowClosing;
