@@ -46,6 +46,15 @@ namespace Parley.Views.Helpers
         }
 
         /// <summary>
+        /// Handles sibling reorder requests from flowchart drag-drop (#240).
+        /// Routes to MainWindow for undo state + execution.
+        /// </summary>
+        private void OnFlowchartSiblingReorder(DialogNode node, DialogNode? parent, int fromIndex, int toIndex)
+        {
+            _onSiblingReorder?.Invoke(node, parent, fromIndex, toIndex);
+        }
+
+        /// <summary>
         /// Handles node clicks from any flowchart panel (floating, embedded, tabbed).
         /// Selects the corresponding node in the TreeView.
         /// For link nodes, finds the specific link instance rather than the target node.

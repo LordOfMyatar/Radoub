@@ -18,6 +18,11 @@ namespace DialogEditor.ViewModels
         private readonly DialogToFlowchartConverter _converter = new();
         private FlowchartGraph? _flowchartGraph;
         private Dialog? _sourceDialog; // Keep source for refresh (#340)
+
+        /// <summary>
+        /// The current dialog being displayed (#240: needed for drag-drop sibling lookup).
+        /// </summary>
+        public Dialog? CurrentDialog => _sourceDialog;
         private readonly HashSet<string> _collapsedNodeIds = new(); // Track collapsed nodes (#251)
         private bool _isHandlingExternalEvent; // Prevent event loops (#451)
 

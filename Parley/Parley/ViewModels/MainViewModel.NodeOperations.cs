@@ -257,6 +257,28 @@ namespace DialogEditor.ViewModels
         }
 
         /// <summary>
+        /// Reorders a sibling node within its parent's pointer list (#240).
+        /// Called from flowchart drag-drop. Handles undo state + execution.
+        /// </summary>
+        public void ReorderSibling(DialogNode node, DialogNode? parent, int fromIndex, int toIndex)
+        {
+            if (CurrentDialog == null) return;
+
+            SaveUndoState("Reorder Node");
+
+            // ReorderSibling publishes DialogChangeEventBus.NodeMoved, which triggers view refresh
+            bool moved = _nodeOpsManager.ReorderSibling(CurrentDialog, node, parent, fromIndex, toIndex, out string statusMessage);
+
+            StatusMessage = statusMessage;
+
+            if (moved)
+            {
+                HasUnsavedChanges = true;
+                RefreshTreeViewAndSelectNode(node);
+            }
+        }
+
+        /// <summary>
         /// Find a sibling node to focus after cutting/deleting a node.
         /// Returns previous sibling if available, otherwise next sibling, otherwise parent.
         /// </summary>

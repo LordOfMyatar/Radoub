@@ -174,7 +174,8 @@ namespace DialogEditor.Views
                 getIsSettingSelectionProgrammatically: () => _uiState.IsSettingSelectionProgrammatically,
                 setIsSettingSelectionProgrammatically: value => _uiState.IsSettingSelectionProgrammatically = value,
                 shortcutManager: _services.KeyboardShortcuts, // #809: Enable keyboard shortcuts in FlowView
-                onContextMenuAction: OnFlowchartContextMenuAction); // #461: Context menu parity
+                onContextMenuAction: OnFlowchartContextMenuAction, // #461: Context menu parity
+                onSiblingReorder: OnFlowchartSiblingReorder); // #240: Drag-drop reorder
 
             _controllers.TreeView = new TreeViewUIController(
                 window: this,

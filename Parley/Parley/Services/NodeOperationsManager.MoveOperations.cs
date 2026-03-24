@@ -329,5 +329,43 @@ namespace DialogEditor.Services
 
             return false;
         }
+
+        /// <summary>
+        /// Reorders a sibling within its parent's pointer list or in Dialog.Starts (#240).
+        /// Moves the pointer at fromIndex to toIndex. No alternation validation needed
+        /// since all siblings under the same parent are the same type.
+        /// </summary>
+        public bool ReorderSibling(Dialog dialog, DialogNode node, DialogNode? parent, int fromIndex, int toIndex, out string statusMessage)
+        {
+            var pointerList = parent?.Pointers ?? dialog.Starts;
+
+            // Validate indices
+            if (fromIndex < 0 || fromIndex >= pointerList.Count ||
+                toIndex < 0 || toIndex >= pointerList.Count)
+            {
+                statusMessage = "Invalid index for reorder";
+                return false;
+            }
+
+            // Same position — no-op
+            if (fromIndex == toIndex)
+            {
+                statusMessage = "Already at target position";
+                return false;
+            }
+
+            // Remove from old position and insert at new
+            var ptr = pointerList[fromIndex];
+            pointerList.RemoveAt(fromIndex);
+            pointerList.Insert(toIndex, ptr);
+
+            statusMessage = $"Reordered '{node.Text?.GetDefault()}' from position {fromIndex} to {toIndex}";
+            UnifiedLogger.LogApplication(LogLevel.INFO, statusMessage);
+
+            // Publish event for view sync
+            DialogChangeEventBus.Instance.PublishNodeMoved(node, parent, parent);
+
+            return true;
+        }
     }
 }

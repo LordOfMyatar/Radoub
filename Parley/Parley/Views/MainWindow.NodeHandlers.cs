@@ -220,6 +220,15 @@ namespace DialogEditor.Views
             _viewModel.MoveNodeToPosition(draggedNode, newParent, insertIndex);
         }
 
+        /// <summary>
+        /// Handles flowchart drag-drop sibling reorder (#240).
+        /// Delegates to MainViewModel which handles undo state + execution.
+        /// </summary>
+        private void OnFlowchartSiblingReorder(DialogNode node, DialogNode? parent, int fromIndex, int toIndex)
+        {
+            _viewModel.ReorderSibling(node, parent, fromIndex, toIndex);
+        }
+
         // Issue #463: Delegated to TreeViewUIController
         private void OnDialogTreeViewSelectionChanged(object? sender, SelectionChangedEventArgs e)
             => _controllers.TreeView.OnDialogTreeViewSelectionChanged(sender, e);
