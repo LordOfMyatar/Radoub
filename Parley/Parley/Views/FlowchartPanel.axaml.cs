@@ -653,8 +653,8 @@ namespace DialogEditor.Views
                 // Raise the event with the FlowchartNode (includes IsLink, OriginalPointer context)
                 NodeClicked?.Invoke(this, clickedNode);
 
-                // #240: Start tracking potential drag (only for non-link, left-button single-click)
-                if (clickCount == 1 && point.Properties.IsLeftButtonPressed && !clickedNode.IsLink)
+                // #240/#1965: Start tracking potential drag (left-button single-click, including link nodes)
+                if (clickCount == 1 && point.Properties.IsLeftButtonPressed)
                 {
                     _dragPotential = true;
                     _dragStartPoint = e.GetPosition(FlowchartGraphPanel);
@@ -925,8 +925,8 @@ namespace DialogEditor.Views
             var dialog = _viewModel.CurrentDialog;
             if (dialog == null) return;
 
-            // Find the source pointer for the dragged node
-            DialogPtr? sourcePointer = FindSourcePointer(dialog, draggedNode.OriginalNode);
+            // Use OriginalPointer if available (e.g., link nodes), otherwise search
+            DialogPtr? sourcePointer = draggedNode.OriginalPointer ?? FindSourcePointer(dialog, draggedNode.OriginalNode);
 
             // Insert at end of target's children
             int insertIndex = targetNode.OriginalNode.Pointers.Count;
