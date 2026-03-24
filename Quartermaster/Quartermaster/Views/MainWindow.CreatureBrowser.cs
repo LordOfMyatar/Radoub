@@ -104,6 +104,15 @@ public partial class MainWindow
     }
 
     /// <summary>
+    /// Refresh module indicator when theme changes so BrushManager picks up
+    /// the new theme's info/warning colors (#1859).
+    /// </summary>
+    private void OnThemeApplied(object? sender, EventArgs e)
+    {
+        Avalonia.Threading.Dispatcher.UIThread.Post(UpdateModuleIndicator);
+    }
+
+    /// <summary>
     /// Update status bar module indicator from RadoubSettings (#1003).
     /// Shows module name or "No module selected" in warning colors.
     /// </summary>
