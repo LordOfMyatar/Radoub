@@ -306,7 +306,7 @@ public partial class MainWindow
                         BaseItem = cached.BaseItemType,
                         Value = cached.BaseValue,
                         Tag = !string.IsNullOrEmpty(cached.Tag) ? cached.Tag : cached.ResRef,
-                        PropertiesDisplay = string.Empty,
+                        PropertiesDisplay = cached.PropertiesDisplay,
                         Source = cached.IsStandard ? GameResourceSource.Bif : GameResourceSource.Override
                     };
                     ItemFactory.PopulateEquipableSlots(vm, cached.BaseItemType);
