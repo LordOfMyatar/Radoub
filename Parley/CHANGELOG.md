@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.159-alpha] - 2026-03-24
-**Branch**: `parley/issue-1906` | **PR**: #TBD
+**Branch**: `parley/issue-1906` | **PR**: #1966
 
 ### Sprint: Flowchart Node Customization (#1906)
 
