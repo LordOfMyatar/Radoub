@@ -186,7 +186,7 @@ public class TextureService
     /// BioWare header (20 bytes): width(4), height(4), channels(4), pitch(4), alpha(4)
     /// Channels: 3 = DXT1 (RGB), 4 = DXT5 (RGBA)
     /// </summary>
-    private static byte[]? ConvertBiowareDdsToStandard(byte[] biowareData)
+    internal static byte[]? ConvertBiowareDdsToStandard(byte[] biowareData)
     {
         if (biowareData.Length < 20) return null;
 
@@ -426,7 +426,7 @@ public class TextureService
     /// <summary>
     /// Build layer color mapping from PltColorIndices.
     /// </summary>
-    private static Dictionary<int, int> BuildLayerColors(PltColorIndices colorIndices)
+    internal static Dictionary<int, int> BuildLayerColors(PltColorIndices colorIndices)
     {
         return new Dictionary<int, int>
         {
@@ -555,7 +555,7 @@ public class TextureService
     /// but Pfim's DXT decoder assumes standard RGB 5:6:5 ordering.
     /// This produces R↔B swapped output for BioWare DDS only (#1867).
     /// </summary>
-    private static void SwapRedBlue(byte[] rgba)
+    internal static void SwapRedBlue(byte[] rgba)
     {
         for (int i = 0; i < rgba.Length - 2; i += 4)
         {
@@ -569,7 +569,7 @@ public class TextureService
     /// expects bottom-up (row 0 = bottom). DDS textures via Pfim are already
     /// in OpenGL orientation and should NOT be flipped (#1867).
     /// </summary>
-    private static void FlipVertically(byte[] rgba, int width, int height)
+    internal static void FlipVertically(byte[] rgba, int width, int height)
     {
         int rowBytes = width * 4;
         var tempRow = new byte[rowBytes];
