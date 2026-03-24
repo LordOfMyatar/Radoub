@@ -69,6 +69,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private IGameDataService? _gameDataService;
     private TlkService? _tlkService;
     private ItemIconService? _itemIconService;
+    private ItemViewModelFactory? _itemViewModelFactory;
     private bool _servicesInitialized;
 
     // Cancellation token for async operations - cancelled on window close
@@ -241,7 +242,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
             _itemResolutionService = new ItemResolutionService(_gameDataService, _tlkService);
             if (_gameDataService != null)
+            {
                 _itemIconService = new ItemIconService(_gameDataService);
+                _itemViewModelFactory = new ItemViewModelFactory(_gameDataService);
+            }
         });
 
         _servicesInitialized = true;

@@ -139,20 +139,31 @@ public partial class MainWindow
 
                 try
                 {
-                    var resolved = _itemResolutionService!.ResolveItem(resourceInfo.ResRef);
-                    if (resolved != null && !ExcludedBaseItemTypes.Contains(resolved.BaseItemType))
+                    var utiData = _gameDataService.FindResource(resourceInfo.ResRef, ResourceTypes.Uti);
+                    if (utiData != null)
                     {
-                        cacheItems.Add(new SharedPaletteCacheItem
+                        var item = UtiReader.Read(utiData);
+                        var displayName = _itemViewModelFactory?.GetItemDisplayName(item)
+                            ?? item.LocalizedName.GetDefault()
+                            ?? resourceInfo.ResRef;
+                        var baseItemTypeName = _itemViewModelFactory?.GetBaseItemTypeName(item.BaseItem) ?? string.Empty;
+                        var propertiesDisplay = _itemViewModelFactory?.GetPropertiesDisplay(item.Properties) ?? string.Empty;
+
+                        if (!ExcludedBaseItemTypes.Contains(item.BaseItem))
                         {
-                            ResRef = resolved.ResRef,
-                            DisplayName = resolved.DisplayName,
-                            BaseItemTypeName = resolved.BaseItemTypeName,
-                            BaseItemType = resolved.BaseItemType,
-                            BaseValue = (uint)resolved.BaseCost,
-                            Tag = resolved.Tag,
-                            IsStandard = resourceInfo.Source == GameResourceSource.Bif
-                        });
-                        existingResRefs.Add(resourceInfo.ResRef);
+                            cacheItems.Add(new SharedPaletteCacheItem
+                            {
+                                ResRef = resourceInfo.ResRef,
+                                DisplayName = displayName,
+                                BaseItemTypeName = baseItemTypeName,
+                                BaseItemType = item.BaseItem,
+                                BaseValue = item.Cost,
+                                Tag = item.Tag ?? string.Empty,
+                                IsStandard = resourceInfo.Source == GameResourceSource.Bif,
+                                PropertiesDisplay = propertiesDisplay
+                            });
+                            existingResRefs.Add(resourceInfo.ResRef);
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -195,7 +206,7 @@ public partial class MainWindow
             foreach (var cached in _cachedPaletteData)
             {
                 token.ThrowIfCancellationRequested();
-                vms.Add(new ItemViewModel
+                var vm = new ItemViewModel
                 {
                     ResRef = cached.ResRef,
                     Name = cached.DisplayName,
@@ -206,7 +217,9 @@ public partial class MainWindow
                     PropertiesDisplay = cached.PropertiesDisplay,
                     Source = cached.IsStandard ? GameResourceSource.Bif : GameResourceSource.Override,
                     IconBitmap = _itemIconService?.GetItemIcon(cached.BaseItemType)
-                });
+                };
+                _itemViewModelFactory?.PopulateEquipableSlots(vm, cached.BaseItemType);
+                vms.Add(vm);
             }
             return vms;
         }, token);
@@ -225,6 +238,8 @@ public partial class MainWindow
             {
                 _paletteFilter.Items = PaletteItems;
                 _paletteFilter.GameDataService = _gameDataService;
+                // Show all sources by default (including module/custom items)
+                _paletteFilter.ShowCustom = true;
                 _paletteFilter.ApplyFilter();
             }
 
