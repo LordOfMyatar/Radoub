@@ -135,7 +135,8 @@ public partial class MainWindow
                 BaseItemIndex = item.BaseItemIndex,
                 BaseValue = item.BaseValue,
                 SellPrice = sellPrice,
-                BuyPrice = buyPrice
+                BuyPrice = buyPrice,
+                IconBitmap = item.IconBitmap ?? _itemIconService?.GetItemIcon(item.BaseItemIndex)
             });
         }
 
