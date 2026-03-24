@@ -156,7 +156,7 @@ public class SharedPaletteCacheServiceTests : IDisposable
         await _service.SaveSourceCacheAsync("bif", CreateTestItems(), validationPath: "/path");
         var cacheFile = Path.Combine(_testCacheDir, "bif.json");
         var json = File.ReadAllText(cacheFile);
-        json = json.Replace("\"Version\":1", "\"Version\":999");
+        json = json.Replace("\"Version\":2", "\"Version\":999");
         File.WriteAllText(cacheFile, json);
 
         Assert.False(_service.HasValidSourceCache("bif"));
