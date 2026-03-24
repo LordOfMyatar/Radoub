@@ -112,11 +112,19 @@ public class MockGameDataService : IGameDataService
     /// </summary>
     public void AddResourceInfo(string resRef, ushort resourceType, string? sourcePath = null)
     {
+        AddResourceInfo(resRef, resourceType, GameResourceSource.Bif, sourcePath);
+    }
+
+    /// <summary>
+    /// Add a resource info entry for ListResources with explicit source.
+    /// </summary>
+    public void AddResourceInfo(string resRef, ushort resourceType, GameResourceSource source, string? sourcePath = null)
+    {
         _resourceInfos.Add(new GameResourceInfo
         {
             ResRef = resRef,
             ResourceType = resourceType,
-            Source = GameResourceSource.Bif,
+            Source = source,
             SourcePath = sourcePath
         });
     }
