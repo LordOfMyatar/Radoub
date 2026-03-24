@@ -96,6 +96,7 @@ namespace Radoub.UI.Services.Search
 
         /// <summary>
         /// Replace the current match in the file on disk.
+        /// Creates a .bak backup before modifying. Logs the replacement.
         /// Returns the result, and re-runs search to update matches.
         /// </summary>
         public ReplaceResult? ReplaceCurrent(string filePath, string replacementText, SearchCriteria criteria)
@@ -106,6 +107,8 @@ namespace Radoub.UI.Services.Search
 
             try
             {
+                BackupFile(filePath);
+
                 var gffFile = GffReader.Read(filePath);
                 var ops = new[] { new ReplaceOperation { Match = match, ReplacementText = replacementText } };
                 var results = _provider.Replace(gffFile, ops);
@@ -115,6 +118,7 @@ namespace Radoub.UI.Services.Search
                 {
                     var bytes = GffWriter.Write(gffFile);
                     File.WriteAllBytes(filePath, bytes);
+                    LogReplacement(filePath, match.Field.Name, match.MatchedText, replacementText);
                     Search(filePath, criteria);
                 }
 
@@ -129,6 +133,7 @@ namespace Radoub.UI.Services.Search
 
         /// <summary>
         /// Replace all current matches in the file on disk.
+        /// Creates a .bak backup before modifying. Logs each replacement.
         /// Returns the number of successful replacements.
         /// </summary>
         public int ReplaceAll(string filePath, string replacementText, SearchCriteria criteria)
@@ -138,6 +143,8 @@ namespace Radoub.UI.Services.Search
 
             try
             {
+                BackupFile(filePath);
+
                 var gffFile = GffReader.Read(filePath);
                 var ops = _currentMatches.Select(m => new ReplaceOperation
                 {
@@ -152,6 +159,15 @@ namespace Radoub.UI.Services.Search
                 {
                     var bytes = GffWriter.Write(gffFile);
                     File.WriteAllBytes(filePath, bytes);
+
+                    for (int i = 0; i < results.Count; i++)
+                    {
+                        if (results[i].Success)
+                            LogReplacement(filePath, ops[i].Match.Field.Name, ops[i].Match.MatchedText, replacementText);
+                    }
+
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"Replace All: {successCount} replacement(s) in {UnifiedLogger.SanitizePath(filePath)}");
                     Search(filePath, criteria);
                 }
 
@@ -162,6 +178,39 @@ namespace Radoub.UI.Services.Search
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Replace all failed: {ex.Message}");
                 return 0;
             }
+        }
+
+        /// <summary>
+        /// Copy the file to ~/Radoub/Backups/SearchReplace/ before modifying.
+        /// Backup filename includes timestamp to prevent overwrites.
+        /// </summary>
+        private static void BackupFile(string filePath)
+        {
+            try
+            {
+                var backupDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                    "Radoub", "Backups", "SearchReplace");
+                Directory.CreateDirectory(backupDir);
+
+                var fileName = Path.GetFileName(filePath);
+                var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                var bakPath = Path.Combine(backupDir, $"{Path.GetFileNameWithoutExtension(fileName)}_{timestamp}{Path.GetExtension(fileName)}");
+                File.Copy(filePath, bakPath, overwrite: true);
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Backup created: {UnifiedLogger.SanitizePath(bakPath)}");
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"Failed to create backup: {ex.Message}");
+            }
+        }
+
+        private static void LogReplacement(string filePath, string fieldName, string oldText, string newText)
+        {
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Replace in {UnifiedLogger.SanitizePath(filePath)}: [{fieldName}] \"{oldText}\" → \"{newText}\"");
         }
     }
 }
