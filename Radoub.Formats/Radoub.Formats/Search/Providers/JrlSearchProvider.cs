@@ -31,7 +31,12 @@ public class JrlSearchProvider : SearchProviderBase, IFileSearchProvider
         for (int catIdx = 0; catIdx < jrl.Categories.Count; catIdx++)
         {
             var category = jrl.Categories[catIdx];
-            var catDisplayPath = $"Category #{catIdx}";
+            // Use category tag or name for display (tag is more reliable, name may be localized)
+            var catName = category.Name?.LocalizedStrings.Values.FirstOrDefault();
+            var catLabel = !string.IsNullOrEmpty(category.Tag) ? category.Tag
+                : !string.IsNullOrEmpty(catName) ? catName
+                : $"Category #{catIdx}";
+            var catDisplayPath = catLabel;
             var catLocation = new JrlMatchLocation
             {
                 CategoryIndex = catIdx,
@@ -53,7 +58,7 @@ public class JrlSearchProvider : SearchProviderBase, IFileSearchProvider
                 {
                     CategoryIndex = catIdx,
                     EntryId = entry.ID,
-                    DisplayPath = $"{catDisplayPath} → Entry #{entry.ID}"
+                    DisplayPath = $"{catLabel} → Entry {entry.ID}"
                 };
 
                 if (criteria.MatchesField(EntryTextField))

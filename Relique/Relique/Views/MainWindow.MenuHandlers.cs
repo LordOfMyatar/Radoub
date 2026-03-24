@@ -295,7 +295,9 @@ public partial class MainWindow
         var preview = match.FullFieldValue.Length > 60
             ? match.FullFieldValue[..60] + "..."
             : match.FullFieldValue;
-        UpdateStatus($"Found \"{match.MatchedText}\" in {match.Field.Name}: {preview}");
+        var msg = $"Found \"{match.MatchedText}\" in {match.Field.Name}: {preview}";
+        Radoub.Formats.Logging.UnifiedLogger.LogUI(Radoub.Formats.Logging.LogLevel.DEBUG, $"Relique.OnSearchNavigateToMatch: {msg}");
+        UpdateStatus(msg);
     }
 
     #endregion
