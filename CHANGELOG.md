@@ -24,6 +24,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - [x] Extract SearchBar and FileSearchService to Radoub.UI as shared controls
 - [x] Refactor Parley to use shared SearchBar (removed DialogSearchService)
+- [x] Status bar match info display for all tools (field name + preview)
+- [x] Backup before replace (~/Radoub/Backups/SearchReplace/) with replacement logging
+- [x] JrlSearchProvider shows category tag/name instead of index in match location
+- [x] Relique status bar moved to top position (was hidden at bottom)
 
 ---
 
