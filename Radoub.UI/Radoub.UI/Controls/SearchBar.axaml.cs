@@ -2,23 +2,25 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
-using DialogEditor.Services;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Search;
+using Radoub.UI.Services.Search;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace DialogEditor.Controls
+namespace Radoub.UI.Controls
 {
     /// <summary>
-    /// Search bar control for finding text in the current dialog.
-    /// Communicates with parent via events.
+    /// Shared search bar control for finding and replacing text in GFF-based files.
+    /// Must be initialized with a FileSearchService via <see cref="Initialize"/>.
     /// </summary>
     public partial class SearchBar : UserControl
     {
-        private readonly DialogSearchService _searchService = new();
+        private FileSearchService? _searchService;
         private string? _currentFilePath;
         private CancellationTokenSource? _debounceCts;
+        private bool _textBoxEventsWired;
 
         /// <summary>Fired when the user navigates to a match</summary>
         public event EventHandler<SearchMatch?>? NavigateToMatch;
@@ -26,55 +28,86 @@ namespace DialogEditor.Controls
         /// <summary>Fired when search results change (for highlighting)</summary>
         public event EventHandler<IReadOnlyList<SearchMatch>>? SearchResultsChanged;
 
+        /// <summary>Fired when the file is modified by a replace operation</summary>
+        public event EventHandler? FileModified;
+
         public SearchBar()
         {
             InitializeComponent();
 
-            // Wire events in code-behind — AXAML event wiring doesn't connect
-            // reliably when UserControl is inside TabItem deferred content.
-            // Use Initialized event to ensure controls are resolved.
-            Initialized += (_, _) =>
+            Initialized += (_, _) => WireTextBoxEvents("Initialized");
+            Loaded += (_, _) => WireTextBoxEvents("Loaded");
+        }
+
+        private void WireTextBoxEvents(string source)
+        {
+            if (_textBoxEventsWired) return;
+            var textBox = GetSearchTextBox();
+            if (textBox != null)
             {
-                var textBox = GetSearchTextBox();
-                if (textBox != null)
-                {
-                    textBox.TextChanged += OnSearchTextChanged;
-                    textBox.KeyDown += OnSearchTextKeyDown;
-                }
-            };
+                textBox.TextChanged += OnSearchTextChanged;
+                textBox.KeyDown += OnSearchTextKeyDown;
+                _textBoxEventsWired = true;
+                UnifiedLogger.LogUI(LogLevel.DEBUG, $"SearchBar: TextBox events wired via {source}");
+            }
+            else
+            {
+                UnifiedLogger.LogUI(LogLevel.WARN, $"SearchBar: TextBox NOT found during {source}");
+            }
         }
 
         /// <summary>
-        /// Show the search bar and focus the text input.
+        /// Initialize the search bar with a search service and optional field filter items.
+        /// Call this once after construction before using the search bar.
         /// </summary>
+        /// <param name="searchService">The file search service wrapping a format-specific provider</param>
+        /// <param name="fieldFilters">Optional field filter definitions (label → SearchFieldCategory).
+        /// If null or empty, only "All Fields" is shown.</param>
+        public void Initialize(FileSearchService searchService,
+            IReadOnlyList<(string Label, SearchFieldCategory Category)>? fieldFilters = null)
+        {
+            _searchService = searchService;
+            UnifiedLogger.LogUI(LogLevel.INFO, "SearchBar: Initialized with search service");
+
+            var combo = GetFieldFilterCombo();
+            if (combo != null && fieldFilters != null)
+            {
+                foreach (var (label, category) in fieldFilters)
+                {
+                    combo.Items.Add(new ComboBoxItem
+                    {
+                        Content = label,
+                        Tag = category.ToString()
+                    });
+                }
+            }
+        }
+
+        /// <summary>Show the search bar and focus the text input.</summary>
         public void Show(string? filePath)
         {
             _currentFilePath = filePath;
             IsVisible = true;
+            UnifiedLogger.LogUI(LogLevel.DEBUG, $"SearchBar.Show: filePath={(!string.IsNullOrEmpty(filePath) ? UnifiedLogger.SanitizePath(filePath) : "(null)")}, searchService={((_searchService != null) ? "set" : "NULL")}");
 
-            // Defer focus — control must be visible and rendered first
-            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            Dispatcher.UIThread.Post(() =>
             {
                 var textBox = GetSearchTextBox();
                 textBox?.Focus();
                 textBox?.SelectAll();
-            }, Avalonia.Threading.DispatcherPriority.Input);
+            }, DispatcherPriority.Input);
         }
 
-        /// <summary>
-        /// Hide the search bar and clear results.
-        /// </summary>
+        /// <summary>Hide the search bar and clear results.</summary>
         public void Hide()
         {
             IsVisible = false;
-            _searchService.Clear();
+            _searchService?.Clear();
             UpdateMatchCount();
             SearchResultsChanged?.Invoke(this, Array.Empty<SearchMatch>());
         }
 
-        /// <summary>
-        /// Update the file path for searching (e.g., after save or file switch).
-        /// </summary>
+        /// <summary>Update the file path for searching (e.g., after save or file switch).</summary>
         public void UpdateFilePath(string? filePath)
         {
             _currentFilePath = filePath;
@@ -83,6 +116,7 @@ namespace DialogEditor.Controls
         /// <summary>Navigate to next match</summary>
         public void FindNext()
         {
+            if (_searchService == null) return;
             var match = _searchService.NextMatch();
             UpdateMatchCount();
             NavigateToMatch?.Invoke(this, match);
@@ -91,17 +125,13 @@ namespace DialogEditor.Controls
         /// <summary>Navigate to previous match</summary>
         public void FindPrevious()
         {
+            if (_searchService == null) return;
             var match = _searchService.PreviousMatch();
             UpdateMatchCount();
             NavigateToMatch?.Invoke(this, match);
         }
 
-        /// <summary>Fired when the file is modified by a replace operation</summary>
-        public event EventHandler? FileModified;
-
-        /// <summary>
-        /// Show the search bar in replace mode (Ctrl+H).
-        /// </summary>
+        /// <summary>Show the search bar in replace mode (Ctrl+H).</summary>
         public void ShowReplace(string? filePath)
         {
             Show(filePath);
@@ -109,16 +139,13 @@ namespace DialogEditor.Controls
             if (replaceRow != null) replaceRow.IsVisible = true;
         }
 
-        /// <summary>
-        /// Toggle replace row visibility.
-        /// </summary>
+        /// <summary>Toggle replace row visibility.</summary>
         public void ToggleReplace()
         {
             var replaceRow = this.FindControl<DockPanel>("ReplaceRow");
             if (replaceRow != null) replaceRow.IsVisible = !replaceRow.IsVisible;
         }
 
-        // Resolve named controls — auto-generated fields may be null inside TabItem
         private TextBox? GetSearchTextBox() => this.FindControl<TextBox>("SearchTextBox");
         private TextBox? GetReplaceTextBox() => this.FindControl<TextBox>("ReplaceTextBox");
         private TextBlock? GetMatchCountText() => this.FindControl<TextBlock>("MatchCountText");
@@ -128,34 +155,41 @@ namespace DialogEditor.Controls
 
         private void ExecuteSearch()
         {
+            if (_searchService == null)
+            {
+                UnifiedLogger.LogUI(LogLevel.WARN, "SearchBar.ExecuteSearch: _searchService is null — Initialize() not called?");
+                return;
+            }
+
             var textBox = GetSearchTextBox();
             var pattern = textBox?.Text;
 
             if (string.IsNullOrEmpty(pattern) || string.IsNullOrEmpty(_currentFilePath))
             {
+                if (string.IsNullOrEmpty(_currentFilePath))
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, "SearchBar.ExecuteSearch: _currentFilePath is null/empty — no file loaded?");
                 _searchService.Clear();
                 UpdateMatchCount();
                 SearchResultsChanged?.Invoke(this, Array.Empty<SearchMatch>());
                 return;
             }
 
+            UnifiedLogger.LogUI(LogLevel.DEBUG, $"SearchBar.ExecuteSearch: pattern='{pattern}', file='{UnifiedLogger.SanitizePath(_currentFilePath)}'");
             var criteria = BuildCriteria(pattern);
             _searchService.Search(_currentFilePath, criteria);
+            UnifiedLogger.LogUI(LogLevel.DEBUG, $"SearchBar.ExecuteSearch: {_searchService.MatchCount} matches found");
             UpdateMatchCount();
             SearchResultsChanged?.Invoke(this, _searchService.Matches);
 
-            // Auto-navigate to first match
-            if (_searchService.MatchCount > 0)
-            {
-                NavigateToMatch?.Invoke(this, _searchService.CurrentMatch);
-            }
+            // Always fire NavigateToMatch — with match on success, null on no matches
+            // so tools can update/clear their status bar
+            NavigateToMatch?.Invoke(this, _searchService.MatchCount > 0 ? _searchService.CurrentMatch : null);
         }
 
         private SearchCriteria BuildCriteria(string pattern)
         {
             SearchFieldCategory[]? categoryFilter = null;
 
-            // Apply field category filter based on combo selection
             if (GetFieldFilterCombo()?.SelectedItem is ComboBoxItem item && item.Tag is string categoryTag)
             {
                 if (Enum.TryParse<SearchFieldCategory>(categoryTag, out var category))
@@ -176,10 +210,14 @@ namespace DialogEditor.Controls
         private void UpdateMatchCount()
         {
             var matchCountText = GetMatchCountText();
-            if (matchCountText == null) return;
+            if (matchCountText == null)
+            {
+                UnifiedLogger.LogUI(LogLevel.WARN, "SearchBar.UpdateMatchCount: MatchCountText control not found");
+                return;
+            }
 
-            var count = _searchService.MatchCount;
-            var index = _searchService.CurrentIndex;
+            var count = _searchService?.MatchCount ?? 0;
+            var index = _searchService?.CurrentIndex ?? -1;
 
             matchCountText.Text = count switch
             {
@@ -187,15 +225,13 @@ namespace DialogEditor.Controls
                 0 => "No matches",
                 _ => $"{index + 1} of {count}"
             };
+            UnifiedLogger.LogUI(LogLevel.DEBUG, $"SearchBar.UpdateMatchCount: '{matchCountText.Text}'");
         }
 
         #region Event Handlers
 
         private void OnSearchTextChanged(object? sender, TextChangedEventArgs e)
         {
-            // Debounce: wait 300ms after last keystroke before searching.
-            // Prevents searching partial words ("t", "te", "tes") and
-            // avoids re-reading the file from disk on every keystroke.
             _debounceCts?.Cancel();
             _debounceCts = new CancellationTokenSource();
             var token = _debounceCts.Token;
@@ -239,6 +275,8 @@ namespace DialogEditor.Controls
 
         private void OnReplaceClick(object? sender, RoutedEventArgs e)
         {
+            if (_searchService == null) return;
+
             var replaceText = GetReplaceTextBox()?.Text ?? "";
             var pattern = GetSearchTextBox()?.Text;
             if (string.IsNullOrEmpty(pattern) || string.IsNullOrEmpty(_currentFilePath))
@@ -260,6 +298,8 @@ namespace DialogEditor.Controls
 
         private void OnReplaceAllClick(object? sender, RoutedEventArgs e)
         {
+            if (_searchService == null) return;
+
             var replaceText = GetReplaceTextBox()?.Text ?? "";
             var pattern = GetSearchTextBox()?.Text;
             if (string.IsNullOrEmpty(pattern) || string.IsNullOrEmpty(_currentFilePath))

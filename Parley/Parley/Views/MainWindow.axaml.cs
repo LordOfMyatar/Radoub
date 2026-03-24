@@ -14,7 +14,9 @@ using Radoub.Formats.Logging;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
 using Parley.Services;
 using Parley.Views.Helpers;
+using Radoub.Formats.Search;
 using Radoub.Formats.Ssf;
+using Radoub.UI.Services.Search;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DialogEditor.Views
@@ -79,6 +81,18 @@ namespace DialogEditor.Views
             InitializeLogging();
             RegisterEventHandlers();
             SetupUILayout();
+
+            // Initialize shared search bar with DLG search provider
+            var searchBar = this.FindControl<Radoub.UI.Controls.SearchBar>("DialogSearchBar");
+            searchBar?.Initialize(
+                new FileSearchService(new DlgSearchProvider()),
+                new (string, SearchFieldCategory)[]
+                {
+                    ("Text", SearchFieldCategory.Content),
+                    ("Speaker", SearchFieldCategory.Identity),
+                    ("Scripts", SearchFieldCategory.Script),
+                    ("Metadata", SearchFieldCategory.Metadata),
+                });
         }
 
         /// <summary>
@@ -387,8 +401,8 @@ namespace DialogEditor.Views
         // Search - Issue #1842: Find in dialog (Ctrl+F, F3, Shift+F3), #1853: Ctrl+H Replace
         void IKeyboardShortcutHandler.OnFind() => OnFindClick(null, null!);
         void IKeyboardShortcutHandler.OnFindReplace() => OnFindReplaceClick(null, null!);
-        void IKeyboardShortcutHandler.OnFindNext() => this.FindControl<Controls.SearchBar>("DialogSearchBar")?.FindNext();
-        void IKeyboardShortcutHandler.OnFindPrevious() => this.FindControl<Controls.SearchBar>("DialogSearchBar")?.FindPrevious();
+        void IKeyboardShortcutHandler.OnFindNext() => this.FindControl<Radoub.UI.Controls.SearchBar>("DialogSearchBar")?.FindNext();
+        void IKeyboardShortcutHandler.OnFindPrevious() => this.FindControl<Radoub.UI.Controls.SearchBar>("DialogSearchBar")?.FindPrevious();
         void IKeyboardShortcutHandler.OnSearchModule() => OnSearchModuleClick(null, null!);
 
         #endregion

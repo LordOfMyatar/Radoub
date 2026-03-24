@@ -56,6 +56,9 @@
                 <MenuItem Header="Add _Entry" Click="OnAddEntryClick" IsEnabled="{Binding CanAddEntry}"/>
                 <Separator/>
                 <MenuItem Header="_Delete" Click="OnDeleteClick" InputGesture="Delete" IsEnabled="{Binding HasSelection}"/>
+                <Separator/>
+                <MenuItem Header="_Find..." Click="OnFindClick" InputGesture="Ctrl+F" IsEnabled="{Binding HasFile}"/>
+                <MenuItem Header="_Replace..." Click="OnFindReplaceClick" InputGesture="Ctrl+H" IsEnabled="{Binding HasFile}"/>
             </MenuItem>
             <MenuItem Header="_View">
                 <MenuItem x:Name="UseRadoubThemeMenuItem" Header="Use _Radoub Theme" Click="OnToggleUseRadoubThemeClick"/>
@@ -80,6 +83,9 @@
                 <Button Content="Delete" Click="OnDeleteClick" ToolTip.Tip="Delete Selected (Delete)" IsEnabled="{Binding HasSelection}" Padding="8,4"/>
             </StackPanel>
         </Border>
+
+        <!-- Search Bar (Ctrl+F / Ctrl+H) -->
+        <uicontrols:SearchBar x:Name="FileSearchBar" DockPanel.Dock="Top"/>
 
         <!-- Status Bar (top position for visibility, matching Fence pattern) -->
         <Border DockPanel.Dock="Top"

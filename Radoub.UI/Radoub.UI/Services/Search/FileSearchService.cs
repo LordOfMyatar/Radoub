@@ -6,17 +6,22 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace DialogEditor.Services
+namespace Radoub.UI.Services.Search
 {
     /// <summary>
-    /// Provides search functionality for the currently open dialog file.
-    /// Wraps DlgSearchProvider with file re-read for current-state search.
+    /// Generic single-file search service that wraps any IFileSearchProvider.
+    /// Reads the file from disk, searches via the provider, and maintains match navigation state.
     /// </summary>
-    public class DialogSearchService
+    public class FileSearchService
     {
-        private readonly DlgSearchProvider _provider = new();
+        private readonly IFileSearchProvider _provider;
         private IReadOnlyList<SearchMatch> _currentMatches = Array.Empty<SearchMatch>();
         private int _currentIndex = -1;
+
+        public FileSearchService(IFileSearchProvider provider)
+        {
+            _provider = provider ?? throw new ArgumentNullException(nameof(provider));
+        }
 
         /// <summary>Current search results</summary>
         public IReadOnlyList<SearchMatch> Matches => _currentMatches;
@@ -27,13 +32,16 @@ namespace DialogEditor.Services
         /// <summary>Total number of matches</summary>
         public int MatchCount => _currentMatches.Count;
 
+        /// <summary>Get the current match without changing position.</summary>
+        public SearchMatch? CurrentMatch =>
+            _currentIndex >= 0 && _currentIndex < _currentMatches.Count
+                ? _currentMatches[_currentIndex]
+                : null;
+
         /// <summary>
-        /// Search the specified dialog file for matches.
+        /// Search the specified file for matches.
         /// Reads the file fresh from disk to get a GffFile for the search provider.
         /// </summary>
-        /// <param name="filePath">Path to the DLG file</param>
-        /// <param name="criteria">Search criteria</param>
-        /// <returns>Number of matches found</returns>
         public int Search(string filePath, SearchCriteria criteria)
         {
             _currentMatches = Array.Empty<SearchMatch>();
@@ -63,10 +71,7 @@ namespace DialogEditor.Services
             }
         }
 
-        /// <summary>
-        /// Move to the next match. Wraps around to the beginning.
-        /// </summary>
-        /// <returns>The next match, or null if no matches</returns>
+        /// <summary>Move to the next match. Wraps around to the beginning.</summary>
         public SearchMatch? NextMatch()
         {
             if (_currentMatches.Count == 0) return null;
@@ -74,10 +79,7 @@ namespace DialogEditor.Services
             return _currentMatches[_currentIndex];
         }
 
-        /// <summary>
-        /// Move to the previous match. Wraps around to the end.
-        /// </summary>
-        /// <returns>The previous match, or null if no matches</returns>
+        /// <summary>Move to the previous match. Wraps around to the end.</summary>
         public SearchMatch? PreviousMatch()
         {
             if (_currentMatches.Count == 0) return null;
@@ -85,17 +87,7 @@ namespace DialogEditor.Services
             return _currentMatches[_currentIndex];
         }
 
-        /// <summary>
-        /// Get the current match without changing position.
-        /// </summary>
-        public SearchMatch? CurrentMatch =>
-            _currentIndex >= 0 && _currentIndex < _currentMatches.Count
-                ? _currentMatches[_currentIndex]
-                : null;
-
-        /// <summary>
-        /// Clear all search results.
-        /// </summary>
+        /// <summary>Clear all search results.</summary>
         public void Clear()
         {
             _currentMatches = Array.Empty<SearchMatch>();
@@ -104,6 +96,7 @@ namespace DialogEditor.Services
 
         /// <summary>
         /// Replace the current match in the file on disk.
+        /// Creates a .bak backup before modifying. Logs the replacement.
         /// Returns the result, and re-runs search to update matches.
         /// </summary>
         public ReplaceResult? ReplaceCurrent(string filePath, string replacementText, SearchCriteria criteria)
@@ -114,6 +107,8 @@ namespace DialogEditor.Services
 
             try
             {
+                BackupFile(filePath);
+
                 var gffFile = GffReader.Read(filePath);
                 var ops = new[] { new ReplaceOperation { Match = match, ReplacementText = replacementText } };
                 var results = _provider.Replace(gffFile, ops);
@@ -121,11 +116,9 @@ namespace DialogEditor.Services
 
                 if (result?.Success == true)
                 {
-                    // Write modified file back to disk
                     var bytes = GffWriter.Write(gffFile);
                     File.WriteAllBytes(filePath, bytes);
-
-                    // Re-search to update match list
+                    LogReplacement(filePath, match.Field.Name, match.MatchedText, replacementText);
                     Search(filePath, criteria);
                 }
 
@@ -140,6 +133,7 @@ namespace DialogEditor.Services
 
         /// <summary>
         /// Replace all current matches in the file on disk.
+        /// Creates a .bak backup before modifying. Logs each replacement.
         /// Returns the number of successful replacements.
         /// </summary>
         public int ReplaceAll(string filePath, string replacementText, SearchCriteria criteria)
@@ -149,6 +143,8 @@ namespace DialogEditor.Services
 
             try
             {
+                BackupFile(filePath);
+
                 var gffFile = GffReader.Read(filePath);
                 var ops = _currentMatches.Select(m => new ReplaceOperation
                 {
@@ -164,7 +160,14 @@ namespace DialogEditor.Services
                     var bytes = GffWriter.Write(gffFile);
                     File.WriteAllBytes(filePath, bytes);
 
-                    // Re-search to update (should now find fewer/no matches)
+                    for (int i = 0; i < results.Count; i++)
+                    {
+                        if (results[i].Success)
+                            LogReplacement(filePath, ops[i].Match.Field.Name, ops[i].Match.MatchedText, replacementText);
+                    }
+
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"Replace All: {successCount} replacement(s) in {UnifiedLogger.SanitizePath(filePath)}");
                     Search(filePath, criteria);
                 }
 
@@ -178,13 +181,36 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
-        /// Get a display-friendly location string for a match.
+        /// Copy the file to ~/Radoub/Backups/SearchReplace/ before modifying.
+        /// Backup filename includes timestamp to prevent overwrites.
         /// </summary>
-        public static string GetMatchLocationText(SearchMatch match)
+        private static void BackupFile(string filePath)
         {
-            if (match.Location is DlgMatchLocation dlgLoc)
-                return dlgLoc.DisplayPath;
-            return match.Location?.ToString() ?? "";
+            try
+            {
+                var backupDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                    "Radoub", "Backups", "SearchReplace");
+                Directory.CreateDirectory(backupDir);
+
+                var fileName = Path.GetFileName(filePath);
+                var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                var bakPath = Path.Combine(backupDir, $"{Path.GetFileNameWithoutExtension(fileName)}_{timestamp}{Path.GetExtension(fileName)}");
+                File.Copy(filePath, bakPath, overwrite: true);
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Backup created: {UnifiedLogger.SanitizePath(bakPath)}");
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"Failed to create backup: {ex.Message}");
+            }
+        }
+
+        private static void LogReplacement(string filePath, string fieldName, string oldText, string newText)
+        {
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Replace in {UnifiedLogger.SanitizePath(filePath)}: [{fieldName}] \"{oldText}\" → \"{newText}\"");
         }
     }
 }

@@ -7,6 +7,7 @@ using MerchantEditor.ViewModels;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
 using Radoub.Formats.Utm;
+using Radoub.UI.Controls;
 using Radoub.UI.Services;
 using Radoub.UI.Views;
 using System;
@@ -135,6 +136,9 @@ public partial class MainWindow
 
             // Update store browser panel (#1144)
             UpdateStoreBrowserCurrentFile(filePath);
+
+            // Update search bar file path
+            this.FindControl<SearchBar>("FileSearchBar")?.UpdateFilePath(filePath);
 
             // Scan module directory for loose .uti files
             PopulateModuleItems();

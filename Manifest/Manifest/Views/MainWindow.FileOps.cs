@@ -4,6 +4,7 @@ using Avalonia.Platform.Storage;
 using Manifest.Services;
 using Radoub.Formats.Jrl;
 using Radoub.Formats.Logging;
+using Radoub.UI.Controls;
 using Radoub.UI.Views;
 using DirtyCheckResult = Radoub.UI.Services.DirtyCheckResult;
 using FileOperationsHelper = Radoub.UI.Services.FileOperationsHelper;
@@ -156,6 +157,9 @@ public partial class MainWindow
             // Add to recent files
             SettingsService.Instance.AddRecentFile(filePath);
             UpdateRecentFilesMenu();
+
+            // Update search bar file path
+            this.FindControl<SearchBar>("FileSearchBar")?.UpdateFilePath(filePath);
 
             UnifiedLogger.LogJournal(LogLevel.INFO, $"Loaded journal: {UnifiedLogger.SanitizePath(filePath)} ({_currentJrl.Categories.Count} categories)");
         }

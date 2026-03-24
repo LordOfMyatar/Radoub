@@ -174,7 +174,7 @@ public class JrlSearchProviderTests
 
         var match = Assert.Single(matches);
         var loc = Assert.IsType<JrlMatchLocation>(match.Location);
-        Assert.Contains("Category #1", loc.DisplayPath);
+        Assert.Contains("q_side_escort", loc.DisplayPath);
     }
 
     [Fact]
@@ -190,7 +190,7 @@ public class JrlSearchProviderTests
         var entryMatch = matches.FirstOrDefault(m => m.Field.Name == "Entry Text");
         Assert.NotNull(entryMatch);
         var loc = Assert.IsType<JrlMatchLocation>(entryMatch.Location);
-        Assert.Contains("Entry #1", loc.DisplayPath);
+        Assert.Contains("Entry 1", loc.DisplayPath);
     }
 
     [Fact]

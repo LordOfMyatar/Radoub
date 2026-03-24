@@ -87,6 +87,9 @@
                 <MenuItem Header="_Copy" InputGesture="Ctrl+C" IsEnabled="False" ToolTip.Tip="Not yet implemented"/>
                 <MenuItem Header="_Paste" InputGesture="Ctrl+V" IsEnabled="False" ToolTip.Tip="Not yet implemented"/>
                 <MenuItem Header="_Delete" Click="OnDeleteClick" InputGesture="Delete" IsEnabled="{Binding HasSelection, ElementName=MainWindowInstance}"/>
+                <Separator/>
+                <MenuItem Header="_Find..." Click="OnFindClick" InputGesture="Ctrl+F" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
+                <MenuItem Header="_Replace..." Click="OnFindReplaceClick" InputGesture="Ctrl+H" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
             </MenuItem>
             <MenuItem Header="_Character">
                 <MenuItem Header="_New Character..." Click="OnNewClick" InputGesture="Ctrl+N"/>
@@ -114,6 +117,9 @@
                 <MenuItem Header="_About Quartermaster" Click="OnAboutClick"/>
             </MenuItem>
         </Menu>
+
+        <!-- Search Bar (Ctrl+F / Ctrl+H) -->
+        <controls:SearchBar x:Name="FileSearchBar" DockPanel.Dock="Top"/>
 
         <!-- Status Bar (top position for visibility during loading) -->
         <Border DockPanel.Dock="Top"

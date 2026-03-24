@@ -5,11 +5,14 @@ using Avalonia.Interactivity;
 using MerchantEditor.Services;
 using MerchantEditor.ViewModels;
 using Radoub.Formats.Common;
-using Radoub.UI.Services;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Search;
 using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
 using Radoub.Formats.Utm;
+using Radoub.UI.Controls;
+using Radoub.UI.Services;
+using Radoub.UI.Services.Search;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -22,7 +25,6 @@ using System.Collections.Specialized;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Radoub.UI.Services;
 using Radoub.UI.Utils;
 using Radoub.UI.Views;
 
@@ -124,6 +126,24 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Show module context in status bar (#1003)
         UpdateModuleIndicator();
+
+        // Initialize search bar with UTM search provider
+        var searchBar = this.FindControl<SearchBar>("FileSearchBar");
+        searchBar?.Initialize(
+            new FileSearchService(new UtmSearchProvider()),
+            new (string, SearchFieldCategory)[]
+            {
+                ("Text", SearchFieldCategory.Content),
+                ("Tags", SearchFieldCategory.Identity),
+                ("Scripts", SearchFieldCategory.Script),
+                ("Metadata", SearchFieldCategory.Metadata),
+                ("Variables", SearchFieldCategory.Variable),
+            });
+        if (searchBar != null)
+        {
+            searchBar.FileModified += OnSearchFileModified;
+            searchBar.NavigateToMatch += OnSearchNavigateToMatch;
+        }
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "Fence MainWindow initialized");
     }
@@ -758,6 +778,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             switch (e.Key)
             {
+                case Key.F3:
+                    this.FindControl<SearchBar>("FileSearchBar")?.FindNext();
+                    e.Handled = true;
+                    return;
                 case Key.F4:
                     // Toggle store browser panel (#1144)
                     OnToggleStoreBrowserClick(null, e);
@@ -797,6 +821,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                         e.Handled = true;
                     }
                     return;
+                case Key.F:
+                    if (HasFile)
+                    {
+                        OnFindClick(null, e);
+                        e.Handled = true;
+                    }
+                    return;
+                case Key.H:
+                    if (HasFile)
+                    {
+                        OnFindReplaceClick(null, e);
+                        e.Handled = true;
+                    }
+                    return;
             }
         }
         else if (e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift))
@@ -812,7 +850,49 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     return;
             }
         }
+        else if (e.KeyModifiers == KeyModifiers.Shift)
+        {
+            switch (e.Key)
+            {
+                case Key.F3:
+                    this.FindControl<SearchBar>("FileSearchBar")?.FindPrevious();
+                    e.Handled = true;
+                    return;
+            }
+        }
         // Don't mark as handled for other keys - let them propagate to controls
+    }
+
+    #endregion
+
+    #region Search
+
+    private void OnFindClick(object? sender, RoutedEventArgs e)
+    {
+        this.FindControl<SearchBar>("FileSearchBar")?.Show(_currentFilePath);
+    }
+
+    private void OnFindReplaceClick(object? sender, RoutedEventArgs e)
+    {
+        this.FindControl<SearchBar>("FileSearchBar")?.ShowReplace(_currentFilePath);
+    }
+
+    private void OnSearchFileModified(object? sender, EventArgs e)
+    {
+        if (!string.IsNullOrEmpty(_currentFilePath))
+        {
+            LoadFile(_currentFilePath);
+            UpdateStatusBar("File reloaded after replace.");
+        }
+    }
+
+    private void OnSearchNavigateToMatch(object? sender, Radoub.Formats.Search.SearchMatch? match)
+    {
+        if (match == null) { UpdateStatusBar("No matches"); return; }
+        var preview = match.FullFieldValue.Length > 60
+            ? match.FullFieldValue[..60] + "..."
+            : match.FullFieldValue;
+        UpdateStatusBar($"Found \"{match.MatchedText}\" in {match.Field.Name}: {preview}");
     }
 
     #endregion

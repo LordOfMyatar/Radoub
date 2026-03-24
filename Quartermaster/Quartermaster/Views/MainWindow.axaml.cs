@@ -12,8 +12,10 @@ using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
 using Radoub.Formats.Utc;
+using Radoub.Formats.Search;
 using Radoub.UI.Controls;
 using Radoub.UI.Services;
+using Radoub.UI.Services.Search;
 using Radoub.UI.ViewModels;
 using DialogHelper = Quartermaster.Views.Helpers.DialogHelper;
 using System;
@@ -111,6 +113,24 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Show module context in status bar (#1003)
         UpdateModuleIndicator();
+
+        // Initialize search bar with UTC search provider
+        var searchBar = this.FindControl<SearchBar>("FileSearchBar");
+        searchBar?.Initialize(
+            new FileSearchService(new UtcSearchProvider()),
+            new (string, SearchFieldCategory)[]
+            {
+                ("Text", SearchFieldCategory.Content),
+                ("Tags", SearchFieldCategory.Identity),
+                ("Scripts", SearchFieldCategory.Script),
+                ("Metadata", SearchFieldCategory.Metadata),
+                ("Variables", SearchFieldCategory.Variable),
+            });
+        if (searchBar != null)
+        {
+            searchBar.FileModified += OnSearchFileModified;
+            searchBar.NavigateToMatch += OnSearchNavigateToMatch;
+        }
 
         Closing += OnWindowClosing;
         Opened += OnWindowOpened;
@@ -580,6 +600,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                         e.Handled = true;
                     }
                     break;
+                case Key.F:
+                    if (HasFile)
+                    {
+                        OnFindClick(sender, new RoutedEventArgs());
+                        e.Handled = true;
+                    }
+                    break;
+                case Key.H:
+                    if (HasFile)
+                    {
+                        OnFindReplaceClick(sender, new RoutedEventArgs());
+                        e.Handled = true;
+                    }
+                    break;
             }
         }
         else if (e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift))
@@ -617,12 +651,58 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     OnAboutClick(sender, new RoutedEventArgs());
                     e.Handled = true;
                     break;
+                case Key.F3:
+                    this.FindControl<SearchBar>("FileSearchBar")?.FindNext();
+                    e.Handled = true;
+                    break;
                 case Key.F4:
                     OnToggleCreatureBrowserClick(sender, new RoutedEventArgs());
                     e.Handled = true;
                     break;
             }
         }
+        else if (e.KeyModifiers == KeyModifiers.Shift)
+        {
+            switch (e.Key)
+            {
+                case Key.F3:
+                    this.FindControl<SearchBar>("FileSearchBar")?.FindPrevious();
+                    e.Handled = true;
+                    break;
+            }
+        }
+    }
+
+    #endregion
+
+    #region Search
+
+    private void OnFindClick(object? sender, RoutedEventArgs e)
+    {
+        this.FindControl<SearchBar>("FileSearchBar")?.Show(_currentFilePath);
+    }
+
+    private void OnFindReplaceClick(object? sender, RoutedEventArgs e)
+    {
+        this.FindControl<SearchBar>("FileSearchBar")?.ShowReplace(_currentFilePath);
+    }
+
+    private async void OnSearchFileModified(object? sender, EventArgs e)
+    {
+        if (!string.IsNullOrEmpty(_currentFilePath))
+        {
+            await LoadFile(_currentFilePath);
+            UpdateStatus("File reloaded after replace.");
+        }
+    }
+
+    private void OnSearchNavigateToMatch(object? sender, Radoub.Formats.Search.SearchMatch? match)
+    {
+        if (match == null) { UpdateStatus("No matches"); return; }
+        var preview = match.FullFieldValue.Length > 60
+            ? match.FullFieldValue[..60] + "..."
+            : match.FullFieldValue;
+        UpdateStatus($"Found \"{match.MatchedText}\" in {match.Field.Name}: {preview}");
     }
 
     #endregion

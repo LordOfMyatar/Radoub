@@ -1,6 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="DialogEditor.Controls.SearchBar"
+             x:Class="Radoub.UI.Controls.SearchBar"
              IsVisible="False">
     <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
             BorderThickness="0,0,0,1"
@@ -19,7 +19,7 @@
                 <TextBlock x:Name="MatchCountText" DockPanel.Dock="Right"
                            VerticalAlignment="Center" Margin="8,0"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                           Text="No matches"/>
+                           Text=""/>
 
                 <!-- Navigation buttons -->
                 <Button DockPanel.Dock="Right" Content="▼" Click="OnNextClick"
@@ -37,10 +37,6 @@
                           SelectionChanged="OnFieldFilterChanged"
                           ToolTip.Tip="Filter by field type">
                     <ComboBoxItem Content="All Fields"/>
-                    <ComboBoxItem Content="Text" Tag="Content"/>
-                    <ComboBoxItem Content="Speaker" Tag="Identity"/>
-                    <ComboBoxItem Content="Scripts" Tag="Script"/>
-                    <ComboBoxItem Content="Metadata" Tag="Metadata"/>
                 </ComboBox>
 
                 <!-- Options -->
@@ -54,9 +50,9 @@
                           ToolTip.Tip="Regular expression"
                           IsCheckedChanged="OnOptionsChanged"/>
 
-                <!-- Search text box (events wired in code-behind for TabItem compatibility) -->
+                <!-- Search text box -->
                 <TextBox x:Name="SearchTextBox"
-                         Watermark="Find in dialog... (Ctrl+F)"
+                         Watermark="Find... (Ctrl+F)"
                          Margin="0,0,5,0"/>
             </DockPanel>
 

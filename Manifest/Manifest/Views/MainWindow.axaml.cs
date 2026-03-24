@@ -13,6 +13,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Radoub.Formats.Search;
+using Radoub.UI.Controls;
+using Radoub.UI.Services.Search;
 using Radoub.UI.Utils;
 using Radoub.UI.Views;
 using DialogHelper = Radoub.UI.Services.DialogHelper;
@@ -75,6 +78,22 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             if (e.Property == Expander.IsExpandedProperty)
                 OnTokenPreviewExpanded(null, null!);
         };
+
+        // Initialize search bar with JRL search provider
+        var searchBar = this.FindControl<SearchBar>("FileSearchBar");
+        searchBar?.Initialize(
+            new FileSearchService(new JrlSearchProvider()),
+            new (string, SearchFieldCategory)[]
+            {
+                ("Text", SearchFieldCategory.Content),
+                ("Tags", SearchFieldCategory.Identity),
+                ("Metadata", SearchFieldCategory.Metadata),
+            });
+        if (searchBar != null)
+        {
+            searchBar.FileModified += OnSearchFileModified;
+            searchBar.NavigateToMatch += OnSearchNavigateToMatch;
+        }
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "Manifest MainWindow initialized");
     }
@@ -312,6 +331,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                         e.Handled = true;
                     }
                     break;
+                case Key.F:
+                    if (HasFile)
+                    {
+                        OnFindClick(sender, new RoutedEventArgs());
+                        e.Handled = true;
+                    }
+                    break;
+                case Key.H:
+                    if (HasFile)
+                    {
+                        OnFindReplaceClick(sender, new RoutedEventArgs());
+                        e.Handled = true;
+                    }
+                    break;
             }
         }
         else if (e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift))
@@ -345,8 +378,59 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     OnAboutClick(sender, new RoutedEventArgs());
                     e.Handled = true;
                     break;
+                case Key.F3:
+                    this.FindControl<SearchBar>("FileSearchBar")?.FindNext();
+                    e.Handled = true;
+                    break;
             }
         }
+        else if (e.KeyModifiers == KeyModifiers.Shift)
+        {
+            switch (e.Key)
+            {
+                case Key.F3:
+                    this.FindControl<SearchBar>("FileSearchBar")?.FindPrevious();
+                    e.Handled = true;
+                    break;
+            }
+        }
+    }
+
+    #endregion
+
+    #region Search
+
+    private void OnFindClick(object? sender, RoutedEventArgs e)
+    {
+        this.FindControl<SearchBar>("FileSearchBar")?.Show(_currentFilePath);
+    }
+
+    private void OnFindReplaceClick(object? sender, RoutedEventArgs e)
+    {
+        this.FindControl<SearchBar>("FileSearchBar")?.ShowReplace(_currentFilePath);
+    }
+
+    private async void OnSearchFileModified(object? sender, EventArgs e)
+    {
+        if (!string.IsNullOrEmpty(_currentFilePath))
+        {
+            await LoadFile(_currentFilePath);
+            UpdateStatus("File reloaded after replace.");
+        }
+    }
+
+    private void OnSearchNavigateToMatch(object? sender, Radoub.Formats.Search.SearchMatch? match)
+    {
+        if (match == null) { UpdateStatus("No matches"); return; }
+        var preview = match.FullFieldValue.Length > 60
+            ? match.FullFieldValue[..60] + "..."
+            : match.FullFieldValue;
+        var locationText = match.Location switch
+        {
+            Radoub.Formats.Search.JrlMatchLocation jrl => jrl.DisplayPath,
+            _ => ""
+        };
+        UpdateStatus($"Found \"{match.MatchedText}\" in {match.Field.Name}{(locationText.Length > 0 ? $" — {locationText}" : "")}: {preview}");
     }
 
     #endregion

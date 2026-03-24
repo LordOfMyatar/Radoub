@@ -3,6 +3,7 @@ using Avalonia.Platform.Storage;
 using ItemEditor.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Uti;
+using Radoub.UI.Controls;
 using Radoub.UI.Services;
 using System.IO;
 using System.Threading.Tasks;
@@ -64,6 +65,9 @@ public partial class MainWindow
             {
                 ItemBrowserPanel.ModulePath = moduleDir;
             }
+
+            // Update search bar file path
+            this.FindControl<SearchBar>("FileSearchBar")?.UpdateFilePath(filePath);
 
             UpdateStatus("Ready");
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Opened: {UnifiedLogger.SanitizePath(filePath)}");
