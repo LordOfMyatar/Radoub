@@ -17,7 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.70-alpha] - 2026-03-24
-**Branch**: `quartermaster/issue-1900` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1900` | **PR**: #1969
 
 ### Sprint: Module Switch & UI Bug Fixes (#1900)
 
