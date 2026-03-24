@@ -4,6 +4,7 @@ using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Quartermaster.Models;
 using Quartermaster.Services;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Utc;

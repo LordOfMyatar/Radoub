@@ -38,24 +38,7 @@ public partial class NewCharacterWizardWindow
         public string Name { get; init; } = "";
     }
 
-    private class SkillDisplayItem : Services.SkillDisplayHelper.INamedItem
-    {
-        public int SkillId { get; set; }
-        public string Name { get; set; } = "";
-        public string KeyAbility { get; set; } = "";
-        public bool IsClassSkill { get; set; }
-        public bool IsUnavailable { get; set; }
-        public int MaxRanks { get; set; }
-        public int AllocatedRanks { get; set; }
-        public int Cost { get; set; } = 1;
-    }
-
-    private class SpellDisplayItem : Services.SkillDisplayHelper.INamedItem
-    {
-        public int SpellId { get; set; }
-        public string Name { get; set; } = "";
-        public string SchoolAbbrev { get; set; } = "";
-    }
+    // SkillDisplayItem and SpellDisplayItem moved to Quartermaster.Models.WizardDisplayItems (#1798)
 
     private class FeatDisplayItem : Services.SkillDisplayHelper.INamedItem
     {
