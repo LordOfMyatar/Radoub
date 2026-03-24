@@ -75,11 +75,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 });
             searchBar.FileModified += OnSearchFileModified;
             searchBar.NavigateToMatch += OnSearchNavigateToMatch;
-            UnifiedLogger.LogApplication(LogLevel.INFO, "Relique: SearchBar found and events wired");
-        }
-        else
-        {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, "Relique: SearchBar 'FileSearchBar' NOT found — search will not work");
         }
 
         Closing += OnWindowClosing;
