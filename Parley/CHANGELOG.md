@@ -14,6 +14,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.159-alpha] - 2026-03-24
+**Branch**: `parley/issue-1906` | **PR**: #TBD
+
+### Sprint: Flowchart Node Customization (#1906)
+
+- [ ] #906 - Flowchart: Configurable node width
+- [ ] #240 - Flowchart: Drag-drop sibling reorder
+- [ ] #1965 - Flowchart: Drag-drop reparent nodes
+
+---
+
 ## [0.1.158-alpha] - 2026-03-22
 **Branch**: `parley/issue-1855` | **PR**: #1920
 
