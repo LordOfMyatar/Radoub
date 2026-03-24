@@ -19,6 +19,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Collections.Specialized;
@@ -779,6 +780,81 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     new System.Uri("avares://Fence/Assets/fence.ico")))
         });
         aboutWindow.Show(this);
+    }
+
+    private async void OnExportLogsClick(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var logFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Radoub", "Fence", "Logs");
+
+            if (!Directory.Exists(logFolder))
+            {
+                UpdateStatusBar("No logs to export");
+                return;
+            }
+
+            var storageProvider = StorageProvider;
+            var options = new Avalonia.Platform.Storage.FilePickerSaveOptions
+            {
+                Title = "Export Logs for Support",
+                SuggestedFileName = $"Fence_Logs_{DateTime.Now:yyyyMMdd_HHmmss}.zip",
+                FileTypeChoices = new[]
+                {
+                    new Avalonia.Platform.Storage.FilePickerFileType("ZIP Archive")
+                    {
+                        Patterns = new[] { "*.zip" }
+                    }
+                }
+            };
+
+            var file = await storageProvider.SaveFilePickerAsync(options);
+            if (file == null) return;
+
+            var result = file.Path.LocalPath;
+            if (File.Exists(result)) File.Delete(result);
+
+            ZipFile.CreateFromDirectory(logFolder, result);
+
+            UpdateStatusBar($"Logs exported to: {Path.GetFileName(result)}");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Exported logs to: ~/{Path.GetFileName(result)}");
+        }
+        catch (Exception ex)
+        {
+            UpdateStatusBar($"Failed to export logs: {ex.Message}");
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to export logs: {ex.Message}");
+        }
+    }
+
+    private void OnOpenLogFolderClick(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var logFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Radoub", "Fence", "Logs");
+
+            if (!Directory.Exists(logFolder))
+            {
+                UpdateStatusBar("Log folder does not exist yet");
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = logFolder,
+                UseShellExecute = true
+            });
+
+            UnifiedLogger.LogApplication(LogLevel.INFO, "Opened log folder");
+        }
+        catch (Exception ex)
+        {
+            UpdateStatusBar($"Failed to open log folder: {ex.Message}");
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open log folder: {ex.Message}");
+        }
     }
 
     #endregion
