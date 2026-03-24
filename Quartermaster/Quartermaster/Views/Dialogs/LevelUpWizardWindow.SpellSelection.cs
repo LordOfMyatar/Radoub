@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
+using Quartermaster.Models;
 using Quartermaster.Services;
 using Radoub.UI.Services;
 
@@ -316,12 +317,7 @@ public partial class LevelUpWizardWindow
 
     private void ApplySpellFilter()
     {
-        var filter = _spellSearchBox?.Text?.Trim() ?? "";
-
-        _filteredAvailableSpells = string.IsNullOrEmpty(filter)
-            ? new List<SpellDisplayItem>(_availableSpellsForLevel)
-            : _availableSpellsForLevel.Where(s => s.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)).ToList();
-
+        _filteredAvailableSpells = SkillDisplayHelper.FilterByName(_availableSpellsForLevel, _spellSearchBox?.Text?.Trim());
         _availableSpellsListBox.ItemsSource = _filteredAvailableSpells;
     }
 

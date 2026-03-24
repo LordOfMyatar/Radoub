@@ -19,13 +19,13 @@ public partial class NewCharacterWizardWindow
 
     #region Display Items
 
-    private class RaceDisplayItem
+    private class RaceDisplayItem : Services.SkillDisplayHelper.INamedItem
     {
         public byte Id { get; init; }
         public string Name { get; init; } = "";
     }
 
-    private class ClassDisplayItem
+    private class ClassDisplayItem : Services.SkillDisplayHelper.INamedItem
     {
         public int Id { get; init; }
         public string Name { get; init; } = "";
@@ -38,26 +38,9 @@ public partial class NewCharacterWizardWindow
         public string Name { get; init; } = "";
     }
 
-    private class SkillDisplayItem
-    {
-        public int SkillId { get; set; }
-        public string Name { get; set; } = "";
-        public string KeyAbility { get; set; } = "";
-        public bool IsClassSkill { get; set; }
-        public bool IsUnavailable { get; set; }
-        public int MaxRanks { get; set; }
-        public int AllocatedRanks { get; set; }
-        public int Cost { get; set; } = 1;
-    }
+    // SkillDisplayItem and SpellDisplayItem moved to Quartermaster.Models.WizardDisplayItems (#1798)
 
-    private class SpellDisplayItem
-    {
-        public int SpellId { get; set; }
-        public string Name { get; set; } = "";
-        public string SchoolAbbrev { get; set; } = "";
-    }
-
-    private class FeatDisplayItem
+    private class FeatDisplayItem : Services.SkillDisplayHelper.INamedItem
     {
         public int FeatId { get; set; }
         public string Name { get; set; } = "";

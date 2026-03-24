@@ -54,19 +54,7 @@ public partial class NewCharacterWizardWindow
 
     private void OnRaceSearchChanged(object? sender, TextChangedEventArgs e)
     {
-        var filter = _raceSearchBox.Text?.Trim() ?? "";
-
-        if (string.IsNullOrEmpty(filter))
-        {
-            _filteredRaces = new List<RaceDisplayItem>(_allRaces);
-        }
-        else
-        {
-            _filteredRaces = _allRaces
-                .Where(r => r.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-        }
-
+        _filteredRaces = SkillDisplayHelper.FilterByName(_allRaces, _raceSearchBox.Text?.Trim());
         _raceListBox.ItemsSource = _filteredRaces;
     }
 

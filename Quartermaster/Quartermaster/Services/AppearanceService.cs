@@ -603,7 +603,7 @@ public class AppearanceService
 /// <summary>
 /// Appearance information from appearance.2da.
 /// </summary>
-public class AppearanceInfo
+public class AppearanceInfo : SkillDisplayHelper.INamedItem
 {
     public ushort AppearanceId { get; set; }
     public string Name { get; set; } = "";

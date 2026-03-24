@@ -75,19 +75,7 @@ public partial class NewCharacterWizardWindow
 
     private void OnClassSearchChanged(object? sender, TextChangedEventArgs e)
     {
-        var filter = _classSearchBox.Text?.Trim() ?? "";
-
-        if (string.IsNullOrEmpty(filter))
-        {
-            _filteredClasses = new List<ClassDisplayItem>(_allClasses);
-        }
-        else
-        {
-            _filteredClasses = _allClasses
-                .Where(c => c.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-        }
-
+        _filteredClasses = SkillDisplayHelper.FilterByName(_allClasses, _classSearchBox.Text?.Trim());
         _classListBox.ItemsSource = _filteredClasses;
     }
 

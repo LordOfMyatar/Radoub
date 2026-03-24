@@ -4,6 +4,7 @@ using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Quartermaster.Models;
 using Quartermaster.Services;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Utc;
@@ -83,18 +84,7 @@ public partial class NewCharacterWizardWindow
 
     private void ApplySkillFilter()
     {
-        var filter = _skillSearchBox?.Text?.Trim() ?? "";
-
-        if (string.IsNullOrEmpty(filter))
-        {
-            _filteredSkills = new List<SkillDisplayItem>(_allSkills);
-        }
-        else
-        {
-            _filteredSkills = _allSkills
-                .Where(s => s.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-        }
+        _filteredSkills = SkillDisplayHelper.FilterByName(_allSkills, _skillSearchBox?.Text?.Trim());
     }
 
     private void RenderSkillRows()

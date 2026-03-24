@@ -3,6 +3,7 @@ using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
+using Quartermaster.Models;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
@@ -227,19 +228,7 @@ public partial class NewCharacterWizardWindow
 
     private void ApplySpellFilter()
     {
-        var filter = _spellSearchBox2?.Text?.Trim() ?? "";
-
-        if (string.IsNullOrEmpty(filter))
-        {
-            _filteredAvailableSpells = new List<SpellDisplayItem>(_availableSpellsForLevel);
-        }
-        else
-        {
-            _filteredAvailableSpells = _availableSpellsForLevel
-                .Where(s => s.Name.Contains(filter, System.StringComparison.OrdinalIgnoreCase))
-                .ToList();
-        }
-
+        _filteredAvailableSpells = SkillDisplayHelper.FilterByName(_availableSpellsForLevel, _spellSearchBox2?.Text?.Trim());
         _availableSpellsListBox.ItemsSource = _filteredAvailableSpells;
     }
 

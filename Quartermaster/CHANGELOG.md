@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.69-alpha] - 2026-03-23
+**Branch**: `quartermaster/issue-1827` | **PR**: #1953
+
+### Sprint: Wizard Code Refactoring (#1827)
+
+- [x] #1799 - Extract shared wizard search/filter helpers
+- [x] #1798 - Extract shared NCW/LUW display item classes
+
+---
+
 ## [0.2.68-alpha] - 2026-03-22
 **Branch**: `radoub/issue-1936` | **PR**: #1938
 

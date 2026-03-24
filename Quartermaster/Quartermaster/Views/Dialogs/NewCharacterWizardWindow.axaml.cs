@@ -8,6 +8,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
+using Quartermaster.Models;
 using Quartermaster.Services;
 using Quartermaster.Views;
 using Radoub.Formats.Services;

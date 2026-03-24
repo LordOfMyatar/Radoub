@@ -143,19 +143,7 @@ public partial class NewCharacterWizardWindow
 
     private void ApplyFeatFilter()
     {
-        var filter = _featSearchBox?.Text?.Trim() ?? "";
-
-        if (string.IsNullOrEmpty(filter))
-        {
-            _filteredAvailableFeats = new List<FeatDisplayItem>(_availableFeats);
-        }
-        else
-        {
-            _filteredAvailableFeats = _availableFeats
-                .Where(f => f.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-        }
-
+        _filteredAvailableFeats = SkillDisplayHelper.FilterByName(_availableFeats, _featSearchBox?.Text?.Trim());
         _availableFeatsListBox.ItemsSource = _filteredAvailableFeats;
     }
 
