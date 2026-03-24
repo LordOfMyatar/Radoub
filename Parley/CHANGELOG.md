@@ -19,9 +19,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Flowchart Node Customization (#1906)
 
-- [ ] #906 - Flowchart: Configurable node width
-- [ ] #240 - Flowchart: Drag-drop sibling reorder
-- [ ] #1965 - Flowchart: Drag-drop reparent nodes
+- [x] #906 - Flowchart: Configurable node width (Settings slider, 100-400px)
+- [x] #240 - Flowchart: Drag-drop sibling reorder
+- [x] #1965 - Flowchart: Drag-drop reparent nodes (Entry↔Reply alternation enforced)
+- Link nodes can now be dragged in flowchart view
 
 ---
 
