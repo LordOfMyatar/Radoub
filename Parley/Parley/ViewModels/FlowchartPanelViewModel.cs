@@ -48,6 +48,21 @@ namespace DialogEditor.ViewModels
         public int NodeMaxLines => Program.Services.GetRequiredService<UISettingsService>().FlowchartNodeMaxLines;
 
         /// <summary>
+        /// Flowchart node width in pixels (#906). Bound for XAML MaxWidth.
+        /// </summary>
+        public int NodeWidth => Program.Services.GetRequiredService<UISettingsService>().FlowchartNodeWidth;
+
+        /// <summary>
+        /// Computed minimum width for flowchart nodes (#906). NodeWidth * 0.6.
+        /// </summary>
+        public int NodeMinWidth => (int)(NodeWidth * 0.6);
+
+        /// <summary>
+        /// Computed maximum width for text inside flowchart nodes (#906). NodeWidth - 20.
+        /// </summary>
+        public int NodeTextMaxWidth => NodeWidth - 20;
+
+        /// <summary>
         /// Notifies that a property has changed. Used by FlowchartPanel to trigger refresh on settings change.
         /// </summary>
         public new void OnPropertyChanged(string propertyName) => base.OnPropertyChanged(propertyName);

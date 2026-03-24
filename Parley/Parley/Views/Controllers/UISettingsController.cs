@@ -86,6 +86,18 @@ namespace DialogEditor.Views.Controllers
                 flowchartNodeMaxLinesLabel.Text = lines == 1 ? "1 line" : $"{lines} lines";
             }
 
+            // Flowchart node width (#906)
+            var flowchartNodeWidthSlider = _window.FindControl<Slider>("FlowchartNodeWidthSlider");
+            var flowchartNodeWidthLabel = _window.FindControl<TextBlock>("FlowchartNodeWidthLabel");
+            if (flowchartNodeWidthSlider != null)
+            {
+                flowchartNodeWidthSlider.Value = settings.FlowchartNodeWidth;
+            }
+            if (flowchartNodeWidthLabel != null)
+            {
+                flowchartNodeWidthLabel.Text = $"{settings.FlowchartNodeWidth} px";
+            }
+
             var externalEditorPathTextBox = _window.FindControl<TextBox>("ExternalEditorPathTextBox");
             if (externalEditorPathTextBox != null)
             {
@@ -212,6 +224,21 @@ namespace DialogEditor.Views.Controllers
             {
                 _settings.FlowchartNodeMaxLines = (int)s.Value;
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Flowchart node max lines: {(int)s.Value}");
+            }
+        }
+
+        public void OnFlowchartNodeWidthChanged(object? sender, RangeBaseValueChangedEventArgs e)
+        {
+            var label = _window.FindControl<TextBlock>("FlowchartNodeWidthLabel");
+            if (label != null && sender is Slider slider)
+            {
+                label.Text = $"{(int)slider.Value} px";
+            }
+
+            if (!_isInitializing() && sender is Slider s)
+            {
+                _settings.FlowchartNodeWidth = (int)s.Value;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Flowchart node width: {(int)s.Value}");
             }
         }
 

@@ -265,11 +265,22 @@ namespace DialogEditor.Views
             {
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
-                    // Notify that NodeMaxLines changed so bindings update
                     _viewModel.OnPropertyChanged(nameof(FlowchartPanelViewModel.NodeMaxLines));
-                    // Also refresh the graph to re-render nodes
                     _viewModel.RefreshGraph();
                     UnifiedLogger.LogUI(LogLevel.DEBUG, "Flowchart refreshed due to NodeMaxLines change");
+                });
+            }
+
+            // Refresh when flowchart node width changes (#906)
+            if (e.PropertyName == nameof(UISettingsService.FlowchartNodeWidth))
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    _viewModel.OnPropertyChanged(nameof(FlowchartPanelViewModel.NodeWidth));
+                    _viewModel.OnPropertyChanged(nameof(FlowchartPanelViewModel.NodeMinWidth));
+                    _viewModel.OnPropertyChanged(nameof(FlowchartPanelViewModel.NodeTextMaxWidth));
+                    _viewModel.RefreshGraph();
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, "Flowchart refreshed due to NodeWidth change");
                 });
             }
         }
@@ -690,7 +701,7 @@ namespace DialogEditor.Views
                 return false;
             }
 
-            return await FlowchartExportService.ExportToSvgAsync(graph, filePath, _viewModel.FileName);
+            return await FlowchartExportService.ExportToSvgAsync(graph, filePath, _viewModel.FileName, _uiSettings.FlowchartNodeWidth);
         }
 
         #endregion

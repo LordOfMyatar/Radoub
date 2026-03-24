@@ -303,6 +303,23 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- Flowchart Node Width (#906) -->
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Flowchart Node Width" FontWeight="Bold"/>
+                                <TextBlock Text="Width of nodes in the flowchart view (100-400 pixels)"
+                                          FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Slider x:Name="FlowchartNodeWidthSlider" Grid.Column="0"
+                                           Minimum="100" Maximum="400" Value="200"
+                                           TickFrequency="10" IsSnapToTickEnabled="True"
+                                           ValueChanged="OnFlowchartNodeWidthChanged"/>
+                                    <TextBlock x:Name="FlowchartNodeWidthLabel" Grid.Column="1"
+                                              Text="200 px" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
                         <!-- NPC Tag Coloring (Issue #16, #36) -->
                         <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">

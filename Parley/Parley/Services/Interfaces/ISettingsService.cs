@@ -36,6 +36,7 @@ namespace DialogEditor.Services
         string FlowchartLayout { get; set; }
         bool AllowScrollbarAutoHide { get; set; }
         int FlowchartNodeMaxLines { get; set; }
+        int FlowchartNodeWidth { get; set; }
         bool TreeViewWordWrap { get; set; }
 
         // Flowchart window (delegated to WindowLayoutService)

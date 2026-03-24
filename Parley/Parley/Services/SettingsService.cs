@@ -439,6 +439,12 @@ namespace DialogEditor.Services
             set => _uiSettings.FlowchartNodeMaxLines = value;
         }
 
+        public int FlowchartNodeWidth
+        {
+            get => _uiSettings.FlowchartNodeWidth;
+            set => _uiSettings.FlowchartNodeWidth = value;
+        }
+
         public bool TreeViewWordWrap
         {
             get => _uiSettings.TreeViewWordWrap;
@@ -596,7 +602,8 @@ namespace DialogEditor.Services
                             settings.AllowScrollbarAutoHide,
                             settings.FlowchartNodeMaxLines,
                             settings.TreeViewWordWrap,
-                            settings.UseSharedTheme);
+                            settings.UseSharedTheme,
+                            settings.FlowchartNodeWidth);
 
                         // Issue #179: Migrate speaker preferences to separate file
                         _legacyNpcSpeakerPreferences = settings.NpcSpeakerPreferences;
@@ -689,6 +696,7 @@ namespace DialogEditor.Services
                     DialogBrowserPanelVisible = DialogBrowserPanelVisible,
                     AllowScrollbarAutoHide = AllowScrollbarAutoHide,
                     FlowchartNodeMaxLines = FlowchartNodeMaxLines,
+                    FlowchartNodeWidth = FlowchartNodeWidth,
                     TreeViewWordWrap = TreeViewWordWrap,
                     // Issue #179: NpcSpeakerPreferences moved to SpeakerPreferences.json
                     EnableNpcTagColoring = EnableNpcTagColoring,
@@ -780,6 +788,7 @@ namespace DialogEditor.Services
             public bool DialogBrowserPanelVisible { get; set; } = true;
             public bool AllowScrollbarAutoHide { get; set; } = false;
             public int FlowchartNodeMaxLines { get; set; } = 3;
+            public int FlowchartNodeWidth { get; set; } = 200;
             public bool TreeViewWordWrap { get; set; } = false;
             public Dictionary<string, SpeakerPreferences>? NpcSpeakerPreferences { get; set; }
             public bool EnableNpcTagColoring { get; set; } = true;
