@@ -179,7 +179,7 @@ function Invoke-ThemeCompatScan {
     )
 
     # File/path exclusions (theme definitions, test files, infrastructure)
-    $excludeFileNames = @('BrushManager.cs', 'ThemeManager.cs', 'ThemeEditorViewModel.cs')
+    $excludeFileNames = @('BrushManager.cs', 'ThemeManager.cs', 'ThemeManager.Resources.cs', 'ThemeEditorViewModel.cs')
 
     $violations = @()
 

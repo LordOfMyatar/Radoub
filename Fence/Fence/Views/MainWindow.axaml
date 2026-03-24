@@ -80,6 +80,9 @@
                 <MenuItem Header="_Refresh Item Palette" Click="OnRefreshItemPalette"/>
             </MenuItem>
             <MenuItem Header="_Help">
+                <MenuItem Header="_Export Logs for Support..." Click="OnExportLogsClick"/>
+                <MenuItem Header="Open Log _Folder" Click="OnOpenLogFolderClick"/>
+                <Separator/>
                 <MenuItem Header="_About Fence" Click="OnAboutClick"/>
             </MenuItem>
         </Menu>

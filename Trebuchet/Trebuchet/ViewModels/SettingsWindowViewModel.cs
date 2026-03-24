@@ -63,6 +63,9 @@ public partial class SettingsWindowViewModel : ObservableObject
     [ObservableProperty]
     private int _logRetentionSessions = 3;
 
+    [ObservableProperty]
+    private bool _isSharedLogging;
+
     public string LogRetentionText => $"{LogRetentionSessions} session{(LogRetentionSessions == 1 ? "" : "s")}";
 
     public ObservableCollection<string> AvailableLogLevels { get; } = new()
@@ -111,9 +114,13 @@ public partial class SettingsWindowViewModel : ObservableObject
         NwnDocumentsPath = sharedSettings.NeverwinterNightsPath ?? "";
         FontSizeScale = localSettings.FontSizeScale;
 
-        // Logging settings
+        // Logging settings — show effective log level
         LogRetentionSessions = localSettings.LogRetentionSessions;
-        SelectedLogLevel = localSettings.CurrentLogLevel.ToString();
+        IsSharedLogging = sharedSettings.UseSharedLogging;
+        var effectiveLevel = sharedSettings.UseSharedLogging
+            ? sharedSettings.SharedLogLevel
+            : localSettings.CurrentLogLevel;
+        SelectedLogLevel = effectiveLevel.ToString();
 
         // Shared theme setting
         UseSharedTheme = sharedSettings.UseSharedTheme;

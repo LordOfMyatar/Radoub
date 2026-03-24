@@ -17,6 +17,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.101] - 2026-03-23
+**Branch**: `radoub/issue-1901` | **PR**: #1957
+
+### Sprint: Housekeeping, Logging Parity & Model Code Quality (#1901)
+
+- [x] #1897 — Housekeeping: theme scan exclusion, /pre-warm skill, init-item plan detection
+- [x] #1891 — Export Logs + Open Log Folder for all tools, Trebuchet effective log level fix
+- [x] #1681 — Split ModelPreviewGLControl into ModelViewController + OpenGLShaderManager
+- [x] #1670 — TDD: fixture-free tests for PltColorIndices, ModelViewController, TextureService helpers, model naming
+
+---
+
 ## [0.9.100] - TBD
 **Branch**: `radoub/issue-1942` | **PR**: #1952
 

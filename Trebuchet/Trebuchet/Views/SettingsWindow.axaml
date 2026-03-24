@@ -153,10 +153,16 @@
                                    Text="Log Level:"
                                    VerticalAlignment="Center"
                                    Margin="0,0,12,0"/>
-                        <ComboBox Grid.Row="0" Grid.Column="1"
-                                  ItemsSource="{Binding AvailableLogLevels}"
-                                  SelectedItem="{Binding SelectedLogLevel}"
-                                  MinWidth="200"/>
+                        <StackPanel Grid.Row="0" Grid.Column="1"
+                                    Orientation="Horizontal" Spacing="8">
+                            <ComboBox ItemsSource="{Binding AvailableLogLevels}"
+                                      SelectedItem="{Binding SelectedLogLevel}"
+                                      MinWidth="200"/>
+                            <TextBlock Text="(Shared)"
+                                       VerticalAlignment="Center"
+                                       Opacity="0.6"
+                                       IsVisible="{Binding IsSharedLogging}"/>
+                        </StackPanel>
 
                         <TextBlock Grid.Row="1" Grid.Column="0"
                                    Text="Session Retention:"

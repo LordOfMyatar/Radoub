@@ -93,7 +93,23 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-Cac
 Continue anyway? [y/n]
 ```
 
-**If no similar issues**, proceed silently to Step 4.
+**If no similar issues**, proceed silently to Step 3b.
+
+### Step 3b: Check for Pre-Warmed Plan
+
+Search for an existing implementation plan matching the issue number:
+
+```bash
+# Check for pre-warmed plan (created by /pre-warm)
+ls NonPublic/Plans/*-[number]-plan.md 2>/dev/null
+```
+
+**If found**, announce to user:
+
+> **Pre-warmed plan found**: `[path]`
+> This plan was prepared in a previous session. Review it before starting implementation.
+
+**If not found**, proceed silently to Step 4.
 
 ### Step 4: Determine Item Type and Branch Name
 

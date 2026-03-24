@@ -33,6 +33,25 @@ public class ModelService
     }
 
     /// <summary>
+    /// Build the base model prefix for a part-based creature.
+    /// Format: p{gender}{race}{phenotype} (e.g., "pfo0" = playable female, race O, phenotype 0)
+    /// </summary>
+    internal static string BuildModelPrefix(int gender, string race, int phenotype)
+    {
+        var genderChar = gender == 1 ? 'f' : 'm';
+        return $"p{genderChar}{race.ToLowerInvariant()}{phenotype}";
+    }
+
+    /// <summary>
+    /// Build a body part model name from prefix, part type, and part number.
+    /// Format: {prefix}_{partType}{partNumber:D3} (e.g., "pfo0_head001")
+    /// </summary>
+    internal static string BuildBodyPartName(string prefix, string partType, byte partNumber)
+    {
+        return $"{prefix}_{partType}{partNumber:D3}";
+    }
+
+    /// <summary>
     /// Load the model for a creature based on its appearance settings.
     /// For part-based models, loads and combines body part models.
     /// Equipped armor can override certain body parts.
@@ -170,10 +189,7 @@ public class ModelService
         if (string.IsNullOrEmpty(race) || race == "****")
             return null;
 
-        // Build base model prefix: p{gender}{race}{phenotype}
-        // e.g., pfo0 for playable female O phenotype 0
-        var genderChar = creature.Gender == 1 ? 'f' : 'm';
-        var basePrefix = $"p{genderChar}{race.ToLowerInvariant()}{creature.Phenotype}";
+        var basePrefix = BuildModelPrefix(creature.Gender, race, creature.Phenotype);
 
         UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadPartBasedCreatureModel: basePrefix={basePrefix}");
 
@@ -303,9 +319,7 @@ public class ModelService
     private void TryAddBodyPartCore(MdlModel compositeModel, string basePrefix, string partType, byte partNumber)
     {
 
-        // Format: {basePrefix}_{partType}{partNumber:D3}
-        // e.g., pfo0_head001
-        var partName = $"{basePrefix}_{partType}{partNumber:D3}";
+        var partName = BuildBodyPartName(basePrefix, partType, partNumber);
         var partModel = LoadModelPreferBIF(partName);
 
         // If not found with race-specific prefix, try human fallback
@@ -690,10 +704,7 @@ public class ModelService
         if (modelType?.ToUpperInvariant().Contains("P") == true)
         {
             // Part-based model - RACE is just a letter (e.g., "O" for Half-Elf)
-            // Model name format: p{gender}{race}{phenotype}
-            // Examples: pmo0 (playable male O phenotype 0), pfo0 (playable female O phenotype 0)
-            var genderChar = gender == 1 ? 'f' : 'm'; // 0=male, 1=female
-            modelName = $"p{genderChar}{race.ToLowerInvariant()}{phenotype}";
+            modelName = BuildModelPrefix(gender, race, phenotype);
         }
         else
         {

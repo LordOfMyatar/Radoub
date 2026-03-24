@@ -151,6 +151,9 @@
                 <MenuItem Header="Edit Settings _File..." Click="OnEditSettingsFileClick"/>
             </MenuItem>
             <MenuItem Header="_Help">
+                <MenuItem Header="_Export Logs for Support..." Click="OnExportLogsClick"/>
+                <MenuItem Header="Open Log _Folder" Click="OnOpenLogFolderClick"/>
+                <Separator/>
                 <MenuItem Header="_Documentation" Click="OnDocumentationClick"/>
                 <MenuItem Header="_Report Issue" Click="OnReportIssueClick"/>
                 <Separator/>

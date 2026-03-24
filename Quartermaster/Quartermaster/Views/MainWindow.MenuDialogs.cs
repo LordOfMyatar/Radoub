@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
@@ -74,6 +75,81 @@ public partial class MainWindow
     private void OnAboutClick(object? sender, RoutedEventArgs e)
     {
         DialogHelper.ShowAboutDialog(this);
+    }
+
+    private async void OnExportLogsClick(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var logFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Radoub", "Quartermaster", "Logs");
+
+            if (!Directory.Exists(logFolder))
+            {
+                UpdateStatus("No logs to export");
+                return;
+            }
+
+            var storageProvider = StorageProvider;
+            var options = new Avalonia.Platform.Storage.FilePickerSaveOptions
+            {
+                Title = "Export Logs for Support",
+                SuggestedFileName = $"Quartermaster_Logs_{DateTime.Now:yyyyMMdd_HHmmss}.zip",
+                FileTypeChoices = new[]
+                {
+                    new Avalonia.Platform.Storage.FilePickerFileType("ZIP Archive")
+                    {
+                        Patterns = new[] { "*.zip" }
+                    }
+                }
+            };
+
+            var file = await storageProvider.SaveFilePickerAsync(options);
+            if (file == null) return;
+
+            var result = file.Path.LocalPath;
+            if (File.Exists(result)) File.Delete(result);
+
+            ZipFile.CreateFromDirectory(logFolder, result);
+
+            UpdateStatus($"Logs exported to: {Path.GetFileName(result)}");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Exported logs to: ~/{Path.GetFileName(result)}");
+        }
+        catch (Exception ex)
+        {
+            UpdateStatus($"Failed to export logs: {ex.Message}");
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to export logs: {ex.Message}");
+        }
+    }
+
+    private void OnOpenLogFolderClick(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var logFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Radoub", "Quartermaster", "Logs");
+
+            if (!Directory.Exists(logFolder))
+            {
+                UpdateStatus("Log folder does not exist yet");
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = logFolder,
+                UseShellExecute = true
+            });
+
+            UnifiedLogger.LogApplication(LogLevel.INFO, "Opened log folder");
+        }
+        catch (Exception ex)
+        {
+            UpdateStatus($"Failed to open log folder: {ex.Message}");
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open log folder: {ex.Message}");
+        }
     }
 
     private void OnLevelUpClick(object? sender, RoutedEventArgs e) => LaunchLevelUpWizard();

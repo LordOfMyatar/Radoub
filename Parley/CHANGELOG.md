@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### From Sprint #1901 (Radoub-level)
+
+- Added Export Logs and Open Log Folder to Help menu for consistency (#1891)
+
 ---
 
 ## [0.1.158-alpha] - 2026-03-22
