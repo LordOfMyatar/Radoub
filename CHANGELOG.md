@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.101] - 2026-03-23
-**Branch**: `radoub/issue-1901` | **PR**: #TBD
+**Branch**: `radoub/issue-1901` | **PR**: #1957
 
 ### Sprint: Housekeeping, Logging Parity & Model Code Quality (#1901)
 
