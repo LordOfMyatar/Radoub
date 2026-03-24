@@ -22,10 +22,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Housekeeping, Logging Parity & Model Code Quality (#1901)
 
-- [ ] #1897 — Housekeeping: miscellaneous small fixes (theme scan, dead code, log-level bug)
-- [ ] #1891 — Audit logging parity and docs across all tools (Export Logs, Open Log Folder)
-- [ ] #1681 — Split ModelPreviewGLControl.cs into focused classes
-- [ ] #1670 — TDD: ModelService & TextureService test coverage (fixture-free)
+- [x] #1897 — Housekeeping: theme scan exclusion, /pre-warm skill, init-item plan detection
+- [x] #1891 — Export Logs + Open Log Folder for all tools, Trebuchet effective log level fix
+- [x] #1681 — Split ModelPreviewGLControl into ModelViewController + OpenGLShaderManager
+- [x] #1670 — TDD: fixture-free tests for PltColorIndices, ModelViewController, TextureService helpers, model naming
 
 ---
 
