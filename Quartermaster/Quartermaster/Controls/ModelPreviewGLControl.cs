@@ -23,7 +23,8 @@ namespace Quartermaster.Controls;
 public class ModelPreviewGLControl : OpenGlControlBase
 {
     private GL? _gl;
-    private uint _shaderProgram;
+    private OpenGLShaderManager? _shaderManager;
+    private readonly ModelViewController _viewController = new();
     private uint _vao;
     private uint _vbo;
     private uint _ebo;
@@ -44,86 +45,12 @@ public class ModelPreviewGLControl : OpenGlControlBase
     private MdlModel? _model;
     private TextureService? _textureService;
     private bool _preferBifTextures;
-    private float _rotationY = MathF.PI; // Default 180° so model faces camera
-    private float _rotationX;
-    private float _zoom = 1.0f;
-    private Vector3 _cameraTarget = Vector3.Zero;
-    private float _modelRadius = 1.0f;
-    private bool _hasVertexBounds;
 
     // PLT color indices for texture rendering
     private PltColorIndices _colorIndices = new();
     private bool _needsTextureUpdate;
     private bool _needsMeshUpdate;
     private bool _logOncePerModel;
-
-    // Shader source code - GLSL ES 300 for ANGLE compatibility on Windows
-    // Avalonia uses ANGLE which provides OpenGL ES, not desktop OpenGL
-    private const string VertexShaderSource = @"#version 300 es
-precision highp float;
-
-layout (location = 0) in vec3 aPosition;
-layout (location = 1) in vec3 aNormal;
-layout (location = 2) in vec2 aTexCoord;
-
-out vec3 FragPos;
-out vec3 Normal;
-out vec2 TexCoord;
-
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
-
-void main()
-{
-    FragPos = vec3(model * vec4(aPosition, 1.0));
-    Normal = mat3(model) * aNormal;
-    TexCoord = aTexCoord;
-    gl_Position = projection * view * model * vec4(aPosition, 1.0);
-}
-";
-
-    private const string FragmentShaderSource = @"#version 300 es
-precision highp float;
-
-out vec4 FragColor;
-
-in vec3 FragPos;
-in vec3 Normal;
-in vec2 TexCoord;
-
-uniform sampler2D diffuseTexture;
-uniform vec3 lightDir;
-uniform vec3 lightColor;
-uniform vec3 ambientColor;
-uniform bool hasTexture;
-uniform vec3 flatColor;
-
-void main()
-{
-    // Two-sided lighting: use abs() so thin surfaces (bat wings, dragon
-    // membranes) are lit from both sides. The Aurora Engine renders these
-    // single-layer polygons visible from both directions (#1867).
-    vec3 norm = normalize(Normal);
-    float diff = abs(dot(norm, lightDir));
-    vec3 diffuse = diff * lightColor;
-    vec3 ambient = ambientColor;
-
-    vec3 baseColor;
-    if (hasTexture) {
-        baseColor = texture(diffuseTexture, TexCoord).rgb;
-    } else {
-        baseColor = flatColor;
-    }
-
-    vec3 result = (ambient + diffuse) * baseColor;
-
-    // Gamma correction: NWN textures are sRGB; brighten midtones to match toolset look
-    result = pow(result, vec3(1.0 / 1.6));
-
-    FragColor = vec4(result, 1.0);
-}
-";
 
     /// <summary>
     /// The model to render.
@@ -137,7 +64,7 @@ void main()
             _needsMeshUpdate = true;
             _needsTextureUpdate = true;  // New model needs textures loaded
             _logOncePerModel = true;
-            CenterCamera();
+            _viewController.CenterCamera();
             RequestNextFrameRendering();
         }
     }
@@ -147,10 +74,10 @@ void main()
     /// </summary>
     public float RotationY
     {
-        get => _rotationY;
+        get => _viewController.RotationY;
         set
         {
-            _rotationY = value;
+            _viewController.RotationY = value;
             RequestNextFrameRendering();
         }
     }
@@ -160,10 +87,10 @@ void main()
     /// </summary>
     public float RotationX
     {
-        get => _rotationX;
+        get => _viewController.RotationX;
         set
         {
-            _rotationX = value;
+            _viewController.RotationX = value;
             RequestNextFrameRendering();
         }
     }
@@ -173,10 +100,10 @@ void main()
     /// </summary>
     public float Zoom
     {
-        get => _zoom;
+        get => _viewController.Zoom;
         set
         {
-            _zoom = Math.Clamp(value, 0.1f, 10f);
+            _viewController.Zoom = value;
             RequestNextFrameRendering();
         }
     }
@@ -293,8 +220,7 @@ void main()
     /// </summary>
     public void Rotate(float deltaY, float deltaX = 0)
     {
-        _rotationY += deltaY;
-        _rotationX += deltaX;
+        _viewController.Rotate(deltaY, deltaX);
         RequestNextFrameRendering();
     }
 
@@ -303,155 +229,8 @@ void main()
     /// </summary>
     public void ResetView()
     {
-        _rotationY = MathF.PI;
-        _rotationX = 0;
-        _zoom = 1.0f;
-        // Use vertex-computed bounds if available, otherwise safe defaults.
-        // Don't call CenterCamera() — model stored bounds are unreliable
-        // (they include the full skeleton hierarchy, not just rendered mesh).
-        if (!_hasVertexBounds)
-        {
-            _cameraTarget = Vector3.Zero;
-            _modelRadius = 1.0f;
-        }
+        _viewController.ResetView();
         RequestNextFrameRendering();
-    }
-
-    private void CenterCamera()
-    {
-        // Set safe defaults. Actual center and radius are computed from
-        // rendered vertices in UpdateMeshBuffers(). The model's stored
-        // BoundingMin/Max encompasses the full skeleton hierarchy and is
-        // much larger than the visible mesh.
-        _cameraTarget = Vector3.Zero;
-        _modelRadius = 1.0f;
-        _hasVertexBounds = false;
-    }
-
-    /// <summary>
-    /// Calculate the world transform matrix for a node by walking up the parent chain.
-    /// Combines position, rotation (quaternion), and scale from each ancestor.
-    ///
-    /// Transform order for each node: Scale first, then Rotate, then Translate (SRT)
-    /// This means vertices are scaled, rotated, then positioned.
-    ///
-    /// For hierarchical transforms: Parent * Child
-    /// So a vertex transforms as: RootTransform * ... * ParentTransform * NodeTransform * vertex
-    /// </summary>
-    private static Matrix4x4 GetWorldTransform(MdlNode? node)
-    {
-        // System.Numerics uses row-major convention where Vector3.Transform(v, M) = v * M
-        // For hierarchical transforms: v_world = v_local * NodeLocal * ParentLocal * ... * RootLocal
-        // So we need: worldTransform = NodeLocal * ParentLocal * ... * RootLocal
-        // We walk leaf-to-root, accumulating: world = local * world
-        //
-        // Each local transform: vertex is scaled, rotated, then translated
-        // In row-major: localTransform = S * R * T (applied left-to-right on row vector)
-        var worldTransform = Matrix4x4.Identity;
-        var current = node;
-
-        while (current != null)
-        {
-            var scale = Matrix4x4.CreateScale(current.Scale);
-            var rotation = Matrix4x4.CreateFromQuaternion(current.Orientation);
-            var translation = Matrix4x4.CreateTranslation(current.Position);
-
-            // Row-major local transform: S * R * T
-            var localTransform = scale * rotation * translation;
-
-            // Accumulate: node * parent * grandparent * ... * root
-            worldTransform = worldTransform * localTransform;
-
-            current = current.Parent;
-        }
-
-        return worldTransform;
-    }
-
-    /// <summary>
-    /// Transform a position vector by a matrix.
-    /// </summary>
-    private static Vector3 TransformPosition(Vector3 position, Matrix4x4 matrix)
-    {
-        return Vector3.Transform(position, matrix);
-    }
-
-    /// <summary>
-    /// Transform a normal vector by a matrix (ignores translation, handles non-uniform scale).
-    /// </summary>
-    private static Vector3 TransformNormal(Vector3 normal, Matrix4x4 matrix)
-    {
-        // For normals, we need the inverse transpose of the upper-left 3x3
-        // For uniform scale and rotation only, we can simplify to just the rotation part
-        // Extract rotation/scale portion and transform
-        var transformed = Vector3.TransformNormal(normal, matrix);
-        return Vector3.Normalize(transformed);
-    }
-
-    /// <summary>
-    /// Apply bone-weighted skinning transform to a vertex position.
-    /// The on-disk data contains INVERSE bind-pose transforms (world→bone space).
-    /// To display in world space, we invert: v_world = Q_fwd * (v_local - T_inv)
-    /// where Q_fwd = conjugate(Q_inv).
-    /// </summary>
-    private static Vector3 ApplySkinTransform(Vector3 vertex, int vertexIndex, Radoub.Formats.Mdl.MdlSkinNode skin)
-    {
-        var bw = skin.BoneWeights[vertexIndex];
-        var result = Vector3.Zero;
-
-        void Accumulate(int boneIndex, float weight)
-        {
-            if (weight <= 0 || boneIndex < 0) return;
-            if (boneIndex >= skin.BoneQuaternions.Length || boneIndex >= skin.BoneTranslations.Length) return;
-
-            // NWN runtime skinning formula: v_world = Q_stored * v_local + T_stored
-            // Q_stored has W=-1 for identity-rotation bones, which causes Vector3.Transform
-            // to NEGATE the vertex. This is intentional — the stored T compensates.
-            // Use quaternion as-is (do NOT normalize W to +1).
-            var q = skin.BoneQuaternions[boneIndex];
-            var t = skin.BoneTranslations[boneIndex];
-            var rotated = Vector3.Transform(vertex, q);
-            result += weight * (rotated + t);
-        }
-
-        Accumulate(bw.Bone0, bw.Weight0);
-        Accumulate(bw.Bone1, bw.Weight1);
-        Accumulate(bw.Bone2, bw.Weight2);
-        Accumulate(bw.Bone3, bw.Weight3);
-
-        // Guard against NaN from invalid bone data or degenerate transforms
-        if (float.IsNaN(result.X) || float.IsNaN(result.Y) || float.IsNaN(result.Z))
-            return vertex; // Fall back to raw vertex
-
-        return result;
-    }
-
-    /// <summary>
-    /// Apply bone-weighted skinning rotation to a normal vector.
-    /// Only applies the rotation component (no translation for normals).
-    /// </summary>
-    private static Vector3 ApplySkinNormalTransform(Vector3 normal, int vertexIndex, Radoub.Formats.Mdl.MdlSkinNode skin)
-    {
-        var bw = skin.BoneWeights[vertexIndex];
-        var result = Vector3.Zero;
-
-        void Accumulate(int boneIndex, float weight)
-        {
-            if (weight <= 0 || boneIndex < 0) return;
-            if (boneIndex >= skin.BoneQuaternions.Length) return;
-
-            // Use stored Q as-is — same formula as position transform (Q negates for W=-1 bones)
-            var q = skin.BoneQuaternions[boneIndex];
-            result += weight * Vector3.Transform(normal, q);
-        }
-
-        Accumulate(bw.Bone0, bw.Weight0);
-        Accumulate(bw.Bone1, bw.Weight1);
-        Accumulate(bw.Bone2, bw.Weight2);
-        Accumulate(bw.Bone3, bw.Weight3);
-
-        var len = result.Length();
-        return len > 0.0001f ? result / len : Vector3.UnitZ;
     }
 
     protected override void OnOpenGlInit(GlInterface gl)
@@ -463,29 +242,9 @@ void main()
             // Create Silk.NET GL context from Avalonia's proc address loader
             _gl = GL.GetApi(gl.GetProcAddress);
 
-            // Compile shaders
-            var vertexShader = CompileShader(ShaderType.VertexShader, VertexShaderSource);
-            var fragmentShader = CompileShader(ShaderType.FragmentShader, FragmentShaderSource);
-
-            // Link program
-            _shaderProgram = _gl.CreateProgram();
-            _gl.AttachShader(_shaderProgram, vertexShader);
-            _gl.AttachShader(_shaderProgram, fragmentShader);
-            _gl.LinkProgram(_shaderProgram);
-
-            _gl.GetProgram(_shaderProgram, ProgramPropertyARB.LinkStatus, out var status);
-            if (status == 0)
-            {
-                var log = _gl.GetProgramInfoLog(_shaderProgram);
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Shader link error: {log}");
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.INFO, "Shaders compiled and linked successfully");
-            }
-
-            _gl.DeleteShader(vertexShader);
-            _gl.DeleteShader(fragmentShader);
+            // Compile and link shaders via manager
+            _shaderManager = new OpenGLShaderManager(_gl);
+            _shaderManager.CreateProgram();
 
             // Create VAO/VBO/EBO
             _vao = _gl.GenVertexArray();
@@ -497,31 +256,6 @@ void main()
         catch (Exception ex)
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"OpenGL init failed: {ex.Message}");
-        }
-    }
-
-    private uint CompileShader(ShaderType type, string source)
-    {
-        try
-        {
-            var shader = _gl!.CreateShader(type);
-            _gl.ShaderSource(shader, source);
-            _gl.CompileShader(shader);
-
-            _gl.GetShader(shader, ShaderParameterName.CompileStatus, out var status);
-            if (status == 0)
-            {
-                var log = _gl.GetShaderInfoLog(shader);
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Shader compile error ({type}): {log}");
-            }
-
-            return shader;
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogApplication(LogLevel.ERROR,
-                $"CompileShader failed ({type}): {ex.GetType().Name}: {ex.Message}");
-            return 0;
         }
     }
 
@@ -542,7 +276,8 @@ void main()
                 _gl.DeleteBuffer(_vbo);
                 _gl.DeleteBuffer(_ebo);
                 _gl.DeleteVertexArray(_vao);
-                _gl.DeleteProgram(_shaderProgram);
+                _shaderManager?.Cleanup();
+                _shaderManager = null;
                 _gl = null;
             }
         }
@@ -632,8 +367,8 @@ void main()
         float halfFovTan = MathF.Tan(fovRadians * 0.5f);
 
         // Camera distance so the model fills ~90% of view height at zoom=1
-        float radius = Math.Max(_modelRadius, 0.001f);
-        float cameraDistance = (radius / halfFovTan) / _zoom;
+        float radius = Math.Max(_viewController.ModelRadius, 0.001f);
+        float cameraDistance = (radius / halfFovTan) / _viewController.Zoom;
 
         var projection = Matrix4x4.CreatePerspectiveFieldOfView(
             fovRadians, aspect, cameraDistance * 0.01f, cameraDistance * 100f);
@@ -646,31 +381,31 @@ void main()
         // No scale needed — perspective + camera distance handles framing.
         // The view matrix (LookAt with Z-up) already handles coordinate conversion,
         // so no extra Z-up to Y-up tilt is needed here.
-        var m = Matrix4x4.CreateRotationZ(_rotationY);
-        m = Matrix4x4.CreateRotationX(_rotationX) * m;
+        var m = Matrix4x4.CreateRotationZ(_viewController.RotationY);
+        m = Matrix4x4.CreateRotationX(_viewController.RotationX) * m;
 
         var modelMatrix = m;
 
         // Use shader
-        _gl.UseProgram(_shaderProgram);
+        _gl.UseProgram(_shaderManager!.ShaderProgram);
 
         // Set uniforms
-        SetUniformMatrix4("model", modelMatrix);
-        SetUniformMatrix4("view", view);
-        SetUniformMatrix4("projection", projection);
+        _shaderManager!.SetUniformMatrix4("model", modelMatrix);
+        _shaderManager!.SetUniformMatrix4("view", view);
+        _shaderManager!.SetUniformMatrix4("projection", projection);
 
         // Debug logging - only log once per model
         if (_logOncePerModel)
         {
             _logOncePerModel = false;
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Render: camDist={cameraDistance:F3}, radius={_modelRadius:F3}");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Render: camDist={cameraDistance:F3}, radius={_viewController.ModelRadius:F3}");
         }
 
         // Lighting - match NWN toolset brightness with higher ambient fill
         var lightDir = Vector3.Normalize(new Vector3(0.3f, -0.5f, 0.8f));
-        SetUniformVec3("lightDir", lightDir);
-        SetUniformVec3("lightColor", new Vector3(0.7f, 0.7f, 0.7f));
-        SetUniformVec3("ambientColor", new Vector3(0.45f, 0.45f, 0.45f));
+        _shaderManager!.SetUniformVec3("lightDir", lightDir);
+        _shaderManager!.SetUniformVec3("lightColor", new Vector3(0.7f, 0.7f, 0.7f));
+        _shaderManager!.SetUniformVec3("ambientColor", new Vector3(0.45f, 0.45f, 0.45f));
 
         // Bind VAO and draw
         _gl.BindVertexArray(_vao);
@@ -693,15 +428,15 @@ void main()
 
             if (hasTexture)
             {
-                SetUniformBool("hasTexture", true);
+                _shaderManager!.SetUniformBool("hasTexture", true);
                 _gl.ActiveTexture(TextureUnit.Texture0);
                 _gl.BindTexture(TextureTarget.Texture2D, _textureCache[resolvedTexture!]);
-                SetUniformInt("diffuseTexture", 0);
+                _shaderManager!.SetUniformInt("diffuseTexture", 0);
             }
             else
             {
-                SetUniformBool("hasTexture", false);
-                SetUniformVec3("flatColor", new Vector3(0.6f, 0.6f, 0.6f)); // Neutral gray for untextured meshes
+                _shaderManager!.SetUniformBool("hasTexture", false);
+                _shaderManager!.SetUniformVec3("flatColor", new Vector3(0.6f, 0.6f, 0.6f)); // Neutral gray for untextured meshes
             }
 
             // Use unsafe pointer for DrawElements offset
@@ -789,7 +524,7 @@ void main()
             // All meshes: apply full hierarchy world transform.
             // Skin mesh vertices (m_pavVerts) are in bind-pose space — same treatment as trimesh.
             // m_aQBoneRefInv/m_aTBoneRefInv are inverse bind-pose matrices for runtime animation, not static display.
-            var worldTransform = GetWorldTransform(mesh);
+            var worldTransform = ModelViewController.GetWorldTransform(mesh);
             bool hasWorldTransform = worldTransform != Matrix4x4.Identity;
 
             // Count NaN vertices - we'll skip them during rendering
@@ -856,7 +591,7 @@ void main()
                 // Skin mesh vertices (m_pavVerts) are stored in bind-pose space — apply
                 // the node hierarchy transform exactly like NWNExplorer does (no bone weighting
                 // needed for static bind-pose display; Q/T arrays are for runtime animation).
-                Vector3 v = hasWorldTransform ? TransformPosition(localVertex, worldTransform) : localVertex;
+                Vector3 v = hasWorldTransform ? ModelViewController.TransformPosition(localVertex, worldTransform) : localVertex;
 
                 // Position
                 vertices.Add(v.X);
@@ -869,7 +604,7 @@ void main()
                 {
                     normal = mesh.Normals[i];
                     if (hasWorldTransform)
-                        normal = TransformNormal(normal, worldTransform);
+                        normal = ModelViewController.TransformNormal(normal, worldTransform);
                 }
                 else
                 {
@@ -961,8 +696,7 @@ void main()
             if (minX == float.MaxValue)
             {
                 UnifiedLogger.LogApplication(LogLevel.WARN, "All vertices were NaN — skipping centering");
-                _modelRadius = 1.0f;
-                _hasVertexBounds = false;
+                _viewController.UpdateBounds(1.0f, false);
             }
             else
             {
@@ -984,15 +718,12 @@ void main()
             float sizeX = maxX - minX;
             float sizeY = maxY - minY;
             float sizeZ = maxZ - minZ;
-            _modelRadius = Math.Max(Math.Max(sizeX, sizeY), sizeZ) * 0.5f;
-            _hasVertexBounds = true;
-
-            // Vertices are now centered at origin — no need for screenOffset or _cameraTarget
-            _cameraTarget = Vector3.Zero;
+            var computedRadius = Math.Max(Math.Max(sizeX, sizeY), sizeZ) * 0.5f;
+            _viewController.UpdateBounds(computedRadius, true);
 
             UnifiedLogger.LogApplication(LogLevel.INFO,
                 $"Vertex bounds: X=[{minX:F2},{maxX:F2}] Y=[{minY:F2},{maxY:F2}] Z=[{minZ:F2},{maxZ:F2}], " +
-                $"pre-centered by ({center.X:F2}, {center.Y:F2}, {center.Z:F2}), radius={_modelRadius:F2}");
+                $"pre-centered by ({center.X:F2}, {center.Y:F2}, {center.Z:F2}), radius={computedRadius:F2}");
             } // else (valid bounds)
         }
 
@@ -1158,72 +889,6 @@ void main()
         _gl.BindTexture(TextureTarget.Texture2D, 0);
 
         return texId;
-    }
-
-    private bool _loggedUniforms;
-    private void SetUniformMatrix4(string name, Matrix4x4 matrix)
-    {
-        var location = _gl!.GetUniformLocation(_shaderProgram, name);
-        if (!_loggedUniforms && name == "projection")
-        {
-            _loggedUniforms = true;
-            var modelLoc = _gl.GetUniformLocation(_shaderProgram, "model");
-            var viewLoc = _gl.GetUniformLocation(_shaderProgram, "view");
-            var projLoc = location;
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Uniform locations: model={modelLoc}, view={viewLoc}, projection={projLoc}");
-        }
-        if (location >= 0)
-        {
-            // System.Numerics uses row-vector convention: result = v * M
-            // GLSL uses column-vector convention: result = M_gl * v
-            // For these to agree, GLSL needs M^T (the transpose).
-            // We write M^T in column-major order (which OpenGL expects).
-            // M^T columns = M rows, so column 0 of M^T = row 0 of M = {M11,M12,M13,M14}.
-            ReadOnlySpan<float> values = stackalloc float[16]
-            {
-                matrix.M11, matrix.M12, matrix.M13, matrix.M14,  // M^T column 0 = M row 0
-                matrix.M21, matrix.M22, matrix.M23, matrix.M24,  // M^T column 1 = M row 1
-                matrix.M31, matrix.M32, matrix.M33, matrix.M34,  // M^T column 2 = M row 2
-                matrix.M41, matrix.M42, matrix.M43, matrix.M44   // M^T column 3 = M row 3
-            };
-            _gl.UniformMatrix4(location, 1, false, values);
-        }
-    }
-
-    private void SetUniformVec3(string name, Vector3 value)
-    {
-        var location = _gl!.GetUniformLocation(_shaderProgram, name);
-        if (location >= 0)
-        {
-            _gl.Uniform3(location, value.X, value.Y, value.Z);
-        }
-    }
-
-    private void SetUniformBool(string name, bool value)
-    {
-        var location = _gl!.GetUniformLocation(_shaderProgram, name);
-        if (location >= 0)
-        {
-            _gl.Uniform1(location, value ? 1 : 0);
-        }
-    }
-
-    private void SetUniformInt(string name, int value)
-    {
-        var location = _gl!.GetUniformLocation(_shaderProgram, name);
-        if (location >= 0)
-        {
-            _gl.Uniform1(location, value);
-        }
-    }
-
-    private void SetUniformFloat(string name, float value)
-    {
-        var location = _gl!.GetUniformLocation(_shaderProgram, name);
-        if (location >= 0)
-        {
-            _gl.Uniform1(location, value);
-        }
     }
 
     /// <summary>
