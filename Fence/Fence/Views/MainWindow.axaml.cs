@@ -74,6 +74,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     // Cancellation token for async operations - cancelled on window close
     private CancellationTokenSource? _windowCts;
 
+    // Shared filter panel for item palette
+    private ItemFilterPanel? _paletteFilter;
+
     // Store palette categories loaded from storepal.itp
     // Maps dropdown index to category ID for CEP/custom content support
     private readonly List<PaletteCategory> _storeCategories = new();
@@ -91,6 +94,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         InitializeComponent();
         DataContext = this;
+
+        // Find shared filter panel
+        _paletteFilter = this.FindControl<ItemFilterPanel>("PaletteFilter");
 
         // Wire up shared document state for title bar updates
         _documentState.DirtyStateChanged += () => Title = _documentState.GetTitle();
@@ -426,9 +432,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 }
                 ItemTypeCheckboxes.ItemsSource = SelectableBaseItemTypes;
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {SelectableBaseItemTypes.Count} base item types for buy restrictions");
-
-                // Populate type filter after base items loaded
-                PopulateTypeFilter();
             });
         }
         catch (OperationCanceledException)

@@ -2,7 +2,6 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using MerchantEditor.ViewModels;
-using Radoub.Formats.Services;
 using Radoub.Formats.Utm;
 using Radoub.UI.Services;
 using Radoub.UI.ViewModels;
@@ -317,74 +316,6 @@ public partial class MainWindow
 
             StoreInventoryGrid.ItemsSource = filtered;
         }
-    }
-
-    private async void OnPaletteSearchTextChanged(object? sender, TextChangedEventArgs e)
-    {
-        // If user is searching, load all items first (search needs full dataset)
-        var searchText = PaletteSearchBox.Text?.Trim() ?? "";
-        if (!string.IsNullOrEmpty(searchText) && searchText.Length >= 2)
-        {
-            await LoadItemsForTypeAsync(null); // Load all items for search
-        }
-        ApplyPaletteFilter();
-    }
-
-    private void OnClearPaletteSearch(object? sender, RoutedEventArgs e)
-    {
-        PaletteSearchBox.Text = "";
-        ApplyPaletteFilter();
-    }
-
-    private async void OnTypeFilterChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        // Load items for the selected type on-demand
-        var typeFilter = ItemTypeFilter.SelectedIndex > 0 ? ItemTypeFilter.SelectedItem?.ToString() : null;
-        await LoadItemsForTypeAsync(typeFilter);
-        ApplyPaletteFilter();
-    }
-
-    private void OnSourceFilterChanged(object? sender, RoutedEventArgs e)
-    {
-        ApplyPaletteFilter();
-    }
-
-    private void ApplyPaletteFilter()
-    {
-        var searchText = PaletteSearchBox.Text?.Trim() ?? "";
-        var typeFilter = ItemTypeFilter.SelectedIndex > 0 ? ItemTypeFilter.SelectedItem?.ToString() : null;
-        var showStandard = StandardItemsCheck?.IsChecked ?? true;
-        var showCustom = CustomItemsCheck?.IsChecked ?? true;
-
-        var filtered = PaletteItems.AsEnumerable();
-
-        // Apply search text filter
-        if (!string.IsNullOrEmpty(searchText))
-        {
-            filtered = filtered.Where(item =>
-                item.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
-                item.ResRef.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
-                item.BaseItemName.Contains(searchText, StringComparison.OrdinalIgnoreCase)
-            );
-        }
-
-        // Apply type filter
-        if (!string.IsNullOrEmpty(typeFilter))
-        {
-            filtered = filtered.Where(item =>
-                item.BaseItemName.Equals(typeFilter, StringComparison.OrdinalIgnoreCase)
-            );
-        }
-
-        // Apply source filter (module items always visible)
-        if (!showStandard || !showCustom)
-        {
-            filtered = filtered.Where(item =>
-                item.Source == GameResourceSource.Module || (showStandard && item.IsStandard) || (showCustom && !item.IsStandard)
-            );
-        }
-
-        ItemPaletteGrid.ItemsSource = filtered.ToList();
     }
 
     #endregion
