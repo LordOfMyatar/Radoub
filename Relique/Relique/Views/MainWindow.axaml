@@ -75,17 +75,20 @@
         <!-- Search Bar (Ctrl+F / Ctrl+H) -->
         <controls:SearchBar x:Name="FileSearchBar" DockPanel.Dock="Top"/>
 
-        <!-- Status Bar -->
-        <Border DockPanel.Dock="Bottom"
+        <!-- Status Bar (top position, matching other tools) -->
+        <Border DockPanel.Dock="Top"
                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                BorderThickness="0,1,0,0"
-                Padding="8,4">
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="8,4"
+                Margin="8,4,8,0">
             <Grid ColumnDefinitions="Auto,8,*,8,Auto">
                 <!-- Module indicator -->
                 <TextBlock Grid.Column="0" x:Name="ModuleIndicator"
                            VerticalAlignment="Center"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           FontWeight="Bold"/>
 
                 <!-- Status text -->
                 <TextBlock Grid.Column="2" x:Name="StatusText"
@@ -95,7 +98,8 @@
                 <!-- File path -->
                 <TextBlock Grid.Column="4" x:Name="FilePathText"
                            VerticalAlignment="Center"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           TextTrimming="CharacterEllipsis"/>
             </Grid>
         </Border>
 

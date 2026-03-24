@@ -324,6 +324,7 @@ public partial class MainWindow
     private void UpdateStatus(string text)
     {
         StatusText.Text = text;
+        Radoub.Formats.Logging.UnifiedLogger.LogUI(Radoub.Formats.Logging.LogLevel.DEBUG, $"Relique.UpdateStatus: '{text}' → StatusText.Text='{StatusText.Text}'");
     }
 
     private void UpdateModuleIndicator()
