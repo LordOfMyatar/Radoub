@@ -17,6 +17,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.101] - 2026-03-23
+**Branch**: `radoub/issue-1901` | **PR**: #TBD
+
+### Sprint: Housekeeping, Logging Parity & Model Code Quality (#1901)
+
+- [ ] #1897 — Housekeeping: miscellaneous small fixes (theme scan, dead code, log-level bug)
+- [ ] #1891 — Audit logging parity and docs across all tools (Export Logs, Open Log Folder)
+- [ ] #1681 — Split ModelPreviewGLControl.cs into focused classes
+- [ ] #1670 — TDD: ModelService & TextureService test coverage (fixture-free)
+
+---
+
 ## [0.9.100] - TBD
 **Branch**: `radoub/issue-1942` | **PR**: #1952
 
