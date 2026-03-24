@@ -6,6 +6,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Quartermaster.Models;
 using Quartermaster.Services;
 using Radoub.Formats.Utc;
 using Radoub.UI.Services;

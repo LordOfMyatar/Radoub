@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Quartermaster.Models;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
 
@@ -338,23 +339,7 @@ public partial class LevelUpWizardWindow
         public string Text { get; set; } = "";
     }
 
-    private class SkillDisplayItem : Services.SkillDisplayHelper.INamedItem
-    {
-        public int SkillId { get; set; }
-        public string Name { get; set; } = "";
-        public int CurrentRanks { get; set; }
-        public int AddedRanks { get; set; }
-        public bool IsClassSkill { get; set; }
-        public bool IsUnavailable { get; set; }
-        public int MaxRanks { get; set; }
-        public int Cost { get; set; } = 1;
-        public Avalonia.Media.IBrush? NameBrush { get; set; }
-
-        public string ClassSkillIndicator => Services.SkillDisplayHelper.GetClassSkillIndicator(IsClassSkill, IsUnavailable);
-        public bool CanIncrease => !IsUnavailable && CurrentRanks + AddedRanks < MaxRanks;
-        public bool CanDecrease => AddedRanks > 0;
-        public double RowOpacity => IsUnavailable ? 0.4 : 1.0;
-    }
+    // SkillDisplayItem moved to Quartermaster.Models.WizardDisplayItems (#1798)
 
     private class FeatDisplayItem
     {
@@ -372,14 +357,7 @@ public partial class LevelUpWizardWindow
         public string Badge => !MeetsPrereqs ? "(prereqs)" : IsClassFeat ? "(class)" : "";
     }
 
-    private class SpellDisplayItem : Services.SkillDisplayHelper.INamedItem
-    {
-        public int SpellId { get; set; }
-        public string Name { get; set; } = "";
-        public string SchoolAbbrev { get; set; } = "";
-
-        public string DisplayName => string.IsNullOrEmpty(SchoolAbbrev) ? Name : $"{Name} [{SchoolAbbrev}]";
-    }
+    // SpellDisplayItem moved to Quartermaster.Models.WizardDisplayItems (#1798)
 
     #endregion
 }
