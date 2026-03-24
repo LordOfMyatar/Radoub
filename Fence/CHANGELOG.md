@@ -15,8 +15,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Item Display & Palette Standardization (#1826)
 
-- [ ] #1192 — Add item icons to store inventory grid
-- [ ] #1674 — Standardize item palette between QM and Fence
+- [x] #1192 — Add item icons to store inventory grid
+- [x] #1674 — Standardize item palette between QM and Fence
+  - Migrated from custom `PaletteItemViewModel` to shared `ItemViewModel`
+  - Adopted shared `ItemFilterPanel` (text search, slot filter, property search, filter persistence)
+  - Switched from per-type lazy loading to load-all-then-filter strategy
+  - Added `PropertiesDisplay` to shared palette cache for property search
 
 ---
 
