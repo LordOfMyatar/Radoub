@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.23-alpha] - 2026-03-22
-**Branch**: `fence/issue-1826` | **PR**: #TBD
+**Branch**: `fence/issue-1826` | **PR**: #1954
 
 ### Sprint: Item Display & Palette Standardization (#1826)
 
