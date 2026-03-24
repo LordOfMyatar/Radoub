@@ -16,6 +16,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.70-alpha] - 2026-03-24
+**Branch**: `quartermaster/issue-1900` | **PR**: #TBD
+
+### Sprint: Module Switch & UI Bug Fixes (#1900)
+
+- [ ] #1869 + #1878 — Module switch HAK clearing + title bar update
+- [ ] #1868 — Appearance source filter fix
+- [ ] #1863 — Spells +/- button alignment
+- [ ] #1859 — Module indicator theme refresh (QM portion)
+
+---
+
 ## [0.2.69-alpha] - 2026-03-23
 **Branch**: `quartermaster/issue-1827` | **PR**: #1953
 
