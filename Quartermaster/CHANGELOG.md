@@ -21,10 +21,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Module Switch & UI Bug Fixes (#1900)
 
-- [ ] #1869 + #1878 — Module switch HAK clearing + title bar update
-- [ ] #1868 — Appearance source filter fix
-- [ ] #1863 — Spells +/- button alignment
-- [ ] #1859 — Module indicator theme refresh (QM portion)
+- [x] #1869 + #1878 — Module switch HAK clearing + status bar indicator update
+- [x] #1868 — Appearance source filter: part-based model resolution via prefix matching
+- [x] #1863 — Spells +/- button alignment (widened column, square buttons)
+- [x] #1859 — Module indicator theme refresh on theme change
 
 ---
 
