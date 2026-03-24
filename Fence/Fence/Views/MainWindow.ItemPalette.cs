@@ -2,13 +2,13 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
-using MerchantEditor.ViewModels;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
 using Radoub.Formats.Uti;
 using Radoub.UI.Services;
+using Radoub.UI.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -222,21 +222,22 @@ public partial class MainWindow
 
             // Convert to view models and add (skip already loaded)
             var existingResRefs = new HashSet<string>(PaletteItems.Select(p => p.ResRef), StringComparer.OrdinalIgnoreCase);
-            var newItems = new List<PaletteItemViewModel>();
+            var newItems = new List<ItemViewModel>();
 
             foreach (var cached in itemsToAdd)
             {
                 if (!existingResRefs.Contains(cached.ResRef))
                 {
-                    newItems.Add(new PaletteItemViewModel
+                    newItems.Add(new ItemViewModel
                     {
                         ResRef = cached.ResRef,
-                        DisplayName = cached.DisplayName,
-                        BaseItemType = cached.BaseItemTypeName,
-                        BaseItemIndex = cached.BaseItemType,
-                        BaseValue = (int)cached.BaseValue,
-                        Tag = cached.Tag,
-                        IsStandard = cached.IsStandard,
+                        Name = cached.DisplayName,
+                        BaseItemName = cached.BaseItemTypeName,
+                        BaseItem = cached.BaseItemType,
+                        Value = cached.BaseValue,
+                        Tag = !string.IsNullOrEmpty(cached.Tag) ? cached.Tag : cached.ResRef,
+                        PropertiesDisplay = cached.PropertiesDisplay,
+                        Source = cached.IsStandard ? GameResourceSource.Bif : GameResourceSource.Override,
                         IconBitmap = _itemIconService?.GetItemIcon(cached.BaseItemType)
                     });
                 }
@@ -366,16 +367,16 @@ public partial class MainWindow
                 var resolved = _itemResolutionService?.ResolveItem(resRef);
                 if (resolved != null && !ExcludedBaseItemTypes.Contains(resolved.BaseItemType))
                 {
-                    PaletteItems.Add(new PaletteItemViewModel
+                    PaletteItems.Add(new ItemViewModel
                     {
                         ResRef = resolved.ResRef,
-                        DisplayName = resolved.DisplayName,
-                        BaseItemType = resolved.BaseItemTypeName,
-                        BaseItemIndex = resolved.BaseItemType,
-                        BaseValue = resolved.BaseCost,
+                        Name = resolved.DisplayName,
+                        BaseItemName = resolved.BaseItemTypeName,
+                        BaseItem = resolved.BaseItemType,
+                        Value = (uint)resolved.BaseCost,
                         Tag = resolved.Tag,
-                        IsStandard = false,
-                        IsModuleItem = true,
+                        PropertiesDisplay = string.Empty,
+                        Source = GameResourceSource.Module,
                         IconBitmap = _itemIconService?.GetItemIcon(resolved.BaseItemType)
                     });
                     existingResRefs.Add(resRef);
@@ -400,7 +401,7 @@ public partial class MainWindow
     /// </summary>
     private void ClearModuleItems()
     {
-        var toRemove = PaletteItems.Where(p => p.IsModuleItem).ToList();
+        var toRemove = PaletteItems.Where(p => p.Source == GameResourceSource.Module).ToList();
 
         foreach (var item in toRemove)
             PaletteItems.Remove(item);

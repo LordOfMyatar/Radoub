@@ -26,6 +26,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Radoub.UI.Utils;
+using Radoub.UI.ViewModels;
 using Radoub.UI.Views;
 
 namespace MerchantEditor.Views;
@@ -78,7 +79,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private readonly List<PaletteCategory> _storeCategories = new();
 
     public ObservableCollection<StoreItemViewModel> StoreItems { get; } = new();
-    public ObservableCollection<PaletteItemViewModel> PaletteItems { get; } = new();
+    public ObservableCollection<ItemViewModel> PaletteItems { get; } = new();
     public ObservableCollection<SelectableBaseItemTypeViewModel> SelectableBaseItemTypes { get; } = new();
 
     public bool HasFile => _currentStore != null;

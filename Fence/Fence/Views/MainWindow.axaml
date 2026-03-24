@@ -594,9 +594,9 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="Name" Width="*" MinWidth="150" Binding="{Binding DisplayName}"/>
-                                <DataGridTextColumn Header="Type" Width="100" Binding="{Binding BaseItemType}"/>
-                                <DataGridTextColumn Header="Value" Width="60" Binding="{Binding BaseValue}"/>
+                                <DataGridTextColumn Header="Name" Width="*" MinWidth="150" Binding="{Binding Name}"/>
+                                <DataGridTextColumn Header="Type" Width="100" Binding="{Binding BaseItemName}"/>
+                                <DataGridTextColumn Header="Value" Width="60" Binding="{Binding Value}"/>
                                 <DataGridTextColumn Header="ResRef" Width="120" Binding="{Binding ResRef}"/>
                                 <DataGridTextColumn Header="Tag" Width="120" Binding="{Binding Tag}"/>
                             </DataGrid.Columns>

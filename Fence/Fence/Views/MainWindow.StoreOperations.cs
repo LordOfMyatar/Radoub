@@ -2,8 +2,10 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using MerchantEditor.ViewModels;
+using Radoub.Formats.Services;
 using Radoub.Formats.Utm;
 using Radoub.UI.Services;
+using Radoub.UI.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -106,7 +108,7 @@ public partial class MainWindow
 
     private void AddSelectedPaletteItems()
     {
-        var selectedItems = ItemPaletteGrid.SelectedItems?.Cast<PaletteItemViewModel>().ToList();
+        var selectedItems = ItemPaletteGrid.SelectedItems?.Cast<ItemViewModel>().ToList();
         if (selectedItems == null || selectedItems.Count == 0)
             return;
 
@@ -116,27 +118,27 @@ public partial class MainWindow
 
         foreach (var item in selectedItems)
         {
-            var sellPrice = (int)Math.Ceiling(item.BaseValue * markUp / 100.0);
-            var buyPrice = (int)Math.Floor(item.BaseValue * markDown / 100.0);
-            var panelId = GetStorePanelForBaseItemType(item.BaseItemIndex);
+            var sellPrice = (int)Math.Ceiling((int)item.Value * markUp / 100.0);
+            var buyPrice = (int)Math.Floor((int)item.Value * markDown / 100.0);
+            var panelId = GetStorePanelForBaseItemType(item.BaseItem);
 
             // Debug: Log panel assignment for troubleshooting
             Radoub.Formats.Logging.UnifiedLogger.LogApplication(
                 Radoub.Formats.Logging.LogLevel.DEBUG,
-                $"Adding item: {item.ResRef} | Type: {item.BaseItemType} | Panel: {panelId} ({StorePanels.GetPanelName(panelId)})");
+                $"Adding item: {item.ResRef} | Type: {item.BaseItemName} | Panel: {panelId} ({StorePanels.GetPanelName(panelId)})");
 
             StoreItems.Add(new StoreItemViewModel
             {
                 ResRef = item.ResRef,
-                DisplayName = item.DisplayName,
+                DisplayName = item.Name,
                 Infinite = false,
                 PanelId = panelId,
-                BaseItemType = item.BaseItemType,
-                BaseItemIndex = item.BaseItemIndex,
-                BaseValue = item.BaseValue,
+                BaseItemType = item.BaseItemName,
+                BaseItemIndex = item.BaseItem,
+                BaseValue = (int)item.Value,
                 SellPrice = sellPrice,
                 BuyPrice = buyPrice,
-                IconBitmap = item.IconBitmap ?? _itemIconService?.GetItemIcon(item.BaseItemIndex)
+                IconBitmap = item.IconBitmap ?? _itemIconService?.GetItemIcon(item.BaseItem)
             });
         }
 
@@ -360,9 +362,9 @@ public partial class MainWindow
         if (!string.IsNullOrEmpty(searchText))
         {
             filtered = filtered.Where(item =>
-                item.DisplayName.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                item.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
                 item.ResRef.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
-                item.BaseItemType.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+                item.BaseItemName.Contains(searchText, StringComparison.OrdinalIgnoreCase)
             );
         }
 
@@ -370,7 +372,7 @@ public partial class MainWindow
         if (!string.IsNullOrEmpty(typeFilter))
         {
             filtered = filtered.Where(item =>
-                item.BaseItemType.Equals(typeFilter, StringComparison.OrdinalIgnoreCase)
+                item.BaseItemName.Equals(typeFilter, StringComparison.OrdinalIgnoreCase)
             );
         }
 
@@ -378,7 +380,7 @@ public partial class MainWindow
         if (!showStandard || !showCustom)
         {
             filtered = filtered.Where(item =>
-                item.IsModuleItem || (showStandard && item.IsStandard) || (showCustom && !item.IsStandard)
+                item.Source == GameResourceSource.Module || (showStandard && item.IsStandard) || (showCustom && !item.IsStandard)
             );
         }
 
