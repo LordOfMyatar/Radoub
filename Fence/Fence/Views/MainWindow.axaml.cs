@@ -84,6 +84,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     public ObservableCollection<StoreItemViewModel> StoreItems { get; } = new();
     public ObservableCollection<ItemViewModel> PaletteItems { get; } = new();
+    private readonly ObservableCollection<ItemViewModel> _filteredPaletteItems = new();
     public ObservableCollection<SelectableBaseItemTypeViewModel> SelectableBaseItemTypes { get; } = new();
 
     public bool HasFile => _currentStore != null;
@@ -96,8 +97,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         InitializeComponent();
         DataContext = this;
 
-        // Find shared filter panel
+        // Find shared filter panel and wire up filtered items (matching QM pattern)
         _paletteFilter = this.FindControl<ItemFilterPanel>("PaletteFilter");
+        if (_paletteFilter != null)
+        {
+            _paletteFilter.FilteredItems = _filteredPaletteItems;
+            ItemPaletteGrid.ItemsSource = _filteredPaletteItems;
+        }
 
         // Wire up shared document state for title bar updates
         _documentState.DirtyStateChanged += () => Title = _documentState.GetTitle();

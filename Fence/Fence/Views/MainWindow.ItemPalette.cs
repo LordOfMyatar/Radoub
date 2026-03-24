@@ -243,10 +243,6 @@ public partial class MainWindow
                 _paletteFilter.ApplyFilter();
             }
 
-            // Wire DataGrid to filtered items from the filter panel
-            if (_paletteFilter != null)
-                ItemPaletteGrid.ItemsSource = _paletteFilter.FilteredItems;
-
             UpdateStatusBar($"Ready - {PaletteItems.Count} items loaded");
         });
 
