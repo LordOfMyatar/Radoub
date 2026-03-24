@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.100] - TBD
-**Branch**: `radoub/issue-1942` | **PR**: #TBD
+**Branch**: `radoub/issue-1942` | **PR**: #1952
 
 ### Sprint: Dependabot Dependency Updates (#1942)
 
