@@ -458,6 +458,7 @@ public partial class MainWindow
                     AppearancePanelContent.ClearResourceCaches();
                 }
                 _lastLoadedModuleDir = moduleDirectory;
+                UpdateModuleIndicator();
             }
 
             PopulateInventoryUI();
