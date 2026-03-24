@@ -41,6 +41,7 @@ namespace Parley.Tests.Mocks
         public string FlowchartLayout { get; set; } = "TopToBottom";
         public bool AllowScrollbarAutoHide { get; set; } = true;
         public int FlowchartNodeMaxLines { get; set; } = 3;
+        public int FlowchartNodeWidth { get; set; } = 200;
         public bool TreeViewWordWrap { get; set; } = false;
 
         // Flowchart window

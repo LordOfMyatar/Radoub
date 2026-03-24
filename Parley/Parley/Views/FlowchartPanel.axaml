@@ -94,8 +94,8 @@
                         <DataTemplate DataType="{x:Type models:FlowchartNode}">
                             <Border CornerRadius="4"
                                     Padding="8,4"
-                                    MinWidth="120"
-                                    MaxWidth="200">
+                                    MinWidth="{Binding DataContext.NodeMinWidth, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    MaxWidth="{Binding DataContext.NodeWidth, RelativeSource={RelativeSource AncestorType=UserControl}}">
                                 <Border.Opacity>
                                     <MultiBinding Converter="{x:Static models:FlowchartLinkOpacityConverter.Instance}">
                                         <Binding Path="IsLink"/>
@@ -163,7 +163,7 @@
                                                TextWrapping="Wrap"
                                                TextTrimming="CharacterEllipsis"
                                                MaxLines="{Binding DataContext.NodeMaxLines, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                               MaxWidth="180"
+                                               MaxWidth="{Binding DataContext.NodeTextMaxWidth, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                ToolTip.Tip="{Binding Text}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                                     <!-- Indicators for conditions/actions/collapse -->

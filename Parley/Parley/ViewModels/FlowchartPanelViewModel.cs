@@ -18,6 +18,11 @@ namespace DialogEditor.ViewModels
         private readonly DialogToFlowchartConverter _converter = new();
         private FlowchartGraph? _flowchartGraph;
         private Dialog? _sourceDialog; // Keep source for refresh (#340)
+
+        /// <summary>
+        /// The current dialog being displayed (#240: needed for drag-drop sibling lookup).
+        /// </summary>
+        public Dialog? CurrentDialog => _sourceDialog;
         private readonly HashSet<string> _collapsedNodeIds = new(); // Track collapsed nodes (#251)
         private bool _isHandlingExternalEvent; // Prevent event loops (#451)
 
@@ -46,6 +51,21 @@ namespace DialogEditor.ViewModels
         /// Bound from UISettingsService for XAML data binding.
         /// </summary>
         public int NodeMaxLines => Program.Services.GetRequiredService<UISettingsService>().FlowchartNodeMaxLines;
+
+        /// <summary>
+        /// Flowchart node width in pixels (#906). Bound for XAML MaxWidth.
+        /// </summary>
+        public int NodeWidth => Program.Services.GetRequiredService<UISettingsService>().FlowchartNodeWidth;
+
+        /// <summary>
+        /// Computed minimum width for flowchart nodes (#906). NodeWidth * 0.6.
+        /// </summary>
+        public int NodeMinWidth => (int)(NodeWidth * 0.6);
+
+        /// <summary>
+        /// Computed maximum width for text inside flowchart nodes (#906). NodeWidth - 20.
+        /// </summary>
+        public int NodeTextMaxWidth => NodeWidth - 20;
 
         /// <summary>
         /// Notifies that a property has changed. Used by FlowchartPanel to trigger refresh on settings change.

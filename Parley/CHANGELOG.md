@@ -14,6 +14,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.159-alpha] - 2026-03-24
+**Branch**: `parley/issue-1906` | **PR**: #1966
+
+### Sprint: Flowchart Node Customization (#1906)
+
+- [x] #906 - Flowchart: Configurable node width (Settings slider, 100-400px)
+- [x] #240 - Flowchart: Drag-drop sibling reorder
+- [x] #1965 - Flowchart: Drag-drop reparent nodes (Entry↔Reply alternation enforced)
+- Link nodes can now be dragged in flowchart view
+
+---
+
 ## [0.1.158-alpha] - 2026-03-22
 **Branch**: `parley/issue-1855` | **PR**: #1920
 

@@ -385,6 +385,9 @@ namespace DialogEditor.Views
         private void OnFlowchartNodeMaxLinesChanged(object? sender, RangeBaseValueChangedEventArgs e)
             => _uiSettingsController?.OnFlowchartNodeMaxLinesChanged(sender, e);
 
+        private void OnFlowchartNodeWidthChanged(object? sender, RangeBaseValueChangedEventArgs e)
+            => _uiSettingsController?.OnFlowchartNodeWidthChanged(sender, e);
+
         private void OnEnableNpcTagColoringChanged(object? sender, RoutedEventArgs e)
             => _uiSettingsController?.OnEnableNpcTagColoringChanged(sender, e);
 

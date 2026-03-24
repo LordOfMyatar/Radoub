@@ -76,7 +76,7 @@ namespace DialogEditor.Services
         /// <param name="filePath">The destination file path</param>
         /// <param name="fileName">The dialog filename for the title</param>
         /// <returns>True if export succeeded</returns>
-        public static async Task<bool> ExportToSvgAsync(FlowchartGraph graph, string filePath, string? fileName = null)
+        public static async Task<bool> ExportToSvgAsync(FlowchartGraph graph, string filePath, string? fileName = null, int nodeWidth = 200)
         {
             try
             {
@@ -86,7 +86,7 @@ namespace DialogEditor.Services
                     return false;
                 }
 
-                var svg = GenerateSvg(graph, fileName);
+                var svg = GenerateSvg(graph, fileName, nodeWidth);
 
                 await File.WriteAllTextAsync(filePath, svg, Encoding.UTF8);
 
@@ -104,14 +104,14 @@ namespace DialogEditor.Services
         /// Generates SVG content from a flowchart graph.
         /// Uses hierarchical layout matching the visual flowchart display.
         /// </summary>
-        private static string GenerateSvg(FlowchartGraph graph, string? fileName)
+        private static string GenerateSvg(FlowchartGraph graph, string? fileName, int nodeWidth = 200)
         {
             var sb = new StringBuilder();
 
-            // Basic layout parameters
-            const int nodeWidth = 180;
+            // Basic layout parameters (#906: nodeWidth now configurable)
+            var clampedNodeWidth = Math.Max(100, Math.Min(400, nodeWidth));
             const int nodeHeight = 60;
-            const int horizontalSpacing = 200;
+            var horizontalSpacing = clampedNodeWidth + 20;
             const int verticalSpacing = 100;
             const int padding = 50;
 

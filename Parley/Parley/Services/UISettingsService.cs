@@ -28,8 +28,9 @@ namespace DialogEditor.Services
         // Scrollbar settings
         private bool _allowScrollbarAutoHide = false; // Default: always visible
 
-        // Flowchart node display settings (#813)
+        // Flowchart node display settings (#813, #906)
         private int _flowchartNodeMaxLines = 3; // 1-6 lines, default 3
+        private int _flowchartNodeWidth = 200; // 100-400 pixels, default 200
 
         // TreeView display settings (#903)
         private bool _treeViewWordWrap = false; // Default: OFF (traditional single-line display)
@@ -62,7 +63,8 @@ namespace DialogEditor.Services
             bool allowScrollbarAutoHide,
             int flowchartNodeMaxLines = 3,
             bool treeViewWordWrap = false,
-            bool useSharedTheme = true)
+            bool useSharedTheme = true,
+            int flowchartNodeWidth = 200)
         {
             _fontSize = Math.Max(8, Math.Min(24, fontSize));
             _fontFamily = fontFamily ?? "";
@@ -85,6 +87,7 @@ namespace DialogEditor.Services
             _flowchartNodeMaxLines = Math.Max(1, Math.Min(6, flowchartNodeMaxLines));
             _treeViewWordWrap = treeViewWordWrap;
             _useSharedTheme = useSharedTheme;
+            _flowchartNodeWidth = Math.Max(100, Math.Min(400, flowchartNodeWidth));
         }
 
         public double FontSize
@@ -208,6 +211,24 @@ namespace DialogEditor.Services
                 {
                     SettingsChanged?.Invoke();
                     UnifiedLogger.LogUI(LogLevel.INFO, $"Flowchart node max lines set to {clampedValue}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Flowchart node width in pixels (#906).
+        /// Range: 100-400, default 200.
+        /// </summary>
+        public int FlowchartNodeWidth
+        {
+            get => _flowchartNodeWidth;
+            set
+            {
+                var clampedValue = Math.Max(100, Math.Min(400, value));
+                if (SetProperty(ref _flowchartNodeWidth, clampedValue))
+                {
+                    SettingsChanged?.Invoke();
+                    UnifiedLogger.LogUI(LogLevel.INFO, $"Flowchart node width set to {clampedValue}");
                 }
             }
         }

@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -51,6 +53,13 @@ namespace DialogEditor.Views
         private Point _panStartPoint;
         private Vector _panStartOffset;
 
+        // Drag-drop sibling reorder state (#240)
+        private const double DragThreshold = 5.0;
+        private bool _isDragging;
+        private bool _dragPotential; // pointer pressed on node, waiting for threshold
+        private Point _dragStartPoint;
+        private FlowchartNode? _draggedNode;
+
         // #809: Keyboard shortcut handler for forwarding to parent window
         private KeyboardShortcutManager? _shortcutManager;
 
@@ -77,6 +86,18 @@ namespace DialogEditor.Views
         public event EventHandler<FlowchartContextMenuEventArgs>? ContextMenuAction;
 
         /// <summary>
+        /// Raised when a drag-drop sibling reorder is requested (#240).
+        /// Args: (DialogNode node, DialogNode? parent, int fromIndex, int toIndex)
+        /// </summary>
+        public event Action<DialogNode, DialogNode?, int, int>? SiblingReorderRequested;
+
+        /// <summary>
+        /// Raised when a reparent is requested via drag-drop (#1965).
+        /// Args: (DialogNode node, DialogPtr? sourcePointer, DialogNode? newParent, int insertIndex)
+        /// </summary>
+        public event Action<DialogNode, DialogPtr?, DialogNode?, int>? ReparentRequested;
+
+        /// <summary>
         /// Gets the ViewModel for external access (e.g., selection sync)
         /// </summary>
         public FlowchartPanelViewModel ViewModel => _viewModel;
@@ -89,8 +110,10 @@ namespace DialogEditor.Views
             _viewModel = new FlowchartPanelViewModel();
             DataContext = _viewModel;
 
-            // Hook up pointer pressed to handle node clicks
+            // Hook up pointer events for node clicks and drag-drop (#240)
             FlowchartGraphPanel.AddHandler(PointerPressedEvent, OnGraphPanelPointerPressed, RoutingStrategies.Tunnel);
+            FlowchartGraphPanel.AddHandler(PointerMovedEvent, OnGraphPanelPointerMoved, RoutingStrategies.Tunnel);
+            FlowchartGraphPanel.AddHandler(PointerReleasedEvent, OnGraphPanelPointerReleased, RoutingStrategies.Tunnel);
 
             // Hook up mouse wheel for zoom
             FlowchartScrollViewer.AddHandler(PointerWheelChangedEvent, OnPointerWheelChanged, RoutingStrategies.Tunnel);
@@ -265,11 +288,22 @@ namespace DialogEditor.Views
             {
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
-                    // Notify that NodeMaxLines changed so bindings update
                     _viewModel.OnPropertyChanged(nameof(FlowchartPanelViewModel.NodeMaxLines));
-                    // Also refresh the graph to re-render nodes
                     _viewModel.RefreshGraph();
                     UnifiedLogger.LogUI(LogLevel.DEBUG, "Flowchart refreshed due to NodeMaxLines change");
+                });
+            }
+
+            // Refresh when flowchart node width changes (#906)
+            if (e.PropertyName == nameof(UISettingsService.FlowchartNodeWidth))
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    _viewModel.OnPropertyChanged(nameof(FlowchartPanelViewModel.NodeWidth));
+                    _viewModel.OnPropertyChanged(nameof(FlowchartPanelViewModel.NodeMinWidth));
+                    _viewModel.OnPropertyChanged(nameof(FlowchartPanelViewModel.NodeTextMaxWidth));
+                    _viewModel.RefreshGraph();
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, "Flowchart refreshed due to NodeWidth change");
                 });
             }
         }
@@ -618,7 +652,331 @@ namespace DialogEditor.Views
 
                 // Raise the event with the FlowchartNode (includes IsLink, OriginalPointer context)
                 NodeClicked?.Invoke(this, clickedNode);
+
+                // #240/#1965: Start tracking potential drag (left-button single-click, including link nodes)
+                if (clickCount == 1 && point.Properties.IsLeftButtonPressed)
+                {
+                    _dragPotential = true;
+                    _dragStartPoint = e.GetPosition(FlowchartGraphPanel);
+                    _draggedNode = clickedNode;
+                }
             }
+        }
+
+        /// <summary>
+        /// Handles pointer move during potential drag (#240).
+        /// Detects drag threshold and shows insertion indicator for sibling reorder.
+        /// </summary>
+        private void OnGraphPanelPointerMoved(object? sender, PointerEventArgs e)
+        {
+            if (!_dragPotential && !_isDragging) return;
+            if (_isPanning) return;
+
+            var currentPos = e.GetPosition(FlowchartGraphPanel);
+
+            // Check threshold to start drag
+            if (_dragPotential && !_isDragging)
+            {
+                var delta = currentPos - _dragStartPoint;
+                if (Math.Abs(delta.X) > DragThreshold || Math.Abs(delta.Y) > DragThreshold)
+                {
+                    _isDragging = true;
+                    _dragPotential = false;
+                    FlowchartGraphPanel.Cursor = new Avalonia.Input.Cursor(StandardCursorType.DragMove);
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, $"Drag started for node {_draggedNode?.Id}");
+                }
+                else
+                {
+                    return; // Not yet past threshold
+                }
+            }
+
+            if (!_isDragging || _draggedNode == null) return;
+
+            // Find target node under cursor
+            var targetNode = FindFlowchartNodeAtPoint(currentPos);
+            if (targetNode != null && targetNode != _draggedNode)
+            {
+                if (AreSiblings(targetNode, _draggedNode))
+                {
+                    // Sibling reorder (#240)
+                    ShowInsertionIndicator(targetNode, currentPos);
+                    FlowchartGraphPanel.Cursor = new Avalonia.Input.Cursor(StandardCursorType.DragMove);
+                }
+                else if (IsValidReparentTarget(targetNode, _draggedNode))
+                {
+                    // Valid reparent target (#1965)
+                    ShowInsertionIndicator(targetNode, currentPos);
+                    FlowchartGraphPanel.Cursor = new Avalonia.Input.Cursor(StandardCursorType.DragLink);
+                }
+                else
+                {
+                    // Invalid target
+                    HideInsertionIndicator();
+                    FlowchartGraphPanel.Cursor = new Avalonia.Input.Cursor(StandardCursorType.No);
+                }
+            }
+            else
+            {
+                HideInsertionIndicator();
+                FlowchartGraphPanel.Cursor = new Avalonia.Input.Cursor(StandardCursorType.DragMove);
+            }
+        }
+
+        /// <summary>
+        /// Handles pointer release to execute or cancel drag (#240).
+        /// </summary>
+        private void OnGraphPanelPointerReleased(object? sender, PointerReleasedEventArgs e)
+        {
+            if (_isDragging && _draggedNode != null)
+            {
+                var currentPos = e.GetPosition(FlowchartGraphPanel);
+                var targetNode = FindFlowchartNodeAtPoint(currentPos);
+
+                if (targetNode != null && targetNode != _draggedNode)
+                {
+                    if (AreSiblings(targetNode, _draggedNode))
+                    {
+                        ExecuteSiblingReorder(_draggedNode, targetNode, currentPos);
+                    }
+                    else if (IsValidReparentTarget(targetNode, _draggedNode))
+                    {
+                        ExecuteReparent(_draggedNode, targetNode);
+                    }
+                }
+
+                HideInsertionIndicator();
+                FlowchartGraphPanel.Cursor = Avalonia.Input.Cursor.Default;
+                UnifiedLogger.LogUI(LogLevel.DEBUG, "Drag ended");
+            }
+
+            ResetDragState();
+        }
+
+        private void ResetDragState()
+        {
+            _isDragging = false;
+            _dragPotential = false;
+            _draggedNode = null;
+        }
+
+        /// <summary>
+        /// Finds the FlowchartNode at a given point by walking the visual tree.
+        /// </summary>
+        private FlowchartNode? FindFlowchartNodeAtPoint(Point point)
+        {
+            var hit = FlowchartGraphPanel.InputHitTest(point);
+            if (hit is not Visual visual) return null;
+
+            var current = visual;
+            while (current != null)
+            {
+                if (current is Border border && border.DataContext is FlowchartNode node)
+                    return node;
+                current = current.GetVisualParent();
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Checks if two FlowchartNodes are siblings (share the same parent in the dialog structure).
+        /// </summary>
+        private bool AreSiblings(FlowchartNode a, FlowchartNode b)
+        {
+            if (a.OriginalNode == null || b.OriginalNode == null) return false;
+
+            var graph = _viewModel.FlowchartGraph;
+            if (graph == null) return false;
+
+            // Check if both are root-level (in Dialog.Starts)
+            var dialog = _viewModel.CurrentDialog;
+            if (dialog == null) return false;
+
+            bool aIsRoot = dialog.Starts.Any(s => s.Node == a.OriginalNode);
+            bool bIsRoot = dialog.Starts.Any(s => s.Node == b.OriginalNode);
+            if (aIsRoot && bIsRoot) return true;
+
+            // Check if they share a parent
+            foreach (var entry in dialog.Entries)
+            {
+                bool hasA = entry.Pointers.Any(p => p.Node == a.OriginalNode);
+                bool hasB = entry.Pointers.Any(p => p.Node == b.OriginalNode);
+                if (hasA && hasB) return true;
+            }
+            foreach (var reply in dialog.Replies)
+            {
+                bool hasA = reply.Pointers.Any(p => p.Node == a.OriginalNode);
+                bool hasB = reply.Pointers.Any(p => p.Node == b.OriginalNode);
+                if (hasA && hasB) return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Resolves sibling indices and raises SiblingReorderRequested event (#240).
+        /// MainWindow handles undo state + actual reorder execution.
+        /// </summary>
+        private void ExecuteSiblingReorder(FlowchartNode draggedNode, FlowchartNode targetNode, Point dropPoint)
+        {
+            if (draggedNode.OriginalNode == null || targetNode.OriginalNode == null) return;
+
+            var dialog = _viewModel.CurrentDialog;
+            if (dialog == null) return;
+
+            // Find shared parent and indices
+            DialogNode? parent = null;
+            int fromIndex = -1;
+            int toIndex = -1;
+
+            // Check root level
+            bool draggedIsRoot = false;
+            for (int i = 0; i < dialog.Starts.Count; i++)
+            {
+                if (dialog.Starts[i].Node == draggedNode.OriginalNode) { fromIndex = i; draggedIsRoot = true; }
+                if (dialog.Starts[i].Node == targetNode.OriginalNode) toIndex = i;
+            }
+
+            if (!draggedIsRoot)
+            {
+                // Find parent node
+                foreach (var entry in dialog.Entries.Concat(dialog.Replies))
+                {
+                    fromIndex = -1;
+                    toIndex = -1;
+                    for (int i = 0; i < entry.Pointers.Count; i++)
+                    {
+                        if (entry.Pointers[i].Node == draggedNode.OriginalNode) fromIndex = i;
+                        if (entry.Pointers[i].Node == targetNode.OriginalNode) toIndex = i;
+                    }
+                    if (fromIndex >= 0 && toIndex >= 0)
+                    {
+                        parent = entry;
+                        break;
+                    }
+                }
+            }
+
+            if (fromIndex < 0 || toIndex < 0) return;
+
+            // Raise event for MainWindow to handle undo + execution
+            SiblingReorderRequested?.Invoke(draggedNode.OriginalNode, parent, fromIndex, toIndex);
+        }
+
+        /// <summary>
+        /// Checks if a target node is a valid reparent destination for the dragged node (#1965).
+        /// Enforces Entry↔Reply alternation and prevents circular references.
+        /// </summary>
+        private bool IsValidReparentTarget(FlowchartNode target, FlowchartNode dragged)
+        {
+            if (target.OriginalNode == null || dragged.OriginalNode == null) return false;
+
+            var dialog = _viewModel.CurrentDialog;
+            if (dialog == null) return false;
+
+            // Alternation rule: Entry nodes can only be children of Reply nodes (or root)
+            // Reply nodes can only be children of Entry nodes
+            var draggedType = dragged.OriginalNode.Type;
+            var targetType = target.OriginalNode.Type;
+
+            // Drop INTO target as new child — dragged becomes child of target
+            // Entry dragged → target must be Reply (or drop to root, handled separately)
+            // Reply dragged → target must be Entry
+            if (draggedType == DialogNodeType.Entry && targetType != DialogNodeType.Reply) return false;
+            if (draggedType == DialogNodeType.Reply && targetType != DialogNodeType.Entry) return false;
+
+            // Prevent circular reference: target cannot be a descendant of dragged
+            if (IsDescendantOf(target.OriginalNode, dragged.OriginalNode, dialog)) return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Checks if possibleDescendant is reachable from possibleAncestor (#1965).
+        /// </summary>
+        private bool IsDescendantOf(DialogNode possibleDescendant, DialogNode possibleAncestor, Dialog dialog)
+        {
+            var visited = new HashSet<DialogNode>();
+            return IsReachableFrom(possibleAncestor, possibleDescendant, visited);
+        }
+
+        private bool IsReachableFrom(DialogNode current, DialogNode target, HashSet<DialogNode> visited)
+        {
+            if (current == target) return true;
+            if (visited.Contains(current)) return false;
+            visited.Add(current);
+
+            foreach (var ptr in current.Pointers)
+            {
+                if (ptr.Node != null && IsReachableFrom(ptr.Node, target, visited))
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Executes reparent via the ReparentRequested event (#1965).
+        /// MainWindow handles undo state + MoveNodeToPosition execution.
+        /// </summary>
+        private void ExecuteReparent(FlowchartNode draggedNode, FlowchartNode targetNode)
+        {
+            if (draggedNode.OriginalNode == null || targetNode.OriginalNode == null) return;
+
+            var dialog = _viewModel.CurrentDialog;
+            if (dialog == null) return;
+
+            // Use OriginalPointer if available (e.g., link nodes), otherwise search
+            DialogPtr? sourcePointer = draggedNode.OriginalPointer ?? FindSourcePointer(dialog, draggedNode.OriginalNode);
+
+            // Insert at end of target's children
+            int insertIndex = targetNode.OriginalNode.Pointers.Count;
+
+            ReparentRequested?.Invoke(draggedNode.OriginalNode, sourcePointer, targetNode.OriginalNode, insertIndex);
+        }
+
+        /// <summary>
+        /// Finds the DialogPtr that owns a node (for sourcePointer parameter in MoveNodeToPosition).
+        /// </summary>
+        private DialogPtr? FindSourcePointer(Dialog dialog, DialogNode node)
+        {
+            // Check root level
+            var rootPtr = dialog.Starts.FirstOrDefault(s => s.Node == node);
+            if (rootPtr != null) return rootPtr;
+
+            // Check all parents
+            foreach (var entry in dialog.Entries.Concat(dialog.Replies))
+            {
+                var ptr = entry.Pointers.FirstOrDefault(p => p.Node == node && !p.IsLink);
+                if (ptr != null) return ptr;
+            }
+
+            // Fallback: check link pointers
+            foreach (var entry in dialog.Entries.Concat(dialog.Replies))
+            {
+                var ptr = entry.Pointers.FirstOrDefault(p => p.Node == node);
+                if (ptr != null) return ptr;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Shows an insertion indicator line near the target node (#240).
+        /// </summary>
+        private void ShowInsertionIndicator(FlowchartNode targetNode, Point cursorPos)
+        {
+            // For now, change the cursor to indicate valid drop
+            // Full visual indicator requires overlay on the GraphPanel which is complex
+            // with AvaloniaGraphControl's layout system — the cursor change provides feedback
+            FlowchartGraphPanel.Cursor = new Avalonia.Input.Cursor(StandardCursorType.DragMove);
+        }
+
+        /// <summary>
+        /// Hides the insertion indicator (#240).
+        /// </summary>
+        private void HideInsertionIndicator()
+        {
+            // Clear any visual indicator state
         }
 
         #endregion
@@ -690,7 +1048,7 @@ namespace DialogEditor.Views
                 return false;
             }
 
-            return await FlowchartExportService.ExportToSvgAsync(graph, filePath, _viewModel.FileName);
+            return await FlowchartExportService.ExportToSvgAsync(graph, filePath, _viewModel.FileName, _uiSettings.FlowchartNodeWidth);
         }
 
         #endregion

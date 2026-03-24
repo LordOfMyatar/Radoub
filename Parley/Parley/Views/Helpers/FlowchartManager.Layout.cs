@@ -27,6 +27,8 @@ namespace Parley.Views.Helpers
                         var w = new FlowchartWindow();
                         w.NodeClicked += OnFlowchartNodeClicked;
                         w.ContextMenuAction += OnFlowchartContextMenuAction; // #461: Context menu parity
+                        w.SiblingReorderRequested += OnFlowchartSiblingReorder; // #240: Drag-drop reorder
+                        w.ReparentRequested += OnFlowchartReparent; // #1965: Drag-drop reparent
                         w.ShortcutManager = _shortcutManager; // #809: Enable keyboard shortcuts
                         return w;
                     });
@@ -136,6 +138,8 @@ namespace Parley.Views.Helpers
                     {
                         panel.NodeClicked += OnEmbeddedFlowchartNodeClicked;
                         panel.ContextMenuAction += OnFlowchartContextMenuAction; // #461: Context menu parity
+                        panel.SiblingReorderRequested += OnFlowchartSiblingReorder; // #240: Drag-drop reorder
+                        panel.ReparentRequested += OnFlowchartReparent; // #1965: Drag-drop reparent
                         panel.ShortcutManager = _shortcutManager; // #809: Enable keyboard shortcuts
                         _embeddedFlowchartWired = true;
                     }
@@ -179,6 +183,8 @@ namespace Parley.Views.Helpers
                     {
                         panel.NodeClicked += OnTabbedFlowchartNodeClicked;
                         panel.ContextMenuAction += OnFlowchartContextMenuAction; // #461: Context menu parity
+                        panel.SiblingReorderRequested += OnFlowchartSiblingReorder; // #240: Drag-drop reorder
+                        panel.ReparentRequested += OnFlowchartReparent; // #1965: Drag-drop reparent
                         panel.ShortcutManager = _shortcutManager; // #809: Enable keyboard shortcuts
                         _tabbedFlowchartWired = true;
                     }
