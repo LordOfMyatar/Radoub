@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Xunit;
 
 namespace Quartermaster.Tests;
@@ -138,6 +140,53 @@ public class LevelUpSkillDisplayTests
     {
         Assert.False(Services.SkillDisplayHelper.ShouldUseClassSkillColor(
             isClassSkill: false, isUnavailable: true));
+    }
+
+    #endregion
+
+    #region Generic FilterByName (#1799)
+
+    private class TestNamedItem : Services.SkillDisplayHelper.INamedItem
+    {
+        public string Name { get; set; } = "";
+    }
+
+    [Fact]
+    public void FilterByName_GenericItem_FiltersByNameCaseInsensitive()
+    {
+        var items = new List<TestNamedItem>
+        {
+            new() { Name = "Fireball" },
+            new() { Name = "Fire Shield" },
+            new() { Name = "Ice Storm" }
+        };
+        var result = Services.SkillDisplayHelper.FilterByName(items, "fire");
+        Assert.Equal(2, result.Count);
+        Assert.All(result, r => Assert.Contains("Fire", r.Name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void FilterByName_GenericItem_EmptyFilter_ReturnsAll()
+    {
+        var items = new List<TestNamedItem>
+        {
+            new() { Name = "Alpha" },
+            new() { Name = "Beta" }
+        };
+        var result = Services.SkillDisplayHelper.FilterByName(items, "");
+        Assert.Equal(2, result.Count);
+    }
+
+    [Fact]
+    public void FilterByName_GenericItem_NoMatch_ReturnsEmpty()
+    {
+        var items = new List<TestNamedItem>
+        {
+            new() { Name = "Alpha" },
+            new() { Name = "Beta" }
+        };
+        var result = Services.SkillDisplayHelper.FilterByName(items, "zzz");
+        Assert.Empty(result);
     }
 
     #endregion

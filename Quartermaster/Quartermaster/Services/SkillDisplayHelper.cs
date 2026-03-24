@@ -11,9 +11,17 @@ namespace Quartermaster.Services;
 public static class SkillDisplayHelper
 {
     /// <summary>
+    /// Interface for items that can be filtered by name (#1799).
+    /// </summary>
+    public interface INamedItem
+    {
+        string Name { get; }
+    }
+
+    /// <summary>
     /// Minimal interface for skill filter operations — avoids coupling to UI display items.
     /// </summary>
-    public class SkillFilterItem
+    public class SkillFilterItem : INamedItem
     {
         public string Name { get; set; } = "";
         public bool IsClassSkill { get; set; }
@@ -21,15 +29,15 @@ public static class SkillDisplayHelper
     }
 
     /// <summary>
-    /// Filters skills by name using case-insensitive substring matching.
-    /// Returns all skills if filter is null, empty, or whitespace.
+    /// Filters any named items by name using case-insensitive substring matching.
+    /// Returns all items if filter is null, empty, or whitespace.
     /// </summary>
-    public static List<T> FilterByName<T>(List<T> skills, string? filter) where T : SkillFilterItem
+    public static List<T> FilterByName<T>(List<T> items, string? filter) where T : INamedItem
     {
         if (string.IsNullOrWhiteSpace(filter))
-            return new List<T>(skills);
+            return new List<T>(items);
 
-        return skills
+        return items
             .Where(s => s.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
             .ToList();
     }
