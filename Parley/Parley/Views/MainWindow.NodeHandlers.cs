@@ -229,6 +229,26 @@ namespace DialogEditor.Views
             _viewModel.ReorderSibling(node, parent, fromIndex, toIndex);
         }
 
+        /// <summary>
+        /// Handles flowchart drag-drop reparent (#1965).
+        /// Delegates to MainViewModel.MoveNodeToPosition with appropriate wrapper.
+        /// </summary>
+        private void OnFlowchartReparent(DialogNode node, DialogPtr? sourcePointer, DialogNode? newParent, int insertIndex)
+        {
+            if (_viewModel.CurrentDialog == null) return;
+
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"OnFlowchartReparent: '{node.Text?.GetDefault()}' to {(newParent?.Text?.GetDefault() ?? "ROOT")}, index={insertIndex}");
+
+            _viewModel.SaveUndoState("Reparent Node");
+
+            bool moved = _viewModel.MoveNodeToPositionDirect(node, sourcePointer, newParent, insertIndex);
+            if (!moved)
+            {
+                _viewModel.StatusMessage = "Cannot reparent node to that location";
+            }
+        }
+
         // Issue #463: Delegated to TreeViewUIController
         private void OnDialogTreeViewSelectionChanged(object? sender, SelectionChangedEventArgs e)
             => _controllers.TreeView.OnDialogTreeViewSelectionChanged(sender, e);

@@ -37,6 +37,7 @@ namespace Parley.Views.Helpers
         private readonly KeyboardShortcutManager _shortcutManager; // #809: For FlowView keyboard parity
         private readonly Action<FlowchartContextMenuEventArgs>? _onContextMenuAction; // #461: Context menu parity
         private readonly Action<DialogNode, DialogNode?, int, int>? _onSiblingReorder; // #240: Flowchart drag-drop reorder
+        private readonly Action<DialogNode, DialogPtr?, DialogNode?, int>? _onReparent; // #1965: Flowchart drag-drop reparent
 
         // Track whether embedded/tabbed panels have been wired up
         private bool _embeddedFlowchartWired = false;
@@ -56,7 +57,8 @@ namespace Parley.Views.Helpers
             Action<bool> setIsSettingSelectionProgrammatically,
             KeyboardShortcutManager shortcutManager,
             Action<FlowchartContextMenuEventArgs>? onContextMenuAction = null,
-            Action<DialogNode, DialogNode?, int, int>? onSiblingReorder = null)
+            Action<DialogNode, DialogNode?, int, int>? onSiblingReorder = null,
+            Action<DialogNode, DialogPtr?, DialogNode?, int>? onReparent = null)
         {
             _window = window;
             _controls = controls;
@@ -72,6 +74,7 @@ namespace Parley.Views.Helpers
             _shortcutManager = shortcutManager;
             _onContextMenuAction = onContextMenuAction;
             _onSiblingReorder = onSiblingReorder;
+            _onReparent = onReparent;
         }
 
         private MainViewModel ViewModel => _getViewModel();

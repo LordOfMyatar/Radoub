@@ -257,6 +257,28 @@ namespace DialogEditor.ViewModels
         }
 
         /// <summary>
+        /// Moves a node to a new position via drag-and-drop from flowchart (#1965).
+        /// Takes DialogNode/DialogPtr directly (no TreeViewSafeNode wrapper).
+        /// Caller is responsible for saving undo state.
+        /// </summary>
+        public bool MoveNodeToPositionDirect(DialogNode node, DialogPtr? sourcePointer, DialogNode? newParent, int insertIndex)
+        {
+            if (CurrentDialog == null) return false;
+
+            bool moved = _nodeOpsManager.MoveNodeToPosition(CurrentDialog, node, sourcePointer, newParent, insertIndex, out string statusMessage);
+
+            StatusMessage = statusMessage;
+
+            if (moved)
+            {
+                HasUnsavedChanges = true;
+                RefreshTreeViewAndSelectNode(node);
+            }
+
+            return moved;
+        }
+
+        /// <summary>
         /// Reorders a sibling node within its parent's pointer list (#240).
         /// Called from flowchart drag-drop. Handles undo state + execution.
         /// </summary>

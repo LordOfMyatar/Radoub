@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -89,6 +90,12 @@ namespace DialogEditor.Views
         /// Args: (DialogNode node, DialogNode? parent, int fromIndex, int toIndex)
         /// </summary>
         public event Action<DialogNode, DialogNode?, int, int>? SiblingReorderRequested;
+
+        /// <summary>
+        /// Raised when a reparent is requested via drag-drop (#1965).
+        /// Args: (DialogNode node, DialogPtr? sourcePointer, DialogNode? newParent, int insertIndex)
+        /// </summary>
+        public event Action<DialogNode, DialogPtr?, DialogNode?, int>? ReparentRequested;
 
         /// <summary>
         /// Gets the ViewModel for external access (e.g., selection sync)
@@ -686,20 +693,33 @@ namespace DialogEditor.Views
 
             if (!_isDragging || _draggedNode == null) return;
 
-            // Find sibling node under cursor
+            // Find target node under cursor
             var targetNode = FindFlowchartNodeAtPoint(currentPos);
-            if (targetNode != null && targetNode != _draggedNode && AreSiblings(targetNode, _draggedNode))
+            if (targetNode != null && targetNode != _draggedNode)
             {
-                ShowInsertionIndicator(targetNode, currentPos);
-                FlowchartGraphPanel.Cursor = new Avalonia.Input.Cursor(StandardCursorType.DragMove);
+                if (AreSiblings(targetNode, _draggedNode))
+                {
+                    // Sibling reorder (#240)
+                    ShowInsertionIndicator(targetNode, currentPos);
+                    FlowchartGraphPanel.Cursor = new Avalonia.Input.Cursor(StandardCursorType.DragMove);
+                }
+                else if (IsValidReparentTarget(targetNode, _draggedNode))
+                {
+                    // Valid reparent target (#1965)
+                    ShowInsertionIndicator(targetNode, currentPos);
+                    FlowchartGraphPanel.Cursor = new Avalonia.Input.Cursor(StandardCursorType.DragLink);
+                }
+                else
+                {
+                    // Invalid target
+                    HideInsertionIndicator();
+                    FlowchartGraphPanel.Cursor = new Avalonia.Input.Cursor(StandardCursorType.No);
+                }
             }
             else
             {
                 HideInsertionIndicator();
-                if (targetNode != null && targetNode != _draggedNode)
-                    FlowchartGraphPanel.Cursor = new Avalonia.Input.Cursor(StandardCursorType.No);
-                else
-                    FlowchartGraphPanel.Cursor = new Avalonia.Input.Cursor(StandardCursorType.DragMove);
+                FlowchartGraphPanel.Cursor = new Avalonia.Input.Cursor(StandardCursorType.DragMove);
             }
         }
 
@@ -713,9 +733,16 @@ namespace DialogEditor.Views
                 var currentPos = e.GetPosition(FlowchartGraphPanel);
                 var targetNode = FindFlowchartNodeAtPoint(currentPos);
 
-                if (targetNode != null && targetNode != _draggedNode && AreSiblings(targetNode, _draggedNode))
+                if (targetNode != null && targetNode != _draggedNode)
                 {
-                    ExecuteSiblingReorder(_draggedNode, targetNode, currentPos);
+                    if (AreSiblings(targetNode, _draggedNode))
+                    {
+                        ExecuteSiblingReorder(_draggedNode, targetNode, currentPos);
+                    }
+                    else if (IsValidReparentTarget(targetNode, _draggedNode))
+                    {
+                        ExecuteReparent(_draggedNode, targetNode);
+                    }
                 }
 
                 HideInsertionIndicator();
@@ -834,6 +861,103 @@ namespace DialogEditor.Views
 
             // Raise event for MainWindow to handle undo + execution
             SiblingReorderRequested?.Invoke(draggedNode.OriginalNode, parent, fromIndex, toIndex);
+        }
+
+        /// <summary>
+        /// Checks if a target node is a valid reparent destination for the dragged node (#1965).
+        /// Enforces Entry↔Reply alternation and prevents circular references.
+        /// </summary>
+        private bool IsValidReparentTarget(FlowchartNode target, FlowchartNode dragged)
+        {
+            if (target.OriginalNode == null || dragged.OriginalNode == null) return false;
+
+            var dialog = _viewModel.CurrentDialog;
+            if (dialog == null) return false;
+
+            // Alternation rule: Entry nodes can only be children of Reply nodes (or root)
+            // Reply nodes can only be children of Entry nodes
+            var draggedType = dragged.OriginalNode.Type;
+            var targetType = target.OriginalNode.Type;
+
+            // Drop INTO target as new child — dragged becomes child of target
+            // Entry dragged → target must be Reply (or drop to root, handled separately)
+            // Reply dragged → target must be Entry
+            if (draggedType == DialogNodeType.Entry && targetType != DialogNodeType.Reply) return false;
+            if (draggedType == DialogNodeType.Reply && targetType != DialogNodeType.Entry) return false;
+
+            // Prevent circular reference: target cannot be a descendant of dragged
+            if (IsDescendantOf(target.OriginalNode, dragged.OriginalNode, dialog)) return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Checks if possibleDescendant is reachable from possibleAncestor (#1965).
+        /// </summary>
+        private bool IsDescendantOf(DialogNode possibleDescendant, DialogNode possibleAncestor, Dialog dialog)
+        {
+            var visited = new HashSet<DialogNode>();
+            return IsReachableFrom(possibleAncestor, possibleDescendant, visited);
+        }
+
+        private bool IsReachableFrom(DialogNode current, DialogNode target, HashSet<DialogNode> visited)
+        {
+            if (current == target) return true;
+            if (visited.Contains(current)) return false;
+            visited.Add(current);
+
+            foreach (var ptr in current.Pointers)
+            {
+                if (ptr.Node != null && IsReachableFrom(ptr.Node, target, visited))
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Executes reparent via the ReparentRequested event (#1965).
+        /// MainWindow handles undo state + MoveNodeToPosition execution.
+        /// </summary>
+        private void ExecuteReparent(FlowchartNode draggedNode, FlowchartNode targetNode)
+        {
+            if (draggedNode.OriginalNode == null || targetNode.OriginalNode == null) return;
+
+            var dialog = _viewModel.CurrentDialog;
+            if (dialog == null) return;
+
+            // Find the source pointer for the dragged node
+            DialogPtr? sourcePointer = FindSourcePointer(dialog, draggedNode.OriginalNode);
+
+            // Insert at end of target's children
+            int insertIndex = targetNode.OriginalNode.Pointers.Count;
+
+            ReparentRequested?.Invoke(draggedNode.OriginalNode, sourcePointer, targetNode.OriginalNode, insertIndex);
+        }
+
+        /// <summary>
+        /// Finds the DialogPtr that owns a node (for sourcePointer parameter in MoveNodeToPosition).
+        /// </summary>
+        private DialogPtr? FindSourcePointer(Dialog dialog, DialogNode node)
+        {
+            // Check root level
+            var rootPtr = dialog.Starts.FirstOrDefault(s => s.Node == node);
+            if (rootPtr != null) return rootPtr;
+
+            // Check all parents
+            foreach (var entry in dialog.Entries.Concat(dialog.Replies))
+            {
+                var ptr = entry.Pointers.FirstOrDefault(p => p.Node == node && !p.IsLink);
+                if (ptr != null) return ptr;
+            }
+
+            // Fallback: check link pointers
+            foreach (var entry in dialog.Entries.Concat(dialog.Replies))
+            {
+                var ptr = entry.Pointers.FirstOrDefault(p => p.Node == node);
+                if (ptr != null) return ptr;
+            }
+
+            return null;
         }
 
         /// <summary>

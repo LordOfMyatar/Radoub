@@ -35,6 +35,11 @@ namespace DialogEditor.Views
         /// </summary>
         public event Action<DialogNode, DialogNode?, int, int>? SiblingReorderRequested;
 
+        /// <summary>
+        /// Raised when a reparent is requested via drag-drop (#1965).
+        /// </summary>
+        public event Action<DialogNode, DialogPtr?, DialogNode?, int>? ReparentRequested;
+
         public FlowchartWindow()
         {
             _settings = Program.Services.GetRequiredService<ISettingsService>();
@@ -48,6 +53,9 @@ namespace DialogEditor.Views
 
             // Forward sibling reorder events from the panel (#240)
             FlowchartPanelControl.SiblingReorderRequested += (node, parent, from, to) => SiblingReorderRequested?.Invoke(node, parent, from, to);
+
+            // Forward reparent events from the panel (#1965)
+            FlowchartPanelControl.ReparentRequested += (node, sourcePtr, newParent, idx) => ReparentRequested?.Invoke(node, sourcePtr, newParent, idx);
 
             // Restore window position after window opens (Screens not available in constructor)
             Opened += async (s, e) => await RestoreWindowPositionAsync();
