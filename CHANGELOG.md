@@ -17,6 +17,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.100] - TBD
+**Branch**: `radoub/issue-1942` | **PR**: #1952
+
+### Sprint: Dependabot Dependency Updates (#1942)
+
+- [ ] #1942 — Bump dorny/test-reporter from v2 to v3 (CI)
+- [ ] #1943 — Bump coverlet.collector from 8.0.0 to 8.0.1
+- [ ] #1944 — Bump CommunityToolkit.Mvvm from 8.4.0 to 8.4.1
+- [ ] #1945 — Bump Svg.Controls.Skia.Avalonia from 11.3.9.4 to 11.3.9.5
+
+---
+
 ## [0.9.99] - 2026-03-22
 **Branch**: `radoub/issue-1936` | **PR**: #1938
 

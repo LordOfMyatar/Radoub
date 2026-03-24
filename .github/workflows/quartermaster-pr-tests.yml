@@ -66,7 +66,7 @@ jobs:
         retention-days: 30
 
     - name: Test Report - Quartermaster
-      uses: dorny/test-reporter@v2
+      uses: dorny/test-reporter@v3
       if: always()
       with:
         name: Quartermaster Test Results
@@ -75,7 +75,7 @@ jobs:
         fail-on-error: false
 
     - name: Test Report - Formats
-      uses: dorny/test-reporter@v2
+      uses: dorny/test-reporter@v3
       if: always()
       with:
         name: Formats Test Results (Quartermaster PR)

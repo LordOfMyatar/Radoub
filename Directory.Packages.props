@@ -18,7 +18,7 @@
     <PackageVersion Include="SkiaSharp.NativeAssets.Linux" Version="3.119.2" />
 
     <!-- MVVM -->
-    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.1" />
 
     <!-- Serialization -->
     <PackageVersion Include="System.Text.Json" Version="10.0.5" />
@@ -35,7 +35,7 @@
     <!-- Graphics / Rendering -->
     <PackageVersion Include="Pfim" Version="0.11.4" />
     <PackageVersion Include="Silk.NET.OpenGL" Version="2.22.0" />
-    <PackageVersion Include="Svg.Controls.Skia.Avalonia" Version="11.3.9.4" />
+    <PackageVersion Include="Svg.Controls.Skia.Avalonia" Version="11.3.9.5" />
 
     <!-- Spell-checking -->
     <PackageVersion Include="WeCantSpell.Hunspell" Version="7.0.1" />
@@ -52,7 +52,7 @@
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.v3" Version="3.2.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
-    <PackageVersion Include="coverlet.collector" Version="8.0.0" />
+    <PackageVersion Include="coverlet.collector" Version="8.0.1" />
 
     <!-- Integration Testing -->
     <PackageVersion Include="FlaUI.Core" Version="5.0.0" />
