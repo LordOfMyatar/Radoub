@@ -222,6 +222,7 @@ public partial class MainWindow
                     var item = UtiReader.Read(utiData);
                     var displayName = ItemFactory.GetItemDisplayName(item);
                     var baseItemTypeName = ItemFactory.GetBaseItemTypeName(item.BaseItem);
+                    var propertiesDisplay = ItemFactory.GetPropertiesDisplay(item.Properties);
 
                     cacheItems.Add(new SharedPaletteCacheItem
                     {
@@ -229,6 +230,7 @@ public partial class MainWindow
                         Tag = item.Tag ?? string.Empty,
                         DisplayName = displayName,
                         BaseItemTypeName = baseItemTypeName,
+                        PropertiesDisplay = propertiesDisplay,
                         BaseItemType = item.BaseItem,
                         BaseValue = item.Cost,
                         IsStandard = gameSource == GameResourceSource.Bif
@@ -304,7 +306,7 @@ public partial class MainWindow
                         BaseItem = cached.BaseItemType,
                         Value = cached.BaseValue,
                         Tag = !string.IsNullOrEmpty(cached.Tag) ? cached.Tag : cached.ResRef,
-                        PropertiesDisplay = string.Empty,
+                        PropertiesDisplay = cached.PropertiesDisplay,
                         Source = cached.IsStandard ? GameResourceSource.Bif : GameResourceSource.Override
                     };
                     ItemFactory.PopulateEquipableSlots(vm, cached.BaseItemType);

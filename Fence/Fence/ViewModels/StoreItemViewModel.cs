@@ -81,6 +81,17 @@ public class StoreItemViewModel : INotifyPropertyChanged
         set { if (_buyPrice != value) { _buyPrice = value; OnPropertyChanged(); } }
     }
 
+    private Avalonia.Media.Imaging.Bitmap? _iconBitmap;
+
+    /// <summary>
+    /// Icon bitmap loaded from game data by base item type.
+    /// </summary>
+    public Avalonia.Media.Imaging.Bitmap? IconBitmap
+    {
+        get => _iconBitmap;
+        set { if (_iconBitmap != value) { _iconBitmap = value; OnPropertyChanged(); } }
+    }
+
     protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

@@ -479,6 +479,14 @@
                                 </ContextMenu>
                             </DataGrid.ContextMenu>
                             <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="" Width="32" CanUserResize="False" CanUserSort="False">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Image Source="{Binding IconBitmap}" Width="24" Height="24"
+                                                   Stretch="Uniform" Margin="2,0"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                                 <DataGridTemplateColumn Header="∞" Width="45" CanUserSort="True" SortMemberPath="Infinite">
                                     <DataGridTemplateColumn.HeaderTemplate>
                                         <DataTemplate>
@@ -523,32 +531,12 @@
                             <TextBlock Text="Item Palette" FontWeight="Bold"/>
                         </Border>
 
-                        <!-- Filter Bar -->
-                        <Border DockPanel.Dock="Top" Padding="8" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,0,0,1">
-                            <StackPanel Spacing="4">
-                                <!-- Search -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox Grid.Column="0" x:Name="PaletteSearchBox" Watermark="Search items..." TextChanged="OnPaletteSearchTextChanged" AutomationProperties.AutomationId="PaletteSearchBox"/>
-                                    <Button Grid.Column="1" Content="X" Width="28" Margin="4,0,0,0" Click="OnClearPaletteSearch" AutomationProperties.AutomationId="ClearPaletteSearchButton"/>
-                                </Grid>
-
-                                <!-- Source Filter -->
-                                <WrapPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                    <CheckBox x:Name="StandardItemsCheck" Content="Standard" IsChecked="True" Margin="0,0,12,0" IsCheckedChanged="OnSourceFilterChanged" AutomationProperties.AutomationId="StandardItemsCheck"/>
-                                    <CheckBox x:Name="CustomItemsCheck" Content="Custom" IsChecked="False" IsCheckedChanged="OnSourceFilterChanged" AutomationProperties.AutomationId="CustomItemsCheck"/>
-                                </WrapPanel>
-
-                                <!-- Type Filter -->
-                                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
-                                    <TextBlock Text="Type:" VerticalAlignment="Center"/>
-                                    <ComboBox x:Name="ItemTypeFilter" MinWidth="200" SelectionChanged="OnTypeFilterChanged" AutomationProperties.AutomationId="ItemTypeFilter"/>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
+                        <!-- Filter Panel (shared with Quartermaster) -->
+                        <controls:ItemFilterPanel x:Name="PaletteFilter"
+                                                   DockPanel.Dock="Top"
+                                                   ContextKey="Palette"
+                                                   Margin="0,0,0,5"
+                                                   AutomationProperties.AutomationId="PaletteFilter"/>
 
                         <!-- Action Buttons (must dock before DataGrid fills remaining space) -->
                         <Border DockPanel.Dock="Bottom" Padding="8" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,1,0,0">
@@ -586,9 +574,9 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="Name" Width="*" MinWidth="150" Binding="{Binding DisplayName}"/>
-                                <DataGridTextColumn Header="Type" Width="100" Binding="{Binding BaseItemType}"/>
-                                <DataGridTextColumn Header="Value" Width="60" Binding="{Binding BaseValue}"/>
+                                <DataGridTextColumn Header="Name" Width="*" MinWidth="150" Binding="{Binding Name}"/>
+                                <DataGridTextColumn Header="Type" Width="100" Binding="{Binding BaseItemName}"/>
+                                <DataGridTextColumn Header="Value" Width="60" Binding="{Binding Value}"/>
                                 <DataGridTextColumn Header="ResRef" Width="120" Binding="{Binding ResRef}"/>
                                 <DataGridTextColumn Header="Tag" Width="120" Binding="{Binding Tag}"/>
                             </DataGrid.Columns>

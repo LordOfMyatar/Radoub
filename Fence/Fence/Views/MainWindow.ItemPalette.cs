@@ -2,13 +2,13 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
-using MerchantEditor.ViewModels;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
 using Radoub.Formats.Uti;
 using Radoub.UI.Services;
+using Radoub.UI.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -21,6 +21,7 @@ namespace MerchantEditor.Views;
 /// <summary>
 /// MainWindow partial: Item Palette loading and filtering
 /// Uses shared cross-tool palette cache for item data.
+/// Load-all strategy with shared ItemFilterPanel for filtering.
 /// </summary>
 public partial class MainWindow
 {
@@ -40,9 +41,6 @@ public partial class MainWindow
     // HAK scanner for loading items from module-referenced HAK files
     private readonly HakPaletteScannerService _hakScanner = new();
 
-    // Track which types have been loaded (for on-demand loading)
-    private readonly HashSet<string> _loadedItemTypes = new(StringComparer.OrdinalIgnoreCase);
-    private bool _allItemsLoaded;
     private List<SharedPaletteCacheItem>? _cachedPaletteData;
     private string? _lastModuleDirectory;
 
@@ -51,20 +49,9 @@ public partial class MainWindow
 
     #region Item Palette
 
-    private void PopulateTypeFilter()
-    {
-        if (_baseItemTypeService == null) return;
-
-        var types = _baseItemTypeService.GetBaseItemTypes();
-        var items = new List<string> { "(All Types)" };
-        items.AddRange(types.Select(t => t.DisplayName));
-        ItemTypeFilter.ItemsSource = items;
-        ItemTypeFilter.SelectedIndex = 0;
-    }
-
     /// <summary>
-    /// Initialize palette - don't load items yet, just prepare the cache.
-    /// Items are loaded on-demand when user filters or searches.
+    /// Initialize palette - pre-warm cache and load all items.
+    /// Uses load-all strategy with shared ItemFilterPanel for filtering.
     /// </summary>
     private void StartItemPaletteLoad(CancellationToken token = default)
     {
@@ -75,13 +62,16 @@ public partial class MainWindow
             return;
         }
 
-        // Bind grid to collection
-        ItemPaletteGrid.ItemsSource = PaletteItems;
+        // Pre-warm cache in background, then load all items
+        _ = PreWarmAndLoadPaletteAsync(token);
 
-        // Pre-warm cache in background (but don't display items yet)
-        _ = PreWarmCacheAsync(token);
+        UpdateStatusBar("Loading item palette...");
+    }
 
-        UpdateStatusBar("Ready - select an item type to browse");
+    private async Task PreWarmAndLoadPaletteAsync(CancellationToken token = default)
+    {
+        await PreWarmCacheAsync(token);
+        await LoadAllPaletteItemsAsync(token);
     }
 
     /// <summary>
@@ -149,20 +139,31 @@ public partial class MainWindow
 
                 try
                 {
-                    var resolved = _itemResolutionService!.ResolveItem(resourceInfo.ResRef);
-                    if (resolved != null && !ExcludedBaseItemTypes.Contains(resolved.BaseItemType))
+                    var utiData = _gameDataService.FindResource(resourceInfo.ResRef, ResourceTypes.Uti);
+                    if (utiData != null)
                     {
-                        cacheItems.Add(new SharedPaletteCacheItem
+                        var item = UtiReader.Read(utiData);
+                        var displayName = _itemViewModelFactory?.GetItemDisplayName(item)
+                            ?? item.LocalizedName.GetDefault()
+                            ?? resourceInfo.ResRef;
+                        var baseItemTypeName = _itemViewModelFactory?.GetBaseItemTypeName(item.BaseItem) ?? string.Empty;
+                        var propertiesDisplay = _itemViewModelFactory?.GetPropertiesDisplay(item.Properties) ?? string.Empty;
+
+                        if (!ExcludedBaseItemTypes.Contains(item.BaseItem))
                         {
-                            ResRef = resolved.ResRef,
-                            DisplayName = resolved.DisplayName,
-                            BaseItemTypeName = resolved.BaseItemTypeName,
-                            BaseItemType = resolved.BaseItemType,
-                            BaseValue = (uint)resolved.BaseCost,
-                            Tag = resolved.Tag,
-                            IsStandard = resourceInfo.Source == GameResourceSource.Bif
-                        });
-                        existingResRefs.Add(resourceInfo.ResRef);
+                            cacheItems.Add(new SharedPaletteCacheItem
+                            {
+                                ResRef = resourceInfo.ResRef,
+                                DisplayName = displayName,
+                                BaseItemTypeName = baseItemTypeName,
+                                BaseItemType = item.BaseItem,
+                                BaseValue = item.Cost,
+                                Tag = item.Tag ?? string.Empty,
+                                IsStandard = resourceInfo.Source == GameResourceSource.Bif,
+                                PropertiesDisplay = propertiesDisplay
+                            });
+                            existingResRefs.Add(resourceInfo.ResRef);
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -187,138 +188,85 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// Load items for a specific type filter. Called when user changes filter.
+    /// Load all palette items from cache into ItemViewModel collection.
+    /// Matching QM's load-all-then-filter strategy.
     /// </summary>
-    public async Task LoadItemsForTypeAsync(string? typeFilter)
+    private async Task LoadAllPaletteItemsAsync(CancellationToken token = default)
     {
-        // If loading all items and already done, skip
-        if (string.IsNullOrEmpty(typeFilter) && _allItemsLoaded)
-            return;
-
-        // If loading specific type and already loaded, skip
-        if (!string.IsNullOrEmpty(typeFilter) && _loadedItemTypes.Contains(typeFilter))
-            return;
-
-        UpdateStatusBar($"Loading {typeFilter ?? "all"} items...");
-
-        try
+        if (_cachedPaletteData == null || _cachedPaletteData.Count == 0)
         {
-            // Wait for cache if not ready
-            if (_cachedPaletteData == null)
-            {
-                await PreWarmCacheAsync();
-            }
-
-            if (_cachedPaletteData == null)
-            {
-                UpdateStatusBar("Ready (no items available)");
-                return;
-            }
-
-            // Filter cached data - use BaseItemTypeName for type matching
-            var itemsToAdd = string.IsNullOrEmpty(typeFilter)
-                ? _cachedPaletteData
-                : _cachedPaletteData.Where(i => i.BaseItemTypeName.Equals(typeFilter, StringComparison.OrdinalIgnoreCase)).ToList();
-
-            // Convert to view models and add (skip already loaded)
-            var existingResRefs = new HashSet<string>(PaletteItems.Select(p => p.ResRef), StringComparer.OrdinalIgnoreCase);
-            var newItems = new List<PaletteItemViewModel>();
-
-            foreach (var cached in itemsToAdd)
-            {
-                if (!existingResRefs.Contains(cached.ResRef))
-                {
-                    newItems.Add(new PaletteItemViewModel
-                    {
-                        ResRef = cached.ResRef,
-                        DisplayName = cached.DisplayName,
-                        BaseItemType = cached.BaseItemTypeName,
-                        BaseItemIndex = cached.BaseItemType,
-                        BaseValue = (int)cached.BaseValue,
-                        Tag = cached.Tag,
-                        IsStandard = cached.IsStandard,
-                        IconBitmap = _itemIconService?.GetItemIcon(cached.BaseItemType)
-                    });
-                }
-            }
-
-            // Add to UI
             await Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                foreach (var item in newItems)
-                {
-                    PaletteItems.Add(item);
-                }
-            });
-
-            // Track what's loaded
-            if (string.IsNullOrEmpty(typeFilter))
-            {
-                _allItemsLoaded = true;
-            }
-            else
-            {
-                _loadedItemTypes.Add(typeFilter);
-            }
-
-            var total = PaletteItems.Count;
-            UpdateStatusBar($"Ready - {total} items loaded");
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {newItems.Count} {typeFilter ?? "all"} items (total: {total})");
+                UpdateStatusBar("Ready (no items available)"));
+            return;
         }
-        catch (Exception ex)
+
+        var viewModels = await Task.Run(() =>
         {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load items: {ex.Message}");
-            UpdateStatusBar("Ready (load failed)");
-        }
+            var vms = new List<ItemViewModel>(_cachedPaletteData.Count);
+            foreach (var cached in _cachedPaletteData)
+            {
+                token.ThrowIfCancellationRequested();
+                var vm = new ItemViewModel
+                {
+                    ResRef = cached.ResRef,
+                    Name = cached.DisplayName,
+                    BaseItemName = cached.BaseItemTypeName,
+                    BaseItem = cached.BaseItemType,
+                    Value = cached.BaseValue,
+                    Tag = !string.IsNullOrEmpty(cached.Tag) ? cached.Tag : cached.ResRef,
+                    PropertiesDisplay = cached.PropertiesDisplay,
+                    Source = cached.IsStandard ? GameResourceSource.Bif : GameResourceSource.Override,
+                    IconBitmap = _itemIconService?.GetItemIcon(cached.BaseItemType)
+                };
+                _itemViewModelFactory?.PopulateEquipableSlots(vm, cached.BaseItemType);
+                vms.Add(vm);
+            }
+            return vms;
+        }, token);
+
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            // Disconnect filter during bulk load
+            if (_paletteFilter != null)
+                _paletteFilter.Items = null;
+
+            PaletteItems.Clear();
+            foreach (var vm in viewModels)
+                PaletteItems.Add(vm);
+
+            if (_paletteFilter != null)
+            {
+                _paletteFilter.Items = PaletteItems;
+                _paletteFilter.GameDataService = _gameDataService;
+                // Show all sources by default (including module/custom items)
+                _paletteFilter.ShowCustom = true;
+                _paletteFilter.ApplyFilter();
+            }
+
+            UpdateStatusBar($"Ready - {PaletteItems.Count} items loaded");
+        });
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Palette loaded: {viewModels.Count} items");
     }
 
     /// <summary>
     /// Clear and reload the palette cache. Called from Settings.
     /// Returns a task that completes when rebuild is done.
     /// </summary>
-    public Task ClearAndReloadPaletteCacheAsync()
+    public async Task ClearAndReloadPaletteCacheAsync()
     {
         _sharedCacheService.ClearAllCaches();
         _cachedPaletteData = null;
         _activeHakPaths = null;
-        _loadedItemTypes.Clear();
-        _allItemsLoaded = false;
         PaletteItems.Clear();
 
-        // Rebuild cache and refresh the current filter
-        return RebuildCacheAndRefreshAsync();
-    }
-
-    /// <summary>
-    /// Rebuild cache from scratch and refresh the palette display.
-    /// </summary>
-    private async Task RebuildCacheAndRefreshAsync()
-    {
-        try
-        {
-            UpdateStatusBar("Rebuilding palette cache...");
-
-            // Build the cache
-            await BuildCacheInBackgroundAsync();
-
-            // Refresh the current filter selection
-            var selectedType = ItemTypeFilter.SelectedItem as string;
-            if (!string.IsNullOrEmpty(selectedType) && selectedType != "All Items")
-            {
-                await LoadItemsForTypeAsync(selectedType);
-            }
-            else if (selectedType == "All Items")
-            {
-                await LoadItemsForTypeAsync(null);
-            }
-
-            UpdateStatusBar("Cache rebuilt successfully");
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Cache rebuild failed: {ex.Message}");
-            UpdateStatusBar("Cache rebuild failed");
-        }
+        // Rebuild cache and load all items
+        UpdateStatusBar("Rebuilding palette cache...");
+        await BuildCacheInBackgroundAsync();
+        await ScanModuleHaksAsync();
+        await LoadAllPaletteItemsAsync();
+        PopulateModuleItems();
+        UpdateStatusBar("Cache rebuilt successfully");
     }
 
     /// <summary>
@@ -349,6 +297,10 @@ public partial class MainWindow
         if (string.IsNullOrEmpty(newModuleDir) || !Directory.Exists(newModuleDir))
             return;
 
+        // Disconnect filter during bulk add
+        if (_paletteFilter != null)
+            _paletteFilter.Items = null;
+
         var utiFiles = Directory.GetFiles(newModuleDir, "*.uti", SearchOption.TopDirectoryOnly);
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Found {utiFiles.Length} .uti files in module directory");
 
@@ -366,16 +318,16 @@ public partial class MainWindow
                 var resolved = _itemResolutionService?.ResolveItem(resRef);
                 if (resolved != null && !ExcludedBaseItemTypes.Contains(resolved.BaseItemType))
                 {
-                    PaletteItems.Add(new PaletteItemViewModel
+                    PaletteItems.Add(new ItemViewModel
                     {
                         ResRef = resolved.ResRef,
-                        DisplayName = resolved.DisplayName,
-                        BaseItemType = resolved.BaseItemTypeName,
-                        BaseItemIndex = resolved.BaseItemType,
-                        BaseValue = resolved.BaseCost,
+                        Name = resolved.DisplayName,
+                        BaseItemName = resolved.BaseItemTypeName,
+                        BaseItem = resolved.BaseItemType,
+                        Value = (uint)resolved.BaseCost,
                         Tag = resolved.Tag,
-                        IsStandard = false,
-                        IsModuleItem = true,
+                        PropertiesDisplay = string.Empty,
+                        Source = GameResourceSource.Module,
                         IconBitmap = _itemIconService?.GetItemIcon(resolved.BaseItemType)
                     });
                     existingResRefs.Add(resRef);
@@ -389,6 +341,13 @@ public partial class MainWindow
             }
         }
 
+        // Reconnect filter
+        if (_paletteFilter != null)
+        {
+            _paletteFilter.Items = PaletteItems;
+            _paletteFilter.ApplyFilter();
+        }
+
         if (moduleItemCount > 0)
         {
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Added {moduleItemCount} module items to palette");
@@ -400,10 +359,21 @@ public partial class MainWindow
     /// </summary>
     private void ClearModuleItems()
     {
-        var toRemove = PaletteItems.Where(p => p.IsModuleItem).ToList();
+        // Disconnect filter during removal
+        if (_paletteFilter != null)
+            _paletteFilter.Items = null;
+
+        var toRemove = PaletteItems.Where(p => p.Source == GameResourceSource.Module).ToList();
 
         foreach (var item in toRemove)
             PaletteItems.Remove(item);
+
+        // Reconnect filter
+        if (_paletteFilter != null)
+        {
+            _paletteFilter.Items = PaletteItems;
+            _paletteFilter.ApplyFilter();
+        }
 
         if (toRemove.Count > 0)
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Cleared {toRemove.Count} module items from palette");

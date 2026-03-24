@@ -97,6 +97,11 @@ public class ItemViewModelFactory
     public string GetBaseItemTypeName(int baseItem) => ResolveBaseItemName(baseItem);
 
     /// <summary>
+    /// Get the properties display string for caching.
+    /// </summary>
+    public string GetPropertiesDisplay(List<ItemProperty> properties) => ResolvePropertiesDisplay(properties);
+
+    /// <summary>
     /// Populate equipable slot info on an ItemViewModel using baseitems.2da lookup.
     /// Works for both full and cache-loaded items.
     /// </summary>

@@ -4,6 +4,7 @@ using Avalonia.Interactivity;
 using MerchantEditor.ViewModels;
 using Radoub.Formats.Utm;
 using Radoub.UI.Services;
+using Radoub.UI.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -106,7 +107,7 @@ public partial class MainWindow
 
     private void AddSelectedPaletteItems()
     {
-        var selectedItems = ItemPaletteGrid.SelectedItems?.Cast<PaletteItemViewModel>().ToList();
+        var selectedItems = ItemPaletteGrid.SelectedItems?.Cast<ItemViewModel>().ToList();
         if (selectedItems == null || selectedItems.Count == 0)
             return;
 
@@ -116,26 +117,27 @@ public partial class MainWindow
 
         foreach (var item in selectedItems)
         {
-            var sellPrice = (int)Math.Ceiling(item.BaseValue * markUp / 100.0);
-            var buyPrice = (int)Math.Floor(item.BaseValue * markDown / 100.0);
-            var panelId = GetStorePanelForBaseItemType(item.BaseItemIndex);
+            var sellPrice = (int)Math.Ceiling((int)item.Value * markUp / 100.0);
+            var buyPrice = (int)Math.Floor((int)item.Value * markDown / 100.0);
+            var panelId = GetStorePanelForBaseItemType(item.BaseItem);
 
             // Debug: Log panel assignment for troubleshooting
             Radoub.Formats.Logging.UnifiedLogger.LogApplication(
                 Radoub.Formats.Logging.LogLevel.DEBUG,
-                $"Adding item: {item.ResRef} | Type: {item.BaseItemType} | Panel: {panelId} ({StorePanels.GetPanelName(panelId)})");
+                $"Adding item: {item.ResRef} | Type: {item.BaseItemName} | Panel: {panelId} ({StorePanels.GetPanelName(panelId)})");
 
             StoreItems.Add(new StoreItemViewModel
             {
                 ResRef = item.ResRef,
-                DisplayName = item.DisplayName,
+                DisplayName = item.Name,
                 Infinite = false,
                 PanelId = panelId,
-                BaseItemType = item.BaseItemType,
-                BaseItemIndex = item.BaseItemIndex,
-                BaseValue = item.BaseValue,
+                BaseItemType = item.BaseItemName,
+                BaseItemIndex = item.BaseItem,
+                BaseValue = (int)item.Value,
                 SellPrice = sellPrice,
-                BuyPrice = buyPrice
+                BuyPrice = buyPrice,
+                IconBitmap = item.IconBitmap ?? _itemIconService?.GetItemIcon(item.BaseItem)
             });
         }
 
@@ -314,74 +316,6 @@ public partial class MainWindow
 
             StoreInventoryGrid.ItemsSource = filtered;
         }
-    }
-
-    private async void OnPaletteSearchTextChanged(object? sender, TextChangedEventArgs e)
-    {
-        // If user is searching, load all items first (search needs full dataset)
-        var searchText = PaletteSearchBox.Text?.Trim() ?? "";
-        if (!string.IsNullOrEmpty(searchText) && searchText.Length >= 2)
-        {
-            await LoadItemsForTypeAsync(null); // Load all items for search
-        }
-        ApplyPaletteFilter();
-    }
-
-    private void OnClearPaletteSearch(object? sender, RoutedEventArgs e)
-    {
-        PaletteSearchBox.Text = "";
-        ApplyPaletteFilter();
-    }
-
-    private async void OnTypeFilterChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        // Load items for the selected type on-demand
-        var typeFilter = ItemTypeFilter.SelectedIndex > 0 ? ItemTypeFilter.SelectedItem?.ToString() : null;
-        await LoadItemsForTypeAsync(typeFilter);
-        ApplyPaletteFilter();
-    }
-
-    private void OnSourceFilterChanged(object? sender, RoutedEventArgs e)
-    {
-        ApplyPaletteFilter();
-    }
-
-    private void ApplyPaletteFilter()
-    {
-        var searchText = PaletteSearchBox.Text?.Trim() ?? "";
-        var typeFilter = ItemTypeFilter.SelectedIndex > 0 ? ItemTypeFilter.SelectedItem?.ToString() : null;
-        var showStandard = StandardItemsCheck?.IsChecked ?? true;
-        var showCustom = CustomItemsCheck?.IsChecked ?? true;
-
-        var filtered = PaletteItems.AsEnumerable();
-
-        // Apply search text filter
-        if (!string.IsNullOrEmpty(searchText))
-        {
-            filtered = filtered.Where(item =>
-                item.DisplayName.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
-                item.ResRef.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
-                item.BaseItemType.Contains(searchText, StringComparison.OrdinalIgnoreCase)
-            );
-        }
-
-        // Apply type filter
-        if (!string.IsNullOrEmpty(typeFilter))
-        {
-            filtered = filtered.Where(item =>
-                item.BaseItemType.Equals(typeFilter, StringComparison.OrdinalIgnoreCase)
-            );
-        }
-
-        // Apply source filter (module items always visible)
-        if (!showStandard || !showCustom)
-        {
-            filtered = filtered.Where(item =>
-                item.IsModuleItem || (showStandard && item.IsStandard) || (showCustom && !item.IsStandard)
-            );
-        }
-
-        ItemPaletteGrid.ItemsSource = filtered.ToList();
     }
 
     #endregion

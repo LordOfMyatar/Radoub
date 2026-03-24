@@ -4,6 +4,7 @@ using Avalonia.Interactivity;
 using MerchantEditor.Services;
 using MerchantEditor.ViewModels;
 using Radoub.Formats.Utm;
+using Radoub.UI.ViewModels;
 using System.Linq;
 
 namespace MerchantEditor.Views;
@@ -34,7 +35,7 @@ public partial class MainWindow
         if (StoreInventoryGrid.SelectedItem != null)
             return;
 
-        var selected = ItemPaletteGrid.SelectedItem as PaletteItemViewModel;
+        var selected = ItemPaletteGrid.SelectedItem as ItemViewModel;
         if (selected != null)
         {
             UpdateItemDetailsFromPalette(selected);
@@ -62,26 +63,26 @@ public partial class MainWindow
         DetailStorePanel.Text = StorePanels.GetPanelName(item.PanelId);
     }
 
-    private void UpdateItemDetailsFromPalette(PaletteItemViewModel item)
+    private void UpdateItemDetailsFromPalette(ItemViewModel item)
     {
         NoSelectionText.IsVisible = false;
         ItemDetailsScroll.IsVisible = true;
 
-        DetailItemIcon.Source = item.IconBitmap ?? _itemIconService?.GetItemIcon(item.BaseItemIndex);
-        DetailItemName.Text = item.DisplayName;
-        DetailItemType.Text = item.BaseItemType;
+        DetailItemIcon.Source = item.IconBitmap ?? _itemIconService?.GetItemIcon(item.BaseItem);
+        DetailItemName.Text = item.Name;
+        DetailItemType.Text = item.BaseItemName;
         DetailResRef.Text = item.ResRef;
         DetailTag.Text = "(palette item)";
-        DetailValue.Text = $"{item.BaseValue:N0} gp";
+        DetailValue.Text = $"{item.Value:N0} gp";
 
         // Calculate prices from current markup/markdown
         var markUp = int.TryParse(SellMarkupBox.Text, out var mu) ? mu : 100;
         var markDown = int.TryParse(BuyMarkdownBox.Text, out var md) ? md : 50;
-        DetailSellPrice.Text = $"{(int)System.Math.Ceiling(item.BaseValue * markUp / 100.0):N0} gp";
-        DetailBuyPrice.Text = $"{(int)System.Math.Floor(item.BaseValue * markDown / 100.0):N0} gp";
+        DetailSellPrice.Text = $"{(int)System.Math.Ceiling(item.Value * markUp / 100.0):N0} gp";
+        DetailBuyPrice.Text = $"{(int)System.Math.Floor(item.Value * markDown / 100.0):N0} gp";
         DetailInfinite.Text = "—";
         DetailStorePanel.Text = StorePanels.GetPanelName(
-            GetStorePanelForBaseItemType(item.BaseItemIndex));
+            GetStorePanelForBaseItemType(item.BaseItem));
     }
 
     private void ClearItemDetails()
@@ -247,7 +248,7 @@ public partial class MainWindow
 
     private async void OnContextCopyPaletteResRef(object? sender, RoutedEventArgs e)
     {
-        var selected = ItemPaletteGrid.SelectedItem as PaletteItemViewModel;
+        var selected = ItemPaletteGrid.SelectedItem as ItemViewModel;
         if (selected != null && TopLevel.GetTopLevel(this) is { Clipboard: { } clipboard })
         {
             await clipboard.SetTextAsync(selected.ResRef);
@@ -257,7 +258,7 @@ public partial class MainWindow
 
     private async void OnContextCopyPaletteTag(object? sender, RoutedEventArgs e)
     {
-        var selected = ItemPaletteGrid.SelectedItem as PaletteItemViewModel;
+        var selected = ItemPaletteGrid.SelectedItem as ItemViewModel;
         if (selected != null && TopLevel.GetTopLevel(this) is { Clipboard: { } clipboard })
         {
             await clipboard.SetTextAsync(selected.Tag);
@@ -267,11 +268,11 @@ public partial class MainWindow
 
     private async void OnContextCopyPaletteName(object? sender, RoutedEventArgs e)
     {
-        var selected = ItemPaletteGrid.SelectedItem as PaletteItemViewModel;
+        var selected = ItemPaletteGrid.SelectedItem as ItemViewModel;
         if (selected != null && TopLevel.GetTopLevel(this) is { Clipboard: { } clipboard })
         {
-            await clipboard.SetTextAsync(selected.DisplayName);
-            UpdateStatusBar($"Copied: {selected.DisplayName}");
+            await clipboard.SetTextAsync(selected.Name);
+            UpdateStatusBar($"Copied: {selected.Name}");
         }
     }
 

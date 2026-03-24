@@ -26,6 +26,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Radoub.UI.Utils;
+using Radoub.UI.ViewModels;
 using Radoub.UI.Views;
 
 namespace MerchantEditor.Views;
@@ -68,17 +69,22 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private IGameDataService? _gameDataService;
     private TlkService? _tlkService;
     private ItemIconService? _itemIconService;
+    private ItemViewModelFactory? _itemViewModelFactory;
     private bool _servicesInitialized;
 
     // Cancellation token for async operations - cancelled on window close
     private CancellationTokenSource? _windowCts;
+
+    // Shared filter panel for item palette
+    private ItemFilterPanel? _paletteFilter;
 
     // Store palette categories loaded from storepal.itp
     // Maps dropdown index to category ID for CEP/custom content support
     private readonly List<PaletteCategory> _storeCategories = new();
 
     public ObservableCollection<StoreItemViewModel> StoreItems { get; } = new();
-    public ObservableCollection<PaletteItemViewModel> PaletteItems { get; } = new();
+    public ObservableCollection<ItemViewModel> PaletteItems { get; } = new();
+    private readonly ObservableCollection<ItemViewModel> _filteredPaletteItems = new();
     public ObservableCollection<SelectableBaseItemTypeViewModel> SelectableBaseItemTypes { get; } = new();
 
     public bool HasFile => _currentStore != null;
@@ -90,6 +96,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         InitializeComponent();
         DataContext = this;
+
+        // Find shared filter panel and wire up filtered items (matching QM pattern)
+        _paletteFilter = this.FindControl<ItemFilterPanel>("PaletteFilter");
+        if (_paletteFilter != null)
+        {
+            _paletteFilter.FilteredItems = _filteredPaletteItems;
+            ItemPaletteGrid.ItemsSource = _filteredPaletteItems;
+        }
 
         // Wire up shared document state for title bar updates
         _documentState.DirtyStateChanged += () => Title = _documentState.GetTitle();
@@ -234,7 +248,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
             _itemResolutionService = new ItemResolutionService(_gameDataService, _tlkService);
             if (_gameDataService != null)
+            {
                 _itemIconService = new ItemIconService(_gameDataService);
+                _itemViewModelFactory = new ItemViewModelFactory(_gameDataService);
+            }
         });
 
         _servicesInitialized = true;
@@ -425,9 +442,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 }
                 ItemTypeCheckboxes.ItemsSource = SelectableBaseItemTypes;
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {SelectableBaseItemTypes.Count} base item types for buy restrictions");
-
-                // Populate type filter after base items loaded
-                PopulateTypeFilter();
             });
         }
         catch (OperationCanceledException)

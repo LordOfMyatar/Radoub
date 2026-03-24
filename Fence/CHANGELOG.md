@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.23-alpha] - 2026-03-22
+**Branch**: `fence/issue-1826` | **PR**: #1954
+
+### Sprint: Item Display & Palette Standardization (#1826)
+
+- [x] #1192 — Add item icons to store inventory grid
+- [x] #1674 — Standardize item palette between QM and Fence
+  - Migrated from custom `PaletteItemViewModel` to shared `ItemViewModel`
+  - Adopted shared `ItemFilterPanel` (text search, slot filter, property search, filter persistence)
+  - Switched from per-type lazy loading to load-all-then-filter strategy
+  - Added `PropertiesDisplay` to shared palette cache for property search
+
+---
+
 ## [0.1.22-alpha] - 2026-03-22
 **Branch**: `radoub/issue-1936` | **PR**: #1938
 
