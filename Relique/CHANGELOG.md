@@ -14,6 +14,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.2-alpha] - 2026-03-24
+**Branch**: `relique/issue-1829` | **PR**: #TBD
+
+### Sprint: Bug Fixes (#1829)
+
+- [ ] #1802 — Module change from Trebuchet not detected
+- [ ] #1803 — Title bar not updating when opening from Recent Files
+- [ ] #1804 — Item statistics don't auto-update on property value change
+- [ ] #1809 — Duplicate properties allowed (move semantics for property assignment)
+
+---
+
 ## [0.10.1-alpha] - 2026-03-22
 **Branch**: `radoub/issue-1936` | **PR**: #1938
 
