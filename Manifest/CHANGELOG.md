@@ -14,6 +14,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.15.6-alpha] - 2026-03-24
+**Branch**: `quartermaster/issue-1900` | **PR**: #1969
+
+### Sprint: Module Switch & UI Bug Fixes (#1900)
+
+- [x] #1859 — Module indicator theme refresh on theme change
+
+---
+
 ## [0.15.5-alpha] - 2026-03-22
 **Branch**: `radoub/issue-1936` | **PR**: #1938
 

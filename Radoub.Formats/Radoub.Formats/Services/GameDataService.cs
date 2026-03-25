@@ -241,21 +241,20 @@ public class GameDataService : IGameDataService
             var hakSearchPaths = settings.GetAllHakSearchPaths().ToList();
 
             var modulePaths = ModuleHakResolver.ResolveModuleHakPaths(moduleDirectory, hakSearchPaths);
-            if (modulePaths.Count == 0)
-            {
-                UnifiedLogger.Log(LogLevel.INFO, "ConfigureModuleHaks: no HAKs referenced by module", "GameDataService", "GameData");
-                return;
-            }
 
-            // Update HAK paths on the existing resolver — preserves KEY/BIF index
+            if (modulePaths.Count == 0)
+                UnifiedLogger.Log(LogLevel.INFO, "ConfigureModuleHaks: no HAKs referenced by module — clearing stale HAK state", "GameDataService", "GameData");
+            else
+                UnifiedLogger.Log(LogLevel.INFO, $"ConfigureModuleHaks: loaded {modulePaths.Count} module-referenced HAKs", "GameDataService", "GameData");
+
+            // Update HAK paths on the existing resolver — preserves KEY/BIF index.
+            // Must be called even when modulePaths is empty to clear stale HAKs (#1869).
             _resolver.UpdateHakPaths(modulePaths);
 
             // Clear caches that depend on resource resolution order
             _twoDACache.Clear();
             _ssfCache.Clear();
             _paletteCache.Clear();
-
-            UnifiedLogger.Log(LogLevel.INFO, $"ConfigureModuleHaks: loaded {modulePaths.Count} module-referenced HAKs", "GameDataService", "GameData");
         }
     }
 

@@ -80,6 +80,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 OnTokenPreviewExpanded(null, null!);
         };
 
+        // Subscribe to theme changes to refresh module indicator color (#1859)
+        Radoub.UI.Services.ThemeManager.Instance.ThemeApplied += OnThemeApplied;
+
         // Initialize search bar with JRL search provider
         var searchBar = this.FindControl<SearchBar>("FileSearchBar");
         searchBar?.Initialize(
@@ -143,6 +146,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (shouldClose)
         {
             _documentState.ClearDirty();
+            Radoub.UI.Services.ThemeManager.Instance.ThemeApplied -= OnThemeApplied;
             Radoub.UI.Services.FileSessionLockService.ReleaseAllLocks();
             SaveWindowPosition();
             if (e.Cancel)
@@ -156,6 +160,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     #endregion
 
     #region Module Indicator
+
+    /// <summary>
+    /// Refresh module indicator when theme changes so BrushManager picks up
+    /// the new theme's info/warning colors (#1859).
+    /// </summary>
+    private void OnThemeApplied(object? sender, EventArgs e)
+    {
+        Avalonia.Threading.Dispatcher.UIThread.Post(UpdateModuleIndicator);
+    }
 
     /// <summary>
     /// Update status bar module indicator from RadoubSettings (#1003).

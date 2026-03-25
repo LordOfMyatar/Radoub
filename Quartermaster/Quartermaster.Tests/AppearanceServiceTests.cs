@@ -765,4 +765,103 @@ public class AppearanceServiceTests
     }
 
     #endregion
+
+    #region ResolveAppearanceSources
+
+    [Fact]
+    public void ResolveAppearanceSources_SimpleModel_ResolvesToBif()
+    {
+        // Simple model: Race = "BADGER" → MDL resref "badger"
+        _mockGameData.AddResourceInfo("badger", 2030); // MDL type, BIF source
+
+        var appearances = new System.Collections.Generic.List<AppearanceInfo>
+        {
+            new() { AppearanceId = 0, Label = "Badger", Race = "BADGER", IsPartBased = false }
+        };
+
+        _service.ResolveAppearanceSources(appearances);
+
+        Assert.Equal(AppearanceSource.Bif, appearances[0].Source);
+    }
+
+    [Fact]
+    public void ResolveAppearanceSources_SimpleModelWithCPrefix_ResolvesToBif()
+    {
+        // Some creature models use "c_" prefix
+        _mockGameData.AddResourceInfo("c_dragon", 2030);
+
+        var appearances = new System.Collections.Generic.List<AppearanceInfo>
+        {
+            new() { AppearanceId = 0, Label = "Dragon", Race = "DRAGON", IsPartBased = false }
+        };
+
+        _service.ResolveAppearanceSources(appearances);
+
+        Assert.Equal(AppearanceSource.Bif, appearances[0].Source);
+    }
+
+    [Fact]
+    public void ResolveAppearanceSources_PartBasedModel_ResolvesViaPrefixMatch()
+    {
+        // Part-based model: Race = "H" (single letter for Human)
+        // MDL lookup should find models starting with "p" + race letter
+        _mockGameData.AddResourceInfo("pmh0", 2030); // Male human default skeleton
+
+        var appearances = new System.Collections.Generic.List<AppearanceInfo>
+        {
+            new() { AppearanceId = 0, Label = "Human", Race = "H", IsPartBased = true }
+        };
+
+        _service.ResolveAppearanceSources(appearances);
+
+        Assert.Equal(AppearanceSource.Bif, appearances[0].Source);
+    }
+
+    [Fact]
+    public void ResolveAppearanceSources_PartBasedDwarf_ResolvesViaPrefixMatch()
+    {
+        // Part-based model: Race = "D" (Dwarf)
+        _mockGameData.AddResourceInfo("pmd0", 2030);
+
+        var appearances = new System.Collections.Generic.List<AppearanceInfo>
+        {
+            new() { AppearanceId = 0, Label = "Dwarf", Race = "D", IsPartBased = true }
+        };
+
+        _service.ResolveAppearanceSources(appearances);
+
+        Assert.Equal(AppearanceSource.Bif, appearances[0].Source);
+    }
+
+    [Fact]
+    public void ResolveAppearanceSources_PartBasedNoMatch_ResolvesToUnknown()
+    {
+        // Part-based model with no matching MDL
+        var appearances = new System.Collections.Generic.List<AppearanceInfo>
+        {
+            new() { AppearanceId = 0, Label = "Weird", Race = "Z", IsPartBased = true }
+        };
+
+        _service.ResolveAppearanceSources(appearances);
+
+        Assert.Equal(AppearanceSource.Unknown, appearances[0].Source);
+    }
+
+    [Fact]
+    public void ResolveAppearanceSources_HakSource_MapsCorrectly()
+    {
+        _mockGameData.AddResourceInfo("cep_model", 2030,
+            Radoub.Formats.Services.GameResourceSource.Hak);
+
+        var appearances = new System.Collections.Generic.List<AppearanceInfo>
+        {
+            new() { AppearanceId = 0, Label = "CEP_Thing", Race = "CEP_MODEL", IsPartBased = false }
+        };
+
+        _service.ResolveAppearanceSources(appearances);
+
+        Assert.Equal(AppearanceSource.Hak, appearances[0].Source);
+    }
+
+    #endregion
 }

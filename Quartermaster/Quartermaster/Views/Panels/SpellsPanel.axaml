@@ -221,7 +221,7 @@
                         BorderThickness="1,1,1,0"
                         CornerRadius="4,4,0,0"
                         Padding="10,8,25,8">
-                    <Grid ColumnDefinitions="32,35,70,*,60,100,80,80">
+                    <Grid ColumnDefinitions="32,35,80,*,60,100,80,80">
                         <TextBlock Grid.Column="0" Text="" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
                         <TextBlock Grid.Column="1" Text="K" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
                                    ToolTip.Tip="Known - Spell is in spellbook/learned"/>
@@ -260,7 +260,7 @@
                                     BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                                     BorderThickness="0,0,0,1"
                                     ToolTip.Tip="{Binding Description}">
-                                <Grid ColumnDefinitions="32,35,70,*,60,100,80,80">
+                                <Grid ColumnDefinitions="32,35,80,*,60,100,80,80">
                                     <!-- Icon -->
                                     <Image Grid.Column="0"
                                            Source="{Binding IconBitmap}"
@@ -287,8 +287,10 @@
                                                 Spacing="2"
                                                 IsVisible="{Binding !IsSpontaneousCaster}">
                                         <Button Content="-"
-                                                Width="22" Height="22"
+                                                Width="24" Height="24"
                                                 Padding="0"
+                                                HorizontalContentAlignment="Center"
+                                                VerticalContentAlignment="Center"
                                                 FontSize="{DynamicResource FontSizeNormal}"
                                                 FontWeight="Bold"
                                                 Click="OnDecrementMemorizedClick"
@@ -303,8 +305,10 @@
                                                    FontWeight="Bold"
                                                    Foreground="{Binding MemorizedCountColor}"/>
                                         <Button Content="+"
-                                                Width="22" Height="22"
+                                                Width="24" Height="24"
                                                 Padding="0"
+                                                HorizontalContentAlignment="Center"
+                                                VerticalContentAlignment="Center"
                                                 FontSize="{DynamicResource FontSizeNormal}"
                                                 FontWeight="Bold"
                                                 Click="OnIncrementMemorizedClick"

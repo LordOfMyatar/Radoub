@@ -149,16 +149,49 @@ public class AppearanceService
                 mdlLookup[r.ResRef] = r.Source;
         }
 
+        var unresolvedCount = 0;
+
         foreach (var app in appearances)
         {
             if (string.IsNullOrEmpty(app.Race) && string.IsNullOrEmpty(app.Label))
             {
                 app.Source = AppearanceSource.Unknown;
+                unresolvedCount++;
                 continue;
             }
 
-            // For static models, the model resref is the RACE column value (lowercase)
-            // For part-based models, we check the race skeleton model
+            // Part-based models (MODELTYPE=P) have single-letter Race values (e.g., "H", "D", "E")
+            // that don't correspond to MDL filenames. Their skeleton models use the pattern
+            // p{gender}{race}{phenotype} (e.g., "pmh0" for male human default).
+            // Use prefix matching: find any MDL starting with "p" + race letter (#1868).
+            if (app.IsPartBased && !string.IsNullOrEmpty(app.Race) && app.Race.Length <= 2)
+            {
+                var prefix = $"p{app.Race.ToLowerInvariant()}";
+                // Check only the first character after "p" — match "pm{race}" or "pf{race}" patterns
+                var racePrefix = app.Race.ToLowerInvariant();
+                var matched = false;
+                foreach (var kvp in mdlLookup)
+                {
+                    // Match MDLs like "pmh0", "pfh0", "pmd0" — pattern: p + any char + race letter
+                    if (kvp.Key.Length >= 3 &&
+                        kvp.Key[0] == 'p' &&
+                        kvp.Key.Substring(2).StartsWith(racePrefix, StringComparison.OrdinalIgnoreCase))
+                    {
+                        app.Source = MapSource(kvp.Value);
+                        matched = true;
+                        break;
+                    }
+                }
+                if (matched) continue;
+
+                app.Source = AppearanceSource.Unknown;
+                unresolvedCount++;
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"[AppearanceSource] Part-based appearance '{app.Label}' (Race='{app.Race}') could not resolve source");
+                continue;
+            }
+
+            // For simple/full models, the model resref is the RACE column value (lowercase)
             var modelRef = !string.IsNullOrEmpty(app.Race) ? app.Race.ToLowerInvariant() : app.Label.ToLowerInvariant();
 
             if (mdlLookup.TryGetValue(modelRef, out var source))
@@ -175,6 +208,15 @@ public class AppearanceService
             }
 
             app.Source = AppearanceSource.Unknown;
+            unresolvedCount++;
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"[AppearanceSource] Simple appearance '{app.Label}' (Race='{app.Race}') could not resolve source");
+        }
+
+        if (unresolvedCount > 0)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"[AppearanceSource] {unresolvedCount} appearance(s) could not resolve source — these will bypass source filters");
         }
     }
 

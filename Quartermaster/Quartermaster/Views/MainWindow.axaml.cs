@@ -114,6 +114,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Show module context in status bar (#1003)
         UpdateModuleIndicator();
 
+        // Subscribe to theme changes to refresh module indicator color (#1859)
+        Radoub.UI.Services.ThemeManager.Instance.ThemeApplied += OnThemeApplied;
+
         // Initialize search bar with UTC search provider
         var searchBar = this.FindControl<SearchBar>("FileSearchBar");
         searchBar?.Initialize(

@@ -415,6 +415,40 @@ public class GameDataServiceTests : IDisposable
 
     #endregion
 
+    #region ConfigureModuleHaks Tests
+
+    [Fact]
+    public void ConfigureModuleHaks_NoHakModule_ClearsTwoDACCache()
+    {
+        // Arrange — create a 2DA in override and populate the cache
+        var twoDAContent = "2DA V2.0\n\n  COL\n0 Val\n";
+        File.WriteAllText(Path.Combine(_overrideDir, "cached2da.2da"), twoDAContent);
+
+        var config = new GameResourceConfig { OverridePath = _overrideDir };
+        using var service = new GameDataService(config);
+
+        // Prime the cache
+        var first = service.Get2DA("cached2da");
+        Assert.NotNull(first);
+
+        // Create a module directory with no module.ifo (so zero HAKs)
+        var noHakModuleDir = Path.Combine(_testDir, "base_mod");
+        Directory.CreateDirectory(noHakModuleDir);
+
+        // Act — configure HAKs for a module with no HAKs
+        service.ConfigureModuleHaks(noHakModuleDir);
+
+        // Delete the override file so we can verify cache was cleared
+        File.Delete(Path.Combine(_overrideDir, "cached2da.2da"));
+
+        // Assert — if cache was cleared, this should return null (file is gone)
+        // If cache was NOT cleared (bug), this returns the stale cached value
+        var afterSwitch = service.Get2DA("cached2da");
+        Assert.Null(afterSwitch);
+    }
+
+    #endregion
+
     #region GameResourceInfo Tests
 
     [Fact]
