@@ -69,6 +69,16 @@
             </StackPanel>
         </Border>
 
+        <!-- Menu Bar -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_Help">
+                <MenuItem Header="_Export Logs for Support..." Click="OnExportLogsClick"/>
+                <MenuItem Header="Open Log _Folder" Click="OnOpenLogFolderClick"/>
+                <Separator/>
+                <MenuItem Header="_About Trebuchet" Command="{Binding OpenAboutCommand}"/>
+            </MenuItem>
+        </Menu>
+
         <!-- Toolbar -->
         <Border DockPanel.Dock="Top"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"

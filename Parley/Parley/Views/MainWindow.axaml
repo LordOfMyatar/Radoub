@@ -140,8 +140,6 @@
                 <Separator/>
                 <MenuItem Header="_Logging">
                     <MenuItem Header="_Clear Debug Output" Click="OnClearDebugClick"/>
-                    <MenuItem Header="Open Log _Folder" Click="OnOpenLogFolderClick"/>
-                    <MenuItem Header="_Export Logs for Support..." Click="OnExportLogsClick"/>
                 </MenuItem>
                 <Separator/>
                 <MenuItem x:Name="UseRadoubThemeMenuItem" Header="Use _Radoub Theme" Click="OnToggleUseRadoubThemeClick"/>
