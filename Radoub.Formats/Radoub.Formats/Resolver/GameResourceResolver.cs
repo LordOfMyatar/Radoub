@@ -9,9 +9,10 @@ namespace Radoub.Formats.Resolver;
 
 /// <summary>
 /// Resolves game resources using NWN's standard search order:
-/// 1. Override folder (loose files)
-/// 2. HAK files (in configured order)
-/// 3. Base game BIF files (via KEY index)
+/// 1. Module directory (loose files — highest priority)
+/// 2. Override folder (loose files)
+/// 3. HAK files (in configured order)
+/// 4. Base game BIF files (via KEY index)
 ///
 /// Reference: NWN resource loading order documentation
 /// </summary>
@@ -33,6 +34,15 @@ public class GameResourceResolver : IDisposable
     public GameResourceResolver(GameResourceConfig config)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
+    }
+
+    /// <summary>
+    /// Set or clear the module directory for loose resource file resolution.
+    /// Module directory has highest priority in the search order.
+    /// </summary>
+    public void SetModuleDirectory(string? moduleDirectory)
+    {
+        _config.ModuleDirectory = moduleDirectory;
     }
 
     /// <summary>
@@ -79,7 +89,12 @@ public class GameResourceResolver : IDisposable
     /// </summary>
     public ResourceResult? FindResourceWithSource(string resRef, ushort resourceType)
     {
-        // 1. Check override folder
+        // 1. Check module directory (highest priority for module-local resources)
+        var moduleResult = FindInModule(resRef, resourceType);
+        if (moduleResult != null)
+            return moduleResult;
+
+        // 2. Check override folder
         var overrideResult = FindInOverride(resRef, resourceType);
         if (overrideResult != null)
             return overrideResult;
@@ -105,6 +120,13 @@ public class GameResourceResolver : IDisposable
     {
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var results = new List<ResourceInfo>();
+
+        // Module files (highest priority)
+        foreach (var info in ListModuleResources(resourceType))
+        {
+            if (seen.Add(info.ResRef))
+                results.Add(info);
+        }
 
         // Override files
         foreach (var info in ListOverrideResources(resourceType))
@@ -164,6 +186,51 @@ public class GameResourceResolver : IDisposable
         EnsureBaseTlkLoaded();
         return _baseTlk?.GetEntry(strRef);
     }
+
+    #region Module Resolution
+
+    private ResourceResult? FindInModule(string resRef, ushort resourceType)
+    {
+        if (string.IsNullOrEmpty(_config.ModuleDirectory) || !Directory.Exists(_config.ModuleDirectory))
+            return null;
+
+        var extension = ResourceTypes.GetExtension(resourceType);
+        var fileName = resRef + extension;
+        var filePath = Path.Combine(_config.ModuleDirectory, fileName);
+
+        if (!File.Exists(filePath))
+        {
+            // Case-insensitive fallback (module files may have mixed case)
+            var matchingFile = Directory.EnumerateFiles(_config.ModuleDirectory, "*" + extension, SearchOption.TopDirectoryOnly)
+                .FirstOrDefault(f => Path.GetFileNameWithoutExtension(f).Equals(resRef, StringComparison.OrdinalIgnoreCase));
+            if (matchingFile == null) return null;
+            filePath = matchingFile;
+        }
+
+        var data = File.ReadAllBytes(filePath);
+        return new ResourceResult(data, ResourceSource.Module, filePath, resRef, resourceType);
+    }
+
+    private IEnumerable<ResourceInfo> ListModuleResources(ushort resourceType)
+    {
+        if (string.IsNullOrEmpty(_config.ModuleDirectory) || !Directory.Exists(_config.ModuleDirectory))
+            yield break;
+
+        var extension = ResourceTypes.GetExtension(resourceType);
+        var pattern = "*" + extension;
+        foreach (var file in Directory.GetFiles(_config.ModuleDirectory, pattern, SearchOption.TopDirectoryOnly))
+        {
+            yield return new ResourceInfo
+            {
+                ResRef = Path.GetFileNameWithoutExtension(file).ToLowerInvariant(),
+                ResourceType = resourceType,
+                Source = ResourceSource.Module,
+                SourcePath = file
+            };
+        }
+    }
+
+    #endregion
 
     #region Override Resolution
 

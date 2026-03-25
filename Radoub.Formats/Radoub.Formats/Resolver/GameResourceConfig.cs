@@ -6,6 +6,12 @@ namespace Radoub.Formats.Resolver;
 public class GameResourceConfig
 {
     /// <summary>
+    /// Path to the unpacked module directory for loose resource files.
+    /// Highest priority in resolution order (Module → Override → HAK → BIF).
+    /// </summary>
+    public string? ModuleDirectory { get; set; }
+
+    /// <summary>
     /// Path to the NWN installation data directory (contains .key files and data/).
     /// </summary>
     public string? GameDataPath { get; set; }
