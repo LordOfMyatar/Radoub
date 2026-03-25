@@ -74,6 +74,13 @@ public partial class MainWindow
         if (!_isLoading)
         {
             MarkDirty();
+
+            // Refresh statistics when base item type changes (#1804)
+            // Base item affects how properties are resolved/displayed
+            if (e.PropertyName == "BaseItem")
+            {
+                RefreshStatistics();
+            }
         }
     }
 

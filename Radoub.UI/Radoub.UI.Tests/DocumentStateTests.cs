@@ -164,4 +164,35 @@ public class DocumentStateTests
         var state = new DocumentState("TestTool");
         Assert.False(state.IsReadOnly);
     }
+
+    [Fact]
+    public void GetTitle_AfterFilePathChange_ReturnsNewPath()
+    {
+        // Scenario: Open file A (clean), then open file B from Recent Files
+        // GetTitle() should reflect file B even though ClearDirty() didn't fire an event
+        var state = new DocumentState("TestTool");
+        state.CurrentFilePath = "/test/fileA.uti";
+        state.ClearDirty(); // already clean, no event fires
+
+        // Now "open" a different file
+        state.CurrentFilePath = "/test/fileB.uti";
+        state.ClearDirty(); // still clean, no event fires
+
+        var title = state.GetTitle();
+        Assert.Contains("fileB.uti", title);
+        Assert.DoesNotContain("fileA.uti", title);
+    }
+
+    [Fact]
+    public void ClearDirty_WhenAlreadyClean_DoesNotFireEvent()
+    {
+        var state = new DocumentState("TestTool");
+        state.CurrentFilePath = "/test/file.uti";
+
+        bool eventFired = false;
+        state.DirtyStateChanged += () => eventFired = true;
+
+        state.ClearDirty(); // already clean
+        Assert.False(eventFired);
+    }
 }

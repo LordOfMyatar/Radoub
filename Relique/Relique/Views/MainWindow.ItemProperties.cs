@@ -72,6 +72,10 @@ public partial class MainWindow
                 .ToList();
         }
 
+        // Move semantics: filter out properties already assigned to the item (#1809)
+        var assignedProperties = _currentItem?.Properties ?? new List<ItemProperty>();
+        types = types.Where(t => _itemPropertyService.HasAvailableSubtypes(t.PropertyIndex, assignedProperties)).ToList();
+
         PropertyCountLabel.Text = $"({types.Count})";
 
         foreach (var type in types)
@@ -98,12 +102,15 @@ public partial class MainWindow
                 Tag = type
             };
 
-            // Add subtypes as children if this property has them
+            // Add subtypes as children if this property has them — only available ones
             var hasMatchingSubtype = false;
             if (type.HasSubtypes)
             {
-                var subtypes = _itemPropertyService.GetSubtypes(type.PropertyIndex);
-                foreach (var subtype in subtypes)
+                var allSubtypes = _itemPropertyService.GetSubtypes(type.PropertyIndex);
+                var availableSubtypes = _itemPropertyService.GetAvailableSubtypes(
+                    type.PropertyIndex, allSubtypes, assignedProperties);
+
+                foreach (var subtype in availableSubtypes)
                 {
                     var subtypeNode = new TreeViewItem
                     {
@@ -188,9 +195,13 @@ public partial class MainWindow
 
         if (subtypeIndex == 0 && propertyType.HasSubtypes)
         {
-            var subtypes = _itemPropertyService.GetSubtypes(propertyType.PropertyIndex);
-            if (subtypes.Count > 0)
-                subtypeIndex = subtypes[0].Index;
+            var allSubtypes = _itemPropertyService.GetSubtypes(propertyType.PropertyIndex);
+            var availableSubtypes = _itemPropertyService.GetAvailableSubtypes(
+                propertyType.PropertyIndex, allSubtypes, _currentItem.Properties);
+            if (availableSubtypes.Count > 0)
+                subtypeIndex = availableSubtypes[0].Index;
+            else
+                return; // All subtypes assigned
         }
 
         var property = _itemPropertyService.CreateItemProperty(
@@ -258,15 +269,29 @@ public partial class MainWindow
         PropertyConfigPanel.IsVisible = true;
         SelectedPropertyName.Text = propertyType.DisplayName;
 
-        // Subtypes
+        // Subtypes — only show available (unassigned) subtypes (#1809)
+        // When editing, exclude the property being edited so its subtype stays selectable
         bool hasSubtypes = propertyType.HasSubtypes;
         SubtypeLabel.IsVisible = hasSubtypes;
         SubtypeComboBox.IsVisible = hasSubtypes;
         SubtypeComboBox.Items.Clear();
         if (hasSubtypes && _itemPropertyService != null)
         {
-            var subtypes = _itemPropertyService.GetSubtypes(propertyType.PropertyIndex);
-            foreach (var sub in subtypes)
+            var allSubtypes = _itemPropertyService.GetSubtypes(propertyType.PropertyIndex);
+            var assignedProperties = _currentItem?.Properties ?? new List<ItemProperty>();
+
+            // When editing, exclude the property at _editingPropertyIndex from the filter
+            if (_editingPropertyIndex >= 0 && _editingPropertyIndex < assignedProperties.Count)
+            {
+                var filtered = new List<ItemProperty>(assignedProperties);
+                filtered.RemoveAt(_editingPropertyIndex);
+                assignedProperties = filtered;
+            }
+
+            var availableSubtypes = _itemPropertyService.GetAvailableSubtypes(
+                propertyType.PropertyIndex, allSubtypes, assignedProperties);
+
+            foreach (var sub in availableSubtypes)
             {
                 SubtypeComboBox.Items.Add(new ComboBoxItem
                 {
@@ -362,7 +387,20 @@ public partial class MainWindow
             var type = types.FirstOrDefault(t => t.PropertyIndex == propIndex);
             if (type == null) continue;
 
-            var property = _itemPropertyService.CreateItemProperty(propIndex, 0, 0, null);
+            // Use first available subtype (move semantics)
+            int subtypeIndex = 0;
+            if (type.HasSubtypes)
+            {
+                var allSubtypes = _itemPropertyService.GetSubtypes(propIndex);
+                var available = _itemPropertyService.GetAvailableSubtypes(
+                    propIndex, allSubtypes, _currentItem.Properties);
+                if (available.Count > 0)
+                    subtypeIndex = available[0].Index;
+                else
+                    continue; // All subtypes assigned, skip
+            }
+
+            var property = _itemPropertyService.CreateItemProperty(propIndex, subtypeIndex, 0, null);
             _currentItem.Properties.Add(property);
             added++;
         }
@@ -531,6 +569,9 @@ public partial class MainWindow
         RemovePropertyButton.IsEnabled = false;
         EditPropertyButton.IsEnabled = false;
         ClearAllPropertiesButton.IsEnabled = _currentItem.Properties.Count > 0;
+
+        // Refresh available properties list to reflect move semantics (#1809)
+        PopulateAvailableProperties(PropertySearchBox.Text);
 
         RefreshStatistics();
     }

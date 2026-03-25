@@ -185,6 +185,47 @@ public class ItemPropertyService
     }
 
     /// <summary>
+    /// Check if a specific property+subtype combination is available (not already assigned).
+    /// For move semantics: once a property is on the item, it's removed from the available list.
+    /// </summary>
+    public bool IsPropertyAvailable(int propertyIndex, int subtypeIndex, IReadOnlyList<ItemProperty> assignedProperties)
+    {
+        return !assignedProperties.Any(p =>
+            p.PropertyName == propertyIndex &&
+            p.Subtype == subtypeIndex);
+    }
+
+    /// <summary>
+    /// Filter a subtype list to exclude subtypes already assigned to the item.
+    /// Returns only subtypes that are still available for assignment.
+    /// </summary>
+    public List<TwoDAEntry> GetAvailableSubtypes(int propertyIndex, List<TwoDAEntry> allSubtypes,
+        IReadOnlyList<ItemProperty> assignedProperties)
+    {
+        return allSubtypes
+            .Where(s => IsPropertyAvailable(propertyIndex, s.Index, assignedProperties))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Check if a property type has any available subtypes left (or is available at all for no-subtype properties).
+    /// Used to determine whether to show/hide the property type in the available list.
+    /// </summary>
+    public bool HasAvailableSubtypes(int propertyIndex, IReadOnlyList<ItemProperty> assignedProperties)
+    {
+        var subtypeResRef = GetSubtypeResRef(propertyIndex);
+        if (subtypeResRef == null)
+        {
+            // No subtypes — property is binary (present or not)
+            return !assignedProperties.Any(p => p.PropertyName == propertyIndex);
+        }
+
+        // Has subtypes — check if any are still available
+        var allSubtypes = GetSubtypes(propertyIndex);
+        return GetAvailableSubtypes(propertyIndex, allSubtypes, assignedProperties).Count > 0;
+    }
+
+    /// <summary>
     /// Create an ItemProperty with correct indices from user selections.
     /// </summary>
     public ItemProperty CreateItemProperty(int propertyIndex, int subtypeIndex, int costValueIndex, int? paramValueIndex)

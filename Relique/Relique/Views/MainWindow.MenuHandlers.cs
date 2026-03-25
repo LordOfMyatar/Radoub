@@ -103,6 +103,7 @@ public partial class MainWindow
         _currentFilePath = null;
         _itemViewModel = null;
         _documentState.ClearDirty();
+        UpdateTitle();
         PopulateEditor();
         OnPropertyChanged(nameof(HasFile));
         UpdateStatus("Ready");

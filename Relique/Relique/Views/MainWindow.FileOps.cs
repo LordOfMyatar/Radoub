@@ -43,8 +43,7 @@ public partial class MainWindow
             _currentItem = item;
             _currentFilePath = filePath;
             _documentState.ClearDirty();
-            // Always update title — ClearDirty only fires when transitioning from dirty
-            Title = _documentState.GetTitle();
+            UpdateTitle();
 
             // Sync ResRef from filename (Aurora Engine requires they match)
             var fileResRef = Path.GetFileNameWithoutExtension(filePath).ToLowerInvariant();

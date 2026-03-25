@@ -601,4 +601,160 @@ public class ItemPropertyServiceTests
     }
 
     #endregion
+
+    #region IsPropertyAvailable / GetAvailableSubtypes
+
+    [Fact]
+    public void IsPropertyAvailable_NoAssignedProperties_ReturnsTrue()
+    {
+        var mock = CreateMockWithItemPropertyData();
+        var service = new ItemPropertyService(mock);
+        var assigned = new List<ItemProperty>();
+
+        Assert.True(service.IsPropertyAvailable(1, 0, assigned)); // AC Bonus (no subtypes)
+    }
+
+    [Fact]
+    public void IsPropertyAvailable_NoSubtypeProperty_AlreadyAssigned_ReturnsFalse()
+    {
+        var mock = CreateMockWithItemPropertyData();
+        var service = new ItemPropertyService(mock);
+
+        // AC Bonus (index 1) has no subtypes — once added, should be unavailable
+        var assigned = new List<ItemProperty>
+        {
+            service.CreateItemProperty(1, 0, 2, null) // AC Bonus +2
+        };
+
+        Assert.False(service.IsPropertyAvailable(1, 0, assigned));
+    }
+
+    [Fact]
+    public void IsPropertyAvailable_SubtypeProperty_DifferentSubtype_ReturnsTrue()
+    {
+        var mock = CreateMockWithItemPropertyData();
+        var service = new ItemPropertyService(mock);
+
+        // Ability Bonus STR assigned — Ability Bonus DEX should still be available
+        var assigned = new List<ItemProperty>
+        {
+            service.CreateItemProperty(0, 0, 2, null) // Ability Bonus STR +2
+        };
+
+        Assert.True(service.IsPropertyAvailable(0, 1, assigned)); // DEX subtype
+    }
+
+    [Fact]
+    public void IsPropertyAvailable_SubtypeProperty_SameSubtype_ReturnsFalse()
+    {
+        var mock = CreateMockWithItemPropertyData();
+        var service = new ItemPropertyService(mock);
+
+        // Ability Bonus STR assigned — Ability Bonus STR should NOT be available
+        var assigned = new List<ItemProperty>
+        {
+            service.CreateItemProperty(0, 0, 2, null) // Ability Bonus STR +2
+        };
+
+        Assert.False(service.IsPropertyAvailable(0, 0, assigned)); // Same STR subtype
+    }
+
+    [Fact]
+    public void GetAvailableSubtypes_FiltersAssignedSubtypes()
+    {
+        var mock = CreateMockWithItemPropertyData();
+        var service = new ItemPropertyService(mock);
+
+        // Assign Ability Bonus STR
+        var assigned = new List<ItemProperty>
+        {
+            service.CreateItemProperty(0, 0, 2, null) // Ability Bonus STR
+        };
+
+        var allSubtypes = service.GetSubtypes(0); // All ability subtypes (6 total)
+        var available = service.GetAvailableSubtypes(0, allSubtypes, assigned);
+
+        // STR (index 0) should be filtered out, remaining 5 available
+        Assert.Equal(allSubtypes.Count - 1, available.Count);
+        Assert.DoesNotContain(available, s => s.Index == 0); // STR removed
+        Assert.Contains(available, s => s.Index == 1);       // DEX still there
+    }
+
+    [Fact]
+    public void GetAvailableSubtypes_AllAssigned_ReturnsEmpty()
+    {
+        var mock = CreateMockWithItemPropertyData();
+        var service = new ItemPropertyService(mock);
+
+        // Assign all 6 ability subtypes
+        var assigned = new List<ItemProperty>
+        {
+            service.CreateItemProperty(0, 0, 2, null), // STR
+            service.CreateItemProperty(0, 1, 2, null), // DEX
+            service.CreateItemProperty(0, 2, 2, null), // CON
+            service.CreateItemProperty(0, 3, 2, null), // INT
+            service.CreateItemProperty(0, 4, 2, null), // WIS
+            service.CreateItemProperty(0, 5, 2, null), // CHA
+        };
+
+        var allSubtypes = service.GetSubtypes(0);
+        var available = service.GetAvailableSubtypes(0, allSubtypes, assigned);
+
+        Assert.Empty(available);
+    }
+
+    [Fact]
+    public void IsPropertyAvailable_PreExistingDuplicates_StillFilters()
+    {
+        var mock = CreateMockWithItemPropertyData();
+        var service = new ItemPropertyService(mock);
+
+        // File loaded with two identical AC Bonus properties (legacy/other tool)
+        var assigned = new List<ItemProperty>
+        {
+            service.CreateItemProperty(1, 0, 2, null),
+            service.CreateItemProperty(1, 0, 2, null), // duplicate
+        };
+
+        // Should still report unavailable
+        Assert.False(service.IsPropertyAvailable(1, 0, assigned));
+    }
+
+    [Fact]
+    public void HasAvailableSubtypes_NoSubtypeProperty_NotAssigned_ReturnsTrue()
+    {
+        var mock = CreateMockWithItemPropertyData();
+        var service = new ItemPropertyService(mock);
+        var assigned = new List<ItemProperty>();
+
+        Assert.True(service.HasAvailableSubtypes(1, assigned)); // AC Bonus, not assigned
+    }
+
+    [Fact]
+    public void HasAvailableSubtypes_NoSubtypeProperty_Assigned_ReturnsFalse()
+    {
+        var mock = CreateMockWithItemPropertyData();
+        var service = new ItemPropertyService(mock);
+        var assigned = new List<ItemProperty>
+        {
+            service.CreateItemProperty(1, 0, 2, null)
+        };
+
+        Assert.False(service.HasAvailableSubtypes(1, assigned)); // AC Bonus, assigned
+    }
+
+    [Fact]
+    public void HasAvailableSubtypes_SubtypeProperty_PartiallyAssigned_ReturnsTrue()
+    {
+        var mock = CreateMockWithItemPropertyData();
+        var service = new ItemPropertyService(mock);
+        var assigned = new List<ItemProperty>
+        {
+            service.CreateItemProperty(0, 0, 2, null) // Ability Bonus STR only
+        };
+
+        Assert.True(service.HasAvailableSubtypes(0, assigned)); // Still has DEX, CON, etc.
+    }
+
+    #endregion
 }
