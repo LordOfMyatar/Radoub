@@ -5,6 +5,7 @@ using Radoub.Formats.Settings;
 using Radoub.UI.Controls;
 using Radoub.UI.Services;
 using System;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 
@@ -331,8 +332,23 @@ public partial class MainWindow
             Close();
         }
 
+        RadoubSettings.Instance.PropertyChanged -= OnRadoubSettingsChanged;
         FileSessionLockService.ReleaseAllLocks();
         SaveWindowPosition();
+    }
+
+    private void OnRadoubSettingsChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(RadoubSettings.CurrentModulePath))
+        {
+            UpdateModuleIndicator();
+            var moduleDir = GetModuleWorkingDirectory(RadoubSettings.Instance.CurrentModulePath);
+            if (!string.IsNullOrEmpty(moduleDir))
+            {
+                ItemBrowserPanel.ModulePath = moduleDir;
+                UnifiedLogger.LogUI(LogLevel.INFO, "Module path updated from Trebuchet");
+            }
+        }
     }
 
     // --- Window Position ---

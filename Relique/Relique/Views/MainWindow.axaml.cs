@@ -4,6 +4,7 @@ using ItemEditor.ViewModels;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Search;
 using Radoub.Formats.Services;
+using Radoub.Formats.Settings;
 using Radoub.Formats.Uti;
 using Radoub.UI.Controls;
 using Radoub.UI.Services;
@@ -55,6 +56,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Wire up shared document state for title bar updates
         _documentState.DirtyStateChanged += () => Title = _documentState.GetTitle();
+
+        // Listen for module changes from Trebuchet (#1802)
+        RadoubSettings.Instance.PropertyChanged += OnRadoubSettingsChanged;
 
         RestoreWindowPosition();
         UpdateUseRadoubThemeMenuState();
