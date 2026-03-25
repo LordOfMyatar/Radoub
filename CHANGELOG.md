@@ -22,10 +22,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Service Consolidation & StatusBar (#1987)
 
-- [ ] #1958 — Help Menu Parity: Export Logs and Open Log Folder
-- [ ] #1962 — Cache ThemeManager discovery results
-- [ ] #1963 — Consolidate duplicate services across tools
-- [ ] #1946 — Migrate all tools to shared StatusBarControl
+- [x] #1958 — Help Menu Parity: Export Logs and Open Log Folder
+- [x] #1962 — Cache ThemeManager discovery results
+- [x] #1963 — Consolidate duplicate services across tools
+- [x] #1946 — Migrate all tools to shared StatusBarControl
 
 ---
 
