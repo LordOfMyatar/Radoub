@@ -1,6 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        x:Class="Quartermaster.Views.Dialogs.ColorPickerWindow"
+        x:Class="Radoub.UI.Views.ColorPickerWindow"
         Title="Select Color"
         AutomationProperties.AutomationId="ColorPickerWindow"
         Width="500" Height="420"

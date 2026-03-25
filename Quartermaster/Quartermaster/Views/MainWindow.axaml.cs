@@ -4,6 +4,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Quartermaster.Services;
 using Quartermaster.Views.Dialogs;
+using Radoub.UI.Services;
 using Quartermaster.Views.Helpers;
 using Quartermaster.Views.Panels;
 using Radoub.Formats.Bic;

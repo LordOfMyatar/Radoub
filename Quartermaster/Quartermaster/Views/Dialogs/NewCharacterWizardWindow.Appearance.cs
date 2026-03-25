@@ -6,6 +6,8 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Quartermaster.Services;
+using Radoub.UI.Services;
+using Radoub.UI.Views;
 
 namespace Quartermaster.Views.Dialogs;
 

@@ -7,8 +7,9 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Quartermaster.Services;
-using Quartermaster.Views.Dialogs;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
+using Radoub.UI.Views;
 
 namespace Quartermaster.Views.Panels;
 

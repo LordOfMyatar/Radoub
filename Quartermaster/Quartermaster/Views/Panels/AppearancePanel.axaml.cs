@@ -6,6 +6,7 @@ using Avalonia.Markup.Xaml;
 using Quartermaster.Controls;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 using Radoub.Formats.Mdl;
 using Radoub.Formats.Utc;
 
