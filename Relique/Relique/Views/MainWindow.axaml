@@ -239,37 +239,51 @@
                                          Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                             </Grid>
 
-                            <!-- Unidentified Description -->
-                            <TextBlock Text="Unidentified Description" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,2"/>
-                            <TextBlock Text="Shown to players before the item is identified"
-                                       FontSize="11"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                       Margin="0,0,0,4"/>
-                            <controls:SpellCheckTextBox
-                                x:Name="DescriptionTextBox"
-                                Text="{Binding Description, Mode=TwoWay}"
-                                AcceptsReturn="True"
-                                TextWrapping="Wrap"
-                                MinHeight="60"
-                                MaxHeight="200"
-                                Watermark="Unidentified description (visible before Lore check)"
-                                Margin="0,0,0,8"/>
+                            <!-- Descriptions (side-by-side) -->
+                            <TextBlock Text="Descriptions" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                            <Grid ColumnDefinitions="*,16,*" Margin="0,0,0,8">
+                                <!-- Unidentified Description -->
+                                <StackPanel Grid.Column="0" x:Name="UnidentifiedDescriptionPanel">
+                                    <TextBlock Text="Unidentified" FontWeight="SemiBold" Margin="0,0,0,2"/>
+                                    <TextBlock Text="Shown before the item is identified"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               Margin="0,0,0,4"/>
+                                    <controls:SpellCheckTextBox
+                                        x:Name="DescriptionTextBox"
+                                        Text="{Binding Description, Mode=TwoWay}"
+                                        AcceptsReturn="True"
+                                        TextWrapping="Wrap"
+                                        MinHeight="80"
+                                        MaxHeight="200"
+                                        Watermark="Unidentified description"/>
+                                    <TextBlock x:Name="IdentifiedHintLabel"
+                                               Text="This item is flagged identified. Uncheck identified to be mysterious."
+                                               FontSize="11"
+                                               FontStyle="Italic"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,4,0,0"
+                                               IsVisible="False"/>
+                                </StackPanel>
 
-                            <!-- Identified Description -->
-                            <TextBlock Text="Identified Description" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,2"/>
-                            <TextBlock Text="Shown to players after the item is identified"
-                                       FontSize="11"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                       Margin="0,0,0,4"/>
-                            <controls:SpellCheckTextBox
-                                x:Name="DescIdentifiedTextBox"
-                                Text="{Binding DescIdentified, Mode=TwoWay}"
-                                AcceptsReturn="True"
-                                TextWrapping="Wrap"
-                                MinHeight="60"
-                                MaxHeight="200"
-                                Watermark="Identified description (visible after Lore check)"
-                                Margin="0,0,0,8"/>
+                                <!-- Identified Description -->
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Identified" FontWeight="SemiBold" Margin="0,0,0,2"/>
+                                    <TextBlock Text="Shown after the item is identified"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               Margin="0,0,0,4"/>
+                                    <controls:SpellCheckTextBox
+                                        x:Name="DescIdentifiedTextBox"
+                                        Text="{Binding DescIdentified, Mode=TwoWay}"
+                                        AcceptsReturn="True"
+                                        TextWrapping="Wrap"
+                                        MinHeight="80"
+                                        MaxHeight="200"
+                                        Watermark="Identified description"/>
+                                </StackPanel>
+                            </Grid>
 
                             <Separator/>
 
@@ -536,24 +550,39 @@
                                 </StackPanel>
                             </Expander>
 
+                            <!-- Item Statistics (above Item Properties for visibility without scrolling) -->
+                            <StackPanel x:Name="ItemStatisticsPanel" IsVisible="False">
+                                <TextBlock Text="Item Statistics" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <TextBox x:Name="ItemStatisticsText"
+                                         IsReadOnly="True"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         MinHeight="60"
+                                         MaxHeight="200"
+                                         Watermark="No properties assigned"
+                                         Margin="0,0,0,8"/>
+                            </StackPanel>
+
                             <!-- Item Properties Editor -->
                             <TextBlock Text="Item Properties" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
 
                             <Grid ColumnDefinitions="*,Auto,*" RowDefinitions="Auto,*" MinHeight="300" Margin="0,0,0,8">
-                                <!-- Left: Available Properties -->
-                                <Border Grid.Column="0" Grid.RowSpan="2"
+                                <!-- Left: Available Properties header -->
+                                <DockPanel Grid.Column="0" Grid.Row="0" Margin="0,0,0,4">
+                                    <TextBlock Text="Available Properties"
+                                               FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="PropertyCountLabel"
+                                               Margin="4,0,0,0"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                </DockPanel>
+
+                                <!-- Left: Available Properties tree -->
+                                <Border Grid.Column="0" Grid.Row="1"
                                         BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                         BorderThickness="1"
                                         CornerRadius="4"
                                         Padding="8">
                                     <DockPanel>
-                                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,4">
-                                            <TextBlock Text="Available Properties"
-                                                       FontWeight="SemiBold"/>
-                                            <TextBlock x:Name="PropertyCountLabel"
-                                                       Margin="4,0,0,0"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                        </DockPanel>
                                         <ComboBox DockPanel.Dock="Top" x:Name="CategoryFilterComboBox"
                                                   Margin="0,0,0,4"/>
                                         <TextBox DockPanel.Dock="Top" x:Name="PropertySearchBox"
@@ -573,7 +602,7 @@
                                 </Border>
 
                                 <!-- Center: Add/Remove buttons -->
-                                <StackPanel Grid.Column="1" Grid.RowSpan="2"
+                                <StackPanel Grid.Column="1" Grid.Row="1"
                                             VerticalAlignment="Center"
                                             Margin="8,0">
                                     <Button x:Name="AddPropertyButton"
@@ -614,19 +643,20 @@
                                             IsEnabled="False"/>
                                 </StackPanel>
 
-                                <!-- Right: Assigned Properties -->
-                                <Border Grid.Column="2" Grid.RowSpan="2"
+                                <!-- Right: Assigned Properties header -->
+                                <TextBlock Grid.Column="2" Grid.Row="0"
+                                           Text="Assigned Properties"
+                                           FontWeight="SemiBold" Margin="0,0,0,4"/>
+
+                                <!-- Right: Assigned Properties list -->
+                                <Border Grid.Column="2" Grid.Row="1"
                                         BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                         BorderThickness="1"
                                         CornerRadius="4"
                                         Padding="8">
-                                    <DockPanel>
-                                        <TextBlock DockPanel.Dock="Top" Text="Assigned Properties"
-                                                   FontWeight="SemiBold" Margin="0,0,0,4"/>
-                                        <ListBox x:Name="AssignedPropertiesList"
-                                                 SelectionMode="Multiple,Toggle"
-                                                 SelectionChanged="OnAssignedPropertySelectionChanged"/>
-                                    </DockPanel>
+                                    <ListBox x:Name="AssignedPropertiesList"
+                                             SelectionMode="Multiple,Toggle"
+                                             SelectionChanged="OnAssignedPropertySelectionChanged"/>
                                 </Border>
                             </Grid>
 
@@ -679,19 +709,6 @@
                                             Margin="0,0,0,4"/>
                                 </Grid>
                             </Border>
-
-                            <!-- Item Statistics -->
-                            <StackPanel x:Name="ItemStatisticsPanel" IsVisible="False">
-                                <TextBlock Text="Item Statistics" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                                <TextBox x:Name="ItemStatisticsText"
-                                         IsReadOnly="True"
-                                         AcceptsReturn="True"
-                                         TextWrapping="Wrap"
-                                         MinHeight="60"
-                                         MaxHeight="200"
-                                         Watermark="No properties assigned"
-                                         Margin="0,0,0,8"/>
-                            </StackPanel>
 
                             <!-- Local Variables -->
                             <Expander Header="Local Variables" IsExpanded="False" Margin="0,0,0,8">

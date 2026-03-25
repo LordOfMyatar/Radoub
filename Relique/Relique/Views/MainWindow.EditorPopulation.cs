@@ -67,6 +67,9 @@ public partial class MainWindow
         // Populate local variables
         PopulateVariables();
 
+        // Set initial identified visual cue state
+        UpdateIdentifiedVisualCue();
+
         FilePathText.Text = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : "";
     }
 
@@ -77,10 +80,15 @@ public partial class MainWindow
             MarkDirty();
 
             // Refresh statistics when base item type changes (#1804)
-            // Base item affects how properties are resolved/displayed
             if (e.PropertyName == "BaseItem")
             {
                 RefreshStatistics();
+            }
+
+            // Update unidentified description visual cue when Identified flag changes (#1810)
+            if (e.PropertyName == "Identified")
+            {
+                UpdateIdentifiedVisualCue();
             }
         }
     }
@@ -530,6 +538,15 @@ public partial class MainWindow
         MarkDirty();
         ValidateVariablesRealTime();
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed {selectedItems.Count} variable(s)");
+    }
+
+    // --- Identified Visual Cue (#1810) ---
+
+    private void UpdateIdentifiedVisualCue()
+    {
+        bool isIdentified = _itemViewModel?.Identified ?? false;
+        UnidentifiedDescriptionPanel.Opacity = isIdentified ? 0.5 : 1.0;
+        IdentifiedHintLabel.IsVisible = isIdentified;
     }
 
     // --- Color Picker ---
