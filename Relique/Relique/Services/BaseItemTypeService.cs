@@ -80,16 +80,19 @@ public class BaseItemTypeService
                     descriptionText = tlkDesc!;
             }
 
-            // Read Stacking column: 1=single, 2=stackable, 3=charges
+            // Read Stacking column: max stack size (1=single, >1=stackable)
             var stackingStr = baseItems.GetValue(i, "Stacking");
-            int stacking = 1; // Default: single (not stackable)
+            int stacking = 1;
             if (stackingStr != null && stackingStr != "****" && int.TryParse(stackingStr, out var st))
                 stacking = st;
 
-            if (stacking > 1)
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"BaseItem {i} ({label}): Stacking={stacking} (raw={stackingStr})");
+            // Read ChargesStarting column: >0 means item uses charges (wands, rods, staves)
+            var chargesStartingStr = baseItems.GetValue(i, "ChargesStarting");
+            int chargesStarting = 0;
+            if (chargesStartingStr != null && chargesStartingStr != "****" && int.TryParse(chargesStartingStr, out var cs))
+                chargesStarting = cs;
 
-            _cachedTypes.Add(new BaseItemTypeInfo(i, displayName, label, modelType, descriptionText, stacking));
+            _cachedTypes.Add(new BaseItemTypeInfo(i, displayName, label, modelType, descriptionText, stacking, chargesStarting));
         }
 
         _cachedTypes = _cachedTypes.OrderBy(t => t.DisplayName).ToList();
@@ -100,69 +103,71 @@ public class BaseItemTypeService
     private List<BaseItemTypeInfo> GetHardcodedTypes()
     {
         // ModelType: 0=Simple, 1=Layered, 2=Composite, 3=Armor
-        // Stacking: 1=single, 2=stackable, 3=charges
+        // Stacking: max stack size (1=single, >1=stackable)
+        // ChargesStarting: >0 means charge-based item
         _cachedTypes = new List<BaseItemTypeInfo>
         {
-            new(0, "Shortsword", "BASE_ITEM_SHORTSWORD", 0, "", 1),
-            new(1, "Longsword", "BASE_ITEM_LONGSWORD", 0, "", 1),
-            new(2, "Battleaxe", "BASE_ITEM_BATTLEAXE", 0, "", 1),
-            new(3, "Bastardsword", "BASE_ITEM_BASTARDSWORD", 0, "", 1),
-            new(4, "Light Flail", "BASE_ITEM_LIGHTFLAIL", 0, "", 1),
-            new(5, "Warhammer", "BASE_ITEM_WARHAMMER", 0, "", 1),
-            new(6, "Heavy Crossbow", "BASE_ITEM_HEAVYCROSSBOW", 0, "", 1),
-            new(7, "Light Crossbow", "BASE_ITEM_LIGHTCROSSBOW", 0, "", 1),
-            new(8, "Longbow", "BASE_ITEM_LONGBOW", 0, "", 1),
-            new(9, "Mace", "BASE_ITEM_LIGHTMACE", 0, "", 1),
-            new(10, "Halberd", "BASE_ITEM_HALBERD", 0, "", 1),
-            new(11, "Shortbow", "BASE_ITEM_SHORTBOW", 0, "", 1),
-            new(12, "Twobladed Sword", "BASE_ITEM_TWOBLADEDSWORD", 2, "", 1),
-            new(13, "Greatsword", "BASE_ITEM_GREATSWORD", 0, "", 1),
-            new(14, "Small Shield", "BASE_ITEM_SMALLSHIELD", 0, "", 1),
-            new(15, "Torch", "BASE_ITEM_TORCH", 0, "", 1),
-            new(16, "Armor", "BASE_ITEM_ARMOR", 3, "", 1),
-            new(17, "Helmet", "BASE_ITEM_HELMET", 0, "", 1),
-            new(18, "Amulet", "BASE_ITEM_AMULET", 0, "", 1),
-            new(19, "Belt", "BASE_ITEM_BELT", 0, "", 1),
-            new(20, "Boots", "BASE_ITEM_BOOTS", 0, "", 1),
-            new(21, "Gloves", "BASE_ITEM_GLOVES", 0, "", 1),
-            new(22, "Large Shield", "BASE_ITEM_LARGESHIELD", 0, "", 1),
-            new(23, "Tower Shield", "BASE_ITEM_TOWERSHIELD", 0, "", 1),
-            new(24, "Ring", "BASE_ITEM_RING", 0, "", 1),
-            new(25, "Arrow", "BASE_ITEM_ARROW", 0, "", 2),
-            new(26, "Bolt", "BASE_ITEM_BOLT", 0, "", 2),
-            new(27, "Bullet", "BASE_ITEM_BULLET", 0, "", 2),
-            new(28, "Club", "BASE_ITEM_CLUB", 0, "", 1),
-            new(29, "Dagger", "BASE_ITEM_DAGGER", 0, "", 1),
-            new(31, "Dire Mace", "BASE_ITEM_DIREMACE", 2, "", 1),
-            new(32, "Double Axe", "BASE_ITEM_DOUBLEAXE", 2, "", 1),
-            new(33, "Heavy Flail", "BASE_ITEM_HEAVYFLAIL", 0, "", 1),
-            new(35, "Light Hammer", "BASE_ITEM_LIGHTHAMMER", 0, "", 1),
-            new(36, "Handaxe", "BASE_ITEM_HANDAXE", 0, "", 1),
-            new(37, "Healers Kit", "BASE_ITEM_HEALERSKIT", 0, "", 2),
-            new(38, "Kama", "BASE_ITEM_KAMA", 0, "", 1),
-            new(39, "Katana", "BASE_ITEM_KATANA", 0, "", 1),
-            new(40, "Kukri", "BASE_ITEM_KUKRI", 0, "", 1),
-            new(41, "Magic Rod", "BASE_ITEM_MAGICROD", 0, "", 3),
-            new(42, "Magic Staff", "BASE_ITEM_MAGICSTAFF", 0, "", 3),
-            new(43, "Magic Wand", "BASE_ITEM_MAGICWAND", 0, "", 3),
-            new(44, "Morningstar", "BASE_ITEM_MORNINGSTAR", 0, "", 1),
-            new(46, "Potions", "BASE_ITEM_POTIONS", 0, "", 2),
-            new(47, "Quarterstaff", "BASE_ITEM_QUARTERSTAFF", 0, "", 1),
-            new(48, "Rapier", "BASE_ITEM_RAPIER", 0, "", 1),
-            new(49, "Scimitar", "BASE_ITEM_SCIMITAR", 0, "", 1),
-            new(50, "Scythe", "BASE_ITEM_SCYTHE", 0, "", 1),
-            new(53, "Short Spear", "BASE_ITEM_SHORTSPEAR", 0, "", 1),
-            new(54, "Shuriken", "BASE_ITEM_SHURIKEN", 0, "", 2),
-            new(55, "Sickle", "BASE_ITEM_SICKLE", 0, "", 1),
-            new(56, "Sling", "BASE_ITEM_SLING", 0, "", 1),
-            new(58, "Throwing Axe", "BASE_ITEM_THROWINGAXE", 0, "", 2),
-            new(61, "Greataxe", "BASE_ITEM_GREATAXE", 0, "", 1),
-            new(63, "Cloak", "BASE_ITEM_CLOAK", 1, "", 1),
-            new(67, "Trident", "BASE_ITEM_TRIDENT", 0, "", 1),
-            new(73, "Book", "BASE_ITEM_BOOK", 0, "", 1),
-            new(77, "Bracer", "BASE_ITEM_BRACER", 0, "", 1),
-            new(95, "Whip", "BASE_ITEM_WHIP", 0, "", 1),
-            new(108, "Dart", "BASE_ITEM_DART", 0, "", 2),
+            //                                                           model  desc  stack  charges
+            new(0, "Shortsword", "BASE_ITEM_SHORTSWORD", 0),
+            new(1, "Longsword", "BASE_ITEM_LONGSWORD", 0),
+            new(2, "Battleaxe", "BASE_ITEM_BATTLEAXE", 0),
+            new(3, "Bastardsword", "BASE_ITEM_BASTARDSWORD", 0),
+            new(4, "Light Flail", "BASE_ITEM_LIGHTFLAIL", 0),
+            new(5, "Warhammer", "BASE_ITEM_WARHAMMER", 0),
+            new(6, "Heavy Crossbow", "BASE_ITEM_HEAVYCROSSBOW", 0),
+            new(7, "Light Crossbow", "BASE_ITEM_LIGHTCROSSBOW", 0),
+            new(8, "Longbow", "BASE_ITEM_LONGBOW", 0),
+            new(9, "Mace", "BASE_ITEM_LIGHTMACE", 0),
+            new(10, "Halberd", "BASE_ITEM_HALBERD", 0),
+            new(11, "Shortbow", "BASE_ITEM_SHORTBOW", 0),
+            new(12, "Twobladed Sword", "BASE_ITEM_TWOBLADEDSWORD", 2),
+            new(13, "Greatsword", "BASE_ITEM_GREATSWORD", 0),
+            new(14, "Small Shield", "BASE_ITEM_SMALLSHIELD", 0),
+            new(15, "Torch", "BASE_ITEM_TORCH", 0),
+            new(16, "Armor", "BASE_ITEM_ARMOR", 3),
+            new(17, "Helmet", "BASE_ITEM_HELMET", 0),
+            new(18, "Amulet", "BASE_ITEM_AMULET", 0),
+            new(19, "Belt", "BASE_ITEM_BELT", 0),
+            new(20, "Boots", "BASE_ITEM_BOOTS", 0),
+            new(21, "Gloves", "BASE_ITEM_GLOVES", 0),
+            new(22, "Large Shield", "BASE_ITEM_LARGESHIELD", 0),
+            new(23, "Tower Shield", "BASE_ITEM_TOWERSHIELD", 0),
+            new(24, "Ring", "BASE_ITEM_RING", 0),
+            new(25, "Arrow", "BASE_ITEM_ARROW", 0, "", 99),
+            new(26, "Bolt", "BASE_ITEM_BOLT", 0, "", 99),
+            new(27, "Bullet", "BASE_ITEM_BULLET", 0, "", 99),
+            new(28, "Club", "BASE_ITEM_CLUB", 0),
+            new(29, "Dagger", "BASE_ITEM_DAGGER", 0),
+            new(31, "Dire Mace", "BASE_ITEM_DIREMACE", 2),
+            new(32, "Double Axe", "BASE_ITEM_DOUBLEAXE", 2),
+            new(33, "Heavy Flail", "BASE_ITEM_HEAVYFLAIL", 0),
+            new(35, "Light Hammer", "BASE_ITEM_LIGHTHAMMER", 0),
+            new(36, "Handaxe", "BASE_ITEM_HANDAXE", 0),
+            new(37, "Healers Kit", "BASE_ITEM_HEALERSKIT", 0, "", 10),
+            new(38, "Kama", "BASE_ITEM_KAMA", 0),
+            new(39, "Katana", "BASE_ITEM_KATANA", 0),
+            new(40, "Kukri", "BASE_ITEM_KUKRI", 0),
+            new(41, "Magic Rod", "BASE_ITEM_MAGICROD", 0, "", 1, 50),
+            new(42, "Magic Staff", "BASE_ITEM_MAGICSTAFF", 0, "", 1, 50),
+            new(43, "Magic Wand", "BASE_ITEM_MAGICWAND", 0, "", 1, 50),
+            new(44, "Morningstar", "BASE_ITEM_MORNINGSTAR", 0),
+            new(46, "Potions", "BASE_ITEM_POTIONS", 0, "", 10),
+            new(47, "Quarterstaff", "BASE_ITEM_QUARTERSTAFF", 0),
+            new(48, "Rapier", "BASE_ITEM_RAPIER", 0),
+            new(49, "Scimitar", "BASE_ITEM_SCIMITAR", 0),
+            new(50, "Scythe", "BASE_ITEM_SCYTHE", 0),
+            new(53, "Short Spear", "BASE_ITEM_SHORTSPEAR", 0),
+            new(54, "Shuriken", "BASE_ITEM_SHURIKEN", 0, "", 50),
+            new(55, "Sickle", "BASE_ITEM_SICKLE", 0),
+            new(56, "Sling", "BASE_ITEM_SLING", 0),
+            new(58, "Throwing Axe", "BASE_ITEM_THROWINGAXE", 0, "", 50),
+            new(61, "Greataxe", "BASE_ITEM_GREATAXE", 0),
+            new(63, "Cloak", "BASE_ITEM_CLOAK", 1),
+            new(67, "Trident", "BASE_ITEM_TRIDENT", 0),
+            new(73, "Book", "BASE_ITEM_BOOK", 0),
+            new(77, "Bracer", "BASE_ITEM_BRACER", 0),
+            new(95, "Whip", "BASE_ITEM_WHIP", 0),
+            new(108, "Dart", "BASE_ITEM_DART", 0, "", 50),
         };
 
         return _cachedTypes.OrderBy(t => t.DisplayName).ToList();
@@ -188,19 +193,25 @@ public class BaseItemTypeInfo
     public string DescriptionText { get; }
 
     /// <summary>
-    /// Stacking behavior from baseitems.2da:
-    /// 1 = single (not stackable), 2 = stackable, 3 = charges
+    /// Maximum stack size from baseitems.2da Stacking column.
+    /// 1 = single item (not stackable), >1 = stackable with this max.
     /// </summary>
     public int Stacking { get; }
+
+    /// <summary>
+    /// Initial charges from baseitems.2da ChargesStarting column.
+    /// 0 = no charges, >0 = item uses charges (wands, rods, staves).
+    /// </summary>
+    public int ChargesStarting { get; }
 
     public bool HasColorFields => ModelType is 1 or 3;
     public bool HasArmorParts => ModelType == 3;
     public bool HasModelParts => ModelType is 0 or 1 or 2;
     public bool HasMultipleModelParts => ModelType == 2;
-    public bool IsStackable => Stacking == 2;
-    public bool HasCharges => Stacking == 3;
+    public bool IsStackable => Stacking > 1;
+    public bool HasCharges => ChargesStarting > 0;
 
-    public BaseItemTypeInfo(int baseItemIndex, string displayName, string label, int modelType = 0, string descriptionText = "", int stacking = 1)
+    public BaseItemTypeInfo(int baseItemIndex, string displayName, string label, int modelType = 0, string descriptionText = "", int stacking = 1, int chargesStarting = 0)
     {
         BaseItemIndex = baseItemIndex;
         DisplayName = displayName;
@@ -208,6 +219,7 @@ public class BaseItemTypeInfo
         ModelType = modelType;
         DescriptionText = descriptionText;
         Stacking = stacking;
+        ChargesStarting = chargesStarting;
     }
 
     public override string ToString() => DisplayName;

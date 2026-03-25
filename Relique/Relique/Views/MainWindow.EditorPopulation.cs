@@ -160,20 +160,21 @@ public partial class MainWindow
         // Item Type Description from 2DA (read-only)
         BaseItemDescriptionText.Text = typeInfo?.DescriptionText ?? string.Empty;
 
-        // Stack Size / Charges: enable based on Stacking column (#1814)
-        int stacking = typeInfo?.Stacking ?? 0;
-        bool enableStackSize = stacking == 2;     // Stackable items
-        bool enableCharges = stacking == 3;        // Charge-based items
-        bool unknownStacking = stacking == 0;      // Unknown — enable both as fallback
+        // Stack Size / Charges: enable based on Stacking + ChargesStarting columns (#1814)
+        // Stackable items: show Stack Size, grey out Charges (can't have both)
+        // Charge-based items (wands/rods): show Charges, grey out Stack Size
+        // All other items: both enabled (any item can get charge-based properties)
+        bool isStackable = typeInfo?.IsStackable ?? false;
+        bool isChargeBased = typeInfo?.HasCharges ?? false;
 
-        StackSizeUpDown.IsEnabled = enableStackSize || unknownStacking;
-        ChargesUpDown.IsEnabled = enableCharges || unknownStacking;
+        StackSizeUpDown.IsEnabled = !isChargeBased;  // Disabled only for charge items
+        ChargesUpDown.IsEnabled = !isStackable;       // Disabled only for stackable items
 
         string disabledTip = "Not applicable for this base item type";
-        ToolTip.SetTip(StackSizeUpDown, enableStackSize || unknownStacking ? null : disabledTip);
-        ToolTip.SetTip(ChargesUpDown, enableCharges || unknownStacking ? null : disabledTip);
-        ToolTip.SetTip(StackSizeLabel, enableStackSize || unknownStacking ? null : disabledTip);
-        ToolTip.SetTip(ChargesLabel, enableCharges || unknownStacking ? null : disabledTip);
+        ToolTip.SetTip(StackSizeUpDown, StackSizeUpDown.IsEnabled ? null : disabledTip);
+        ToolTip.SetTip(ChargesUpDown, ChargesUpDown.IsEnabled ? null : disabledTip);
+        ToolTip.SetTip(StackSizeLabel, StackSizeUpDown.IsEnabled ? null : disabledTip);
+        ToolTip.SetTip(ChargesLabel, ChargesUpDown.IsEnabled ? null : disabledTip);
 
         // Appearance section: show if any sub-section is visible
         bool showModelParts = typeInfo?.HasModelParts ?? false;

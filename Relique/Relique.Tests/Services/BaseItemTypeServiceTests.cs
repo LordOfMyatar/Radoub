@@ -6,7 +6,10 @@ using Xunit;
 namespace ItemEditor.Tests.Services;
 
 /// <summary>
-/// Tests for BaseItemTypeService Stacking column parsing (#1814).
+/// Tests for BaseItemTypeService Stacking and ChargesStarting parsing (#1814).
+///
+/// Stacking column = max stack size (1=single, >1=stackable)
+/// ChargesStarting column = initial charges (0=none, >0=charge-based item)
 /// </summary>
 public class BaseItemTypeServiceTests
 {
@@ -17,53 +20,68 @@ public class BaseItemTypeServiceTests
         _mockGameData = new MockGameDataService(includeSampleData: false);
     }
 
-    private void SetupBaseItems2DA(params (int index, string label, string name, string modelType, string stacking)[] items)
+    private void SetupBaseItems2DA(params (int index, string label, string name, string modelType, string stacking, string chargesStarting)[] items)
     {
-        var columns = new[] { "label", "Name", "ModelType", "Stacking", "Description" };
+        var columns = new[] { "label", "Name", "ModelType", "Stacking", "Description", "ChargesStarting" };
         var twoDA = new TwoDAFile { Columns = new System.Collections.Generic.List<string>(columns) };
 
-        // Pad with empty rows up to the max index
         int maxIndex = 0;
         foreach (var item in items)
             if (item.index > maxIndex) maxIndex = item.index;
 
         for (int i = 0; i <= maxIndex; i++)
         {
-            twoDA.Rows.Add(new TwoDARow { Values = new System.Collections.Generic.List<string> { "****", "****", "****", "****", "****" } });
+            twoDA.Rows.Add(new TwoDARow { Values = new System.Collections.Generic.List<string> { "****", "****", "****", "****", "****", "****" } });
         }
 
         foreach (var item in items)
         {
             twoDA.Rows[item.index] = new TwoDARow
             {
-                Values = new System.Collections.Generic.List<string> { item.label, item.name, item.modelType, item.stacking, "****" }
+                Values = new System.Collections.Generic.List<string> { item.label, item.name, item.modelType, item.stacking, "****", item.chargesStarting }
             };
         }
 
         _mockGameData.With2DA("baseitems", twoDA);
     }
 
+    #region Stacking (max stack size)
+
     [Fact]
-    public void GetBaseItemTypes_ParsesStackingColumn()
+    public void GetBaseItemTypes_StackableItem_StackingIs99()
     {
-        // Arrows are stackable (Stacking=2)
         SetupBaseItems2DA(
-            (25, "BASE_ITEM_ARROW", "****", "0", "2")
+            (25, "BASE_ITEM_ARROW", "****", "0", "99", "****")
         );
-        // MockGameDataService returns label-based name since Name="****"
         var service = new BaseItemTypeService(_mockGameData);
         var types = service.GetBaseItemTypes();
 
         var arrow = types.Find(t => t.BaseItemIndex == 25);
         Assert.NotNull(arrow);
-        Assert.Equal(2, arrow.Stacking);
+        Assert.Equal(99, arrow.Stacking);
+        Assert.True(arrow.IsStackable);
     }
 
     [Fact]
-    public void GetBaseItemTypes_StackingSingle_Returns1()
+    public void GetBaseItemTypes_SingleItem_StackingIs1()
     {
         SetupBaseItems2DA(
-            (1, "BASE_ITEM_LONGSWORD", "****", "0", "1")
+            (1, "BASE_ITEM_LONGSWORD", "****", "0", "1", "****")
+        );
+        var service = new BaseItemTypeService(_mockGameData);
+        var types = service.GetBaseItemTypes();
+
+        var sword = types.Find(t => t.BaseItemIndex == 1);
+        Assert.NotNull(sword);
+        Assert.Equal(1, sword.Stacking);
+        Assert.False(sword.IsStackable);
+    }
+
+    [Fact]
+    public void GetBaseItemTypes_MissingStacking_DefaultsTo1()
+    {
+        SetupBaseItems2DA(
+            (1, "BASE_ITEM_LONGSWORD", "****", "0", "****", "****")
         );
         var service = new BaseItemTypeService(_mockGameData);
         var types = service.GetBaseItemTypes();
@@ -73,55 +91,68 @@ public class BaseItemTypeServiceTests
         Assert.Equal(1, sword.Stacking);
     }
 
+    #endregion
+
+    #region ChargesStarting
+
     [Fact]
-    public void GetBaseItemTypes_StackingCharges_Returns3()
+    public void GetBaseItemTypes_ChargeItem_ChargesStartingParsed()
     {
         SetupBaseItems2DA(
-            (43, "BASE_ITEM_MAGICWAND", "****", "0", "3")
+            (43, "BASE_ITEM_MAGICWAND", "****", "0", "1", "50")
         );
         var service = new BaseItemTypeService(_mockGameData);
         var types = service.GetBaseItemTypes();
 
         var wand = types.Find(t => t.BaseItemIndex == 43);
         Assert.NotNull(wand);
-        Assert.Equal(3, wand.Stacking);
+        Assert.Equal(50, wand.ChargesStarting);
+        Assert.True(wand.HasCharges);
+        Assert.False(wand.IsStackable);
     }
 
     [Fact]
-    public void GetBaseItemTypes_MissingStackingColumn_DefaultsTo1()
+    public void GetBaseItemTypes_NonChargeItem_ChargesStartingIs0()
     {
         SetupBaseItems2DA(
-            (1, "BASE_ITEM_LONGSWORD", "****", "0", "****")
+            (1, "BASE_ITEM_LONGSWORD", "****", "0", "1", "****")
         );
         var service = new BaseItemTypeService(_mockGameData);
         var types = service.GetBaseItemTypes();
 
         var sword = types.Find(t => t.BaseItemIndex == 1);
         Assert.NotNull(sword);
-        Assert.Equal(1, sword.Stacking); // Default: single/not stackable
+        Assert.Equal(0, sword.ChargesStarting);
+        Assert.False(sword.HasCharges);
     }
 
+    #endregion
+
+    #region IsStackable / HasCharges convenience properties
+
     [Fact]
-    public void BaseItemTypeInfo_IsStackable_TrueForStacking2()
+    public void IsStackable_TrueWhenStackingGreaterThan1()
     {
-        var info = new BaseItemTypeInfo(25, "Arrow", "BASE_ITEM_ARROW", 0, "", 2);
+        var info = new BaseItemTypeInfo(25, "Arrow", "BASE_ITEM_ARROW", 0, "", 99);
         Assert.True(info.IsStackable);
         Assert.False(info.HasCharges);
     }
 
     [Fact]
-    public void BaseItemTypeInfo_HasCharges_TrueForStacking3()
+    public void HasCharges_TrueWhenChargesStartingGreaterThan0()
     {
-        var info = new BaseItemTypeInfo(43, "Magic Wand", "BASE_ITEM_MAGICWAND", 0, "", 3);
+        var info = new BaseItemTypeInfo(43, "Magic Wand", "BASE_ITEM_MAGICWAND", 0, "", 1, 50);
         Assert.False(info.IsStackable);
         Assert.True(info.HasCharges);
     }
 
     [Fact]
-    public void BaseItemTypeInfo_Single_NeitherStackableNorCharges()
+    public void SingleItem_NeitherStackableNorCharges()
     {
-        var info = new BaseItemTypeInfo(1, "Longsword", "BASE_ITEM_LONGSWORD", 0, "", 1);
+        var info = new BaseItemTypeInfo(1, "Longsword", "BASE_ITEM_LONGSWORD", 0);
         Assert.False(info.IsStackable);
         Assert.False(info.HasCharges);
     }
+
+    #endregion
 }
