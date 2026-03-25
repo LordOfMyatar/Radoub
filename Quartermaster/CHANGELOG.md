@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.2.71-alpha] - 2026-03-24
+## [0.2.71-alpha] - 2026-03-25
 **Branch**: `quartermaster/issue-1970` | **PR**: #1988
 
 ### Fix: 3D Preview Ignores Equipped Armor (#1970)
@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Add module directory as highest-priority resource source in GameResourceResolver
 - Resolution order: Module Directory → Override → HAK → BIF
 - Wire module directory into existing ConfigureModuleHaks() call
+- Add robe body part loading to 3D preview (ArmorPart_Robe)
 
 ---
 
