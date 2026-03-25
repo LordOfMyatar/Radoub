@@ -173,22 +173,22 @@ public partial class MainWindow
 
     private void UpdateTlkStatus()
     {
-        TlkStatusText.Text = TlkService.Instance.GetTlkStatusSummary();
+        StatusBar.TertiaryText = TlkService.Instance.GetTlkStatusSummary();
     }
 
     private void UpdateStatusBarCounts()
     {
         if (_currentJrl == null)
         {
-            CountsText.Text = "";
-            FilePathText.Text = "";
+            StatusBar.SecondaryText = null;
+            StatusBar.FilePath = null;
             return;
         }
 
         var categoryCount = _currentJrl.Categories.Count;
         var entryCount = _currentJrl.Categories.Sum(c => c.Entries.Count);
-        CountsText.Text = $"{categoryCount} categories, {entryCount} entries";
-        FilePathText.Text = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : "";
+        StatusBar.SecondaryText = $"{categoryCount} categories, {entryCount} entries";
+        StatusBar.FilePath = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : null;
     }
 
     private async Task SaveFile()
