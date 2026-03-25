@@ -70,7 +70,7 @@ public partial class MainWindow
         // Set initial identified visual cue state
         UpdateIdentifiedVisualCue();
 
-        FilePathText.Text = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : "";
+        StatusBar.FilePath = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : null;
     }
 
     private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)

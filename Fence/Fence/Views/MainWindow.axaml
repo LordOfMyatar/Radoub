@@ -90,28 +90,9 @@
         <!-- Search Bar (Ctrl+F / Ctrl+H) -->
         <controls:SearchBar x:Name="FileSearchBar" DockPanel.Dock="Top"/>
 
-        <!-- Status Bar (top position for visibility during loading) -->
-        <Border DockPanel.Dock="Top"
-                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                BorderThickness="1"
-                CornerRadius="4"
-                Padding="8,4"
-                Margin="8,4,8,0"
-                AutomationProperties.AutomationId="StatusBar">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock x:Name="ModuleText" Grid.Column="0" Text="No module selected" FontWeight="Bold"/>
-                <TextBlock x:Name="StatusText" Grid.Column="1" Text="Ready" Margin="20,0,0,0" AutomationProperties.AutomationId="StatusText"/>
-                <TextBlock x:Name="ItemCountText" Grid.Column="2" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0"/>
-                <TextBlock x:Name="FilePathText" Grid.Column="3" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0"/>
-            </Grid>
-        </Border>
+        <!-- Status Bar -->
+        <controls:StatusBarControl x:Name="StatusBar" DockPanel.Dock="Top"
+                                   Margin="8,4,8,0"/>
 
         <!-- Main Content Area with Store Browser Panel -->
         <Grid x:Name="OuterContentGrid" Margin="8">
