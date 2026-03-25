@@ -180,7 +180,6 @@ sealed class Program
         // Services that were previously accessed via .Instance (#1233)
         services.AddSingleton<GameResourceService>();
         services.AddSingleton<ExternalEditorService>();
-        services.AddSingleton<DialogEditor.Services.SpellCheckService>();
         services.AddSingleton<SoundCache>();
         services.AddSingleton<CoverageTracker>();
         services.AddSingleton<ITtsService>(sp => TtsServiceFactory.Create());
