@@ -14,6 +14,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.3-alpha] - 2026-03-24
+**Branch**: `relique/issue-1831` | **PR**: #TBD
+
+### Sprint: Editor Polish (#1831)
+
+- [ ] #1806 — Color picker for appearance section (shared library move to Radoub.UI)
+- [ ] #1810 — Form layout improvements (statistics position, descriptions side-by-side)
+- [ ] #1814 — Conditional Stack Size/Charges based on base item type stacking column
+
+---
+
 ## [0.10.2-alpha] - 2026-03-24
 **Branch**: `relique/issue-1829` | **PR**: #1971
 
