@@ -19,10 +19,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Bug Fixes (#1829)
 
-- [ ] #1802 — Module change from Trebuchet not detected
-- [ ] #1803 — Title bar not updating when opening from Recent Files
-- [ ] #1804 — Item statistics don't auto-update on property value change
-- [ ] #1809 — Duplicate properties allowed (move semantics for property assignment)
+- [x] #1802 — Module change from Trebuchet now detected via PropertyChanged subscription
+- [x] #1803 — Title bar updates correctly on Recent Files open (added UpdateTitle helper)
+- [x] #1804 — Statistics refresh on base item type change
+- [x] #1809 — Property assignment uses move semantics (subtype-level filtering)
 
 ---
 
