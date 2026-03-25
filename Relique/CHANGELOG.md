@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.10.2-alpha] - 2026-03-24
-**Branch**: `relique/issue-1829` | **PR**: #TBD
+**Branch**: `relique/issue-1829` | **PR**: #1971
 
 ### Sprint: Bug Fixes (#1829)
 
