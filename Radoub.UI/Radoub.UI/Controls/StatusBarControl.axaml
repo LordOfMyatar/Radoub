@@ -13,21 +13,32 @@
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="Auto"/>
         <ColumnDefinition Width="Auto"/>
+        <ColumnDefinition Width="Auto"/>
         <ColumnDefinition Width="*"/>
         <ColumnDefinition Width="Auto"/>
         <ColumnDefinition Width="Auto"/>
       </Grid.ColumnDefinitions>
 
-      <!-- Primary Status Text (left) -->
-      <TextBlock x:Name="PrimaryTextBlock"
+      <!-- Module Indicator (far left, bold) -->
+      <TextBlock x:Name="ModuleIndicatorBlock"
                  Grid.Column="0"
+                 Text="{Binding ModuleIndicator, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                 FontWeight="SemiBold"
+                 VerticalAlignment="Center"
+                 Margin="0,0,12,0"
+                 IsVisible="{Binding ModuleIndicator, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                 AutomationProperties.AutomationId="ModuleIndicator"/>
+
+      <!-- Primary Status Text -->
+      <TextBlock x:Name="PrimaryTextBlock"
+                 Grid.Column="1"
                  Text="{Binding PrimaryText, RelativeSource={RelativeSource AncestorType=UserControl}}"
                  VerticalAlignment="Center"
                  AutomationProperties.AutomationId="StatusText"/>
 
-      <!-- Secondary Text (optional, left of center) -->
+      <!-- Secondary Text (optional) -->
       <TextBlock x:Name="SecondaryTextBlock"
-                 Grid.Column="1"
+                 Grid.Column="2"
                  Text="{Binding SecondaryText, RelativeSource={RelativeSource AncestorType=UserControl}}"
                  Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                  Margin="20,0,0,0"
@@ -36,7 +47,7 @@
 
       <!-- Progress Indicator (center) -->
       <ProgressBar x:Name="ProgressIndicator"
-                   Grid.Column="2"
+                   Grid.Column="3"
                    IsIndeterminate="True"
                    Height="4"
                    Margin="20,0"
@@ -45,7 +56,7 @@
 
       <!-- Tertiary Text (optional, right side) -->
       <TextBlock x:Name="TertiaryTextBlock"
-                 Grid.Column="3"
+                 Grid.Column="4"
                  Text="{Binding TertiaryText, RelativeSource={RelativeSource AncestorType=UserControl}}"
                  Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                  Margin="20,0,0,0"
@@ -55,7 +66,7 @@
 
       <!-- File Path (right, trimmed) -->
       <TextBlock x:Name="FilePathTextBlock"
-                 Grid.Column="4"
+                 Grid.Column="5"
                  Text="{Binding FilePath, RelativeSource={RelativeSource AncestorType=UserControl}}"
                  Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                  Margin="20,0,0,0"

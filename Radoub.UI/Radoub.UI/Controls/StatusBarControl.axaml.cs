@@ -21,6 +21,13 @@ namespace Radoub.UI.Controls;
 public partial class StatusBarControl : UserControl
 {
     /// <summary>
+    /// Module or tool indicator displayed on the far left (bold).
+    /// Auto-hides when null or empty.
+    /// </summary>
+    public static readonly StyledProperty<string?> ModuleIndicatorProperty =
+        AvaloniaProperty.Register<StatusBarControl, string?>(nameof(ModuleIndicator));
+
+    /// <summary>
     /// Primary status text displayed on the left (e.g., "Ready", "Loading...").
     /// </summary>
     public static readonly StyledProperty<string> PrimaryTextProperty =
@@ -53,6 +60,15 @@ public partial class StatusBarControl : UserControl
     public StatusBarControl()
     {
         InitializeComponent();
+    }
+
+    /// <summary>
+    /// Module or tool indicator displayed on the far left.
+    /// </summary>
+    public string? ModuleIndicator
+    {
+        get => GetValue(ModuleIndicatorProperty);
+        set => SetValue(ModuleIndicatorProperty, value);
     }
 
     /// <summary>
