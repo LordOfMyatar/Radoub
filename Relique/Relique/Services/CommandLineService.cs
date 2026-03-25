@@ -1,5 +1,4 @@
 using System;
-using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 
 namespace ItemEditor.Services;
@@ -40,7 +39,7 @@ public static class CommandLineService
                 return 0;
             },
             fileExtension: ".uti");
-        ResolveModuleName(Options);
+        CommandLineParser.ResolveModuleName(Options);
         return Options;
     }
 
@@ -64,19 +63,5 @@ public static class CommandLineService
         Console.WriteLine("  ItemEditor -m LNS --file sword.uti     Open LNS/sword.uti");
         Console.WriteLine("  ItemEditor --new                       Open the New Item wizard");
         Console.WriteLine("  ItemEditor --safemode                  Start with default visual settings");
-    }
-
-    private static void ResolveModuleName(CommandLineOptions options)
-    {
-        if (string.IsNullOrEmpty(options.ModuleName))
-            return;
-
-        var resolved = ProjectPathResolver.ResolveFilePath(options.ModuleName, options.FilePath);
-        if (resolved != null)
-            options.FilePath = resolved;
-
-        var modulePath = ProjectPathResolver.ResolveModulePath(options.ModuleName);
-        if (!string.IsNullOrEmpty(modulePath))
-            RadoubSettings.Instance.CurrentModulePath = modulePath;
     }
 }

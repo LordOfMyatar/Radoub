@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using DialogEditor.Models;
 using DialogEditor.Services;
 using Radoub.Formats.Logging;
-using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 
 namespace DialogEditor.Services
@@ -45,7 +44,7 @@ namespace DialogEditor.Services
         public static ParleyCommandLineOptions Parse(string[] args)
         {
             _options = CommandLineParser.Parse<ParleyCommandLineOptions>(args, HandleCustomFlag, ".dlg");
-            ResolveModuleName(_options);
+            CommandLineParser.ResolveModuleName(_options);
             return _options;
         }
 
@@ -97,20 +96,6 @@ Examples:
   Parley --screenplay test.dlg             Export dialog as screenplay
   Parley --screenplay -o out.txt dialog.dlg   Export to file
 ");
-        }
-
-        private static void ResolveModuleName(CommandLineOptions options)
-        {
-            if (string.IsNullOrEmpty(options.ModuleName))
-                return;
-
-            var resolved = ProjectPathResolver.ResolveFilePath(options.ModuleName, options.FilePath);
-            if (resolved != null)
-                options.FilePath = resolved;
-
-            var modulePath = ProjectPathResolver.ResolveModulePath(options.ModuleName);
-            if (!string.IsNullOrEmpty(modulePath))
-                RadoubSettings.Instance.CurrentModulePath = modulePath;
         }
 
         /// <summary>

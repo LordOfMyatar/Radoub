@@ -1,5 +1,4 @@
 using System;
-using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 
 namespace Manifest.Services;
@@ -47,7 +46,7 @@ public static class CommandLineService
     public static ManifestCommandLineOptions Parse(string[] args)
     {
         _options = CommandLineParser.Parse<ManifestCommandLineOptions>(args, HandleCustomFlag, ".jrl");
-        ResolveModuleName(_options);
+        CommandLineParser.ResolveModuleName(_options);
         return _options;
     }
 
@@ -108,19 +107,5 @@ Examples:
   Manifest module.jrl --quest my_quest   Open and navigate to quest
   Manifest module.jrl -q my_quest -e 100 Open, navigate to quest, select entry 100
 ");
-    }
-
-    private static void ResolveModuleName(CommandLineOptions options)
-    {
-        if (string.IsNullOrEmpty(options.ModuleName))
-            return;
-
-        var resolved = ProjectPathResolver.ResolveFilePath(options.ModuleName, options.FilePath);
-        if (resolved != null)
-            options.FilePath = resolved;
-
-        var modulePath = ProjectPathResolver.ResolveModulePath(options.ModuleName);
-        if (!string.IsNullOrEmpty(modulePath))
-            RadoubSettings.Instance.CurrentModulePath = modulePath;
     }
 }
