@@ -141,11 +141,27 @@ public partial class ThemeManager
 
     /// <summary>
     /// Discover all available themes from theme directories.
+    /// Uses per-tool cache to skip filesystem scan when directories haven't changed.
     /// Thread-safe: locks _themes during mutation.
     /// </summary>
-    public void DiscoverThemes()
+    /// <param name="forceRescan">If true, bypass cache and rescan directories. Use for theme editing.</param>
+    public void DiscoverThemes(bool forceRescan = false)
     {
-        // Load manifests from disk outside the lock (I/O can be slow)
+        var cache = ThemeCatalogCache.ForTool(_toolName);
+
+        // Try loading from cache (unless forced rescan)
+        if (!forceRescan && cache.IsValid(_themeDirectories))
+        {
+            var cached = cache.Load();
+            if (cached != null && TryLoadFromCache(cached))
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"[{_toolName}] Loaded {_themes.Count} themes from cache");
+                return;
+            }
+        }
+
+        // Full rescan: discover from filesystem
         var discovered = new Dictionary<string, ThemeManifest>();
 
         foreach (var directory in _themeDirectories)
@@ -183,7 +199,62 @@ public partial class ThemeManager
             }
         }
 
-        UnifiedLogger.LogApplication(LogLevel.INFO, $"[{_toolName}] Discovered {_themes.Count} themes");
+        // Save to cache for next startup
+        var cacheData = new ThemeCatalogData
+        {
+            CacheVersion = 1,
+            DirectoryTimestamps = ThemeCatalogCache.BuildTimestamps(_themeDirectories),
+            ThemeFiles = new Dictionary<string, string>()
+        };
+        foreach (var kvp in discovered)
+        {
+            if (kvp.Value.SourcePath != null)
+                cacheData.ThemeFiles[kvp.Key] = kvp.Value.SourcePath;
+        }
+        cache.Save(cacheData);
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"[{_toolName}] Discovered {_themes.Count} themes (rescanned)");
+    }
+
+    /// <summary>
+    /// Try to load themes from cached file paths. Returns false if any file is missing or corrupt.
+    /// </summary>
+    private bool TryLoadFromCache(ThemeCatalogData cached)
+    {
+        var discovered = new Dictionary<string, ThemeManifest>();
+
+        foreach (var kvp in cached.ThemeFiles)
+        {
+            var themeId = kvp.Key;
+            var filePath = kvp.Value;
+
+            if (!File.Exists(filePath))
+                return false; // Cache is stale — a theme file was removed
+
+            try
+            {
+                var manifest = LoadThemeManifest(filePath);
+                if (manifest != null)
+                {
+                    discovered[manifest.Plugin.Id] = manifest;
+                }
+            }
+            catch
+            {
+                return false; // Cache is stale — a theme file is corrupt
+            }
+        }
+
+        lock (_lock)
+        {
+            _themes.Clear();
+            foreach (var kvp in discovered)
+            {
+                _themes[kvp.Key] = kvp.Value;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>
