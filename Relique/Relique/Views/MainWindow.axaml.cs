@@ -92,6 +92,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         _documentState.MarkDirty();
     }
+
+    /// <summary>
+    /// Explicitly updates the title bar from document state.
+    /// Called defensively — ClearDirty() only fires DirtyStateChanged on dirty→clean transitions,
+    /// so callers that change file path on a clean document must call this explicitly.
+    /// </summary>
+    private void UpdateTitle()
+    {
+        Title = _documentState.GetTitle();
+    }
 }
 
 internal enum SavePromptResult
