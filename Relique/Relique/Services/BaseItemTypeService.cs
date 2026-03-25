@@ -86,6 +86,9 @@ public class BaseItemTypeService
             if (stackingStr != null && stackingStr != "****" && int.TryParse(stackingStr, out var st))
                 stacking = st;
 
+            if (stacking > 1)
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"BaseItem {i} ({label}): Stacking={stacking} (raw={stackingStr})");
+
             _cachedTypes.Add(new BaseItemTypeInfo(i, displayName, label, modelType, descriptionText, stacking));
         }
 
