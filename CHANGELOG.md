@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.102] - 2026-03-25
-**Branch**: `radoub/issue-1987` | **PR**: #TBD
+**Branch**: `radoub/issue-1987` | **PR**: #1991
 
 ### Sprint: Service Consolidation & StatusBar (#1987)
 
