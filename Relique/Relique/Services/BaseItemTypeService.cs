@@ -80,7 +80,13 @@ public class BaseItemTypeService
                     descriptionText = tlkDesc!;
             }
 
-            _cachedTypes.Add(new BaseItemTypeInfo(i, displayName, label, modelType, descriptionText));
+            // Read Stacking column: 1=single, 2=stackable, 3=charges
+            var stackingStr = baseItems.GetValue(i, "Stacking");
+            int stacking = 1; // Default: single (not stackable)
+            if (stackingStr != null && stackingStr != "****" && int.TryParse(stackingStr, out var st))
+                stacking = st;
+
+            _cachedTypes.Add(new BaseItemTypeInfo(i, displayName, label, modelType, descriptionText, stacking));
         }
 
         _cachedTypes = _cachedTypes.OrderBy(t => t.DisplayName).ToList();
@@ -177,18 +183,27 @@ public class BaseItemTypeInfo
     /// </summary>
     public string DescriptionText { get; }
 
+    /// <summary>
+    /// Stacking behavior from baseitems.2da:
+    /// 1 = single (not stackable), 2 = stackable, 3 = charges
+    /// </summary>
+    public int Stacking { get; }
+
     public bool HasColorFields => ModelType is 1 or 3;
     public bool HasArmorParts => ModelType == 3;
     public bool HasModelParts => ModelType is 0 or 1 or 2;
     public bool HasMultipleModelParts => ModelType == 2;
+    public bool IsStackable => Stacking == 2;
+    public bool HasCharges => Stacking == 3;
 
-    public BaseItemTypeInfo(int baseItemIndex, string displayName, string label, int modelType = 0, string descriptionText = "")
+    public BaseItemTypeInfo(int baseItemIndex, string displayName, string label, int modelType = 0, string descriptionText = "", int stacking = 1)
     {
         BaseItemIndex = baseItemIndex;
         DisplayName = displayName;
         Label = label;
         ModelType = modelType;
         DescriptionText = descriptionText;
+        Stacking = stacking;
     }
 
     public override string ToString() => DisplayName;

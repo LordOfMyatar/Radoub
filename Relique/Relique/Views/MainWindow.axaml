@@ -320,6 +320,7 @@
 
                                 <!-- Stack Size -->
                                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Stack Size"
+                                           x:Name="StackSizeLabel"
                                            VerticalAlignment="Center" Margin="0,0,8,8"/>
                                 <NumericUpDown Grid.Row="1" Grid.Column="1"
                                                x:Name="StackSizeUpDown"
@@ -332,6 +333,7 @@
 
                                 <!-- Charges -->
                                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Charges"
+                                           x:Name="ChargesLabel"
                                            VerticalAlignment="Center" Margin="0,0,8,8"/>
                                 <NumericUpDown Grid.Row="2" Grid.Column="1"
                                                x:Name="ChargesUpDown"

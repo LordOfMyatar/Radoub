@@ -160,6 +160,21 @@ public partial class MainWindow
         // Item Type Description from 2DA (read-only)
         BaseItemDescriptionText.Text = typeInfo?.DescriptionText ?? string.Empty;
 
+        // Stack Size / Charges: enable based on Stacking column (#1814)
+        int stacking = typeInfo?.Stacking ?? 0;
+        bool enableStackSize = stacking == 2;     // Stackable items
+        bool enableCharges = stacking == 3;        // Charge-based items
+        bool unknownStacking = stacking == 0;      // Unknown — enable both as fallback
+
+        StackSizeUpDown.IsEnabled = enableStackSize || unknownStacking;
+        ChargesUpDown.IsEnabled = enableCharges || unknownStacking;
+
+        string disabledTip = "Not applicable for this base item type";
+        ToolTip.SetTip(StackSizeUpDown, enableStackSize || unknownStacking ? null : disabledTip);
+        ToolTip.SetTip(ChargesUpDown, enableCharges || unknownStacking ? null : disabledTip);
+        ToolTip.SetTip(StackSizeLabel, enableStackSize || unknownStacking ? null : disabledTip);
+        ToolTip.SetTip(ChargesLabel, enableCharges || unknownStacking ? null : disabledTip);
+
         // Appearance section: show if any sub-section is visible
         bool showModelParts = typeInfo?.HasModelParts ?? false;
         bool showMultipleParts = typeInfo?.HasMultipleModelParts ?? false;
