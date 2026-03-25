@@ -5,11 +5,12 @@ using Radoub.Formats.Common;
 using Radoub.Formats.Services;
 using Radoub.Formats.Tga;
 
-namespace Quartermaster.Services;
+namespace Radoub.UI.Services;
 
 /// <summary>
 /// Provides color extraction from NWN palette TGA files.
 /// Caches loaded palettes for performance.
+/// Shared across all Radoub tools (character and item color palettes).
 /// </summary>
 public class PaletteColorService
 {
@@ -21,10 +22,19 @@ public class PaletteColorService
     /// </summary>
     public static class Palettes
     {
+        // Character palettes
         public const string Skin = "pal_skin01";
         public const string Hair = "pal_hair01";
         public const string Tattoo1 = "pal_tattoo01";
         public const string Tattoo2 = "pal_tattoo01"; // Same palette as Tattoo1
+
+        // Item palettes
+        public const string Cloth1 = "pal_cloth01";
+        public const string Cloth2 = "pal_cloth02";
+        public const string Leather1 = "pal_leath01";
+        public const string Leather2 = "pal_leath02";
+        public const string Metal1 = "pal_armor01";
+        public const string Metal2 = "pal_armor02";
     }
 
     public PaletteColorService(IGameDataService gameDataService)
@@ -44,8 +54,6 @@ public class PaletteColorService
         if (palette == null)
             return Colors.Gray;
 
-        // Use X=127 (middle of the shading range) for a representative color
-        // Y = colorIndex (row in the palette)
         var (r, g, b, a) = TgaReader.GetPixel(palette, 127, colorIndex);
         return Color.FromArgb(a, r, g, b);
     }
@@ -68,10 +76,6 @@ public class PaletteColorService
     /// <summary>
     /// Get gradient stops for a palette row. Returns colors sampled across the X-axis.
     /// </summary>
-    /// <param name="paletteName">Palette file name</param>
-    /// <param name="colorIndex">Color index (row)</param>
-    /// <param name="numStops">Number of gradient stops (default 8)</param>
-    /// <returns>List of (offset, color) tuples for LinearGradientBrush</returns>
     public List<(double offset, Color color)> GetPaletteGradient(string paletteName, byte colorIndex, int numStops = 8)
     {
         var stops = new List<(double offset, Color color)>();
@@ -79,16 +83,13 @@ public class PaletteColorService
 
         if (palette == null)
         {
-            // Return gray gradient if palette not found
             stops.Add((0.0, Colors.DarkGray));
             stops.Add((1.0, Colors.LightGray));
             return stops;
         }
 
-        // Clamp to minimum 2 stops to avoid division by zero in offset calculation
         if (numStops < 2) numStops = 2;
 
-        // Sample across the X-axis (0-255 is the shading range)
         for (int i = 0; i < numStops; i++)
         {
             double offset = (double)i / (numStops - 1);
@@ -120,9 +121,6 @@ public class PaletteColorService
         return brush;
     }
 
-    /// <summary>
-    /// Load a palette from game resources, with caching.
-    /// </summary>
     private TgaImage? GetPalette(string paletteName)
     {
         if (_paletteCache.TryGetValue(paletteName, out var cached))

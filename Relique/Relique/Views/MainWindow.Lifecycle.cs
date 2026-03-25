@@ -61,6 +61,7 @@ public partial class MainWindow
                 LoadBaseItemTypes();
                 InitializePropertyServices();
                 _itemIconService = new Radoub.UI.Services.ItemIconService(_gameDataService);
+                _paletteColorService = new PaletteColorService(_gameDataService);
                 UnifiedLogger.LogApplication(LogLevel.INFO, "Game data service initialized");
             }
             else

@@ -408,54 +408,120 @@
                                     <!-- Colors (ModelType 1 or 3) -->
                                     <StackPanel x:Name="ColorsPanel" IsVisible="False">
                                         <TextBlock Text="Colors" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                                        <Grid ColumnDefinitions="120,*,16,120,*" RowDefinitions="Auto,Auto,Auto" Margin="0,0,0,8">
+                                        <Grid ColumnDefinitions="120,*,30,30,16,120,*,30,30" RowDefinitions="Auto,Auto,Auto" Margin="0,0,0,8">
+                                            <!-- Cloth 1 -->
                                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Cloth 1"
                                                        VerticalAlignment="Center" Margin="0,0,8,8"/>
                                             <NumericUpDown Grid.Row="0" Grid.Column="1"
+                                                           x:Name="Cloth1ColorInput"
                                                            Value="{Binding Cloth1Color, Mode=TwoWay}"
                                                            Minimum="0" Maximum="255"
                                                            FormatString="N0"
-                                                           Margin="0,0,0,8"/>
+                                                           Margin="0,0,4,8"/>
+                                            <Border Grid.Row="0" Grid.Column="2"
+                                                    x:Name="Cloth1ColorSwatch"
+                                                    Height="26" CornerRadius="2"
+                                                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                    BorderThickness="1" Margin="0,0,2,8"/>
+                                            <Button Grid.Row="0" Grid.Column="3"
+                                                    Content="..." Padding="4,2"
+                                                    Click="OnCloth1ColorBrowse"
+                                                    VerticalAlignment="Center" Margin="0,0,0,8"/>
 
-                                            <TextBlock Grid.Row="0" Grid.Column="3" Text="Cloth 2"
+                                            <!-- Cloth 2 -->
+                                            <TextBlock Grid.Row="0" Grid.Column="5" Text="Cloth 2"
                                                        VerticalAlignment="Center" Margin="0,0,8,8"/>
-                                            <NumericUpDown Grid.Row="0" Grid.Column="4"
+                                            <NumericUpDown Grid.Row="0" Grid.Column="6"
+                                                           x:Name="Cloth2ColorInput"
                                                            Value="{Binding Cloth2Color, Mode=TwoWay}"
                                                            Minimum="0" Maximum="255"
                                                            FormatString="N0"
-                                                           Margin="0,0,0,8"/>
+                                                           Margin="0,0,4,8"/>
+                                            <Border Grid.Row="0" Grid.Column="7"
+                                                    x:Name="Cloth2ColorSwatch"
+                                                    Height="26" CornerRadius="2"
+                                                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                    BorderThickness="1" Margin="0,0,2,8"/>
+                                            <Button Grid.Row="0" Grid.Column="8"
+                                                    Content="..." Padding="4,2"
+                                                    Click="OnCloth2ColorBrowse"
+                                                    VerticalAlignment="Center" Margin="0,0,0,8"/>
 
+                                            <!-- Leather 1 -->
                                             <TextBlock Grid.Row="1" Grid.Column="0" Text="Leather 1"
                                                        VerticalAlignment="Center" Margin="0,0,8,8"/>
                                             <NumericUpDown Grid.Row="1" Grid.Column="1"
+                                                           x:Name="Leather1ColorInput"
                                                            Value="{Binding Leather1Color, Mode=TwoWay}"
                                                            Minimum="0" Maximum="255"
                                                            FormatString="N0"
-                                                           Margin="0,0,0,8"/>
+                                                           Margin="0,0,4,8"/>
+                                            <Border Grid.Row="1" Grid.Column="2"
+                                                    x:Name="Leather1ColorSwatch"
+                                                    Height="26" CornerRadius="2"
+                                                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                    BorderThickness="1" Margin="0,0,2,8"/>
+                                            <Button Grid.Row="1" Grid.Column="3"
+                                                    Content="..." Padding="4,2"
+                                                    Click="OnLeather1ColorBrowse"
+                                                    VerticalAlignment="Center" Margin="0,0,0,8"/>
 
-                                            <TextBlock Grid.Row="1" Grid.Column="3" Text="Leather 2"
+                                            <!-- Leather 2 -->
+                                            <TextBlock Grid.Row="1" Grid.Column="5" Text="Leather 2"
                                                        VerticalAlignment="Center" Margin="0,0,8,8"/>
-                                            <NumericUpDown Grid.Row="1" Grid.Column="4"
+                                            <NumericUpDown Grid.Row="1" Grid.Column="6"
+                                                           x:Name="Leather2ColorInput"
                                                            Value="{Binding Leather2Color, Mode=TwoWay}"
                                                            Minimum="0" Maximum="255"
                                                            FormatString="N0"
-                                                           Margin="0,0,0,8"/>
+                                                           Margin="0,0,4,8"/>
+                                            <Border Grid.Row="1" Grid.Column="7"
+                                                    x:Name="Leather2ColorSwatch"
+                                                    Height="26" CornerRadius="2"
+                                                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                    BorderThickness="1" Margin="0,0,2,8"/>
+                                            <Button Grid.Row="1" Grid.Column="8"
+                                                    Content="..." Padding="4,2"
+                                                    Click="OnLeather2ColorBrowse"
+                                                    VerticalAlignment="Center" Margin="0,0,0,8"/>
 
+                                            <!-- Metal 1 -->
                                             <TextBlock Grid.Row="2" Grid.Column="0" Text="Metal 1"
                                                        VerticalAlignment="Center" Margin="0,0,8,8"/>
                                             <NumericUpDown Grid.Row="2" Grid.Column="1"
+                                                           x:Name="Metal1ColorInput"
                                                            Value="{Binding Metal1Color, Mode=TwoWay}"
                                                            Minimum="0" Maximum="255"
                                                            FormatString="N0"
-                                                           Margin="0,0,0,8"/>
+                                                           Margin="0,0,4,8"/>
+                                            <Border Grid.Row="2" Grid.Column="2"
+                                                    x:Name="Metal1ColorSwatch"
+                                                    Height="26" CornerRadius="2"
+                                                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                    BorderThickness="1" Margin="0,0,2,8"/>
+                                            <Button Grid.Row="2" Grid.Column="3"
+                                                    Content="..." Padding="4,2"
+                                                    Click="OnMetal1ColorBrowse"
+                                                    VerticalAlignment="Center" Margin="0,0,0,8"/>
 
-                                            <TextBlock Grid.Row="2" Grid.Column="3" Text="Metal 2"
+                                            <!-- Metal 2 -->
+                                            <TextBlock Grid.Row="2" Grid.Column="5" Text="Metal 2"
                                                        VerticalAlignment="Center" Margin="0,0,8,8"/>
-                                            <NumericUpDown Grid.Row="2" Grid.Column="4"
+                                            <NumericUpDown Grid.Row="2" Grid.Column="6"
+                                                           x:Name="Metal2ColorInput"
                                                            Value="{Binding Metal2Color, Mode=TwoWay}"
                                                            Minimum="0" Maximum="255"
                                                            FormatString="N0"
-                                                           Margin="0,0,0,8"/>
+                                                           Margin="0,0,4,8"/>
+                                            <Border Grid.Row="2" Grid.Column="7"
+                                                    x:Name="Metal2ColorSwatch"
+                                                    Height="26" CornerRadius="2"
+                                                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                    BorderThickness="1" Margin="0,0,2,8"/>
+                                            <Button Grid.Row="2" Grid.Column="8"
+                                                    Content="..." Padding="4,2"
+                                                    Click="OnMetal2ColorBrowse"
+                                                    VerticalAlignment="Center" Margin="0,0,0,8"/>
                                         </Grid>
                                     </StackPanel>
 

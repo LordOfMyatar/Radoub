@@ -6,10 +6,9 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
-using Quartermaster.Services;
 using Radoub.UI.Services;
 
-namespace Quartermaster.Views.Dialogs;
+namespace Radoub.UI.Views;
 
 public partial class ColorPickerWindow : Window
 {
@@ -44,13 +43,9 @@ public partial class ColorPickerWindow : Window
         _currentColorLabel = this.FindControl<TextBlock>("CurrentColorLabel")!;
         _titleLabel = this.FindControl<TextBlock>("TitleLabel")!;
 
-        // Set title based on palette type
         _titleLabel.Text = GetPaletteDisplayName(paletteName);
 
-        // Build the color grid
         BuildColorGrid();
-
-        // Select the current color
         SelectColor(currentColorIndex);
     }
 
@@ -59,13 +54,19 @@ public partial class ColorPickerWindow : Window
         AvaloniaXamlLoader.Load(this);
     }
 
-    private string GetPaletteDisplayName(string paletteName)
+    private static string GetPaletteDisplayName(string paletteName)
     {
         return paletteName switch
         {
             PaletteColorService.Palettes.Skin => "Select Skin Color",
             PaletteColorService.Palettes.Hair => "Select Hair Color",
             PaletteColorService.Palettes.Tattoo1 or PaletteColorService.Palettes.Tattoo2 => "Select Tattoo Color",
+            PaletteColorService.Palettes.Cloth1 => "Select Cloth 1 Color",
+            PaletteColorService.Palettes.Cloth2 => "Select Cloth 2 Color",
+            PaletteColorService.Palettes.Leather1 => "Select Leather 1 Color",
+            PaletteColorService.Palettes.Leather2 => "Select Leather 2 Color",
+            PaletteColorService.Palettes.Metal1 => "Select Metal 1 Color",
+            PaletteColorService.Palettes.Metal2 => "Select Metal 2 Color",
             _ => "Select Color"
         };
     }
@@ -74,9 +75,6 @@ public partial class ColorPickerWindow : Window
     {
         var items = new List<Border>();
 
-        // NWN palettes have 176 color rows (0-175)
-        // Layout: 16 columns x 11 rows = 176 swatches (matches Aurora Toolset)
-        // Each swatch shows a gradient from dark to light
         for (byte i = 0; i < 176; i++)
         {
             IBrush background;
@@ -91,7 +89,7 @@ public partial class ColorPickerWindow : Window
 
             var swatch = new Border
             {
-                Width = 26,   // Square-ish swatches like Aurora Toolset
+                Width = 26,
                 Height = 26,
                 Margin = new Thickness(1),
                 CornerRadius = new CornerRadius(2),
@@ -116,7 +114,6 @@ public partial class ColorPickerWindow : Window
         {
             SelectColor(index);
 
-            // Double-click confirms
             if (e.ClickCount == 2)
             {
                 Confirmed = true;
@@ -129,7 +126,6 @@ public partial class ColorPickerWindow : Window
     {
         SelectedColorIndex = index;
 
-        // Update current color display with gradient
         if (_paletteColorService != null)
         {
             _currentColorSwatch.Background = _paletteColorService.CreateGradientBrush(_paletteName, index);
@@ -140,7 +136,6 @@ public partial class ColorPickerWindow : Window
         }
         _currentColorLabel.Text = $"Index: {index}";
 
-        // Update selection highlight
         if (_selectedSwatch != null)
         {
             _selectedSwatch.BorderBrush = GetBorderBrush();

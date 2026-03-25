@@ -32,6 +32,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private readonly HashSet<int> _checkedPropertyIndices = new();
     private readonly ObservableCollection<VariableViewModel> _variables = new();
     private ItemIconService? _itemIconService;
+    private PaletteColorService? _paletteColorService;
 
     // Convenience accessors for document state
     private string? _currentFilePath

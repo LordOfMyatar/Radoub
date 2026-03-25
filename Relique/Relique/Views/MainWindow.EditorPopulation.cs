@@ -4,6 +4,7 @@ using Avalonia.Media.Imaging;
 using ItemEditor.ViewModels;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 using System;
 using System.ComponentModel;
 using System.Linq;
@@ -180,6 +181,10 @@ public partial class MainWindow
 
         // Colors: show for Layered (1) and Armor (3)
         ColorsPanel.IsVisible = showColors;
+        if (showColors)
+        {
+            UpdateAllColorSwatches();
+        }
 
         // Armor Parts: show for Armor (3) only
         ArmorPartsPanel.IsVisible = showArmorParts;
@@ -525,5 +530,102 @@ public partial class MainWindow
         MarkDirty();
         ValidateVariablesRealTime();
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed {selectedItems.Count} variable(s)");
+    }
+
+    // --- Color Picker ---
+
+    private void UpdateAllColorSwatches()
+    {
+        if (_paletteColorService == null || _itemViewModel == null) return;
+
+        UpdateColorSwatch(Cloth1ColorSwatch, PaletteColorService.Palettes.Cloth1, _itemViewModel.Cloth1Color);
+        UpdateColorSwatch(Cloth2ColorSwatch, PaletteColorService.Palettes.Cloth2, _itemViewModel.Cloth2Color);
+        UpdateColorSwatch(Leather1ColorSwatch, PaletteColorService.Palettes.Leather1, _itemViewModel.Leather1Color);
+        UpdateColorSwatch(Leather2ColorSwatch, PaletteColorService.Palettes.Leather2, _itemViewModel.Leather2Color);
+        UpdateColorSwatch(Metal1ColorSwatch, PaletteColorService.Palettes.Metal1, _itemViewModel.Metal1Color);
+        UpdateColorSwatch(Metal2ColorSwatch, PaletteColorService.Palettes.Metal2, _itemViewModel.Metal2Color);
+    }
+
+    private void UpdateColorSwatch(Avalonia.Controls.Border swatch, string paletteName, byte colorIndex)
+    {
+        if (_paletteColorService == null)
+        {
+            swatch.Background = Avalonia.Media.Brushes.Gray;
+            return;
+        }
+        swatch.Background = _paletteColorService.CreateGradientBrush(paletteName, colorIndex);
+    }
+
+    private async void OpenColorPicker(string paletteName, byte currentIndex, Action<byte> onColorSelected)
+    {
+        if (_paletteColorService == null) return;
+
+        var picker = new Radoub.UI.Views.ColorPickerWindow(_paletteColorService, paletteName, currentIndex);
+        await picker.ShowDialog(this);
+
+        if (picker.Confirmed)
+        {
+            onColorSelected(picker.SelectedColorIndex);
+        }
+    }
+
+    private void OnCloth1ColorBrowse(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (_itemViewModel == null) return;
+        OpenColorPicker(PaletteColorService.Palettes.Cloth1, _itemViewModel.Cloth1Color, newIndex =>
+        {
+            _itemViewModel.Cloth1Color = newIndex;
+            UpdateColorSwatch(Cloth1ColorSwatch, PaletteColorService.Palettes.Cloth1, newIndex);
+        });
+    }
+
+    private void OnCloth2ColorBrowse(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (_itemViewModel == null) return;
+        OpenColorPicker(PaletteColorService.Palettes.Cloth2, _itemViewModel.Cloth2Color, newIndex =>
+        {
+            _itemViewModel.Cloth2Color = newIndex;
+            UpdateColorSwatch(Cloth2ColorSwatch, PaletteColorService.Palettes.Cloth2, newIndex);
+        });
+    }
+
+    private void OnLeather1ColorBrowse(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (_itemViewModel == null) return;
+        OpenColorPicker(PaletteColorService.Palettes.Leather1, _itemViewModel.Leather1Color, newIndex =>
+        {
+            _itemViewModel.Leather1Color = newIndex;
+            UpdateColorSwatch(Leather1ColorSwatch, PaletteColorService.Palettes.Leather1, newIndex);
+        });
+    }
+
+    private void OnLeather2ColorBrowse(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (_itemViewModel == null) return;
+        OpenColorPicker(PaletteColorService.Palettes.Leather2, _itemViewModel.Leather2Color, newIndex =>
+        {
+            _itemViewModel.Leather2Color = newIndex;
+            UpdateColorSwatch(Leather2ColorSwatch, PaletteColorService.Palettes.Leather2, newIndex);
+        });
+    }
+
+    private void OnMetal1ColorBrowse(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (_itemViewModel == null) return;
+        OpenColorPicker(PaletteColorService.Palettes.Metal1, _itemViewModel.Metal1Color, newIndex =>
+        {
+            _itemViewModel.Metal1Color = newIndex;
+            UpdateColorSwatch(Metal1ColorSwatch, PaletteColorService.Palettes.Metal1, newIndex);
+        });
+    }
+
+    private void OnMetal2ColorBrowse(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (_itemViewModel == null) return;
+        OpenColorPicker(PaletteColorService.Palettes.Metal2, _itemViewModel.Metal2Color, newIndex =>
+        {
+            _itemViewModel.Metal2Color = newIndex;
+            UpdateColorSwatch(Metal2ColorSwatch, PaletteColorService.Palettes.Metal2, newIndex);
+        });
     }
 }
