@@ -5,6 +5,9 @@ namespace Radoub.Formats.Resolver;
 /// </summary>
 public enum ResourceSource
 {
+    /// <summary>Resource found in module directory (loose file).</summary>
+    Module,
+
     /// <summary>Resource found in override folder.</summary>
     Override,
 

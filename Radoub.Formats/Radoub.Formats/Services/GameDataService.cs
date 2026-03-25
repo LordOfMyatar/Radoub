@@ -226,6 +226,11 @@ public class GameDataService : IGameDataService
         if (string.IsNullOrEmpty(moduleDirectory) || !Directory.Exists(moduleDirectory))
         {
             UnifiedLogger.Log(LogLevel.DEBUG, "ConfigureModuleHaks: invalid module directory", "GameDataService", "GameData");
+            // Clear stale module directory from previous module
+            lock (_lock)
+            {
+                _resolver?.SetModuleDirectory(null);
+            }
             return;
         }
 
@@ -236,6 +241,9 @@ public class GameDataService : IGameDataService
                 UnifiedLogger.Log(LogLevel.WARN, "ConfigureModuleHaks: resolver not initialized", "GameDataService", "GameData");
                 return;
             }
+
+            // Set module directory for loose file resolution
+            _resolver.SetModuleDirectory(moduleDirectory);
 
             var settings = RadoubSettings.Instance;
             var hakSearchPaths = settings.GetAllHakSearchPaths().ToList();
@@ -414,6 +422,7 @@ public class GameDataService : IGameDataService
     {
         return source switch
         {
+            ResourceSource.Module => GameResourceSource.Module,
             ResourceSource.Override => GameResourceSource.Override,
             ResourceSource.Hak => GameResourceSource.Hak,
             ResourceSource.Bif => GameResourceSource.Bif,

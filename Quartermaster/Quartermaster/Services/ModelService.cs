@@ -259,6 +259,10 @@ public class ModelService
         // handl/handr, legl/legr, neck, pelvis, shinl/shinr, shol/shor
         TryAddBodyPart(compositeModel, basePrefix, "neck", GetPartNumber("Neck", creature.BodyPart_Neck));
         TryAddBodyPart(compositeModel, basePrefix, "chest", GetPartNumber("Torso", creature.BodyPart_Torso));
+        // Robe is armor-only (no creature body part) — use armor override or skip
+        var robePartNumber = (armorOverrides != null && armorOverrides.TryGetValue("Robe", out var robeValue) && robeValue > 0)
+            ? robeValue : (byte)0;
+        TryAddBodyPart(compositeModel, basePrefix, "robe", robePartNumber);
         TryAddBodyPart(compositeModel, basePrefix, "pelvis", GetPartNumber("Pelvis", creature.BodyPart_Pelvis));
         TryAddBodyPart(compositeModel, basePrefix, "belt", GetPartNumber("Belt", creature.BodyPart_Belt));
 
@@ -435,6 +439,7 @@ public class ModelService
             "head" => "head_g",
             "neck" => "neck_g",
             "chest" => "torso_g",
+            "robe" => "torso_g",
             "pelvis" => "pelvis_g",
             "belt" => "belt_g",
             "shol" => "lshoulder_g",

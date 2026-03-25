@@ -313,7 +313,7 @@ public class GameResourceResolverTests : IDisposable
 
         Assert.Equal("", info.ResRef);
         Assert.Equal((ushort)0, info.ResourceType);
-        Assert.Equal(ResourceSource.Override, info.Source);
+        Assert.Equal(ResourceSource.Module, info.Source);
         Assert.Equal("", info.SourcePath);
     }
 
