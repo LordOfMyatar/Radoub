@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.24-alpha] - 2026-03-26
-**Branch**: `fence/issue-1981` | **PR**: #TBD
+**Branch**: `fence/issue-1981` | **PR**: #1994
 
 ### Sprint: Performance & Cross-Tool Polish (#1981)
 
