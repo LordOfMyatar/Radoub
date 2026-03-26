@@ -174,6 +174,11 @@ public partial class ItemViewModel : ObservableObject
     public bool IsCustom => Source != GameResourceSource.Bif;
 
     /// <summary>
+    /// Specific source file or archive name (e.g., "templates.bif", "cep2_add_wpn.hak").
+    /// </summary>
+    public string SourceLocation { get; set; } = string.Empty;
+
+    /// <summary>
     /// Path to placeholder icon based on item type.
     /// Icons from game-icons.net (CC BY 3.0).
     /// </summary>

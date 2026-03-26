@@ -105,6 +105,7 @@ public class ItemResolutionService
     private ResolvedItemData? LoadItemData(string resRef)
     {
         UtiFile? uti = null;
+        string sourceLocation = string.Empty;
 
         // 1. Try module directory first (highest priority for module-specific items)
         if (!string.IsNullOrEmpty(_moduleDirectory))
@@ -115,6 +116,7 @@ public class ItemResolutionService
                 try
                 {
                     uti = UtiReader.Read(utiPath);
+                    sourceLocation = Path.GetFileName(utiPath);
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Loaded UTI from module: {resRef}");
                 }
                 catch (Exception ex)
@@ -129,10 +131,13 @@ public class ItemResolutionService
         {
             try
             {
-                var utiData = _gameDataService.FindResource(resRef, ResourceTypes.Uti);
-                if (utiData != null)
+                var result = _gameDataService.FindResourceWithSource(resRef, ResourceTypes.Uti);
+                if (result != null)
                 {
-                    uti = UtiReader.Read(utiData);
+                    uti = UtiReader.Read(result.Data);
+                    sourceLocation = !string.IsNullOrEmpty(result.SourcePath)
+                        ? Path.GetFileName(result.SourcePath)
+                        : result.Source.ToString();
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Loaded UTI from game data: {resRef}");
                 }
             }
@@ -170,7 +175,8 @@ public class ItemResolutionService
                 BaseCost = baseCost,
                 StackSize = uti.StackSize,
                 Plot = uti.Plot,
-                Cursed = uti.Cursed
+                Cursed = uti.Cursed,
+                SourceLocation = sourceLocation
             };
         }
         catch (Exception ex)
@@ -267,6 +273,7 @@ public class ResolvedItemData
     public required ushort StackSize { get; init; }
     public required bool Plot { get; init; }
     public required bool Cursed { get; init; }
+    public string SourceLocation { get; init; } = string.Empty;
 
     /// <summary>
     /// Calculate sell price (what player pays to buy from store).

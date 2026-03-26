@@ -83,7 +83,8 @@ public class HakPaletteScannerService
                             BaseItemTypeName = string.Empty, // Set by consumer with 2DA lookup
                             BaseItemType = uti.BaseItem,
                             BaseValue = uti.Cost,
-                            IsStandard = false // HAK items are custom content
+                            IsStandard = false, // HAK items are custom content
+                            SourceLocation = Path.GetFileName(hakPath)
                         });
                         seenResRefs.Add(entry.ResRef);
                     }

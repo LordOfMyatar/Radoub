@@ -203,7 +203,8 @@ public partial class MainWindow
                     BaseItemIndex = resolved?.BaseItemType ?? 0,
                     BaseValue = resolved?.BaseCost ?? 0,
                     SellPrice = resolved?.CalculateSellPrice(markUp) ?? 0,
-                    BuyPrice = resolved?.CalculateBuyPrice(markDown) ?? 0
+                    BuyPrice = resolved?.CalculateBuyPrice(markDown) ?? 0,
+                    SourceLocation = resolved?.SourceLocation ?? string.Empty
                 });
             }
 

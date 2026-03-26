@@ -694,6 +694,16 @@
                                                        Text=""
                                                        AutomationProperties.AutomationId="DetailStorePanel"/>
                                         </Grid>
+
+                                        <!-- Source Location -->
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <TextBlock Grid.Column="0" Text="Source:"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                       Margin="0,0,8,0"/>
+                                            <TextBlock Grid.Column="1" x:Name="DetailSourceLocation"
+                                                       Text="" FontFamily="Consolas" FontSize="11"
+                                                       AutomationProperties.AutomationId="DetailSourceLocation"/>
+                                        </Grid>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>

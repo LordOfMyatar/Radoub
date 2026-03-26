@@ -6,7 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased]
+## [0.1.24-alpha] - 2026-03-26
+**Branch**: `fence/issue-1981` | **PR**: #1994
+
+### Sprint: Performance & Cross-Tool Polish (#1981)
+
+- [x] #1964 — Optimize palette loading cold cache path
+  - Parallelize cache building + HAK scanning on cold cache (Task.WhenAll)
+  - Defer BaseItemTypeService creation to first use
+  - Remove dead PaletteCacheService wrapper (replaced by SharedPaletteCacheService)
+- [x] #1956 — Load item icons from HAK/CEP content
+  - Refresh palette UI after background HAK scan discovers new items
+- [x] #1918 — Show item source location (UTI/BIF/HAK) in palette details
+  - Added SourceLocation to SharedPaletteCacheItem, ItemViewModel, StoreItemViewModel
+  - Item details panel shows source file (e.g., "templates.bif", "cep2_add_wpn.hak")
+  - Bumped shared cache version to v3
 
 ### From Sprint #1901 (Radoub-level)
 

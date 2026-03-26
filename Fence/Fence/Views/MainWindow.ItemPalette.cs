@@ -102,12 +102,21 @@ public partial class MainWindow
                 return;
             }
 
-            // No shared cache - build it in background
+            // No shared cache - build cache and scan HAKs in parallel
             UnifiedLogger.LogApplication(LogLevel.INFO, "Building palette cache in background...");
-            await BuildCacheInBackgroundAsync();
+            var buildTask = BuildCacheInBackgroundAsync();
+            var hakTask = ScanModuleHaksAsync(token);
+            await Task.WhenAll(buildTask, hakTask);
 
-            // Scan module HAKs after building base caches
-            await ScanModuleHaksAsync(token);
+            // Re-aggregate after both complete to include HAK items
+            _sharedCacheService.InvalidateAggregatedCache();
+            var freshAggregated = _sharedCacheService.GetAggregatedCache(_activeHakPaths);
+            if (freshAggregated != null)
+            {
+                _cachedPaletteData = freshAggregated
+                    .Where(i => !ExcludedBaseItemTypes.Contains(i.BaseItemType))
+                    .ToList();
+            }
         }
         catch (OperationCanceledException)
         {
@@ -160,7 +169,10 @@ public partial class MainWindow
                                 BaseValue = item.Cost,
                                 Tag = item.Tag ?? string.Empty,
                                 IsStandard = resourceInfo.Source == GameResourceSource.Bif,
-                                PropertiesDisplay = propertiesDisplay
+                                PropertiesDisplay = propertiesDisplay,
+                                SourceLocation = !string.IsNullOrEmpty(resourceInfo.SourcePath)
+                                    ? Path.GetFileName(resourceInfo.SourcePath)
+                                    : resourceInfo.Source.ToString()
                             });
                             existingResRefs.Add(resourceInfo.ResRef);
                         }
@@ -216,6 +228,7 @@ public partial class MainWindow
                     Tag = !string.IsNullOrEmpty(cached.Tag) ? cached.Tag : cached.ResRef,
                     PropertiesDisplay = cached.PropertiesDisplay,
                     Source = cached.IsStandard ? GameResourceSource.Bif : GameResourceSource.Override,
+                    SourceLocation = cached.SourceLocation,
                     IconBitmap = _itemIconService?.GetItemIcon(cached.BaseItemType)
                 };
                 _itemViewModelFactory?.PopulateEquipableSlots(vm, cached.BaseItemType);
@@ -328,6 +341,7 @@ public partial class MainWindow
                         Tag = resolved.Tag,
                         PropertiesDisplay = string.Empty,
                         Source = GameResourceSource.Module,
+                        SourceLocation = Path.GetFileName(utiPath),
                         IconBitmap = _itemIconService?.GetItemIcon(resolved.BaseItemType)
                     });
                     existingResRefs.Add(resRef);
@@ -410,6 +424,9 @@ public partial class MainWindow
                     _cachedPaletteData = aggregated
                         .Where(i => !ExcludedBaseItemTypes.Contains(i.BaseItemType))
                         .ToList();
+
+                    // Reload palette UI to include newly discovered HAK items and their icons
+                    await LoadAllPaletteItemsAsync(token);
                 }
             }
         }

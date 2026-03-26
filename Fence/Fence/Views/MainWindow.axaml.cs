@@ -241,7 +241,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         await Task.Run(() =>
         {
             _gameDataService = CreateGameDataService();
-            _baseItemTypeService = new BaseItemTypeService(_gameDataService);
 
             // Create TlkService with settings integration for language-aware string resolution (#1361)
             _tlkService = new TlkService();
@@ -421,6 +420,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private async Task LoadBaseItemTypesAsync(CancellationToken token = default)
     {
+        // Lazy-create BaseItemTypeService on first use (deferred from InitializeServicesAsync)
+        _baseItemTypeService ??= _gameDataService != null ? new BaseItemTypeService(_gameDataService) : null;
         if (_baseItemTypeService == null) return;
 
         try

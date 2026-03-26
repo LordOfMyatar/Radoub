@@ -81,6 +81,14 @@ public class StoreItemViewModel : INotifyPropertyChanged
         set { if (_buyPrice != value) { _buyPrice = value; OnPropertyChanged(); } }
     }
 
+    private string _sourceLocation = string.Empty;
+
+    public string SourceLocation
+    {
+        get => _sourceLocation;
+        set { if (_sourceLocation != value) { _sourceLocation = value; OnPropertyChanged(); } }
+    }
+
     private Avalonia.Media.Imaging.Bitmap? _iconBitmap;
 
     /// <summary>
