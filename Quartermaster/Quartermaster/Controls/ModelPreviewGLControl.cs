@@ -9,12 +9,28 @@ using System.Numerics;
 using Avalonia;
 using Avalonia.OpenGL;
 using Avalonia.OpenGL.Controls;
+using Avalonia.Threading;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Mdl;
 using Silk.NET.OpenGL;
 
 namespace Quartermaster.Controls;
+
+/// <summary>
+/// Preview rendering state for the 3D model preview.
+/// </summary>
+public enum PreviewState
+{
+    /// <summary>No model loaded (null model or load failure).</summary>
+    None,
+    /// <summary>All meshes rendered successfully, no emitter nodes.</summary>
+    Complete,
+    /// <summary>Meshes rendered but model also has emitter nodes (particles not shown).</summary>
+    Incomplete,
+    /// <summary>Model loaded but has no renderable geometry (emitter-only).</summary>
+    NotAvailable
+}
 
 /// <summary>
 /// GPU-accelerated control for rendering 3D model previews using OpenGL.
@@ -52,6 +68,18 @@ public class ModelPreviewGLControl : OpenGlControlBase
     private bool _needsMeshUpdate;
     private bool _logOncePerModel;
 
+    private PreviewState _previewState = PreviewState.None;
+
+    /// <summary>
+    /// Current preview rendering state.
+    /// </summary>
+    public PreviewState PreviewState => _previewState;
+
+    /// <summary>
+    /// Raised on the UI thread when the preview state changes.
+    /// </summary>
+    public event EventHandler<PreviewState>? PreviewStateChanged;
+
     /// <summary>
     /// The model to render.
     /// </summary>
@@ -65,6 +93,8 @@ public class ModelPreviewGLControl : OpenGlControlBase
             _needsTextureUpdate = true;  // New model needs textures loaded
             _logOncePerModel = true;
             _viewController.CenterCamera();
+            if (value == null)
+                SetPreviewState(PreviewState.None);
             RequestNextFrameRendering();
         }
     }
@@ -729,6 +759,20 @@ public class ModelPreviewGLControl : OpenGlControlBase
 
         UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateMeshBuffers: model={_model?.Name ?? "null"}, {_meshDrawCalls.Count} meshes ({skippedMeshes} skipped), {vertices.Count / 8} vertices, {_indexCount / 3} triangles");
 
+        // Determine preview state based on rendered geometry and emitter nodes
+        if (_indexCount == 0)
+        {
+            SetPreviewState(_model != null ? PreviewState.NotAvailable : PreviewState.None);
+        }
+        else if (_model?.HasEmitterNodes() == true)
+        {
+            SetPreviewState(PreviewState.Incomplete);
+        }
+        else
+        {
+            SetPreviewState(PreviewState.Complete);
+        }
+
         if (_indexCount == 0) return;
 
         // Upload to GPU
@@ -918,5 +962,23 @@ public class ModelPreviewGLControl : OpenGlControlBase
                name.Contains("_bicep") ||
                name.Contains("_forearm") ||
                name.Contains("_pelvis");
+    }
+
+    /// <summary>
+    /// Thread-safe state update — marshals to UI thread if needed.
+    /// </summary>
+    private void SetPreviewState(PreviewState newState)
+    {
+        if (_previewState == newState) return;
+        _previewState = newState;
+
+        if (Dispatcher.UIThread.CheckAccess())
+        {
+            PreviewStateChanged?.Invoke(this, newState);
+        }
+        else
+        {
+            Dispatcher.UIThread.Post(() => PreviewStateChanged?.Invoke(this, newState));
+        }
     }
 }

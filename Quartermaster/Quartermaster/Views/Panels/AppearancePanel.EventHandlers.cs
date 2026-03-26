@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Quartermaster.Controls;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.UI.Services;
@@ -66,6 +67,10 @@ public partial class AppearancePanel
             _tattoo2ColorSwatch.Cursor = new Cursor(StandardCursorType.Hand);
             _tattoo2ColorSwatch.PointerPressed += OnTattoo2ColorSwatchClicked;
         }
+
+        // 3D Preview state overlay
+        if (_modelPreviewGL != null)
+            _modelPreviewGL.PreviewStateChanged += OnPreviewStateChanged;
 
         // 3D Preview button events
         if (_rotateLeftButton != null)
@@ -355,6 +360,28 @@ public partial class AppearancePanel
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR,
                 $"AppearancePanel: Color picker failed for '{paletteName}': {ex.GetType().Name}: {ex.Message}");
+        }
+    }
+
+    private void OnPreviewStateChanged(object? sender, PreviewState state)
+    {
+        if (_previewStateOverlay == null || _previewStateText == null) return;
+
+        switch (state)
+        {
+            case PreviewState.NotAvailable:
+                _previewStateText.Text = "Preview not available";
+                _previewStateText.Foreground = BrushManager.GetWarningBrush(this);
+                _previewStateOverlay.IsVisible = true;
+                break;
+            case PreviewState.Incomplete:
+                _previewStateText.Text = "Preview incomplete";
+                _previewStateText.Foreground = BrushManager.GetWarningBrush(this);
+                _previewStateOverlay.IsVisible = true;
+                break;
+            default:
+                _previewStateOverlay.IsVisible = false;
+                break;
         }
     }
 
