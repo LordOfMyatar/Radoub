@@ -16,11 +16,18 @@ public partial class MainWindow
 {
     #region Item Details
 
+    private bool _updatingSelection;
+
     private void OnStoreInventorySelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
+        if (_updatingSelection) return;
+
         var selected = StoreInventoryGrid.SelectedItem as StoreItemViewModel;
         if (selected != null)
         {
+            _updatingSelection = true;
+            ItemPaletteGrid.SelectedItem = null;
+            _updatingSelection = false;
             UpdateItemDetails(selected);
         }
         else
@@ -31,18 +38,15 @@ public partial class MainWindow
 
     private void OnPaletteSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        // Only show palette item details if nothing selected in store grid
-        if (StoreInventoryGrid.SelectedItem != null)
-            return;
+        if (_updatingSelection) return;
 
         var selected = ItemPaletteGrid.SelectedItem as ItemViewModel;
         if (selected != null)
         {
+            _updatingSelection = true;
+            StoreInventoryGrid.SelectedItem = null;
+            _updatingSelection = false;
             UpdateItemDetailsFromPalette(selected);
-        }
-        else
-        {
-            ClearItemDetails();
         }
     }
 
