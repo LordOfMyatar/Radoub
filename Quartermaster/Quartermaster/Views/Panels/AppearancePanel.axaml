@@ -306,7 +306,21 @@
                     <!-- 3D Preview Area -->
                     <Border Grid.Row="1" x:Name="ModelPreviewContainer"
                             Background="{DynamicResource ThemeSidebar}" Margin="10" CornerRadius="4">
-                        <controls:ModelPreviewGLControl x:Name="ModelPreviewGL"/>
+                        <Grid>
+                            <controls:ModelPreviewGLControl x:Name="ModelPreviewGL"/>
+                            <Border x:Name="PreviewStateOverlay"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    Margin="0,8,8,0"
+                                    Background="#AA000000"
+                                    CornerRadius="3"
+                                    Padding="8,4"
+                                    IsVisible="False">
+                                <TextBlock x:Name="PreviewStateText"
+                                           FontStyle="Italic"
+                                           FontSize="12"/>
+                            </Border>
+                        </Grid>
                     </Border>
 
                     <!-- Preview Controls -->

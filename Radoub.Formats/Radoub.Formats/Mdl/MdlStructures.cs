@@ -502,4 +502,12 @@ public class MdlModel
     {
         return EnumerateAllNodes().OfType<MdlTrimeshNode>();
     }
+
+    /// <summary>
+    /// Check whether the model contains any emitter (particle effect) nodes.
+    /// </summary>
+    public bool HasEmitterNodes()
+    {
+        return EnumerateAllNodes().OfType<MdlEmitterNode>().Any();
+    }
 }

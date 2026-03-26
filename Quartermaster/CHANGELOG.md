@@ -6,9 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased]
+## [0.2.72-alpha] - 2026-03-25
+**Branch**: `quartermaster/issue-1757` | **PR**: #1993
 
-### From Sprint #1901 (Radoub-level)
+### Fix: Archon Lantern Model Renders Incorrectly (#1757)
+
+- Add preview state overlay for emitter-only and incomplete models
+- Add HasEmitterNodes() helper to MdlModel
+
+### From Sprint #1901 (Radoub-level, PR #1991)
 
 - Split ModelPreviewGLControl into ModelViewController + OpenGLShaderManager (#1681)
 - Added fixture-free tests for PltColorIndices, ModelViewController, TextureService helpers, model name construction (#1670)

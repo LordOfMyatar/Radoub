@@ -207,20 +207,15 @@ Read CHANGELOG and verify:
 - PR number filled in (not TBD)
 - Date is today or earlier
 
-**Stale [Unreleased] check**:
+**[Unreleased] section check**:
 
-Check ALL affected CHANGELOG files (root `CHANGELOG.md` + tool-specific) for non-empty `[Unreleased]` sections. If `[Unreleased]` contains bullet points:
+`[Unreleased]` should never contain items — all CHANGELOG entries go directly into versioned sections. Check ALL affected CHANGELOG files for non-empty `[Unreleased]` sections. If any contain bullet points:
 
-1. For each item, search `git log main --oneline --grep="<keyword>"` to find which commit/PR introduced it
-2. Check if that PR is already merged to main (i.e., the item should be in a versioned section, not Unreleased)
-3. Report as:
+1. Report as:
    ```
-   ⚠️ Stale [Unreleased] items found in [CHANGELOG file]:
-     - "[item text]" → should be in [version] (PR #NNN, merged YYYY-MM-DD)
+   ⚠️ [CHANGELOG file] has items in [Unreleased] — move them to a versioned section
    ```
-4. **Do NOT auto-fix** — flag for the user to confirm placement before moving items
-
-This prevents items from being silently left behind when CHANGELOGs are updated during sprints.
+2. Move the items into the most recent versioned section (or create one) as part of this PR
 
 **Note**: Version numbers are managed by NBGV via `version.json` files — no `.csproj` version properties to check. CHANGELOG versions are for human tracking only and don't need to match computed NBGV versions exactly.
 
@@ -327,7 +322,7 @@ Flag if >30 days old and code changed.
 | Check | Status |
 |-------|--------|
 | CHANGELOG | ✅/⚠️ |
-| Unreleased items | ✅ Empty / ⚠️ N stale items need placement |
+| [Unreleased] section | ✅ Empty / ⚠️ Has items (move to versioned section) |
 | Wiki | ✅ Current / ⚠️ Stale |
 
 ### Status
