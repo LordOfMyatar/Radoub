@@ -419,6 +419,9 @@ public partial class MainWindow
                     _cachedPaletteData = aggregated
                         .Where(i => !ExcludedBaseItemTypes.Contains(i.BaseItemType))
                         .ToList();
+
+                    // Reload palette UI to include newly discovered HAK items and their icons
+                    await LoadAllPaletteItemsAsync(token);
                 }
             }
         }
