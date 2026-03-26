@@ -15,6 +15,7 @@ public class SharedPaletteCacheItem
     public uint BaseValue { get; set; }
     public bool IsStandard { get; set; }
     public string PropertiesDisplay { get; set; } = string.Empty;
+    public string SourceLocation { get; set; } = string.Empty;
 }
 
 /// <summary>

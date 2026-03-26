@@ -169,7 +169,10 @@ public partial class MainWindow
                                 BaseValue = item.Cost,
                                 Tag = item.Tag ?? string.Empty,
                                 IsStandard = resourceInfo.Source == GameResourceSource.Bif,
-                                PropertiesDisplay = propertiesDisplay
+                                PropertiesDisplay = propertiesDisplay,
+                                SourceLocation = !string.IsNullOrEmpty(resourceInfo.SourcePath)
+                                    ? Path.GetFileName(resourceInfo.SourcePath)
+                                    : resourceInfo.Source.ToString()
                             });
                             existingResRefs.Add(resourceInfo.ResRef);
                         }
@@ -225,6 +228,7 @@ public partial class MainWindow
                     Tag = !string.IsNullOrEmpty(cached.Tag) ? cached.Tag : cached.ResRef,
                     PropertiesDisplay = cached.PropertiesDisplay,
                     Source = cached.IsStandard ? GameResourceSource.Bif : GameResourceSource.Override,
+                    SourceLocation = cached.SourceLocation,
                     IconBitmap = _itemIconService?.GetItemIcon(cached.BaseItemType)
                 };
                 _itemViewModelFactory?.PopulateEquipableSlots(vm, cached.BaseItemType);
@@ -337,6 +341,7 @@ public partial class MainWindow
                         Tag = resolved.Tag,
                         PropertiesDisplay = string.Empty,
                         Source = GameResourceSource.Module,
+                        SourceLocation = Path.GetFileName(utiPath),
                         IconBitmap = _itemIconService?.GetItemIcon(resolved.BaseItemType)
                     });
                     existingResRefs.Add(resRef);

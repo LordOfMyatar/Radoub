@@ -11,7 +11,7 @@ namespace Radoub.UI.Services;
 /// </summary>
 public class SharedPaletteCacheService : ISharedPaletteCacheService
 {
-    private const int CacheVersion = 2;
+    private const int CacheVersion = 3; // v3: Added SourceLocation
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

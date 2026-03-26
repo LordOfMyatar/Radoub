@@ -233,7 +233,10 @@ public partial class MainWindow
                         PropertiesDisplay = propertiesDisplay,
                         BaseItemType = item.BaseItem,
                         BaseValue = item.Cost,
-                        IsStandard = gameSource == GameResourceSource.Bif
+                        IsStandard = gameSource == GameResourceSource.Bif,
+                        SourceLocation = !string.IsNullOrEmpty(resourceInfo.SourcePath)
+                            ? Path.GetFileName(resourceInfo.SourcePath)
+                            : resourceInfo.Source.ToString()
                     });
                     existingResRefs.Add(resourceInfo.ResRef);
                 }

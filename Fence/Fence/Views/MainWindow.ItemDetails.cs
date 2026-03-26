@@ -61,6 +61,7 @@ public partial class MainWindow
         DetailBuyPrice.Text = $"{item.BuyPrice:N0} gp";
         DetailInfinite.Text = item.Infinite ? "Yes ∞" : "No";
         DetailStorePanel.Text = StorePanels.GetPanelName(item.PanelId);
+        DetailSourceLocation.Text = !string.IsNullOrEmpty(item.SourceLocation) ? item.SourceLocation : "—";
     }
 
     private void UpdateItemDetailsFromPalette(ItemViewModel item)
@@ -83,6 +84,7 @@ public partial class MainWindow
         DetailInfinite.Text = "—";
         DetailStorePanel.Text = StorePanels.GetPanelName(
             GetStorePanelForBaseItemType(item.BaseItem));
+        DetailSourceLocation.Text = !string.IsNullOrEmpty(item.SourceLocation) ? item.SourceLocation : "—";
     }
 
     private void ClearItemDetails()
