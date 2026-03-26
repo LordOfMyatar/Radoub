@@ -102,12 +102,21 @@ public partial class MainWindow
                 return;
             }
 
-            // No shared cache - build it in background
+            // No shared cache - build cache and scan HAKs in parallel
             UnifiedLogger.LogApplication(LogLevel.INFO, "Building palette cache in background...");
-            await BuildCacheInBackgroundAsync();
+            var buildTask = BuildCacheInBackgroundAsync();
+            var hakTask = ScanModuleHaksAsync(token);
+            await Task.WhenAll(buildTask, hakTask);
 
-            // Scan module HAKs after building base caches
-            await ScanModuleHaksAsync(token);
+            // Re-aggregate after both complete to include HAK items
+            _sharedCacheService.InvalidateAggregatedCache();
+            var freshAggregated = _sharedCacheService.GetAggregatedCache(_activeHakPaths);
+            if (freshAggregated != null)
+            {
+                _cachedPaletteData = freshAggregated
+                    .Where(i => !ExcludedBaseItemTypes.Contains(i.BaseItemType))
+                    .ToList();
+            }
         }
         catch (OperationCanceledException)
         {
