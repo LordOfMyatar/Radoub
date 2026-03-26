@@ -1,13 +1,8 @@
-using System;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
-using System.IO.Compression;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Radoub.Formats.Logging;
 using Radoub.UI.Services;
 using RadoubLauncher.Services;
 using RadoubLauncher.ViewModels;
@@ -210,85 +205,6 @@ public partial class MainWindow : Window
         WindowState = WindowState == WindowState.Maximized
             ? WindowState.Normal
             : WindowState.Maximized;
-    }
-
-    #endregion
-
-    #region Help Menu Handlers
-
-    private async void OnExportLogsClick(object? sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var logFolder = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "Radoub", "Trebuchet", "Logs");
-
-            if (!Directory.Exists(logFolder))
-            {
-                if (_viewModel != null) _viewModel.BuildStatusText = "No logs to export";
-                return;
-            }
-
-            var storageProvider = StorageProvider;
-            var options = new Avalonia.Platform.Storage.FilePickerSaveOptions
-            {
-                Title = "Export Logs for Support",
-                SuggestedFileName = $"Trebuchet_Logs_{DateTime.Now:yyyyMMdd_HHmmss}.zip",
-                FileTypeChoices = new[]
-                {
-                    new Avalonia.Platform.Storage.FilePickerFileType("ZIP Archive")
-                    {
-                        Patterns = new[] { "*.zip" }
-                    }
-                }
-            };
-
-            var file = await storageProvider.SaveFilePickerAsync(options);
-            if (file == null) return;
-
-            var result = file.Path.LocalPath;
-            if (File.Exists(result)) File.Delete(result);
-
-            ZipFile.CreateFromDirectory(logFolder, result);
-
-            if (_viewModel != null) _viewModel.BuildStatusText = $"Logs exported to: {Path.GetFileName(result)}";
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Exported logs to: ~/{Path.GetFileName(result)}");
-        }
-        catch (Exception ex)
-        {
-            if (_viewModel != null) _viewModel.BuildStatusText = $"Failed to export logs: {ex.Message}";
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to export logs: {ex.Message}");
-        }
-    }
-
-    private void OnOpenLogFolderClick(object? sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var logFolder = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "Radoub", "Trebuchet", "Logs");
-
-            if (!Directory.Exists(logFolder))
-            {
-                if (_viewModel != null) _viewModel.BuildStatusText = "Log folder does not exist yet";
-                return;
-            }
-
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = logFolder,
-                UseShellExecute = true
-            });
-
-            UnifiedLogger.LogApplication(LogLevel.INFO, "Opened log folder");
-        }
-        catch (Exception ex)
-        {
-            if (_viewModel != null) _viewModel.BuildStatusText = $"Failed to open log folder: {ex.Message}";
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open log folder: {ex.Message}");
-        }
     }
 
     #endregion
