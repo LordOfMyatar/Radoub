@@ -6,7 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased]
+## [0.1.24-alpha] - 2026-03-26
+**Branch**: `fence/issue-1981` | **PR**: #TBD
+
+### Sprint: Performance & Cross-Tool Polish (#1981)
+
+- [ ] #1964 — Optimize palette loading cold cache path
+- [ ] #1956 — Load item icons from HAK/CEP content
+- [ ] #1918 — Show item source location (UTI/BIF/HAK) in palette details
 
 ### From Sprint #1901 (Radoub-level)
 
