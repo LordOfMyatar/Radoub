@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using ItemEditor.Services;
+using Radoub.Formats.Services;
 
 namespace ItemEditor.Views;
 
@@ -157,7 +158,9 @@ internal class BaseItemTypeDisplayItem : BaseItemTypeInfo
     public string ModelTypeDisplay { get; }
 
     public BaseItemTypeDisplayItem(BaseItemTypeInfo source)
-        : base(source.BaseItemIndex, source.DisplayName, source.Label, source.ModelType, source.DescriptionText)
+        : base(source.BaseItemIndex, source.DisplayName, source.Label,
+              storePanel: source.StorePanel, modelType: source.ModelType, descriptionText: source.DescriptionText,
+              stacking: source.Stacking, chargesStarting: source.ChargesStarting)
     {
         ModelTypeDisplay = source.ModelType switch
         {

@@ -5,6 +5,7 @@
         xmlns:ctrl="using:RadoubLauncher.Controls"
         xmlns:sys="using:System"
         xmlns:conv="using:RadoubLauncher.ViewModels"
+        xmlns:radoubControls="using:Radoub.UI.Controls"
         x:Class="RadoubLauncher.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         x:Name="MainWindowRoot"
@@ -126,70 +127,47 @@
             </Grid>
         </Border>
 
-        <!-- Status Bar -->
-        <Border DockPanel.Dock="Bottom"
-                Background="{DynamicResource ThemeBackgroundAlt}"
-                Padding="12,8">
-            <Grid ColumnDefinitions="*,Auto,Auto">
-                <!-- Game Info -->
-                <StackPanel Orientation="Horizontal" Spacing="16">
-                    <TextBlock Text="{Binding GameStatusText}"
-                               Opacity="0.7"
-                               VerticalAlignment="Center"/>
-                    <TextBlock Text="|" Opacity="0.3" VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding TlkStatusText}"
-                               Opacity="0.7"
-                               VerticalAlignment="Center"/>
-                    <!-- Build Status -->
-                    <TextBlock Text="|" Opacity="0.3" VerticalAlignment="Center"
-                               IsVisible="{Binding BuildStatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-                    <StackPanel Orientation="Horizontal" Spacing="8"
-                                IsVisible="{Binding BuildStatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                        <ProgressBar IsIndeterminate="True"
-                                     Width="80"
-                                     Height="6"
-                                     IsVisible="{Binding IsBuilding}"
-                                     VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding BuildStatusText}"
-                                   Opacity="0.7"
+        <!-- Status Bar (bottom position) -->
+        <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,Auto">
+            <radoubControls:StatusBarControl x:Name="StatusBar"
+                                             PrimaryText="{Binding GameStatusText}"
+                                             SecondaryText="{Binding BuildStatusText}"
+                                             TertiaryText="{Binding TlkStatusText}"
+                                             ShowProgress="{Binding IsBuilding}"/>
+
+            <!-- Update Status -->
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
+                        Spacing="8"
+                        Margin="16,0"
+                        VerticalAlignment="Center">
+                <TextBlock Text="{Binding UpdateStatusText}"
+                           Opacity="0.7"
+                           VerticalAlignment="Center"
+                           IsVisible="{Binding !UpdateAvailable}"/>
+                <Border Background="{DynamicResource ThemeInfoBrush}"
+                        CornerRadius="4"
+                        Padding="8,4"
+                        IsVisible="{Binding UpdateAvailable}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="{Binding UpdateStatusText}"
+                                   Foreground="{DynamicResource ThemeAccentForeground}"
+                                   FontWeight="SemiBold"
                                    VerticalAlignment="Center"/>
+                        <Button Content="Download"
+                                Command="{Binding OpenReleasePageCommand}"
+                                Padding="8,2"/>
                     </StackPanel>
-                </StackPanel>
+                </Border>
+            </StackPanel>
 
-                <!-- Update Status -->
-                <StackPanel Grid.Column="1"
-                            Orientation="Horizontal"
-                            Spacing="8"
-                            Margin="16,0">
-                    <!-- Normal status (no update) -->
-                    <TextBlock Text="{Binding UpdateStatusText}"
-                               Opacity="0.7"
-                               VerticalAlignment="Center"
-                               IsVisible="{Binding !UpdateAvailable}"/>
-                    <!-- Update available - highlighted -->
-                    <Border Background="{DynamicResource ThemeInfoBrush}"
-                            CornerRadius="4"
-                            Padding="8,4"
-                            IsVisible="{Binding UpdateAvailable}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="{Binding UpdateStatusText}"
-                                       Foreground="{DynamicResource ThemeAccentForeground}"
-                                       FontWeight="SemiBold"
-                                       VerticalAlignment="Center"/>
-                            <Button Content="Download"
-                                    Command="{Binding OpenReleasePageCommand}"
-                                    Padding="8,2"/>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-
-                <!-- Version -->
-                <TextBlock Grid.Column="2"
-                           Text="{Binding VersionText}"
-                           Opacity="0.5"
-                           VerticalAlignment="Center"/>
-            </Grid>
-        </Border>
+            <!-- Version -->
+            <TextBlock Grid.Column="2"
+                       Text="{Binding VersionText}"
+                       Opacity="0.5"
+                       Margin="8,0"
+                       VerticalAlignment="Center"/>
+        </Grid>
 
         <!-- Main Content: Sidebar + Workspace -->
         <Grid ColumnDefinitions="200,Auto,*">

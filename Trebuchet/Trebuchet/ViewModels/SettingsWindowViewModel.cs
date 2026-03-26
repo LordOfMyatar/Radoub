@@ -386,6 +386,47 @@ public partial class SettingsWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task ExportLogs()
+    {
+        try
+        {
+            var logFolder = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Radoub", "Trebuchet", "Logs");
+
+            if (!System.IO.Directory.Exists(logFolder))
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO, "No logs to export");
+                return;
+            }
+
+            var options = new FilePickerSaveOptions
+            {
+                Title = "Export Logs for Support",
+                SuggestedFileName = $"Trebuchet_Logs_{DateTime.Now:yyyyMMdd_HHmmss}.zip",
+                FileTypeChoices = new[]
+                {
+                    new FilePickerFileType("ZIP Archive") { Patterns = new[] { "*.zip" } }
+                }
+            };
+
+            var file = await _window.StorageProvider.SaveFilePickerAsync(options);
+            if (file == null) return;
+
+            var result = file.Path.LocalPath;
+            if (System.IO.File.Exists(result)) System.IO.File.Delete(result);
+
+            System.IO.Compression.ZipFile.CreateFromDirectory(logFolder, result);
+
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Exported logs to: ~/{System.IO.Path.GetFileName(result)}");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to export logs: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
     private void OpenThemeEditor()
     {
         try

@@ -5,6 +5,7 @@ using Avalonia.Interactivity;
 using ItemEditor.Services;
 using Radoub.Formats.Settings;
 using Radoub.UI.Controls;
+using Radoub.UI.Services;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -402,7 +403,7 @@ public partial class MainWindow
 
     private void UpdateStatus(string text)
     {
-        StatusText.Text = text;
+        StatusBar.PrimaryText = text;
     }
 
     private void UpdateModuleIndicator()
@@ -411,11 +412,13 @@ public partial class MainWindow
         if (!string.IsNullOrEmpty(modulePath))
         {
             var name = Path.GetFileNameWithoutExtension(modulePath);
-            ModuleIndicator.Text = $"Module: {name}";
+            StatusBar.ModuleIndicator = $"Module: {name}";
+            StatusBar.ModuleIndicatorForeground = BrushManager.GetInfoBrush(this);
         }
         else
         {
-            ModuleIndicator.Text = "No module";
+            StatusBar.ModuleIndicator = "No module";
+            StatusBar.ModuleIndicatorForeground = BrushManager.GetWarningBrush(this);
         }
     }
 

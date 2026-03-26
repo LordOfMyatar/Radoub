@@ -17,6 +17,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.102] - 2026-03-25
+**Branch**: `radoub/issue-1987` | **PR**: #1991
+
+### Sprint: Service Consolidation & StatusBar (#1987)
+
+- [x] #1958 — Help Menu Parity: Export Logs and Open Log Folder
+- [x] #1962 — Cache ThemeManager discovery results
+- [x] #1963 — Consolidate duplicate services across tools
+- [x] #1946 — Migrate all tools to shared StatusBarControl
+
+---
+
 ## [0.9.101] - 2026-03-23
 **Branch**: `radoub/issue-1901` | **PR**: #1957
 

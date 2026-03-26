@@ -1,4 +1,4 @@
-using MerchantEditor.Services;
+using Radoub.Formats.Services;
 using Radoub.TestUtilities.Mocks;
 
 namespace Fence.Tests;

@@ -1,4 +1,5 @@
 using Manifest.Services;
+using Radoub.UI.Services;
 using Radoub.TestUtilities.Helpers;
 using Xunit;
 

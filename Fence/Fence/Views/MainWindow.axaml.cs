@@ -546,7 +546,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void UpdateStatusBar(string message)
     {
-        StatusText.Text = message;
+        StatusBar.PrimaryText = message;
 
         if (!string.IsNullOrEmpty(_currentFilePath))
         {
@@ -557,17 +557,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             {
                 displayPath = "~" + displayPath.Substring(userProfile.Length);
             }
-            FilePathText.Text = displayPath;
+            StatusBar.FilePath = displayPath;
         }
         else
         {
-            FilePathText.Text = "";
+            StatusBar.FilePath = null;
         }
     }
 
     private void UpdateItemCount()
     {
-        ItemCountText.Text = $"{StoreItems.Count} items";
+        StatusBar.SecondaryText = $"{StoreItems.Count} items";
     }
 
     private void UpdateTitle()

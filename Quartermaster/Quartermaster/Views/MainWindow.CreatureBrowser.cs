@@ -118,33 +118,27 @@ public partial class MainWindow
     /// </summary>
     private void UpdateModuleIndicator()
     {
-        var moduleText = this.FindControl<TextBlock>("ModuleText");
-        if (moduleText == null) return;
-
         try
         {
             var modulePath = RadoubSettings.Instance.CurrentModulePath;
 
-            // Validate this is a real module path, not just the modules parent directory (#1327)
             if (!RadoubSettings.IsValidModulePath(modulePath))
             {
-                moduleText.Text = "No module selected";
-                moduleText.Foreground = BrushManager.GetWarningBrush(this);
+                StatusBar.ModuleIndicator = "No module selected";
+                StatusBar.ModuleIndicatorForeground = BrushManager.GetWarningBrush(this);
                 return;
             }
 
-            // Resolve .mod to working directory
             if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
                 modulePath = FindWorkingDirectory(modulePath);
 
             if (string.IsNullOrEmpty(modulePath) || !Directory.Exists(modulePath))
             {
-                moduleText.Text = "No module selected";
-                moduleText.Foreground = BrushManager.GetWarningBrush(this);
+                StatusBar.ModuleIndicator = "No module selected";
+                StatusBar.ModuleIndicatorForeground = BrushManager.GetWarningBrush(this);
                 return;
             }
 
-            // Extract module name from module.ifo
             var ifoPath = Path.Combine(modulePath, "module.ifo");
             string? moduleName = null;
             if (File.Exists(ifoPath))
@@ -153,14 +147,14 @@ public partial class MainWindow
                 moduleName = ifo.ModuleName.GetDefault();
             }
 
-            moduleText.Text = $"Module: {moduleName ?? Path.GetFileName(modulePath)}";
-            moduleText.Foreground = BrushManager.GetInfoBrush(this);
+            StatusBar.ModuleIndicator = $"Module: {moduleName ?? Path.GetFileName(modulePath)}";
+            StatusBar.ModuleIndicatorForeground = BrushManager.GetInfoBrush(this);
         }
         catch (Exception ex)
         {
             UnifiedLogger.LogUI(LogLevel.WARN, $"Failed to update module indicator: {ex.Message}");
-            moduleText.Text = "No module selected";
-            moduleText.Foreground = BrushManager.GetWarningBrush(this);
+            StatusBar.ModuleIndicator = "No module selected";
+            StatusBar.ModuleIndicatorForeground = BrushManager.GetWarningBrush(this);
         }
     }
 

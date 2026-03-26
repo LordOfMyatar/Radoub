@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Radoub.Formats.Settings;
 
 namespace Radoub.UI.Services;
 
@@ -105,5 +106,23 @@ public static class CommandLineParser
         }
 
         return options;
+    }
+
+    /// <summary>
+    /// Resolve module name to file path and set current module in RadoubSettings.
+    /// Shared logic used by all tools after parsing command line arguments.
+    /// </summary>
+    public static void ResolveModuleName(CommandLineOptions options)
+    {
+        if (string.IsNullOrEmpty(options.ModuleName))
+            return;
+
+        var resolved = ProjectPathResolver.ResolveFilePath(options.ModuleName, options.FilePath);
+        if (resolved != null)
+            options.FilePath = resolved;
+
+        var modulePath = ProjectPathResolver.ResolveModulePath(options.ModuleName);
+        if (!string.IsNullOrEmpty(modulePath))
+            RadoubSettings.Instance.CurrentModulePath = modulePath;
     }
 }

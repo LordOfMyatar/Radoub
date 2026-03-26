@@ -381,7 +381,7 @@ public class ThemeEditorViewModel : INotifyPropertyChanged
         {
             // Get themes from ThemeManager
             var themeManager = ThemeManager.Instance;
-            themeManager.DiscoverThemes();
+            themeManager.DiscoverThemes(forceRescan: true);
 
             PresetThemes.Clear();
             foreach (var theme in themeManager.AvailableThemes)

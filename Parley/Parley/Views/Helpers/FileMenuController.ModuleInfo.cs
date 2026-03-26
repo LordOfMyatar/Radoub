@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using DialogEditor.Parsers;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
+using Radoub.UI.Controls;
 using Radoub.UI.Services;
 
 namespace Parley.Views.Helpers
@@ -37,10 +38,10 @@ namespace Parley.Views.Helpers
                 var displayPath = PathHelper.SanitizePathForDisplay(moduleDirectory);
 
                 // Update UI - info colors when module is active (#1321: merged into status bar)
-                _controls.WithControl<TextBlock>("ModuleNameTextBlock", tb =>
+                _controls.WithControl<StatusBarControl>("StatusBar", sb =>
                 {
-                    tb.Text = moduleName ?? Path.GetFileName(moduleDirectory);
-                    tb.Foreground = BrushManager.GetInfoBrush(tb);
+                    sb.ModuleIndicator = moduleName ?? Path.GetFileName(moduleDirectory);
+                    sb.ModuleIndicatorForeground = BrushManager.GetInfoBrush(sb);
                 });
 
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Module info updated: {moduleName ?? "(unnamed)"} | {displayPath}");
@@ -57,10 +58,10 @@ namespace Parley.Views.Helpers
         /// </summary>
         public void ClearModuleInfo()
         {
-            _controls.WithControl<TextBlock>("ModuleNameTextBlock", tb =>
+            _controls.WithControl<StatusBarControl>("StatusBar", sb =>
             {
-                tb.Text = "No module selected";
-                tb.Foreground = BrushManager.GetWarningBrush(tb);
+                sb.ModuleIndicator = "No module selected";
+                sb.ModuleIndicatorForeground = BrushManager.GetWarningBrush(sb);
             });
         }
 
@@ -105,10 +106,10 @@ namespace Parley.Views.Helpers
                 var displayPath = PathHelper.SanitizePathForDisplay(workingDir);
 
                 // Update UI - info colors when module is active (#1321: merged into status bar)
-                _controls.WithControl<TextBlock>("ModuleNameTextBlock", tb =>
+                _controls.WithControl<StatusBarControl>("StatusBar", sb =>
                 {
-                    tb.Text = moduleName ?? Path.GetFileName(workingDir);
-                    tb.Foreground = BrushManager.GetInfoBrush(tb);
+                    sb.ModuleIndicator = moduleName ?? Path.GetFileName(workingDir);
+                    sb.ModuleIndicatorForeground = BrushManager.GetInfoBrush(sb);
                 });
 
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Module info from settings: {moduleName ?? "(unnamed)"} | {displayPath}");

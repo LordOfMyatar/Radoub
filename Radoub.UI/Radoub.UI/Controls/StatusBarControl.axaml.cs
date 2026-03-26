@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Media;
 
 namespace Radoub.UI.Controls;
 
@@ -20,6 +21,20 @@ namespace Radoub.UI.Controls;
 /// </remarks>
 public partial class StatusBarControl : UserControl
 {
+    /// <summary>
+    /// Module or tool indicator displayed on the far left (bold).
+    /// Auto-hides when null or empty.
+    /// </summary>
+    public static readonly StyledProperty<string?> ModuleIndicatorProperty =
+        AvaloniaProperty.Register<StatusBarControl, string?>(nameof(ModuleIndicator));
+
+    /// <summary>
+    /// Foreground brush for the module indicator text.
+    /// Allows tools to color the module name (e.g., info color when loaded, warning when not).
+    /// </summary>
+    public static readonly StyledProperty<IBrush?> ModuleIndicatorForegroundProperty =
+        AvaloniaProperty.Register<StatusBarControl, IBrush?>(nameof(ModuleIndicatorForeground));
+
     /// <summary>
     /// Primary status text displayed on the left (e.g., "Ready", "Loading...").
     /// </summary>
@@ -53,6 +68,24 @@ public partial class StatusBarControl : UserControl
     public StatusBarControl()
     {
         InitializeComponent();
+    }
+
+    /// <summary>
+    /// Module or tool indicator displayed on the far left.
+    /// </summary>
+    public string? ModuleIndicator
+    {
+        get => GetValue(ModuleIndicatorProperty);
+        set => SetValue(ModuleIndicatorProperty, value);
+    }
+
+    /// <summary>
+    /// Foreground brush for the module indicator text.
+    /// </summary>
+    public IBrush? ModuleIndicatorForeground
+    {
+        get => GetValue(ModuleIndicatorForegroundProperty);
+        set => SetValue(ModuleIndicatorForegroundProperty, value);
     }
 
     /// <summary>

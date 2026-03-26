@@ -140,8 +140,6 @@
                 <Separator/>
                 <MenuItem Header="_Logging">
                     <MenuItem Header="_Clear Debug Output" Click="OnClearDebugClick"/>
-                    <MenuItem Header="Open Log _Folder" Click="OnOpenLogFolderClick"/>
-                    <MenuItem Header="_Export Logs for Support..." Click="OnExportLogsClick"/>
                 </MenuItem>
                 <Separator/>
                 <MenuItem x:Name="UseRadoubThemeMenuItem" Header="Use _Radoub Theme" Click="OnToggleUseRadoubThemeClick"/>
@@ -161,31 +159,13 @@
             </MenuItem>
         </Menu>
 
-        <!-- Status Bar (combined with module info, #1321) -->
-        <Border Grid.Row="2"
-                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                BorderThickness="1"
-                CornerRadius="4"
-                Padding="8,4"
-                Margin="8,4,8,0">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock x:Name="ModuleNameTextBlock" Grid.Column="0" Text="No module selected" FontWeight="Bold"/>
-                <TextBlock Grid.Column="1" Text="{Binding StatusMessage}" Margin="20,0,0,0"/>
-                <TextBlock Grid.Column="2" Text="{Binding LastSavedTime}" Foreground="{DynamicResource SystemAccentColor}" FontStyle="Italic" Margin="20,0,0,0"/>
-                <TextBlock Grid.Column="3" Text="{Binding LoadedFileName}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0"/>
-                <ProgressBar Grid.Column="4" Width="100" Height="16"
-                             IsIndeterminate="{Binding IsLoading}"
-                             IsVisible="{Binding IsLoading}" Margin="10,0,0,0"/>
-            </Grid>
-        </Border>
+        <!-- Status Bar -->
+        <radoubControls:StatusBarControl x:Name="StatusBar" Grid.Row="2"
+                                         PrimaryText="{Binding StatusMessage}"
+                                         SecondaryText="{Binding LastSavedTime}"
+                                         FilePath="{Binding LoadedFileName}"
+                                         ShowProgress="{Binding IsLoading}"
+                                         Margin="8,4,8,0"/>
 
 <!-- Main Content Area (spans rows 4-6 for left/right layout) -->
         <!-- Outer grid: Dialog Browser Panel | Main Content -->

@@ -1,11 +1,11 @@
+using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Radoub.UI.Services;
-using RadoubLauncher.ViewModels;
 using RadoubLauncher.Services;
-using System.ComponentModel;
+using RadoubLauncher.ViewModels;
 
 namespace RadoubLauncher.Views;
 

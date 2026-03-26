@@ -405,7 +405,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void UpdateStatus(string message)
     {
-        StatusText.Text = message;
+        StatusBar.PrimaryText = message;
     }
 
     /// <summary>
@@ -413,7 +413,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     /// </summary>
     private void ShowProgress(bool visible)
     {
-        LoadingProgressBar.IsVisible = visible;
+        StatusBar.ShowProgress = visible;
     }
 
     private void UpdateCharacterHeader()
@@ -493,14 +493,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (_currentCreature == null)
         {
-            InventoryCountText.Text = "";
-            FilePathText.Text = "";
+            StatusBar.SecondaryText = null;
+            StatusBar.FilePath = null;
             return;
         }
 
         InventoryPanelContent.UpdateInventoryCounts(out var equippedCount, out var backpackCount);
-        InventoryCountText.Text = $"{equippedCount} equipped, {backpackCount} in backpack";
-        FilePathText.Text = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : "";
+        StatusBar.SecondaryText = $"{equippedCount} equipped, {backpackCount} in backpack";
+        StatusBar.FilePath = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : null;
     }
 
     private void MarkDirty([CallerMemberName] string? caller = null)

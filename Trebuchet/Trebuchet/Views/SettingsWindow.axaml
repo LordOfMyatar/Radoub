@@ -193,6 +193,9 @@
                             <Button Content="Cleanup Logs"
                                     Command="{Binding CleanupLogsCommand}"
                                     Padding="8,4"/>
+                            <Button Content="Export Logs for Support..."
+                                    Command="{Binding ExportLogsCommand}"
+                                    Padding="8,4"/>
                         </StackPanel>
                     </Grid>
                 </StackPanel>
