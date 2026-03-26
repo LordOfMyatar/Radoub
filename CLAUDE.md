@@ -223,7 +223,7 @@ main (production)
    - Feature: `[tool]/feat/[short-name]`
    - Fix: `[tool]/fix/[short-name]`
 3. Update tool's CHANGELOG.md:
-   - Add new version section after `[Unreleased]`
+   - Add new versioned section as the first entry (never use `[Unreleased]`)
    - Include branch name and `PR: #TBD` placeholder
    - Add epic/feature heading
 4. Commit and push branch
@@ -539,7 +539,7 @@ dotnet nbgv get-version --project [ToolDir]
 - Private documentation to the Private folder
 - Public Documentation approved before push
 - CHANGELOG updated for affected tools
-- **CHANGELOG version finalized**: Move `[Unreleased]` entries to versioned section with date (e.g., `[0.1.3-alpha] - 2025-11-08`)
+- **CHANGELOG uses versioned sections only** — never use `[Unreleased]`. All entries go directly into a versioned section with date (e.g., `[0.1.3-alpha] - 2025-11-08`)
 
 ---
 
@@ -708,10 +708,9 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 - Reference related issues (`Closes #X`, `Relates to #Y`)
 - Include testing checklist
 - Tag tool-specific reviewers if applicable
-- **Before creating PR**: Update CHANGELOG to move `[Unreleased]` entries to new version section with date
+- **CHANGELOG entries always go in versioned sections** — never use `[Unreleased]`
   - Example: `[0.1.3-alpha] - 2025-11-08`
-  - Commit with: `chore: Prepare vX.Y.Z release`
-  - This ensures CHANGELOG is ready for tagging/release after merge
+  - This ensures CHANGELOG is always ready for tagging/release after merge
 
 ---
 

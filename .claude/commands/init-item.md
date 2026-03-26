@@ -189,7 +189,7 @@ Edit the appropriate CHANGELOG file:
 - Parley changes: `Parley/CHANGELOG.md`
 - Radoub/shared changes: `CHANGELOG.md`
 
-Add new version section after `[Unreleased]`:
+**Never use `[Unreleased]`** — all entries go directly into a versioned section. Add the new version section as the first entry after the header/separator:
 
 **For Sprint:**
 ```markdown
