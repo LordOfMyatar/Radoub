@@ -17,7 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.72-alpha] - 2026-03-25
-**Branch**: `quartermaster/issue-1757` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1757` | **PR**: #1993
 
 ### Fix: Archon Lantern Model Renders Incorrectly (#1757)
 
