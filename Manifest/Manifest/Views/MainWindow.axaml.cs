@@ -183,6 +183,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             if (!RadoubSettings.IsValidModulePath(modulePath))
             {
                 StatusBar.ModuleIndicator = "No module selected";
+                StatusBar.ModuleIndicatorForeground = Radoub.UI.Services.BrushManager.GetWarningBrush(this);
                 return;
             }
 
@@ -192,6 +193,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             if (string.IsNullOrEmpty(modulePath) || !Directory.Exists(modulePath))
             {
                 StatusBar.ModuleIndicator = "No module selected";
+                StatusBar.ModuleIndicatorForeground = Radoub.UI.Services.BrushManager.GetWarningBrush(this);
                 return;
             }
 
@@ -204,11 +206,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             }
 
             StatusBar.ModuleIndicator = $"Module: {moduleName ?? Path.GetFileName(modulePath)}";
+            StatusBar.ModuleIndicatorForeground = Radoub.UI.Services.BrushManager.GetInfoBrush(this);
         }
         catch (Exception ex)
         {
             UnifiedLogger.LogUI(LogLevel.WARN, $"Failed to update module indicator: {ex.Message}");
             StatusBar.ModuleIndicator = "No module selected";
+            StatusBar.ModuleIndicatorForeground = Radoub.UI.Services.BrushManager.GetWarningBrush(this);
         }
     }
 

@@ -19,10 +19,11 @@
         <ColumnDefinition Width="Auto"/>
       </Grid.ColumnDefinitions>
 
-      <!-- Module Indicator (far left, bold) -->
+      <!-- Module Indicator (far left, bold, optional color) -->
       <TextBlock x:Name="ModuleIndicatorBlock"
                  Grid.Column="0"
                  Text="{Binding ModuleIndicator, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                 Foreground="{Binding ModuleIndicatorForeground, RelativeSource={RelativeSource AncestorType=UserControl}}"
                  FontWeight="SemiBold"
                  VerticalAlignment="Center"
                  Margin="0,0,12,0"
