@@ -15,6 +15,7 @@ using Radoub.UI.Services.Search;
 using RadoubLauncher.Services;
 using RadoubLauncher.ViewModels;
 using RadoubLauncher.Views;
+using ModulePath = RadoubLauncher.Services.ModulePathHelper;
 
 namespace RadoubLauncher.Controls;
 
@@ -107,10 +108,10 @@ public partial class MarlinspikePanel : UserControl
     {
         if (_viewModel == null) return;
 
-        var modulePath = RadoubSettings.Instance.CurrentModulePath;
-        if (string.IsNullOrEmpty(modulePath) || !Directory.Exists(modulePath))
+        var modulePath = ModulePath.GetWorkingDirectory(RadoubSettings.Instance.CurrentModulePath);
+        if (string.IsNullOrEmpty(modulePath))
         {
-            _viewModel.StatusText = "No module loaded. Open a module in Trebuchet first.";
+            _viewModel.StatusText = "No module loaded or unpacked. Open and unpack a module in Trebuchet first.";
             return;
         }
 
