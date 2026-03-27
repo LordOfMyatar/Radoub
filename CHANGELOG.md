@@ -13,7 +13,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased]
+## [0.9.104] - 2026-03-26
+**Branch**: `radoub/issue-2006` | **PR**: #TBD
+
+### Sprint: Theme Unification & Cleanup (#2006)
+
+- [ ] #1510 — AboutWindow dark mode fix (Tier 2 brush migration)
+- [ ] #2006 — Unify theme/font management under Trebuchet as sole authority (absorbs #2005)
+- [ ] #1960 — Trebuchet startup optimization (timestamp checks, discovery caching)
 
 ---
 
