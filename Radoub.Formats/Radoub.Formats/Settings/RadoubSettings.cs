@@ -85,6 +85,9 @@ public partial class RadoubSettings : INotifyPropertyChanged
     private int _sharedLogRetentionSessions = 3;
     private bool _useSharedLogging = true;  // If true, tools use shared logging settings
 
+    // Backup settings (shared across all tools)
+    private int _backupRetentionDays = 30;
+
     // Garbage label filters (shared across all tools)
     private List<string> _garbageFilters = GetDefaultGarbageFilters();
 
@@ -413,6 +416,19 @@ public partial class RadoubSettings : INotifyPropertyChanged
             LogLevel = _sharedLogLevel,
             LogRetentionSessions = _sharedLogRetentionSessions
         };
+    }
+
+    /// <summary>
+    /// Backup retention in days (1-90). Backups older than this are deleted on startup.
+    /// </summary>
+    public int BackupRetentionDays
+    {
+        get => _backupRetentionDays;
+        set
+        {
+            var clamped = Math.Max(1, Math.Min(90, value));
+            if (SetProperty(ref _backupRetentionDays, clamped)) SaveSettings();
+        }
     }
 
     /// <summary>

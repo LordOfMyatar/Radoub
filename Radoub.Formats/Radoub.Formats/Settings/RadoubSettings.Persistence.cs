@@ -78,6 +78,9 @@ public partial class RadoubSettings
                     _sharedLogRetentionSessions = Math.Max(1, Math.Min(10, data.SharedLogRetentionSessions));
                     _useSharedLogging = data.UseSharedLogging;
 
+                    // Backup settings
+                    _backupRetentionDays = Math.Max(1, Math.Min(90, data.BackupRetentionDays));
+
                     // Garbage filters
                     if (data.GarbageFilters != null && data.GarbageFilters.Count > 0)
                         _garbageFilters = data.GarbageFilters.Where(f => !string.IsNullOrWhiteSpace(f)).ToList();
@@ -140,6 +143,9 @@ public partial class RadoubSettings
                 TrebuchetPath = PathHelper.ContractPath(_trebuchetPath),
                 ReliquePath = PathHelper.ContractPath(_reliquePath),
 
+                // Backup settings
+                BackupRetentionDays = _backupRetentionDays,
+
                 // Garbage filters
                 GarbageFilters = _garbageFilters,
             };
@@ -176,6 +182,9 @@ public partial class RadoubSettings
         public LogLevel SharedLogLevel { get; set; } = LogLevel.INFO;
         public int SharedLogRetentionSessions { get; set; } = 3;
         public bool UseSharedLogging { get; set; } = true;
+
+        // Backup settings (shared across all tools)
+        public int BackupRetentionDays { get; set; } = 30;
 
         // Garbage label filters (shared across all tools)
         public List<string>? GarbageFilters { get; set; }

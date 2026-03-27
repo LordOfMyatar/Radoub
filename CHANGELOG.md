@@ -22,9 +22,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Marlinspike Infrastructure Polish (#1937)
 
-- [ ] #1935 — AreSearchProvider for dedicated ARE search
-- [ ] #1927 — [Parley] --mod flag not working for module search context
-- [ ] #1925 — [Radoub.UI] Backup cleanup service — retention policy for ~/Radoub/Backups/
+- [x] #1935 — AreSearchProvider for dedicated ARE search (Name, Tag, ResRef, Comments, 4 scripts)
+- [x] #1927 — [Parley] --mod flag now correctly sets module search context
+- [x] #1925 — BackupCleanupService with configurable retention (1-90 days), auto-cleanup on startup, Trebuchet settings UI with "Delete All Backups" button
 
 ---
 

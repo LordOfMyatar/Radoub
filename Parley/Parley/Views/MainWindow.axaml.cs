@@ -267,6 +267,10 @@ namespace DialogEditor.Views
             // Cleanup old log sessions on startup (#1232: use DI-resolved settings)
             var retentionCount = _services.Settings.LogRetentionSessions;
             UnifiedLogger.CleanupOldSessions(retentionCount);
+
+            // Clean up old backups
+            Radoub.UI.Services.BackupCleanupService.CleanupExpiredBackups(
+                Radoub.Formats.Settings.RadoubSettings.Instance.BackupRetentionDays);
         }
 
         /// <summary>

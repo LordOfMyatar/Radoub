@@ -68,6 +68,12 @@ public partial class SettingsWindowViewModel : ObservableObject
 
     public string LogRetentionText => $"{LogRetentionSessions} session{(LogRetentionSessions == 1 ? "" : "s")}";
 
+    // Backup settings
+    [ObservableProperty]
+    private int _backupRetentionDays = 30;
+
+    public string BackupRetentionText => $"{BackupRetentionDays} day{(BackupRetentionDays == 1 ? "" : "s")}";
+
     public ObservableCollection<string> AvailableLogLevels { get; } = new()
     {
         "TRACE", "DEBUG", "INFO", "WARN", "ERROR"
@@ -124,6 +130,9 @@ public partial class SettingsWindowViewModel : ObservableObject
 
         // Shared theme setting
         UseSharedTheme = sharedSettings.UseSharedTheme;
+
+        // Backup settings
+        BackupRetentionDays = sharedSettings.BackupRetentionDays;
 
         // Validate existing paths
         if (!string.IsNullOrEmpty(GameInstallPath))
@@ -187,6 +196,11 @@ public partial class SettingsWindowViewModel : ObservableObject
     partial void OnLogRetentionSessionsChanged(int value)
     {
         OnPropertyChanged(nameof(LogRetentionText));
+    }
+
+    partial void OnBackupRetentionDaysChanged(int value)
+    {
+        OnPropertyChanged(nameof(BackupRetentionText));
     }
 
     partial void OnSelectedThemeChanged(string value)
@@ -287,6 +301,9 @@ public partial class SettingsWindowViewModel : ObservableObject
 
         // Shared theme setting
         sharedSettings.UseSharedTheme = UseSharedTheme;
+
+        // Backup settings
+        sharedSettings.BackupRetentionDays = BackupRetentionDays;
 
         // Save and apply selected theme
         var selectedThemeInfo = ThemeManager.Instance.AvailableThemes
@@ -423,6 +440,37 @@ public partial class SettingsWindowViewModel : ObservableObject
         catch (Exception ex)
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to export logs: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task DeleteAllBackups()
+    {
+        try
+        {
+            var (fileCount, totalBytes) = BackupCleanupService.GetBackupSummary();
+            if (fileCount == 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO, "No backups to delete");
+                return;
+            }
+
+            var sizeMb = totalBytes / (1024.0 * 1024.0);
+            var dialog = new ConfirmDialog(
+                "Delete All Backups",
+                $"Delete all backups? ({fileCount} files, {sizeMb:F1} MB)\nThis cannot be undone.");
+            await dialog.ShowDialog(_window);
+
+            if (dialog.Confirmed)
+            {
+                BackupCleanupService.DeleteAllBackups();
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Deleted all backups ({fileCount} files, {sizeMb:F1} MB)");
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to delete backups: {ex.Message}");
         }
     }
 
