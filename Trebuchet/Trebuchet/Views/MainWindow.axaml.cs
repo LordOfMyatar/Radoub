@@ -42,6 +42,14 @@ public partial class MainWindow : Window
         var launchTestPanel = this.FindControl<Controls.LaunchTestPanel>("LaunchTestPanel");
         launchTestPanel?.Initialize(_viewModel);
 
+        // Initialize the Marlinspike search & replace panel
+        var marlinspikePanel = this.FindControl<Controls.MarlinspikePanel>("MarlinspikePanel");
+        if (marlinspikePanel != null)
+        {
+            var marlinspikeVm = new MarlinspikePanelViewModel();
+            marlinspikePanel.Initialize(marlinspikeVm, _viewModel, this);
+        }
+
         // Restore window position from settings
         RestoreWindowState();
 
@@ -111,6 +119,10 @@ public partial class MainWindow : Window
         {
             UpdateModuleNameColor(vm);
             UpdateWindowTitle();
+
+            // Clear Marlinspike results when module changes
+            var marlinspikePanel = this.FindControl<Controls.MarlinspikePanel>("MarlinspikePanel");
+            marlinspikePanel?.OnModuleChanged();
         }
 
         if (e.PropertyName == nameof(MainWindowViewModel.HasModule))
@@ -166,17 +178,28 @@ public partial class MainWindow : Window
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
-        // Ctrl+1/2/3 switches workspace tabs
+        var tabControl = this.FindControl<TabControl>("WorkspaceTabs");
+        if (tabControl == null || !tabControl.IsVisible) return;
+
+        // Ctrl+Shift+F: Switch to Marlinspike tab and focus search box
+        if (e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift) && e.Key == Key.F)
+        {
+            tabControl.SelectedIndex = 3; // Marlinspike
+            var panel = this.FindControl<Controls.MarlinspikePanel>("MarlinspikePanel");
+            panel?.FocusSearchBox();
+            e.Handled = true;
+            return;
+        }
+
+        // Ctrl+1/2/3/4 switches workspace tabs
         if (e.KeyModifiers == KeyModifiers.Control)
         {
-            var tabControl = this.FindControl<TabControl>("WorkspaceTabs");
-            if (tabControl == null || !tabControl.IsVisible) return;
-
             int? tabIndex = e.Key switch
             {
                 Key.D1 => 0, // Module
                 Key.D2 => 1, // Factions
                 Key.D3 => 2, // Build & Test
+                Key.D4 => 3, // Marlinspike
                 _ => null
             };
 
