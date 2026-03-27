@@ -219,6 +219,28 @@ public class MarlinspikePanelViewModelTests
     }
 
     [Fact]
+    public void DeselectAllFileTypes_CanSearch_ReturnsFalse()
+    {
+        var vm = new MarlinspikePanelViewModel();
+        vm.SearchPattern = "test";
+
+        vm.DeselectAllFileTypes();
+
+        Assert.False(vm.HasAnyFileTypeSelected);
+        Assert.False(vm.CanSearch);
+    }
+
+    [Fact]
+    public void HasAnyFileTypeSelected_OneChecked_ReturnsTrue()
+    {
+        var vm = new MarlinspikePanelViewModel();
+        vm.DeselectAllFileTypes();
+        vm.IncludeDlg = true;
+
+        Assert.True(vm.HasAnyFileTypeSelected);
+    }
+
+    [Fact]
     public void SetResults_UpdatesResultGroups()
     {
         var vm = new MarlinspikePanelViewModel();

@@ -65,23 +65,23 @@ public partial class MarlinspikePanelViewModel : ObservableObject
 
     // --- File type checkboxes ---
 
-    [ObservableProperty] private bool _includeDlg = true;
-    [ObservableProperty] private bool _includeUtc = true;
-    [ObservableProperty] private bool _includeBic = true;
-    [ObservableProperty] private bool _includeUti = true;
-    [ObservableProperty] private bool _includeUtm = true;
-    [ObservableProperty] private bool _includeJrl = true;
-    [ObservableProperty] private bool _includeUtp = true;
-    [ObservableProperty] private bool _includeUtd = true;
-    [ObservableProperty] private bool _includeUte = true;
-    [ObservableProperty] private bool _includeUtt = true;
-    [ObservableProperty] private bool _includeUtw = true;
-    [ObservableProperty] private bool _includeUts = true;
-    [ObservableProperty] private bool _includeGit = true;
-    [ObservableProperty] private bool _includeAre = true;
-    [ObservableProperty] private bool _includeIfo = true;
-    [ObservableProperty] private bool _includeFac = true;
-    [ObservableProperty] private bool _includeItp = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeDlg = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeUtc = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeBic = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeUti = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeUtm = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeJrl = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeUtp = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeUtd = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeUte = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeUtt = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeUtw = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeUts = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeGit = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeAre = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeIfo = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeFac = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeItp = true;
 
     // --- Category list ---
 
@@ -97,7 +97,13 @@ public partial class MarlinspikePanelViewModel : ObservableObject
 
     // --- Computed properties ---
 
-    public bool CanSearch => !string.IsNullOrEmpty(SearchPattern) && !IsSearching;
+    public bool HasAnyFileTypeSelected =>
+        IncludeDlg || IncludeUtc || IncludeBic || IncludeUti || IncludeUtm ||
+        IncludeJrl || IncludeUtp || IncludeUtd || IncludeUte || IncludeUtt ||
+        IncludeUtw || IncludeUts || IncludeGit || IncludeAre || IncludeIfo ||
+        IncludeFac || IncludeItp;
+
+    public bool CanSearch => !string.IsNullOrEmpty(SearchPattern) && !IsSearching && HasAnyFileTypeSelected;
 
     public bool CanReplace => HasResults && !string.IsNullOrEmpty(ReplaceText) && !IsSearching;
 

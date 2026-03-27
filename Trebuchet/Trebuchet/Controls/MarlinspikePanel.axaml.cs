@@ -7,9 +7,11 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
 using Radoub.UI.Services.Search;
+using RadoubLauncher.Services;
 using RadoubLauncher.ViewModels;
 using RadoubLauncher.Views;
 
@@ -22,8 +24,18 @@ public partial class MarlinspikePanel : UserControl
     private Window? _parentWindow;
     private ModuleSearchService? _searchService;
     private BatchReplaceService? _batchReplaceService;
-    private ToolDispatchService? _toolDispatchService;
     private CancellationTokenSource? _searchCts;
+
+    /// <summary>Maps resource types to Trebuchet tool names for launch dispatch.</summary>
+    private static readonly Dictionary<ushort, string> ResourceTypeToToolName = new()
+    {
+        [ResourceTypes.Dlg] = "Parley",
+        [ResourceTypes.Utc] = "Quartermaster",
+        [ResourceTypes.Bic] = "Quartermaster",
+        [ResourceTypes.Uti] = "Relique",
+        [ResourceTypes.Utm] = "Fence",
+        [ResourceTypes.Jrl] = "Manifest",
+    };
 
     public MarlinspikePanel()
     {
@@ -54,7 +66,6 @@ public partial class MarlinspikePanel : UserControl
     {
         _searchService ??= new ModuleSearchService();
         _batchReplaceService ??= new BatchReplaceService(new BackupService());
-        _toolDispatchService ??= new ToolDispatchService();
     }
 
     private async void OnSearchClick(object? sender, RoutedEventArgs e)
@@ -226,8 +237,6 @@ public partial class MarlinspikePanel : UserControl
         if (ResultsTree.SelectedItem is not TreeViewItem item)
             return;
 
-        EnsureServices();
-
         string? filePath = null;
         ushort resourceType = 0;
 
@@ -245,11 +254,11 @@ public partial class MarlinspikePanel : UserControl
         if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
             return;
 
-        if (_toolDispatchService!.CanDispatch(resourceType))
+        if (ResourceTypeToToolName.TryGetValue(resourceType, out var toolName))
         {
-            var launched = _toolDispatchService.LaunchTool(resourceType, filePath);
+            var launched = ToolLauncherService.Instance.LaunchTool(toolName, $"--file \"{filePath}\"");
             if (!launched && _viewModel != null)
-                _viewModel.StatusText = $"Could not launch tool for: {Path.GetFileName(filePath)}";
+                _viewModel.StatusText = $"Could not launch {toolName} for: {Path.GetFileName(filePath)}";
         }
         else if (_viewModel != null)
         {
