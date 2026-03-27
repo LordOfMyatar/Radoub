@@ -195,4 +195,6 @@ public class GitMatchLocation
     public required int InstanceIndex { get; init; }
     public string? InstanceTag { get; init; }
     public required string DisplayPath { get; init; }
+
+    public override string ToString() => DisplayPath;
 }

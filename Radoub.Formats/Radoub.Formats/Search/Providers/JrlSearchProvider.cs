@@ -178,4 +178,6 @@ public class JrlMatchLocation
     public required int CategoryIndex { get; init; }
     public uint? EntryId { get; init; }
     public required string DisplayPath { get; init; }
+
+    public override string ToString() => DisplayPath;
 }
