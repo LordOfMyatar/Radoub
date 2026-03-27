@@ -436,17 +436,13 @@ namespace DialogEditor.Views
 
         private void OnSearchModuleClick(object? sender, RoutedEventArgs e)
         {
-            // #1843: Module-wide search — implemented in next sprint item
-            if (string.IsNullOrEmpty(_viewModel.CurrentFileName))
-            {
-                _viewModel.StatusMessage = "Open a dialog file first to search the module.";
-                return;
-            }
+            var moduleDir = Services.ModuleDirectoryResolver.Resolve(
+                Radoub.Formats.Settings.RadoubSettings.Instance.CurrentModulePath,
+                _viewModel.CurrentFileName);
 
-            var moduleDir = System.IO.Path.GetDirectoryName(_viewModel.CurrentFileName);
             if (string.IsNullOrEmpty(moduleDir))
             {
-                _viewModel.StatusMessage = "Cannot determine module directory.";
+                _viewModel.StatusMessage = "Open a dialog file or use --mod to set a module first.";
                 return;
             }
 
