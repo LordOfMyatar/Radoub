@@ -40,7 +40,7 @@
                            Text="Part of the Radoub Toolset"
                            FontSize="{DynamicResource GlobalFontSize}"
                            HorizontalAlignment="Center"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           Foreground="{DynamicResource ThemeTextMuted}"
                            Margin="0,0,0,10"/>
 
                 <!-- Author -->
@@ -54,7 +54,7 @@
                            Text="https://github.com/LordOfMyatar/Radoub"
                            HorizontalAlignment="Center"
                            Margin="0,0,0,20"
-                           Foreground="{DynamicResource SystemAccentColor}"
+                           Foreground="{DynamicResource ThemeAccentBrush}"
                            TextDecorations="Underline"
                            Cursor="Hand"
                            PointerPressed="OnGitHubLinkClick"/>
@@ -64,7 +64,7 @@
                            Text="Version 0.1.0"
                            FontSize="{DynamicResource GlobalFontSize}"
                            HorizontalAlignment="Center"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                           Foreground="{DynamicResource ThemeTextMuted}"/>
 
                 <!-- Additional Info (optional, tool-specific) -->
                 <TextBlock x:Name="AdditionalInfoText"
@@ -72,7 +72,7 @@
                            FontSize="{DynamicResource FontSizeSmall}"
                            TextAlignment="Center"
                            TextWrapping="Wrap"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           Foreground="{DynamicResource ThemeTextMuted}"
                            Margin="0,10,0,0"
                            IsVisible="False"/>
 
@@ -81,7 +81,7 @@
                            Text=""
                            FontSize="{DynamicResource FontSizeSmall}"
                            TextAlignment="Center"
-                           Foreground="{DynamicResource SystemAccentColor}"
+                           Foreground="{DynamicResource ThemeAccentBrush}"
                            TextDecorations="Underline"
                            Cursor="Hand"
                            PointerPressed="OnThirdPartyLinkClick"
@@ -89,14 +89,14 @@
                            IsVisible="False"/>
 
                 <!-- Special Thanks -->
-                <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                <Border BorderBrush="{DynamicResource ThemeBorderBrush}"
                         BorderThickness="0,1,0,0"
                         Padding="0,15,0,0"
                         Margin="0,15,0,0">
                     <TextBlock Text="Special thanks to the&#x0a;Neverwinter Nights modding community"
                                FontSize="{DynamicResource FontSizeSmall}"
                                TextAlignment="Center"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                               Foreground="{DynamicResource ThemeTextMuted}"/>
                 </Border>
             </StackPanel>
         </ScrollViewer>
