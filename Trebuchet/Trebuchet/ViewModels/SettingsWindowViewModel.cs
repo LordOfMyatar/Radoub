@@ -51,9 +51,6 @@ public partial class SettingsWindowViewModel : ObservableObject
     [ObservableProperty]
     private double _fontSizeScale = 1.0;
 
-    [ObservableProperty]
-    private bool _useSharedTheme = true;
-
     public string FontSizePercentText => $"{(int)(FontSizeScale * 100)}%";
 
     // Logging settings
@@ -127,9 +124,6 @@ public partial class SettingsWindowViewModel : ObservableObject
             ? sharedSettings.SharedLogLevel
             : localSettings.CurrentLogLevel;
         SelectedLogLevel = effectiveLevel.ToString();
-
-        // Shared theme setting
-        UseSharedTheme = sharedSettings.UseSharedTheme;
 
         // Backup settings
         BackupRetentionDays = sharedSettings.BackupRetentionDays;
@@ -299,9 +293,6 @@ public partial class SettingsWindowViewModel : ObservableObject
             localSettings.CurrentLogLevel = logLevel;
         }
 
-        // Shared theme setting
-        sharedSettings.UseSharedTheme = UseSharedTheme;
-
         // Backup settings
         sharedSettings.BackupRetentionDays = BackupRetentionDays;
 
@@ -312,15 +303,9 @@ public partial class SettingsWindowViewModel : ObservableObject
         {
             var themeId = selectedThemeInfo.Plugin.Id;
 
-            // Save to local settings
-            localSettings.CurrentThemeId = themeId;
-
-            // If using shared themes and this is a universal theme, set it as shared
-            if (UseSharedTheme && themeId.StartsWith("org.radoub.theme."))
-            {
-                sharedSettings.SharedThemeId = themeId;
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Set shared theme: {themeId}");
-            }
+            // Save theme to shared settings (centralized theme management)
+            sharedSettings.SharedThemeId = themeId;
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Set shared theme: {themeId}");
 
             ThemeManager.Instance.ApplyTheme(themeId);
         }

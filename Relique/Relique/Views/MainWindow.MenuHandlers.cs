@@ -183,17 +183,35 @@ public partial class MainWindow
 
     private void OnToggleUseRadoubThemeClick(object? sender, RoutedEventArgs e)
     {
-        var settings = SettingsService.Instance;
-        settings.UseSharedTheme = !settings.UseSharedTheme;
-        UpdateUseRadoubThemeMenuState();
-        Radoub.UI.Services.ThemeManager.Instance.ApplyEffectiveTheme(settings.CurrentThemeId, settings.UseSharedTheme);
+        // Theme management moved to Trebuchet — launch settings
+        LaunchTrebuchetSettings();
     }
 
-    private void UpdateUseRadoubThemeMenuState()
+    private static void LaunchTrebuchetSettings()
     {
-        var menuItem = this.FindControl<MenuItem>("UseRadoubThemeMenuItem");
-        if (menuItem != null)
-            menuItem.Icon = SettingsService.Instance.UseSharedTheme ? new TextBlock { Text = "✓" } : null;
+        try
+        {
+            var trebuchetPath = Radoub.Formats.Settings.RadoubSettings.Instance.TrebuchetPath;
+            if (!string.IsNullOrEmpty(trebuchetPath) && System.IO.File.Exists(trebuchetPath))
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = trebuchetPath,
+                    Arguments = "--settings",
+                    UseShellExecute = false
+                });
+            }
+            else
+            {
+                Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                    Radoub.Formats.Logging.LogLevel.WARN, "Trebuchet not found — cannot open settings");
+            }
+        }
+        catch (Exception ex)
+        {
+            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                Radoub.Formats.Logging.LogLevel.WARN, $"Could not launch Trebuchet: {ex.Message}");
+        }
     }
 
     private void OnAboutClick(object? sender, RoutedEventArgs e)

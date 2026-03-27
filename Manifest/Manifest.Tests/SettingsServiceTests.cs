@@ -72,7 +72,6 @@ public class SettingsServiceTests : IDisposable
         var service = SettingsService.Instance;
 
         // Assert - should have default values
-        Assert.Equal(14, service.FontSize);
         Assert.Equal(1000, service.WindowWidth);
         Assert.Equal(700, service.WindowHeight);
     }
@@ -82,12 +81,10 @@ public class SettingsServiceTests : IDisposable
     {
         // Arrange
         var service = SettingsService.Instance;
-        service.FontSize = 18;
         service.WindowWidth = 1200;
         service.WindowHeight = 800;
         service.WindowMaximized = true;
         service.TreePanelWidth = 350;
-        service.CurrentThemeId = "org.radoub.theme.dark";
         service.LogRetentionSessions = 5;
         service.CurrentLogLevel = LogLevel.DEBUG;
         service.SpellCheckEnabled = false;
@@ -97,33 +94,13 @@ public class SettingsServiceTests : IDisposable
         var reloaded = SettingsService.Instance;
 
         // Assert
-        Assert.Equal(18, reloaded.FontSize);
         Assert.Equal(1200, reloaded.WindowWidth);
         Assert.Equal(800, reloaded.WindowHeight);
         Assert.True(reloaded.WindowMaximized);
         Assert.Equal(350, reloaded.TreePanelWidth);
-        Assert.Equal("org.radoub.theme.dark", reloaded.CurrentThemeId);
         Assert.Equal(5, reloaded.LogRetentionSessions);
         Assert.Equal(LogLevel.DEBUG, reloaded.CurrentLogLevel);
         Assert.False(reloaded.SpellCheckEnabled);
-    }
-
-    [Fact]
-    public void FontSize_OutOfRange_ClampedToBounds()
-    {
-        var service = SettingsService.Instance;
-
-        // Below minimum (8)
-        service.FontSize = 5;
-        Assert.Equal(8, service.FontSize);
-
-        // Above maximum (24)
-        service.FontSize = 30;
-        Assert.Equal(24, service.FontSize);
-
-        // Within range
-        service.FontSize = 16;
-        Assert.Equal(16, service.FontSize);
     }
 
     [Fact]
@@ -207,14 +184,10 @@ public class SettingsServiceTests : IDisposable
         };
 
         // Act
-        service.FontSize = 20;
         service.WindowWidth = 1100;
-        service.CurrentThemeId = "test.theme";
 
         // Assert
-        Assert.Contains("FontSize", changedProperties);
         Assert.Contains("WindowWidth", changedProperties);
-        Assert.Contains("CurrentThemeId", changedProperties);
     }
 
     [Fact]

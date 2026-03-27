@@ -109,15 +109,6 @@
                                 Margin="8,0,0,0"
                                 Padding="8,4"/>
 
-                        <TextBlock Grid.Row="1" Grid.Column="0"
-                                   Text="Apply to All Tools:"
-                                   VerticalAlignment="Center"
-                                   Margin="0,8,12,0"/>
-                        <CheckBox Grid.Row="1" Grid.Column="1"
-                                  IsChecked="{Binding UseSharedTheme}"
-                                  Content="Use this theme for all Radoub tools"
-                                  Margin="0,8,0,0"/>
-
                         <TextBlock Grid.Row="2" Grid.Column="0"
                                    Text="Font Size:"
                                    VerticalAlignment="Center"

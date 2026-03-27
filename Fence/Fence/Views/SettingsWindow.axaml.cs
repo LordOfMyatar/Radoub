@@ -2,15 +2,12 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
-using MerchantEditor.Services;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace MerchantEditor.Views;
 
@@ -24,8 +21,6 @@ public partial class SettingsWindow : Window
         InitializeComponent();
 
         LoadSettings();
-        PopulateThemes();
-        PopulateFontFamilies();
         UpdateCacheInfo();
 
         _isInitializing = false;
@@ -95,7 +90,6 @@ public partial class SettingsWindow : Window
         LoadModuleConfiguration();
 
         var sharedSettings = RadoubSettings.Instance;
-        var settings = SettingsService.Instance;
 
         // Paths
         BaseGamePathTextBox.Text = sharedSettings.BaseGameInstallPath;
@@ -103,126 +97,6 @@ public partial class SettingsWindow : Window
 
         ValidateBaseGamePath();
         ValidateGamePath();
-
-        // Font
-        FontSizeSlider.Value = settings.FontSize;
-        FontSizeLabel.Text = settings.FontSize.ToString();
-    }
-
-    private void PopulateThemes()
-    {
-        var themes = ThemeManager.Instance.AvailableThemes;
-
-        // Deduplicate by name: prefer shared themes (org.radoub.*) over any user overrides
-        var deduplicatedThemes = themes
-            .GroupBy(t => t.Plugin.Name)
-            .Select(g => g.OrderByDescending(t => t.Plugin.Id.StartsWith("org.radoub.")).First())
-            .OrderBy(t => t.Plugin.Name)
-            .ToList();
-
-        ThemeComboBox.ItemsSource = deduplicatedThemes.Select(t => t.Plugin.Name).ToList();
-
-        var currentTheme = ThemeManager.Instance.CurrentTheme;
-        if (currentTheme != null)
-        {
-            var index = deduplicatedThemes.FindIndex(t => t.Plugin.Id == currentTheme.Plugin.Id);
-            if (index >= 0)
-            {
-                ThemeComboBox.SelectedIndex = index;
-            }
-        }
-    }
-
-    private void PopulateFontFamilies()
-    {
-        var fontFamilies = new List<string>
-        {
-            "(System Default)",
-            "Segoe UI",
-            "Arial",
-            "Verdana",
-            "Tahoma",
-            "Consolas",
-            "Courier New"
-        };
-
-        FontFamilyComboBox.ItemsSource = fontFamilies;
-
-        var currentFamily = SettingsService.Instance.FontFamily;
-        if (string.IsNullOrEmpty(currentFamily))
-        {
-            FontFamilyComboBox.SelectedIndex = 0;
-        }
-        else
-        {
-            var index = fontFamilies.FindIndex(f => f == currentFamily);
-            FontFamilyComboBox.SelectedIndex = index >= 0 ? index : 0;
-        }
-
-        UpdateFontPreview();
-    }
-
-    private void OnThemeComboBoxChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (_isInitializing || ThemeComboBox.SelectedIndex < 0)
-            return;
-
-        // Use same deduplication logic as PopulateThemes
-        var deduplicatedThemes = ThemeManager.Instance.AvailableThemes
-            .GroupBy(t => t.Plugin.Name)
-            .Select(g => g.OrderByDescending(t => t.Plugin.Id.StartsWith("org.radoub.")).First())
-            .OrderBy(t => t.Plugin.Name)
-            .ToList();
-
-        if (ThemeComboBox.SelectedIndex < deduplicatedThemes.Count)
-        {
-            var theme = deduplicatedThemes[ThemeComboBox.SelectedIndex];
-            SettingsService.Instance.CurrentThemeId = theme.Plugin.Id;
-        }
-    }
-
-    private void OnFontSizeChanged(object? sender, Avalonia.Controls.Primitives.RangeBaseValueChangedEventArgs e)
-    {
-        if (_isInitializing)
-            return;
-
-        var size = (int)FontSizeSlider.Value;
-        FontSizeLabel.Text = size.ToString();
-        SettingsService.Instance.FontSize = size;
-        UpdateFontPreview();
-    }
-
-    private void OnFontFamilyChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (_isInitializing || FontFamilyComboBox.SelectedIndex < 0)
-            return;
-
-        var selected = FontFamilyComboBox.SelectedItem as string;
-        if (selected == "(System Default)")
-        {
-            SettingsService.Instance.FontFamily = "";
-        }
-        else if (!string.IsNullOrEmpty(selected))
-        {
-            SettingsService.Instance.FontFamily = selected;
-        }
-
-        UpdateFontPreview();
-    }
-
-    private void UpdateFontPreview()
-    {
-        var settings = SettingsService.Instance;
-        FontPreviewText.FontSize = settings.FontSize;
-
-        if (!string.IsNullOrEmpty(settings.FontFamily))
-        {
-            FontPreviewText.FontFamily = new FontFamily(settings.FontFamily);
-        }
-        else
-        {
-            FontPreviewText.FontFamily = FontFamily.Default;
-        }
     }
 
     private async void OnBrowseBaseGamePathClick(object? sender, RoutedEventArgs e)

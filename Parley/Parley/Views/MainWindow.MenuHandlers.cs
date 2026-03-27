@@ -185,17 +185,33 @@ namespace DialogEditor.Views
 
         private void OnToggleUseRadoubThemeClick(object? sender, RoutedEventArgs e)
         {
-            var settings = _services.Settings;
-            settings.UseSharedTheme = !settings.UseSharedTheme;
-            UpdateUseRadoubThemeMenuState();
-            Radoub.UI.Services.ThemeManager.Instance.ApplyEffectiveTheme(settings.CurrentThemeId, settings.UseSharedTheme);
+            // Theme management moved to Trebuchet — launch settings
+            LaunchTrebuchetSettings();
         }
 
-        private void UpdateUseRadoubThemeMenuState()
+        private static void LaunchTrebuchetSettings()
         {
-            var menuItem = this.FindControl<MenuItem>("UseRadoubThemeMenuItem");
-            if (menuItem != null)
-                menuItem.Icon = _services.Settings.UseSharedTheme ? new TextBlock { Text = "✓" } : null;
+            try
+            {
+                var trebuchetPath = Radoub.Formats.Settings.RadoubSettings.Instance.TrebuchetPath;
+                if (!string.IsNullOrEmpty(trebuchetPath) && File.Exists(trebuchetPath))
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = trebuchetPath,
+                        Arguments = "--settings",
+                        UseShellExecute = false
+                    });
+                }
+                else
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, "Trebuchet not found — cannot open settings");
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Could not launch Trebuchet: {ex.Message}");
+            }
         }
 
         private void OnEditSettingsFileClick(object? sender, RoutedEventArgs e)

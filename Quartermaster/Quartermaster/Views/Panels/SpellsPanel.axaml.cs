@@ -70,27 +70,6 @@ public partial class SpellsPanel : UserControl
     public SpellsPanel()
     {
         InitializeComponent();
-
-        // Subscribe to theme changes to refresh color-dependent view models
-        SettingsService.Instance.PropertyChanged += OnSettingsPropertyChanged;
-
-        // Unsubscribe when control is detached to prevent memory leaks (#1282)
-        DetachedFromVisualTree += (_, _) =>
-            SettingsService.Instance.PropertyChanged -= OnSettingsPropertyChanged;
-    }
-
-    private void OnSettingsPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(SettingsService.CurrentThemeId) ||
-            e.PropertyName == nameof(SettingsService.FontFamily) ||
-            e.PropertyName == nameof(SettingsService.FontSize))
-        {
-            // Theme or font changed - reload creature to refresh view
-            if (_currentCreature != null)
-            {
-                LoadCreature(_currentCreature);
-            }
-        }
     }
 
     private void InitializeComponent()

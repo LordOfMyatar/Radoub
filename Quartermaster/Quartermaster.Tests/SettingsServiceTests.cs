@@ -80,19 +80,6 @@ public class SettingsServiceTests : IDisposable
     }
 
     [Fact]
-    public void FontSize_EnforcesRange()
-    {
-        var service = SettingsService.Instance;
-
-        // FontSize should be between 8 and 24
-        service.FontSize = 5;
-        Assert.True(service.FontSize >= 8);
-
-        service.FontSize = 30;
-        Assert.True(service.FontSize <= 24);
-    }
-
-    [Fact]
     public void LeftPanelWidth_EnforcesRange()
     {
         var service = SettingsService.Instance;
@@ -131,15 +118,6 @@ public class SettingsServiceTests : IDisposable
     }
 
     [Fact]
-    public void CurrentThemeId_HasDefaultValue()
-    {
-        var service = SettingsService.Instance;
-
-        // Should have a default theme
-        Assert.False(string.IsNullOrEmpty(service.CurrentThemeId));
-    }
-
-    [Fact]
     public void LogRetentionSessions_EnforcesRange()
     {
         var service = SettingsService.Instance;
@@ -171,7 +149,6 @@ public class SettingsServiceTests : IDisposable
     {
         // Set some values
         var service = SettingsService.Instance;
-        service.FontSize = 18;
         service.WindowWidth = 1000;
 
         // Reset and reload
@@ -179,7 +156,6 @@ public class SettingsServiceTests : IDisposable
 
         var reloaded = SettingsService.Instance;
 
-        Assert.Equal(18, reloaded.FontSize);
         Assert.Equal(1000, reloaded.WindowWidth);
     }
 }
