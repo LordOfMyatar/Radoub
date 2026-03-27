@@ -76,9 +76,10 @@ public partial class RadoubSettings : INotifyPropertyChanged
     private bool _tlkUseFemale = false;
     private Language _defaultLanguage = Language.English;  // Default display language
 
-    // Theme settings (shared across all tools)
-    private string _sharedThemeId = "";  // Empty = no shared theme (tools use their own)
-    private bool _useSharedTheme = true;  // If true, tools prefer shared theme over tool-specific
+    // Theme and font settings (shared across all tools — Trebuchet is sole authority)
+    private string _sharedThemeId = "";  // Empty = defaults to org.radoub.theme.light
+    private double _sharedFontSize = 14.0;
+    private string _sharedFontFamily = "Segoe UI";
 
     // Logging settings (shared across all tools)
     private LogLevel _sharedLogLevel = LogLevel.INFO;
@@ -345,8 +346,8 @@ public partial class RadoubSettings : INotifyPropertyChanged
     public Gender PreferredGender => _tlkUseFemale ? Gender.Female : Gender.Male;
 
     /// <summary>
-    /// Shared theme ID applied to all tools.
-    /// Empty = no shared theme (tools use their own settings).
+    /// Shared theme ID applied to all tools. Trebuchet is the sole authority.
+    /// Empty = defaults to org.radoub.theme.light.
     /// </summary>
     public string SharedThemeId
     {
@@ -355,19 +356,27 @@ public partial class RadoubSettings : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// If true, tools prefer the shared theme over their tool-specific setting.
-    /// Tools can still override by setting this to false in their own settings.
+    /// Check if a shared theme is configured.
     /// </summary>
-    public bool UseSharedTheme
+    public bool HasSharedTheme => !string.IsNullOrEmpty(_sharedThemeId);
+
+    /// <summary>
+    /// Shared font size applied to all tools. Trebuchet is the sole authority.
+    /// </summary>
+    public double SharedFontSize
     {
-        get => _useSharedTheme;
-        set { if (SetProperty(ref _useSharedTheme, value)) SaveSettings(); }
+        get => _sharedFontSize;
+        set { if (SetProperty(ref _sharedFontSize, Math.Max(8, Math.Min(32, value)))) SaveSettings(); }
     }
 
     /// <summary>
-    /// Check if a shared theme is configured.
+    /// Shared font family applied to all tools. Trebuchet is the sole authority.
     /// </summary>
-    public bool HasSharedTheme => _useSharedTheme && !string.IsNullOrEmpty(_sharedThemeId);
+    public string SharedFontFamily
+    {
+        get => _sharedFontFamily;
+        set { if (SetProperty(ref _sharedFontFamily, value ?? "Segoe UI")) SaveSettings(); }
+    }
 
     /// <summary>
     /// Shared log level for all tools.
