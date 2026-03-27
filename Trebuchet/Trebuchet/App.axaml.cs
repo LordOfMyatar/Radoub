@@ -236,6 +236,9 @@ public partial class App : Application
                         continue;
 
                     var destFile = Path.Combine(sharedThemesDir, Path.GetFileName(themeFile));
+                    if (File.Exists(destFile) && File.GetLastWriteTimeUtc(destFile) >= File.GetLastWriteTimeUtc(themeFile))
+                        continue; // Destination is same age or newer, skip copy
+
                     File.Copy(themeFile, destFile, overwrite: true);
                     copiedCount++;
                 }

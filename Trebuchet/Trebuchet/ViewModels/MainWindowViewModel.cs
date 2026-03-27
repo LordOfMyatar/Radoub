@@ -568,6 +568,10 @@ public partial class MainWindowViewModel : ObservableObject
     private void OnSharedSettingsChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         UpdateStatusFromSettings();
+
+        // Re-discover game when the install path changes; otherwise just re-read existing state
+        if (e.PropertyName == nameof(RadoubSettings.BaseGameInstallPath))
+            _gameLauncher.RefreshDiscovery();
         UpdateGameAvailability();
 
         // Update module-dependent properties when module changes
@@ -597,7 +601,8 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void UpdateGameAvailability()
     {
-        _gameLauncher.RefreshDiscovery();
+        // Read already-discovered state; GameLauncherService constructor calls DiscoverGame().
+        // RefreshDiscovery() is available for manual refresh (e.g., after settings change).
         IsGameAvailable = _gameLauncher.IsGameAvailable;
     }
 
