@@ -9,6 +9,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Search;
 using Radoub.Formats.Settings;
 using Radoub.UI.Services.Search;
 using RadoubLauncher.Services;
@@ -199,7 +200,9 @@ public partial class MarlinspikePanel : UserControl
 
                 foreach (var match in fileResult.Matches)
                 {
-                    var locationText = match.Location?.ToString() ?? match.Field.Name;
+                    var locationText = match.Location is DlgMatchLocation dlgLoc
+                        ? dlgLoc.DisplayPath
+                        : match.Location?.ToString() ?? match.Field.Name;
                     var preview = match.FullFieldValue.Length > 80
                         ? match.FullFieldValue[..80] + "..."
                         : match.FullFieldValue;

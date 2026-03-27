@@ -317,7 +317,9 @@ public partial class MarlinspikePanelViewModel : ObservableObject
 
     private static string FormatMatchDisplay(SearchMatch match)
     {
-        var location = match.Location?.ToString() ?? match.Field.Name;
+        var location = match.Location is DlgMatchLocation dlgLoc
+            ? dlgLoc.DisplayPath
+            : match.Location?.ToString() ?? match.Field.Name;
         var context = match.FullFieldValue;
 
         // Truncate long context
