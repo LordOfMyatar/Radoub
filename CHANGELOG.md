@@ -17,6 +17,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.103] - 2026-03-25
+**Branch**: `radoub/issue-1937` | **PR**: #TBD
+
+### Sprint: Marlinspike Infrastructure Polish (#1937)
+
+- [ ] #1935 — AreSearchProvider for dedicated ARE search
+- [ ] #1927 — [Parley] --mod flag not working for module search context
+- [ ] #1925 — [Radoub.UI] Backup cleanup service — retention policy for ~/Radoub/Backups/
+
+---
+
 ## [0.9.102] - 2026-03-25
 **Branch**: `radoub/issue-1987` | **PR**: #1991
 
