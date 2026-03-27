@@ -17,6 +17,7 @@ public static class FieldRegistrations
         RegisterUtp(registry);
         RegisterUtd(registry);
         RegisterJrl(registry);
+        RegisterAre(registry);
         RegisterIfo(registry);
         RegisterGit(registry);
     }
@@ -239,6 +240,20 @@ public static class FieldRegistrations
             new FieldDefinition { Name = "Name", GffPath = "LocName", FieldType = SearchFieldType.LocString, Category = SearchFieldCategory.Content, Description = "Instance name" },
             new FieldDefinition { Name = "Template ResRef", GffPath = "TemplateResRef", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Blueprint resource reference", IsReplaceable = false },
             new FieldDefinition { Name = "Local Variables", GffPath = "VarTable", FieldType = SearchFieldType.Variable, Category = SearchFieldCategory.Variable, Description = "Instance local variables" }
+        );
+    }
+
+    private static void RegisterAre(SearchFieldRegistry registry)
+    {
+        registry.RegisterFileType(ResourceTypes.Are,
+            new FieldDefinition { Name = "Name", GffPath = "Name", FieldType = SearchFieldType.LocString, Category = SearchFieldCategory.Content, Description = "Area name" },
+            new FieldDefinition { Name = "Tag", GffPath = "Tag", FieldType = SearchFieldType.Tag, Category = SearchFieldCategory.Identity, Description = "Area scripting tag" },
+            new FieldDefinition { Name = "ResRef", GffPath = "ResRef", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Area resource reference", IsReplaceable = false },
+            new FieldDefinition { Name = "Comments", GffPath = "Comments", FieldType = SearchFieldType.Text, Category = SearchFieldCategory.Metadata, Description = "Toolset comments" },
+            new FieldDefinition { Name = "OnEnter", GffPath = "OnEnter", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnEnter event script" },
+            new FieldDefinition { Name = "OnExit", GffPath = "OnExit", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnExit event script" },
+            new FieldDefinition { Name = "OnHeartbeat", GffPath = "OnHeartbeat", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnHeartbeat event script" },
+            new FieldDefinition { Name = "OnUserDefined", GffPath = "OnUserDefined", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnUserDefined event script" }
         );
     }
 
