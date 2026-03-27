@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.25.0-alpha] - 2026-03-26
-**Branch**: `trebuchet/issue-1933` | **PR**: #TBD
+**Branch**: `trebuchet/issue-1933` | **PR**: #1999
 
 ### Marlinspike Search Panel (#1933)
 
