@@ -32,12 +32,7 @@ namespace Parley.Tests.Mocks
         public double LeftPanelWidth { get; set; } = 250;
         public double TopLeftPanelHeight { get; set; } = 300;
 
-        // UI settings
-        public double FontSize { get; set; } = 14;
-        public string FontFamily { get; set; } = "Segoe UI";
-        public bool IsDarkTheme { get; set; } = false;
-        public string CurrentThemeId { get; set; } = "light";
-        public bool UseSharedTheme { get; set; } = true;
+        // UI settings (theme/font removed — now in RadoubSettings)
         public string FlowchartLayout { get; set; } = "TopToBottom";
         public bool AllowScrollbarAutoHide { get; set; } = true;
         public int FlowchartNodeMaxLines { get; set; } = 3;

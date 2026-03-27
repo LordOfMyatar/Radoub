@@ -9,7 +9,6 @@ using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
-using Avalonia.Styling;
 using DialogEditor.Services;
 using DialogEditor.Views.Controllers;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,7 +26,6 @@ namespace DialogEditor.Views
 
         // Controllers for section-specific logic
         private ResourcePathsController? _resourcePathsController;
-        private ThemeSettingsController? _themeSettingsController;
         private DictionarySettingsController? _dictionarySettingsController;
         private UISettingsController? _uiSettingsController;
         private LoggingSettingsController? _loggingSettingsController;
@@ -46,9 +44,6 @@ namespace DialogEditor.Views
             InitializeControllers();
             LoadSettings();
             _isInitializing = false;
-
-            // Apply current theme immediately when dialog opens
-            _themeSettingsController?.LoadSettings();
 
             // Select the specified tab
             var tabControl = this.FindControl<TabControl>("SettingsTabControl");
@@ -84,9 +79,7 @@ namespace DialogEditor.Views
             _resourcePathsController = new ResourcePathsController(
                 this, () => _isInitializing, GetErrorBrush, GetSuccessBrush, _settings);
 
-            _themeSettingsController = new ThemeSettingsController(
-                this, () => _isInitializing, GetErrorBrush, _settings,
-                ThemeManager.Instance, EasterEggService.Instance);
+            // ThemeSettingsController removed — theme now managed by Trebuchet via RadoubSettings
 
             _dictionarySettingsController = new DictionarySettingsController(
                 this, () => _isInitializing, dictionarySettings);
@@ -108,7 +101,6 @@ namespace DialogEditor.Views
         {
             // Delegate to controllers
             _resourcePathsController?.LoadSettings();
-            _themeSettingsController?.LoadSettings();
             _dictionarySettingsController?.LoadSettings();
             _uiSettingsController?.LoadSettings();
             _loggingSettingsController?.LoadSettings();
@@ -345,18 +337,7 @@ namespace DialogEditor.Views
 
         #endregion
 
-        #region Theme Settings Handlers (delegated to controller)
-
-        private void OnThemeComboBoxChanged(object? sender, SelectionChangedEventArgs e)
-            => _themeSettingsController?.OnThemeComboBoxChanged(sender, e);
-
-        private void OnGetThemesClick(object? sender, RoutedEventArgs e)
-            => _themeSettingsController?.OnGetThemesClick(sender, e);
-
-        private void OnEasterEggHintClick(object? sender, Avalonia.Input.PointerPressedEventArgs e)
-            => _themeSettingsController?.OnEasterEggHintClick(sender, e);
-
-        #endregion
+        // Theme Settings Handlers removed — theme now managed by Trebuchet via RadoubSettings
 
         #region Dictionary Settings Handlers (delegated to controller)
 
@@ -372,12 +353,6 @@ namespace DialogEditor.Views
         #endregion
 
         #region UI Settings Handlers (delegated to controller)
-
-        private void OnFontSizeChanged(object? sender, RangeBaseValueChangedEventArgs e)
-            => _uiSettingsController?.OnFontSizeChanged(sender, e);
-
-        private void OnFontFamilyChanged(object? sender, SelectionChangedEventArgs e)
-            => _uiSettingsController?.OnFontFamilyChanged(sender, e);
 
         private void OnAllowScrollbarAutoHideChanged(object? sender, RoutedEventArgs e)
             => _uiSettingsController?.OnAllowScrollbarAutoHideChanged(sender, e);

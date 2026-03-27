@@ -14,6 +14,11 @@ sealed class Program
     /// </summary>
     public static SafeModeService? SafeMode { get; private set; }
 
+    /// <summary>
+    /// When true, auto-open the settings window after the main window loads.
+    /// </summary>
+    public static bool OpenSettingsOnStartup { get; private set; }
+
     [STAThread]
     public static int Main(string[] args)
     {
@@ -33,6 +38,9 @@ sealed class Program
             SafeMode = new SafeModeService("Trebuchet");
             SafeMode.ActivateSafeMode(clearParameterCache: false, clearPluginData: false);
         }
+
+        // --settings: Auto-open settings window after main window loads
+        OpenSettingsOnStartup = options.OpenSettings;
 
         // Set app name early so any pre-configuration logging goes to correct directory
         UnifiedLogger.SetAppName("Trebuchet");
