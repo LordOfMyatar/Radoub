@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Xunit;
 
 namespace Radoub.UI.Tests;
@@ -12,29 +14,44 @@ public class ThemeOverrideTests
     [Fact]
     public void LegacyJson_WithUseSharedTheme_DeserializesWithoutError()
     {
-        // Old JSON from before theme unification — should not throw
         var json = """{"UseSharedTheme":false,"CurrentThemeId":"org.radoub.theme.dark","FontSize":16}""";
-        var deserialized = System.Text.Json.JsonSerializer.Deserialize<Services.BaseToolSettingsService.BaseSettingsData>(json);
+        var deserialized = JsonSerializer.Deserialize<LegacySettingsData>(json);
         Assert.NotNull(deserialized);
     }
 
     [Fact]
     public void LegacyJson_WithoutThemeFields_DeserializesWithoutError()
     {
-        // New JSON without theme/font fields
         var json = """{"WindowLeft":100,"WindowTop":100}""";
-        var deserialized = System.Text.Json.JsonSerializer.Deserialize<Services.BaseToolSettingsService.BaseSettingsData>(json);
+        var deserialized = JsonSerializer.Deserialize<LegacySettingsData>(json);
         Assert.NotNull(deserialized);
     }
 
     [Fact]
-    public void BaseSettingsData_DoesNotSerializeThemeFields()
+    public void LegacyFields_DoNotSerializeWhenDefault()
     {
-        // Theme/font fields should not appear in serialized output (WhenWritingDefault/Null)
-        var data = new Services.BaseToolSettingsService.BaseSettingsData();
-        var json = System.Text.Json.JsonSerializer.Serialize(data);
+        var data = new LegacySettingsData();
+        var json = JsonSerializer.Serialize(data);
         Assert.DoesNotContain("UseSharedTheme", json);
         Assert.DoesNotContain("CurrentThemeId", json);
         Assert.DoesNotContain("FontFamily", json);
+    }
+
+    /// <summary>
+    /// Mirrors BaseSettingsData legacy fields — kept for deserialization of old JSON.
+    /// </summary>
+    private class LegacySettingsData
+    {
+        public double WindowLeft { get; set; } = 100;
+        public double WindowTop { get; set; } = 100;
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public double FontSize { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? FontFamily { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? CurrentThemeId { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool UseSharedTheme { get; set; }
     }
 }

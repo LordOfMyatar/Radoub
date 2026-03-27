@@ -92,9 +92,19 @@ public partial class App : Application
         {
             DisableAvaloniaDataAnnotationValidation();
             desktop.MainWindow = new MainWindow();
+
+            // Re-read shared settings when window regains focus (picks up Trebuchet changes)
+            desktop.MainWindow.Activated += OnMainWindowActivated;
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private void OnMainWindowActivated(object? sender, EventArgs e)
+    {
+        RadoubSettings.Instance.ReloadSettings();
+        ThemeManager.Instance.ApplySharedTheme();
+        ApplyFontSettings();
     }
 
     private void ApplyFontSettings()

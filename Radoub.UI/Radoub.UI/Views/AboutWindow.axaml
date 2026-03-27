@@ -40,7 +40,6 @@
                            Text="Part of the Radoub Toolset"
                            FontSize="{DynamicResource GlobalFontSize}"
                            HorizontalAlignment="Center"
-                           Foreground="{DynamicResource ThemeTextMuted}"
                            Margin="0,0,0,10"/>
 
                 <!-- Author -->
@@ -63,8 +62,7 @@
                 <TextBlock x:Name="VersionText"
                            Text="Version 0.1.0"
                            FontSize="{DynamicResource GlobalFontSize}"
-                           HorizontalAlignment="Center"
-                           Foreground="{DynamicResource ThemeTextMuted}"/>
+                           HorizontalAlignment="Center"/>
 
                 <!-- Additional Info (optional, tool-specific) -->
                 <TextBlock x:Name="AdditionalInfoText"
@@ -72,7 +70,6 @@
                            FontSize="{DynamicResource FontSizeSmall}"
                            TextAlignment="Center"
                            TextWrapping="Wrap"
-                           Foreground="{DynamicResource ThemeTextMuted}"
                            Margin="0,10,0,0"
                            IsVisible="False"/>
 
@@ -95,8 +92,7 @@
                         Margin="0,15,0,0">
                     <TextBlock Text="Special thanks to the&#x0a;Neverwinter Nights modding community"
                                FontSize="{DynamicResource FontSizeSmall}"
-                               TextAlignment="Center"
-                               Foreground="{DynamicResource ThemeTextMuted}"/>
+                               TextAlignment="Center"/>
                 </Border>
             </StackPanel>
         </ScrollViewer>

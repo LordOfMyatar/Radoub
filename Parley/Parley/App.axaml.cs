@@ -108,6 +108,9 @@ public partial class App : Application
             var mainWindow = new MainWindow(Program.Services);
             desktop.MainWindow = mainWindow;
 
+            // Re-read shared settings when window regains focus (picks up Trebuchet changes)
+            mainWindow.Activated += OnMainWindowActivated;
+
             // Check if SafeMode is active - show dialog after main window is set
             var isSafeMode = Program.SafeMode?.SafeModeActive ?? false;
             if (isSafeMode)
@@ -135,6 +138,15 @@ public partial class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private void OnMainWindowActivated(object? sender, EventArgs e)
+    {
+        var sharedSettings = Radoub.Formats.Settings.RadoubSettings.Instance;
+        sharedSettings.ReloadSettings();
+        ThemeManager.Instance.ApplySharedTheme();
+        ApplyFontSize(sharedSettings.SharedFontSize);
+        ApplyFontFamily(sharedSettings.SharedFontFamily);
     }
 
     private void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
