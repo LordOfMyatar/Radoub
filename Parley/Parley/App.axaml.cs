@@ -57,29 +57,13 @@ public partial class App : Application
         ThemeManager.Initialize("Parley");
         ThemeManager.Instance.DiscoverThemes();
 
-        string themeId;
         if (isSafeMode)
-        {
-            // SafeMode forces light theme
-            themeId = "org.radoub.theme.light";
-        }
-        else
-        {
-            themeId = _settings.CurrentThemeId;
-            if (string.IsNullOrEmpty(themeId))
-            {
-                themeId = "org.radoub.theme.light"; // Default if not set
-            }
-        }
-
-        // Use ApplyEffectiveTheme to check for shared Radoub-level theme first (#1533)
-        if (!ThemeManager.Instance.ApplyEffectiveTheme(themeId, _settings.UseSharedTheme))
-        {
-            // If preferred theme fails, try default light theme
             ThemeManager.Instance.ApplyTheme("org.radoub.theme.light");
-        }
+        else
+            ThemeManager.Instance.ApplySharedTheme();
 
-        // Apply font size and family from settings (or defaults if SafeMode)
+        // Apply font size and family from shared settings (or defaults if SafeMode)
+        var sharedSettings = Radoub.Formats.Settings.RadoubSettings.Instance;
         if (isSafeMode)
         {
             ApplyFontSize(SafeModeService.DefaultFontSize);
@@ -87,8 +71,8 @@ public partial class App : Application
         }
         else
         {
-            ApplyFontSize(_settings.FontSize);
-            ApplyFontFamily(_settings.FontFamily);
+            ApplyFontSize(sharedSettings.SharedFontSize);
+            ApplyFontFamily(sharedSettings.SharedFontFamily);
         }
 
         // Apply scrollbar auto-hide preference (Issue #63)
@@ -99,22 +83,16 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Apply SafeMode defaults to settings - resets theme, fonts, and flowview.
+    /// Apply SafeMode defaults to settings - disables FlowView.
+    /// Theme and font overrides are applied directly (not written to settings).
     /// </summary>
     private void ApplySafeModeDefaults()
     {
-        // Reset theme to light
-        _settings.CurrentThemeId = "org.radoub.theme.light";
-
-        // Reset fonts to system defaults
-        _settings.FontSize = SafeModeService.DefaultFontSize;
-        _settings.FontFamily = SafeModeService.DefaultFontFamily;
-
         // Disable FlowView (can cause issues)
         _settings.FlowchartVisible = false;
         _settings.FlowchartWindowOpen = false;
 
-        UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode: Reset theme to light, fonts to default, FlowView disabled");
+        UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode: FlowView disabled");
     }
 
     public override void OnFrameworkInitializationCompleted()
@@ -161,24 +139,7 @@ public partial class App : Application
 
     private void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(SettingsService.FontSize))
-        {
-            ApplyFontSize(_settings.FontSize);
-        }
-        else if (e.PropertyName == nameof(SettingsService.FontFamily))
-        {
-            ApplyFontFamily(_settings.FontFamily);
-        }
-        else if (e.PropertyName == nameof(SettingsService.CurrentThemeId))
-        {
-            // Theme changed - apply new theme (#1533)
-            var themeId = _settings.CurrentThemeId;
-            if (!string.IsNullOrEmpty(themeId))
-            {
-                ThemeManager.Instance.ApplyEffectiveTheme(themeId, _settings.UseSharedTheme);
-            }
-        }
-        else if (e.PropertyName == nameof(SettingsService.AllowScrollbarAutoHide))
+        if (e.PropertyName == nameof(SettingsService.AllowScrollbarAutoHide))
         {
             ApplyScrollbarAutoHide(_settings.AllowScrollbarAutoHide);
         }

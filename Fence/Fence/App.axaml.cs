@@ -3,7 +3,6 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Media;
 using System;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using Avalonia.Markup.Xaml;
@@ -30,8 +29,6 @@ public partial class App : Application
 
         if (isSafeMode)
         {
-            // SafeMode: Reset visual settings to safe defaults
-            ApplySafeModeDefaults();
             UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode enabled - visual settings reset to defaults");
         }
 
@@ -42,25 +39,15 @@ public partial class App : Application
         ThemeManager.Initialize("Fence");
         ThemeManager.Instance.DiscoverThemes();
 
-        string themeId;
         if (isSafeMode)
         {
-            // SafeMode forces light theme
-            themeId = "org.radoub.theme.light";
+            ThemeManager.Instance.ApplyTheme("org.radoub.theme.light");
         }
         else
         {
-            themeId = SettingsService.Instance.CurrentThemeId;
+            ThemeManager.Instance.ApplySharedTheme();
         }
 
-        // Use ApplyEffectiveTheme to check for shared Radoub-level theme first (#1533)
-        if (!ThemeManager.Instance.ApplyEffectiveTheme(themeId, SettingsService.Instance.UseSharedTheme))
-        {
-            // Fallback to light theme
-            ThemeManager.Instance.ApplyTheme("org.radoub.theme.light");
-        }
-
-        // Apply font overrides from settings
         if (isSafeMode)
         {
             ApplySafeModeFontSettings();
@@ -69,9 +56,6 @@ public partial class App : Application
         {
             ApplyFontSettings();
         }
-
-        // Subscribe to settings changes
-        SettingsService.Instance.PropertyChanged += OnSettingsPropertyChanged;
 
         // Clean up old log sessions
         UnifiedLogger.CleanupOldSessions(SettingsService.Instance.LogRetentionSessions);
@@ -82,21 +66,6 @@ public partial class App : Application
 
         // Initialize spell-checking (async, non-blocking)
         _ = SpellCheckService.Instance.InitializeAsync();
-    }
-
-    /// <summary>
-    /// Apply SafeMode defaults to settings - resets theme and fonts.
-    /// </summary>
-    private void ApplySafeModeDefaults()
-    {
-        // Reset theme to light
-        SettingsService.Instance.CurrentThemeId = "org.radoub.theme.light";
-
-        // Reset fonts to system defaults
-        SettingsService.Instance.FontSize = SafeModeService.DefaultFontSize;
-        SettingsService.Instance.FontFamily = SafeModeService.DefaultFontFamily;
-
-        UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode: Reset theme to light, fonts to default");
     }
 
     /// <summary>
@@ -128,40 +97,19 @@ public partial class App : Application
         {
             DisableAvaloniaDataAnnotationValidation();
             desktop.MainWindow = new MainWindow();
-
-            // Unsubscribe from singleton events on app exit (#1282)
-            desktop.Exit += (_, _) =>
-                SettingsService.Instance.PropertyChanged -= OnSettingsPropertyChanged;
         }
 
         base.OnFrameworkInitializationCompleted();
     }
 
-    private void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        switch (e.PropertyName)
-        {
-            case nameof(SettingsService.CurrentThemeId):
-                ThemeManager.Instance.ApplyEffectiveTheme(
-                    SettingsService.Instance.CurrentThemeId,
-                    SettingsService.Instance.UseSharedTheme);
-                ApplyFontSettings();
-                break;
-            case nameof(SettingsService.FontSize):
-            case nameof(SettingsService.FontFamily):
-                ApplyFontSettings();
-                break;
-        }
-    }
-
     private void ApplyFontSettings()
     {
-        var settings = SettingsService.Instance;
+        var sharedSettings = Radoub.Formats.Settings.RadoubSettings.Instance;
+        var baseSize = (double)sharedSettings.SharedFontSize;
+        var fontFamily = sharedSettings.SharedFontFamily;
 
         if (Resources != null)
         {
-            var baseSize = (double)settings.FontSize;
-
             // Update base font size
             Resources["GlobalFontSize"] = baseSize;
 
@@ -174,17 +122,17 @@ public partial class App : Application
             Resources["FontSizeXLarge"] = baseSize + 6;                 // 20 @ base 14
             Resources["FontSizeTitle"] = baseSize + 10;                 // 24 @ base 14
 
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font size: {settings.FontSize}pt (derived sizes updated)");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font size: {baseSize}pt (derived sizes updated)");
         }
 
         if (Resources != null)
         {
-            if (!string.IsNullOrEmpty(settings.FontFamily))
+            if (!string.IsNullOrEmpty(fontFamily))
             {
                 try
                 {
-                    Resources["GlobalFontFamily"] = new FontFamily(settings.FontFamily);
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font family: {settings.FontFamily}");
+                    Resources["GlobalFontFamily"] = new FontFamily(fontFamily);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font family: {fontFamily}");
                 }
                 catch
                 {

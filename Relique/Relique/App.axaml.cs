@@ -3,12 +3,12 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Media;
 using System;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using Avalonia.Markup.Xaml;
 using ItemEditor.Services;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Settings;
 using ItemEditor.Views;
 using Radoub.UI.Services;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
@@ -30,8 +30,7 @@ public partial class App : Application
 
         if (isSafeMode)
         {
-            ApplySafeModeDefaults();
-            UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode enabled - visual settings reset to defaults");
+            UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode enabled - using light theme and default fonts");
         }
 
         // Record tool launch for easter egg tracking
@@ -41,23 +40,17 @@ public partial class App : Application
         ThemeManager.Initialize("Relique");
         ThemeManager.Instance.DiscoverThemes();
 
-        string themeId;
+        // Apply theme
         if (isSafeMode)
-        {
-            themeId = "org.radoub.theme.light";
-        }
-        else
-        {
-            themeId = SettingsService.Instance.CurrentThemeId;
-        }
-
-        // Use ApplyEffectiveTheme to check for shared Radoub-level theme first (#1533)
-        if (!ThemeManager.Instance.ApplyEffectiveTheme(themeId, SettingsService.Instance.UseSharedTheme))
         {
             ThemeManager.Instance.ApplyTheme("org.radoub.theme.light");
         }
+        else
+        {
+            ThemeManager.Instance.ApplySharedTheme();
+        }
 
-        // Apply font overrides from settings
+        // Apply font settings
         if (isSafeMode)
         {
             ApplySafeModeFontSettings();
@@ -67,23 +60,12 @@ public partial class App : Application
             ApplyFontSettings();
         }
 
-        // Subscribe to settings changes
-        SettingsService.Instance.PropertyChanged += OnSettingsPropertyChanged;
-
         // Clean up old log sessions
         UnifiedLogger.CleanupOldSessions(SettingsService.Instance.LogRetentionSessions);
 
         // Clean up old backups
-        Radoub.UI.Services.BackupCleanupService.CleanupExpiredBackups(
-            Radoub.Formats.Settings.RadoubSettings.Instance.BackupRetentionDays);
-    }
-
-    private void ApplySafeModeDefaults()
-    {
-        SettingsService.Instance.CurrentThemeId = "org.radoub.theme.light";
-        SettingsService.Instance.FontSize = SafeModeService.DefaultFontSize;
-        SettingsService.Instance.FontFamily = SafeModeService.DefaultFontFamily;
-        UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode: Reset theme to light, fonts to default");
+        BackupCleanupService.CleanupExpiredBackups(
+            RadoubSettings.Instance.BackupRetentionDays);
     }
 
     private void ApplySafeModeFontSettings()
@@ -110,39 +92,18 @@ public partial class App : Application
         {
             DisableAvaloniaDataAnnotationValidation();
             desktop.MainWindow = new MainWindow();
-
-            // Unsubscribe from singleton events on app exit (#1282)
-            desktop.Exit += (_, _) =>
-                SettingsService.Instance.PropertyChanged -= OnSettingsPropertyChanged;
         }
 
         base.OnFrameworkInitializationCompleted();
     }
 
-    private void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        switch (e.PropertyName)
-        {
-            case nameof(SettingsService.CurrentThemeId):
-                ThemeManager.Instance.ApplyEffectiveTheme(
-                    SettingsService.Instance.CurrentThemeId,
-                    SettingsService.Instance.UseSharedTheme);
-                ApplyFontSettings();
-                break;
-            case nameof(SettingsService.FontSize):
-            case nameof(SettingsService.FontFamily):
-                ApplyFontSettings();
-                break;
-        }
-    }
-
     private void ApplyFontSettings()
     {
-        var settings = SettingsService.Instance;
+        var radoub = RadoubSettings.Instance;
 
         if (Resources != null)
         {
-            var baseSize = (double)settings.FontSize;
+            var baseSize = radoub.SharedFontSize;
             Resources["GlobalFontSize"] = baseSize;
             Resources["FontSizeXSmall"] = Math.Max(10, baseSize - 2);
             Resources["FontSizeSmall"] = Math.Max(11, baseSize - 1);
@@ -151,17 +112,17 @@ public partial class App : Application
             Resources["FontSizeLarge"] = baseSize + 4;
             Resources["FontSizeXLarge"] = baseSize + 6;
             Resources["FontSizeTitle"] = baseSize + 10;
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font size: {settings.FontSize}pt (derived sizes updated)");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font size: {baseSize}pt (derived sizes updated)");
         }
 
         if (Resources != null)
         {
-            if (!string.IsNullOrEmpty(settings.FontFamily))
+            if (!string.IsNullOrEmpty(radoub.SharedFontFamily))
             {
                 try
                 {
-                    Resources["GlobalFontFamily"] = new FontFamily(settings.FontFamily);
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font family: {settings.FontFamily}");
+                    Resources["GlobalFontFamily"] = new FontFamily(radoub.SharedFontFamily);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font family: {radoub.SharedFontFamily}");
                 }
                 catch
                 {
@@ -195,7 +156,7 @@ public partial class App : Application
             var exePath = Environment.ProcessPath;
             if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
             {
-                Radoub.Formats.Settings.RadoubSettings.Instance.ReliquePath = exePath;
+                RadoubSettings.Instance.ReliquePath = exePath;
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Registered Relique path in shared settings: {UnifiedLogger.SanitizePath(exePath)}");
             }
         }
