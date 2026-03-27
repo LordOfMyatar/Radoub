@@ -77,6 +77,10 @@ public partial class App : Application
         // Clean up old log sessions
         UnifiedLogger.CleanupOldSessions(SettingsService.Instance.LogRetentionSessions);
 
+        // Clean up old backups
+        Radoub.UI.Services.BackupCleanupService.CleanupExpiredBackups(
+            Radoub.Formats.Settings.RadoubSettings.Instance.BackupRetentionDays);
+
         // Initialize spell-checking (async, non-blocking)
         // No cancellation needed - singleton service that should complete during app lifetime
         _ = InitializeSpellCheckAsync();

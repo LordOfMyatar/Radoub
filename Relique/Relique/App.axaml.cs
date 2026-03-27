@@ -72,6 +72,10 @@ public partial class App : Application
 
         // Clean up old log sessions
         UnifiedLogger.CleanupOldSessions(SettingsService.Instance.LogRetentionSessions);
+
+        // Clean up old backups
+        Radoub.UI.Services.BackupCleanupService.CleanupExpiredBackups(
+            Radoub.Formats.Settings.RadoubSettings.Instance.BackupRetentionDays);
     }
 
     private void ApplySafeModeDefaults()

@@ -17,6 +17,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.103] - 2026-03-25
+**Branch**: `radoub/issue-1937` | **PR**: #1997
+
+### Sprint: Marlinspike Infrastructure Polish (#1937)
+
+- [x] #1935 — AreSearchProvider for dedicated ARE search (Name, Tag, ResRef, Comments, 4 scripts)
+- [x] #1927 — [Parley] --mod flag now correctly sets module search context
+- [x] #1925 — BackupCleanupService with configurable retention (1-90 days), auto-cleanup on startup, Trebuchet settings UI with "Delete All Backups" button
+
+---
+
 ## [0.9.102] - 2026-03-25
 **Branch**: `radoub/issue-1987` | **PR**: #1991
 
