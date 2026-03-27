@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 
 namespace DialogEditor.Services;
@@ -16,8 +17,26 @@ public static class ModuleDirectoryResolver
     /// </summary>
     public static string? Resolve(string? currentModulePath, string? currentFileName)
     {
-        if (!string.IsNullOrEmpty(currentModulePath) && Directory.Exists(currentModulePath))
-            return currentModulePath;
+        if (!string.IsNullOrEmpty(currentModulePath))
+        {
+            // Direct directory path (from --mod or unpacked module)
+            if (Directory.Exists(currentModulePath))
+                return currentModulePath;
+
+            // .mod file path (from Trebuchet) — look for unpacked working directory
+            if (currentModulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase)
+                && File.Exists(currentModulePath))
+            {
+                var moduleName = Path.GetFileNameWithoutExtension(currentModulePath);
+                var parentDir = Path.GetDirectoryName(currentModulePath);
+                if (!string.IsNullOrEmpty(parentDir))
+                {
+                    var workingDir = Path.Combine(parentDir, moduleName);
+                    if (Directory.Exists(workingDir))
+                        return workingDir;
+                }
+            }
+        }
 
         if (!string.IsNullOrEmpty(currentFileName))
             return Path.GetDirectoryName(currentFileName);

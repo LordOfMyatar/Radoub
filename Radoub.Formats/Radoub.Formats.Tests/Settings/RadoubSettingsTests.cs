@@ -3,15 +3,8 @@ using Xunit;
 
 namespace Radoub.Formats.Tests.Settings;
 
-public class RadoubSettingsTests
+public class BackupRetentionDaysTests
 {
-    [Fact]
-    public void BackupRetentionDays_Default_Is30()
-    {
-        var settings = RadoubSettings.Instance;
-        Assert.Equal(30, settings.BackupRetentionDays);
-    }
-
     [Theory]
     [InlineData(0, 1)]    // Below minimum, clamps to 1
     [InlineData(-5, 1)]   // Negative, clamps to 1

@@ -76,4 +76,54 @@ public class ModuleDirectoryResolverTests
 
         Assert.Equal(modulePath, result);
     }
+
+    [Fact]
+    public void ResolveModuleDirectory_ResolvesModFileToWorkingDirectory()
+    {
+        // Create temp structure: modules/TestMod.mod + modules/TestMod/
+        var tempRoot = Path.Combine(Path.GetTempPath(), "ModResolverTest_" + Guid.NewGuid().ToString("N"));
+        var modFile = Path.Combine(tempRoot, "TestMod.mod");
+        var workingDir = Path.Combine(tempRoot, "TestMod");
+
+        try
+        {
+            Directory.CreateDirectory(workingDir);
+            File.WriteAllText(modFile, "fake mod");
+
+            var result = ModuleDirectoryResolver.Resolve(modFile, null);
+
+            Assert.Equal(workingDir, result);
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+                Directory.Delete(tempRoot, true);
+        }
+    }
+
+    [Fact]
+    public void ResolveModuleDirectory_ModFileWithoutWorkingDir_FallsBack()
+    {
+        // Create temp .mod file without unpacked directory
+        var tempRoot = Path.Combine(Path.GetTempPath(), "ModResolverTest_" + Guid.NewGuid().ToString("N"));
+        var modFile = Path.Combine(tempRoot, "TestMod.mod");
+        var tempDir = Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar);
+        var filePath = Path.Combine(tempDir, "test.dlg");
+
+        try
+        {
+            Directory.CreateDirectory(tempRoot);
+            File.WriteAllText(modFile, "fake mod");
+
+            var result = ModuleDirectoryResolver.Resolve(modFile, filePath);
+
+            // Should fall back to file's parent directory
+            Assert.Equal(tempDir, result);
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+                Directory.Delete(tempRoot, true);
+        }
+    }
 }
