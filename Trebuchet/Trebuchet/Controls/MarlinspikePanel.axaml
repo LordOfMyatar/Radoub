@@ -44,7 +44,8 @@
                     <CheckBox Content="Case sensitive" Margin="0,0,12,0"
                               IsChecked="{Binding IsCaseSensitive}"/>
                     <CheckBox Content="Regex" Margin="0,0,12,0"
-                              IsChecked="{Binding IsRegex}"/>
+                              IsChecked="{Binding IsRegex}"
+                              ToolTip.Tip="Use .NET regular expressions (e.g., .* = any text, \b = word boundary, [abc] = character class). See: https://learn.microsoft.com/en-us/dotnet/standard/base-types/regular-expression-language-quick-reference"/>
                     <CheckBox Content="Whole word" Margin="0,0,12,0"
                               IsChecked="{Binding IsWholeWord}"/>
                     <TextBlock Text="Fields:" VerticalAlignment="Center" Margin="8,0,4,0"/>
