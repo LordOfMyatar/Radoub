@@ -1,0 +1,138 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RadoubLauncher.ViewModels"
+             x:Class="RadoubLauncher.Controls.MarlinspikePanel"
+             x:DataType="vm:MarlinspikePanelViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+        <!-- Search Criteria -->
+        <Border Grid.Row="0" Padding="10,8"
+                Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                BorderThickness="0,0,0,1">
+            <StackPanel Spacing="6">
+                <!-- Search pattern -->
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" x:Name="SearchButton" Content="Search"
+                            Click="OnSearchClick" Margin="8,0,0,0" Padding="16,4"
+                            IsEnabled="{Binding CanSearch}"/>
+                    <Button DockPanel.Dock="Right" x:Name="CancelButton" Content="Cancel"
+                            Click="OnCancelClick" Margin="4,0,0,0" Padding="12,4"
+                            IsVisible="{Binding IsSearching}"/>
+                    <TextBox x:Name="SearchPatternBox" Watermark="Search pattern..."
+                             Text="{Binding SearchPattern, Mode=TwoWay}"
+                             KeyDown="OnSearchPatternKeyDown"/>
+                </DockPanel>
+
+                <!-- Replace pattern -->
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" x:Name="ReplaceAllButton" Content="Replace All"
+                            Click="OnReplaceAllClick" Margin="4,0,0,0" Padding="12,4"
+                            IsEnabled="{Binding CanReplace}"
+                            ToolTip.Tip="Preview and replace all matches"/>
+                    <Button DockPanel.Dock="Right" x:Name="ReplaceSelectedButton" Content="Replace Selected"
+                            Click="OnReplaceSelectedClick" Margin="4,0,0,0" Padding="12,4"
+                            IsEnabled="{Binding CanReplace}"
+                            ToolTip.Tip="Preview and replace only selected matches"/>
+                    <TextBox x:Name="ReplacePatternBox" Watermark="Replace with..."
+                             Text="{Binding ReplaceText, Mode=TwoWay}"/>
+                </DockPanel>
+
+                <!-- Options row -->
+                <WrapPanel>
+                    <CheckBox Content="Case sensitive" Margin="0,0,12,0"
+                              IsChecked="{Binding IsCaseSensitive}"/>
+                    <CheckBox Content="Regex" Margin="0,0,12,0"
+                              IsChecked="{Binding IsRegex}"
+                              ToolTip.Tip="Use .NET regular expressions (e.g., .* = any text, \b = word boundary, [abc] = character class). See: https://learn.microsoft.com/en-us/dotnet/standard/base-types/regular-expression-language-quick-reference"/>
+                    <CheckBox Content="Whole word" Margin="0,0,12,0"
+                              IsChecked="{Binding IsWholeWord}"/>
+                    <TextBlock Text="Fields:" VerticalAlignment="Center" Margin="8,0,4,0"/>
+                    <ComboBox x:Name="CategoryCombo" MinWidth="120"
+                              ItemsSource="{Binding Categories}"
+                              SelectedItem="{Binding SelectedCategory}"/>
+                </WrapPanel>
+
+                <!-- File type checkboxes -->
+                <StackPanel Spacing="4">
+                    <DockPanel>
+                        <TextBlock Text="File Types:" VerticalAlignment="Center"
+                                   Margin="0,0,8,0"/>
+                        <Button Content="Select All" Click="OnSelectAllClick"
+                                Padding="8,2" Margin="0,0,4,0"
+                                FontSize="{DynamicResource FontSizeSmall}"/>
+                        <Button Content="Deselect All" Click="OnDeselectAllClick"
+                                Padding="8,2"
+                                FontSize="{DynamicResource FontSizeSmall}"/>
+                    </DockPanel>
+                    <WrapPanel>
+                        <CheckBox Content="DLG" IsChecked="{Binding IncludeDlg}" Margin="0,0,8,0" MinWidth="65"/>
+                        <CheckBox Content="UTC" IsChecked="{Binding IncludeUtc}" Margin="0,0,8,0" MinWidth="65"/>
+                        <CheckBox Content="BIC" IsChecked="{Binding IncludeBic}" Margin="0,0,8,0" MinWidth="65"/>
+                        <CheckBox Content="UTI" IsChecked="{Binding IncludeUti}" Margin="0,0,8,0" MinWidth="65"/>
+                        <CheckBox Content="UTM" IsChecked="{Binding IncludeUtm}" Margin="0,0,8,0" MinWidth="65"/>
+                        <CheckBox Content="JRL" IsChecked="{Binding IncludeJrl}" Margin="0,0,8,0" MinWidth="65"/>
+                    </WrapPanel>
+                    <WrapPanel>
+                        <CheckBox Content="UTP" IsChecked="{Binding IncludeUtp}" Margin="0,0,8,0" MinWidth="65"/>
+                        <CheckBox Content="UTD" IsChecked="{Binding IncludeUtd}" Margin="0,0,8,0" MinWidth="65"/>
+                        <CheckBox Content="UTE" IsChecked="{Binding IncludeUte}" Margin="0,0,8,0" MinWidth="65"/>
+                        <CheckBox Content="UTT" IsChecked="{Binding IncludeUtt}" Margin="0,0,8,0" MinWidth="65"/>
+                        <CheckBox Content="UTW" IsChecked="{Binding IncludeUtw}" Margin="0,0,8,0" MinWidth="65"/>
+                        <CheckBox Content="UTS" IsChecked="{Binding IncludeUts}" Margin="0,0,8,0" MinWidth="65"/>
+                    </WrapPanel>
+                    <WrapPanel>
+                        <CheckBox Content="GIT" IsChecked="{Binding IncludeGit}" Margin="0,0,8,0" MinWidth="65"/>
+                        <CheckBox Content="ARE" IsChecked="{Binding IncludeAre}" Margin="0,0,8,0" MinWidth="65"/>
+                        <CheckBox Content="IFO" IsChecked="{Binding IncludeIfo}" Margin="0,0,8,0" MinWidth="65"/>
+                        <CheckBox Content="FAC" IsChecked="{Binding IncludeFac}" Margin="0,0,8,0" MinWidth="65"/>
+                        <CheckBox Content="ITP" IsChecked="{Binding IncludeItp}" Margin="0,0,8,0" MinWidth="65"/>
+                    </WrapPanel>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Status / Progress -->
+        <Border Grid.Row="1" Padding="8,4"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                BorderThickness="0,0,0,1">
+            <DockPanel>
+                <ProgressBar x:Name="SearchProgress" DockPanel.Dock="Right"
+                             Width="120" Height="12" Margin="8,0,0,0"
+                             IsIndeterminate="True"
+                             IsVisible="{Binding ShowProgress}"/>
+                <TextBlock Text="{Binding StatusText}"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+            </DockPanel>
+        </Border>
+
+        <!-- Results Tree -->
+        <TreeView x:Name="ResultsTree" Grid.Row="2" Margin="4"
+                  DoubleTapped="OnResultDoubleTapped">
+            <TreeView.Styles>
+                <Style Selector="TreeViewItem">
+                    <Setter Property="IsExpanded" Value="True"/>
+                </Style>
+            </TreeView.Styles>
+        </TreeView>
+
+        <!-- Footer -->
+        <Border Grid.Row="3" Padding="8,4"
+                Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                BorderThickness="0,1,0,0">
+            <DockPanel>
+                <TextBlock x:Name="ModulePathText" DockPanel.Dock="Left"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           VerticalAlignment="Center" FontSize="11"/>
+                <TextBlock x:Name="DurationText" DockPanel.Dock="Right"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           VerticalAlignment="Center" FontSize="11"
+                           HorizontalAlignment="Right"/>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

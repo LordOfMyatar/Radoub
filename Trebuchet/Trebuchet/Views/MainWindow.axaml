@@ -302,6 +302,11 @@
                     <TabItem Header="Build &amp; Test">
                         <ctrl:LaunchTestPanel x:Name="LaunchTestPanel"/>
                     </TabItem>
+
+                    <!-- Marlinspike Tab -->
+                    <TabItem Header="Marlinspike">
+                        <ctrl:MarlinspikePanel x:Name="MarlinspikePanel"/>
+                    </TabItem>
                 </TabControl>
             </Grid>
         </Grid>

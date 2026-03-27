@@ -45,6 +45,8 @@ public class DlgMatchLocation
     public bool IsOnLink { get; init; }
     public int? LinkIndex { get; init; }
     public required string DisplayPath { get; init; }
+
+    public override string ToString() => DisplayPath;
 }
 
 public enum DlgNodeType

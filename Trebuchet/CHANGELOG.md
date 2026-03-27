@@ -6,7 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased]
+## [1.25.0-alpha] - 2026-03-26
+**Branch**: `trebuchet/issue-1933` | **PR**: #1999
+
+### Marlinspike Search Panel (#1933)
+
+- New 4th workspace tab: module-wide search & replace across all 17 GFF file types
+- Search criteria: pattern, regex, case-sensitive, whole word, field category filter
+- File type checkboxes with Select All / Deselect All
+- Results tree grouped by file type → file → matches
+- Replace preview window with per-match selective checkboxes and backup
+- Double-click dispatches to correct Radoub tool via ToolLauncherService
+- Keyboard shortcuts: Ctrl+4, Ctrl+Shift+F (focus search box)
+- Regex tooltip with .NET quick reference link
+- Fixed: DlgMatchLocation, GitMatchLocation, JrlMatchLocation display paths (was showing raw type names)
+- Fixed: Module path resolution using ModulePathHelper (was failing for .mod file paths)
 
 ---
 
