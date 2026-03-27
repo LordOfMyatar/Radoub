@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.104] - 2026-03-26
-**Branch**: `radoub/issue-2006` | **PR**: #TBD
+**Branch**: `radoub/issue-2006` | **PR**: #2010
 
 ### Sprint: Theme Unification & Cleanup (#2006)
 
