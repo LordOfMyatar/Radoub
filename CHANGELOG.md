@@ -18,9 +18,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Theme Unification & Cleanup (#2006)
 
-- [ ] #1510 — AboutWindow dark mode fix (Tier 2 brush migration)
-- [ ] #2006 — Unify theme/font management under Trebuchet as sole authority (absorbs #2005)
-- [ ] #1960 — Trebuchet startup optimization (timestamp checks, discovery caching)
+- [x] #1510 — AboutWindow dark mode fix (Tier 2 brush migration)
+- [x] #2006 — Unify theme/font management under Trebuchet as sole authority (absorbs #2005)
+- [x] #1960 — Trebuchet startup optimization (timestamp checks, discovery caching)
 
 ---
 
