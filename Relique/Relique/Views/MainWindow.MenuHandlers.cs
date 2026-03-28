@@ -397,10 +397,6 @@ public partial class MainWindow
             : match.FullFieldValue;
         UpdateStatus($"Found \"{match.MatchedText}\" in {match.Field.Name}: {preview}");
 
-        // Scroll to the matching section in the editor
-        var editorScroll = this.FindControl<Avalonia.Controls.ScrollViewer>("EditorContent");
-        if (editorScroll == null) return;
-
         // Map field GFF paths to named controls in the editor
         var targetControlName = match.Field.GffPath switch
         {
@@ -428,14 +424,10 @@ public partial class MainWindow
             parent = parent.Parent;
         }
 
-        // Scroll into view on next layout pass
+        // Scroll into view and focus
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
-            var transform = target.TranslatePoint(new Avalonia.Point(0, 0), editorScroll);
-            if (transform.HasValue)
-            {
-                editorScroll.Offset = new Avalonia.Vector(0, editorScroll.Offset.Y + transform.Value.Y - 50);
-            }
+            target.BringIntoView();
             target.Focus();
         }, Avalonia.Threading.DispatcherPriority.Render);
     }
