@@ -267,6 +267,90 @@ public abstract class SearchProviderBase
     }
 
     /// <summary>
+    /// Apply a replace operation to a VarTable variable (name or string value).
+    /// Reads the VarTable, finds the matching variable, applies replacement, writes back.
+    /// </summary>
+    protected static ReplaceResult ReplaceVarTableField(GffStruct gffStruct, ReplaceOperation op)
+    {
+        var variables = VarTableHelper.ReadVarTable(gffStruct);
+        if (variables.Count == 0)
+        {
+            return new ReplaceResult
+            {
+                Success = false, Field = op.Match.Field,
+                OldValue = op.Match.FullFieldValue, NewValue = op.ReplacementText,
+                Skipped = true, SkipReason = "VarTable is empty"
+            };
+        }
+
+        // FullFieldValue is "Name = value" — extract variable name
+        var fullValue = op.Match.FullFieldValue;
+        var separatorIndex = fullValue.IndexOf(" = ", StringComparison.Ordinal);
+        if (separatorIndex < 0)
+        {
+            return new ReplaceResult
+            {
+                Success = false, Field = op.Match.Field,
+                OldValue = fullValue, NewValue = op.ReplacementText,
+                Skipped = true, SkipReason = "Could not parse VarTable match format"
+            };
+        }
+
+        var varName = fullValue[..separatorIndex];
+        var variable = variables.FirstOrDefault(v => v.Name == varName);
+        if (variable == null)
+        {
+            return new ReplaceResult
+            {
+                Success = false, Field = op.Match.Field,
+                OldValue = fullValue, NewValue = op.ReplacementText,
+                Skipped = true, SkipReason = $"Variable '{varName}' not found in VarTable"
+            };
+        }
+
+        // Determine if match is in the name or value.
+        // Name match: offset+length fits within the name string and matched text is found there.
+        // Value match: variable is String type and matched text is found in the value.
+        var matchedText = op.Match.MatchedText;
+        var offset = op.Match.MatchOffset;
+        var isNameMatch = offset + op.Match.MatchLength <= (variable.Name?.Length ?? 0)
+                          && (variable.Name ?? "").Substring(offset, op.Match.MatchLength) == matchedText;
+
+        string oldValue;
+        string newValue;
+
+        if (isNameMatch)
+        {
+            oldValue = variable.Name ?? string.Empty;
+            newValue = ReplaceInString(oldValue, op);
+            variable.Name = newValue;
+        }
+        else if (variable.Type == VariableType.String && variable.Value is string strValue)
+        {
+            oldValue = strValue;
+            newValue = ReplaceInString(strValue, op);
+            variable.Value = newValue;
+        }
+        else
+        {
+            return new ReplaceResult
+            {
+                Success = false, Field = op.Match.Field,
+                OldValue = fullValue, NewValue = op.ReplacementText,
+                Skipped = true, SkipReason = "Match not found in variable name or value"
+            };
+        }
+
+        VarTableHelper.WriteVarTable(gffStruct, variables);
+
+        return new ReplaceResult
+        {
+            Success = true, Field = op.Match.Field,
+            OldValue = oldValue, NewValue = newValue
+        };
+    }
+
+    /// <summary>
     /// Search script parameter key/value pairs.
     /// </summary>
     protected static List<SearchMatch> SearchParams(

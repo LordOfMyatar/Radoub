@@ -62,6 +62,7 @@ public class UtmSearchProvider : SearchProviderBase, IFileSearchProvider
             var result = op.Match.Field.FieldType switch
             {
                 SearchFieldType.LocString => ReplaceLocStringField(gffFile.RootStruct, gffPath, op),
+                SearchFieldType.Variable => ReplaceVarTableField(gffFile.RootStruct, op),
                 _ => ReplaceStringField(gffFile.RootStruct, gffPath, op)
             };
             results.Add(result);

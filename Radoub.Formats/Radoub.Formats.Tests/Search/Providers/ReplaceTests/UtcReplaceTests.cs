@@ -214,4 +214,93 @@ public class UtcReplaceTests
 
         Assert.Empty(results);
     }
+
+    // --- VarTable replace tests (#1949) ---
+
+    [Fact]
+    public void Replace_VarTable_StringValue()
+    {
+        // "sQuestNote" has value "Find Louis at the docks" — replace "Louis" in value
+        var (gff, ops) = SearchAndBuildOps("Louis", "Marcel", "Local Variables");
+        // Filter to only value matches (not name matches)
+        var valueOps = ops.Where(o => o.Match.FullFieldValue.Contains("Find Louis")).ToList();
+
+        var provider = new UtcSearchProvider();
+        var results = provider.Replace(gff, valueOps);
+
+        Assert.All(results, r => Assert.True(r.Success, r.SkipReason ?? "no reason"));
+
+        // Verify VarTable was updated in GFF
+        var variables = VarTableHelper.ReadVarTable(gff.RootStruct);
+        var questNote = variables.First(v => v.Name == "sQuestNote");
+        Assert.Equal("Find Marcel at the docks", questNote.GetString());
+    }
+
+    [Fact]
+    public void Replace_VarTable_VariableName()
+    {
+        // Create a UTC with a variable whose name matches
+        var utc = new UtcFile
+        {
+            VarTable = new List<Variable>
+            {
+                Variable.CreateString("sOldQuest", "some value"),
+                Variable.CreateInt("nCounter", 5)
+            }
+        };
+        var gff = UtcToGff(utc);
+
+        var provider = new UtcSearchProvider();
+        var criteria = new SearchCriteria { Pattern = "Old" };
+        var matches = provider.Search(gff, criteria);
+        var nameMatches = matches.Where(m => m.Field.Name == "Local Variables").ToList();
+        Assert.NotEmpty(nameMatches);
+
+        var ops = nameMatches.Select(m => new ReplaceOperation
+        {
+            Match = m, ReplacementText = "New"
+        }).ToList();
+
+        // Re-parse for replace
+        gff = UtcToGff(utc);
+        var results = provider.Replace(gff, ops);
+
+        Assert.All(results, r => Assert.True(r.Success, r.SkipReason ?? "no reason"));
+
+        var variables = VarTableHelper.ReadVarTable(gff.RootStruct);
+        Assert.Contains(variables, v => v.Name == "sNewQuest");
+        Assert.DoesNotContain(variables, v => v.Name == "sOldQuest");
+    }
+
+    [Fact]
+    public void Replace_VarTable_NonStringVariable_NameOnly()
+    {
+        // Int variables: can replace name but not value
+        var utc = new UtcFile
+        {
+            VarTable = new List<Variable>
+            {
+                Variable.CreateInt("nOldCounter", 42)
+            }
+        };
+        var gff = UtcToGff(utc);
+
+        var provider = new UtcSearchProvider();
+        var criteria = new SearchCriteria { Pattern = "Old" };
+        var matches = provider.Search(gff, criteria);
+        Assert.Single(matches); // Only name matches (int value not searchable)
+
+        var ops = matches.Select(m => new ReplaceOperation
+        {
+            Match = m, ReplacementText = "New"
+        }).ToList();
+
+        gff = UtcToGff(utc);
+        var results = provider.Replace(gff, ops);
+
+        Assert.All(results, r => Assert.True(r.Success, r.SkipReason ?? "no reason"));
+
+        var variables = VarTableHelper.ReadVarTable(gff.RootStruct);
+        Assert.Contains(variables, v => v.Name == "nNewCounter");
+    }
 }

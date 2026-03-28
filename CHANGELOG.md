@@ -21,8 +21,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - [ ] #1949 — VarTable replace not implemented — silent failure on all providers
 - [ ] #1950 — SearchBar tab order — Tab from search box should go to replace box
 - [ ] #1939 — Search result navigation per tool
-- [ ] #1935 — Add AreSearchProvider for dedicated ARE search
-- [ ] #1925 — Backup cleanup service — retention policy for ~/Radoub/Backups/
+- [x] #1935 — Add AreSearchProvider for dedicated ARE search
+- [x] #1925 — Backup cleanup service — retention policy for ~/Radoub/Backups/
 
 ---
 
