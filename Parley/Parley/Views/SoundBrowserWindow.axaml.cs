@@ -404,19 +404,9 @@ namespace DialogEditor.Views
         {
             SoundListBox.Items.Clear();
 
-            var soundsToDisplay = _allSounds.ToList();
             var monoOnly = MonoOnlyCheckBox?.IsChecked == true;
-            if (monoOnly)
-            {
-                // Include sounds that are mono OR have unknown channel status (archive sounds not yet validated)
-                soundsToDisplay = soundsToDisplay.Where(s => s.IsMono || s.ChannelUnknown).ToList();
-            }
-
-            var searchText = SearchBox?.Text?.ToLowerInvariant();
-            if (!string.IsNullOrWhiteSpace(searchText))
-                soundsToDisplay = soundsToDisplay.Where(s => s.FileName.ToLowerInvariant().Contains(searchText)).ToList();
-
-            soundsToDisplay = soundsToDisplay.OrderBy(s => s.FileName).ToList();
+            var searchText = SearchBox?.Text;
+            var soundsToDisplay = SoundFilterService.ApplyFilters(_allSounds, monoOnly, searchText);
             _filteredSounds = soundsToDisplay;
 
             foreach (var sound in soundsToDisplay)
