@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.105] - 2026-03-27
-**Branch**: `radoub/issue-1986` | **PR**: #TBD
+**Branch**: `radoub/issue-1986` | **PR**: #2012
 
 ### Sprint: Marlinspike Bug Fixes & Polish (#1986)
 
