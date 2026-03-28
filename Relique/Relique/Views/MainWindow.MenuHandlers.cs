@@ -396,6 +396,40 @@ public partial class MainWindow
             ? match.FullFieldValue[..60] + "..."
             : match.FullFieldValue;
         UpdateStatus($"Found \"{match.MatchedText}\" in {match.Field.Name}: {preview}");
+
+        // Map field GFF paths to named controls in the editor
+        var targetControlName = match.Field.GffPath switch
+        {
+            "LocalizedName" => "NameTextBox",
+            "Tag" => "TagTextBox",
+            "TemplateResRef" => "ResRefTextBox",
+            "Description" => "DescriptionTextBox",
+            "DescIdentified" => "DescIdentifiedTextBox",
+            "Comment" => "CommentTextBox",
+            "VarTable" => "VariablesGrid",
+            _ => null
+        };
+
+        if (targetControlName == null) return;
+
+        var target = this.FindControl<Avalonia.Controls.Control>(targetControlName);
+        if (target == null) return;
+
+        // Expand parent expander if collapsed
+        var parent = target.Parent;
+        while (parent != null)
+        {
+            if (parent is Avalonia.Controls.Expander expander && !expander.IsExpanded)
+                expander.IsExpanded = true;
+            parent = parent.Parent;
+        }
+
+        // Scroll into view and focus
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            target.BringIntoView();
+            target.Focus();
+        }, Avalonia.Threading.DispatcherPriority.Render);
     }
 
     #endregion

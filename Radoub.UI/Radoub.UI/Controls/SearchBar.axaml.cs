@@ -180,10 +180,6 @@ namespace Radoub.UI.Controls
             UnifiedLogger.LogUI(LogLevel.DEBUG, $"SearchBar.ExecuteSearch: {_searchService.MatchCount} matches found");
             UpdateMatchCount();
             SearchResultsChanged?.Invoke(this, _searchService.Matches);
-
-            // Always fire NavigateToMatch — with match on success, null on no matches
-            // so tools can update/clear their status bar
-            NavigateToMatch?.Invoke(this, _searchService.MatchCount > 0 ? _searchService.CurrentMatch : null);
         }
 
         private SearchCriteria BuildCriteria(string pattern)

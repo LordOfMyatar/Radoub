@@ -13,6 +13,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.105] - 2026-03-27
+**Branch**: `radoub/issue-1986` | **PR**: #2012
+
+### Sprint: Marlinspike Bug Fixes & Polish (#1986)
+
+- [x] #1949 — VarTable replace not implemented — silent failure on all providers
+- [x] #1950 — SearchBar tab order — Tab from search box should go to replace box
+- [x] #1939 — Search result navigation per tool
+- [x] #1935 — Add AreSearchProvider for dedicated ARE search
+- [x] #1925 — Backup cleanup service — retention policy for ~/Radoub/Backups/
+
+---
+
 ## [0.9.104] - 2026-03-26
 **Branch**: `radoub/issue-2006` | **PR**: #2010
 

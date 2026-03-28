@@ -163,6 +163,7 @@ public class GitSearchProvider : SearchProviderBase, IFileSearchProvider
             var result = op.Match.Field.FieldType switch
             {
                 SearchFieldType.LocString => ReplaceLocStringField(instanceStruct, op.Match.Field.GffPath, op),
+                SearchFieldType.Variable => ReplaceVarTableField(instanceStruct, op),
                 _ => ReplaceStringField(instanceStruct, op.Match.Field.GffPath, op)
             };
             results.Add(result);

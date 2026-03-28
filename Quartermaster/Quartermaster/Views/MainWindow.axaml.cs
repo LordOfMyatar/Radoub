@@ -704,6 +704,22 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             ? match.FullFieldValue[..60] + "..."
             : match.FullFieldValue;
         UpdateStatus($"Found \"{match.MatchedText}\" in {match.Field.Name}: {preview}");
+
+        // Navigate to the panel containing the matched field
+        var section = match.Field.GffPath switch
+        {
+            "FirstName" or "LastName" or "Tag" or "TemplateResRef"
+                or "Subrace" or "Deity" or "Conversation" => "Character",
+            "Description" => "Character",
+            "Comment" or "VarTable" => "Advanced",
+            _ when match.Field.Category == Radoub.Formats.Search.SearchFieldCategory.Script => "Scripts",
+            _ => null
+        };
+
+        if (section != null)
+        {
+            NavigateToSection(section);
+        }
     }
 
     #endregion

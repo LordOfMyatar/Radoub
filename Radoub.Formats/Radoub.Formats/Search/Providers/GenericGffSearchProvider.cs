@@ -57,6 +57,7 @@ public class GenericGffSearchProvider : SearchProviderBase, IFileSearchProvider
             var result = op.Match.Field.FieldType switch
             {
                 SearchFieldType.LocString => ReplaceLocStringField(targetStruct, op.Match.Field.GffPath, op),
+                SearchFieldType.Variable => ReplaceVarTableField(targetStruct, op),
                 _ => ReplaceStringField(targetStruct, op.Match.Field.GffPath, op)
             };
             results.Add(result);
