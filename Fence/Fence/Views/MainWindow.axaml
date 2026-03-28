@@ -704,6 +704,24 @@
                                                        Text="" FontFamily="Consolas" FontSize="11"
                                                        AutomationProperties.AutomationId="DetailSourceLocation"/>
                                         </Grid>
+
+                                        <!-- Item Properties -->
+                                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                BorderThickness="0,1,0,0"
+                                                Padding="0,6,0,0"
+                                                Margin="0,4,0,0"
+                                                x:Name="DetailPropertiesBorder">
+                                            <StackPanel Spacing="2">
+                                                <TextBlock Text="Properties:"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                           FontSize="11"/>
+                                                <TextBlock x:Name="DetailProperties"
+                                                           Text=""
+                                                           TextWrapping="Wrap"
+                                                           FontSize="11"
+                                                           AutomationProperties.AutomationId="DetailProperties"/>
+                                            </StackPanel>
+                                        </Border>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>

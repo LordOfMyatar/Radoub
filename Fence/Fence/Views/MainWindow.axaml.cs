@@ -243,12 +243,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _tlkService = new TlkService();
             _tlkService.EnableSettingsIntegration();
 
-            _itemResolutionService = new ItemResolutionService(_gameDataService, _tlkService);
             if (_gameDataService != null)
             {
                 _itemIconService = new ItemIconService(_gameDataService);
                 _itemViewModelFactory = new ItemViewModelFactory(_gameDataService);
             }
+            _itemResolutionService = new ItemResolutionService(_gameDataService, _tlkService, _itemViewModelFactory);
         });
 
         _servicesInitialized = true;

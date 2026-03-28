@@ -66,6 +66,12 @@ public partial class MainWindow
         DetailInfinite.Text = item.Infinite ? "Yes ∞" : "No";
         DetailStorePanel.Text = StorePanels.GetPanelName(item.PanelId);
         DetailSourceLocation.Text = !string.IsNullOrEmpty(item.SourceLocation) ? item.SourceLocation : "—";
+
+        // Resolve item properties from UTI via game data chain
+        var resolved = _itemResolutionService?.ResolveItem(item.ResRef);
+        var props = resolved?.PropertiesDisplay;
+        DetailProperties.Text = !string.IsNullOrEmpty(props) ? props : "(none)";
+        DetailPropertiesBorder.IsVisible = true;
     }
 
     private void UpdateItemDetailsFromPalette(ItemViewModel item)
@@ -89,6 +95,10 @@ public partial class MainWindow
         DetailStorePanel.Text = StorePanels.GetPanelName(
             GetStorePanelForBaseItemType(item.BaseItem));
         DetailSourceLocation.Text = !string.IsNullOrEmpty(item.SourceLocation) ? item.SourceLocation : "—";
+
+        // Display cached properties from palette
+        DetailProperties.Text = !string.IsNullOrEmpty(item.PropertiesDisplay) ? item.PropertiesDisplay : "(none)";
+        DetailPropertiesBorder.IsVisible = true;
     }
 
     private void ClearItemDetails()

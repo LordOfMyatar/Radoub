@@ -297,6 +297,56 @@ public class ItemResolutionServiceTests
 
     #endregion
 
+    #region PropertiesDisplay Tests
+
+    [Fact]
+    public void ResolvedItemData_PropertiesDisplay_DefaultsToEmpty()
+    {
+        // Arrange & Act
+        var data = CreateResolvedItemData(baseCost: 100);
+
+        // Assert
+        Assert.Equal(string.Empty, data.PropertiesDisplay);
+    }
+
+    [Fact]
+    public void ResolvedItemData_PropertiesDisplay_CanBeSet()
+    {
+        // Arrange & Act
+        var data = new ResolvedItemData
+        {
+            ResRef = "test_item",
+            Tag = "TEST_TAG",
+            DisplayName = "Test Item",
+            BaseItemType = 4,
+            BaseItemTypeName = "Longsword",
+            BaseCost = 100,
+            StackSize = 1,
+            Plot = false,
+            Cursed = false,
+            PropertiesDisplay = "Enhancement Bonus +1; Damage Bonus Fire 1d6"
+        };
+
+        // Assert
+        Assert.Equal("Enhancement Bonus +1; Damage Bonus Fire 1d6", data.PropertiesDisplay);
+    }
+
+    [Fact]
+    public void ResolveItem_FallbackData_HasEmptyPropertiesDisplay()
+    {
+        // Arrange
+        var service = new ItemResolutionService(null);
+
+        // Act
+        var result = service.ResolveItem("nonexistent_item");
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(string.Empty, result.PropertiesDisplay);
+    }
+
+    #endregion
+
     #region Test Helpers
 
     private static ResolvedItemData CreateResolvedItemData(int baseCost)
