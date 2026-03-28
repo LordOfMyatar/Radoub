@@ -61,6 +61,12 @@ public partial class MainWindow
         // Subscribe to collapse/expand events
         storeBrowserPanel.CollapsedChanged += OnStoreBrowserCollapsedChanged;
 
+        // Subscribe to copy-to-module events (#1687)
+        storeBrowserPanel.FileCopiedToModule += (_, destPath) =>
+        {
+            UpdateStatusBar($"Copied to module: {Path.GetFileName(destPath)}");
+        };
+
         // Restore panel state from settings
         RestoreStoreBrowserPanelState();
 
@@ -364,10 +370,18 @@ public partial class MainWindow
 
             OnPropertyChanged(nameof(HasFile));
 
-            _documentState.IsLoading = false;
-            _documentState.ClearDirty();
-            UpdateTitle();
-            UpdateStatusBar($"{sourceLabel} store (read-only): {entry.Name}");
+            // Load inventory items (same as LoadFile but with archive source label)
+            var archiveLabel = $"{sourceLabel}: {entry.Name}";
+            _ = PopulateStoreInventoryAsync(archiveLabel).ContinueWith(_ =>
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    _documentState.IsLoading = false;
+                    _documentState.ClearDirty();
+                    Title = $"Fence - {entry.Name}.utm [{sourceLabel}, read-only]";
+                    UpdateStatusBar($"{sourceLabel} store (read-only): {entry.Name}");
+                });
+            });
         }
         catch (Exception ex)
         {
