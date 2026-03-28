@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.4-alpha] - 2026-03-28
+**Branch**: `radoub/issue-2021` | **PR**: #2023
+
+### Sprint: Relique Path & CI Bug Fixes (#2021)
+
+- Fix settings folder path ("ItemEditor" → "Relique") with migration (#1948/#1909)
+- Fix logs writing to ~/Radoub/Logs instead of session directory (#1915)
+- Fix flaky RadoubSettingsTests.CustomTlkPath_PersistsToFile on Linux CI (#2007)
+
+---
+
 ## [0.10.3-alpha] - 2026-03-24
 **Branch**: `relique/issue-1831` | **PR**: #1973
 
