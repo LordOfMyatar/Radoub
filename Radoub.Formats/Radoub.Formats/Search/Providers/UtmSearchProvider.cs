@@ -7,7 +7,8 @@ namespace Radoub.Formats.Search;
 
 /// <summary>
 /// Search provider for UTM (store/merchant) files.
-/// Searches name, tag, resref, comment, scripts, and local variables.
+/// Searches name, tag, resref, comment, scripts, local variables, and inventory items.
+/// Optionally resolves inventory item display names via a callback for name-based search.
 /// </summary>
 public class UtmSearchProvider : SearchProviderBase, IFileSearchProvider
 {
@@ -19,6 +20,19 @@ public class UtmSearchProvider : SearchProviderBase, IFileSearchProvider
     private static readonly FieldDefinition OnStoreClosedField = new() { Name = "OnStoreClosed", GffPath = "OnStoreClosed", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script when store closed" };
     private static readonly FieldDefinition VarTableField = new() { Name = "Local Variables", GffPath = "VarTable", FieldType = SearchFieldType.Variable, Category = SearchFieldCategory.Variable, Description = "Local variable names and string values" };
     private static readonly FieldDefinition InventoryResField = new() { Name = "InventoryRes", GffPath = "InventoryRes", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Store inventory item ResRef", IsReplaceable = true };
+    private static readonly FieldDefinition InventoryItemNameField = new() { Name = "InventoryItemName", GffPath = "InventoryRes", FieldType = SearchFieldType.Text, Category = SearchFieldCategory.Content, Description = "Resolved inventory item display name", IsReplaceable = false };
+
+    private readonly Func<string, string?>? _itemNameResolver;
+
+    /// <summary>
+    /// Create a UtmSearchProvider with optional item name resolution.
+    /// </summary>
+    /// <param name="itemNameResolver">Optional callback that resolves an item ResRef to its display name.
+    /// When provided, inventory items are searchable by their resolved name (e.g., "Club" instead of "nw_wblcl001").</param>
+    public UtmSearchProvider(Func<string, string?>? itemNameResolver = null)
+    {
+        _itemNameResolver = itemNameResolver;
+    }
 
     public ushort FileType => ResourceTypes.Utm;
 
@@ -47,8 +61,11 @@ public class UtmSearchProvider : SearchProviderBase, IFileSearchProvider
         if (criteria.MatchesField(VarTableField))
             matches.AddRange(SearchVarTable(gffFile.RootStruct, VarTableField, regex, "VarTable"));
 
-        // Search inventory item ResRefs across all store panels
-        if (criteria.MatchesField(InventoryResField))
+        // Search inventory item ResRefs and resolved names across all store panels
+        var searchResRef = criteria.MatchesField(InventoryResField);
+        var searchItemName = _itemNameResolver != null && criteria.MatchesField(InventoryItemNameField);
+
+        if (searchResRef || searchItemName)
         {
             foreach (var panel in utm.StoreList)
             {
@@ -57,7 +74,19 @@ public class UtmSearchProvider : SearchProviderBase, IFileSearchProvider
                 {
                     var item = panel.Items[i];
                     var location = $"{panelName} > Item {i} > InventoryRes";
-                    matches.AddRange(SearchString(item.InventoryRes, InventoryResField, regex, location));
+
+                    if (searchResRef)
+                        matches.AddRange(SearchString(item.InventoryRes, InventoryResField, regex, location));
+
+                    if (searchItemName)
+                    {
+                        var displayName = _itemNameResolver!(item.InventoryRes);
+                        if (!string.IsNullOrEmpty(displayName))
+                        {
+                            var nameLocation = $"{panelName} > Item {i} > {displayName}";
+                            matches.AddRange(SearchString(displayName, InventoryItemNameField, regex, nameLocation));
+                        }
+                    }
                 }
             }
         }

@@ -307,4 +307,61 @@ public class UtmSearchProviderTests
     }
 
     #endregion
+
+    #region Inventory Item Name Search
+
+    [Fact]
+    public void Search_FindsInventoryItemByResolvedName()
+    {
+        // Simulate: nw_wswls001 resolves to "Longsword", cep_halberd resolves to "Halberd"
+        var resolver = new Func<string, string?>(resRef => resRef switch
+        {
+            "nw_wswls001" => "Longsword",
+            "cep_halberd" => "Halberd",
+            "nw_aarcl001" => "Chainmail",
+            _ => null
+        });
+
+        var provider = new UtmSearchProvider(resolver);
+        var gff = UtmToGff(CreateTestUtmWithInventory());
+        var criteria = new SearchCriteria { Pattern = "Longsword" };
+
+        var matches = provider.Search(gff, criteria);
+
+        Assert.Contains(matches, m => m.Field.Name == "InventoryItemName" && m.MatchedText == "Longsword");
+    }
+
+    [Fact]
+    public void Search_FindsInventoryItemByPartialName()
+    {
+        var resolver = new Func<string, string?>(resRef => resRef switch
+        {
+            "nw_wswls001" => "Longsword +1",
+            "cep_halberd" => "Halberd of Flame",
+            "nw_aarcl001" => "Chainmail",
+            _ => null
+        });
+
+        var provider = new UtmSearchProvider(resolver);
+        var gff = UtmToGff(CreateTestUtmWithInventory());
+        var criteria = new SearchCriteria { Pattern = "Halberd" };
+
+        var matches = provider.Search(gff, criteria);
+
+        Assert.Contains(matches, m => m.Field.Name == "InventoryItemName" && m.MatchedText == "Halberd");
+    }
+
+    [Fact]
+    public void Search_NoResolver_SkipsItemNameSearch()
+    {
+        var provider = new UtmSearchProvider(); // No resolver
+        var gff = UtmToGff(CreateTestUtmWithInventory());
+        var criteria = new SearchCriteria { Pattern = "Longsword" };
+
+        var matches = provider.Search(gff, criteria);
+
+        Assert.DoesNotContain(matches, m => m.Field.Name == "InventoryItemName");
+    }
+
+    #endregion
 }

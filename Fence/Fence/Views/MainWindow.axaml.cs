@@ -140,9 +140,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         UpdateModuleIndicator();
 
         // Initialize search bar with UTM search provider
+        // Item name resolver uses ItemResolutionService (initialized later in Opened event)
+        // The closure captures _itemResolutionService which is set during InitializeServicesAsync
         var searchBar = this.FindControl<SearchBar>("FileSearchBar");
         searchBar?.Initialize(
-            new FileSearchService(new UtmSearchProvider()),
+            new FileSearchService(new UtmSearchProvider(resRef =>
+                _itemResolutionService?.ResolveItem(resRef)?.DisplayName)),
             new (string, SearchFieldCategory)[]
             {
                 ("Text", SearchFieldCategory.Content),
