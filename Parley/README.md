@@ -21,6 +21,12 @@ See [Known Issues](https://github.com/LordOfMyatar/Radoub/issues?q=is%3Aissue+is
 
 ---
 
+## Supported File Types
+
+- `.dlg` — Dialog files (GFF-based, Aurora Engine)
+
+---
+
 ## Features
 
 - Dialog tree editing with full undo/redo
