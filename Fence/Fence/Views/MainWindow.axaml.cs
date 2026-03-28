@@ -140,9 +140,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         UpdateModuleIndicator();
 
         // Initialize search bar with UTM search provider
+        // Item name resolver uses ItemResolutionService (initialized later in Opened event)
+        // The closure captures _itemResolutionService which is set during InitializeServicesAsync
         var searchBar = this.FindControl<SearchBar>("FileSearchBar");
         searchBar?.Initialize(
-            new FileSearchService(new UtmSearchProvider()),
+            new FileSearchService(new UtmSearchProvider(resRef =>
+                _itemResolutionService?.ResolveItem(resRef)?.DisplayName)),
             new (string, SearchFieldCategory)[]
             {
                 ("Text", SearchFieldCategory.Content),
@@ -183,6 +186,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
             // Initialize services on background thread - this is the expensive part
             await InitializeServicesAsync();
+
+            // Wire up GameDataService to StoreBrowserPanel for BIF scanning (#1687)
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                var storeBrowserPanel = this.FindControl<StoreBrowserPanel>("StoreBrowserPanel");
+                if (storeBrowserPanel != null && _gameDataService != null)
+                {
+                    storeBrowserPanel.GameDataService = _gameDataService;
+                }
+            });
 
             token.ThrowIfCancellationRequested();
 
@@ -243,12 +256,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _tlkService = new TlkService();
             _tlkService.EnableSettingsIntegration();
 
-            _itemResolutionService = new ItemResolutionService(_gameDataService, _tlkService);
             if (_gameDataService != null)
             {
                 _itemIconService = new ItemIconService(_gameDataService);
                 _itemViewModelFactory = new ItemViewModelFactory(_gameDataService);
             }
+            _itemResolutionService = new ItemResolutionService(_gameDataService, _tlkService, _itemViewModelFactory);
         });
 
         _servicesInitialized = true;

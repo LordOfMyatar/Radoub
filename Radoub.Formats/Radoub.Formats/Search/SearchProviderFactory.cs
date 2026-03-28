@@ -42,13 +42,15 @@ public class SearchProviderFactory
     /// Create a fully initialized factory with all built-in providers.
     /// Called at startup by ModuleSearchService.
     /// </summary>
-    public static SearchProviderFactory CreateDefault()
+    /// <param name="utmItemNameResolver">Optional callback that resolves an item ResRef to its display name
+    /// for searching store inventory by item name (e.g., "Club" instead of "nw_wblcl001").</param>
+    public static SearchProviderFactory CreateDefault(Func<string, string?>? utmItemNameResolver = null)
     {
         var factory = new SearchProviderFactory();
         factory.Register(new DlgSearchProvider());
         factory.Register(new UtcSearchProvider());
         factory.Register(new UtiSearchProvider());
-        factory.Register(new UtmSearchProvider());
+        factory.Register(new UtmSearchProvider(utmItemNameResolver));
         factory.Register(new UtpSearchProvider());
         factory.Register(new UtdSearchProvider());
         factory.Register(new JrlSearchProvider());

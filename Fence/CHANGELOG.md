@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.25-alpha] - 2026-03-27
+**Branch**: `fence/issue-1980` | **PR**: #2013
+
+### Sprint: Detail Panel & Search (#1980)
+
+- [x] #1955 — Display item properties in detail panel
+  - Added PropertiesDisplay to ResolvedItemData, populated via ItemViewModelFactory
+  - Palette items use cached properties; store items resolve via game data chain (module → HAK → BIF)
+- [x] #1941 — Search & replace store inventory item ResRefs
+  - UtmSearchProvider now traverses StoreList/ItemList/InventoryRes
+  - Location uses panel names (e.g., "Weapons > Item 2 > InventoryRes")
+  - Replace supports 16-char ResRef truncation with warnings
+- [x] #1687 — Parity with QM creature browser — BIF checkbox, module-aware HAK scan, archive resource loading
+  - Replaced naive hak/ folder scan with ModuleHakResolver (reads module.ifo)
+  - Added "Base Game" BIF checkbox with lazy-load via GameDataService
+  - Added "Module" checkbox to toggle module stores on/off
+  - Archive store loading: HAK via ErfReader, BIF via GameDataService, displayed read-only
+  - "Copy to Module" context menu for archive entries — extracts .utm to module folder
+  - UtmSearchProvider accepts optional item name resolver for display-name search
+
+---
+
 ## [0.1.24-alpha] - 2026-03-26
 **Branch**: `fence/issue-1981` | **PR**: #1994
 

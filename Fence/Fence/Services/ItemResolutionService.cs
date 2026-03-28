@@ -6,6 +6,7 @@ using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Uti;
 using Radoub.UI.Services;
+using Radoub.UI.ViewModels;
 
 namespace MerchantEditor.Services;
 
@@ -18,13 +19,15 @@ public class ItemResolutionService
 {
     private readonly IGameDataService? _gameDataService;
     private readonly ITlkService? _tlkService;
+    private readonly ItemViewModelFactory? _itemViewModelFactory;
     private readonly Dictionary<string, ResolvedItemData> _cache = new(StringComparer.OrdinalIgnoreCase);
     private string? _moduleDirectory;
 
-    public ItemResolutionService(IGameDataService? gameDataService, ITlkService? tlkService = null)
+    public ItemResolutionService(IGameDataService? gameDataService, ITlkService? tlkService = null, ItemViewModelFactory? itemViewModelFactory = null)
     {
         _gameDataService = gameDataService;
         _tlkService = tlkService;
+        _itemViewModelFactory = itemViewModelFactory;
 
         // Log configuration status on creation
         if (_gameDataService == null)
@@ -165,6 +168,9 @@ public class ItemResolutionService
             // Get base cost from UTI
             var baseCost = (int)uti.Cost;
 
+            // Resolve item properties display string
+            var propertiesDisplay = _itemViewModelFactory?.GetPropertiesDisplay(uti.Properties) ?? string.Empty;
+
             return new ResolvedItemData
             {
                 ResRef = resRef,
@@ -176,6 +182,7 @@ public class ItemResolutionService
                 StackSize = uti.StackSize,
                 Plot = uti.Plot,
                 Cursed = uti.Cursed,
+                PropertiesDisplay = propertiesDisplay,
                 SourceLocation = sourceLocation
             };
         }
@@ -273,6 +280,7 @@ public class ResolvedItemData
     public required ushort StackSize { get; init; }
     public required bool Plot { get; init; }
     public required bool Cursed { get; init; }
+    public string PropertiesDisplay { get; init; } = string.Empty;
     public string SourceLocation { get; init; } = string.Empty;
 
     /// <summary>
