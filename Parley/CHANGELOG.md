@@ -4,6 +4,12 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
+## [0.1.160-alpha] - 2026-03-28 | PR #2024
+- Lazy-load TTS factory and defer ResourcePathDetector startup
+- Remove broken SVG export option
+
+---
+
 ## [0.1.159-alpha] - 2026-03-24 | PR #1966
 - Flowchart: configurable node width, drag-drop sibling reorder, drag-drop reparent
 

@@ -34,7 +34,7 @@ public partial class FeatsPanel : UserControl
     private TextBox? _searchTextBox;
     private Button? _clearSearchButton;
     private ComboBox? _categoryFilterComboBox;
-    private CheckBox? _showAssignedCheckBox;
+    private CheckBox? _showChosenCheckBox;
     private CheckBox? _showGrantedCheckBox;
     private CheckBox? _showAvailableCheckBox;
     private CheckBox? _showPrereqsUnmetCheckBox;
@@ -78,7 +78,7 @@ public partial class FeatsPanel : UserControl
         _searchTextBox = this.FindControl<TextBox>("SearchTextBox");
         _clearSearchButton = this.FindControl<Button>("ClearSearchButton");
         _categoryFilterComboBox = this.FindControl<ComboBox>("CategoryFilterComboBox");
-        _showAssignedCheckBox = this.FindControl<CheckBox>("ShowAssignedCheckBox");
+        _showChosenCheckBox = this.FindControl<CheckBox>("ShowChosenCheckBox");
         _showGrantedCheckBox = this.FindControl<CheckBox>("ShowGrantedCheckBox");
         _showAvailableCheckBox = this.FindControl<CheckBox>("ShowAvailableCheckBox");
         _showPrereqsUnmetCheckBox = this.FindControl<CheckBox>("ShowPrereqsUnmetCheckBox");
@@ -114,8 +114,8 @@ public partial class FeatsPanel : UserControl
         }
 
         // Wire up status filter checkboxes
-        if (_showAssignedCheckBox != null)
-            _showAssignedCheckBox.IsCheckedChanged += (s, e) => ApplySearchAndFilter();
+        if (_showChosenCheckBox != null)
+            _showChosenCheckBox.IsCheckedChanged += (s, e) => ApplySearchAndFilter();
         if (_showGrantedCheckBox != null)
             _showGrantedCheckBox.IsCheckedChanged += (s, e) => ApplySearchAndFilter();
         if (_showAvailableCheckBox != null)
@@ -290,7 +290,7 @@ public partial class FeatsPanel : UserControl
         }
         else if (isAssigned)
         {
-            statusText = "Assigned";
+            statusText = "Chosen";
             statusColor = BrushManager.GetSuccessBrush(this);
             rowBackground = GetTransparentRowBackground(statusColor, 30);
             textOpacity = 1.0;

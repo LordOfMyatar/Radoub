@@ -182,6 +182,7 @@ sealed class Program
         services.AddSingleton<ExternalEditorService>();
         services.AddSingleton<SoundCache>();
         services.AddSingleton<CoverageTracker>();
+        // TTS factory deferred to first use — DI singleton only calls Create() on first GetRequiredService (#1961)
         services.AddSingleton<ITtsService>(sp => TtsServiceFactory.Create());
 
         return services.BuildServiceProvider();

@@ -9,7 +9,7 @@ using Radoub.Formats.Logging;
 namespace Parley.Views.Helpers
 {
     /// <summary>
-    /// PNG/SVG export functionality for flowcharts.
+    /// PNG export functionality for flowcharts.
     /// </summary>
     public partial class FlowchartManager
     {
@@ -17,19 +17,6 @@ namespace Parley.Views.Helpers
         /// Exports the flowchart to PNG format.
         /// </summary>
         public async Task ExportToPngAsync()
-        {
-            await ExportAsync("png");
-        }
-
-        /// <summary>
-        /// Exports the flowchart to SVG format.
-        /// </summary>
-        public async Task ExportToSvgAsync()
-        {
-            await ExportAsync("svg");
-        }
-
-        private async Task ExportAsync(string format)
         {
             try
             {
@@ -43,18 +30,16 @@ namespace Parley.Views.Helpers
 
                 // Set up file picker
                 var storageProvider = _window.StorageProvider;
-                var extension = format.ToLower();
-                var filterName = extension.ToUpper();
 
                 var options = new FilePickerSaveOptions
                 {
-                    Title = $"Export Flowchart as {filterName}",
+                    Title = "Export Flowchart as PNG",
                     SuggestedFileName = string.IsNullOrEmpty(ViewModel.CurrentFileName)
-                        ? $"flowchart.{extension}"
-                        : System.IO.Path.GetFileNameWithoutExtension(ViewModel.CurrentFileName) + $"_flowchart.{extension}",
+                        ? "flowchart.png"
+                        : System.IO.Path.GetFileNameWithoutExtension(ViewModel.CurrentFileName) + "_flowchart.png",
                     FileTypeChoices = new[]
                     {
-                        new FilePickerFileType(filterName) { Patterns = new[] { $"*.{extension}" } }
+                        new FilePickerFileType("PNG") { Patterns = new[] { "*.png" } }
                     }
                 };
 
@@ -63,15 +48,7 @@ namespace Parley.Views.Helpers
 
                 var filePath = file.Path.LocalPath;
 
-                bool success;
-                if (format == "png")
-                {
-                    success = await activePanel.ExportToPngAsync(filePath);
-                }
-                else
-                {
-                    success = await activePanel.ExportToSvgAsync(filePath);
-                }
+                var success = await activePanel.ExportToPngAsync(filePath);
 
                 if (success)
                 {

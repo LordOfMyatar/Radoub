@@ -131,10 +131,7 @@
                         <MenuItem x:Name="FlowchartLayoutTabbed" Header="_Tabbed" Click="OnFlowchartLayoutClick" Tag="Tabbed"/>
                     </MenuItem>
                     <Separator/>
-                    <MenuItem Header="Export">
-                        <MenuItem Header="Export as _PNG..." Click="OnExportFlowchartPngClick"/>
-                        <MenuItem Header="Export as _SVG..." Click="OnExportFlowchartSvgClick"/>
-                    </MenuItem>
+                    <MenuItem Header="Export as _PNG..." Click="OnExportFlowchartPngClick"/>
                 </MenuItem>
                 <MenuItem Header="_Conversation Simulator" Click="OnConversationSimulatorClick" InputGesture="F6"/>
                 <Separator/>

@@ -112,23 +112,16 @@ namespace DialogEditor.Services
 
             LoadSettings();
 
-            // Phase 2: Auto-detect resource paths on first run
-            // Now delegates to SharedSettings (RadoubSettings) which has its own auto-detection
-            if (string.IsNullOrEmpty(SharedSettings.NeverwinterNightsPath) ||
-                string.IsNullOrEmpty(SharedSettings.CurrentModulePath))
-            {
-                AutoDetectResourcePaths();
-            }
+            // #1961: Auto-detect moved to DeferredAutoDetectPaths() — called from OnWindowOpened
 
             UnifiedLogger.LogApplication(LogLevel.INFO, "Parley SettingsService initialized");
         }
 
         /// <summary>
-        /// Phase 2: Auto-detect Neverwinter Nights resource paths.
-        /// Now delegates to RadoubSettings which has its own auto-detection.
-        /// This method is kept for any Parley-specific path logic (e.g., module paths).
+        /// Auto-detect Neverwinter Nights resource paths.
+        /// #1961: Deferred from constructor to OnWindowOpened to avoid blocking startup.
         /// </summary>
-        private void AutoDetectResourcePaths()
+        public void DeferredAutoDetectPaths()
         {
             // RadoubSettings.Instance already does auto-detection on first access
             // We just need to check if module path needs additional detection

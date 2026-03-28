@@ -117,7 +117,7 @@ public class ToolLauncherService
             new ToolInfo
             {
                 Name = "Relique",
-                Description = "Item Blueprint Editor",
+                Description = "Item Editor",
                 FileTypes = ".uti",
                 Maturity = ToolMaturity.Alpha,
                 AssemblyName = "ItemEditor"

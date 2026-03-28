@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.5-alpha] - 2026-03-28
+**Branch**: `radoub/issue-2022` | **PR**: #2024
+
+### Sprint: Startup Performance & Code Cleanup (#2022)
+
+- Fix fake-async startup and defer unnecessary initialization
+
+---
+
 ## [0.10.4-alpha] - 2026-03-28
 **Branch**: `radoub/issue-2021` | **PR**: #2023
 
