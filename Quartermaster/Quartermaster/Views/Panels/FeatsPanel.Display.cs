@@ -46,7 +46,7 @@ public partial class FeatsPanel
         }
 
         SetText(_featsSummaryText,
-            $"{assignedCount} assigned ({grantedCount} granted){expectedNote} | {unavailableCount} unavailable{filterNote}");
+            $"{assignedCount} chosen ({grantedCount} granted){expectedNote} | {unavailableCount} unavailable{filterNote}");
 
         // Update the left-side assigned feats list
         UpdateAssignedFeatsList();
@@ -235,10 +235,10 @@ public partial class FeatsPanel
         {
             hasAnyFeats = true;
 
-            // Assigned header (matches status column terminology)
+            // Chosen header (matches status column terminology)
             var selectedHeader = new TextBlock
             {
-                Text = "Assigned",
+                Text = "Chosen",
                 FontWeight = FontWeight.Bold,
                 FontSize = smallFontSize,
                 Foreground = BrushManager.GetSuccessBrush(this),
@@ -276,7 +276,7 @@ public partial class FeatsPanel
         _unavailableFeatIds.Clear();
         _currentCreature = null;
 
-        SetText(_featsSummaryText, "0 feats assigned");
+        SetText(_featsSummaryText, "0 feats chosen");
         if (_noFeatsText != null)
             _noFeatsText.IsVisible = false;
         if (_searchTextBox != null)
@@ -284,8 +284,8 @@ public partial class FeatsPanel
         if (_categoryFilterComboBox != null)
             _categoryFilterComboBox.SelectedIndex = 0;
         // Reset status checkboxes to defaults
-        if (_showAssignedCheckBox != null)
-            _showAssignedCheckBox.IsChecked = true;
+        if (_showChosenCheckBox != null)
+            _showChosenCheckBox.IsChecked = true;
         if (_showGrantedCheckBox != null)
             _showGrantedCheckBox.IsChecked = true;
         if (_showAvailableCheckBox != null)

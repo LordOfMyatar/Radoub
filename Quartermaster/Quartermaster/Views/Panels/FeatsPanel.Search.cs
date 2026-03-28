@@ -43,7 +43,7 @@ public partial class FeatsPanel
 
         // Apply status filter (checkboxes - OR logic for enabled statuses)
         // Filter should match the StatusText shown to users exactly
-        var showAssigned = _showAssignedCheckBox?.IsChecked ?? true;
+        var showChosen = _showChosenCheckBox?.IsChecked ?? true;
         var showGranted = _showGrantedCheckBox?.IsChecked ?? true;
         var showAvailable = _showAvailableCheckBox?.IsChecked ?? true;
         var showPrereqsUnmet = _showPrereqsUnmetCheckBox?.IsChecked ?? true;
@@ -55,7 +55,7 @@ public partial class FeatsPanel
             return f.StatusText switch
             {
                 "Granted" => showGranted,
-                "Assigned" => showAssigned,
+                "Chosen" => showChosen,
                 "Unavailable" => showUnavailable,
                 "Available" => showAvailable,
                 "Prereqs Unmet" => showPrereqsUnmet,
