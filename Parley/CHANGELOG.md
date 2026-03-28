@@ -4,7 +4,7 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
-## [0.1.160-alpha] - 2026-03-28 | PR #TBD
+## [0.1.160-alpha] - 2026-03-28 | PR #2024
 - Lazy-load TTS factory and defer ResourcePathDetector startup
 - Remove broken SVG export option
 

@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.10.5-alpha] - 2026-03-28
-**Branch**: `radoub/issue-2022` | **PR**: #TBD
+**Branch**: `radoub/issue-2022` | **PR**: #2024
 
 ### Sprint: Startup Performance & Code Cleanup (#2022)
 
