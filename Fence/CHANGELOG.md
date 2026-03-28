@@ -21,7 +21,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - [x] #1687 — Parity with QM creature browser — BIF checkbox, module-aware HAK scan, archive resource loading
   - Replaced naive hak/ folder scan with ModuleHakResolver (reads module.ifo)
   - Added "Base Game" BIF checkbox with lazy-load via GameDataService
+  - Added "Module" checkbox to toggle module stores on/off
   - Archive store loading: HAK via ErfReader, BIF via GameDataService, displayed read-only
+  - "Copy to Module" context menu for archive entries — extracts .utm to module folder
+  - UtmSearchProvider accepts optional item name resolver for display-name search
 
 ---
 
