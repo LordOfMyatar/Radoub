@@ -132,6 +132,9 @@ namespace Parley.Tests.Mocks
         public List<string> RecentCreatureTags { get; private set; } = new();
         public void SetRecentCreatureTags(List<string> tags) => RecentCreatureTags = tags ?? new();
 
+        // #1961: No-op in tests — path detection not needed
+        public void DeferredAutoDetectPaths() { }
+
         protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

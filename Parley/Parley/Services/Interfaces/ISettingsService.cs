@@ -108,5 +108,8 @@ namespace DialogEditor.Services
         // Recent creature tags for character picker (#1244)
         List<string> RecentCreatureTags { get; }
         void SetRecentCreatureTags(List<string> tags);
+
+        // #1961: Deferred path auto-detection — call from OnWindowOpened instead of constructor
+        void DeferredAutoDetectPaths();
     }
 }

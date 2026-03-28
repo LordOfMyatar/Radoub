@@ -23,6 +23,9 @@ namespace DialogEditor.Views
         /// </summary>
         private async void OnWindowOpened(object? sender, EventArgs e)
         {
+            // #1961: Auto-detect resource paths deferred from SettingsService constructor
+            _services.Settings.DeferredAutoDetectPaths();
+
             // #1791: Deferred from constructor — KEY/BIF/TLK I/O happens after window is visible
             _services.InitializeGameData();
             ConnectGameDataServices();
