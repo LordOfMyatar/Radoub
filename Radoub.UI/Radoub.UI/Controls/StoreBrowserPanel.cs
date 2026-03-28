@@ -8,16 +8,21 @@ using Radoub.Formats.Common;
 using Radoub.Formats.Erf;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Resolver;
+using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 
 namespace Radoub.UI.Controls;
 
 /// <summary>
-/// Store-specific entry with HAK support.
+/// Store-specific entry with HAK and BIF support.
 /// </summary>
 public class StoreBrowserEntry : FileBrowserEntry
 {
+    /// <summary>
+    /// True if this resource is from a base game BIF file.
+    /// </summary>
+    public bool IsFromBif { get; set; }
 }
 
 /// <summary>
@@ -38,9 +43,13 @@ public class StoreBrowserPanel : FileBrowserPanelBase
 {
     private readonly IScriptBrowserContext? _context;
     private readonly CheckBox _showHakCheckBox;
+    private readonly CheckBox _showBifCheckBox;
     private bool _showHakStores;
     private bool _hakStoresLoaded;
+    private bool _showBifStores;
+    private bool _bifStoresLoaded;
     private List<StoreBrowserEntry> _hakStores = new();
+    private List<StoreBrowserEntry> _bifStores = new();
 
     // Static cache for HAK file contents - persists across panel instances
     private static readonly Dictionary<string, StoreHakCacheEntry> _hakCache = new();
@@ -67,7 +76,20 @@ public class StoreBrowserPanel : FileBrowserPanelBase
         ToolTip.SetTip(_showHakCheckBox, "Include stores from HAK files");
         _showHakCheckBox.IsCheckedChanged += OnShowHakChanged;
 
-        FilterOptionsContent = _showHakCheckBox;
+        // Create and wire up BIF checkbox
+        _showBifCheckBox = new CheckBox
+        {
+            Content = "Base Game",
+            IsChecked = false,
+            Margin = new Avalonia.Thickness(0, 4, 0, 0)
+        };
+        ToolTip.SetTip(_showBifCheckBox, "Show store blueprints from base game BIF archives");
+        _showBifCheckBox.IsCheckedChanged += OnShowBifChanged;
+
+        var filterPanel = new StackPanel { Spacing = 2 };
+        filterPanel.Children.Add(_showHakCheckBox);
+        filterPanel.Children.Add(_showBifCheckBox);
+        FilterOptionsContent = filterPanel;
     }
 
     /// <summary>
@@ -86,6 +108,26 @@ public class StoreBrowserPanel : FileBrowserPanelBase
         }
     }
 
+    /// <summary>
+    /// Gets or sets the game data service for BIF resource access.
+    /// Must be set before BIF scanning will work.
+    /// </summary>
+    public IGameDataService? GameDataService { get; set; }
+
+    private async void OnShowBifChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        _showBifStores = _showBifCheckBox.IsChecked == true;
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"StoreBrowserPanel: Show BIF stores = {_showBifStores}");
+
+        if (_showBifStores && !_bifStoresLoaded)
+        {
+            await LoadBifStoresAsync();
+            MergeAdditionalEntries(_bifStores);
+        }
+
+        OnFilterOptionsChanged();
+    }
+
     private async void OnShowHakChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         _showHakStores = _showHakCheckBox.IsChecked == true;
@@ -102,9 +144,11 @@ public class StoreBrowserPanel : FileBrowserPanelBase
 
     protected override async Task<List<FileBrowserEntry>> LoadFilesFromModuleAsync(string modulePath)
     {
-        // Reset HAK state when module changes
+        // Reset HAK and BIF state when module changes
         _hakStoresLoaded = false;
         _hakStores.Clear();
+        _bifStoresLoaded = false;
+        _bifStores.Clear();
 
         return await Task.Run(() =>
         {
@@ -152,18 +196,32 @@ public class StoreBrowserPanel : FileBrowserPanelBase
             await LoadHakStoresAsync();
         }
 
-        return _hakStores.Cast<FileBrowserEntry>().ToList();
+        if (_showBifStores && !_bifStoresLoaded)
+        {
+            await LoadBifStoresAsync();
+        }
+
+        var additional = new List<FileBrowserEntry>();
+        additional.AddRange(_hakStores);
+        additional.AddRange(_bifStores);
+        return additional;
     }
 
     protected override IEnumerable<FileBrowserEntry> ApplyCustomFilters(IEnumerable<FileBrowserEntry> entries)
     {
-        // Filter out HAK entries if not showing HAK
-        if (!_showHakStores)
+        return entries.Where(e =>
         {
-            return entries.Where(e => !e.IsFromHak);
-        }
-
-        return entries;
+            if (e is StoreBrowserEntry se)
+            {
+                if (se.IsFromBif) return _showBifStores;
+                if (se.IsFromHak) return _showHakStores;
+            }
+            else if (e.IsFromHak)
+            {
+                return _showHakStores;
+            }
+            return true; // Module entries always shown
+        });
     }
 
     protected override string FormatCountLabel(int moduleCount, int hakCount, int totalCount)
@@ -175,12 +233,65 @@ public class StoreBrowserPanel : FileBrowserPanelBase
             return "No stores found";
         }
 
+        // Separate BIF count from HAK count for distinct display
+        var bifCount = _bifStores.Count(s => _showBifStores);
+        var actualHakCount = hakCount - (_showBifStores ? bifCount : 0);
+
         var countText = $"{moduleCount} module";
-        if (hakCount > 0)
+        if (actualHakCount > 0)
         {
-            countText += $" + {hakCount} HAK";
+            countText += $" + {actualHakCount} HAK";
+        }
+        if (_showBifStores && _bifStores.Count > 0)
+        {
+            countText += $" + {_bifStores.Count} base game";
         }
         return countText;
+    }
+
+    private async Task LoadBifStoresAsync()
+    {
+        if (GameDataService == null || !GameDataService.IsConfigured)
+        {
+            UnifiedLogger.LogApplication(LogLevel.INFO, "StoreBrowserPanel: GameDataService not available for BIF scanning");
+            _bifStoresLoaded = true;
+            return;
+        }
+
+        try
+        {
+            _bifStores.Clear();
+            ShowLoading("Scanning base game stores...");
+
+            await Task.Run(() =>
+            {
+                var resources = GameDataService.ListResources(ResourceTypes.Utm)
+                    .Where(r => r.Source == GameResourceSource.Bif)
+                    .ToList();
+
+                foreach (var resource in resources)
+                {
+                    _bifStores.Add(new StoreBrowserEntry
+                    {
+                        Name = resource.ResRef,
+                        Source = "Base Game",
+                        IsFromHak = false,
+                        IsFromBif = true
+                    });
+                }
+            });
+
+            _bifStoresLoaded = true;
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"StoreBrowserPanel: Found {_bifStores.Count} base game stores from BIF");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"StoreBrowserPanel: Failed to load BIF stores: {ex.Message}");
+        }
+        finally
+        {
+            HideLoading();
+        }
     }
 
     private async Task LoadHakStoresAsync()

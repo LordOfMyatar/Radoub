@@ -270,11 +270,10 @@ public partial class MainWindow
     {
         try
         {
-            // Only load on single click (per issue requirements)
-            if (e.Entry.IsFromHak)
+            // Archive stores (HAK/BIF) can't be edited directly
+            if (e.Entry.IsFromHak || (e.Entry is StoreBrowserEntry sbe && sbe.IsFromBif))
             {
-                // HAK files can't be edited directly - show info
-                UpdateStatusBar($"HAK stores are read-only: {e.Entry.Name}");
+                UpdateStatusBar($"Archive stores are read-only: {e.Entry.Name}");
                 return;
             }
 

@@ -184,6 +184,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             // Initialize services on background thread - this is the expensive part
             await InitializeServicesAsync();
 
+            // Wire up GameDataService to StoreBrowserPanel for BIF scanning (#1687)
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                var storeBrowserPanel = this.FindControl<StoreBrowserPanel>("StoreBrowserPanel");
+                if (storeBrowserPanel != null && _gameDataService != null)
+                {
+                    storeBrowserPanel.GameDataService = _gameDataService;
+                }
+            });
+
             token.ThrowIfCancellationRequested();
 
             // Load store categories on background thread (triggers KEY cache + BIF metadata load)
