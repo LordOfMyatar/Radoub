@@ -185,9 +185,7 @@ Example: `git checkout -b parley/issue-708`
 
 ### Step 7: Update CHANGELOG
 
-Edit the appropriate CHANGELOG file:
-- Parley changes: `Parley/CHANGELOG.md`
-- Radoub/shared changes: `CHANGELOG.md`
+Edit the tool's CHANGELOG file (e.g., `Parley/CHANGELOG.md`). Highlights only — no detailed checklists.
 
 **Never use `[Unreleased]`** — all entries go directly into a versioned section. Add the new version section as the first entry after the header/separator:
 

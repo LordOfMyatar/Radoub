@@ -12,6 +12,17 @@ A collection of cross-platform tools for creating and editing Neverwinter Nights
 
 ## Tools
 
+### File Types
+
+| Tool | File Types | Description |
+|------|-----------|-------------|
+| Parley | `.dlg` | Dialog editor |
+| Manifest | `.jrl` | Journal editor |
+| Quartermaster | `.utc`, `.bic` | Creature/inventory editor |
+| Fence | `.utm` | Merchant/store editor |
+| Relique | `.uti` | Item blueprint editor |
+| Trebuchet | — | Launcher/hub (manages `.mod` modules) |
+
 ### Ready for Preview
 
 These tools are ready for adventurous users to try out. Like a zombie hungering for brains, we crave your feedback!
@@ -85,6 +96,21 @@ Cross-platform creature and inventory editor for Neverwinter Nights UTC and BIC 
 - Creature browser for loading from modules
 
 **Learn more**: [Quartermaster/README.md](Quartermaster/README.md) | [Wiki](https://github.com/LordOfMyatar/Radoub/wiki/Quartermaster)
+
+#### Relique - Item Blueprint Editor
+
+Cross-platform item blueprint editor for Neverwinter Nights `.uti` files.
+
+**Status**: User Preview (Alpha)
+**Platforms**: Windows, Linux, macOS (experimental)
+**Key Features**:
+- Item blueprint editing (identity, base properties, flags, appearance, scripts)
+- Item property/enchantment editor with 2DA-driven data
+- Item browser panel with search
+- New Item wizard
+- Theme support (dark/light, accessibility themes)
+
+**Learn more**: [Relique/README.md](Relique/README.md) | [Wiki](https://github.com/LordOfMyatar/Radoub/wiki/Relique)
 
 #### Trebuchet - Tool Launcher & Module Hub
 
@@ -182,6 +208,7 @@ dotnet build Parley/Parley.sln
 dotnet build Manifest/Manifest/Manifest.csproj
 dotnet build Quartermaster/Quartermaster/Quartermaster.csproj
 dotnet build Fence/Fence/Fence.csproj
+dotnet build Relique/Relique/Relique.csproj
 dotnet build Trebuchet/Trebuchet/Trebuchet.csproj
 ```
 

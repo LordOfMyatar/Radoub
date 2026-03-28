@@ -21,6 +21,12 @@ See [Known Issues](https://github.com/LordOfMyatar/Radoub/issues?q=is%3Aissue+is
 
 ---
 
+## Supported File Types
+
+- `.jrl` — Journal files (GFF-based, Aurora Engine)
+
+---
+
 ## Features
 
 - Quest category and entry editing

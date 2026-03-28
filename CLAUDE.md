@@ -33,7 +33,6 @@ Future tools will be added as subdirectories with their own README, CLAUDE.md, a
 Radoub/
 ├── README.md (landing page)
 ├── LICENSE
-├── CHANGELOG.md (repo-level changes)
 ├── CLAUDE.md (this file - repo-level guidance)
 ├── Radoub.sln (builds all tools; excludes Windows-only integration tests)
 ├── .gitignore
@@ -222,30 +221,26 @@ main (production)
    - Epic: `[tool]/feat/epic-[N]-[short-name]`
    - Feature: `[tool]/feat/[short-name]`
    - Fix: `[tool]/fix/[short-name]`
-3. Update tool's CHANGELOG.md:
-   - Add new versioned section as the first entry (never use `[Unreleased]`)
-   - Include branch name and `PR: #TBD` placeholder
-   - Add epic/feature heading
+3. Update tool's CHANGELOG.md with a new versioned section (highlights only, never use `[Unreleased]`)
 4. Commit and push branch
 5. Create draft PR on GitHub
 6. Update CHANGELOG.md with actual PR number
 7. Commit and push PR number update
 
-**Example CHANGELOG Section**:
+**Example CHANGELOG Entry**:
 ```markdown
-## [0.1.5-alpha] - TBD
+## [0.1.5-alpha] - 2026-03-28
 **Branch**: `parley/feat/epic-0-plugins` | **PR**: #84
 
 ### Epic 0: Plugin Foundation
-
----
+- Plugin discovery and loading framework
+- Hot-reload support for development
 ```
 
 **Benefits**:
-- CHANGELOG tracks branch/PR numbers to prevent version collisions
+- CHANGELOG highlights give users a quick overview of what changed
 - Draft PR created early for visibility and discussion
-- Clear connection between version, branch, PR, and epic/issue
-- Prevents accidental version number reuse across branches
+- Git history preserves all implementation details
 
 ---
 
@@ -413,6 +408,15 @@ New tools must integrate with Trebuchet (the Radoub launcher):
 | Custom TLK loading | Use shared ITlkService |
 | Custom portrait browser | Use shared PortraitBrowserWindow |
 
+### Post-Implementation Audit
+
+After a new tool's initial implementation is complete (before first release), run a UI uniformity audit against the checklist table above:
+
+- [ ] **Run UI uniformity audit** — verify all criteria in the UI Uniformity Checklist table pass
+- [ ] **Run `run-tests.ps1 -Tool [ToolName]`** — confirm clean pass (privacy, tech-debt, unit tests)
+- [ ] **Verify Trebuchet integration** — tool registered in ToolLauncherService, `--file` argument works
+- [ ] **Add FlaUI smoke test** — basic launch/close test in `Radoub.IntegrationTests/[ToolName]/` (requires CI infrastructure from #1905)
+
 ### Versioning (NBGV)
 
 **Version Source**: Nerdbank.GitVersioning (NBGV) via per-tool `version.json` files.
@@ -538,8 +542,8 @@ dotnet nbgv get-version --project [ToolDir]
 - All tool tests must pass
 - Private documentation to the Private folder
 - Public Documentation approved before push
-- CHANGELOG updated for affected tools
-- **CHANGELOG uses versioned sections only** — never use `[Unreleased]`. All entries go directly into a versioned section with date (e.g., `[0.1.3-alpha] - 2025-11-08`)
+- CHANGELOG updated for affected tools (highlights only — see CHANGELOG Management)
+- **CHANGELOG uses versioned sections only** — never use `[Unreleased]`
 
 ---
 
@@ -659,23 +663,24 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 
 ## CHANGELOG Management
 
-**Two-Level CHANGELOG System**:
+**Per-tool CHANGELOGs only** — no repository-level CHANGELOG. Git history is the detailed archive.
 
-| CHANGELOG | Location | Contents |
-|-----------|----------|----------|
-| **Radoub** | `CHANGELOG.md` | Repository-level changes: shared documentation, slash commands, cross-tool features, Radoub.Formats |
-| **Parley** | `Parley/CHANGELOG.md` | Parley-specific changes: features, fixes, UI updates |
-| **Manifest** | `Manifest/CHANGELOG.md` | Manifest-specific changes: features, fixes, UI updates |
-| **Quartermaster** | `Quartermaster/CHANGELOG.md` | Quartermaster-specific changes |
-| **Fence** | `Fence/CHANGELOG.md` | Fence-specific changes |
-| **Relique** | `Relique/CHANGELOG.md` | Relique specific changes |
-| **Trebuchet** | `Trebuchet/CHANGELOG.md` | Trebuchet-specific changes |
+| Location | Contents |
+|----------|----------|
+| `Parley/CHANGELOG.md` | Parley highlights |
+| `Manifest/CHANGELOG.md` | Manifest highlights |
+| `Quartermaster/CHANGELOG.md` | Quartermaster highlights |
+| `Fence/CHANGELOG.md` | Fence highlights |
+| `Relique/CHANGELOG.md` | Relique highlights |
+| `Trebuchet/CHANGELOG.md` | Trebuchet highlights |
 
 **Rules**:
-- Tool-specific changes go in tool CHANGELOG only
-- Shared documentation updates go in Radoub CHANGELOG
-- Slash commands (`.claude/commands/`) go in Radoub CHANGELOG
-- When in doubt, ask which CHANGELOG to update
+- Highlights only — major features, breaking changes, notable fixes
+- Git history is the detailed archive
+- Cross-tool sprints: each affected tool gets its own one-liner entry
+- No cross-references between CHANGELOGs
+- Never use `[Unreleased]` — all entries go in versioned sections
+- One entry per feature, not implementation checklists
 
 ---
 
@@ -708,9 +713,7 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 - Reference related issues (`Closes #X`, `Relates to #Y`)
 - Include testing checklist
 - Tag tool-specific reviewers if applicable
-- **CHANGELOG entries always go in versioned sections** — never use `[Unreleased]`
-  - Example: `[0.1.3-alpha] - 2025-11-08`
-  - This ensures CHANGELOG is always ready for tagging/release after merge
+- **CHANGELOG entries** — highlights only, versioned sections, never `[Unreleased]`
 
 ---
 

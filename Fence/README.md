@@ -21,6 +21,12 @@ See [Known Issues](https://github.com/LordOfMyatar/Radoub/issues?q=is%3Aissue+is
 
 ---
 
+## Supported File Types
+
+- `.utm` — Store/merchant blueprint files (GFF-based, Aurora Engine)
+
+---
+
 ## Features
 
 - **Store Properties**: Name, tag, markup/markdown percentages, gold reserves

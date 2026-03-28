@@ -1,1717 +1,192 @@
-# Changelog - Parley
+# Changelog - Parley (Highlights)
 
-All notable changes to Parley will be documented in this file.
+All notable changes to Parley. One-line highlights per version; full details in git history.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
-
----
-
-## [Unreleased]
-
----
-
-## [0.1.159-alpha] - 2026-03-24
-**Branch**: `parley/issue-1906` | **PR**: #1966
-
-### Sprint: Flowchart Node Customization (#1906)
-
-- [x] #906 - Flowchart: Configurable node width (Settings slider, 100-400px)
-- [x] #240 - Flowchart: Drag-drop sibling reorder
-- [x] #1965 - Flowchart: Drag-drop reparent nodes (Entry↔Reply alternation enforced)
-- Link nodes can now be dragged in flowchart view
-
----
-
-## [0.1.158-alpha] - 2026-03-22
-**Branch**: `parley/issue-1855` | **PR**: #1920
-
-### Sprint: Search Integration (Phase 1) (#1855)
-
-- [x] #1841 - ModuleSearchService (Radoub.UI orchestration)
-- [x] #1842 - Parley single-file search (Ctrl+F)
-- [x] #1843 - Parley multi-file module search UI
-
----
-
-## [0.1.157-alpha] - 2026-03-20
-**Branch**: `radoub/issue-1824` | **PR**: #1879
-
-### Sprint: Aging Bugs Sweep (#1824)
-
-- [x] #603 - Fix NPC-to-NPC links visual bug (⚠ icon moved to end of TreeView line)
-
----
-
-## [0.1.156-alpha] - 2026-03-19
-**Branch**: `radoub/issue-1825` | **PR**: #1834
-
-### Sprint: Legacy Code & Unused Package Cleanup (#1825)
-
-- [x] #1790 - Remove legacy `~/Parley` → `~/Radoub/Parley` migration code (tombstone comments cleaned up; methods removed in retrospective)
-- [x] #1791 - Lighten MainWindow constructor (GameDataService init deferred to OnWindowOpened; already implemented in retrospective)
-
----
-
-## [0.1.155-alpha] - 2026-02-28
-**Branch**: `parley/issue-1563` | **PR**: #1565
-
-### Sprint: Visual & UX Polish
-
-- [x] #1165 - FlowView shows 📋 symbol for nodes with quest tags
-- [x] #1539 - Replace hardcoded Colors/Brushes with theme-aware BrushManager in browser windows, RenameDialog, AboutWindow, Manifest views
-- [x] #1375 - Fix UndoMenuItem_Exists/RedoMenuItem_Exists intermittent failure (search desktop for Avalonia popup menus with retries)
-
----
-
-## [0.1.154-alpha] - 2026-02-28
-**Branch**: `parley/issue-1562` | **PR**: #1564
-
-### Sprint: Bug Squash + Code Health
-
-- [x] #1509 - Wire up delete file from browser panel context menu + File > Delete File menu option
-- [x] #1244 - Persist character picker Recent dropdown across sessions via SettingsService
-- [x] #1540 - Split FileMenuController (3 partials) and NodeOperationsManager (3 partials), all <500 lines
-
----
-
-## [0.1.153-alpha] - 2026-02-27
-**Branch**: `parley/issue-1554` | **PR**: #1558
-
-### Sprint: Test Quality Improvement (Controllers + Critical Services)
-
-- Removed 35 constructor-only and mock-behavior tests from controller test files (#1548)
-- Added 16 ScrapSerializationService tests: round-trip, persistence, migration (#1549)
-- Added 11 ScrapRestoreService tests: single/batch/subtree restore, validation (#1549)
-- Added 13 GameResourceService tests: graceful degradation, TLK handling, disposal (#1549)
-- Net change: +5 meaningful tests (removed 35 anti-pattern tests, added 40 behavioral tests)
-
----
-
-## [0.1.152-alpha] - 2026-02-26
-**Branch**: `radoub/issue-1530` | **PR**: #1537
-
-### Sprint: File Splits (#1530)
-
-- ConversationSimulatorViewModel split into 3 partials (base + ConversationFlow + CoverageAnalysis)
-- FlowchartManager split into 5 partials (base + Layout + PanelSync + Export + NodeSync)
-- MainWindow.Properties split: extracted AutoSave and ResourceBrowsing partials
-
----
-
-## [0.1.151-alpha] - 2026-02-21
-
-### UI Improvements
-- Dialog Tree and Scrap Tree backgrounds now use sidebar color for better visual distinction (#1089)
-  - Shipped in Cross-Tool UI Consistency sprint (#1154, PR #1196)
-
----
-
-## [0.1.150-alpha] - 2026-02-15
-**Branch**: `parley/issue-1358` | **PR**: #1374
-
-### Tech Debt: 126 Hardcoded Theme Values (#1358)
-
----
-
-## [0.1.149-alpha] - 2026-02-08
-**Branch**: `parley/issue-1271` | **PR**: #1272
-
-### Refactor: Decompose ScrapManager.cs (#1271)
-
----
-
-## [0.1.148-alpha] - 2026-02-08
-**Branch**: `parley/issue-1269` | **PR**: #1270
-
-### Refactor: Decompose SettingsService (#1269)
-
-- Extract LoggingSettingsService (log retention, log level, debug window visibility)
-- Extract ModulePathsService (module paths MRU list)
-- Extract EditorPreferencesService (auto-save, NPC coloring, confirmations, simulator, script editor, sound browser, spell check, parameter cache config)
-- Update SettingsService to delegate to new sub-services
-- Register new services in DI container
-- Update test DI container and direct constructor calls
-
----
-
-## [0.1.147-alpha] - 2026-02-08
-**Branch**: `parley/issue-1267` | **PR**: #1268
-
-### Refactor: MainWindow Decomposition (#1267)
-
-- Extract DialogBrowserController from Lifecycle.cs
-- Consolidate tree utilities into TreeViewUIController
-- Extract FieldUndoTracker and PropertySaveCoordinator from Properties.cs
-- Extract TokenAndCreatureHandler from Properties.cs
-
----
-
-## [0.1.146-alpha] - 2026-02-07
-**Branch**: `parley/issue-1236` | **PR**: #1264
-
-### Sprint 4.3: Add Integration Tests for Property Panel (#1236)
-
-- Create integration test project structure
-- Test coordinator delegates to correct sub-populators
-- Test entry node vs PC reply property differences
-- Test clear/reset behavior
-- Test rapid node switching (no stale data)
-
----
-
-## [0.1.145-alpha] - 2026-02-07
-**Branch**: `parley/issue-1235` | **PR**: #1263
-
-### Sprint 4.2: Add Unit Tests for Controllers (#1235)
-
-- Create test classes for each controller (FileMenu, EditMenu, SpeakerVisual, TreeViewUI, QuestUI)
-- Test happy paths for all public methods
-- Test error paths (null inputs, invalid state)
-- Test edge cases specific to dialog editing
-- Target: 80%+ coverage on controller business logic
-
----
-
-## [0.1.144-alpha] - 2026-02-07
-**Branch**: `parley/issue-1234` | **PR**: #1258
-
-### Sprint 4.1: Create Mock Service Implementations (#1234)
-
-- Create mock for each service interface
-- Provide sensible test defaults
-- Add setup methods for test data injection (e.g., `Setup2DA()`)
-- Verify mocks compile and implement interfaces correctly
-
----
-
-## [0.1.143-alpha] - 2026-02-07
-**Branch**: `parley/issue-1233` | **PR**: #1255
-
-### Sprint 3.4: Remove Singleton Pattern (#1233)
-
-- Identify all `*.Instance` singleton references
-- Replace each with constructor-injected dependencies
-- Remove `Instance` property from service classes
-- Update all call sites
-- Verify no static state leaks between tests
-
----
-
-## [0.1.142-alpha] - 2026-02-07
-**Branch**: `parley/issue-1232` | **PR**: #1254
-
-### Sprint 3.3: Refactor MainWindow Constructor for DI (#1232)
-
-- Update MainWindow constructor signature to accept IServiceProvider
-- Resolve services from IServiceProvider instead of direct instantiation
-- Remove direct `new` instantiation of services
-- Update MainWindowServices to work with DI
-- Update MainWindowControllers to work with DI
-- Verify all controllers receive their dependencies
-
----
-
-## [0.1.141-alpha] - 2026-02-07
-**Branch**: `parley/issue-1231` | **PR**: #1253
-
-### Sprint 3.2: Add DI Container in Program.cs (#1231)
-
-- Add `Microsoft.Extensions.DependencyInjection` package
-- Configure service registrations in Program.cs
-- Determine correct lifetimes (Singleton vs Transient vs Scoped)
-- Make IServiceProvider accessible to MainWindow
-- Verify all services resolve correctly at startup
-
----
-
-## [0.1.140-alpha] - 2026-02-07
-**Branch**: `parley/issue-1230` | **PR**: #1252
-
-### Sprint 3.1: Define Service Interfaces (#1230)
-
-- Identify all service classes that need interfaces
-- Extract interfaces from each service (public API only)
-- Place interfaces in `Services/Interfaces/` directory
-- Update service classes to implement their interfaces
-- Verify build succeeds with no behavior change
-
----
-
-## [0.1.139-alpha] - 2026-02-07
-**Branch**: `parley/issue-1229` | **PR**: #1251
-
-### Sprint 2.4: Refactor PropertyPanelPopulator as Coordinator (#1229)
-
-- Wire up three sub-populators in PropertyPanelPopulator constructor
-- Replace direct logic with delegation calls
-- Remove extracted methods from PropertyPanelPopulator
-- Eliminate remaining `FindControl` calls
-- Clean up unused `using` statements
-- Verify coordinator ≤ 300 lines
-
----
-
-## [0.1.138-alpha] - 2026-02-07
-**Branch**: `parley/issue-1228` | **PR**: #1250
-
-### Sprint 2.3: Extract QuestPropertiesPopulator (#1228)
-
-- Extract quest field population logic from `PropertyPanelPopulator.cs` into `QuestPropertiesPopulator.cs`
-
----
-
-## [0.1.137-alpha] - 2026-02-07
-**Branch**: `parley/issue-1227` | **PR**: #1249
-
-### Sprint 2.2: Extract ScriptPropertiesPopulator (#1227)
-
-- Extract script and parameter population logic from `PropertyPanelPopulator.cs` into `ScriptPropertiesPopulator.cs`
-
----
-
-## [0.1.136-alpha] - 2026-02-07
-**Branch**: `parley/issue-1226` | **PR**: #1248
-
-### Sprint 2.1: Extract SpeakerPropertiesPopulator (#1226)
-
-- Extract speaker, portrait, and soundset population logic from `PropertyPanelPopulator.cs` into `SpeakerPropertiesPopulator.cs`
-
----
-
-## [0.1.135-alpha] - 2026-02-07
-**Branch**: `parley/issue-1225` | **PR**: #1247
-
-### Sprint 1.6: Consolidate MainWindow.axaml.cs (#1225)
-
-- Consolidate `MainWindow.axaml.cs` from 1,127 lines to 409 lines (core responsibilities only)
-- Create `MainWindow.FileHandlers.cs` for file menu operations (new/open/save/rename/creature scanning)
-- Move flowchart, conversation simulator, script browser, and edit menu handlers to `MainWindow.MenuHandlers.cs`
-- Move parameter, resource browser, token insertion, quest, and speaker visual handlers to `MainWindow.Properties.cs`
-- Move selection, drag-drop, tree navigation, and ViewModel property handlers to `MainWindow.NodeHandlers.cs`
-- Clean up unused `using` statements across all partial files
-
----
-
-## [0.1.134-alpha] - 2026-02-07
-**Branch**: `parley/issue-1224` | **PR**: #1246
-
-### Sprint 1.5: Extract Menu Handlers to MainWindow.MenuHandlers.cs (#1224)
-
-- Extract non-delegated menu handlers from `MainWindow.axaml.cs` into `MainWindow.MenuHandlers.cs` partial file
-
----
-
-## [0.1.133-alpha] - 2026-02-07
-**Branch**: `parley/issue-1223` | **PR**: #1243
-
-### Sprint 1.4: Extract Speaker Visual Controller (#1223)
-
-- Extract speaker visual preference logic into `Views/Helpers/SpeakerVisualController.cs`
-
----
-
-## [0.1.132-alpha] - 2026-02-07
-**Branch**: `parley/issue-1222` | **PR**: #1242
-
-### Sprint 1.3: Extract Node Operation Handlers to MainWindow.NodeHandlers.cs (#1222)
-
-- Extract node CRUD handlers from `MainWindow.axaml.cs` into `MainWindow.NodeHandlers.cs` partial file
-
----
-
-## [0.1.131-alpha] - 2026-02-07
-**Branch**: `parley/issue-1221` | **PR**: #1238
-
-### Sprint 1.2: Extract Sound Handlers to MainWindow.SoundHandlers.cs (#1221)
-
-- Extract sound playback event handlers from `MainWindow.axaml.cs` into `MainWindow.SoundHandlers.cs` partial file
-
----
-
-## [0.1.130-alpha] - 2026-02-07
-**Branch**: `parley/issue-1220` | **PR**: #1237
-
-### Sprint 1.1: Extract Lifecycle Methods to MainWindow.Lifecycle.cs (#1220)
-
-- Extract window lifecycle methods from `MainWindow.axaml.cs` into `MainWindow.Lifecycle.cs` partial file
-
----
-
-## [0.1.129-alpha] - 2026-02-01
-**Branch**: `radoub/sprint-1175-1166-1167` | **PR**: #1195
-
-### Sprint: Testing & Reliability (#1167, #1166)
-
-- [x] #1166 - Fix UI tests failing after DialogBrowserPanel integration
-  - Hide DialogBrowserPanel by default in tests to prevent layout issues
-  - Add AutomationIds to UI elements for reliable test automation
-- [x] #1167 - Reliability improvements for integration tests
-  - Add AutomationId to DialogBrowserPanel control
-  - Add explicit AutomationIds to buttons and text fields
-  - Note: New DialogBrowserPanel-specific tests deferred - F4 toggle is flaky
-
----
-
-## [0.1.128-alpha] - 2026-02-01
-**Branch**: `parley/issue-1177` | **PR**: #1179
-
-### Sprint: UI Polish and Validation (#152, #288, #1158)
-
-- [x] #152 - Dialog Validation: Warning for unsupported characters (emojis, etc.)
-- [x] #288 - Move status bar to top of window
-- [x] #1158 - Word wrap should fit dialog panel width, not its own boundary
-
----
-
-## [0.1.127-alpha] - 2026-01-31
-**Branch**: `parley/issue-1143` | **PR**: #1164
-
-### Feature: Integrate DialogBrowserPanel as collapsible left panel (#1143)
-
-Part of Epic #1141 (File Browser Panel). Depends on #1142 (FileBrowserPanelBase).
-
-Added a collapsible left panel to MainWindow that displays all .dlg files from the current
-module and HAKs, enabling single-click navigation between dialogs.
-
-#### Layout
-```
-┌─────────────────────────────────────────────────────┐
-│ Menu Bar                                            │
-├────────┬────────────────────────────────────────────┤
-│ Dialog │                                            │
-│ List   │  Existing Parley Content                   │
-│        │  (TreeView, Flowchart, Properties)         │
-│ [dlg1] │                                            │
-│ [dlg2] │                                            │
-│ [dlg3] │                                            │
-│        │                                            │
-├────────┴────────────────────────────────────────────┤
-│ Status Bar                                          │
-└─────────────────────────────────────────────────────┘
-```
-
-#### Features
-- [x] Collapsible left panel with resizable splitter
-- [x] Search box to filter dialogs by name
-- [x] "Show HAK" checkbox to include dialogs from HAK files
-- [x] Single-click loads file (auto-saves current if unsaved)
-- [x] Current file highlighted in list
-- [x] Panel width persisted in settings
-- [x] Toggle via View menu (F4 keyboard shortcut)
-
-#### Implementation
-- Uses `DialogBrowserPanel` from Radoub.UI (shared with DialogBrowserWindow)
-- Panel width stored in `WindowLayoutService.DialogBrowserPanelWidth`
-- Panel visibility stored in `WindowLayoutService.DialogBrowserPanelVisible`
-- Auto-save on single-click prevents data loss when switching files
-- HAK files cannot be opened directly (shows info message)
-
----
-
-## [0.1.126-alpha] - 2026-01-24
-**Branch**: `parley/issue-1098` | **PR**: #1104
-
-### Sprint: Bug Fixes & Polish
-
-- [x] #903 - TreeView text needs word wrap option
-  - Added Word Wrap checkbox to Dialog Tree toolbar
-  - Toggling immediately refreshes tree with new wrapping behavior
-  - Setting persists across sessions
-
-- [x] #905 - Flowchart font follows theme settings
-  - Node text and labels now use GlobalFontSize
-  - Placeholder and status bar also follow theme
-
-- [x] #810 - Speaker row controls overflow (verified already fixed)
-  - WrapPanel implemented in PR #822 (2026-01-10)
-  - Controls wrap to new row on narrow screens
-
----
-
-## [0.1.125-alpha] - 2026-01-24
-**Branch**: `parley/sprint/cleanup-polish` | **PR**: #1087
-
-### Sprint: Cleanup & Polish
-
-- [x] #1082 - Use custom file browser for .dlg files
-- [x] #1039 - Use Radoub.Formats IFO library for module info
-- [x] #453 - Improve modal window contrast for visibility
-- [x] #1076 - Fix dark theme contrast/color issues (Radoub.UI)
-
-#### #1082 - Custom Dialog Browser for Open
-
-File > Open now uses `DialogBrowserWindow` from Radoub.UI instead of OS file picker.
-- Shows dialogs from current module directory
-- Search/filter functionality
-- Consistent UX with other Radoub browsers
-
-#### #1039 - Migrate to Shared IFO Library
-
-Replaced custom GFF parsing in `ModuleInfoParser` with `Radoub.Formats.Ifo.IfoReader`.
-Removed dead code: GffParser inheritance, manual field extraction.
-
-#### #453 - Modal Window Contrast
-
-Added visual styling to DialogFactory confirmation dialogs:
-- Sidebar background color (distinct from main window)
-- Accent-colored border for visual distinction
-- Theme-aware (works in both light and dark modes)
-
-Follow-up: #1088 - Standardize modal dialogs across all tools
-
-#### #1076 - Dark Theme Fixes
-
-**ThemeManager improvements**:
-- Added missing popup/flyout background resources (ComboBox, ToolTip, AutoComplete)
-- Added DataGrid, ListBox, ListView, TreeView background resources
-- Added ScrollViewer background resource
-- Removed problematic `SystemChromeWhiteColor` override that caused contrast issues
-
----
-
-## [0.1.124-alpha] - 2026-01-19
-**Branch**: `radoub/sprint-988-1010` | **PR**: #1011
-
-### Sprint: Parley Startup Performance (#988)
-
-- [x] Profile Parley startup to identify bottlenecks
-- [x] Implement optimizations if identified
-
-#### Root Cause
-First click on NPC node was slow because `GameDataService` uses lazy loading for KEY/BIF/TLK files. The heavy I/O happened on first portrait/soundset lookup instead of during startup.
-
-#### Fix
-Added `WarmupGameDataServiceAsync()` that primes `portraits.2da` and `soundset.2da` in background during `OnWindowOpened`. This shifts the lazy loading from user interaction to startup (fire-and-forget pattern per CLAUDE.md deferred loading guidelines).
-
----
-
-## [0.1.123-alpha] - 2026-01-19
-**Branch**: `parley/issue-1008` | **PR**: #1009
-
-### Refactor: Remove duplicate ScriptBrowserWindow (#1008)
-
-- Deleted duplicate `ScriptBrowserWindow.axaml` and `.axaml.cs` from Parley (~1,089 lines of dead code)
-- Parley already uses the shared version from `Radoub.UI.Views`
-- Added AutomationId attributes to shared version for FlaUI testing
-- Updated shared version to use dynamic theme brushes for dark mode
-
----
-
-## [0.1.122-alpha] - 2026-01-19
-**Branch**: `parley/issue-999` | **PR**: #1000
-
-### Sprint: Bug Bash - Theme Regressions (#999)
-
-Fixes theme-related regressions from Epic #959 UI Uniformity work.
-
-#### Fix: Duplicate themes in theme selection (#998)
-
-- Added deduplication logic to prefer shared themes (`org.radoub.*`) over tool-specific themes
-- Themes with same display name now appear only once in dropdown
-- Applied to all tools: Parley, Manifest, Quartermaster, Fence
-
-#### Fix: Button and tab contrast in dark themes (#997)
-
-- ThemeManager now applies `button_primary`, `button_secondary`, `button_hover` colors to Fluent theme resources
-- Tab header text now uses theme text color for proper contrast
-
-#### Fix: Child links not visually distinguished (#901)
-
-- Child links now display with 50% opacity to distinguish from primary nodes
-- Added `TextOpacity` property to TreeViewSafeNode model
-
----
-
-## [0.1.121-alpha] - 2026-01-16
-**Branch**: `parley/issue-916` | **PR**: #918
-
-### Sprint: Animation & Audio Features (#916)
-
-#### Fix: Sound play button in Main Window (#895)
-
-- Created `SoundPlaybackService` to handle sound playback from all sources
-- Main Window now searches loose files, HAK archives, and BIF archives
-- Play button disables during playback, re-enables when stopped
-- Shows source label (e.g., "(from HAK)") in status bar
-- Properly subscribes to `PlaybackStopped` event for UI state management
-
-#### Enhancement: Sound validation for non-standard WAV files (#858)
-
-- Detects MP3 audio with .wav extension (common NWN modding technique)
-- Detects BMU V1.0 music files with .wav extension
-- Shows informative messages: "MP3 audio with .wav extension - works in NWN"
-- Validates MP3 frame sync bytes for accurate detection
-
-#### Enhancement: NPC soundset preview from creature tag (#786)
-
-- Shows soundset name and gender below speaker field for NPC dialog nodes
-- Looks up creature by speaker tag from cached UTC files
-- Extracts `SoundSetFile` field from UTC and resolves via `soundset.2da`
-- Extended `TwoDAService` to support soundset.2da lookups with caching
-- Shows informative messages when creature not found or soundset unavailable
-
-#### Enhancement: Display NPC portrait for selected speaker (#915)
-
-- Shows portrait ResRef below speaker field for NPC dialog nodes
-- Extracts `PortraitId` from UTC and resolves via `portraits.2da`
-- Extended `TwoDAService` to support portraits.2da lookups with caching
-- Combined with soundset display: "Portrait: po_elara | Soundset: vs_female_f (Female)"
-- Graceful fallback when portrait or creature unavailable
-
-#### Fix: Mono filter shows stereo sounds from HAK/BIF archives
-
-- HAK/BIF sounds now marked as "channel unknown" until validated on selection
-- Mono filter includes unknown-channel sounds (shown with `[?ch]` indicator)
-- When sound is selected and validated, channel status updates and indicator removed
-- File count shows "X unverified" when mono filter active with archive sounds
-- Prevents filtering out potentially valid mono sounds from archives
-
-#### Fix: 2DA lookups not working for portrait/soundset display
-
-- `ResourceBrowserManager` now passes game data path to `CreatureService.ScanCreaturesAsync`
-- Added `GetGameDataPath()` helper to locate 2DA files in game installation
-- Enables portrait and soundset resolution from `portraits.2da` and `soundset.2da`
-
-#### Fix: Portrait/soundset not showing on initial node selection
-
-- Creature scan now refreshes selected node properties after completion
-- Previously, creature scan was fire-and-forget, completing after initial node selection
-- Portrait and soundset info now displays immediately when dialog loads
-
-#### Fix: Portrait loading from BIF archives
-
-- Added `GameDataService` and `ImageService` to MainWindowServices for BIF archive access
-- Portrait loading now uses `ImageService.GetPortrait()` which reads from BIF archives
-- Previously, `PortraitService` only searched loose .tga files which don't exist in NWN:EE
-
-#### Enhancement: Soundset preview play button
-
-- Added SSF file parser (`SsfReader`, `SsfFile`, `SsfEntry`) to Radoub.Formats
-- Added soundset playback support to `IGameDataService` (`GetSoundset`, `GetSoundsetByResRef`)
-- Preview panel appears below soundset info when NPC has a valid soundset
-- Dropdown allows selecting sound type (Hello, Goodbye, Attack, Death, etc.)
-- Play button loads sound from SSF and plays via `SoundPlaybackService`
-
----
-
-## [0.1.120-alpha] - 2026-01-16
-**Branch**: `parley/issue-719` | **PR**: #913
-
-### Refactor: Tech debt - Large files needing refactoring (#719)
-
-**SettingsService refactoring** (1,404 → 1,274 lines):
-- Extracted `WindowLayoutService` for window position, panel layout, and flowchart window settings
-- SettingsService now delegates window-related properties to WindowLayoutService
-- Removed plugin migration code (PluginSettings.json) - plugin infrastructure removed in v0.1.115
-- Follows same service extraction pattern as RecentFilesService and UISettingsService
-
----
-
-## [0.1.119-alpha] - 2026-01-15
-**Branch**: `radoub/issue-908` | **PR**: #909
-
-### Fix: Recent files menu doesn't refresh in realtime (#597)
-
-- Added `_populateRecentFilesMenu()` call after `LoadDialogAsync` in File > Open
-- Added `_populateRecentFilesMenu()` call after loading recent files (moves selected file to top)
-- Recent files menu now updates immediately when files are opened
-
----
-
-## [0.1.118-alpha] - 2026-01-15
-**Branch**: `parley/issue-897` | **PR**: #904
-
-### Enhancement: Remove unused WebView dependency (#897)
-
-- Removed `WebViewControl-Avalonia` and `WebViewControl-Avalonia-ARM64` packages from Parley.csproj
-- Binary size reduced from ~359 MB to ~38 MB (89% reduction)
-
----
-
-## [0.1.117-alpha] - 2026-01-15
-**Branch**: `parley/issue-899` | **PR**: #902
-
-### Sprint: Flowchart UX Polish (#813, #461)
-
-- [x] #813 - Flowchart node text truncation without tooltip
-  - Replaced character-based truncation with line-based display using `MaxLines`
-  - Added tooltip showing full text on hover for truncated nodes
-  - Added configurable "Flowchart Node Text" setting in UI Settings (1-6 lines, default 3)
-- [x] #461 - FlowView context menu parity with TreeView
-  - Added right-click context menu to flowchart nodes
-  - Menu includes: Add Node, Add Sibling, Delete, Cut/Copy/Paste, Paste as Link, Move Up/Down, Expand/Collapse, Go to Parent/Link Target
-  - Actions route to same handlers as TreeView for consistent behavior
-
----
-
-## [0.1.116-alpha] - 2026-01-15
-**Branch**: `parley/issue-898` | **PR**: #900
-
-### Sprint: Theme & Accessibility Fixes (#811, #812, #814)
-
-- [x] #811 - Hardcoded Gray colors break theme consistency
-  - Replaced all `Foreground="Gray"` with `{DynamicResource SystemControlForegroundBaseMediumBrush}`
-  - Replaced all `BorderBrush="Gray"` with theme-aware resources
-  - Replaced all `Background="Gray"` on GridSplitters
-  - Files updated: MainWindow, AboutWindow, SettingsWindow, CreaturePickerWindow, ParameterBrowserWindow, QuestBrowserWindow, SoundBrowserWindow, TokenSelectorWindow, ScriptBrowserWindow, CrashRecoveryDialog
-- [x] #812 - FlowchartPanel lacks focus indicator
-  - Added focus border that highlights with SystemAccentColor when panel has keyboard focus
-  - Uses `:focus-within` pseudo-class for consistent Avalonia styling
-- [x] #814 - Properties panel MinWidth too restrictive for small screens
-  - Already fixed in #822 (1024x768 support) - MinWidth is 280
-
----
-
-## [0.1.115-alpha] - 2026-01-14
-**Branch**: `parley/issue-891` | **PR**: #896
-
-### Sprint: Testing Foundation (#891, #841)
-
-#### #891 - Remove Plugin Infrastructure
-
-Removed the unused Python plugin system to reduce code complexity:
-- Removed gRPC service (Grpc.Net.Client, Grpc.AspNetCore.Server, Google.Protobuf)
-- Removed plugin discovery, lifecycle management, and security enforcement
-- Removed Python SDK and example plugins
-- Removed plugin-related settings tab and UI components
-- Removed plugin security tests (MaliciousPluginTests, SandboxTests, etc.)
-- Cleaned up DialogContextService (removed plugin-only events)
-
-**Files Removed**: ~50 files including Plugins/, Python/, and related tests
-
-#### #841 - Script Cache Timestamp Validation
-
-Added file modification time validation to script content cache:
-- Cache now tracks source file path and last modified timestamp
-- On cache hit, validates file hasn't been modified since caching
-- If file modified externally, cache is automatically refreshed
-- BIF-sourced scripts (game built-ins) bypass validation (never change)
-- Parameter cache also invalidated when source script changes
-
----
-
-## [0.1.114-alpha] - 2026-01-12
-**Branch**: `parley/issue-887` | **PR**: #888
-
-### Sprint: Token System Completion (#883, #880, #877)
-
-- [x] #883 - Token insertion auto-adds space before (not after) when needed
-- [x] #880 - Token system documentation (in NonPublic, pending review)
-- [x] #877 - TreeView text coloring - speaker tags colored, dialog text uses theme
-
----
-
-## [0.1.113-alpha] - 2026-01-12
-**Branch**: `parley/issue-753` | **PR**: #878
-
-### Sprint: Color Token & Variable Support (#753, #481)
-
-- [x] #753 - Color Token Support (shared infrastructure)
-- [x] #481 - Custom and built-in variable support in Conversation Simulator
-- [x] #882 - Fix ROOT auto-selection during tree refresh
-
-#### #753 - Color Token Support
-
-Added NWN color token parsing and rendering infrastructure:
-- Parse `<c###>` format color tags (RGB as ASCII characters)
-- Support `</c>` close tags
-- TokenParser in Radoub.Formats for shared use
-- TokenTextBlock Avalonia control for rendering colored text
-- Token Selector dialog with Standard, Highlight, and Color tabs
-- **Ctrl+T** keyboard shortcut for quick token insertion
-- User-configurable color definitions via `~/Radoub/token-colors.json`
-
-#### #481 - Variable Support
-
-Conversation Simulator now renders NWN tokens with color:
-- TokenTextBlock displays colored NPC dialog text
-- Standard tokens (`<FullName>`, `<FirstName>`, etc.) shown in preview
-- Highlight tokens (`<StartAction>`, `<StartCheck>`) with color preview
-
-#### #882 - Focus Fix
-
-Fixed focus jumping to ROOT during tree refresh:
-- Selection now preserved when tabbing between property fields
-- Token insertion works correctly from any node
-
----
-
-## [0.1.112-alpha] - 2026-01-11
-**Branch**: `parley/issue-475` | **PR**: #876
-
-### Sprint: Scrap System Overhaul (#475, #476)
-
-- [x] #476 - Fix legacy entries showing as sub-items after reload
-- [x] #475 - TreeView for hierarchical scrap display
-
-#### #476 - Legacy Entries Fix
-
-Fixed scrap entries with `ParentEntryId` incorrectly marked as batch roots after reload.
-The migration logic now validates and repairs batch structure on load:
-- Children are never marked as roots
-- Each batch is guaranteed to have exactly one root
-- Root promotion logic handles partial restores
-
-#### #475 - TreeView Hierarchical Display
-
-Replaced flat ListBox with TreeView for scrap panel:
-- Expandable tree shows parent-child relationships
-- Selective node restoration: restore any node and its descendants
-- Partial restore promotes remaining entries to new batch roots
-- Visual hierarchy with proper indentation
-
-**New Features**:
-- **Swap Roles**: Convert NPC↔PC for selected node chain before restoring
-  - Useful for fixing accidentally swapped dialog roles
-  - Recursively swaps all descendants
-
-| Button | Action |
-|--------|--------|
-| Restore | Restores selected node and children to dialog tree |
-| Swap Roles | Swaps Entry↔Reply types for selected subtree |
-| Clear All | Removes all scrap entries |
-
----
-
-## [0.1.111-alpha] - 2026-01-10
-**Branch**: `parley/issue-856` | **PR**: #857
-
-### Sprint: Validation & Polish (#856)
-
-- [x] #826 - Validate DLG Filename Length on Save
-- [x] #827 - Validate Sound Files Are Mono on Assignment
-- [x] #809 - FlowView keyboard shortcuts parity with TreeView
-
-#### #826 - Filename Length Validation
-
-Blocks saving DLG files with names exceeding Aurora Engine's 16-character limit.
-
-| Save Point | Behavior |
-|------------|----------|
-| New File | Validates before creating |
-| Save | Shows error dialog, prompts Save As |
-| Save As | Validates before saving |
-| Auto-save | Skips with status bar warning |
-
-Error dialog shows filename, length, and maximum allowed.
-
-#### #827 - Sound File Mono Validation
-
-Shows confirmation dialog when assigning stereo WAV files to conversation nodes.
-NWN conversation audio requires mono; stereo plays incorrectly in-game.
-User can proceed anyway (for post-processing workflows) or cancel.
-
-#### #809 - FlowView Keyboard Shortcuts
-
-FlowView now supports all TreeView keyboard shortcuts:
-
-| Shortcut | Action |
-|----------|--------|
-| Ctrl+D | Add Smart Node |
-| Ctrl+Shift+D | Add Sibling Node |
-| Ctrl+R | Add Context-Aware Reply |
-| Delete | Delete Node |
-| Ctrl+C/X/V/L | Copy/Cut/Paste/Link |
-| Ctrl+Z/Y | Undo/Redo |
-| Ctrl+Shift+Up/Down | Move Node Up/Down |
-| Ctrl+J | Go to Parent Node |
-
-Works in embedded (side-by-side), tabbed, and floating window modes.
-
-FlowView now auto-refreshes on structural changes (add/delete/move/undo/redo).
-
----
-
-## [0.1.110-alpha] - 2026-01-02
-**Branch**: `parley/issue-723` | **PR**: #724
-
-### Sprint: Settings Persistence & Cleanup (#723)
-
-#### #719 - SettingsService Refactoring
-
-Split SettingsService (1,405 → 1,275 lines) into focused services:
-
-| New File | Lines | Responsibility |
-|----------|-------|----------------|
-| RecentFilesService.cs | 141 | Recent files list management |
-| UISettingsService.cs | 178 | Fonts, themes, flowchart layout, scrollbars |
-
-#### #717 - Dead Code Removal
-
-Removed unused properties:
-- `UseNewLayout` - feature flag never implemented
-- `WarnMissingScriptInDialogDirectory` - never referenced
-
-#### #718 - Settings Persistence Fix
-
-Fixed silent data loss: `ExternalEditorPath` and `ScriptSearchPaths` now persist across restarts.
-Added to SettingsData, LoadSettings(), and SaveSettings().
-
----
-
-## [0.1.109-alpha] - 2026-01-01
-**Branch**: `parley/refactor/split-treeview-safenode` | **PR**: #714
-
-### Refactor: Split TreeViewSafeNode.cs (#708)
-
-Split 597-line file into focused components for maintainability:
-
-| File | Lines | Responsibility |
-|------|-------|----------------|
-| TreeViewSafeNode.cs | 473 | Core node wrapper, properties, children, subclasses |
-| TreeViewNodePopulator.cs | 123 | PopulateChildren, lazy loading logic |
-| TreeViewValidation.cs | 53 | CalculateUnreachableSiblings validation helper |
-
----
-
-## [0.1.108-alpha] - 2026-01-01
-**Branch**: `parley/refactor/split-script-browser-controller` | **PR**: #713
-
-### Refactor: Split ScriptBrowserController.cs (#707)
-
-Split 638-line controller into focused components for maintainability:
-
-| File | Lines | Responsibility |
-|------|-------|----------------|
-| ScriptBrowserController.cs | 299 | Script browser window management |
-| ParameterBrowserController.cs | 290 | Parameter browser and declaration caching |
-| ScriptPreviewService.cs | 88 | Script preview loading and display |
-
----
-
-## [0.1.107-alpha] - 2026-01-01
-**Branch**: `parley/refactor/split-script-param-ui-manager` | **PR**: #712
-
-### Refactor: Split ScriptParameterUIManager.cs (#706)
-
-Split 666-line file into focused services for maintainability:
-
-| File | Lines | Responsibility |
-|------|-------|----------------|
-| ScriptParameterUIManager.cs | 269 | Core row management, add/remove, change handling |
-| ParameterValidationService.cs | 244 | Duplicate key validation, red borders, theme colors |
-| ParameterPersistenceService.cs | 233 | UI-to-model sync, auto-trim, parameter caching |
-
----
-
-## [0.1.106-alpha] - 2026-01-01
-**Branch**: `parley/feat/sound-browser-refactor` | **PR**: #711
-
-### Refactor: Extract services and models from SoundBrowserWindow (#611)
-
-- Extract `SoundScanner` service for HAK/KEY/BIF file scanning
-- Extract `SoundCache` service for thread-safe cache management
-- Move models to `Models/Sound/`: SoundFileInfo, HakCacheEntry, KeyCacheEntry, BifSoundInfo
-- Reduce SoundBrowserWindow.axaml.cs from 1,423 to 606 lines (57% reduction)
-
----
-
-## [0.1.105-alpha] - 2026-01-01
-**Branch**: `parley/refactor/settings-window-controllers` | **PR**: #710
-
-### Refactor: Extract controllers from SettingsWindow.axaml.cs (#610)
-
-Reduced SettingsWindow.axaml.cs from 1,904 to 449 lines (76% reduction) by extracting section-specific controllers:
-
-| Controller | Lines | Responsibility |
-|------------|-------|----------------|
-| ResourcePathsController | 500 | Game paths, module paths, TLK settings |
-| ThemeSettingsController | 197 | Theme selection, preview, easter eggs |
-| DictionarySettingsController | 247 | Primary language, custom dictionaries |
-| PluginSettingsController | 209 | Plugin list, enable/disable, safe mode |
-| UISettingsController | 292 | Font, scrollbar, NPC coloring, spell check |
-| LoggingSettingsController | 116 | Log level, retention, debug panel |
-| AutoSaveSettingsController | 86 | Auto-save enabled state and interval |
-| ParameterCacheController | 180 | Cache settings, stats, clear cache |
-
-Moved inline `PluginListItemViewModel` to proper ViewModels location.
-
----
-
-## [0.1.104-alpha] - 2025-12-31
-**Branch**: `parley/sprint/focus-ux-fixes` | **PR**: #702
-
-### Sprint: Focus & UX Bug Fixes (#679)
-
-#### Fixed
-- Focus no longer jumps to Script Parameters when navigating in FlowView (#664)
-  - Added `focusNewRow` parameter to `AddParameterRow` - only focuses when user explicitly adds
-- Autosave no longer overrides user node navigation (#594)
-  - `RefreshTreeDisplayPreserveState` now checks if user has navigated away during refresh
-- Validation warnings (⚠️ unreachable siblings) now update immediately when condition scripts change (#609)
-  - Made `IsUnreachableSibling` updatable via property notification
-  - Added `RefreshSiblingValidation()` to recalculate when `ScriptAppears` changes
-
----
-
-## [0.1.103-alpha] - 2025-12-30
-**Branch**: `parley/sprint/script-browser-fixes` | **PR**: #682
-
-### Sprint: Script Browser Fixes (#681)
-
-#### Fixed
-- Script browse dialog no longer sets script when cancelled with X button (#571)
-- Conditional script preview now shows built-in game scripts from BIF archives (#570)
-  - ScriptService falls back to GameResourceService when script not found in filesystem
-
----
-
-## [0.1.102-alpha] - 2025-12-28
-**Branch**: `parley/refactor/remove-legacy-parser` | **PR**: #608
-
-### Refactor: Remove legacy DLG parser code (#592)
-
-Complete migration to `Radoub.Formats.Dlg` parser. Removed ~3,800 lines of legacy parsing code.
-
-**Removed Files** (3,782 lines):
-| File | Lines | Purpose |
-|------|-------|---------|
-| `DialogParser.cs` | 287 | Legacy parser facade |
-| `DialogBuilder.cs` | 638 | GFF → Dialog model conversion |
-| `DialogWriter.cs` | 1,768 | Dialog → GFF binary writing |
-| `GffBinaryWriter.cs` | 660 | Low-level GFF serialization |
-| `GffFieldFactory.cs` | 202 | GFF field creation helpers |
-| `GffIndexFixer.cs` | 178 | Struct index patching |
-| `IDialogParser.cs` | 49 | Parser interface + ParserResult class |
-
-**Added/Updated:**
-- `DlgAdapter.cs`: Added TLK resolution (StrRef → text lookup via GameResourceService)
-- `ParserResult.cs`: Moved to Models/ namespace
-- `DialogFileService.cs`: Simplified - removed `UseNewParser` flag, always uses Radoub.Formats
-
-**Architecture:**
-- `Radoub.Formats.Dlg.DlgReader/DlgWriter` → Raw DLG binary I/O
-- `DlgAdapter` → Bidirectional conversion between DlgFile and Parley's Dialog model
-- `DialogFileService` → High-level async API for dialog file operations
-
----
-
-## [0.1.101-alpha] - 2025-12-27
-**Branch**: `parley/refactor/remove-dialogbuilder` | **PR**: #605
-
-### Refactor: DialogBuilder.cs Investigation (#599)
-
-**Outcome:** DialogBuilder.cs is NOT a duplicate of DlgWriter - they serve different architectural layers.
-
-| Component | Purpose |
-|-----------|---------|
-| `DlgReader/DlgWriter` (Radoub.Formats) | Raw DLG format I/O |
-| `DialogBuilder` (Parley) | Converts GFF → Parley domain model with TLK resolution, pointer linking, link registry |
-
-**Why DialogBuilder is needed:**
-- Preserves `OriginalGffStruct.Type` for byte-perfect round-trip editing
-- Resolves TLK StrRef values to display text
-- Links `DialogPtr.Node` references for tree traversal
-- Integrates with Parley's `LinkRegistry` for reference tracking
-
-**Removed:**
-- `ConvertGlobalToLocalIndex()` (60 lines) - dead code, never called
-
----
-
-## [0.1.100-alpha] - 2025-12-27
-**Branch**: `parley/refactor/remove-gffbinaryreader` | **PR**: #602
-
-### Refactor: Remove legacy GffBinaryReader.cs (#598)
-
-Full migration to Radoub.Formats.Gff types, removing duplicate GFF parsing code.
-
-**Removed Files:**
-- `GffBinaryReader.cs` (582 lines) - replaced by `Radoub.Formats.Gff.GffReader`
-- `GffStructures.cs` (183 lines) - replaced by `Radoub.Formats.Gff` types
-
-**Updated Files:**
-- `DialogParser.cs` - now uses `GffReader.Read()` instead of manual parsing
-- `DialogBuilder.cs` - uses `Radoub.Formats.Gff.GffStruct`
-- `GffParser.cs` - simplified to use `GffReader`
-- `DialogWriter.cs`, `GffBinaryWriter.cs`, `GffFieldFactory.cs`, `GffIndexFixer.cs`, `CreatureParser.cs`, `ModuleInfoParser.cs` - updated imports
-- `DialogStructures.cs` - `OriginalGffStruct` now uses `Radoub.Formats.Gff.GffStruct`
-
-**Impact:** -765 lines of duplicate code removed. All GFF parsing now uses the shared `Radoub.Formats` library.
-
-All 500 tests pass.
-
----
-
-## [0.1.99-alpha] - 2025-12-27
-**Branch**: `parley/refactor/gff-field-factory` | **PR**: #601
-
-### Refactor: Extract GffFieldFactory from DialogWriter (#534)
-
-Extracted field creation methods from DialogWriter.cs into new GffFieldFactory class.
-
-| File | Before | After | Change |
-|------|--------|-------|--------|
-| DialogWriter.cs | 1,915 | 1,767 | -148 lines (8%) |
-| GffFieldFactory.cs | - | 201 | New file |
-
-**Extracted Methods:**
-- `BuildLocStringFieldData()` - CExoLocString binary data builder
-- `BuildCExoStringFieldData()` - CExoString binary data builder
-- `BuildCResRefFieldData()` - CResRef binary data builder
-- `AddLabelAndField()` - Label/field collection helper
-- `GetOrCreateTextOffset()` - Text data creation with offset tracking
-- `CalculateEntryFieldCount()` / `CalculateReplyFieldCount()` - Field count calculations
-
-All 500 tests pass.
-
----
-
-## [0.1.98-alpha] - 2025-12-27
-**Branch**: `parley/refactor/gff-binary-writer` | **PR**: #600
-
-### Refactor: Extract GffBinaryWriter from DialogWriter (#533)
-
-Extracted binary writing methods from DialogWriter.cs (2,593 lines) into new GffBinaryWriter class.
-
-| File | Before | After | Change |
-|------|--------|-------|--------|
-| DialogWriter.cs | 2,593 | 1,915 | -678 lines (26%) |
-| GffBinaryWriter.cs | - | 659 | New file |
-
-**Extracted Methods:**
-- `Write()` - Main binary output (header, structs, fields, labels, field data)
-- `WriteFieldIndices()` - Field index array writing
-- `WriteListIndices()` - List indices section (conversation flow)
-- Supporting helpers: `WriteHeader`, `WriteStructs`, `WriteFields`, `WriteLabels`, `WriteFieldData`
-
-All 500 tests pass.
-
----
-
-## [0.1.97-alpha] - 2025-12-27
-**Branch**: `parley/refactor/mainviewmodel-size` | **PR**: #596
-
-### Refactor: Reduce MainViewModel.cs Size (#536)
-
-Split MainViewModel (1,786 lines) into partial classes for maintainability:
-
-| File | Lines | Purpose |
-|------|-------|---------|
-| MainViewModel.cs | 337 | Core properties, constructor, debug messaging |
-| MainViewModel.FileOperations.cs | 199 | Load, Save, New, Close, Reload |
-| MainViewModel.EditOperations.cs | 377 | Undo, Redo, Copy, Cut, Paste |
-| MainViewModel.NodeOperations.cs | 271 | Add, Delete, Move nodes |
-| MainViewModel.TreeOperations.cs | 593 | Tree population, refresh, navigation |
-| MainViewModel.ScrapOperations.cs | 91 | Scrap restore and management |
-
-Core file reduced from 1,786 → 337 lines (81% reduction).
-All 500 tests pass.
-
----
-
-## [0.1.96-alpha] - 2025-12-27
-**Branch**: `parley/feat/dlg-parser-migration` | **PR**: #590
-
-### Feat: Migrate DLG Parser to Radoub.Formats (#560)
-
-Migrate Parley's DLG parser to the shared Radoub.Formats library.
-
-#### Phase 1: Extract & Refactor
-- [x] Create `Radoub.Formats/Dlg/` directory
-- [x] Create `DlgFile` domain model (entries, replies, links, params)
-- [x] Create `DlgReader` using GffReader infrastructure
-- [x] Create `DlgWriter` using GffFieldBuilder helpers
-- [x] Migrate to use shared `CExoLocString`
-- [x] Add 17 comprehensive unit tests with round-trip validation
-
-#### Phase 2: Update Parley
-- [x] Create `DlgAdapter` for model conversion (ToDialog/ToDlgFile)
-- [x] Update `DialogFileService` with `UseNewParser` feature flag
-- [x] Wire up new parser with logging integration
-- [x] Verify all 500+ Parley tests pass
-- [x] Enable new parser by default (`UseNewParser = true`)
-- [ ] Remove legacy parser code (see #592)
-
-#### Notes
-- **Legacy Parser**: `DialogFileService.UseNewParser` flag allows fallback to legacy parser if issues arise. Set to `false` to use legacy Parley parser.
-- **DlgWriter**: Updated to write all required GFF fields per BioWare spec (Aurora Engine expects all fields present, even when empty)
-
----
-
-## [0.1.95-alpha] - 2025-12-26
-**Branch**: `parley/refactor/mainwindow-size` | **PR**: #569
-
-### Refactor: Reduce MainWindow.axaml.cs Size (#535)
-
-Part of Epic #479 (Parley Refactoring).
-
-#### Added
-- `MainWindow.Properties.cs` - Partial class for property panel handlers and auto-save logic
-- `MainWindow.TreeOps.cs` - Partial class for tree expand/collapse and state persistence
-- `MainWindow.Theme.cs` - Partial class for theme application and handlers
-
-#### Changed
-- MainWindow.axaml.cs reduced from 2,485 to 1,596 lines (36% reduction)
-- Code-behind now uses partial classes for maintainability
-
----
-
-## [0.1.94-alpha] - 2025-12-25
-**Branch**: `radoub/sprint/dictionary-language` | **PR**: #539
-
-### Sprint: Dictionary Language Selection (#515)
-
-#### Added
-- **Dictionaries tab** in Settings (#510)
-  - Primary language dropdown (select Hunspell dictionary)
-  - Custom dictionaries list with enable/disable toggles (like Plugins tab)
-  - NWN/D&D dictionary now toggleable (previously always-on)
-  - "Open Dictionaries Folder" and "Refresh" buttons
-- Hot-swap dictionary support - changes apply immediately without restart
-- `SpellCheckService.DictionariesReloaded` event for UI refresh
-
----
-
-## [0.1.93-alpha] - 2025-12-25
-**Branch**: `parley/fix/delete-focus-sibling` | **PR**: #538
-
-### Fix: Deleting Node Jumps Focus to Root Instead of Nearest Sibling (#435)
-
-After deleting a node, focus now moves to the nearest sibling instead of jumping to root.
-
-#### Changed
-- Focus behavior after node deletion:
-  1. Previous sibling (if exists) - stays at same visual position
-  2. Next sibling (if no previous sibling)
-  3. Parent (if no siblings)
-
----
-
-## [0.1.92-alpha] - 2025-12-24
-**Branch**: `parley/refactor/remove-parser-dead-code` | **PR**: #532
-
-### Refactor: Remove Dead Code from DialogParser (#531)
-
-Remove ~2,000 lines of dead/duplicated code from DialogParser.cs that remained after Phase 1-3 refactoring extractions.
-
-#### Changed
-- DialogParser.cs reduced from ~3,900 lines to ~500 lines
-- Removed duplicated implementations that now delegate to support classes:
-  - DialogBuilder (Phase 2)
-  - DialogWriter (Phase 3)
-  - GffIndexFixer (Phase 1)
-
-#### Removed
-- Duplicated field creation methods (CreatePointerFields, CreateRootFields, etc.)
-- Duplicated binary builders (BuildLocStringFieldData, BuildCExoStringFieldData, etc.)
-- Duplicated calculation methods (CalculateEntryFieldCount, CalculateLabelSize, etc.)
-- Duplicated index fixing methods
-
----
-
-## [0.1.91-alpha] - 2025-12-24
-**Branch**: `parley/refactor/service-coordinator` | **PR**: #530
-
-### Refactor: Create ServiceCoordinator (#526)
-
-Consolidate MainWindow's 24 service dependencies into organized container classes.
-
-#### Added
-- `Views/Helpers/MainWindowServices.cs` - Container for 15 service dependencies:
-  - Core: Audio, Creature
-  - Plugin: Plugin, PluginPanel
-  - Property: PropertyPopulator, PropertyAutoSave, ParameterUI
-  - UI: NodeCreation, ResourceBrowser, KeyboardShortcuts
-  - Window: DebugLogging, WindowPersistence, PluginSelectionSync
-  - TreeView/Dialog: DragDrop, Dialog
-- `Views/Helpers/MainWindowControllers.cs` - Container for 6 controller dependencies:
-  - Flowchart, TreeView, ScriptBrowser, Quest, FileMenu, EditMenu
-
-#### Changed
-- MainWindow field count reduced from 24 to 6 (ViewModel, Controls, Windows, Services, Controllers, UiState)
-- Removed verbose development comments (Phase 0/1/2 notes)
-- MainWindow reduced by ~49 lines
-
----
-
-## [0.1.90-alpha] - 2025-12-24
-**Branch**: `parley/refactor/dialog-factory` | **PR**: #529
-
-### Refactor: Extract DialogFactory Service (#524)
-
-Extract dialog creation from MainWindow.axaml.cs into dedicated DialogFactory service.
-
-#### Added
-- `Services/DialogFactory.cs` - Reusable dialog factory with:
-  - `ShowConfirmDialogAsync()` - Yes/No confirmation with optional "Don't show again" checkbox
-  - `ShowSaveErrorDialogAsync()` - Save failed dialog with Save As option
-
-#### Changed
-- MainWindow now uses DialogFactory for all confirmation dialogs
-- MainWindow reduced by ~117 lines
-
----
-
-## [0.1.89-alpha] - 2025-12-24
-**Branch**: `parley/refactor/mainwindow-constructor` | **PR**: #528
-
-### Refactor: Extract MainWindow Constructor Initialization (#522)
-
-Reduce MainWindow.axaml.cs constructor from 140+ lines to focused initialization methods.
-
-#### Changed
-- Extract constructor into 5 focused initialization methods:
-  - `InitializeServices()` - Core services and helpers
-  - `InitializeControllers()` - UI controllers
-  - `InitializeLogging()` - Logging infrastructure
-  - `RegisterEventHandlers()` - Event subscriptions
-  - `SetupUILayout()` - UI configuration
-- Extract inline event handlers to named methods:
-  - `OnWindowOpened()` - Window opened handler
-  - `OnWindowPropertyChanged()` - Window property change handler
-  - `OnDebugMessagesCollectionChanged()` - Debug message scroll handler
-- Constructor reduced from ~225 lines to 22 lines
-
----
-
-## [0.1.88-alpha] - 2025-12-24
-**Branch**: `parley/sprint/mainview-quick-wins` | **PR**: #527
-
-### Sprint: MainView Quick Wins (Tech Debt)
-
-Quick refactoring wins for MainViewModel.
-
-#### Changed
-- #521 - Remove dead code from MainViewModel (~50 lines of commented blocks)
-- #523 - Create RefreshTreeViewAndMarkDirty() helper to consolidate pattern
-- #525 - Create UiStateManager for centralized UI state tracking
-
----
-
-## [0.1.87-alpha] - 2025-12-24
-**Branch**: `parley/sprint/flowview-bug-bash` | **PR**: #520 | **Closes**: #514
-
-### Sprint: FlowView Bug Bash
-
-Fix four related FlowView rendering and navigation bugs.
-
-#### Fixed
-- #455 - FlowView: Fit to Window doesn't center content, appears mostly off-screen
-- #454 - FlowView: Shift+drag panning broken in side-by-side mode, scrollbars missing
-- #394 - Floating FlowchartWindow doesn't render when opened before DLG file
-- #378 - Flowchart doesn't clear when file closed
-- UI Tests: ClickMenu now retries up to 5 times with 300ms delays and searches desktop for Avalonia popup menus
-
----
-
-## [0.1.86-alpha] - 2025-12-23
-**Branch**: `parley/sprint/script-browser-hak` | **PR**: #518 | **Closes**: #516
-
-### Sprint: Script Browser HAK Support (Epic #364)
-
-Enable script discovery in HAK/ERF archives using Radoub.Formats ERF parsing.
-
-#### Added
-- Script Browser: "📦 Show HAK" checkbox to include scripts from HAK files
-- Script Browser: Scans dialog directory, override path, and NWN user hak folder for HAK files
-- Script Browser: Displays HAK scripts with 📦 icon prefix and source attribution (e.g., "HAK: customscripts.hak")
-- Script Browser: Preview extraction for HAK scripts - view source code directly from archives
-- Script Browser: Preview extraction for built-in scripts - lists .nss source files from game BIFs
-- Script Browser: HAK metadata caching for fast repeated access (persists across window instances)
-- Script Browser: Priority ordering matches NWN resource system (Module > HAK > Built-in)
-- ScriptEntry: Added HakPath, ErfEntry, FilePath properties for source tracking
-- UI Tests: Settings isolation prevents test runs from modifying user preferences
-- UI Tests: Pre-seed SideBySide flowchart layout for stable automated testing
-
----
-
-## [0.1.85-alpha] - 2025-12-23
-**Branch**: `parley/sprint/dictionary-integration` | **PR**: #509 | **Closes**: #505
-
-### Sprint: Dictionary Integration (Epic #43)
-
-Add spell-checking to Parley's Text and Comments fields.
-
-#### Added
-- Spell-checking for dialog Text field
-- Spell-checking for Comments field
-- Hunspell (en_US) + custom D&D/NWN dictionary support
-- Bundled NWN/D&D terminology dictionary (~450 terms: spells, creatures, deities, etc.)
-- Session ignore for unknown words
-- Spelling suggestions on misspelled words
-- Custom dictionary persistence at `~/Radoub/Dictionaries/custom.dic` (shared across Radoub tools)
-- "Add to Dictionary" saves permanently across sessions
-- Spell-check enable/disable toggle in Settings > UI Settings
-
-#### Fixed
-- Spell-check toggle now takes effect immediately (no restart required)
-- Scripts tab parameter fields no longer stretch to full width
-
----
-
-## [0.1.84-alpha] - 2025-12-22
-**Branch**: `parley/feat/linux-tts-enhancement` | **PR**: #492
-
-### Feature: Enhance Linux TTS with Piper and Voice Variants (#491)
-
-#### Added
-
-**Piper TTS Integration** (Neural voices - high quality):
-- PiperTtsService for natural-sounding neural voice synthesis
-- Preferred over espeak-ng when installed
-- 13 neural voice models for NWN languages:
-  - English US (Lessac, Amy), English GB (Alan, Alba)
-  - German (Thorsten, Eva)
-  - French (UPMC, Siwis)
-  - Spanish (Sharvard, Carlfm)
-  - Italian (Riccardo)
-  - Polish (Gosia, Darkman)
-
-**espeak-ng Voice Variants** (Formant synthesis - fallback):
-- Male and female variants for 6 NWN languages
-- Uses `+m3`/`+f3` suffixes for distinct voices
-- Friendly display names (e.g., "English (Male)")
-
-#### Installation (Linux)
-
-**Option 1: Piper TTS** (recommended for quality)
-```bash
-pipx install piper-tts
-mkdir -p ~/.local/share/piper-voices
-cd ~/.local/share/piper-voices
-# Download English voice:
-wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx
-wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json
-```
-More voices: https://rhasspy.github.io/piper-samples/
-
-**Option 2: espeak-ng** (basic, no download required)
-```bash
-sudo apt install espeak-ng
-```
-
-#### Technical
-- TtsServiceFactory auto-detects: Piper > espeak-ng (Linux), Piper > say > espeak-ng (macOS)
-
----
-
-## [0.1.83-alpha] - 2025-12-22
-**Branch**: `parley/fix/linux-espeak-audio` | **PR**: #490
-
-### Fix: Linux espeak-ng Audio Playback (#489)
-
-#### Fixed
-- espeak-ng TTS now plays audio on Linux (disabled stdout/stderr redirection)
-- Voice selection now uses language codes (e.g., "en-us") instead of display names
-- English voices prioritized in voice list with "en" as default
-- Timing-sensitive tests now skip on Linux (OS-specific timing jitter)
-
 ---
-
-## [0.1.82-alpha] - 2025-12-21
-**Branch**: `parley/sprint/simulator-warnings` | **PR**: #485 | **Closes**: #484
-
-### Sprint: Conversation Simulator - Warnings System
-
-Implement warning detection for unreachable NPC entries (Epic #222).
-
-#### Added
-- ⚠️ Per-node unreachable sibling warnings in main tree view
-- ⚠️ Per-entry unreachable sibling warnings in conversation simulator
-- "Show Dialog Warnings" toggle in Settings > UI Settings
-- Live refresh of warnings when setting is toggled
-
-#### Technical
-- `TreeViewSafeNode.CalculateUnreachableSiblings()` - static method for reuse
-- `ReplyOption.IsUnreachable` property for simulator entries
-- MultiBinding pattern for compound visibility (warning + setting)
 
----
+## [0.1.159-alpha] - 2026-03-24 | PR #1966
+- Flowchart: configurable node width, drag-drop sibling reorder, drag-drop reparent
 
-## [0.1.81-alpha] - 2025-12-21
-**Branch**: `parley/fix/linux-tts-dropdown-overlap` | **PR**: #487
+## [0.1.158-alpha] - 2026-03-22 | PR #1920
+- Single-file search (Ctrl+F) and multi-file module search UI
 
-### Fix: Linux TTS Dropdown Overlap (#486)
+## [0.1.157-alpha] - 2026-03-20 | PR #1879
+- Fix NPC-to-NPC links visual bug
 
-#### Fixed
-- TTS voice dropdown no longer overlaps Linux installation instructions when no text to speak
+## [0.1.156-alpha] - 2026-03-19 | PR #1834
+- Remove legacy migration code, defer GameDataService init
 
----
+## [0.1.155-alpha] - 2026-02-28 | PR #1565
+- FlowView quest tag icons, theme-aware BrushManager, test reliability
 
-## [0.1.80-alpha] - 2025-12-21
-**Branch**: `parley/sprint/tts-integration` | **PR**: #483 | **Closes**: #479
-
-### Sprint: Text-to-Speech Integration (Epic #222)
-
-Add cross-platform text-to-speech to the conversation simulator for immersive dialog testing.
-
-#### Added
-- ITtsService interface for platform-agnostic TTS
-- WindowsTtsService (System.Speech.Synthesis)
-- EspeakTtsService (Linux espeak-ng)
-- MacOsSayTtsService (macOS say command)
-- TtsServiceFactory for platform detection
-- Per-speaker voice assignment UI (NPC voices + PC voice)
-- Speed control slider (0.5x - 2.0x)
-- Auto-Speak mode (speaks both NPC and PC lines automatically)
-- Auto-Advance mode (advances when single reply, waits for TTS completion)
-- SpeakCompleted event for proper PC→NPC speech sequencing
-- Graceful degradation with install instructions per platform
+## [0.1.154-alpha] - 2026-02-28 | PR #1564
+- Delete file from browser, persist character picker, split large controllers
 
----
+## [0.1.153-alpha] - 2026-02-27 | PR #1558
+- Replace 35 anti-pattern tests with 40 behavioral tests
 
-## [0.1.79-alpha] - 2025-12-20
-**Branch**: `parley/sprint/conversation-simulator-walker` | **PR**: #480 | **Closes**: #478
-
-### Sprint: Conversation Simulator - Dialog Walker + Coverage
-
-#### Dialog Walker UI
-- Floating window (ConversationSimulatorWindow.axaml)
-- NPC text display with speaker name
-- Script info panel (condition script + action script)
-- Reply selection (radio buttons)
-- Controls: Speak (placeholder), Pause, Skip, Restart, Exit
-
-#### Navigation
-- Step through conversation branches
-- User selects reply at each fork
-- Traverse links within same .dlg
-- Loop detection with warning
-
-#### Coverage Tracking
-- Track unique paths taken (path signatures)
-- Display percentage: "X of Y paths (Z%)"
-- Persist coverage per dialog file (like Scrap)
-- Clear button to reset coverage
-
-#### Warnings
-- ⚠️ "No conditional scripts found"
-- ⚠️ "NPC entries without conditions" (unreachable siblings)
-- ⚠️ "Loop detected"
-
-#### Theme-Aware Colors
-- NPC speaker label uses SpeakerVisualHelper for theme-aware coloring
-- Choices indicator toggles between PC (blue, "Choose response:") and NPC (orange, "Select start:") styling
-- F6 keyboard shortcut opens Conversation Simulator
-
-#### Bug Fixes
-- Fix false "unsaved changes" prompt when opening Conversation Simulator
-- Coverage now tracks unique visited entries (node-based) instead of paths
+## [0.1.152-alpha] - 2026-02-26 | PR #1537
+- Split ConversationSimulatorViewModel, FlowchartManager into partials
 
----
+## [0.1.150-alpha] - 2026-02-15 | PR #1374
+- Replace 126 hardcoded theme values
 
-## [0.1.78-alpha] - 2025-12-20
-**Branch**: `parley/sprint/scrap-settings-migration` | **PR**: #474 | **Closes**: #473
+## [0.1.148-alpha] - 2026-02-08 | PR #1270
+- Decompose SettingsService into 3 focused sub-services
 
-### Sprint: Scrap System Redesign & Settings Migration
+## [0.1.147-alpha] - 2026-02-07 | PR #1268
+- MainWindow decomposition: extract 4 controllers/services
 
-#### Scrap System Redesign (Epic #458)
-- Redesign scrap data model with deletion batch tracking
-- Add "Restore with descendants" operation for subtree restoration
-- UI improvements: child count indicators, batch grouping
-- Fix #370: Redo now properly restores deleted nodes to scrap panel
-- Closes #124: Restore entire subtree chain with one click
+## [0.1.146-alpha] - [0.1.130-alpha] | 2026-02-07 | PRs #1237-#1264
+- **17 sprints: DI & Testability Refactoring** -- Full DI architecture, service interfaces, singleton removal, property panel sub-populators, MainWindow partial classes, controller extraction, mock services, 80%+ test coverage
 
-#### Settings Migration
-- #412: Migrate game paths to shared RadoubSettings
-- #472: Move Parley folder from ~/Parley/ to ~/Radoub/Parley/
-- Auto-migration preserves existing user settings
+## [0.1.129-alpha] - 2026-02-01 | PR #1195
+- Fix UI tests after DialogBrowserPanel, add AutomationIds
 
----
+## [0.1.128-alpha] - 2026-02-01 | PR #1179
+- Dialog validation for unsupported chars, status bar to top, word wrap fix
 
-## [0.1.77-alpha] - 2025-12-20
-**Branch**: `parley/sprint/mainwindow-cleanup` | **PR**: #471 | **Closes**: #466
+## [0.1.127-alpha] - 2026-01-31 | PR #1164
+- **Collapsible Dialog Browser Panel** -- left panel with all .dlg files, search/filter, F4 toggle
 
-### Sprint 5: MainWindow Cleanup & Integration (#457)
+## [0.1.126-alpha] - 2026-01-24 | PR #1104
+- TreeView word wrap option, flowchart font follows theme
 
-Final cleanup after Sprints 1-4. Extract additional controllers for file and edit operations.
+## [0.1.125-alpha] - 2026-01-24 | PR #1087
+- Custom dialog browser for Open, shared IFO library, dark theme fixes
 
-**Line count**: MainWindow 3,047 → 2,555 lines (-492 lines)
+## [0.1.124-alpha] - 2026-01-19 | PR #1011
+- Startup performance: background warmup of GameDataService
 
-#### Refactored
-- **FileMenuController** (539 lines) - Extracted file menu operations:
-  - New/Open/Save/SaveAs/Close/Exit handlers
-  - Recent files menu population
-  - Module info display (UpdateModuleInfo, ClearModuleInfo)
-  - File-related dialog helpers
+## [0.1.123-alpha] - 2026-01-19 | PR #1009
+- Remove duplicate ScriptBrowserWindow (~1,089 lines)
 
-- **EditMenuController** (245 lines) - Extracted edit menu operations:
-  - Undo/Redo handlers
-  - Cut/Copy/Paste node handlers
-  - Copy to clipboard handlers (text, properties, tree structure)
-  - Paste-as-link-after-cut dialog
+## [0.1.122-alpha] - 2026-01-19 | PR #1000
+- Fix duplicate themes, dark theme contrast, child link opacity
 
-#### Summary
-Epic #457 complete. MainWindow reduced from 5,081 to 2,555 lines (**50% reduction**).
+## [0.1.121-alpha] - 2026-01-16 | PR #918
+- **Audio Features** -- Sound from HAK/BIF, WAV validation, NPC soundset/portrait preview, SSF parser
 
-Total extracted across all sprints:
-- FlowchartManager: 875 lines
-- TreeViewUIController: 593 lines
-- ScriptBrowserController: 632 lines
-- QuestUIController: 487 lines
-- FileMenuController: 539 lines
-- EditMenuController: 245 lines
+## [0.1.120-alpha] - 2026-01-16 | PR #913
+- Extract WindowLayoutService from SettingsService
 
----
+## [0.1.118-alpha] - 2026-01-15 | PR #904
+- Remove WebView dependency (binary: 359 MB to 38 MB)
 
-## [0.1.76-alpha] - 2025-12-20
-**Branch**: `parley/sprint/quest-ui-controller` | **PR**: #470 | **Closes**: #465
+## [0.1.117-alpha] - 2026-01-15 | PR #902
+- Configurable flowchart text lines, FlowView context menu parity
 
-### Sprint 4: Extract QuestUIController (#457)
+## [0.1.116-alpha] - 2026-01-15 | PR #900
+- Replace hardcoded Gray colors, add FlowchartPanel focus indicator
 
-Extract quest/journal UI code from MainWindow.axaml.cs into dedicated QuestUIController class.
+## [0.1.115-alpha] - 2026-01-14 | PR #896
+- Remove Python plugin system (~50 files), script cache timestamp validation
 
-**Line count**: MainWindow 3,421 → 3,047 lines (-374 lines)
+## [0.1.114-alpha] - 2026-01-12 | PR #888
+- Token insertion spacing, TreeView speaker tag coloring
 
-#### Refactored
-- Extract quest tag/entry text change handlers
-- Move quest browser dialog handlers (browse quest, browse entry)
-- Extract quest clear button handlers (clear tag, clear entry)
-- Move journal loading/integration
-- Move quest display update methods (name display, entry preview)
+## [0.1.113-alpha] - 2026-01-12 | PR #878
+- **Color Token Support** -- NWN `<c###>` parsing/rendering, Token Selector (Ctrl+T), simulator colored text
 
----
+## [0.1.112-alpha] - 2026-01-11 | PR #876
+- **Scrap System Overhaul** -- Hierarchical TreeView, selective restore, Swap Roles
 
-## [0.1.75-alpha] - 2025-12-20
-**Branch**: `parley/sprint/script-browser-controller` | **PR**: #469 | **Closes**: #464
+## [0.1.111-alpha] - 2026-01-10 | PR #857
+- DLG filename validation (16-char limit), sound mono validation, FlowView shortcuts
 
-### Sprint 3: Extract ScriptBrowserController (#457)
+## [0.1.110-alpha] - 2026-01-02 | PR #724
+- SettingsService split, dead code removal, settings persistence fix
 
-Extract script browser code from MainWindow.axaml.cs into dedicated ScriptBrowserController class.
+## [0.1.109-alpha] - [0.1.105-alpha] | 2026-01-01 | PRs #710-#714
+- **5 file-split refactorings** -- SoundBrowserWindow 57% smaller, SettingsWindow 76% smaller, 3 controllers split
 
-**Line count**: MainWindow 3,999 -> 3,421 lines (-578 lines)
+## [0.1.104-alpha] - 2025-12-31 | PR #702
+- Fix FlowView focus jumping, autosave nav override, live validation warnings
 
-#### Refactored
-- Extract script browser dialog handlers (conditional, action, conversation scripts)
-- Move script editor launching (external editor integration)
-- Extract parameter browser and suggestion logic
-- Move script preview loading and caching
-- Consolidate parameter declarations management
-- Remove duplicate AddParameterRow, OnParameterChanged, ShowTrimFeedback from MainWindow
+## [0.1.103-alpha] - 2025-12-30 | PR #682
+- Script browse respects cancel, conditional preview shows BIF scripts
 
----
+## [0.1.102-alpha] - 2025-12-28 | PR #608
+- Remove ~3,800 lines legacy DLG parser; full migration to Radoub.Formats
 
-## [0.1.74-alpha] - 2025-12-20
-**Branch**: `parley/sprint/treeview-ui-controller` | **PR**: #468 | **Closes**: #463
+## [0.1.100-alpha] - 2025-12-27 | PR #602
+- Remove legacy GffBinaryReader (-765 lines); all GFF via shared library
 
-### Sprint 2: Extract TreeViewUIController (#457)
+## [0.1.99-alpha] - [0.1.97-alpha] | 2025-12-27 | PRs #596-#601
+- Extract GffFieldFactory/GffBinaryWriter, split MainViewModel into 6 partials (81% reduction)
 
-Extract TreeView UI handling code from MainWindow.axaml.cs into dedicated TreeViewUIController class.
+## [0.1.96-alpha] - 2025-12-27 | PR #590
+- **DLG Parser Migration** -- DlgReader/DlgWriter in Radoub.Formats, 17 round-trip tests, DlgAdapter
 
-**Line count**: MainWindow 4,448 -> 3,999 lines (-449 lines)
+## [0.1.95-alpha] - 2025-12-26 | PR #569
+- MainWindow.axaml.cs: 2,485 to 1,596 lines via partial classes
 
-#### Refactored
-- Extract drag-drop UI event handlers (pointer events, drag over, drop, visual indicators)
-- Move selection handling logic (selection changed, double-tap expansion)
-- Extract expand/collapse operations (recursive expand/collapse with circular reference protection)
-- Move link navigation (Go to Parent node)
+## [0.1.94-alpha] - 2025-12-25 | PR #539
+- Dictionary language selection in Settings, hot-swap support
 
----
+## [0.1.93-alpha] - 2025-12-25 | PR #538
+- Delete focuses nearest sibling instead of root
 
-## [0.1.73-alpha] - 2025-12-20
-**Branch**: `parley/sprint/flowchart-manager` | **PR**: #467 | **Closes**: #462
+## [0.1.92-alpha] - [0.1.88-alpha] | 2025-12-24 | PRs #527-#532
+- **MainWindow refactoring** -- Remove 2,000 lines dead code, consolidate 24 deps, extract DialogFactory, constructor 225 to 22 lines
 
-### Sprint 1: Extract FlowchartManager (#457)
+## [0.1.87-alpha] - 2025-12-24 | PR #520
+- Fix FlowView: Fit to Window, Shift+drag, empty render, clear on close
 
-Extract flowchart-related code from MainWindow.axaml.cs into dedicated FlowchartManager class.
+## [0.1.86-alpha] - 2025-12-23 | PR #518
+- Script discovery in HAK/ERF archives, priority: Module > HAK > Built-in
 
-**Line count**: MainWindow 5,081 -> 4,448 lines (-633 lines)
+## [0.1.85-alpha] - 2025-12-23 | PR #509
+- **Spell-checking** -- Hunspell + NWN/D&D dictionary for Text/Comments, shared custom dictionary
 
-#### Refactored
-- Extract flowchart layout modes (floating, side-by-side, tabbed)
-- Move PNG/SVG export logic to FlowchartManager
-- Move flowchart node click handling and tree sync
-- Move FlowView collapse/expand event handling
-- Centralize selection sync to all flowchart panels
+## [0.1.84-alpha] - 2025-12-22 | PR #492
+- Piper TTS (13 neural voices) and espeak-ng variants for Linux
 
----
+## [0.1.82-alpha] - 2025-12-21 | PR #485
+- Per-node unreachable sibling warnings in tree view and simulator
 
-## [0.1.72-alpha] - 2025-12-20
-**Branch**: `parley/sprint/treeview-nav-ux` | **PR**: #460 | **Closes**: #149, #150
+## [0.1.80-alpha] - 2025-12-21 | PR #483
+- **Text-to-Speech** -- Cross-platform TTS, per-speaker voices, auto-speak, auto-advance
 
-### Sprint: TreeView Navigation UX (#459)
+## [0.1.79-alpha] - 2025-12-20 | PR #480
+- **Conversation Simulator** -- Step-through branches, coverage tracking, loop detection, F6
 
-Quality-of-life enhancements for faster dialog authoring workflows.
+## [0.1.78-alpha] - 2025-12-20 | PR #474
+- Scrap redesign (batch tracking, subtree restore), settings migration to ~/Radoub/
 
-#### Added
-- **#149**: Child link jump - Navigate from link node to parent
-  - Context menu: "Go to Parent Node"
-  - Keyboard shortcut: Ctrl+J
-- **#150**: Sibling node creation
-  - Ctrl+Shift+D creates sibling of current node
-  - Maintains NPC/PC alternation
+## [0.1.77-alpha] - [0.1.73-alpha] | 2025-12-20 | PRs #467-#471
+- **Epic #457: MainWindow 5,081 to 2,555 lines (50%)** -- Extracted FlowchartManager, TreeViewUIController, ScriptBrowserController, QuestUIController, FileMenuController, EditMenuController
 
----
+## [0.1.72-alpha] - 2025-12-20 | PR #460
+- Go to Parent Node (Ctrl+J), sibling creation (Ctrl+Shift+D)
 
-## [0.1.71-alpha] - 2025-12-20
-**Branch**: `parley/sprint/drag-drop-collapse` | **PR**: #452 | **Closes**: #251, #436, #450
-
-### Sprint: Drag-Drop & Collapsible Nodes (#451)
-
-Advanced navigation and organization features for TreeView and FlowView.
-
-#### Added
-- **DialogChangeEventBus**: Centralized event system for TreeView/FlowView synchronization
-  - Singleton pattern with pub/sub for dialog structure changes
-  - Event types: NodeAdded, NodeDeleted, NodeMoved, SelectionChanged, DialogRefreshed
-  - Suppression support for batch operations
-- **TreeViewDragDropService**: Drag-drop infrastructure for dialog tree (#450)
-  - Drag threshold detection (5px movement)
-  - Drop position calculation (Before/After/Into zones)
-  - NPC/PC alternation rule validation
-  - Circular reference prevention
-  - Link node drag prevention (drag original instead)
-- **#450**: TreeView drag-drop node reordering (Aurora Toolset parity)
-  - Visual drop indicators (CSS border/background classes)
-  - Reorder nodes within same parent
-  - Reparent nodes to different parent (with validation)
-  - Undo support for move operations
-- **#251**: FlowView collapse/expand subtrees
-  - Collapse All / Expand All toolbar buttons
-  - Double-click node to toggle collapse
-  - Child count indicator (▼ N / ▶ N) on nodes with children
-  - Hidden node count in status bar
-- **Drag-drop unit tests**: 29 tests covering validation and move operations
-  - DragDropTests.cs: MoveNodeToPosition tests (16 tests)
-  - DragDropValidationTests.cs: ValidateDrop tests (13 tests)
-
-#### Deferred
-- **#240**: FlowView visual node repositioning - Requires custom layout engine; AvaloniaGraphControl uses automatic Sugiyama layout
-
-#### Fixed
-- **#436**: FlowView now updates when nodes are added/deleted/moved
-  - MainWindow subscribes to DialogChangeEventBus
-  - Floating, embedded, and tabbed panels all update on structure changes
+## [0.1.71-alpha] - 2025-12-20 | PR #452
+- **Drag-Drop & Collapsible Nodes** -- TreeView drag-drop with undo, FlowView collapse/expand, DialogChangeEventBus
 
 ---
-
-## Archive Summary (v0.1.14 - v0.1.70)
-
-Major features added during November - December 2025:
-
-- **MainViewModel Refactoring** (v0.1.14-v0.1.20, Epic #99) - Completed Phase 4-7, extracted 6 service managers, reduced MainViewModel 57% (2,956 to 1,258 lines)
-- **Theme System** (v0.1.18, v0.1.65-v0.1.67) - 8 official themes, colorblind accessibility, speaker preferences file, warm/cool consistency audit
-- **UI/UX Enhancements** (v0.1.19, v0.1.69) - Panel/window persistence, toolbar icons, Help documentation, flowchart persistence
-- **Native Flowchart View** (v0.1.50-v0.1.56, Epic #325) - Cross-platform flowchart visualization, multiple layouts (floating/side-by-side/tabbed), PNG/SVG export, zoom controls, bidirectional tree selection sync
-- **Script Parameter System** (v0.1.39-v0.1.47, Epic #1, #207) - Debounced auto-save, parameter validation fixes, condition/action panel scrolling
-- **Sound Browser Improvements** (v0.1.41) - BIF archive scanning, subdata folder traversal, invalid WAV handling
-- **Undo/Redo Fixes** (v0.1.40-v0.1.42) - Dialog state restoration, parent reference fixes, deep clone improvements
-- **Linux Compatibility** (v0.1.68) - Case-insensitive script preview, BIF sound playback with ffplay, streaming BIF reading
-- **Quest Browser** (v0.1.70) - TextBox + Browse pattern for Quest Tag/Entry, QuestBrowserWindow, Open in Manifest integration
-- **Shared GFF Parser** (v0.1.66) - JournalService now uses Radoub.Formats.Jrl for JRL parsing
-- **Plugin System Refinements** (v0.1.27-v0.1.38) - FlaUI automation tests, graceful shutdown, A11y identifiers, settings persistence
-- **FlowView Updates** (v0.1.54, v0.1.56) - Mouse drag panning, scroll zoom, theme-aware colors, SVG export layout fixes
-
-For complete details, see git history or contact maintainer.
-
 
-## Archive Summary (v0.1.0 - v0.1.13)
+## Archive: v0.1.14 - v0.1.70 (Nov-Dec 2025)
 
-Major features added during early development (October - November 2025):
+- **MainViewModel Refactoring** (v0.1.14-v0.1.20) - 6 service managers, 57% reduction
+- **Theme System** (v0.1.18, v0.1.65-v0.1.67) - 8 themes, colorblind accessibility
+- **Native Flowchart View** (v0.1.50-v0.1.56) - Visualization, PNG/SVG export
+- **Script Parameters** (v0.1.39-v0.1.47) - Auto-save, validation
+- **Sound Browser** (v0.1.41) - BIF scanning, subdata traversal
+- **Undo/Redo Fixes** (v0.1.40-v0.1.42) - State restoration, deep clone
+- **Linux Compatibility** (v0.1.68) - Case-insensitive scripts, BIF playback
+- **Quest Browser** (v0.1.70) - Browse pattern, Open in Manifest
+- **Plugin System** (v0.1.27-v0.1.38) - FlaUI tests, settings persistence
 
-- **Initial Release** (v0.1.0) - Aurora DLG reading/writing, tree view editor, undo/redo, sound/script browsers, cross-platform support
-- **LinkRegistry System** (v0.1.1) - Fixed critical copy/paste corruption, pre-save validation
-- **Accessibility** (v0.1.3) - Color-blind friendly speaker visuals (shapes + colors)
-- **Performance** (v0.1.4) - Lazy loading for TreeView, eliminated O(2^depth) scaling
-- **Plugin Foundation** (v0.1.5, Epic 0) - Python plugins, gRPC IPC, process isolation, security model
-- **Script Parameters** (v0.1.6, Epic 1) - Parameter browsing, caching, intelligent suggestions
-- **UI/UX Start** (v0.1.8, Epic 2) - Font customization, layout redesign, Scrap Tab
-- **Logging & Diagnostics** (v0.1.10, Epic 126) - Auto path sanitization, log level filtering
-- **MainViewModel Refactoring** (v0.1.9-v0.1.13, Epic 99) - Service extraction, SOLID patterns
+## Archive: v0.1.0 - v0.1.13 (Oct-Nov 2025)
 
-For complete details, see git history or contact maintainer.
+- **Initial Release** (v0.1.0) - DLG reading/writing, tree editor, undo/redo, cross-platform
+- **LinkRegistry** (v0.1.1) - Fixed copy/paste corruption
+- **Performance** (v0.1.4) - Lazy loading, eliminated O(2^depth)
+- **Plugin Foundation** (v0.1.5) - Python plugins, gRPC, process isolation
+- **Script Parameters** (v0.1.6) - Browsing, caching, suggestions
+- **UI/UX** (v0.1.8) - Font customization, layout redesign, Scrap Tab
+- **Logging** (v0.1.10) - Path sanitization, log level filtering
 
 ---
 
-**Development**: This project was developed through AI-human collaboration. See `../About/CLAUDE_DEVELOPMENT_TIMELINE.md` and `../About/ON_USING_CLAUDE.md` for the full development story.
+**Development**: See `../About/CLAUDE_DEVELOPMENT_TIMELINE.md` for project history.

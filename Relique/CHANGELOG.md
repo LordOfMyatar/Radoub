@@ -6,18 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased]
-
----
-
 ## [0.10.3-alpha] - 2026-03-24
 **Branch**: `relique/issue-1831` | **PR**: #1973
 
 ### Sprint: Editor Polish (#1831)
 
-- [x] #1806 — Color picker for appearance section (shared library move to Radoub.UI)
-- [x] #1810 — Form layout improvements (statistics position, descriptions side-by-side)
-- [x] #1814 — Conditional Stack Size/Charges based on base item type stacking column
+- Color picker for appearance section (moved to Radoub.UI shared library)
+- Form layout improvements (statistics position, descriptions side-by-side)
+- Conditional Stack Size/Charges based on base item stacking column
 
 ---
 
@@ -26,10 +22,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Bug Fixes (#1829)
 
-- [x] #1802 — Module change from Trebuchet now detected via PropertyChanged subscription
-- [x] #1803 — Title bar updates correctly on Recent Files open (added UpdateTitle helper)
-- [x] #1804 — Statistics refresh on base item type change
-- [x] #1809 — Property assignment uses move semantics (subtype-level filtering)
+- Module change from Trebuchet now detected via PropertyChanged subscription
+- Title bar updates correctly on Recent Files open
+- Statistics refresh on base item type change
+- Property assignment uses move semantics with subtype-level filtering
 
 ---
 
@@ -38,7 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Marlinspike Ctrl+F/H Rollout (#1936)
 
-- [x] #1932 — Ctrl+F search and Ctrl+H replace for item files
+- Ctrl+F search and Ctrl+H replace for item files
 
 ---
 
@@ -47,18 +43,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Browsing & Selection Controls (#1832)
 
-- [x] #1807 — Searchable Base Type dropdown
-- [x] #1808 — Item portrait/icon chooser (inline grid; full picker deferred to #1911/#1912)
-- [x] #1816 — Use standardized file browser instead of OS file picker
-
-### Additional Fixes
-
-- Load module HAK files for CEP-extended base item types (was showing 91 types, now full set)
-- Filter reserved/placeholder entries from base type picker and item properties (BioWare Reserved, CEP Reserved, User slots 214-509)
-- Icon scan uses MinRange/MaxRange from baseitems.2da (was scanning 1-255)
-- Selected icon preview slot with proper Stretch=Uniform scaling
-- F4 keyboard shortcut for item browser toggle
-- WARN logging for placeholder icons (iinvalid_2x2) and failed icon lookups
+- Searchable Base Type dropdown
+- Item portrait/icon chooser with inline grid
+- Standardized file browser instead of OS file picker
+- Load module HAK files for CEP-extended base item types
+- Filter reserved/placeholder entries from base type picker and item properties
+- Icon scan uses MinRange/MaxRange from baseitems.2da
 
 ---
 
@@ -67,9 +57,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: TLK Resolution, Wizard Icons, and MainWindow Split (#1833)
 
-- [x] #1805 — Item Name TLK resolution for base game items
-- [x] #1815 — Wizard: Search by item icon/image
-- [x] #1796 — Split MainWindow.axaml.cs into 6 partial files (82 + 196 + 205 + 401 + 588 + 269)
+- Item Name TLK resolution for base game items
+- Wizard: Search by item icon/image
+- Split MainWindow.axaml.cs into 6 partial files
 
 ---
 
@@ -78,9 +68,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Properties Tree & Search UX (#1830)
 
-- [x] #1811 — Disambiguate "On Hit" entries using nwscript.nss constants (Properties, Monster Hit, Cast Spell)
-- [x] #1812 — Search auto-expands matching subcategories with bold highlighting
-- [x] #1813 — Category filter ComboBox, right-click "Add to Item" context menu, property count label
+- Disambiguate "On Hit" entries using nwscript.nss constants
+- Search auto-expands matching subcategories with bold highlighting
+- Category filter ComboBox, right-click "Add to Item" context menu
 
 ---
 
@@ -89,13 +79,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Rename product to Relique (#1784)
 
-- Rename user-facing product name from ItemEditor to Relique
-- Rename directories: `ItemEditor/` → `Relique/Relique/` (matches tool convention)
-- Rename settings: `ItemEditorPath` → `ReliquePath` with migration for old JSON key
-- Update UI strings, window titles, About dialog, help output, settings paths
-- Update Trebuchet tool card, Fence context menu, cross-tool launcher
-- Fix flaky CommandLine test race condition (`[Collection]`)
-- Namespace stays `ItemEditor` (no code-level rename)
+- Rename user-facing product from ItemEditor to Relique (namespace stays `ItemEditor`)
+- Rename directories, settings keys (with migration), UI strings, cross-tool references
 
 ---
 
@@ -104,9 +89,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint 6: Item Wizard and Cross-Tool Launch Integration (#1728)
 
-- [x] #1729 — Item creation wizard (type → name → palette → finish)
-- [x] #1730 — Fence integration (Edit Item context menu + Refresh Palette)
-- [x] #1731 — Quartermaster integration (Edit Item context menu + Refresh Palette)
+- Item creation wizard (type, name, palette, finish)
+- Fence and Quartermaster integration (Edit Item context menu + Refresh Palette)
 
 ---
 
@@ -115,10 +99,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint 5: Descriptions, Appearance, Variables, and Comments (#1723)
 
-- [x] #1724 — Description fields with spell-check and token support
-- [x] #1725 — Item Type Description from 2DA (read-only)
-- [x] #1726 — Appearance section in collapsible Expander
-- [x] #1727 — Local variables DataGrid and collapsible comments section
+- Description fields with spell-check and token support
+- Appearance section in collapsible Expander
+- Local variables DataGrid and collapsible comments section
 
 ---
 
@@ -127,11 +110,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint 4: Property Editing, Bulk Operations, and Statistics (#1717)
 
-- [x] #1718 — Edit existing properties (modify subtype/cost/param)
-- [x] #1719 — Bulk property operations (multi-select add/remove with validation)
-- [x] #1720 — ItemStatisticsService (auto-generate stats description)
-- [x] #1721 — Undroppable and Identified checkboxes
-- [x] #1722 — Unit tests for bulk operations and statistics
+- Edit existing properties (modify subtype/cost/param)
+- Bulk property operations with multi-select and validation
+- ItemStatisticsService for auto-generated stats description
 
 ---
 
@@ -140,10 +121,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint 3: Item Property Display and Add/Remove (#1712)
 
-- [x] #1713 — ItemPropertyService (2DA cascade for editing)
-- [x] #1714 — Available Properties panel with tree view and search
-- [x] #1715 — Assigned Properties panel and Add/Remove flow with cascading dropdowns
-- [x] #1716 — Unit tests for ItemPropertyService and property operations
+- ItemPropertyService with 2DA cascade for editing
+- Available Properties tree view with search
+- Assigned Properties panel with Add/Remove flow and cascading dropdowns
 
 ---
 
@@ -152,11 +132,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint 2: Basic Field Editing (#1706)
 
-- [x] #1707 — Basic properties panel (name, tag, ResRef, base type, cost, weight)
-- [x] #1708 — Flags, charges, and stack size editing
-- [x] #1709 — Conditional fields (armor/weapon) based on base item type
-- [x] #1710 — Palette category dropdown
-- [x] #1711 — Round-trip unit tests for basic editing
+- Basic properties panel (name, tag, ResRef, base type, cost, weight)
+- Flags, charges, stack size, conditional fields, palette category
+- Round-trip unit tests for basic editing
 
 ---
 
@@ -165,10 +143,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint 1: Project Bootstrap (#1700)
 
-- [x] #1701 — Project skeleton (csproj, Program.cs, App.axaml, version.json, test project)
-- [x] #1702 — CommandLineService (--file, --safemode, --help) + SettingsService
-- [x] #1703 — MainWindow with menu bar, status bar, item browser panel
-- [x] #1704 — File operations: Open, Save, Save As for .uti files
-- [x] #1705 — Trebuchet registration + CLAUDE.md, CHANGELOG.md, README.md
+- Project skeleton with csproj, Program.cs, App.axaml, version.json, test project
+- CommandLineService, SettingsService, MainWindow with menu/status/browser
+- File operations (Open, Save, Save As) for .uti files
+- Trebuchet registration
 
 ---

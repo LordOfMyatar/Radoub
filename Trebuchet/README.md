@@ -25,7 +25,7 @@ See [Known Issues](https://github.com/LordOfMyatar/Radoub/issues?q=is%3Aissue+is
 
 ### Tool Launcher
 
-- Discover and launch Parley, Manifest, Quartermaster, and Fence
+- Discover and launch Parley, Manifest, Quartermaster, Fence, and Relique
 - Recent file support for quick access
 - Pass files directly to tools via MRU dropdown
 

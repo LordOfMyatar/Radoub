@@ -21,6 +21,13 @@ See [Known Issues](https://github.com/LordOfMyatar/Radoub/issues?q=is%3Aissue+is
 
 ---
 
+## Supported File Types
+
+- `.utc` — Creature blueprint files (GFF-based, Aurora Engine)
+- `.bic` — Player character files (GFF-based, Aurora Engine)
+
+---
+
 ## Features
 
 ### Creature Editing
