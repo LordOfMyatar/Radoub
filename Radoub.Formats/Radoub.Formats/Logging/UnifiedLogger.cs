@@ -287,6 +287,12 @@ public static class UnifiedLogger
             var sessionInfo = $"Session started: {SessionId}";
             var logPath = Path.Combine(_sessionDirectory, $"Application_{SessionId}.log");
             File.AppendAllText(logPath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [INFO ] [App] {sessionInfo}{Environment.NewLine}");
+
+            // Apply retention cleanup even for unconfigured loggers (e.g. test runs)
+            if (!_configured)
+            {
+                CleanupOldSessions(_retainSessions);
+            }
         }
         catch (Exception ex)
         {
