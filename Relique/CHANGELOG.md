@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.10.4-alpha] - 2026-03-28
-**Branch**: `radoub/issue-2021` | **PR**: #TBD
+**Branch**: `radoub/issue-2021` | **PR**: #2023
 
 ### Sprint: Relique Path & CI Bug Fixes (#2021)
 
