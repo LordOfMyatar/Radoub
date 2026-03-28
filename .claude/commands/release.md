@@ -112,8 +112,8 @@ Before releasing:
      - `Manifest/CHANGELOG.md`
      - `Quartermaster/CHANGELOG.md`
      - `Fence/CHANGELOG.md`
+     - `Relique/CHANGELOG.md`
      - `Trebuchet/CHANGELOG.md`
-     - `CHANGELOG.md` (repo-level, for shared changes)
    - Present numbered list for highlight selection (Phase 1 fallback)
    - Generate release notes from selection
 

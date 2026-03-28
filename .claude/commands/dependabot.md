@@ -85,14 +85,13 @@ git checkout -b radoub/issue-[anchor-number]
 - Apply all version bumps
 - Ensure related packages stay in sync (e.g., all Avalonia packages should be same version)
 
-**Update CHANGELOG.md**:
-- Add new version section with sprint format
-- List all PRs being consolidated
+**Update tool CHANGELOGs** (if dependency changes affect specific tools):
+- Add one-liner highlight entry to affected tool's CHANGELOG
 - Include PR numbers for traceability
 
 **Initial commit**:
 ```bash
-git add CHANGELOG.md
+git add Directory.Packages.props
 git commit -m "[Radoub] chore: Initialize dependabot sprint branch for #[anchor]"
 ```
 

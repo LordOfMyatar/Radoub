@@ -329,7 +329,9 @@ jobs:
             echo ""
             extract_changelog_section "Parley/CHANGELOG.md" "Parley"
             extract_changelog_section "Manifest/CHANGELOG.md" "Manifest"
+            extract_changelog_section "Quartermaster/CHANGELOG.md" "Quartermaster"
             extract_changelog_section "Fence/CHANGELOG.md" "Fence"
+            extract_changelog_section "Relique/CHANGELOG.md" "Relique"
             extract_changelog_section "Trebuchet/CHANGELOG.md" "Trebuchet"
           } > highlights.md
         fi
@@ -401,7 +403,9 @@ jobs:
           See the individual changelogs:
           - [Parley CHANGELOG](https://github.com/${{ github.repository }}/blob/main/Parley/CHANGELOG.md)
           - [Manifest CHANGELOG](https://github.com/${{ github.repository }}/blob/main/Manifest/CHANGELOG.md)
+          - [Quartermaster CHANGELOG](https://github.com/${{ github.repository }}/blob/main/Quartermaster/CHANGELOG.md)
           - [Fence CHANGELOG](https://github.com/${{ github.repository }}/blob/main/Fence/CHANGELOG.md)
+          - [Relique CHANGELOG](https://github.com/${{ github.repository }}/blob/main/Relique/CHANGELOG.md)
           - [Trebuchet CHANGELOG](https://github.com/${{ github.repository }}/blob/main/Trebuchet/CHANGELOG.md)
 
           ## Installation Notes

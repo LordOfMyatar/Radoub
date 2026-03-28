@@ -6,16 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased]
-
----
-
 ## [0.15.6-alpha] - 2026-03-24
 **Branch**: `quartermaster/issue-1900` | **PR**: #1969
 
 ### Sprint: Module Switch & UI Bug Fixes (#1900)
 
-- [x] #1859 — Module indicator theme refresh on theme change
+- Module indicator theme refresh on theme change
 
 ---
 
@@ -24,7 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Marlinspike Ctrl+F/H Rollout (#1936)
 
-- [x] #1929 — Ctrl+F search and Ctrl+H replace for journal files
+- Ctrl+F search and Ctrl+H replace for journal files
 
 ---
 
@@ -33,7 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Cross-Tool & Trebuchet Bug Sweep (#1767)
 
-- [x] #1511 - Token preview not displaying correctly — added explicit Foreground brush, re-render on expander open
+- Fixed token preview display with explicit Foreground brush
 
 ---
 
@@ -42,7 +38,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Manifest & Fence Test Coverage + Anti-Pattern Cleanup (#1555)
 
-- [x] #1550 - Add tests for edit operations, property panel, SpellCheckService (22 new tests: EditOps GenerateUniqueTag, PropertyPanel FormatStrRef, SpellCheckService singleton/word management)
+- Added 22 new tests (EditOps, PropertyPanel, SpellCheckService)
 
 ---
 
@@ -51,8 +47,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: File Splits (#1523)
 
-- [x] #1515 - Split MainWindow.axaml.cs into 4 partial files (core, FileOps, EditOps, PropertyPanel)
-- [x] #1373 - Split SettingsWindow.axaml.cs into 3 partial files (core, Paths, Dictionary)
+- Split MainWindow.axaml.cs into 4 partial files
+- Split SettingsWindow.axaml.cs into 3 partial files
 
 ---
 
@@ -61,13 +57,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Tech Debt Phase 3c - Trebuchet & Manifest Cleanup (#1300)
 
-- [x] #1294 - Fix settings persistence, command line race, and TLK log levels
-  - Replaced bare catch in font handling with specific `ArgumentException` + logging
-  - TLK log levels already correct after #1286 shared TlkService consolidation
-  - CommandLineService.Options now throws if Parse() not called (guards against race)
-  - Added `IsParsed` property for defensive checking
-  - Settings persistence verified correct (all settings auto-save on change)
-  - Added `Path.GetFullPath()` traversal prevention to user path handlers
+- Fixed settings persistence, command line race condition, and TLK log levels
+- Added path traversal prevention to user path handlers
 
 ---
 
@@ -76,10 +67,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Trebuchet Module Management Integration (#1260)
 
-- [x] #1079 - Auto-load journal from Trebuchet's current module
-  - When launched without --file, auto-detects and loads the single .jrl from module directory
-  - Uses ManifestBrowserContext to resolve module path from RadoubSettings
-  - Skips auto-load when multiple journals exist or no module is selected
+- Auto-load journal from Trebuchet's current module when launched without --file
 
 ---
 
@@ -88,9 +76,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Bug Fixes - Manifest & Logging (#1151)
 
-- [x] #1115 - Token preview sometimes doesn't show color
-  - Fixed property assignment order in UpdateTokenPreview() - config must be set before text
-- [x] #1114 - Duplicate theme list entries (already fixed in prior commit)
+- Fixed token preview color not showing (property assignment order)
+- Fixed duplicate theme list entries
 
 ---
 
@@ -99,11 +86,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Custom File Browser - Manifest & Path Standardization (#1097)
 
-- [x] #1085 - Use custom file browser for .jrl files
-  - File > Open now uses `JournalBrowserWindow` from Radoub.UI
-  - Shows journals from current module directory
-  - Auto-selects when only one journal found (typical case: module.jrl)
-  - Browse button to select different module folder
+- File > Open now uses custom JournalBrowserWindow from Radoub.UI
 
 ---
 
@@ -112,17 +95,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Feature Parity (#1059)
 
-Bring Manifest up to parity with other Radoub tools.
-
-- [x] #889 - Settings window already uses non-modal Show()
-- [x] #879 - Add token support to journal editor
-  - Added Token button and Ctrl+T shortcut for token insertion
-  - Added Token Preview expander showing rendered tokens
-  - Added TokenTextBlock and TokenSelectorWindow to Radoub.UI (shared)
-- [x] #808 - Tree panel MinWidth reduced from 200 to 150 for 1024px screens
-- [x] #1069 - Add 'New Journal' command to create module.jrl
-  - File → New Journal (Ctrl+N) creates empty JRL with Save As dialog
-  - Default filename: module.jrl
+- Token support in journal editor (Ctrl+T, Token Preview expander)
+- New Journal command (Ctrl+N) to create module.jrl
+- Tree panel MinWidth reduced for 1024px screen support
 
 ---
 
@@ -131,7 +106,6 @@ Bring Manifest up to parity with other Radoub tools.
 
 ### Fix: Status bar file path truncation (#807)
 
-- Added `TextTrimming="CharacterEllipsis"` to FilePathText in status bar
 - Long file paths now show ellipsis when truncated
 
 ---
@@ -141,12 +115,8 @@ Bring Manifest up to parity with other Radoub tools.
 
 ### Sprint: Testing & Polish (#859)
 
-Get Manifest to release-ready state with unit test coverage and responsive UI fixes.
-
-- [x] #848 - Add SettingsService and TlkService unit tests (14 + 14 = 28 tests)
-- [x] #806 - Priority/XP controls overflow on narrow panels (already fixed in #822)
-- [x] #805 - Fixed-width form fields don't scale on different screen sizes (already fixed in #822)
-- [x] #840 - Use Unicode symbols (…/⌕) for browse/detect buttons (per #821)
+- Added 28 unit tests for SettingsService and TlkService
+- Unicode symbols for browse/detect buttons
 
 ---
 
@@ -155,36 +125,18 @@ Get Manifest to release-ready state with unit test coverage and responsive UI fi
 
 ### Refactor: Rename PreferencesWindow to SettingsWindow (#542)
 
-Align window naming with Parley for cross-tool consistency.
-
-#### Changed
-- Rename `PreferencesWindow` to `SettingsWindow`
-- Update menu item from "Preferences" to "Settings"
-- Update window title to "Settings - Manifest"
+- Renamed PreferencesWindow to SettingsWindow for cross-tool consistency
 
 ---
 
 ## [0.11.0-alpha] - 2025-12-25
 **Branch**: `manifest/feat/dictionary-settings` | **PR**: #541
 
-### Feature: Add Dictionary Settings to Manifest UI (#540)
+### Feature: Dictionary Settings & Recent Files (#540)
 
-Add dictionary language selection UI to Manifest Settings, matching Parley's implementation.
-
-#### Added
-- Dictionaries tab in Settings window
-  - Primary Language dropdown (select Hunspell dictionary)
-  - Custom Dictionaries list with enable/disable toggles
-  - NWN/D&D dictionary toggleable
-  - "Open Dictionaries Folder" and "Refresh" buttons
-- Hot-swap dictionary support - changes apply immediately without restart
-- Recent Files menu (File > Open Recent)
-  - Tracks last 10 opened journal files
-  - Clear Recent Files option
-  - Auto-removes missing files
-
-#### Fixed
-- Custom dictionary (custom.dic) no longer appears redundantly in dictionary list
+- Dictionary language selection UI in Settings (matching Parley)
+- Hot-swap dictionary support (changes apply without restart)
+- Recent Files menu (File > Open Recent, tracks last 10 files)
 
 ---
 
@@ -193,12 +145,7 @@ Add dictionary language selection UI to Manifest Settings, matching Parley's imp
 
 ### Feature: FlaUI Smoke Tests (#512)
 
-Add FlaUI automation tests for Manifest to match Parley's test coverage pattern.
-
-#### Added
-- Application smoke tests (launch, main window visible, menu accessible)
-- TLK integration tests (load JRL with StrRefs, verify localization)
-- Basic workflow tests (open file, verify tree loads, close cleanly)
+- Application smoke tests, TLK integration tests, basic workflow tests
 
 ---
 
@@ -207,50 +154,19 @@ Add FlaUI automation tests for Manifest to match Parley's test coverage pattern.
 
 ### Sprint: Dictionary Integration (#506)
 
-Integrate `Radoub.Dictionary` spell-checking into Manifest journal editor. Final sprint (3 of 3) for Dictionary epic #43.
-
-#### Added
-- `SpellCheckService` for dictionary initialization and spell-checking
-- `SpellCheckTextBox` control with red squiggly underlines for misspellings
-- Right-click context menu with spelling suggestions and "Add to Dictionary"
-- Spell-check settings in Preferences window (enable/disable, word count display)
-- Shared custom dictionary with Parley at `~/Radoub/Dictionaries/custom.dic`
-- 8 new spell-check unit tests in Manifest.Tests
-
-#### Test Infrastructure
-- Updated `run-tests.ps1` to run all 5 test projects (Formats, Dictionary, Parley, Manifest, UITests)
-- Added `-UIOnly` and `-UnitOnly` parameters for selective test execution
-- Created `run-tests.sh` for Linux/macOS (unit tests only - FlaUI is Windows-only)
-- Updated `post-merge.md` command with full test suite execution and keyboard warning
-
-#### Fields with Spell-Check
-- Category Name
-- Category Comment
-- Entry Text
+- SpellCheckTextBox with red squiggly underlines for misspellings
+- Right-click context menu with suggestions and "Add to Dictionary"
+- Shared custom dictionary with Parley at ~/Radoub/Dictionaries/custom.dic
 
 ---
 
 ## [0.8.0-alpha] - 2025-12-21
-**Branch**: `manifest/sprint/cli-ui-polish` | **PR**: #493 | **Closes**: #447, #423
+**Branch**: `manifest/sprint/cli-ui-polish` | **PR**: #493
 
 ### Sprint: CLI Arguments + UI Polish
 
-Add command-line argument support for cross-tool integration and improve journal entry layout.
-
-#### Added
-- Command-line arguments for cross-tool integration (#447)
-  - `--file <path>` - Open specific JRL file
-  - `--quest <tag>` - Navigate to quest category
-  - `--entry <id>` - Select specific entry
-  - Enables Parley's "Open in Manifest" feature
-
-#### Changed
-- Journal entry layout improvements (#423)
-  - Category: Name field moved to top, Tag second
-  - Category: Priority and XP fields side-by-side
-  - Entry: Text field first and larger (200px height)
-  - Entry: ID and End checkbox side-by-side
-  - TLK info (StrRef/Language) de-emphasized with muted colors
+- Command-line arguments: --file, --quest, --entry for cross-tool integration
+- Journal entry layout improvements (reordered fields, larger text area)
 
 ---
 
@@ -259,16 +175,7 @@ Add command-line argument support for cross-tool integration and improve journal
 
 ### Feature: Settings UI (#421)
 
-Add game path configuration to Settings UI for TLK resolution.
-
-#### Added
-- Game Paths section in Preferences window:
-  - Base Game Installation (Steam/GOG) - for TLK files in data\ folder
-  - User Documents path - for modules, override, custom TLKs
-- Folder browser dialogs for manual path selection
-- Auto-detect buttons for both paths
-- Path validation with status messages
-- Edit > Preferences menu entry (Ctrl+,)
+- Game path configuration (Base Game, User Documents) with auto-detect
 
 ---
 
@@ -277,26 +184,8 @@ Add game path configuration to Settings UI for TLK resolution.
 
 ### Sprint: Testing Suite (#392)
 
-Comprehensive testing for Manifest: unit tests, integration tests, and regression validation.
-
-#### Added
-- `Manifest.Tests` project with xUnit and Avalonia.Headless.XUnit
-- JRL round-trip tests (empty, single category, multiple categories, edge cases)
-- Headless UI tests for create/delete operations
-- Test data generator for creating test JRL files
-- Real module JRL file as test fixture
-
-#### Test Coverage
-- 24 Manifest.Tests tests (all pass)
-- 461 Parley.Tests tests (all pass - regression check)
-- 165 Radoub.Formats.Tests (all pass - shared library)
-
-#### CI/CD (#413)
-- GitHub release workflow (`manifest-release.yml`) - triggers on `manifest-v*` tags
-- PR build check workflow (`manifest-pr-build.yml`)
-- PR test workflow (`manifest-pr-tests.yml`)
-- Cross-platform builds (Windows, macOS, Linux)
-- Self-contained and framework-dependent variants
+- Manifest.Tests project with JRL round-trip and headless UI tests
+- GitHub CI/CD workflows for releases and PR checks
 
 ---
 
@@ -305,17 +194,9 @@ Comprehensive testing for Manifest: unit tests, integration tests, and regressio
 
 ### Sprint: UI Polish (#391)
 
-Polish Manifest UI to match BioWare's original journal editor and provide professional UX.
-
-#### Added
-- Toolbar with emoji icons (Open, Save, Category, Entry, Delete)
-- Keyboard shortcuts (Ctrl+O, Ctrl+S, Ctrl+Shift+N, Ctrl+E, Delete, F1)
-- Window state persistence (position, size, maximized, splitter width)
-- Status bar with category/entry counts and file path
-- Tree view context menu
-
-#### Fixed
-- New categories now get unique tags (new_category, new_category_001, etc.)
+- Toolbar with icons, keyboard shortcuts, window state persistence
+- Status bar with category/entry counts
+- Tree view context menu, unique tag generation
 
 ---
 
@@ -324,17 +205,8 @@ Polish Manifest UI to match BioWare's original journal editor and provide profes
 
 ### Sprint: Theme Support (#390)
 
-Implement theme support matching Parley's theme system.
-
-#### Added
-- Theme loading from `~/Radoub/Manifest/Themes/`
-- Default themes (light, dark, fluent-light, vscode-dark)
-- Accessibility themes (deuteranopia, protanopia, tritanopia)
-- ThemeManager service
-- Theme color/font application
-- Scrollbars always visible (no auto-hide)
-- Theme selection persisted in ManifestSettings.json
-- Runtime theme switching
+- Theme system with light/dark/fluent/accessibility themes
+- Runtime theme switching, persisted in settings
 
 ---
 
@@ -343,27 +215,9 @@ Implement theme support matching Parley's theme system.
 
 ### Sprint: TLK Integration (#389)
 
-Integrate TLK (Talk Table) support for resolving localized strings in journal files.
-
-#### Added
-- `TlkService` for loading and resolving TLK strings across multiple languages
-- Language dropdown in property panel to view text in different languages
-- "View All..." button to see all available translations for a string
-- Source indicator showing string origin (Embedded, TLK:N, or both)
-- Graceful handling of missing StrRef ("not found" / "no game path" indicators)
-
-#### Radoub.Formats (Shared Library)
-- `Language` enum with BioWare language IDs and helper utilities
-- `RadoubSettings` service for shared game path and TLK settings (`~/Radoub/RadoubSettings.json`)
-- `ResourcePathDetector` for cross-platform game installation detection
-- Auto-detect Steam/GOG game installation paths
-
-#### Changed
-- Property panel now uses TlkService to resolve and display localized strings
-- SettingsService now references shared RadoubSettings for game paths
-
-#### Notes
-- Created #412 for Parley migration to shared settings
+- TlkService for loading and resolving localized strings
+- Language dropdown and translation viewer in property panel
+- Shared RadoubSettings and ResourcePathDetector in Radoub.Formats
 
 ---
 
@@ -372,23 +226,9 @@ Integrate TLK (Talk Table) support for resolving localized strings in journal fi
 
 ### Sprint: File I/O (#406)
 
-Implement JRL file reading and writing with proper state management.
-
-#### Added
-- Open JRL from file system using JrlReader
-- Open JRL from module folder (File > Open from Module, Ctrl+M)
-- Display categories/entries in TreeView
-- Save JRL to file using JrlWriter
-- Dirty state tracking with title indicator (*)
-- Unsaved changes warning on close
-- Property editing for categories (tag, name, priority, XP, comment)
-- Property editing for entries (ID, end flag, text)
-- Live tree view updates when properties change
-- StrRef display for TLK references (category names and entry text)
-- Priority dropdown (Highest/High/Medium/Low/Lowest)
-- Full file path in title bar with ~ for home directory
-- Auto-focus on name/text field when adding new categories/entries
-- Entry IDs increment by 100 (allows inserting between existing entries)
+- Open/save JRL files with dirty state tracking
+- Property editing for categories and entries
+- StrRef display, priority dropdown, auto-incrementing entry IDs
 
 ---
 
@@ -397,17 +237,7 @@ Implement JRL file reading and writing with proper state management.
 
 ### Sprint: Application Shell (#405)
 
-Create foundational Manifest application structure and services.
-
-#### Added
-- Manifest project structure (mirroring Parley layout)
-- Basic Avalonia MainWindow with tree view and property panel
-- Simplified menu bar (File: Open/Save/Exit, Edit: Add Category/Entry/Delete, Help)
-- Settings service: `~/Radoub/Manifest/ManifestSettings.json`
-- Logging service: `~/Radoub/Manifest/Logs/`
-- File open/save dialogs for JRL files
-
-#### Notes
-- No "New" or "Recent Files" - modules have exactly one JRL file
+- Manifest project structure with Avalonia MainWindow
+- Tree view, property panel, menu bar, settings and logging services
 
 ---
