@@ -10,6 +10,7 @@ namespace Radoub.Formats.Tests;
 /// Tests for RadoubSettings persistence and cross-process propagation (#1384).
 /// Verifies that settings written by one process (Trebuchet) can be read by another (child tools).
 /// </summary>
+[Collection("RadoubSettings")]
 public class RadoubSettingsTests : IDisposable
 {
     private readonly string _testDirectory;

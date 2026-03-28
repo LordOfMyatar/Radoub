@@ -3,6 +3,7 @@ using Xunit;
 
 namespace Radoub.Formats.Tests.Settings;
 
+[Collection("RadoubSettings")]
 public class BackupRetentionDaysTests
 {
     [Theory]
