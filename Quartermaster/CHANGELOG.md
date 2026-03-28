@@ -5,6 +5,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.73-alpha] - 2026-03-28 | PR #TBD
+Rename "Assigned" to "Chosen" for feats terminology
+
+---
+
 ## [0.2.72-alpha] - 2026-03-25 | PR #1993
 Preview state overlay for emitter-only models; split ModelPreviewGLControl; Export Logs menu
 

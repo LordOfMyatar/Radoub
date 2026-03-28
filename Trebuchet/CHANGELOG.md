@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.27.0-alpha] - 2026-03-28 | PR #TBD
+Rename Relique display name from "Item Blueprint Editor" to "Item Editor"
+
+---
+
 ## [1.26.0-alpha] - 2026-03-26
 **Branch**: `radoub/issue-2006` | **PR**: #2010
 
