@@ -997,6 +997,40 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             ? match.FullFieldValue[..60] + "..."
             : match.FullFieldValue;
         UpdateStatusBar($"Found \"{match.MatchedText}\" in {match.Field.Name}: {preview}");
+
+        // Navigate to the section containing the matched field
+        var targetControlName = match.Field.GffPath switch
+        {
+            "LocName" => "StoreNameBox",
+            "Tag" => "StoreTagBox",
+            "ResRef" => "StoreResRefBox",
+            "Comment" => "CommentBox",
+            "OnOpenStore" => "OnOpenStoreBox",
+            "OnStoreClosed" => "OnStoreClosedBox",
+            "VarTable" => "VariablesGrid",
+            _ => null
+        };
+
+        if (targetControlName == null) return;
+
+        var target = this.FindControl<Avalonia.Controls.Control>(targetControlName);
+        if (target == null) return;
+
+        // Expand parent expander if collapsed (Variables, Buy Restrictions)
+        var parent = target.Parent;
+        while (parent != null)
+        {
+            if (parent is Avalonia.Controls.Expander expander && !expander.IsExpanded)
+                expander.IsExpanded = true;
+            parent = parent.Parent;
+        }
+
+        // Scroll into view and focus
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            target.BringIntoView();
+            target.Focus();
+        }, Avalonia.Threading.DispatcherPriority.Render);
     }
 
     #endregion

@@ -436,6 +436,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _ => ""
         };
         UpdateStatus($"Found \"{match.MatchedText}\" in {match.Field.Name}{(locationText.Length > 0 ? $" — {locationText}" : "")}: {preview}");
+
+        // Navigate to matching category/entry in the tree
+        if (match.Location is Radoub.Formats.Search.JrlMatchLocation jrlLoc && _currentJrl != null)
+        {
+            if (jrlLoc.CategoryIndex >= 0 && jrlLoc.CategoryIndex < _currentJrl.Categories.Count)
+            {
+                var category = _currentJrl.Categories[jrlLoc.CategoryIndex];
+                NavigateToQuest(category.Tag, jrlLoc.EntryId);
+            }
+        }
     }
 
     #endregion

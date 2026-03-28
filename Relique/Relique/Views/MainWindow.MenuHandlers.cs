@@ -396,6 +396,48 @@ public partial class MainWindow
             ? match.FullFieldValue[..60] + "..."
             : match.FullFieldValue;
         UpdateStatus($"Found \"{match.MatchedText}\" in {match.Field.Name}: {preview}");
+
+        // Scroll to the matching section in the editor
+        var editorScroll = this.FindControl<Avalonia.Controls.ScrollViewer>("EditorContent");
+        if (editorScroll == null) return;
+
+        // Map field GFF paths to named controls in the editor
+        var targetControlName = match.Field.GffPath switch
+        {
+            "LocalizedName" => "NameTextBox",
+            "Tag" => "TagTextBox",
+            "TemplateResRef" => "ResRefTextBox",
+            "Description" => "DescriptionTextBox",
+            "DescIdentified" => "DescIdentifiedTextBox",
+            "Comment" => "CommentTextBox",
+            "VarTable" => "VariablesGrid",
+            _ => null
+        };
+
+        if (targetControlName == null) return;
+
+        var target = this.FindControl<Avalonia.Controls.Control>(targetControlName);
+        if (target == null) return;
+
+        // Expand parent expander if collapsed
+        var parent = target.Parent;
+        while (parent != null)
+        {
+            if (parent is Avalonia.Controls.Expander expander && !expander.IsExpanded)
+                expander.IsExpanded = true;
+            parent = parent.Parent;
+        }
+
+        // Scroll into view on next layout pass
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            var transform = target.TranslatePoint(new Avalonia.Point(0, 0), editorScroll);
+            if (transform.HasValue)
+            {
+                editorScroll.Offset = new Avalonia.Vector(0, editorScroll.Offset.Y + transform.Value.Y - 50);
+            }
+            target.Focus();
+        }, Avalonia.Threading.DispatcherPriority.Render);
     }
 
     #endregion
