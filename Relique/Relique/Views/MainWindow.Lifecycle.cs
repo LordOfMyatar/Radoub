@@ -8,6 +8,7 @@ using System;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ItemEditor.Views;
 
@@ -19,7 +20,7 @@ public partial class MainWindow
     {
         Opened -= OnWindowOpened;
 
-        // Initialize game data service for base item type resolution
+        // Initialize game data service on background thread (#1959)
         await InitializeGameDataAsync();
 
         // Initialize item browser panel
@@ -43,79 +44,96 @@ public partial class MainWindow
         UpdateStatus("Ready");
     }
 
-    private System.Threading.Tasks.Task InitializeGameDataAsync()
+    private async Task InitializeGameDataAsync()
     {
         try
         {
-            _gameDataService = new GameDataService();
-            if (_gameDataService.IsConfigured)
-            {
-                // Configure module HAKs before loading 2DA data (CEP extends baseitems.2da etc.)
-                var modulePath = RadoubSettings.Instance.CurrentModulePath;
-                var moduleDir = GetModuleWorkingDirectory(modulePath);
-                if (!string.IsNullOrEmpty(moduleDir))
+            // Heavy I/O on background thread: KEY/BIF reading, HAK loading, 2DA parsing (#1959)
+            var (gameDataService, baseItemTypes, paletteCategories, itemPropertyService,
+                 itemStatisticsService, itemIconService, paletteColorService) =
+                await Task.Run(() =>
                 {
-                    _gameDataService.ConfigureModuleHaks(moduleDir);
-                }
+                    var gds = new GameDataService();
+                    BaseItemTypeService? baseItemSvc = null;
+                    System.Collections.Generic.List<PaletteCategory>? palCats = null;
+                    ItemPropertyService? ipSvc = null;
+                    ItemStatisticsService? isSvc = null;
+                    Radoub.UI.Services.ItemIconService? iconSvc = null;
+                    PaletteColorService? colorSvc = null;
 
-                LoadBaseItemTypes();
-                InitializePropertyServices();
-                _itemIconService = new Radoub.UI.Services.ItemIconService(_gameDataService);
-                _paletteColorService = new PaletteColorService(_gameDataService);
-                UnifiedLogger.LogApplication(LogLevel.INFO, "Game data service initialized");
-            }
-            else
+                    if (gds.IsConfigured)
+                    {
+                        var modulePath = RadoubSettings.Instance.CurrentModulePath;
+                        var moduleDir = GetModuleWorkingDirectory(modulePath);
+                        if (!string.IsNullOrEmpty(moduleDir))
+                        {
+                            gds.ConfigureModuleHaks(moduleDir);
+                        }
+
+                        baseItemSvc = new BaseItemTypeService(gds);
+                        ipSvc = new ItemPropertyService(gds);
+                        isSvc = new ItemStatisticsService(ipSvc);
+                        iconSvc = new Radoub.UI.Services.ItemIconService(gds);
+                        colorSvc = new PaletteColorService(gds);
+
+                        try
+                        {
+                            palCats = gds.GetPaletteCategories(Radoub.Formats.Common.ResourceTypes.Uti).ToList();
+                        }
+                        catch (Exception ex)
+                        {
+                            UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to load palette categories: {ex.Message}");
+                        }
+
+                        UnifiedLogger.LogApplication(LogLevel.INFO, "Game data service initialized");
+                    }
+                    else
+                    {
+                        baseItemSvc = new BaseItemTypeService(gds);
+                        UnifiedLogger.LogApplication(LogLevel.WARN, "Game data service not configured, using hardcoded base item types");
+                    }
+
+                    return (gds, baseItemSvc.GetBaseItemTypes(),
+                        palCats, ipSvc, isSvc, iconSvc, colorSvc);
+                });
+
+            // Apply results on UI thread
+            _gameDataService = gameDataService;
+            _baseItemTypes = baseItemTypes;
+            _itemPropertyService = itemPropertyService;
+            _itemStatisticsService = itemStatisticsService;
+            _itemIconService = itemIconService;
+            _paletteColorService = paletteColorService;
+
+            // UI updates must happen on UI thread
+            LoadPaletteCategories(paletteCategories);
+            if (_itemPropertyService != null)
             {
-                LoadBaseItemTypes(); // Will use hardcoded fallback
-                UnifiedLogger.LogApplication(LogLevel.WARN, "Game data service not configured, using hardcoded base item types");
+                PopulateAvailableProperties();
             }
+            InitializePropertySearchHandler();
         }
         catch (Exception ex)
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to initialize game data: {ex.Message}");
-            LoadBaseItemTypes();
+            // Fallback: create base item types with null game data
+            var fallbackService = new BaseItemTypeService(_gameDataService);
+            _baseItemTypes = fallbackService.GetBaseItemTypes();
+            LoadPaletteCategories(null);
+            InitializePropertySearchHandler();
         }
-
-        InitializePropertySearchHandler();
-        return System.Threading.Tasks.Task.CompletedTask;
     }
 
-    private void InitializePropertyServices()
-    {
-        if (_gameDataService == null) return;
-
-        _itemPropertyService = new ItemPropertyService(_gameDataService);
-        _itemStatisticsService = new ItemStatisticsService(_itemPropertyService);
-        PopulateAvailableProperties();
-    }
-
-    private void LoadBaseItemTypes()
-    {
-        var service = new BaseItemTypeService(_gameDataService);
-        _baseItemTypes = service.GetBaseItemTypes();
-        LoadPaletteCategories();
-    }
-
-    private void LoadPaletteCategories()
+    private void LoadPaletteCategories(System.Collections.Generic.List<PaletteCategory>? categories)
     {
         _paletteCategories.Clear();
         PaletteCategoryComboBox.Items.Clear();
 
-        if (_gameDataService != null && _gameDataService.IsConfigured)
+        if (categories != null && categories.Count > 0)
         {
-            try
-            {
-                var categories = _gameDataService.GetPaletteCategories(Radoub.Formats.Common.ResourceTypes.Uti).ToList();
-                _paletteCategories = categories;
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to load palette categories: {ex.Message}");
-            }
+            _paletteCategories = categories;
         }
-
-        // Hardcoded fallback if no categories loaded
-        if (_paletteCategories.Count == 0)
+        else
         {
             _paletteCategories = GetHardcodedPaletteCategories();
         }
