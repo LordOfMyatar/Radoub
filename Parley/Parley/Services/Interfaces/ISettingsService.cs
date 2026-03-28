@@ -28,11 +28,7 @@ namespace DialogEditor.Services
         double TopLeftPanelHeight { get; set; }
 
         // UI settings (delegated to UISettingsService)
-        double FontSize { get; set; }
-        string FontFamily { get; set; }
-        bool IsDarkTheme { get; set; }
-        string CurrentThemeId { get; set; }
-        bool UseSharedTheme { get; set; }
+        // Theme/font settings removed — now managed by RadoubSettings (Trebuchet is sole authority)
         string FlowchartLayout { get; set; }
         bool AllowScrollbarAutoHide { get; set; }
         int FlowchartNodeMaxLines { get; set; }

@@ -82,21 +82,6 @@ public class SettingsServiceTests : IDisposable
     }
 
     [Fact]
-    public void FontSize_ClampedToRange()
-    {
-        // Arrange
-        var settings = SettingsService.Instance;
-
-        // Act & Assert - below minimum
-        settings.FontSize = 4;
-        Assert.Equal(8, settings.FontSize);
-
-        // Act & Assert - above maximum
-        settings.FontSize = 30;
-        Assert.Equal(24, settings.FontSize);
-    }
-
-    [Fact]
     public void LeftPanelWidth_ClampedToRange()
     {
         // Arrange
@@ -151,17 +136,6 @@ public class SettingsServiceTests : IDisposable
         // Act & Assert - above maximum
         settings.MaxRecentFiles = 50;
         Assert.Equal(20, settings.MaxRecentFiles);
-    }
-
-    [Fact]
-    public void CurrentThemeId_HasDefault()
-    {
-        // Arrange
-        var settings = SettingsService.Instance;
-
-        // Assert
-        Assert.NotNull(settings.CurrentThemeId);
-        Assert.Contains("theme", settings.CurrentThemeId);
     }
 
     [Fact]

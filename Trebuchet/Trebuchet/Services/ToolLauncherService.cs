@@ -253,6 +253,7 @@ public class ToolLauncherService
         var devPath = DiscoverDevelopmentPath(directoryName, assemblyName);
         if (!string.IsNullOrEmpty(devPath))
         {
+            CacheToolPath(directoryName, devPath);
             return devPath;
         }
 
@@ -262,6 +263,7 @@ public class ToolLauncherService
         {
             if (File.Exists(path))
             {
+                CacheToolPath(directoryName, path);
                 return path;
             }
         }
@@ -327,6 +329,30 @@ public class ToolLauncherService
             "relique" or "itemeditor" => RadoubSettings.Instance.ReliquePath,
             _ => null
         };
+    }
+
+    /// <summary>
+    /// Save a discovered tool path to RadoubSettings so future startups hit the fast path.
+    /// </summary>
+    private void CacheToolPath(string toolName, string path)
+    {
+        try
+        {
+            var settings = RadoubSettings.Instance;
+            switch (toolName.ToLowerInvariant())
+            {
+                case "parley": settings.ParleyPath = path; break;
+                case "manifest": settings.ManifestPath = path; break;
+                case "quartermaster": settings.QuartermasterPath = path; break;
+                case "fence": settings.FencePath = path; break;
+                case "relique": settings.ReliquePath = path; break;
+            }
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Cached {toolName} path to settings: {UnifiedLogger.SanitizePath(path)}");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not cache {toolName} path: {ex.Message}");
+        }
     }
 
     private string GetExecutableName(string toolName)

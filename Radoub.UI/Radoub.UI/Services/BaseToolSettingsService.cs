@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
@@ -36,10 +37,7 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
     private bool _windowMaximized;
 
     // UI settings
-    private double _fontSize = 14;
-    private string _fontFamily = "";
-    private string _currentThemeId = "org.radoub.theme.light";
-    private bool _useSharedTheme = true;
+    // Font and theme settings removed — now in RadoubSettings (Trebuchet is sole authority)
 
     // Logging settings
     private readonly LoggingSettings _loggingSettings = new();
@@ -170,46 +168,8 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
 
     #endregion
 
-    #region UI Properties
-
-    public double FontSize
-    {
-        get => _fontSize;
-        set { if (SetProperty(ref _fontSize, Math.Max(8, Math.Min(24, value)))) SaveSettings(); }
-    }
-
-    public string FontFamily
-    {
-        get => _fontFamily;
-        set { if (SetProperty(ref _fontFamily, value ?? "")) SaveSettings(); }
-    }
-
-    public string CurrentThemeId
-    {
-        get => _currentThemeId;
-        set
-        {
-            if (SetProperty(ref _currentThemeId, value ?? "org.radoub.theme.light"))
-            {
-                // User explicitly changed theme — disable shared theme so this
-                // tool keeps its chosen theme on next startup (#1533)
-                if (_useSharedTheme)
-                {
-                    _useSharedTheme = false;
-                    OnPropertyChanged(nameof(UseSharedTheme));
-                }
-                SaveSettings();
-            }
-        }
-    }
-
-    public bool UseSharedTheme
-    {
-        get => _useSharedTheme;
-        set { if (SetProperty(ref _useSharedTheme, value)) SaveSettings(); }
-    }
-
-    #endregion
+    // Theme and font properties removed — now in RadoubSettings (Trebuchet is sole authority)
+    // Use RadoubSettings.Instance.SharedFontSize, SharedFontFamily, SharedThemeId instead.
 
     #region Logging Properties
 
@@ -358,12 +318,7 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
                     _windowHeight = Math.Max(MinWindowHeight, settings.WindowHeight);
                     _windowMaximized = settings.WindowMaximized;
 
-                    _fontSize = Math.Max(8, Math.Min(24, settings.FontSize));
-                    _fontFamily = settings.FontFamily ?? "";
-                    _currentThemeId = !string.IsNullOrEmpty(settings.CurrentThemeId)
-                        ? settings.CurrentThemeId
-                        : "org.radoub.theme.light";
-                    _useSharedTheme = settings.UseSharedTheme;
+                    // Font/theme fields ignored — now in RadoubSettings
 
                     _loggingSettings.LogRetentionSessions = settings.LogRetentionSessions;
                     _loggingSettings.LogLevel = settings.LogLevel;
@@ -421,10 +376,7 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
             settings.WindowWidth = WindowWidth;
             settings.WindowHeight = WindowHeight;
             settings.WindowMaximized = WindowMaximized;
-            settings.FontSize = FontSize;
-            settings.FontFamily = FontFamily;
-            settings.CurrentThemeId = CurrentThemeId;
-            settings.UseSharedTheme = UseSharedTheme;
+            // Font/theme fields no longer saved — now in RadoubSettings
             settings.LogRetentionSessions = _loggingSettings.LogRetentionSessions;
             settings.LogLevel = _loggingSettings.LogLevel;
             settings.RecentFiles = PathHelper.ContractPaths(_recentFiles).ToList();
@@ -496,10 +448,16 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
         public double WindowHeight { get; set; } = 800;
         public bool WindowMaximized { get; set; }
 
-        public double FontSize { get; set; } = 14;
-        public string FontFamily { get; set; } = "";
-        public string CurrentThemeId { get; set; } = "org.radoub.theme.light";
-        public bool UseSharedTheme { get; set; } = true;
+        // Legacy: Font/theme fields kept for deserialization of old JSON files.
+        // No longer read or written — theme/font is in RadoubSettings (Trebuchet authority).
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public double FontSize { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? FontFamily { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? CurrentThemeId { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool UseSharedTheme { get; set; }
 
         public int LogRetentionSessions { get; set; } = 3;
         public LogLevel LogLevel { get; set; } = LogLevel.INFO;

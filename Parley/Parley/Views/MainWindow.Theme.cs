@@ -13,6 +13,7 @@ namespace DialogEditor.Views
     /// <summary>
     /// MainWindow partial class for theme handling and application.
     /// Extracted from MainWindow.axaml.cs for maintainability (#535).
+    /// Theme/font settings now managed by RadoubSettings (Trebuchet is sole authority).
     /// </summary>
     public partial class MainWindow
     {
@@ -20,13 +21,13 @@ namespace DialogEditor.Views
         {
             try
             {
-                if (Application.Current != null)
-                {
-                    bool isDark = _services.Settings.IsDarkTheme;
-                    Application.Current.RequestedThemeVariant = isDark ? ThemeVariant.Dark : ThemeVariant.Light;
-                    UpdateThemeMenuChecks(isDark);
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Applied saved theme: {(isDark ? "Dark" : "Light")}");
-                }
+                // Theme is now managed by ThemeManager via RadoubSettings
+                // ThemeManager applies the shared theme on startup
+                var themeManager = ThemeManager.Instance;
+                var currentTheme = themeManager.CurrentTheme;
+                bool isDark = currentTheme?.Plugin.Id.Contains("dark", StringComparison.OrdinalIgnoreCase) ?? false;
+                UpdateThemeMenuChecks(isDark);
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Applied theme from RadoubSettings: {currentTheme?.Plugin.Name ?? "default"}");
             }
             catch (Exception ex)
             {
@@ -41,7 +42,6 @@ namespace DialogEditor.Views
                 if (Application.Current != null)
                 {
                     Application.Current.RequestedThemeVariant = ThemeVariant.Light;
-                    _services.Settings.IsDarkTheme = false;
                     _viewModel.StatusMessage = "Light theme applied";
                     UpdateThemeMenuChecks(false);
                 }
@@ -59,7 +59,6 @@ namespace DialogEditor.Views
                 if (Application.Current != null)
                 {
                     Application.Current.RequestedThemeVariant = ThemeVariant.Dark;
-                    _services.Settings.IsDarkTheme = true;
                     _viewModel.StatusMessage = "Dark theme applied";
                     UpdateThemeMenuChecks(true);
                 }

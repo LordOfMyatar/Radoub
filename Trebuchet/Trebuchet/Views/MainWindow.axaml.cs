@@ -93,6 +93,12 @@ public partial class MainWindow : Window
         {
             await factionEditorPanel.LoadFacFileAsync();
         }
+
+        // --settings flag: auto-open settings window
+        if (Program.OpenSettingsOnStartup)
+        {
+            _viewModel?.OpenSettingsCommand.Execute(null);
+        }
     }
 
     private void RestoreWindowState()

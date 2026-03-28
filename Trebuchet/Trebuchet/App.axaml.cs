@@ -45,20 +45,17 @@ public partial class App : Application
         ThemeManager.Initialize("Trebuchet");
         ThemeManager.Instance.DiscoverThemes();
 
-        string themeId;
         if (isSafeMode)
         {
-            // SafeMode forces light theme
-            themeId = "org.radoub.theme.light";
+            // SafeMode forces light theme directly without writing to settings
+            if (!ThemeManager.Instance.ApplyTheme("org.radoub.theme.light"))
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, "SafeMode light theme failed - UI may render with default Avalonia theme");
+            }
         }
-        else
+        else if (!ThemeManager.Instance.ApplySharedTheme())
         {
-            themeId = SettingsService.Instance.CurrentThemeId;
-        }
-
-        if (!ThemeManager.Instance.ApplyEffectiveTheme(themeId, SettingsService.Instance.UseSharedTheme))
-        {
-            UnifiedLogger.LogApplication(LogLevel.WARN, $"Theme '{themeId}' failed to apply, falling back to light theme");
+            UnifiedLogger.LogApplication(LogLevel.WARN, "Shared theme failed to apply, falling back to light theme");
             if (!ThemeManager.Instance.ApplyTheme("org.radoub.theme.light"))
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR, "Light theme fallback also failed - UI may render with default Avalonia theme");
@@ -91,18 +88,11 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Apply SafeMode defaults to settings - resets theme and fonts.
+    /// Note SafeMode is active. Theme and fonts are applied directly without writing to settings.
     /// </summary>
     private void ApplySafeModeDefaults()
     {
-        // Reset theme to light
-        SettingsService.Instance.CurrentThemeId = "org.radoub.theme.light";
-
-        // Reset fonts to system defaults
-        SettingsService.Instance.FontSize = SafeModeService.DefaultFontSize;
-        SettingsService.Instance.FontFamily = SafeModeService.DefaultFontFamily;
-
-        UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode: Reset theme to light, fonts to default");
+        UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode active - using default theme and fonts without persisting");
     }
 
     // ApplySafeModeDefaults() already resets settings values, so just apply from settings
@@ -130,19 +120,7 @@ public partial class App : Application
     {
         switch (e.PropertyName)
         {
-            case nameof(SettingsService.CurrentThemeId):
-                if (!ThemeManager.Instance.ApplyEffectiveTheme(
-                    SettingsService.Instance.CurrentThemeId,
-                    SettingsService.Instance.UseSharedTheme))
-                {
-                    UnifiedLogger.LogApplication(LogLevel.WARN,
-                        $"Failed to apply theme '{SettingsService.Instance.CurrentThemeId}' on settings change");
-                }
-                // Font reapplication handled by ThemeApplied event (theme applies fonts async via Dispatcher.Post)
-                break;
-            case nameof(SettingsService.FontSize):
             case nameof(SettingsService.FontSizeScale):
-            case nameof(SettingsService.FontFamily):
                 ApplyFontSettings();
                 break;
         }
@@ -150,11 +128,12 @@ public partial class App : Application
 
     private void ApplyFontSettings()
     {
-        var settings = SettingsService.Instance;
+        var radoubSettings = Radoub.Formats.Settings.RadoubSettings.Instance;
+        var fontSizeScale = SettingsService.Instance.FontSizeScale;
 
         if (Resources != null)
         {
-            var baseSize = (double)settings.FontSize * settings.FontSizeScale;
+            var baseSize = radoubSettings.SharedFontSize * fontSizeScale;
 
             // Update base font size
             Resources["GlobalFontSize"] = baseSize;
@@ -168,17 +147,18 @@ public partial class App : Application
             Resources["FontSizeXLarge"] = baseSize + 6;
             Resources["FontSizeTitle"] = baseSize + 10;
 
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Applied font size: {baseSize:F0}pt (base {settings.FontSize} × {settings.FontSizeScale:P0})");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Applied font size: {baseSize:F0}pt (base {radoubSettings.SharedFontSize} × {fontSizeScale:P0})");
         }
 
         if (Resources != null)
         {
-            if (!string.IsNullOrEmpty(settings.FontFamily))
+            var fontFamily = radoubSettings.SharedFontFamily;
+            if (!string.IsNullOrEmpty(fontFamily))
             {
                 try
                 {
-                    Resources["GlobalFontFamily"] = new FontFamily(settings.FontFamily);
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font family: {settings.FontFamily}");
+                    Resources["GlobalFontFamily"] = new FontFamily(fontFamily);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font family: {fontFamily}");
                 }
                 catch (Exception ex)
                 {
@@ -256,6 +236,9 @@ public partial class App : Application
                         continue;
 
                     var destFile = Path.Combine(sharedThemesDir, Path.GetFileName(themeFile));
+                    if (File.Exists(destFile) && File.GetLastWriteTimeUtc(destFile) >= File.GetLastWriteTimeUtc(themeFile))
+                        continue; // Destination is same age or newer, skip copy
+
                     File.Copy(themeFile, destFile, overwrite: true);
                     copiedCount++;
                 }

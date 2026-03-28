@@ -206,42 +206,7 @@ namespace DialogEditor.Services
             set => _windowLayout.TopLeftPanelHeight = value;
         }
 
-        // UI properties - DELEGATED to UISettingsService (#719)
-        public double FontSize
-        {
-            get => _uiSettings.FontSize;
-            set => _uiSettings.FontSize = value;
-        }
-
-        public string FontFamily
-        {
-            get => _uiSettings.FontFamily;
-            set => _uiSettings.FontFamily = value;
-        }
-
-        /// <summary>
-        /// DEPRECATED: Use CurrentThemeId instead. Kept for backwards compatibility.
-        /// </summary>
-        public bool IsDarkTheme
-        {
-            get => _uiSettings.IsDarkTheme;
-            set => _uiSettings.IsDarkTheme = value;
-        }
-
-        /// <summary>
-        /// Current theme plugin ID (e.g., "org.radoub.theme.light")
-        /// </summary>
-        public string CurrentThemeId
-        {
-            get => _uiSettings.CurrentThemeId;
-            set => _uiSettings.CurrentThemeId = value;
-        }
-
-        public bool UseSharedTheme
-        {
-            get => _uiSettings.UseSharedTheme;
-            set => _uiSettings.UseSharedTheme = value;
-        }
+        // Theme/font properties removed — now managed by RadoubSettings (Trebuchet is sole authority)
 
         /// <summary>
         /// Flowchart layout mode: "Floating" (separate window), "SideBySide" (split view), "Tabbed" (tab in main area)
@@ -593,16 +558,12 @@ namespace DialogEditor.Services
                             settings.DialogBrowserPanelVisible);
 
                         // Initialize UISettingsService (#719)
+                        // Theme/font settings removed — now managed by RadoubSettings
                         _uiSettings.Initialize(
-                            settings.FontSize,
-                            settings.FontFamily ?? "",
-                            settings.IsDarkTheme,
-                            settings.CurrentThemeId,
                             settings.FlowchartLayout ?? "Floating",
                             settings.AllowScrollbarAutoHide,
                             settings.FlowchartNodeMaxLines,
                             settings.TreeViewWordWrap,
-                            settings.UseSharedTheme,
                             settings.FlowchartNodeWidth);
 
                         // Issue #179: Migrate speaker preferences to separate file
@@ -646,7 +607,7 @@ namespace DialogEditor.Services
                         // Initialize recent creature tags (#1244)
                         _recentCreatureTags = settings.RecentCreatureTags?.ToList() ?? new List<string>();
 
-                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {_recentFiles.RecentFiles.Count} recent files, max={_recentFiles.MaxRecentFiles}, theme={(_uiSettings.IsDarkTheme ? "dark" : "light")}, logLevel={_loggingSettings.CurrentLogLevel}, retention={_loggingSettings.LogRetentionSessions} sessions, autoSave={_editorPreferences.AutoSaveEnabled}, delay={_editorPreferences.AutoSaveDelayMs}ms, paramCache={_editorPreferences.EnableParameterCache}");
+                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {_recentFiles.RecentFiles.Count} recent files, max={_recentFiles.MaxRecentFiles}, logLevel={_loggingSettings.CurrentLogLevel}, retention={_loggingSettings.LogRetentionSessions} sessions, autoSave={_editorPreferences.AutoSaveEnabled}, delay={_editorPreferences.AutoSaveDelayMs}ms, paramCache={_editorPreferences.EnableParameterCache}");
                     }
                     else
                     {
@@ -679,11 +640,7 @@ namespace DialogEditor.Services
                     WindowMaximized = WindowMaximized,
                     LeftPanelWidth = LeftPanelWidth,
                     TopLeftPanelHeight = TopLeftPanelHeight,
-                    FontSize = FontSize,
-                    FontFamily = FontFamily,
-                    IsDarkTheme = IsDarkTheme,
-                    CurrentThemeId = CurrentThemeId,
-                    UseSharedTheme = UseSharedTheme,
+                    // FontSize, FontFamily, IsDarkTheme, CurrentThemeId, UseSharedTheme removed — now in RadoubSettings
                     FlowchartLayout = FlowchartLayout,
                     FlowchartWindowLeft = FlowchartWindowLeft,
                     FlowchartWindowTop = FlowchartWindowTop,
@@ -771,11 +728,7 @@ namespace DialogEditor.Services
             public double TopLeftPanelHeight { get; set; } = 400;
 
             // UI settings
-            public double FontSize { get; set; } = 14;
-            public string FontFamily { get; set; } = "";
-            public bool IsDarkTheme { get; set; } = false;
-            public string? CurrentThemeId { get; set; } = "org.radoub.theme.light";
-            public bool UseSharedTheme { get; set; } = true;
+            // FontSize, FontFamily, IsDarkTheme, CurrentThemeId, UseSharedTheme removed — now in RadoubSettings
             public string FlowchartLayout { get; set; } = "Floating";
             public double FlowchartWindowLeft { get; set; } = 100;
             public double FlowchartWindowTop { get; set; } = 100;

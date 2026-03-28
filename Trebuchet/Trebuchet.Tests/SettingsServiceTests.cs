@@ -78,37 +78,6 @@ public class SettingsServiceTests : IDisposable
 
     #endregion
 
-    #region Font Size Tests
-
-    [Fact]
-    public void FontSize_ClampedToMinimum()
-    {
-        var settings = SettingsService.Instance;
-        settings.FontSize = 4; // Below minimum of 8
-
-        Assert.Equal(8, settings.FontSize);
-    }
-
-    [Fact]
-    public void FontSize_ClampedToMaximum()
-    {
-        var settings = SettingsService.Instance;
-        settings.FontSize = 30; // Above maximum of 24
-
-        Assert.Equal(24, settings.FontSize);
-    }
-
-    [Fact]
-    public void FontSize_AcceptsValidValue()
-    {
-        var settings = SettingsService.Instance;
-        settings.FontSize = 16;
-
-        Assert.Equal(16, settings.FontSize);
-    }
-
-    #endregion
-
     #region Font Scale Tests
 
     [Fact]
@@ -136,35 +105,6 @@ public class SettingsServiceTests : IDisposable
         settings.FontSizeScale = 1.2;
 
         Assert.Equal(1.2, settings.FontSizeScale);
-    }
-
-    #endregion
-
-    #region Theme Tests
-
-    [Fact]
-    public void CurrentThemeId_DefaultsToLight()
-    {
-        var settings = SettingsService.Instance;
-        Assert.Equal("org.radoub.theme.light", settings.CurrentThemeId);
-    }
-
-    [Fact]
-    public void CurrentThemeId_AcceptsCustomTheme()
-    {
-        var settings = SettingsService.Instance;
-        settings.CurrentThemeId = "org.radoub.theme.dark";
-
-        Assert.Equal("org.radoub.theme.dark", settings.CurrentThemeId);
-    }
-
-    [Fact]
-    public void CurrentThemeId_NullDefaultsToLight()
-    {
-        var settings = SettingsService.Instance;
-        settings.CurrentThemeId = null!;
-
-        Assert.Equal("org.radoub.theme.light", settings.CurrentThemeId);
     }
 
     #endregion

@@ -69,9 +69,12 @@ public partial class RadoubSettings
                         .Where(p => !string.IsNullOrEmpty(p))
                         .ToList();
 
-                    // Theme settings
+                    // Theme and font settings
                     _sharedThemeId = data.SharedThemeId ?? "";
-                    _useSharedTheme = data.UseSharedTheme;
+                    if (string.IsNullOrEmpty(_sharedThemeId))
+                        _sharedThemeId = "org.radoub.theme.light";
+                    _sharedFontSize = Math.Max(8, Math.Min(32, data.SharedFontSize));
+                    _sharedFontFamily = data.SharedFontFamily ?? "Segoe UI";
 
                     // Logging settings
                     _sharedLogLevel = data.SharedLogLevel;
@@ -126,9 +129,10 @@ public partial class RadoubSettings
                 CustomTlkPath = PathHelper.ContractPath(_customTlkPath),
                 HakSearchPaths = _hakSearchPaths.Select(PathHelper.ContractPath).ToList(),
 
-                // Theme settings
+                // Theme and font settings
                 SharedThemeId = _sharedThemeId,
-                UseSharedTheme = _useSharedTheme,
+                SharedFontSize = _sharedFontSize,
+                SharedFontFamily = _sharedFontFamily,
 
                 // Logging settings
                 SharedLogLevel = _sharedLogLevel,
@@ -174,9 +178,15 @@ public partial class RadoubSettings
         public string? CustomTlkPath { get; set; }
         public List<string>? HakSearchPaths { get; set; }
 
-        // Theme settings (shared across all tools)
+        // Theme and font settings (shared across all tools — Trebuchet is sole authority)
         public string? SharedThemeId { get; set; }
-        public bool UseSharedTheme { get; set; } = true;
+        public double SharedFontSize { get; set; } = 14.0;
+        public string? SharedFontFamily { get; set; }
+
+        // Legacy: UseSharedTheme is no longer used (themes always shared via Trebuchet).
+        // Kept as write-ignore read-accept so old JSON files deserialize without error.
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool UseSharedTheme { get; set; }
 
         // Logging settings (shared across all tools)
         public LogLevel SharedLogLevel { get; set; } = LogLevel.INFO;

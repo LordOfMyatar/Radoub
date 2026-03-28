@@ -1,9 +1,7 @@
 using System;
-using System.Collections.ObjectModel;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
-using Avalonia.Media;
 using DialogEditor.Services;
 using Radoub.Dictionary;
 using Radoub.Formats.Logging;
@@ -12,7 +10,8 @@ namespace DialogEditor.Views.Controllers
 {
     /// <summary>
     /// Controller for UI/Appearance settings section in SettingsWindow.
-    /// Handles: Font size, font family, scrollbar, NPC coloring, warnings, spell check.
+    /// Handles: Scrollbar, flowchart node display, NPC coloring, warnings, spell check.
+    /// Font/theme settings removed — now managed by RadoubSettings (Trebuchet is sole authority).
     /// </summary>
     public class UISettingsController
     {
@@ -32,22 +31,6 @@ namespace DialogEditor.Views.Controllers
         public void LoadSettings()
         {
             var settings = _settings;
-
-            var fontSizeSlider = _window.FindControl<Slider>("FontSizeSlider");
-            var fontSizeLabel = _window.FindControl<TextBlock>("FontSizeLabel");
-
-            if (fontSizeSlider != null)
-            {
-                fontSizeSlider.Value = settings.FontSize;
-            }
-
-            if (fontSizeLabel != null)
-            {
-                fontSizeLabel.Text = settings.FontSize.ToString("0");
-            }
-
-            LoadFontFamilies(settings.FontFamily);
-            UpdateFontPreview();
 
             var allowScrollbarAutoHideCheckBox = _window.FindControl<CheckBox>("AllowScrollbarAutoHideCheckBox");
             if (allowScrollbarAutoHideCheckBox != null)
@@ -109,58 +92,10 @@ namespace DialogEditor.Views.Controllers
         {
             var settings = _settings;
 
-            var fontSizeSlider = _window.FindControl<Slider>("FontSizeSlider");
             var externalEditorPathTextBox = _window.FindControl<TextBox>("ExternalEditorPathTextBox");
-
-            if (fontSizeSlider != null)
-            {
-                settings.FontSize = fontSizeSlider.Value;
-            }
-
-            var fontFamilyComboBox = _window.FindControl<ComboBox>("FontFamilyComboBox");
-            if (fontFamilyComboBox?.SelectedItem is string selectedFont)
-            {
-                settings.FontFamily = selectedFont == "System Default" ? "" : selectedFont;
-            }
-
             if (externalEditorPathTextBox != null)
             {
                 settings.ExternalEditorPath = externalEditorPathTextBox.Text ?? "";
-            }
-        }
-
-        public void OnFontSizeChanged(object? sender, RangeBaseValueChangedEventArgs e)
-        {
-            var fontSizeLabel = _window.FindControl<TextBlock>("FontSizeLabel");
-            if (fontSizeLabel != null && sender is Slider slider)
-            {
-                fontSizeLabel.Text = slider.Value.ToString("0");
-            }
-
-            if (!_isInitializing())
-            {
-                ApplyFontSizePreview();
-                UpdateFontPreview();
-            }
-        }
-
-        public void OnFontFamilyChanged(object? sender, SelectionChangedEventArgs e)
-        {
-            if (_isInitializing()) return;
-
-            var fontFamilyComboBox = sender as ComboBox;
-            if (fontFamilyComboBox?.SelectedItem is string selectedFont)
-            {
-                if (selectedFont == "System Default")
-                {
-                    App.ApplyFontFamily("");
-                }
-                else
-                {
-                    App.ApplyFontFamily(selectedFont);
-                }
-
-                UpdateFontPreview();
             }
         }
 
@@ -242,111 +177,5 @@ namespace DialogEditor.Views.Controllers
             }
         }
 
-        private void LoadFontFamilies(string currentFontFamily)
-        {
-            try
-            {
-                var fontFamilyComboBox = _window.FindControl<ComboBox>("FontFamilyComboBox");
-                if (fontFamilyComboBox == null) return;
-
-                var fonts = new ObservableCollection<string> { "System Default" };
-
-                var commonFonts = new[]
-                {
-                    "Arial", "Calibri", "Cambria", "Consolas", "Courier New",
-                    "Georgia", "Helvetica", "Segoe UI", "Tahoma", "Times New Roman",
-                    "Trebuchet MS", "Verdana",
-                    "San Francisco", "Ubuntu", "Noto Sans", "Roboto"
-                };
-
-                foreach (var font in commonFonts)
-                {
-                    try
-                    {
-                        var testFamily = new FontFamily(font);
-                        fonts.Add(font);
-                    }
-                    catch
-                    {
-                        // Font not available on this system
-                    }
-                }
-
-                fontFamilyComboBox.ItemsSource = fonts;
-
-                if (string.IsNullOrWhiteSpace(currentFontFamily))
-                {
-                    fontFamilyComboBox.SelectedIndex = 0;
-                }
-                else
-                {
-                    var index = fonts.IndexOf(currentFontFamily);
-                    fontFamilyComboBox.SelectedIndex = index >= 0 ? index : 0;
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error loading font families: {ex.Message}");
-            }
-        }
-
-        public void UpdateFontPreview()
-        {
-            try
-            {
-                var fontPreviewText = _window.FindControl<TextBlock>("FontPreviewText");
-                var fontFamilyComboBox = _window.FindControl<ComboBox>("FontFamilyComboBox");
-                var fontSizeSlider = _window.FindControl<Slider>("FontSizeSlider");
-
-                if (fontPreviewText != null)
-                {
-                    if (fontSizeSlider != null)
-                    {
-                        fontPreviewText.FontSize = fontSizeSlider.Value;
-                    }
-
-                    if (fontFamilyComboBox?.SelectedItem is string selectedFont)
-                    {
-                        if (selectedFont == "System Default")
-                        {
-                            fontPreviewText.FontFamily = FontFamily.Default;
-                        }
-                        else
-                        {
-                            try
-                            {
-                                fontPreviewText.FontFamily = new FontFamily(selectedFont);
-                            }
-                            catch (Exception ex)
-                            {
-                                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Font '{selectedFont}' not available for preview, using default: {ex.Message}");
-                                fontPreviewText.FontFamily = FontFamily.Default;
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error updating font preview: {ex.Message}");
-            }
-        }
-
-        private void ApplyFontSizePreview()
-        {
-            try
-            {
-                var fontSizeSlider = _window.FindControl<Slider>("FontSizeSlider");
-                if (fontSizeSlider != null)
-                {
-                    App.ApplyFontSize(fontSizeSlider.Value);
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Font size preview: {fontSizeSlider.Value}");
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error applying font size preview: {ex.Message}");
-            }
-        }
     }
 }

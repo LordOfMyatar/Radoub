@@ -128,8 +128,8 @@ namespace DialogEditor.Tests
             var service = new UISettingsService();
 
             // Act
-            service.Initialize(14, "", false, null, "Floating", false,
-                flowchartNodeMaxLines: 3, treeViewWordWrap: false, useSharedTheme: true,
+            service.Initialize("Floating", false,
+                flowchartNodeMaxLines: 3, treeViewWordWrap: false,
                 flowchartNodeWidth: 250);
 
             // Assert
@@ -143,8 +143,8 @@ namespace DialogEditor.Tests
             var service = new UISettingsService();
 
             // Act
-            service.Initialize(14, "", false, null, "Floating", false,
-                flowchartNodeMaxLines: 3, treeViewWordWrap: false, useSharedTheme: true,
+            service.Initialize("Floating", false,
+                flowchartNodeMaxLines: 3, treeViewWordWrap: false,
                 flowchartNodeWidth: 999);
 
             // Assert
@@ -158,7 +158,7 @@ namespace DialogEditor.Tests
             var service = new UISettingsService();
 
             // Act - call without flowchartNodeWidth parameter (uses default)
-            service.Initialize(14, "", false, null, "Floating", false);
+            service.Initialize("Floating", false);
 
             // Assert
             Assert.Equal(200, service.FlowchartNodeWidth);

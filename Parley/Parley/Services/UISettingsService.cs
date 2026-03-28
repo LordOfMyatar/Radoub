@@ -13,14 +13,7 @@ namespace DialogEditor.Services
     /// </summary>
     public class UISettingsService : INotifyPropertyChanged
     {
-        // Font settings
-        private double _fontSize = 14;
-        private string _fontFamily = ""; // Empty string = use system default
-
-        // Theme settings
-        private bool _isDarkTheme = false; // DEPRECATED: Use CurrentThemeId instead
-        private string _currentThemeId = "org.radoub.theme.light"; // Default theme
-        private bool _useSharedTheme = true; // Per-tool shared theme override (#1533)
+        // Font/theme settings removed — now managed by RadoubSettings (Trebuchet is sole authority)
 
         // Layout settings
         private string _flowchartLayout = "Floating"; // "Floating", "SideBySide", "Tabbed"
@@ -53,117 +46,24 @@ namespace DialogEditor.Services
         /// <summary>
         /// Initializes the service with loaded settings data.
         /// Called by SettingsService during LoadSettings().
+        /// Font/theme settings removed — now managed by RadoubSettings (Trebuchet is sole authority).
         /// </summary>
         public void Initialize(
-            double fontSize,
-            string fontFamily,
-            bool isDarkTheme,
-            string? currentThemeId,
             string flowchartLayout,
             bool allowScrollbarAutoHide,
             int flowchartNodeMaxLines = 3,
             bool treeViewWordWrap = false,
-            bool useSharedTheme = true,
             int flowchartNodeWidth = 200)
         {
-            _fontSize = Math.Max(8, Math.Min(24, fontSize));
-            _fontFamily = fontFamily ?? "";
-
-            // Migrate from old IsDarkTheme to new CurrentThemeId
-            if (!string.IsNullOrEmpty(currentThemeId))
-            {
-                _currentThemeId = currentThemeId;
-                _isDarkTheme = isDarkTheme; // Keep for compatibility
-            }
-            else
-            {
-                // Old settings file - migrate
-                _isDarkTheme = isDarkTheme;
-                _currentThemeId = _isDarkTheme ? "org.radoub.theme.dark" : "org.radoub.theme.light";
-            }
-
             _flowchartLayout = flowchartLayout ?? "Floating";
             _allowScrollbarAutoHide = allowScrollbarAutoHide;
             _flowchartNodeMaxLines = Math.Max(1, Math.Min(6, flowchartNodeMaxLines));
             _treeViewWordWrap = treeViewWordWrap;
-            _useSharedTheme = useSharedTheme;
             _flowchartNodeWidth = Math.Max(100, Math.Min(400, flowchartNodeWidth));
         }
 
-        public double FontSize
-        {
-            get => _fontSize;
-            set
-            {
-                if (SetProperty(ref _fontSize, Math.Max(8, Math.Min(24, value))))
-                    SettingsChanged?.Invoke();
-            }
-        }
-
-        public string FontFamily
-        {
-            get => _fontFamily;
-            set
-            {
-                if (SetProperty(ref _fontFamily, value ?? ""))
-                    SettingsChanged?.Invoke();
-            }
-        }
-
-        /// <summary>
-        /// DEPRECATED: Use CurrentThemeId instead. Kept for backwards compatibility.
-        /// </summary>
-        public bool IsDarkTheme
-        {
-            get => _isDarkTheme;
-            set
-            {
-                if (SetProperty(ref _isDarkTheme, value))
-                {
-                    // Auto-migrate to new theme system
-                    _currentThemeId = value ? "org.radoub.theme.dark" : "org.radoub.theme.light";
-                    OnPropertyChanged(nameof(CurrentThemeId));
-                    SettingsChanged?.Invoke();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Current theme plugin ID (e.g., "org.radoub.theme.light")
-        /// </summary>
-        public string CurrentThemeId
-        {
-            get => _currentThemeId;
-            set
-            {
-                if (SetProperty(ref _currentThemeId, value))
-                {
-                    // Update legacy IsDarkTheme for compatibility
-                    _isDarkTheme = value.Contains("dark", StringComparison.OrdinalIgnoreCase);
-                    // User explicitly changed theme — disable shared theme (#1533)
-                    if (_useSharedTheme)
-                    {
-                        _useSharedTheme = false;
-                        OnPropertyChanged(nameof(UseSharedTheme));
-                    }
-                    SettingsChanged?.Invoke();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Per-tool shared theme override. When true, tool inherits Trebuchet's shared theme.
-        /// When false, tool uses its own CurrentThemeId regardless of shared theme (#1533).
-        /// </summary>
-        public bool UseSharedTheme
-        {
-            get => _useSharedTheme;
-            set
-            {
-                if (SetProperty(ref _useSharedTheme, value))
-                    SettingsChanged?.Invoke();
-            }
-        }
+        // FontSize, FontFamily, IsDarkTheme, CurrentThemeId, UseSharedTheme removed
+        // — now managed by RadoubSettings (Trebuchet is sole authority)
 
         /// <summary>
         /// Flowchart layout mode: "Floating" (separate window), "SideBySide" (split view), "Tabbed" (tab in main area)

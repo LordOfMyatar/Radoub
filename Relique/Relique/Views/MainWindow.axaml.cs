@@ -62,7 +62,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         RadoubSettings.Instance.PropertyChanged += OnRadoubSettingsChanged;
 
         RestoreWindowPosition();
-        UpdateUseRadoubThemeMenuState();
         UpdateModuleIndicator();
         PopulateRecentFiles();
 

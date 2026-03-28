@@ -24,7 +24,7 @@ public partial class ThemeManager
     private readonly Dictionary<string, ThemeManifest> _themes = new();
     private ThemeManifest? _currentTheme;
     private readonly string _toolName;
-    private readonly bool _useSharedTheme;
+    private const string DefaultThemeId = "org.radoub.theme.light";
 
     /// <summary>
     /// Event raised when a theme is successfully applied.
@@ -69,9 +69,8 @@ public partial class ThemeManager
     /// Call once at application startup before accessing Instance.
     /// </summary>
     /// <param name="toolName">Tool name for user theme directory (e.g., "Parley", "Manifest", "Quartermaster")</param>
-    /// <param name="useSharedTheme">If true, prefer shared Radoub-level theme over tool-specific. Default: true</param>
     /// <returns>The initialized ThemeManager instance</returns>
-    public static ThemeManager Initialize(string toolName, bool useSharedTheme = true)
+    public static ThemeManager Initialize(string toolName)
     {
         lock (_lock)
         {
@@ -81,7 +80,7 @@ public partial class ThemeManager
                 // (supports safe re-initialization with same tool name)
                 return _instance;
             }
-            _instance = new ThemeManager(toolName, useSharedTheme);
+            _instance = new ThemeManager(toolName);
             return _instance;
         }
     }
@@ -91,11 +90,9 @@ public partial class ThemeManager
     /// Use Initialize() for singleton access or construct directly for testing.
     /// </summary>
     /// <param name="toolName">Tool name for user theme directory (e.g., "Parley", "Manifest", "Quartermaster")</param>
-    /// <param name="useSharedTheme">If true, prefer shared Radoub-level theme over tool-specific. Default: true</param>
-    public ThemeManager(string toolName, bool useSharedTheme = true)
+    public ThemeManager(string toolName)
     {
         _toolName = toolName;
-        _useSharedTheme = useSharedTheme;
         InitializeThemeDirectories();
     }
 
@@ -136,7 +133,7 @@ public partial class ThemeManager
         _themeDirectories.Add(userThemes);
 
         UnifiedLogger.LogApplication(LogLevel.INFO,
-            $"[{_toolName}] Theme directories initialized: {_themeDirectories.Count} locations (shared themes: {_useSharedTheme})");
+            $"[{_toolName}] Theme directories initialized: {_themeDirectories.Count} locations");
     }
 
     /// <summary>
@@ -367,52 +364,40 @@ public partial class ThemeManager
 
     /// <summary>
     /// Get the effective theme ID to apply.
-    /// If useSharedTheme is enabled and a shared theme is configured in RadoubSettings,
-    /// returns the shared theme ID. Otherwise returns the provided tool-specific theme ID.
+    /// Returns the shared theme ID from RadoubSettings, or the default theme if not configured.
+    /// Trebuchet is the sole authority for theme selection — no per-tool overrides.
     /// </summary>
-    /// <param name="toolThemeId">The tool's configured theme ID</param>
-    /// <param name="useSharedTheme">If specified, overrides the instance-level _useSharedTheme setting.
-    /// Pass the tool's SettingsService.UseSharedTheme to respect per-tool override (#1533).</param>
     /// <returns>The effective theme ID to apply</returns>
-    public string GetEffectiveThemeId(string toolThemeId, bool? useSharedTheme = null)
+    public string GetEffectiveThemeId()
     {
-        var effectiveUseShared = useSharedTheme ?? _useSharedTheme;
-        if (effectiveUseShared && RadoubSettings.Instance.HasSharedTheme)
+        var sharedThemeId = RadoubSettings.Instance.HasSharedTheme
+            ? RadoubSettings.Instance.SharedThemeId
+            : DefaultThemeId;
+
+        bool found;
+        lock (_lock)
         {
-            var sharedThemeId = RadoubSettings.Instance.SharedThemeId;
-            bool found;
-            lock (_lock)
-            {
-                found = _themes.ContainsKey(sharedThemeId);
-            }
-            if (found)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"[{_toolName}] Using shared theme: {sharedThemeId}");
-                return sharedThemeId;
-            }
-            UnifiedLogger.LogApplication(LogLevel.WARN,
-                $"[{_toolName}] Shared theme '{sharedThemeId}' not found, falling back to tool theme");
+            found = _themes.ContainsKey(sharedThemeId);
+        }
+        if (found)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"[{_toolName}] Using shared theme: {sharedThemeId}");
+            return sharedThemeId;
         }
 
-        return toolThemeId;
+        UnifiedLogger.LogApplication(LogLevel.WARN,
+            $"[{_toolName}] Shared theme '{sharedThemeId}' not found, falling back to default");
+        return DefaultThemeId;
     }
 
     /// <summary>
-    /// Apply the effective theme (shared or tool-specific).
-    /// Checks shared settings first if useSharedTheme is enabled.
+    /// Apply the shared theme from RadoubSettings.
     /// </summary>
-    /// <param name="toolThemeId">The tool's configured theme ID as fallback</param>
-    /// <param name="useSharedTheme">If specified, overrides the instance-level setting (#1533).</param>
     /// <returns>True if a theme was applied successfully</returns>
-    public bool ApplyEffectiveTheme(string toolThemeId, bool? useSharedTheme = null)
+    public bool ApplySharedTheme()
     {
-        var effectiveThemeId = GetEffectiveThemeId(toolThemeId, useSharedTheme);
+        var effectiveThemeId = GetEffectiveThemeId();
         return ApplyTheme(effectiveThemeId);
     }
-
-    /// <summary>
-    /// Check if shared theme is being used.
-    /// </summary>
-    public bool IsUsingSharedTheme => _useSharedTheme && RadoubSettings.Instance.HasSharedTheme;
 }

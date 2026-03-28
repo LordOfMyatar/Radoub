@@ -1,22 +1,13 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
-using Avalonia.Data;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
-using Avalonia.Styling;
-using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
 using Radoub.UI.Services;
-using ThemeManager = Radoub.UI.Services.ThemeManager;
-using ThemeManifest = Radoub.UI.Models.ThemeManifest;
-using EasterEggService = Radoub.UI.Services.EasterEggService;
 
 namespace Quartermaster.Views.Dialogs;
 
@@ -153,163 +144,8 @@ public partial class SettingsWindow : Window
 
     private void LoadUISettings()
     {
-        var settings = SettingsService.Instance;
-
-        // Theme
-        var themeComboBox = this.FindControl<ComboBox>("ThemeComboBox");
-        if (themeComboBox != null)
-        {
-            PopulateThemeList(themeComboBox);
-
-            var themes = (IEnumerable<ThemeManifest>?)themeComboBox.ItemsSource;
-            var currentTheme = themes?.FirstOrDefault(t => t.Plugin.Id == settings.CurrentThemeId);
-            themeComboBox.SelectedItem = currentTheme;
-
-            if (currentTheme != null)
-            {
-                UpdateThemeDescription(currentTheme);
-            }
-        }
-
-        // Font Size
-        var fontSizeSlider = this.FindControl<Slider>("FontSizeSlider");
-        var fontSizeLabel = this.FindControl<TextBlock>("FontSizeLabel");
-        if (fontSizeSlider != null)
-        {
-            fontSizeSlider.Value = settings.FontSize;
-            if (fontSizeLabel != null)
-            {
-                fontSizeLabel.Text = $"{settings.FontSize}pt";
-            }
-        }
-
-        // Font Family
-        var fontFamilyComboBox = this.FindControl<ComboBox>("FontFamilyComboBox");
-        if (fontFamilyComboBox != null)
-        {
-            var fonts = new List<string> { "(System Default)" };
-            fonts.AddRange(FontManager.Current.SystemFonts.Select(f => f.Name).OrderBy(n => n));
-            fontFamilyComboBox.ItemsSource = fonts;
-
-            if (string.IsNullOrEmpty(settings.FontFamily))
-            {
-                fontFamilyComboBox.SelectedIndex = 0;
-            }
-            else
-            {
-                var index = fonts.IndexOf(settings.FontFamily);
-                fontFamilyComboBox.SelectedIndex = index >= 0 ? index : 0;
-            }
-
-            UpdateFontPreview();
-        }
-    }
-
-    private void PopulateThemeList(ComboBox comboBox)
-    {
-        // Check if Sea-Sick easter egg is unlocked (all 3 tools launched)
-        var includeEasterEggs = EasterEggService.Instance.IsSeaSickUnlocked();
-
-        var themes = ThemeManager.Instance.AvailableThemes
-            .Where(t => includeEasterEggs || !t.Plugin.Tags.Contains("easter-egg"));
-
-        // Deduplicate by name: prefer shared themes (org.radoub.*) over any user overrides
-        var deduplicatedThemes = themes
-            .GroupBy(t => t.Plugin.Name)
-            .Select(g => g.OrderByDescending(t => t.Plugin.Id.StartsWith("org.radoub.")).First())
-            .OrderBy(t => t.Plugin.Name)
-            .ToList();
-
-        comboBox.ItemsSource = deduplicatedThemes;
-        comboBox.DisplayMemberBinding = new Binding("Plugin.Name");
-    }
-
-    private void UpdateThemeDescription(ThemeManifest theme)
-    {
-        var nameText = this.FindControl<TextBlock>("ThemeNameText");
-        var descText = this.FindControl<TextBlock>("ThemeDescriptionText");
-
-        if (nameText != null)
-        {
-            nameText.Text = theme.Plugin.Name;
-        }
-
-        if (descText != null)
-        {
-            descText.Text = theme.Plugin.Description;
-        }
-    }
-
-    private void OnThemeComboBoxChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (_isInitializing) return;
-
-        var comboBox = sender as ComboBox;
-        if (comboBox?.SelectedItem is ThemeManifest theme)
-        {
-            ThemeManager.Instance.ApplyTheme(theme);
-            UpdateThemeDescription(theme);
-            SettingsService.Instance.CurrentThemeId = theme.Plugin.Id;
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Theme changed to: {theme.Plugin.Name}");
-        }
-    }
-
-    private void OnFontSizeChanged(object? sender, RangeBaseValueChangedEventArgs e)
-    {
-        if (_isInitializing) return;
-
-        var slider = sender as Slider;
-        if (slider == null) return;
-
-        var fontSize = (int)slider.Value;
-        var fontSizeLabel = this.FindControl<TextBlock>("FontSizeLabel");
-        if (fontSizeLabel != null)
-        {
-            fontSizeLabel.Text = $"{fontSize}pt";
-        }
-
-        SettingsService.Instance.FontSize = fontSize;
-        UpdateFontPreview();
-    }
-
-    private void OnFontFamilyChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (_isInitializing) return;
-
-        var comboBox = sender as ComboBox;
-        if (comboBox?.SelectedItem is string fontFamily)
-        {
-            if (fontFamily == "(System Default)")
-            {
-                SettingsService.Instance.FontFamily = "";
-            }
-            else
-            {
-                SettingsService.Instance.FontFamily = fontFamily;
-            }
-            UpdateFontPreview();
-        }
-    }
-
-    private void UpdateFontPreview()
-    {
-        var previewText = this.FindControl<TextBlock>("FontPreviewText");
-        if (previewText == null) return;
-
-        var settings = SettingsService.Instance;
-        previewText.FontSize = settings.FontSize;
-
-        if (!string.IsNullOrEmpty(settings.FontFamily))
-        {
-            try
-            {
-                previewText.FontFamily = new FontFamily(settings.FontFamily);
-            }
-            catch (ArgumentException ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Invalid font family for preview: {ex.Message}");
-            }
-        }
+        // Theme and font settings are now managed centrally by Trebuchet/RadoubSettings.
+        // No per-tool theme/font UI needed.
     }
 
     #endregion

@@ -10,6 +10,7 @@ namespace RadoubLauncher.Services;
 public class TrebuchetOptions : CommandLineOptions
 {
     public string? ModulePath { get; set; }
+    public bool OpenSettings { get; set; }
 }
 
 /// <summary>
@@ -26,12 +27,14 @@ public static class CommandLineService
         public bool ShowHelp { get; set; }
         public bool SafeMode { get; set; }
         public string? ModulePath { get; set; }
+        public bool OpenSettings { get; set; }
 
         internal static Options FromParsed(TrebuchetOptions parsed) => new()
         {
             ShowHelp = parsed.ShowHelp,
             SafeMode = parsed.SafeMode,
-            ModulePath = parsed.ModulePath
+            ModulePath = parsed.ModulePath,
+            OpenSettings = parsed.OpenSettings
         };
     }
 
@@ -64,6 +67,9 @@ public static class CommandLineService
                     return 1;
                 }
                 return 0;
+            case "--settings":
+                ((TrebuchetOptions)options).OpenSettings = true;
+                return 0;
             default:
                 return 0;
         }
@@ -78,6 +84,7 @@ public static class CommandLineService
         Console.WriteLine("Options:");
         Console.WriteLine("  -h, --help             Show this help message");
         Console.WriteLine("  --safemode             Start with default theme and font settings");
+        Console.WriteLine("  --settings             Open settings window on startup");
         Console.WriteLine("  -m, --module <path>    Path to module file to open");
         Console.WriteLine("  --mod <name>             Open module by name (resolves from modules directory)");
         Console.WriteLine();

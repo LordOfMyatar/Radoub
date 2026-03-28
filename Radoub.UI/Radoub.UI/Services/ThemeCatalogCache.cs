@@ -9,7 +9,7 @@ namespace Radoub.UI.Services;
 
 /// <summary>
 /// Caches discovered theme catalog to avoid rescanning theme directories on every startup.
-/// Each tool gets its own cache file since each tool scans different directories.
+/// Uses a single shared cache at ~/Radoub/Themes/ThemeCatalog.json for all tools.
 /// </summary>
 public class ThemeCatalogCache
 {
@@ -25,13 +25,23 @@ public class ThemeCatalogCache
     }
 
     /// <summary>
-    /// Creates a cache for the given tool name using the standard path.
+    /// Creates a cache using the shared theme catalog path ~/Radoub/Themes/ThemeCatalog.json.
+    /// </summary>
+    public static ThemeCatalogCache ForShared()
+    {
+        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var cachePath = Path.Combine(userProfile, "Radoub", "Themes", "ThemeCatalog.json");
+        return new ThemeCatalogCache(cachePath);
+    }
+
+    /// <summary>
+    /// Creates a cache using the shared theme catalog path.
+    /// The toolName parameter is ignored — all tools share a single cache.
+    /// Retained for backward compatibility.
     /// </summary>
     public static ThemeCatalogCache ForTool(string toolName)
     {
-        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var cachePath = Path.Combine(userProfile, "Radoub", toolName, "ThemeCatalog.json");
-        return new ThemeCatalogCache(cachePath);
+        return ForShared();
     }
 
     /// <summary>
