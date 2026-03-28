@@ -11,9 +11,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Detail Panel & Search (#1980)
 
-- [ ] #1955 — Display item properties in detail panel
-- [ ] #1941 — Search store inventory item ResRefs
-- [ ] #1687 — Parity with QM creature browser — BIF checkbox, module-aware HAK scan, archive resource loading
+- [x] #1955 — Display item properties in detail panel
+  - Added PropertiesDisplay to ResolvedItemData, populated via ItemViewModelFactory
+  - Palette items use cached properties; store items resolve via game data chain (module → HAK → BIF)
+- [x] #1941 — Search & replace store inventory item ResRefs
+  - UtmSearchProvider now traverses StoreList/ItemList/InventoryRes
+  - Location uses panel names (e.g., "Weapons > Item 2 > InventoryRes")
+  - Replace supports 16-char ResRef truncation with warnings
+- [x] #1687 — Parity with QM creature browser — BIF checkbox, module-aware HAK scan, archive resource loading
+  - Replaced naive hak/ folder scan with ModuleHakResolver (reads module.ifo)
+  - Added "Base Game" BIF checkbox with lazy-load via GameDataService
+  - Archive store loading: HAK via ErfReader, BIF via GameDataService, displayed read-only
 
 ---
 
