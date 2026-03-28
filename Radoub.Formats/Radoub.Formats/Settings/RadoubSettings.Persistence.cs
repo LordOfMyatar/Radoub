@@ -155,7 +155,11 @@ public partial class RadoubSettings
             };
 
             var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(SettingsFilePath, json);
+            using var fs = new FileStream(SettingsFilePath, FileMode.Create, FileAccess.Write, FileShare.None);
+            using var writer = new StreamWriter(fs);
+            writer.Write(json);
+            writer.Flush();
+            fs.Flush(flushToDisk: true);
         }
         catch (Exception ex)
         {
