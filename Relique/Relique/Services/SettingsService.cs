@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Radoub.Formats.Logging;
 using Radoub.UI.Services;
 
@@ -29,8 +30,8 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
         }
     }
 
-    protected override string ToolName => "ItemEditor";
-    protected override string SettingsEnvironmentVariable => "ITEMEDITOR_SETTINGS_DIR";
+    protected override string ToolName => "Relique";
+    protected override string SettingsEnvironmentVariable => "RELIQUE_SETTINGS_DIR";
     protected override string SettingsFileName => "ReliqueSettings.json";
 
     // Panel settings
@@ -41,7 +42,41 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
 
     private SettingsService()
     {
+        MigrateLegacySettings();
         Initialize();
+    }
+
+    /// <summary>
+    /// Migrate settings from legacy ~/Radoub/ItemEditor/ to ~/Radoub/Relique/
+    /// if the old directory exists and the new one does not yet have a settings file.
+    /// </summary>
+    private void MigrateLegacySettings()
+    {
+        try
+        {
+            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var legacyDir = Path.Combine(userProfile, "Radoub", "ItemEditor");
+            var legacyFile = Path.Combine(legacyDir, SettingsFileName);
+
+            if (!File.Exists(legacyFile))
+                return;
+
+            var newDir = SettingsDirectory;
+            var newFile = Path.Combine(newDir, SettingsFileName);
+
+            if (File.Exists(newFile))
+                return;
+
+            Directory.CreateDirectory(newDir);
+            File.Copy(legacyFile, newFile);
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Migrated settings from ~/Radoub/ItemEditor/ to ~/Radoub/Relique/");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"Settings migration from ItemEditor failed: {ex.Message}");
+        }
     }
 
     public double BrowserPanelWidth
