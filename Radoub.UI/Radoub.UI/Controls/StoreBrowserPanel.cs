@@ -42,6 +42,7 @@ internal class StoreHakCacheEntry
 public class StoreBrowserPanel : FileBrowserPanelBase
 {
     private readonly IScriptBrowserContext? _context;
+    private readonly CheckBox _showModuleCheckBox;
     private readonly CheckBox _showHakCheckBox;
     private readonly CheckBox _showBifCheckBox;
     private bool _showHakStores;
@@ -66,6 +67,16 @@ public class StoreBrowserPanel : FileBrowserPanelBase
         SearchWatermark = "Type to filter stores...";
         HeaderTextContent = "Stores";
 
+        // Create Module checkbox (checked by default)
+        _showModuleCheckBox = new CheckBox
+        {
+            Content = "Module",
+            IsChecked = true,
+            Margin = new Avalonia.Thickness(0, 4, 0, 0)
+        };
+        ToolTip.SetTip(_showModuleCheckBox, "Show .utm files from module folder");
+        _showModuleCheckBox.IsCheckedChanged += OnModuleFilterChanged;
+
         // Create and wire up HAK checkbox
         _showHakCheckBox = new CheckBox
         {
@@ -87,6 +98,7 @@ public class StoreBrowserPanel : FileBrowserPanelBase
         _showBifCheckBox.IsCheckedChanged += OnShowBifChanged;
 
         var filterPanel = new StackPanel { Spacing = 2 };
+        filterPanel.Children.Add(_showModuleCheckBox);
         filterPanel.Children.Add(_showHakCheckBox);
         filterPanel.Children.Add(_showBifCheckBox);
         FilterOptionsContent = filterPanel;
@@ -113,6 +125,11 @@ public class StoreBrowserPanel : FileBrowserPanelBase
     /// Must be set before BIF scanning will work.
     /// </summary>
     public IGameDataService? GameDataService { get; set; }
+
+    private void OnModuleFilterChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        OnFilterOptionsChanged();
+    }
 
     private async void OnShowBifChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
@@ -209,6 +226,8 @@ public class StoreBrowserPanel : FileBrowserPanelBase
 
     protected override IEnumerable<FileBrowserEntry> ApplyCustomFilters(IEnumerable<FileBrowserEntry> entries)
     {
+        bool showModule = _showModuleCheckBox.IsChecked == true;
+
         return entries.Where(e =>
         {
             if (e is StoreBrowserEntry se)
@@ -220,7 +239,7 @@ public class StoreBrowserPanel : FileBrowserPanelBase
             {
                 return _showHakStores;
             }
-            return true; // Module entries always shown
+            return showModule;
         });
     }
 
