@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.25-alpha] - 2026-03-27
+**Branch**: `fence/issue-1980` | **PR**: #TBD
+
+### Sprint: Detail Panel & Search (#1980)
+
+- [ ] #1955 — Display item properties in detail panel
+- [ ] #1941 — Search store inventory item ResRefs
+- [ ] #1687 — Parity with QM creature browser — BIF checkbox, module-aware HAK scan, archive resource loading
+
+---
+
 ## [0.1.24-alpha] - 2026-03-26
 **Branch**: `fence/issue-1981` | **PR**: #1994
 
