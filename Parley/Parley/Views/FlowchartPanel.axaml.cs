@@ -1034,22 +1034,7 @@ namespace DialogEditor.Views
             return await FlowchartExportService.ExportToPngAsync(FlowchartGraphPanel, filePath, dpi);
         }
 
-        /// <summary>
-        /// Export the flowchart to SVG format
-        /// </summary>
-        /// <param name="filePath">Destination file path</param>
-        /// <returns>True if export succeeded</returns>
-        public async Task<bool> ExportToSvgAsync(string filePath)
-        {
-            var graph = _viewModel.FlowchartGraph;
-            if (graph == null || graph.IsEmpty)
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN, "Cannot export: no flowchart content");
-                return false;
-            }
 
-            return await FlowchartExportService.ExportToSvgAsync(graph, filePath, _viewModel.FileName, _uiSettings.FlowchartNodeWidth);
-        }
 
         #endregion
     }

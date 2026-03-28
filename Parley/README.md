@@ -30,7 +30,7 @@ See [Known Issues](https://github.com/LordOfMyatar/Radoub/issues?q=is%3Aissue+is
 ## Features
 
 - Dialog tree editing with full undo/redo
-- Native flowchart view (View → Flowchart or F5) with PNG/SVG export
+- Native flowchart view (View → Flowchart or F5) with PNG export
 - Sound and script browsers with parameter preview
 - Conversation simulator (F6) with text-to-speech and coverage tracking
 - Color-coded NPCs for multi-NPC conversations
