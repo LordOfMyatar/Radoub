@@ -413,6 +413,15 @@ New tools must integrate with Trebuchet (the Radoub launcher):
 | Custom TLK loading | Use shared ITlkService |
 | Custom portrait browser | Use shared PortraitBrowserWindow |
 
+### Post-Implementation Audit
+
+After a new tool's initial implementation is complete (before first release), run a UI uniformity audit against the checklist table above:
+
+- [ ] **Run UI uniformity audit** — verify all criteria in the UI Uniformity Checklist table pass
+- [ ] **Run `run-tests.ps1 -Tool [ToolName]`** — confirm clean pass (privacy, tech-debt, unit tests)
+- [ ] **Verify Trebuchet integration** — tool registered in ToolLauncherService, `--file` argument works
+- [ ] **Add FlaUI smoke test** — basic launch/close test in `Radoub.IntegrationTests/[ToolName]/` (requires CI infrastructure from #1905)
+
 ### Versioning (NBGV)
 
 **Version Source**: Nerdbank.GitVersioning (NBGV) via per-tool `version.json` files.
