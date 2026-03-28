@@ -2,13 +2,17 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using MerchantEditor.Services;
+using Radoub.Formats.Common;
+using Radoub.Formats.Erf;
 using Radoub.Formats.Ifo;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
+using Radoub.Formats.Utm;
 using Radoub.UI.Controls;
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace MerchantEditor.Views;
 
@@ -270,10 +274,10 @@ public partial class MainWindow
     {
         try
         {
-            // Archive stores (HAK/BIF) can't be edited directly
+            // Archive stores (HAK/BIF) — load read-only (#1687)
             if (e.Entry.IsFromHak || (e.Entry is StoreBrowserEntry sbe && sbe.IsFromBif))
             {
-                UpdateStatusBar($"Archive stores are read-only: {e.Entry.Name}");
+                await LoadArchiveStore(e.Entry);
                 return;
             }
 
@@ -307,6 +311,93 @@ public partial class MainWindow
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error loading store from browser: {ex.Message}");
             UpdateStatusBar($"Error: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Load a store from a HAK or BIF archive in read-only mode (#1687).
+    /// </summary>
+    private async Task LoadArchiveStore(FileBrowserEntry entry)
+    {
+        var isFromBif = entry is StoreBrowserEntry { IsFromBif: true };
+        var sourceLabel = isFromBif ? "base game" : "HAK";
+
+        try
+        {
+            UpdateStatusBar($"Loading {sourceLabel} store: {entry.Name}...");
+
+            byte[]? data = null;
+
+            if (isFromBif)
+            {
+                if (_gameDataService == null || !_gameDataService.IsConfigured)
+                {
+                    UpdateStatusBar("Game data not configured — cannot load base game stores");
+                    return;
+                }
+                data = _gameDataService.FindResource(entry.Name, ResourceTypes.Utm);
+            }
+            else if (entry.IsFromHak && !string.IsNullOrEmpty(entry.HakPath))
+            {
+                data = await Task.Run(() => ExtractFromHak(entry.HakPath, entry.Name, ResourceTypes.Utm));
+            }
+
+            if (data == null)
+            {
+                UpdateStatusBar($"Could not extract {entry.Name} from {sourceLabel} archives");
+                return;
+            }
+
+            // Release lock on previous file
+            if (!string.IsNullOrEmpty(_currentFilePath))
+            {
+                Radoub.UI.Services.FileSessionLockService.ReleaseLock(_currentFilePath);
+            }
+
+            _currentStore = UtmReader.Read(data);
+            _currentFilePath = null; // No file path — read-only archive resource
+            _documentState.IsLoading = true;
+            _documentState.IsReadOnly = true;
+
+            PopulateStoreProperties();
+            PopulateVariables();
+
+            OnPropertyChanged(nameof(HasFile));
+
+            _documentState.IsLoading = false;
+            _documentState.ClearDirty();
+            UpdateTitle();
+            UpdateStatusBar($"{sourceLabel} store (read-only): {entry.Name}");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load {sourceLabel} store {entry.Name}: {ex.Message}");
+            UpdateStatusBar($"Error loading {sourceLabel} store: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Extract a single resource from a HAK file by resref and type.
+    /// Uses metadata-only read + targeted extraction to avoid loading entire HAK.
+    /// </summary>
+    private static byte[]? ExtractFromHak(string hakPath, string resRef, ushort resourceType)
+    {
+        try
+        {
+            var erf = ErfReader.ReadMetadataOnly(hakPath);
+            var resourceEntry = erf.Resources
+                .FirstOrDefault(r => r.ResRef.Equals(resRef, StringComparison.OrdinalIgnoreCase)
+                                  && r.ResourceType == resourceType);
+
+            if (resourceEntry == null)
+                return null;
+
+            return ErfReader.ExtractResource(hakPath, resourceEntry);
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to extract {resRef} from {Path.GetFileName(hakPath)}: {ex.Message}");
+            return null;
         }
     }
 
