@@ -33,6 +33,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private readonly ObservableCollection<VariableViewModel> _variables = new();
     private ItemIconService? _itemIconService;
     private PaletteColorService? _paletteColorService;
+    private SpellCheckTextBox? _descriptionTextBox;
+    private SpellCheckTextBox? _descIdentifiedTextBox;
+    private readonly QuickTokenService _quickTokenService = new();
 
     // Convenience accessors for document state
     private string? _currentFilePath
@@ -79,6 +82,25 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 });
             searchBar.FileModified += OnSearchFileModified;
             searchBar.NavigateToMatch += OnSearchNavigateToMatch;
+        }
+
+        // Attach token insertion context menu to description fields (#1817)
+        _descriptionTextBox = this.FindControl<SpellCheckTextBox>("DescriptionTextBox");
+        if (_descriptionTextBox != null)
+        {
+            _descriptionTextBox.ContextMenuExtras = menu =>
+                TokenContextMenu.AppendTokenMenu(menu, _descriptionTextBox, () =>
+                    TokenInsertionHelper.OpenTokenWindow(_descriptionTextBox, this),
+                    _quickTokenService);
+        }
+
+        _descIdentifiedTextBox = this.FindControl<SpellCheckTextBox>("DescIdentifiedTextBox");
+        if (_descIdentifiedTextBox != null)
+        {
+            _descIdentifiedTextBox.ContextMenuExtras = menu =>
+                TokenContextMenu.AppendTokenMenu(menu, _descIdentifiedTextBox, () =>
+                    TokenInsertionHelper.OpenTokenWindow(_descIdentifiedTextBox, this),
+                    _quickTokenService);
         }
 
         Closing += OnWindowClosing;
