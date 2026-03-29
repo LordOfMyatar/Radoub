@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.26-alpha] - 2026-03-29
+**Branch**: `radoub/issue-1817` | **PR**: #TBD
+
+### Token Chooser Control (#1817)
+- Token insertion UI for player-facing text fields (color tokens, custom tokens)
+
+---
+
 ## [0.1.25-alpha] - 2026-03-27
 **Branch**: `fence/issue-1980` | **PR**: #2013
 
