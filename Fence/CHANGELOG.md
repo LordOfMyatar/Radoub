@@ -6,8 +6,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
----
-
 ## [0.1.25-alpha] - 2026-03-27
 **Branch**: `fence/issue-1980` | **PR**: #2013
 
