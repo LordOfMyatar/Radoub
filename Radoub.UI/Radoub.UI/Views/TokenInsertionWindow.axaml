@@ -1,0 +1,71 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Radoub.UI.Views.TokenInsertionWindow"
+        Title="Insert Token"
+        Width="450" Height="500"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+
+    <DockPanel Margin="12">
+        <!-- Bottom: Quick Slots + Buttons -->
+        <StackPanel DockPanel.Dock="Bottom" Spacing="8">
+            <!-- Quick Slots -->
+            <Border BorderBrush="Gray" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,8,0,0">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Quick Access Slots" FontWeight="SemiBold" FontSize="12"/>
+                    <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto" Margin="0,4,0,0">
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="&#x2605; 1:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" x:Name="QuickSlot1Label" Text="(empty)" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                        <Button Grid.Row="0" Grid.Column="2" x:Name="SetSlot1Button" Content="Set" Click="OnSetSlotClick" Tag="1" Width="50" Margin="0,0,0,4"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="&#x2605; 2:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" x:Name="QuickSlot2Label" Text="(empty)" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                        <Button Grid.Row="1" Grid.Column="2" x:Name="SetSlot2Button" Content="Set" Click="OnSetSlotClick" Tag="2" Width="50" Margin="0,0,0,4"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="&#x2605; 3:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" x:Name="QuickSlot3Label" Text="(empty)" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                        <Button Grid.Row="2" Grid.Column="2" x:Name="SetSlot3Button" Content="Set" Click="OnSetSlotClick" Tag="3" Width="50"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Buttons -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
+                <Button Content="Insert" x:Name="InsertButton" Click="OnInsertClick" IsDefault="True" Width="80" IsEnabled="False"/>
+                <Button Content="Cancel" Click="OnCancelClick" IsCancel="True" Width="80"/>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Main: Tab Control -->
+        <TabControl x:Name="MainTabControl" SelectionChanged="OnTabSelectionChanged">
+            <!-- Standard Tokens Tab -->
+            <TabItem Header="Standard">
+                <ListBox x:Name="StandardTokenList"
+                         SelectionChanged="OnStandardTokenSelected"
+                         DoubleTapped="OnTokenDoubleTapped"
+                         Margin="0,8,0,0"/>
+            </TabItem>
+
+            <!-- Custom Tokens Tab -->
+            <TabItem Header="Custom / Colors">
+                <DockPanel Margin="0,8,0,0">
+                    <!-- Manual CUSTOM entry at bottom -->
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                        <TextBlock Text="CUSTOM #:" VerticalAlignment="Center"/>
+                        <TextBox x:Name="CustomNumberInput" Width="80" Watermark="e.g. 1001"
+                                 TextChanged="OnCustomNumberChanged"/>
+                        <TextBlock x:Name="CustomPreview" VerticalAlignment="Center" Foreground="Gray"/>
+                    </StackPanel>
+
+                    <!-- Color list -->
+                    <TextBlock DockPanel.Dock="Top" x:Name="NoColorsMessage"
+                               Text="No color tokens configured. Edit ~/Radoub/token-colors.json to add colors."
+                               IsVisible="False" Foreground="Gray" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                    <ListBox x:Name="ColorTokenList"
+                             SelectionChanged="OnColorTokenSelected"
+                             DoubleTapped="OnTokenDoubleTapped"/>
+                </DockPanel>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>

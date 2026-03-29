@@ -49,6 +49,12 @@ public class SpellCheckTextBox : TextBox
     }
 
     /// <summary>
+    /// Optional callback to append extra menu items to the context menu.
+    /// Called each time the context menu is rebuilt (every right-click).
+    /// </summary>
+    public Action<ContextMenu>? ContextMenuExtras { get; set; }
+
+    /// <summary>
     /// Current spelling errors in the text.
     /// </summary>
     public IReadOnlyList<SpellingError> CurrentErrors => _currentErrors;
@@ -259,6 +265,13 @@ public class SpellCheckTextBox : TextBox
         var pasteItem = new MenuItem { Header = "Paste" };
         pasteItem.Click += (_, _) => Paste();
         menu.Items.Add(pasteItem);
+
+        // Extension point for additional menu items (e.g., token insertion)
+        if (ContextMenuExtras != null)
+        {
+            menu.Items.Add(new Separator());
+            ContextMenuExtras(menu);
+        }
 
         // Set as the context menu (replaces default)
         ContextMenu = menu;

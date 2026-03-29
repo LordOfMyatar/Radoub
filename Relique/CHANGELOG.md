@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.6-alpha] - 2026-03-29
+**Branch**: `radoub/issue-1817` | **PR**: #2030
+
+### Token Chooser Control (#1817)
+- Token insertion UI for player-facing text fields (color tokens, custom tokens)
+
+---
+
 ## [0.10.5-alpha] - 2026-03-28
 **Branch**: `radoub/issue-2022` | **PR**: #2024
 

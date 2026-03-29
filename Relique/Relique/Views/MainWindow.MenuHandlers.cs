@@ -344,6 +344,18 @@ public partial class MainWindow
                         e.Handled = true;
                     }
                     break;
+                case Key.T:
+                    TextBox? tokenTarget = null;
+                    if (_nameTextBox?.IsFocused == true) tokenTarget = _nameTextBox;
+                    else if (_descriptionTextBox?.IsFocused == true) tokenTarget = _descriptionTextBox;
+                    else if (_descIdentifiedTextBox?.IsFocused == true) tokenTarget = _descIdentifiedTextBox;
+
+                    if (tokenTarget != null)
+                    {
+                        TokenInsertionHelper.OpenTokenWindow(tokenTarget, this);
+                        e.Handled = true;
+                    }
+                    break;
             }
         }
         else if (e.KeyModifiers == KeyModifiers.None)

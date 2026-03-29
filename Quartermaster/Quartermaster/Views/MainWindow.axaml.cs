@@ -615,6 +615,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                         e.Handled = true;
                     }
                     break;
+                case Key.T:
+                    if (CharacterPanelContent?.HandleInsertToken() == true)
+                        e.Handled = true;
+                    break;
             }
         }
         else if (e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift))

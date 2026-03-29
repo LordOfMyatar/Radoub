@@ -9,6 +9,7 @@ using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Ssf;
 using Radoub.Formats.Utc;
+using Radoub.UI.Controls;
 using Radoub.UI.Services;
 
 namespace Quartermaster.Views.Panels;
@@ -19,8 +20,8 @@ namespace Quartermaster.Views.Panels;
 /// </summary>
 public partial class CharacterPanel : UserControl
 {
-    private TextBox? _firstNameTextBox;
-    private TextBox? _lastNameTextBox;
+    private SpellCheckTextBox? _firstNameTextBox;
+    private SpellCheckTextBox? _lastNameTextBox;
     private ComboBox? _raceComboBox;
     private TextBox? _subraceTextBox;
     private TextBox? _deityTextBox;
@@ -54,7 +55,8 @@ public partial class CharacterPanel : UserControl
     private TextBox? _experienceTextBox;
     private TextBox? _goldTextBox;
     private TextBox? _ageTextBox;
-    private TextBox? _biographyTextBox;
+    private SpellCheckTextBox? _biographyTextBox;
+    private readonly QuickTokenService _quickTokenService = new();
 
     private CreatureDisplayService? _displayService;
     private UtcFile? _currentCreature;
@@ -76,8 +78,8 @@ public partial class CharacterPanel : UserControl
     {
         AvaloniaXamlLoader.Load(this);
 
-        _firstNameTextBox = this.FindControl<TextBox>("FirstNameTextBox");
-        _lastNameTextBox = this.FindControl<TextBox>("LastNameTextBox");
+        _firstNameTextBox = this.FindControl<SpellCheckTextBox>("FirstNameTextBox");
+        _lastNameTextBox = this.FindControl<SpellCheckTextBox>("LastNameTextBox");
         _raceComboBox = this.FindControl<ComboBox>("RaceComboBox");
         _subraceTextBox = this.FindControl<TextBox>("SubraceTextBox");
         _deityTextBox = this.FindControl<TextBox>("DeityTextBox");
@@ -109,7 +111,12 @@ public partial class CharacterPanel : UserControl
         _experienceTextBox = this.FindControl<TextBox>("ExperienceTextBox");
         _goldTextBox = this.FindControl<TextBox>("GoldTextBox");
         _ageTextBox = this.FindControl<TextBox>("AgeTextBox");
-        _biographyTextBox = this.FindControl<TextBox>("BiographyTextBox");
+        _biographyTextBox = this.FindControl<SpellCheckTextBox>("BiographyTextBox");
+
+        // Wire up token insertion context menu (#1817)
+        WireTokenMenu(_firstNameTextBox);
+        WireTokenMenu(_lastNameTextBox);
+        WireTokenMenu(_biographyTextBox);
 
         // Wire up events - common fields
         if (_firstNameTextBox != null)
@@ -159,6 +166,34 @@ public partial class CharacterPanel : UserControl
         if (_biographyTextBox != null)
             _biographyTextBox.TextChanged += OnTextChanged;
     }
+
+    #region Token Insertion
+
+    private void WireTokenMenu(SpellCheckTextBox? textBox)
+    {
+        if (textBox == null) return;
+        textBox.ContextMenuExtras = menu =>
+            TokenContextMenu.AppendTokenMenu(menu, textBox, () =>
+                TokenInsertionHelper.OpenTokenWindow(textBox, this.VisualRoot as Window),
+                _quickTokenService);
+    }
+
+    public bool HandleInsertToken()
+    {
+        SpellCheckTextBox? target = null;
+        if (_firstNameTextBox?.IsFocused == true) target = _firstNameTextBox;
+        else if (_lastNameTextBox?.IsFocused == true) target = _lastNameTextBox;
+        else if (_biographyTextBox?.IsFocused == true) target = _biographyTextBox;
+
+        if (target != null)
+        {
+            TokenInsertionHelper.OpenTokenWindow(target, this.VisualRoot as Window);
+            return true;
+        }
+        return false;
+    }
+
+    #endregion
 
     #region Service Setup
 

@@ -33,6 +33,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private readonly ObservableCollection<VariableViewModel> _variables = new();
     private ItemIconService? _itemIconService;
     private PaletteColorService? _paletteColorService;
+    private SpellCheckTextBox? _nameTextBox;
+    private SpellCheckTextBox? _descriptionTextBox;
+    private SpellCheckTextBox? _descIdentifiedTextBox;
+    private readonly QuickTokenService _quickTokenService = new();
 
     // Convenience accessors for document state
     private string? _currentFilePath
@@ -81,10 +85,27 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             searchBar.NavigateToMatch += OnSearchNavigateToMatch;
         }
 
+        // Attach token insertion context menu to text fields (#1817)
+        _nameTextBox = this.FindControl<SpellCheckTextBox>("NameTextBox");
+        _descriptionTextBox = this.FindControl<SpellCheckTextBox>("DescriptionTextBox");
+        _descIdentifiedTextBox = this.FindControl<SpellCheckTextBox>("DescIdentifiedTextBox");
+        WireTokenMenu(_nameTextBox);
+        WireTokenMenu(_descriptionTextBox);
+        WireTokenMenu(_descIdentifiedTextBox);
+
         Closing += OnWindowClosing;
         Opened += OnWindowOpened;
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "Relique MainWindow initialized");
+    }
+
+    private void WireTokenMenu(SpellCheckTextBox? textBox)
+    {
+        if (textBox == null) return;
+        textBox.ContextMenuExtras = menu =>
+            TokenContextMenu.AppendTokenMenu(menu, textBox, () =>
+                TokenInsertionHelper.OpenTokenWindow(textBox, this),
+                _quickTokenService);
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
