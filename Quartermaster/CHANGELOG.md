@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.74-alpha] - 2026-03-28
-**Branch**: `quartermaster/issue-1676` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1676` | **PR**: #2025
 
 ### CEP/HAK Model Rendering (#1676)
 - CEP/HAK creature models now parse and render correctly
