@@ -528,6 +528,18 @@ public class ModelPreviewGLControl : OpenGlControlBase
         int meshIndex = 0;
         int skippedMeshes = 0;
         var allMeshes = _model.GetMeshNodes().ToList();
+
+        // #1676: CEP models often have both skin meshes (full-body geometry for animation)
+        // and trimeshes. Small trimeshes (<30 verts) in skin models are typically bone
+        // visualizations that overlap with skin geometry, causing visual artifacts.
+        // Skip them when skins are present. Keep substantial trimeshes (manes, fangs, etc.).
+        bool hasSkins = allMeshes.Any(m => m is Radoub.Formats.Mdl.MdlSkinNode && m.Render && m.Vertices.Length > 0);
+        if (hasSkins)
+        {
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"  Model '{_model.Name}': Has skin meshes — will skip tiny trimeshes (<30 verts)");
+        }
+
         UnifiedLogger.LogApplication(LogLevel.INFO, $"  Model '{_model.Name}': {allMeshes.Count} mesh nodes: {string.Join(", ", allMeshes.Select(m => m.Name))}");
         foreach (var mesh in allMeshes)
         {
@@ -550,6 +562,16 @@ public class ModelPreviewGLControl : OpenGlControlBase
             }
 
             bool isSkinMesh = mesh is Radoub.Formats.Mdl.MdlSkinNode;
+
+            // #1676: In models with skins, skip tiny trimeshes (<30 verts) — they're
+            // bone visualizations that overlap with skin geometry causing artifacts.
+            // Keep substantial trimeshes (manes, fangs, accessories, etc.)
+            if (hasSkins && !isSkinMesh && mesh.Vertices.Length < 30)
+            {
+                skippedMeshes++;
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Skipping tiny trimesh '{mesh.Name}' ({mesh.Vertices.Length} verts): bone viz in skin model");
+                continue;
+            }
 
             // All meshes: apply full hierarchy world transform.
             // Skin mesh vertices (m_pavVerts) are in bind-pose space — same treatment as trimesh.

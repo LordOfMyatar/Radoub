@@ -459,6 +459,118 @@ public class CepModelExtractionTests
         }
     }
 
+    [Theory]
+    [InlineData("c_cat_lion", "dire tiger - broken with skins")]
+    [InlineData("c_umberhulk", "umber hulk - broken with skins")]
+    [InlineData("c_wolf", "wolf - broken with skins")]
+    [InlineData("c_zomb_rot", "zombie - spike")]
+    [InlineData("c_aribeth", "aribeth - NEEDS skins")]
+    [InlineData("c_aribeth_evil", "aribeth evil - NEEDS skins")]
+    [InlineData("c_dragon_red", "dragon - NEEDS skins")]
+    [InlineData("c_satyr", "satyr - NEEDS skins")]
+    [InlineData("c_snake", "snake - NEEDS skins")]
+    [InlineData("c_air", "air elemental - emitter heavy")]
+    [InlineData("c_fairy", "fairy - emitter")]
+    public void AnalyzeSkinVsTrimeshOverlap(string resRef, string description)
+    {
+        // For each model, analyze whether skin meshes overlap with trimesh geometry
+        // or whether skins ARE the primary geometry
+
+        var hakData = FindModelInHaks(resRef);
+        byte[]? bifData = _gameDataService?.FindBaseResource(resRef, ResourceTypes.Mdl);
+        var data = hakData.data ?? bifData;
+        if (data == null)
+        {
+            _output.WriteLine($"SKIP: {resRef} not found");
+            return;
+        }
+
+        var source = hakData.data != null ? $"HAK ({hakData.hakFile})" : "BIF";
+        var mdlReader = new MdlReader();
+        var model = mdlReader.Parse(data);
+        var root = model.GeometryRoot;
+
+        _output.WriteLine($"=== {resRef}: {description} — from {source} ===\n");
+
+        // Separate trimesh-only vs skin nodes
+        var allMeshes = model.GetMeshNodes().Where(m => m.Vertices.Length > 0).ToList();
+        var skins = allMeshes.Where(m => m is MdlSkinNode).ToList();
+        var trimeshesOnly = allMeshes.Where(m => m is not MdlSkinNode).ToList();
+
+        int skinVerts = skins.Sum(m => m.Vertices.Length);
+        int trimeshVerts = trimeshesOnly.Sum(m => m.Vertices.Length);
+        int skinFaces = skins.Sum(m => m.Faces.Length);
+        int trimeshFaces = trimeshesOnly.Sum(m => m.Faces.Length);
+
+        _output.WriteLine($"Trimeshes: {trimeshesOnly.Count} meshes, {trimeshVerts} verts, {trimeshFaces} faces");
+        _output.WriteLine($"Skins:     {skins.Count} meshes, {skinVerts} verts, {skinFaces} faces");
+
+        // Analyze: are the trimeshes "real" body parts or just tiny connectors?
+        if (trimeshesOnly.Count > 0)
+        {
+            var avgTrimeshVerts = trimeshVerts / trimeshesOnly.Count;
+            var maxTrimeshVerts = trimeshesOnly.Max(m => m.Vertices.Length);
+            var minTrimeshVerts = trimeshesOnly.Min(m => m.Vertices.Length);
+            _output.WriteLine($"Trimesh stats: avg={avgTrimeshVerts}, min={minTrimeshVerts}, max={maxTrimeshVerts} verts");
+
+            // How many trimeshes have <10 verts? (likely attachment points, not real geometry)
+            var tinyTrimeshes = trimeshesOnly.Count(m => m.Vertices.Length < 10);
+            var substantialTrimeshes = trimeshesOnly.Count(m => m.Vertices.Length >= 10);
+            _output.WriteLine($"Tiny (<10 verts): {tinyTrimeshes}, Substantial (>=10): {substantialTrimeshes}");
+        }
+
+        if (skins.Count > 0)
+        {
+            foreach (var skin in skins)
+                _output.WriteLine($"  Skin: '{skin.Name}' — {skin.Vertices.Length} verts, {skin.Faces.Length} faces");
+        }
+
+        // Ratio analysis
+        if (skinVerts > 0 && trimeshVerts > 0)
+        {
+            var ratio = (float)skinVerts / trimeshVerts;
+            _output.WriteLine($"\nSkin/Trimesh vert ratio: {ratio:F2}");
+            if (ratio > 2.0f)
+                _output.WriteLine("  -> Skins are DOMINANT (skip trimeshes? or skins are the real geometry)");
+            else if (ratio < 0.5f)
+                _output.WriteLine("  -> Trimeshes are DOMINANT (skins may be redundant overlays)");
+            else
+                _output.WriteLine("  -> Mixed — both significant");
+        }
+        else if (skinVerts > 0 && trimeshVerts == 0)
+        {
+            _output.WriteLine("\n  -> SKIN-ONLY model (no trimesh geometry)");
+        }
+        else if (trimeshVerts > 0 && skinVerts == 0)
+        {
+            _output.WriteLine("\n  -> TRIMESH-ONLY model (no skin geometry)");
+        }
+
+        // Check: do skin meshes share parent nodes with trimeshes?
+        foreach (var skin in skins)
+        {
+            var parent = FindParent(root, skin);
+            var parentName = parent?.Name ?? "(root)";
+            var siblingsAreTrimesh = parent?.Children
+                .OfType<MdlTrimeshNode>()
+                .Where(c => c is not MdlSkinNode && c.Vertices.Length > 0)
+                .Any() ?? false;
+            _output.WriteLine($"  Skin '{skin.Name}' parent='{parentName}', sibling trimeshes={siblingsAreTrimesh}");
+        }
+    }
+
+    private static MdlNode? FindParent(MdlNode? root, MdlNode target)
+    {
+        if (root == null) return null;
+        foreach (var child in root.Children)
+        {
+            if (child == target) return root;
+            var found = FindParent(child, target);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
     [Fact]
     public void TryParseAsciiCepModelsWithMdlReader()
     {
@@ -632,6 +744,26 @@ public class CepModelExtractionTests
     }
 
     #region Helpers
+
+    private (byte[]? data, string? hakFile) FindModelInHaks(string resRef)
+    {
+        if (!Directory.Exists(HakDir)) return (null, null);
+        var hakFiles = Directory.GetFiles(HakDir, "*.hak", SearchOption.TopDirectoryOnly);
+        foreach (var hakFile in hakFiles.OrderBy(f => f))
+        {
+            try
+            {
+                var erf = ErfReader.ReadMetadataOnly(hakFile);
+                var entry = erf.FindResource(resRef, ResourceTypes.Mdl);
+                if (entry != null)
+                    return (ErfReader.ExtractResource(hakFile, entry), Path.GetFileName(hakFile));
+            }
+            catch { }
+        }
+        return (null, null);
+    }
+
+    private static string FormatLabel(bool isBinary) => isBinary ? "BINARY" : "ASCII";
 
     private void TryParse(string label, string resRef, byte[] data, bool useReader2)
     {
