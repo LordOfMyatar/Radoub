@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.28.0-alpha] - 2026-03-29
-**Branch**: `trebuchet/issue-1633` | **PR**: #TBD
+**Branch**: `trebuchet/issue-1633` | **PR**: #2033
 
 ### Pre-warm shared palette cache on launch (#1633)
 - Background BIF/HAK cache warm-up on Trebuchet startup
