@@ -528,6 +528,18 @@ public class ModelPreviewGLControl : OpenGlControlBase
         int meshIndex = 0;
         int skippedMeshes = 0;
         var allMeshes = _model.GetMeshNodes().ToList();
+        // #1676: CEP models often have both trimesh parts (correctly positioned via node hierarchy)
+        // AND skin meshes (same geometry in bind-pose for runtime animation). Rendering both causes
+        // visual artifacts (tearing, spikes, doubled geometry). Skip skins when trimeshes exist.
+        bool hasTrimeshes = allMeshes.Any(m => m is not Radoub.Formats.Mdl.MdlSkinNode && m.Vertices.Length > 0);
+        bool hasSkins = allMeshes.Any(m => m is Radoub.Formats.Mdl.MdlSkinNode);
+        bool skipSkins = hasTrimeshes && hasSkins;
+        if (skipSkins)
+        {
+            int skinCount = allMeshes.Count(m => m is Radoub.Formats.Mdl.MdlSkinNode);
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"  Model '{_model.Name}': Skipping {skinCount} skin meshes (trimesh parts provide positioned geometry)");
+        }
         UnifiedLogger.LogApplication(LogLevel.INFO, $"  Model '{_model.Name}': {allMeshes.Count} mesh nodes: {string.Join(", ", allMeshes.Select(m => m.Name))}");
         foreach (var mesh in allMeshes)
         {
@@ -550,6 +562,14 @@ public class ModelPreviewGLControl : OpenGlControlBase
             }
 
             bool isSkinMesh = mesh is Radoub.Formats.Mdl.MdlSkinNode;
+
+            // Skip skin meshes when trimesh parts already exist (#1676)
+            if (isSkinMesh && skipSkins)
+            {
+                skippedMeshes++;
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Skipping skin mesh {meshIndex} '{mesh.Name}': trimesh parts provide positioned geometry");
+                continue;
+            }
 
             // All meshes: apply full hierarchy world transform.
             // Skin mesh vertices (m_pavVerts) are in bind-pose space — same treatment as trimesh.
