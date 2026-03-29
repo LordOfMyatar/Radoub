@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.74-alpha] - 2026-03-28
+**Branch**: `quartermaster/issue-1676` | **PR**: #2025
+
+### CEP/HAK Model Loading (#1676)
+- Removed `LoadModelPreferBIF` workaround — HAK models now load through standard resolution order
+- Parser verified against 1,737 CEP HAK creature models (binary and ASCII) with 100% pass rate
+
+---
+
 ## [0.2.73-alpha] - 2026-03-28 | PR #2024
 Rename "Assigned" to "Chosen" for feats terminology
 
