@@ -12,6 +12,7 @@ public partial class TokenInsertionWindow : Window
     private readonly QuickTokenService _quickTokenService;
     private QuickTokenSlot[] _quickSlots;
     private UserColorConfig? _colorConfig;
+    private bool _isInitialized;
 
     public string? SelectedToken { get; private set; }
 
@@ -19,13 +20,15 @@ public partial class TokenInsertionWindow : Window
 
     public TokenInsertionWindow(QuickTokenService quickTokenService)
     {
-        InitializeComponent();
         _quickTokenService = quickTokenService;
         _quickSlots = _quickTokenService.Load();
+
+        InitializeComponent();
 
         LoadStandardTokens();
         LoadColorTokens();
         UpdateQuickSlotDisplay();
+        _isInitialized = true;
     }
 
     private void LoadStandardTokens()
@@ -92,15 +95,22 @@ public partial class TokenInsertionWindow : Window
 
             if (hexColor != null)
             {
-                panel.Children.Add(new Border
+                try
                 {
-                    Width = 16, Height = 16,
-                    Background = SolidColorBrush.Parse(hexColor),
-                    BorderBrush = Brushes.Gray,
-                    BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(2),
-                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
-                });
+                    panel.Children.Add(new Border
+                    {
+                        Width = 16, Height = 16,
+                        Background = SolidColorBrush.Parse(hexColor),
+                        BorderBrush = Brushes.Gray,
+                        BorderThickness = new Thickness(1),
+                        CornerRadius = new CornerRadius(2),
+                        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+                    });
+                }
+                catch
+                {
+                    // Invalid hex color in token-colors.json — skip the swatch
+                }
             }
 
             panel.Children.Add(new TextBlock
@@ -158,17 +168,20 @@ public partial class TokenInsertionWindow : Window
 
     private void OnStandardTokenSelected(object? sender, SelectionChangedEventArgs e)
     {
+        if (!_isInitialized) return;
         UpdateInsertButton();
     }
 
     private void OnColorTokenSelected(object? sender, SelectionChangedEventArgs e)
     {
+        if (!_isInitialized) return;
         CustomNumberInput.Text = ""; // Clear manual input when selecting from list
         UpdateInsertButton();
     }
 
     private void OnCustomNumberChanged(object? sender, TextChangedEventArgs e)
     {
+        if (!_isInitialized) return;
         ColorTokenList.SelectedItem = null; // Clear list selection when typing
         var text = CustomNumberInput.Text?.Trim() ?? "";
         CustomPreview.Text = int.TryParse(text, out var num) && num >= 0
@@ -179,6 +192,7 @@ public partial class TokenInsertionWindow : Window
 
     private void OnTabSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
+        if (!_isInitialized) return;
         UpdateInsertButton();
     }
 
