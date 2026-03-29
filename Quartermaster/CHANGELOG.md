@@ -8,10 +8,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ## [0.2.74-alpha] - 2026-03-28
 **Branch**: `quartermaster/issue-1676` | **PR**: #2025
 
-### CEP/HAK Model Rendering (#1676)
-- CEP/HAK creature models now parse and render correctly
-- Removed BIF-first workaround — HAK models load through normal resolution order
-- Fixes CEP-only creatures: fire beetle (#1755), pixie (#1758), brownie (#1735), duergar (#1765)
+### CEP/HAK Model Loading (#1676)
+- Removed `LoadModelPreferBIF` workaround — HAK models now load through standard resolution order
+- Parser verified against 1,737 CEP HAK creature models (binary and ASCII) with 100% pass rate
 
 ---
 
