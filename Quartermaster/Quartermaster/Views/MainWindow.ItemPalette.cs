@@ -137,6 +137,17 @@ public partial class MainWindow
                     foreach (var source in sourcesToRebuild)
                     {
                         token.ThrowIfCancellationRequested();
+
+                        // Check if another process (e.g. Trebuchet) is building this source (#1633)
+                        if (await _sharedCacheService.WaitForBuildLock(source, timeout: 60000, cancellationToken: token))
+                        {
+                            // Another process built it — reload from cache
+                            UnifiedLogger.LogInventory(LogLevel.DEBUG,
+                                $"Build lock cleared for {source}, reloading from cache");
+                            continue;
+                        }
+
+                        // No lock existed or timeout — build it ourselves
                         var gameSource = source == "bif" ? GameResourceSource.Bif : GameResourceSource.Override;
                         await BuildSourceCacheAsync(gameSource, source, token);
                     }
@@ -171,12 +182,22 @@ public partial class MainWindow
         {
             await Task.Run(async () =>
             {
-                // Build each source independently
-                await BuildSourceCacheAsync(GameResourceSource.Bif, "bif", token);
-                token.ThrowIfCancellationRequested();
+                // Build each source — check if another process is building first (#1633)
+                foreach (var (gameSource, cacheSource) in new[] {
+                    (GameResourceSource.Bif, "bif"),
+                    (GameResourceSource.Override, "override") })
+                {
+                    token.ThrowIfCancellationRequested();
 
-                await BuildSourceCacheAsync(GameResourceSource.Override, "override", token);
-                token.ThrowIfCancellationRequested();
+                    if (await _sharedCacheService.WaitForBuildLock(cacheSource, timeout: 60000, cancellationToken: token))
+                    {
+                        UnifiedLogger.LogInventory(LogLevel.DEBUG,
+                            $"Build lock cleared for {cacheSource}, reloading from cache");
+                        continue;
+                    }
+
+                    await BuildSourceCacheAsync(gameSource, cacheSource, token);
+                }
             }, token);
 
             // Scan module HAKs (outside Task.Run — scanner manages its own threading)

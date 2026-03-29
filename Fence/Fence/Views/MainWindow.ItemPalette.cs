@@ -102,7 +102,24 @@ public partial class MainWindow
                 return;
             }
 
-            // No shared cache - build cache and scan HAKs in parallel
+            // Check if another process (e.g. Trebuchet) is building the cache (#1633)
+            var bifLockCleared = await _sharedCacheService.WaitForBuildLock("bif", timeout: 60000, cancellationToken: token);
+            if (bifLockCleared)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "BIF build lock cleared, reloading from cache");
+                _sharedCacheService.InvalidateAggregatedCache();
+                var freshCache = _sharedCacheService.GetAggregatedCache(_activeHakPaths);
+                if (freshCache != null)
+                {
+                    _cachedPaletteData = freshCache
+                        .Where(i => !ExcludedBaseItemTypes.Contains(i.BaseItemType))
+                        .ToList();
+                    _ = ScanModuleHaksAsync(token);
+                    return;
+                }
+            }
+
+            // No shared cache and no lock — build cache and scan HAKs in parallel
             UnifiedLogger.LogApplication(LogLevel.INFO, "Building palette cache in background...");
             var buildTask = BuildCacheInBackgroundAsync();
             var hakTask = ScanModuleHaksAsync(token);
