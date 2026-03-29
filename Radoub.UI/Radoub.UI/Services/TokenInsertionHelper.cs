@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Radoub.UI.Views;
 
 namespace Radoub.UI.Services;
 
@@ -54,5 +55,28 @@ public static class TokenInsertionHelper
         textBox.Focus();
     }
 
-    // TODO: OpenTokenWindow will be added after TokenInsertionWindow is created (Task 5)
+    /// <summary>
+    /// Open the TokenInsertionWindow as a dialog, insert the selected token into the target TextBox.
+    /// Shared across all tools — captures cursor state before dialog opens.
+    /// </summary>
+    public static async void OpenTokenWindow(TextBox targetTextBox, Window? owner)
+    {
+        if (owner == null) return;
+
+        // Capture cursor state BEFORE dialog opens (focus loss resets caret)
+        var selStart = targetTextBox.SelectionStart;
+        var selLen = targetTextBox.SelectionEnd - targetTextBox.SelectionStart;
+        var currentText = targetTextBox.Text ?? "";
+
+        var window = new TokenInsertionWindow();
+        var result = await window.ShowDialog<bool?>(owner);
+
+        if (result == true && window.SelectedToken != null)
+        {
+            var insertion = ComputeInsertion(currentText, selStart, selLen, window.SelectedToken);
+            targetTextBox.Text = insertion.NewText;
+            targetTextBox.CaretIndex = insertion.NewCaretPosition;
+            targetTextBox.Focus();
+        }
+    }
 }
