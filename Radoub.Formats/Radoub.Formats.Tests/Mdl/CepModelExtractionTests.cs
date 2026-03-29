@@ -391,6 +391,75 @@ public class CepModelExtractionTests
     }
 
     [Fact]
+    public void ComparePmh0BifVsHakSkeletonStructure()
+    {
+        // Compare BIF pmh0 skeleton vs HAK pmh0 skeleton to understand structural differences
+        if (_gameDataService == null)
+        {
+            _output.WriteLine("SKIP: Game data not available");
+            return;
+        }
+
+        var hakPath = Path.Combine(HakDir, "cep3_armor.hak");
+        if (!File.Exists(hakPath))
+        {
+            _output.WriteLine("SKIP: cep3_armor.hak not found");
+            return;
+        }
+
+        var mdlReader = new MdlReader();
+
+        // BIF version
+        var bifData = _gameDataService.FindBaseResource("pmh0", ResourceTypes.Mdl);
+        Assert.NotNull(bifData);
+        var bifModel = mdlReader.Parse(bifData);
+        var bifNames = CollectNodeNames(bifModel.GeometryRoot);
+
+        // HAK version
+        var erf = ErfReader.ReadMetadataOnly(hakPath);
+        var entry = erf.FindResource("pmh0", ResourceTypes.Mdl);
+        Assert.NotNull(entry);
+        var hakData = ErfReader.ExtractResource(hakPath, entry);
+        var hakModel = mdlReader.Parse(hakData);
+        var hakNames = CollectNodeNames(hakModel.GeometryRoot);
+
+        _output.WriteLine($"BIF pmh0: {bifData.Length} bytes, {bifNames.Count} nodes");
+        _output.WriteLine($"HAK pmh0: {hakData.Length} bytes, {hakNames.Count} nodes");
+
+        // Nodes in BIF but not HAK
+        var bifOnly = bifNames.Except(hakNames, StringComparer.OrdinalIgnoreCase).ToList();
+        _output.WriteLine($"\nBIF-only nodes ({bifOnly.Count}): {string.Join(", ", bifOnly)}");
+
+        // Nodes in HAK but not BIF
+        var hakOnly = hakNames.Except(bifNames, StringComparer.OrdinalIgnoreCase).ToList();
+        _output.WriteLine($"HAK-only nodes ({hakOnly.Count}): {string.Join(", ", hakOnly)}");
+
+        // Common nodes
+        var common = bifNames.Intersect(hakNames, StringComparer.OrdinalIgnoreCase).ToList();
+        _output.WriteLine($"Common nodes ({common.Count}): {string.Join(", ", common)}");
+
+        // Critical body part attachment points that must exist in both
+        var criticalNodes = new[] { "rootdummy", "torso_g", "neck_g", "head_g", "pelvis_g",
+            "Lbicep_g", "Rbicep_g", "lthigh_g", "rthigh_g", "lshin_g", "rshin_g",
+            "lfoot_g", "rfoot_g", "lhand_g", "rhand_g" };
+
+        _output.WriteLine("\nCritical attachment point check:");
+        foreach (var node in criticalNodes)
+        {
+            var inBif = bifNames.Contains(node, StringComparer.OrdinalIgnoreCase);
+            var inHak = hakNames.Contains(node, StringComparer.OrdinalIgnoreCase);
+            var status = (inBif, inHak) switch
+            {
+                (true, true) => "OK",
+                (true, false) => "MISSING IN HAK",
+                (false, true) => "HAK-ONLY",
+                _ => "MISSING IN BOTH"
+            };
+            _output.WriteLine($"  {node}: {status}");
+        }
+    }
+
+    [Fact]
     public void TryParseAsciiCepModelsWithMdlReader()
     {
         if (!Directory.Exists(HakDir))
