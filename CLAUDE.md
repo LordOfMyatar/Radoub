@@ -10,12 +10,16 @@ Project guidance for Claude Code sessions working with the Radoub multi-tool rep
 
 ### Current Tools
 
-- **Parley**: Dialog editor (`.dlg` files) - See `Parley/CLAUDE.md` for tool-specific guidance
-- **Manifest**: Journal editor (`.jrl` files) - See `Manifest/CLAUDE.md` for tool-specific guidance
-- **Quartermaster**: Creature/inventory editor (`.utc`, `.bic` files) - See `Quartermaster/CLAUDE.md` for tool-specific guidance
-- **Fence**: Merchant/store editor (`.utm` files) - See `Fence/CLAUDE.md` for tool-specific guidance
-- **Relique**: Item blueprint editor (`.uti` files) - See `Relique/CLAUDE.md` for tool-specific guidance
-- **Trebuchet**: Radoub launcher/hub - See `Trebuchet/CLAUDE.md` for tool-specific guidance
+| Tool | Abbrev | Description | CLAUDE.md |
+|------|--------|-------------|-----------|
+| **Parley** | PAR | Dialog editor (`.dlg` files) | `Parley/CLAUDE.md` |
+| **Manifest** | MAN | Journal editor (`.jrl` files) | `Manifest/CLAUDE.md` |
+| **Quartermaster** | QM | Creature/inventory editor (`.utc`, `.bic` files) | `Quartermaster/CLAUDE.md` |
+| **Fence** | FEN | Merchant/store editor (`.utm` files) | `Fence/CLAUDE.md` |
+| **Relique** | REL | Item blueprint editor (`.uti` files) | `Relique/CLAUDE.md` |
+| **Trebuchet** | TRE | Radoub launcher/hub | `Trebuchet/CLAUDE.md` |
+| **Marlinspike** | MAR | Search & replace across files (lives in Trebuchet) | `Trebuchet/CLAUDE.md` |
+| **Radoub** | RAD | Repository-level / shared | This file |
 
 ### Shared Libraries
 
