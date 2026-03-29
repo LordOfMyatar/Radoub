@@ -73,4 +73,23 @@ public interface ISharedPaletteCacheService
     /// Get the cache directory path.
     /// </summary>
     string CacheDirectory { get; }
+
+    /// <summary>
+    /// Acquire a build lock for a source cache. Creates a .building sentinel file with PID + timestamp.
+    /// Returns true if lock acquired, false if another live process holds it.
+    /// Stale locks (dead PID or older than 5 minutes) are automatically taken over.
+    /// </summary>
+    bool AcquireBuildLock(string source, string? sourcePath = null);
+
+    /// <summary>
+    /// Release a build lock for a source cache. Deletes the .building sentinel file.
+    /// </summary>
+    void ReleaseBuildLock(string source, string? sourcePath = null);
+
+    /// <summary>
+    /// Wait for an existing build lock to clear. If no sentinel exists, returns false immediately
+    /// (no lock to wait for — caller should build). If sentinel exists, polls until cleared or timeout.
+    /// Returns true if cache became available, false on timeout or no sentinel.
+    /// </summary>
+    Task<bool> WaitForBuildLock(string source, string? sourcePath = null, int timeout = 60000, CancellationToken cancellationToken = default);
 }

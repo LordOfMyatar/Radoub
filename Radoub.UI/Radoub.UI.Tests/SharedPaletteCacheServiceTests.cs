@@ -545,4 +545,252 @@ public class SharedPaletteCacheServiceTests : IDisposable
     }
 
     #endregion
+
+    #region Atomic Writes
+
+    [Fact]
+    public async Task SaveSourceCacheAsync_AtomicWrite_NoTempFileRemains()
+    {
+        var items = CreateTestItems(5);
+
+        await _service.SaveSourceCacheAsync("bif", items, validationPath: "/game/path");
+
+        // No .tmp files should remain after save
+        var tempFiles = Directory.GetFiles(_testCacheDir, "*.tmp");
+        Assert.Empty(tempFiles);
+
+        // The final cache file should exist and be valid JSON
+        var cacheFile = Path.Combine(_testCacheDir, "bif.json");
+        Assert.True(File.Exists(cacheFile));
+        var loaded = _service.LoadSourceCache("bif");
+        Assert.NotNull(loaded);
+        Assert.Equal(5, loaded.Count);
+    }
+
+    [Fact]
+    public async Task SaveSourceCacheAsync_AtomicWrite_OverwritesExistingCache()
+    {
+        // Save initial cache
+        await _service.SaveSourceCacheAsync("bif", CreateTestItems(3), validationPath: "/game");
+        var loaded1 = _service.LoadSourceCache("bif");
+        Assert.Equal(3, loaded1!.Count);
+
+        // Overwrite with new data
+        await _service.SaveSourceCacheAsync("bif", CreateTestItems(7), validationPath: "/game");
+        var loaded2 = _service.LoadSourceCache("bif");
+        Assert.Equal(7, loaded2!.Count);
+
+        // No temp files left behind
+        var tempFiles = Directory.GetFiles(_testCacheDir, "*.tmp");
+        Assert.Empty(tempFiles);
+    }
+
+    [Fact]
+    public async Task SaveSourceCacheAsync_ConcurrentWrites_BothProduceValidCache()
+    {
+        // Two threads writing to the same source — last writer wins, both readers see valid data
+        var items1 = CreateTestItems(10);
+        var items2 = CreateTestItems(20);
+
+        var task1 = _service.SaveSourceCacheAsync("bif", items1, validationPath: "/game");
+        var task2 = _service.SaveSourceCacheAsync("bif", items2, validationPath: "/game");
+
+        await Task.WhenAll(task1, task2);
+
+        // No temp files remain
+        var tempFiles = Directory.GetFiles(_testCacheDir, "*.tmp");
+        Assert.Empty(tempFiles);
+
+        // Cache file exists and is valid JSON (one of the two writes won)
+        var loaded = _service.LoadSourceCache("bif");
+        Assert.NotNull(loaded);
+        Assert.True(loaded.Count == 10 || loaded.Count == 20);
+    }
+
+    #endregion
+
+    #region Build Lock Sentinels
+
+    [Fact]
+    public void AcquireBuildLock_CreateseSentinelFile()
+    {
+        var acquired = _service.AcquireBuildLock("bif");
+        Assert.True(acquired);
+
+        var sentinelFile = Path.Combine(_testCacheDir, "bif.json.building");
+        Assert.True(File.Exists(sentinelFile));
+
+        _service.ReleaseBuildLock("bif");
+    }
+
+    [Fact]
+    public void AcquireBuildLock_ReturnsFalse_WhenLiveProcessHoldsLock()
+    {
+        // Acquire once
+        var first = _service.AcquireBuildLock("bif");
+        Assert.True(first);
+
+        // Create a new service instance (simulating another process, but same PID)
+        // The lock is held by current PID which IS alive, so second acquire should fail
+        var service2 = new SharedPaletteCacheService(_testCacheDir);
+        var second = service2.AcquireBuildLock("bif");
+        Assert.False(second);
+
+        _service.ReleaseBuildLock("bif");
+    }
+
+    [Fact]
+    public void ReleaseBuildLock_DeletesSentinelFile()
+    {
+        _service.AcquireBuildLock("bif");
+        var sentinelFile = Path.Combine(_testCacheDir, "bif.json.building");
+        Assert.True(File.Exists(sentinelFile));
+
+        _service.ReleaseBuildLock("bif");
+        Assert.False(File.Exists(sentinelFile));
+    }
+
+    [Fact]
+    public void AcquireBuildLock_HakSource_UsesSentinelWithSourcePath()
+    {
+        var hakPath = Path.Combine(_testCacheDir, "cep2_top.hak");
+        var acquired = _service.AcquireBuildLock("hak", hakPath);
+        Assert.True(acquired);
+
+        var sentinelFile = Path.Combine(_testCacheDir, "hak_cep2_top.json.building");
+        Assert.True(File.Exists(sentinelFile));
+
+        _service.ReleaseBuildLock("hak", hakPath);
+    }
+
+    [Fact]
+    public void AcquireBuildLock_TakesStaleLock_WhenPidDead()
+    {
+        // Write a sentinel with a fake dead PID
+        var sentinelFile = Path.Combine(_testCacheDir, "bif.json.building");
+        if (!Directory.Exists(_testCacheDir))
+            Directory.CreateDirectory(_testCacheDir);
+        var fakeSentinel = $"{{\"pid\":99999999,\"startedAt\":\"{DateTime.UtcNow:O}\"}}";
+        File.WriteAllText(sentinelFile, fakeSentinel);
+
+        // Should detect stale lock and acquire
+        var acquired = _service.AcquireBuildLock("bif");
+        Assert.True(acquired);
+
+        _service.ReleaseBuildLock("bif");
+    }
+
+    [Fact]
+    public void AcquireBuildLock_TakesStaleLock_WhenOlderThan5Minutes()
+    {
+        // Write a sentinel with current PID but old timestamp
+        var sentinelFile = Path.Combine(_testCacheDir, "bif.json.building");
+        if (!Directory.Exists(_testCacheDir))
+            Directory.CreateDirectory(_testCacheDir);
+        var pid = Environment.ProcessId;
+        var oldTime = DateTime.UtcNow.AddMinutes(-6);
+        var fakeSentinel = $"{{\"pid\":{pid},\"startedAt\":\"{oldTime:O}\"}}";
+        File.WriteAllText(sentinelFile, fakeSentinel);
+
+        // Should detect stale by age and acquire
+        var acquired = _service.AcquireBuildLock("bif");
+        Assert.True(acquired);
+
+        _service.ReleaseBuildLock("bif");
+    }
+
+    [Fact]
+    public async Task WaitForBuildLock_ReturnsFalseImmediately_WhenNoSentinelExists()
+    {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var result = await _service.WaitForBuildLock("bif");
+        sw.Stop();
+
+        // Should return false immediately (no lock to wait for — caller should build)
+        Assert.False(result);
+        // Should not have waited anywhere near the timeout
+        Assert.True(sw.ElapsedMilliseconds < 2000, $"Took {sw.ElapsedMilliseconds}ms, expected immediate return");
+    }
+
+    [Fact]
+    public async Task WaitForBuildLock_ReturnsTrue_WhenSentinelClearsMidWait()
+    {
+        // Create a sentinel
+        var sentinelFile = Path.Combine(_testCacheDir, "bif.json.building");
+        var sentinel = $"{{\"pid\":{Environment.ProcessId},\"startedAt\":\"{DateTime.UtcNow:O}\"}}";
+        File.WriteAllText(sentinelFile, sentinel);
+
+        // Start waiting, and clear the sentinel after a short delay
+        var clearTask = Task.Run(async () =>
+        {
+            await Task.Delay(300);
+            File.Delete(sentinelFile);
+        });
+
+        var result = await _service.WaitForBuildLock("bif", timeout: 10000);
+
+        Assert.True(result);
+        await clearTask;
+    }
+
+    [Fact]
+    public async Task WaitForBuildLock_ReturnsFalse_OnTimeout()
+    {
+        // Create a sentinel that will NOT be cleared
+        var sentinelFile = Path.Combine(_testCacheDir, "bif.json.building");
+        var sentinel = $"{{\"pid\":{Environment.ProcessId},\"startedAt\":\"{DateTime.UtcNow:O}\"}}";
+        File.WriteAllText(sentinelFile, sentinel);
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var result = await _service.WaitForBuildLock("bif", timeout: 1500);
+        sw.Stop();
+
+        Assert.False(result);
+        // Should have waited approximately the timeout duration
+        Assert.True(sw.ElapsedMilliseconds >= 1000, $"Only waited {sw.ElapsedMilliseconds}ms");
+
+        // Cleanup
+        File.Delete(sentinelFile);
+    }
+
+    [Fact]
+    public async Task WaitForBuildLock_RespectsCancellationToken()
+    {
+        // Create a sentinel that will NOT be cleared
+        var sentinelFile = Path.Combine(_testCacheDir, "bif.json.building");
+        var sentinel = $"{{\"pid\":{Environment.ProcessId},\"startedAt\":\"{DateTime.UtcNow:O}\"}}";
+        File.WriteAllText(sentinelFile, sentinel);
+
+        var cts = new CancellationTokenSource(500);
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var result = await _service.WaitForBuildLock("bif", timeout: 60000, cancellationToken: cts.Token);
+        sw.Stop();
+
+        // Should have been cancelled, not timed out
+        Assert.False(result);
+        Assert.True(sw.ElapsedMilliseconds < 5000, $"Took {sw.ElapsedMilliseconds}ms, expected cancellation around 500ms");
+
+        // Cleanup
+        File.Delete(sentinelFile);
+    }
+
+    [Fact]
+    public async Task ClearAllCaches_AlsoDeletesBuildingSentinels()
+    {
+        // Create cache files and sentinel files
+        await _service.SaveSourceCacheAsync("bif", CreateTestItems(), validationPath: "/game");
+        _service.AcquireBuildLock("override");
+
+        Assert.True(File.Exists(Path.Combine(_testCacheDir, "bif.json")));
+        Assert.True(File.Exists(Path.Combine(_testCacheDir, "override.json.building")));
+
+        _service.ClearAllCaches();
+
+        // Both .json and .building files should be gone
+        Assert.Empty(Directory.GetFiles(_testCacheDir, "*.json"));
+        Assert.Empty(Directory.GetFiles(_testCacheDir, "*.building"));
+    }
+
+    #endregion
 }
