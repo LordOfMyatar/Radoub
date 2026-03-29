@@ -510,7 +510,8 @@ public class SharedPaletteCacheService : ISharedPaletteCacheService
         var sw = Stopwatch.StartNew();
         while (sw.ElapsedMilliseconds < timeout)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            if (cancellationToken.IsCancellationRequested)
+                return false;
 
             if (!File.Exists(sentinelFile))
             {
