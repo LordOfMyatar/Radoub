@@ -73,9 +73,8 @@ public class TokenContextMenuTests
     [Fact]
     public void BuildInsertTokenMenu_HasAllTokensEntry()
     {
-        bool windowOpened = false;
         var textBox = new TextBox();
-        var menu = TokenContextMenu.BuildInsertTokenMenu(textBox, () => windowOpened = true);
+        var menu = TokenContextMenu.BuildInsertTokenMenu(textBox, () => { });
 
         var allTokensItem = menu.Items.OfType<MenuItem>().LastOrDefault();
         Assert.NotNull(allTokensItem);

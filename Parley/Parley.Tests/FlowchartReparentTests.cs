@@ -55,7 +55,7 @@ namespace Parley.Tests
             var result = nodeOps.MoveNodeToPosition(dialog, entry1, sourcePtr, null, 0, out var message);
 
             Assert.True(result, message);
-            Assert.True(dialog.Starts.Any(s => s.Node == entry1));
+            Assert.Contains(dialog.Starts, s => s.Node == entry1);
         }
 
         #endregion

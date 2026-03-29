@@ -140,6 +140,8 @@ public class ItemResolutionServiceWithGameDataTests
         service.ClearCache();
         var result2 = service.ResolveItem("cached_item");
 
+        Assert.NotNull(result1);
+        Assert.NotNull(result2);
         Assert.NotSame(result1, result2);
         Assert.Equal(result1.ResRef, result2.ResRef);
     }

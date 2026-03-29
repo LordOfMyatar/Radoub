@@ -153,7 +153,8 @@ public class FeatCacheServiceTests
         service.CacheClassGrantedFeats(4, new HashSet<int> { 30 });
 
         Assert.True(service.TryGetClassGrantedFeats(4, out var result));
-        Assert.Single(result!);
+        Assert.NotNull(result);
+        Assert.Single(result);
         Assert.Contains(30, result);
     }
 
@@ -409,7 +410,8 @@ public class FeatCacheServiceTests
         service.CacheRaceGrantedFeats(6, new HashSet<int> { 300 });
 
         Assert.True(service.TryGetRaceGrantedFeats(6, out var result));
-        Assert.Single(result!);
+        Assert.NotNull(result);
+        Assert.Single(result);
         Assert.Contains(300, result);
     }
 
