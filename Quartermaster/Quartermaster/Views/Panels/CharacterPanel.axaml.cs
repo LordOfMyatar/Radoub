@@ -9,6 +9,7 @@ using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Ssf;
 using Radoub.Formats.Utc;
+using Radoub.UI.Controls;
 using Radoub.UI.Services;
 
 namespace Quartermaster.Views.Panels;
@@ -54,7 +55,8 @@ public partial class CharacterPanel : UserControl
     private TextBox? _experienceTextBox;
     private TextBox? _goldTextBox;
     private TextBox? _ageTextBox;
-    private TextBox? _biographyTextBox;
+    private SpellCheckTextBox? _biographyTextBox;
+    private readonly QuickTokenService _quickTokenService = new();
 
     private CreatureDisplayService? _displayService;
     private UtcFile? _currentCreature;
@@ -109,7 +111,16 @@ public partial class CharacterPanel : UserControl
         _experienceTextBox = this.FindControl<TextBox>("ExperienceTextBox");
         _goldTextBox = this.FindControl<TextBox>("GoldTextBox");
         _ageTextBox = this.FindControl<TextBox>("AgeTextBox");
-        _biographyTextBox = this.FindControl<TextBox>("BiographyTextBox");
+        _biographyTextBox = this.FindControl<SpellCheckTextBox>("BiographyTextBox");
+
+        // Wire up token insertion context menu for biography
+        if (_biographyTextBox != null)
+        {
+            _biographyTextBox.ContextMenuExtras = menu =>
+                TokenContextMenu.AppendTokenMenu(menu, _biographyTextBox, () =>
+                    TokenInsertionHelper.OpenTokenWindow(_biographyTextBox, this.VisualRoot as Window),
+                    _quickTokenService);
+        }
 
         // Wire up events - common fields
         if (_firstNameTextBox != null)
@@ -159,6 +170,20 @@ public partial class CharacterPanel : UserControl
         if (_biographyTextBox != null)
             _biographyTextBox.TextChanged += OnTextChanged;
     }
+
+    #region Token Insertion
+
+    public bool HandleInsertToken()
+    {
+        if (_biographyTextBox?.IsFocused == true)
+        {
+            TokenInsertionHelper.OpenTokenWindow(_biographyTextBox, this.VisualRoot as Window);
+            return true;
+        }
+        return false;
+    }
+
+    #endregion
 
     #region Service Setup
 
