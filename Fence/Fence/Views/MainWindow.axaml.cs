@@ -76,6 +76,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     // Cancellation token for async operations - cancelled on window close
     private CancellationTokenSource? _windowCts;
 
+    // Quick-access token slots for CommentBox token insertion
+    private readonly QuickTokenService _quickTokenService = new();
+
     // Shared filter panel for item palette
     private ItemFilterPanel? _paletteFilter;
 
@@ -135,6 +138,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Initialize store browser panel (#1144)
         InitializeStoreBrowserPanel();
+
+        // Attach token insertion context menu to CommentBox (#1817)
+        var commentBox = this.FindControl<TextBox>("CommentBox");
+        if (commentBox != null)
+        {
+            TokenContextMenu.Attach(commentBox,
+                () => TokenInsertionHelper.OpenTokenWindow(commentBox, this),
+                _quickTokenService);
+        }
 
         // Show module context in status bar (#1003)
         UpdateModuleIndicator();
@@ -949,6 +961,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     if (HasFile)
                     {
                         OnFindReplaceClick(null, e);
+                        e.Handled = true;
+                    }
+                    return;
+                case Key.T:
+                    var tokenTarget = this.FindControl<TextBox>("CommentBox");
+                    if (tokenTarget?.IsFocused == true)
+                    {
+                        TokenInsertionHelper.OpenTokenWindow(tokenTarget, this);
                         e.Handled = true;
                     }
                     return;
