@@ -20,8 +20,8 @@ namespace Quartermaster.Views.Panels;
 /// </summary>
 public partial class CharacterPanel : UserControl
 {
-    private TextBox? _firstNameTextBox;
-    private TextBox? _lastNameTextBox;
+    private SpellCheckTextBox? _firstNameTextBox;
+    private SpellCheckTextBox? _lastNameTextBox;
     private ComboBox? _raceComboBox;
     private TextBox? _subraceTextBox;
     private TextBox? _deityTextBox;
@@ -78,8 +78,8 @@ public partial class CharacterPanel : UserControl
     {
         AvaloniaXamlLoader.Load(this);
 
-        _firstNameTextBox = this.FindControl<TextBox>("FirstNameTextBox");
-        _lastNameTextBox = this.FindControl<TextBox>("LastNameTextBox");
+        _firstNameTextBox = this.FindControl<SpellCheckTextBox>("FirstNameTextBox");
+        _lastNameTextBox = this.FindControl<SpellCheckTextBox>("LastNameTextBox");
         _raceComboBox = this.FindControl<ComboBox>("RaceComboBox");
         _subraceTextBox = this.FindControl<TextBox>("SubraceTextBox");
         _deityTextBox = this.FindControl<TextBox>("DeityTextBox");
@@ -113,14 +113,10 @@ public partial class CharacterPanel : UserControl
         _ageTextBox = this.FindControl<TextBox>("AgeTextBox");
         _biographyTextBox = this.FindControl<SpellCheckTextBox>("BiographyTextBox");
 
-        // Wire up token insertion context menu for biography
-        if (_biographyTextBox != null)
-        {
-            _biographyTextBox.ContextMenuExtras = menu =>
-                TokenContextMenu.AppendTokenMenu(menu, _biographyTextBox, () =>
-                    TokenInsertionHelper.OpenTokenWindow(_biographyTextBox, this.VisualRoot as Window),
-                    _quickTokenService);
-        }
+        // Wire up token insertion context menu (#1817)
+        WireTokenMenu(_firstNameTextBox);
+        WireTokenMenu(_lastNameTextBox);
+        WireTokenMenu(_biographyTextBox);
 
         // Wire up events - common fields
         if (_firstNameTextBox != null)
@@ -173,11 +169,25 @@ public partial class CharacterPanel : UserControl
 
     #region Token Insertion
 
+    private void WireTokenMenu(SpellCheckTextBox? textBox)
+    {
+        if (textBox == null) return;
+        textBox.ContextMenuExtras = menu =>
+            TokenContextMenu.AppendTokenMenu(menu, textBox, () =>
+                TokenInsertionHelper.OpenTokenWindow(textBox, this.VisualRoot as Window),
+                _quickTokenService);
+    }
+
     public bool HandleInsertToken()
     {
-        if (_biographyTextBox?.IsFocused == true)
+        SpellCheckTextBox? target = null;
+        if (_firstNameTextBox?.IsFocused == true) target = _firstNameTextBox;
+        else if (_lastNameTextBox?.IsFocused == true) target = _lastNameTextBox;
+        else if (_biographyTextBox?.IsFocused == true) target = _biographyTextBox;
+
+        if (target != null)
         {
-            TokenInsertionHelper.OpenTokenWindow(_biographyTextBox, this.VisualRoot as Window);
+            TokenInsertionHelper.OpenTokenWindow(target, this.VisualRoot as Window);
             return true;
         }
         return false;

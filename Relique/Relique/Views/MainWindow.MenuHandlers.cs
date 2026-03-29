@@ -346,7 +346,8 @@ public partial class MainWindow
                     break;
                 case Key.T:
                     TextBox? tokenTarget = null;
-                    if (_descriptionTextBox?.IsFocused == true) tokenTarget = _descriptionTextBox;
+                    if (_nameTextBox?.IsFocused == true) tokenTarget = _nameTextBox;
+                    else if (_descriptionTextBox?.IsFocused == true) tokenTarget = _descriptionTextBox;
                     else if (_descIdentifiedTextBox?.IsFocused == true) tokenTarget = _descIdentifiedTextBox;
 
                     if (tokenTarget != null)
