@@ -200,7 +200,7 @@ public class ModelService
         // Use LoadSkeletonModel to prefer BIF over HAK — CEP HAKs override standard
         // skeletons with incompatible versions (#1314)
         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"LoadPartBasedCreatureModel: Attempting to load skeleton model '{basePrefix}'...");
-        var skeletonModel = LoadModelPreferBIF(basePrefix);
+        var skeletonModel = LoadModel(basePrefix);
         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"LoadPartBasedCreatureModel: LoadModel returned {(skeletonModel != null ? "model" : "null")}");
         if (skeletonModel != null)
         {
@@ -324,7 +324,7 @@ public class ModelService
     {
 
         var partName = BuildBodyPartName(basePrefix, partType, partNumber);
-        var partModel = LoadModelPreferBIF(partName);
+        var partModel = LoadModel(partName);
 
         // If not found with race-specific prefix, try human fallback
         // NWN shares many body part models across races using pmh0/pfh0 (human male/female)
@@ -336,7 +336,7 @@ public class ModelService
             if (humanPrefix != basePrefix)
             {
                 var humanPartName = $"{humanPrefix}_{partType}{partNumber:D3}";
-                partModel = LoadModelPreferBIF(humanPartName);
+                partModel = LoadModel(humanPartName);
                 if (partModel != null)
                 {
                     UnifiedLogger.LogApplication(LogLevel.INFO,
@@ -718,7 +718,7 @@ public class ModelService
         }
 
         UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadModelForAppearance: Loading model '{modelName}'");
-        return LoadModelPreferBIF(modelName);
+        return LoadModel(modelName);
     }
 
     /// <summary>
@@ -769,69 +769,9 @@ public class ModelService
         }
     }
 
-    /// <summary>
-    /// Load a model preferring BIF over HAK for part-based creature assembly.
-    /// CEP HAKs override standard race models (skeletons, heads, hands, etc.) with
-    /// versions that our MDL parser doesn't handle correctly — producing garbage data.
-    /// For models that exist in BIF, the BIF version is used.
-    /// For CEP-only models (not in BIF), the HAK version is used.
-    /// </summary>
-    private MdlModel? LoadModelPreferBIF(string resRef)
-    {
-        if (string.IsNullOrEmpty(resRef))
-            return null;
-
-        resRef = resRef.ToLowerInvariant();
-
-        // Check cache (shared with LoadModel)
-        if (_modelCache.TryGetValue(resRef, out var cached))
-        {
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadModelPreferBIF: '{resRef}' from cache");
-            return cached;
-        }
-
-        // Try BIF first (skips HAK overrides)
-        var baseData = _gameDataService.FindBaseResource(resRef, ResourceTypes.Mdl);
-        if (baseData != null && baseData.Length > 0)
-        {
-            // Log source file for debugging
-            var sourceInfo = _gameDataService.FindResourceWithSource(resRef, ResourceTypes.Mdl);
-            var sourceFile = sourceInfo != null ? System.IO.Path.GetFileName(sourceInfo.SourcePath) : "BIF";
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadModelPreferBIF: '{resRef}' from BIF ({sourceFile}), {baseData.Length} bytes");
-            try
-            {
-                var model = _mdlReader.Parse(baseData);
-                _modelCache[resRef] = model;
-                return model;
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"LoadModelPreferBIF: '{resRef}' BIF parse failed: {ex.Message}");
-            }
-        }
-
-        // Not in BIF (CEP-only creature) — fall back to full resolution
-        var hakResult = _gameDataService.FindResourceWithSource(resRef, ResourceTypes.Mdl);
-        if (hakResult != null && hakResult.Data.Length > 0)
-        {
-            var sourceFile = System.IO.Path.GetFileName(hakResult.SourcePath);
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadModelPreferBIF: '{resRef}' from {hakResult.Source} ({sourceFile}), {hakResult.Data.Length} bytes");
-            try
-            {
-                var model = _mdlReader.Parse(hakResult.Data);
-                _modelCache[resRef] = model;
-                return model;
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"LoadModelPreferBIF: '{resRef}' {hakResult.Source} parse failed: {ex.Message}");
-            }
-        }
-
-        UnifiedLogger.LogApplication(LogLevel.WARN, $"LoadModelPreferBIF: '{resRef}' not found");
-        _modelCache[resRef] = null;
-        return null;
-    }
+    // #1676: LoadModelPreferBIF removed. All model loading now uses the public LoadModel()
+    // method above, which uses standard resolution (Override → HAK → Module → BIF).
+    // Investigation verified that both binary and ASCII CEP HAK models parse correctly.
 
     /// <summary>
     /// Clear the model cache.
