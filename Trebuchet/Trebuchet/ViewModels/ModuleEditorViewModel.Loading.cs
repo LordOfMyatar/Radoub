@@ -34,6 +34,8 @@ public partial class ModuleEditorViewModel
         }
 
         RefreshAvailableTlkLanguages();
+
+        GameDataServiceInitialized?.Invoke(this, EventArgs.Empty);
     }
 
     public void SetParentWindow(Window window)
@@ -133,6 +135,8 @@ public partial class ModuleEditorViewModel
 
             var statusSuffix = _isReadOnly ? " (Read-only - module not unpacked)" : "";
             StatusText = $"Loaded: {Path.GetFileName(_modulePath)}{statusSuffix}";
+
+            ModuleLoaded?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception ex)
         {

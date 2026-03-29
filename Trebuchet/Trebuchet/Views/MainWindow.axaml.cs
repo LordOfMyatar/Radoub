@@ -1,8 +1,11 @@
+using System;
 using System.ComponentModel;
+using System.Threading;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 using RadoubLauncher.Services;
 using RadoubLauncher.ViewModels;
@@ -12,6 +15,8 @@ namespace RadoubLauncher.Views;
 public partial class MainWindow : Window
 {
     private MainWindowViewModel? _viewModel;
+    private PaletteCacheWarmupService? _paletteCacheWarmup;
+    private CancellationTokenSource? _appShutdownCts;
 
     public MainWindow()
     {
@@ -27,6 +32,35 @@ public partial class MainWindow : Window
             var moduleEditorVm = new ModuleEditorViewModel();
             moduleEditorPanel.Initialize(moduleEditorVm, this);
             _viewModel.SetModuleEditorViewModel(moduleEditorVm);
+
+            // Wire palette cache pre-warming (#1633)
+            _appShutdownCts = new CancellationTokenSource();
+            var cacheService = new SharedPaletteCacheService();
+            var hakScanner = new HakPaletteScannerService();
+            _paletteCacheWarmup = new PaletteCacheWarmupService(cacheService, hakScanner);
+
+            moduleEditorVm.GameDataServiceInitialized += (_, _) =>
+            {
+                if (moduleEditorVm.GameDataService?.IsConfigured == true)
+                {
+                    _ = _paletteCacheWarmup.WarmBifCacheAsync(
+                        moduleEditorVm.GameDataService, _appShutdownCts.Token);
+                }
+            };
+
+            moduleEditorVm.ModuleLoaded += (_, _) =>
+            {
+                if (moduleEditorVm.GameDataService?.IsConfigured == true &&
+                    moduleEditorVm.ModuleDirectory != null)
+                {
+                    var hakSearchPaths = RadoubSettings.Instance.GetAllHakSearchPaths();
+                    _ = _paletteCacheWarmup.WarmModuleHakCacheAsync(
+                        moduleEditorVm.GameDataService,
+                        moduleEditorVm.ModuleDirectory,
+                        hakSearchPaths,
+                        _appShutdownCts.Token);
+                }
+            };
         }
 
         // Initialize the embedded faction editor panel
@@ -109,6 +143,13 @@ public partial class MainWindow : Window
     private void OnWindowClosing(object? sender, WindowClosingEventArgs e)
     {
         SaveWindowState();
+
+        // Cancel palette cache warm-up operations (#1633)
+        _paletteCacheWarmup?.CancelAll();
+        _appShutdownCts?.Cancel();
+        _paletteCacheWarmup?.Dispose();
+        _appShutdownCts?.Dispose();
+
         (_viewModel)?.Cleanup();
     }
 
