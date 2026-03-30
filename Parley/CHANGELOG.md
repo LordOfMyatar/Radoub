@@ -4,7 +4,7 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
-## [0.1.161-alpha] - 2026-03-29 | PR #TBD
+## [0.1.161-alpha] - 2026-03-29 | PR #2035
 **Branch**: `parley/issue-1976`
 
 ### Sprint: UX Polish & Search Fix
