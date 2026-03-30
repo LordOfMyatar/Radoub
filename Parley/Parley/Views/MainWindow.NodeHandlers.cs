@@ -267,6 +267,13 @@ namespace DialogEditor.Views
         private void OnGoToParentNodeClick(object? sender, RoutedEventArgs e)
             => _controllers.TreeView.OnGoToParentNodeClick(sender, e);
 
+        private void OnTreeViewContextMenuOpening(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            var treeView = this.FindControl<TreeView>("DialogTreeView");
+            var selectedNode = treeView?.SelectedItem as TreeViewSafeNode;
+            GoToParentNodeMenuItem.IsEnabled = selectedNode?.IsChild == true;
+        }
+
         #endregion
 
         #region ViewModel Property Changed

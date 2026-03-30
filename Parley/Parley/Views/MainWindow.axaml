@@ -252,7 +252,7 @@
                                       DragDrop.AllowDrop="True"
                                       Padding="0,0,12,20">
                                 <TreeView.ContextMenu>
-                                    <ContextMenu>
+                                    <ContextMenu Opening="OnTreeViewContextMenuOpening">
                                         <MenuItem Header="Add Node" InputGesture="Ctrl+D" Click="OnAddSmartNodeClick"/>
                                         <MenuItem Header="Add Sibling Node" InputGesture="Ctrl+Shift+D" Click="OnAddSiblingNodeClick"/>
                                         <MenuItem Header="Delete Node" InputGesture="Delete" Click="OnDeleteNodeClick"/>
@@ -268,7 +268,7 @@
                                         <MenuItem Header="Expand Subnodes" InputGesture="Ctrl+E" Click="OnExpandSubnodesClick"/>
                                         <MenuItem Header="Collapse Subnodes" InputGesture="Ctrl+W" Click="OnCollapseSubnodesClick"/>
                                         <Separator/>
-                                        <MenuItem Header="Go to Parent Node" InputGesture="Ctrl+J" Click="OnGoToParentNodeClick"/>
+                                        <MenuItem x:Name="GoToParentNodeMenuItem" Header="Go to Parent Node" InputGesture="Ctrl+J" Click="OnGoToParentNodeClick"/>
                                     </ContextMenu>
                                 </TreeView.ContextMenu>
                                 <TreeView.Styles>

@@ -123,7 +123,7 @@
                                         <MenuItem Header="Go to Link Target" InputGesture="Ctrl+J" Tag="GoToLinkTarget" Click="OnContextMenuItemClick"
                                                   IsVisible="{Binding IsLink}"/>
                                         <MenuItem Header="Go to Parent Node" InputGesture="Ctrl+J" Tag="GoToParent" Click="OnContextMenuItemClick"
-                                                  IsVisible="{Binding !IsLink}"/>
+                                                  IsVisible="{Binding !IsLink}" IsEnabled="False"/>
                                     </ContextMenu>
                                 </Border.ContextMenu>
                                 <Border.Background>
