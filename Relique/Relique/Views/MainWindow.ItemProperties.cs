@@ -72,6 +72,16 @@ public partial class MainWindow
                 .ToList();
         }
 
+        // Filter by base item type: only show properties valid for the current base item (#1972)
+        if (_currentItem != null)
+        {
+            var validIndices = _itemPropertyService.GetValidPropertyIndicesForBaseItem(_currentItem.BaseItem);
+            if (validIndices != null)
+            {
+                types = types.Where(t => validIndices.Contains(t.PropertyIndex)).ToList();
+            }
+        }
+
         // Move semantics: filter out properties already assigned to the item (#1809)
         var assignedProperties = _currentItem?.Properties ?? new List<ItemProperty>();
         types = types.Where(t => _itemPropertyService.HasAvailableSubtypes(t.PropertyIndex, assignedProperties)).ToList();
