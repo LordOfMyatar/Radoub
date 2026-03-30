@@ -18,6 +18,9 @@ public class UtiSearchProvider : SearchProviderBase, IFileSearchProvider
     private static readonly FieldDefinition TemplateResRefField = new() { Name = "Template ResRef", GffPath = "TemplateResRef", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Blueprint resource reference", IsReplaceable = false };
     private static readonly FieldDefinition CommentField = new() { Name = "Comment", GffPath = "Comment", FieldType = SearchFieldType.Text, Category = SearchFieldCategory.Metadata, Description = "Toolset comment" };
 
+    // Variable field
+    private static readonly FieldDefinition VarTableField = new() { Name = "Local Variables", GffPath = "VarTable", FieldType = SearchFieldType.Variable, Category = SearchFieldCategory.Variable, Description = "Local variable names and string values" };
+
     public ushort FileType => ResourceTypes.Uti;
 
     public IReadOnlyList<string> Extensions => new[] { ".uti" };
@@ -43,6 +46,10 @@ public class UtiSearchProvider : SearchProviderBase, IFileSearchProvider
         if (criteria.MatchesField(CommentField))
             matches.AddRange(SearchString(uti.Comment, CommentField, regex, "Comment"));
 
+        // Local variables
+        if (criteria.MatchesField(VarTableField))
+            matches.AddRange(SearchVarTable(gffFile.RootStruct, VarTableField, regex, "VarTable"));
+
         return matches;
     }
 
@@ -59,6 +66,7 @@ public class UtiSearchProvider : SearchProviderBase, IFileSearchProvider
             var result = op.Match.Field.FieldType switch
             {
                 SearchFieldType.LocString => ReplaceLocStringField(gffFile.RootStruct, gffPath, op),
+                SearchFieldType.Variable => ReplaceVarTableField(gffFile.RootStruct, op),
                 _ => ReplaceStringField(gffFile.RootStruct, gffPath, op)
             };
             results.Add(result);
