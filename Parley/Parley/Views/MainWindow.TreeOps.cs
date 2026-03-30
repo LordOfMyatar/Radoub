@@ -64,6 +64,7 @@ namespace DialogEditor.Views
 
         private void OnShowNodeIndexChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
+            _viewModel.RefreshTreeViewColors();
             var enabled = _services.Settings.ShowNodeIndexNumbers;
             _viewModel.StatusMessage = enabled ? "Node index numbers shown" : "Node index numbers hidden";
             UnifiedLogger.LogUI(LogLevel.INFO, $"Show node index numbers toggled: {enabled}");

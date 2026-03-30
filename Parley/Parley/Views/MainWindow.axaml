@@ -235,6 +235,7 @@
                                           ToolTip.Tip="Wrap long dialog text in tree view (#903)"/>
                                 <CheckBox x:Name="ShowIndexCheckBox" Content="Index #"
                                           IsChecked="{Binding Source={x:Static services:SettingsService.Instance}, Path=ShowNodeIndexNumbers, Mode=TwoWay}"
+                                          Margin="8,0,0,0"
                                           VerticalAlignment="Center"
                                           Checked="OnShowNodeIndexChanged"
                                           Unchecked="OnShowNodeIndexChanged"

@@ -412,7 +412,11 @@ namespace DialogEditor.Services
         public bool ShowNodeIndexNumbers
         {
             get => _uiSettings.ShowNodeIndexNumbers;
-            set => _uiSettings.ShowNodeIndexNumbers = value;
+            set
+            {
+                _uiSettings.ShowNodeIndexNumbers = value;
+                OnPropertyChanged();
+            }
         }
 
         // NPC Speaker Visual Preferences - DELEGATED to SpeakerPreferencesService (#719)
