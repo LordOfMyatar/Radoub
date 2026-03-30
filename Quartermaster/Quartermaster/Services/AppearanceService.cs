@@ -140,9 +140,8 @@ public class AppearanceService
     public void ResolveAppearanceSources(List<AppearanceInfo> appearances)
     {
         // Build a lookup of all MDL resources by resref for O(1) lookups
-        // MDL resource type = 2030
         var mdlLookup = new Dictionary<string, Radoub.Formats.Services.GameResourceSource>(StringComparer.OrdinalIgnoreCase);
-        foreach (var r in _gameDataService.ListResources(2030))
+        foreach (var r in _gameDataService.ListResources(Radoub.Formats.Common.ResourceTypes.Mdl))
         {
             // First match wins (Override > HAK > BIF priority is already in ListResources order)
             if (!mdlLookup.ContainsKey(r.ResRef))

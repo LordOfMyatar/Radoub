@@ -244,11 +244,11 @@ public class BaseItemTypeServiceTests
         var twoDA = new TwoDAFile { Columns = new System.Collections.Generic.List<string>(columns) };
 
         // Row 0: Arrow (stackable)
-        twoDA.Rows.Add(new TwoDARow { Values = new System.Collections.Generic.List<string> { "BASE_ITEM_ARROW", "****", "0", "99", "****", "****", "1" } });
+        twoDA.Rows.Add(new TwoDARow { Values = new System.Collections.Generic.List<string?> { "BASE_ITEM_ARROW", "****", "0", "99", "****", "****", "1" } });
         // Row 1: Wand (charges)
-        twoDA.Rows.Add(new TwoDARow { Values = new System.Collections.Generic.List<string> { "BASE_ITEM_MAGICWAND", "****", "0", "1", "****", "50", "4" } });
+        twoDA.Rows.Add(new TwoDARow { Values = new System.Collections.Generic.List<string?> { "BASE_ITEM_MAGICWAND", "****", "0", "1", "****", "50", "4" } });
         // Row 2: Armor (model type 3)
-        twoDA.Rows.Add(new TwoDARow { Values = new System.Collections.Generic.List<string> { "BASE_ITEM_ARMOR", "****", "3", "1", "****", "****", "0" } });
+        twoDA.Rows.Add(new TwoDARow { Values = new System.Collections.Generic.List<string?> { "BASE_ITEM_ARMOR", "****", "3", "1", "****", "****", "0" } });
 
         mockGameData.With2DA("baseitems", twoDA);
 

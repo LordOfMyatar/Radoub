@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Radoub.Formats.Logging;
 
@@ -150,10 +151,14 @@ public class SharedPaletteCacheService : ISharedPaletteCacheService
             };
 
             var cacheFile = GetCacheFilePath(source, validationPath);
+            var tempFile = cacheFile + ".tmp";
             var json = JsonSerializer.Serialize(cache, JsonOptions);
-            await File.WriteAllTextAsync(cacheFile, json);
 
-            // Invalidate aggregated cache since data changed
+            // Atomic write: write to temp file then move (rename is atomic on NTFS and POSIX)
+            await File.WriteAllTextAsync(tempFile, json);
+            File.Move(tempFile, cacheFile, overwrite: true);
+
+            // Invalidate aggregated cache AFTER the atomic move, not after the temp write
             InvalidateAggregatedCache();
 
             UnifiedLogger.LogApplication(LogLevel.INFO,
@@ -360,6 +365,21 @@ public class SharedPaletteCacheService : ISharedPaletteCacheService
                         $"Could not delete cache file '{Path.GetFileName(file)}': {ex.Message}");
                 }
             }
+
+            // Also clean up any .building sentinel files
+            foreach (var file in Directory.GetFiles(_cacheDirectory, "*.building"))
+            {
+                try
+                {
+                    File.Delete(file);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN,
+                        $"Could not delete sentinel file '{Path.GetFileName(file)}': {ex.Message}");
+                }
+            }
+
             UnifiedLogger.LogApplication(LogLevel.INFO, "Cleared all shared palette caches");
         }
         InvalidateAggregatedCache();
@@ -400,5 +420,180 @@ public class SharedPaletteCacheService : ISharedPaletteCacheService
         }
 
         return stats;
+    }
+
+    #region Build Lock Sentinels
+
+    private string GetSentinelFilePath(string source, string? sourcePath = null)
+    {
+        return GetCacheFilePath(source, sourcePath) + ".building";
+    }
+
+    public bool AcquireBuildLock(string source, string? sourcePath = null)
+    {
+        var sentinelFile = GetSentinelFilePath(source, sourcePath);
+
+        if (!Directory.Exists(_cacheDirectory))
+            Directory.CreateDirectory(_cacheDirectory);
+
+        // Check if sentinel already exists
+        if (File.Exists(sentinelFile))
+        {
+            if (IsLockStale(sentinelFile))
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"Build lock stale for {source}, taking over");
+                try { File.Delete(sentinelFile); }
+                catch { /* race condition OK — another process may have cleaned it */ }
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"Build lock held by another process for {source}");
+                return false;
+            }
+        }
+
+        try
+        {
+            var sentinel = JsonSerializer.Serialize(new BuildLockSentinel
+            {
+                Pid = Environment.ProcessId,
+                StartedAt = DateTime.UtcNow
+            }, SentinelJsonOptions);
+            File.WriteAllText(sentinelFile, sentinel);
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Build lock acquired for {source}");
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"Failed to acquire build lock for {source}: {ex.Message}");
+            return false;
+        }
+    }
+
+    public void ReleaseBuildLock(string source, string? sourcePath = null)
+    {
+        var sentinelFile = GetSentinelFilePath(source, sourcePath);
+        try
+        {
+            if (File.Exists(sentinelFile))
+            {
+                File.Delete(sentinelFile);
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Build lock released for {source}");
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"Failed to release build lock for {source}: {ex.Message}");
+        }
+    }
+
+    public async Task<bool> WaitForBuildLock(string source, string? sourcePath = null, int timeout = 60000, CancellationToken cancellationToken = default)
+    {
+        var sentinelFile = GetSentinelFilePath(source, sourcePath);
+
+        // No sentinel exists — return false immediately (no lock to wait for)
+        if (!File.Exists(sentinelFile))
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"Build lock: no sentinel for {source}, no lock to wait for");
+            return false;
+        }
+
+        UnifiedLogger.LogApplication(LogLevel.DEBUG,
+            $"Build lock held for {source}, waiting...");
+
+        var sw = Stopwatch.StartNew();
+        while (sw.ElapsedMilliseconds < timeout)
+        {
+            if (cancellationToken.IsCancellationRequested)
+                return false;
+
+            if (!File.Exists(sentinelFile))
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"Build lock cleared for {source}, cache available");
+                return true;
+            }
+
+            // Check for stale lock
+            if (IsLockStale(sentinelFile))
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"Build lock stale for {source}, proceeding");
+                try { File.Delete(sentinelFile); }
+                catch { /* OK */ }
+                return false;
+            }
+
+            try
+            {
+                await Task.Delay(500, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+        }
+
+        UnifiedLogger.LogApplication(LogLevel.DEBUG,
+            $"Build lock wait timeout for {source}, proceeding with own build");
+        return false;
+    }
+
+    private bool IsLockStale(string sentinelFile)
+    {
+        try
+        {
+            var json = File.ReadAllText(sentinelFile);
+            var sentinel = JsonSerializer.Deserialize<BuildLockSentinel>(json, SentinelJsonOptions);
+            if (sentinel == null)
+                return true;
+
+            // Check if PID is still alive
+            try
+            {
+                Process.GetProcessById(sentinel.Pid);
+            }
+            catch (ArgumentException)
+            {
+                // Process not found — PID is dead
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"Build lock stale (PID {sentinel.Pid} dead)");
+                return true;
+            }
+
+            // Check if sentinel is older than 5 minutes
+            if (DateTime.UtcNow - sentinel.StartedAt > TimeSpan.FromMinutes(5))
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"Build lock stale (age > 5 min, PID {sentinel.Pid})");
+                return true;
+            }
+
+            return false;
+        }
+        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
+        {
+            return true; // Can't read sentinel — treat as stale
+        }
+    }
+
+    #endregion
+
+    private static readonly JsonSerializerOptions SentinelJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true
+    };
+
+    private class BuildLockSentinel
+    {
+        public int Pid { get; set; }
+        public DateTime StartedAt { get; set; }
     }
 }

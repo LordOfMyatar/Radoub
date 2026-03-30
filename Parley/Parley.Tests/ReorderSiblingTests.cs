@@ -143,14 +143,14 @@ namespace Parley.Tests
         public void ReorderSibling_SingleChild_ReturnsFalse()
         {
             var dialog = new Dialog();
-            var entry = dialog.CreateNode(DialogNodeType.Entry);
+            var entry = dialog.CreateNode(DialogNodeType.Entry)!;
             dialog.AddNodeInternal(entry, DialogNodeType.Entry);
-            var startPtr = dialog.CreatePtr();
-            startPtr!.Node = entry;
+            var startPtr = dialog.CreatePtr()!;
+            startPtr.Node = entry;
             startPtr.Type = DialogNodeType.Entry;
             dialog.Starts.Add(startPtr);
 
-            var reply = dialog.CreateNode(DialogNodeType.Reply);
+            var reply = dialog.CreateNode(DialogNodeType.Reply)!;
             dialog.AddNodeInternal(reply, DialogNodeType.Reply);
             var replyPtr = dialog.CreatePtr();
             replyPtr!.Node = reply;
@@ -259,12 +259,12 @@ namespace Parley.Tests
 
             for (int i = 0; i < 3; i++)
             {
-                var entry = dialog.CreateNode(DialogNodeType.Entry);
+                var entry = dialog.CreateNode(DialogNodeType.Entry)!;
                 entry.Text.Add(0, $"Entry {i}");
                 dialog.AddNodeInternal(entry, DialogNodeType.Entry);
 
-                var ptr = dialog.CreatePtr();
-                ptr!.Node = entry;
+                var ptr = dialog.CreatePtr()!;
+                ptr.Node = entry;
                 ptr.Type = DialogNodeType.Entry;
                 ptr.IsStart = true;
                 dialog.Starts.Add(ptr);
@@ -278,11 +278,11 @@ namespace Parley.Tests
             var dialog = new Dialog();
 
             // Create root entry
-            var entry = dialog.CreateNode(DialogNodeType.Entry);
+            var entry = dialog.CreateNode(DialogNodeType.Entry)!;
             entry.Text.Add(0, "Root entry");
             dialog.AddNodeInternal(entry, DialogNodeType.Entry);
-            var startPtr = dialog.CreatePtr();
-            startPtr!.Node = entry;
+            var startPtr = dialog.CreatePtr()!;
+            startPtr.Node = entry;
             startPtr.Type = DialogNodeType.Entry;
             startPtr.IsStart = true;
             dialog.Starts.Add(startPtr);
@@ -290,12 +290,12 @@ namespace Parley.Tests
             // Add 3 replies as children
             for (int i = 0; i < 3; i++)
             {
-                var reply = dialog.CreateNode(DialogNodeType.Reply);
+                var reply = dialog.CreateNode(DialogNodeType.Reply)!;
                 reply.Text.Add(0, $"Reply {i}");
                 dialog.AddNodeInternal(reply, DialogNodeType.Reply);
 
-                var replyPtr = dialog.CreatePtr();
-                replyPtr!.Node = reply;
+                var replyPtr = dialog.CreatePtr()!;
+                replyPtr.Node = reply;
                 replyPtr.Type = DialogNodeType.Reply;
                 entry.Pointers.Add(replyPtr);
             }

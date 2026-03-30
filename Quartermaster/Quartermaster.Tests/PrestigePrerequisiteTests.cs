@@ -333,7 +333,7 @@ public class PrestigePrerequisiteTests
         var result = _classService.CheckPrerequisites(17, creature); // Assassin
 
         // At least one OR feat met → group passes
-        Assert.True(result.OrRequiredFeats.Any(f => f.Met));
+        Assert.Contains(result.OrRequiredFeats, f => f.Met);
     }
 
     [Fact]
@@ -344,7 +344,7 @@ public class PrestigePrerequisiteTests
 
         var result = _classService.CheckPrerequisites(17, creature);
 
-        Assert.True(result.OrRequiredFeats.Any(f => f.Met));
+        Assert.Contains(result.OrRequiredFeats, f => f.Met);
     }
 
     [Fact]

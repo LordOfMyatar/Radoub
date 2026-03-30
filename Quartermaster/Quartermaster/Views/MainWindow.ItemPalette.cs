@@ -171,12 +171,14 @@ public partial class MainWindow
         {
             await Task.Run(async () =>
             {
-                // Build each source independently
-                await BuildSourceCacheAsync(GameResourceSource.Bif, "bif", token);
-                token.ThrowIfCancellationRequested();
-
-                await BuildSourceCacheAsync(GameResourceSource.Override, "override", token);
-                token.ThrowIfCancellationRequested();
+                // Build each source — check if another process is building first (#1633)
+                foreach (var (gameSource, cacheSource) in new[] {
+                    (GameResourceSource.Bif, "bif"),
+                    (GameResourceSource.Override, "override") })
+                {
+                    token.ThrowIfCancellationRequested();
+                    await BuildSourceCacheAsync(gameSource, cacheSource, token);
+                }
             }, token);
 
             // Scan module HAKs (outside Task.Run — scanner manages its own threading)
@@ -197,6 +199,24 @@ public partial class MainWindow
     /// </summary>
     private async Task BuildSourceCacheAsync(GameResourceSource gameSource, string cacheSource, CancellationToken token)
     {
+        // Skip if valid cache already exists
+        if (_sharedCacheService.HasValidSourceCache(cacheSource))
+        {
+            UnifiedLogger.LogInventory(LogLevel.DEBUG, $"{cacheSource} cache already valid, skipping build");
+            return;
+        }
+
+        // Acquire build lock — skip if another process is building (#1633)
+        if (!_sharedCacheService.AcquireBuildLock(cacheSource))
+        {
+            UnifiedLogger.LogInventory(LogLevel.DEBUG,
+                $"{cacheSource} build lock held by another process, waiting...");
+            await _sharedCacheService.WaitForBuildLock(cacheSource, timeout: 60000, cancellationToken: token);
+            return;
+        }
+
+        try
+        {
         var cacheItems = new List<SharedPaletteCacheItem>();
         var existingResRefs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -257,6 +277,11 @@ public partial class MainWindow
 
             await _sharedCacheService.SaveSourceCacheAsync(cacheSource, cacheItems, validationPath);
             UnifiedLogger.LogInventory(LogLevel.INFO, $"{cacheSource} cache complete: {cacheItems.Count} items");
+        }
+        }
+        finally
+        {
+            _sharedCacheService.ReleaseBuildLock(cacheSource);
         }
     }
 

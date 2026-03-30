@@ -26,6 +26,29 @@ public partial class ModuleEditorViewModel : ObservableObject
     private IGameDataService? _gameDataService;
 
     /// <summary>
+    /// Exposes the GameDataService for use by PaletteCacheWarmupService.
+    /// Null until InitializeGameDataServiceAsync completes.
+    /// </summary>
+    public IGameDataService? GameDataService => _gameDataService;
+
+    /// <summary>
+    /// Raised after GameDataService initialization completes (regardless of success).
+    /// PaletteCacheWarmupService subscribes to this to trigger BIF cache warm-up.
+    /// </summary>
+    public event EventHandler? GameDataServiceInitialized;
+
+    /// <summary>
+    /// Raised after a module finishes loading (auto-load or manual).
+    /// PaletteCacheWarmupService subscribes to this to trigger HAK cache warm-up.
+    /// </summary>
+    public event EventHandler? ModuleLoaded;
+
+    /// <summary>
+    /// Gets the module working directory path (for HAK resolution).
+    /// </summary>
+    public string? ModuleDirectory => _workingDirectoryPath ?? _modulePath;
+
+    /// <summary>
     /// Raised when a new variable is added, to allow the View to auto-focus the name field.
     /// </summary>
     public event EventHandler? VariableAdded;

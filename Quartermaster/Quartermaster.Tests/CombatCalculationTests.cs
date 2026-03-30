@@ -197,7 +197,7 @@ public class CombatCalculationTests
     [InlineData(4, "Fighter")]
     [InlineData(6, "Paladin")]
     [InlineData(7, "Ranger")]
-    public void GetClassBab_BaseFullBabClasses_Level10Returns10(int classId, string _className)
+    public void GetClassBab_BaseFullBabClasses_Level10Returns10(int classId, string _)
     {
         var (_, service) = CreateServiceWith2DABabData();
         Assert.Equal(10, service.GetClassBab(classId, 10));
@@ -209,7 +209,7 @@ public class CombatCalculationTests
     [InlineData(3, "Druid")]
     [InlineData(5, "Monk")]
     [InlineData(8, "Rogue")]
-    public void GetClassBab_BaseThreeQuarterBabClasses_Level10Returns7(int classId, string _className)
+    public void GetClassBab_BaseThreeQuarterBabClasses_Level10Returns7(int classId, string _)
     {
         var (_, service) = CreateServiceWith2DABabData();
         Assert.Equal(7, service.GetClassBab(classId, 10));
@@ -218,7 +218,7 @@ public class CombatCalculationTests
     [Theory]
     [InlineData(9, "Sorcerer")]
     [InlineData(10, "Wizard")]
-    public void GetClassBab_BaseHalfBabClasses_Level10Returns5(int classId, string _className)
+    public void GetClassBab_BaseHalfBabClasses_Level10Returns5(int classId, string _)
     {
         var (_, service) = CreateServiceWith2DABabData();
         Assert.Equal(5, service.GetClassBab(classId, 10));
@@ -235,7 +235,7 @@ public class CombatCalculationTests
     [InlineData(17, "Weapon Master")]
     [InlineData(20, "Dwarven Defender")]
     [InlineData(27, "Purple Dragon Knight")]
-    public void GetClassBab_PrestigeFullBab_Level10Returns10(int classId, string _className)
+    public void GetClassBab_PrestigeFullBab_Level10Returns10(int classId, string _)
     {
         var (_, service) = CreateServiceWith2DABabData();
         Assert.Equal(10, service.GetClassBab(classId, 10));
@@ -247,7 +247,7 @@ public class CombatCalculationTests
     [InlineData(14, "Assassin")]
     [InlineData(19, "Shifter")]
     [InlineData(21, "Dragon Disciple")]
-    public void GetClassBab_PrestigeThreeQuarterBab_Level10Returns7(int classId, string _className)
+    public void GetClassBab_PrestigeThreeQuarterBab_Level10Returns7(int classId, string _)
     {
         var (_, service) = CreateServiceWith2DABabData();
         Assert.Equal(7, service.GetClassBab(classId, 10));
