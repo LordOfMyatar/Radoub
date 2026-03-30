@@ -102,24 +102,8 @@ public partial class MainWindow
                 return;
             }
 
-            // Check if another process (e.g. Trebuchet) is building the cache (#1633)
-            var bifLockCleared = await _sharedCacheService.WaitForBuildLock("bif", timeout: 60000, cancellationToken: token);
-            if (bifLockCleared)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "BIF build lock cleared, reloading from cache");
-                _sharedCacheService.InvalidateAggregatedCache();
-                var freshCache = _sharedCacheService.GetAggregatedCache(_activeHakPaths);
-                if (freshCache != null)
-                {
-                    _cachedPaletteData = freshCache
-                        .Where(i => !ExcludedBaseItemTypes.Contains(i.BaseItemType))
-                        .ToList();
-                    _ = ScanModuleHaksAsync(token);
-                    return;
-                }
-            }
-
-            // No shared cache and no lock — build cache and scan HAKs in parallel
+            // No shared cache — build cache and scan HAKs in parallel
+            // BuildCacheInBackgroundAsync handles lock acquire/release internally (#1633)
             UnifiedLogger.LogApplication(LogLevel.INFO, "Building palette cache in background...");
             var buildTask = BuildCacheInBackgroundAsync();
             var hakTask = ScanModuleHaksAsync(token);
@@ -151,6 +135,50 @@ public partial class MainWindow
     /// </summary>
     private async Task BuildCacheInBackgroundAsync()
     {
+        // Check if caches are already valid — skip if so
+        var needBif = !_sharedCacheService.HasValidSourceCache("bif");
+        var needOverride = !_sharedCacheService.HasValidSourceCache("override");
+
+        if (!needBif && !needOverride)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Both caches valid, skipping build");
+            return;
+        }
+
+        // Acquire build locks — wait if another process is building (#1633)
+        var bifLocked = needBif && _sharedCacheService.AcquireBuildLock("bif");
+        var overrideLocked = needOverride && _sharedCacheService.AcquireBuildLock("override");
+
+        if (needBif && !bifLocked)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "BIF build lock held by another process, waiting...");
+            await _sharedCacheService.WaitForBuildLock("bif", timeout: 60000);
+            needBif = false; // Another process built it
+        }
+        if (needOverride && !overrideLocked)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Override build lock held by another process, waiting...");
+            await _sharedCacheService.WaitForBuildLock("override", timeout: 60000);
+            needOverride = false; // Another process built it
+        }
+
+        if (!needBif && !needOverride)
+        {
+            // Both were built by other processes — reload from cache
+            _sharedCacheService.InvalidateAggregatedCache();
+            var cached = _sharedCacheService.GetAggregatedCache(_activeHakPaths);
+            if (cached != null)
+            {
+                _cachedPaletteData = cached
+                    .Where(i => !ExcludedBaseItemTypes.Contains(i.BaseItemType))
+                    .ToList();
+            }
+            UnifiedLogger.LogApplication(LogLevel.INFO, "Cache built by another process, reloaded from disk");
+            return;
+        }
+
+        try
+        {
         var cacheItems = new List<SharedPaletteCacheItem>();
 
         await Task.Run(() =>
@@ -207,13 +235,19 @@ public partial class MainWindow
         var customItems = cacheItems.Where(i => !i.IsStandard).ToList();
 
         var settings = Radoub.Formats.Settings.RadoubSettings.Instance;
-        if (bifItems.Count > 0)
+        if (bifItems.Count > 0 && bifLocked)
             await _sharedCacheService.SaveSourceCacheAsync("bif", bifItems, settings.BaseGameInstallPath);
-        if (customItems.Count > 0)
+        if (customItems.Count > 0 && overrideLocked)
             await _sharedCacheService.SaveSourceCacheAsync("override", customItems, settings.NeverwinterNightsPath);
 
         _cachedPaletteData = cacheItems;
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Background cache complete: {cacheItems.Count} items");
+        }
+        finally
+        {
+            if (bifLocked) _sharedCacheService.ReleaseBuildLock("bif");
+            if (overrideLocked) _sharedCacheService.ReleaseBuildLock("override");
+        }
     }
 
     /// <summary>
