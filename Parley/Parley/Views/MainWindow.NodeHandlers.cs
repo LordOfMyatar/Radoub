@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
@@ -266,6 +267,20 @@ namespace DialogEditor.Views
 
         private void OnGoToParentNodeClick(object? sender, RoutedEventArgs e)
             => _controllers.TreeView.OnGoToParentNodeClick(sender, e);
+
+        private void OnTreeViewContextMenuOpening(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            var treeView = this.FindControl<TreeView>("DialogTreeView");
+            var selectedNode = treeView?.SelectedItem as TreeViewSafeNode;
+            if (sender is ContextMenu contextMenu)
+            {
+                var menuItem = contextMenu.Items
+                    .OfType<MenuItem>()
+                    .FirstOrDefault(m => m.Header?.ToString() == "Go to Parent Node");
+                if (menuItem != null)
+                    menuItem.IsEnabled = selectedNode?.IsChild == true;
+            }
+        }
 
         #endregion
 

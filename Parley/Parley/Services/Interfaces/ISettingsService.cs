@@ -34,6 +34,7 @@ namespace DialogEditor.Services
         int FlowchartNodeMaxLines { get; set; }
         int FlowchartNodeWidth { get; set; }
         bool TreeViewWordWrap { get; set; }
+        bool ShowNodeIndexNumbers { get; set; }
 
         // Flowchart window (delegated to WindowLayoutService)
         double FlowchartWindowLeft { get; set; }

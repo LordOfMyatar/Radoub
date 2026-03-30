@@ -134,6 +134,12 @@ namespace DialogEditor.Models
         }
 
         /// <summary>
+        /// Issue #1921: Index prefix for debugging (e.g., "[E5] " or "[R12] ").
+        /// Derived from the node's Id which is already in E{n}/R{n} format.
+        /// </summary>
+        public string IndexPrefix => $"[{Id}] ";
+
+        /// <summary>
         /// Display text for flowchart nodes. Returns full text - truncation handled by XAML MaxLines.
         /// </summary>
         public string DisplayText

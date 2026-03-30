@@ -233,6 +233,13 @@
                                           Checked="OnWordWrapChanged"
                                           Unchecked="OnWordWrapChanged"
                                           ToolTip.Tip="Wrap long dialog text in tree view (#903)"/>
+                                <CheckBox x:Name="ShowIndexCheckBox" Content="Index #"
+                                          IsChecked="{Binding Source={x:Static services:SettingsService.Instance}, Path=ShowNodeIndexNumbers, Mode=TwoWay}"
+                                          Margin="8,0,0,0"
+                                          VerticalAlignment="Center"
+                                          Checked="OnShowNodeIndexChanged"
+                                          Unchecked="OnShowNodeIndexChanged"
+                                          ToolTip.Tip="Show entry/reply index numbers [E5] [R12] (#1921)"/>
                             </StackPanel>
 
                             <!-- Search Bar (Ctrl+F) -->
@@ -252,7 +259,7 @@
                                       DragDrop.AllowDrop="True"
                                       Padding="0,0,12,20">
                                 <TreeView.ContextMenu>
-                                    <ContextMenu>
+                                    <ContextMenu Opening="OnTreeViewContextMenuOpening">
                                         <MenuItem Header="Add Node" InputGesture="Ctrl+D" Click="OnAddSmartNodeClick"/>
                                         <MenuItem Header="Add Sibling Node" InputGesture="Ctrl+Shift+D" Click="OnAddSiblingNodeClick"/>
                                         <MenuItem Header="Delete Node" InputGesture="Delete" Click="OnDeleteNodeClick"/>
@@ -297,6 +304,11 @@
                                                   Stretch="Uniform"
                                                   VerticalAlignment="Center"
                                                   Margin="0,2,0,0"/>
+                                            <!-- Issue #1921: Node index prefix (e.g., [E5] [R12]) -->
+                                            <TextBlock Text="{Binding IndexPrefix}"
+                                                       IsVisible="{Binding Source={x:Static services:SettingsService.Instance}, Path=ShowNodeIndexNumbers}"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                       VerticalAlignment="Center"/>
                                             <!-- Issue #877: Speaker tag (colored) + dialog text (theme color) -->
                                             <TextBlock Text="{Binding SpeakerTag}"
                                                        Foreground="{Binding NodeColor}"

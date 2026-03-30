@@ -4,6 +4,16 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
+## [0.1.161-alpha] - 2026-03-29 | PR #2035
+**Branch**: `parley/issue-1976`
+
+### Sprint: UX Polish & Search Fix
+- Fix --mod flag not working for module search context (#1927)
+- Grey out 'Go to Parent Node' when not on a link node (#1967)
+- Toggle to show entry/reply index numbers in tree and flow views (#1921)
+
+---
+
 ## [0.1.160-alpha] - 2026-03-28 | PR #2024
 - Lazy-load TTS factory and defer ResourcePathDetector startup
 - Remove broken SVG export option

@@ -62,6 +62,14 @@ namespace DialogEditor.Views
             UnifiedLogger.LogUI(LogLevel.INFO, $"TreeView word wrap toggled: {enabled}");
         }
 
+        private void OnShowNodeIndexChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            _viewModel.RefreshTreeViewColors();
+            var enabled = _services.Settings.ShowNodeIndexNumbers;
+            _viewModel.StatusMessage = enabled ? "Node index numbers shown" : "Node index numbers hidden";
+            UnifiedLogger.LogUI(LogLevel.INFO, $"Show node index numbers toggled: {enabled}");
+        }
+
         private void ExpandAllTreeViewItems(TreeView treeView)
         {
             // Avalonia approach: Work directly with ViewModel data

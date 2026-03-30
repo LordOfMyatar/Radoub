@@ -28,6 +28,9 @@ namespace DialogEditor.Services
         // TreeView display settings (#903)
         private bool _treeViewWordWrap = false; // Default: OFF (traditional single-line display)
 
+        // Node index display (#1921)
+        private bool _showNodeIndexNumbers = false; // Default: OFF
+
         // TreeView dynamic width (#1158) - Runtime only, not persisted
         private double _treeViewTextMaxWidth = 400; // Default fallback width
 
@@ -53,13 +56,15 @@ namespace DialogEditor.Services
             bool allowScrollbarAutoHide,
             int flowchartNodeMaxLines = 3,
             bool treeViewWordWrap = false,
-            int flowchartNodeWidth = 200)
+            int flowchartNodeWidth = 200,
+            bool showNodeIndexNumbers = false)
         {
             _flowchartLayout = flowchartLayout ?? "Floating";
             _allowScrollbarAutoHide = allowScrollbarAutoHide;
             _flowchartNodeMaxLines = Math.Max(1, Math.Min(6, flowchartNodeMaxLines));
             _treeViewWordWrap = treeViewWordWrap;
             _flowchartNodeWidth = Math.Max(100, Math.Min(400, flowchartNodeWidth));
+            _showNodeIndexNumbers = showNodeIndexNumbers;
         }
 
         // FontSize, FontFamily, IsDarkTheme, CurrentThemeId, UseSharedTheme removed
@@ -147,6 +152,24 @@ namespace DialogEditor.Services
                 {
                     SettingsChanged?.Invoke();
                     UnifiedLogger.LogUI(LogLevel.INFO, $"TreeView word wrap set to {value}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Show entry/reply index numbers in tree and flow views (#1921).
+        /// When enabled, nodes are prefixed with [E5] or [R12] for debugging.
+        /// Default: OFF.
+        /// </summary>
+        public bool ShowNodeIndexNumbers
+        {
+            get => _showNodeIndexNumbers;
+            set
+            {
+                if (SetProperty(ref _showNodeIndexNumbers, value))
+                {
+                    SettingsChanged?.Invoke();
+                    UnifiedLogger.LogUI(LogLevel.INFO, $"Show node index numbers set to {value}");
                 }
             }
         }
