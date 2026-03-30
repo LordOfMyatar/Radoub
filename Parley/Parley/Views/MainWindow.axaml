@@ -274,7 +274,7 @@
                                         <MenuItem Header="Expand Subnodes" InputGesture="Ctrl+E" Click="OnExpandSubnodesClick"/>
                                         <MenuItem Header="Collapse Subnodes" InputGesture="Ctrl+W" Click="OnCollapseSubnodesClick"/>
                                         <Separator/>
-                                        <MenuItem x:Name="GoToParentNodeMenuItem" Header="Go to Parent Node" InputGesture="Ctrl+J" Click="OnGoToParentNodeClick"/>
+                                        <MenuItem Header="Go to Parent Node" InputGesture="Ctrl+J" Click="OnGoToParentNodeClick"/>
                                     </ContextMenu>
                                 </TreeView.ContextMenu>
                                 <TreeView.Styles>
