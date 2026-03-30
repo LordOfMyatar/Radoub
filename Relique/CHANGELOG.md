@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.10.7-alpha] - 2026-03-29
-**Branch**: `relique/issue-1982` | **PR**: #TBD
+**Branch**: `relique/issue-1982` | **PR**: #2036
 
 ### Sprint: Bug Fix Sweep (#1982)
 - Filter available properties by base item type (#1972)
