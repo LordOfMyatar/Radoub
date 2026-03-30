@@ -11,11 +11,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Bug Fix Sweep (#1982)
 - Filter available properties by base item type (#1972)
-- Fix settings folder using 'ItemEditor' instead of 'Relique' (#1948)
 - Add VarTable (local variable) search to UtiSearchProvider (#1940)
 - Resolve racial subtype names instead of showing raw labels (#1917)
-- Fix logs writing to ~/Radoub/Logs instead of session directory (#1915)
-- Fix settings saved to ~/Radoub/ItemEditor/ instead of ~/Radoub/Relique/ (#1909)
+
+*Note: #1948, #1909, #1915 were already fixed in v0.10.4-alpha (#2023)*
 
 ---
 
