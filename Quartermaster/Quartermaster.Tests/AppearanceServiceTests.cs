@@ -772,7 +772,7 @@ public class AppearanceServiceTests
     public void ResolveAppearanceSources_SimpleModel_ResolvesToBif()
     {
         // Simple model: Race = "BADGER" → MDL resref "badger"
-        _mockGameData.AddResourceInfo("badger", 2030); // MDL type, BIF source
+        _mockGameData.AddResourceInfo("badger", Radoub.Formats.Common.ResourceTypes.Mdl); // MDL type, BIF source
 
         var appearances = new System.Collections.Generic.List<AppearanceInfo>
         {
@@ -788,7 +788,7 @@ public class AppearanceServiceTests
     public void ResolveAppearanceSources_SimpleModelWithCPrefix_ResolvesToBif()
     {
         // Some creature models use "c_" prefix
-        _mockGameData.AddResourceInfo("c_dragon", 2030);
+        _mockGameData.AddResourceInfo("c_dragon", Radoub.Formats.Common.ResourceTypes.Mdl);
 
         var appearances = new System.Collections.Generic.List<AppearanceInfo>
         {
@@ -805,7 +805,7 @@ public class AppearanceServiceTests
     {
         // Part-based model: Race = "H" (single letter for Human)
         // MDL lookup should find models starting with "p" + race letter
-        _mockGameData.AddResourceInfo("pmh0", 2030); // Male human default skeleton
+        _mockGameData.AddResourceInfo("pmh0", Radoub.Formats.Common.ResourceTypes.Mdl); // Male human default skeleton
 
         var appearances = new System.Collections.Generic.List<AppearanceInfo>
         {
@@ -821,7 +821,7 @@ public class AppearanceServiceTests
     public void ResolveAppearanceSources_PartBasedDwarf_ResolvesViaPrefixMatch()
     {
         // Part-based model: Race = "D" (Dwarf)
-        _mockGameData.AddResourceInfo("pmd0", 2030);
+        _mockGameData.AddResourceInfo("pmd0", Radoub.Formats.Common.ResourceTypes.Mdl);
 
         var appearances = new System.Collections.Generic.List<AppearanceInfo>
         {
@@ -850,7 +850,7 @@ public class AppearanceServiceTests
     [Fact]
     public void ResolveAppearanceSources_HakSource_MapsCorrectly()
     {
-        _mockGameData.AddResourceInfo("cep_model", 2030,
+        _mockGameData.AddResourceInfo("cep_model", Radoub.Formats.Common.ResourceTypes.Mdl,
             Radoub.Formats.Services.GameResourceSource.Hak);
 
         var appearances = new System.Collections.Generic.List<AppearanceInfo>
