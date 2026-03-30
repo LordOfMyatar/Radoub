@@ -409,6 +409,12 @@ namespace DialogEditor.Services
             set => _uiSettings.TreeViewWordWrap = value;
         }
 
+        public bool ShowNodeIndexNumbers
+        {
+            get => _uiSettings.ShowNodeIndexNumbers;
+            set => _uiSettings.ShowNodeIndexNumbers = value;
+        }
+
         // NPC Speaker Visual Preferences - DELEGATED to SpeakerPreferencesService (#719)
         public Dictionary<string, SpeakerPreferences> NpcSpeakerPreferences => _speakerPreferences.Preferences;
 
@@ -557,7 +563,8 @@ namespace DialogEditor.Services
                             settings.AllowScrollbarAutoHide,
                             settings.FlowchartNodeMaxLines,
                             settings.TreeViewWordWrap,
-                            settings.FlowchartNodeWidth);
+                            settings.FlowchartNodeWidth,
+                            settings.ShowNodeIndexNumbers);
 
                         // Issue #179: Migrate speaker preferences to separate file
                         _legacyNpcSpeakerPreferences = settings.NpcSpeakerPreferences;
@@ -648,6 +655,7 @@ namespace DialogEditor.Services
                     FlowchartNodeMaxLines = FlowchartNodeMaxLines,
                     FlowchartNodeWidth = FlowchartNodeWidth,
                     TreeViewWordWrap = TreeViewWordWrap,
+                    ShowNodeIndexNumbers = ShowNodeIndexNumbers,
                     // Issue #179: NpcSpeakerPreferences moved to SpeakerPreferences.json
                     EnableNpcTagColoring = EnableNpcTagColoring,
                     ShowDeleteConfirmation = ShowDeleteConfirmation,
@@ -736,6 +744,7 @@ namespace DialogEditor.Services
             public int FlowchartNodeMaxLines { get; set; } = 3;
             public int FlowchartNodeWidth { get; set; } = 200;
             public bool TreeViewWordWrap { get; set; } = false;
+            public bool ShowNodeIndexNumbers { get; set; } = false;
             public Dictionary<string, SpeakerPreferences>? NpcSpeakerPreferences { get; set; }
             public bool EnableNpcTagColoring { get; set; } = true;
             public bool ShowDeleteConfirmation { get; set; } = true;

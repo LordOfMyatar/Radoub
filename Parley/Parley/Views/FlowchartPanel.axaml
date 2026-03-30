@@ -3,6 +3,7 @@
              xmlns:agc="clr-namespace:AvaloniaGraphControl;assembly=AvaloniaGraphControl"
              xmlns:vm="using:DialogEditor.ViewModels"
              xmlns:models="using:DialogEditor.Models"
+             xmlns:services="using:DialogEditor.Services"
              x:Class="DialogEditor.Views.FlowchartPanel">
 
     <Design.DataContext>
@@ -150,6 +151,11 @@
                                     </MultiBinding>
                                 </Border.BorderThickness>
                                 <StackPanel Spacing="2">
+                                    <!-- Issue #1921: Node index prefix (e.g., [E5] [R12]) -->
+                                    <TextBlock Text="{Binding IndexPrefix}"
+                                               IsVisible="{Binding Source={x:Static services:SettingsService.Instance}, Path=ShowNodeIndexNumbers}"
+                                               FontSize="{DynamicResource FontSizeXSmall}"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                     <!-- Speaker label - slightly smaller than global font (#905) -->
                                     <TextBlock Text="{Binding Speaker}"
                                                FontSize="{DynamicResource GlobalFontSize}"

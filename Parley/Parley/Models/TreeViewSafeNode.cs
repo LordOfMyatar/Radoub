@@ -205,6 +205,22 @@ namespace DialogEditor.Models
         public virtual string SpeakerTag => $"[{Speaker}]";
 
         /// <summary>
+        /// Issue #1921: Index prefix for debugging (e.g., "[E5]" or "[R12]").
+        /// Returns the node's position in the dialog's Entry/Reply list.
+        /// </summary>
+        public virtual string IndexPrefix
+        {
+            get
+            {
+                if (_originalNode?.Parent == null) return "";
+                var index = _originalNode.Parent.GetNodeIndex(_originalNode, _originalNode.Type);
+                if (index < 0) return "";
+                var typeChar = _originalNode.Type == DialogNodeType.Entry ? "E" : "R";
+                return $"[{typeChar}{index}] ";
+            }
+        }
+
+        /// <summary>
         /// Issue #877: Dialog text only (without speaker tag) for theme-colored display.
         /// </summary>
         public virtual string DialogText
