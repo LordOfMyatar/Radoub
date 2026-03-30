@@ -38,6 +38,7 @@ namespace Parley.Tests.Mocks
         public int FlowchartNodeMaxLines { get; set; } = 3;
         public int FlowchartNodeWidth { get; set; } = 200;
         public bool TreeViewWordWrap { get; set; } = false;
+        public bool ShowNodeIndexNumbers { get; set; } = false;
 
         // Flowchart window
         public double FlowchartWindowLeft { get; set; } = 200;
