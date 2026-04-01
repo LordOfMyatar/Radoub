@@ -757,4 +757,96 @@ public class ItemPropertyServiceTests
     }
 
     #endregion
+
+    #region GetValidPropertyIndicesForBaseItem
+
+    private MockGameDataService CreateMockWithItemPropsData()
+    {
+        var mock = CreateMockWithItemPropertyData();
+
+        // baseitems.2da: row 12 (amulet) has PropColumn "16"
+        mock.Set2DAValue("baseitems", 12, "PropColumn", "16");
+        mock.Set2DAValue("baseitems", 12, "label", "BASE_ITEM_AMULET");
+
+        // baseitems.2da: row 36 (longsword) has PropColumn "1"
+        mock.Set2DAValue("baseitems", 36, "PropColumn", "1");
+        mock.Set2DAValue("baseitems", 36, "label", "BASE_ITEM_LONGSWORD");
+
+        // itemprops.2da — columns: "1_Weapons", "16_Misc"
+        // Row 0 (Ability Bonus):   weapons=1, misc=1  → valid for both
+        // Row 1 (AC Bonus):        weapons=****, misc=1  → valid for amulet only
+        // Row 6 (Enhancement):     weapons=1, misc=****  → valid for longsword only
+        // Row 15 (Cast Spell):     weapons=1, misc=1  → valid for both
+        // Row 16 (Damage Bonus):   weapons=1, misc=****  → valid for longsword only
+        mock.Set2DAValue("itemprops", 0, "1_Weapons", "1");
+        mock.Set2DAValue("itemprops", 0, "16_Misc", "1");
+        mock.Set2DAValue("itemprops", 1, "1_Weapons", "****");
+        mock.Set2DAValue("itemprops", 1, "16_Misc", "1");
+        mock.Set2DAValue("itemprops", 6, "1_Weapons", "1");
+        mock.Set2DAValue("itemprops", 6, "16_Misc", "****");
+        mock.Set2DAValue("itemprops", 15, "1_Weapons", "1");
+        mock.Set2DAValue("itemprops", 15, "16_Misc", "1");
+        mock.Set2DAValue("itemprops", 16, "1_Weapons", "1");
+        mock.Set2DAValue("itemprops", 16, "16_Misc", "****");
+
+        return mock;
+    }
+
+    [Fact]
+    public void GetValidPropertyIndicesForBaseItem_FiltersForAmulet()
+    {
+        var mock = CreateMockWithItemPropsData();
+        var service = new ItemPropertyService(mock);
+
+        var valid = service.GetValidPropertyIndicesForBaseItem(12);
+
+        Assert.NotNull(valid);
+        Assert.Contains(0, valid);   // Ability Bonus
+        Assert.Contains(1, valid);   // AC Bonus
+        Assert.DoesNotContain(6, valid);   // Enhancement Bonus — not valid for amulet
+        Assert.Contains(15, valid);  // Cast Spell
+        Assert.DoesNotContain(16, valid);  // Damage Bonus — not valid for amulet
+    }
+
+    [Fact]
+    public void GetValidPropertyIndicesForBaseItem_FiltersForLongsword()
+    {
+        var mock = CreateMockWithItemPropsData();
+        var service = new ItemPropertyService(mock);
+
+        var valid = service.GetValidPropertyIndicesForBaseItem(36);
+
+        Assert.NotNull(valid);
+        Assert.Contains(0, valid);   // Ability Bonus
+        Assert.DoesNotContain(1, valid);   // AC Bonus — not valid for weapon
+        Assert.Contains(6, valid);   // Enhancement Bonus
+        Assert.Contains(15, valid);  // Cast Spell
+        Assert.Contains(16, valid);  // Damage Bonus
+    }
+
+    [Fact]
+    public void GetValidPropertyIndicesForBaseItem_ReturnsNull_WhenNoPropColumn()
+    {
+        var mock = CreateMockWithItemPropsData();
+        // Row 99 has no PropColumn set
+        var service = new ItemPropertyService(mock);
+
+        var valid = service.GetValidPropertyIndicesForBaseItem(99);
+
+        Assert.Null(valid);
+    }
+
+    [Fact]
+    public void GetValidPropertyIndicesForBaseItem_ReturnsNull_WhenItemPropsNotAvailable()
+    {
+        var mock = CreateMockWithItemPropertyData(); // No itemprops.2da
+        mock.Set2DAValue("baseitems", 12, "PropColumn", "16");
+        var service = new ItemPropertyService(mock);
+
+        var valid = service.GetValidPropertyIndicesForBaseItem(12);
+
+        Assert.Null(valid);
+    }
+
+    #endregion
 }

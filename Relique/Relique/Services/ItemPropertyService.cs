@@ -258,6 +258,56 @@ public class ItemPropertyService
         return prop;
     }
 
+    /// <summary>
+    /// Get the set of valid property indices for a given base item type.
+    /// Uses baseitems.2da PropColumn → itemprops.2da to determine which properties
+    /// are available for the base item type.
+    /// Returns null if filtering data is unavailable (show all properties).
+    /// </summary>
+    public HashSet<int>? GetValidPropertyIndicesForBaseItem(int baseItemIndex)
+    {
+        if (!_gameDataService.IsConfigured)
+            return null;
+
+        var baseItems = _gameDataService.Get2DA("baseitems");
+        if (baseItems == null || baseItemIndex >= baseItems.RowCount)
+            return null;
+
+        var propColumn = baseItems.GetValue(baseItemIndex, "PropColumn");
+        if (string.IsNullOrEmpty(propColumn) || propColumn == "****")
+            return null;
+
+        var itemProps = _gameDataService.Get2DA("itemprops");
+        if (itemProps == null)
+            return null;
+
+        // Find the column in itemprops.2da that starts with the PropColumn value
+        // Column names are like "0_Property", "1_Weapons", "16_Misc", etc.
+        int colIndex = -1;
+        var prefix = propColumn + "_";
+        for (int i = 0; i < itemProps.Columns.Count; i++)
+        {
+            if (itemProps.Columns[i].StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                colIndex = i;
+                break;
+            }
+        }
+
+        if (colIndex < 0)
+            return null;
+
+        var validIndices = new HashSet<int>();
+        for (int row = 0; row < itemProps.RowCount; row++)
+        {
+            var value = itemProps.GetValue(row, colIndex);
+            if (value == "1")
+                validIndices.Add(row);
+        }
+
+        return validIndices;
+    }
+
     #region Private helpers
 
     private string? GetSubtypeResRef(int propertyIndex)

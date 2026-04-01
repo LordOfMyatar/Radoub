@@ -113,6 +113,7 @@ public partial class MainWindow
             _itemViewModel.BaseItem = picker.SelectedBaseItemIndex.Value;
             DisplayBaseItemType(picker.SelectedBaseItemIndex.Value);
             UpdateConditionalFields(picker.SelectedBaseItemIndex.Value);
+            PopulateAvailableProperties(PropertySearchBox.Text); // Refresh for new base item type (#1972)
         }
     }
 

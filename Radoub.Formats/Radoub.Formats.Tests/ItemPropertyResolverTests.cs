@@ -146,6 +146,97 @@ public class ItemPropertyResolverTests
 }
 
 /// <summary>
+/// Tests for ResolveSubtype Label fallback behavior.
+/// Uses temp directory with mock 2DA files to test without game data.
+/// </summary>
+public class ItemPropertyResolverSubtypeFallbackTests : IDisposable
+{
+    private readonly string _tempDir;
+
+    public ItemPropertyResolverSubtypeFallbackTests()
+    {
+        _tempDir = Path.Combine(Path.GetTempPath(), $"radoub_test_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(_tempDir);
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_tempDir))
+            Directory.Delete(_tempDir, true);
+    }
+
+    private void WriteTwoDA(string name, string content)
+    {
+        File.WriteAllText(Path.Combine(_tempDir, $"{name}.2da"), content);
+    }
+
+    [Fact]
+    public void ResolveSubtype_FallsBackToLabel_WhenTlkNotAvailable()
+    {
+        // itempropdef.2da: row 20 = "Use Limitation: Racial Type" with subtype iprp_racialtype
+        WriteTwoDA("itempropdef",
+            "2DA V2.0\n\n" +
+            "   Label                          Name  GameStrRef  SubTypeResRef    CostTableResRef  Param1ResRef\n" +
+            "0  IP_CONST_USE_LIMIT_RACIAL_TYPE  6336  6336        iprp_racialtype  ****             ****\n");
+
+        // iprp_racialtype.2da: row 0 = Dwarf with Name strRef and Label
+        WriteTwoDA("iprp_racialtype",
+            "2DA V2.0\n\n" +
+            "   Name  Label\n" +
+            "0  386   RACIAL_TYPE_DWARF\n" +
+            "1  387   RACIAL_TYPE_ELF\n" +
+            "2  ****  RACIAL_TYPE_CUSTOM\n");
+
+        var config = new GameResourceConfig { ModuleDirectory = _tempDir };
+        using var resolver = new GameResourceResolver(config);
+        // No TLK loaded — Name strRef will not resolve, should fall back to Label
+        using var propResolver = new ItemPropertyResolver(resolver);
+
+        var property = new ItemProperty
+        {
+            PropertyName = 0,
+            Subtype = 0  // Dwarf
+        };
+
+        var result = propResolver.Resolve(property);
+
+        // Without TLK, Name strRef "386" won't resolve.
+        // Before fix: subtype would be null/empty.
+        // After fix: should fall back to Label "RACIAL_TYPE_DWARF".
+        Assert.Contains("RACIAL_TYPE_DWARF", result);
+    }
+
+    [Fact]
+    public void ResolveSubtype_FallsBackToLabel_WhenNameIsEmpty()
+    {
+        WriteTwoDA("itempropdef",
+            "2DA V2.0\n\n" +
+            "   Label                          Name  GameStrRef  SubTypeResRef    CostTableResRef  Param1ResRef\n" +
+            "0  IP_CONST_USE_LIMIT_RACIAL_TYPE  6336  6336        iprp_racialtype  ****             ****\n");
+
+        // Row 2 has **** for Name — no TLK reference at all
+        WriteTwoDA("iprp_racialtype",
+            "2DA V2.0\n\n" +
+            "   Name  Label\n" +
+            "0  ****  RACIAL_TYPE_CUSTOM\n");
+
+        var config = new GameResourceConfig { ModuleDirectory = _tempDir };
+        using var resolver = new GameResourceResolver(config);
+        using var propResolver = new ItemPropertyResolver(resolver);
+
+        var property = new ItemProperty
+        {
+            PropertyName = 0,
+            Subtype = 0  // Custom race with no Name strRef
+        };
+
+        var result = propResolver.Resolve(property);
+
+        Assert.Contains("RACIAL_TYPE_CUSTOM", result);
+    }
+}
+
+/// <summary>
 /// Integration tests that require NWN game data.
 /// These are skipped if game data is not available.
 /// </summary>

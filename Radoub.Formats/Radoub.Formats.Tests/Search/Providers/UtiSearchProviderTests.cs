@@ -25,7 +25,12 @@ public class UtiSearchProviderTests
             }},
             Tag = "LOUIS_SCYTHE",
             TemplateResRef = "louis_scythe",
-            Comment = "Quest reward item for main plot"
+            Comment = "Quest reward item for main plot",
+            VarTable = new List<Variable>
+            {
+                new Variable { Name = "nEnchantLevel", Type = VariableType.Int, Value = 3 },
+                new Variable { Name = "sCreator", Type = VariableType.String, Value = "Dwarven Forge of Icewind" }
+            }
         };
     }
 
@@ -166,5 +171,45 @@ public class UtiSearchProviderTests
     {
         var provider = new UtiSearchProvider();
         Assert.Contains(".uti", provider.Extensions);
+    }
+
+    [Fact]
+    public void Search_FindsVarTableName()
+    {
+        var provider = new UtiSearchProvider();
+        var gff = UtiToGff(CreateTestUti());
+        var criteria = new SearchCriteria { Pattern = "nEnchantLevel" };
+
+        var matches = provider.Search(gff, criteria);
+
+        Assert.Contains(matches, m => m.Field.Name == "Local Variables");
+    }
+
+    [Fact]
+    public void Search_FindsVarTableStringValue()
+    {
+        var provider = new UtiSearchProvider();
+        var gff = UtiToGff(CreateTestUti());
+        var criteria = new SearchCriteria { Pattern = "Dwarven Forge" };
+
+        var matches = provider.Search(gff, criteria);
+
+        Assert.Contains(matches, m => m.Field.Name == "Local Variables");
+    }
+
+    [Fact]
+    public void Search_VariableCategoryFilter()
+    {
+        var provider = new UtiSearchProvider();
+        var gff = UtiToGff(CreateTestUti());
+        var criteria = new SearchCriteria
+        {
+            Pattern = "nEnchantLevel",
+            CategoryFilter = new[] { SearchFieldCategory.Variable }
+        };
+
+        var matches = provider.Search(gff, criteria);
+
+        Assert.All(matches, m => Assert.Equal(SearchFieldCategory.Variable, m.Field.Category));
     }
 }

@@ -165,7 +165,13 @@ public class ItemPropertyResolver : IDisposable
             return null;
 
         var nameStrRef = subtypeTwoDA.GetValue(subtypeIndex, "Name");
-        return GetTlkString(nameStrRef);
+        var resolved = GetTlkString(nameStrRef);
+        if (resolved != null)
+            return resolved;
+
+        // Fallback to Label if Name doesn't resolve
+        var label = subtypeTwoDA.GetValue(subtypeIndex, "Label");
+        return label != "****" ? label : null;
     }
 
     private string? ResolveCostValue(int costTableIndex, int costValueIndex)
