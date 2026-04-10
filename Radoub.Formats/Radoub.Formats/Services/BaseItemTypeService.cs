@@ -101,7 +101,18 @@ public class BaseItemTypeService
             if (chargesStartingStr != null && chargesStartingStr != "****" && int.TryParse(chargesStartingStr, out var cs))
                 chargesStarting = cs;
 
-            _cachedTypes.Add(new BaseItemTypeInfo(i, displayName, label, storePanel, modelType, descriptionText, stacking, chargesStarting));
+            // Read InvSlotWidth/InvSlotHeight for inventory size rendering
+            var invSlotWidthStr = baseItems.GetValue(i, "InvSlotWidth");
+            int invSlotWidth = 1;
+            if (invSlotWidthStr != null && invSlotWidthStr != "****" && int.TryParse(invSlotWidthStr, out var isw))
+                invSlotWidth = isw;
+
+            var invSlotHeightStr = baseItems.GetValue(i, "InvSlotHeight");
+            int invSlotHeight = 1;
+            if (invSlotHeightStr != null && invSlotHeightStr != "****" && int.TryParse(invSlotHeightStr, out var ish))
+                invSlotHeight = ish;
+
+            _cachedTypes.Add(new BaseItemTypeInfo(i, displayName, label, storePanel, modelType, descriptionText, stacking, chargesStarting, invSlotWidth, invSlotHeight));
         }
 
         _cachedTypes = _cachedTypes.OrderBy(t => t.DisplayName).ToList();
@@ -280,6 +291,12 @@ public class BaseItemTypeInfo
     /// <summary>Initial charges from baseitems.2da ChargesStarting column. 0 = none, >0 = charge-based.</summary>
     public int ChargesStarting { get; }
 
+    /// <summary>Inventory slot width from baseitems.2da InvSlotWidth column. Default 1.</summary>
+    public int InvSlotWidth { get; }
+
+    /// <summary>Inventory slot height from baseitems.2da InvSlotHeight column. Default 1.</summary>
+    public int InvSlotHeight { get; }
+
     // Computed convenience properties (used by Relique)
     public bool HasColorFields => ModelType is 1 or 3;
     public bool HasArmorParts => ModelType == 3;
@@ -291,7 +308,8 @@ public class BaseItemTypeInfo
     public BaseItemTypeInfo(
         int baseItemIndex, string displayName, string label,
         int storePanel = 4, int modelType = 0, string descriptionText = "",
-        int stacking = 1, int chargesStarting = 0)
+        int stacking = 1, int chargesStarting = 0,
+        int invSlotWidth = 1, int invSlotHeight = 1)
     {
         BaseItemIndex = baseItemIndex;
         DisplayName = displayName;
@@ -301,6 +319,8 @@ public class BaseItemTypeInfo
         DescriptionText = descriptionText;
         Stacking = stacking;
         ChargesStarting = chargesStarting;
+        InvSlotWidth = invSlotWidth;
+        InvSlotHeight = invSlotHeight;
     }
 
     public override string ToString() => DisplayName;
