@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Sprint: Preview & Settings (#1983)
 - SettingsWindow with game paths, theme/font display, and Trebuchet integration (#2009)
 - Item icon picker dialog with inventory size rendering (#1911)
+- Fix: Semantic theme colors (Info, Success, etc.) now apply before window construction (all tools)
 
 ---
 
