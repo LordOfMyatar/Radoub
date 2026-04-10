@@ -153,8 +153,8 @@ public partial class MainWindow
 
     private void OnSettingsClick(object? sender, RoutedEventArgs e)
     {
-        // TODO (#1706): Settings window
-        UpdateStatus("Settings not yet implemented");
+        var settingsWindow = new SettingsWindow();
+        settingsWindow.Show(this);
     }
 
     private void OnEditSettingsFileClick(object? sender, RoutedEventArgs e)
@@ -178,39 +178,6 @@ public partial class MainWindow
             Radoub.Formats.Logging.UnifiedLogger.LogApplication(
                 Radoub.Formats.Logging.LogLevel.WARN, $"Failed to open settings file: {ex.Message}");
             UpdateStatus("Could not open settings file");
-        }
-    }
-
-    private void OnToggleUseRadoubThemeClick(object? sender, RoutedEventArgs e)
-    {
-        // Theme management moved to Trebuchet — launch settings
-        LaunchTrebuchetSettings();
-    }
-
-    private static void LaunchTrebuchetSettings()
-    {
-        try
-        {
-            var trebuchetPath = Radoub.Formats.Settings.RadoubSettings.Instance.TrebuchetPath;
-            if (!string.IsNullOrEmpty(trebuchetPath) && System.IO.File.Exists(trebuchetPath))
-            {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = trebuchetPath,
-                    Arguments = "--settings",
-                    UseShellExecute = false
-                });
-            }
-            else
-            {
-                Radoub.Formats.Logging.UnifiedLogger.LogApplication(
-                    Radoub.Formats.Logging.LogLevel.WARN, "Trebuchet not found — cannot open settings");
-            }
-        }
-        catch (Exception ex)
-        {
-            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
-                Radoub.Formats.Logging.LogLevel.WARN, $"Could not launch Trebuchet: {ex.Message}");
         }
     }
 

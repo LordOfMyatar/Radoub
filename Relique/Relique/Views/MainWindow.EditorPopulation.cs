@@ -371,7 +371,7 @@ public partial class MainWindow
         // Highlight selected icon
         if (isSelected)
         {
-            button.BorderBrush = Avalonia.Media.Brushes.DodgerBlue;
+            button.BorderBrush = BrushManager.GetInfoBrush(this);
             button.BorderThickness = new Thickness(2);
 
             // Update the selected icon preview
@@ -584,7 +584,7 @@ public partial class MainWindow
     {
         if (_paletteColorService == null)
         {
-            swatch.Background = Avalonia.Media.Brushes.Gray;
+            swatch.Background = BrushManager.GetDisabledBrush(this);
             return;
         }
         swatch.Background = _paletteColorService.CreateGradientBrush(paletteName, colorIndex);

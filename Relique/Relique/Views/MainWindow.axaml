@@ -61,8 +61,6 @@
                 <Separator/>
                 <MenuItem x:Name="LanguageMenu" Header="_Language" AutomationProperties.AutomationId="LanguageMenu"/>
                 <Separator/>
-                <MenuItem x:Name="UseRadoubThemeMenuItem" Header="Use _Radoub Theme" Click="OnToggleUseRadoubThemeClick"/>
-                <Separator/>
                 <MenuItem Header="_Settings..." Click="OnSettingsClick"/>
                 <Separator/>
                 <MenuItem Header="Edit Settings _File..." Click="OnEditSettingsFileClick"/>
@@ -699,7 +697,7 @@
                                                 <Button Content="Remove" Click="OnRemoveVariable"/>
                                             </StackPanel>
                                             <TextBlock x:Name="VariableValidationText"
-                                                       Foreground="#FF4444"
+                                                       Foreground="{DynamicResource ThemeError}"
                                                        FontSize="11"
                                                        TextWrapping="Wrap"
                                                        IsVisible="False"/>
