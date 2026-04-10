@@ -46,6 +46,30 @@ public partial class ThemeManager
     }
 
     /// <summary>
+    /// Apply semantic colors (Success, Warning, Error, Info, Disabled) synchronously.
+    /// Called before the deferred Post so BrushManager can resolve these immediately
+    /// during window construction. These are custom resources that don't depend on
+    /// Fluent's variant re-derivation.
+    /// </summary>
+    private void ApplySemanticColors(IResourceDictionary resources, ThemeColors colors)
+    {
+        if (!string.IsNullOrEmpty(colors.Success))
+            resources["ThemeSuccess"] = new SolidColorBrush(Color.Parse(colors.Success)); // theme-ok
+        if (!string.IsNullOrEmpty(colors.Warning))
+            resources["ThemeWarning"] = new SolidColorBrush(Color.Parse(colors.Warning)); // theme-ok
+        if (!string.IsNullOrEmpty(colors.Error))
+            resources["ThemeError"] = new SolidColorBrush(Color.Parse(colors.Error)); // theme-ok
+        if (!string.IsNullOrEmpty(colors.Info))
+        {
+            var infoBrush = new SolidColorBrush(Color.Parse(colors.Info)); // theme-ok
+            resources["ThemeInfo"] = infoBrush;
+            resources["ThemeInfoBrush"] = infoBrush; // Alias for Trebuchet
+        }
+        if (!string.IsNullOrEmpty(colors.Disabled))
+            resources["ThemeDisabled"] = new SolidColorBrush(Color.Parse(colors.Disabled)); // theme-ok
+    }
+
+    /// <summary>
     /// Apply color values to resource dictionary.
     /// Maps theme colors to Avalonia system resources.
     /// </summary>
