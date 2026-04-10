@@ -67,5 +67,11 @@ namespace DialogEditor.Models.Sound
         /// These sounds use IGameDataService.FindResource() for extraction (#1240).
         /// </summary>
         public bool IsFromGameDataService { get; set; }
+
+        /// <summary>
+        /// True if this sound is compatible with NWN conversations (mono + valid WAV).
+        /// Sounds with unknown channels are considered potentially compatible.
+        /// </summary>
+        public bool IsCompatible => (IsMono || ChannelUnknown) && IsValidWav;
     }
 }

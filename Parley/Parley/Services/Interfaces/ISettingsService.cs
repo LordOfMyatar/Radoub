@@ -102,6 +102,7 @@ namespace DialogEditor.Services
         bool SoundBrowserIncludeGameResources { get; set; }
         bool SoundBrowserIncludeHakFiles { get; set; }
         bool SoundBrowserIncludeBifFiles { get; set; }
+        bool SoundBrowserMonoOnly { get; set; }
 
         // Spell Check settings
         bool SpellCheckEnabled { get; set; }

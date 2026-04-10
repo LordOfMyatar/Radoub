@@ -72,6 +72,7 @@ namespace DialogEditor.Views
             IncludeGameResourcesCheckBox.IsChecked = _settings.SoundBrowserIncludeGameResources;
             IncludeHakFolderCheckBox.IsChecked = _settings.SoundBrowserIncludeHakFiles;
             IncludeBifFilesCheckBox.IsChecked = _settings.SoundBrowserIncludeBifFiles;
+            MonoOnlyCheckBox.IsChecked = _settings.SoundBrowserMonoOnly;
             _isInitializing = false;
 
             _audioService.PlaybackStopped += OnPlaybackStopped;
@@ -150,7 +151,14 @@ namespace DialogEditor.Views
             }
         }
 
-        private void OnMonoFilterChanged(object? sender, RoutedEventArgs e) => UpdateSoundList();
+        private void OnMonoFilterChanged(object? sender, RoutedEventArgs e)
+        {
+            if (!_isInitializing)
+            {
+                _settings.SoundBrowserMonoOnly = MonoOnlyCheckBox?.IsChecked == true;
+            }
+            UpdateSoundList();
+        }
 
         private async void LoadSounds() => await LoadSoundsAsync();
 
@@ -386,7 +394,7 @@ namespace DialogEditor.Views
                 GameResourceSource.Override => "Override",
                 GameResourceSource.Hak => "HAK (Module)",
                 GameResourceSource.Module => "Module",
-                GameResourceSource.Bif => "BIF",
+                GameResourceSource.Bif => "Base Game",
                 _ => source.ToString()
             };
         }
@@ -441,8 +449,8 @@ namespace DialogEditor.Views
             if (sound.IsFromGameDataService)
             {
                 var channelHint = sound.ChannelUnknown ? " [?ch]" : "";
-                var icon = sound.Source?.Contains("BIF") == true ? "○" : "☐";
-                var brush = sound.Source?.Contains("BIF") == true ? ForegroundBrush : HakBrush;
+                var icon = sound.IsFromBif ? "○" : "☐";
+                var brush = sound.IsFromBif ? ForegroundBrush : HakBrush;
                 return ($"{icon} {baseName}{sourceInfo}{channelHint}", brush);
             }
             return ($"{baseName}{sourceInfo}", ForegroundBrush);
@@ -451,14 +459,14 @@ namespace DialogEditor.Views
         private void UpdateFileCountLabel(int count, bool monoOnly)
         {
             var hakCount = _filteredSounds.Count(s => s.IsFromHak || (s.IsFromGameDataService && s.Source?.Contains("HAK") == true));
-            var bifCount = _filteredSounds.Count(s => s.IsFromBif || (s.IsFromGameDataService && s.Source?.Contains("BIF") == true));
+            var bifCount = _filteredSounds.Count(s => s.IsFromBif);
             var stereoCount = _filteredSounds.Count(s => !s.IsMono && !s.ChannelUnknown);
             var unknownChannelCount = _filteredSounds.Count(s => s.ChannelUnknown);
             var invalidCount = _filteredSounds.Count(s => !s.IsValidWav);
             var countText = $"{count} sound{(count == 1 ? "" : "s")}";
 
             var details = new List<string>();
-            if (bifCount > 0) details.Add($"{bifCount} from BIF");
+            if (bifCount > 0) details.Add($"{bifCount} base game");
             if (hakCount > 0) details.Add($"{hakCount} from HAK");
             if (!monoOnly && stereoCount > 0) details.Add($"{stereoCount} stereo");
             if (monoOnly && unknownChannelCount > 0) details.Add($"{unknownChannelCount} unverified");
@@ -486,7 +494,7 @@ namespace DialogEditor.Views
                 _selectedSound = soundInfo.FileName;
                 var selIcon = soundInfo.IsFromHak ? " ☐"
                     : soundInfo.IsFromBif ? " ○"
-                    : soundInfo.IsFromGameDataService && soundInfo.Source?.Contains("BIF") == true ? " ○"
+                    : soundInfo.IsFromGameDataService && soundInfo.IsFromBif ? " ○"
                     : soundInfo.IsFromGameDataService && soundInfo.Source?.Contains("HAK") == true ? " ☐"
                     : "";
                 SelectedSoundLabel.Text = $"{soundInfo.FileName}{selIcon}";
@@ -545,7 +553,7 @@ namespace DialogEditor.Views
                     if (tempPath != null)
                     {
                         var validation = SoundValidator.Validate(tempPath, isVoiceOrSfx: true);
-                        var icon = soundInfo.Source?.Contains("BIF") == true ? "○" : "☐";
+                        var icon = soundInfo.IsFromBif ? "○" : "☐";
                         if (validation.HasIssues)
                         {
                             var issues = string.Join(", ", validation.Errors.Concat(validation.Warnings));

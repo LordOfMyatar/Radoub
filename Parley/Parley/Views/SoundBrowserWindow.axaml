@@ -65,24 +65,24 @@
                        VerticalAlignment="Center"
                        FontSize="{DynamicResource FontSizeSmall}"/>
             <CheckBox x:Name="IncludeGameResourcesCheckBox"
-                      Content="Game resources"
+                      Content="User Files"
                       FontSize="{DynamicResource FontSizeSmall}"
-                      IsChecked="False"
-                      ToolTip.Tip="Include sounds from base game folders"
+                      IsChecked="True"
+                      ToolTip.Tip="Include sounds from override and user sound folders"
                       Checked="OnSourceSelectionChanged"
                       Unchecked="OnSourceSelectionChanged"/>
             <CheckBox x:Name="IncludeHakFolderCheckBox"
-                      Content="HAK files"
+                      Content="HAK Files"
                       FontSize="{DynamicResource FontSizeSmall}"
-                      IsChecked="False"
-                      ToolTip.Tip="Include sounds from HAK files in dialog directory"
+                      IsChecked="True"
+                      ToolTip.Tip="Include sounds from HAK files in dialog and hak directories"
                       Checked="OnSourceSelectionChanged"
                       Unchecked="OnSourceSelectionChanged"/>
             <CheckBox x:Name="IncludeBifFilesCheckBox"
-                      Content="BIF archives"
+                      Content="Base Game"
                       FontSize="{DynamicResource FontSizeSmall}"
                       IsChecked="False"
-                      ToolTip.Tip="Include base game sounds from BIF archives (slower)"
+                      ToolTip.Tip="Include base game sounds from KEY/BIF data files (slower)"
                       Checked="OnSourceSelectionChanged"
                       Unchecked="OnSourceSelectionChanged"/>
             <CheckBox x:Name="IncludeOtherLocationCheckBox"
@@ -131,7 +131,7 @@
                       Margin="15,0,0,0"
                       ToolTip.Tip="Disable on-selection format validation for HAK sounds (faster for large HAK collections)"/>
             <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10">
-                <TextBlock Text="○ = BIF"
+                <TextBlock Text="○ = Base Game"
                            FontSize="{DynamicResource FontSizeXSmall}"
                            VerticalAlignment="Center"/>
                 <TextBlock Text="☐ = HAK"
