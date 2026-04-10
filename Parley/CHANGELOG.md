@@ -4,7 +4,7 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
-## [0.1.162-alpha] - 2026-04-10 | PR #TBD
+## [0.1.162-alpha] - 2026-04-10 | PR #2048
 **Branch**: `parley/issue-1977`
 
 ### Sprint: Quality of Life & Polish
