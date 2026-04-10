@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.8-alpha] - 2026-04-09
+**Branch**: `relique/issue-1983` | **PR**: #TBD
+
+### Sprint: Preview & Settings (#1983)
+- SettingsWindow with game paths, theme/font display, and Trebuchet integration (#2009)
+- Item icon picker dialog with inventory size rendering (#1911)
+
+---
+
 ## [0.10.7-alpha] - 2026-03-29
 **Branch**: `relique/issue-1982` | **PR**: #2036
 
