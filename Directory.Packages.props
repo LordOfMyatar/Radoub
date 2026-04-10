@@ -5,13 +5,13 @@
 
   <ItemGroup>
     <!-- Avalonia UI Framework -->
-    <PackageVersion Include="Avalonia" Version="11.3.12" />
-    <PackageVersion Include="Avalonia.Desktop" Version="11.3.12" />
-    <PackageVersion Include="Avalonia.Themes.Fluent" Version="11.3.12" />
-    <PackageVersion Include="Avalonia.Fonts.Inter" Version="11.3.12" />
-    <PackageVersion Include="Avalonia.Controls.DataGrid" Version="11.3.12" />
-    <PackageVersion Include="Avalonia.Skia" Version="11.3.12" />
-    <PackageVersion Include="Avalonia.Diagnostics" Version="11.3.12" />
+    <PackageVersion Include="Avalonia" Version="11.3.13" />
+    <PackageVersion Include="Avalonia.Desktop" Version="11.3.13" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="11.3.13" />
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="11.3.13" />
+    <PackageVersion Include="Avalonia.Controls.DataGrid" Version="11.3.13" />
+    <PackageVersion Include="Avalonia.Skia" Version="11.3.13" />
+    <PackageVersion Include="Avalonia.Diagnostics" Version="11.3.13" />
 
     <!-- SkiaSharp -->
     <PackageVersion Include="SkiaSharp" Version="3.119.2" />
@@ -47,7 +47,7 @@
     <PackageVersion Include="AvaloniaGraphControl" Version="0.7.0" />
 
     <!-- Testing -->
-    <PackageVersion Include="Avalonia.Headless.XUnit" Version="11.3.12" />
+    <PackageVersion Include="Avalonia.Headless.XUnit" Version="11.3.13" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.v3" Version="3.2.2" />
