@@ -24,11 +24,14 @@ namespace Radoub.UI.Views
         /// <summary>
         /// Initializes the token selector window.
         /// </summary>
+        private CustomTokenConfig? _customTokenConfig;
+
         public TokenSelectorWindow()
         {
             InitializeComponent();
             LoadStandardTokens();
             LoadUserColorConfig();
+            LoadCustomTokenConfig();
         }
 
         private void LoadStandardTokens()
@@ -71,6 +74,61 @@ namespace Radoub.UI.Views
             }
 
             ColorListBox.ItemsSource = colors;
+        }
+
+        private void LoadCustomTokenConfig()
+        {
+            try
+            {
+                _customTokenConfig = CustomTokenConfigLoader.LoadOrCreateDefault();
+                LoadCustomTokenList();
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.Log(LogLevel.WARN, $"Failed to load custom token config: {ex.Message}", "TokenSelectorWindow", "Tokens");
+                _customTokenConfig = new CustomTokenConfig();
+                LoadCustomTokenList();
+            }
+        }
+
+        private void LoadCustomTokenList()
+        {
+            if (_customTokenConfig == null || !_customTokenConfig.Tokens.Any())
+            {
+                CustomTokenListBox.ItemsSource = null;
+                CustomTokenEmptyText.IsVisible = true;
+                return;
+            }
+
+            CustomTokenEmptyText.IsVisible = false;
+            var items = _customTokenConfig.Tokens.Select(t => new CustomTokenListItem
+            {
+                Name = t.Name,
+                TagPreview = t.IsStandalone ? t.Tag ?? "" : $"{t.OpenTag}...{t.CloseTag}",
+                Definition = t
+            }).ToList();
+
+            CustomTokenListBox.ItemsSource = items;
+        }
+
+        private void OnCustomTokenSelected(object? sender, SelectionChangedEventArgs e)
+        {
+            if (CustomTokenListBox == null || CustomTokenPreviewText == null)
+                return;
+
+            var item = CustomTokenListBox.SelectedItem as CustomTokenListItem;
+            if (item != null)
+            {
+                if (item.Definition.IsStandalone)
+                {
+                    CustomTokenPreviewText.Text = item.Definition.Tag ?? "";
+                }
+                else if (item.Definition.IsPaired)
+                {
+                    CustomTokenPreviewText.Text = $"{item.Definition.OpenTag}TEXT{item.Definition.CloseTag}";
+                }
+            }
+            UpdateTokenOutput();
         }
 
         private void OnTabSelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -226,7 +284,8 @@ namespace Radoub.UI.Views
             // Guard against calls before UI is initialized
             if (TokenTabControl == null || TokenOutputTextBox == null ||
                 StandardTokenListBox == null || ActionRadio == null || HighlightRadio == null ||
-                ActionTextBox == null || SkillCheckComboBox == null || ColorListBox == null)
+                ActionTextBox == null || SkillCheckComboBox == null || ColorListBox == null ||
+                CustomTokenListBox == null)
                 return;
 
             var tabIndex = TokenTabControl.SelectedIndex;
@@ -268,11 +327,29 @@ namespace Radoub.UI.Views
                         : "";
                     break;
 
-                case 2: // Custom Colors
+                case 2: // Custom Tokens
+                    var customItem = CustomTokenListBox.SelectedItem as CustomTokenListItem;
+                    if (customItem != null)
+                    {
+                        if (customItem.Definition.IsStandalone)
+                        {
+                            TokenOutputTextBox.Text = customItem.Definition.Tag ?? "";
+                        }
+                        else if (customItem.Definition.IsPaired)
+                        {
+                            TokenOutputTextBox.Text = $"{customItem.Definition.OpenTag}TEXT{customItem.Definition.CloseTag}";
+                        }
+                    }
+                    else
+                    {
+                        TokenOutputTextBox.Text = "";
+                    }
+                    break;
+
+                case 3: // Custom Colors
                     var colorItem = ColorListBox.SelectedItem as ColorListItem;
                     if (colorItem != null)
                     {
-                        // For custom colors, we insert open+close with cursor position in between
                         TokenOutputTextBox.Text = $"{colorItem.OpenToken}TEXT{colorItem.CloseToken}";
                     }
                     else
@@ -313,5 +390,15 @@ namespace Radoub.UI.Views
         public string OpenToken { get; set; } = "";
         public string CloseToken { get; set; } = "";
         public IBrush HexColor { get; set; } = Brushes.White;
+    }
+
+    /// <summary>
+    /// Item for the custom token list display.
+    /// </summary>
+    internal class CustomTokenListItem
+    {
+        public string Name { get; set; } = "";
+        public string TagPreview { get; set; } = "";
+        public CustomTokenDefinition Definition { get; set; } = new();
     }
 }
