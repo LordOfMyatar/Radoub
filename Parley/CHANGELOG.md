@@ -4,6 +4,15 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
+## [0.1.162-alpha] - 2026-04-10 | PR #TBD
+**Branch**: `parley/issue-1977`
+
+### Sprint: Quality of Life & Polish
+- User-defined custom (non-color) tokens in token chooser (#1890)
+- Sound Browser overhaul — TDD refactor, correct labels, pre-scan validation (#1241)
+
+---
+
 ## [0.1.161-alpha] - 2026-03-29 | PR #2035
 **Branch**: `parley/issue-1976`
 
