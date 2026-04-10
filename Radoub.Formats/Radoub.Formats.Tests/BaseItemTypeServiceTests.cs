@@ -234,6 +234,66 @@ public class BaseItemTypeServiceTests
 
     #endregion
 
+    #region Inventory Size (Relique icon picker)
+
+    [Fact]
+    public void BaseItemTypeInfo_DefaultInventorySize_Is1x1()
+    {
+        var info = new BaseItemTypeInfo(1, "Longsword", "BASE_ITEM_LONGSWORD");
+        Assert.Equal(1, info.InvSlotWidth);
+        Assert.Equal(1, info.InvSlotHeight);
+    }
+
+    [Fact]
+    public void BaseItemTypeInfo_InventorySize_SetFromConstructor()
+    {
+        var info = new BaseItemTypeInfo(10, "Halberd", "BASE_ITEM_HALBERD",
+            invSlotWidth: 1, invSlotHeight: 3);
+        Assert.Equal(1, info.InvSlotWidth);
+        Assert.Equal(3, info.InvSlotHeight);
+    }
+
+    [Fact]
+    public void GetBaseItemTypes_From2DA_ParsesInventorySize()
+    {
+        var mockGameData = new MockGameDataService(includeSampleData: false);
+        var columns = new[] { "label", "Name", "ModelType", "Stacking", "Description",
+            "ChargesStarting", "StorePanel", "InvSlotWidth", "InvSlotHeight" };
+        var twoDA = new TwoDAFile { Columns = new System.Collections.Generic.List<string>(columns) };
+
+        // Row 0: Longsword (1x3)
+        twoDA.Rows.Add(new TwoDARow { Values = new System.Collections.Generic.List<string?>
+            { "BASE_ITEM_LONGSWORD", "****", "0", "1", "****", "****", "1", "1", "3" } });
+        // Row 1: Large Shield (2x3)
+        twoDA.Rows.Add(new TwoDARow { Values = new System.Collections.Generic.List<string?>
+            { "BASE_ITEM_LARGESHIELD", "****", "0", "1", "****", "****", "0", "2", "3" } });
+        // Row 2: Ring (missing columns → default 1x1)
+        twoDA.Rows.Add(new TwoDARow { Values = new System.Collections.Generic.List<string?>
+            { "BASE_ITEM_RING", "****", "0", "1", "****", "****", "4", "****", "****" } });
+
+        mockGameData.With2DA("baseitems", twoDA);
+
+        var service = new BaseItemTypeService(mockGameData);
+        var types = service.GetBaseItemTypes();
+
+        var longsword = types.Find(t => t.BaseItemIndex == 0);
+        Assert.NotNull(longsword);
+        Assert.Equal(1, longsword.InvSlotWidth);
+        Assert.Equal(3, longsword.InvSlotHeight);
+
+        var shield = types.Find(t => t.BaseItemIndex == 1);
+        Assert.NotNull(shield);
+        Assert.Equal(2, shield.InvSlotWidth);
+        Assert.Equal(3, shield.InvSlotHeight);
+
+        var ring = types.Find(t => t.BaseItemIndex == 2);
+        Assert.NotNull(ring);
+        Assert.Equal(1, ring.InvSlotWidth);
+        Assert.Equal(1, ring.InvSlotHeight);
+    }
+
+    #endregion
+
     #region 2DA parsing tests (from Relique)
 
     [Fact]

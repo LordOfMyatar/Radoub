@@ -26,7 +26,6 @@ public partial class MainWindow
             ColorsPanel.IsVisible = false;
             ArmorPartsPanel.IsVisible = false;
             IconChooserPanel.IsVisible = false;
-            IconChooserGrid.Children.Clear();
             SelectedIconPreview.Source = null;
             PropertyConfigPanel.IsVisible = false;
             AssignedPropertiesList.Items.Clear();
@@ -188,7 +187,7 @@ public partial class MainWindow
         IconChooserPanel.IsVisible = showIconChooser;
         if (showIconChooser)
         {
-            PopulateIconChooser(baseItemIndex);
+            UpdateIconPreview(baseItemIndex);
         }
 
         AppearanceExpander.IsVisible = showModelParts || showColors || showArmorParts || showIconChooser;
@@ -280,11 +279,10 @@ public partial class MainWindow
         if (ArmorPartNames.Length % 2 == 1) row++;
     }
 
-    // --- Icon Chooser ---
+    // --- Icon Preview + Picker ---
 
-    private void PopulateIconChooser(int baseItemIndex)
+    private void UpdateIconPreview(int baseItemIndex)
     {
-        IconChooserGrid.Children.Clear();
         SelectedIconPreview.Source = null;
 
         if (_itemIconService == null || _itemViewModel == null)
@@ -293,106 +291,42 @@ public partial class MainWindow
             return;
         }
 
-        int iconCount = 0;
         byte currentModelPart1 = _itemViewModel.ModelPart1;
+        var icon = _itemIconService.GetItemIcon(baseItemIndex, currentModelPart1);
+        if (icon == null)
+            icon = _itemIconService.GetItemIcon(baseItemIndex);
 
-        // Use MinRange/MaxRange from baseitems.2da to limit scan (matches wizard pattern)
-        int minRange = 0, maxRange = 0;
-        if (_gameDataService != null && _gameDataService.IsConfigured)
+        if (icon != null)
         {
-            var minStr = _gameDataService.Get2DAValue("baseitems", baseItemIndex, "MinRange");
-            var maxStr = _gameDataService.Get2DAValue("baseitems", baseItemIndex, "MaxRange");
-            if (int.TryParse(minStr, out int mn)) minRange = mn;
-            if (int.TryParse(maxStr, out int mx)) maxRange = mx;
-        }
-
-        // Cap to avoid UI lag
-        if (maxRange - minRange > 300) maxRange = minRange + 300;
-
-        int start = minRange == 0 ? 1 : minRange;
-
-        for (int modelNum = start; modelNum <= maxRange; modelNum++)
-        {
-            var icon = _itemIconService.GetItemIcon(baseItemIndex, modelNum);
-            if (icon == null) continue;
-
-            iconCount++;
-            AddIconChooserButton(icon, (byte)modelNum, $"Model #{modelNum}", currentModelPart1 == modelNum);
-        }
-
-        if (iconCount == 0)
-        {
-            // No numbered icons — show the default icon (fixed icon type)
-            var defaultIcon = _itemIconService.GetItemIcon(baseItemIndex);
-            if (defaultIcon != null)
-            {
-                AddIconChooserButton(defaultIcon, 1, "Default", currentModelPart1 == 1);
-                iconCount = 1;
-            }
-        }
-
-        // If no icon in the grid matched the current selection, try to show a preview anyway
-        if (SelectedIconPreview.Source == null && _itemIconService != null)
-        {
-            var currentIcon = _itemIconService.GetItemIcon(baseItemIndex, currentModelPart1);
-            if (currentIcon != null)
-                SelectedIconPreview.Source = currentIcon;
-        }
-
-        IconChooserInfoLabel.Text = iconCount > 1
-            ? $"({iconCount} variations)"
-            : iconCount == 1
-                ? "(fixed icon)"
-                : "(no icons found)";
-    }
-
-    private void AddIconChooserButton(Bitmap icon, byte modelPart, string tooltip, bool isSelected)
-    {
-        var image = new Avalonia.Controls.Image
-        {
-            Source = icon,
-            Width = 40,
-            Height = 40,
-            Stretch = Avalonia.Media.Stretch.Uniform
-        };
-        Avalonia.Media.RenderOptions.SetBitmapInterpolationMode(image, Avalonia.Media.Imaging.BitmapInterpolationMode.HighQuality);
-
-        var button = new Button
-        {
-            Content = image,
-            Width = 48,
-            Height = 48,
-            Margin = new Thickness(2),
-            Padding = new Thickness(2),
-            Tag = modelPart
-        };
-        Avalonia.Controls.ToolTip.SetTip(button, tooltip);
-
-        // Highlight selected icon
-        if (isSelected)
-        {
-            button.BorderBrush = Avalonia.Media.Brushes.DodgerBlue;
-            button.BorderThickness = new Thickness(2);
-
-            // Update the selected icon preview
             SelectedIconPreview.Source = icon;
+            IconChooserInfoLabel.Text = $"Model {currentModelPart1}";
         }
-
-        button.Click += OnIconChooserButtonClick;
-        IconChooserGrid.Children.Add(button);
+        else
+        {
+            IconChooserInfoLabel.Text = "(no icon)";
+        }
     }
 
-    private void OnIconChooserButtonClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    private async void OnBrowseIconClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        if (sender is not Button button || button.Tag is not byte modelPart) return;
-        if (_itemViewModel == null) return;
+        if (_gameDataService == null || _itemIconService == null || _itemViewModel == null || _currentItem == null)
+            return;
 
-        _itemViewModel.ModelPart1 = modelPart;
+        var baseItemIndex = _currentItem.BaseItem;
+        var typeInfo = _baseItemTypes?.Find(t => t.BaseItemIndex == baseItemIndex);
+        var baseItemName = typeInfo?.DisplayName ?? $"Type {baseItemIndex}";
+        int invW = typeInfo?.InvSlotWidth ?? 1;
+        int invH = typeInfo?.InvSlotHeight ?? 1;
 
-        // Refresh the icon grid to update selection highlight
-        if (_currentItem != null)
+        var picker = new ItemIconPickerWindow(
+            _gameDataService, _itemIconService, baseItemIndex,
+            _itemViewModel.ModelPart1, baseItemName, invW, invH);
+
+        var result = await picker.ShowDialog<byte?>(this);
+        if (result.HasValue)
         {
-            PopulateIconChooser(_currentItem.BaseItem);
+            _itemViewModel.ModelPart1 = result.Value;
+            UpdateIconPreview(baseItemIndex);
         }
     }
 
@@ -584,7 +518,7 @@ public partial class MainWindow
     {
         if (_paletteColorService == null)
         {
-            swatch.Background = Avalonia.Media.Brushes.Gray;
+            swatch.Background = BrushManager.GetDisabledBrush(this);
             return;
         }
         swatch.Background = _paletteColorService.CreateGradientBrush(paletteName, colorIndex);

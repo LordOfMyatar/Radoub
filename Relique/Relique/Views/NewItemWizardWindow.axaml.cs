@@ -401,7 +401,7 @@ public partial class NewItemWizardWindow : Window
 
         if (_selectedModelPart1 == modelPart)
         {
-            button.BorderBrush = new SolidColorBrush(Colors.DodgerBlue);
+            button.BorderBrush = BrushManager.GetInfoBrush(this);
             button.BorderThickness = new Thickness(2);
         }
 

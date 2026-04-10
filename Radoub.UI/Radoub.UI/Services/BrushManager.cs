@@ -71,7 +71,7 @@ public static class BrushManager
             return appBrush;
 
         // Log when using fallback (helps debug theme issues)
-        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"BrushManager: {key} not in theme, using fallback");
+        UnifiedLogger.LogApplication(LogLevel.WARN, $"BrushManager: {key} not in theme, using fallback");
         return fallback;
     }
 }

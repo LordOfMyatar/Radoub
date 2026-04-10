@@ -61,8 +61,6 @@
                 <Separator/>
                 <MenuItem x:Name="LanguageMenu" Header="_Language" AutomationProperties.AutomationId="LanguageMenu"/>
                 <Separator/>
-                <MenuItem x:Name="UseRadoubThemeMenuItem" Header="Use _Radoub Theme" Click="OnToggleUseRadoubThemeClick"/>
-                <Separator/>
                 <MenuItem Header="_Settings..." Click="OnSettingsClick"/>
                 <Separator/>
                 <MenuItem Header="Edit Settings _File..." Click="OnEditSettingsFileClick"/>
@@ -325,19 +323,12 @@
                             <Expander x:Name="AppearanceExpander" Header="Appearance" IsExpanded="True" IsVisible="False" Margin="0,0,0,8">
                                 <StackPanel Spacing="8" Margin="0,4,0,0">
 
-                                    <!-- Icon/Portrait Chooser -->
+                                    <!-- Icon Preview + Browse Button -->
                                     <StackPanel x:Name="IconChooserPanel" IsVisible="False">
-                                        <DockPanel Margin="0,0,0,4">
-                                            <TextBlock Text="Item Icon" FontWeight="SemiBold" DockPanel.Dock="Left"/>
-                                            <TextBlock x:Name="IconChooserInfoLabel"
-                                                       Margin="8,0,0,0"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                                       DockPanel.Dock="Left"/>
-                                        </DockPanel>
-                                        <Grid ColumnDefinitions="Auto,8,*" Margin="0,0,0,4">
+                                        <TextBlock Text="Item Icon" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,4">
                                             <!-- Selected icon preview -->
-                                            <Border Grid.Column="0"
-                                                    BorderBrush="{DynamicResource ThemeAccent}"
+                                            <Border BorderBrush="{DynamicResource ThemeAccent}"
                                                     BorderThickness="2" CornerRadius="4"
                                                     Width="72" Height="72"
                                                     VerticalAlignment="Top">
@@ -346,17 +337,14 @@
                                                        Stretch="Uniform"
                                                        RenderOptions.BitmapInterpolationMode="HighQuality"/>
                                             </Border>
-                                            <!-- Icon grid -->
-                                            <Border Grid.Column="2"
-                                                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                                    BorderThickness="1" CornerRadius="4"
-                                                    MinHeight="60" MaxHeight="180"
-                                                    Padding="4">
-                                                <ScrollViewer>
-                                                    <WrapPanel x:Name="IconChooserGrid" Margin="2"/>
-                                                </ScrollViewer>
-                                            </Border>
-                                        </Grid>
+                                            <StackPanel VerticalAlignment="Center" Spacing="4">
+                                                <TextBlock x:Name="IconChooserInfoLabel"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                                <Button Content="Browse..."
+                                                        Click="OnBrowseIconClick"
+                                                        Padding="10,5"/>
+                                            </StackPanel>
+                                        </StackPanel>
                                     </StackPanel>
 
                                     <!-- Model Parts (ModelType 0/1/2) -->
@@ -699,7 +687,7 @@
                                                 <Button Content="Remove" Click="OnRemoveVariable"/>
                                             </StackPanel>
                                             <TextBlock x:Name="VariableValidationText"
-                                                       Foreground="#FF4444"
+                                                       Foreground="{DynamicResource ThemeError}"
                                                        FontSize="11"
                                                        TextWrapping="Wrap"
                                                        IsVisible="False"/>
