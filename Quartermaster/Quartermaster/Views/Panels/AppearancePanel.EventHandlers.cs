@@ -398,18 +398,13 @@ public partial class AppearancePanel
             return;
         }
 
-        // Only warn about missing skin meshes for part-based appearances.
-        // Static models (bat, dragon, etc.) use trimeshes and never have skin meshes.
-        var isPartBased = _currentCreature != null &&
-            (_displayService?.IsPartBasedAppearance(_currentCreature.AppearanceType) ?? false);
-
-        if (info.SkinMeshCount == 0 && isPartBased)
-        {
-            _modelInfoStatusText.Text = "\u26a0 No skin meshes \u2014 model may appear as skeleton only";
-            _modelInfoStatusText.Foreground = BrushManager.GetWarningBrush(this);
-            _modelInfoStatusText.IsVisible = true;
-        }
-        else if (info.HiddenMeshCount > 0)
+        // Only warn about missing skins when the model has meshes but ALL are
+        // non-rendering bones (many Render=false, zero visible geometry).
+        // Part-based models often assemble trimeshes (not skin nodes) and render fine.
+        // Static models use trimeshes by design. The real skeleton-only case is when
+        // most meshes are hidden and there's no visible geometry — that's already
+        // covered by PreviewState.NotAvailable. So we only show the hidden mesh info.
+        if (info.HiddenMeshCount > 0)
         {
             _modelInfoStatusText.Text = $"\u2139 {info.HiddenMeshCount} of {info.TotalMeshes} meshes hidden (Render=false)";
             _modelInfoStatusText.Foreground = BrushManager.GetInfoBrush(this);
