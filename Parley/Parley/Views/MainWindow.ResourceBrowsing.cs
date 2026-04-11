@@ -45,13 +45,14 @@ namespace DialogEditor.Views
                     string newText;
                     int newCursorPos;
 
-                    // Determine if we need a space before the token
-                    // Add space if: not at start, and previous char is not whitespace
+                    // Determine if we need spaces around the token
                     var needsSpaceBefore = selStart > 0 &&
                         !char.IsWhiteSpace(currentText[selStart - 1]);
-                    var tokenToInsert = needsSpaceBefore
-                        ? " " + tokenWindow.SelectedToken
-                        : tokenWindow.SelectedToken;
+                    var needsSpaceAfter = selStart < currentText.Length &&
+                        !char.IsWhiteSpace(currentText[selStart]);
+                    var tokenToInsert = (needsSpaceBefore ? " " : "") +
+                        tokenWindow.SelectedToken +
+                        (needsSpaceAfter ? " " : "");
 
                     if (selLength > 0)
                     {
@@ -76,10 +77,13 @@ namespace DialogEditor.Views
                         _viewModel.StatusMessage = "Text updated with token";
                     }
 
-                    // Restore cursor position and focus
-                    textBox.SelectionStart = newCursorPos;
-                    textBox.SelectionEnd = newCursorPos;
-                    textBox.Focus();
+                    // Restore cursor position and focus (deferred to let dialog close complete)
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        textBox.Focus();
+                        textBox.SelectionStart = newCursorPos;
+                        textBox.SelectionEnd = newCursorPos;
+                    }, Avalonia.Threading.DispatcherPriority.Background);
                 }
             }
             catch (Exception ex)
