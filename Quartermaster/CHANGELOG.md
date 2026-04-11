@@ -5,6 +5,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.76-alpha] - 2026-04-11
+**Branch**: `quartermaster/issue-1979` | **PR**: #2055
+
+### Sprint: Appearance Preview & Search (#1979)
+- Show model resref in appearance list with copy context menu (#1870)
+- Model completeness indicator below 3D preview (#1873)
+- Search creature inventory/backpack item ResRefs in Marlinspike (#1947)
+- Custom token support and Description editor for spell-checked fields (#1697)
+
+---
+
 ## [0.2.75-alpha] - 2026-03-29
 **Branch**: `radoub/issue-1817` | **PR**: #2030
 

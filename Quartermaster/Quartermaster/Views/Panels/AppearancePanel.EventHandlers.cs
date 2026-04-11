@@ -70,7 +70,10 @@ public partial class AppearancePanel
 
         // 3D Preview state overlay
         if (_modelPreviewGL != null)
+        {
             _modelPreviewGL.PreviewStateChanged += OnPreviewStateChanged;
+            _modelPreviewGL.MeshInfoChanged += OnMeshInfoChanged;
+        }
 
         // 3D Preview button events
         if (_rotateLeftButton != null)
@@ -382,6 +385,72 @@ public partial class AppearancePanel
             default:
                 _previewStateOverlay.IsVisible = false;
                 break;
+        }
+    }
+
+    private void OnMeshInfoChanged(object? sender, ModelPreviewGLControl.ModelMeshInfo info)
+    {
+        if (_modelInfoStatusText == null) return;
+
+        if (info.TotalMeshes == 0)
+        {
+            _modelInfoStatusText.IsVisible = false;
+            return;
+        }
+
+        // Only warn about missing skins when the model has meshes but ALL are
+        // non-rendering bones (many Render=false, zero visible geometry).
+        // Part-based models often assemble trimeshes (not skin nodes) and render fine.
+        // Static models use trimeshes by design. The real skeleton-only case is when
+        // most meshes are hidden and there's no visible geometry — that's already
+        // covered by PreviewState.NotAvailable. So we only show the hidden mesh info.
+        if (info.HiddenMeshCount > 0)
+        {
+            _modelInfoStatusText.Text = $"\u2139 {info.HiddenMeshCount} of {info.TotalMeshes} meshes hidden (Render=false)";
+            _modelInfoStatusText.Foreground = BrushManager.GetInfoBrush(this);
+            _modelInfoStatusText.IsVisible = true;
+        }
+        else
+        {
+            _modelInfoStatusText.IsVisible = false;
+        }
+    }
+
+    private ContextMenu CreateAppearanceCopyMenu(ushort id, string name, string resref)
+    {
+        var menu = new ContextMenu();
+
+        var copyAll = new MenuItem { Header = "Copy Appearance Info" };
+        copyAll.Click += async (_, _) => await CopyToClipboard($"[{id}] {name} ({resref})");
+        menu.Items.Add(copyAll);
+
+        var copyName = new MenuItem { Header = "Copy Name" };
+        copyName.Click += async (_, _) => await CopyToClipboard(name);
+        menu.Items.Add(copyName);
+
+        var copyResRef = new MenuItem { Header = "Copy ResRef" };
+        copyResRef.Click += async (_, _) => await CopyToClipboard(resref);
+        menu.Items.Add(copyResRef);
+
+        var copyId = new MenuItem { Header = "Copy ID" };
+        copyId.Click += async (_, _) => await CopyToClipboard(id.ToString());
+        menu.Items.Add(copyId);
+
+        return menu;
+    }
+
+    private async System.Threading.Tasks.Task CopyToClipboard(string text)
+    {
+        try
+        {
+            var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+            if (clipboard != null)
+                await clipboard.SetTextAsync(text);
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"AppearancePanel: Clipboard copy failed: {ex.Message}");
         }
     }
 

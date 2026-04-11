@@ -295,7 +295,7 @@
                     BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                     BorderThickness="1,0,0,0"
                     Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
-                <Grid RowDefinitions="Auto,*,Auto">
+                <Grid RowDefinitions="Auto,*,Auto,Auto">
                     <!-- Preview Header -->
                     <Border Grid.Row="0" Padding="10"
                             BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
@@ -323,8 +323,14 @@
                         </Grid>
                     </Border>
 
+                    <!-- Model Info Status Line (#1873) -->
+                    <TextBlock Grid.Row="2" x:Name="ModelInfoStatusText"
+                               FontSize="{DynamicResource FontSizeSmall}" Padding="10,4"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               IsVisible="False"/>
+
                     <!-- Preview Controls -->
-                    <Border Grid.Row="2" Padding="10"
+                    <Border Grid.Row="3" Padding="10"
                             BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                             BorderThickness="0,1,0,0">
                         <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">

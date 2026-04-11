@@ -70,6 +70,7 @@ public partial class AppearancePanel : UserControl
     private ModelPreviewGLControl? _modelPreviewGL;
     private Border? _previewStateOverlay;
     private TextBlock? _previewStateText;
+    private TextBlock? _modelInfoStatusText;
     private Button? _rotateLeftButton;
     private Button? _rotateRightButton;
     private Button? _resetViewButton;
@@ -153,6 +154,7 @@ public partial class AppearancePanel : UserControl
         _modelPreviewGL = this.FindControl<ModelPreviewGLControl>("ModelPreviewGL");
         _previewStateOverlay = this.FindControl<Border>("PreviewStateOverlay");
         _previewStateText = this.FindControl<TextBlock>("PreviewStateText");
+        _modelInfoStatusText = this.FindControl<TextBlock>("ModelInfoStatusText");
         _rotateLeftButton = this.FindControl<Button>("RotateLeftButton");
         _rotateRightButton = this.FindControl<Button>("RotateRightButton");
         _resetViewButton = this.FindControl<Button>("ResetViewButton");
