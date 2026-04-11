@@ -519,6 +519,7 @@ namespace DialogEditor.Views
 
         private void ValidateSelectedSound(SoundFileInfo soundInfo, bool skipValidation)
         {
+            var wasChannelUnknown = soundInfo.ChannelUnknown;
             try
             {
                 if (soundInfo.IsFromHak)
@@ -598,10 +599,17 @@ namespace DialogEditor.Views
                 UpdateFileCountLabel(_filteredSounds.Count, MonoOnlyCheckBox?.IsChecked == true);
             }
 
-            // If validation changed channel info, refresh the list to update icons/filtering
-            if (!soundInfo.ChannelUnknown)
+            // If validation revealed channel info for a previously unknown sound, refresh its display
+            if (wasChannelUnknown && !soundInfo.ChannelUnknown)
             {
-                RefreshSoundListItem(soundInfo);
+                try
+                {
+                    RefreshSoundListItem(soundInfo);
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error refreshing sound list item: {ex.Message}");
+                }
             }
         }
 
