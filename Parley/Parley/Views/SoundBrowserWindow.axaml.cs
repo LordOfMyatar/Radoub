@@ -615,7 +615,7 @@ namespace DialogEditor.Views
 
         /// <summary>
         /// Update a single item's display after validation revealed its channel info.
-        /// If the sound is now stereo and mono-only is checked, remove it from the list.
+        /// Updates the icon/text to reflect the newly-known channel status.
         /// </summary>
         private void RefreshSoundListItem(SoundFileInfo soundInfo)
         {
@@ -623,34 +623,9 @@ namespace DialogEditor.Views
             {
                 if (SoundListBox.Items[i] is ListBoxItem item && item.Tag == soundInfo)
                 {
-                    var monoOnly = MonoOnlyCheckBox?.IsChecked == true;
-                    if (monoOnly && !soundInfo.IsMono)
-                    {
-                        // Sound is stereo and mono filter is on — remove it.
-                        // Suppress SelectionChanged to avoid re-entrant validation.
-                        SoundListBox.SelectionChanged -= OnSoundSelected;
-                        try
-                        {
-                            SoundListBox.Items.RemoveAt(i);
-                            _filteredSounds.Remove(soundInfo);
-                            _selectedSound = null;
-                            _selectedSoundInfo = null;
-                            SelectedSoundLabel.Text = "(none)";
-                            PlayButton.IsEnabled = false;
-                            UpdateFileCountLabel(_filteredSounds.Count, monoOnly);
-                        }
-                        finally
-                        {
-                            SoundListBox.SelectionChanged += OnSoundSelected;
-                        }
-                    }
-                    else
-                    {
-                        // Update the display text/icon
-                        var (displayName, foreground) = GetSoundDisplayInfo(soundInfo);
-                        item.Content = displayName;
-                        item.Foreground = foreground;
-                    }
+                    var (displayName, foreground) = GetSoundDisplayInfo(soundInfo);
+                    item.Content = displayName;
+                    item.Foreground = foreground;
                     break;
                 }
             }
