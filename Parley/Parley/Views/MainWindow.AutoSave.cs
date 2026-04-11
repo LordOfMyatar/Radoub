@@ -30,6 +30,7 @@ namespace DialogEditor.Views
         private void OnFieldGotFocus(object? sender, GotFocusEventArgs e)
         {
             if (_selectedNode == null || _uiState.IsPopulatingProperties) return;
+            if (_treeRefreshCoordinator.IsBusy) return;
             if (_viewModel.CurrentDialog == null) return;
 
             var control = sender as Control;
@@ -87,6 +88,7 @@ namespace DialogEditor.Views
         private void OnFieldLostFocus(object? sender, RoutedEventArgs e)
         {
             if (_selectedNode == null || _selectedNode is TreeViewRootNode || _uiState.IsPopulatingProperties) return;
+            if (_treeRefreshCoordinator.IsBusy) return;
 
             // Skip auto-save during token insertion (token handler saves directly to avoid focus jump)
             if (_uiState.IsInsertingToken) return;

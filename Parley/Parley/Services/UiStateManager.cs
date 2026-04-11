@@ -5,9 +5,13 @@ namespace Parley.Services;
 /// Replaces scattered boolean flags with explicit state tracking (#525).
 /// </summary>
 /// <remarks>
-/// These flags prevent recursive event handling and infinite loops when:
-/// - Populating properties panel from code (shouldn't trigger auto-save)
-/// - Setting selection programmatically (shouldn't trigger selection changed events)
+/// These flags guard non-tree-refresh concerns. Tree refresh suppression
+/// is handled by TreeRefreshCoordinator.IsBusy (added as additional guard
+/// in AutoSave and SelectionChanged handlers, #2050).
+/// These flags must NOT be removed — they each serve independent purposes:
+/// - IsPopulatingProperties: guards property panel population + QuestUIController
+/// - IsSettingSelectionProgrammatically: guards FlowchartManager selection sync
+/// - IsInsertingToken: guards post-insert text field focus restoration
 /// </remarks>
 public class UiStateManager
 {

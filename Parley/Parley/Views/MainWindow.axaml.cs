@@ -59,6 +59,9 @@ namespace DialogEditor.Views
         // UI state management
         private readonly UiStateManager _uiState = new();
 
+        // Tree refresh coordination (#2050)
+        private TreeRefreshCoordinator _treeRefreshCoordinator = null!;
+
         // Node selection state (shared across partial files)
         private TreeViewSafeNode? _selectedNode;
 
@@ -105,9 +108,31 @@ namespace DialogEditor.Views
             _services.PropertyPopulator = new PropertyPanelPopulator(this, _services.Settings, _services.Journal);
             // #1791: GameData/ImageService wired in ConnectGameDataServices() after deferred init
             _services.PropertyPopulator.SetCurrentSoundsetId = id => _currentSoundsetId = id;
+            _treeRefreshCoordinator = new TreeRefreshCoordinator(
+                populateDialogNodes: (skipAutoSelect) => _viewModel.PopulateDialogNodes(skipAutoSelect),
+                saveExpansionState: () => _viewModel.SaveExpansionState(),
+                restoreExpansionState: (nodes, refs) => _viewModel.RestoreExpansionState(nodes, refs),
+                getDialogNodes: () => _viewModel.DialogNodes,
+                getCurrentDialog: () => _viewModel.CurrentDialog,
+                getSelectedNode: () => _selectedNode,
+                setSelectedNode: (node) =>
+                {
+                    _selectedNode = node;
+                    _viewModel.SelectedTreeNode = node;
+                    if (node != null)
+                    {
+                        var treeView = this.FindControl<TreeView>("DialogTreeView");
+                        if (treeView != null) treeView.SelectedItem = node;
+                    }
+                },
+                getFocusedFieldInfo: GetFocusedFieldInfo,
+                restoreFocusedField: RestoreFocusedField,
+                publishDialogRefreshed: (source) =>
+                    DialogChangeEventBus.Instance.PublishDialogRefreshed(source));
+            _viewModel.TreeRefreshCoordinator = _treeRefreshCoordinator;
             _services.PropertyAutoSave = new PropertyAutoSaveService(
                 findControl: this.FindControl<Control>,
-                refreshTreeDisplay: RefreshTreeDisplayPreserveState,
+                treeRefreshCoordinator: _treeRefreshCoordinator,
                 loadScriptPreview: (script, isCondition) => _ = LoadScriptPreviewAsync(script, isCondition),
                 clearScriptPreview: ClearScriptPreview,
                 triggerDebouncedAutoSave: TriggerDebouncedAutoSave,
@@ -189,7 +214,8 @@ namespace DialogEditor.Views
                 saveCurrentNodeProperties: SaveCurrentNodeProperties,
                 clearAllFields: () => _services.PropertyPopulator.ClearAllFields(),
                 getIsSettingSelectionProgrammatically: () => _uiState.IsSettingSelectionProgrammatically,
-                syncSelectionToFlowcharts: node => _controllers.Flowchart.SyncSelectionToFlowcharts(node));
+                syncSelectionToFlowcharts: node => _controllers.Flowchart.SyncSelectionToFlowcharts(node),
+                getIsCoordinatorBusy: () => _treeRefreshCoordinator.IsBusy);
 
             // #1791: GameData not yet initialized — wired in ConnectGameDataServices() after deferred init
             _controllers.ScriptBrowser = new ScriptBrowserController(
@@ -425,9 +451,9 @@ namespace DialogEditor.Views
             {
                 if (_viewModel.CurrentDialog != null)
                 {
+                    _treeRefreshCoordinator.RefreshPreservingSelection();
                     global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                     {
-                        _viewModel.RefreshTreeViewColors();
                         _controllers.Flowchart.UpdateAllPanels();
                         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Tree + flowchart refreshed after {e.PropertyName} change");
                     });

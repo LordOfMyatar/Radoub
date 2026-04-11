@@ -38,6 +38,7 @@ namespace Parley.Views.Helpers
         private readonly Action _saveCurrentNodeProperties;
         private readonly Action _clearAllFields;
         private readonly Func<bool> _getIsSettingSelectionProgrammatically;
+        private readonly Func<bool> _getIsCoordinatorBusy;
         private readonly Action<DialogNode?> _syncSelectionToFlowcharts;
 
         // Track current drop indicator target for cleanup
@@ -55,7 +56,8 @@ namespace Parley.Views.Helpers
             Action saveCurrentNodeProperties,
             Action clearAllFields,
             Func<bool> getIsSettingSelectionProgrammatically,
-            Action<DialogNode?> syncSelectionToFlowcharts)
+            Action<DialogNode?> syncSelectionToFlowcharts,
+            Func<bool>? getIsCoordinatorBusy = null)
         {
             _window = window;
             _controls = controls;
@@ -67,6 +69,7 @@ namespace Parley.Views.Helpers
             _saveCurrentNodeProperties = saveCurrentNodeProperties;
             _clearAllFields = clearAllFields;
             _getIsSettingSelectionProgrammatically = getIsSettingSelectionProgrammatically;
+            _getIsCoordinatorBusy = getIsCoordinatorBusy ?? (() => false);
             _syncSelectionToFlowcharts = syncSelectionToFlowcharts;
         }
 
@@ -352,6 +355,12 @@ namespace Parley.Views.Helpers
             if (_getIsSettingSelectionProgrammatically())
             {
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, "OnDialogTreeViewSelectionChanged: Skipping - programmatic selection");
+                return;
+            }
+
+            if (_getIsCoordinatorBusy())
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "OnDialogTreeViewSelectionChanged: Skipping - tree refresh in progress");
                 return;
             }
 

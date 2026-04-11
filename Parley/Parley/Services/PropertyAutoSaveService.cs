@@ -16,7 +16,7 @@ namespace DialogEditor.Services
     public class PropertyAutoSaveService
     {
         private readonly Func<string, Control?> _findControl;
-        private readonly Action _refreshTreeDisplay;
+        private readonly TreeRefreshCoordinator _treeRefreshCoordinator;
         private readonly Action<string, bool> _loadScriptPreview;
         private readonly Action<bool> _clearScriptPreview;
         private readonly Action _triggerDebouncedAutoSave;
@@ -29,14 +29,14 @@ namespace DialogEditor.Services
 
         public PropertyAutoSaveService(
             Func<string, Control?> findControl,
-            Action refreshTreeDisplay,
+            TreeRefreshCoordinator treeRefreshCoordinator,
             Action<string, bool> loadScriptPreview,
             Action<bool> clearScriptPreview,
             Action triggerDebouncedAutoSave,
             Action<TreeViewSafeNode>? refreshSiblingValidation = null)
         {
             _findControl = findControl ?? throw new ArgumentNullException(nameof(findControl));
-            _refreshTreeDisplay = refreshTreeDisplay ?? throw new ArgumentNullException(nameof(refreshTreeDisplay));
+            _treeRefreshCoordinator = treeRefreshCoordinator ?? throw new ArgumentNullException(nameof(treeRefreshCoordinator));
             _loadScriptPreview = loadScriptPreview ?? throw new ArgumentNullException(nameof(loadScriptPreview));
             _clearScriptPreview = clearScriptPreview ?? throw new ArgumentNullException(nameof(clearScriptPreview));
             _triggerDebouncedAutoSave = triggerDebouncedAutoSave ?? throw new ArgumentNullException(nameof(triggerDebouncedAutoSave));
@@ -94,7 +94,7 @@ namespace DialogEditor.Services
             if (control != null && !control.IsReadOnly)
             {
                 node.OriginalNode.Speaker = control.Text ?? "";
-                _refreshTreeDisplay(); // Update tree to show new speaker name
+                _treeRefreshCoordinator.RefreshPreservingSelection(); // Update tree to show new speaker name
 
                 // Notify FlowView of speaker change (#1223)
                 DialogChangeEventBus.Instance.PublishNodeModified(node.OriginalNode, "SpeakerChanged");
@@ -109,8 +109,8 @@ namespace DialogEditor.Services
                 var newText = control.Text ?? "";
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"💾 SaveText: Updating text to '{newText.Substring(0, Math.Min(50, newText.Length))}...'");
                 node.OriginalNode.Text.Strings[0] = newText;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "💾 SaveText: Calling _refreshTreeDisplay()");
-                _refreshTreeDisplay(); // Update tree display
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "💾 SaveText: Calling _treeRefreshCoordinator.RefreshPreservingSelection()");
+                _treeRefreshCoordinator.RefreshPreservingSelection(); // Update tree display
 
                 // Notify FlowView and other subscribers of the text change
                 DialogChangeEventBus.Instance.PublishNodeModified(node.OriginalNode, "TextChanged");

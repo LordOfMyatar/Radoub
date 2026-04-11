@@ -42,9 +42,8 @@ namespace DialogEditor.ViewModels
             var newNode = createNode(parentNode, parentPtr);
 
             // Focus on the newly created node after tree refresh
-            NodeToSelectAfterRefresh = newNode;
-
-            RefreshTreeViewAndMarkDirty();
+            CoordinatedRefreshAndSelect(newNode);
+            HasUnsavedChanges = true;
             StatusMessage = successMessage;
 
             return newNode;
@@ -151,10 +150,13 @@ namespace DialogEditor.ViewModels
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, "DeleteNode: About to refresh tree");
                 if (siblingToFocus != null)
                 {
-                    // Set the node to focus after tree refresh (will be picked up by PopulateDialogNodes)
-                    NodeToSelectAfterRefresh = siblingToFocus;
+                    CoordinatedRefreshAndSelect(siblingToFocus);
                 }
-                RefreshTreeViewAndMarkDirty();
+                else
+                {
+                    CoordinatedRefreshToRoot();
+                }
+                HasUnsavedChanges = true;
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, "DeleteNode: Tree refresh completed");
             }
             catch (Exception ex)
@@ -200,7 +202,7 @@ namespace DialogEditor.ViewModels
             if (moved)
             {
                 HasUnsavedChanges = true;
-                RefreshTreeViewAndSelectNode(node);
+                CoordinatedRefreshAndSelect(node);
             }
         }
 
@@ -222,7 +224,7 @@ namespace DialogEditor.ViewModels
             if (moved)
             {
                 HasUnsavedChanges = true;
-                RefreshTreeViewAndSelectNode(node);
+                CoordinatedRefreshAndSelect(node);
             }
         }
 
@@ -252,7 +254,7 @@ namespace DialogEditor.ViewModels
             if (moved)
             {
                 HasUnsavedChanges = true;
-                RefreshTreeViewAndSelectNode(node);
+                CoordinatedRefreshAndSelect(node);
             }
         }
 
@@ -272,7 +274,7 @@ namespace DialogEditor.ViewModels
             if (moved)
             {
                 HasUnsavedChanges = true;
-                RefreshTreeViewAndSelectNode(node);
+                CoordinatedRefreshAndSelect(node);
             }
 
             return moved;
@@ -296,7 +298,7 @@ namespace DialogEditor.ViewModels
             if (moved)
             {
                 HasUnsavedChanges = true;
-                RefreshTreeViewAndSelectNode(node);
+                CoordinatedRefreshAndSelect(node);
             }
         }
 

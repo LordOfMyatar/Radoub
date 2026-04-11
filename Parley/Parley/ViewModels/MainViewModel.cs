@@ -61,6 +61,27 @@ namespace DialogEditor.ViewModels
 
         #endregion
 
+        public TreeRefreshCoordinator? TreeRefreshCoordinator { get; set; }
+
+        internal void CoordinatedRefreshAndSelect(DialogNode target)
+        {
+            if (TreeRefreshCoordinator != null)
+                TreeRefreshCoordinator.RefreshAndSelectNode(target);
+            else
+            {
+                NodeToSelectAfterRefresh = target;
+                PopulateDialogNodes();
+            }
+        }
+
+        internal void CoordinatedRefreshToRoot()
+        {
+            if (TreeRefreshCoordinator != null)
+                TreeRefreshCoordinator.RefreshToRoot();
+            else
+                PopulateDialogNodes();
+        }
+
         #region Properties
 
         public Dialog? CurrentDialog

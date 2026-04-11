@@ -4,6 +4,16 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
+## [0.1.163-alpha] - 2026-04-10 | PR #2052
+**Branch**: `parley/issue-2050`
+
+### Refactor: Unified Tree Refresh Coordinator (#2050)
+- Unified three competing tree refresh mechanisms into single coordinator
+- Selection and cursor position preserved across property edits, theme changes, and node operations
+- Theme changes no longer jump to root
+
+---
+
 ## [0.1.162-alpha] - 2026-04-10 | PR #2048
 **Branch**: `parley/issue-1977`
 
