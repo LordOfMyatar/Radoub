@@ -274,84 +274,8 @@ namespace DialogEditor.ViewModels
         }
 
         /// <summary>
-        /// Public method to refresh tree view (called when theme changes)
-        /// </summary>
-        public void RefreshTreeViewColors()
-        {
-            RefreshTreeView();
-        }
-
-        /// <summary>
-        /// Public method to refresh tree view and restore selection to specific node (Issue #134)
-        /// </summary>
-        public void RefreshTreeViewColors(DialogNode nodeToSelect)
-        {
-            RefreshTreeViewAndSelectNode(nodeToSelect);
-        }
-
-        private void RefreshTreeView()
-        {
-            // Log dialog state before refresh
-            UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                $"🔄 RefreshTreeView: Dialog has {CurrentDialog?.Entries.Count ?? 0} entries, " +
-                $"{CurrentDialog?.Replies.Count ?? 0} replies, {CurrentDialog?.Starts.Count ?? 0} starts");
-
-            // Save expansion state before refresh
-            var expandedNodeRefs = _treeNavManager.SaveTreeExpansionState(DialogNodes);
-
-            // Re-populate tree to reflect changes
-            // CRITICAL: Run synchronously to ensure orphan removal is reflected immediately
-            PopulateDialogNodes();
-
-            // Log tree state after refresh
-            UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                $"🔄 RefreshTreeView complete: DialogNodes has {DialogNodes.Count} root nodes");
-
-            // Restore expansion state after tree is rebuilt
-            // Use Dispatcher for expansion restore to ensure tree is fully rendered
-            Dispatcher.UIThread.Post(() =>
-            {
-                _treeNavManager.RestoreTreeExpansionState(DialogNodes, expandedNodeRefs);
-
-                // Notify subscribers that the dialog structure was refreshed
-                // This allows FlowView and other components to update automatically
-                DialogChangeEventBus.Instance.PublishDialogRefreshed("RefreshTreeView");
-            }, global::Avalonia.Threading.DispatcherPriority.Loaded);
-        }
-
-        private void RefreshTreeViewAndSelectNode(DialogNode nodeToSelect)
-        {
-            // Save expansion state before refresh
-            var expandedNodeRefs = _treeNavManager.SaveTreeExpansionState(DialogNodes);
-
-            // Store the node to re-select after refresh
-            NodeToSelectAfterRefresh = nodeToSelect;
-
-            // Re-populate tree to reflect changes
-            Dispatcher.UIThread.Post(() =>
-            {
-                PopulateDialogNodes();
-
-                // Restore expansion state after tree is rebuilt
-                Dispatcher.UIThread.Post(() =>
-                {
-                    _treeNavManager.RestoreTreeExpansionState(DialogNodes, expandedNodeRefs);
-
-                    // Notify subscribers that the dialog structure was refreshed
-                    DialogChangeEventBus.Instance.PublishDialogRefreshed("RefreshTreeViewAndSelectNode");
-                }, global::Avalonia.Threading.DispatcherPriority.Loaded);
-            });
-        }
-
-        /// <summary>
-        /// Refreshes tree view and marks dialog as having unsaved changes.
-        /// Common pattern after node operations that modify the dialog structure.
-        /// </summary>
-        private void RefreshTreeViewAndMarkDirty()
-        {
-            RefreshTreeView();
-            HasUnsavedChanges = true;
-        }
+        // 2026-04-11: Old tree refresh methods deleted (#2050).
+        // All callers now use TreeRefreshCoordinator via CoordinatedRefreshAndSelect/CoordinatedRefreshToRoot.
 
         /// <summary>
         /// Recursively finds a TreeViewSafeNode that wraps the target DialogNode.

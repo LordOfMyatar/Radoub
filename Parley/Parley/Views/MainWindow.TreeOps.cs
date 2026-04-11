@@ -126,95 +126,9 @@ namespace DialogEditor.Views
             _treeRefreshCoordinator.RefreshPreservingSelection();
         }
 
-        private void RefreshTreeDisplayPreserveState()
-        {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "🔄 RefreshTreeDisplayPreserveState: Starting tree refresh");
-
-            // Phase 0 Fix: Save expansion state AND selection before refresh
-            var expandedNodes = new HashSet<TreeViewSafeNode>();
-            SaveExpansionState(_viewModel.DialogNodes, expandedNodes);
-
-            var selectedNodeText = _selectedNode?.OriginalNode?.DisplayText;
-            // Issue #594: Capture the selected node reference to detect if user navigates away during refresh
-            var selectedNodeAtRefreshStart = _selectedNode;
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🔄 RefreshTreeDisplayPreserveState: Selected node text = '{selectedNodeText?.Substring(0, System.Math.Min(30, selectedNodeText?.Length ?? 0))}...'");
-
-            // Force refresh by re-populating
-            // Issue #882: Pass skipAutoSelect=true to prevent ROOT auto-selection during refresh
-            // Selection will be restored by RestoreSelection below
-            _viewModel.PopulateDialogNodes(skipAutoSelect: true);
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "🔄 RefreshTreeDisplayPreserveState: PopulateDialogNodes completed");
-
-            // Restore expansion state and selection after UI updates
-            global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-            {
-                RestoreExpansionState(_viewModel.DialogNodes, expandedNodes);
-
-                // Issue #594: Only restore selection if user hasn't navigated to a different node
-                // If user clicked a new node during refresh, _selectedNode will have changed
-                if (!string.IsNullOrEmpty(selectedNodeText) && _selectedNode == selectedNodeAtRefreshStart)
-                {
-                    RestoreSelection(_viewModel.DialogNodes, selectedNodeText);
-                }
-                else if (_selectedNode != selectedNodeAtRefreshStart)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                        "🔄 RefreshTreeDisplayPreserveState: Skipping selection restore - user navigated to different node");
-                }
-            }, global::Avalonia.Threading.DispatcherPriority.Loaded);
-        }
-
-        private void SaveExpansionState(System.Collections.ObjectModel.ObservableCollection<TreeViewSafeNode> nodes, HashSet<TreeViewSafeNode> expandedNodes)
-        {
-            foreach (var node in nodes)
-            {
-                if (node.IsExpanded)
-                {
-                    expandedNodes.Add(node);
-                }
-                if (node.Children != null)
-                {
-                    SaveExpansionState(node.Children, expandedNodes);
-                }
-            }
-        }
-
-        private void RestoreExpansionState(System.Collections.ObjectModel.ObservableCollection<TreeViewSafeNode> nodes, HashSet<TreeViewSafeNode> expandedNodes)
-        {
-            foreach (var node in nodes)
-            {
-                // Match by underlying node reference
-                if (expandedNodes.Any(n => n.OriginalNode == node.OriginalNode))
-                {
-                    node.IsExpanded = true;
-                }
-                if (node.Children != null)
-                {
-                    RestoreExpansionState(node.Children, expandedNodes);
-                }
-            }
-        }
-
-        private void RestoreSelection(System.Collections.ObjectModel.ObservableCollection<TreeViewSafeNode> nodes, string displayText)
-        {
-            foreach (var node in nodes)
-            {
-                if (node.OriginalNode?.DisplayText == displayText)
-                {
-                    var treeView = this.FindControl<TreeView>("DialogTreeView");
-                    if (treeView != null)
-                    {
-                        treeView.SelectedItem = node;
-                        _selectedNode = node;
-                    }
-                    return;
-                }
-                if (node.Children != null)
-                {
-                    RestoreSelection(node.Children, displayText);
-                }
-            }
-        }
+        // 2026-04-11: Old RefreshTreeDisplayPreserveState, SaveExpansionState,
+        // RestoreExpansionState, and RestoreSelection deleted (#2050).
+        // All callers now use TreeRefreshCoordinator.
 
         /// <summary>
         /// Expands all ancestor nodes to make target node visible (Issue #7)
