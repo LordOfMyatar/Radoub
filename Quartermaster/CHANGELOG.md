@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.76-alpha] - 2026-04-11
-**Branch**: `quartermaster/issue-1979` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1979` | **PR**: #2055
 
 ### Sprint: Appearance Preview & Search (#1979)
 - Show model resref in appearance list with copy context menu (#1870)
