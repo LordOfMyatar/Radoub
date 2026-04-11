@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.77-alpha] - 2026-04-11
+**Branch**: `quartermaster/issue-2057` | **PR**: #TBD
+
+### Fix: Dragon models missing tails in appearance preview (#2057)
+- Texture-based mesh skip heuristic replaces blunt <30 vertex threshold
+- Status line shows filtered trimesh count for diagnostic visibility
+
+---
+
 ## [0.2.76-alpha] - 2026-04-11
 **Branch**: `quartermaster/issue-1979` | **PR**: #2055
 
