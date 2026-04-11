@@ -24,6 +24,7 @@ namespace DialogEditor.Views
         {
             // Set flag to suppress tree refresh during token insertion
             _uiState.IsInsertingToken = true;
+            var deferredClear = false;
             try
             {
                 // Capture cursor position BEFORE opening dialog (OnFieldLostFocus fires when button clicked)
@@ -77,12 +78,23 @@ namespace DialogEditor.Views
                         _viewModel.StatusMessage = "Text updated with token";
                     }
 
-                    // Restore cursor position and focus (deferred to let dialog close complete)
+                    // Restore cursor position and focus (deferred to let dialog close complete).
+                    // Keep IsInsertingToken true until focus is restored to prevent
+                    // debounced auto-save from triggering a tree refresh that jumps to root.
+                    // See #2050 for the proper architectural fix.
+                    deferredClear = true;
                     Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                     {
-                        textBox.Focus();
-                        textBox.SelectionStart = newCursorPos;
-                        textBox.SelectionEnd = newCursorPos;
+                        try
+                        {
+                            textBox.Focus();
+                            textBox.SelectionStart = newCursorPos;
+                            textBox.SelectionEnd = newCursorPos;
+                        }
+                        finally
+                        {
+                            _uiState.IsInsertingToken = false;
+                        }
                     }, Avalonia.Threading.DispatcherPriority.Background);
                 }
             }
@@ -92,7 +104,9 @@ namespace DialogEditor.Views
             }
             finally
             {
-                _uiState.IsInsertingToken = false;
+                // Only clear here if we didn't defer it to the focus restoration callback
+                if (!deferredClear)
+                    _uiState.IsInsertingToken = false;
             }
         }
 
