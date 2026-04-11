@@ -513,6 +513,7 @@ namespace DialogEditor.Views
                 _selectedSoundInfo = null;
                 SelectedSoundLabel.Text = "(none)";
                 PlayButton.IsEnabled = false;
+                UpdateFileCountLabel(_filteredSounds.Count, MonoOnlyCheckBox?.IsChecked == true);
             }
         }
 
@@ -594,6 +595,43 @@ namespace DialogEditor.Views
             catch (Exception ex)
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Validation error: {ex.Message}");
+                UpdateFileCountLabel(_filteredSounds.Count, MonoOnlyCheckBox?.IsChecked == true);
+            }
+
+            // If validation changed channel info, refresh the list to update icons/filtering
+            if (!soundInfo.ChannelUnknown)
+            {
+                RefreshSoundListItem(soundInfo);
+            }
+        }
+
+        /// <summary>
+        /// Update a single item's display after validation revealed its channel info.
+        /// If the sound is now stereo and mono-only is checked, remove it from the list.
+        /// </summary>
+        private void RefreshSoundListItem(SoundFileInfo soundInfo)
+        {
+            for (int i = 0; i < SoundListBox.Items.Count; i++)
+            {
+                if (SoundListBox.Items[i] is ListBoxItem item && item.Tag == soundInfo)
+                {
+                    var monoOnly = MonoOnlyCheckBox?.IsChecked == true;
+                    if (monoOnly && !soundInfo.IsMono)
+                    {
+                        // Sound is stereo and mono filter is on — remove it
+                        SoundListBox.Items.RemoveAt(i);
+                        _filteredSounds.Remove(soundInfo);
+                        UpdateFileCountLabel(_filteredSounds.Count, monoOnly);
+                    }
+                    else
+                    {
+                        // Update the display text/icon
+                        var (displayName, foreground) = GetSoundDisplayInfo(soundInfo);
+                        item.Content = displayName;
+                        item.Foreground = foreground;
+                    }
+                    break;
+                }
             }
         }
 
