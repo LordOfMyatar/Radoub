@@ -9,7 +9,9 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ### Sprint: Quality of Life & Polish
 - User-defined custom (non-color) tokens in token chooser (#1890)
-- Sound Browser overhaul — TDD refactor, correct labels, pre-scan validation (#1241)
+- Sound Browser overhaul — correct labels, defaults, mono filter persistence (#1241)
+- Fix ADPCM/DviAdpcm WAV playback (base game sounds now play correctly)
+- Fix Sound Browser validation display and list refresh after channel detection
 
 ---
 
