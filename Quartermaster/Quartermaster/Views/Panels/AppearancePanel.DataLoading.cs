@@ -71,14 +71,14 @@ public partial class AppearancePanel
             var baseName = app.IsPartBased && !app.Name.Contains("(Dynamic)")
                 ? $"(Dynamic) {app.Name}"
                 : app.Name;
-            // Show appearance ID in display, model name in tooltip for debugging
             var modelRef = !string.IsNullOrEmpty(app.Race) ? app.Race : app.Label;
-            var displayText = $"[{app.AppearanceId}] {baseName}";
+            var displayText = $"[{app.AppearanceId}] {baseName} ({modelRef})";
             var item = new ListBoxItem
             {
                 Content = displayText,
                 Tag = app.AppearanceId
             };
+            item.ContextMenu = CreateAppearanceCopyMenu(app.AppearanceId, baseName, modelRef);
             Avalonia.Controls.ToolTip.SetTip(item, $"ID: {app.AppearanceId} | Model: {modelRef} | Type: {(app.IsPartBased ? "Part-Based" : "Static")} | Label: {app.Label}");
             _appearanceListBox.Items.Add(item);
         }
@@ -344,12 +344,14 @@ public partial class AppearancePanel
             }
         }
 
-        // Still not found, add it
-        _appearanceListBox.Items.Add(new ListBoxItem
+        // Still not found, add it with consistent format
+        var fallbackItem = new ListBoxItem
         {
-            Content = $"Appearance {appearanceId}",
+            Content = $"[{appearanceId}] Appearance {appearanceId}",
             Tag = appearanceId
-        });
+        };
+        fallbackItem.ContextMenu = CreateAppearanceCopyMenu(appearanceId, $"Appearance {appearanceId}", "");
+        _appearanceListBox.Items.Add(fallbackItem);
         _appearanceListBox.SelectedIndex = _appearanceListBox.Items.Count - 1;
     }
 

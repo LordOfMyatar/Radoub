@@ -385,6 +385,44 @@ public partial class AppearancePanel
         }
     }
 
+    private ContextMenu CreateAppearanceCopyMenu(ushort id, string name, string resref)
+    {
+        var menu = new ContextMenu();
+
+        var copyAll = new MenuItem { Header = "Copy Appearance Info" };
+        copyAll.Click += async (_, _) => await CopyToClipboard($"[{id}] {name} ({resref})");
+        menu.Items.Add(copyAll);
+
+        var copyName = new MenuItem { Header = "Copy Name" };
+        copyName.Click += async (_, _) => await CopyToClipboard(name);
+        menu.Items.Add(copyName);
+
+        var copyResRef = new MenuItem { Header = "Copy ResRef" };
+        copyResRef.Click += async (_, _) => await CopyToClipboard(resref);
+        menu.Items.Add(copyResRef);
+
+        var copyId = new MenuItem { Header = "Copy ID" };
+        copyId.Click += async (_, _) => await CopyToClipboard(id.ToString());
+        menu.Items.Add(copyId);
+
+        return menu;
+    }
+
+    private async System.Threading.Tasks.Task CopyToClipboard(string text)
+    {
+        try
+        {
+            var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+            if (clipboard != null)
+                await clipboard.SetTextAsync(text);
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"AppearancePanel: Clipboard copy failed: {ex.Message}");
+        }
+    }
+
     // 3D Preview control handlers
     private void OnRotateLeftClicked(object? sender, RoutedEventArgs e)
     {
