@@ -131,7 +131,7 @@ namespace DialogEditor.Views
                     DialogChangeEventBus.Instance.PublishDialogRefreshed(source));
             _services.PropertyAutoSave = new PropertyAutoSaveService(
                 findControl: this.FindControl<Control>,
-                refreshTreeDisplay: RefreshTreeDisplayPreserveState,
+                treeRefreshCoordinator: _treeRefreshCoordinator,
                 loadScriptPreview: (script, isCondition) => _ = LoadScriptPreviewAsync(script, isCondition),
                 clearScriptPreview: ClearScriptPreview,
                 triggerDebouncedAutoSave: TriggerDebouncedAutoSave,
