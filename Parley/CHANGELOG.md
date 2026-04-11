@@ -4,6 +4,17 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
+## [0.1.162-alpha] - 2026-04-10 | PR #2048
+**Branch**: `parley/issue-1977`
+
+### Sprint: Quality of Life & Polish
+- User-defined custom (non-color) tokens in token chooser (#1890)
+- Sound Browser overhaul — correct labels, defaults, mono filter persistence (#1241)
+- Fix ADPCM/DviAdpcm WAV playback (base game sounds now play correctly)
+- Fix Sound Browser validation display and list refresh after channel detection
+
+---
+
 ## [0.1.161-alpha] - 2026-03-29 | PR #2035
 **Branch**: `parley/issue-1976`
 

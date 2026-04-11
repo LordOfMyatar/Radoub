@@ -125,6 +125,7 @@ namespace Parley.Tests.Mocks
         public bool SoundBrowserIncludeGameResources { get; set; } = true;
         public bool SoundBrowserIncludeHakFiles { get; set; } = true;
         public bool SoundBrowserIncludeBifFiles { get; set; } = true;
+        public bool SoundBrowserMonoOnly { get; set; } = true;
 
         // Spell Check settings
         public bool SpellCheckEnabled { get; set; } = false;

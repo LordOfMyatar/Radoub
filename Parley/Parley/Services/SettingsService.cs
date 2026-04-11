@@ -510,6 +510,12 @@ namespace DialogEditor.Services
             set => _editorPreferences.SoundBrowserIncludeBifFiles = value;
         }
 
+        public bool SoundBrowserMonoOnly
+        {
+            get => _editorPreferences.SoundBrowserMonoOnly;
+            set => _editorPreferences.SoundBrowserMonoOnly = value;
+        }
+
         public bool SpellCheckEnabled
         {
             get => _editorPreferences.SpellCheckEnabled;
@@ -606,6 +612,7 @@ namespace DialogEditor.Services
                             settings.SoundBrowserIncludeGameResources,
                             settings.SoundBrowserIncludeHakFiles,
                             settings.SoundBrowserIncludeBifFiles,
+                            settings.SoundBrowserMonoOnly,
                             settings.SpellCheckEnabled);
 
                         // Initialize recent creature tags (#1244)
@@ -684,6 +691,7 @@ namespace DialogEditor.Services
                     SoundBrowserIncludeGameResources = SoundBrowserIncludeGameResources,
                     SoundBrowserIncludeHakFiles = SoundBrowserIncludeHakFiles,
                     SoundBrowserIncludeBifFiles = SoundBrowserIncludeBifFiles,
+                    SoundBrowserMonoOnly = SoundBrowserMonoOnly,
                     SpellCheckEnabled = SpellCheckEnabled,
                     ManifestPath = SharedPathHelper.ContractPath(ManifestPath),
                     ExternalEditorPath = SharedPathHelper.ContractPath(ExternalEditorPath),
@@ -778,9 +786,10 @@ namespace DialogEditor.Services
             public int MaxCachedScripts { get; set; } = 1000;
 
             // Sound Browser settings
-            public bool SoundBrowserIncludeGameResources { get; set; } = false;
-            public bool SoundBrowserIncludeHakFiles { get; set; } = false;
+            public bool SoundBrowserIncludeGameResources { get; set; } = true;
+            public bool SoundBrowserIncludeHakFiles { get; set; } = true;
             public bool SoundBrowserIncludeBifFiles { get; set; } = false;
+            public bool SoundBrowserMonoOnly { get; set; } = true;
 
             // Spell Check settings
             public bool SpellCheckEnabled { get; set; } = true;

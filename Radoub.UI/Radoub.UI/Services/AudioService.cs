@@ -160,10 +160,25 @@ internal class WindowsAudioPlayer : IAudioPlayer
 
             if (IsRiffWav(firstBytes))
             {
-                // Use WaveFileReader for WAV files - better ADPCM codec support
-                _waveStream = new NAudio.Wave.WaveFileReader(filePath);
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"Using WaveFileReader for {Path.GetFileName(filePath)} - Format: {_waveStream.WaveFormat}");
+                // Use WaveFileReader for WAV files
+                var reader = new NAudio.Wave.WaveFileReader(filePath);
+
+                // IMA ADPCM and other non-PCM formats need conversion to PCM for WaveOutEvent
+                if (reader.WaveFormat.Encoding != NAudio.Wave.WaveFormatEncoding.Pcm &&
+                    reader.WaveFormat.Encoding != NAudio.Wave.WaveFormatEncoding.IeeeFloat)
+                {
+                    var pcmFormat = new NAudio.Wave.WaveFormat(
+                        reader.WaveFormat.SampleRate, 16, reader.WaveFormat.Channels);
+                    _waveStream = new NAudio.Wave.WaveFormatConversionStream(pcmFormat, reader);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"Converted {reader.WaveFormat.Encoding} to PCM for {Path.GetFileName(filePath)}");
+                }
+                else
+                {
+                    _waveStream = reader;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"Using WaveFileReader for {Path.GetFileName(filePath)} - Format: {reader.WaveFormat}");
+                }
             }
             else if (IsBmu(firstBytes))
             {

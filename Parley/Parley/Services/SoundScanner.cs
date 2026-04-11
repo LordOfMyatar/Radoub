@@ -309,7 +309,7 @@ namespace DialogEditor.Services
                             FullPath = bifPath,
                             IsMono = true, // Default value, but ChannelUnknown indicates not verified
                             ChannelUnknown = true, // Channel status unknown until validated
-                            Source = $"BIF:{bifName}",
+                            Source = $"Base Game:{bifName}",
                             BifInfo = new BifSoundInfo
                             {
                                 ResRef = resource.ResRef,

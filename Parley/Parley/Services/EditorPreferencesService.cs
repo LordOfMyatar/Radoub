@@ -43,9 +43,10 @@ namespace DialogEditor.Services
         private int _maxCachedScripts = 1000;
 
         // Sound Browser settings
-        private bool _soundBrowserIncludeGameResources = false;
-        private bool _soundBrowserIncludeHakFiles = false;
+        private bool _soundBrowserIncludeGameResources = true;
+        private bool _soundBrowserIncludeHakFiles = true;
         private bool _soundBrowserIncludeBifFiles = false;
+        private bool _soundBrowserMonoOnly = true;
 
         // Spell Check settings
         private bool _spellCheckEnabled = true;
@@ -73,6 +74,7 @@ namespace DialogEditor.Services
             string manifestPath,
             bool enableParameterCache, int maxCachedValuesPerParameter, int maxCachedScripts,
             bool soundBrowserIncludeGameResources, bool soundBrowserIncludeHakFiles, bool soundBrowserIncludeBifFiles,
+            bool soundBrowserMonoOnly,
             bool spellCheckEnabled)
         {
             _autoSaveEnabled = autoSaveEnabled;
@@ -100,6 +102,7 @@ namespace DialogEditor.Services
             _soundBrowserIncludeGameResources = soundBrowserIncludeGameResources;
             _soundBrowserIncludeHakFiles = soundBrowserIncludeHakFiles;
             _soundBrowserIncludeBifFiles = soundBrowserIncludeBifFiles;
+            _soundBrowserMonoOnly = soundBrowserMonoOnly;
 
             _spellCheckEnabled = spellCheckEnabled;
         }
@@ -284,6 +287,12 @@ namespace DialogEditor.Services
         {
             get => _soundBrowserIncludeBifFiles;
             set { if (SetProperty(ref _soundBrowserIncludeBifFiles, value)) SettingsChanged?.Invoke(); }
+        }
+
+        public bool SoundBrowserMonoOnly
+        {
+            get => _soundBrowserMonoOnly;
+            set { if (SetProperty(ref _soundBrowserMonoOnly, value)) SettingsChanged?.Invoke(); }
         }
 
         // Spell Check Settings

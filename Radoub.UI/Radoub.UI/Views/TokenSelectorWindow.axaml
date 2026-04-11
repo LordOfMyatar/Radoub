@@ -172,6 +172,75 @@
                 </Grid>
             </TabItem>
 
+            <!-- Custom Tokens Tab -->
+            <TabItem Header="Custom Tokens">
+                <Grid Margin="5">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Info Text -->
+                    <TextBlock Grid.Row="0" TextWrapping="Wrap" Margin="0,0,0,10"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" FontSize="{DynamicResource FontSizeSmall}">
+                        User-defined custom tokens. Configure in ~/Radoub/custom-tokens.json
+                    </TextBlock>
+
+                    <!-- Token List -->
+                    <ListBox Grid.Row="1" x:Name="CustomTokenListBox"
+                             SelectionChanged="OnCustomTokenSelected"
+                             DoubleTapped="OnTokenDoubleClicked">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Token name -->
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding Name}"
+                                               VerticalAlignment="Center"/>
+
+                                    <!-- Tag preview -->
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding TagPreview}"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                               FontFamily="Consolas"
+                                               FontSize="{DynamicResource FontSizeXSmall}"
+                                               VerticalAlignment="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <!-- Empty state -->
+                    <TextBlock Grid.Row="1" x:Name="CustomTokenEmptyText"
+                               Text="No custom tokens defined. Add tokens to ~/Radoub/custom-tokens.json"
+                               TextWrapping="Wrap"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                               IsVisible="True"/>
+
+                    <!-- Preview -->
+                    <Border Grid.Row="2"
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1"
+                            Padding="10" Margin="0,10,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Insert" FontWeight="Bold" Margin="0,0,0,10"/>
+                            <TextBlock x:Name="CustomTokenPreviewText"
+                                       Text="Select a token"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                       FontFamily="Consolas"
+                                       FontSize="{DynamicResource FontSizeSmall}"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
             <!-- Custom Colors Tab -->
             <TabItem Header="Custom Colors">
                 <Grid Margin="5">
