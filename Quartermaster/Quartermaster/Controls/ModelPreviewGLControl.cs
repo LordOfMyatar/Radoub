@@ -81,6 +81,16 @@ public class ModelPreviewGLControl : OpenGlControlBase
     public event EventHandler<PreviewState>? PreviewStateChanged;
 
     /// <summary>
+    /// Mesh composition info for the currently loaded model.
+    /// </summary>
+    public record ModelMeshInfo(int TotalMeshes, int SkinMeshCount, int HiddenMeshCount);
+
+    /// <summary>
+    /// Raised on the UI thread after model mesh analysis completes.
+    /// </summary>
+    public event EventHandler<ModelMeshInfo>? MeshInfoChanged;
+
+    /// <summary>
     /// The model to render.
     /// </summary>
     public MdlModel? Model
@@ -94,7 +104,10 @@ public class ModelPreviewGLControl : OpenGlControlBase
             _logOncePerModel = true;
             _viewController.CenterCamera();
             if (value == null)
+            {
                 SetPreviewState(PreviewState.None);
+                MeshInfoChanged?.Invoke(this, new ModelMeshInfo(0, 0, 0));
+            }
             RequestNextFrameRendering();
         }
     }
@@ -779,7 +792,19 @@ public class ModelPreviewGLControl : OpenGlControlBase
             } // else (valid bounds)
         }
 
+        // Mesh composition analysis for model completeness indicator (#1873)
+        int totalMeshCount = allMeshes.Count;
+        int skinMeshCount = allMeshes.Count(m => m is Radoub.Formats.Mdl.MdlSkinNode && m.Render && m.Vertices.Length > 0);
+        int hiddenMeshCount = allMeshes.Count(m => !m.Render);
+
         UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateMeshBuffers: model={_model?.Name ?? "null"}, {_meshDrawCalls.Count} meshes ({skippedMeshes} skipped), {vertices.Count / 8} vertices, {_indexCount / 3} triangles");
+
+        // Notify listeners of mesh composition
+        var meshInfo = new ModelMeshInfo(totalMeshCount, skinMeshCount, hiddenMeshCount);
+        if (Dispatcher.UIThread.CheckAccess())
+            MeshInfoChanged?.Invoke(this, meshInfo);
+        else
+            Dispatcher.UIThread.Post(() => MeshInfoChanged?.Invoke(this, meshInfo));
 
         // Determine preview state based on rendered geometry and emitter nodes
         if (_indexCount == 0)

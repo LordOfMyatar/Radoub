@@ -70,7 +70,10 @@ public partial class AppearancePanel
 
         // 3D Preview state overlay
         if (_modelPreviewGL != null)
+        {
             _modelPreviewGL.PreviewStateChanged += OnPreviewStateChanged;
+            _modelPreviewGL.MeshInfoChanged += OnMeshInfoChanged;
+        }
 
         // 3D Preview button events
         if (_rotateLeftButton != null)
@@ -382,6 +385,34 @@ public partial class AppearancePanel
             default:
                 _previewStateOverlay.IsVisible = false;
                 break;
+        }
+    }
+
+    private void OnMeshInfoChanged(object? sender, ModelPreviewGLControl.ModelMeshInfo info)
+    {
+        if (_modelInfoStatusText == null) return;
+
+        if (info.TotalMeshes == 0)
+        {
+            _modelInfoStatusText.IsVisible = false;
+            return;
+        }
+
+        if (info.SkinMeshCount == 0 && info.TotalMeshes > 0)
+        {
+            _modelInfoStatusText.Text = "\u26a0 No skin meshes \u2014 model may appear as skeleton only";
+            _modelInfoStatusText.Foreground = BrushManager.GetWarningBrush(this);
+            _modelInfoStatusText.IsVisible = true;
+        }
+        else if (info.HiddenMeshCount > 0)
+        {
+            _modelInfoStatusText.Text = $"\u2139 {info.HiddenMeshCount} of {info.TotalMeshes} meshes hidden (Render=false)";
+            _modelInfoStatusText.Foreground = Avalonia.Media.Brushes.Gray;
+            _modelInfoStatusText.IsVisible = true;
+        }
+        else
+        {
+            _modelInfoStatusText.IsVisible = false;
         }
     }
 
