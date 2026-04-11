@@ -4,7 +4,7 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
-## [0.1.163-alpha] - 2026-04-10 | PR #TBD
+## [0.1.163-alpha] - 2026-04-10 | PR #2052
 **Branch**: `parley/issue-2050`
 
 ### Refactor: Unified Tree Refresh Coordinator (#2050)
