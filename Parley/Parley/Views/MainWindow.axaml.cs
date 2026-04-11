@@ -213,7 +213,8 @@ namespace DialogEditor.Views
                 saveCurrentNodeProperties: SaveCurrentNodeProperties,
                 clearAllFields: () => _services.PropertyPopulator.ClearAllFields(),
                 getIsSettingSelectionProgrammatically: () => _uiState.IsSettingSelectionProgrammatically,
-                syncSelectionToFlowcharts: node => _controllers.Flowchart.SyncSelectionToFlowcharts(node));
+                syncSelectionToFlowcharts: node => _controllers.Flowchart.SyncSelectionToFlowcharts(node),
+                getIsCoordinatorBusy: () => _treeRefreshCoordinator.IsBusy);
 
             // #1791: GameData not yet initialized — wired in ConnectGameDataServices() after deferred init
             _controllers.ScriptBrowser = new ScriptBrowserController(
