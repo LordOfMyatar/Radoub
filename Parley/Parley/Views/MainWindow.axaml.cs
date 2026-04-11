@@ -451,9 +451,9 @@ namespace DialogEditor.Views
             {
                 if (_viewModel.CurrentDialog != null)
                 {
+                    _treeRefreshCoordinator.RefreshPreservingSelection();
                     global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                     {
-                        _viewModel.RefreshTreeViewColors();
                         _controllers.Flowchart.UpdateAllPanels();
                         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Tree + flowchart refreshed after {e.PropertyName} change");
                     });

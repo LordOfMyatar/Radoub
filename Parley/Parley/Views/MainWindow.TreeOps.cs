@@ -57,7 +57,7 @@ namespace DialogEditor.Views
         private void OnWordWrapChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             // Refresh tree view to apply new word wrap setting
-            _viewModel.RefreshTreeViewColors();
+            _treeRefreshCoordinator.RefreshPreservingSelection();
             var enabled = _services.Settings.TreeViewWordWrap;
             _viewModel.StatusMessage = enabled ? "Word wrap enabled" : "Word wrap disabled";
             UnifiedLogger.LogUI(LogLevel.INFO, $"TreeView word wrap toggled: {enabled}");
@@ -65,7 +65,7 @@ namespace DialogEditor.Views
 
         private void OnShowNodeIndexChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            _viewModel.RefreshTreeViewColors();
+            _treeRefreshCoordinator.RefreshPreservingSelection();
             var enabled = _services.Settings.ShowNodeIndexNumbers;
             _viewModel.StatusMessage = enabled ? "Node index numbers shown" : "Node index numbers hidden";
             UnifiedLogger.LogUI(LogLevel.INFO, $"Show node index numbers toggled: {enabled}");

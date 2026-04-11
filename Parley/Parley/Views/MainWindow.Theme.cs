@@ -90,11 +90,8 @@ namespace DialogEditor.Views
             // Only refresh if a dialog is loaded
             if (_viewModel.CurrentDialog != null)
             {
-                global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                {
-                    _viewModel.RefreshTreeViewColors();
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Tree view refreshed after theme change");
-                });
+                _treeRefreshCoordinator.RefreshPreservingSelection();
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Tree view refreshed after theme change");
             }
         }
 

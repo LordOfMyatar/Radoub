@@ -217,7 +217,7 @@ namespace DialogEditor.Views
                 if (_services.Settings.TreeViewWordWrap && Math.Abs(textWidth - previousWidth) > 10)
                 {
                     // Refresh tree to apply new width
-                    _viewModel.RefreshTreeViewColors();
+                    _treeRefreshCoordinator.RefreshPreservingSelection();
                 }
             }
         }
