@@ -618,10 +618,23 @@ namespace DialogEditor.Views
                     var monoOnly = MonoOnlyCheckBox?.IsChecked == true;
                     if (monoOnly && !soundInfo.IsMono)
                     {
-                        // Sound is stereo and mono filter is on — remove it
-                        SoundListBox.Items.RemoveAt(i);
-                        _filteredSounds.Remove(soundInfo);
-                        UpdateFileCountLabel(_filteredSounds.Count, monoOnly);
+                        // Sound is stereo and mono filter is on — remove it.
+                        // Suppress SelectionChanged to avoid re-entrant validation.
+                        SoundListBox.SelectionChanged -= OnSoundSelected;
+                        try
+                        {
+                            SoundListBox.Items.RemoveAt(i);
+                            _filteredSounds.Remove(soundInfo);
+                            _selectedSound = null;
+                            _selectedSoundInfo = null;
+                            SelectedSoundLabel.Text = "(none)";
+                            PlayButton.IsEnabled = false;
+                            UpdateFileCountLabel(_filteredSounds.Count, monoOnly);
+                        }
+                        finally
+                        {
+                            SoundListBox.SelectionChanged += OnSoundSelected;
+                        }
                     }
                     else
                     {
