@@ -11,6 +11,8 @@ using Quartermaster.Views.Dialogs;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
+using Radoub.UI.Controls;
+using Radoub.UI.Services;
 
 namespace Quartermaster.Views.Panels;
 
@@ -19,7 +21,7 @@ public partial class AdvancedPanel : BasePanelControl
     // Identity section
     private TextBox? _templateResRefTextBox;
     private TextBox? _tagTextBox;
-    private TextBox? _commentTextBox;
+    private Radoub.UI.Controls.SpellCheckTextBox? _commentTextBox;
     private Button? _copyResRefButton;
     private Button? _copyTagButton;
     private Button? _renameResRefButton;
@@ -81,7 +83,7 @@ public partial class AdvancedPanel : BasePanelControl
         // Identity section
         _templateResRefTextBox = this.FindControl<TextBox>("TemplateResRefTextBox");
         _tagTextBox = this.FindControl<TextBox>("TagTextBox");
-        _commentTextBox = this.FindControl<TextBox>("CommentTextBox");
+        _commentTextBox = this.FindControl<Radoub.UI.Controls.SpellCheckTextBox>("CommentTextBox");
         _copyResRefButton = this.FindControl<Button>("CopyResRefButton");
         _copyTagButton = this.FindControl<Button>("CopyTagButton");
         _renameResRefButton = this.FindControl<Button>("RenameResRefButton");
@@ -125,7 +127,10 @@ public partial class AdvancedPanel : BasePanelControl
         if (_tagTextBox != null)
             _tagTextBox.TextChanged += OnTagTextChanged;
         if (_commentTextBox != null)
+        {
             _commentTextBox.TextChanged += OnCommentTextChanged;
+            WireTokenMenu(_commentTextBox);
+        }
 
         WireUpFlagCheckboxes();
         WireUpBehaviorCombos();
@@ -727,6 +732,21 @@ public partial class AdvancedPanel : BasePanelControl
             vm.PropertyChanged -= OnVariablePropertyChanged;
         }
         Variables.Clear();
+    }
+
+    #endregion
+
+    #region Token Support
+
+    private readonly QuickTokenService _quickTokenService = new();
+
+    private void WireTokenMenu(SpellCheckTextBox? textBox)
+    {
+        if (textBox == null) return;
+        textBox.ContextMenuExtras = menu =>
+            TokenContextMenu.AppendTokenMenu(menu, textBox, () =>
+                TokenInsertionHelper.OpenTokenWindow(textBox, this.VisualRoot as Avalonia.Controls.Window),
+                _quickTokenService);
     }
 
     #endregion

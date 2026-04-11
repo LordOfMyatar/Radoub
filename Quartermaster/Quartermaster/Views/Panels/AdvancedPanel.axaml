@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:converters="using:Radoub.UI.Converters"
+             xmlns:controls="using:Radoub.UI.Controls"
              mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="900"
              x:Class="Quartermaster.Views.Panels.AdvancedPanel">
 
@@ -63,7 +64,7 @@
                                 <TextBlock Grid.Column="0" Text="Comment:"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            VerticalAlignment="Top" Margin="0,5,0,0" Width="100"/>
-                                <TextBox Grid.Column="1"
+                                <controls:SpellCheckTextBox Grid.Column="1"
                                          x:Name="CommentTextBox"
                                          AcceptsReturn="True"
                                          TextWrapping="Wrap"
