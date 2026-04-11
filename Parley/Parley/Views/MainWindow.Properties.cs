@@ -356,7 +356,7 @@ namespace DialogEditor.Views
             _viewModel.HasUnsavedChanges = true;
 
             // Refresh tree WITHOUT collapsing
-            RefreshTreeDisplayPreserveState();
+            _treeRefreshCoordinator.RefreshPreservingSelection();
 
             // CRITICAL: Save to file immediately
             if (!string.IsNullOrEmpty(_viewModel.CurrentFileName))

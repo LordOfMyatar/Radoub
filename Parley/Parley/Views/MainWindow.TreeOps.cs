@@ -123,8 +123,7 @@ namespace DialogEditor.Views
 
         private void RefreshTreeDisplay()
         {
-            // OLD: This method collapses tree - kept for compatibility
-            RefreshTreeDisplayPreserveState();
+            _treeRefreshCoordinator.RefreshPreservingSelection();
         }
 
         private void RefreshTreeDisplayPreserveState()
@@ -331,7 +330,7 @@ namespace DialogEditor.Views
                     // Fall back to full tree refresh which will recalculate all validation
                     UnifiedLogger.LogApplication(LogLevel.WARN,
                         $"RefreshSiblingValidation: Parent not found or has no children - falling back to full refresh");
-                    RefreshTreeDisplayPreserveState();
+                    _treeRefreshCoordinator.RefreshPreservingSelection();
                     return;
                 }
 
@@ -367,7 +366,7 @@ namespace DialogEditor.Views
                     // Fallback: just refresh the tree to recalculate all validation
                     UnifiedLogger.LogApplication(LogLevel.INFO,
                         "RefreshSiblingValidation: No pointers found - refreshing tree display");
-                    RefreshTreeDisplayPreserveState();
+                    _treeRefreshCoordinator.RefreshPreservingSelection();
                     return;
                 }
 
