@@ -59,6 +59,9 @@ namespace DialogEditor.Views
         // UI state management
         private readonly UiStateManager _uiState = new();
 
+        // Tree refresh coordination (#2050)
+        private TreeRefreshCoordinator _treeRefreshCoordinator = null!;
+
         // Node selection state (shared across partial files)
         private TreeViewSafeNode? _selectedNode;
 
@@ -105,6 +108,27 @@ namespace DialogEditor.Views
             _services.PropertyPopulator = new PropertyPanelPopulator(this, _services.Settings, _services.Journal);
             // #1791: GameData/ImageService wired in ConnectGameDataServices() after deferred init
             _services.PropertyPopulator.SetCurrentSoundsetId = id => _currentSoundsetId = id;
+            _treeRefreshCoordinator = new TreeRefreshCoordinator(
+                populateDialogNodes: (skipAutoSelect) => _viewModel.PopulateDialogNodes(skipAutoSelect),
+                saveExpansionState: () => _viewModel.SaveExpansionState(),
+                restoreExpansionState: (nodes, refs) => _viewModel.RestoreExpansionState(nodes, refs),
+                getDialogNodes: () => _viewModel.DialogNodes,
+                getCurrentDialog: () => _viewModel.CurrentDialog,
+                getSelectedNode: () => _selectedNode,
+                setSelectedNode: (node) =>
+                {
+                    _selectedNode = node;
+                    _viewModel.SelectedTreeNode = node;
+                    if (node != null)
+                    {
+                        var treeView = this.FindControl<TreeView>("DialogTreeView");
+                        if (treeView != null) treeView.SelectedItem = node;
+                    }
+                },
+                getFocusedFieldInfo: GetFocusedFieldInfo,
+                restoreFocusedField: RestoreFocusedField,
+                publishDialogRefreshed: (source) =>
+                    DialogChangeEventBus.Instance.PublishDialogRefreshed(source));
             _services.PropertyAutoSave = new PropertyAutoSaveService(
                 findControl: this.FindControl<Control>,
                 refreshTreeDisplay: RefreshTreeDisplayPreserveState,

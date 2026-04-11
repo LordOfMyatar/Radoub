@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
@@ -410,6 +411,27 @@ namespace DialogEditor.Views
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR,
                     $"RefreshSiblingValidation: Error updating sibling validation: {ex.Message}");
+            }
+        }
+
+        private (string? fieldName, int? cursorPosition) GetFocusedFieldInfo()
+        {
+            var topLevel = TopLevel.GetTopLevel(this);
+            var focused = topLevel?.FocusManager?.GetFocusedElement() as TextBox;
+            if (focused?.Name == null) return (null, null);
+            return (focused.Name, focused.CaretIndex);
+        }
+
+        private void RestoreFocusedField(string? fieldName, int? cursorPosition)
+        {
+            if (fieldName == null) return;
+            var control = this.FindControl<TextBox>(fieldName);
+            if (control == null) return;
+            control.Focus();
+            if (cursorPosition != null)
+            {
+                var textLength = control.Text?.Length ?? 0;
+                control.CaretIndex = Math.Min(cursorPosition.Value, textLength);
             }
         }
     }

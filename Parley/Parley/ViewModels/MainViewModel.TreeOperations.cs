@@ -423,6 +423,16 @@ namespace DialogEditor.ViewModels
             return _treeNavManager.FindTreeNodeForDialogNode(DialogNodes, nodeToFind);
         }
 
+        public HashSet<DialogNode> SaveExpansionState()
+        {
+            return _treeNavManager.SaveTreeExpansionState(DialogNodes);
+        }
+
+        public void RestoreExpansionState(ObservableCollection<TreeViewSafeNode> nodes, HashSet<DialogNode> expandedRefs)
+        {
+            _treeNavManager.RestoreTreeExpansionState(nodes, expandedRefs);
+        }
+
         public string CaptureTreeStructure()
         {
             if (CurrentDialog == null)
