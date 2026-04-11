@@ -129,6 +129,7 @@ namespace DialogEditor.Views
                 restoreFocusedField: RestoreFocusedField,
                 publishDialogRefreshed: (source) =>
                     DialogChangeEventBus.Instance.PublishDialogRefreshed(source));
+            _viewModel.TreeRefreshCoordinator = _treeRefreshCoordinator;
             _services.PropertyAutoSave = new PropertyAutoSaveService(
                 findControl: this.FindControl<Control>,
                 treeRefreshCoordinator: _treeRefreshCoordinator,

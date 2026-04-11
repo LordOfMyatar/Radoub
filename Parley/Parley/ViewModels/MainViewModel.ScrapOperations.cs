@@ -38,7 +38,8 @@ namespace DialogEditor.ViewModels
 
             if (result.Success)
             {
-                RefreshTreeViewAndMarkDirty();
+                CoordinatedRefreshToRoot();
+                HasUnsavedChanges = true;
             }
 
             return result.Success;

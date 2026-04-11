@@ -223,11 +223,11 @@ namespace DialogEditor.ViewModels
             // Refresh tree and restore focus to sibling
             if (siblingToFocus != null)
             {
-                RefreshTreeViewAndSelectNode(siblingToFocus);
+                CoordinatedRefreshAndSelect(siblingToFocus);
             }
             else
             {
-                RefreshTreeView();
+                CoordinatedRefreshToRoot();
             }
 
             HasUnsavedChanges = true;
@@ -253,9 +253,13 @@ namespace DialogEditor.ViewModels
                 // Issue #122: Focus on the newly pasted node instead of sibling
                 if (result.PastedNode != null)
                 {
-                    NodeToSelectAfterRefresh = result.PastedNode;
+                    CoordinatedRefreshAndSelect(result.PastedNode);
                 }
-                RefreshTreeViewAndMarkDirty();
+                else
+                {
+                    CoordinatedRefreshToRoot();
+                }
+                HasUnsavedChanges = true;
             }
         }
 
@@ -308,8 +312,8 @@ namespace DialogEditor.ViewModels
             CurrentDialog.LinkRegistry.RegisterLink(linkPtr);
 
             // Issue #122: Focus on parent node (link is under parent, not standalone)
-            NodeToSelectAfterRefresh = parent.OriginalNode;
-            RefreshTreeViewAndMarkDirty();
+            CoordinatedRefreshAndSelect(parent.OriginalNode);
+            HasUnsavedChanges = true;
             StatusMessage = $"Pasted link under {parent.DisplayText}: {linkPtr.Node?.DisplayText}";
         }
 
