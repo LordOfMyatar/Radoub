@@ -44,6 +44,10 @@ public class UtcSearchProvider : SearchProviderBase, IFileSearchProvider
     // Variable field
     private static readonly FieldDefinition VarTableField = new() { Name = "Local Variables", GffPath = "VarTable", FieldType = SearchFieldType.Variable, Category = SearchFieldCategory.Variable, Description = "Local variable names and string values" };
 
+    // Equipment/Inventory fields (#1947)
+    private static readonly FieldDefinition EquipResField = new() { Name = "EquipRes", GffPath = "EquipRes", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Equipped item ResRef", IsReplaceable = false };
+    private static readonly FieldDefinition InventoryResField = new() { Name = "InventoryRes", GffPath = "InventoryRes", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Backpack item ResRef", IsReplaceable = false };
+
     public ushort FileType => ResourceTypes.Utc;
 
     public IReadOnlyList<string> Extensions => new[] { ".utc", ".bic" };
@@ -111,6 +115,27 @@ public class UtcSearchProvider : SearchProviderBase, IFileSearchProvider
         // Local variables
         if (criteria.MatchesField(VarTableField))
             matches.AddRange(SearchVarTable(gffFile.RootStruct, VarTableField, regex, "VarTable"));
+
+        // Equipment (#1947)
+        if (criteria.MatchesField(EquipResField))
+        {
+            foreach (var equip in utc.EquipItemList)
+            {
+                var slotName = Utc.EquipmentSlots.GetSlotName(equip.Slot);
+                var location = $"Equipment > {slotName} > EquipRes";
+                matches.AddRange(SearchString(equip.EquipRes, EquipResField, regex, location));
+            }
+        }
+
+        // Backpack inventory (#1947)
+        if (criteria.MatchesField(InventoryResField))
+        {
+            for (int i = 0; i < utc.ItemList.Count; i++)
+            {
+                var location = $"Backpack > Item {i} > InventoryRes";
+                matches.AddRange(SearchString(utc.ItemList[i].InventoryRes, InventoryResField, regex, location));
+            }
+        }
 
         return matches;
     }

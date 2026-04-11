@@ -263,6 +263,95 @@ public class UtcSearchProviderTests
         Assert.Equal("Deity", match.Location as string);
     }
 
+    // --- Inventory/Equipment Search (#1947) ---
+
+    private static UtcFile CreateTestUtcWithInventory()
+    {
+        var utc = CreateTestUtc();
+        utc.EquipItemList = new List<EquippedItem>
+        {
+            new() { Slot = EquipmentSlots.RightHand, EquipRes = "nw_wswdg001" },
+            new() { Slot = EquipmentSlots.Chest, EquipRes = "nw_aarcl006" },
+            new() { Slot = EquipmentSlots.Head, EquipRes = "nw_arhe001" }
+        };
+        utc.ItemList = new List<InventoryItem>
+        {
+            new() { InventoryRes = "nw_it_gem001", Repos_PosX = 0, Repos_PosY = 0 },
+            new() { InventoryRes = "nw_it_mpotion003", Repos_PosX = 1, Repos_PosY = 0 },
+            new() { InventoryRes = "nw_wswdg001", Repos_PosX = 2, Repos_PosY = 0 }
+        };
+        return utc;
+    }
+
+    [Fact]
+    public void Search_FindsEquippedItemResRef()
+    {
+        var provider = new UtcSearchProvider();
+        var gff = UtcToGff(CreateTestUtcWithInventory());
+        var criteria = new SearchCriteria { Pattern = "nw_wswdg001" };
+
+        var matches = provider.Search(gff, criteria);
+
+        Assert.Contains(matches, m =>
+            m.Field.Name == "EquipRes" &&
+            (m.Location as string)!.Contains("Right Hand"));
+    }
+
+    [Fact]
+    public void Search_FindsBackpackItemResRef()
+    {
+        var provider = new UtcSearchProvider();
+        var gff = UtcToGff(CreateTestUtcWithInventory());
+        var criteria = new SearchCriteria { Pattern = "nw_it_gem001" };
+
+        var matches = provider.Search(gff, criteria);
+
+        Assert.Contains(matches, m =>
+            m.Field.Name == "InventoryRes" &&
+            (m.Location as string)!.Contains("Backpack"));
+    }
+
+    [Fact]
+    public void Search_NoMatch_ReturnsNoInventoryResults()
+    {
+        var provider = new UtcSearchProvider();
+        var gff = UtcToGff(CreateTestUtcWithInventory());
+        var criteria = new SearchCriteria { Pattern = "nonexistent_item" };
+
+        var matches = provider.Search(gff, criteria);
+
+        Assert.DoesNotContain(matches, m =>
+            m.Field.Name == "EquipRes" || m.Field.Name == "InventoryRes");
+    }
+
+    [Fact]
+    public void Search_FindsSameResRefInEquipmentAndBackpack()
+    {
+        var provider = new UtcSearchProvider();
+        var gff = UtcToGff(CreateTestUtcWithInventory());
+        // nw_wswdg001 is in both equipped (Right Hand) and backpack
+        var criteria = new SearchCriteria { Pattern = "nw_wswdg001" };
+
+        var matches = provider.Search(gff, criteria);
+
+        var equipMatch = matches.Where(m => m.Field.Name == "EquipRes").ToList();
+        var backpackMatch = matches.Where(m => m.Field.Name == "InventoryRes").ToList();
+        Assert.NotEmpty(equipMatch);
+        Assert.NotEmpty(backpackMatch);
+    }
+
+    [Fact]
+    public void Search_CaseInsensitive_FindsInventoryItem()
+    {
+        var provider = new UtcSearchProvider();
+        var gff = UtcToGff(CreateTestUtcWithInventory());
+        var criteria = new SearchCriteria { Pattern = "NW_IT_GEM001", CaseSensitive = false };
+
+        var matches = provider.Search(gff, criteria);
+
+        Assert.Contains(matches, m => m.Field.Name == "InventoryRes");
+    }
+
     [Fact]
     public void FileType_IsUtc()
     {
