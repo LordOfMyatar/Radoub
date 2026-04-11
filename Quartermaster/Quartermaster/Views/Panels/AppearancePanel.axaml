@@ -325,7 +325,7 @@
 
                     <!-- Model Info Status Line (#1873) -->
                     <TextBlock Grid.Row="2" x:Name="ModelInfoStatusText"
-                               FontSize="11" Padding="10,4"
+                               FontSize="{DynamicResource FontSizeSmall}" Padding="10,4"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                IsVisible="False"/>
 

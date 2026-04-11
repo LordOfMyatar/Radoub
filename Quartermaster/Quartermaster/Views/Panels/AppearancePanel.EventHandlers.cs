@@ -398,7 +398,12 @@ public partial class AppearancePanel
             return;
         }
 
-        if (info.SkinMeshCount == 0 && info.TotalMeshes > 0)
+        // Only warn about missing skin meshes for part-based appearances.
+        // Static models (bat, dragon, etc.) use trimeshes and never have skin meshes.
+        var isPartBased = _currentCreature != null &&
+            (_displayService?.IsPartBasedAppearance(_currentCreature.AppearanceType) ?? false);
+
+        if (info.SkinMeshCount == 0 && isPartBased)
         {
             _modelInfoStatusText.Text = "\u26a0 No skin meshes \u2014 model may appear as skeleton only";
             _modelInfoStatusText.Foreground = BrushManager.GetWarningBrush(this);
@@ -407,7 +412,7 @@ public partial class AppearancePanel
         else if (info.HiddenMeshCount > 0)
         {
             _modelInfoStatusText.Text = $"\u2139 {info.HiddenMeshCount} of {info.TotalMeshes} meshes hidden (Render=false)";
-            _modelInfoStatusText.Foreground = Avalonia.Media.Brushes.Gray;
+            _modelInfoStatusText.Foreground = BrushManager.GetInfoBrush(this);
             _modelInfoStatusText.IsVisible = true;
         }
         else
