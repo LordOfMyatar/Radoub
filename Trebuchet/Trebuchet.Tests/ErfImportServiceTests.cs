@@ -109,6 +109,7 @@ public class ErfImportServiceTests : IDisposable
         var result = await _service.ImportResourcesAsync(_erfPath, erf.Resources, _targetDir, overwriteExisting: false);
 
         Assert.Equal(3, result.ImportedCount);
+        Assert.Equal(0, result.OverwrittenCount);
         Assert.Equal(0, result.SkippedCount);
         Assert.Equal(0, result.ErrorCount);
         Assert.True(File.Exists(Path.Combine(_targetDir, "test_script.ncs")));
@@ -126,6 +127,7 @@ public class ErfImportServiceTests : IDisposable
         var result = await _service.ImportResourcesAsync(_erfPath, erf.Resources, _targetDir, overwriteExisting: false);
 
         Assert.Equal(2, result.ImportedCount);
+        Assert.Equal(0, result.OverwrittenCount);
         Assert.Equal(1, result.SkippedCount);
         // Verify the existing file was NOT overwritten
         var actual = await File.ReadAllBytesAsync(Path.Combine(_targetDir, "test_item.uti"));
@@ -140,9 +142,10 @@ public class ErfImportServiceTests : IDisposable
 
         var result = await _service.ImportResourcesAsync(_erfPath, erf.Resources, _targetDir, overwriteExisting: true);
 
-        Assert.Equal(3, result.ImportedCount);
+        Assert.Equal(2, result.ImportedCount);
+        Assert.Equal(1, result.OverwrittenCount);
+        Assert.Equal(3, result.TotalWritten);
         Assert.Equal(0, result.SkippedCount);
-        // Verify the file was overwritten (original ERF content, not 0xFF 0xFF)
         var actual = await File.ReadAllBytesAsync(Path.Combine(_targetDir, "test_item.uti"));
         Assert.NotEqual(new byte[] { 0xFF, 0xFF }, actual);
     }

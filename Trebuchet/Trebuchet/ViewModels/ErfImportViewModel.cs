@@ -181,12 +181,16 @@ public partial class ErfImportViewModel : ObservableObject
             var result = await _importService.ImportResourcesAsync(
                 ErfFilePath, selected, _moduleDirectory, OverwriteExisting, progress, token);
 
-            var parts = new List<string> { $"Imported {result.ImportedCount} resources" };
+            var parts = new List<string>();
+            if (result.ImportedCount > 0)
+                parts.Add($"{result.ImportedCount} imported");
+            if (result.OverwrittenCount > 0)
+                parts.Add($"{result.OverwrittenCount} overwritten");
             if (result.SkippedCount > 0)
                 parts.Add($"{result.SkippedCount} skipped (already exist)");
             if (result.ErrorCount > 0)
                 parts.Add($"{result.ErrorCount} errors");
-            StatusText = string.Join(", ", parts);
+            StatusText = parts.Count > 0 ? string.Join(", ", parts) : "No resources imported";
 
             return result;
         }

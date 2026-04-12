@@ -58,7 +58,9 @@ public class ErfImportService
                 CurrentResRef = entry.ResRef
             });
 
-            if (File.Exists(targetPath) && !overwriteExisting)
+            var fileExists = File.Exists(targetPath);
+
+            if (fileExists && !overwriteExisting)
             {
                 result.SkippedCount++;
                 processed++;
@@ -69,7 +71,17 @@ public class ErfImportService
             {
                 var data = await Task.Run(() => ErfReader.ExtractResource(erfPath, entry), cancellationToken);
                 await File.WriteAllBytesAsync(targetPath, data, cancellationToken);
-                result.ImportedCount++;
+
+                if (fileExists)
+                {
+                    result.OverwrittenCount++;
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"ERF import: overwrote {fileName}");
+                }
+                else
+                {
+                    result.ImportedCount++;
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"ERF import: imported {fileName}");
+                }
             }
             catch (OperationCanceledException)
             {
@@ -92,9 +104,11 @@ public class ErfImportService
 public class ErfImportResult
 {
     public int ImportedCount { get; set; }
+    public int OverwrittenCount { get; set; }
     public int SkippedCount { get; set; }
     public int ErrorCount { get; set; }
     public List<(string ResRef, string Error)> Errors { get; set; } = new();
+    public int TotalWritten => ImportedCount + OverwrittenCount;
 }
 
 public class ImportProgress
