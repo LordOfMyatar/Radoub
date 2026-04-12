@@ -127,6 +127,8 @@ public partial class MainWindowViewModel : ObservableObject
     /// </summary>
     public bool CanBuildModule => IsModuleValid && !string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath) && !IsModFileLocked;
 
+    public bool IsModuleUnpacked => HasUnpackedWorkingDirectory();
+
     /// <summary>
     /// Can compile scripts when a module is selected and compiler is available.
     /// Works even when .mod is locked — compilation writes to the working directory.
@@ -590,6 +592,7 @@ public partial class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(CanTestModule));
             OnPropertyChanged(nameof(CanLoadModule));
             OnPropertyChanged(nameof(CanBuildModule));
+            OnPropertyChanged(nameof(IsModuleUnpacked));
             BuildModuleCommand.NotifyCanExecuteChanged();
         }
 
