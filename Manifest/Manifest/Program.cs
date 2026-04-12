@@ -1,6 +1,7 @@
 using Avalonia;
 using Manifest.Services;
 using System;
+using System.Collections.Generic;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
 using Radoub.UI.Services;
@@ -56,8 +57,27 @@ sealed class Program
 
     // Avalonia configuration, don't remove; also used by visual designer.
     public static AppBuilder BuildAvaloniaApp()
-        => AppBuilder.Configure<App>()
+    {
+        var builder = AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .WithInterFont()
             .LogToTrace();
+
+        // Linux: Explicitly use GLX + Software rendering (no Vulkan).
+        // Vulkan GPU drivers reserve ~256GB of virtual address space, which
+        // triggers the OOM killer on memory-constrained systems.
+        if (OperatingSystem.IsLinux())
+        {
+            builder = builder.With(new X11PlatformOptions
+            {
+                RenderingMode = new List<X11RenderingMode>
+                {
+                    X11RenderingMode.Glx,
+                    X11RenderingMode.Software
+                }
+            });
+        }
+
+        return builder;
+    }
 }
