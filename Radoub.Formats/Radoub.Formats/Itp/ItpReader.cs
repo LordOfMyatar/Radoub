@@ -33,6 +33,14 @@ public static class ItpReader
     }
 
     /// <summary>
+    /// Read an ITP file from an already-parsed GFF file.
+    /// </summary>
+    public static ItpFile Read(GffFile gff)
+    {
+        return ParseItp(gff);
+    }
+
+    /// <summary>
     /// Read an ITP file from a file path.
     /// </summary>
     public static ItpFile? Read(string filePath)

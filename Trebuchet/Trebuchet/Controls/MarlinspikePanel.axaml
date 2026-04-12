@@ -48,6 +48,9 @@
                               ToolTip.Tip="Use .NET regular expressions (e.g., .* = any text, \b = word boundary, [abc] = character class). See: https://learn.microsoft.com/en-us/dotnet/standard/base-types/regular-expression-language-quick-reference"/>
                     <CheckBox Content="Whole word" Margin="0,0,12,0"
                               IsChecked="{Binding IsWholeWord}"/>
+                    <CheckBox Content="Include StrRef text" Margin="0,0,12,0"
+                              IsChecked="{Binding SearchStrRefs}"
+                              ToolTip.Tip="Also search TLK-resolved StrRef text (requires game TLK loaded). Off by default — most modules use embedded text."/>
                     <TextBlock Text="Fields:" VerticalAlignment="Center" Margin="8,0,4,0"/>
                     <ComboBox x:Name="CategoryCombo" MinWidth="120"
                               ItemsSource="{Binding Categories}"

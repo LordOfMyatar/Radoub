@@ -18,7 +18,7 @@ public class GenericGffSearchProvider : SearchProviderBase, IFileSearchProvider
     {
         var regex = criteria.ToRegex();
         var matches = new List<SearchMatch>();
-        WalkStruct(gffFile.RootStruct, regex, "", matches);
+        WalkStruct(gffFile.RootStruct, regex, "", matches, criteria.EffectiveTlkResolver);
         return matches;
     }
 
@@ -107,7 +107,7 @@ public class GenericGffSearchProvider : SearchProviderBase, IFileSearchProvider
         return current;
     }
 
-    private void WalkStruct(GffStruct gffStruct, Regex pattern, string pathPrefix, List<SearchMatch> matches)
+    private void WalkStruct(GffStruct gffStruct, Regex pattern, string pathPrefix, List<SearchMatch> matches, Func<uint, string?>? tlkResolver)
     {
         if (gffStruct.Fields == null) return;
 
@@ -130,20 +130,20 @@ public class GenericGffSearchProvider : SearchProviderBase, IFileSearchProvider
                     if (field.Value is CExoLocString locString)
                     {
                         var fieldDef = MakeFieldDef(field);
-                        matches.AddRange(SearchLocString(locString, fieldDef, pattern, fieldPath));
+                        matches.AddRange(SearchLocString(locString, fieldDef, pattern, fieldPath, tlkResolver));
                     }
                     break;
 
                 case GffField.Struct:
                     if (field.Value is GffStruct childStruct)
-                        WalkStruct(childStruct, pattern, fieldPath, matches);
+                        WalkStruct(childStruct, pattern, fieldPath, matches, tlkResolver);
                     break;
 
                 case GffField.List:
                     if (field.Value is GffList list)
                     {
                         for (int i = 0; i < list.Elements.Count; i++)
-                            WalkStruct(list.Elements[i], pattern, $"{fieldPath}[{i}]", matches);
+                            WalkStruct(list.Elements[i], pattern, $"{fieldPath}[{i}]", matches, tlkResolver);
                     }
                     break;
             }

@@ -31,6 +31,7 @@ public class UtpSearchProvider : SearchProviderBase, IFileSearchProvider
     private static readonly FieldDefinition OnUserDefinedField = new() { Name = "OnUserDefined", GffPath = "OnUserDefined", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnUserDefined event script" };
     private static readonly FieldDefinition OnUsedField = new() { Name = "OnUsed", GffPath = "OnUsed", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnUsed event script" };
     private static readonly FieldDefinition VarTableField = new() { Name = "Local Variables", GffPath = "VarTable", FieldType = SearchFieldType.Variable, Category = SearchFieldCategory.Variable, Description = "Local variable names and string values" };
+    private static readonly FieldDefinition InventoryResField = new() { Name = "InventoryRes", GffPath = "InventoryRes", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Inventory item ResRef", IsReplaceable = false };
 
     public ushort FileType => ResourceTypes.Utp;
 
@@ -45,9 +46,9 @@ public class UtpSearchProvider : SearchProviderBase, IFileSearchProvider
         var matches = new List<SearchMatch>();
 
         if (criteria.MatchesField(NameField))
-            matches.AddRange(SearchLocString(utp.LocName, NameField, regex, "LocName"));
+            matches.AddRange(SearchLocString(utp.LocName, NameField, regex, "LocName", criteria.EffectiveTlkResolver));
         if (criteria.MatchesField(DescriptionField))
-            matches.AddRange(SearchLocString(utp.Description, DescriptionField, regex, "Description"));
+            matches.AddRange(SearchLocString(utp.Description, DescriptionField, regex, "Description", criteria.EffectiveTlkResolver));
         if (criteria.MatchesField(TagField))
             matches.AddRange(SearchString(utp.Tag, TagField, regex, "Tag"));
         if (criteria.MatchesField(ResRefField))
@@ -86,6 +87,16 @@ public class UtpSearchProvider : SearchProviderBase, IFileSearchProvider
             matches.AddRange(SearchString(utp.OnUsed, OnUsedField, regex, "OnUsed"));
         if (criteria.MatchesField(VarTableField))
             matches.AddRange(SearchVarTable(gffFile.RootStruct, VarTableField, regex, "VarTable"));
+
+        // Inventory items (#1951)
+        if (criteria.MatchesField(InventoryResField))
+        {
+            for (int i = 0; i < utp.ItemList.Count; i++)
+            {
+                var location = $"Inventory > Item {i} > InventoryRes";
+                matches.AddRange(SearchString(utp.ItemList[i].InventoryRes, InventoryResField, regex, location));
+            }
+        }
 
         return matches;
     }

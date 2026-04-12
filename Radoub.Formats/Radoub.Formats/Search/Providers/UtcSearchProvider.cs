@@ -62,11 +62,11 @@ public class UtcSearchProvider : SearchProviderBase, IFileSearchProvider
 
         // Content (LocString)
         if (criteria.MatchesField(FirstNameField))
-            matches.AddRange(SearchLocString(utc.FirstName, FirstNameField, regex, "FirstName"));
+            matches.AddRange(SearchLocString(utc.FirstName, FirstNameField, regex, "FirstName", criteria.EffectiveTlkResolver));
         if (criteria.MatchesField(LastNameField))
-            matches.AddRange(SearchLocString(utc.LastName, LastNameField, regex, "LastName"));
+            matches.AddRange(SearchLocString(utc.LastName, LastNameField, regex, "LastName", criteria.EffectiveTlkResolver));
         if (criteria.MatchesField(DescriptionField))
-            matches.AddRange(SearchLocString(utc.Description, DescriptionField, regex, "Description"));
+            matches.AddRange(SearchLocString(utc.Description, DescriptionField, regex, "Description", criteria.EffectiveTlkResolver));
 
         // Identity
         if (criteria.MatchesField(TagField))
