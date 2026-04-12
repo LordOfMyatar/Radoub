@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.30.0-alpha] - 2026-04-11
+**Branch**: `trebuchet/issue-2067` | **PR**: #2071
+
+### Sprint: ERF Importer & Marlinspike UTM Search (#2067)
+
+- Promote ItemResolutionService to shared Radoub.UI library (#2014)
+- Wire item name resolver into Marlinspike UTM search (#2014)
+- ERF import wizard for selective resource extraction into module (#2016)
+
+---
+
 ## [1.29.0-alpha] - 2026-04-11
 **Branch**: `radoub/issue-2069` | **PR**: #2070
 

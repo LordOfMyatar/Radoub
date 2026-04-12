@@ -278,4 +278,19 @@ public partial class MainWindow : Window
     }
 
     #endregion
+
+    #region ERF Import
+
+    private void OnImportErfClick(object? sender, RoutedEventArgs e)
+    {
+        var modulePath = RadoubLauncher.Services.ModulePathHelper.GetWorkingDirectory(
+            Radoub.Formats.Settings.RadoubSettings.Instance.CurrentModulePath);
+        if (string.IsNullOrEmpty(modulePath)) return;
+
+        var window = new ErfImportWindow();
+        window.Initialize(modulePath);
+        window.Show(this);
+    }
+
+    #endregion
 }

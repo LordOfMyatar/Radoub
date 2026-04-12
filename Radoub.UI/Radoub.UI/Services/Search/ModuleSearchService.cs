@@ -38,6 +38,11 @@ public class ModuleSearchService
     {
     }
 
+    public ModuleSearchService(Func<string, string?>? utmItemNameResolver)
+        : this(SearchProviderFactory.CreateDefault(utmItemNameResolver))
+    {
+    }
+
     public ModuleSearchService(SearchProviderFactory factory)
     {
         _factory = factory ?? throw new ArgumentNullException(nameof(factory));

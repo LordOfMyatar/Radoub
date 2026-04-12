@@ -27,6 +27,7 @@ public partial class MarlinspikePanel : UserControl
     private Window? _parentWindow;
     private ModuleSearchService? _searchService;
     private BatchReplaceService? _batchReplaceService;
+    private ItemResolutionService? _itemResolutionService;
     private TlkService? _tlkService;
     private CancellationTokenSource? _searchCts;
 
@@ -68,7 +69,17 @@ public partial class MarlinspikePanel : UserControl
 
     private void EnsureServices()
     {
-        _searchService ??= new ModuleSearchService();
+        if (_searchService == null)
+        {
+            var gameDataService = _mainViewModel?.ModuleEditorViewModel?.GameDataService;
+            _itemResolutionService = new ItemResolutionService(gameDataService);
+            var modulePath = ModulePath.GetWorkingDirectory(RadoubSettings.Instance.CurrentModulePath);
+            if (!string.IsNullOrEmpty(modulePath))
+                _itemResolutionService.SetModuleDirectory(modulePath);
+
+            _searchService = new ModuleSearchService(
+                resRef => _itemResolutionService?.ResolveItem(resRef)?.DisplayName);
+        }
         _batchReplaceService ??= new BatchReplaceService(new BackupService());
         EnsureTlkResolver();
     }
@@ -335,6 +346,8 @@ public partial class MarlinspikePanel : UserControl
     /// </summary>
     public void OnModuleChanged()
     {
+        _itemResolutionService = null;
+        _searchService = null;
         _viewModel?.ClearResults();
         ResultsTree.ItemsSource = null;
         DurationText.Text = "";

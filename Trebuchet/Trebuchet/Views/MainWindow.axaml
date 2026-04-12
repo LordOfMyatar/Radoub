@@ -96,6 +96,11 @@
                             IsEnabled="{Binding CanBuildModule}"
                             Padding="8,4"
                             ToolTip.Tip="Save IFO changes and pack working directory into .mod file"/>
+                    <Button Content="Import ERF..."
+                            Click="OnImportErfClick"
+                            IsVisible="{Binding IsModuleUnpacked}"
+                            Padding="8,4"
+                            ToolTip.Tip="Import resources from an ERF, HAK, or MOD archive"/>
                     <!-- Build warning indicator -->
                     <TextBlock Text="⚠"
                                Foreground="{DynamicResource ThemeWarning}"
