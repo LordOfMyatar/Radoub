@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -59,6 +60,7 @@ public partial class ErfImportViewModel : ObservableObject
         {
             ErfFilePath = path;
             StatusText = "Loading ERF metadata...";
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"ERF import: loading {Path.GetFileName(path)}");
 
             var erf = await Task.Run(() => ErfReader.ReadMetadataOnly(path));
             var conflicts = _importService.DetectConflicts(erf.Resources, _moduleDirectory);
@@ -164,6 +166,9 @@ public partial class ErfImportViewModel : ObservableObject
             .Where(r => r.IsSelected)
             .Select(r => r.Entry)
             .ToList();
+
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"ERF import: starting — {selected.Count} resources, overwrite={OverwriteExisting}");
 
         _importCts?.Cancel();
         _importCts = new CancellationTokenSource();
