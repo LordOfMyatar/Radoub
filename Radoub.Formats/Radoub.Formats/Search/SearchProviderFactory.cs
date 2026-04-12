@@ -56,6 +56,8 @@ public class SearchProviderFactory
         factory.Register(new JrlSearchProvider());
         factory.Register(new AreSearchProvider());
         factory.Register(new GitSearchProvider());
+        factory.Register(new ItpSearchProvider());
+        factory.Register(new FacSearchProvider());
         factory.SetFallback(new GenericGffSearchProvider());
         return factory;
     }
