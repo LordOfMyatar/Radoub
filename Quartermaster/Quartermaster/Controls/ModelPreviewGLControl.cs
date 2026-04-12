@@ -285,8 +285,16 @@ public class ModelPreviewGLControl : OpenGlControlBase
             // Create Silk.NET GL context from Avalonia's proc address loader
             _gl = GL.GetApi(gl.GetProcAddress);
 
+            // Detect whether this is an OpenGL ES context (ANGLE on Windows)
+            // or desktop OpenGL (GLX on Linux) — shaders need different version preambles.
+            var versionString = _gl.GetStringS(StringName.Version) ?? "";
+            var isOpenGLES = versionString.Contains("OpenGL ES", StringComparison.OrdinalIgnoreCase);
+            var renderer = _gl.GetStringS(StringName.Renderer) ?? "unknown";
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"GL context: {versionString} | Renderer: {renderer} | ES={isOpenGLES}");
+
             // Compile and link shaders via manager
-            _shaderManager = new OpenGLShaderManager(_gl);
+            _shaderManager = new OpenGLShaderManager(_gl, isOpenGLES);
             _shaderManager.CreateProgram();
 
             // Create VAO/VBO/EBO

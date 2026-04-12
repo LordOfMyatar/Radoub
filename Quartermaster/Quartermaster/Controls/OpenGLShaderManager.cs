@@ -15,14 +15,17 @@ namespace Quartermaster.Controls;
 public class OpenGLShaderManager
 {
     private readonly GL _gl;
+    private readonly bool _isOpenGLES;
     private uint _shaderProgram;
     private bool _loggedUniforms;
 
-    // Shader source code - GLSL ES 300 for ANGLE compatibility on Windows
-    // Avalonia uses ANGLE which provides OpenGL ES, not desktop OpenGL
-    public const string VertexShaderSource = @"#version 300 es
-precision highp float;
+    // Shader source split into version preamble + shared body.
+    // Windows (ANGLE) provides OpenGL ES → needs "#version 300 es" + precision qualifier.
+    // Linux (GLX) provides desktop OpenGL → needs "#version 330 core", no precision qualifier.
+    private const string VersionEs = "#version 300 es\nprecision highp float;\n";
+    private const string VersionDesktop = "#version 330 core\n";
 
+    private const string VertexShaderBody = @"
 layout (location = 0) in vec3 aPosition;
 layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aTexCoord;
@@ -44,9 +47,7 @@ void main()
 }
 ";
 
-    public const string FragmentShaderSource = @"#version 300 es
-precision highp float;
-
+    private const string FragmentShaderBody = @"
 out vec4 FragColor;
 
 in vec3 FragPos;
@@ -88,9 +89,10 @@ void main()
 
     public uint ShaderProgram => _shaderProgram;
 
-    public OpenGLShaderManager(GL gl)
+    public OpenGLShaderManager(GL gl, bool isOpenGLES)
     {
         _gl = gl;
+        _isOpenGLES = isOpenGLES;
     }
 
     /// <summary>
@@ -98,8 +100,9 @@ void main()
     /// </summary>
     public bool CreateProgram()
     {
-        var vertexShader = CompileShader(ShaderType.VertexShader, VertexShaderSource);
-        var fragmentShader = CompileShader(ShaderType.FragmentShader, FragmentShaderSource);
+        var preamble = _isOpenGLES ? VersionEs : VersionDesktop;
+        var vertexShader = CompileShader(ShaderType.VertexShader, preamble + VertexShaderBody);
+        var fragmentShader = CompileShader(ShaderType.FragmentShader, preamble + FragmentShaderBody);
 
         _shaderProgram = _gl.CreateProgram();
         _gl.AttachShader(_shaderProgram, vertexShader);

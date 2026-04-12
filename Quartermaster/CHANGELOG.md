@@ -5,6 +5,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.78-alpha] - 2026-04-12
+**Branch**: `quartermaster/issue-2074` | **PR**: #2076
+
+### Fix: 3D model preview not rendering on Linux (#2074)
+
+---
+
 ## [0.2.77-alpha] - 2026-04-11
 **Branch**: `quartermaster/issue-2057` | **PR**: #2059
 
