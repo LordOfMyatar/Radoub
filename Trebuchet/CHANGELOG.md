@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.30.0-alpha] - 2026-04-11
-**Branch**: `trebuchet/issue-2067` | **PR**: #TBD
+**Branch**: `trebuchet/issue-2067` | **PR**: #2071
 
 ### Sprint: ERF Importer & Marlinspike UTM Search (#2067)
 
