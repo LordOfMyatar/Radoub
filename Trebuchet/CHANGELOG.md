@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.29.0-alpha] - 2026-04-11
+**Branch**: `radoub/issue-2069` | **PR**: #TBD
+
+### Sprint: Marlinspike Search Provider Expansion (#2069)
+
+- UtpSearchProvider: search placeable inventory item ResRefs (#1951)
+- Dedicated ITP and FAC search providers with human-readable paths (#2001)
+- StrRef-resolved text search option across all providers (#2000)
+
+---
+
 ## [1.28.0-alpha] - 2026-03-29
 **Branch**: `trebuchet/issue-1633` | **PR**: #2033
 
