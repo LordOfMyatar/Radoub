@@ -74,15 +74,18 @@ sealed class Program
             .WithInterFont()
             .LogToTrace();
 
-        // Linux: Explicitly use GLX + Software rendering (no Vulkan).
+        // Linux: Explicitly set rendering modes (no Vulkan).
         // Vulkan GPU drivers reserve ~256GB of virtual address space, which
         // triggers the OOM killer on memory-constrained systems.
+        // EGL is needed for OpenGlControlBase on Wayland/XWayland where GLX
+        // contexts may not initialize for offscreen GL controls (#2074).
         if (OperatingSystem.IsLinux())
         {
             builder = builder.With(new X11PlatformOptions
             {
                 RenderingMode = new List<X11RenderingMode>
                 {
+                    X11RenderingMode.Egl,
                     X11RenderingMode.Glx,
                     X11RenderingMode.Software
                 }
