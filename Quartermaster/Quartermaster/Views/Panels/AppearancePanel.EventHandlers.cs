@@ -2,6 +2,7 @@
 // All event wiring and handler methods
 
 using System;
+using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -398,15 +399,15 @@ public partial class AppearancePanel
             return;
         }
 
-        // Only warn about missing skins when the model has meshes but ALL are
-        // non-rendering bones (many Render=false, zero visible geometry).
-        // Part-based models often assemble trimeshes (not skin nodes) and render fine.
-        // Static models use trimeshes by design. The real skeleton-only case is when
-        // most meshes are hidden and there's no visible geometry — that's already
-        // covered by PreviewState.NotAvailable. So we only show the hidden mesh info.
+        var parts = new List<string>();
+        if (info.SkippedTrimeshCount > 0)
+            parts.Add($"{info.SkippedTrimeshCount} tiny trimeshes filtered");
         if (info.HiddenMeshCount > 0)
+            parts.Add($"{info.HiddenMeshCount} of {info.TotalMeshes} meshes hidden (Render=false)");
+
+        if (parts.Count > 0)
         {
-            _modelInfoStatusText.Text = $"\u2139 {info.HiddenMeshCount} of {info.TotalMeshes} meshes hidden (Render=false)";
+            _modelInfoStatusText.Text = $"\u2139 {string.Join(", ", parts)}";
             _modelInfoStatusText.Foreground = BrushManager.GetInfoBrush(this);
             _modelInfoStatusText.IsVisible = true;
         }

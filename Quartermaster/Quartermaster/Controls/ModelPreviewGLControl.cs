@@ -83,7 +83,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
     /// <summary>
     /// Mesh composition info for the currently loaded model.
     /// </summary>
-    public record ModelMeshInfo(int TotalMeshes, int SkinMeshCount, int HiddenMeshCount);
+    public record ModelMeshInfo(int TotalMeshes, int SkinMeshCount, int HiddenMeshCount, int SkippedTrimeshCount);
 
     /// <summary>
     /// Raised on the UI thread after model mesh analysis completes.
@@ -106,7 +106,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
             if (value == null)
             {
                 SetPreviewState(PreviewState.None);
-                MeshInfoChanged?.Invoke(this, new ModelMeshInfo(0, 0, 0));
+                MeshInfoChanged?.Invoke(this, new ModelMeshInfo(0, 0, 0, 0));
             }
             RequestNextFrameRendering();
         }
@@ -540,17 +540,26 @@ public class ModelPreviewGLControl : OpenGlControlBase
 
         int meshIndex = 0;
         int skippedMeshes = 0;
+        int skippedTrimeshes = 0;
         var allMeshes = _model.GetMeshNodes().ToList();
 
-        // #1676: CEP models often have both skin meshes (full-body geometry for animation)
-        // and trimeshes. Small trimeshes (<30 verts) in skin models are typically bone
-        // visualizations that overlap with skin geometry, causing visual artifacts.
-        // Skip them when skins are present. Keep substantial trimeshes (manes, fangs, etc.).
+        // #1676/#2057: CEP models often have both skin meshes and trimeshes. Tiny trimeshes
+        // (<30 verts) that share a skin's bitmap are bone visualizations causing artifacts.
+        // Trimeshes with unique bitmaps are real geometry (tails, manes, fangs) — keep them.
         bool hasSkins = allMeshes.Any(m => m is Radoub.Formats.Mdl.MdlSkinNode && m.Render && m.Vertices.Length > 0);
+        var skinBitmaps = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (hasSkins)
         {
+            foreach (var m in allMeshes)
+            {
+                if (m is Radoub.Formats.Mdl.MdlSkinNode && m.Render && m.Vertices.Length > 0)
+                {
+                    if (!string.IsNullOrEmpty(m.Bitmap) && !m.Bitmap.Equals("null", StringComparison.OrdinalIgnoreCase))
+                        skinBitmaps.Add(m.Bitmap);
+                }
+            }
             UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"  Model '{_model.Name}': Has skin meshes — will skip tiny trimeshes (<30 verts)");
+                $"  Model '{_model.Name}': Has skin meshes — will filter tiny trimeshes sharing skin textures ({string.Join(", ", skinBitmaps)})");
         }
 
         UnifiedLogger.LogApplication(LogLevel.INFO, $"  Model '{_model.Name}': {allMeshes.Count} mesh nodes: {string.Join(", ", allMeshes.Select(m => m.Name))}");
@@ -576,13 +585,15 @@ public class ModelPreviewGLControl : OpenGlControlBase
 
             bool isSkinMesh = mesh is Radoub.Formats.Mdl.MdlSkinNode;
 
-            // #1676: In models with skins, skip tiny trimeshes (<30 verts) — they're
-            // bone visualizations that overlap with skin geometry causing artifacts.
-            // Keep substantial trimeshes (manes, fangs, accessories, etc.)
-            if (hasSkins && !isSkinMesh && mesh.Vertices.Length < 30)
+            // #1676/#2057: In models with skins, skip tiny trimeshes (<30 verts) that share
+            // a skin bitmap (bone visualizations). Keep trimeshes with unique bitmaps — they're
+            // real geometry (tails, manes, fangs, accessories).
+            if (MeshSkipHeuristic.ShouldSkipTrimesh(hasSkins, isSkinMesh, mesh.Vertices.Length, mesh.Bitmap, skinBitmaps))
             {
                 skippedMeshes++;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Skipping tiny trimesh '{mesh.Name}' ({mesh.Vertices.Length} verts): bone viz in skin model");
+                skippedTrimeshes++;
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"  Skipping tiny trimesh '{mesh.Name}' ({mesh.Vertices.Length} verts, bitmap='{mesh.Bitmap}'): shares skin texture in skin model");
                 continue;
             }
 
@@ -800,7 +811,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
         UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateMeshBuffers: model={_model?.Name ?? "null"}, {_meshDrawCalls.Count} meshes ({skippedMeshes} skipped), {vertices.Count / 8} vertices, {_indexCount / 3} triangles");
 
         // Notify listeners of mesh composition
-        var meshInfo = new ModelMeshInfo(totalMeshCount, skinMeshCount, hiddenMeshCount);
+        var meshInfo = new ModelMeshInfo(totalMeshCount, skinMeshCount, hiddenMeshCount, skippedTrimeshes);
         if (Dispatcher.UIThread.CheckAccess())
             MeshInfoChanged?.Invoke(this, meshInfo);
         else
