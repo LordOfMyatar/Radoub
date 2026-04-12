@@ -1,7 +1,8 @@
-using MerchantEditor.Services;
 using Radoub.TestUtilities.Mocks;
+using Radoub.UI.Services;
+using Xunit;
 
-namespace Fence.Tests;
+namespace Radoub.UI.Tests.Services;
 
 /// <summary>
 /// Tests for ItemResolutionService with a configured MockGameDataService.
@@ -23,32 +24,24 @@ public class ItemResolutionServiceWithGameDataTests
 
     private void SetupBaseItemsData()
     {
-        // baseitems.2da for GetBaseItemTypeName resolution
-        // Row 1: Longsword with valid TLK
         _mockGameData.Set2DAValue("baseitems", 1, "label", "BASE_ITEM_LONGSWORD");
         _mockGameData.Set2DAValue("baseitems", 1, "Name", "600");
 
-        // Row 16: Armor with valid TLK
         _mockGameData.Set2DAValue("baseitems", 16, "label", "BASE_ITEM_ARMOR");
         _mockGameData.Set2DAValue("baseitems", 16, "Name", "601");
 
-        // Row 24: Ring with no TLK string (falls back to label)
         _mockGameData.Set2DAValue("baseitems", 24, "label", "BASE_ITEM_RING");
         _mockGameData.Set2DAValue("baseitems", 24, "Name", "602");
 
-        // Row 46: Potions with BadStrRef TLK (falls back to label)
         _mockGameData.Set2DAValue("baseitems", 46, "label", "BASE_ITEM_POTIONS");
         _mockGameData.Set2DAValue("baseitems", 46, "Name", "603");
 
-        // Row 100: Custom item, Name = "****" (falls back to label)
         _mockGameData.Set2DAValue("baseitems", 100, "label", "BASE_ITEM_CUSTOM_SWORD");
         _mockGameData.Set2DAValue("baseitems", 100, "Name", "****");
 
-        // TLK strings
         _mockGameData.SetTlkString(600, "Long Sword");
         _mockGameData.SetTlkString(601, "Armor");
-        // 602 not set — returns null
-        _mockGameData.SetTlkString(603, "BadStrRef"); // Invalid TLK value
+        _mockGameData.SetTlkString(603, "BadStrRef");
     }
 
     #region GetBaseItemTypeName via Fallback Data
@@ -56,8 +49,6 @@ public class ItemResolutionServiceWithGameDataTests
     [Fact]
     public void ResolveItem_WithGameData_FallbackIncludesBaseItemTypeName()
     {
-        // When UTI is not found (FindResource returns null), we still get fallback data
-        // The base item type name should still be resolved from 2DA when possible
         var service = new ItemResolutionService(_mockGameData);
 
         var result = service.ResolveItem("nonexistent_sword");
@@ -65,7 +56,6 @@ public class ItemResolutionServiceWithGameDataTests
         Assert.NotNull(result);
         Assert.Equal("nonexistent_sword", result.ResRef);
         Assert.Equal(-1, result.BaseItemType);
-        // Fallback uses "Unknown" regardless of game data
         Assert.Equal("Unknown", result.BaseItemTypeName);
     }
 
@@ -91,8 +81,6 @@ public class ItemResolutionServiceWithGameDataTests
     [Fact]
     public void ResolveItem_WithConfiguredGameData_StillReturnsFallbackWhenNotFound()
     {
-        // MockGameDataService.FindResource always returns null
-        // So even with configured game data, items not found on disk get fallback
         var service = new ItemResolutionService(_mockGameData);
 
         var result = service.ResolveItem("missing_item");
@@ -207,7 +195,6 @@ public class ItemResolutionServiceWithGameDataTests
     {
         var service = new ItemResolutionService(_mockGameData);
         service.SetCurrentFilePath(null);
-        // Should work fine
         var result = service.ResolveItem("test_item");
         Assert.NotNull(result);
     }

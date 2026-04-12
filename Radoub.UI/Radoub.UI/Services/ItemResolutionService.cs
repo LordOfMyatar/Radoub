@@ -5,10 +5,9 @@ using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Uti;
-using Radoub.UI.Services;
 using Radoub.UI.ViewModels;
 
-namespace MerchantEditor.Services;
+namespace Radoub.UI.Services;
 
 /// <summary>
 /// Service for resolving item data from UTI files.
@@ -29,7 +28,6 @@ public class ItemResolutionService
         _tlkService = tlkService;
         _itemViewModelFactory = itemViewModelFactory;
 
-        // Log configuration status on creation
         if (_gameDataService == null)
         {
             UnifiedLogger.LogApplication(LogLevel.WARN, "ItemResolutionService: GameDataService is null - BIF lookup disabled");
@@ -51,7 +49,17 @@ public class ItemResolutionService
     public void SetCurrentFilePath(string? filePath)
     {
         _moduleDirectory = string.IsNullOrEmpty(filePath) ? null : Path.GetDirectoryName(filePath);
-        ClearCache(); // Clear cache when file context changes
+        ClearCache();
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"ItemResolutionService: Module directory set to: {_moduleDirectory ?? "(none)"}");
+    }
+
+    /// <summary>
+    /// Sets the module directory directly for item resolution.
+    /// </summary>
+    public void SetModuleDirectory(string? directory)
+    {
+        _moduleDirectory = directory;
+        ClearCache();
         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"ItemResolutionService: Module directory set to: {_moduleDirectory ?? "(none)"}");
     }
 
@@ -65,7 +73,6 @@ public class ItemResolutionService
         if (string.IsNullOrEmpty(resRef))
             return null;
 
-        // Check cache first
         if (_cache.TryGetValue(resRef, out var cached))
             return cached;
 
@@ -159,16 +166,9 @@ public class ItemResolutionService
 
         try
         {
-            // Get display name with full resolution chain
             var displayName = ResolveDisplayName(uti, resRef);
-
-            // Get base item type name
             var baseItemTypeName = GetBaseItemTypeName(uti.BaseItem);
-
-            // Get base cost from UTI
             var baseCost = (int)uti.Cost;
-
-            // Resolve item properties display string
             var propertiesDisplay = _itemViewModelFactory?.GetPropertiesDisplay(uti.Properties) ?? string.Empty;
 
             return new ResolvedItemData
@@ -195,7 +195,6 @@ public class ItemResolutionService
 
     private string ResolveDisplayName(UtiFile uti, string resRef)
     {
-        // Use TlkService for language-aware resolution (#1361)
         if (_tlkService != null)
         {
             var resolved = _tlkService.ResolveLocString(uti.LocalizedName);
@@ -204,7 +203,6 @@ public class ItemResolutionService
         }
         else
         {
-            // Fallback: no TlkService available - use basic resolution
             var defaultString = uti.LocalizedName.GetDefault();
             if (TlkHelper.IsValidTlkString(defaultString))
                 return defaultString!;
@@ -217,11 +215,9 @@ public class ItemResolutionService
             }
         }
 
-        // Fall back to ResRef from UTI
         if (!string.IsNullOrEmpty(uti.TemplateResRef))
             return uti.TemplateResRef;
 
-        // Final fallback to the resRef we were looking for
         return resRef;
     }
 
@@ -230,7 +226,6 @@ public class ItemResolutionService
         if (_gameDataService == null)
             return $"Type {baseItemIndex}";
 
-        // Try to get name from baseitems.2da
         var nameStrRef = _gameDataService.Get2DAValue("baseitems", baseItemIndex, "Name");
         if (!string.IsNullOrEmpty(nameStrRef) && nameStrRef != "****")
         {
@@ -239,7 +234,6 @@ public class ItemResolutionService
                 return name!;
         }
 
-        // Fall back to label
         var label = _gameDataService.Get2DAValue("baseitems", baseItemIndex, "label");
         if (!string.IsNullOrEmpty(label) && label != "****")
         {
