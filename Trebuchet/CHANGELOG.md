@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.29.0-alpha] - 2026-04-11
-**Branch**: `radoub/issue-2069` | **PR**: #TBD
+**Branch**: `radoub/issue-2069` | **PR**: #2070
 
 ### Sprint: Marlinspike Search Provider Expansion (#2069)
 
