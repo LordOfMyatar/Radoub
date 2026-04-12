@@ -27,6 +27,7 @@ public partial class MainWindowViewModel : ObservableObject
     private System.Threading.Timer? _lockPollTimer;
     private Window? _parentWindow;
     private ModuleEditorViewModel? _moduleEditorViewModel;
+    public ModuleEditorViewModel? ModuleEditorViewModel => _moduleEditorViewModel;
     private FactionEditorViewModel? _factionEditorViewModel;
 
     [ObservableProperty]
