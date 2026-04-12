@@ -57,7 +57,9 @@ jobs:
       run: |
         echo "parley=$(dotnet nbgv get-version -p Parley -v SemVer2)" >> $GITHUB_OUTPUT
         echo "manifest=$(dotnet nbgv get-version -p Manifest -v SemVer2)" >> $GITHUB_OUTPUT
+        echo "quartermaster=$(dotnet nbgv get-version -p Quartermaster -v SemVer2)" >> $GITHUB_OUTPUT
         echo "fence=$(dotnet nbgv get-version -p Fence -v SemVer2)" >> $GITHUB_OUTPUT
+        echo "relique=$(dotnet nbgv get-version -p Relique -v SemVer2)" >> $GITHUB_OUTPUT
         echo "trebuchet=$(dotnet nbgv get-version -p Trebuchet -v SemVer2)" >> $GITHUB_OUTPUT
 
     - name: Restore Parley dependencies
@@ -68,6 +70,12 @@ jobs:
 
     - name: Restore Fence dependencies
       run: dotnet restore Fence/Fence/Fence.csproj -r ${{ matrix.runtime }}
+
+    - name: Restore Quartermaster dependencies
+      run: dotnet restore Quartermaster/Quartermaster/Quartermaster.csproj -r ${{ matrix.runtime }}
+
+    - name: Restore Relique dependencies
+      run: dotnet restore Relique/Relique/Relique.csproj -r ${{ matrix.runtime }}
 
     - name: Restore Trebuchet dependencies
       run: dotnet restore Trebuchet/Trebuchet/Trebuchet.csproj -r ${{ matrix.runtime }}
@@ -86,6 +94,14 @@ jobs:
     # Fence - merchant/store editor
     - name: Publish Fence to shared folder
       run: dotnet publish Fence/Fence/Fence.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -o ./publish/Radoub
+
+    # Quartermaster - creature/inventory editor
+    - name: Publish Quartermaster to shared folder
+      run: dotnet publish Quartermaster/Quartermaster/Quartermaster.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -o ./publish/Radoub
+
+    # Relique - item blueprint editor (assembly name: ItemEditor)
+    - name: Publish Relique to shared folder
+      run: dotnet publish Relique/Relique/Relique.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -o ./publish/Radoub
 
     # Trebuchet - launcher/hub (includes bundled tools/ directory with script compiler)
     - name: Publish Trebuchet to shared folder
@@ -194,6 +210,64 @@ jobs:
         EOF
         chmod +x "./bundle/Fence.app/Contents/MacOS/Fence"
 
+        # Quartermaster.app - copy from shared folder
+        mkdir -p "./bundle/Quartermaster.app/Contents/MacOS"
+        mkdir -p "./bundle/Quartermaster.app/Contents/Resources"
+        cp ./publish/Radoub/Quartermaster "./bundle/Quartermaster.app/Contents/MacOS/"
+        cp ./publish/Radoub/*.dylib "./bundle/Quartermaster.app/Contents/MacOS/" 2>/dev/null || true
+        cat > "./bundle/Quartermaster.app/Contents/Info.plist" << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key>
+            <string>Quartermaster</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.lnsdevelopment.quartermaster</string>
+            <key>CFBundleName</key>
+            <string>Quartermaster</string>
+            <key>CFBundleVersion</key>
+            <string>${{ steps.tool-versions.outputs.quartermaster }}</string>
+            <key>CFBundleShortVersionString</key>
+            <string>${{ steps.tool-versions.outputs.quartermaster }}</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+        </dict>
+        </plist>
+        EOF
+        chmod +x "./bundle/Quartermaster.app/Contents/MacOS/Quartermaster"
+
+        # Relique.app (ItemEditor) - copy from shared folder
+        mkdir -p "./bundle/Relique.app/Contents/MacOS"
+        mkdir -p "./bundle/Relique.app/Contents/Resources"
+        cp ./publish/Radoub/ItemEditor "./bundle/Relique.app/Contents/MacOS/ItemEditor"
+        cp ./publish/Radoub/*.dylib "./bundle/Relique.app/Contents/MacOS/" 2>/dev/null || true
+        cat > "./bundle/Relique.app/Contents/Info.plist" << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key>
+            <string>ItemEditor</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.lnsdevelopment.relique</string>
+            <key>CFBundleName</key>
+            <string>Relique</string>
+            <key>CFBundleVersion</key>
+            <string>${{ steps.tool-versions.outputs.relique }}</string>
+            <key>CFBundleShortVersionString</key>
+            <string>${{ steps.tool-versions.outputs.relique }}</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+        </dict>
+        </plist>
+        EOF
+        chmod +x "./bundle/Relique.app/Contents/MacOS/ItemEditor"
+
         # Trebuchet.app - copy from shared folder (includes tools/ for script compiler)
         mkdir -p "./bundle/Trebuchet.app/Contents/MacOS"
         mkdir -p "./bundle/Trebuchet.app/Contents/Resources"
@@ -231,7 +305,9 @@ jobs:
       run: |
         chmod +x ./publish/Radoub/Parley
         chmod +x ./publish/Radoub/Manifest
+        chmod +x ./publish/Radoub/Quartermaster
         chmod +x ./publish/Radoub/Fence
+        chmod +x ./publish/Radoub/ItemEditor
         chmod +x ./publish/Radoub/Trebuchet
         chmod +x ./publish/Radoub/tools/nwn_script_comp_linux 2>/dev/null || true
 
@@ -362,7 +438,7 @@ jobs:
         body: |
           # Radoub ${{ steps.version.outputs.version }}
 
-          Bundled release containing Parley, Manifest, Fence, and Trebuchet with shared runtime.
+          Bundled release containing Parley, Manifest, Quartermaster, Fence, Relique, and Trebuchet with shared runtime.
 
           ${{ steps.highlights.outputs.highlights }}
 
@@ -373,12 +449,12 @@ jobs:
           These bundles include everything needed - just download and run!
 
           - **Windows**: `Radoub-win-x64.zip` (~110MB)
-            - Extract and run `Radoub/Parley.exe`, `Radoub/Manifest.exe`, `Radoub/Fence.exe`, or `Radoub/Trebuchet.exe`
+            - Extract and run `Radoub/Parley.exe`, `Radoub/Manifest.exe`, `Radoub/Quartermaster.exe`, `Radoub/Fence.exe`, `Radoub/ItemEditor.exe`, or `Radoub/Trebuchet.exe`
           - **macOS**: `Radoub-osx-arm64.zip` (~130MB)
-            - Extract and open `Parley.app`, `Manifest.app`, `Fence.app`, or `Trebuchet.app`
+            - Extract and open `Parley.app`, `Manifest.app`, `Quartermaster.app`, `Fence.app`, `Relique.app`, or `Trebuchet.app`
             - Apple Silicon (M1/M2/M3) Macs
           - **Linux**: `Radoub-linux-x64.tar.gz` (~115MB)
-            - Extract and run `./Radoub/Parley`, `./Radoub/Manifest`, `./Radoub/Fence`, or `./Radoub/Trebuchet`
+            - Extract and run `./Radoub/Parley`, `./Radoub/Manifest`, `./Radoub/Quartermaster`, `./Radoub/Fence`, `./Radoub/ItemEditor`, or `./Radoub/Trebuchet`
 
           ## What's Included
 
@@ -386,7 +462,9 @@ jobs:
           |------|-------------|
           | **Parley** | Dialog editor for `.dlg` files |
           | **Manifest** | Journal editor for `.jrl` files |
+          | **Quartermaster** | Creature/inventory editor for `.utc`/`.bic` files |
           | **Fence** | Merchant/store editor for `.utm` files |
+          | **Relique** (ItemEditor) | Item blueprint editor for `.uti` files |
           | **Trebuchet** | Launcher, module editor, and build system |
 
           ## Shared Infrastructure
@@ -412,7 +490,7 @@ jobs:
 
           **macOS**: You may need to allow the apps in System Preferences → Security & Privacy after first launch.
 
-          **Linux**: Make binaries executable: `chmod +x Radoub/Parley Radoub/Manifest Radoub/Fence Radoub/Trebuchet`
+          **Linux**: Make binaries executable: `chmod +x Radoub/Parley Radoub/Manifest Radoub/Quartermaster Radoub/Fence Radoub/ItemEditor Radoub/Trebuchet`
 
           ---
           🤖 Generated with [Claude Code](https://claude.com/claude-code)
