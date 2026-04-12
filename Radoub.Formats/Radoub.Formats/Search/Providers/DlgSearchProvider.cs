@@ -168,7 +168,7 @@ public class DlgSearchProvider : SearchProviderBase, IFileSearchProvider
         var loc = new DlgMatchLocation { NodeType = DlgNodeType.Entry, NodeIndex = index, DisplayPath = $"Entry #{index}" };
 
         if (criteria.MatchesField(TextField))
-            matches.AddRange(SearchLocString(entry.Text, TextField, regex, loc));
+            matches.AddRange(SearchLocString(entry.Text, TextField, regex, loc, criteria.EffectiveTlkResolver));
         if (criteria.MatchesField(SpeakerField))
             matches.AddRange(SearchString(entry.Speaker, SpeakerField, regex, loc));
         if (criteria.MatchesField(ActionScriptField))
@@ -195,7 +195,7 @@ public class DlgSearchProvider : SearchProviderBase, IFileSearchProvider
         var loc = new DlgMatchLocation { NodeType = DlgNodeType.Reply, NodeIndex = index, DisplayPath = $"Reply #{index}" };
 
         if (criteria.MatchesField(TextField))
-            matches.AddRange(SearchLocString(reply.Text, TextField, regex, loc));
+            matches.AddRange(SearchLocString(reply.Text, TextField, regex, loc, criteria.EffectiveTlkResolver));
         if (criteria.MatchesField(ActionScriptField))
             matches.AddRange(SearchString(reply.Script, ActionScriptField, regex, loc));
         if (criteria.MatchesField(ActionParamsField) && reply.ActionParams != null)

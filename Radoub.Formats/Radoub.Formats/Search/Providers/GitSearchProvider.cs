@@ -52,14 +52,14 @@ public class GitSearchProvider : SearchProviderBase, IFileSearchProvider
                     DisplayPath = $"{typeName} #{i} ({tag})"
                 };
 
-                SearchInstance(instance, location, regex, matches);
+                SearchInstance(instance, location, regex, matches, criteria.EffectiveTlkResolver);
             }
         }
 
         return matches;
     }
 
-    private static void SearchInstance(GffStruct instance, GitMatchLocation location, Regex regex, List<SearchMatch> matches)
+    private static void SearchInstance(GffStruct instance, GitMatchLocation location, Regex regex, List<SearchMatch> matches, Func<uint, string?>? tlkResolver)
     {
         if (instance.Fields == null) return;
 
@@ -87,7 +87,7 @@ public class GitSearchProvider : SearchProviderBase, IFileSearchProvider
                     if (field.Value is CExoLocString locString)
                     {
                         var fieldDef = MakeFieldDef(field.Label, SearchFieldType.LocString);
-                        matches.AddRange(SearchLocString(locString, fieldDef, regex, location));
+                        matches.AddRange(SearchLocString(locString, fieldDef, regex, location, tlkResolver));
                     }
                     break;
 

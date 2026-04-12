@@ -34,11 +34,11 @@ public class UtiSearchProvider : SearchProviderBase, IFileSearchProvider
         var matches = new List<SearchMatch>();
 
         if (criteria.MatchesField(NameField))
-            matches.AddRange(SearchLocString(uti.LocalizedName, NameField, regex, "LocalizedName"));
+            matches.AddRange(SearchLocString(uti.LocalizedName, NameField, regex, "LocalizedName", criteria.EffectiveTlkResolver));
         if (criteria.MatchesField(DescriptionField))
-            matches.AddRange(SearchLocString(uti.Description, DescriptionField, regex, "Description"));
+            matches.AddRange(SearchLocString(uti.Description, DescriptionField, regex, "Description", criteria.EffectiveTlkResolver));
         if (criteria.MatchesField(DescIdentifiedField))
-            matches.AddRange(SearchLocString(uti.DescIdentified, DescIdentifiedField, regex, "DescIdentified"));
+            matches.AddRange(SearchLocString(uti.DescIdentified, DescIdentifiedField, regex, "DescIdentified", criteria.EffectiveTlkResolver));
         if (criteria.MatchesField(TagField))
             matches.AddRange(SearchString(uti.Tag, TagField, regex, "Tag"));
         if (criteria.MatchesField(TemplateResRefField))

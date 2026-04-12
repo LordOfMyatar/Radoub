@@ -39,6 +39,20 @@ public class SearchCriteria
     public IReadOnlyList<ushort>? FileTypeFilter { get; init; }
 
     /// <summary>
+    /// When true, resolve StrRef values via TLK and search the resolved text.
+    /// Requires TlkResolver to be set. Default false — most module authors use
+    /// embedded LocString text, and StrRef resolution has a performance cost.
+    /// </summary>
+    public bool SearchStrRefs { get; init; }
+
+    /// <summary>
+    /// Callback that resolves a StrRef to its TLK string. Set by the caller
+    /// (e.g., Marlinspike panel) when SearchStrRefs is enabled.
+    /// Providers pass this to SearchLocString when SearchStrRefs is true.
+    /// </summary>
+    public Func<uint, string?>? TlkResolver { get; init; }
+
+    /// <summary>
     /// Validates the pattern. Returns null if valid, error message if invalid.
     /// </summary>
     public string? Validate()
@@ -75,6 +89,11 @@ public class SearchCriteria
 
         return new Regex(pattern, options);
     }
+
+    /// <summary>
+    /// Returns the TLK resolver to pass to SearchLocString, or null if StrRef search is disabled.
+    /// </summary>
+    public Func<uint, string?>? EffectiveTlkResolver => SearchStrRefs ? TlkResolver : null;
 
     /// <summary>
     /// Returns true if the given field definition passes all filters.

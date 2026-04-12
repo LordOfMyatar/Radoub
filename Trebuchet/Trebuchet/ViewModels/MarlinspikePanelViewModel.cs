@@ -37,6 +37,9 @@ public partial class MarlinspikePanelViewModel : ObservableObject
     private bool _isWholeWord;
 
     [ObservableProperty]
+    private bool _searchStrRefs;
+
+    [ObservableProperty]
     private string _selectedCategory = "All Fields";
 
     // --- Search state ---
@@ -121,6 +124,12 @@ public partial class MarlinspikePanelViewModel : ObservableObject
     /// <summary>
     /// Build a SearchCriteria from the current ViewModel state.
     /// </summary>
+    /// <summary>
+    /// Optional TLK resolver, set by the codebehind when TlkService is available.
+    /// Used when SearchStrRefs is enabled.
+    /// </summary>
+    public Func<uint, string?>? TlkResolver { get; set; }
+
     public SearchCriteria BuildSearchCriteria()
     {
         return new SearchCriteria
@@ -129,6 +138,8 @@ public partial class MarlinspikePanelViewModel : ObservableObject
             IsRegex = IsRegex,
             CaseSensitive = IsCaseSensitive,
             WholeWord = IsWholeWord,
+            SearchStrRefs = SearchStrRefs,
+            TlkResolver = TlkResolver,
             CategoryFilter = BuildCategoryFilter(),
             FileTypeFilter = BuildFileTypeFilter()
         };

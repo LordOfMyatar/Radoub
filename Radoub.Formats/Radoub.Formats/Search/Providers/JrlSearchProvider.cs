@@ -44,7 +44,7 @@ public class JrlSearchProvider : SearchProviderBase, IFileSearchProvider
             };
 
             if (criteria.MatchesField(CategoryNameField))
-                matches.AddRange(SearchLocString(category.Name, CategoryNameField, regex, catLocation));
+                matches.AddRange(SearchLocString(category.Name, CategoryNameField, regex, catLocation, criteria.EffectiveTlkResolver));
             if (criteria.MatchesField(CategoryTagField))
                 matches.AddRange(SearchString(category.Tag, CategoryTagField, regex, catLocation));
             if (criteria.MatchesField(CommentField))
@@ -62,7 +62,7 @@ public class JrlSearchProvider : SearchProviderBase, IFileSearchProvider
                 };
 
                 if (criteria.MatchesField(EntryTextField))
-                    matches.AddRange(SearchLocString(entry.Text, EntryTextField, regex, entryLocation));
+                    matches.AddRange(SearchLocString(entry.Text, EntryTextField, regex, entryLocation, criteria.EffectiveTlkResolver));
             }
         }
 

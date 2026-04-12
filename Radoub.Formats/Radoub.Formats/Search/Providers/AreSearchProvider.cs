@@ -32,7 +32,7 @@ public class AreSearchProvider : SearchProviderBase, IFileSearchProvider
         var matches = new List<SearchMatch>();
 
         if (criteria.MatchesField(NameField))
-            matches.AddRange(SearchLocString(are.Name, NameField, regex, "Name"));
+            matches.AddRange(SearchLocString(are.Name, NameField, regex, "Name", criteria.EffectiveTlkResolver));
         if (criteria.MatchesField(TagField))
             matches.AddRange(SearchString(are.Tag, TagField, regex, "Tag"));
         if (criteria.MatchesField(ResRefField))

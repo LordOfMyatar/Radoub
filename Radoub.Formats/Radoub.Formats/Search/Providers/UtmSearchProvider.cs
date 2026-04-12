@@ -47,7 +47,7 @@ public class UtmSearchProvider : SearchProviderBase, IFileSearchProvider
         var matches = new List<SearchMatch>();
 
         if (criteria.MatchesField(NameField))
-            matches.AddRange(SearchLocString(utm.LocName, NameField, regex, "LocName"));
+            matches.AddRange(SearchLocString(utm.LocName, NameField, regex, "LocName", criteria.EffectiveTlkResolver));
         if (criteria.MatchesField(TagField))
             matches.AddRange(SearchString(utm.Tag, TagField, regex, "Tag"));
         if (criteria.MatchesField(ResRefField))

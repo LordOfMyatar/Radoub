@@ -46,9 +46,9 @@ public class UtpSearchProvider : SearchProviderBase, IFileSearchProvider
         var matches = new List<SearchMatch>();
 
         if (criteria.MatchesField(NameField))
-            matches.AddRange(SearchLocString(utp.LocName, NameField, regex, "LocName"));
+            matches.AddRange(SearchLocString(utp.LocName, NameField, regex, "LocName", criteria.EffectiveTlkResolver));
         if (criteria.MatchesField(DescriptionField))
-            matches.AddRange(SearchLocString(utp.Description, DescriptionField, regex, "Description"));
+            matches.AddRange(SearchLocString(utp.Description, DescriptionField, regex, "Description", criteria.EffectiveTlkResolver));
         if (criteria.MatchesField(TagField))
             matches.AddRange(SearchString(utp.Tag, TagField, regex, "Tag"));
         if (criteria.MatchesField(ResRefField))

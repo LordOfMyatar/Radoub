@@ -11,6 +11,7 @@ using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Search;
 using Radoub.Formats.Settings;
+using Radoub.UI.Services;
 using Radoub.UI.Services.Search;
 using RadoubLauncher.Services;
 using RadoubLauncher.ViewModels;
@@ -26,6 +27,7 @@ public partial class MarlinspikePanel : UserControl
     private Window? _parentWindow;
     private ModuleSearchService? _searchService;
     private BatchReplaceService? _batchReplaceService;
+    private TlkService? _tlkService;
     private CancellationTokenSource? _searchCts;
 
     /// <summary>Maps resource types to Trebuchet tool names for launch dispatch.</summary>
@@ -68,6 +70,17 @@ public partial class MarlinspikePanel : UserControl
     {
         _searchService ??= new ModuleSearchService();
         _batchReplaceService ??= new BatchReplaceService(new BackupService());
+        EnsureTlkResolver();
+    }
+
+    private void EnsureTlkResolver()
+    {
+        if (_viewModel == null) return;
+        if (_viewModel.TlkResolver != null) return;
+
+        _tlkService ??= new TlkService();
+        if (_tlkService.IsAvailable)
+            _viewModel.TlkResolver = _tlkService.ResolveStrRef;
     }
 
     private async void OnSearchClick(object? sender, RoutedEventArgs e)

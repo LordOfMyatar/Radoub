@@ -132,6 +132,47 @@ public class UtpSearchProviderTests
     }
 
     [Fact]
+    public void Search_WithStrRefResolver_MatchesTlkText()
+    {
+        var utp = CreateTestUtp();
+        utp.LocName = new CExoLocString { StrRef = 5000 }; // No inline text, only StrRef
+        var provider = new UtpSearchProvider();
+        var gff = UtpToGff(utp);
+        var criteria = new SearchCriteria
+        {
+            Pattern = "Magic Chest",
+            SearchStrRefs = true,
+            TlkResolver = strRef => strRef == 5000 ? "Magic Chest of Wonders" : null
+        };
+
+        var matches = provider.Search(gff, criteria);
+
+        Assert.Contains(matches, m =>
+            m.Field.Name == "Name" &&
+            m.MatchedText == "Magic Chest" &&
+            m.LanguageId == null); // TLK-resolved, not a specific language
+    }
+
+    [Fact]
+    public void Search_WithoutStrRefFlag_IgnoresTlk()
+    {
+        var utp = CreateTestUtp();
+        utp.LocName = new CExoLocString { StrRef = 5000 }; // No inline text
+        var provider = new UtpSearchProvider();
+        var gff = UtpToGff(utp);
+        var criteria = new SearchCriteria
+        {
+            Pattern = "Magic Chest",
+            SearchStrRefs = false,
+            TlkResolver = strRef => strRef == 5000 ? "Magic Chest of Wonders" : null
+        };
+
+        var matches = provider.Search(gff, criteria);
+
+        Assert.DoesNotContain(matches, m => m.Field.Name == "Name");
+    }
+
+    [Fact]
     public void Search_FieldTypeFilter_OnlySearchesInventory()
     {
         var provider = new UtpSearchProvider();
