@@ -29,11 +29,6 @@
 
         <!-- Filter Row -->
         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,4">
-            <CheckBox DockPanel.Dock="Right"
-                      Content="Overwrite existing"
-                      IsChecked="{Binding OverwriteExisting}"
-                      VerticalAlignment="Center"
-                      Margin="12,0,0,0"/>
             <ComboBox DockPanel.Dock="Right"
                       ItemsSource="{Binding TypeFilters}"
                       SelectedItem="{Binding SelectedTypeFilter}"
@@ -64,6 +59,10 @@
                         Click="OnCancelClick"
                         IsCancel="True"
                         Padding="12,6"/>
+                <CheckBox Content="Overwrite existing"
+                          IsChecked="{Binding OverwriteExisting}"
+                          VerticalAlignment="Center"
+                          Margin="0,0,4,0"/>
                 <Button Content="Import"
                         Click="OnImportClick"
                         IsEnabled="{Binding CanImport}"
