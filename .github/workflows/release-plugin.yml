@@ -55,7 +55,7 @@ jobs:
             -OutputPath "${{ github.workspace }}"
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: "${{ steps.tag.outputs.plugin }} v${{ steps.tag.outputs.version }}"
           files: "*.zip"
