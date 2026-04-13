@@ -4,7 +4,7 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
-## [0.1.164-alpha] - 2026-04-12 | PR #TBD
+## [0.1.164-alpha] - 2026-04-12 | PR #2082
 **Branch**: `parley/issue-2062`
 
 ### Sprint: Stress Testing & Edge Case Hardening (#2062)
