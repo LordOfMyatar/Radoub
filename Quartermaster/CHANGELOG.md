@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.3.0-alpha] - 2026-04-13
-**Branch**: `radoub/issue-2092` | **PR**: #TBD
+**Branch**: `radoub/issue-2092` | **PR**: #2094
 
 ### Sprint: Upgrade to Avalonia 12 (#2092)
 - Migrate inventory drag-and-drop from `IDataObject` to `IDataTransfer`

@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.0-alpha] - 2026-04-13
-**Branch**: `radoub/issue-2092` | **PR**: #TBD
+**Branch**: `radoub/issue-2092` | **PR**: #2094
 
 ### Sprint: Upgrade to Avalonia 12 (#2092)
 - Avalonia 12.0.x package upgrade
