@@ -4,6 +4,14 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
+## [0.1.164-alpha] - 2026-04-12 | PR #2082
+**Branch**: `parley/issue-2062`
+
+### Sprint: Stress Testing & Edge Case Hardening (#2062)
+- Comprehensive DLG parser stress testing and corruption handling (#1309)
+
+---
+
 ## [0.1.163-alpha] - 2026-04-10 | PR #2052
 **Branch**: `parley/issue-2050`
 
