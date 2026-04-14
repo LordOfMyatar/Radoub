@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.31.0-alpha] - 2026-04-13
+**Branch**: `radoub/issue-2092` | **PR**: #TBD
+
+### Sprint: Upgrade to Avalonia 12 (#2092)
+- Avalonia 12.0.x package upgrade across all tools
+- `IDataTransfer` compatibility helper in Radoub.UI
+
+---
+
 ## [1.30.0-alpha] - 2026-04-11
 **Branch**: `trebuchet/issue-2067` | **PR**: #2071
 

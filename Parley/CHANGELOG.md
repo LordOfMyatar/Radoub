@@ -4,6 +4,14 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
+## [0.2.0-alpha] - 2026-04-13
+**Branch**: `radoub/issue-2092` | **PR**: #TBD
+
+### Sprint: Upgrade to Avalonia 12 (#2092)
+- Migrate tree view drag-and-drop from `IDataObject` to `IDataTransfer`
+
+---
+
 ## [0.1.164-alpha] - 2026-04-12 | PR #2082
 **Branch**: `parley/issue-2062`
 

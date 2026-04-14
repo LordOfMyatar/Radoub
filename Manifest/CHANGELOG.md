@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.16.0-alpha] - 2026-04-13
+**Branch**: `radoub/issue-2092` | **PR**: #TBD
+
+### Sprint: Upgrade to Avalonia 12 (#2092)
+- Avalonia 12.0.x package upgrade
+
+---
+
 ## [0.15.6-alpha] - 2026-03-24
 **Branch**: `quartermaster/issue-1900` | **PR**: #1969
 
