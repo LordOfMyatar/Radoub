@@ -130,9 +130,9 @@ public partial class LevelUpWizardWindow
         foreach (var sf in _selectedFeats)
             currentFeats.Add((ushort)sf);
 
-        // Get all feat IDs
+        // Build raw candidate list first — applies MaxLevel / universal / class-feat filters
         var allFeatIds = _displayService.Feats.GetAllFeatIds();
-
+        var candidates = new List<int>();
         foreach (var featId in allFeatIds)
         {
             // Skip feats the creature already has — unless GAINMULTIPLE=1 in feat.2da
@@ -145,27 +145,73 @@ public partial class LevelUpWizardWindow
                 int.TryParse(maxLevelStr, out int featMaxLevel) && featMaxLevel == 1)
                 continue;
 
-            // Check if feat is available to select (universal or in class table)
             bool isUniversal = _displayService.Feats.IsFeatUniversal(featId);
             bool isClassFeat = classFeatIds.Contains(featId);
-
             if (!isUniversal && !isClassFeat)
                 continue;
 
-            // Get feat info
-            var featInfo = _displayService.Feats.GetFeatInfo(featId);
+            candidates.Add(featId);
+        }
 
-            // Check prerequisites with projected state (#1744)
+        // Group candidates by MASTERFEAT so variants like Weapon Focus (Club/Dagger/...)
+        // collapse into a single selectable row (#1734).
+        foreach (var group in _displayService.Feats.GroupFeatsByMaster(candidates))
+        {
+            if (group.IsMasterFeat)
+            {
+                // Master row: aggregate selectability from children. A master is "selectable"
+                // if at least one subtype is selectable under the current validation level.
+                var masterName = _displayService.GetFeatName(group.FeatId);
+                if (string.IsNullOrEmpty(masterName)) continue;
+
+                bool anySelectable = false;
+                FeatCategory masterCategory = FeatCategory.Other;
+                bool sampleIsClassFeat = false;
+                foreach (var childId in group.SubtypeIds)
+                {
+                    var childPrereq = _displayService.Feats.CheckFeatPrerequisites(
+                        _creature, childId, currentFeats,
+                        c => _projectedBab,
+                        cid => _displayService.GetClassName(cid),
+                        _prereqOverrides);
+                    bool childCanSelect = _validationLevel != ValidationLevel.Strict || childPrereq.AllMet;
+                    if (childCanSelect) anySelectable = true;
+
+                    // Take category/class-feat flag from first child (all subtypes of a master share these)
+                    if (masterCategory == FeatCategory.Other)
+                    {
+                        masterCategory = _displayService.Feats.GetFeatCategory(childId);
+                        bool childIsUniversal = _displayService.Feats.IsFeatUniversal(childId);
+                        sampleIsClassFeat = classFeatIds.Contains(childId) && !childIsUniversal;
+                    }
+                }
+
+                _allAvailableFeats.Add(new FeatDisplayItem
+                {
+                    FeatId = group.FeatId,
+                    Name = $"{masterName} (choose type)",
+                    Description = _displayService.GetFeatDescription(group.FeatId) ?? "",
+                    Category = masterCategory,
+                    MeetsPrereqs = anySelectable,
+                    PrereqResult = null,
+                    IsClassFeat = sampleIsClassFeat,
+                    CanSelect = anySelectable,
+                    IsMasterFeat = true,
+                    SubtypeIds = group.SubtypeIds.ToList()
+                });
+                continue;
+            }
+
+            // Singleton: original per-feat logic
+            var featId = group.FeatId;
+            var featInfo = _displayService.Feats.GetFeatInfo(featId);
             var prereqResult = _displayService.Feats.CheckFeatPrerequisites(
-                _creature,
-                featId,
-                currentFeats,
+                _creature, featId, currentFeats,
                 c => _projectedBab,
                 cid => _displayService.GetClassName(cid),
                 _prereqOverrides);
-
-            // Strict: must meet prereqs. Warning/None: can select regardless
             bool canSelect = _validationLevel != ValidationLevel.Strict || prereqResult.AllMet;
+            bool isUniversalFeat = _displayService.Feats.IsFeatUniversal(featId);
 
             _allAvailableFeats.Add(new FeatDisplayItem
             {
@@ -175,7 +221,7 @@ public partial class LevelUpWizardWindow
                 Category = featInfo.Category,
                 MeetsPrereqs = prereqResult.AllMet,
                 PrereqResult = prereqResult,
-                IsClassFeat = isClassFeat && !isUniversal,
+                IsClassFeat = classFeatIds.Contains(featId) && !isUniversalFeat,
                 CanSelect = canSelect
             });
         }
@@ -337,7 +383,7 @@ public partial class LevelUpWizardWindow
         RemoveSelectedFeat();
     }
 
-    private void AddSelectedFeat()
+    private async void AddSelectedFeat()
     {
         if (_availableFeatsListBox.SelectedItem is not FeatDisplayItem item)
             return;
@@ -351,17 +397,65 @@ public partial class LevelUpWizardWindow
         if (!isCeMode && _selectedFeats.Count >= _featsToSelect)
             return;
 
-        // Enforce bonus feat pool restriction (non-CE only)
-        if (!isCeMode && IsSelectingBonusFeat() && _bonusFeatPool != null && !_bonusFeatPool.Contains(item.FeatId))
+        int featIdToAdd;
+        if (item.IsMasterFeat)
+        {
+            // #1734: route master-feat selection through the subtype picker
+            var chosen = await PromptForFeatSubtypeAsync(item);
+            if (chosen is null) return;
+            featIdToAdd = chosen.Value;
+        }
+        else
+        {
+            featIdToAdd = item.FeatId;
+        }
+
+        // Enforce bonus feat pool restriction (non-CE only) — check the resolved feat id
+        if (!isCeMode && IsSelectingBonusFeat() && _bonusFeatPool != null && !_bonusFeatPool.Contains(featIdToAdd))
             return;
 
-        _selectedFeats.Add(item.FeatId);
+        _selectedFeats.Add(featIdToAdd);
 
-        // Re-evaluate prerequisites since selected feat may unlock others
-        RefreshFeatPrerequisites();
+        // Rebuild the available list so the master regroups (or the singleton is removed)
+        // and prerequisites re-evaluate with the new selection.
+        LoadAvailableFeats();
         ApplyFeatFilter();
         RefreshSelectedFeatsList();
         UpdateFeatSelectionUI();
+    }
+
+    private async System.Threading.Tasks.Task<int?> PromptForFeatSubtypeAsync(FeatDisplayItem master)
+    {
+        var existingFeats = new HashSet<int>(_creature.FeatList.Select(f => (int)f));
+        foreach (var sf in _selectedFeats) existingFeats.Add(sf);
+
+        var currentFeats = new HashSet<ushort>(_creature.FeatList);
+        foreach (var sf in _selectedFeats) currentFeats.Add((ushort)sf);
+
+        bool isStrict = _validationLevel == ValidationLevel.Strict;
+
+        var subtypes = master.SubtypeIds
+            .Select(id =>
+            {
+                var prereq = _displayService.Feats.CheckFeatPrerequisites(
+                    _creature, id, currentFeats,
+                    c => _projectedBab,
+                    cid => _displayService.GetClassName(cid),
+                    _prereqOverrides);
+                return new FeatSubtypePickerWindow.SubtypeItem
+                {
+                    FeatId = id,
+                    Name = _displayService.GetFeatName(id),
+                    MeetsPrereqs = !isStrict || prereq.AllMet,
+                    AlreadyOwned = existingFeats.Contains(id)
+                };
+            })
+            .ToList();
+
+        var masterName = _displayService.GetFeatName(master.FeatId);
+        var picker = new FeatSubtypePickerWindow(masterName, subtypes);
+        await picker.ShowDialog(this);
+        return picker.Confirmed ? picker.SelectedFeatId : null;
     }
 
     private void RemoveSelectedFeat()
@@ -372,8 +466,9 @@ public partial class LevelUpWizardWindow
 
         _selectedFeats.RemoveAt(index);
 
-        // Re-evaluate prerequisites since removed feat may lock others
-        RefreshFeatPrerequisites();
+        // Rebuild the available list so removed subtypes regroup under their master (#1734)
+        // and prerequisites re-evaluate.
+        LoadAvailableFeats();
         ApplyFeatFilter();
         RefreshSelectedFeatsList();
         UpdateFeatSelectionUI();

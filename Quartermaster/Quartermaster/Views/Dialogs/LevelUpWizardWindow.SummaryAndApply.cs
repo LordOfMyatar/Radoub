@@ -352,9 +352,13 @@ public partial class LevelUpWizardWindow
         public bool IsClassFeat { get; set; }
         public bool CanSelect { get; set; }
 
+        // MASTERFEAT grouping (#1734): master-feat rows open the subtype picker on add.
+        public bool IsMasterFeat { get; set; }
+        public System.Collections.Generic.List<int> SubtypeIds { get; set; } = new();
+
         public string DisplayName => Name;
         public string PrereqTooltip => PrereqResult?.GetTooltip() ?? "No prerequisites";
-        public string Badge => !MeetsPrereqs ? "(prereqs)" : IsClassFeat ? "(class)" : "";
+        public string Badge => IsMasterFeat ? "(choose)" : !MeetsPrereqs ? "(prereqs)" : IsClassFeat ? "(class)" : "";
     }
 
     // SpellDisplayItem moved to Quartermaster.Models.WizardDisplayItems (#1798)
