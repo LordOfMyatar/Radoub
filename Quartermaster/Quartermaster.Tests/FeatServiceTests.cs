@@ -866,6 +866,33 @@ public class FeatServiceTests
     }
 
     [Fact]
+    public void GetMasterFeatName_ReadsFromMasterfeats2da_NotFeat2da()
+    {
+        // masterfeats.2da row 5 has STRREF 900 -> "Weapon Focus" in TLK
+        _mockGameData.Set2DAValue("masterfeats", 5, "LABEL", "WeapFocus");
+        _mockGameData.Set2DAValue("masterfeats", 5, "STRREF", "900");
+        _mockGameData.WithString(900, "Weapon Focus");
+
+        // feat.2da row 5 would resolve to something else — confirm we DON'T use that
+        _mockGameData.Set2DAValue("feat", 5, "LABEL", "Blind_Fight"); // already set in fixture
+        _mockGameData.WithString(401, "Blind-Fight");
+
+        var name = _featService.GetMasterFeatName(5);
+        Assert.Equal("Weapon Focus", name);
+    }
+
+    [Fact]
+    public void GetMasterFeatName_MissingRow_ReturnsFallbackLabel()
+    {
+        // When STRREF lookup fails, fall back to LABEL
+        _mockGameData.Set2DAValue("masterfeats", 7, "LABEL", "ImprCrit");
+        _mockGameData.Set2DAValue("masterfeats", 7, "STRREF", "****");
+
+        var name = _featService.GetMasterFeatName(7);
+        Assert.Equal("ImprCrit", name);
+    }
+
+    [Fact]
     public void GroupFeatsByMaster_MixedMastersAndOrphans_GroupsIndependently()
     {
         _mockGameData.Set2DAValue("feat", 1051, "LABEL", "WeapFocus");

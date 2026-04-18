@@ -33,6 +33,7 @@ public partial class FeatService
 
     /// <summary>
     /// Reads the MASTERFEAT column for a feat. Returns null if unset, "****", or unparseable.
+    /// The returned value is an index into <c>masterfeats.2da</c> (NOT <c>feat.2da</c>).
     /// </summary>
     public int? GetMasterFeatId(int featId)
     {
@@ -40,6 +41,25 @@ public partial class FeatService
         if (string.IsNullOrEmpty(raw) || raw == "****")
             return null;
         return int.TryParse(raw, out var parsed) ? parsed : null;
+    }
+
+    /// <summary>
+    /// Resolves the display name of a master feat by looking up <c>masterfeats.2da</c>
+    /// STRREF in the TLK. Falls back to the LABEL column when the string lookup fails.
+    /// The <paramref name="masterFeatId"/> is the value stored in feat.2da's MASTERFEAT column.
+    /// </summary>
+    public string GetMasterFeatName(int masterFeatId)
+    {
+        var strRef = _gameDataService.Get2DAValue("masterfeats", masterFeatId, "STRREF");
+        if (!string.IsNullOrEmpty(strRef) && strRef != "****")
+        {
+            var tlkName = _gameDataService.GetString(strRef);
+            if (!string.IsNullOrEmpty(tlkName))
+                return tlkName;
+        }
+
+        var label = _gameDataService.Get2DAValue("masterfeats", masterFeatId, "LABEL");
+        return !string.IsNullOrEmpty(label) && label != "****" ? label : $"Master feat #{masterFeatId}";
     }
 
     /// <summary>

@@ -159,11 +159,12 @@ public partial class LevelUpWizardWindow
         {
             if (group.IsMasterFeat)
             {
-                // Master row: aggregate selectability from children. A master is "selectable"
-                // if at least one subtype is selectable under the current validation level.
-                var masterName = _displayService.GetFeatName(group.FeatId);
+                // group.FeatId is a masterfeats.2da row — look up name there, NOT in feat.2da
+                var masterName = _displayService.Feats.GetMasterFeatName(group.FeatId);
                 if (string.IsNullOrEmpty(masterName)) continue;
 
+                // Master row: aggregate selectability from children. A master is "selectable"
+                // if at least one subtype is selectable under the current validation level.
                 bool anySelectable = false;
                 FeatCategory masterCategory = FeatCategory.Other;
                 bool sampleIsClassFeat = false;
@@ -190,7 +191,7 @@ public partial class LevelUpWizardWindow
                 {
                     FeatId = group.FeatId,
                     Name = $"{masterName} (choose type)",
-                    Description = _displayService.GetFeatDescription(group.FeatId) ?? "",
+                    Description = "", // master feat has no per-row description; subtypes carry their own
                     Category = masterCategory,
                     MeetsPrereqs = anySelectable,
                     PrereqResult = null,
@@ -452,7 +453,7 @@ public partial class LevelUpWizardWindow
             })
             .ToList();
 
-        var masterName = _displayService.GetFeatName(master.FeatId);
+        var masterName = _displayService.Feats.GetMasterFeatName(master.FeatId);
         var picker = new FeatSubtypePickerWindow(masterName, subtypes);
         await picker.ShowDialog(this);
         return picker.Confirmed ? picker.SelectedFeatId : null;

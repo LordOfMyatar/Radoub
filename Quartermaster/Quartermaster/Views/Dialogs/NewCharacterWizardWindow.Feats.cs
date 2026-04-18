@@ -60,10 +60,22 @@ public partial class NewCharacterWizardWindow
         _availableFeats = new List<FeatDisplayItem>();
         foreach (var group in _displayService.Feats.GroupFeatsByMaster(candidateFeatIds))
         {
-            var name = _displayService.GetFeatName(group.FeatId);
+            string name;
+            FeatCategory category;
+            if (group.IsMasterFeat)
+            {
+                // group.FeatId is a masterfeats.2da row — look up via GetMasterFeatName
+                name = _displayService.Feats.GetMasterFeatName(group.FeatId);
+                // Category comes from a child feat (all subtypes share the same category)
+                category = _displayService.Feats.GetFeatCategory(group.SubtypeIds[0]);
+            }
+            else
+            {
+                name = _displayService.GetFeatName(group.FeatId);
+                category = _displayService.Feats.GetFeatCategory(group.FeatId);
+            }
             if (string.IsNullOrEmpty(name)) continue;
 
-            var category = _displayService.Feats.GetFeatCategory(group.FeatId);
             _availableFeats.Add(new FeatDisplayItem
             {
                 FeatId = group.FeatId,
@@ -266,7 +278,7 @@ public partial class NewCharacterWizardWindow
             })
             .ToList();
 
-        var masterName = _displayService.GetFeatName(master.FeatId);
+        var masterName = _displayService.Feats.GetMasterFeatName(master.FeatId);
         var picker = new FeatSubtypePickerWindow(masterName, subtypes);
         await picker.ShowDialog(this);
         return picker.Confirmed ? picker.SelectedFeatId : null;
