@@ -73,11 +73,8 @@ public partial class NewCharacterWizardWindow
             });
         }
 
-        // Sort: class skills first, then alphabetical
-        _allSkills = _allSkills
-            .OrderByDescending(s => s.IsClassSkill)
-            .ThenBy(s => s.Name)
-            .ToList();
+        // Sort: class skills → cross-class → unavailable, alpha within bucket (#1881)
+        _allSkills = SkillDisplayHelper.SortForDisplay(_allSkills);
 
         ApplySkillFilter();
     }

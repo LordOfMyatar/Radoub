@@ -13,7 +13,7 @@ namespace Quartermaster.Models;
 /// LUW-specific properties (CurrentRanks, AddedRanks, NameBrush, computed properties)
 /// default to safe values when unused by NCW.
 /// </summary>
-public class SkillDisplayItem : SkillDisplayHelper.INamedItem
+public class SkillDisplayItem : SkillDisplayHelper.ISortableSkill
 {
     public int SkillId { get; set; }
     public string Name { get; set; } = "";

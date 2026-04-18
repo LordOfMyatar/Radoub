@@ -13,7 +13,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 - NCW feat selection should show previously chosen feats (#1883)
 - Simplify validation rules from LG/TN/CE to LG/CE (#1882)
 - NCW/LUW skill list should sort unavailable skills to bottom (#1881)
-- Rename 'Assigned' to 'Chosen' for feats terminology (#1865)
 - Consolidate GAINMULTIPLE subtypes (Weapon Focus, etc.) in feat list (#1734)
 
 ---

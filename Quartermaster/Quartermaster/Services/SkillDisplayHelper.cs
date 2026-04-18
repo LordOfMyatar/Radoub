@@ -19,9 +19,18 @@ public static class SkillDisplayHelper
     }
 
     /// <summary>
-    /// Minimal interface for skill filter operations — avoids coupling to UI display items.
+    /// Interface for items that can be sorted by skill availability (#1881).
     /// </summary>
-    public class SkillFilterItem : INamedItem
+    public interface ISortableSkill : INamedItem
+    {
+        bool IsClassSkill { get; }
+        bool IsUnavailable { get; }
+    }
+
+    /// <summary>
+    /// Minimal class for skill filter/sort operations — avoids coupling to UI display items.
+    /// </summary>
+    public class SkillFilterItem : ISortableSkill
     {
         public string Name { get; set; } = "";
         public bool IsClassSkill { get; set; }
@@ -59,5 +68,17 @@ public static class SkillDisplayHelper
     public static bool ShouldUseClassSkillColor(bool isClassSkill, bool isUnavailable)
     {
         return isClassSkill && !isUnavailable;
+    }
+
+    /// <summary>
+    /// Sorts skills for wizard display: available class skills first, then available cross-class,
+    /// then unavailable skills. Alphabetical within each bucket (#1881).
+    /// </summary>
+    public static List<T> SortForDisplay<T>(List<T> skills) where T : ISortableSkill
+    {
+        return skills
+            .OrderBy(s => s.IsUnavailable ? 2 : (s.IsClassSkill ? 0 : 1))
+            .ThenBy(s => s.Name)
+            .ToList();
     }
 }
