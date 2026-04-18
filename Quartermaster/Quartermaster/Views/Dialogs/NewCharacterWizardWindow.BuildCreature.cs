@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Quartermaster.Views.Dialogs;
 
 /// <summary>
@@ -48,6 +50,11 @@ public partial class NewCharacterWizardWindow
         public bool IsGranted { get; set; }
         public bool MeetsPrereqs { get; set; } = true;
         public string SourceLabel { get; set; } = "";
+
+        // MASTERFEAT grouping (#1734): when true, FeatId is the master feat and SubtypeIds
+        // lists all children. Selecting this item opens the subtype picker.
+        public bool IsMasterFeat { get; set; }
+        public List<int> SubtypeIds { get; set; } = new();
     }
 
     private class EquipmentDisplayItem
