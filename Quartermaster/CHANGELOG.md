@@ -5,6 +5,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.80-alpha] - 2026-04-18
+**Branch**: `fence/issue-2065` | **PR**: #2097
+
+### Copy-to-Module for Creatures (#1479)
+
+- Right-click any BIF/HAK creature in the browser → Copy to Module with rename dialog
+- Edit TemplateResRef, Tag, and FirstName (LastName preserved) before writing to module
+- Inherits shared implementation from FileBrowserPanelBase
+
+---
+
 ## [0.2.79-alpha] - 2026-04-18
 **Branch**: `quartermaster/issue-1978` | **PR**: #2095
 
