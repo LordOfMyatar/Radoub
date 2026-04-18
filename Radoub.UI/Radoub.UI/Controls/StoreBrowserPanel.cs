@@ -107,107 +107,56 @@ public class StoreBrowserPanel : FileBrowserPanelBase
         filterPanel.Children.Add(_showHakCheckBox);
         filterPanel.Children.Add(_showBifCheckBox);
         FilterOptionsContent = filterPanel;
-
-        // Add "Copy to Module" context menu item for archive entries
-        Loaded += (_, _) => AddCopyToModuleMenuItem();
     }
+
+    protected override bool SupportsCopyToModule() => true;
+
+    protected override bool IsArchiveEntry(FileBrowserEntry entry)
+        => entry is StoreBrowserEntry s && (s.IsFromHak || s.IsFromBif);
+
+    protected override Task<byte[]?> ExtractArchiveBytesAsync(FileBrowserEntry entry)
+    {
+        if (entry is not StoreBrowserEntry storeEntry) return Task.FromResult<byte[]?>(null);
+
+        if (storeEntry.IsFromBif && GameDataService is { IsConfigured: true })
+        {
+            return Task.FromResult(GameDataService.FindResource(storeEntry.Name, ResourceTypes.Utm));
+        }
+        if (storeEntry.IsFromHak && !string.IsNullOrEmpty(storeEntry.HakPath))
+        {
+            return Task.FromResult(ExtractFromHak(storeEntry.HakPath, storeEntry.Name, ResourceTypes.Utm));
+        }
+        return Task.FromResult<byte[]?>(null);
+    }
+
+    protected override Task<(string tag, string name)> ReadSourceMetadataAsync(byte[] bytes)
+    {
+        try
+        {
+            var utm = Radoub.Formats.Utm.UtmReader.Read(bytes);
+            return Task.FromResult((utm.Tag ?? string.Empty, utm.LocName.GetDefault() ?? string.Empty));
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"StoreBrowserPanel.ReadSourceMetadataAsync: {ex.Message}");
+            return Task.FromResult((string.Empty, string.Empty));
+        }
+    }
+
+    protected override Task<byte[]> ApplyCopyCustomizationsAsync(byte[] sourceBytes, CopyToModuleResult result)
+        => Task.FromResult(ApplyUtmCopyCustomizations(sourceBytes, result));
 
     /// <summary>
-    /// Raised when an archive store is copied to the module folder.
-    /// The string is the destination file path.
+    /// Rewrite a UTM byte blob with the user's new ResRef/Tag/Name. Pure, testable.
     /// </summary>
-    public event EventHandler<string>? FileCopiedToModule;
-
-    private void AddCopyToModuleMenuItem()
+    internal static byte[] ApplyUtmCopyCustomizations(byte[] sourceBytes, CopyToModuleResult result)
     {
-        var contextMenu = this.FindControl<Avalonia.Controls.ContextMenu>("FileListContextMenu");
-        var fileListBox = this.FindControl<ListBox>("FileListBox");
-        if (contextMenu == null || fileListBox == null) return;
-
-        var copyItem = new MenuItem { Header = "Copy to Module" };
-        copyItem.Click += async (_, _) =>
-        {
-            if (fileListBox.SelectedItem is not StoreBrowserEntry entry) return;
-            if (!entry.IsFromHak && !entry.IsFromBif) return;
-            if (string.IsNullOrEmpty(ModulePath)) return;
-
-            await CopyArchiveStoreToModuleAsync(entry);
-        };
-
-        // Insert before Delete
-        contextMenu.Items.Insert(0, copyItem);
-        contextMenu.Items.Insert(1, new Avalonia.Controls.Separator());
-
-        // Update menu item visibility when context menu opens
-        contextMenu.Opening += (_, _) =>
-        {
-            var selected = fileListBox.SelectedItem as StoreBrowserEntry;
-            var isArchive = selected != null && (selected.IsFromHak || selected.IsFromBif);
-            copyItem.IsVisible = isArchive && !string.IsNullOrEmpty(ModulePath);
-        };
-    }
-
-    private async Task CopyArchiveStoreToModuleAsync(StoreBrowserEntry entry)
-    {
-        if (string.IsNullOrEmpty(ModulePath)) return;
-
-        try
-        {
-            byte[]? data = null;
-
-            if (entry.IsFromBif && GameDataService != null && GameDataService.IsConfigured)
-            {
-                data = GameDataService.FindResource(entry.Name, ResourceTypes.Utm);
-            }
-            else if (entry.IsFromHak && !string.IsNullOrEmpty(entry.HakPath))
-            {
-                data = ExtractFromHakStatic(entry.HakPath, entry.Name, ResourceTypes.Utm);
-            }
-
-            if (data == null)
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"Could not extract {entry.Name} from archive");
-                return;
-            }
-
-            var destPath = Path.Combine(ModulePath, $"{entry.Name}.utm");
-            if (File.Exists(destPath))
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"Store already exists in module: {entry.Name}.utm");
-                return;
-            }
-
-            await File.WriteAllBytesAsync(destPath, data);
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Copied archive store to module: {destPath}");
-
-            FileCopiedToModule?.Invoke(this, destPath);
-            await RefreshAsync();
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to copy {entry.Name} to module: {ex.Message}");
-        }
-    }
-
-    private static byte[]? ExtractFromHakStatic(string hakPath, string resRef, ushort resourceType)
-    {
-        try
-        {
-            var erf = ErfReader.ReadMetadataOnly(hakPath);
-            var resourceEntry = erf.Resources
-                .FirstOrDefault(r => r.ResRef.Equals(resRef, StringComparison.OrdinalIgnoreCase)
-                                  && r.ResourceType == resourceType);
-
-            if (resourceEntry == null)
-                return null;
-
-            return ErfReader.ExtractResource(hakPath, resourceEntry);
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to extract {resRef} from {Path.GetFileName(hakPath)}: {ex.Message}");
-            return null;
-        }
+        var utm = Radoub.Formats.Utm.UtmReader.Read(sourceBytes);
+        utm.ResRef = result.NewResRef;
+        if (result.NewTag != null) utm.Tag = result.NewTag;
+        if (result.NewName != null) utm.LocName.SetString(0, result.NewName);
+        return Radoub.Formats.Utm.UtmWriter.Write(utm);
     }
 
     /// <summary>
