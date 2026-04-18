@@ -81,4 +81,19 @@ public static class SkillDisplayHelper
             .ThenBy(s => s.Name)
             .ToList();
     }
+
+    /// <summary>
+    /// Sorts selected feats for NCW display: chosen feats first, granted feats last (#1883).
+    /// Alphabetical within each group.
+    /// </summary>
+    public static List<T> SortSelectedFeats<T>(
+        IEnumerable<T> feats,
+        Func<T, bool> isGranted,
+        Func<T, string> nameSelector)
+    {
+        return feats
+            .OrderBy(f => isGranted(f) ? 1 : 0)
+            .ThenBy(nameSelector)
+            .ToList();
+    }
 }

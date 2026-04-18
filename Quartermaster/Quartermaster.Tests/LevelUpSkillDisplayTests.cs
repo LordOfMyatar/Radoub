@@ -254,6 +254,54 @@ public class LevelUpSkillDisplayTests
 
     #endregion
 
+    #region Feat Sort (#1883)
+
+    [Fact]
+    public void SortSelectedFeats_ChosenFirst_ThenGranted()
+    {
+        var feats = new List<(int id, string name, bool granted)>
+        {
+            (1, "Alertness", true),
+            (2, "Weapon Focus", false),
+            (3, "Toughness", true),
+            (4, "Power Attack", false),
+        };
+
+        var result = Services.SkillDisplayHelper.SortSelectedFeats(
+            feats, f => f.granted, f => f.name);
+
+        Assert.Equal("Power Attack", result[0].name);
+        Assert.Equal("Weapon Focus", result[1].name);
+        Assert.Equal("Alertness", result[2].name);
+        Assert.Equal("Toughness", result[3].name);
+    }
+
+    [Fact]
+    public void SortSelectedFeats_EmptyInput_ReturnsEmpty()
+    {
+        var result = Services.SkillDisplayHelper.SortSelectedFeats(
+            new List<(int, string, bool)>(),
+            f => f.Item3,
+            f => f.Item2);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public void SortSelectedFeats_AllChosen_OrdersAlpha()
+    {
+        var feats = new List<(int id, string name, bool granted)>
+        {
+            (1, "Zombie Mastery", false),
+            (2, "Alertness", false),
+        };
+        var result = Services.SkillDisplayHelper.SortSelectedFeats(
+            feats, f => f.granted, f => f.name);
+        Assert.Equal("Alertness", result[0].name);
+        Assert.Equal("Zombie Mastery", result[1].name);
+    }
+
+    #endregion
+
     #region Helpers
 
     private static List<Services.SkillDisplayHelper.SkillFilterItem> CreateSampleSkills()

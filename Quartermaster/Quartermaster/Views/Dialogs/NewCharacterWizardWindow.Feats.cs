@@ -150,29 +150,13 @@ public partial class NewCharacterWizardWindow
     private void UpdateSelectedFeatsDisplay()
     {
         var grantedFeatIds = GetGrantedFeatIds();
-        var selectedItems = new List<FeatDisplayItem>();
+        var allItems = new List<FeatDisplayItem>();
 
-        // Add granted feats first (read-only)
-        foreach (var featId in grantedFeatIds.OrderBy(id => _displayService.GetFeatName(id)))
-        {
-            var name = _displayService.GetFeatName(featId);
-            if (string.IsNullOrEmpty(name)) continue;
-            selectedItems.Add(new FeatDisplayItem
-            {
-                FeatId = featId,
-                Name = name,
-                IsGranted = true,
-                SourceLabel = "(granted)",
-                MeetsPrereqs = true
-            });
-        }
-
-        // Add chosen feats
         foreach (var featId in _chosenFeatIds)
         {
             var name = _displayService.GetFeatName(featId);
             if (string.IsNullOrEmpty(name)) continue;
-            selectedItems.Add(new FeatDisplayItem
+            allItems.Add(new FeatDisplayItem
             {
                 FeatId = featId,
                 Name = name,
@@ -182,7 +166,24 @@ public partial class NewCharacterWizardWindow
             });
         }
 
-        _selectedFeatsListBox.ItemsSource = selectedItems;
+        foreach (var featId in grantedFeatIds)
+        {
+            var name = _displayService.GetFeatName(featId);
+            if (string.IsNullOrEmpty(name)) continue;
+            allItems.Add(new FeatDisplayItem
+            {
+                FeatId = featId,
+                Name = name,
+                IsGranted = true,
+                SourceLabel = "(granted)",
+                MeetsPrereqs = true
+            });
+        }
+
+        // Chosen feats first (player-selected), granted last (auto-granted) — #1883
+        var sorted = SkillDisplayHelper.SortSelectedFeats(allItems, f => f.IsGranted, f => f.Name);
+
+        _selectedFeatsListBox.ItemsSource = sorted;
         _selectedFeatCountLabel.Text = $"({_chosenFeatIds.Count} chosen + {grantedFeatIds.Count} granted)";
     }
 
