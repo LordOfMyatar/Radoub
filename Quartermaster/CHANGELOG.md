@@ -5,6 +5,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.79-alpha] - 2026-04-18
+**Branch**: `quartermaster/issue-1978` | **PR**: #TBD
+
+### Sprint: Wizard & List Polish (#1978)
+
+- NCW feat selection should show previously chosen feats (#1883)
+- Simplify validation rules from LG/TN/CE to LG/CE (#1882)
+- NCW/LUW skill list should sort unavailable skills to bottom (#1881)
+- Rename 'Assigned' to 'Chosen' for feats terminology (#1865)
+- Consolidate GAINMULTIPLE subtypes (Weapon Focus, etc.) in feat list (#1734)
+
+---
+
 ## [0.2.78-alpha] - 2026-04-12
 **Branch**: `quartermaster/issue-2074` | **PR**: #2076
 
