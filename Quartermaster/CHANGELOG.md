@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.79-alpha] - 2026-04-18
-**Branch**: `quartermaster/issue-1978` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1978` | **PR**: #2095
 
 ### Sprint: Wizard & List Polish (#1978)
 
