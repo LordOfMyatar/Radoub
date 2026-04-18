@@ -177,6 +177,12 @@ public partial class MainWindow
         ItemBrowserPanel.FileDeleteRequested += OnItemBrowserFileDeleteRequested;
         ItemBrowserPanel.CollapsedChanged += (_, isCollapsed) => SetItemBrowserPanelVisible(!isCollapsed);
 
+        // Copy-to-Module status feedback (#1479)
+        ItemBrowserPanel.FileCopiedToModule += (_, destPath) =>
+        {
+            UpdateStatus($"Copied to module: {Path.GetFileName(destPath)}");
+        };
+
         UpdateItemBrowserMenuState();
         UnifiedLogger.LogUI(LogLevel.INFO, "ItemBrowserPanel initialized");
     }

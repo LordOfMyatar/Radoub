@@ -93,6 +93,12 @@ namespace Parley.Views.Helpers
             // Subscribe to collapse/expand events (#1143)
             dialogBrowserPanel.CollapsedChanged += OnCollapsedChanged;
 
+            // Copy-to-Module status feedback (#1479)
+            dialogBrowserPanel.FileCopiedToModule += (_, destPath) =>
+            {
+                _viewModel.StatusMessage = $"Copied to module: {Path.GetFileName(destPath)}";
+            };
+
             // Update menu item checkmark
             UpdateMenuState();
         }

@@ -65,6 +65,12 @@ public partial class MainWindow
         // Subscribe to collapse/expand events
         creatureBrowserPanel.CollapsedChanged += OnCreatureBrowserCollapsedChanged;
 
+        // Copy-to-Module status feedback (#1479)
+        creatureBrowserPanel.FileCopiedToModule += (_, destPath) =>
+        {
+            UpdateStatus($"Copied to module: {System.IO.Path.GetFileName(destPath)}");
+        };
+
         // Restore panel state from settings
         RestoreCreatureBrowserPanelState();
 

@@ -68,6 +68,22 @@ public class DialogBrowserPanel : FileBrowserPanelBase
         FilterOptionsContent = _showHakCheckBox;
     }
 
+    protected override bool SupportsCopyToModule() => true;
+
+    // DLG has no Tag or LocName equivalents — ResRef-only rename.
+    protected override bool SupportsTagNameRename() => false;
+
+    protected override Task<byte[]?> ExtractArchiveBytesAsync(FileBrowserEntry entry)
+    {
+        if (!entry.IsFromHak || string.IsNullOrEmpty(entry.HakPath))
+            return Task.FromResult<byte[]?>(null);
+
+        return Task.FromResult(ExtractFromHak(entry.HakPath, entry.Name, ResourceTypes.Dlg));
+    }
+
+    // Default ApplyCopyCustomizationsAsync returns bytes unchanged — exactly what we want
+    // for DLG since the filename is the only thing that changes.
+
     /// <summary>
     /// Gets or sets whether HAK dialogs are shown.
     /// </summary>
