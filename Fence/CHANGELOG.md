@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.26-alpha] - 2026-04-18
-**Branch**: `fence/issue-2065` | **PR**: #TBD
+**Branch**: `fence/issue-2065` | **PR**: #2097
 
 ### Sprint: Search & Copy-to-Module (#2065)
 
