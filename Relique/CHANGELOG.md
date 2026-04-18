@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.10-alpha] - 2026-04-18
+**Branch**: `relique/sprint/1905-categories` | **PR**: #TBD
+
+### Sprint: Editor Preview & 2DA-Sourced Categories (#1905)
+
+- Replace hardcoded item property categories with 2DA-sourced data (#1903)
+
+---
+
 ## [0.10.9-alpha] - 2026-04-18
 **Branch**: `fence/issue-2065` | **PR**: #2097
 
