@@ -457,7 +457,30 @@ public partial class LevelUpWizardWindow : Window
     {
         var level = ValidationLevelComboBoxMap.FromComboBoxIndex(_validationLevelComboBox.SelectedIndex);
         SettingsService.Instance.ValidationLevel = level;
+
+        // Refresh step-specific UI so filters/button states reflect the new level,
+        // without clobbering the user's in-progress selections. (#1978 follow-up)
+        RefreshCurrentStepForValidationChange();
         ValidateCurrentStep();
+    }
+
+    private void RefreshCurrentStepForValidationChange()
+    {
+        switch (_currentStep)
+        {
+            case 3:
+                // Feats: rebuild available list (prereq filtering depends on level) and refresh UI
+                LoadAvailableFeats();
+                ApplyFeatFilter();
+                UpdateFeatSelectionUI();
+                break;
+            case 4:
+                // Skills: rebuild rows so [+]/[-] enablement reflects current caps
+                _allSkills = BuildSkillList();
+                ApplySkillFilter();
+                UpdateSkillPointsDisplay();
+                break;
+        }
     }
 
     private void ValidateCurrentStep()

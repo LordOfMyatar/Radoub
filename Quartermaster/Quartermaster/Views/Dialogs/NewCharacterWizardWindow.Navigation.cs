@@ -48,19 +48,12 @@ public partial class NewCharacterWizardWindow
         var level = ValidationLevelComboBoxMap.FromComboBoxIndex(_validationLevelComboBox.SelectedIndex);
         SettingsService.Instance.ValidationLevel = level;
 
-        // Refresh step-specific UI when validation level changes
-        switch (_currentStep)
-        {
-            case 6 when _step5Loaded:
-                UpdateAbilityDisplay(); // Also calls ValidateCurrentStep
-                break;
-            case 8 when _step7Loaded:
-                RenderSkillRows(); // Rebuild buttons with new enabled state; also calls ValidateCurrentStep
-                break;
-            default:
-                ValidateCurrentStep();
-                break;
-        }
+        // Rebuild current step so lists/filters/button states reflect the new level.
+        // Prepare methods are idempotent (guarded by per-step _loaded flags), so user
+        // selections are preserved. Fixes stale feat/skill/spell filtering when toggling
+        // CE <-> LG without navigating (#1978 follow-up).
+        PrepareCurrentStep();
+        ValidateCurrentStep();
     }
 
     private void ValidateCurrentStep()
