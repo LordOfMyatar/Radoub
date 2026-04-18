@@ -139,26 +139,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Show module context in status bar (#1003)
         UpdateModuleIndicator();
 
-        // Initialize search bar with UTM search provider
-        // Item name resolver uses ItemResolutionService (initialized later in Opened event)
-        // The closure captures _itemResolutionService which is set during InitializeServicesAsync
-        var searchBar = this.FindControl<SearchBar>("FileSearchBar");
-        searchBar?.Initialize(
-            new FileSearchService(new UtmSearchProvider(resRef =>
-                _itemResolutionService?.ResolveItem(resRef)?.DisplayName)),
-            new (string, SearchFieldCategory)[]
-            {
-                ("Text", SearchFieldCategory.Content),
-                ("Tags", SearchFieldCategory.Identity),
-                ("Scripts", SearchFieldCategory.Script),
-                ("Metadata", SearchFieldCategory.Metadata),
-                ("Variables", SearchFieldCategory.Variable),
-            });
-        if (searchBar != null)
-        {
-            searchBar.FileModified += OnSearchFileModified;
-            searchBar.NavigateToMatch += OnSearchNavigateToMatch;
-        }
+        // Search bar initialization is deferred to InitializeAndLoadAsync (#2015)
+        // so the item-name resolver captures a non-null _itemResolutionService.
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "Fence MainWindow initialized");
     }
@@ -188,12 +170,31 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             await InitializeServicesAsync();
 
             // Wire up GameDataService to StoreBrowserPanel for BIF scanning (#1687)
+            // and initialize the search bar now that _itemResolutionService is set (#2015).
             await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
                 var storeBrowserPanel = this.FindControl<StoreBrowserPanel>("StoreBrowserPanel");
                 if (storeBrowserPanel != null && _gameDataService != null)
                 {
                     storeBrowserPanel.GameDataService = _gameDataService;
+                }
+
+                var searchBar = this.FindControl<SearchBar>("FileSearchBar");
+                searchBar?.Initialize(
+                    new FileSearchService(new UtmSearchProvider(resRef =>
+                        _itemResolutionService?.ResolveItem(resRef)?.DisplayName)),
+                    new (string, SearchFieldCategory)[]
+                    {
+                        ("Text", SearchFieldCategory.Content),
+                        ("Tags", SearchFieldCategory.Identity),
+                        ("Scripts", SearchFieldCategory.Script),
+                        ("Metadata", SearchFieldCategory.Metadata),
+                        ("Variables", SearchFieldCategory.Variable),
+                    });
+                if (searchBar != null)
+                {
+                    searchBar.FileModified += OnSearchFileModified;
+                    searchBar.NavigateToMatch += OnSearchNavigateToMatch;
                 }
             });
 
