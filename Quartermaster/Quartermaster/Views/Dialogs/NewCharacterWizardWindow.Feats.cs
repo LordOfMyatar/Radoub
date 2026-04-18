@@ -42,40 +42,50 @@ public partial class NewCharacterWizardWindow
         // Build ability scores for prereq checking
         var racialMods = _displayService.GetRacialModifiers(_selectedRaceId);
 
-        // Build available feats list (excluding granted and already chosen)
-        _availableFeats = new List<FeatDisplayItem>();
+        // Build raw list of candidate feat IDs (visible to player in this step)
+        var candidateFeatIds = new List<int>();
         foreach (var featId in allFeatIds)
         {
-            // Skip granted feats
             if (grantedFeatIds.Contains(featId)) continue;
-
-            // Skip already chosen feats
             if (_chosenFeatIds.Contains(featId)) continue;
+            if (!_displayService.Feats.IsFeatAvailable(_tempCreature, featId)) continue;
+            if (_validationLevel != ValidationLevel.None && !CheckFeatPrereqsForWizard(featId)) continue;
+            var featName = _displayService.GetFeatName(featId);
+            if (string.IsNullOrEmpty(featName)) continue;
+            candidateFeatIds.Add(featId);
+        }
 
-            // Check if feat is available to this class
-            if (!_displayService.Feats.IsFeatAvailable(_tempCreature, featId))
-                continue;
-
-            // Check prerequisites against current wizard state via FeatService (#1800)
-            // In None mode (Chaotic Evil), skip prereq filtering — show all feats
-            if (_validationLevel != ValidationLevel.None)
+        // Group by MASTERFEAT so variants like Weapon Focus (Club/Dagger/...) collapse
+        // into a single selectable row (#1734). Singletons remain as-is.
+        _availableFeats = new List<FeatDisplayItem>();
+        foreach (var group in _displayService.Feats.GroupFeatsByMaster(candidateFeatIds))
+        {
+            string name;
+            FeatCategory category;
+            if (group.IsMasterFeat)
             {
-                if (!CheckFeatPrereqsForWizard(featId)) continue;
+                // group.FeatId is a masterfeats.2da row — look up via GetMasterFeatName
+                name = _displayService.Feats.GetMasterFeatName(group.FeatId);
+                // Category comes from a child feat (all subtypes share the same category)
+                category = _displayService.Feats.GetFeatCategory(group.SubtypeIds[0]);
             }
-
-            var name = _displayService.GetFeatName(featId);
+            else
+            {
+                name = _displayService.GetFeatName(group.FeatId);
+                category = _displayService.Feats.GetFeatCategory(group.FeatId);
+            }
             if (string.IsNullOrEmpty(name)) continue;
-
-            var category = _displayService.Feats.GetFeatCategory(featId);
 
             _availableFeats.Add(new FeatDisplayItem
             {
-                FeatId = featId,
-                Name = name,
+                FeatId = group.FeatId,
+                Name = group.IsMasterFeat ? $"{name} (choose type)" : name,
                 CategoryAbbrev = GetFeatCategoryAbbrev(category),
                 IsGranted = false,
                 MeetsPrereqs = true,
-                SourceLabel = ""
+                SourceLabel = "",
+                IsMasterFeat = group.IsMasterFeat,
+                SubtypeIds = group.IsMasterFeat ? group.SubtypeIds.ToList() : new List<int>()
             });
         }
 
@@ -150,29 +160,13 @@ public partial class NewCharacterWizardWindow
     private void UpdateSelectedFeatsDisplay()
     {
         var grantedFeatIds = GetGrantedFeatIds();
-        var selectedItems = new List<FeatDisplayItem>();
+        var allItems = new List<FeatDisplayItem>();
 
-        // Add granted feats first (read-only)
-        foreach (var featId in grantedFeatIds.OrderBy(id => _displayService.GetFeatName(id)))
-        {
-            var name = _displayService.GetFeatName(featId);
-            if (string.IsNullOrEmpty(name)) continue;
-            selectedItems.Add(new FeatDisplayItem
-            {
-                FeatId = featId,
-                Name = name,
-                IsGranted = true,
-                SourceLabel = "(granted)",
-                MeetsPrereqs = true
-            });
-        }
-
-        // Add chosen feats
         foreach (var featId in _chosenFeatIds)
         {
             var name = _displayService.GetFeatName(featId);
             if (string.IsNullOrEmpty(name)) continue;
-            selectedItems.Add(new FeatDisplayItem
+            allItems.Add(new FeatDisplayItem
             {
                 FeatId = featId,
                 Name = name,
@@ -182,7 +176,24 @@ public partial class NewCharacterWizardWindow
             });
         }
 
-        _selectedFeatsListBox.ItemsSource = selectedItems;
+        foreach (var featId in grantedFeatIds)
+        {
+            var name = _displayService.GetFeatName(featId);
+            if (string.IsNullOrEmpty(name)) continue;
+            allItems.Add(new FeatDisplayItem
+            {
+                FeatId = featId,
+                Name = name,
+                IsGranted = true,
+                SourceLabel = "(granted)",
+                MeetsPrereqs = true
+            });
+        }
+
+        // Chosen feats first (player-selected), granted last (auto-granted) — #1883
+        var sorted = SkillDisplayHelper.SortSelectedFeats(allItems, f => f.IsGranted, f => f.Name);
+
+        _selectedFeatsListBox.ItemsSource = sorted;
         _selectedFeatCountLabel.Text = $"({_chosenFeatIds.Count} chosen + {grantedFeatIds.Count} granted)";
     }
 
@@ -209,7 +220,7 @@ public partial class NewCharacterWizardWindow
         ApplyFeatFilter();
     }
 
-    private void OnAddFeatClick(object? sender, RoutedEventArgs e)
+    private async void OnAddFeatClick(object? sender, RoutedEventArgs e)
     {
         var selectedItems = _availableFeatsListBox.SelectedItems?
             .OfType<FeatDisplayItem>()
@@ -220,6 +231,23 @@ public partial class NewCharacterWizardWindow
         {
             // Only Strict (LG) enforces feat count cap
             if (_validationLevel == ValidationLevel.Strict && _chosenFeatIds.Count >= _featsToChoose) break;
+
+            if (item.IsMasterFeat)
+            {
+                // #1734: open sub-picker to resolve a subtype feat
+                var chosenSubtype = await PromptForFeatSubtypeAsync(item);
+                if (chosenSubtype is null) continue;
+
+                if (!_chosenFeatIds.Contains(chosenSubtype.Value))
+                {
+                    _chosenFeatIds.Add(chosenSubtype.Value);
+                    // Remove the entire master group from available (master collapse assumes
+                    // a single variant is enough — matches current GAINMULTIPLE UI behavior).
+                    _availableFeats.RemoveAll(f => f.FeatId == item.FeatId && f.IsMasterFeat);
+                }
+                continue;
+            }
+
             if (!_chosenFeatIds.Contains(item.FeatId))
             {
                 _chosenFeatIds.Add(item.FeatId);
@@ -233,6 +261,29 @@ public partial class NewCharacterWizardWindow
         ValidateCurrentStep();
     }
 
+    /// <summary>
+    /// Shows the subtype picker for a master feat (#1734). Returns the chosen
+    /// subtype's feat ID or null if the user cancelled.
+    /// </summary>
+    private async System.Threading.Tasks.Task<int?> PromptForFeatSubtypeAsync(FeatDisplayItem master)
+    {
+        var subtypes = master.SubtypeIds
+            .Select(id => new FeatSubtypePickerWindow.SubtypeItem
+            {
+                FeatId = id,
+                Name = _displayService.GetFeatName(id),
+                MeetsPrereqs = _validationLevel == ValidationLevel.None || CheckFeatPrereqsForWizard(id),
+                AlreadyOwned = _chosenFeatIds.Contains(id)
+                    || GetGrantedFeatIds().Contains(id)
+            })
+            .ToList();
+
+        var masterName = _displayService.Feats.GetMasterFeatName(master.FeatId);
+        var picker = new FeatSubtypePickerWindow(masterName, subtypes);
+        await picker.ShowDialog(this);
+        return picker.Confirmed ? picker.SelectedFeatId : null;
+    }
+
     private void OnRemoveFeatClick(object? sender, RoutedEventArgs e)
     {
         var selectedItems = _selectedFeatsListBox.SelectedItems?
@@ -243,34 +294,10 @@ public partial class NewCharacterWizardWindow
         foreach (var item in selectedItems)
         {
             _chosenFeatIds.Remove(item.FeatId);
-
-            // Re-add to available list
-            var category = _displayService.Feats.GetFeatCategory(item.FeatId);
-            bool meetsPrereqs = true;
-            if (_validationLevel != ValidationLevel.None)
-            {
-                meetsPrereqs = CheckFeatPrereqsForWizard(item.FeatId);
-            }
-
-            _availableFeats.Add(new FeatDisplayItem
-            {
-                FeatId = item.FeatId,
-                Name = item.Name,
-                CategoryAbbrev = GetFeatCategoryAbbrev(category),
-                IsGranted = false,
-                MeetsPrereqs = meetsPrereqs,
-                SourceLabel = meetsPrereqs ? "" : "(prereqs)"
-            });
         }
 
-        _availableFeats = _availableFeats
-            .OrderByDescending(f => f.MeetsPrereqs)
-            .ThenBy(f => f.Name)
-            .ToList();
-
-        ApplyFeatFilter();
-        UpdateSelectedFeatsDisplay();
-        UpdateFeatSelectionCount();
+        // Rebuild available list so removed subtypes regroup under their master (#1734)
+        PrepareStep7();
         ValidateCurrentStep();
     }
 

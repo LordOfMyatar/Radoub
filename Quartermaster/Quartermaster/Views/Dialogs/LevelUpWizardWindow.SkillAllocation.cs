@@ -96,8 +96,8 @@ public partial class LevelUpWizardWindow
             });
         }
 
-        // Sort: class skills first, then by name
-        return skills.OrderByDescending(s => s.IsClassSkill).ThenBy(s => s.Name).ToList();
+        // Sort: class skills → cross-class → unavailable, alpha within bucket (#1881)
+        return SkillDisplayHelper.SortForDisplay(skills);
     }
 
     private void ApplySkillFilter()

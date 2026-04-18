@@ -47,7 +47,7 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
     private bool _recordLevelHistory = true;
 
     // Validation level for wizards (NCW/LUW)
-    private ValidationLevel _validationLevel = ValidationLevel.Warning;
+    private ValidationLevel _validationLevel = ValidationLevel.None;
 
     // Appearance filter exclude patterns (#1520)
     private string _appearanceExcludeFilter = "Invisible;object";
@@ -104,7 +104,7 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
 
     /// <summary>
     /// Validation strictness for NCW and LUW character creation rules.
-    /// Default: Warning (True Neutral) — shows warnings but allows rule violations.
+    /// Default: None (Chaotic Evil) — permissive; Strict (Lawful Good) enforces ELC (#1882).
     /// </summary>
     public ValidationLevel ValidationLevel
     {
@@ -132,7 +132,8 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
         _creatureBrowserPanelVisible = settings.CreatureBrowserPanelVisible;
         _levelHistoryEncoding = settings.LevelHistoryEncoding;
         _recordLevelHistory = settings.RecordLevelHistory;
-        _validationLevel = settings.ValidationLevel;
+        // #1882: Legacy Warning=1 tier was removed; migrate persisted value to None.
+        _validationLevel = MigrateValidationLevel(settings.ValidationLevel);
         _appearanceExcludeFilter = settings.AppearanceExcludeFilter ?? "Invisible;object";
     }
 
@@ -149,6 +150,13 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
         settings.AppearanceExcludeFilter = AppearanceExcludeFilter;
     }
 
+    // #1882: Removed Warning tier (int 1). Persisted None (0) and Strict (2) map directly;
+    // the legacy Warning value collapses to None since it allowed everything None allows.
+    private static ValidationLevel MigrateValidationLevel(ValidationLevel persisted) =>
+        persisted == ValidationLevel.None || persisted == ValidationLevel.Strict
+            ? persisted
+            : ValidationLevel.None;
+
     public class SettingsData : BaseSettingsData
     {
         public double LeftPanelWidth { get; set; } = 350;
@@ -161,7 +169,7 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
 
         public LevelHistoryEncoding LevelHistoryEncoding { get; set; } = LevelHistoryEncoding.Readable;
         public bool RecordLevelHistory { get; set; } = true;
-        public ValidationLevel ValidationLevel { get; set; } = ValidationLevel.Warning;
+        public ValidationLevel ValidationLevel { get; set; } = ValidationLevel.None;
         public string AppearanceExcludeFilter { get; set; } = "Invisible;object";
     }
 }

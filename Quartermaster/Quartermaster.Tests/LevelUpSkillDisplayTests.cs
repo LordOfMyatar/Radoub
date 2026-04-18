@@ -191,6 +191,117 @@ public class LevelUpSkillDisplayTests
 
     #endregion
 
+    #region Skill Sort (#1881)
+
+    [Fact]
+    public void SortForDisplay_ClassSkillsFirst_ThenCrossClass_ThenUnavailable()
+    {
+        var skills = new List<Services.SkillDisplayHelper.SkillFilterItem>
+        {
+            new() { Name = "Use Magic Device", IsClassSkill = false, IsUnavailable = true },
+            new() { Name = "Hide", IsClassSkill = false, IsUnavailable = false },
+            new() { Name = "Concentration", IsClassSkill = true, IsUnavailable = false },
+        };
+
+        var result = Services.SkillDisplayHelper.SortForDisplay(skills);
+
+        Assert.Equal("Concentration", result[0].Name);
+        Assert.Equal("Hide", result[1].Name);
+        Assert.Equal("Use Magic Device", result[2].Name);
+    }
+
+    [Fact]
+    public void SortForDisplay_WithinBucket_OrdersAlphabetically()
+    {
+        var skills = new List<Services.SkillDisplayHelper.SkillFilterItem>
+        {
+            new() { Name = "Spellcraft", IsClassSkill = true, IsUnavailable = false },
+            new() { Name = "Concentration", IsClassSkill = true, IsUnavailable = false },
+            new() { Name = "Search", IsClassSkill = false, IsUnavailable = false },
+            new() { Name = "Hide", IsClassSkill = false, IsUnavailable = false },
+        };
+
+        var result = Services.SkillDisplayHelper.SortForDisplay(skills);
+
+        Assert.Equal("Concentration", result[0].Name);
+        Assert.Equal("Spellcraft", result[1].Name);
+        Assert.Equal("Hide", result[2].Name);
+        Assert.Equal("Search", result[3].Name);
+    }
+
+    [Fact]
+    public void SortForDisplay_UnavailableClassSkill_SortsToBottom()
+    {
+        // A class skill that is also unavailable should be in the unavailable bucket, not class
+        var skills = new List<Services.SkillDisplayHelper.SkillFilterItem>
+        {
+            new() { Name = "Hide", IsClassSkill = false, IsUnavailable = false },
+            new() { Name = "Tumble", IsClassSkill = true, IsUnavailable = true },
+        };
+
+        var result = Services.SkillDisplayHelper.SortForDisplay(skills);
+
+        Assert.Equal("Hide", result[0].Name);
+        Assert.Equal("Tumble", result[1].Name);
+    }
+
+    [Fact]
+    public void SortForDisplay_EmptyList_ReturnsEmpty()
+    {
+        var result = Services.SkillDisplayHelper.SortForDisplay(new List<Services.SkillDisplayHelper.SkillFilterItem>());
+        Assert.Empty(result);
+    }
+
+    #endregion
+
+    #region Feat Sort (#1883)
+
+    [Fact]
+    public void SortSelectedFeats_ChosenFirst_ThenGranted()
+    {
+        var feats = new List<(int id, string name, bool granted)>
+        {
+            (1, "Alertness", true),
+            (2, "Weapon Focus", false),
+            (3, "Toughness", true),
+            (4, "Power Attack", false),
+        };
+
+        var result = Services.SkillDisplayHelper.SortSelectedFeats(
+            feats, f => f.granted, f => f.name);
+
+        Assert.Equal("Power Attack", result[0].name);
+        Assert.Equal("Weapon Focus", result[1].name);
+        Assert.Equal("Alertness", result[2].name);
+        Assert.Equal("Toughness", result[3].name);
+    }
+
+    [Fact]
+    public void SortSelectedFeats_EmptyInput_ReturnsEmpty()
+    {
+        var result = Services.SkillDisplayHelper.SortSelectedFeats(
+            new List<(int, string, bool)>(),
+            f => f.Item3,
+            f => f.Item2);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public void SortSelectedFeats_AllChosen_OrdersAlpha()
+    {
+        var feats = new List<(int id, string name, bool granted)>
+        {
+            (1, "Zombie Mastery", false),
+            (2, "Alertness", false),
+        };
+        var result = Services.SkillDisplayHelper.SortSelectedFeats(
+            feats, f => f.granted, f => f.name);
+        Assert.Equal("Alertness", result[0].name);
+        Assert.Equal("Zombie Mastery", result[1].name);
+    }
+
+    #endregion
+
     #region Helpers
 
     private static List<Services.SkillDisplayHelper.SkillFilterItem> CreateSampleSkills()

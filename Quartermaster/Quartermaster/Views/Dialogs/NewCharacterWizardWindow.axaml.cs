@@ -141,7 +141,7 @@ public partial class NewCharacterWizardWindow : Window
 
     // Validation level (#1503)
     private readonly ComboBox _validationLevelComboBox;
-    private ValidationLevel _validationLevel => (ValidationLevel)_validationLevelComboBox.SelectedIndex;
+    private ValidationLevel _validationLevel => ValidationLevelComboBoxMap.FromComboBoxIndex(_validationLevelComboBox.SelectedIndex);
 
     // Controls - navigation
     private readonly TextBlock _sidebarTitle;
@@ -596,7 +596,7 @@ public partial class NewCharacterWizardWindow : Window
 
         // Validation level toggle (#1503)
         _validationLevelComboBox = this.FindControl<ComboBox>("ValidationLevelComboBox")!;
-        _validationLevelComboBox.SelectedIndex = (int)SettingsService.Instance.ValidationLevel;
+        _validationLevelComboBox.SelectedIndex = ValidationLevelComboBoxMap.ToComboBoxIndex(SettingsService.Instance.ValidationLevel);
         _validationLevelComboBox.SelectionChanged += OnValidationLevelChanged;
 
         UpdateStepDisplay();

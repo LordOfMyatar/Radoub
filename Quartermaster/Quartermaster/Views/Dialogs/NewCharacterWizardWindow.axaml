@@ -155,15 +155,14 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Validation Level Toggle (#1503) -->
+                <!-- Validation Level Toggle (#1503, simplified #1882) -->
                 <Separator Margin="0,15,0,10"/>
-                <TextBlock Text="Rules" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                <TextBlock Text="Validation Level" FontWeight="SemiBold" Margin="0,0,0,5"/>
                 <ComboBox x:Name="ValidationLevelComboBox"
                           AutomationProperties.AutomationId="ValidationLevelComboBox"
                           HorizontalAlignment="Stretch"
-                          SelectedIndex="1">
+                          SelectedIndex="0">
                     <ComboBoxItem Content="😈 Chaotic Evil" ToolTip.Tip="No validation. Anything goes — for power users and custom content."/>
-                    <ComboBoxItem Content="⚖️ True Neutral" ToolTip.Tip="Warn about rule violations but allow them. Default."/>
                     <ComboBoxItem Content="⚔️ Lawful Good" ToolTip.Tip="Enforce ELC rules. Block invalid selections."/>
                 </ComboBox>
             </StackPanel>

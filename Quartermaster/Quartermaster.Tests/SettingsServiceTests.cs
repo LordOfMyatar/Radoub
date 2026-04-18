@@ -158,4 +158,66 @@ public class SettingsServiceTests : IDisposable
 
         Assert.Equal(1000, reloaded.WindowWidth);
     }
+
+    [Fact]
+    public void ValidationLevel_LegacyWarningValue_MigratesToNone()
+    {
+        // #1882: The old Warning=1 tier was removed. Persisted settings with
+        // Warning (1) must migrate to None since TN allowed everything CE allows.
+        var settingsFile = Path.Combine(_testSettingsDir, "QuartermasterSettings.json");
+        File.WriteAllText(settingsFile,
+            "{ \"ValidationLevel\": 1, \"WindowWidth\": 1024, \"WindowHeight\": 768 }");
+
+        SingletonTestHelper.ResetSingleton<SettingsService>();
+        var service = SettingsService.Instance;
+
+        Assert.Equal(ValidationLevel.None, service.ValidationLevel);
+    }
+
+    [Fact]
+    public void ValidationLevel_DefaultValue_IsNone()
+    {
+        // #1882: Default is now None (CE) — permissive, matches prior TN default intent
+        SingletonTestHelper.ResetSingleton<SettingsService>();
+        var service = SettingsService.Instance;
+
+        Assert.Equal(ValidationLevel.None, service.ValidationLevel);
+    }
+
+    [Fact]
+    public void ValidationLevel_StrictValue_PreservedAcrossReload()
+    {
+        var service = SettingsService.Instance;
+        service.ValidationLevel = ValidationLevel.Strict;
+
+        SingletonTestHelper.ResetSingleton<SettingsService>();
+        var reloaded = SettingsService.Instance;
+
+        Assert.Equal(ValidationLevel.Strict, reloaded.ValidationLevel);
+    }
+
+    [Fact]
+    public void ValidationLevelComboBoxMap_ToIndex_NoneMapsTo0()
+    {
+        Assert.Equal(0, ValidationLevelComboBoxMap.ToComboBoxIndex(ValidationLevel.None));
+    }
+
+    [Fact]
+    public void ValidationLevelComboBoxMap_ToIndex_StrictMapsTo1()
+    {
+        // Strict is enum value 2, but occupies index 1 in the two-item ComboBox
+        Assert.Equal(1, ValidationLevelComboBoxMap.ToComboBoxIndex(ValidationLevel.Strict));
+    }
+
+    [Fact]
+    public void ValidationLevelComboBoxMap_FromIndex_0MapsToNone()
+    {
+        Assert.Equal(ValidationLevel.None, ValidationLevelComboBoxMap.FromComboBoxIndex(0));
+    }
+
+    [Fact]
+    public void ValidationLevelComboBoxMap_FromIndex_1MapsToStrict()
+    {
+        Assert.Equal(ValidationLevel.Strict, ValidationLevelComboBoxMap.FromComboBoxIndex(1));
+    }
 }

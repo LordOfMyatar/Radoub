@@ -765,4 +765,155 @@ public class FeatServiceTests
     }
 
     #endregion
+
+    #region MASTERFEAT Subtype Grouping (#1734)
+
+    [Fact]
+    public void GetMasterFeatId_FeatWithMasterFeat_ReturnsParentId()
+    {
+        // Feat 100: Weapon Focus Club — child of master feat 1051
+        _mockGameData.Set2DAValue("feat", 100, "LABEL", "WeapFocus_Club");
+        _mockGameData.Set2DAValue("feat", 100, "FEAT", "500");
+        _mockGameData.Set2DAValue("feat", 100, "MASTERFEAT", "1051");
+
+        Assert.Equal(1051, _featService.GetMasterFeatId(100));
+    }
+
+    [Fact]
+    public void GetMasterFeatId_FeatWithoutMasterFeat_ReturnsNull()
+    {
+        Assert.Null(_featService.GetMasterFeatId(0)); // Alertness has no MASTERFEAT
+    }
+
+    [Fact]
+    public void GetMasterFeatId_FeatWithInvalidMasterFeat_ReturnsNull()
+    {
+        _mockGameData.Set2DAValue("feat", 101, "LABEL", "Foo");
+        _mockGameData.Set2DAValue("feat", 101, "FEAT", "500");
+        _mockGameData.Set2DAValue("feat", 101, "MASTERFEAT", "****");
+
+        Assert.Null(_featService.GetMasterFeatId(101));
+    }
+
+    [Fact]
+    public void GetSubtypeFeatIds_MasterFeat_ReturnsAllChildren()
+    {
+        // Set up a master feat (1051) with 3 subtypes
+        _mockGameData.Set2DAValue("feat", 1051, "LABEL", "WeapFocus");
+        _mockGameData.Set2DAValue("feat", 1051, "FEAT", "600");
+
+        _mockGameData.Set2DAValue("feat", 200, "LABEL", "WeapFocus_Club");
+        _mockGameData.Set2DAValue("feat", 200, "FEAT", "601");
+        _mockGameData.Set2DAValue("feat", 200, "MASTERFEAT", "1051");
+
+        _mockGameData.Set2DAValue("feat", 201, "LABEL", "WeapFocus_Dagger");
+        _mockGameData.Set2DAValue("feat", 201, "FEAT", "602");
+        _mockGameData.Set2DAValue("feat", 201, "MASTERFEAT", "1051");
+
+        _mockGameData.Set2DAValue("feat", 202, "LABEL", "WeapFocus_Bastard");
+        _mockGameData.Set2DAValue("feat", 202, "FEAT", "603");
+        _mockGameData.Set2DAValue("feat", 202, "MASTERFEAT", "1051");
+
+        var children = _featService.GetSubtypeFeatIds(1051);
+
+        Assert.Equal(3, children.Count);
+        Assert.Contains(200, children);
+        Assert.Contains(201, children);
+        Assert.Contains(202, children);
+    }
+
+    [Fact]
+    public void GetSubtypeFeatIds_FeatWithNoChildren_ReturnsEmpty()
+    {
+        Assert.Empty(_featService.GetSubtypeFeatIds(0));
+    }
+
+    [Fact]
+    public void GroupFeatsByMaster_SingletonFeats_KeptAsIs()
+    {
+        // Feats 0, 5, 10 have no MASTERFEAT — should appear as singleton groups
+        var groups = _featService.GroupFeatsByMaster(new[] { 0, 5, 10 });
+
+        Assert.Equal(3, groups.Count);
+        Assert.All(groups, g => Assert.False(g.IsMasterFeat));
+    }
+
+    [Fact]
+    public void GroupFeatsByMaster_SubtypeFeats_CollapsedToMaster()
+    {
+        // Set up master + children
+        _mockGameData.Set2DAValue("feat", 1051, "LABEL", "WeapFocus");
+        _mockGameData.Set2DAValue("feat", 1051, "FEAT", "600");
+
+        _mockGameData.Set2DAValue("feat", 200, "LABEL", "WeapFocus_Club");
+        _mockGameData.Set2DAValue("feat", 200, "FEAT", "601");
+        _mockGameData.Set2DAValue("feat", 200, "MASTERFEAT", "1051");
+
+        _mockGameData.Set2DAValue("feat", 201, "LABEL", "WeapFocus_Dagger");
+        _mockGameData.Set2DAValue("feat", 201, "FEAT", "602");
+        _mockGameData.Set2DAValue("feat", 201, "MASTERFEAT", "1051");
+
+        // Input contains two children of the same master, plus a singleton (feat 0)
+        var groups = _featService.GroupFeatsByMaster(new[] { 200, 201, 0 });
+
+        // Expect 2 groups: master (1051) + singleton (0)
+        Assert.Equal(2, groups.Count);
+        var master = groups.Single(g => g.IsMasterFeat);
+        Assert.Equal(1051, master.FeatId);
+        Assert.Equal(2, master.SubtypeIds.Count);
+        Assert.Contains(200, master.SubtypeIds);
+        Assert.Contains(201, master.SubtypeIds);
+    }
+
+    [Fact]
+    public void GetMasterFeatName_ReadsFromMasterfeats2da_NotFeat2da()
+    {
+        // masterfeats.2da row 5 has STRREF 900 -> "Weapon Focus" in TLK
+        _mockGameData.Set2DAValue("masterfeats", 5, "LABEL", "WeapFocus");
+        _mockGameData.Set2DAValue("masterfeats", 5, "STRREF", "900");
+        _mockGameData.WithString(900, "Weapon Focus");
+
+        // feat.2da row 5 would resolve to something else — confirm we DON'T use that
+        _mockGameData.Set2DAValue("feat", 5, "LABEL", "Blind_Fight"); // already set in fixture
+        _mockGameData.WithString(401, "Blind-Fight");
+
+        var name = _featService.GetMasterFeatName(5);
+        Assert.Equal("Weapon Focus", name);
+    }
+
+    [Fact]
+    public void GetMasterFeatName_MissingRow_ReturnsFallbackLabel()
+    {
+        // When STRREF lookup fails, fall back to LABEL
+        _mockGameData.Set2DAValue("masterfeats", 7, "LABEL", "ImprCrit");
+        _mockGameData.Set2DAValue("masterfeats", 7, "STRREF", "****");
+
+        var name = _featService.GetMasterFeatName(7);
+        Assert.Equal("ImprCrit", name);
+    }
+
+    [Fact]
+    public void GroupFeatsByMaster_MixedMastersAndOrphans_GroupsIndependently()
+    {
+        _mockGameData.Set2DAValue("feat", 1051, "LABEL", "WeapFocus");
+        _mockGameData.Set2DAValue("feat", 1051, "FEAT", "600");
+        _mockGameData.Set2DAValue("feat", 1052, "LABEL", "WeapSpec");
+        _mockGameData.Set2DAValue("feat", 1052, "FEAT", "601");
+
+        _mockGameData.Set2DAValue("feat", 200, "LABEL", "WFC");
+        _mockGameData.Set2DAValue("feat", 200, "FEAT", "700");
+        _mockGameData.Set2DAValue("feat", 200, "MASTERFEAT", "1051");
+
+        _mockGameData.Set2DAValue("feat", 300, "LABEL", "WSpec_Club");
+        _mockGameData.Set2DAValue("feat", 300, "FEAT", "800");
+        _mockGameData.Set2DAValue("feat", 300, "MASTERFEAT", "1052");
+
+        var groups = _featService.GroupFeatsByMaster(new[] { 200, 300, 0 });
+
+        // Expect 3 groups: master 1051, master 1052, singleton 0
+        Assert.Equal(3, groups.Count);
+        Assert.Equal(2, groups.Count(g => g.IsMasterFeat));
+    }
+
+    #endregion
 }

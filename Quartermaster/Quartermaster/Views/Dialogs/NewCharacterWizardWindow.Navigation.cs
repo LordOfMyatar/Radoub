@@ -45,22 +45,15 @@ public partial class NewCharacterWizardWindow
 
     private void OnValidationLevelChanged(object? sender, SelectionChangedEventArgs e)
     {
-        var level = (ValidationLevel)_validationLevelComboBox.SelectedIndex;
+        var level = ValidationLevelComboBoxMap.FromComboBoxIndex(_validationLevelComboBox.SelectedIndex);
         SettingsService.Instance.ValidationLevel = level;
 
-        // Refresh step-specific UI when validation level changes
-        switch (_currentStep)
-        {
-            case 6 when _step5Loaded:
-                UpdateAbilityDisplay(); // Also calls ValidateCurrentStep
-                break;
-            case 8 when _step7Loaded:
-                RenderSkillRows(); // Rebuild buttons with new enabled state; also calls ValidateCurrentStep
-                break;
-            default:
-                ValidateCurrentStep();
-                break;
-        }
+        // Rebuild current step so lists/filters/button states reflect the new level.
+        // Prepare methods are idempotent (guarded by per-step _loaded flags), so user
+        // selections are preserved. Fixes stale feat/skill/spell filtering when toggling
+        // CE <-> LG without navigating (#1978 follow-up).
+        PrepareCurrentStep();
+        ValidateCurrentStep();
     }
 
     private void ValidateCurrentStep()
@@ -91,13 +84,6 @@ public partial class NewCharacterWizardWindow
                 5 => _selectedClassId >= 0,
                 _ => true
             },
-            // True Neutral: warn but allow proceeding (except hard requirements)
-            ValidationLevel.Warning => _currentStep switch
-            {
-                2 => _selectedRaceId != 255,
-                5 => _selectedClassId >= 0 && !IsFamiliarNameRequired(),
-                _ => true
-            },
             // Lawful Good: enforce all rules
             _ => strictValid
         };
@@ -105,21 +91,7 @@ public partial class NewCharacterWizardWindow
         _nextButton.IsEnabled = canProceed;
         _finishButton.IsEnabled = canProceed;
 
-        // Status message: Warning mode shows yellow warnings, Strict mode shows blocking messages
-        if (_validationLevel == ValidationLevel.Warning && !strictValid)
-        {
-            _statusLabel.Foreground = BrushManager.GetWarningBrush(this);
-            _statusLabel.Text = _currentStep switch
-            {
-                3 when _isBicFile && !_voiceSetSelected => "⚠ No voice set selected. BIC files need a voice set for in-game dialog.",
-                5 when IsFamiliarNameRequired() => "⚠ Familiar name is empty.",
-                6 => $"⚠ {GetAbilityPointsRemaining()} ability point(s) unspent.",
-                7 => $"⚠ {_featsToChoose - _chosenFeatIds.Count} feat(s) not selected.",
-                9 => "⚠ Spell selection incomplete.",
-                _ => ""
-            };
-        }
-        else if (!canProceed)
+        if (!canProceed)
         {
             // Voice set uses warning brush (advisory, not an error); other blocks use default foreground
             if (_currentStep == 3 && _isBicFile && !_voiceSetSelected)
