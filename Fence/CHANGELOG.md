@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.26-alpha] - 2026-04-18
+**Branch**: `fence/issue-2065` | **PR**: #TBD
+
+### Sprint: Search & Copy-to-Module (#2065)
+
+- Fix search bar inventory item name resolution (resolver race with async service init)
+- Copy-to-Module rename dialog (ResRef/Tag/Name edit before write)
+- Browser refresh after copy when Module checkbox is active
+- Promote Copy-to-Module to shared `FileBrowserPanelBase` (closes #1479 — QM, Relique, Parley now inherit it)
+
+---
+
 ## [0.1.25-alpha] - 2026-03-27
 **Branch**: `fence/issue-1980` | **PR**: #2013
 
