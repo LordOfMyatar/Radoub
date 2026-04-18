@@ -4,6 +4,15 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
+## [0.1.165-alpha] - 2026-04-18 | PR #2097
+**Branch**: `fence/issue-2065`
+
+### Copy-to-Module for Dialogs (#1479)
+- Right-click any HAK dialog in the browser → Copy to Module with rename prompt (ResRef only)
+- DLG files have no Tag/LocName — dialog only prompts for the new filename
+
+---
+
 ## [0.1.164-alpha] - 2026-04-12 | PR #2082
 **Branch**: `parley/issue-2062`
 

@@ -1,0 +1,103 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Radoub.UI.Views.CopyToModuleDialog"
+        Title="Copy to Module"
+        MinWidth="480" MinHeight="420"
+        MaxHeight="750"
+        SizeToContent="WidthAndHeight"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <Grid Margin="20" MinWidth="440">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0"
+                   x:Name="HeaderText"
+                   Text="Copy resource to module"
+                   FontWeight="SemiBold"
+                   Margin="0,0,0,15"/>
+
+        <!-- ResRef -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,10">
+            <TextBlock Text="ResRef (filename):" FontWeight="SemiBold" Margin="0,0,0,5"/>
+            <TextBox x:Name="ResRefBox" FontFamily="Consolas, Courier New, monospace"
+                     TextChanged="OnFieldChanged"
+                     KeyDown="OnFieldKeyDown"
+                     Watermark="max 16 chars, a-z, 0-9, _"/>
+        </StackPanel>
+
+        <!-- ResRef char count -->
+        <TextBlock Grid.Row="2" x:Name="ResRefCharCountText"
+                   Text="0 / 16 characters"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                   Margin="0,0,0,10"/>
+
+        <!-- Tag -->
+        <StackPanel Grid.Row="3" x:Name="TagPanel" Margin="0,0,0,10">
+            <TextBlock Text="Tag:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+            <TextBox x:Name="TagBox" FontFamily="Consolas, Courier New, monospace"
+                     TextChanged="OnFieldChanged"
+                     KeyDown="OnFieldKeyDown"
+                     Watermark="max 32 chars"/>
+        </StackPanel>
+
+        <!-- Tag char count -->
+        <TextBlock Grid.Row="4" x:Name="TagCharCountText"
+                   Text="0 / 32 characters"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                   Margin="0,0,0,10"/>
+
+        <!-- Name -->
+        <StackPanel Grid.Row="5" x:Name="NamePanel" Margin="0,0,0,10">
+            <TextBlock Text="Name:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+            <TextBox x:Name="NameBox"
+                     KeyDown="OnFieldKeyDown"
+                     Watermark="display name shown in-game"/>
+        </StackPanel>
+
+        <!-- Validation messages -->
+        <Border Grid.Row="6" x:Name="ValidationBorder"
+                Background="{DynamicResource SystemControlErrorTextForegroundBrush}"
+                CornerRadius="4"
+                Padding="10"
+                Margin="0,0,0,10"
+                IsVisible="False">
+            <TextBlock x:Name="ValidationText"
+                       TextWrapping="Wrap"
+                       Foreground="White"/>
+        </Border>
+
+        <!-- Info block -->
+        <Border Grid.Row="7"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                CornerRadius="4"
+                Padding="10"
+                Margin="0,0,0,15">
+            <StackPanel>
+                <TextBlock Text="Copy-to-Module rules:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                <TextBlock Text="• ResRef must be unique in the module directory"/>
+                <TextBlock Text="• Aurora filenames: max 16 chars, lowercase, a-z, 0-9, _"/>
+                <TextBlock x:Name="InfoTagLine" Text="• Tag limit: 32 characters"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="8" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+            <Button x:Name="CopyButton" Content="Copy" MinWidth="90" Click="OnCopyClick" IsEnabled="False"/>
+            <Button Content="Cancel" MinWidth="90" Click="OnCancelClick"/>
+        </StackPanel>
+    </Grid>
+    </ScrollViewer>
+</Window>

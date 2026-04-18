@@ -8,6 +8,7 @@ using Radoub.Formats.Common;
 using Radoub.Formats.Erf;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
+using Radoub.UI.Services;
 
 namespace Radoub.UI.Controls;
 
@@ -59,6 +60,46 @@ public class ItemBrowserPanel : FileBrowserPanelBase
         _showHakCheckBox.IsCheckedChanged += OnShowHakChanged;
 
         FilterOptionsContent = _showHakCheckBox;
+    }
+
+    protected override bool SupportsCopyToModule() => true;
+
+    protected override Task<byte[]?> ExtractArchiveBytesAsync(FileBrowserEntry entry)
+    {
+        if (!entry.IsFromHak || string.IsNullOrEmpty(entry.HakPath))
+            return Task.FromResult<byte[]?>(null);
+
+        return Task.FromResult(ExtractFromHak(entry.HakPath, entry.Name, ResourceTypes.Uti));
+    }
+
+    protected override Task<(string tag, string name)> ReadSourceMetadataAsync(byte[] bytes)
+    {
+        try
+        {
+            var uti = Radoub.Formats.Uti.UtiReader.Read(bytes);
+            return Task.FromResult((uti.Tag ?? string.Empty, uti.LocalizedName.GetDefault() ?? string.Empty));
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"ItemBrowserPanel.ReadSourceMetadataAsync: {ex.Message}");
+            return Task.FromResult((string.Empty, string.Empty));
+        }
+    }
+
+    protected override Task<byte[]> ApplyCopyCustomizationsAsync(byte[] sourceBytes, CopyToModuleResult result)
+        => Task.FromResult(ApplyUtiCopyCustomizations(sourceBytes, result));
+
+    /// <summary>
+    /// Rewrite a UTI byte blob with the user's new TemplateResRef/Tag/LocalizedName.
+    /// </summary>
+    internal static byte[] ApplyUtiCopyCustomizations(byte[] sourceBytes, CopyToModuleResult result)
+    {
+        var uti = Radoub.Formats.Uti.UtiReader.Read(sourceBytes);
+        uti.TemplateResRef = result.NewResRef;
+        if (result.NewTag != null) uti.Tag = result.NewTag;
+        if (result.NewName != null) uti.LocalizedName.SetString(0, result.NewName);
+        return Radoub.Formats.Uti.UtiWriter.Write(uti);
     }
 
     /// <summary>

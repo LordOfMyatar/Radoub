@@ -176,6 +176,61 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
     /// </summary>
     public IGameDataService? GameDataService { get; set; }
 
+    protected override bool SupportsCopyToModule() => true;
+
+    protected override bool IsArchiveEntry(FileBrowserEntry entry)
+        => entry is CreatureBrowserEntry c && (c.IsFromHak || c.IsFromBif);
+
+    protected override Task<byte[]?> ExtractArchiveBytesAsync(FileBrowserEntry entry)
+    {
+        if (entry is not CreatureBrowserEntry ce) return Task.FromResult<byte[]?>(null);
+
+        if (ce.IsFromBif && GameDataService is { IsConfigured: true })
+        {
+            return Task.FromResult(GameDataService.FindResource(ce.Name, ResourceTypes.Utc));
+        }
+        if (ce.IsFromHak && !string.IsNullOrEmpty(ce.HakPath))
+        {
+            return Task.FromResult(ExtractFromHak(ce.HakPath, ce.Name, ResourceTypes.Utc));
+        }
+        return Task.FromResult<byte[]?>(null);
+    }
+
+    protected override Task<(string tag, string name)> ReadSourceMetadataAsync(byte[] bytes)
+    {
+        try
+        {
+            var utc = Radoub.Formats.Utc.UtcReader.Read(bytes);
+            var firstName = utc.FirstName.GetDefault() ?? string.Empty;
+            var lastName = utc.LastName.GetDefault() ?? string.Empty;
+            var fullName = string.IsNullOrEmpty(lastName) ? firstName : $"{firstName} {lastName}".Trim();
+            return Task.FromResult((utc.Tag ?? string.Empty, fullName));
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"CreatureBrowserPanel.ReadSourceMetadataAsync: {ex.Message}");
+            return Task.FromResult((string.Empty, string.Empty));
+        }
+    }
+
+    protected override Task<byte[]> ApplyCopyCustomizationsAsync(byte[] sourceBytes, CopyToModuleResult result)
+        => Task.FromResult(ApplyUtcCopyCustomizations(sourceBytes, result));
+
+    /// <summary>
+    /// Rewrite a UTC byte blob with the user's new TemplateResRef/Tag/FirstName.
+    /// The dialog's "Name" maps to FirstName; LastName is left unchanged because
+    /// the dialog does not expose a separate last-name field.
+    /// </summary>
+    internal static byte[] ApplyUtcCopyCustomizations(byte[] sourceBytes, CopyToModuleResult result)
+    {
+        var utc = Radoub.Formats.Utc.UtcReader.Read(sourceBytes);
+        utc.TemplateResRef = result.NewResRef;
+        if (result.NewTag != null) utc.Tag = result.NewTag;
+        if (result.NewName != null) utc.FirstName.SetString(0, result.NewName);
+        return Radoub.Formats.Utc.UtcWriter.Write(utc);
+    }
+
     private void OnFilterChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         OnFilterOptionsChanged();
