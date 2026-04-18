@@ -150,7 +150,7 @@ public partial class LevelUpWizardWindow : Window
 
     // Validation level (#1503)
     private readonly ComboBox _validationLevelComboBox;
-    private ValidationLevel _validationLevel => (ValidationLevel)_validationLevelComboBox.SelectedIndex;
+    private ValidationLevel _validationLevel => ValidationLevelComboBoxMap.FromComboBoxIndex(_validationLevelComboBox.SelectedIndex);
 
     // Step 6 controls
     private readonly TextBlock _summaryClassLabel;
@@ -320,7 +320,7 @@ public partial class LevelUpWizardWindow : Window
 
         // Validation level toggle (#1503)
         _validationLevelComboBox = this.FindControl<ComboBox>("ValidationLevelComboBox")!;
-        _validationLevelComboBox.SelectedIndex = (int)SettingsService.Instance.ValidationLevel;
+        _validationLevelComboBox.SelectedIndex = ValidationLevelComboBoxMap.ToComboBoxIndex(SettingsService.Instance.ValidationLevel);
         _validationLevelComboBox.SelectionChanged += OnValidationLevelChanged;
 
         // Consolidated level-up presets (#1645)
@@ -455,7 +455,7 @@ public partial class LevelUpWizardWindow : Window
 
     private void OnValidationLevelChanged(object? sender, SelectionChangedEventArgs e)
     {
-        var level = (ValidationLevel)_validationLevelComboBox.SelectedIndex;
+        var level = ValidationLevelComboBoxMap.FromComboBoxIndex(_validationLevelComboBox.SelectedIndex);
         SettingsService.Instance.ValidationLevel = level;
         ValidateCurrentStep();
     }
@@ -489,33 +489,13 @@ public partial class LevelUpWizardWindow : Window
                 2 => true, // Allow skipping ability selection in CE mode
                 _ => true
             },
-            ValidationLevel.Warning => _currentStep switch
-            {
-                1 => _selectedClassId >= 0, // Must select something, but warn if unqualified
-                2 => true,
-                _ => true
-            },
             _ => strictValid
         };
 
         _nextButton.IsEnabled = canProceed;
         _finishButton.IsEnabled = canProceed;
 
-        // Status messages
-        if (_validationLevel == ValidationLevel.Warning && !strictValid)
-        {
-            _statusLabel.Foreground = BrushManager.GetWarningBrush(this);
-            _statusLabel.Text = _currentStep switch
-            {
-                1 when !classIsQualified => "⚠ Selected class does not meet prerequisites.",
-                2 => "⚠ No ability score selected.",
-                3 => $"⚠ {_featsToSelect - _selectedFeats.Count} feat(s) not selected.",
-                4 => $"⚠ {GetRemainingSkillPoints()} skill point(s) unspent.",
-                5 when !_isDivineCaster => "⚠ Spell selection incomplete.",
-                _ => ""
-            };
-        }
-        else if (!canProceed)
+        if (!canProceed)
         {
             _statusLabel.ClearValue(Avalonia.Controls.TextBlock.ForegroundProperty);
             _statusLabel.Text = _currentStep switch
