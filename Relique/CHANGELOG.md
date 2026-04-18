@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.10.10-alpha] - 2026-04-18
-**Branch**: `relique/sprint/1905-categories` | **PR**: #TBD
+**Branch**: `relique/sprint/1905-categories` | **PR**: #2107
 
 ### Sprint: Editor Preview & 2DA-Sourced Categories (#1905)
 
