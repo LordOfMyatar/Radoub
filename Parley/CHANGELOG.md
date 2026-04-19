@@ -5,7 +5,7 @@ All notable changes to Parley. One-line highlights per version; full details in 
 ---
 
 ## [0.1.166-alpha] - 2026-04-18
-**Branch**: `parley/issue-2063` | **PR**: #TBD
+**Branch**: `parley/issue-2063` | **PR**: #2108
 
 ### Sprint: FlowView & Focus Bug Fixes (#2063)
 - Side-by-side view opens centered and self-heals corrupt window settings (#2049)
