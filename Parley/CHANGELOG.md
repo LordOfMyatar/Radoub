@@ -4,6 +4,16 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
+## [0.1.166-alpha] - 2026-04-18
+**Branch**: `parley/issue-2063` | **PR**: #TBD
+
+### Sprint: FlowView & Focus Bug Fixes (#2063)
+- Side-by-side view opens centered and self-heals corrupt window settings (#2049)
+- Token insertion keeps focus on text field; text-only edits no longer rebuild the tree (#2032)
+- FlowView supports drag-to-root parity with TreeView via shared drag-drop validator (#2060)
+
+---
+
 ## [0.1.165-alpha] - 2026-04-18 | PR #2097
 **Branch**: `fence/issue-2065`
 
