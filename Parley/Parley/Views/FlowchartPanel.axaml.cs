@@ -757,6 +757,9 @@ namespace DialogEditor.Views
                 var currentPos = e.GetPosition(FlowchartGraphPanel);
                 var targetNode = FindFlowchartNodeAtPoint(currentPos);
 
+                UnifiedLogger.LogUI(LogLevel.DEBUG,
+                    $"FlowView drop: dragged='{_draggedNode.Id}' target='{targetNode?.Id ?? "BACKGROUND"}'");
+
                 if (targetNode != null && targetNode != _draggedNode)
                 {
                     if (AreSiblings(targetNode, _draggedNode))
@@ -767,11 +770,31 @@ namespace DialogEditor.Views
                     {
                         ExecuteReparent(_draggedNode, targetNode);
                     }
+                    else
+                    {
+                        UnifiedLogger.LogUI(LogLevel.DEBUG,
+                            $"FlowView drop: no action — not siblings, not valid reparent target");
+                    }
                 }
-                else if (targetNode == null && IsValidRootDropTarget(_draggedNode))
+                else if (targetNode == null)
                 {
                     // #2060: Drop on empty background → new root start point.
-                    ExecuteReparentToRoot(_draggedNode);
+                    if (IsValidRootDropTarget(_draggedNode))
+                    {
+                        UnifiedLogger.LogUI(LogLevel.DEBUG,
+                            $"FlowView drop-to-root: executing for '{_draggedNode.Id}'");
+                        ExecuteReparentToRoot(_draggedNode);
+                    }
+                    else
+                    {
+                        UnifiedLogger.LogUI(LogLevel.DEBUG,
+                            $"FlowView drop-to-root: rejected — not a valid root drop (source type={_draggedNode.OriginalNode?.Type})");
+                    }
+                }
+                else
+                {
+                    UnifiedLogger.LogUI(LogLevel.DEBUG,
+                        $"FlowView drop: dropped on self — no action");
                 }
 
                 HideInsertionIndicator();
