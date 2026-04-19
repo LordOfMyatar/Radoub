@@ -146,7 +146,19 @@ namespace DialogEditor.Models
         {
             _globalExpandedNodes.Clear();
         }
-        
+
+        /// <summary>
+        /// Signals that the underlying DialogNode's text / speaker changed.
+        /// Raises PropertyChanged for the computed display properties so bindings
+        /// repaint the label without a full tree rebuild (#2032).
+        /// </summary>
+        public void NotifyTextChanged()
+        {
+            OnPropertyChanged(nameof(DisplayText));
+            OnPropertyChanged(nameof(Speaker));
+            OnPropertyChanged(nameof(TypeDisplay));
+        }
+
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

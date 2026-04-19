@@ -47,6 +47,21 @@ namespace DialogEditor.Services
     }
 
     /// <summary>
+    /// Distinguishes changes that require a full tree/flow rebuild (Structural)
+    /// from changes that only need to repaint a single node's label (TextOnly).
+    /// Used to prevent focus loss during in-place text edits (#2032).
+    /// </summary>
+    public enum DialogChangeKind
+    {
+        /// <summary>Topology changed; subscribers must rebuild their view.</summary>
+        Structural,
+
+        /// <summary>Only a node's displayed text/property changed; subscribers
+        /// should repaint the affected node in place without rebuilding.</summary>
+        TextOnly
+    }
+
+    /// <summary>
     /// Event arguments containing details about a dialog change.
     /// </summary>
     public class DialogChangeEventArgs : EventArgs
@@ -69,13 +84,20 @@ namespace DialogEditor.Services
         /// <summary>Optional additional context about the change.</summary>
         public string? Context { get; }
 
+        /// <summary>
+        /// Whether this change requires a full rebuild or just an in-place repaint.
+        /// Defaults to Structural so existing call sites keep their current behavior (#2032).
+        /// </summary>
+        public DialogChangeKind ChangeKind { get; }
+
         public DialogChangeEventArgs(
             DialogChangeType changeType,
             DialogNode? affectedNode = null,
             DialogNode? newParent = null,
             DialogNode? oldParent = null,
             DialogNode? previousSelection = null,
-            string? context = null)
+            string? context = null,
+            DialogChangeKind changeKind = DialogChangeKind.Structural)
         {
             ChangeType = changeType;
             AffectedNode = affectedNode;
@@ -83,6 +105,7 @@ namespace DialogEditor.Services
             OldParent = oldParent;
             PreviousSelection = previousSelection;
             Context = context;
+            ChangeKind = changeKind;
         }
     }
 
@@ -204,13 +227,15 @@ namespace DialogEditor.Services
 
         /// <summary>
         /// Publish a node modified event (text, speaker, or other property changed).
+        /// Defaults to Structural for back-compat with existing callers (#2032).
         /// </summary>
-        public void PublishNodeModified(DialogNode modifiedNode, string? context = null)
+        public void PublishNodeModified(DialogNode modifiedNode, string? context = null, DialogChangeKind kind = DialogChangeKind.Structural)
         {
             Publish(new DialogChangeEventArgs(
                 DialogChangeType.NodeModified,
                 affectedNode: modifiedNode,
-                context: context));
+                context: context,
+                changeKind: kind));
         }
 
         /// <summary>

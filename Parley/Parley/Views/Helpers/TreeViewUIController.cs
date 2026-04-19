@@ -252,9 +252,15 @@ namespace Parley.Views.Helpers
                     // Get the new parent - prefer TreeViewSafeNode.OriginalNode, fall back to NewParentDialogNode
                     var newParentDialogNode = validation.NewParent?.OriginalNode ?? validation.NewParentDialogNode;
 
-                    _dragDropService.Reset();
                     e.DragEffects = DragDropEffects.Move;
                     e.Handled = true;
+
+                    // Fire DropCompleted so MainWindow.OnDragDropCompleted actually moves the node.
+                    // Prior to this, the tuple return value was discarded by Avalonia's routed-event
+                    // dispatcher, so validated drops never executed — pre-existing bug from #463
+                    // refactor, surfaced during sprint #2063.
+                    _dragDropService.NotifyDropCompleted(draggedNode, newParentDialogNode, dropPosition, validation.InsertIndex);
+                    _dragDropService.Reset();
 
                     return (draggedNode, newParentDialogNode, dropPosition, validation.InsertIndex);
                 }

@@ -22,12 +22,15 @@ namespace DialogEditor.Views
 
         private async void OnInsertTokenClick(object? sender, RoutedEventArgs e)
         {
-            // Set flag to suppress tree refresh during token insertion
+            // #2032: IsInsertingToken still suppresses OnFieldLostFocus auto-save
+            // (the token dialog steals focus, which would otherwise re-fire AutoSaveProperty
+            // on the same unchanged value). Tree rebuild is no longer the risk since
+            // PropertyAutoSaveService now uses DialogChangeKind.TextOnly, but the lost-focus
+            // guard still matters to avoid a redundant save pass.
             _uiState.IsInsertingToken = true;
-            var deferredClear = false;
             try
             {
-                // Capture cursor position BEFORE opening dialog (OnFieldLostFocus fires when button clicked)
+                // Capture cursor position BEFORE opening dialog (focus is lost when button clicked)
                 var textBox = this.FindControl<TextBox>("TextTextBox");
                 var savedSelStart = textBox?.SelectionStart ?? 0;
                 var savedSelEnd = textBox?.SelectionEnd ?? 0;
@@ -38,13 +41,9 @@ namespace DialogEditor.Views
 
                 if (result && !string.IsNullOrEmpty(tokenWindow.SelectedToken) && textBox != null)
                 {
-                    // Use saved values since focus was lost when dialog opened
                     var selStart = savedSelStart;
                     var selLength = savedSelEnd - savedSelStart;
                     var currentText = savedText;
-
-                    string newText;
-                    int newCursorPos;
 
                     // Determine if we need spaces around the token
                     var needsSpaceBefore = selStart > 0 &&
@@ -55,46 +54,42 @@ namespace DialogEditor.Views
                         tokenWindow.SelectedToken +
                         (needsSpaceAfter ? " " : "");
 
+                    string newText;
+                    int newCursorPos;
                     if (selLength > 0)
                     {
-                        // Replace selection
                         newText = currentText.Remove(selStart, selLength).Insert(selStart, tokenToInsert);
                         newCursorPos = selStart + tokenToInsert.Length;
                     }
                     else
                     {
-                        // Insert at cursor
                         newText = currentText.Insert(selStart, tokenToInsert);
                         newCursorPos = selStart + tokenToInsert.Length;
                     }
 
                     textBox.Text = newText;
 
-                    // Save directly to node without tree refresh (avoids focus jump)
+                    // #2032: Update node, notify bindings, publish TextOnly so FlowView
+                    // / TreeView repaint in place. No tree rebuild — focus stays put.
                     if (_selectedNode?.OriginalNode?.Text != null)
                     {
                         _selectedNode.OriginalNode.Text.Strings[0] = newText;
+                        _selectedNode.NotifyTextChanged();
                         _viewModel.HasUnsavedChanges = true;
                         _viewModel.StatusMessage = "Text updated with token";
+
+                        DialogEditor.Services.DialogChangeEventBus.Instance.PublishNodeModified(
+                            _selectedNode.OriginalNode,
+                            "TokenInserted",
+                            DialogEditor.Services.DialogChangeKind.TextOnly);
                     }
 
-                    // Restore cursor position and focus (deferred to let dialog close complete).
-                    // Keep IsInsertingToken true until focus is restored to prevent
-                    // debounced auto-save from triggering a tree refresh that jumps to root.
-                    // See #2050 for the proper architectural fix.
-                    deferredClear = true;
+                    // Restore cursor position after the token dialog finishes closing.
                     Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                     {
-                        try
-                        {
-                            textBox.Focus();
-                            textBox.SelectionStart = newCursorPos;
-                            textBox.SelectionEnd = newCursorPos;
-                        }
-                        finally
-                        {
-                            _uiState.IsInsertingToken = false;
-                        }
+                        textBox.Focus();
+                        textBox.SelectionStart = newCursorPos;
+                        textBox.SelectionEnd = newCursorPos;
                     }, Avalonia.Threading.DispatcherPriority.Background);
                 }
             }
@@ -104,9 +99,7 @@ namespace DialogEditor.Views
             }
             finally
             {
-                // Only clear here if we didn't defer it to the focus restoration callback
-                if (!deferredClear)
-                    _uiState.IsInsertingToken = false;
+                _uiState.IsInsertingToken = false;
             }
         }
 

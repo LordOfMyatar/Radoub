@@ -94,10 +94,12 @@ namespace DialogEditor.Services
             if (control != null && !control.IsReadOnly)
             {
                 node.OriginalNode.Speaker = control.Text ?? "";
-                _treeRefreshCoordinator.RefreshPreservingSelection(); // Update tree to show new speaker name
 
-                // Notify FlowView of speaker change (#1223)
-                DialogChangeEventBus.Instance.PublishNodeModified(node.OriginalNode, "SpeakerChanged");
+                // #2032: Publish TextOnly — views repaint the affected node in place
+                // instead of rebuilding, so focus stays on the edited field.
+                node.NotifyTextChanged();
+                DialogChangeEventBus.Instance.PublishNodeModified(
+                    node.OriginalNode, "SpeakerChanged", DialogChangeKind.TextOnly);
             }
         }
 
@@ -109,11 +111,12 @@ namespace DialogEditor.Services
                 var newText = control.Text ?? "";
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"💾 SaveText: Updating text to '{newText.Substring(0, Math.Min(50, newText.Length))}...'");
                 node.OriginalNode.Text.Strings[0] = newText;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "💾 SaveText: Calling _treeRefreshCoordinator.RefreshPreservingSelection()");
-                _treeRefreshCoordinator.RefreshPreservingSelection(); // Update tree display
 
-                // Notify FlowView and other subscribers of the text change
-                DialogChangeEventBus.Instance.PublishNodeModified(node.OriginalNode, "TextChanged");
+                // #2032: Publish TextOnly — TreeView node raises PropertyChanged to
+                // repaint its label; FlowView updates the node in place. No rebuild.
+                node.NotifyTextChanged();
+                DialogChangeEventBus.Instance.PublishNodeModified(
+                    node.OriginalNode, "TextChanged", DialogChangeKind.TextOnly);
             }
         }
 
@@ -204,8 +207,9 @@ namespace DialogEditor.Services
             {
                 node.OriginalNode.Quest = control.Text ?? "";
 
-                // Notify FlowView so quest tag indicator (📋) updates immediately
-                DialogChangeEventBus.Instance.PublishNodeModified(node.OriginalNode, "QuestChanged");
+                // #2032: Quest tag is pointer metadata — repaint in place, no rebuild.
+                DialogChangeEventBus.Instance.PublishNodeModified(
+                    node.OriginalNode, "QuestChanged", DialogChangeKind.TextOnly);
             }
         }
 

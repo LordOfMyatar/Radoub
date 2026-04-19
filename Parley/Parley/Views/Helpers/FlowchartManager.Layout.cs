@@ -123,8 +123,9 @@ namespace Parley.Views.Helpers
                     if (grid.ColumnDefinitions.Count < 5) return;
 
                     // Show columns (indices 3 and 4 are the splitter and panel columns)
-                    // Use saved width or default (#377)
-                    var savedWidth = _settings.FlowchartPanelWidth;
+                    // Use saved width clamped to on-screen range (#2049 — self-heals corrupt settings)
+                    var windowWidth = _window.Bounds.Width > 0 ? _window.Bounds.Width : _window.Width;
+                    var savedWidth = PanelWidthClamper.Clamp(_settings.FlowchartPanelWidth, windowWidth);
                     grid.ColumnDefinitions[3].Width = new GridLength(5);
                     grid.ColumnDefinitions[4].Width = new GridLength(savedWidth, GridUnitType.Pixel);
                     grid.ColumnDefinitions[4].MinWidth = 200;
@@ -277,7 +278,9 @@ namespace Parley.Views.Helpers
         {
             if (e.Property.Name == "Width" && sender is ColumnDefinition colDef && colDef.Width.IsAbsolute)
             {
-                _settings.FlowchartPanelWidth = colDef.Width.Value;
+                // #2049: Clamp on save so corrupt state can't survive a session
+                var windowWidth = _window.Bounds.Width > 0 ? _window.Bounds.Width : _window.Width;
+                _settings.FlowchartPanelWidth = PanelWidthClamper.Clamp(colDef.Width.Value, windowWidth);
             }
         }
     }
