@@ -716,11 +716,35 @@ namespace DialogEditor.Views
                     FlowchartGraphPanel.Cursor = new Avalonia.Input.Cursor(StandardCursorType.No);
                 }
             }
+            else if (targetNode == null)
+            {
+                // #2060: Dragging over empty background — drop-to-root if valid (Entry source).
+                HideInsertionIndicator();
+                FlowchartGraphPanel.Cursor = new Avalonia.Input.Cursor(
+                    IsValidRootDropTarget(_draggedNode)
+                        ? StandardCursorType.DragLink
+                        : StandardCursorType.No);
+            }
             else
             {
                 HideInsertionIndicator();
                 FlowchartGraphPanel.Cursor = new Avalonia.Input.Cursor(StandardCursorType.DragMove);
             }
+        }
+
+        /// <summary>
+        /// #2060: True if the dragged node may be dropped onto the empty background
+        /// to become a new root start point. Delegates to the shared validator.
+        /// </summary>
+        private bool IsValidRootDropTarget(FlowchartNode dragged)
+        {
+            if (dragged.OriginalNode == null) return false;
+            var dialog = _viewModel.CurrentDialog;
+            if (dialog == null) return false;
+
+            return DialogDragDropValidator
+                .ValidateReparent(dragged.OriginalNode, target: null, dialog)
+                .IsValid;
         }
 
         /// <summary>
@@ -743,6 +767,11 @@ namespace DialogEditor.Views
                     {
                         ExecuteReparent(_draggedNode, targetNode);
                     }
+                }
+                else if (targetNode == null && IsValidRootDropTarget(_draggedNode))
+                {
+                    // #2060: Drop on empty background → new root start point.
+                    ExecuteReparentToRoot(_draggedNode);
                 }
 
                 HideInsertionIndicator();
@@ -864,8 +893,9 @@ namespace DialogEditor.Views
         }
 
         /// <summary>
-        /// Checks if a target node is a valid reparent destination for the dragged node (#1965).
-        /// Enforces Entry↔Reply alternation and prevents circular references.
+        /// Checks if a target node is a valid reparent destination for the dragged node.
+        /// #2060: Delegates to DialogDragDropValidator so TreeView and FlowView share
+        /// one authoritative source for parent-assignment rules.
         /// </summary>
         private bool IsValidReparentTarget(FlowchartNode target, FlowchartNode dragged)
         {
@@ -874,44 +904,9 @@ namespace DialogEditor.Views
             var dialog = _viewModel.CurrentDialog;
             if (dialog == null) return false;
 
-            // Alternation rule: Entry nodes can only be children of Reply nodes (or root)
-            // Reply nodes can only be children of Entry nodes
-            var draggedType = dragged.OriginalNode.Type;
-            var targetType = target.OriginalNode.Type;
-
-            // Drop INTO target as new child — dragged becomes child of target
-            // Entry dragged → target must be Reply (or drop to root, handled separately)
-            // Reply dragged → target must be Entry
-            if (draggedType == DialogNodeType.Entry && targetType != DialogNodeType.Reply) return false;
-            if (draggedType == DialogNodeType.Reply && targetType != DialogNodeType.Entry) return false;
-
-            // Prevent circular reference: target cannot be a descendant of dragged
-            if (IsDescendantOf(target.OriginalNode, dragged.OriginalNode, dialog)) return false;
-
-            return true;
-        }
-
-        /// <summary>
-        /// Checks if possibleDescendant is reachable from possibleAncestor (#1965).
-        /// </summary>
-        private bool IsDescendantOf(DialogNode possibleDescendant, DialogNode possibleAncestor, Dialog dialog)
-        {
-            var visited = new HashSet<DialogNode>();
-            return IsReachableFrom(possibleAncestor, possibleDescendant, visited);
-        }
-
-        private bool IsReachableFrom(DialogNode current, DialogNode target, HashSet<DialogNode> visited)
-        {
-            if (current == target) return true;
-            if (visited.Contains(current)) return false;
-            visited.Add(current);
-
-            foreach (var ptr in current.Pointers)
-            {
-                if (ptr.Node != null && IsReachableFrom(ptr.Node, target, visited))
-                    return true;
-            }
-            return false;
+            return DialogDragDropValidator
+                .ValidateReparent(dragged.OriginalNode, target.OriginalNode, dialog)
+                .IsValid;
         }
 
         /// <summary>
@@ -932,6 +927,24 @@ namespace DialogEditor.Views
             int insertIndex = targetNode.OriginalNode.Pointers.Count;
 
             ReparentRequested?.Invoke(draggedNode.OriginalNode, sourcePointer, targetNode.OriginalNode, insertIndex);
+        }
+
+        /// <summary>
+        /// #2060: Executes a drop-to-root reparent — the dragged Entry becomes a new
+        /// start pointer. Uses the same ReparentRequested event with newParent=null
+        /// and insertIndex at the end of Dialog.Starts.
+        /// </summary>
+        private void ExecuteReparentToRoot(FlowchartNode draggedNode)
+        {
+            if (draggedNode.OriginalNode == null) return;
+
+            var dialog = _viewModel.CurrentDialog;
+            if (dialog == null) return;
+
+            DialogPtr? sourcePointer = draggedNode.OriginalPointer ?? FindSourcePointer(dialog, draggedNode.OriginalNode);
+            int insertIndex = dialog.Starts.Count;
+
+            ReparentRequested?.Invoke(draggedNode.OriginalNode, sourcePointer, null, insertIndex);
         }
 
         /// <summary>

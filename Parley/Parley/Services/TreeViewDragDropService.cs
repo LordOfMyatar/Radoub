@@ -279,16 +279,21 @@ namespace DialogEditor.Services
                     break;
             }
 
-            // Validate NPC/PC alternation rules
+            // #2060: Delegate NPC/PC alternation + root-drop rules to the shared validator
+            // so FlowView and TreeView stay in lock-step on parent-assignment decisions.
             UnifiedLogger.LogApplication(LogLevel.DEBUG,
                 $"TreeViewDragDrop: Validating source='{sourceNode.DisplayText}' (Type={sourceNode.Type}) " +
                 $"under parent='{newParent?.DisplayText ?? "ROOT"}' (Type={newParent?.Type})");
-            var validationError = ValidateNodePlacement(sourceNode, newParent);
-            if (validationError != null)
+            var dialog = sourceNode.Parent;
+            if (dialog != null)
             {
-                result.ErrorMessage = validationError;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"TreeViewDragDrop.ValidateDrop: REJECTED - {result.ErrorMessage}");
-                return result;
+                var sharedResult = DialogDragDropValidator.ValidateReparent(sourceNode, newParent, dialog);
+                if (!sharedResult.IsValid)
+                {
+                    result.ErrorMessage = sharedResult.RejectReason;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"TreeViewDragDrop.ValidateDrop: REJECTED - {result.ErrorMessage}");
+                    return result;
+                }
             }
 
             // Find the TreeViewSafeNode for the new parent
@@ -303,42 +308,6 @@ namespace DialogEditor.Services
                 $"NewParentDialogNode={result.NewParentDialogNode?.DisplayText ?? "ROOT"}, InsertIndex={insertIndex}");
 
             return result;
-        }
-
-        /// <summary>
-        /// Validates NPC/PC alternation rules for node placement.
-        /// </summary>
-        private string? ValidateNodePlacement(DialogNode source, DialogNode? newParent)
-        {
-            if (newParent == null)
-            {
-                // Dropping at root level - only NPC Entries allowed
-                if (source.Type != DialogNodeType.Entry)
-                {
-                    return "Only NPC Entry nodes can be at root level";
-                }
-                return null;
-            }
-
-            // Check parent-child type compatibility
-            if (newParent.Type == DialogNodeType.Entry)
-            {
-                // NPC Entry parent can only have PC Reply children
-                if (source.Type != DialogNodeType.Reply)
-                {
-                    return "NPC Entry nodes can only have PC Reply children";
-                }
-            }
-            else // Reply
-            {
-                // PC Reply parent can only have NPC Entry children
-                if (source.Type != DialogNodeType.Entry)
-                {
-                    return "PC Reply nodes can only have NPC Entry children";
-                }
-            }
-
-            return null;
         }
 
         /// <summary>
