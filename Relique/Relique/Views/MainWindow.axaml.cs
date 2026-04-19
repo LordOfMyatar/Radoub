@@ -26,6 +26,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private List<BaseItemTypeInfo>? _baseItemTypes;
     private List<PaletteCategory> _paletteCategories = new();
     private ItemPropertyService? _itemPropertyService;
+    private readonly PropertyCategoryService _categoryService = new();
     private ItemStatisticsService? _itemStatisticsService;
     private PropertyTypeInfo? _selectedPropertyType;
     private int _editingPropertyIndex = -1; // -1 = add mode, >= 0 = editing that index

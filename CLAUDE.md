@@ -1060,6 +1060,14 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-Cac
 - Summary stats (stale issues, missing labels)
 - Auto-refreshes when >1 hour old
 
+**Verify Live State** (closed issues are not in cache, but their numbers may appear in other issues' bodies):
+
+```bash
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Test-IssueState.ps1" -Numbers "1902,1903,1905"
+```
+
+Returns JSON array with live `state` (OPEN/CLOSED) and `closedAt`. Use when `/init-item` or `/research` surfaces referenced issue numbers that may have been closed since the cache was last written.
+
 **Commands that use cache**: `/backlog`, `/init-item`, `/pre-merge`, `/research`
 
 **Commands that trigger post-mutation refresh**: `/init-item` (after PR create), `/pre-merge` (after tech debt issue create), `/post-merge` (after issue close/comment)

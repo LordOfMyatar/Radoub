@@ -14,7 +14,6 @@ public partial class MainWindow
     // --- Item Properties UI ---
 
     private string? _selectedCategory;
-    private Dictionary<string, string[]> _categoryKeywords = new();
 
     private void InitializePropertySearchHandler()
     {
@@ -27,26 +26,15 @@ public partial class MainWindow
         CategoryFilterComboBox.Items.Clear();
         CategoryFilterComboBox.Items.Add(new ComboBoxItem { Content = "All Categories", Tag = (string?)null });
 
-        // Categories based on common item property groupings from nwscript.nss
-        var categories = new (string Label, string[] Keywords)[]
+        if (_itemPropertyService != null)
         {
-            ("Bonus/Enhancement", new[] { "Bonus", "Enhancement", "Mighty", "Keen" }),
-            ("Damage", new[] { "Damage", "Massive Critical" }),
-            ("Defense/AC", new[] { "AC", "Saving Throw", "Spell Resistance", "Immunity", "Damage Reduction", "Damage Resistance" }),
-            ("On Hit", new[] { "On Hit", "On Monster" }),
-            ("Cast Spell", new[] { "Cast Spell" }),
-            ("Penalty/Decreased", new[] { "Decreased", "Vulnerability", "No Damage" }),
-            ("Skill/Ability", new[] { "Skill", "Ability" }),
-            ("Use Limitation", new[] { "Use Limitation" }),
-            ("Miscellaneous", new[] { "Regeneration", "Haste", "Darkvision", "Light", "True Seeing", "Freedom", "Trap", "Poison", "Visual", "Weight", "Material", "Quality" }),
-        };
-
-        foreach (var (label, _) in categories)
-        {
-            CategoryFilterComboBox.Items.Add(new ComboBoxItem { Content = label, Tag = label });
+            var availableProps = _itemPropertyService.GetAvailablePropertyTypes();
+            foreach (var category in _categoryService.GetCategoryNames(availableProps))
+            {
+                CategoryFilterComboBox.Items.Add(new ComboBoxItem { Content = category, Tag = category });
+            }
         }
 
-        _categoryKeywords = categories.ToDictionary(c => c.Label, c => c.Keywords);
         CategoryFilterComboBox.SelectedIndex = 0;
         CategoryFilterComboBox.SelectionChanged += OnCategoryFilterChanged;
     }
@@ -65,11 +53,9 @@ public partial class MainWindow
             : _itemPropertyService.SearchProperties(searchFilter);
 
         // Apply category filter
-        if (_selectedCategory != null && _categoryKeywords.TryGetValue(_selectedCategory, out var keywords))
+        if (_selectedCategory != null)
         {
-            types = types.Where(t =>
-                keywords.Any(k => t.DisplayName.Contains(k, StringComparison.OrdinalIgnoreCase)))
-                .ToList();
+            types = types.Where(t => _categoryService.IsInCategory(t, _selectedCategory)).ToList();
         }
 
         // Filter by base item type: only show properties valid for the current base item (#1972)

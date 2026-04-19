@@ -80,7 +80,21 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-Cac
 - Overlapping file paths mentioned in body
 - Issues that were closed but reopened as new issues
 
-**If similar issues found**, report to user:
+**If similar issues found**, verify their live state before presenting. The cache only contains OPEN issues, but search matches on body text — so an open sprint issue may reference already-closed child issues.
+
+**Verify state of the current issue AND any referenced issue numbers** (e.g. numbers the target issue's body calls out as work items, dependencies, or parents):
+
+```bash
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Test-IssueState.ps1" -Numbers "1902,1903,1905"
+```
+
+Returns a JSON array with live `state` (OPEN/CLOSED) and `closedAt` for each number. Use this to:
+
+- Flag stale references in the target issue (e.g. a sprint still lists closed children as open)
+- Fail fast if the target issue itself is already CLOSED
+- Tell the user when a match is actually a closed/completed issue
+
+Then report to user:
 
 ```markdown
 ### ⚠️ Potentially Related Issues Found
@@ -88,7 +102,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Get-Cac
 | # | Title | State |
 |---|-------|-------|
 | #123 | [Similar title] | OPEN |
-| #456 | [Related work] | CLOSED |
+| #456 | [Related work] | CLOSED (YYYY-MM-DD) |
 
 Continue anyway? [y/n]
 ```
