@@ -763,11 +763,7 @@ namespace DialogEditor.Views
                 // #2060: The ROOT visual node represents the dialog's start-pointer container,
                 // not an actual DialogNode. Dropping onto it means "make this a start" — same
                 // semantics as dropping on empty background. Normalize to null here.
-                bool isRootSurrogate = targetNode != null && IsRootVisualNode(targetNode);
-                if (isRootSurrogate) targetNode = null;
-
-                UnifiedLogger.LogUI(LogLevel.DEBUG,
-                    $"FlowView drop: dragged='{_draggedNode.Id}' target='{targetNode?.Id ?? (isRootSurrogate ? "ROOT-SURROGATE" : "BACKGROUND")}'");
+                if (targetNode != null && IsRootVisualNode(targetNode)) targetNode = null;
 
                 if (targetNode != null && targetNode != _draggedNode)
                 {
@@ -779,31 +775,11 @@ namespace DialogEditor.Views
                     {
                         ExecuteReparent(_draggedNode, targetNode);
                     }
-                    else
-                    {
-                        UnifiedLogger.LogUI(LogLevel.DEBUG,
-                            $"FlowView drop: no action — not siblings, not valid reparent target");
-                    }
                 }
-                else if (targetNode == null)
+                else if (targetNode == null && IsValidRootDropTarget(_draggedNode))
                 {
                     // Drop on empty background or ROOT visual node → new root start point.
-                    if (IsValidRootDropTarget(_draggedNode))
-                    {
-                        UnifiedLogger.LogUI(LogLevel.DEBUG,
-                            $"FlowView drop-to-root: executing for '{_draggedNode.Id}'");
-                        ExecuteReparentToRoot(_draggedNode);
-                    }
-                    else
-                    {
-                        UnifiedLogger.LogUI(LogLevel.DEBUG,
-                            $"FlowView drop-to-root: rejected — not a valid root drop (source type={_draggedNode.OriginalNode?.Type})");
-                    }
-                }
-                else
-                {
-                    UnifiedLogger.LogUI(LogLevel.DEBUG,
-                        $"FlowView drop: dropped on self — no action");
+                    ExecuteReparentToRoot(_draggedNode);
                 }
 
                 HideInsertionIndicator();
