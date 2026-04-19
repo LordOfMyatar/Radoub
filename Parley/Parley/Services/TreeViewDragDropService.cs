@@ -81,6 +81,17 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
+        /// Fires the DropCompleted event so subscribers can execute the move.
+        /// Call this after a valid drop has been validated.
+        /// </summary>
+        public void NotifyDropCompleted(TreeViewSafeNode draggedNode, DialogNode? newParent, DropPosition position, int insertIndex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"TreeViewDragDrop: Dropping '{draggedNode.DisplayText}' {position} parent='{newParent?.DisplayText ?? "ROOT"}', index={insertIndex}");
+            DropCompleted?.Invoke(draggedNode, newParent, position, insertIndex);
+        }
+
+        /// <summary>
         /// The node currently being dragged, if any.
         /// </summary>
         public TreeViewSafeNode? DraggedNode => _draggedNode;
