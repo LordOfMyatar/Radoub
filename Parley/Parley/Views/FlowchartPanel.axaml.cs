@@ -693,8 +693,11 @@ namespace DialogEditor.Views
 
             if (!_isDragging || _draggedNode == null) return;
 
-            // Find target node under cursor
+            // Find target node under cursor. Normalize ROOT visual node to null so
+            // hovering over ROOT shows the drop-to-root cursor (#2060).
             var targetNode = FindFlowchartNodeAtPoint(currentPos);
+            if (targetNode != null && IsRootVisualNode(targetNode)) targetNode = null;
+
             if (targetNode != null && targetNode != _draggedNode)
             {
                 if (AreSiblings(targetNode, _draggedNode))
@@ -718,7 +721,7 @@ namespace DialogEditor.Views
             }
             else if (targetNode == null)
             {
-                // #2060: Dragging over empty background — drop-to-root if valid (Entry source).
+                // #2060: Dragging over empty background (or ROOT visual) — drop-to-root if valid.
                 HideInsertionIndicator();
                 FlowchartGraphPanel.Cursor = new Avalonia.Input.Cursor(
                     IsValidRootDropTarget(_draggedNode)
@@ -757,8 +760,14 @@ namespace DialogEditor.Views
                 var currentPos = e.GetPosition(FlowchartGraphPanel);
                 var targetNode = FindFlowchartNodeAtPoint(currentPos);
 
+                // #2060: The ROOT visual node represents the dialog's start-pointer container,
+                // not an actual DialogNode. Dropping onto it means "make this a start" — same
+                // semantics as dropping on empty background. Normalize to null here.
+                bool isRootSurrogate = targetNode != null && IsRootVisualNode(targetNode);
+                if (isRootSurrogate) targetNode = null;
+
                 UnifiedLogger.LogUI(LogLevel.DEBUG,
-                    $"FlowView drop: dragged='{_draggedNode.Id}' target='{targetNode?.Id ?? "BACKGROUND"}'");
+                    $"FlowView drop: dragged='{_draggedNode.Id}' target='{targetNode?.Id ?? (isRootSurrogate ? "ROOT-SURROGATE" : "BACKGROUND")}'");
 
                 if (targetNode != null && targetNode != _draggedNode)
                 {
@@ -778,7 +787,7 @@ namespace DialogEditor.Views
                 }
                 else if (targetNode == null)
                 {
-                    // #2060: Drop on empty background → new root start point.
+                    // Drop on empty background or ROOT visual node → new root start point.
                     if (IsValidRootDropTarget(_draggedNode))
                     {
                         UnifiedLogger.LogUI(LogLevel.DEBUG,
@@ -804,6 +813,13 @@ namespace DialogEditor.Views
 
             ResetDragState();
         }
+
+        /// <summary>
+        /// #2060: True if this FlowchartNode is the synthetic ROOT visual node
+        /// (not a real DialogNode). Used to normalize drops onto ROOT as drops-to-root.
+        /// </summary>
+        private static bool IsRootVisualNode(FlowchartNode node) =>
+            node.NodeType == FlowchartNodeType.Root || node.OriginalNode == null;
 
         private void ResetDragState()
         {
