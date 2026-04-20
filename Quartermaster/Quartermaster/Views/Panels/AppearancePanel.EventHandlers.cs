@@ -111,7 +111,9 @@ public partial class AppearancePanel
                 if (_currentCreature != null)
                 {
                     _currentCreature.AppearanceType = appearanceId;
-                    UpdateModelPreview();
+                    // Debounce so arrow-key navigation through the ListBox doesn't
+                    // fire a full mesh+texture rebuild per keystroke (#2058).
+                    ScheduleAppearancePreviewRebuild();
                 }
 
                 AppearanceChanged?.Invoke(this, EventArgs.Empty);
@@ -122,6 +124,30 @@ public partial class AppearancePanel
             UnifiedLogger.LogApplication(LogLevel.ERROR,
                 $"AppearancePanel: Appearance change failed: {ex.GetType().Name}: {ex.Message}");
         }
+    }
+
+    private void ScheduleAppearancePreviewRebuild()
+    {
+        if (_appearancePreviewDebounceTimer == null)
+        {
+            _appearancePreviewDebounceTimer = new Avalonia.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(AppearancePreviewDebounceMs)
+            };
+            _appearancePreviewDebounceTimer.Tick += OnAppearancePreviewDebounceTick;
+        }
+
+        // Restart the countdown on each call — only the last selection in a
+        // rapid burst triggers the rebuild.
+        _appearancePreviewDebounceTimer.Stop();
+        _appearancePreviewDebounceTimer.Start();
+    }
+
+    private void OnAppearancePreviewDebounceTick(object? sender, EventArgs e)
+    {
+        _appearancePreviewDebounceTimer?.Stop();
+        if (_currentCreature == null) return;
+        UpdateModelPreview();
     }
 
     private void OnAppearanceSearchChanged(object? sender, TextChangedEventArgs e)
