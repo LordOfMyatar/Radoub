@@ -677,16 +677,11 @@ public class ModelPreviewGLControl : OpenGlControlBase
                     $"  Mesh {meshIndex} '{mesh.Name}': {nanVertexIndices.Count}/{mesh.Vertices.Length} NaN vertices will be skipped — possible parser issue");
             }
             var hasUVs = mesh.TextureCoords.Length > 0 && mesh.TextureCoords[0].Length == mesh.Vertices.Length;
-            var hasNormals = mesh.Normals.Length == mesh.Vertices.Length;
 
             // Debug: check for data consistency issues
             if (mesh.TextureCoords.Length > 0 && mesh.TextureCoords[0].Length != mesh.Vertices.Length)
             {
                 UnifiedLogger.LogApplication(LogLevel.WARN, $"  Mesh {meshIndex} '{mesh.Name}' UV count mismatch: {mesh.TextureCoords[0].Length} UVs vs {mesh.Vertices.Length} vertices");
-            }
-            if (mesh.Normals.Length > 0 && mesh.Normals.Length != mesh.Vertices.Length)
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"  Mesh {meshIndex} '{mesh.Name}' normal count mismatch: {mesh.Normals.Length} normals vs {mesh.Vertices.Length} vertices");
             }
 
             UnifiedLogger.LogApplication(LogLevel.DEBUG,
@@ -705,6 +700,13 @@ public class ModelPreviewGLControl : OpenGlControlBase
                 IndexOffset = indices.Count * sizeof(uint),
                 TextureName = rawBitmap
             };
+
+            // #2026: Recompute per-vertex normals from per-face plane normals
+            // grouped by smoothgroup bitmask (SurfaceId). The stored per-vertex
+            // normals in NWN MDLs are unreliable for part-based heads — Aurora
+            // itself ignores them and smooths from face data. We follow the
+            // same path for all meshes since plane normals are always present.
+            var smoothNormals = SmoothGroupNormals.ComputePerVertex(mesh.Vertices, mesh.Faces);
 
             // Add vertices (position, normal, texcoord)
             for (int i = 0; i < mesh.Vertices.Length; i++)
@@ -732,32 +734,10 @@ public class ModelPreviewGLControl : OpenGlControlBase
                 vertices.Add(v.Y);
                 vertices.Add(v.Z);
 
-                // Normal - use pre-computed normals from mesh if available, then rotate
-                Vector3 normal;
-                if (hasNormals)
-                {
-                    normal = mesh.Normals[i];
-                    if (hasWorldTransform)
-                        normal = ModelViewController.TransformNormal(normal, worldTransform);
-                }
-                else
-                {
-                    // Fallback: calculate from first face that uses this vertex
-                    normal = Vector3.UnitZ;
-                    foreach (var face in mesh.Faces)
-                    {
-                        if (face.VertexIndex0 == i || face.VertexIndex1 == i || face.VertexIndex2 == i)
-                        {
-                            var v0 = mesh.Vertices[face.VertexIndex0];
-                            var v1 = mesh.Vertices[face.VertexIndex1];
-                            var v2 = mesh.Vertices[face.VertexIndex2];
-                            var e1 = v1 - v0;
-                            var e2 = v2 - v0;
-                            normal = Vector3.Normalize(Vector3.Cross(e1, e2));
-                            break;
-                        }
-                    }
-                }
+                // Normal in world space
+                var normal = smoothNormals[i];
+                if (hasWorldTransform)
+                    normal = ModelViewController.TransformNormal(normal, worldTransform);
                 vertices.Add(normal.X);
                 vertices.Add(normal.Y);
                 vertices.Add(normal.Z);
