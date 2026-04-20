@@ -78,7 +78,8 @@ public partial class AppearancePanel
                 Content = displayText,
                 Tag = app.AppearanceId
             };
-            item.ContextMenu = CreateAppearanceCopyMenu(app.AppearanceId, baseName, modelRef);
+            // Context menu is attached once to the parent ListBox (see WireEvents),
+            // not per-item — #2058.
             Avalonia.Controls.ToolTip.SetTip(item, $"ID: {app.AppearanceId} | Model: {modelRef} | Type: {(app.IsPartBased ? "Part-Based" : "Static")} | Label: {app.Label}");
             _appearanceListBox.Items.Add(item);
         }
@@ -344,13 +345,13 @@ public partial class AppearancePanel
             }
         }
 
-        // Still not found, add it with consistent format
+        // Still not found, add it with consistent format. Shared ContextMenu
+        // on the parent ListBox handles the copy actions for all rows (#2058).
         var fallbackItem = new ListBoxItem
         {
             Content = $"[{appearanceId}] Appearance {appearanceId}",
             Tag = appearanceId
         };
-        fallbackItem.ContextMenu = CreateAppearanceCopyMenu(appearanceId, $"Appearance {appearanceId}", "");
         _appearanceListBox.Items.Add(fallbackItem);
         _appearanceListBox.SelectedIndex = _appearanceListBox.Items.Count - 1;
     }

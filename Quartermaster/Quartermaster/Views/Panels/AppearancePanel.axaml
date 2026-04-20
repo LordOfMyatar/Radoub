@@ -255,7 +255,7 @@
                                            VerticalAlignment="Center"/>
                                 <Border Grid.Row="0" Grid.Column="1" x:Name="SkinColorSwatch" Width="18" Height="18"
                                         CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
-                                        Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"
+                                        VerticalAlignment="Center"
                                         ToolTip.Tip="Click to choose skin color"/>
 
                                 <TextBlock Grid.Row="0" Grid.Column="3" Text="Hair:" FontSize="{DynamicResource FontSizeSmall}"
@@ -263,7 +263,7 @@
                                            VerticalAlignment="Center"/>
                                 <Border Grid.Row="0" Grid.Column="4" x:Name="HairColorSwatch" Width="18" Height="18"
                                         CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
-                                        Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"
+                                        VerticalAlignment="Center"
                                         ToolTip.Tip="Click to choose hair color"/>
 
                                 <!-- Tattoo 1 / Tattoo 2 -->
@@ -273,7 +273,7 @@
                                            ToolTip.Tip="Tattoo colors apply to pixels painted in body part textures. Most base game models have minimal tattoo areas."/>
                                 <Border Grid.Row="1" Grid.Column="1" x:Name="Tattoo1ColorSwatch" Width="18" Height="18"
                                         CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
-                                        Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"
+                                        VerticalAlignment="Center"
                                         ToolTip.Tip="Click to choose tattoo 1 color"/>
 
                                 <TextBlock Grid.Row="1" Grid.Column="3" Text="Tat 2:" FontSize="{DynamicResource FontSizeSmall}"
@@ -282,7 +282,7 @@
                                            ToolTip.Tip="Tattoo colors apply to pixels painted in body part textures. Custom content may add more tattoo areas."/>
                                 <Border Grid.Row="1" Grid.Column="4" x:Name="Tattoo2ColorSwatch" Width="18" Height="18"
                                         CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
-                                        Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"
+                                        VerticalAlignment="Center"
                                         ToolTip.Tip="Click to choose tattoo 2 color"/>
                             </Grid>
                         </StackPanel>

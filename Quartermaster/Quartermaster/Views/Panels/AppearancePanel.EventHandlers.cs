@@ -20,7 +20,13 @@ public partial class AppearancePanel
     private void WireEvents()
     {
         if (_appearanceListBox != null)
+        {
             _appearanceListBox.SelectionChanged += OnAppearanceSelectionChanged;
+            // Attach the Copy context menu once to the ListBox rather than per-item.
+            // Per-item ContextMenu allocation was a hot path during load and filter
+            // refresh with ~1000 rows (#2058).
+            _appearanceListBox.ContextMenu = BuildSharedAppearanceCopyMenu();
+        }
 
         if (_appearanceSearchBox != null)
             _appearanceSearchBox.TextChanged += OnAppearanceSearchChanged;
@@ -417,27 +423,79 @@ public partial class AppearancePanel
         }
     }
 
-    private ContextMenu CreateAppearanceCopyMenu(ushort id, string name, string resref)
+    /// <summary>
+    /// Build the shared "Copy ..." context menu attached once to the appearance ListBox.
+    /// Per-item allocation of 5+ objects × ~1000 rows was a measurable hot path on load
+    /// and on every filter/search refresh (#2058). Handlers resolve the current selection
+    /// at click time rather than capturing per-row data.
+    /// </summary>
+    private ContextMenu BuildSharedAppearanceCopyMenu()
     {
         var menu = new ContextMenu();
 
         var copyAll = new MenuItem { Header = "Copy Appearance Info" };
-        copyAll.Click += async (_, _) => await CopyToClipboard($"[{id}] {name} ({resref})");
+        copyAll.Click += async (_, _) =>
+        {
+            if (TryGetSelectedAppearanceCopyData(out var id, out var name, out var resref))
+                await CopyToClipboard($"[{id}] {name} ({resref})");
+        };
         menu.Items.Add(copyAll);
 
         var copyName = new MenuItem { Header = "Copy Name" };
-        copyName.Click += async (_, _) => await CopyToClipboard(name);
+        copyName.Click += async (_, _) =>
+        {
+            if (TryGetSelectedAppearanceCopyData(out _, out var name, out _))
+                await CopyToClipboard(name);
+        };
         menu.Items.Add(copyName);
 
         var copyResRef = new MenuItem { Header = "Copy ResRef" };
-        copyResRef.Click += async (_, _) => await CopyToClipboard(resref);
+        copyResRef.Click += async (_, _) =>
+        {
+            if (TryGetSelectedAppearanceCopyData(out _, out _, out var resref))
+                await CopyToClipboard(resref);
+        };
         menu.Items.Add(copyResRef);
 
         var copyId = new MenuItem { Header = "Copy ID" };
-        copyId.Click += async (_, _) => await CopyToClipboard(id.ToString());
+        copyId.Click += async (_, _) =>
+        {
+            if (TryGetSelectedAppearanceCopyData(out var id, out _, out _))
+                await CopyToClipboard(id.ToString());
+        };
         menu.Items.Add(copyId);
 
         return menu;
+    }
+
+    private bool TryGetSelectedAppearanceCopyData(out ushort id, out string name, out string resref)
+    {
+        id = 0;
+        name = string.Empty;
+        resref = string.Empty;
+
+        if (_appearanceListBox?.SelectedItem is not ListBoxItem selected) return false;
+        if (selected.Tag is not ushort selectedId) return false;
+
+        id = selectedId;
+
+        if (_appearances != null)
+        {
+            foreach (var app in _appearances)
+            {
+                if (app.AppearanceId != selectedId) continue;
+
+                name = app.IsPartBased && !app.Name.Contains("(Dynamic)")
+                    ? $"(Dynamic) {app.Name}"
+                    : app.Name;
+                resref = !string.IsNullOrEmpty(app.Race) ? app.Race : app.Label;
+                return true;
+            }
+        }
+
+        // Fallback: synthesize from ListBoxItem content (matches the "Appearance N" row format)
+        name = selected.Content?.ToString() ?? $"Appearance {selectedId}";
+        return true;
     }
 
     private async System.Threading.Tasks.Task CopyToClipboard(string text)

@@ -5,6 +5,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.81-alpha] - 2026-04-19
+**Branch**: `quartermaster/issue-2064` | **PR**: #2112
+
+### Sprint: Performance & UX Polish (#2064)
+
+- Address general UI lag and performance (#2058)
+- Color picker swatches not displaying until picker dialog opened (#2004)
+
+---
+
 ## [0.2.80-alpha] - 2026-04-18
 **Branch**: `fence/issue-2065` | **PR**: #2097
 

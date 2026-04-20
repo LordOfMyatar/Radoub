@@ -318,6 +318,19 @@ public class TextureService
         string resRef,
         PltColorIndices? colorIndices = null)
     {
+        var result = LoadTexturePreferBIFWithKind(resRef, colorIndices);
+        return result.HasValue ? (result.Value.width, result.Value.height, result.Value.pixels) : null;
+    }
+
+    /// <summary>
+    /// Same as <see cref="LoadTexturePreferBIF"/> but also reports whether the texture
+    /// came from a PLT (color-index-dependent) source. Callers can use this to cache
+    /// non-PLT textures across color changes.
+    /// </summary>
+    public (int width, int height, byte[] pixels, bool isPlt)? LoadTexturePreferBIFWithKind(
+        string resRef,
+        PltColorIndices? colorIndices = null)
+    {
         if (string.IsNullOrEmpty(resRef))
             return null;
 
@@ -325,20 +338,20 @@ public class TextureService
         resRef = resRef.ToLowerInvariant();
 
         // Try BIF first (Override → BIF, skip HAK)
-        var bifResult = LoadTextureFromBase(resRef, colorIndices);
+        var bifResult = LoadTextureFromBaseWithKind(resRef, colorIndices);
         if (bifResult.HasValue)
         {
             UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                $"TextureService.LoadTexturePreferBIF: '{resRef}' from BIF");
+                $"TextureService.LoadTexturePreferBIF: '{resRef}' from BIF (isPlt={bifResult.Value.isPlt})");
             return bifResult;
         }
 
         // Not in BIF — fall back to full resolution (CEP-only texture)
-        var fullResult = LoadTexture(resRef, colorIndices);
+        var fullResult = LoadTextureWithKind(resRef, colorIndices);
         if (fullResult.HasValue)
         {
             UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                $"TextureService.LoadTexturePreferBIF: '{resRef}' from HAK (CEP-only)");
+                $"TextureService.LoadTexturePreferBIF: '{resRef}' from HAK (CEP-only, isPlt={fullResult.Value.isPlt})");
         }
         return fullResult;
     }
@@ -348,6 +361,14 @@ public class TextureService
     /// Tries PLT, TGA, DDS in order using FindBaseResource.
     /// </summary>
     private (int width, int height, byte[] pixels)? LoadTextureFromBase(
+        string resRef,
+        PltColorIndices colorIndices)
+    {
+        var result = LoadTextureFromBaseWithKind(resRef, colorIndices);
+        return result.HasValue ? (result.Value.width, result.Value.height, result.Value.pixels) : null;
+    }
+
+    private (int width, int height, byte[] pixels, bool isPlt)? LoadTextureFromBaseWithKind(
         string resRef,
         PltColorIndices colorIndices)
     {
@@ -368,7 +389,7 @@ public class TextureService
                 var layerColors = BuildLayerColors(colorIndices);
                 var pixels = PltReader.Render(pltFile, palettes, layerColors);
                 FlipVertically(pixels, pltFile.Width, pltFile.Height);
-                return (pltFile.Width, pltFile.Height, pixels);
+                return (pltFile.Width, pltFile.Height, pixels, true);
             }
             catch (Exception ex)
             {
@@ -385,7 +406,7 @@ public class TextureService
             {
                 var tgaImage = TgaReader.Read(tgaData);
                 FlipVertically(tgaImage.Pixels, tgaImage.Width, tgaImage.Height);
-                return (tgaImage.Width, tgaImage.Height, tgaImage.Pixels);
+                return (tgaImage.Width, tgaImage.Height, tgaImage.Pixels, false);
             }
             catch (Exception ex)
             {
@@ -410,7 +431,7 @@ public class TextureService
                     byte[] rgbaPixels = ConvertPfimToRgba(image);
                     if (isBiowareDds)
                         SwapRedBlue(rgbaPixels);
-                    return (image.Width, image.Height, rgbaPixels);
+                    return (image.Width, image.Height, rgbaPixels, false);
                 }
                 catch (Exception ex)
                 {
@@ -450,6 +471,19 @@ public class TextureService
         string resRef,
         PltColorIndices? colorIndices = null)
     {
+        var result = LoadTextureWithKind(resRef, colorIndices);
+        return result.HasValue ? (result.Value.width, result.Value.height, result.Value.pixels) : null;
+    }
+
+    /// <summary>
+    /// Same as <see cref="LoadTexture"/> but also reports whether the texture came from
+    /// a PLT (color-index-dependent) source. Callers can use this to cache non-PLT
+    /// textures across color changes.
+    /// </summary>
+    public (int width, int height, byte[] pixels, bool isPlt)? LoadTextureWithKind(
+        string resRef,
+        PltColorIndices? colorIndices = null)
+    {
         if (string.IsNullOrEmpty(resRef))
             return null;
 
@@ -458,15 +492,15 @@ public class TextureService
         // Try PLT first, then TGA, then DDS (matches Aurora Engine resolution order)
         var pltResult = RenderPltTexture(resRef, colorIndices);
         if (pltResult.HasValue)
-            return pltResult;
+            return (pltResult.Value.width, pltResult.Value.height, pltResult.Value.pixels, true);
 
         var tgaResult = LoadTgaTexture(resRef);
         if (tgaResult.HasValue)
-            return tgaResult;
+            return (tgaResult.Value.width, tgaResult.Value.height, tgaResult.Value.pixels, false);
 
         var ddsResult = LoadDdsTexture(resRef);
         if (ddsResult.HasValue)
-            return ddsResult;
+            return (ddsResult.Value.width, ddsResult.Value.height, ddsResult.Value.pixels, false);
 
         // If race-specific texture not found, try human fallback
         // e.g., pme0_head001 -> pmh0_head001
@@ -479,15 +513,15 @@ public class TextureService
             {
                 pltResult = RenderPltTexture(humanResRef, colorIndices);
                 if (pltResult.HasValue)
-                    return pltResult;
+                    return (pltResult.Value.width, pltResult.Value.height, pltResult.Value.pixels, true);
 
                 tgaResult = LoadTgaTexture(humanResRef);
                 if (tgaResult.HasValue)
-                    return tgaResult;
+                    return (tgaResult.Value.width, tgaResult.Value.height, tgaResult.Value.pixels, false);
 
                 ddsResult = LoadDdsTexture(humanResRef);
                 if (ddsResult.HasValue)
-                    return ddsResult;
+                    return (ddsResult.Value.width, ddsResult.Value.height, ddsResult.Value.pixels, false);
             }
         }
 

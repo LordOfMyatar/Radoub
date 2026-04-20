@@ -46,6 +46,10 @@ public class ModelPreviewGLControl : OpenGlControlBase
     private uint _ebo;
     private int _indexCount;
     private readonly Dictionary<string, uint> _textureCache = new();
+    // Names of textures in _textureCache that came from PLT sources and depend on
+    // the current color indices. Color-index changes invalidate only these — not
+    // flat TGA/DDS textures whose pixels are color-independent (#2058).
+    private readonly HashSet<string> _pltTextureNames = new();
     // Maps unresolvable bitmap names to valid fallback texture names
     private readonly Dictionary<string, string> _textureRemapping = new();
 
@@ -208,11 +212,28 @@ public class ModelPreviewGLControl : OpenGlControlBase
         if (!ColorsEqual(_colorIndices, colorIndices))
         {
             _colorIndices = colorIndices;
-            // Clear cached textures so they reload with new color indices
-            ClearTextureCache();
+            // Only PLT textures depend on color indices. Flat TGA/DDS textures
+            // are color-independent and can survive the change (#2058).
+            InvalidatePltTextures();
             _needsTextureUpdate = true;
             RequestNextFrameRendering();
         }
+    }
+
+    private void InvalidatePltTextures()
+    {
+        if (_pltTextureNames.Count == 0) return;
+
+        foreach (var name in _pltTextureNames)
+        {
+            if (_textureCache.TryGetValue(name, out var texId))
+            {
+                if (_gl != null && texId != 0)
+                    _gl.DeleteTexture(texId);
+                _textureCache.Remove(name);
+            }
+        }
+        _pltTextureNames.Clear();
     }
 
     /// <summary>
@@ -247,6 +268,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
                 _gl.DeleteTexture(texId);
         }
         _textureCache.Clear();
+        _pltTextureNames.Clear();
     }
 
     private static bool ColorsEqual(PltColorIndices a, PltColorIndices b)
@@ -322,6 +344,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
                     _gl.DeleteTexture(texId);
                 }
                 _textureCache.Clear();
+                _pltTextureNames.Clear();
 
                 // Clean up buffers and program
                 _gl.DeleteBuffer(_vbo);
@@ -898,7 +921,10 @@ public class ModelPreviewGLControl : OpenGlControlBase
             }
         }
         foreach (var key in toRemove)
+        {
             _textureCache.Remove(key);
+            _pltTextureNames.Remove(key);
+        }
 
         // Load new textures
         UnifiedLogger.LogApplication(LogLevel.DEBUG,
@@ -914,8 +940,8 @@ public class ModelPreviewGLControl : OpenGlControlBase
             try
             {
                 var textureData = _preferBifTextures
-                    ? _textureService.LoadTexturePreferBIF(texName, _colorIndices)
-                    : _textureService.LoadTexture(texName, _colorIndices);
+                    ? _textureService.LoadTexturePreferBIFWithKind(texName, _colorIndices)
+                    : _textureService.LoadTextureWithKind(texName, _colorIndices);
                 if (textureData == null)
                 {
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Texture '{texName}' returned null");
@@ -923,12 +949,13 @@ public class ModelPreviewGLControl : OpenGlControlBase
                     continue;
                 }
 
-                var (width, height, pixels) = textureData.Value;
+                var (width, height, pixels, isPlt) = textureData.Value;
                 var texId = UploadTexture(width, height, pixels);
                 if (texId != 0)
                 {
                     _textureCache[texName] = texId;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Loaded texture '{texName}' ({width}x{height}) -> texId={texId}");
+                    if (isPlt) _pltTextureNames.Add(texName);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Loaded texture '{texName}' ({width}x{height}) -> texId={texId}, isPlt={isPlt}");
                 }
             }
             catch (Exception ex)
@@ -947,17 +974,18 @@ public class ModelPreviewGLControl : OpenGlControlBase
             if (!string.IsNullOrEmpty(modelTexture) && !_textureCache.ContainsKey(modelTexture))
             {
                 var fallbackData = _preferBifTextures
-                    ? _textureService.LoadTexturePreferBIF(modelTexture, _colorIndices)
-                    : _textureService.LoadTexture(modelTexture, _colorIndices);
+                    ? _textureService.LoadTexturePreferBIFWithKind(modelTexture, _colorIndices)
+                    : _textureService.LoadTextureWithKind(modelTexture, _colorIndices);
                 if (fallbackData != null)
                 {
-                    var (w, h, px) = fallbackData.Value;
+                    var (w, h, px, isPlt) = fallbackData.Value;
                     var fallbackId = UploadTexture(w, h, px);
                     if (fallbackId != 0)
                     {
                         _textureCache[modelTexture] = fallbackId;
+                        if (isPlt) _pltTextureNames.Add(modelTexture);
                         UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                            $"  Loaded model fallback texture '{modelTexture}' ({w}x{h}) -> texId={fallbackId}");
+                            $"  Loaded model fallback texture '{modelTexture}' ({w}x{h}) -> texId={fallbackId}, isPlt={isPlt}");
                     }
                 }
             }
