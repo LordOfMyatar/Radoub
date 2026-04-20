@@ -679,78 +679,90 @@ public class ModelPreviewGLControl : OpenGlControlBase
                 TextureName = rawBitmap
             };
 
-            // Add vertices (position, normal, texcoord)
+            // Build per-vertex attributes (world-space) into temporary arrays so we
+            // can weld duplicates below. NWN's binary MDL compiler often emits a
+            // vertex per face-corner with IDENTICAL position+normal+UV (#2026) —
+            // the topology renders flat because the GPU can't interpolate across
+            // triangles that don't share indices. Welding collapses these back.
+            var meshPositions = new Vector3[mesh.Vertices.Length];
+            var meshNormals = new Vector3[mesh.Vertices.Length];
+            var meshUVs = new Vector2[mesh.Vertices.Length];
             for (int i = 0; i < mesh.Vertices.Length; i++)
             {
-                // For NaN vertices, output a zero vertex (won't be rendered due to face filtering)
                 if (nanVertexIndices.Contains(i))
                 {
-                    nanFlatIndices.Add(vertices.Count / 8); // Track for bounds exclusion
-                    // 8 floats per vertex: position(3), normal(3), texcoord(2)
-                    for (int j = 0; j < 8; j++) vertices.Add(0);
+                    // Stays at zero — faces referencing these are skipped below.
                     continue;
                 }
 
-                // Get vertex in local mesh space
                 var localVertex = mesh.Vertices[i];
+                meshPositions[i] = hasWorldTransform
+                    ? ModelViewController.TransformPosition(localVertex, worldTransform)
+                    : localVertex;
 
-                // Apply world transform to get world-space positions.
-                // Skin mesh vertices (m_pavVerts) are stored in bind-pose space — apply
-                // the node hierarchy transform exactly like NWNExplorer does (no bone weighting
-                // needed for static bind-pose display; Q/T arrays are for runtime animation).
-                Vector3 v = hasWorldTransform ? ModelViewController.TransformPosition(localVertex, worldTransform) : localVertex;
-
-                // Position
-                vertices.Add(v.X);
-                vertices.Add(v.Y);
-                vertices.Add(v.Z);
-
-                // Normal - use pre-computed normals from mesh if available, then rotate
-                Vector3 normal;
                 if (hasNormals)
                 {
-                    normal = mesh.Normals[i];
-                    if (hasWorldTransform)
-                        normal = ModelViewController.TransformNormal(normal, worldTransform);
+                    var n = mesh.Normals[i];
+                    meshNormals[i] = hasWorldTransform
+                        ? ModelViewController.TransformNormal(n, worldTransform)
+                        : n;
                 }
-                else
-                {
-                    // Fallback: calculate from first face that uses this vertex
-                    normal = Vector3.UnitZ;
-                    foreach (var face in mesh.Faces)
-                    {
-                        if (face.VertexIndex0 == i || face.VertexIndex1 == i || face.VertexIndex2 == i)
-                        {
-                            var v0 = mesh.Vertices[face.VertexIndex0];
-                            var v1 = mesh.Vertices[face.VertexIndex1];
-                            var v2 = mesh.Vertices[face.VertexIndex2];
-                            var e1 = v1 - v0;
-                            var e2 = v2 - v0;
-                            normal = Vector3.Normalize(Vector3.Cross(e1, e2));
-                            break;
-                        }
-                    }
-                }
-                vertices.Add(normal.X);
-                vertices.Add(normal.Y);
-                vertices.Add(normal.Z);
 
-                // Texcoord
                 if (hasUVs)
                 {
-                    var uv = mesh.TextureCoords[0][i];
-                    vertices.Add(uv.X);
-                    vertices.Add(uv.Y); // No V-flip — matches nwnexplorer (raw UVs)
-                }
-                else
-                {
-                    vertices.Add(0);
-                    vertices.Add(0);
+                    meshUVs[i] = mesh.TextureCoords[0][i];
                 }
             }
 
-            // Add indices (skip faces that reference NaN vertices)
+            // Face-normal fallback (only when the MDL has no normals array).
+            if (!hasNormals)
+            {
+                foreach (var face in mesh.Faces)
+                {
+                    if (face.VertexIndex0 >= mesh.Vertices.Length ||
+                        face.VertexIndex1 >= mesh.Vertices.Length ||
+                        face.VertexIndex2 >= mesh.Vertices.Length) continue;
+                    var v0 = mesh.Vertices[face.VertexIndex0];
+                    var v1 = mesh.Vertices[face.VertexIndex1];
+                    var v2 = mesh.Vertices[face.VertexIndex2];
+                    var fn = Vector3.Cross(v1 - v0, v2 - v0);
+                    if (fn.LengthSquared() > 1e-9f) fn = Vector3.Normalize(fn);
+                    if (meshNormals[face.VertexIndex0] == Vector3.Zero) meshNormals[face.VertexIndex0] = fn;
+                    if (meshNormals[face.VertexIndex1] == Vector3.Zero) meshNormals[face.VertexIndex1] = fn;
+                    if (meshNormals[face.VertexIndex2] == Vector3.Zero) meshNormals[face.VertexIndex2] = fn;
+                }
+            }
+
+            // Weld duplicate (position, normal, UV) vertices so adjacent
+            // triangles share indices and normals interpolate across edges
+            // (#2026). NWN's binary MDL compiler emits face-corner duplicates
+            // with identical attributes that otherwise force flat shading.
+            var dropMask = new bool[mesh.Vertices.Length];
+            foreach (var idx in nanVertexIndices) dropMask[idx] = true;
+
+            var weld = VertexWelder.Build(meshPositions, meshNormals, meshUVs, dropMask);
             int meshIndexStart = indices.Count;
+
+            // Emit welded vertex buffer (only first occurrence of each unique triple).
+            var emitted = new bool[weld.OutputVertexCount];
+            for (int i = 0; i < mesh.Vertices.Length; i++)
+            {
+                var local = weld.IndexRemap[i];
+                if (local < 0 || emitted[local]) continue;
+                emitted[local] = true;
+
+                vertices.Add(meshPositions[i].X);
+                vertices.Add(meshPositions[i].Y);
+                vertices.Add(meshPositions[i].Z);
+                vertices.Add(meshNormals[i].X);
+                vertices.Add(meshNormals[i].Y);
+                vertices.Add(meshNormals[i].Z);
+                vertices.Add(meshUVs[i].X);
+                vertices.Add(meshUVs[i].Y);
+            }
+
+            // Rewrite face indices through the weld map; drop degenerate and
+            // NaN-referencing triangles.
             foreach (var face in mesh.Faces)
             {
                 if (face.VertexIndex0 >= mesh.Vertices.Length ||
@@ -758,22 +770,30 @@ public class ModelPreviewGLControl : OpenGlControlBase
                     face.VertexIndex2 >= mesh.Vertices.Length)
                     continue;
 
-                // Skip faces that reference NaN vertices
-                if (nanVertexIndices.Contains(face.VertexIndex0) ||
-                    nanVertexIndices.Contains(face.VertexIndex1) ||
-                    nanVertexIndices.Contains(face.VertexIndex2))
-                    continue;
+                int w0 = weld.IndexRemap[face.VertexIndex0];
+                int w1 = weld.IndexRemap[face.VertexIndex1];
+                int w2 = weld.IndexRemap[face.VertexIndex2];
 
-                indices.Add(baseVertex + (uint)face.VertexIndex0);
-                indices.Add(baseVertex + (uint)face.VertexIndex1);
-                indices.Add(baseVertex + (uint)face.VertexIndex2);
+                if (w0 < 0 || w1 < 0 || w2 < 0) continue;
+                if (w0 == w1 || w1 == w2 || w0 == w2) continue;
+
+                indices.Add(baseVertex + (uint)w0);
+                indices.Add(baseVertex + (uint)w1);
+                indices.Add(baseVertex + (uint)w2);
+            }
+
+            if (weld.WeldedCount > 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"  Mesh '{mesh.Name}': welded {weld.WeldedCount}/{mesh.Vertices.Length} duplicate vertices " +
+                    $"({weld.OutputVertexCount} unique in GPU buffer)");
             }
 
             drawCall.IndexCount = indices.Count - meshIndexStart;
             if (drawCall.IndexCount > 0)
                 _meshDrawCalls.Add(drawCall);
 
-            baseVertex += (uint)mesh.Vertices.Length;
+            baseVertex += (uint)weld.OutputVertexCount;
         }
 
         _indexCount = indices.Count;
