@@ -72,6 +72,12 @@ public class ModelPreviewGLControl : OpenGlControlBase
     private bool _needsMeshUpdate;
     private bool _logOncePerModel;
 
+    // Shader debug visualisation (#2026 investigation):
+    //   0 = normal rendering
+    //   1 = world-space normal as RGB
+    //   2 = lighting dot-product as grayscale
+    private int _debugMode;
+
     private PreviewState _previewState = PreviewState.None;
 
     /// <summary>
@@ -139,6 +145,26 @@ public class ModelPreviewGLControl : OpenGlControlBase
         {
             _viewController.RotationX = value;
             RequestNextFrameRendering();
+        }
+    }
+
+    /// <summary>
+    /// Shader debug mode (0 = normal, 1 = normal-as-RGB, 2 = lighting-as-grayscale).
+    /// Used to diagnose shading issues — when a model rotates, a correct
+    /// world-space normal will paint different colours on the same face
+    /// region. Locked colours indicate the normal isn't being transformed.
+    /// </summary>
+    public int DebugMode
+    {
+        get => _debugMode;
+        set
+        {
+            if (_debugMode != value)
+            {
+                _debugMode = value;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"ModelPreview: debugMode = {value}");
+                RequestNextFrameRendering();
+            }
         }
     }
 
@@ -480,6 +506,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
         _shaderManager!.SetUniformVec3("lightDir", lightDir);
         _shaderManager!.SetUniformVec3("lightColor", new Vector3(0.7f, 0.7f, 0.7f));
         _shaderManager!.SetUniformVec3("ambientColor", new Vector3(0.45f, 0.45f, 0.45f));
+        _shaderManager!.SetUniformInt("debugMode", _debugMode);
 
         // Bind VAO and draw
         _gl.BindVertexArray(_vao);
