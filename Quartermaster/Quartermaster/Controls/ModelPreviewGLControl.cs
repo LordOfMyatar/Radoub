@@ -78,6 +78,12 @@ public class ModelPreviewGLControl : OpenGlControlBase
     //   2 = lighting dot-product as grayscale
     private int _debugMode;
 
+    // When true, ignore stored mesh normals and compute face-averaged
+    // normals on the CPU instead. Diagnostic for #2026 to determine whether
+    // the faceted look is caused by the stored normals being wrong or by
+    // something downstream of the normal source.
+    private bool _forceComputedNormals;
+
     private PreviewState _previewState = PreviewState.None;
 
     /// <summary>
@@ -163,6 +169,27 @@ public class ModelPreviewGLControl : OpenGlControlBase
             {
                 _debugMode = value;
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"ModelPreview: debugMode = {value}");
+                RequestNextFrameRendering();
+            }
+        }
+    }
+
+    /// <summary>
+    /// When true, ignore stored mesh normals and compute topology-averaged
+    /// normals on the CPU. Diagnostic toggle for #2026: if this produces
+    /// smooth shading while stored normals produce facets, the stored
+    /// normals aren't suited to our renderer.
+    /// </summary>
+    public bool ForceComputedNormals
+    {
+        get => _forceComputedNormals;
+        set
+        {
+            if (_forceComputedNormals != value)
+            {
+                _forceComputedNormals = value;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"ModelPreview: forceComputedNormals = {value}");
+                _needsMeshUpdate = true;
                 RequestNextFrameRendering();
             }
         }
@@ -679,6 +706,38 @@ public class ModelPreviewGLControl : OpenGlControlBase
             var hasUVs = mesh.TextureCoords.Length > 0 && mesh.TextureCoords[0].Length == mesh.Vertices.Length;
             var hasNormals = mesh.Normals.Length == mesh.Vertices.Length;
 
+            // #2026 diagnostic: optionally compute face-averaged normals on
+            // the CPU instead of using stored ones. Uses the MDL's topology:
+            // for each vertex, average the normals of all faces that use it.
+            Vector3[]? computedNormals = null;
+            if (_forceComputedNormals && mesh.Vertices.Length > 0 && mesh.Faces.Length > 0)
+            {
+                computedNormals = new Vector3[mesh.Vertices.Length];
+                foreach (var face in mesh.Faces)
+                {
+                    if (face.VertexIndex0 >= mesh.Vertices.Length ||
+                        face.VertexIndex1 >= mesh.Vertices.Length ||
+                        face.VertexIndex2 >= mesh.Vertices.Length) continue;
+                    var a = mesh.Vertices[face.VertexIndex0];
+                    var b = mesh.Vertices[face.VertexIndex1];
+                    var c = mesh.Vertices[face.VertexIndex2];
+                    var fn = Vector3.Cross(b - a, c - a);
+                    if (fn.LengthSquared() < 1e-12f) continue;
+                    fn = Vector3.Normalize(fn);
+                    computedNormals[face.VertexIndex0] += fn;
+                    computedNormals[face.VertexIndex1] += fn;
+                    computedNormals[face.VertexIndex2] += fn;
+                }
+                for (int i = 0; i < computedNormals.Length; i++)
+                {
+                    if (computedNormals[i].LengthSquared() > 1e-9f)
+                        computedNormals[i] = Vector3.Normalize(computedNormals[i]);
+                    else
+                        computedNormals[i] = Vector3.UnitZ;
+                }
+                hasNormals = true;
+            }
+
             // Debug: check for data consistency issues
             if (mesh.TextureCoords.Length > 0 && mesh.TextureCoords[0].Length != mesh.Vertices.Length)
             {
@@ -736,7 +795,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
                 Vector3 normal;
                 if (hasNormals)
                 {
-                    normal = mesh.Normals[i];
+                    normal = computedNormals != null ? computedNormals[i] : mesh.Normals[i];
                     if (hasWorldTransform)
                         normal = ModelViewController.TransformNormal(normal, worldTransform);
                 }

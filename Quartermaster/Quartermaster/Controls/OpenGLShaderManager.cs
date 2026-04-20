@@ -81,9 +81,10 @@ void main()
     }
 
     if (debugMode == 2) {
-        // Pure lighting term with no texture/ambient. Shows exactly how
-        // bright each face gets from the directional light.
-        float d = abs(dot(norm, lightDir));
+        // Pure lighting term with no texture/ambient. Uses signed dot
+        // (not abs) so front-facing is bright, back-facing is dark —
+        // reveals whether normals are transformed with the model.
+        float d = max(dot(norm, lightDir), 0.0);
         FragColor = vec4(vec3(d), 1.0);
         return;
     }
