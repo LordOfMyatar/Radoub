@@ -86,12 +86,6 @@ public partial class AppearancePanel : UserControl
     private List<PhenotypeInfo>? _phenotypes;
     private bool _isLoading;
 
-    // Debounces model preview rebuild when the user arrow-key-navigates the
-    // appearance list. Mesh + texture work happens on the GL thread and was
-    // firing per arrow press (#2058).
-    private Avalonia.Threading.DispatcherTimer? _appearancePreviewDebounceTimer;
-    private const int AppearancePreviewDebounceMs = 150;
-
     public event EventHandler? AppearanceChanged;
 
     public AppearancePanel()
