@@ -63,7 +63,7 @@ uniform vec3 flatColor;
 
 // Debug visualisation modes (#2026 investigation):
 //   0 = normal rendering
-//   1 = world-space normal as RGB (x,y,z → r,g,b remapped from [-1,1] to [0,1])
+//   1 = world-space normal as RGB (xyz -> rgb remapped from [-1,1] to [0,1])
 //   2 = pure lighting dot product as grayscale (no texture, no ambient)
 uniform int debugMode;
 
@@ -82,7 +82,7 @@ void main()
 
     if (debugMode == 2) {
         // Pure lighting term with no texture/ambient. Uses signed dot
-        // (not abs) so front-facing is bright, back-facing is dark —
+        // (not abs) so front-facing is bright, back-facing is dark --
         // reveals whether normals are transformed with the model.
         float d = max(dot(norm, lightDir), 0.0);
         FragColor = vec4(vec3(d), 1.0);
