@@ -677,15 +677,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                         e.Handled = true;
                     }
                     break;
-                case Key.F9:
-                    {
-                        var on = AppearancePanelContent.ToggleComputedNormals();
-                        StatusBar.PrimaryText = on
-                            ? "Preview: using face-averaged normals (ignoring stored)"
-                            : "Preview: using stored mesh normals";
-                        e.Handled = true;
-                    }
-                    break;
             }
         }
         else if (e.KeyModifiers == KeyModifiers.Shift)

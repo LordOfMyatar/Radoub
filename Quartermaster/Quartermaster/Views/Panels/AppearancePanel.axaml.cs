@@ -279,16 +279,4 @@ public partial class AppearancePanel : UserControl
         _modelPreviewGL.DebugMode = next;
         return next;
     }
-
-    /// <summary>
-    /// Toggle the computed-normals diagnostic (#2026). When enabled, the
-    /// renderer ignores stored mesh normals and derives them from topology.
-    /// Returns the new state.
-    /// </summary>
-    public bool ToggleComputedNormals()
-    {
-        if (_modelPreviewGL == null) return false;
-        _modelPreviewGL.ForceComputedNormals = !_modelPreviewGL.ForceComputedNormals;
-        return _modelPreviewGL.ForceComputedNormals;
-    }
 }
