@@ -701,13 +701,34 @@ public class ModelPreviewGLControl : OpenGlControlBase
                 TextureName = rawBitmap
             };
 
-            // #2026: Compute per-face-corner normals using smoothgroup-aware
-            // averaging. Faces in disjoint smoothgroups (no shared SurfaceId
-            // bit) keep distinct normals at shared positions, preserving hard
-            // edges (e.g. scalp-to-face seam on head models). Then weld
-            // corners with matching (position, normal, UV) triples so the GPU
-            // interpolates across same-smoothgroup edges.
-            var cornerNormals = SmoothGroupNormals.ComputePerCorner(mesh.Vertices, mesh.Faces);
+            // #2026: Pick normal source based on how the mesh encodes hard
+            // edges. Multi-smoothgroup meshes (heads) use SurfaceId bitmasks;
+            // stored per-vertex normals are unreliable BioWare-compiler
+            // output. Single-smoothgroup meshes (bodies) encode hard edges
+            // by duplicating vertices with different stored normals, so the
+            // stored data IS the source of truth.
+            var distinctSmoothgroups = new HashSet<int>();
+            foreach (var face in mesh.Faces) distinctSmoothgroups.Add(face.SurfaceId);
+            bool hasStoredNormals = mesh.Normals != null && mesh.Normals.Length == mesh.Vertices.Length;
+            bool useStoredNormals = distinctSmoothgroups.Count <= 1 && hasStoredNormals;
+
+            Vector3[] cornerNormals;
+            if (useStoredNormals)
+            {
+                // One normal per face-corner, sourced from the stored per-vertex array.
+                cornerNormals = new Vector3[mesh.Faces.Length * 3];
+                for (int f = 0; f < mesh.Faces.Length; f++)
+                {
+                    var face = mesh.Faces[f];
+                    cornerNormals[f * 3 + 0] = face.VertexIndex0 < mesh.Normals!.Length ? mesh.Normals[face.VertexIndex0] : Vector3.UnitZ;
+                    cornerNormals[f * 3 + 1] = face.VertexIndex1 < mesh.Normals.Length ? mesh.Normals[face.VertexIndex1] : Vector3.UnitZ;
+                    cornerNormals[f * 3 + 2] = face.VertexIndex2 < mesh.Normals.Length ? mesh.Normals[face.VertexIndex2] : Vector3.UnitZ;
+                }
+            }
+            else
+            {
+                cornerNormals = SmoothGroupNormals.ComputePerCorner(mesh.Vertices, mesh.Faces);
+            }
 
             // Build per-corner attribute arrays (3 corners per face, in face order).
             int cornerCount = mesh.Faces.Length * 3;
