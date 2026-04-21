@@ -65,6 +65,8 @@ uniform vec3 flatColor;
 //   0 = normal rendering
 //   1 = world-space normal as RGB (xyz -> rgb remapped from [-1,1] to [0,1])
 //   2 = pure lighting dot product as grayscale (no texture, no ambient)
+//   3 = texture only (no directional lighting, full ambient) -- compare to Aurora
+//   4 = texture modulated by directional lighting signed (shows lit vs unlit side)
 uniform int debugMode;
 
 void main()
@@ -86,6 +88,28 @@ void main()
         // reveals whether normals are transformed with the model.
         float d = max(dot(norm, lightDir), 0.0);
         FragColor = vec4(vec3(d), 1.0);
+        return;
+    }
+
+    if (debugMode == 3) {
+        // Texture only, no directional lighting. Aurora appears to render
+        // with very little directional contribution -- the texture's
+        // painted-in shading does most of the work. If this matches the
+        // toolset reference, our issue is over-strong directional lighting.
+        vec3 tc = hasTexture ? texture(diffuseTexture, TexCoord).rgb : flatColor;
+        FragColor = vec4(pow(tc, vec3(1.0 / 1.6)), 1.0);
+        return;
+    }
+
+    if (debugMode == 4) {
+        // Texture modulated by signed lighting, red/green split: red
+        // channel shows positive dot (lit side), green channel shows
+        // negative dot (unlit side). Reveals exactly which half of the
+        // head the current light vector treats as facing it.
+        vec3 tc = hasTexture ? texture(diffuseTexture, TexCoord).rgb : flatColor;
+        float d = dot(norm, lightDir);
+        vec3 tint = d > 0.0 ? vec3(1.0, 0.7, 0.7) : vec3(0.7, 1.0, 0.7);
+        FragColor = vec4(pow(tc * tint, vec3(1.0 / 1.6)), 1.0);
         return;
     }
 
