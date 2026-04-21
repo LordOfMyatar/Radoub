@@ -93,6 +93,16 @@ public partial class AppearancePanel
             _zoomInButton.Click += OnZoomInClicked;
         if (_zoomOutButton != null)
             _zoomOutButton.Click += OnZoomOutClicked;
+        if (_viewFrontButton != null)
+            _viewFrontButton.Click += (_, _) => _modelPreviewGL?.SetViewPreset(ViewPreset.Front);
+        if (_viewBackButton != null)
+            _viewBackButton.Click += (_, _) => _modelPreviewGL?.SetViewPreset(ViewPreset.Back);
+        if (_viewSideButton != null)
+            _viewSideButton.Click += (_, _) => _modelPreviewGL?.SetViewPreset(ViewPreset.Side);
+        if (_viewSideRightButton != null)
+            _viewSideRightButton.Click += (_, _) => _modelPreviewGL?.SetViewPreset(ViewPreset.SideRight);
+        if (_viewTopButton != null)
+            _viewTopButton.Click += (_, _) => _modelPreviewGL?.SetViewPreset(ViewPreset.Top);
 
         // 3D Preview pointer/wheel/key input — wired on the transparent
         // input-surface Border that overlays the GL control (#2124).

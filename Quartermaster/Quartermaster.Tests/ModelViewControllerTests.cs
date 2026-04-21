@@ -229,6 +229,63 @@ public class ModelViewControllerTests
     }
 
     [Fact]
+    public void ViewPreset_Front_SetsExpectedRotation()
+    {
+        var vc = new ModelViewController();
+        vc.RotationY = 0.5f;
+        vc.RotationX = 0.3f;
+
+        vc.SetViewPreset(ViewPreset.Front);
+
+        Assert.Equal(MathF.PI, vc.RotationY, 4);
+        Assert.Equal(0f, vc.RotationX, 4);
+    }
+
+    [Fact]
+    public void ViewPreset_Back_SetsZeroY()
+    {
+        var vc = new ModelViewController();
+        vc.SetViewPreset(ViewPreset.Back);
+
+        Assert.Equal(0f, vc.RotationY, 4);
+        Assert.Equal(0f, vc.RotationX, 4);
+    }
+
+    [Fact]
+    public void ViewPreset_Side_SetsQuarterTurn()
+    {
+        var vc = new ModelViewController();
+        vc.SetViewPreset(ViewPreset.Side);
+
+        Assert.Equal(MathF.PI / 2f, vc.RotationY, 4);
+        Assert.Equal(0f, vc.RotationX, 4);
+    }
+
+    [Fact]
+    public void ViewPreset_Top_TiltsDownOnX()
+    {
+        var vc = new ModelViewController();
+        vc.SetViewPreset(ViewPreset.Top);
+
+        Assert.Equal(MathF.PI, vc.RotationY, 4);
+        Assert.Equal(MathF.PI / 2f, vc.RotationX, 4);
+    }
+
+    [Fact]
+    public void ViewPreset_ClearsPanAndRestoresDefaultZoom()
+    {
+        var vc = new ModelViewController();
+        vc.UpdateBounds(2.0f, true);
+        vc.Pan(new Vector3(3, 0, 4));
+        vc.Zoom = 5f;
+
+        vc.SetViewPreset(ViewPreset.Front);
+
+        Assert.Equal(Vector3.Zero, vc.CameraTarget);
+        Assert.Equal(1.0f, vc.Zoom, 4);
+    }
+
+    [Fact]
     public void ZoomAtPoint_DoesNotMoveTarget_WhenZoomClamped()
     {
         // If the zoom factor is clamped (no effective change), the pivot pull must

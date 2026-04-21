@@ -77,6 +77,11 @@ public partial class AppearancePanel : UserControl
     private Button? _resetViewButton;
     private Button? _zoomInButton;
     private Button? _zoomOutButton;
+    private Button? _viewFrontButton;
+    private Button? _viewBackButton;
+    private Button? _viewSideButton;
+    private Button? _viewSideRightButton;
+    private Button? _viewTopButton;
 
     private CreatureDisplayService? _displayService;
     private PaletteColorService? _paletteColorService;
@@ -162,6 +167,11 @@ public partial class AppearancePanel : UserControl
         _resetViewButton = this.FindControl<Button>("ResetViewButton");
         _zoomInButton = this.FindControl<Button>("ZoomInButton");
         _zoomOutButton = this.FindControl<Button>("ZoomOutButton");
+        _viewFrontButton = this.FindControl<Button>("ViewFrontButton");
+        _viewBackButton = this.FindControl<Button>("ViewBackButton");
+        _viewSideButton = this.FindControl<Button>("ViewSideButton");
+        _viewSideRightButton = this.FindControl<Button>("ViewSideRightButton");
+        _viewTopButton = this.FindControl<Button>("ViewTopButton");
     }
 
     public void SetDisplayService(CreatureDisplayService displayService)

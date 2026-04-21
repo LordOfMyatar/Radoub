@@ -342,13 +342,24 @@
                             <Button x:Name="RotateLeftButton" Content="↺" Width="32" Height="32"
                                     ToolTip.Tip="Rotate Left"/>
                             <Button x:Name="ResetViewButton" Content="⟲" Width="32" Height="32"
-                                    ToolTip.Tip="Reset View"/>
+                                    ToolTip.Tip="Reset View (Home)"/>
                             <Button x:Name="RotateRightButton" Content="↻" Width="32" Height="32"
                                     ToolTip.Tip="Rotate Right"/>
                             <Button x:Name="ZoomInButton" Content="+" Width="32" Height="32"
                                     ToolTip.Tip="Zoom In" Margin="20,0,0,0"/>
                             <Button x:Name="ZoomOutButton" Content="-" Width="32" Height="32"
                                     ToolTip.Tip="Zoom Out"/>
+                            <!-- View preset buttons (#2124) -->
+                            <Button x:Name="ViewFrontButton" Content="F" Width="32" Height="32"
+                                    ToolTip.Tip="Front View" Margin="20,0,0,0"/>
+                            <Button x:Name="ViewBackButton" Content="B" Width="32" Height="32"
+                                    ToolTip.Tip="Back View"/>
+                            <Button x:Name="ViewSideButton" Content="L" Width="32" Height="32"
+                                    ToolTip.Tip="Left Side View"/>
+                            <Button x:Name="ViewSideRightButton" Content="R" Width="32" Height="32"
+                                    ToolTip.Tip="Right Side View"/>
+                            <Button x:Name="ViewTopButton" Content="T" Width="32" Height="32"
+                                    ToolTip.Tip="Top View"/>
                         </StackPanel>
                     </Border>
                 </Grid>

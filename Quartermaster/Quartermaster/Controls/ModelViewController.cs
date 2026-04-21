@@ -8,6 +8,19 @@ using Radoub.Formats.Mdl;
 namespace Quartermaster.Controls;
 
 /// <summary>
+/// Preset camera orientations (#2124).
+/// Values map to RotationY (model-around-Z) + RotationX tilt.
+/// </summary>
+public enum ViewPreset
+{
+    Front,
+    Back,
+    Side,       // quarter turn — "left" side in viewer terms
+    SideRight,  // opposite side
+    Top,
+}
+
+/// <summary>
 /// Manages camera state (rotation, zoom, target) and provides
 /// world-space transform calculations for 3D model rendering.
 /// Pure math — no GL dependency.
@@ -84,6 +97,39 @@ public class ModelViewController
         // target a matching fraction of (pivot - target).
         float t = 1f - 1f / applied;
         _cameraTarget += (worldPivot - _cameraTarget) * t;
+    }
+
+    /// <summary>
+    /// Snap the camera to a preset orientation. Clears pan and zoom so
+    /// the chosen view fills the frame the same way ResetView does.
+    /// </summary>
+    public void SetViewPreset(ViewPreset preset)
+    {
+        switch (preset)
+        {
+            case ViewPreset.Front:
+                _rotationY = MathF.PI;
+                _rotationX = 0f;
+                break;
+            case ViewPreset.Back:
+                _rotationY = 0f;
+                _rotationX = 0f;
+                break;
+            case ViewPreset.Side:
+                _rotationY = MathF.PI / 2f;
+                _rotationX = 0f;
+                break;
+            case ViewPreset.SideRight:
+                _rotationY = 3f * MathF.PI / 2f;
+                _rotationX = 0f;
+                break;
+            case ViewPreset.Top:
+                _rotationY = MathF.PI;
+                _rotationX = MathF.PI / 2f;
+                break;
+        }
+        _zoom = 1.0f;
+        _cameraTarget = Vector3.Zero;
     }
 
     /// <summary>

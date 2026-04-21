@@ -396,6 +396,15 @@ public class ModelPreviewGLControl : OpenGlControlBase
         DebugMode = (_debugMode + 1) % 5;
     }
 
+    /// <summary>
+    /// Snap to a preset view (front/side/top/back). #2124.
+    /// </summary>
+    public void SetViewPreset(ViewPreset preset)
+    {
+        _viewController.SetViewPreset(preset);
+        RequestNextFrameRendering();
+    }
+
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
