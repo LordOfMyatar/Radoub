@@ -2,6 +2,7 @@
 // Extracted from ModelPreviewGLControl to improve testability and separation of concerns.
 
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Radoub.Formats.Mdl;
 
@@ -181,23 +182,40 @@ public class ModelViewController
     /// </summary>
     public static Matrix4x4 GetWorldTransform(MdlNode? node)
     {
-        // System.Numerics uses row-major convention where Vector3.Transform(v, M) = v * M
-        // For hierarchical transforms: v_world = v_local * NodeLocal * ParentLocal * ... * RootLocal
-        // So we need: worldTransform = NodeLocal * ParentLocal * ... * RootLocal
-        // We walk leaf-to-root, accumulating: world = local * world
+        return GetWorldTransform(node, null);
+    }
+
+    /// <summary>
+    /// Variant that consults an animation pose (node name → sampled transform).
+    /// Used by the appearance preview to play animation stances (#2124).
+    /// When a node's name is in <paramref name="pose"/>, the sampled values
+    /// replace the bind-pose Position/Orientation/Scale for that link of the
+    /// hierarchy. Other nodes use their static values.
+    /// </summary>
+    public static Matrix4x4 GetWorldTransform(MdlNode? node, IReadOnlyDictionary<string, NodePose>? pose)
+    {
         var worldTransform = Matrix4x4.Identity;
         var current = node;
 
         while (current != null)
         {
-            var scale = Matrix4x4.CreateScale(current.Scale);
-            var rotation = Matrix4x4.CreateFromQuaternion(current.Orientation);
-            var translation = Matrix4x4.CreateTranslation(current.Position);
+            Vector3 pos = current.Position;
+            Quaternion orient = current.Orientation;
+            float scl = current.Scale;
 
-            // Row-major local transform: S * R * T
+            if (pose != null && !string.IsNullOrEmpty(current.Name)
+                && pose.TryGetValue(current.Name, out var p))
+            {
+                if (p.HasPosition) pos = p.Position;
+                if (p.HasOrientation) orient = p.Orientation;
+                if (p.HasScale) scl = p.Scale;
+            }
+
+            var scale = Matrix4x4.CreateScale(scl);
+            var rotation = Matrix4x4.CreateFromQuaternion(orient);
+            var translation = Matrix4x4.CreateTranslation(pos);
+
             var localTransform = scale * rotation * translation;
-
-            // Accumulate: node * parent * grandparent * ... * root
             worldTransform = worldTransform * localTransform;
 
             current = current.Parent;
@@ -205,6 +223,16 @@ public class ModelViewController
 
         return worldTransform;
     }
+
+    /// <summary>
+    /// Sampled pose for a single node at a specific animation time.
+    /// Flags indicate which channels were actually animated (vs inheriting
+    /// the bind pose).
+    /// </summary>
+    public readonly record struct NodePose(
+        bool HasPosition, Vector3 Position,
+        bool HasOrientation, Quaternion Orientation,
+        bool HasScale, float Scale);
 
     /// <summary>
     /// Transform a position vector by a matrix.

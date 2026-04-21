@@ -295,7 +295,7 @@
                     BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                     BorderThickness="1,0,0,0"
                     Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
-                <Grid RowDefinitions="Auto,*,Auto,Auto">
+                <Grid RowDefinitions="Auto,*,Auto,Auto,Auto">
                     <!-- Preview Header -->
                     <Border Grid.Row="0" Padding="10"
                             BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
@@ -360,6 +360,23 @@
                                     ToolTip.Tip="Right Side View"/>
                             <Button x:Name="ViewTopButton" Content="T" Width="32" Height="32"
                                     ToolTip.Tip="Top View"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Animation playback (#2124) -->
+                    <Border Grid.Row="4" Padding="10"
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                            BorderThickness="0,1,0,0">
+                        <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                            <TextBlock Text="Animation:" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="AnimationComboBox" MinWidth="160"
+                                      ToolTip.Tip="Select an animation / stance"/>
+                            <Button x:Name="AnimPlayButton" Content="▶" Width="32" Height="32"
+                                    ToolTip.Tip="Play / Pause"/>
+                            <Slider x:Name="AnimTimeSlider" MinWidth="160"
+                                    Minimum="0" Maximum="1" Value="0"
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="Scrub playhead"/>
                         </StackPanel>
                     </Border>
                 </Grid>

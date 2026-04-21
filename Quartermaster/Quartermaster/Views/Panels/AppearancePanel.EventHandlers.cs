@@ -104,6 +104,14 @@ public partial class AppearancePanel
         if (_viewTopButton != null)
             _viewTopButton.Click += (_, _) => _modelPreviewGL?.SetViewPreset(ViewPreset.Top);
 
+        // Animation dropdown / play / scrub (#2124)
+        if (_animationComboBox != null)
+            _animationComboBox.SelectionChanged += OnAnimationSelectionChanged;
+        if (_animPlayButton != null)
+            _animPlayButton.Click += OnAnimPlayClicked;
+        if (_animTimeSlider != null)
+            _animTimeSlider.PropertyChanged += OnAnimSliderChanged;
+
         // 3D Preview pointer/wheel/key input — wired on the transparent
         // input-surface Border that overlays the GL control (#2124).
         if (_modelPreviewInputSurface != null)
@@ -655,5 +663,76 @@ public partial class AppearancePanel
     {
         if (_modelPreviewGL != null)
             _modelPreviewGL.Zoom /= 1.2f;
+    }
+
+    // ----- Animation playback handlers (#2124) -----
+
+    private bool _suppressSliderSync;
+
+    private void OnAnimationSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_modelPreviewGL?.Model == null || _animationComboBox == null) return;
+
+        int idx = _animationComboBox.SelectedIndex;
+        if (idx <= 0)
+        {
+            _modelPreviewGL.SetActiveAnimation(null);
+            if (_animTimeSlider != null)
+            {
+                _suppressSliderSync = true;
+                _animTimeSlider.Value = 0;
+                _animTimeSlider.Maximum = 1;
+                _suppressSliderSync = false;
+            }
+            if (_animPlayButton != null) _animPlayButton.Content = "▶";
+            return;
+        }
+
+        int animIdx = idx - 1; // offset past "(none)"
+        if (animIdx >= 0 && animIdx < _modelPreviewGL.Model.Animations.Count)
+        {
+            var anim = _modelPreviewGL.Model.Animations[animIdx];
+            _modelPreviewGL.SetActiveAnimation(anim);
+            if (_animTimeSlider != null)
+            {
+                _suppressSliderSync = true;
+                _animTimeSlider.Maximum = anim.Length > 0 ? anim.Length : 1;
+                _animTimeSlider.Value = 0;
+                _suppressSliderSync = false;
+            }
+        }
+    }
+
+    private void OnAnimPlayClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_modelPreviewGL == null || _animPlayButton == null) return;
+        if (_modelPreviewGL.ActiveAnimation == null) return;
+
+        if (_modelPreviewGL.IsAnimationPlaying)
+        {
+            _modelPreviewGL.PauseAnimation();
+            _animPlayButton.Content = "▶";
+        }
+        else
+        {
+            _modelPreviewGL.PlayAnimation();
+            _animPlayButton.Content = "⏸";
+        }
+    }
+
+    private void OnAnimSliderChanged(object? sender, Avalonia.AvaloniaPropertyChangedEventArgs e)
+    {
+        if (_suppressSliderSync) return;
+        if (e.Property != Slider.ValueProperty) return;
+        if (_modelPreviewGL == null || _animTimeSlider == null) return;
+        if (_modelPreviewGL.ActiveAnimation == null) return;
+
+        // User dragged the scrub slider — pause playback and seek.
+        if (_modelPreviewGL.IsAnimationPlaying)
+        {
+            _modelPreviewGL.PauseAnimation();
+            if (_animPlayButton != null) _animPlayButton.Content = "▶";
+        }
+        _modelPreviewGL.AnimationTime = (float)_animTimeSlider.Value;
     }
 }

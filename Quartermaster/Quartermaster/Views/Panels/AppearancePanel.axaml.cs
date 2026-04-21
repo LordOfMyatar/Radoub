@@ -82,6 +82,10 @@ public partial class AppearancePanel : UserControl
     private Button? _viewSideButton;
     private Button? _viewSideRightButton;
     private Button? _viewTopButton;
+    // Animation playback (#2124)
+    private ComboBox? _animationComboBox;
+    private Button? _animPlayButton;
+    private Slider? _animTimeSlider;
 
     private CreatureDisplayService? _displayService;
     private PaletteColorService? _paletteColorService;
@@ -172,6 +176,9 @@ public partial class AppearancePanel : UserControl
         _viewSideButton = this.FindControl<Button>("ViewSideButton");
         _viewSideRightButton = this.FindControl<Button>("ViewSideRightButton");
         _viewTopButton = this.FindControl<Button>("ViewTopButton");
+        _animationComboBox = this.FindControl<ComboBox>("AnimationComboBox");
+        _animPlayButton = this.FindControl<Button>("AnimPlayButton");
+        _animTimeSlider = this.FindControl<Slider>("AnimTimeSlider");
     }
 
     public void SetDisplayService(CreatureDisplayService displayService)
@@ -278,6 +285,35 @@ public partial class AppearancePanel : UserControl
     {
         if (_modelPreviewGL != null)
             _modelPreviewGL.Model = model;
+        RefreshAnimationList(model);
+    }
+
+    /// <summary>
+    /// Populate the animation dropdown from a model's animation list (#2124).
+    /// </summary>
+    private void RefreshAnimationList(MdlModel? model)
+    {
+        if (_animationComboBox == null) return;
+
+        var items = new List<string> { "(none)" };
+        if (model?.Animations != null)
+        {
+            foreach (var anim in model.Animations)
+            {
+                if (!string.IsNullOrEmpty(anim.Name))
+                    items.Add(anim.Name);
+            }
+        }
+
+        _animationComboBox.ItemsSource = items;
+        _animationComboBox.SelectedIndex = 0;
+        if (_modelPreviewGL != null)
+            _modelPreviewGL.SetActiveAnimation(null);
+        if (_animTimeSlider != null)
+        {
+            _animTimeSlider.Value = 0;
+            _animTimeSlider.Maximum = 1;
+        }
     }
 
     /// <summary>

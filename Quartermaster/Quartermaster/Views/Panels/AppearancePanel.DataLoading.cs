@@ -218,12 +218,14 @@ public partial class AppearancePanel
 
             var model = _modelService.LoadCreatureModel(_currentCreature);
             _modelPreviewGL.Model = model;
+            RefreshAnimationList(model);
         }
         catch (Exception ex)
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR,
                 $"Model preview failed: {ex.GetType().Name}: {ex.Message}");
             _modelPreviewGL.Model = null;
+            RefreshAnimationList(null);
         }
     }
 
