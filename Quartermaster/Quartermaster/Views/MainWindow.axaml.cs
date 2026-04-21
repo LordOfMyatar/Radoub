@@ -664,6 +664,21 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     OnToggleCreatureBrowserClick(sender, new RoutedEventArgs());
                     e.Handled = true;
                     break;
+                case Key.F8:
+                    {
+                        var mode = AppearancePanelContent.CycleDebugMode();
+                        var label = mode switch
+                        {
+                            1 => "world-space normals (RGB)",
+                            2 => "lighting dot-product (grayscale)",
+                            3 => "texture only (no lighting)",
+                            4 => "lit side red / unlit side green",
+                            _ => "normal rendering"
+                        };
+                        StatusBar.PrimaryText = $"Preview debug mode: {label}";
+                        e.Handled = true;
+                    }
+                    break;
             }
         }
         else if (e.KeyModifiers == KeyModifiers.Shift)

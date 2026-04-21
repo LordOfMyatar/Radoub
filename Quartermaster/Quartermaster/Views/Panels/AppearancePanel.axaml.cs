@@ -267,4 +267,16 @@ public partial class AppearancePanel : UserControl
         if (_modelPreviewGL != null)
             _modelPreviewGL.Model = model;
     }
+
+    /// <summary>
+    /// Cycle the shader debug visualisation (0 -> 1 -> 2 -> 3 -> 4 -> 0).
+    /// Used for diagnosing shading issues (#2026). Returns the new mode.
+    /// </summary>
+    public int CycleDebugMode()
+    {
+        if (_modelPreviewGL == null) return 0;
+        var next = (_modelPreviewGL.DebugMode + 1) % 5;
+        _modelPreviewGL.DebugMode = next;
+        return next;
+    }
 }

@@ -5,6 +5,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.82-alpha] - 2026-04-20
+**Branch**: `quartermaster/issue-2026` | **PR**: #2114
+
+### Fix: Human/elf head shading misaligned (#2026)
+
+- 3D preview now matches the Aurora toolset's texture-dominant shading.
+- Per-vertex normals computed from smoothgroup bitmasks for multi-group meshes (heads); stored normals used for single-group meshes (bodies/limbs) where the author encoded hard edges via vertex duplication.
+- Vertex welding after normal selection so the GPU interpolates across shared edges while preserving legitimate seams.
+- Directional light contribution reduced, ambient raised so texture-painted detail dominates.
+- F8 in the appearance preview cycles debug visualisations (normals as RGB, lighting term, texture-only, lit-side tint).
+
+---
+
 ## [0.2.81-alpha] - 2026-04-19
 **Branch**: `quartermaster/issue-2064` | **PR**: #2112
 

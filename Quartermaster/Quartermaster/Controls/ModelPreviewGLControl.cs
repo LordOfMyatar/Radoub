@@ -72,6 +72,12 @@ public class ModelPreviewGLControl : OpenGlControlBase
     private bool _needsMeshUpdate;
     private bool _logOncePerModel;
 
+    // Shader debug visualisation (#2026 investigation):
+    //   0 = normal rendering
+    //   1 = world-space normal as RGB
+    //   2 = lighting dot-product as grayscale
+    private int _debugMode;
+
     private PreviewState _previewState = PreviewState.None;
 
     /// <summary>
@@ -139,6 +145,26 @@ public class ModelPreviewGLControl : OpenGlControlBase
         {
             _viewController.RotationX = value;
             RequestNextFrameRendering();
+        }
+    }
+
+    /// <summary>
+    /// Shader debug mode (0 = normal, 1 = normal-as-RGB, 2 = lighting-as-grayscale).
+    /// Used to diagnose shading issues — when a model rotates, a correct
+    /// world-space normal will paint different colours on the same face
+    /// region. Locked colours indicate the normal isn't being transformed.
+    /// </summary>
+    public int DebugMode
+    {
+        get => _debugMode;
+        set
+        {
+            if (_debugMode != value)
+            {
+                _debugMode = value;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"ModelPreview: debugMode = {value}");
+                RequestNextFrameRendering();
+            }
         }
     }
 
@@ -476,10 +502,17 @@ public class ModelPreviewGLControl : OpenGlControlBase
         }
 
         // Lighting - match NWN toolset brightness with higher ambient fill
+        // #2026: NWN textures already carry painted-in shading. A strong
+        // directional light fights that painted detail and exposes
+        // low-poly facets (the Aurora toolset renders with minimal
+        // directional contribution). Keep ambient high so the texture
+        // dominates, and add a gentle directional term for subtle
+        // surface cues.
         var lightDir = Vector3.Normalize(new Vector3(0.3f, -0.5f, 0.8f));
         _shaderManager!.SetUniformVec3("lightDir", lightDir);
-        _shaderManager!.SetUniformVec3("lightColor", new Vector3(0.7f, 0.7f, 0.7f));
-        _shaderManager!.SetUniformVec3("ambientColor", new Vector3(0.45f, 0.45f, 0.45f));
+        _shaderManager!.SetUniformVec3("lightColor", new Vector3(0.15f, 0.15f, 0.15f));
+        _shaderManager!.SetUniformVec3("ambientColor", new Vector3(0.95f, 0.95f, 0.95f));
+        _shaderManager!.SetUniformInt("debugMode", _debugMode);
 
         // Bind VAO and draw
         _gl.BindVertexArray(_vao);
@@ -650,16 +683,11 @@ public class ModelPreviewGLControl : OpenGlControlBase
                     $"  Mesh {meshIndex} '{mesh.Name}': {nanVertexIndices.Count}/{mesh.Vertices.Length} NaN vertices will be skipped — possible parser issue");
             }
             var hasUVs = mesh.TextureCoords.Length > 0 && mesh.TextureCoords[0].Length == mesh.Vertices.Length;
-            var hasNormals = mesh.Normals.Length == mesh.Vertices.Length;
 
             // Debug: check for data consistency issues
             if (mesh.TextureCoords.Length > 0 && mesh.TextureCoords[0].Length != mesh.Vertices.Length)
             {
                 UnifiedLogger.LogApplication(LogLevel.WARN, $"  Mesh {meshIndex} '{mesh.Name}' UV count mismatch: {mesh.TextureCoords[0].Length} UVs vs {mesh.Vertices.Length} vertices");
-            }
-            if (mesh.Normals.Length > 0 && mesh.Normals.Length != mesh.Vertices.Length)
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"  Mesh {meshIndex} '{mesh.Name}' normal count mismatch: {mesh.Normals.Length} normals vs {mesh.Vertices.Length} vertices");
             }
 
             UnifiedLogger.LogApplication(LogLevel.DEBUG,
@@ -679,101 +707,133 @@ public class ModelPreviewGLControl : OpenGlControlBase
                 TextureName = rawBitmap
             };
 
-            // Add vertices (position, normal, texcoord)
-            for (int i = 0; i < mesh.Vertices.Length; i++)
+            // #2026: Pick normal source based on how the mesh encodes hard
+            // edges. Multi-smoothgroup meshes (heads) use SurfaceId bitmasks;
+            // stored per-vertex normals are unreliable BioWare-compiler
+            // output. Single-smoothgroup meshes (bodies) encode hard edges
+            // by duplicating vertices with different stored normals, so the
+            // stored data IS the source of truth.
+            var distinctSmoothgroups = new HashSet<int>();
+            foreach (var face in mesh.Faces) distinctSmoothgroups.Add(face.SurfaceId);
+            bool hasStoredNormals = mesh.Normals != null && mesh.Normals.Length == mesh.Vertices.Length;
+            bool useStoredNormals = distinctSmoothgroups.Count <= 1 && hasStoredNormals;
+
+            Vector3[] cornerNormals;
+            if (useStoredNormals)
             {
-                // For NaN vertices, output a zero vertex (won't be rendered due to face filtering)
-                if (nanVertexIndices.Contains(i))
+                // One normal per face-corner, sourced from the stored per-vertex array.
+                cornerNormals = new Vector3[mesh.Faces.Length * 3];
+                for (int f = 0; f < mesh.Faces.Length; f++)
                 {
-                    nanFlatIndices.Add(vertices.Count / 8); // Track for bounds exclusion
-                    // 8 floats per vertex: position(3), normal(3), texcoord(2)
-                    for (int j = 0; j < 8; j++) vertices.Add(0);
-                    continue;
+                    var face = mesh.Faces[f];
+                    cornerNormals[f * 3 + 0] = face.VertexIndex0 < mesh.Normals!.Length ? mesh.Normals[face.VertexIndex0] : Vector3.UnitZ;
+                    cornerNormals[f * 3 + 1] = face.VertexIndex1 < mesh.Normals.Length ? mesh.Normals[face.VertexIndex1] : Vector3.UnitZ;
+                    cornerNormals[f * 3 + 2] = face.VertexIndex2 < mesh.Normals.Length ? mesh.Normals[face.VertexIndex2] : Vector3.UnitZ;
                 }
+            }
+            else
+            {
+                cornerNormals = SmoothGroupNormals.ComputePerCorner(mesh.Vertices, mesh.Faces);
+            }
 
-                // Get vertex in local mesh space
-                var localVertex = mesh.Vertices[i];
+            // Build per-corner attribute arrays (3 corners per face, in face order).
+            int cornerCount = mesh.Faces.Length * 3;
+            var cornerPositions = new Vector3[cornerCount];
+            var cornerNormalsWorld = new Vector3[cornerCount];
+            var cornerUVs = new Vector2[cornerCount];
+            var cornerDrop = new bool[cornerCount];
 
-                // Apply world transform to get world-space positions.
-                // Skin mesh vertices (m_pavVerts) are stored in bind-pose space — apply
-                // the node hierarchy transform exactly like NWNExplorer does (no bone weighting
-                // needed for static bind-pose display; Q/T arrays are for runtime animation).
-                Vector3 v = hasWorldTransform ? ModelViewController.TransformPosition(localVertex, worldTransform) : localVertex;
+            for (int f = 0; f < mesh.Faces.Length; f++)
+            {
+                var face = mesh.Faces[f];
+                int[] vs = { face.VertexIndex0, face.VertexIndex1, face.VertexIndex2 };
 
-                // Position
-                vertices.Add(v.X);
-                vertices.Add(v.Y);
-                vertices.Add(v.Z);
+                bool faceInvalid =
+                    vs[0] >= mesh.Vertices.Length ||
+                    vs[1] >= mesh.Vertices.Length ||
+                    vs[2] >= mesh.Vertices.Length ||
+                    nanVertexIndices.Contains(vs[0]) ||
+                    nanVertexIndices.Contains(vs[1]) ||
+                    nanVertexIndices.Contains(vs[2]);
 
-                // Normal - use pre-computed normals from mesh if available, then rotate
-                Vector3 normal;
-                if (hasNormals)
+                for (int c = 0; c < 3; c++)
                 {
-                    normal = mesh.Normals[i];
-                    if (hasWorldTransform)
-                        normal = ModelViewController.TransformNormal(normal, worldTransform);
-                }
-                else
-                {
-                    // Fallback: calculate from first face that uses this vertex
-                    normal = Vector3.UnitZ;
-                    foreach (var face in mesh.Faces)
+                    int ci = f * 3 + c;
+                    if (faceInvalid)
                     {
-                        if (face.VertexIndex0 == i || face.VertexIndex1 == i || face.VertexIndex2 == i)
-                        {
-                            var v0 = mesh.Vertices[face.VertexIndex0];
-                            var v1 = mesh.Vertices[face.VertexIndex1];
-                            var v2 = mesh.Vertices[face.VertexIndex2];
-                            var e1 = v1 - v0;
-                            var e2 = v2 - v0;
-                            normal = Vector3.Normalize(Vector3.Cross(e1, e2));
-                            break;
-                        }
+                        cornerDrop[ci] = true;
+                        continue;
                     }
-                }
-                vertices.Add(normal.X);
-                vertices.Add(normal.Y);
-                vertices.Add(normal.Z);
 
-                // Texcoord
-                if (hasUVs)
-                {
-                    var uv = mesh.TextureCoords[0][i];
-                    vertices.Add(uv.X);
-                    vertices.Add(uv.Y); // No V-flip — matches nwnexplorer (raw UVs)
-                }
-                else
-                {
-                    vertices.Add(0);
-                    vertices.Add(0);
+                    var localVertex = mesh.Vertices[vs[c]];
+                    var worldPos = hasWorldTransform
+                        ? ModelViewController.TransformPosition(localVertex, worldTransform)
+                        : localVertex;
+                    cornerPositions[ci] = worldPos;
+
+                    var localNormal = cornerNormals[ci];
+                    var worldNormal = hasWorldTransform
+                        ? ModelViewController.TransformNormal(localNormal, worldTransform)
+                        : localNormal;
+                    cornerNormalsWorld[ci] = worldNormal;
+
+                    if (hasUVs)
+                        cornerUVs[ci] = mesh.TextureCoords[0][vs[c]];
+                    else
+                        cornerUVs[ci] = Vector2.Zero;
                 }
             }
 
-            // Add indices (skip faces that reference NaN vertices)
+            // Weld corners sharing (pos, normal, UV). Corners across disjoint
+            // smoothgroups have different normals so they stay separate; UV
+            // seams produce different UVs and also stay separate.
+            var weld = VertexWelder.Build(cornerPositions, cornerNormalsWorld, cornerUVs, cornerDrop);
             int meshIndexStart = indices.Count;
-            foreach (var face in mesh.Faces)
+
+            // Emit vertex buffer: one entry per unique (pos, normal, UV).
+            var emitted = new bool[weld.OutputVertexCount];
+            for (int ci = 0; ci < cornerCount; ci++)
             {
-                if (face.VertexIndex0 >= mesh.Vertices.Length ||
-                    face.VertexIndex1 >= mesh.Vertices.Length ||
-                    face.VertexIndex2 >= mesh.Vertices.Length)
-                    continue;
+                int local = weld.IndexRemap[ci];
+                if (local < 0 || emitted[local]) continue;
+                emitted[local] = true;
 
-                // Skip faces that reference NaN vertices
-                if (nanVertexIndices.Contains(face.VertexIndex0) ||
-                    nanVertexIndices.Contains(face.VertexIndex1) ||
-                    nanVertexIndices.Contains(face.VertexIndex2))
-                    continue;
+                vertices.Add(cornerPositions[ci].X);
+                vertices.Add(cornerPositions[ci].Y);
+                vertices.Add(cornerPositions[ci].Z);
+                vertices.Add(cornerNormalsWorld[ci].X);
+                vertices.Add(cornerNormalsWorld[ci].Y);
+                vertices.Add(cornerNormalsWorld[ci].Z);
+                vertices.Add(cornerUVs[ci].X);
+                vertices.Add(cornerUVs[ci].Y);
+            }
 
-                indices.Add(baseVertex + (uint)face.VertexIndex0);
-                indices.Add(baseVertex + (uint)face.VertexIndex1);
-                indices.Add(baseVertex + (uint)face.VertexIndex2);
+            // Emit indices: each face contributes 3 corner indices through the weld map.
+            for (int f = 0; f < mesh.Faces.Length; f++)
+            {
+                int i0 = weld.IndexRemap[f * 3 + 0];
+                int i1 = weld.IndexRemap[f * 3 + 1];
+                int i2 = weld.IndexRemap[f * 3 + 2];
+                if (i0 < 0 || i1 < 0 || i2 < 0) continue;            // dropped (NaN/invalid)
+                if (i0 == i1 || i1 == i2 || i0 == i2) continue;      // degenerate after welding
+
+                indices.Add(baseVertex + (uint)i0);
+                indices.Add(baseVertex + (uint)i1);
+                indices.Add(baseVertex + (uint)i2);
+            }
+
+            if (weld.WeldedCount > 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"  Mesh '{mesh.Name}': welded {weld.WeldedCount}/{cornerCount} corners " +
+                    $"-> {weld.OutputVertexCount} unique in GPU buffer");
             }
 
             drawCall.IndexCount = indices.Count - meshIndexStart;
             if (drawCall.IndexCount > 0)
                 _meshDrawCalls.Add(drawCall);
 
-            baseVertex += (uint)mesh.Vertices.Length;
+            baseVertex += (uint)weld.OutputVertexCount;
         }
 
         _indexCount = indices.Count;
