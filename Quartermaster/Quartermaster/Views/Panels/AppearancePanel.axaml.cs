@@ -86,6 +86,7 @@ public partial class AppearancePanel : UserControl
     private ComboBox? _animationComboBox;
     private Button? _animPlayButton;
     private Slider? _animTimeSlider;
+    private Slider? _animSpeedSlider;
 
     private CreatureDisplayService? _displayService;
     private PaletteColorService? _paletteColorService;
@@ -179,6 +180,7 @@ public partial class AppearancePanel : UserControl
         _animationComboBox = this.FindControl<ComboBox>("AnimationComboBox");
         _animPlayButton = this.FindControl<Button>("AnimPlayButton");
         _animTimeSlider = this.FindControl<Slider>("AnimTimeSlider");
+        _animSpeedSlider = this.FindControl<Slider>("AnimSpeedSlider");
     }
 
     public void SetDisplayService(CreatureDisplayService displayService)

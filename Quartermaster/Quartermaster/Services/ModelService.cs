@@ -757,6 +757,7 @@ public class ModelService
             var meshCount = model.GetMeshNodes().Count();
             UnifiedLogger.LogApplication(LogLevel.INFO,
                 $"LoadModel: '{resRef}' parsed OK, meshes={meshCount}, bounds={model.BoundingMin}-{model.BoundingMax}");
+            MergeSuperModelAnimations(model, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
             _modelCache[resRef] = model;
             return model;
         }
@@ -767,6 +768,53 @@ public class ModelService
             _modelCache[resRef] = null;
             return null;
         }
+    }
+
+    /// <summary>
+    /// NWN creatures inherit animations from a supermodel chain (e.g. a_ba, a_fa).
+    /// The leaf creature MDL usually only overrides geometry; idle/walk/attack/etc.
+    /// live in the parent. This walks the chain and appends every animation it
+    /// finds to the leaf model so the preview can play them. Missing supermodels
+    /// are logged and skipped — they're optional at runtime (#2124).
+    /// </summary>
+    private void MergeSuperModelAnimations(MdlModel model, HashSet<string> visited)
+    {
+        var parentName = model.SuperModel;
+        if (string.IsNullOrWhiteSpace(parentName) ||
+            parentName.Equals("NULL", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+        if (!visited.Add(parentName.ToLowerInvariant()))
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"MergeSuperModelAnimations: cycle detected at '{parentName}' — stopping");
+            return;
+        }
+
+        var parent = LoadModel(parentName);
+        if (parent == null)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"MergeSuperModelAnimations: supermodel '{parentName}' not loadable");
+            return;
+        }
+
+        // Append parent animations that the leaf doesn't already define.
+        var existing = new HashSet<string>(
+            model.Animations.Select(a => a.Name),
+            StringComparer.OrdinalIgnoreCase);
+        int added = 0;
+        foreach (var anim in parent.Animations)
+        {
+            if (existing.Add(anim.Name))
+            {
+                model.Animations.Add(anim);
+                added++;
+            }
+        }
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"MergeSuperModelAnimations: '{model.Name}' inherited {added} animations from '{parentName}'");
     }
 
     // #1676: LoadModelPreferBIF removed. All model loading now uses the public LoadModel()

@@ -111,6 +111,8 @@ public partial class AppearancePanel
             _animPlayButton.Click += OnAnimPlayClicked;
         if (_animTimeSlider != null)
             _animTimeSlider.PropertyChanged += OnAnimSliderChanged;
+        if (_animSpeedSlider != null)
+            _animSpeedSlider.PropertyChanged += OnAnimSpeedChanged;
 
         // 3D Preview pointer/wheel/key input — wired on the transparent
         // input-surface Border that overlays the GL control (#2124).
@@ -734,5 +736,12 @@ public partial class AppearancePanel
             if (_animPlayButton != null) _animPlayButton.Content = "▶";
         }
         _modelPreviewGL.AnimationTime = (float)_animTimeSlider.Value;
+    }
+
+    private void OnAnimSpeedChanged(object? sender, Avalonia.AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property != Slider.ValueProperty) return;
+        if (_modelPreviewGL == null || _animSpeedSlider == null) return;
+        _modelPreviewGL.AnimationSpeed = (float)_animSpeedSlider.Value;
     }
 }

@@ -377,6 +377,11 @@
                                     Minimum="0" Maximum="1" Value="0"
                                     VerticalAlignment="Center"
                                     ToolTip.Tip="Scrub playhead"/>
+                            <TextBlock Text="Speed:" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            <Slider x:Name="AnimSpeedSlider" MinWidth="80"
+                                    Minimum="0.1" Maximum="2.0" Value="1.0"
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="Playback speed (0.1x – 2x)"/>
                         </StackPanel>
                     </Border>
                 </Grid>

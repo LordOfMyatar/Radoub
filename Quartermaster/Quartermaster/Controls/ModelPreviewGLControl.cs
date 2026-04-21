@@ -95,6 +95,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
     // Animation playback state (#2124).
     private MdlAnimation? _activeAnimation;
     private float _animTime;
+    private float _animSpeed = 1.0f;
     private bool _animPlaying;
     private DateTime _animLastTick = DateTime.UtcNow;
     private Dictionary<string, ModelViewController.NodePose>? _cachedPose;
@@ -441,6 +442,15 @@ public class ModelPreviewGLControl : OpenGlControlBase
     public bool IsAnimationPlaying => _animPlaying;
 
     /// <summary>
+    /// Playback speed multiplier (1.0 = real-time).
+    /// </summary>
+    public float AnimationSpeed
+    {
+        get => _animSpeed;
+        set => _animSpeed = Math.Clamp(value, 0.1f, 5f);
+    }
+
+    /// <summary>
     /// Select an animation by reference (null to clear). Resets playhead to 0.
     /// </summary>
     public void SetActiveAnimation(MdlAnimation? animation)
@@ -481,7 +491,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
         if (!_animPlaying || _activeAnimation == null) return;
 
         var now = DateTime.UtcNow;
-        var dt = (float)(now - _animLastTick).TotalSeconds;
+        var dt = (float)(now - _animLastTick).TotalSeconds * _animSpeed;
         _animLastTick = now;
 
         float length = _activeAnimation.Length;
