@@ -68,6 +68,7 @@ public partial class AppearancePanel : UserControl
     // 3D Preview
     private Border? _modelPreviewContainer;
     private ModelPreviewGLControl? _modelPreviewGL;
+    private Border? _modelPreviewInputSurface;
     private Border? _previewStateOverlay;
     private TextBlock? _previewStateText;
     private TextBlock? _modelInfoStatusText;
@@ -152,6 +153,7 @@ public partial class AppearancePanel : UserControl
         // 3D Preview
         _modelPreviewContainer = this.FindControl<Border>("ModelPreviewContainer");
         _modelPreviewGL = this.FindControl<ModelPreviewGLControl>("ModelPreviewGL");
+        _modelPreviewInputSurface = this.FindControl<Border>("ModelPreviewInputSurface");
         _previewStateOverlay = this.FindControl<Border>("PreviewStateOverlay");
         _previewStateText = this.FindControl<TextBlock>("PreviewStateText");
         _modelInfoStatusText = this.FindControl<TextBlock>("ModelInfoStatusText");

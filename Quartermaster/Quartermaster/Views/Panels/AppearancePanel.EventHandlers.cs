@@ -93,6 +93,112 @@ public partial class AppearancePanel
             _zoomInButton.Click += OnZoomInClicked;
         if (_zoomOutButton != null)
             _zoomOutButton.Click += OnZoomOutClicked;
+
+        // 3D Preview pointer/wheel/key input — wired on the transparent
+        // input-surface Border that overlays the GL control (#2124).
+        if (_modelPreviewInputSurface != null)
+        {
+            _modelPreviewInputSurface.PointerPressed += OnModelPreviewPointerPressed;
+            _modelPreviewInputSurface.PointerMoved += OnModelPreviewPointerMoved;
+            _modelPreviewInputSurface.PointerReleased += OnModelPreviewPointerReleased;
+            _modelPreviewInputSurface.PointerWheelChanged += OnModelPreviewWheel;
+            _modelPreviewInputSurface.KeyDown += OnModelPreviewKeyDown;
+        }
+    }
+
+    // ----- 3D Preview input forwarding (#2124) -----
+
+    private enum PreviewDragMode { None, Rotate, Pan }
+    private PreviewDragMode _previewDragMode = PreviewDragMode.None;
+    private Avalonia.Point _previewLastPointer;
+
+    private void OnModelPreviewPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (_modelPreviewInputSurface == null || _modelPreviewGL == null) return;
+
+        var props = e.GetCurrentPoint(_modelPreviewInputSurface).Properties;
+        bool shift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
+
+        if (props.IsMiddleButtonPressed || (props.IsLeftButtonPressed && shift))
+            _previewDragMode = PreviewDragMode.Pan;
+        else if (props.IsLeftButtonPressed)
+            _previewDragMode = PreviewDragMode.Rotate;
+        else
+            return;
+
+        _previewLastPointer = e.GetPosition(_modelPreviewInputSurface);
+        _modelPreviewInputSurface.Focus();
+        e.Pointer.Capture(_modelPreviewInputSurface);
+        e.Handled = true;
+    }
+
+    private void OnModelPreviewPointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (_previewDragMode == PreviewDragMode.None ||
+            _modelPreviewInputSurface == null || _modelPreviewGL == null) return;
+
+        var pos = e.GetPosition(_modelPreviewInputSurface);
+        double dx = pos.X - _previewLastPointer.X;
+        double dy = pos.Y - _previewLastPointer.Y;
+        _previewLastPointer = pos;
+
+        if (_previewDragMode == PreviewDragMode.Rotate)
+            _modelPreviewGL.RotateByPixels(dx, dy);
+        else if (_previewDragMode == PreviewDragMode.Pan)
+            _modelPreviewGL.PanByPixels(dx, dy);
+    }
+
+    private void OnModelPreviewPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (_previewDragMode != PreviewDragMode.None)
+        {
+            _previewDragMode = PreviewDragMode.None;
+            e.Pointer.Capture(null);
+            e.Handled = true;
+        }
+    }
+
+    private void OnModelPreviewWheel(object? sender, PointerWheelEventArgs e)
+    {
+        if (_modelPreviewInputSurface == null || _modelPreviewGL == null) return;
+        var pos = e.GetPosition(_modelPreviewGL); // unproject uses GL viewport coords
+        _modelPreviewGL.ZoomAtCursorPixels(pos, e.Delta.Y);
+        e.Handled = true;
+    }
+
+    private void OnModelPreviewKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (_modelPreviewGL == null) return;
+        const float rotStep = 0.1f;
+
+        switch (e.Key)
+        {
+            case Key.Left:
+            case Key.A:
+                _modelPreviewGL.Rotate(-rotStep, 0);
+                break;
+            case Key.Right:
+            case Key.D:
+                _modelPreviewGL.Rotate(rotStep, 0);
+                break;
+            case Key.Up:
+            case Key.W:
+                _modelPreviewGL.Rotate(0, -rotStep);
+                break;
+            case Key.Down:
+            case Key.S:
+                _modelPreviewGL.Rotate(0, rotStep);
+                break;
+            case Key.Home:
+                _modelPreviewGL.ResetView();
+                break;
+            case Key.F8:
+                _modelPreviewGL.CycleDebugMode();
+                break;
+            default:
+                return;
+        }
+        e.Handled = true;
     }
 
     private void OnAppearanceSelectionChanged(object? sender, SelectionChangedEventArgs e)

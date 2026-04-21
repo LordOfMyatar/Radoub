@@ -345,10 +345,56 @@ public class ModelPreviewGLControl : OpenGlControlBase
 
     // ----- Pointer / keyboard input (#2124) -----
     //
-    // Avalonia delivers these via the standard routed events. We override
-    // them on the control so the host AppearancePanel doesn't need to
-    // wire anything. Focus is requested on press so keyboard shortcuts
-    // (arrow keys, WASD, Home) land on the control.
+    // OpenGlControlBase has no Background brush, so pointer events don't
+    // hit-test on its transparent pixels. The host panel overlays a
+    // transparent Border on top of this control and forwards input here
+    // via the public Handle* / Pan / ZoomAtCursor / RotateBy methods
+    // below. The OnPointerPressed etc. overrides remain as a fallback
+    // if the control is ever used without the overlay.
+
+    /// <summary>
+    /// Host panels call this to request a pan in screen-pixel units.
+    /// Converts to world units using the last-rendered viewport + camera distance.
+    /// </summary>
+    public void PanByPixels(double dxPixels, double dyPixels)
+    {
+        if (_lastViewportHeight <= 0) return;
+        float fovRadians = MathF.PI / 6f;
+        float halfFovTan = MathF.Tan(fovRadians * 0.5f);
+        float worldPerPixel = 2f * _lastCameraDistance * halfFovTan / _lastViewportHeight;
+
+        // See OnPointerMoved for axis convention; camera right = -X, up = +Z.
+        _viewController.Pan(new Vector3(-(float)dxPixels * worldPerPixel, 0, (float)dyPixels * worldPerPixel));
+        RequestNextFrameRendering();
+    }
+
+    /// <summary>
+    /// Host panels call this to zoom toward a world point under the cursor.
+    /// </summary>
+    public void ZoomAtCursorPixels(Point screenPos, double wheelDeltaY)
+    {
+        float factor = (float)Math.Pow(1.1, wheelDeltaY);
+        var pivot = UnprojectToTargetPlane(screenPos);
+        _viewController.ZoomAtPoint(factor, pivot);
+        RequestNextFrameRendering();
+    }
+
+    /// <summary>
+    /// Host panels call this to rotate by screen-pixel drag deltas.
+    /// </summary>
+    public void RotateByPixels(double dxPixels, double dyPixels)
+    {
+        _viewController.Rotate((float)(dxPixels * 0.01), (float)(dyPixels * 0.01));
+        RequestNextFrameRendering();
+    }
+
+    /// <summary>
+    /// Cycle debug visualisation mode (0..4).
+    /// </summary>
+    public void CycleDebugMode()
+    {
+        DebugMode = (_debugMode + 1) % 5;
+    }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {

@@ -308,6 +308,11 @@
                             Background="{DynamicResource ThemeSidebar}" Margin="10" CornerRadius="4">
                         <Grid>
                             <controls:ModelPreviewGLControl x:Name="ModelPreviewGL"/>
+                            <!-- Transparent input surface so pointer/wheel events always hit-test
+                                 (OpenGlControlBase has no Background). #2124 -->
+                            <Border x:Name="ModelPreviewInputSurface"
+                                    Background="Transparent"
+                                    Focusable="True"/>
                             <Border x:Name="PreviewStateOverlay"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Top"
