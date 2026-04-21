@@ -502,10 +502,16 @@ public class ModelPreviewGLControl : OpenGlControlBase
         }
 
         // Lighting - match NWN toolset brightness with higher ambient fill
+        // #2026: NWN textures already carry painted-in shading. A strong
+        // directional light fights that painted detail and exposes
+        // low-poly facets (the Aurora toolset renders with minimal
+        // directional contribution). Keep ambient high so the texture
+        // dominates, and add a gentle directional term for subtle
+        // surface cues.
         var lightDir = Vector3.Normalize(new Vector3(0.3f, -0.5f, 0.8f));
         _shaderManager!.SetUniformVec3("lightDir", lightDir);
-        _shaderManager!.SetUniformVec3("lightColor", new Vector3(0.7f, 0.7f, 0.7f));
-        _shaderManager!.SetUniformVec3("ambientColor", new Vector3(0.45f, 0.45f, 0.45f));
+        _shaderManager!.SetUniformVec3("lightColor", new Vector3(0.15f, 0.15f, 0.15f));
+        _shaderManager!.SetUniformVec3("ambientColor", new Vector3(0.95f, 0.95f, 0.95f));
         _shaderManager!.SetUniformInt("debugMode", _debugMode);
 
         // Bind VAO and draw
