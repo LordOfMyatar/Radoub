@@ -104,6 +104,25 @@ public class MdlNode
 
     /// <summary>Inherit color from parent.</summary>
     public bool InheritColor { get; set; }
+
+    // ----- Animation keyframe tracks (#2124) -----
+    // Each array is parallel: Times[i] corresponds to Values[i].
+    // Empty arrays = static node (use Position/Orientation/Scale above).
+
+    /// <summary>Position keyframe times (seconds).</summary>
+    public float[] PositionTimes { get; set; } = Array.Empty<float>();
+    /// <summary>Position keyframe values, parallel to PositionTimes.</summary>
+    public Vector3[] PositionValues { get; set; } = Array.Empty<Vector3>();
+
+    /// <summary>Orientation keyframe times (seconds).</summary>
+    public float[] OrientationTimes { get; set; } = Array.Empty<float>();
+    /// <summary>Orientation keyframe values, parallel to OrientationTimes.</summary>
+    public Quaternion[] OrientationValues { get; set; } = Array.Empty<Quaternion>();
+
+    /// <summary>Scale keyframe times (seconds).</summary>
+    public float[] ScaleTimes { get; set; } = Array.Empty<float>();
+    /// <summary>Scale keyframe values, parallel to ScaleTimes.</summary>
+    public float[] ScaleValues { get; set; } = Array.Empty<float>();
 }
 
 /// <summary>

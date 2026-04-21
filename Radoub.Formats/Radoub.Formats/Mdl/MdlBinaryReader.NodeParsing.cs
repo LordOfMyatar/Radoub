@@ -267,39 +267,105 @@ public partial class MdlBinaryReader
             var columns = reader.ReadByte();
             reader.ReadByte(); // pad
 
-            // Read controller data based on type
-            // Type 8 = Position, Type 20 = Orientation
+            if (rows <= 0) continue;
+
+            // Times array immediately precedes values (NWN convention): one
+            // float per row at dataOffset + keyDataOffset * 4. Values follow.
+            var timePos = dataOffset + keyDataOffset * 4;
             var valuePos = dataOffset + valueDataOffset * 4;
 
-            if (type == 8 && rows > 0) // Position
+            // Read time keys (#2124) — parse all rows for animation playback.
+            // rows == 1 + no time stream = static bind pose (legacy behavior).
+            float[]? times = null;
+            if (rows > 1 && timePos + rows * 4 <= _modelData.Length)
             {
-                if (valuePos + 12 > _modelData.Length) continue;
-                stream.Position = valuePos;
-                node.Position = ReadVector3(reader);
+                times = new float[rows];
+                stream.Position = timePos;
+                for (int k = 0; k < rows; k++)
+                    times[k] = reader.ReadSingle();
             }
-            else if (type == 20 && rows > 0) // Orientation
+
+            if (type == 8) // Position (Vector3)
             {
-                if (valuePos + 16 > _modelData.Length) continue;
+                if (valuePos + rows * 12 > _modelData.Length) continue;
                 stream.Position = valuePos;
-                var x = reader.ReadSingle();
-                var y = reader.ReadSingle();
-                var z = reader.ReadSingle();
-                var w = reader.ReadSingle();
-                node.Orientation = new Quaternion(x, y, z, w);
+                var first = ReadVector3(reader);
+
+                if (rows == 1 || times == null)
+                {
+                    node.Position = first;
+                }
+                else
+                {
+                    var values = new Vector3[rows];
+                    values[0] = first;
+                    for (int k = 1; k < rows; k++)
+                        values[k] = ReadVector3(reader);
+
+                    node.PositionTimes = times;
+                    node.PositionValues = values;
+                    node.Position = first; // bind pose fallback
+                }
             }
-            else if (type == 36 && rows > 0) // Scale
+            else if (type == 20) // Orientation (Quaternion, 16 bytes)
             {
-                if (valuePos + 4 > _modelData.Length) continue;
+                if (valuePos + rows * 16 > _modelData.Length) continue;
                 stream.Position = valuePos;
-                node.Scale = reader.ReadSingle();
+                Quaternion ReadQuat()
+                {
+                    var x = reader.ReadSingle();
+                    var y = reader.ReadSingle();
+                    var z = reader.ReadSingle();
+                    var w = reader.ReadSingle();
+                    return new Quaternion(x, y, z, w);
+                }
+
+                var first = ReadQuat();
+                if (rows == 1 || times == null)
+                {
+                    node.Orientation = first;
+                }
+                else
+                {
+                    var values = new Quaternion[rows];
+                    values[0] = first;
+                    for (int k = 1; k < rows; k++)
+                        values[k] = ReadQuat();
+
+                    node.OrientationTimes = times;
+                    node.OrientationValues = values;
+                    node.Orientation = first;
+                }
             }
-            else if (type == 76 && rows > 0 && node is MdlLightNode light) // Light Color
+            else if (type == 36) // Scale (float)
+            {
+                if (valuePos + rows * 4 > _modelData.Length) continue;
+                stream.Position = valuePos;
+                var first = reader.ReadSingle();
+
+                if (rows == 1 || times == null)
+                {
+                    node.Scale = first;
+                }
+                else
+                {
+                    var values = new float[rows];
+                    values[0] = first;
+                    for (int k = 1; k < rows; k++)
+                        values[k] = reader.ReadSingle();
+
+                    node.ScaleTimes = times;
+                    node.ScaleValues = values;
+                    node.Scale = first;
+                }
+            }
+            else if (type == 76 && node is MdlLightNode light) // Light Color
             {
                 if (valuePos + 12 > _modelData.Length) continue;
                 stream.Position = valuePos;
                 light.Color = ReadVector3(reader);
             }
-            else if (type == 88 && rows > 0 && node is MdlLightNode light2) // Light Radius
+            else if (type == 88 && node is MdlLightNode light2) // Light Radius
             {
                 if (valuePos + 4 > _modelData.Length) continue;
                 stream.Position = valuePos;

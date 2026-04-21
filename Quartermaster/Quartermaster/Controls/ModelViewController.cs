@@ -152,27 +152,26 @@ public class ModelViewController
     }
 
     /// <summary>
-    /// Reset camera to defaults. Actual center and radius are computed from
-    /// rendered vertices in UpdateMeshBuffers(). The model's stored
-    /// BoundingMin/Max encompasses the full skeleton hierarchy and is
-    /// much larger than the visible mesh.
+    /// Reset camera framing defaults. Called when a model loads/unloads so
+    /// vertex-computed bounds can be rebuilt. Zoom, rotation, and user pan
+    /// are preserved — switching equipment or heads should not snap the
+    /// camera back to the default view (#2124).
     /// </summary>
     public void CenterCamera()
     {
-        _cameraTarget = Vector3.Zero;
         _modelRadius = 1.0f;
         _hasVertexBounds = false;
     }
 
     /// <summary>
     /// Update the camera bounds from computed vertex data.
-    /// Called by the GL control after mesh buffer assembly.
+    /// Called by the GL control after mesh buffer assembly. Preserves the
+    /// user's pan — only radius/bounds-flag are refreshed.
     /// </summary>
     public void UpdateBounds(float modelRadius, bool hasVertexBounds)
     {
         _modelRadius = modelRadius;
         _hasVertexBounds = hasVertexBounds;
-        _cameraTarget = Vector3.Zero;
     }
 
     /// <summary>

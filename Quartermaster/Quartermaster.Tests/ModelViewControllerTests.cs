@@ -143,6 +143,37 @@ public class ModelViewControllerTests
     // ----- #2124: Pan + cursor-centric zoom -----
 
     [Fact]
+    public void CenterCamera_PreservesUserPan()
+    {
+        // Switching heads / equipment triggers CenterCamera. The user's
+        // pan (and zoom) must survive so they keep looking at the spot
+        // they zoomed into (#2124).
+        var vc = new ModelViewController();
+        vc.UpdateBounds(2f, true);
+        vc.Pan(new Vector3(3, 0, 2));
+        vc.Zoom = 4f;
+
+        vc.CenterCamera();
+
+        Assert.Equal(3f, vc.CameraTarget.X, 4);
+        Assert.Equal(2f, vc.CameraTarget.Z, 4);
+        Assert.Equal(4f, vc.Zoom, 4);
+    }
+
+    [Fact]
+    public void UpdateBounds_PreservesUserPan()
+    {
+        var vc = new ModelViewController();
+        vc.Pan(new Vector3(1, 0, 1));
+
+        vc.UpdateBounds(3.5f, true);
+
+        Assert.Equal(1f, vc.CameraTarget.X, 4);
+        Assert.Equal(1f, vc.CameraTarget.Z, 4);
+        Assert.Equal(3.5f, vc.ModelRadius);
+    }
+
+    [Fact]
     public void Pan_TranslatesCameraTargetByDelta()
     {
         var vc = new ModelViewController();
