@@ -53,6 +53,40 @@ public class ModelViewController
     }
 
     /// <summary>
+    /// Translate the camera target in world space. Used by panning so
+    /// the model appears to slide under the camera.
+    /// </summary>
+    public void Pan(Vector3 worldDelta)
+    {
+        _cameraTarget += worldDelta;
+    }
+
+    /// <summary>
+    /// Multiplicatively change zoom while keeping a world-space pivot
+    /// point anchored. When the user zooms with the scroll wheel at a
+    /// cursor position, we want that spot to stay roughly under the
+    /// cursor rather than drifting off screen (#2124).
+    /// </summary>
+    public void ZoomAtPoint(float factor, Vector3 worldPivot)
+    {
+        float before = _zoom;
+        Zoom = _zoom * factor;
+        float applied = _zoom / before;
+
+        // If zoom was clamped (no effective change), suppress the pivot
+        // pull so repeated scrolls at the limit don't drift the target.
+        if (MathF.Abs(applied - 1f) < 1e-5f)
+            return;
+
+        // The camera views the scene at distance ∝ 1/zoom from the
+        // target. Scaling zoom by `applied` shrinks that distance by
+        // 1/applied. To keep the pivot stable on screen, move the
+        // target a matching fraction of (pivot - target).
+        float t = 1f - 1f / applied;
+        _cameraTarget += (worldPivot - _cameraTarget) * t;
+    }
+
+    /// <summary>
     /// Reset the view to default (facing front).
     /// </summary>
     public void ResetView()
@@ -60,12 +94,13 @@ public class ModelViewController
         _rotationY = MathF.PI;
         _rotationX = 0;
         _zoom = 1.0f;
+        // Always clear user-applied pan on reset so the model recenters.
+        _cameraTarget = Vector3.Zero;
         // Use vertex-computed bounds if available, otherwise safe defaults.
         // Don't call CenterCamera() — model stored bounds are unreliable
         // (they include the full skeleton hierarchy, not just rendered mesh).
         if (!_hasVertexBounds)
         {
-            _cameraTarget = Vector3.Zero;
             _modelRadius = 1.0f;
         }
     }
