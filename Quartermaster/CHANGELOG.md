@@ -5,6 +5,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.83-alpha] - 2026-04-20
+**Branch**: `quartermaster/issue-2124` | **PR**: #TBD
+
+### Feature: Comprehensive 3D preview controls (#2124)
+
+- Free orbit (drag rotate on Y and X axes without X-axis clamping)
+- Pan via middle-click or Shift+drag
+- Zoom via scroll wheel
+- View presets (front/side/top/back) and reset-to-front
+- Animation/stance playback from MDL anim section (stretch)
+- Keyboard camera shortcuts, F8 debug mode surfacing, FOV slider (quality-of-life)
+
+---
+
 ## [0.2.82-alpha] - 2026-04-20
 **Branch**: `quartermaster/issue-2026` | **PR**: #2114
 
