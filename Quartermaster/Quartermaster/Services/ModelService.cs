@@ -232,6 +232,18 @@ public class ModelService
         // Store skeleton for bone position lookup
         _currentSkeleton = skeletonModel;
 
+        // Inherit the skeleton's animation list (and any already merged from
+        // its supermodel chain) so part-based creatures — humans, elves,
+        // halflings, dwarves, etc. — can play idle/walk/attack in the
+        // preview (#2124). Without this, composite models would have an
+        // empty Animations list because they skip the LoadModel code path.
+        if (skeletonModel?.Animations != null)
+        {
+            foreach (var anim in skeletonModel.Animations)
+                compositeModel.Animations.Add(anim);
+            compositeModel.SuperModel = skeletonModel.SuperModel;
+        }
+
         // Helper to get body part number.
         // Creature value takes precedence — it reflects the user's explicit choice.
         // Armor overrides only apply when the creature has the default part (non-zero)
