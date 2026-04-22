@@ -244,6 +244,14 @@ public class ModelService
             compositeModel.SuperModel = skeletonModel.SuperModel;
         }
 
+        // Use the skeleton's bone hierarchy as the composite root so animation
+        // pose lookup finds matching bone names through the full parent chain
+        // (#2124). Each body part mesh attaches under its target bone below.
+        if (skeletonModel?.GeometryRoot != null)
+        {
+            compositeModel.GeometryRoot = skeletonModel.GeometryRoot;
+        }
+
         // Helper to get body part number.
         // Creature value takes precedence — it reflects the user's explicit choice.
         // Armor overrides only apply when the creature has the default part (non-zero)
@@ -363,6 +371,7 @@ public class ModelService
             // Body part MDL files have geometry at local origin
             // We need to position and orient them at the corresponding bone in the skeleton
             var (bonePosition, _) = GetBoneTransformForPart(partType);
+            var boneName = GetBoneNameForPart(partType);
 
             var meshCount = 0;
             // Add all mesh nodes from this part to the composite model
@@ -408,10 +417,29 @@ public class ModelService
                     {
                         compositeModel.GeometryRoot = new Radoub.Formats.Mdl.MdlNode { Name = "composite_root" };
                     }
-                    // Reparent to composite root so GetWorldTransform() uses bone position,
-                    // not the original part model's hierarchy
-                    node.Parent = compositeModel.GeometryRoot;
-                    compositeModel.GeometryRoot.Children.Add(node);
+
+                    // Parent the mesh under the target bone in the skeleton
+                    // so GetWorldTransform's parent-chain walk picks up
+                    // animated transforms from the supermodel (#2124). The
+                    // bone already holds the correct bind position; zero out
+                    // the mesh's own offset so it doesn't compound.
+                    Radoub.Formats.Mdl.MdlNode? bone = null;
+                    if (_currentSkeleton?.GeometryRoot != null)
+                        bone = FindBoneByName(_currentSkeleton.GeometryRoot, boneName);
+
+                    if (bone != null)
+                    {
+                        trimesh.Position = System.Numerics.Vector3.Zero;
+                        node.Parent = bone;
+                        bone.Children.Add(node);
+                    }
+                    else
+                    {
+                        // Fallback — skeleton bone missing, keep old flat behavior.
+                        trimesh.Position = bonePosition;
+                        node.Parent = compositeModel.GeometryRoot;
+                        compositeModel.GeometryRoot.Children.Add(node);
+                    }
                     meshCount++;
                     // Track which body part type this mesh belongs to (#1557)
                     _meshPartTypes[trimesh.Name] = partType;
@@ -436,6 +464,31 @@ public class ModelService
     /// Returns both position and orientation so body parts are correctly placed and rotated.
     /// Body part names map to skeleton bone names with _g suffix.
     /// </summary>
+    private static string GetBoneNameForPart(string partType) => partType switch
+    {
+        "head" => "head_g",
+        "neck" => "neck_g",
+        "chest" => "torso_g",
+        "robe" => "torso_g",
+        "pelvis" => "pelvis_g",
+        "belt" => "belt_g",
+        "shol" => "lshoulder_g",
+        "shor" => "rshoulder_g",
+        "bicepl" => "lbicep_g",
+        "bicepr" => "rbicep_g",
+        "forel" => "lforearm_g",
+        "forer" => "rforearm_g",
+        "handl" => "lhand_g",
+        "handr" => "rhand_g",
+        "legl" => "lthigh_g",
+        "legr" => "rthigh_g",
+        "shinl" => "lshin_g",
+        "shinr" => "rshin_g",
+        "footl" => "lfoot_g",
+        "footr" => "rfoot_g",
+        _ => partType + "_g"
+    };
+
     private (System.Numerics.Vector3 Position, System.Numerics.Quaternion Orientation) GetBoneTransformForPart(string partType)
     {
         var identity = (System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity);
@@ -443,33 +496,7 @@ public class ModelService
         if (_currentSkeleton?.GeometryRoot == null)
             return identity;
 
-        // Map body part type to skeleton bone name
-        // Body parts use NWN naming: bicepl, bicepr, forel, forer, etc.
-        // Skeleton uses names like "head_g", "neck_g", "lbicep_g", etc.
-        var boneName = partType switch
-        {
-            "head" => "head_g",
-            "neck" => "neck_g",
-            "chest" => "torso_g",
-            "robe" => "torso_g",
-            "pelvis" => "pelvis_g",
-            "belt" => "belt_g",
-            "shol" => "lshoulder_g",
-            "shor" => "rshoulder_g",
-            "bicepl" => "lbicep_g",
-            "bicepr" => "rbicep_g",
-            "forel" => "lforearm_g",
-            "forer" => "rforearm_g",
-            "handl" => "lhand_g",
-            "handr" => "rhand_g",
-            "legl" => "lthigh_g",
-            "legr" => "rthigh_g",
-            "shinl" => "lshin_g",
-            "shinr" => "rshin_g",
-            "footl" => "lfoot_g",
-            "footr" => "rfoot_g",
-            _ => partType + "_g"
-        };
+        var boneName = GetBoneNameForPart(partType);
 
         // Find the bone in the skeleton and calculate its world transform
         var bone = FindBoneByName(_currentSkeleton.GeometryRoot, boneName);
