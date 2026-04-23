@@ -91,7 +91,20 @@ cd d:\LOM\workspace\Radoub.wiki
 grep -l "Page freshness:" *.md | xargs grep "Page freshness:"
 ```
 
-**30-day rule**: Pages older than 30 days with related code changes are STALE.
+**Staleness thresholds** (pages older than this with related code changes are STALE):
+
+| Tool | Threshold |
+|------|-----------|
+| Parley | 60 days |
+| Manifest | 60 days |
+| Quartermaster | 30 days |
+| Fence | 30 days |
+| Relique | 30 days |
+| Trebuchet | 30 days |
+| Radoub.Formats | 30 days |
+| Radoub.UI | 30 days |
+
+Parley and Manifest use the longer window because their codebases are winding down and most changes affecting them are Radoub-wide refactors rather than tool-specific feature work.
 
 ### Step 4: Developer Docs Updates
 
