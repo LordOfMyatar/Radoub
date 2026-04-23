@@ -219,6 +219,56 @@ public class GameDataServiceTests : IDisposable
         Assert.NotNull(second);
     }
 
+    [Fact]
+    public void ClearCache_AlsoClearsSsfAndPaletteCaches()
+    {
+        // #2034: ClearCache() only cleared _twoDACache, leaving _ssfCache and
+        // _paletteCache populated with stale data after module switches.
+        // It must now clear all three caches to match ConfigureModuleHaks behavior.
+        var config = new GameResourceConfig { OverridePath = _overrideDir };
+        using var service = new GameDataService(config);
+
+        // Seed all three caches via reflection (simulates populated caches from prior module).
+        // Null values are acceptable — each dictionary's value type is nullable or a collection.
+        SeedPrivateDictionaryCache(service, "_twoDACache", "some2da", value: null);
+        SeedPrivateDictionaryCache(service, "_ssfCache", "someresref", value: null);
+        SeedPrivateDictionaryCache(service, "_paletteCache", (ushort)2027, new List<PaletteCategory>());
+
+        Assert.Equal(1, GetPrivateDictionaryCount(service, "_twoDACache"));
+        Assert.Equal(1, GetPrivateDictionaryCount(service, "_ssfCache"));
+        Assert.Equal(1, GetPrivateDictionaryCount(service, "_paletteCache"));
+
+        service.ClearCache();
+
+        Assert.Equal(0, GetPrivateDictionaryCount(service, "_twoDACache"));
+        Assert.Equal(0, GetPrivateDictionaryCount(service, "_ssfCache"));
+        Assert.Equal(0, GetPrivateDictionaryCount(service, "_paletteCache"));
+    }
+
+    private static void SeedPrivateDictionaryCache(object target, string fieldName, object key, object? value)
+    {
+        var field = target.GetType().GetField(fieldName,
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(field);
+        var dict = field!.GetValue(target);
+        Assert.NotNull(dict);
+        var indexer = dict!.GetType().GetProperty("Item");
+        Assert.NotNull(indexer);
+        indexer!.SetValue(dict, value, new[] { key });
+    }
+
+    private static int GetPrivateDictionaryCount(object target, string fieldName)
+    {
+        var field = target.GetType().GetField(fieldName,
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(field);
+        var dict = field!.GetValue(target);
+        Assert.NotNull(dict);
+        var countProp = dict!.GetType().GetProperty("Count");
+        Assert.NotNull(countProp);
+        return (int)countProp!.GetValue(dict)!;
+    }
+
     #endregion
 
     #region TLK Tests

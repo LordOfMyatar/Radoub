@@ -93,9 +93,12 @@ public class GameDataService : IGameDataService
 
     public void ClearCache()
     {
+        // Must clear all three caches to match ConfigureModuleHaks (#2034).
         lock (_lock)
         {
             _twoDACache.Clear();
+            _ssfCache.Clear();
+            _paletteCache.Clear();
         }
     }
 
