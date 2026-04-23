@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.84-alpha] - 2026-04-22
-**Branch**: `radoub/issue-2034` | **PR**: #TBD
+**Branch**: `radoub/issue-2034` | **PR**: #2129
 
 ### Fix: Memory leaks — top 3 (#2034)
 
