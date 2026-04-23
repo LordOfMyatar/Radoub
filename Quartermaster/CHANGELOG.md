@@ -5,17 +5,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
-## [0.2.83-alpha] - 2026-04-20
+## [0.2.83-alpha] - 2026-04-22
 **Branch**: `quartermaster/issue-2124` | **PR**: #2125
 
 ### Feature: Comprehensive 3D preview controls (#2124)
 
-- Free orbit (drag rotate on Y and X axes without X-axis clamping)
-- Pan via middle-click or Shift+drag
-- Zoom via scroll wheel
-- View presets (front/side/top/back) and reset-to-front
-- Animation/stance playback from MDL anim section (stretch)
-- Keyboard camera shortcuts, F8 debug mode surfacing, FOV slider (quality-of-life)
+- Free orbit — left-drag rotates on both axes with no X-axis clamp
+- Pan via middle-click or Shift+left-drag; zooming now pivots on the cursor instead of world origin
+- Scroll wheel zoom and keyboard camera shortcuts (arrows/WASD rotate, Home reset, F8 cycles debug mode)
+- View preset buttons: F/B/L/R/T (front/back/left/right/top)
+- Animation playback: dropdown of idle/walk/run/attack/cast etc., play-pause-scrub, loop, speed slider (0.1×–2×)
+- Supermodel animation inheritance (`a_ba`, `a_fa`, etc.) so most creatures have anims without authoring their own
+- Humanoid (part-based) creatures now use their skeleton's bone hierarchy so supermodel animations drive all body parts
 
 ---
 
