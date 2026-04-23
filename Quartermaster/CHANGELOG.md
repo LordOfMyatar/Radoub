@@ -5,6 +5,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.84-alpha] - 2026-04-22
+**Branch**: `radoub/issue-2034` | **PR**: #2129
+
+### Fix: Memory leaks — top 3 (#2034)
+
+- Bounded `TextureService` palette and rendered-texture caches with LRU eviction (previously unbounded, grew to 500 MB+ in long sessions).
+- `AppearancePanel` now unsubscribes its 27+ event handlers on `Unloaded`, letting prior `CurrentCreature` graphs be garbage-collected between creature switches.
+- `GameDataService.ClearCache()` now clears the SSF and palette caches in addition to the 2DA cache, matching `ConfigureModuleHaks` behavior (affects all tools via Radoub.Formats).
+
+---
+
 ## [0.2.83-alpha] - 2026-04-22
 **Branch**: `quartermaster/issue-2124` | **PR**: #2125
 

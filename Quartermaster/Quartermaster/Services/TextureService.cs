@@ -17,9 +17,16 @@ namespace Quartermaster.Services;
 /// </summary>
 public class TextureService
 {
+    // Capacities chosen to bound worst-case memory (#2034):
+    //   palette  ~250 KB each × 128 = ~32 MB
+    //   rendered ~2-4 MB each ×  64 = ~128-256 MB
+    // Typical sessions stay well below these caps; LRU eviction protects long runs.
+    private const int PaletteCacheCapacity = 128;
+    private const int RenderedTextureCacheCapacity = 64;
+
     private readonly IGameDataService _gameDataService;
-    private readonly Dictionary<string, PaletteData?> _paletteCache = new();
-    private readonly Dictionary<string, byte[]?> _renderedTextureCache = new();
+    private readonly LruCache<string, PaletteData?> _paletteCache = new(PaletteCacheCapacity);
+    private readonly LruCache<string, byte[]?> _renderedTextureCache = new(RenderedTextureCacheCapacity);
 
     public TextureService(IGameDataService gameDataService)
     {
@@ -555,7 +562,7 @@ public class TextureService
         var tgaData = _gameDataService.FindResource(paletteResRef, ResourceTypes.Tga);
         if (tgaData == null || tgaData.Length == 0)
         {
-            _paletteCache[paletteResRef] = null;
+            _paletteCache.Set(paletteResRef, null);
             return null;
         }
 
@@ -563,13 +570,13 @@ public class TextureService
         {
             var tgaImage = TgaReader.Read(tgaData);
             var palette = new PaletteData(tgaImage.Width, tgaImage.Height, tgaImage.Pixels);
-            _paletteCache[paletteResRef] = palette;
+            _paletteCache.Set(paletteResRef, palette);
             return palette;
         }
         catch (Exception ex)
         {
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Failed to load palette '{paletteResRef}': {ex.Message}");
-            _paletteCache[paletteResRef] = null;
+            _paletteCache.Set(paletteResRef, null);
             return null;
         }
     }

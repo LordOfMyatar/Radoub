@@ -109,6 +109,15 @@ public partial class AppearancePanel : UserControl
         AvaloniaXamlLoader.Load(this);
         FindControls();
         WireEvents();
+        // Release ~40 event-handler subscriptions when the panel leaves the visual
+        // tree so the prior CurrentCreature graph can be GC'd (#2034).
+        Unloaded += OnPanelUnloaded;
+    }
+
+    private void OnPanelUnloaded(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        Unloaded -= OnPanelUnloaded;
+        UnwireEvents();
     }
 
     private void FindControls()

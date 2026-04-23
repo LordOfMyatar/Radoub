@@ -94,15 +94,15 @@ public partial class AppearancePanel
         if (_zoomOutButton != null)
             _zoomOutButton.Click += OnZoomOutClicked;
         if (_viewFrontButton != null)
-            _viewFrontButton.Click += (_, _) => _modelPreviewGL?.SetViewPreset(ViewPreset.Front);
+            _viewFrontButton.Click += OnViewFrontClicked;
         if (_viewBackButton != null)
-            _viewBackButton.Click += (_, _) => _modelPreviewGL?.SetViewPreset(ViewPreset.Back);
+            _viewBackButton.Click += OnViewBackClicked;
         if (_viewSideButton != null)
-            _viewSideButton.Click += (_, _) => _modelPreviewGL?.SetViewPreset(ViewPreset.Side);
+            _viewSideButton.Click += OnViewSideClicked;
         if (_viewSideRightButton != null)
-            _viewSideRightButton.Click += (_, _) => _modelPreviewGL?.SetViewPreset(ViewPreset.SideRight);
+            _viewSideRightButton.Click += OnViewSideRightClicked;
         if (_viewTopButton != null)
-            _viewTopButton.Click += (_, _) => _modelPreviewGL?.SetViewPreset(ViewPreset.Top);
+            _viewTopButton.Click += OnViewTopClicked;
 
         // Animation dropdown / play / scrub (#2124)
         if (_animationComboBox != null)
@@ -343,6 +343,131 @@ public partial class AppearancePanel
         if (_rShinComboBox != null) _rShinComboBox.SelectionChanged += OnBodyPartSelectionChanged;
         if (_rFootComboBox != null) _rFootComboBox.SelectionChanged += OnBodyPartSelectionChanged;
     }
+
+    // Unsubscribe mirror of WireEvents(). Called on Unloaded to release handler
+    // references so the panel + its _currentCreature graph can be GC'd (#2034).
+    // Keep in exact symmetry with WireEvents — every += has a matching -=.
+    private void UnwireEvents()
+    {
+        if (_appearanceListBox != null)
+        {
+            _appearanceListBox.SelectionChanged -= OnAppearanceSelectionChanged;
+            _appearanceListBox.ContextMenu = null;
+        }
+
+        if (_appearanceSearchBox != null)
+            _appearanceSearchBox.TextChanged -= OnAppearanceSearchChanged;
+
+        if (_showBifCheckBox != null)
+            _showBifCheckBox.IsCheckedChanged -= OnSourceFilterChanged;
+        if (_showHakCheckBox != null)
+            _showHakCheckBox.IsCheckedChanged -= OnSourceFilterChanged;
+        if (_showOverrideCheckBox != null)
+            _showOverrideCheckBox.IsCheckedChanged -= OnSourceFilterChanged;
+
+        if (_excludePatternBox != null)
+            _excludePatternBox.LostFocus -= OnExcludePatternLostFocus;
+
+        if (_genderComboBox != null)
+            _genderComboBox.SelectionChanged -= OnGenderSelectionChanged;
+
+        if (_phenotypeComboBox != null)
+            _phenotypeComboBox.SelectionChanged -= OnPhenotypeSelectionChanged;
+
+        UnwireBodyPartComboEvents();
+
+        if (_skinColorSwatch != null)
+            _skinColorSwatch.PointerPressed -= OnSkinColorSwatchClicked;
+        if (_hairColorSwatch != null)
+            _hairColorSwatch.PointerPressed -= OnHairColorSwatchClicked;
+        if (_tattoo1ColorSwatch != null)
+            _tattoo1ColorSwatch.PointerPressed -= OnTattoo1ColorSwatchClicked;
+        if (_tattoo2ColorSwatch != null)
+            _tattoo2ColorSwatch.PointerPressed -= OnTattoo2ColorSwatchClicked;
+
+        if (_modelPreviewGL != null)
+        {
+            _modelPreviewGL.PreviewStateChanged -= OnPreviewStateChanged;
+            _modelPreviewGL.MeshInfoChanged -= OnMeshInfoChanged;
+        }
+
+        if (_rotateLeftButton != null)
+            _rotateLeftButton.Click -= OnRotateLeftClicked;
+        if (_rotateRightButton != null)
+            _rotateRightButton.Click -= OnRotateRightClicked;
+        if (_resetViewButton != null)
+            _resetViewButton.Click -= OnResetViewClicked;
+        if (_zoomInButton != null)
+            _zoomInButton.Click -= OnZoomInClicked;
+        if (_zoomOutButton != null)
+            _zoomOutButton.Click -= OnZoomOutClicked;
+        if (_viewFrontButton != null)
+            _viewFrontButton.Click -= OnViewFrontClicked;
+        if (_viewBackButton != null)
+            _viewBackButton.Click -= OnViewBackClicked;
+        if (_viewSideButton != null)
+            _viewSideButton.Click -= OnViewSideClicked;
+        if (_viewSideRightButton != null)
+            _viewSideRightButton.Click -= OnViewSideRightClicked;
+        if (_viewTopButton != null)
+            _viewTopButton.Click -= OnViewTopClicked;
+
+        if (_animationComboBox != null)
+            _animationComboBox.SelectionChanged -= OnAnimationSelectionChanged;
+        if (_animPlayButton != null)
+            _animPlayButton.Click -= OnAnimPlayClicked;
+        if (_animTimeSlider != null)
+            _animTimeSlider.PropertyChanged -= OnAnimSliderChanged;
+        if (_animSpeedSlider != null)
+            _animSpeedSlider.PropertyChanged -= OnAnimSpeedChanged;
+
+        if (_modelPreviewInputSurface != null)
+        {
+            _modelPreviewInputSurface.PointerPressed -= OnModelPreviewPointerPressed;
+            _modelPreviewInputSurface.PointerMoved -= OnModelPreviewPointerMoved;
+            _modelPreviewInputSurface.PointerReleased -= OnModelPreviewPointerReleased;
+            _modelPreviewInputSurface.PointerWheelChanged -= OnModelPreviewWheel;
+            _modelPreviewInputSurface.KeyDown -= OnModelPreviewKeyDown;
+        }
+    }
+
+    private void UnwireBodyPartComboEvents()
+    {
+        if (_headComboBox != null) _headComboBox.SelectionChanged -= OnHeadSelectionChanged;
+        if (_neckComboBox != null) _neckComboBox.SelectionChanged -= OnBodyPartSelectionChanged;
+        if (_torsoComboBox != null) _torsoComboBox.SelectionChanged -= OnBodyPartSelectionChanged;
+        if (_pelvisComboBox != null) _pelvisComboBox.SelectionChanged -= OnBodyPartSelectionChanged;
+        if (_beltComboBox != null) _beltComboBox.SelectionChanged -= OnBodyPartSelectionChanged;
+        if (_tailComboBox != null) _tailComboBox.SelectionChanged -= OnTailSelectionChanged;
+        if (_wingsComboBox != null) _wingsComboBox.SelectionChanged -= OnWingsSelectionChanged;
+
+        if (_lShoulComboBox != null) _lShoulComboBox.SelectionChanged -= OnBodyPartSelectionChanged;
+        if (_lBicepComboBox != null) _lBicepComboBox.SelectionChanged -= OnBodyPartSelectionChanged;
+        if (_lFArmComboBox != null) _lFArmComboBox.SelectionChanged -= OnBodyPartSelectionChanged;
+        if (_lHandComboBox != null) _lHandComboBox.SelectionChanged -= OnBodyPartSelectionChanged;
+        if (_lThighComboBox != null) _lThighComboBox.SelectionChanged -= OnBodyPartSelectionChanged;
+        if (_lShinComboBox != null) _lShinComboBox.SelectionChanged -= OnBodyPartSelectionChanged;
+        if (_lFootComboBox != null) _lFootComboBox.SelectionChanged -= OnBodyPartSelectionChanged;
+
+        if (_rShoulComboBox != null) _rShoulComboBox.SelectionChanged -= OnBodyPartSelectionChanged;
+        if (_rBicepComboBox != null) _rBicepComboBox.SelectionChanged -= OnBodyPartSelectionChanged;
+        if (_rFArmComboBox != null) _rFArmComboBox.SelectionChanged -= OnBodyPartSelectionChanged;
+        if (_rHandComboBox != null) _rHandComboBox.SelectionChanged -= OnBodyPartSelectionChanged;
+        if (_rThighComboBox != null) _rThighComboBox.SelectionChanged -= OnBodyPartSelectionChanged;
+        if (_rShinComboBox != null) _rShinComboBox.SelectionChanged -= OnBodyPartSelectionChanged;
+        if (_rFootComboBox != null) _rFootComboBox.SelectionChanged -= OnBodyPartSelectionChanged;
+    }
+
+    private void OnViewFrontClicked(object? sender, RoutedEventArgs e)
+        => _modelPreviewGL?.SetViewPreset(ViewPreset.Front);
+    private void OnViewBackClicked(object? sender, RoutedEventArgs e)
+        => _modelPreviewGL?.SetViewPreset(ViewPreset.Back);
+    private void OnViewSideClicked(object? sender, RoutedEventArgs e)
+        => _modelPreviewGL?.SetViewPreset(ViewPreset.Side);
+    private void OnViewSideRightClicked(object? sender, RoutedEventArgs e)
+        => _modelPreviewGL?.SetViewPreset(ViewPreset.SideRight);
+    private void OnViewTopClicked(object? sender, RoutedEventArgs e)
+        => _modelPreviewGL?.SetViewPreset(ViewPreset.Top);
 
     private void OnHeadSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
