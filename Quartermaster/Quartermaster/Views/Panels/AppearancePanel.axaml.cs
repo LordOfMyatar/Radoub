@@ -68,6 +68,7 @@ public partial class AppearancePanel : UserControl
     // 3D Preview
     private Border? _modelPreviewContainer;
     private ModelPreviewGLControl? _modelPreviewGL;
+    private Border? _modelPreviewInputSurface;
     private Border? _previewStateOverlay;
     private TextBlock? _previewStateText;
     private TextBlock? _modelInfoStatusText;
@@ -76,6 +77,16 @@ public partial class AppearancePanel : UserControl
     private Button? _resetViewButton;
     private Button? _zoomInButton;
     private Button? _zoomOutButton;
+    private Button? _viewFrontButton;
+    private Button? _viewBackButton;
+    private Button? _viewSideButton;
+    private Button? _viewSideRightButton;
+    private Button? _viewTopButton;
+    // Animation playback (#2124)
+    private ComboBox? _animationComboBox;
+    private Button? _animPlayButton;
+    private Slider? _animTimeSlider;
+    private Slider? _animSpeedSlider;
 
     private CreatureDisplayService? _displayService;
     private PaletteColorService? _paletteColorService;
@@ -152,6 +163,7 @@ public partial class AppearancePanel : UserControl
         // 3D Preview
         _modelPreviewContainer = this.FindControl<Border>("ModelPreviewContainer");
         _modelPreviewGL = this.FindControl<ModelPreviewGLControl>("ModelPreviewGL");
+        _modelPreviewInputSurface = this.FindControl<Border>("ModelPreviewInputSurface");
         _previewStateOverlay = this.FindControl<Border>("PreviewStateOverlay");
         _previewStateText = this.FindControl<TextBlock>("PreviewStateText");
         _modelInfoStatusText = this.FindControl<TextBlock>("ModelInfoStatusText");
@@ -160,6 +172,15 @@ public partial class AppearancePanel : UserControl
         _resetViewButton = this.FindControl<Button>("ResetViewButton");
         _zoomInButton = this.FindControl<Button>("ZoomInButton");
         _zoomOutButton = this.FindControl<Button>("ZoomOutButton");
+        _viewFrontButton = this.FindControl<Button>("ViewFrontButton");
+        _viewBackButton = this.FindControl<Button>("ViewBackButton");
+        _viewSideButton = this.FindControl<Button>("ViewSideButton");
+        _viewSideRightButton = this.FindControl<Button>("ViewSideRightButton");
+        _viewTopButton = this.FindControl<Button>("ViewTopButton");
+        _animationComboBox = this.FindControl<ComboBox>("AnimationComboBox");
+        _animPlayButton = this.FindControl<Button>("AnimPlayButton");
+        _animTimeSlider = this.FindControl<Slider>("AnimTimeSlider");
+        _animSpeedSlider = this.FindControl<Slider>("AnimSpeedSlider");
     }
 
     public void SetDisplayService(CreatureDisplayService displayService)
@@ -266,6 +287,35 @@ public partial class AppearancePanel : UserControl
     {
         if (_modelPreviewGL != null)
             _modelPreviewGL.Model = model;
+        RefreshAnimationList(model);
+    }
+
+    /// <summary>
+    /// Populate the animation dropdown from a model's animation list (#2124).
+    /// </summary>
+    private void RefreshAnimationList(MdlModel? model)
+    {
+        if (_animationComboBox == null) return;
+
+        var items = new List<string> { "(none)" };
+        if (model?.Animations != null)
+        {
+            foreach (var anim in model.Animations)
+            {
+                if (!string.IsNullOrEmpty(anim.Name))
+                    items.Add(anim.Name);
+            }
+        }
+
+        _animationComboBox.ItemsSource = items;
+        _animationComboBox.SelectedIndex = 0;
+        if (_modelPreviewGL != null)
+            _modelPreviewGL.SetActiveAnimation(null);
+        if (_animTimeSlider != null)
+        {
+            _animTimeSlider.Value = 0;
+            _animTimeSlider.Maximum = 1;
+        }
     }
 
     /// <summary>

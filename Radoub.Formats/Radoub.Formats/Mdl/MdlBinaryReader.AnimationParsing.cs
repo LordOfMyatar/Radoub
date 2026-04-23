@@ -41,6 +41,26 @@ public partial class MdlBinaryReader
         // Animation name (64 bytes) - from geometry header portion
         anim.Name = ReadFixedString(reader, 64);
 
+        // The geometry header also carries a root-node pointer at offset 0x48.
+        // Parse the animation's node subtree so consumers (e.g. the appearance
+        // preview) can see which animations exist and drive a playhead (#2124).
+        stream.Position = offset + 0x48;
+        var animRootPtr = reader.ReadUInt32();
+        var animRootOffset = PointerToModelOffset(animRootPtr);
+        if (animRootOffset != 0xFFFFFFFF && animRootOffset != uint.MaxValue
+            && animRootOffset < _modelData.Length)
+        {
+            try
+            {
+                anim.GeometryRoot = ParseNode(animRootOffset);
+            }
+            catch (Exception ex)
+            {
+                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.WARN,
+                    $"[MDL] Animation '{anim.Name}': failed to parse GeometryRoot: {ex.Message}");
+            }
+        }
+
         // Skip to animation-specific fields at offset 0x70
         stream.Position = offset + GeometryHeaderSize;
 

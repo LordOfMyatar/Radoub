@@ -93,6 +93,132 @@ public partial class AppearancePanel
             _zoomInButton.Click += OnZoomInClicked;
         if (_zoomOutButton != null)
             _zoomOutButton.Click += OnZoomOutClicked;
+        if (_viewFrontButton != null)
+            _viewFrontButton.Click += (_, _) => _modelPreviewGL?.SetViewPreset(ViewPreset.Front);
+        if (_viewBackButton != null)
+            _viewBackButton.Click += (_, _) => _modelPreviewGL?.SetViewPreset(ViewPreset.Back);
+        if (_viewSideButton != null)
+            _viewSideButton.Click += (_, _) => _modelPreviewGL?.SetViewPreset(ViewPreset.Side);
+        if (_viewSideRightButton != null)
+            _viewSideRightButton.Click += (_, _) => _modelPreviewGL?.SetViewPreset(ViewPreset.SideRight);
+        if (_viewTopButton != null)
+            _viewTopButton.Click += (_, _) => _modelPreviewGL?.SetViewPreset(ViewPreset.Top);
+
+        // Animation dropdown / play / scrub (#2124)
+        if (_animationComboBox != null)
+            _animationComboBox.SelectionChanged += OnAnimationSelectionChanged;
+        if (_animPlayButton != null)
+            _animPlayButton.Click += OnAnimPlayClicked;
+        if (_animTimeSlider != null)
+            _animTimeSlider.PropertyChanged += OnAnimSliderChanged;
+        if (_animSpeedSlider != null)
+            _animSpeedSlider.PropertyChanged += OnAnimSpeedChanged;
+
+        // 3D Preview pointer/wheel/key input — wired on the transparent
+        // input-surface Border that overlays the GL control (#2124).
+        if (_modelPreviewInputSurface != null)
+        {
+            _modelPreviewInputSurface.PointerPressed += OnModelPreviewPointerPressed;
+            _modelPreviewInputSurface.PointerMoved += OnModelPreviewPointerMoved;
+            _modelPreviewInputSurface.PointerReleased += OnModelPreviewPointerReleased;
+            _modelPreviewInputSurface.PointerWheelChanged += OnModelPreviewWheel;
+            _modelPreviewInputSurface.KeyDown += OnModelPreviewKeyDown;
+        }
+    }
+
+    // ----- 3D Preview input forwarding (#2124) -----
+
+    private enum PreviewDragMode { None, Rotate, Pan }
+    private PreviewDragMode _previewDragMode = PreviewDragMode.None;
+    private Avalonia.Point _previewLastPointer;
+
+    private void OnModelPreviewPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (_modelPreviewInputSurface == null || _modelPreviewGL == null) return;
+
+        var props = e.GetCurrentPoint(_modelPreviewInputSurface).Properties;
+        bool shift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
+
+        if (props.IsMiddleButtonPressed || (props.IsLeftButtonPressed && shift))
+            _previewDragMode = PreviewDragMode.Pan;
+        else if (props.IsLeftButtonPressed)
+            _previewDragMode = PreviewDragMode.Rotate;
+        else
+            return;
+
+        _previewLastPointer = e.GetPosition(_modelPreviewInputSurface);
+        _modelPreviewInputSurface.Focus();
+        e.Pointer.Capture(_modelPreviewInputSurface);
+        e.Handled = true;
+    }
+
+    private void OnModelPreviewPointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (_previewDragMode == PreviewDragMode.None ||
+            _modelPreviewInputSurface == null || _modelPreviewGL == null) return;
+
+        var pos = e.GetPosition(_modelPreviewInputSurface);
+        double dx = pos.X - _previewLastPointer.X;
+        double dy = pos.Y - _previewLastPointer.Y;
+        _previewLastPointer = pos;
+
+        if (_previewDragMode == PreviewDragMode.Rotate)
+            _modelPreviewGL.RotateByPixels(dx, dy);
+        else if (_previewDragMode == PreviewDragMode.Pan)
+            _modelPreviewGL.PanByPixels(dx, dy);
+    }
+
+    private void OnModelPreviewPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (_previewDragMode != PreviewDragMode.None)
+        {
+            _previewDragMode = PreviewDragMode.None;
+            e.Pointer.Capture(null);
+            e.Handled = true;
+        }
+    }
+
+    private void OnModelPreviewWheel(object? sender, PointerWheelEventArgs e)
+    {
+        if (_modelPreviewInputSurface == null || _modelPreviewGL == null) return;
+        var pos = e.GetPosition(_modelPreviewGL); // unproject uses GL viewport coords
+        _modelPreviewGL.ZoomAtCursorPixels(pos, e.Delta.Y);
+        e.Handled = true;
+    }
+
+    private void OnModelPreviewKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (_modelPreviewGL == null) return;
+        const float rotStep = 0.1f;
+
+        switch (e.Key)
+        {
+            case Key.Left:
+            case Key.A:
+                _modelPreviewGL.Rotate(-rotStep, 0);
+                break;
+            case Key.Right:
+            case Key.D:
+                _modelPreviewGL.Rotate(rotStep, 0);
+                break;
+            case Key.Up:
+            case Key.W:
+                _modelPreviewGL.Rotate(0, -rotStep);
+                break;
+            case Key.Down:
+            case Key.S:
+                _modelPreviewGL.Rotate(0, rotStep);
+                break;
+            case Key.Home:
+                _modelPreviewGL.ResetView();
+                break;
+            case Key.F8:
+                _modelPreviewGL.CycleDebugMode();
+                break;
+            default:
+                return;
+        }
+        e.Handled = true;
     }
 
     private void OnAppearanceSelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -539,5 +665,83 @@ public partial class AppearancePanel
     {
         if (_modelPreviewGL != null)
             _modelPreviewGL.Zoom /= 1.2f;
+    }
+
+    // ----- Animation playback handlers (#2124) -----
+
+    private bool _suppressSliderSync;
+
+    private void OnAnimationSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_modelPreviewGL?.Model == null || _animationComboBox == null) return;
+
+        int idx = _animationComboBox.SelectedIndex;
+        if (idx <= 0)
+        {
+            _modelPreviewGL.SetActiveAnimation(null);
+            if (_animTimeSlider != null)
+            {
+                _suppressSliderSync = true;
+                _animTimeSlider.Value = 0;
+                _animTimeSlider.Maximum = 1;
+                _suppressSliderSync = false;
+            }
+            if (_animPlayButton != null) _animPlayButton.Content = "▶";
+            return;
+        }
+
+        int animIdx = idx - 1; // offset past "(none)"
+        if (animIdx >= 0 && animIdx < _modelPreviewGL.Model.Animations.Count)
+        {
+            var anim = _modelPreviewGL.Model.Animations[animIdx];
+            _modelPreviewGL.SetActiveAnimation(anim);
+            if (_animTimeSlider != null)
+            {
+                _suppressSliderSync = true;
+                _animTimeSlider.Maximum = anim.Length > 0 ? anim.Length : 1;
+                _animTimeSlider.Value = 0;
+                _suppressSliderSync = false;
+            }
+        }
+    }
+
+    private void OnAnimPlayClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_modelPreviewGL == null || _animPlayButton == null) return;
+        if (_modelPreviewGL.ActiveAnimation == null) return;
+
+        if (_modelPreviewGL.IsAnimationPlaying)
+        {
+            _modelPreviewGL.PauseAnimation();
+            _animPlayButton.Content = "▶";
+        }
+        else
+        {
+            _modelPreviewGL.PlayAnimation();
+            _animPlayButton.Content = "⏸";
+        }
+    }
+
+    private void OnAnimSliderChanged(object? sender, Avalonia.AvaloniaPropertyChangedEventArgs e)
+    {
+        if (_suppressSliderSync) return;
+        if (e.Property != Slider.ValueProperty) return;
+        if (_modelPreviewGL == null || _animTimeSlider == null) return;
+        if (_modelPreviewGL.ActiveAnimation == null) return;
+
+        // User dragged the scrub slider — pause playback and seek.
+        if (_modelPreviewGL.IsAnimationPlaying)
+        {
+            _modelPreviewGL.PauseAnimation();
+            if (_animPlayButton != null) _animPlayButton.Content = "▶";
+        }
+        _modelPreviewGL.AnimationTime = (float)_animTimeSlider.Value;
+    }
+
+    private void OnAnimSpeedChanged(object? sender, Avalonia.AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property != Slider.ValueProperty) return;
+        if (_modelPreviewGL == null || _animSpeedSlider == null) return;
+        _modelPreviewGL.AnimationSpeed = (float)_animSpeedSlider.Value;
     }
 }

@@ -2,10 +2,24 @@
 // Extracted from ModelPreviewGLControl to improve testability and separation of concerns.
 
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Radoub.Formats.Mdl;
 
 namespace Quartermaster.Controls;
+
+/// <summary>
+/// Preset camera orientations (#2124).
+/// Values map to RotationY (model-around-Z) + RotationX tilt.
+/// </summary>
+public enum ViewPreset
+{
+    Front,
+    Back,
+    Side,       // quarter turn — "left" side in viewer terms
+    SideRight,  // opposite side
+    Top,
+}
 
 /// <summary>
 /// Manages camera state (rotation, zoom, target) and provides
@@ -53,6 +67,73 @@ public class ModelViewController
     }
 
     /// <summary>
+    /// Translate the camera target in world space. Used by panning so
+    /// the model appears to slide under the camera.
+    /// </summary>
+    public void Pan(Vector3 worldDelta)
+    {
+        _cameraTarget += worldDelta;
+    }
+
+    /// <summary>
+    /// Multiplicatively change zoom while keeping a world-space pivot
+    /// point anchored. When the user zooms with the scroll wheel at a
+    /// cursor position, we want that spot to stay roughly under the
+    /// cursor rather than drifting off screen (#2124).
+    /// </summary>
+    public void ZoomAtPoint(float factor, Vector3 worldPivot)
+    {
+        float before = _zoom;
+        Zoom = _zoom * factor;
+        float applied = _zoom / before;
+
+        // If zoom was clamped (no effective change), suppress the pivot
+        // pull so repeated scrolls at the limit don't drift the target.
+        if (MathF.Abs(applied - 1f) < 1e-5f)
+            return;
+
+        // The camera views the scene at distance ∝ 1/zoom from the
+        // target. Scaling zoom by `applied` shrinks that distance by
+        // 1/applied. To keep the pivot stable on screen, move the
+        // target a matching fraction of (pivot - target).
+        float t = 1f - 1f / applied;
+        _cameraTarget += (worldPivot - _cameraTarget) * t;
+    }
+
+    /// <summary>
+    /// Snap the camera to a preset orientation. Clears pan and zoom so
+    /// the chosen view fills the frame the same way ResetView does.
+    /// </summary>
+    public void SetViewPreset(ViewPreset preset)
+    {
+        switch (preset)
+        {
+            case ViewPreset.Front:
+                _rotationY = MathF.PI;
+                _rotationX = 0f;
+                break;
+            case ViewPreset.Back:
+                _rotationY = 0f;
+                _rotationX = 0f;
+                break;
+            case ViewPreset.Side:
+                _rotationY = MathF.PI / 2f;
+                _rotationX = 0f;
+                break;
+            case ViewPreset.SideRight:
+                _rotationY = 3f * MathF.PI / 2f;
+                _rotationX = 0f;
+                break;
+            case ViewPreset.Top:
+                _rotationY = MathF.PI;
+                _rotationX = MathF.PI / 2f;
+                break;
+        }
+        _zoom = 1.0f;
+        _cameraTarget = Vector3.Zero;
+    }
+
+    /// <summary>
     /// Reset the view to default (facing front).
     /// </summary>
     public void ResetView()
@@ -60,38 +141,38 @@ public class ModelViewController
         _rotationY = MathF.PI;
         _rotationX = 0;
         _zoom = 1.0f;
+        // Always clear user-applied pan on reset so the model recenters.
+        _cameraTarget = Vector3.Zero;
         // Use vertex-computed bounds if available, otherwise safe defaults.
         // Don't call CenterCamera() — model stored bounds are unreliable
         // (they include the full skeleton hierarchy, not just rendered mesh).
         if (!_hasVertexBounds)
         {
-            _cameraTarget = Vector3.Zero;
             _modelRadius = 1.0f;
         }
     }
 
     /// <summary>
-    /// Reset camera to defaults. Actual center and radius are computed from
-    /// rendered vertices in UpdateMeshBuffers(). The model's stored
-    /// BoundingMin/Max encompasses the full skeleton hierarchy and is
-    /// much larger than the visible mesh.
+    /// Reset camera framing defaults. Called when a model loads/unloads so
+    /// vertex-computed bounds can be rebuilt. Zoom, rotation, and user pan
+    /// are preserved — switching equipment or heads should not snap the
+    /// camera back to the default view (#2124).
     /// </summary>
     public void CenterCamera()
     {
-        _cameraTarget = Vector3.Zero;
         _modelRadius = 1.0f;
         _hasVertexBounds = false;
     }
 
     /// <summary>
     /// Update the camera bounds from computed vertex data.
-    /// Called by the GL control after mesh buffer assembly.
+    /// Called by the GL control after mesh buffer assembly. Preserves the
+    /// user's pan — only radius/bounds-flag are refreshed.
     /// </summary>
     public void UpdateBounds(float modelRadius, bool hasVertexBounds)
     {
         _modelRadius = modelRadius;
         _hasVertexBounds = hasVertexBounds;
-        _cameraTarget = Vector3.Zero;
     }
 
     /// <summary>
@@ -101,23 +182,40 @@ public class ModelViewController
     /// </summary>
     public static Matrix4x4 GetWorldTransform(MdlNode? node)
     {
-        // System.Numerics uses row-major convention where Vector3.Transform(v, M) = v * M
-        // For hierarchical transforms: v_world = v_local * NodeLocal * ParentLocal * ... * RootLocal
-        // So we need: worldTransform = NodeLocal * ParentLocal * ... * RootLocal
-        // We walk leaf-to-root, accumulating: world = local * world
+        return GetWorldTransform(node, null);
+    }
+
+    /// <summary>
+    /// Variant that consults an animation pose (node name → sampled transform).
+    /// Used by the appearance preview to play animation stances (#2124).
+    /// When a node's name is in <paramref name="pose"/>, the sampled values
+    /// replace the bind-pose Position/Orientation/Scale for that link of the
+    /// hierarchy. Other nodes use their static values.
+    /// </summary>
+    public static Matrix4x4 GetWorldTransform(MdlNode? node, IReadOnlyDictionary<string, NodePose>? pose)
+    {
         var worldTransform = Matrix4x4.Identity;
         var current = node;
 
         while (current != null)
         {
-            var scale = Matrix4x4.CreateScale(current.Scale);
-            var rotation = Matrix4x4.CreateFromQuaternion(current.Orientation);
-            var translation = Matrix4x4.CreateTranslation(current.Position);
+            Vector3 pos = current.Position;
+            Quaternion orient = current.Orientation;
+            float scl = current.Scale;
 
-            // Row-major local transform: S * R * T
+            if (pose != null && !string.IsNullOrEmpty(current.Name)
+                && pose.TryGetValue(current.Name, out var p))
+            {
+                if (p.HasPosition) pos = p.Position;
+                if (p.HasOrientation) orient = p.Orientation;
+                if (p.HasScale) scl = p.Scale;
+            }
+
+            var scale = Matrix4x4.CreateScale(scl);
+            var rotation = Matrix4x4.CreateFromQuaternion(orient);
+            var translation = Matrix4x4.CreateTranslation(pos);
+
             var localTransform = scale * rotation * translation;
-
-            // Accumulate: node * parent * grandparent * ... * root
             worldTransform = worldTransform * localTransform;
 
             current = current.Parent;
@@ -125,6 +223,16 @@ public class ModelViewController
 
         return worldTransform;
     }
+
+    /// <summary>
+    /// Sampled pose for a single node at a specific animation time.
+    /// Flags indicate which channels were actually animated (vs inheriting
+    /// the bind pose).
+    /// </summary>
+    public readonly record struct NodePose(
+        bool HasPosition, Vector3 Position,
+        bool HasOrientation, Quaternion Orientation,
+        bool HasScale, float Scale);
 
     /// <summary>
     /// Transform a position vector by a matrix.

@@ -139,4 +139,197 @@ public class ModelViewControllerTests
         Assert.True(vc.HasVertexBounds);
         Assert.Equal(Vector3.Zero, vc.CameraTarget);
     }
+
+    // ----- #2124: Pan + cursor-centric zoom -----
+
+    [Fact]
+    public void CenterCamera_PreservesUserPan()
+    {
+        // Switching heads / equipment triggers CenterCamera. The user's
+        // pan (and zoom) must survive so they keep looking at the spot
+        // they zoomed into (#2124).
+        var vc = new ModelViewController();
+        vc.UpdateBounds(2f, true);
+        vc.Pan(new Vector3(3, 0, 2));
+        vc.Zoom = 4f;
+
+        vc.CenterCamera();
+
+        Assert.Equal(3f, vc.CameraTarget.X, 4);
+        Assert.Equal(2f, vc.CameraTarget.Z, 4);
+        Assert.Equal(4f, vc.Zoom, 4);
+    }
+
+    [Fact]
+    public void UpdateBounds_PreservesUserPan()
+    {
+        var vc = new ModelViewController();
+        vc.Pan(new Vector3(1, 0, 1));
+
+        vc.UpdateBounds(3.5f, true);
+
+        Assert.Equal(1f, vc.CameraTarget.X, 4);
+        Assert.Equal(1f, vc.CameraTarget.Z, 4);
+        Assert.Equal(3.5f, vc.ModelRadius);
+    }
+
+    [Fact]
+    public void Pan_TranslatesCameraTargetByDelta()
+    {
+        var vc = new ModelViewController();
+        vc.UpdateBounds(1.0f, true);
+
+        vc.Pan(new Vector3(0.5f, 0, -0.25f));
+
+        Assert.Equal(0.5f, vc.CameraTarget.X, 5);
+        Assert.Equal(0f, vc.CameraTarget.Y, 5);
+        Assert.Equal(-0.25f, vc.CameraTarget.Z, 5);
+    }
+
+    [Fact]
+    public void Pan_Accumulates()
+    {
+        var vc = new ModelViewController();
+        vc.UpdateBounds(1.0f, true);
+
+        vc.Pan(new Vector3(1, 0, 0));
+        vc.Pan(new Vector3(0, 0, 2));
+        vc.Pan(new Vector3(-0.5f, 0, 0));
+
+        Assert.Equal(0.5f, vc.CameraTarget.X, 5);
+        Assert.Equal(0f, vc.CameraTarget.Y, 5);
+        Assert.Equal(2f, vc.CameraTarget.Z, 5);
+    }
+
+    [Fact]
+    public void ResetView_ClearsPan()
+    {
+        var vc = new ModelViewController();
+        vc.UpdateBounds(2.0f, true);
+        vc.Pan(new Vector3(3, 4, 5));
+
+        vc.ResetView();
+
+        Assert.Equal(Vector3.Zero, vc.CameraTarget);
+    }
+
+    [Fact]
+    public void ZoomAtPoint_ZoomingIn_MovesTargetTowardPivot()
+    {
+        // When zooming in at an off-center world point, the camera target should
+        // drift toward the pivot so the pivot stays roughly under the cursor.
+        var vc = new ModelViewController();
+        vc.UpdateBounds(1.0f, true);
+        float initialZoom = vc.Zoom;
+        var pivot = new Vector3(2, 0, 0);
+
+        vc.ZoomAtPoint(1.5f, pivot);
+
+        Assert.True(vc.Zoom > initialZoom, "Zoom should increase");
+        Assert.True(vc.CameraTarget.X > 0, "Target should drift toward pivot on X");
+        Assert.True(vc.CameraTarget.X < pivot.X, "Target should not overshoot pivot");
+    }
+
+    [Fact]
+    public void ZoomAtPoint_AtCameraTarget_KeepsTargetStable()
+    {
+        // Zooming at the current target (pivot == target) must not move the target.
+        var vc = new ModelViewController();
+        vc.UpdateBounds(1.0f, true);
+        vc.Pan(new Vector3(1, 0, 0));
+        var pivot = vc.CameraTarget;
+
+        vc.ZoomAtPoint(1.5f, pivot);
+
+        Assert.Equal(pivot.X, vc.CameraTarget.X, 4);
+        Assert.Equal(pivot.Y, vc.CameraTarget.Y, 4);
+        Assert.Equal(pivot.Z, vc.CameraTarget.Z, 4);
+    }
+
+    [Fact]
+    public void ZoomAtPoint_ClampsToZoomRange()
+    {
+        var vc = new ModelViewController();
+        vc.UpdateBounds(1.0f, true);
+
+        vc.ZoomAtPoint(1000f, Vector3.Zero);
+        Assert.Equal(10f, vc.Zoom, 4);
+
+        vc.ZoomAtPoint(0.0001f, Vector3.Zero);
+        Assert.Equal(0.1f, vc.Zoom, 4);
+    }
+
+    [Fact]
+    public void ViewPreset_Front_SetsExpectedRotation()
+    {
+        var vc = new ModelViewController();
+        vc.RotationY = 0.5f;
+        vc.RotationX = 0.3f;
+
+        vc.SetViewPreset(ViewPreset.Front);
+
+        Assert.Equal(MathF.PI, vc.RotationY, 4);
+        Assert.Equal(0f, vc.RotationX, 4);
+    }
+
+    [Fact]
+    public void ViewPreset_Back_SetsZeroY()
+    {
+        var vc = new ModelViewController();
+        vc.SetViewPreset(ViewPreset.Back);
+
+        Assert.Equal(0f, vc.RotationY, 4);
+        Assert.Equal(0f, vc.RotationX, 4);
+    }
+
+    [Fact]
+    public void ViewPreset_Side_SetsQuarterTurn()
+    {
+        var vc = new ModelViewController();
+        vc.SetViewPreset(ViewPreset.Side);
+
+        Assert.Equal(MathF.PI / 2f, vc.RotationY, 4);
+        Assert.Equal(0f, vc.RotationX, 4);
+    }
+
+    [Fact]
+    public void ViewPreset_Top_TiltsDownOnX()
+    {
+        var vc = new ModelViewController();
+        vc.SetViewPreset(ViewPreset.Top);
+
+        Assert.Equal(MathF.PI, vc.RotationY, 4);
+        Assert.Equal(MathF.PI / 2f, vc.RotationX, 4);
+    }
+
+    [Fact]
+    public void ViewPreset_ClearsPanAndRestoresDefaultZoom()
+    {
+        var vc = new ModelViewController();
+        vc.UpdateBounds(2.0f, true);
+        vc.Pan(new Vector3(3, 0, 4));
+        vc.Zoom = 5f;
+
+        vc.SetViewPreset(ViewPreset.Front);
+
+        Assert.Equal(Vector3.Zero, vc.CameraTarget);
+        Assert.Equal(1.0f, vc.Zoom, 4);
+    }
+
+    [Fact]
+    public void ZoomAtPoint_DoesNotMoveTarget_WhenZoomClamped()
+    {
+        // If the zoom factor is clamped (no effective change), the pivot pull must
+        // also be suppressed — otherwise repeated scrolling at max zoom would drift.
+        var vc = new ModelViewController();
+        vc.UpdateBounds(1.0f, true);
+        vc.Zoom = 10f; // at max
+        var before = vc.CameraTarget;
+
+        vc.ZoomAtPoint(2f, new Vector3(5, 0, 0));
+
+        Assert.Equal(before.X, vc.CameraTarget.X, 4);
+        Assert.Equal(before.Y, vc.CameraTarget.Y, 4);
+        Assert.Equal(before.Z, vc.CameraTarget.Z, 4);
+    }
 }
