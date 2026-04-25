@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.85-alpha] - 2026-04-25
-**Branch**: `radoub/issue-1526` | **PR**: #TBD
+**Branch**: `radoub/issue-1526` | **PR**: #2141
 
 ### Fix: FlaUI integration tests flaky under concurrent execution (#1526)
 
