@@ -23,6 +23,20 @@ public abstract class FlaUITestBase : IDisposable
     private string? _isolatedSettingsDir;
 
     /// <summary>
+    /// Cross-process serialization for FlaUI runs (#1526). Acquired per-test
+    /// in the constructor; released on Dispose. Without this, two `dotnet
+    /// test` invocations on the same machine — terminal + IDE Test Explorer,
+    /// or two developers, or a CI runner colliding with a local run — race
+    /// for desktop focus and produce intermittent failures.
+    /// </summary>
+    private readonly FlaUIGlobalMutex _globalMutex;
+
+    protected FlaUITestBase()
+    {
+        _globalMutex = FlaUIGlobalMutex.AcquireDefault();
+    }
+
+    /// <summary>
     /// Path to the application executable. Override in derived classes.
     /// </summary>
     protected abstract string ApplicationPath { get; }
@@ -135,10 +149,36 @@ public abstract class FlaUITestBase : IDisposable
         processInfo.Environment["FENCE_SETTINGS_DIR"] = fenceSettingsDir;
         processInfo.Environment["TREBUCHET_SETTINGS_DIR"] = trebuchetSettingsDir;
 
-        App = Application.Launch(processInfo);
+        // GetMainWindow can return null when the desktop is racing with the
+        // launching app — the window appears in time but UIA doesn't enumerate
+        // it before DefaultTimeout. This is one of the documented residual
+        // sources of #1526 flake (see CLAUDE.md "FlaUI Window Focus"). One
+        // narrowly-scoped retry: on null, kill the launched app, sleep briefly,
+        // and relaunch once. Logging is loud so a real launch regression isn't
+        // hidden as transient.
+        App = LaunchWithRetry(processInfo);
 
         // Wait for main window to appear
         MainWindow = App.GetMainWindow(Automation, DefaultTimeout);
+
+        if (MainWindow == null)
+        {
+            Console.Error.WriteLine(
+                $"[FlaUITestBase] WARNING: GetMainWindow returned null on first attempt " +
+                $"for PID {App.ProcessId}; killing and retrying once (#1526).");
+            try { App.Kill(); } catch { }
+            try { App.WaitWhileMainHandleIsMissing(TimeSpan.FromSeconds(2)); } catch { }
+            Thread.Sleep(500); // let UIA + window manager settle
+
+            App = LaunchWithRetry(processInfo);
+            MainWindow = App.GetMainWindow(Automation, DefaultTimeout);
+
+            if (MainWindow == null)
+            {
+                Console.Error.WriteLine(
+                    "[FlaUITestBase] ERROR: GetMainWindow null on retry too — real launch issue.");
+            }
+        }
 
         // Explicitly focus the main window to prevent keyboard input going to other apps
         // This fixes issues where VSCode or other apps steal focus during test startup
@@ -156,6 +196,15 @@ public abstract class FlaUITestBase : IDisposable
             MainWindow.Focus();
             Thread.Sleep(100);
         }
+    }
+
+    /// <summary>
+    /// Helper to wrap <see cref="Application.Launch(ProcessStartInfo)"/> so the
+    /// retry path in <see cref="StartApplication"/> stays readable.
+    /// </summary>
+    private static Application LaunchWithRetry(ProcessStartInfo processInfo)
+    {
+        return Application.Launch(processInfo);
     }
 
     /// <summary>
@@ -593,7 +642,10 @@ public abstract class FlaUITestBase : IDisposable
                     // Ignore close errors - may already be closing
                 }
 
-                // Wait for process to fully exit (prevents resource conflicts between tests)
+                // Wait for process to fully exit (prevents resource conflicts between tests).
+                // The wait short-circuits when the app exits cleanly; the 5s ceiling only
+                // matters when shutdown actually hangs — which is itself a signal worth
+                // surfacing rather than silently killing (#1526).
                 var timeout = TimeSpan.FromSeconds(5);
                 var startTime = DateTime.Now;
                 while (!App.HasExited && (DateTime.Now - startTime) < timeout)
@@ -601,9 +653,15 @@ public abstract class FlaUITestBase : IDisposable
                     Thread.Sleep(100);
                 }
 
-                // Force kill if still running
+                // Force kill if still running. A timeout-then-kill here means the app
+                // didn't honor WM_CLOSE within 5 seconds — log it so flakes attributed
+                // to shutdown hangs are visible in the test output.
                 if (!App.HasExited)
                 {
+                    Console.Error.WriteLine(
+                        $"[FlaUITestBase] WARNING: app PID {App.ProcessId} did not exit " +
+                        $"within {timeout.TotalSeconds}s of App.Close(); force-killing. " +
+                        "Investigate if this recurs.");
                     try { App.Kill(); } catch { }
                 }
             }
@@ -634,6 +692,7 @@ public abstract class FlaUITestBase : IDisposable
     {
         StopApplication();
         CleanupIsolatedSettings();
+        _globalMutex.Dispose();
         GC.SuppressFinalize(this);
     }
 

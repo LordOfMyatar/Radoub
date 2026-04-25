@@ -518,6 +518,7 @@ dotnet nbgv get-version --project [ToolDir]
 - Add delays before closing to let Avalonia's compositor finish pending renders
 - Wait for process to fully exit between tests to prevent resource conflicts
 - See `FlaUITestBase.StopApplication()` for reference implementation
+- **Sequential execution is enforced (#1526)**: `Radoub.IntegrationTests/AssemblyInfo.cs` carries `[assembly: CollectionBehavior(DisableTestParallelization = true)]` for within-assembly serialization. `FlaUITestBase` acquires a named system mutex (`Global\Radoub.FlaUI.SerialExecution`, 30 s timeout) for cross-process serialization — terminal + IDE Test Explorer collisions block on the mutex with a clear error rather than racing for desktop focus.
 
 **FlaUI Window Focus (CRITICAL)**:
 - **NEVER use direct `Keyboard.TypeSimultaneously()` calls** - keystrokes go to focused window, not necessarily test app

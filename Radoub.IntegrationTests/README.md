@@ -23,6 +23,17 @@ This project uses [FlaUI](https://github.com/FlaUI/FlaUI) for Windows UI automat
 - Native .NET library
 - Works with WPF, WinForms, UWP, and Avalonia apps
 
+### Serialization guarantee (#1526)
+
+FlaUI tests share desktop-global resources — the foreground window, keyboard focus, and the UIA client — so they must run sequentially.
+
+Two safeguards enforce this:
+
+1. **Within the assembly**: `[assembly: CollectionBehavior(DisableTestParallelization = true)]` (`AssemblyInfo.cs`) makes every test in `Radoub.IntegrationTests` run one at a time, regardless of `[Collection]` assignment.
+2. **Across processes**: `FlaUITestBase` acquires a named system mutex (`Global\Radoub.FlaUI.SerialExecution`) per test. A second `dotnet test` invocation, IDE Test Explorer run, or developer session attempting to run FlaUI tests at the same time will block on the mutex (30 s timeout, then a clear error naming the lock).
+
+The FlaUI mutex itself is unit-tested in `Shared/FlaUIGlobalMutexTests.cs` — those tests use unique `Local\…` mutex names so they don't interfere with real FlaUI runs.
+
 ---
 
 ## Prerequisites

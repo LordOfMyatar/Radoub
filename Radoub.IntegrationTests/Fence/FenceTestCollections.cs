@@ -9,7 +9,7 @@ namespace Radoub.IntegrationTests.Fence;
 /// 2. FlaUI can only control one application at a time
 /// 3. Running in parallel causes window focus conflicts
 /// </summary>
-[CollectionDefinition("FenceSequential")]
+[CollectionDefinition("FenceSequential", DisableParallelization = true)]
 public class FenceSequentialCollection : ICollectionFixture<FenceSequentialFixture>
 {
 }
