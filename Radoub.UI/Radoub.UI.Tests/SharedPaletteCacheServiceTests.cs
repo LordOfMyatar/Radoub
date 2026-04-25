@@ -22,6 +22,7 @@ public class SharedPaletteCacheServiceTests : IDisposable
 
     public void Dispose()
     {
+        _service.Dispose();
         if (Directory.Exists(_testCacheDir))
         {
             try { Directory.Delete(_testCacheDir, recursive: true); }
@@ -609,6 +610,38 @@ public class SharedPaletteCacheServiceTests : IDisposable
 
     #endregion
 
+    #region Disposal (#2034 round 2)
+
+    [Fact]
+    public void SharedPaletteCacheService_ImplementsIDisposable()
+    {
+        // The service holds a ReaderWriterLockSlim — a kernel resource that must be disposed.
+        Assert.IsAssignableFrom<IDisposable>(_service);
+    }
+
+    [Fact]
+    public async Task Dispose_DisposesInternalLock()
+    {
+        // After dispose, any operation that takes the lock must fail with ObjectDisposedException —
+        // proving the underlying ReaderWriterLockSlim was actually released, not just nulled.
+        await _service.SaveSourceCacheAsync("bif", CreateTestItems(3), validationPath: "/game");
+
+        ((IDisposable)_service).Dispose();
+
+        Assert.Throws<ObjectDisposedException>(() => _service.GetAggregatedCache());
+    }
+
+    [Fact]
+    public void Dispose_IsIdempotent()
+    {
+        // Calling Dispose twice must not throw — standard IDisposable contract.
+        var disposable = (IDisposable)_service;
+        disposable.Dispose();
+        disposable.Dispose();
+    }
+
+    #endregion
+
     #region Build Lock Sentinels
 
     [Fact]
@@ -632,7 +665,7 @@ public class SharedPaletteCacheServiceTests : IDisposable
 
         // Create a new service instance (simulating another process, but same PID)
         // The lock is held by current PID which IS alive, so second acquire should fail
-        var service2 = new SharedPaletteCacheService(_testCacheDir);
+        using var service2 = new SharedPaletteCacheService(_testCacheDir);
         var second = service2.AcquireBuildLock("bif");
         Assert.False(second);
 

@@ -193,6 +193,8 @@ public partial class MainWindow
             SaveWindowPosition();
             _audioService?.Dispose();
             _gameDataService?.Dispose();
+            _paletteCacheCts?.Dispose();
+            (_sharedCacheService as IDisposable)?.Dispose();
 
             if (e.Cancel)
             {

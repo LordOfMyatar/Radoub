@@ -30,6 +30,7 @@ public class HakPaletteScannerServiceTests : IDisposable
 
     public void Dispose()
     {
+        _cacheService.Dispose();
         if (Directory.Exists(_testDir))
         {
             try { Directory.Delete(_testDir, recursive: true); }
