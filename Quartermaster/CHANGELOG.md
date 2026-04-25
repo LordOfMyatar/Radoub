@@ -5,6 +5,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.86-alpha] - 2026-04-22
+**Branch**: `radoub/issue-2034-round2` | **PR**: #TBD
+
+### Fix: Memory leaks — round 2 top 3 (#2034)
+
+- `SharedPaletteCacheService` now implements `IDisposable` and disposes its `ReaderWriterLockSlim` (eliminates kernel-handle leak; affects all tools via Radoub.UI)
+- `ItemIconService` bitmap cache bounded with LRU eviction (was unbounded `ConcurrentDictionary`, could grow past the documented ~15–30 MB ceiling on large modules)
+- `AdvancedPanel` lambda closures unwired on `Unloaded` so prior `CurrentCreature` graphs can be garbage-collected between creature switches
+
+---
+
 ## [0.2.85-alpha] - 2026-04-25
 **Branch**: `radoub/issue-1526` | **PR**: #2141
 
