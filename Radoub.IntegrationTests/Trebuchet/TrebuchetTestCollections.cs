@@ -9,7 +9,7 @@ namespace Radoub.IntegrationTests.Trebuchet;
 /// 2. FlaUI can only control one application at a time
 /// 3. Running in parallel causes window focus conflicts
 /// </summary>
-[CollectionDefinition("TrebuchetSequential")]
+[CollectionDefinition("TrebuchetSequential", DisableParallelization = true)]
 public class TrebuchetSequentialCollection : ICollectionFixture<TrebuchetSequentialFixture>
 {
 }
