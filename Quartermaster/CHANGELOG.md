@@ -13,6 +13,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 - Assembly-level `[CollectionBehavior(DisableTestParallelization = true)]` on `Radoub.IntegrationTests` so every FlaUI test runs sequentially regardless of `[Collection]` assignment — fixes the canonical `SmokeTests.Quartermaster_LaunchAndCoreUI` flake when multiple test projects load via `dotnet test` directory walks or IDE Test Explorer
 - Named system mutex (`Global\Radoub.FlaUI.SerialExecution`) prevents two FlaUI test runs from racing across processes (e.g. terminal + IDE); 30 s timeout with a clear error
 - Defense-in-depth: `DisableParallelization = true` added to Fence and Trebuchet collection definitions
+- One-shot relaunch retry in `StartApplication` when `GetMainWindow` returns null (residual H3 mitigation for desktop-focus races); both null events log loudly so real launch regressions can't hide as transient
 - Affects test-runner behavior only — no runtime change in Quartermaster itself
 
 ---
