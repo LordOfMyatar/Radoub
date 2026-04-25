@@ -1,0 +1,48 @@
+name: Relique PR Build Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'Relique/**'
+      - 'Radoub.Formats/**'
+      - 'Radoub.UI/**'
+      - '.github/workflows/relique-pr-build.yml'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0  # NBGV needs full history
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore Relique/Relique/Relique.csproj
+
+    - name: Build Relique
+      id: build
+      run: dotnet build Relique/Relique/Relique.csproj --configuration Release --no-restore
+      continue-on-error: true
+
+    - name: Report status
+      if: always()
+      shell: bash
+      run: |
+        if [ "${{ steps.build.outcome }}" = "success" ]; then
+          echo "✅ Relique build successful (${{ matrix.os }})"
+        else
+          echo "❌ Relique build failed (${{ matrix.os }})"
+          exit 1
+        fi

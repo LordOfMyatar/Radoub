@@ -1,0 +1,77 @@
+name: Relique PR Tests
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'Relique/**'
+      - 'Radoub.Formats/**'
+      - 'Radoub.UI/**'
+      - '.github/workflows/relique-pr-tests.yml'
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0  # NBGV needs full history
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore and build
+      run: dotnet build Relique/Relique.Tests/Relique.Tests.csproj --configuration Release
+
+    - name: Run Relique.Tests
+      id: relique-tests
+      shell: bash
+      run: |
+        dotnet test Relique/Relique.Tests/Relique.Tests.csproj \
+          --configuration Release \
+          --no-build \
+          --verbosity normal \
+          --logger "trx;LogFileName=relique-results.trx" \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./TestResults/Relique
+      continue-on-error: true
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: relique-test-results-${{ matrix.os }}
+        path: ./TestResults
+        retention-days: 30
+
+    - name: Test Report
+      uses: dorny/test-reporter@v3
+      if: always()
+      with:
+        name: Relique Test Results (${{ matrix.os }})
+        path: './TestResults/Relique/relique-results.trx'
+        reporter: dotnet-trx
+        fail-on-error: false
+
+    - name: Report test results
+      if: always()
+      shell: bash
+      run: |
+        if [ "${{ steps.relique-tests.outcome }}" = "success" ]; then
+          echo "✅ Relique tests passed (${{ matrix.os }})"
+        else
+          echo "❌ Relique tests failed (${{ matrix.os }})"
+          exit 1
+        fi

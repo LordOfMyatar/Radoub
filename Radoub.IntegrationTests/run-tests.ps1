@@ -317,9 +317,11 @@ function Get-TestsToRun {
             $entry = $toolUiTests[$Tool].Clone()
             # Override filter if custom UIFilter provided
             # UIFilter values use FullyQualifiedName~ by default (Name~ doesn't work with xUnit VSTest adapter)
+            # Wrap both sides in parens — VSTest parses `|` higher than `&`, so a user
+            # filter like `Category=Smoke|Navigation` would otherwise leak across tools (#1526).
             if ($UIFilter) {
                 $filterExpr = if ($UIFilter -match '(FullyQualifiedName|DisplayName|Category)') { $UIFilter } else { "FullyQualifiedName~$UIFilter" }
-                $entry.Filter = "$($entry.Filter)&$filterExpr"
+                $entry.Filter = "($($entry.Filter))&($filterExpr)"
                 $entry.Name = "$($entry.Name) (filtered: $UIFilter)"
             }
             $uiTests += $entry
