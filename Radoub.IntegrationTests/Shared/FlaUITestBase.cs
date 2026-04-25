@@ -149,10 +149,36 @@ public abstract class FlaUITestBase : IDisposable
         processInfo.Environment["FENCE_SETTINGS_DIR"] = fenceSettingsDir;
         processInfo.Environment["TREBUCHET_SETTINGS_DIR"] = trebuchetSettingsDir;
 
-        App = Application.Launch(processInfo);
+        // GetMainWindow can return null when the desktop is racing with the
+        // launching app — the window appears in time but UIA doesn't enumerate
+        // it before DefaultTimeout. This is one of the documented residual
+        // sources of #1526 flake (see CLAUDE.md "FlaUI Window Focus"). One
+        // narrowly-scoped retry: on null, kill the launched app, sleep briefly,
+        // and relaunch once. Logging is loud so a real launch regression isn't
+        // hidden as transient.
+        App = LaunchWithRetry(processInfo);
 
         // Wait for main window to appear
         MainWindow = App.GetMainWindow(Automation, DefaultTimeout);
+
+        if (MainWindow == null)
+        {
+            Console.Error.WriteLine(
+                $"[FlaUITestBase] WARNING: GetMainWindow returned null on first attempt " +
+                $"for PID {App.ProcessId}; killing and retrying once (#1526).");
+            try { App.Kill(); } catch { }
+            try { App.WaitWhileMainHandleIsMissing(TimeSpan.FromSeconds(2)); } catch { }
+            Thread.Sleep(500); // let UIA + window manager settle
+
+            App = LaunchWithRetry(processInfo);
+            MainWindow = App.GetMainWindow(Automation, DefaultTimeout);
+
+            if (MainWindow == null)
+            {
+                Console.Error.WriteLine(
+                    "[FlaUITestBase] ERROR: GetMainWindow null on retry too — real launch issue.");
+            }
+        }
 
         // Explicitly focus the main window to prevent keyboard input going to other apps
         // This fixes issues where VSCode or other apps steal focus during test startup
@@ -170,6 +196,15 @@ public abstract class FlaUITestBase : IDisposable
             MainWindow.Focus();
             Thread.Sleep(100);
         }
+    }
+
+    /// <summary>
+    /// Helper to wrap <see cref="Application.Launch(ProcessStartInfo)"/> so the
+    /// retry path in <see cref="StartApplication"/> stays readable.
+    /// </summary>
+    private static Application LaunchWithRetry(ProcessStartInfo processInfo)
+    {
+        return Application.Launch(processInfo);
     }
 
     /// <summary>
