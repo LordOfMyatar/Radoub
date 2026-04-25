@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Concurrent;
 using Avalonia.Media.Imaging;
+using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Uti;
@@ -15,18 +15,24 @@ namespace Radoub.UI.Services;
 /// </summary>
 public class ItemIconService
 {
+    // Cache cap. Was unbounded ConcurrentDictionary (#2034). 2000 entries is enough
+    // for the icons a real session touches and bounds memory at ~30-60 MB worst case.
+    private const int DefaultCacheCapacity = 2000;
+
     private readonly ImageService _imageService;
     private readonly IGameDataService _gameDataService;
-    private readonly ConcurrentDictionary<string, Bitmap?> _bitmapCache;
-    // No cache limit - keep icons for session lifetime (~15-30MB for 1500 icons is acceptable)
+    private readonly LruCache<string, Bitmap?> _bitmapCache;
 
     public ItemIconService(IGameDataService gameDataService)
     {
         ArgumentNullException.ThrowIfNull(gameDataService);
         _gameDataService = gameDataService;
         _imageService = new ImageService(gameDataService);
-        _bitmapCache = new ConcurrentDictionary<string, Bitmap?>();
+        _bitmapCache = new LruCache<string, Bitmap?>(DefaultCacheCapacity);
     }
+
+    public int CacheCount => _bitmapCache.Count;
+    public int CacheCapacity => _bitmapCache.Capacity;
 
     /// <summary>
     /// Get the icon for an item.
@@ -65,7 +71,7 @@ public class ItemIconService
             }
         }
 
-        _bitmapCache.TryAdd(cacheKey, bitmap);
+        _bitmapCache.Set(cacheKey, bitmap);
         return bitmap;
     }
 
@@ -90,7 +96,7 @@ public class ItemIconService
             bitmap = ImageDataToBitmap(imageData);
         }
 
-        _bitmapCache.TryAdd(cacheKey, bitmap);
+        _bitmapCache.Set(cacheKey, bitmap);
         return bitmap;
     }
 
@@ -144,13 +150,13 @@ public class ItemIconService
                 bitmap = ImageDataToBitmap(imageData);
             }
 
-            _bitmapCache.TryAdd(cacheKey, bitmap);
+            _bitmapCache.Set(cacheKey, bitmap);
             return bitmap;
         }
         catch (Exception ex)
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"ItemIconService: Exception for {cacheKey}: {ex.Message}");
-            _bitmapCache.TryAdd(cacheKey, null);
+            _bitmapCache.Set(cacheKey, null);
             return null;
         }
     }
