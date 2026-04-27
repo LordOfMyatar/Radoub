@@ -43,6 +43,7 @@ __pycache__/
 venv/
 /.claude/settings.local.json
 /.claude/cache/
+/.claude/scheduled_tasks.lock
 NonPublic
 TestOutput
 /Radoub.IntegrationTests/TestOutput
