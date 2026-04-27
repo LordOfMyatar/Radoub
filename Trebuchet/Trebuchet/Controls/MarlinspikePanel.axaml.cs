@@ -45,6 +45,15 @@ public partial class MarlinspikePanel : UserControl
     public MarlinspikePanel()
     {
         InitializeComponent();
+        Unloaded += OnPanelUnloaded;
+    }
+
+    private void OnPanelUnloaded(object? sender, RoutedEventArgs e)
+    {
+        Unloaded -= OnPanelUnloaded;
+        _searchCts?.Cancel();
+        _searchCts?.Dispose();
+        _searchCts = null;
     }
 
     public void Initialize(MarlinspikePanelViewModel viewModel, MainWindowViewModel mainViewModel, Window parentWindow)
@@ -150,6 +159,7 @@ public partial class MarlinspikePanel : UserControl
         }
 
         _searchCts?.Cancel();
+        _searchCts?.Dispose();
         _searchCts = new CancellationTokenSource();
         var token = _searchCts.Token;
 
