@@ -156,6 +156,12 @@ public partial class AdvancedPanel : BasePanelControl
 
     private void OnPanelUnloaded(object? sender, RoutedEventArgs e)
     {
+        // PROBE (#2034 round 2 verification — REMOVE before merge): logs WARN whenever
+        // AdvancedPanel.Unloaded fires so we can see if visibility toggling during
+        // sidebar navigation incorrectly triggers tree detach. Expected: fires once
+        // on app shutdown only.
+        UnifiedLogger.LogApplication(LogLevel.WARN,
+            $"[#2034-PROBE] AdvancedPanel.OnPanelUnloaded fired at {DateTime.UtcNow:O}");
         Unloaded -= OnPanelUnloaded;
         _subs.DetachAll();
         ClearVariables(); // Releases per-VariableViewModel PropertyChanged subscriptions
