@@ -54,7 +54,7 @@ public partial class MdlBinaryReader
         // Log first 16 bytes at this position for debugging
         var debugBytes = new byte[Math.Min(16, _modelData.Length - (int)nodeOffset)];
         Array.Copy(_modelData, nodeOffset, debugBytes, 0, debugBytes.Length);
-        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
             $"[MDL] ParseNode at {nodeOffset}: first16bytes={BitConverter.ToString(debugBytes)}");
 
         // Read node header
@@ -79,7 +79,7 @@ public partial class MdlBinaryReader
         // Convert pointer to buffer offset
         var childArrayBufferOffset = PointerToModelOffset(childArrayOffset);
 
-        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
             $"[MDL] Node '{nodeName}': childArrayPtr=0x{childArrayOffset:X8} -> bufferOffset={childArrayBufferOffset}, childCount={childCount}");
 
         // Controller arrays (these are also pointers)
@@ -96,7 +96,7 @@ public partial class MdlBinaryReader
         // Determine node type and create appropriate object
         MdlNode node = CreateNodeFromFlags(nodeFlags, nodeName);
 
-        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
             $"[MDL] ParseNode: name='{nodeName}', flags=0x{nodeFlags:X8}, type={node.NodeType}, childCount={childCount}");
 
         // Set common properties
@@ -195,7 +195,7 @@ public partial class MdlBinaryReader
 
     private void ParseChildren(MdlNode parent, uint arrayOffset, int count, int parentDepth, HashSet<uint> visitedNodeOffsets)
     {
-        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
             $"[MDL] ParseChildren START: parent='{parent.Name}', arrayOffset={arrayOffset}, count={count}, depth={parentDepth}, modelDataLen={_modelData.Length}");
 
         // Verify we can read the child array
@@ -225,7 +225,7 @@ public partial class MdlBinaryReader
             // Convert pointer to buffer offset
             var childOffset = PointerToModelOffset(childPointer);
 
-            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
                 $"[MDL] ParseChildren: parent='{parent.Name}', i={i}, childPtr=0x{childPointer:X8} -> offset={childOffset}, valid={childOffset != 0xFFFFFFFF && childOffset != uint.MaxValue && childOffset < _modelData.Length}");
 
             if (childOffset != 0xFFFFFFFF && childOffset != uint.MaxValue && childOffset < _modelData.Length)
@@ -233,7 +233,7 @@ public partial class MdlBinaryReader
                 var child = ParseNodeInternal(childOffset, parentDepth + 1, visitedNodeOffsets);
                 child.Parent = parent;
                 parent.Children.Add(child);
-                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
                     $"[MDL] ParseChildren: Added child '{child.Name}' to '{parent.Name}', parent now has {parent.Children.Count} children");
             }
             else
@@ -243,7 +243,7 @@ public partial class MdlBinaryReader
             }
         }
 
-        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
             $"[MDL] ParseChildren END: parent='{parent.Name}' now has {parent.Children.Count} children");
     }
 

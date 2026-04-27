@@ -371,6 +371,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             // Dispose TlkService to unsubscribe from settings events
             _tlkService?.Dispose();
 
+            // Dispose shared palette cache lock (#2034)
+            (_sharedCacheService as IDisposable)?.Dispose();
+
             if (e.Cancel)
             {
                 // HandleClosingAsync set Cancel=true, we need to re-close

@@ -10,7 +10,7 @@ namespace Radoub.UI.Services;
 /// Cache location: ~/Radoub/Cache/ItemPalette/ (shared across all tools).
 /// Thread-safe for concurrent reads from multiple tools.
 /// </summary>
-public class SharedPaletteCacheService : ISharedPaletteCacheService
+public class SharedPaletteCacheService : ISharedPaletteCacheService, IDisposable
 {
     private const int CacheVersion = 3; // v3: Added SourceLocation
 
@@ -22,6 +22,7 @@ public class SharedPaletteCacheService : ISharedPaletteCacheService
     private readonly string _cacheDirectory;
     private readonly ReaderWriterLockSlim _lock = new();
     private List<SharedPaletteCacheItem>? _aggregatedCache;
+    private bool _disposed;
 
     /// <summary>
     /// Create a shared palette cache service using the default shared location.
@@ -595,5 +596,24 @@ public class SharedPaletteCacheService : ISharedPaletteCacheService
     {
         public int Pid { get; set; }
         public DateTime StartedAt { get; set; }
+    }
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed)
+            return;
+
+        if (disposing)
+        {
+            _lock.Dispose();
+        }
+
+        _disposed = true;
     }
 }

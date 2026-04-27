@@ -71,6 +71,10 @@ public partial class AdvancedPanel : BasePanelControl
     public event EventHandler? VariablesChanged;
     public event EventHandler? RenameRequested;
 
+    // All event handler subscriptions tracked so we can release them on Unloaded
+    // and let the prior CurrentCreature graph be garbage-collected (#2034).
+    private readonly EventSubscriptions _subs = new();
+
     public AdvancedPanel()
     {
         InitializeComponent();
@@ -117,18 +121,28 @@ public partial class AdvancedPanel : BasePanelControl
         _removeVariableButton = this.FindControl<Button>("RemoveVariableButton");
         _variableValidationText = this.FindControl<TextBlock>("VariableValidationText");
 
-        // Wire up events
+        // Wire up events — track every subscription so DetachAll() can release them
         if (_copyResRefButton != null)
-            _copyResRefButton.Click += OnCopyResRefClick;
+            _subs.Track(
+                attach: () => _copyResRefButton.Click += OnCopyResRefClick,
+                detach: () => _copyResRefButton.Click -= OnCopyResRefClick);
         if (_copyTagButton != null)
-            _copyTagButton.Click += OnCopyTagClick;
+            _subs.Track(
+                attach: () => _copyTagButton.Click += OnCopyTagClick,
+                detach: () => _copyTagButton.Click -= OnCopyTagClick);
         if (_renameResRefButton != null)
-            _renameResRefButton.Click += OnRenameResRefClick;
+            _subs.Track(
+                attach: () => _renameResRefButton.Click += OnRenameResRefClick,
+                detach: () => _renameResRefButton.Click -= OnRenameResRefClick);
         if (_tagTextBox != null)
-            _tagTextBox.TextChanged += OnTagTextChanged;
+            _subs.Track(
+                attach: () => _tagTextBox.TextChanged += OnTagTextChanged,
+                detach: () => _tagTextBox.TextChanged -= OnTagTextChanged);
         if (_commentTextBox != null)
         {
-            _commentTextBox.TextChanged += OnCommentTextChanged;
+            _subs.Track(
+                attach: () => _commentTextBox.TextChanged += OnCommentTextChanged,
+                detach: () => _commentTextBox.TextChanged -= OnCommentTextChanged);
             WireTokenMenu(_commentTextBox);
         }
 
@@ -136,12 +150,23 @@ public partial class AdvancedPanel : BasePanelControl
         WireUpBehaviorCombos();
         WireUpIdentityCombos();
         WireUpVariables();
+
+        Unloaded += OnPanelUnloaded;
+    }
+
+    private void OnPanelUnloaded(object? sender, RoutedEventArgs e)
+    {
+        Unloaded -= OnPanelUnloaded;
+        _subs.DetachAll();
+        ClearVariables(); // Releases per-VariableViewModel PropertyChanged subscriptions
     }
 
     private void WireUpIdentityCombos()
     {
         if (_paletteCategoryComboBox != null)
-            _paletteCategoryComboBox.SelectionChanged += OnPaletteCategorySelectionChanged;
+            _subs.Track(
+                attach: () => _paletteCategoryComboBox.SelectionChanged += OnPaletteCategorySelectionChanged,
+                detach: () => _paletteCategoryComboBox.SelectionChanged -= OnPaletteCategorySelectionChanged);
     }
 
     private void OnPaletteCategorySelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -159,15 +184,25 @@ public partial class AdvancedPanel : BasePanelControl
     private void WireUpBehaviorCombos()
     {
         if (_factionBrowseButton != null)
-            _factionBrowseButton.Click += OnFactionBrowseClick;
+            _subs.Track(
+                attach: () => _factionBrowseButton.Click += OnFactionBrowseClick,
+                detach: () => _factionBrowseButton.Click -= OnFactionBrowseClick);
         if (_perceptionComboBox != null)
-            _perceptionComboBox.SelectionChanged += OnPerceptionSelectionChanged;
+            _subs.Track(
+                attach: () => _perceptionComboBox.SelectionChanged += OnPerceptionSelectionChanged,
+                detach: () => _perceptionComboBox.SelectionChanged -= OnPerceptionSelectionChanged);
         if (_walkRateComboBox != null)
-            _walkRateComboBox.SelectionChanged += OnWalkRateSelectionChanged;
+            _subs.Track(
+                attach: () => _walkRateComboBox.SelectionChanged += OnWalkRateSelectionChanged,
+                detach: () => _walkRateComboBox.SelectionChanged -= OnWalkRateSelectionChanged);
         if (_decayTimeComboBox != null)
-            _decayTimeComboBox.SelectionChanged += OnDecayTimeSelectionChanged;
+            _subs.Track(
+                attach: () => _decayTimeComboBox.SelectionChanged += OnDecayTimeSelectionChanged,
+                detach: () => _decayTimeComboBox.SelectionChanged -= OnDecayTimeSelectionChanged);
         if (_bodyBagComboBox != null)
-            _bodyBagComboBox.SelectionChanged += OnBodyBagSelectionChanged;
+            _subs.Track(
+                attach: () => _bodyBagComboBox.SelectionChanged += OnBodyBagSelectionChanged,
+                detach: () => _bodyBagComboBox.SelectionChanged -= OnBodyBagSelectionChanged);
     }
 
     private async void OnFactionBrowseClick(object? sender, RoutedEventArgs e)
@@ -242,17 +277,23 @@ public partial class AdvancedPanel : BasePanelControl
     {
         void WireFlag(CheckBox? cb, Action<bool> setter)
         {
-            if (cb != null)
+            if (cb == null) return;
+
+            // Capture the handler in a local so we can detach it on Unloaded —
+            // the previous inline lambda was unreachable and held `this` +
+            // `CurrentCreature` alive for the panel's lifetime (#2034).
+            void Handler(object? s, RoutedEventArgs e)
             {
-                cb.IsCheckedChanged += (s, e) =>
+                if (!IsLoading && CurrentCreature != null)
                 {
-                    if (!IsLoading && CurrentCreature != null)
-                    {
-                        setter(cb.IsChecked ?? false);
-                        FlagsChanged?.Invoke(this, EventArgs.Empty);
-                    }
-                };
+                    setter(cb.IsChecked ?? false);
+                    FlagsChanged?.Invoke(this, EventArgs.Empty);
+                }
             }
+
+            _subs.Track(
+                attach: () => cb.IsCheckedChanged += Handler,
+                detach: () => cb.IsCheckedChanged -= Handler);
         }
 
         WireFlag(_plotCheckBox, v => { if (CurrentCreature != null) CurrentCreature.Plot = v; });
@@ -535,9 +576,13 @@ public partial class AdvancedPanel : BasePanelControl
     private void WireUpVariables()
     {
         if (_addVariableButton != null)
-            _addVariableButton.Click += OnAddVariable;
+            _subs.Track(
+                attach: () => _addVariableButton.Click += OnAddVariable,
+                detach: () => _addVariableButton.Click -= OnAddVariable);
         if (_removeVariableButton != null)
-            _removeVariableButton.Click += OnRemoveVariable;
+            _subs.Track(
+                attach: () => _removeVariableButton.Click += OnRemoveVariable,
+                detach: () => _removeVariableButton.Click -= OnRemoveVariable);
         if (_variablesGrid != null)
             _variablesGrid.ItemsSource = Variables;
     }

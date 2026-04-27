@@ -154,7 +154,7 @@ public partial class MdlAsciiReader
                             parentNames[nodeName] = parentName;
                         }
 
-                        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
                             $"[MDL-ASCII] Parsed node: name='{nodeName}', type='{nodeType}', parent='{parentName ?? "NULL"}'");
                     }
                     else

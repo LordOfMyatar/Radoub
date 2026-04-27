@@ -239,7 +239,7 @@ public partial class MdlAsciiReader
         mesh.TextureCoords = new[] { newUVs.ToArray() };
         mesh.Faces = newFaces;
 
-        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
             $"[MDL-ASCII] Unrolled mesh '{mesh.Name}': {origVertices.Length} verts + {origUVs.Length} tverts -> {newVertices.Count} unified vertices");
     }
 

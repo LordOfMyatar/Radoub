@@ -1094,7 +1094,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
                 UnifiedLogger.LogApplication(LogLevel.WARN, $"  Mesh {meshIndex} '{mesh.Name}' UV count mismatch: {mesh.TextureCoords[0].Length} UVs vs {mesh.Vertices.Length} vertices");
             }
 
-            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+            UnifiedLogger.LogApplication(LogLevel.TRACE,
                 $"  MESH '{mesh.Name}': bitmap='{mesh.Bitmap}', isSkin={isSkinMesh}, hasXform={hasWorldTransform}, " +
                 $"verts={mesh.Vertices.Length}, faces={mesh.Faces.Length}");
 
@@ -1228,7 +1228,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
 
             if (weld.WeldedCount > 0)
             {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                UnifiedLogger.LogApplication(LogLevel.TRACE,
                     $"  Mesh '{mesh.Name}': welded {weld.WeldedCount}/{cornerCount} corners " +
                     $"-> {weld.OutputVertexCount} unique in GPU buffer");
             }

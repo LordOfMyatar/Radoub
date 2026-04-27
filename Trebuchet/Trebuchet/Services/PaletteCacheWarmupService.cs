@@ -171,5 +171,6 @@ public class PaletteCacheWarmupService
     {
         _bifWarmCts?.Dispose();
         _hakWarmCts?.Dispose();
+        (_cacheService as IDisposable)?.Dispose();
     }
 }

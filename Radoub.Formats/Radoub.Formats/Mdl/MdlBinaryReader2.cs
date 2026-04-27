@@ -178,7 +178,7 @@ public class MdlBinaryReader2
         // 0x6C: node flags
         uint flags = reader.ReadUInt32();
 
-        Log(LogLevel.DEBUG, $"Node '{name}' at {offset}: flags=0x{flags:X8}, children={childrenCount}");
+        Log(LogLevel.TRACE, $"Node '{name}' at {offset}: flags=0x{flags:X8}, children={childrenCount}");
 
         // Determine node type and create appropriate object
         MdlNode node;
@@ -236,26 +236,26 @@ public class MdlBinaryReader2
         reader.BaseStream.Position = meshHeaderStart + MESH_FACES_OFFSET;
         uint facesOffset = reader.ReadUInt32();
         uint facesCount = reader.ReadUInt32();
-        Log(LogLevel.DEBUG, $"Mesh '{mesh.Name}': faces at {facesOffset}, count={facesCount}");
+        Log(LogLevel.TRACE, $"Mesh '{mesh.Name}': faces at {facesOffset}, count={facesCount}");
 
         // === Texture name ===
         reader.BaseStream.Position = meshHeaderStart + MESH_TEXTURE0_OFFSET;
         mesh.Bitmap = ReadString(reader, 64);
-        Log(LogLevel.DEBUG, $"Mesh '{mesh.Name}': texture='{mesh.Bitmap}'");
+        Log(LogLevel.TRACE, $"Mesh '{mesh.Name}': texture='{mesh.Bitmap}'");
 
         // === Vertex data pointers ===
         reader.BaseStream.Position = meshHeaderStart + MESH_VERTEX_OFFSET;
         uint vertexOffset = reader.ReadUInt32();
         ushort vertexCount = reader.ReadUInt16();
         ushort textureCount = reader.ReadUInt16();
-        Log(LogLevel.DEBUG, $"Mesh '{mesh.Name}': vertexOffset={vertexOffset}, vertexCount={vertexCount}, textureCount={textureCount}");
+        Log(LogLevel.TRACE, $"Mesh '{mesh.Name}': vertexOffset={vertexOffset}, vertexCount={vertexCount}, textureCount={textureCount}");
 
         // === Texture coordinate offsets ===
         reader.BaseStream.Position = meshHeaderStart + MESH_TVERT0_OFFSET;
         uint[] tvertOffsets = new uint[4];
         for (int i = 0; i < 4; i++)
             tvertOffsets[i] = reader.ReadUInt32();
-        Log(LogLevel.DEBUG, $"Mesh '{mesh.Name}': tvert offsets={tvertOffsets[0]}, {tvertOffsets[1]}, {tvertOffsets[2]}, {tvertOffsets[3]}");
+        Log(LogLevel.TRACE, $"Mesh '{mesh.Name}': tvert offsets={tvertOffsets[0]}, {tvertOffsets[1]}, {tvertOffsets[2]}, {tvertOffsets[3]}");
 
         // === Normals offset ===
         reader.BaseStream.Position = meshHeaderStart + MESH_NORMALS_OFFSET;
@@ -281,7 +281,7 @@ public class MdlBinaryReader2
         if (vertexCount > 0 && normalsOffset != 0xFFFFFFFF && _rawData.Length > 0)
         {
             uint adjustedNormalsOffset = normalsOffset + avgNormalSkip;
-            Log(LogLevel.DEBUG, $"Mesh '{mesh.Name}': Normals offset {normalsOffset} + {avgNormalSkip} = {adjustedNormalsOffset}");
+            Log(LogLevel.TRACE, $"Mesh '{mesh.Name}': Normals offset {normalsOffset} + {avgNormalSkip} = {adjustedNormalsOffset}");
             mesh.Normals = ReadVerticesFromRaw(adjustedNormalsOffset, vertexCount);
         }
 
@@ -295,7 +295,7 @@ public class MdlBinaryReader2
                 if (tvertOffsets[i] != 0xFFFFFFFF)
                 {
                     uint adjustedTvertOffset = tvertOffsets[i] + avgNormalSkip;
-                    Log(LogLevel.DEBUG, $"Mesh '{mesh.Name}': UV[{i}] offset {tvertOffsets[i]} + {avgNormalSkip} = {adjustedTvertOffset}");
+                    Log(LogLevel.TRACE, $"Mesh '{mesh.Name}': UV[{i}] offset {tvertOffsets[i]} + {avgNormalSkip} = {adjustedTvertOffset}");
                     var uvs = ReadTexCoordsFromRaw(adjustedTvertOffset, vertexCount);
                     texCoordsList.Add(uvs);
                     if (i == 0)
@@ -420,7 +420,7 @@ public class MdlBinaryReader2
         float v2z = BitConverter.ToSingle(_rawData, (int)vertexRawOffset + 20);
         float v2Mag = (float)Math.Sqrt(v2x * v2x + v2y * v2y + v2z * v2z);
 
-        Log(LogLevel.DEBUG,
+        Log(LogLevel.TRACE,
             $"AvgNormal check at offset {vertexRawOffset}: v1=({vx:F4},{vy:F4},{vz:F4}) mag={vMag:F4}, v2=({v2x:F4},{v2y:F4},{v2z:F4}) mag={v2Mag:F4}");
 
         bool shouldSkip = false;
@@ -456,7 +456,7 @@ public class MdlBinaryReader2
         if (shouldSkip)
         {
             vertexRawOffset += 12;
-            Log(LogLevel.DEBUG,
+            Log(LogLevel.TRACE,
                 $"Skipping {skipReason} ({vx:F4},{vy:F4},{vz:F4}), actual positions start at offset {vertexRawOffset}");
         }
 
