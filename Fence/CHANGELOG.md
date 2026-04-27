@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.27-alpha] - 2026-04-26
-**Branch**: `radoub/issue-2034-round-3` | **PR**: #TBD
+**Branch**: `radoub/issue-2034-round-3` | **PR**: #2143
 
 ### Fix: Memory leaks round 3 — event unsubscription (#2034)
 
