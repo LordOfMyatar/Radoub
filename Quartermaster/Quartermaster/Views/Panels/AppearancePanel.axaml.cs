@@ -116,11 +116,6 @@ public partial class AppearancePanel : UserControl
 
     private void OnPanelUnloaded(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        // PROBE (#2034 round 2 verification — REMOVE before merge): cross-checks
-        // whether sidebar navigation triggers Unloaded on AppearancePanel too.
-        // Expected: fires once on app shutdown only.
-        UnifiedLogger.LogApplication(LogLevel.WARN,
-            $"[#2034-PROBE] AppearancePanel.OnPanelUnloaded fired at {DateTime.UtcNow:O}");
         Unloaded -= OnPanelUnloaded;
         UnwireEvents();
     }
