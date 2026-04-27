@@ -16,7 +16,7 @@ public partial class MdlBinaryReader
 
         var meshHeaderStart = reader.BaseStream.Position;
 
-        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
             $"[MDL] ParseMeshNode '{mesh.Name}': meshHeaderStart=0x{meshHeaderStart:X4}");
 
         // 0x000: Skip mesh routines (2 uint32 = 8 bytes)
@@ -51,7 +51,7 @@ public partial class MdlBinaryReader
         // 0x078: Textures (4 x 64 bytes = 256 bytes)
         var textureOffset = reader.BaseStream.Position;
         mesh.Bitmap = ReadFixedString(reader, 64);   // Texture0
-        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
             $"[MDL] Mesh texture0 at 0x{textureOffset:X4} (relative 0x{textureOffset - meshHeaderStart:X4}): '{mesh.Bitmap}'");
         mesh.Bitmap2 = ReadFixedString(reader, 64);  // Texture1
         ReadFixedString(reader, 64);                  // Texture2
@@ -104,7 +104,7 @@ public partial class MdlBinaryReader
         var vertexRawOffset = PointerToRawOffset(vertexDataOffset);
         var normalsRawOffset = PointerToRawOffset(normalsOffset);
 
-        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
             $"[MDL] Mesh '{mesh.Name}': vertexDataPtr=0x{vertexDataOffset:X8} -> rawOffset={vertexRawOffset}, normalsPtr=0x{normalsOffset:X8} -> rawOffset={normalsRawOffset}, vertexCount={vertexCount}, faceCount={faceCount}, rawDataLen={_rawData.Length}");
 
         // Detect and skip average normal header if present.
@@ -121,7 +121,7 @@ public partial class MdlBinaryReader
         if (vertexCount > 0 && actualVertexOffset != 0xFFFFFFFF && actualVertexOffset != uint.MaxValue)
         {
             mesh.Vertices = ReadVertices(actualVertexOffset, vertexCount);
-            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
                 $"[MDL] Mesh '{mesh.Name}': Read {mesh.Vertices?.Length ?? 0} vertices");
         }
 
@@ -129,7 +129,7 @@ public partial class MdlBinaryReader
         {
             // Apply same offset adjustment as vertices - normals array also has the avg normal header
             var adjustedNormalsOffset = actualNormalsOffset + avgNormalSkip;
-            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
                 $"[MDL] Mesh '{mesh.Name}': Normals offset {actualNormalsOffset} + {avgNormalSkip} = {adjustedNormalsOffset}");
             mesh.Normals = ReadVertices(adjustedNormalsOffset, vertexCount);
         }
@@ -146,7 +146,7 @@ public partial class MdlBinaryReader
                 {
                     // Apply same offset adjustment as vertices
                     var adjustedTvertOffset = tvertRawOffset + avgNormalSkip;
-                    Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                    Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
                         $"[MDL] Mesh '{mesh.Name}': UV[{i}] offset {tvertRawOffset} + {avgNormalSkip} = {adjustedTvertOffset}");
                     texCoordsList.Add(ReadTexCoords(adjustedTvertOffset, vertexCount));
                 }
@@ -200,7 +200,7 @@ public partial class MdlBinaryReader
                 {
                     var f0 = validFaces[0];
                     var v0 = mesh.Vertices[f0.VertexIndex0];
-                    Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                    Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
                         $"[MDL] Mesh '{mesh.Name}': {validFaces.Count} valid faces, idx range [{minIdx},{maxIdx}], vtxCount={mesh.Vertices.Length}. Face0: [{f0.VertexIndex0},{f0.VertexIndex1},{f0.VertexIndex2}] -> v0=({v0.X:F3},{v0.Y:F3},{v0.Z:F3})");
                 }
             }
@@ -243,7 +243,7 @@ public partial class MdlBinaryReader
         var skinExtStart = meshHeaderStart + 0x200;
         reader.BaseStream.Position = skinExtStart;
 
-        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
             $"[MDL] ParseSkinNode '{skin.Name}': skinExtStart=0x{skinExtStart:X4}, vertexCount={vertexCount}");
 
         // 0x000: m_aWeights array header (12 bytes) — string-based weight data in model data, skip
@@ -271,7 +271,7 @@ public partial class MdlBinaryReader
         var tBoneCount = reader.ReadUInt32();
         reader.ReadUInt32(); // allocated
 
-        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
             $"[MDL] Skin '{skin.Name}': weightsPtr=0x{skinWeightsPtr:X8}, boneRefsPtr=0x{skinBoneRefsPtr:X8}, " +
             $"nodeToBonePtr=0x{nodeToBoneMapPtr:X8} count={nodeToBoneCount}, " +
             $"qBonePtr=0x{qBoneArrayOffset:X8} count={qBoneCount}, tBonePtr=0x{tBoneArrayOffset:X8} count={tBoneCount}");
@@ -290,7 +290,7 @@ public partial class MdlBinaryReader
 
                 // Log first entries for debugging
                 var mapPreview = string.Join(",", nodeToBoneMap.Take(10).Select(x => x.ToString()));
-                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
                     $"[MDL] Skin '{skin.Name}': NodeToBoneMap[0..{Math.Min(10, nodeToBoneCount)-1}] = [{mapPreview}]");
             }
         }
@@ -302,7 +302,7 @@ public partial class MdlBinaryReader
         // For Dragon wings, slots 0-5 map directly to Q/T indices 0-5.
         var weightsRawOffset = PointerToRawOffset(skinWeightsPtr);
         var boneRefsRawOffset = PointerToRawOffset(skinBoneRefsPtr);
-        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
             $"[MDL] Skin '{skin.Name}': weightsRawOff={weightsRawOffset}, boneRefsRawOff={boneRefsRawOffset}, rawDataLen={_rawData.Length}");
 
         if (vertexCount > 0 && weightsRawOffset != uint.MaxValue && boneRefsRawOffset != uint.MaxValue)
@@ -341,7 +341,7 @@ public partial class MdlBinaryReader
 
                 skin.BoneWeights = boneWeights;
 
-                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
                     $"[MDL] Skin '{skin.Name}': Read {vertexCount} bone weight entries");
             }
             else
@@ -377,7 +377,7 @@ public partial class MdlBinaryReader
                     skin.BoneQuaternions[i] = new Quaternion(f1, f2, f3, f0);
                 }
 
-                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
                     $"[MDL] Skin '{skin.Name}': Read {qBoneCount} inverse bind-pose quaternions");
             }
         }
@@ -399,7 +399,7 @@ public partial class MdlBinaryReader
                     skin.BoneTranslations[i] = ReadVector3(tReader);
                 }
 
-                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
                     $"[MDL] Skin '{skin.Name}': Read {tBoneCount} inverse bind-pose translations");
             }
         }
@@ -430,7 +430,7 @@ public partial class MdlBinaryReader
         float v2z = BitConverter.ToSingle(_rawData, (int)vertexRawOffset + 20);
         float v2Mag = (float)Math.Sqrt(v2x * v2x + v2y * v2y + v2z * v2z);
 
-        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
             $"[MDL] AvgNormal check at offset {vertexRawOffset}: v1=({vx:F4},{vy:F4},{vz:F4}) mag={vMag:F4}, v2=({v2x:F4},{v2y:F4},{v2z:F4}) mag={v2Mag:F4}");
 
         bool shouldSkip = false;
@@ -466,7 +466,7 @@ public partial class MdlBinaryReader
         if (shouldSkip)
         {
             vertexRawOffset += 12;
-            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
                 $"[MDL] Skipping {skipReason} ({vx:F4},{vy:F4},{vz:F4}), actual positions start at offset {vertexRawOffset}");
         }
 

@@ -42,7 +42,7 @@ public partial class MdlBinaryReader
             if (result != uint.MaxValue) return result;
         }
 
-        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
             $"[MDL] PointerToModelOffset: ptr=0x{pointer:X8} FAILED (base=0x{_pointerBase:X8}, bufLen={_modelData.Length}, hasMem={HasMemoryPointers})");
         return uint.MaxValue; // Out of bounds
     }
@@ -78,7 +78,7 @@ public partial class MdlBinaryReader
             if (result != uint.MaxValue) return result;
         }
 
-        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
             $"[MDL] PointerToRawOffset: ptr=0x{pointer:X8} FAILED (base=0x{_pointerBase:X8}, modelLen={_modelData.Length}, rawLen={rawLen}, hasMem={HasMemoryPointers})");
         return uint.MaxValue; // Out of bounds
     }

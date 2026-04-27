@@ -48,7 +48,7 @@ public partial class MdlBinaryReader
             {
                 sb.Append(" [SUSPICIOUS - body parts should be < 2m]");
             }
-            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG, sb.ToString());
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE, sb.ToString());
         }
 
         return vertices;
@@ -91,7 +91,7 @@ public partial class MdlBinaryReader
             {
                 sb.Append($"[WARN: {outOfRange} UVs out of range]");
             }
-            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG, sb.ToString());
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE, sb.ToString());
         }
 
         return coords;
