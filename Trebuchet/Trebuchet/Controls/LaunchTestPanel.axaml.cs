@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Radoub.UI.Services;
 using RadoubLauncher.ViewModels;
 
@@ -12,6 +13,7 @@ public partial class LaunchTestPanel : UserControl
     public LaunchTestPanel()
     {
         InitializeComponent();
+        Unloaded += OnPanelUnloaded;
     }
 
     /// <summary>
@@ -28,6 +30,13 @@ public partial class LaunchTestPanel : UserControl
         UpdateFailedScriptsColors();
         UpdateStaleScriptText();
         UpdateModLockedWarningColor();
+    }
+
+    private void OnPanelUnloaded(object? sender, RoutedEventArgs e)
+    {
+        Unloaded -= OnPanelUnloaded;
+        if (_viewModel != null)
+            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)

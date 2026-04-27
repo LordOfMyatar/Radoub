@@ -434,17 +434,24 @@ public partial class MainWindowViewModel : ObservableObject
         _moduleEditorViewModel = viewModel;
 
         // Forward HasUnsavedChanges from module editor to build warning
-        viewModel.PropertyChanged += (_, e) =>
-        {
-            if (e.PropertyName == nameof(ModuleEditorViewModel.HasUnsavedChanges))
-            {
-                OnPropertyChanged(nameof(NeedsBuildWarning));
-                OnPropertyChanged(nameof(BuildWarningText));
-            }
-        };
+        viewModel.PropertyChanged += OnModuleEditorPropertyChanged;
 
         // Update status bar when TLK language changes
-        viewModel.TlkLanguageChanged += (_, _) => UpdateStatusFromSettings();
+        viewModel.TlkLanguageChanged += OnModuleEditorTlkLanguageChanged;
+    }
+
+    private void OnModuleEditorPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ModuleEditorViewModel.HasUnsavedChanges))
+        {
+            OnPropertyChanged(nameof(NeedsBuildWarning));
+            OnPropertyChanged(nameof(BuildWarningText));
+        }
+    }
+
+    private void OnModuleEditorTlkLanguageChanged(object? sender, EventArgs e)
+    {
+        UpdateStatusFromSettings();
     }
 
     /// <summary>
@@ -456,14 +463,16 @@ public partial class MainWindowViewModel : ObservableObject
         _factionEditorViewModel = viewModel;
 
         // Forward HasUnsavedChanges from faction editor to build warning
-        viewModel.PropertyChanged += (_, e) =>
+        viewModel.PropertyChanged += OnFactionEditorPropertyChanged;
+    }
+
+    private void OnFactionEditorPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(FactionEditorViewModel.HasUnsavedChanges))
         {
-            if (e.PropertyName == nameof(FactionEditorViewModel.HasUnsavedChanges))
-            {
-                OnPropertyChanged(nameof(NeedsBuildWarning));
-                OnPropertyChanged(nameof(BuildWarningText));
-            }
-        };
+            OnPropertyChanged(nameof(NeedsBuildWarning));
+            OnPropertyChanged(nameof(BuildWarningText));
+        }
     }
 
     /// <summary>
@@ -487,6 +496,16 @@ public partial class MainWindowViewModel : ObservableObject
         _cts.Dispose();
         RadoubSettings.Instance.PropertyChanged -= OnSharedSettingsChanged;
         SettingsService.Instance.PropertyChanged -= OnLocalSettingsChanged;
+
+        if (_moduleEditorViewModel != null)
+        {
+            _moduleEditorViewModel.PropertyChanged -= OnModuleEditorPropertyChanged;
+            _moduleEditorViewModel.TlkLanguageChanged -= OnModuleEditorTlkLanguageChanged;
+        }
+        if (_factionEditorViewModel != null)
+        {
+            _factionEditorViewModel.PropertyChanged -= OnFactionEditorPropertyChanged;
+        }
     }
 
     // --- Status & Settings ---

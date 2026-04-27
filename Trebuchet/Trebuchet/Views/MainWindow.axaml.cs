@@ -17,6 +17,8 @@ public partial class MainWindow : Window
     private MainWindowViewModel? _viewModel;
     private PaletteCacheWarmupService? _paletteCacheWarmup;
     private CancellationTokenSource? _appShutdownCts;
+    private TabControl? _workspaceTabs;
+    private ModuleEditorViewModel? _moduleEditorVm;
 
     public MainWindow()
     {
@@ -29,9 +31,9 @@ public partial class MainWindow : Window
         var moduleEditorPanel = this.FindControl<Controls.ModuleEditorPanel>("ModuleEditorPanel");
         if (moduleEditorPanel != null)
         {
-            var moduleEditorVm = new ModuleEditorViewModel();
-            moduleEditorPanel.Initialize(moduleEditorVm, this);
-            _viewModel.SetModuleEditorViewModel(moduleEditorVm);
+            _moduleEditorVm = new ModuleEditorViewModel();
+            moduleEditorPanel.Initialize(_moduleEditorVm, this);
+            _viewModel.SetModuleEditorViewModel(_moduleEditorVm);
 
             // Wire palette cache pre-warming (#1633)
             _appShutdownCts = new CancellationTokenSource();
@@ -39,28 +41,8 @@ public partial class MainWindow : Window
             var hakScanner = new HakPaletteScannerService();
             _paletteCacheWarmup = new PaletteCacheWarmupService(cacheService, hakScanner);
 
-            moduleEditorVm.GameDataServiceInitialized += (_, _) =>
-            {
-                if (moduleEditorVm.GameDataService?.IsConfigured == true)
-                {
-                    _ = _paletteCacheWarmup.WarmBifCacheAsync(
-                        moduleEditorVm.GameDataService, _appShutdownCts.Token);
-                }
-            };
-
-            moduleEditorVm.ModuleLoaded += (_, _) =>
-            {
-                if (moduleEditorVm.GameDataService?.IsConfigured == true &&
-                    moduleEditorVm.ModuleDirectory != null)
-                {
-                    var hakSearchPaths = RadoubSettings.Instance.GetAllHakSearchPaths();
-                    _ = _paletteCacheWarmup.WarmModuleHakCacheAsync(
-                        moduleEditorVm.GameDataService,
-                        moduleEditorVm.ModuleDirectory,
-                        hakSearchPaths,
-                        _appShutdownCts.Token);
-                }
-            };
+            _moduleEditorVm.GameDataServiceInitialized += OnGameDataServiceInitialized;
+            _moduleEditorVm.ModuleLoaded += OnModuleLoaded;
         }
 
         // Initialize the embedded faction editor panel
@@ -91,10 +73,10 @@ public partial class MainWindow : Window
         KeyDown += OnKeyDown;
 
         // Tab change updates title and status bar context
-        var workspaceTabs = this.FindControl<TabControl>("WorkspaceTabs");
-        if (workspaceTabs != null)
+        _workspaceTabs = this.FindControl<TabControl>("WorkspaceTabs");
+        if (_workspaceTabs != null)
         {
-            workspaceTabs.SelectionChanged += OnWorkspaceTabChanged;
+            _workspaceTabs.SelectionChanged += OnWorkspaceTabChanged;
         }
 
         // Save window state on close
@@ -144,6 +126,19 @@ public partial class MainWindow : Window
     {
         SaveWindowState();
 
+        // Unsubscribe window-level event handlers (#2034 round 3)
+        KeyDown -= OnKeyDown;
+        Closing -= OnWindowClosing;
+        if (_workspaceTabs != null)
+            _workspaceTabs.SelectionChanged -= OnWorkspaceTabChanged;
+        if (_viewModel != null)
+            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        if (_moduleEditorVm != null)
+        {
+            _moduleEditorVm.GameDataServiceInitialized -= OnGameDataServiceInitialized;
+            _moduleEditorVm.ModuleLoaded -= OnModuleLoaded;
+        }
+
         // Cancel palette cache warm-up operations (#1633)
         _paletteCacheWarmup?.CancelAll();
         _appShutdownCts?.Cancel();
@@ -151,6 +146,30 @@ public partial class MainWindow : Window
         _appShutdownCts?.Dispose();
 
         (_viewModel)?.Cleanup();
+    }
+
+    private void OnGameDataServiceInitialized(object? sender, System.EventArgs e)
+    {
+        if (_moduleEditorVm?.GameDataService?.IsConfigured == true && _appShutdownCts != null)
+        {
+            _ = _paletteCacheWarmup!.WarmBifCacheAsync(
+                _moduleEditorVm.GameDataService, _appShutdownCts.Token);
+        }
+    }
+
+    private void OnModuleLoaded(object? sender, System.EventArgs e)
+    {
+        if (_moduleEditorVm?.GameDataService?.IsConfigured == true &&
+            _moduleEditorVm.ModuleDirectory != null &&
+            _appShutdownCts != null)
+        {
+            var hakSearchPaths = RadoubSettings.Instance.GetAllHakSearchPaths();
+            _ = _paletteCacheWarmup!.WarmModuleHakCacheAsync(
+                _moduleEditorVm.GameDataService,
+                _moduleEditorVm.ModuleDirectory,
+                hakSearchPaths,
+                _appShutdownCts.Token);
+        }
     }
 
     private void SaveWindowState()

@@ -23,6 +23,7 @@ public partial class FactionEditorPanel : UserControl
     public FactionEditorPanel()
     {
         InitializeComponent();
+        Unloaded += OnPanelUnloaded;
     }
 
     /// <summary>
@@ -38,6 +39,16 @@ public partial class FactionEditorPanel : UserControl
 
         viewModel.MatrixChanged += OnMatrixChanged;
         viewModel.PropertyChanged += OnViewModelPropertyChanged;
+    }
+
+    private void OnPanelUnloaded(object? sender, RoutedEventArgs e)
+    {
+        Unloaded -= OnPanelUnloaded;
+        if (_viewModel != null)
+        {
+            _viewModel.MatrixChanged -= OnMatrixChanged;
+            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        }
     }
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
