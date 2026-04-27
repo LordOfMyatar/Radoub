@@ -107,7 +107,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         // Wire up shared document state for title bar updates
-        _documentState.DirtyStateChanged += () => Title = _documentState.GetTitle();
+        _documentState.DirtyStateChanged += OnDocumentDirtyStateChanged;
 
         // Defer heavy I/O (GameDataService, palette loading) to Opened event
         // Only do fast, synchronous UI setup here
@@ -364,6 +364,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             SaveStoreBrowserPanelSize();
             SaveItemDetailsPanelSize();
 
+            // Unsubscribe window-level event handlers (#2034 round 3)
+            StoreInventoryGrid.DoubleTapped -= OnStoreInventoryDoubleTapped;
+            ItemPaletteGrid.DoubleTapped -= OnItemPaletteDoubleTapped;
+            StoreItems.CollectionChanged -= OnStoreItemsCollectionChanged;
+            _documentState.DirtyStateChanged -= OnDocumentDirtyStateChanged;
+
             // Cancel all async operations
             _windowCts?.Cancel();
             _windowCts?.Dispose();
@@ -380,6 +386,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 Close();
             }
         }
+    }
+
+    private void OnDocumentDirtyStateChanged()
+    {
+        Title = _documentState.GetTitle();
     }
 
     #endregion

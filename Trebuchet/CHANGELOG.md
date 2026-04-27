@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.31.0-alpha] - 2026-04-26
+**Branch**: `radoub/issue-2034-round-3` | **PR**: #2143
+
+### Fix: Memory leaks round 3 — event unsubscription & MarlinspikePanel cleanup (#2034)
+
+- Trebuchet: unsubscribe `KeyDown`, `PropertyChanged`, `SelectionChanged` on window close
+- MarlinspikePanel: dispose `_searchCts` on Unloaded
+- `MainWindowViewModel._cts` disposed in cleanup
+
+---
+
 ## [1.30.0-alpha] - 2026-04-11
 **Branch**: `trebuchet/issue-2067` | **PR**: #2071
 

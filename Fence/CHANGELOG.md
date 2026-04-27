@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.27-alpha] - 2026-04-26
+**Branch**: `radoub/issue-2034-round-3` | **PR**: #2143
+
+### Fix: Memory leaks round 3 — event unsubscription (#2034)
+
+- Unsubscribe `CollectionChanged` and `DoubleTapped` handlers on window close
+
+---
+
 ## [0.1.26-alpha] - 2026-04-18
 **Branch**: `fence/issue-2065` | **PR**: #2097
 
