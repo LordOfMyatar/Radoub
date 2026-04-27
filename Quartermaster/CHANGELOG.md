@@ -13,6 +13,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 - `SharedPaletteCacheService` now implements `IDisposable` and disposes its `ReaderWriterLockSlim` (eliminates kernel-handle leak; affects all tools via Radoub.UI)
 - `ItemIconService` bitmap cache bounded with LRU eviction (was unbounded `ConcurrentDictionary`, could grow past the documented ~15–30 MB ceiling on large modules)
 - `AdvancedPanel` lambda closures unwired on `Unloaded` so prior `CurrentCreature` graphs can be garbage-collected between creature switches
+- Perf: demoted per-node/per-mesh MDL parser logs from DEBUG to TRACE (~165k log lines per creature-browser session at DEBUG level were causing visible app slowdown on startup and panel switches)
 
 ---
 
