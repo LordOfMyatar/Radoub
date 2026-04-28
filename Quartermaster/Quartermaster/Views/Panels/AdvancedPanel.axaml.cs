@@ -8,6 +8,7 @@ using Avalonia.Markup.Xaml;
 using Quartermaster.Services;
 using Quartermaster.ViewModels;
 using Quartermaster.Views.Dialogs;
+using Radoub.Formats.Services;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
@@ -308,8 +309,36 @@ public partial class AdvancedPanel : BasePanelControl
     public void SetDisplayService(CreatureDisplayService displayService)
     {
         _displayService = displayService;
+        // LoadBehaviorData is just hardcoded combo population — keep on UI thread.
         LoadBehaviorData();
-        LoadPaletteCategoryData();
+        // LoadPaletteCategoryData hits creaturepal.itp via GameDataService — push to
+        // background to keep ~700ms off the UI thread on startup (#2058).
+        _ = LoadPaletteCategoryDataInBackgroundAsync(displayService);
+    }
+
+    private async System.Threading.Tasks.Task LoadPaletteCategoryDataInBackgroundAsync(CreatureDisplayService displayService)
+    {
+        try
+        {
+            var categories = await System.Threading.Tasks.Task.Run(() =>
+                displayService.GetCreaturePaletteCategories().ToList());
+
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                PopulatePaletteCategoryCombo(categories);
+                // If a creature was loaded before the combo populated, re-select its category.
+                if (CurrentCreature != null)
+                {
+                    ComboBoxHelper.SelectByTag(_paletteCategoryComboBox, CurrentCreature.PaletteID);
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                Radoub.Formats.Logging.LogLevel.WARN,
+                $"AdvancedPanel: palette category background load failed — {ex.Message}");
+        }
     }
 
     /// <summary>
@@ -416,14 +445,11 @@ public partial class AdvancedPanel : BasePanelControl
         }
     }
 
-    private void LoadPaletteCategoryData()
+    private void PopulatePaletteCategoryCombo(System.Collections.Generic.List<PaletteCategory> categories)
     {
-        if (_paletteCategoryComboBox == null || _displayService == null) return;
+        if (_paletteCategoryComboBox == null) return;
 
         _paletteCategoryComboBox.Items.Clear();
-
-        // Load categories from creaturepal.itp via GameDataService
-        var categories = _displayService.GetCreaturePaletteCategories().ToList();
 
         if (categories.Count == 0)
         {
