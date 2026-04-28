@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.87-alpha] - 2026-04-27
-**Branch**: `quartermaster/issue-2058` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2058` | **PR**: #2145
 
 ### Fix: Address general UI lag and performance (#2058)
 
