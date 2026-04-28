@@ -5,6 +5,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.87-alpha] - 2026-04-27
+**Branch**: `quartermaster/issue-2058` | **PR**: #TBD
+
+### Fix: Address general UI lag and performance (#2058)
+
+- Move CharacterPanel race/portrait/soundset 2DA scans off the UI thread (spike measured 11.3s of synchronous load on first creature open)
+- Same off-thread treatment for AppearancePanel and AdvancedPanel SetDisplayService data loads
+- Cache `AppearanceService.GetAllPortraits` / `GetAllSoundSets` results so subsequent panel switches don't re-iterate the 2DAs
+
+---
+
 ## [0.2.86-alpha] - 2026-04-25
 **Branch**: `radoub/issue-2034-round2` | **PR**: #2142
 
