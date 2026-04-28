@@ -15,9 +15,26 @@ public class AppearanceService
 {
     private readonly IGameDataService _gameDataService;
 
+    private readonly object _cacheLock = new();
+    private List<(ushort Id, string Name)>? _portraitsCache;
+    private List<(ushort Id, string Name)>? _soundSetsCache;
+
     public AppearanceService(IGameDataService gameDataService)
     {
         _gameDataService = gameDataService;
+    }
+
+    /// <summary>
+    /// Clears cached snapshots of 2DA-derived lists (portraits, sound sets).
+    /// Call after the underlying 2DA chain changes (HAK reconfigure, language switch, etc.).
+    /// </summary>
+    public void InvalidateCaches()
+    {
+        lock (_cacheLock)
+        {
+            _portraitsCache = null;
+            _soundSetsCache = null;
+        }
     }
 
     #region Appearance
@@ -318,12 +335,17 @@ public class AppearanceService
     }
 
     /// <summary>
-    /// Gets all portraits from portraits.2da.
+    /// Gets all portraits from portraits.2da. Result is cached until <see cref="InvalidateCaches"/> is called.
     /// </summary>
     public List<(ushort Id, string Name)> GetAllPortraits()
     {
-        var portraits = new List<(ushort Id, string Name)>();
+        lock (_cacheLock)
+        {
+            if (_portraitsCache != null)
+                return _portraitsCache;
+        }
 
+        var portraits = new List<(ushort Id, string Name)>();
         int rowCount = _gameDataService.Get2DA("portraits")?.RowCount ?? 500;
         for (int i = 0; i < rowCount; i++)
         {
@@ -334,7 +356,11 @@ public class AppearanceService
             portraits.Add(((ushort)i, baseResRef));
         }
 
-        return portraits;
+        lock (_cacheLock)
+        {
+            _portraitsCache ??= portraits;
+            return _portraitsCache;
+        }
     }
 
     /// <summary>
@@ -486,12 +512,17 @@ public class AppearanceService
     }
 
     /// <summary>
-    /// Gets all sound sets from soundset.2da.
+    /// Gets all sound sets from soundset.2da. Result is cached until <see cref="InvalidateCaches"/> is called.
     /// </summary>
     public List<(ushort Id, string Name)> GetAllSoundSets()
     {
-        var soundSets = new List<(ushort Id, string Name)>();
+        lock (_cacheLock)
+        {
+            if (_soundSetsCache != null)
+                return _soundSetsCache;
+        }
 
+        var soundSets = new List<(ushort Id, string Name)>();
         int rowCount = _gameDataService.Get2DA("soundset")?.RowCount ?? 500;
         for (int i = 0; i < rowCount; i++)
         {
@@ -503,7 +534,11 @@ public class AppearanceService
             soundSets.Add(((ushort)i, displayName));
         }
 
-        return soundSets;
+        lock (_cacheLock)
+        {
+            _soundSetsCache ??= soundSets;
+            return _soundSetsCache;
+        }
     }
 
     #endregion
