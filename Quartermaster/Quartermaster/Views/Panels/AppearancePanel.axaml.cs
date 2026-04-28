@@ -195,26 +195,72 @@ public partial class AppearancePanel : UserControl
     public void SetDisplayService(CreatureDisplayService displayService)
     {
         _displayService = displayService;
-        LoadAppearanceData();
-        LoadBodyPartData();
+        // Body-part combos are pure 0..20 loops — fast, stay on UI thread.
+        // The 2DA-scan portion of LoadAppearanceData / LoadTailWingsData runs
+        // on a background thread to keep ~940ms off the UI thread (#2058).
+        LoadBodyPartDataExceptTailWings();
+        _ = LoadAppearanceDataInBackgroundAsync(displayService);
+    }
 
-        // Resolve appearance sources asynchronously (non-blocking)
-        if (_appearances != null && _appearances.Count > 0)
+    private async System.Threading.Tasks.Task LoadAppearanceDataInBackgroundAsync(CreatureDisplayService displayService)
+    {
+        try
         {
-            _ = System.Threading.Tasks.Task.Run(() =>
+            var (appearances, phenotypes, tails, wings) = await System.Threading.Tasks.Task.Run(() =>
+                (displayService.GetAllAppearances(),
+                 displayService.GetAllPhenotypes(),
+                 displayService.GetAllTails(),
+                 displayService.GetAllWings()));
+
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
-                try
+                _isLoading = true;
+                _appearances = appearances;
+                _phenotypes = phenotypes;
+                PopulatePhenotypeCombo(phenotypes);
+                PopulateTailCombo(tails);
+                PopulateWingsCombo(wings);
+                LoadGenderData();
+                RefreshFilteredAppearanceList();
+                _isLoading = false;
+
+                // If a creature was loaded before population, re-apply its appearance/phenotype/etc.
+                if (_currentCreature != null)
                 {
-                    displayService.Appearances.ResolveAppearanceSources(_appearances);
-                    Avalonia.Threading.Dispatcher.UIThread.Post(RefreshFilteredAppearanceList);
-                }
-                catch (Exception ex)
-                {
-                    Radoub.Formats.Logging.UnifiedLogger.LogApplication(
-                        Radoub.Formats.Logging.LogLevel.WARN,
-                        $"AppearancePanel: Source resolution failed: {ex.Message}");
+                    _isLoading = true;
+                    SelectAppearance(_currentCreature.AppearanceType);
+                    SelectGender(_currentCreature.Gender);
+                    SelectPhenotype(_currentCreature.Phenotype);
+                    var isPartBased = _displayService?.IsPartBasedAppearance(_currentCreature.AppearanceType) ?? false;
+                    UpdateBodyPartsEnabledState(isPartBased);
+                    LoadBodyPartValues(_currentCreature);
+                    _isLoading = false;
                 }
             });
+
+            // Resolve appearance sources asynchronously (non-blocking) — kept after the
+            // populate so the list shows immediately and source filters update later.
+            if (_appearances != null && _appearances.Count > 0)
+            {
+                await System.Threading.Tasks.Task.Run(() =>
+                {
+                    try
+                    {
+                        displayService.Appearances.ResolveAppearanceSources(_appearances);
+                        Avalonia.Threading.Dispatcher.UIThread.Post(RefreshFilteredAppearanceList);
+                    }
+                    catch (Exception ex)
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.WARN,
+                            $"AppearancePanel: Source resolution failed: {ex.Message}");
+                    }
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"AppearancePanel: background data load failed — {ex.Message}");
         }
     }
 

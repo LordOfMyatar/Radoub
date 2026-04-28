@@ -13,35 +13,18 @@ namespace Quartermaster.Views.Panels;
 
 public partial class AppearancePanel
 {
-    private void LoadAppearanceData()
+    private void PopulatePhenotypeCombo(System.Collections.Generic.List<PhenotypeInfo> phenotypes)
     {
-        if (_displayService == null) return;
-
-        _isLoading = true;
-
-        // Load appearances from 2DA
-        _appearances = _displayService.GetAllAppearances();
-        RefreshFilteredAppearanceList();
-
-        // Load genders (Male=0, Female=1)
-        LoadGenderData();
-
-        // Load phenotypes from 2DA
-        _phenotypes = _displayService.GetAllPhenotypes();
-        if (_phenotypeComboBox != null)
+        if (_phenotypeComboBox == null) return;
+        _phenotypeComboBox.Items.Clear();
+        foreach (var pheno in phenotypes)
         {
-            _phenotypeComboBox.Items.Clear();
-            foreach (var pheno in _phenotypes)
+            _phenotypeComboBox.Items.Add(new ComboBoxItem
             {
-                _phenotypeComboBox.Items.Add(new ComboBoxItem
-                {
-                    Content = pheno.Name,
-                    Tag = pheno.PhenotypeId
-                });
-            }
+                Content = pheno.Name,
+                Tag = pheno.PhenotypeId
+            });
         }
-
-        _isLoading = false;
     }
 
     /// <summary>
@@ -121,13 +104,11 @@ public partial class AppearancePanel
         _genderComboBox.Items.Add(new ComboBoxItem { Content = femaleName, Tag = (byte)1 });
     }
 
-    private void LoadBodyPartData()
+    private void LoadBodyPartDataExceptTailWings()
     {
-        if (_displayService == null) return;
-
-        // For now, populate with numeric values 0-20
+        // Pure 0..N numeric combos — fast, runs on UI thread.
         // TODO: Load from model_*.2da files when available
-        void PopulateBodyPartCombo(ComboBox? combo, int max = 20)
+        static void PopulateBodyPartCombo(ComboBox? combo, int max = 20)
         {
             if (combo == null) return;
             combo.Items.Clear();
@@ -143,10 +124,6 @@ public partial class AppearancePanel
         PopulateBodyPartCombo(_pelvisComboBox);
         PopulateBodyPartCombo(_beltComboBox);
 
-        // Tail/Wings from 2DA
-        LoadTailWingsData();
-
-        // Limbs
         PopulateBodyPartCombo(_lShoulComboBox);
         PopulateBodyPartCombo(_rShoulComboBox);
         PopulateBodyPartCombo(_lBicepComboBox);
@@ -163,28 +140,23 @@ public partial class AppearancePanel
         PopulateBodyPartCombo(_rFootComboBox);
     }
 
-    private void LoadTailWingsData()
+    private void PopulateTailCombo(System.Collections.Generic.List<(byte Id, string Name)> tails)
     {
-        if (_displayService == null) return;
-
-        if (_tailComboBox != null)
+        if (_tailComboBox == null) return;
+        _tailComboBox.Items.Clear();
+        foreach (var (id, name) in tails)
         {
-            _tailComboBox.Items.Clear();
-            var tails = _displayService.GetAllTails();
-            foreach (var (id, name) in tails)
-            {
-                _tailComboBox.Items.Add(new ComboBoxItem { Content = name, Tag = id });
-            }
+            _tailComboBox.Items.Add(new ComboBoxItem { Content = name, Tag = id });
         }
+    }
 
-        if (_wingsComboBox != null)
+    private void PopulateWingsCombo(System.Collections.Generic.List<(byte Id, string Name)> wings)
+    {
+        if (_wingsComboBox == null) return;
+        _wingsComboBox.Items.Clear();
+        foreach (var (id, name) in wings)
         {
-            _wingsComboBox.Items.Clear();
-            var wings = _displayService.GetAllWings();
-            foreach (var (id, name) in wings)
-            {
-                _wingsComboBox.Items.Add(new ComboBoxItem { Content = name, Tag = id });
-            }
+            _wingsComboBox.Items.Add(new ComboBoxItem { Content = name, Tag = id });
         }
     }
 
