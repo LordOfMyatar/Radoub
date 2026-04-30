@@ -200,9 +200,50 @@ public partial class CharacterPanel : UserControl
     public void SetDisplayService(CreatureDisplayService displayService)
     {
         _displayService = displayService;
-        LoadRaceData();
-        LoadPortraitData();
-        LoadSoundSetData();
+        // 2DA list scans (race, portrait, soundset) used to run on the UI thread here and
+        // accounted for ~11s of "Not Responding" on startup (#2058). Push to background
+        // and marshal back when each list is ready.
+        _ = LoadComboDataInBackgroundAsync(displayService);
+    }
+
+    private async System.Threading.Tasks.Task LoadComboDataInBackgroundAsync(CreatureDisplayService displayService)
+    {
+        try
+        {
+            var (races, portraits, soundSets) = await System.Threading.Tasks.Task.Run(() =>
+                (displayService.GetAllRaces(),
+                 displayService.GetAllPortraits(),
+                 displayService.GetAllSoundSets()));
+
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                PopulateRaceCombo(races);
+                PopulatePortraitCombo(portraits);
+                PopulateSoundSetCombo(soundSets);
+
+                // If a creature was loaded before the combos populated, re-apply its selections
+                // now that the lists exist.
+                if (_currentCreature != null)
+                {
+                    _isLoading = true;
+                    SelectRace(_currentCreature.Race);
+                    var portraitId = _currentCreature.PortraitId;
+                    if (portraitId == 0 && !string.IsNullOrEmpty(_currentCreature.Portrait))
+                    {
+                        var foundId = _displayService?.FindPortraitIdByResRef(_currentCreature.Portrait);
+                        if (foundId.HasValue) portraitId = foundId.Value;
+                    }
+                    SelectPortrait(portraitId, _currentCreature.Portrait);
+                    SelectSoundSet(_currentCreature.SoundSetFile);
+                    _isLoading = false;
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"CharacterPanel: background combo population failed — {ex.Message}");
+        }
     }
 
     public void SetGameDataService(IGameDataService? gameDataService)
@@ -279,36 +320,30 @@ public partial class CharacterPanel : UserControl
 
     #region Data Loading
 
-    private void LoadRaceData()
+    private void PopulateRaceCombo(List<(byte Id, string Name)> races)
     {
-        if (_displayService == null || _raceComboBox == null) return;
-
+        if (_raceComboBox == null) return;
         _raceComboBox.Items.Clear();
-        var races = _displayService.GetAllRaces();
         foreach (var (id, name) in races)
         {
             _raceComboBox.Items.Add(new ComboBoxItem { Content = name, Tag = id });
         }
     }
 
-    private void LoadPortraitData()
+    private void PopulatePortraitCombo(List<(ushort Id, string Name)> portraits)
     {
-        if (_displayService == null || _portraitComboBox == null) return;
-
+        if (_portraitComboBox == null) return;
         _portraitComboBox.Items.Clear();
-        var portraits = _displayService.GetAllPortraits();
         foreach (var (id, name) in portraits)
         {
             _portraitComboBox.Items.Add(new ComboBoxItem { Content = name, Tag = id });
         }
     }
 
-    private void LoadSoundSetData()
+    private void PopulateSoundSetCombo(List<(ushort Id, string Name)> soundSets)
     {
-        if (_displayService == null || _soundSetComboBox == null) return;
-
+        if (_soundSetComboBox == null) return;
         _soundSetComboBox.Items.Clear();
-        var soundSets = _displayService.GetAllSoundSets();
         foreach (var (id, name) in soundSets)
         {
             _soundSetComboBox.Items.Add(new ComboBoxItem { Content = name, Tag = id });

@@ -427,6 +427,37 @@ public class AppearanceServiceTests
     }
 
     [Fact]
+    public void GetAllPortraits_SecondCall_ReturnsCachedResult()
+    {
+        // First call populates cache from mock 2DA
+        var first = _service.GetAllPortraits();
+        var firstCount = first.Count;
+
+        // Mutate underlying 2DA after first call
+        _mockGameData.Set2DAValue("portraits", 99, "BaseResRef", "added_after_cache_");
+
+        // Second call should return cached snapshot, not see the new row
+        var second = _service.GetAllPortraits();
+        Assert.Equal(firstCount, second.Count);
+        Assert.DoesNotContain(second, p => p.Name == "added_after_cache_");
+    }
+
+    [Fact]
+    public void GetAllPortraits_AfterInvalidate_ReturnsFreshResult()
+    {
+        // Prime the cache
+        _ = _service.GetAllPortraits();
+
+        // Mutate the underlying 2DA, then invalidate
+        _mockGameData.Set2DAValue("portraits", 99, "BaseResRef", "added_after_invalidate_");
+        _service.InvalidateCaches();
+
+        // After invalidation, the new row should appear
+        var fresh = _service.GetAllPortraits();
+        Assert.Contains(fresh, p => p.Name == "added_after_invalidate_");
+    }
+
+    [Fact]
     public void FindPortraitIdByResRef_PoPrefixCaseInsensitive_Matches()
     {
         // "PO_HU_M_01_" should match "hu_m_01_"
@@ -762,6 +793,31 @@ public class AppearanceServiceTests
         // Row 0 has STRREF=7000 → TLK "Male Voice 1", LABEL="Male_1"
         var first = soundSets.FirstOrDefault(s => s.Id == 0);
         Assert.Equal("Male Voice 1", first.Name);
+    }
+
+    [Fact]
+    public void GetAllSoundSets_SecondCall_ReturnsCachedResult()
+    {
+        var first = _service.GetAllSoundSets();
+        var firstCount = first.Count;
+
+        _mockGameData.Set2DAValue("soundset", 99, "LABEL", "AddedAfterCache");
+
+        var second = _service.GetAllSoundSets();
+        Assert.Equal(firstCount, second.Count);
+        Assert.DoesNotContain(second, s => s.Name == "AddedAfterCache" || s.Name == "Sound Set 99");
+    }
+
+    [Fact]
+    public void GetAllSoundSets_AfterInvalidate_ReturnsFreshResult()
+    {
+        _ = _service.GetAllSoundSets();
+
+        _mockGameData.Set2DAValue("soundset", 99, "LABEL", "AddedAfterInvalidate");
+        _service.InvalidateCaches();
+
+        var fresh = _service.GetAllSoundSets();
+        Assert.Contains(fresh, s => s.Id == 99);
     }
 
     #endregion
