@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.12-alpha] - 2026-05-03
+**Branch**: `relique/issue-1908` | **PR**: #2157
+
+### Feature: Item Model 3D Preview (#1908, PR3b)
+
+- 3D preview of currently-edited item in the Appearance expander
+- Static rendering only (no animations) via shared `ModelPreviewGLControl`
+- ModelType coverage: Simple weapons (single MDL), Layered items (single MDL + Cloth1/2 PLT colors), Composite weapons (3 ResRefs joined via `MdlPartComposer.ComposeFlat`), Armor (full `ArmorParts` dict on `pmh0` mannequin via `MdlPartComposer.Compose` + all 6 PLT colors)
+- 100ms debounce on color spinner `PropertyChanged` so rapid edits coalesce into a single reload
+- Per-MainWindow `TextureService` ownership matching QM's pattern
+
+---
+
 ## [0.10.11-alpha] - 2026-05-01
 **Branch**: `radoub/issue-2159` | **PR**: #2160
 
