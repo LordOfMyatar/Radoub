@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.29-alpha] - 2026-04-30
-**Branch**: `radoub/issue-1996` | **PR**: #TBD
+**Branch**: `radoub/issue-1996` | **PR**: #2151
 
 ### Refactor: Adopt shared ItemDetailsPanel from Radoub.UI (#1996)
 
