@@ -15,6 +15,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 - No rendering behavior changes — QM creature preview renders identically (mesh re-parenting, texture-name overrides, #1557 seam-overlap nudge, bounds aggregation all preserved)
 - Enables Relique 3D item preview (#1908 PR3b) to compose composite weapons (3 parts) and armor (up to 19 parts) using the same mechanics
 
+### Fix: Replace hardcoded font sizes with themable DynamicResource bindings
+
+- Replace hardcoded `FontSize="11"` / `"12"` on `AppearancePanel.PreviewStateText` and `AdvancedPanel.VariableValidationText` / DataGrid error labels with `{DynamicResource FontSizeSmall}`
+- Required for low-vision users — hardcoded font sizes do not scale with the Trebuchet font-size slider
+
 ---
 
 ## [0.2.90-alpha] - 2026-05-01

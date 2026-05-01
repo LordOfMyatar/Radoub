@@ -315,7 +315,7 @@
                             <TextBlock x:Name="VariableValidationText"
                                        DockPanel.Dock="Bottom"
                                        Foreground="{DynamicResource ThemeError}"
-                                       FontSize="11"
+                                       FontSize="{DynamicResource FontSizeSmall}"
                                        TextWrapping="Wrap"
                                        IsVisible="False"
                                        Margin="0,4,0,0"/>
@@ -345,7 +345,7 @@
                                                              BorderBrush="{Binding HasError, Converter={StaticResource BoolToErrorBrushConverter}}"/>
                                                     <TextBlock Text="{Binding ErrorMessage}"
                                                                Foreground="{DynamicResource ThemeError}"
-                                                               FontSize="11"
+                                                               FontSize="{DynamicResource FontSizeSmall}"
                                                                VerticalAlignment="Center"
                                                                IsVisible="{Binding HasError}"/>
                                                 </StackPanel>

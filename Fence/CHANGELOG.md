@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.31-alpha] - 2026-05-01
+**Branch**: `radoub/issue-2159` | **PR**: #2160
+
+### Fix: Replace hardcoded font sizes with themable DynamicResource bindings
+
+- Replace hardcoded `FontSize="11"` on MainWindow `VariableValidationText` and DataGrid error labels with `{DynamicResource FontSizeSmall}`
+- Required for low-vision users — hardcoded font sizes do not scale with the Trebuchet font-size slider
+
+---
+
 ## [0.1.30-alpha] - 2026-05-01
 **Branch**: `radoub/feat/promote-model-preview` | **PR**: #2156
 

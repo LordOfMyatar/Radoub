@@ -4,6 +4,16 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
+## [0.1.167-alpha] - 2026-05-01
+**Branch**: `radoub/issue-2159` | **PR**: #2160
+
+### Fix: Replace hardcoded font sizes with themable DynamicResource bindings
+
+- Replace hardcoded `FontSize="11"` on `ModuleSearchWindow` ModulePathText and DurationText with `{DynamicResource FontSizeSmall}`
+- Required for low-vision users — hardcoded font sizes do not scale with the Trebuchet font-size slider
+
+---
+
 ## [0.1.166-alpha] - 2026-04-18
 **Branch**: `parley/issue-2063` | **PR**: #2108
 
