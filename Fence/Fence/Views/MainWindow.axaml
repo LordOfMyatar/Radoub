@@ -5,6 +5,7 @@
         xmlns:controls="using:Radoub.UI.Controls"
         xmlns:radoubControls="using:Radoub.UI.Controls"
         xmlns:converters="using:MerchantEditor.Converters"
+        xmlns:merchantControls="using:MerchantEditor.Controls"
         xmlns:sharedConverters="using:Radoub.UI.Converters"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
         x:Class="MerchantEditor.Views.MainWindow"
@@ -573,161 +574,16 @@
                               Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                               AutomationProperties.AutomationId="DetailsSplitter"/>
 
-                <!-- Item Details Panel -->
-                <Border Grid.Column="4" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" CornerRadius="4"
-                        AutomationProperties.AutomationId="ItemDetailsPanel">
-                    <DockPanel>
-                        <!-- Header -->
-                        <Border DockPanel.Dock="Top" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" Padding="8">
-                            <TextBlock Text="Item Details" FontWeight="Bold"/>
-                        </Border>
-
-                        <!-- No Selection Message -->
-                        <TextBlock x:Name="NoSelectionText"
-                                   Text="Select an item to view details"
-                                   FontStyle="Italic"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Center"
-                                   AutomationProperties.AutomationId="NoSelectionText"/>
-
-                        <!-- Item Details Content (overlays NoSelectionText when visible) -->
-                        <ScrollViewer x:Name="ItemDetailsScroll"
-                                      VerticalScrollBarVisibility="Auto"
-                                      IsVisible="False">
-                            <StackPanel x:Name="ItemDetailsContent" Spacing="8" Margin="10">
-                                <!-- Item Icon -->
-                                <Image x:Name="DetailItemIcon"
-                                       Width="48" Height="48"
-                                       Stretch="Uniform"
-                                       HorizontalAlignment="Center"
-                                       AutomationProperties.AutomationId="DetailItemIcon"/>
-
-                                <!-- Item Name -->
-                                <TextBlock x:Name="DetailItemName"
-                                           Text=""
-                                           FontWeight="SemiBold"
-                                           FontSize="{DynamicResource GlobalFontSize}"
-                                           TextWrapping="Wrap"
-                                           HorizontalAlignment="Center"
-                                           AutomationProperties.AutomationId="DetailItemName"/>
-
-                                <!-- Base Item Type -->
-                                <TextBlock x:Name="DetailItemType"
-                                           Text=""
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                           HorizontalAlignment="Center"
-                                           AutomationProperties.AutomationId="DetailItemType"/>
-
-                                <!-- Separator -->
-                                <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                        BorderThickness="0,1,0,0"
-                                        Padding="0,8,0,0"
-                                        Margin="0,4,0,0">
-                                    <StackPanel Spacing="6">
-                                        <!-- ResRef -->
-                                        <Grid ColumnDefinitions="Auto,*">
-                                            <TextBlock Grid.Column="0" Text="ResRef:"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                                       Margin="0,0,8,0"/>
-                                            <TextBlock Grid.Column="1" x:Name="DetailResRef"
-                                                       Text="" FontFamily="Consolas"
-                                                       AutomationProperties.AutomationId="DetailResRef"/>
-                                        </Grid>
-
-                                        <!-- Tag -->
-                                        <Grid ColumnDefinitions="Auto,*">
-                                            <TextBlock Grid.Column="0" Text="Tag:"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                                       Margin="0,0,8,0"/>
-                                            <TextBlock Grid.Column="1" x:Name="DetailTag"
-                                                       Text="" FontFamily="Consolas"
-                                                       AutomationProperties.AutomationId="DetailTag"/>
-                                        </Grid>
-
-                                        <!-- Value -->
-                                        <Grid ColumnDefinitions="Auto,*">
-                                            <TextBlock Grid.Column="0" Text="Value:"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                                       Margin="0,0,8,0"/>
-                                            <TextBlock Grid.Column="1" x:Name="DetailValue"
-                                                       Text=""
-                                                       AutomationProperties.AutomationId="DetailValue"/>
-                                        </Grid>
-
-                                        <!-- Sell Price -->
-                                        <Grid ColumnDefinitions="Auto,*">
-                                            <TextBlock Grid.Column="0" Text="Sell:"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                                       Margin="0,0,8,0"/>
-                                            <TextBlock Grid.Column="1" x:Name="DetailSellPrice"
-                                                       Text=""
-                                                       AutomationProperties.AutomationId="DetailSellPrice"/>
-                                        </Grid>
-
-                                        <!-- Buy Price -->
-                                        <Grid ColumnDefinitions="Auto,*">
-                                            <TextBlock Grid.Column="0" Text="Buy:"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                                       Margin="0,0,8,0"/>
-                                            <TextBlock Grid.Column="1" x:Name="DetailBuyPrice"
-                                                       Text=""
-                                                       AutomationProperties.AutomationId="DetailBuyPrice"/>
-                                        </Grid>
-
-                                        <!-- Infinite -->
-                                        <Grid ColumnDefinitions="Auto,*">
-                                            <TextBlock Grid.Column="0" Text="Infinite:"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                                       Margin="0,0,8,0"/>
-                                            <TextBlock Grid.Column="1" x:Name="DetailInfinite"
-                                                       Text=""
-                                                       AutomationProperties.AutomationId="DetailInfinite"/>
-                                        </Grid>
-
-                                        <!-- Store Panel -->
-                                        <Grid ColumnDefinitions="Auto,*">
-                                            <TextBlock Grid.Column="0" Text="Panel:"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                                       Margin="0,0,8,0"/>
-                                            <TextBlock Grid.Column="1" x:Name="DetailStorePanel"
-                                                       Text=""
-                                                       AutomationProperties.AutomationId="DetailStorePanel"/>
-                                        </Grid>
-
-                                        <!-- Source Location -->
-                                        <Grid ColumnDefinitions="Auto,*">
-                                            <TextBlock Grid.Column="0" Text="Source:"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                                       Margin="0,0,8,0"/>
-                                            <TextBlock Grid.Column="1" x:Name="DetailSourceLocation"
-                                                       Text="" FontFamily="Consolas" FontSize="11"
-                                                       AutomationProperties.AutomationId="DetailSourceLocation"/>
-                                        </Grid>
-
-                                        <!-- Item Properties -->
-                                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                                BorderThickness="0,1,0,0"
-                                                Padding="0,6,0,0"
-                                                Margin="0,4,0,0"
-                                                x:Name="DetailPropertiesBorder">
-                                            <StackPanel Spacing="2">
-                                                <TextBlock Text="Properties:"
-                                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                                           FontSize="11"/>
-                                                <TextBlock x:Name="DetailProperties"
-                                                           Text=""
-                                                           TextWrapping="Wrap"
-                                                           FontSize="11"
-                                                           AutomationProperties.AutomationId="DetailProperties"/>
-                                            </StackPanel>
-                                        </Border>
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
-                        </ScrollViewer>
-                    </DockPanel>
-                </Border>
+                <!-- Item Details Panel + Store Listing extras -->
+                <ScrollViewer Grid.Column="4" VerticalScrollBarVisibility="Auto"
+                              AutomationProperties.AutomationId="ItemDetailsPanel">
+                    <StackPanel Spacing="6">
+                        <controls:ItemDetailsPanel x:Name="ItemDetailsView"
+                                                   AutomationProperties.AutomationId="ItemDetailsView"/>
+                        <merchantControls:StoreItemExtrasPanel x:Name="StoreItemExtrasView"
+                                                               AutomationProperties.AutomationId="StoreItemExtrasView"/>
+                    </StackPanel>
+                </ScrollViewer>
             </Grid>
             </Grid>
         </Grid>

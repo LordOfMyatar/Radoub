@@ -36,17 +36,8 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
     private CheckBox? _bulkDropableCheck;
     private CheckBox? _bulkPickpocketCheck;
 
-    // Item Details controls
-    private TextBlock? _noSelectionText;
-    private ScrollViewer? _itemDetailsScroll;
-    private Image? _itemIcon;
-    private TextBlock? _itemNameText;
-    private TextBlock? _itemTypeText;
-    private TextBlock? _itemResRefText;
-    private TextBlock? _itemTagText;
-    private TextBlock? _itemValueText;
-    private TextBlock? _itemSourceText;
-    private TextBlock? _itemPropertiesText;
+    // Item Details panel (shared control from Radoub.UI)
+    private Radoub.UI.Controls.ItemDetailsPanel? _itemDetailsView;
 
     public new event PropertyChangedEventHandler? PropertyChanged;
 
@@ -146,17 +137,8 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
         _bulkDropableCheck = this.FindControl<CheckBox>("BulkDropableCheck");
         _bulkPickpocketCheck = this.FindControl<CheckBox>("BulkPickpocketCheck");
 
-        // Find item details controls
-        _noSelectionText = this.FindControl<TextBlock>("NoSelectionText");
-        _itemDetailsScroll = this.FindControl<ScrollViewer>("ItemDetailsScroll");
-        _itemIcon = this.FindControl<Image>("ItemIcon");
-        _itemNameText = this.FindControl<TextBlock>("ItemNameText");
-        _itemTypeText = this.FindControl<TextBlock>("ItemTypeText");
-        _itemResRefText = this.FindControl<TextBlock>("ItemResRefText");
-        _itemTagText = this.FindControl<TextBlock>("ItemTagText");
-        _itemValueText = this.FindControl<TextBlock>("ItemValueText");
-        _itemSourceText = this.FindControl<TextBlock>("ItemSourceText");
-        _itemPropertiesText = this.FindControl<TextBlock>("ItemPropertiesText");
+        // Find shared item details panel
+        _itemDetailsView = this.FindControl<Radoub.UI.Controls.ItemDetailsPanel>("ItemDetailsView");
     }
 
     protected override void OnInitialized()
@@ -511,19 +493,19 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
 
     /// <summary>
     /// Updates the item details panel with the selected item's information.
-    /// For cache-loaded palette items (no UtiFile), resolves full data on demand.
+    /// For cache-loaded palette items (no UtiFile), resolves full data on demand,
+    /// then assigns the resulting <see cref="ItemViewModel"/> to the shared
+    /// <see cref="Radoub.UI.Controls.ItemDetailsPanel"/> via DataContext.
     /// </summary>
     private void UpdateItemDetails(ItemViewModel? item)
     {
         if (item == null)
         {
-            // No selection - show placeholder
-            if (_noSelectionText != null) _noSelectionText.IsVisible = true;
-            if (_itemDetailsScroll != null) _itemDetailsScroll.IsVisible = false;
+            if (_itemDetailsView != null) _itemDetailsView.DataContext = null;
             return;
         }
 
-        // For cache-loaded items (no UtiFile backing), resolve full data on demand
+        // For cache-loaded items (no UtiFile backing), resolve full data on demand.
         var displayItem = item;
         if (item.Item == null && ItemResolver != null)
         {
@@ -532,61 +514,25 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
                 displayItem = resolved;
         }
 
-        // Show details panel
-        if (_noSelectionText != null) _noSelectionText.IsVisible = false;
-        if (_itemDetailsScroll != null) _itemDetailsScroll.IsVisible = true;
-
-        // Icon - prefer game icon, fall back to placeholder
-        if (_itemIcon != null)
+        // Eagerly load placeholder icon from IconPath when no game icon is available.
+        // The shared ItemDetailsPanel binds IconBitmap directly, so this fallback
+        // happens here rather than in the shared XAML.
+        if (displayItem.IconBitmap == null && !string.IsNullOrEmpty(displayItem.IconPath))
         {
-            if (displayItem.IconBitmap != null)
+            try
             {
-                _itemIcon.Source = displayItem.IconBitmap;
+                var uri = new System.Uri($"avares://Radoub.UI/{displayItem.IconPath}");
+                var asset = Avalonia.Platform.AssetLoader.Open(uri);
+                displayItem.IconBitmap = new Avalonia.Media.Imaging.Bitmap(asset);
             }
-            else if (!string.IsNullOrEmpty(displayItem.IconPath))
+            catch (Exception ex) when (ex is UriFormatException or FileNotFoundException or InvalidOperationException)
             {
-                try
-                {
-                    var uri = new System.Uri($"avares://Radoub.UI/{displayItem.IconPath}");
-                    var asset = Avalonia.Platform.AssetLoader.Open(uri);
-                    _itemIcon.Source = new Avalonia.Media.Imaging.Bitmap(asset);
-                }
-                catch (Exception ex) when (ex is UriFormatException or FileNotFoundException or InvalidOperationException)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not load item icon from '{displayItem.IconPath}': {ex.Message}");
-                    _itemIcon.Source = null;
-                }
-            }
-            else
-            {
-                _itemIcon.Source = null;
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not load item icon from '{displayItem.IconPath}': {ex.Message}");
             }
         }
 
-        // Basic info
-        if (_itemNameText != null) _itemNameText.Text = displayItem.Name;
-        if (_itemTypeText != null) _itemTypeText.Text = displayItem.BaseItemName;
-        if (_itemResRefText != null) _itemResRefText.Text = displayItem.ResRef;
-        if (_itemTagText != null) _itemTagText.Text = displayItem.Tag;
-        if (_itemValueText != null) _itemValueText.Text = $"{displayItem.Value:N0} gp";
-        if (_itemSourceText != null) _itemSourceText.Text = displayItem.Source.ToString();
-
-        // Properties
-        if (_itemPropertiesText != null)
-        {
-            if (!string.IsNullOrEmpty(displayItem.PropertiesDisplay))
-            {
-                _itemPropertiesText.Text = displayItem.PropertiesDisplay;
-            }
-            else if (displayItem.PropertyCount > 0)
-            {
-                _itemPropertiesText.Text = $"{displayItem.PropertyCount} properties";
-            }
-            else
-            {
-                _itemPropertiesText.Text = "None";
-            }
-        }
+        if (_itemDetailsView != null)
+            _itemDetailsView.DataContext = displayItem;
     }
 
     /// <summary>

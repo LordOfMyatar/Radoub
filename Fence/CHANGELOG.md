@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.29-alpha] - 2026-04-30
+**Branch**: `radoub/issue-1996` | **PR**: #2151
+
+### Refactor: Adopt shared ItemDetailsPanel from Radoub.UI (#1996)
+
+- Replace inline item detail block in MainWindow with shared `ItemDetailsPanel` (icon, name, type, ResRef, tag, value, source, properties)
+- New `StoreItemExtrasPanel` companion control encapsulates Fence-only fields (sell/buy price, infinite, store panel)
+- No behavior change — pure UI extraction for reuse across tools
+
+---
+
 ## [0.1.28-alpha] - 2026-04-29
 **Branch**: `radoub/issue-2144` | **PR**: #2150
 
