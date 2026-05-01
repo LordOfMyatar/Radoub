@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.28-alpha] - 2026-04-29
+**Branch**: `radoub/issue-2144` | **PR**: #2150
+
+### Refactor: Consolidate duplicate _cachedPaletteData (#2144)
+
+- Remove local `_cachedPaletteData` field; read from `SharedPaletteCacheService` directly (single source of truth)
+
+---
+
 ## [0.1.27-alpha] - 2026-04-26
 **Branch**: `radoub/issue-2034-round-3` | **PR**: #2143
 
