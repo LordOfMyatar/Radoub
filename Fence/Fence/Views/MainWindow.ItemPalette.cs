@@ -41,11 +41,19 @@ public partial class MainWindow
     // HAK scanner for loading items from module-referenced HAK files
     private readonly HakPaletteScannerService _hakScanner = new();
 
-    private List<SharedPaletteCacheItem>? _cachedPaletteData;
     private string? _lastModuleDirectory;
 
     // Active HAK paths from current module's IFO (for filtered aggregation)
     private List<string>? _activeHakPaths;
+
+    // Read-through to the shared cache so callers always see fresh data after invalidation.
+    private List<SharedPaletteCacheItem>? GetFilteredPaletteData()
+    {
+        var aggregated = _sharedCacheService.GetAggregatedCache(_activeHakPaths);
+        return aggregated?
+            .Where(i => !ExcludedBaseItemTypes.Contains(i.BaseItemType))
+            .ToList();
+    }
 
     #region Item Palette
 
@@ -88,14 +96,10 @@ public partial class MainWindow
             _activeHakPaths = ResolveActiveHakPaths();
 
             // Try to load from shared cache (filtered to active HAKs)
-            var aggregated = await Task.Run(() => _sharedCacheService.GetAggregatedCache(_activeHakPaths), token);
-            if (aggregated != null)
+            var existing = await Task.Run(() => GetFilteredPaletteData(), token);
+            if (existing != null)
             {
-                // Filter out excluded base item types
-                _cachedPaletteData = aggregated
-                    .Where(i => !ExcludedBaseItemTypes.Contains(i.BaseItemType))
-                    .ToList();
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Cache pre-warmed from shared cache: {_cachedPaletteData.Count} items ready");
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Cache pre-warmed from shared cache: {existing.Count} items ready");
 
                 // Scan module HAKs in background (skips cached, refreshes stale)
                 _ = ScanModuleHaksAsync(token);
@@ -109,15 +113,8 @@ public partial class MainWindow
             var hakTask = ScanModuleHaksAsync(token);
             await Task.WhenAll(buildTask, hakTask);
 
-            // Re-aggregate after both complete to include HAK items
+            // Invalidate so next read includes HAK items just scanned
             _sharedCacheService.InvalidateAggregatedCache();
-            var freshAggregated = _sharedCacheService.GetAggregatedCache(_activeHakPaths);
-            if (freshAggregated != null)
-            {
-                _cachedPaletteData = freshAggregated
-                    .Where(i => !ExcludedBaseItemTypes.Contains(i.BaseItemType))
-                    .ToList();
-            }
         }
         catch (OperationCanceledException)
         {
@@ -164,15 +161,8 @@ public partial class MainWindow
 
         if (!needBif && !needOverride)
         {
-            // Both were built by other processes — reload from cache
+            // Both were built by other processes — invalidate so next read pulls fresh data
             _sharedCacheService.InvalidateAggregatedCache();
-            var cached = _sharedCacheService.GetAggregatedCache(_activeHakPaths);
-            if (cached != null)
-            {
-                _cachedPaletteData = cached
-                    .Where(i => !ExcludedBaseItemTypes.Contains(i.BaseItemType))
-                    .ToList();
-            }
             UnifiedLogger.LogApplication(LogLevel.INFO, "Cache built by another process, reloaded from disk");
             return;
         }
@@ -240,7 +230,6 @@ public partial class MainWindow
         if (customItems.Count > 0 && overrideLocked)
             await _sharedCacheService.SaveSourceCacheAsync("override", customItems, settings.NeverwinterNightsPath);
 
-        _cachedPaletteData = cacheItems;
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Background cache complete: {cacheItems.Count} items");
         }
         finally
@@ -256,7 +245,8 @@ public partial class MainWindow
     /// </summary>
     private async Task LoadAllPaletteItemsAsync(CancellationToken token = default)
     {
-        if (_cachedPaletteData == null || _cachedPaletteData.Count == 0)
+        var paletteData = GetFilteredPaletteData();
+        if (paletteData == null || paletteData.Count == 0)
         {
             await Dispatcher.UIThread.InvokeAsync(() =>
                 UpdateStatusBar("Ready (no items available)"));
@@ -265,8 +255,8 @@ public partial class MainWindow
 
         var viewModels = await Task.Run(() =>
         {
-            var vms = new List<ItemViewModel>(_cachedPaletteData.Count);
-            foreach (var cached in _cachedPaletteData)
+            var vms = new List<ItemViewModel>(paletteData.Count);
+            foreach (var cached in paletteData)
             {
                 token.ThrowIfCancellationRequested();
                 var vm = new ItemViewModel
@@ -320,7 +310,6 @@ public partial class MainWindow
     public async Task ClearAndReloadPaletteCacheAsync()
     {
         _sharedCacheService.ClearAllCaches();
-        _cachedPaletteData = null;
         _activeHakPaths = null;
         PaletteItems.Clear();
 
@@ -467,18 +456,11 @@ public partial class MainWindow
                 UnifiedLogger.LogApplication(LogLevel.INFO,
                     $"HAK scan: {result.HaksScanned} scanned, {result.HaksSkipped} cached, {result.TotalItemsScanned} items");
 
-                // Refresh aggregated cache to include HAK items (filtered to active HAKs)
+                // Invalidate aggregated cache so LoadAll pulls a fresh snapshot
                 _sharedCacheService.InvalidateAggregatedCache();
-                var aggregated = _sharedCacheService.GetAggregatedCache(_activeHakPaths);
-                if (aggregated != null)
-                {
-                    _cachedPaletteData = aggregated
-                        .Where(i => !ExcludedBaseItemTypes.Contains(i.BaseItemType))
-                        .ToList();
 
-                    // Reload palette UI to include newly discovered HAK items and their icons
-                    await LoadAllPaletteItemsAsync(token);
-                }
+                // Reload palette UI to include newly discovered HAK items and their icons
+                await LoadAllPaletteItemsAsync(token);
             }
         }
         catch (OperationCanceledException)

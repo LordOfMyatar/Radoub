@@ -32,7 +32,7 @@ public partial class MainWindow
     private CancellationTokenSource? _paletteCacheCts;
 
     // Track loaded state
-    private List<SharedPaletteCacheItem>? _cachedPaletteData;
+    private bool _cachePreWarmed;
     private bool _paletteLoaded;
 
     // Active HAK paths from current module's IFO (for filtered aggregation)
@@ -75,11 +75,12 @@ public partial class MainWindow
             _activeHakPaths = ResolveActiveHakPaths();
 
             // Try to load aggregated cache from existing source caches (filtered to active HAKs)
-            _cachedPaletteData = await Task.Run(() => _sharedCacheService.GetAggregatedCache(_activeHakPaths), token);
+            var existing = await Task.Run(() => _sharedCacheService.GetAggregatedCache(_activeHakPaths), token);
 
-            if (_cachedPaletteData != null && _cachedPaletteData.Count > 0)
+            if (existing != null && existing.Count > 0)
             {
-                UnifiedLogger.LogInventory(LogLevel.INFO, $"Cache pre-warmed from existing sources: {_cachedPaletteData.Count} items");
+                _cachePreWarmed = true;
+                UnifiedLogger.LogInventory(LogLevel.INFO, $"Cache pre-warmed from existing sources: {existing.Count} items");
 
                 // Check if any sources need rebuilding
                 _ = RebuildStaleCachesAsync(token);
@@ -91,6 +92,7 @@ public partial class MainWindow
             // No valid caches - build all from scratch
             UnifiedLogger.LogInventory(LogLevel.INFO, "Building palette caches in background...");
             await BuildAllCachesAsync(token);
+            _cachePreWarmed = true;
         }
         catch (OperationCanceledException)
         {
@@ -149,11 +151,10 @@ public partial class MainWindow
                 await ScanModuleHaksAsync(token);
             }
 
-            // Refresh aggregated cache (filtered to active HAKs)
+            // Invalidate aggregated cache so next read rebuilds from refreshed sources
             if (!token.IsCancellationRequested)
             {
                 _sharedCacheService.InvalidateAggregatedCache();
-                _cachedPaletteData = _sharedCacheService.GetAggregatedCache(_activeHakPaths);
             }
         }
         catch (OperationCanceledException)
@@ -184,9 +185,9 @@ public partial class MainWindow
             // Scan module HAKs (outside Task.Run — scanner manages its own threading)
             await ScanModuleHaksAsync(token);
 
-            // Load aggregated result (filtered to active HAKs)
-            _cachedPaletteData = _sharedCacheService.GetAggregatedCache(_activeHakPaths);
-            UnifiedLogger.LogInventory(LogLevel.INFO, $"All caches built: {_cachedPaletteData?.Count ?? 0} total items");
+            // Log aggregated result (filtered to active HAKs)
+            var aggregated = _sharedCacheService.GetAggregatedCache(_activeHakPaths);
+            UnifiedLogger.LogInventory(LogLevel.INFO, $"All caches built: {aggregated?.Count ?? 0} total items");
         }
         catch (OperationCanceledException)
         {
@@ -298,15 +299,18 @@ public partial class MainWindow
 
         try
         {
-            // Wait for cache if not ready
-            if (_cachedPaletteData == null)
+            // Wait for cache if not pre-warmed yet
+            if (!_cachePreWarmed)
             {
                 await PreWarmCacheAsync(token);
             }
 
             token.ThrowIfCancellationRequested();
 
-            if (_cachedPaletteData == null || _cachedPaletteData.Count == 0)
+            // Snapshot the aggregated cache once for this load operation
+            var paletteData = _sharedCacheService.GetAggregatedCache(_activeHakPaths);
+
+            if (paletteData == null || paletteData.Count == 0)
             {
                 UpdateStatus("Ready (no items available)");
                 _paletteLoaded = true;
@@ -314,16 +318,16 @@ public partial class MainWindow
             }
 
             // Load all items at once (no batching - faster)
-            var standardItems = _cachedPaletteData.Where(i => i.IsStandard).ToList();
-            var customItems = _cachedPaletteData.Where(i => !i.IsStandard).ToList();
+            var standardItems = paletteData.Where(i => i.IsStandard).ToList();
+            var customItems = paletteData.Where(i => !i.IsStandard).ToList();
 
             UnifiedLogger.LogInventory(LogLevel.INFO, $"Loading {standardItems.Count} standard + {customItems.Count} custom items");
 
             // Create all view models on background thread
             var viewModels = await Task.Run(() =>
             {
-                var vms = new List<ItemViewModel>(_cachedPaletteData.Count);
-                foreach (var cached in _cachedPaletteData)
+                var vms = new List<ItemViewModel>(paletteData.Count);
+                foreach (var cached in paletteData)
                 {
                     token.ThrowIfCancellationRequested();
                     var vm = new ItemViewModel
@@ -492,7 +496,7 @@ public partial class MainWindow
         var token = _paletteCacheCts.Token;
 
         _sharedCacheService.ClearAllCaches();
-        _cachedPaletteData = null;
+        _cachePreWarmed = false;
         _paletteLoaded = false;
         _lastModuleDirectory = null;
         _activeHakPaths = null;
@@ -538,9 +542,8 @@ public partial class MainWindow
             UnifiedLogger.LogInventory(LogLevel.INFO,
                 $"HAK scan: {result.HaksScanned} scanned, {result.HaksSkipped} cached, {result.TotalItemsScanned} items");
 
-            // Refresh aggregated cache to include HAK items (filtered to active HAKs)
+            // Invalidate aggregated cache so next read includes HAK items
             _sharedCacheService.InvalidateAggregatedCache();
-            _cachedPaletteData = _sharedCacheService.GetAggregatedCache(_activeHakPaths);
         }
     }
 
