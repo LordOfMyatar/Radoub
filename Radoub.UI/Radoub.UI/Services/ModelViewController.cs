@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using Radoub.Formats.Mdl;
 
-namespace Quartermaster.Controls;
+namespace Radoub.UI.Services;
 
 /// <summary>
 /// Preset camera orientations (#2124).

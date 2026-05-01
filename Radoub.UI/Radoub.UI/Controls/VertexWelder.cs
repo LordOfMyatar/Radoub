@@ -14,7 +14,7 @@
 using System.Collections.Generic;
 using System.Numerics;
 
-namespace Quartermaster.Controls;
+namespace Radoub.UI.Controls;
 
 public static class VertexWelder
 {

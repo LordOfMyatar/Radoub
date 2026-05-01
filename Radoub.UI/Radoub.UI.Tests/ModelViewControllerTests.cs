@@ -1,8 +1,8 @@
 using System.Numerics;
-using Quartermaster.Controls;
+using Radoub.UI.Services;
 using Xunit;
 
-namespace Quartermaster.Tests;
+namespace Radoub.UI.Tests;
 
 /// <summary>
 /// Tests for ModelViewController — pure math, no GL dependency.

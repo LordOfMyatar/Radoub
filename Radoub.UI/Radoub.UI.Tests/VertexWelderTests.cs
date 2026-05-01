@@ -7,9 +7,9 @@
 // GPU to interpolate normals across same-smoothgroup edges.
 
 using System.Numerics;
-using Quartermaster.Controls;
+using Radoub.UI.Controls;
 
-namespace Quartermaster.Tests;
+namespace Radoub.UI.Tests;
 
 public class VertexWelderTests
 {

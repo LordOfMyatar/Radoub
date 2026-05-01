@@ -463,7 +463,7 @@ public class AppearanceAnalysisTests
             "yduechf_body", "yduechf", "duechf"
         };
 
-        var textureService = new Services.TextureService(gameData);
+        var textureService = new Radoub.UI.Services.TextureService(gameData);
 
         foreach (var name in textureNames)
         {

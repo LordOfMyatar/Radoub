@@ -1,6 +1,6 @@
-using Quartermaster.Controls;
+using Radoub.UI.Controls;
 
-namespace Quartermaster.Tests;
+namespace Radoub.UI.Tests;
 
 /// <summary>
 /// Tests for the texture-based mesh skip heuristic (#2057).

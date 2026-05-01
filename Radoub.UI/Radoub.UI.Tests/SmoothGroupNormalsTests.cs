@@ -6,10 +6,10 @@
 // that behaviour.
 
 using System.Numerics;
-using Quartermaster.Controls;
+using Radoub.UI.Controls;
 using Radoub.Formats.Mdl;
 
-namespace Quartermaster.Tests;
+namespace Radoub.UI.Tests;
 
 public class SmoothGroupNormalsTests
 {
