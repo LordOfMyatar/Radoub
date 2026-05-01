@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.91-alpha] - 2026-05-01
-**Branch**: `radoub/issue-2159` | **PR**: #TBD
+**Branch**: `radoub/issue-2159` | **PR**: #2160
 
 ### Refactor: Extract MdlPartComposer to Radoub.UI (#1908 prep PR3a)
 
