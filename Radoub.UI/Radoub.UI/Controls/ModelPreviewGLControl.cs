@@ -11,12 +11,12 @@ using Avalonia.Input;
 using Avalonia.OpenGL;
 using Avalonia.OpenGL.Controls;
 using Avalonia.Threading;
-using Quartermaster.Services;
+using Radoub.UI.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Mdl;
 using Silk.NET.OpenGL;
 
-namespace Quartermaster.Controls;
+namespace Radoub.UI.Controls;
 
 /// <summary>
 /// Preview rendering state for the 3D model preview.

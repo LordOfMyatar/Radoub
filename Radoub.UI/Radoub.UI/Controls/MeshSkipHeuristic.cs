@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Quartermaster.Controls;
+namespace Radoub.UI.Controls;
 
 /// <summary>
 /// Texture-based heuristic for skipping tiny trimeshes in skin models (#2057).

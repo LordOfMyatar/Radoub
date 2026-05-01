@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.30-alpha] - 2026-05-01
+**Branch**: `radoub/feat/promote-model-preview` | **PR**: #2156
+
+### Fix: Restore themable FontSize bindings on shared ItemDetailsPanel (#2155)
+
+- Restore the 12 `{DynamicResource FontSizeMedium|FontSizeSmall}` bindings lost during PR #2151 extraction so the shared panel responds to Trebuchet's font-size slider in Fence
+
+---
+
 ## [0.1.29-alpha] - 2026-04-30
 **Branch**: `radoub/issue-1996` | **PR**: #2151
 

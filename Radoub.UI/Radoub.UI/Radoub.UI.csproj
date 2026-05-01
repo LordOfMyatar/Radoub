@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
     <!-- Product Information -->
     <Product>Radoub.UI - Shared UI Components for Radoub Tools</Product>
@@ -29,6 +30,9 @@
 
     <!-- NAudio for cross-platform audio playback -->
     <PackageReference Include="NAudio" />
+
+    <!-- OpenGL bindings for ModelPreviewGLControl (moved from Quartermaster, #1908 prep) -->
+    <PackageReference Include="Silk.NET.OpenGL" />
   </ItemGroup>
 
   <ItemGroup>

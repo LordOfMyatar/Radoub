@@ -51,12 +51,14 @@
           <!-- Name -->
           <TextBlock Text="{Binding Name}"
                      FontWeight="SemiBold"
+                     FontSize="{DynamicResource FontSizeMedium}"
                      TextWrapping="Wrap"
                      HorizontalAlignment="Center"
                      AutomationProperties.AutomationId="DetailItemName"/>
 
           <!-- Base Item Type -->
           <TextBlock Text="{Binding BaseItemName}"
+                     FontSize="{DynamicResource FontSizeSmall}"
                      Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                      HorizontalAlignment="Center"
                      AutomationProperties.AutomationId="DetailItemType"/>
@@ -70,10 +72,12 @@
               <!-- ResRef -->
               <Grid ColumnDefinitions="Auto,*">
                 <TextBlock Grid.Column="0" Text="ResRef:"
+                           FontSize="{DynamicResource FontSizeSmall}"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            Margin="0,0,8,0"/>
                 <TextBlock Grid.Column="1"
                            Text="{Binding ResRef, Converter={StaticResource StringOrEmDashConverter}}"
+                           FontSize="{DynamicResource FontSizeSmall}"
                            FontFamily="Consolas"
                            AutomationProperties.AutomationId="DetailResRef"/>
               </Grid>
@@ -81,10 +85,12 @@
               <!-- Tag -->
               <Grid ColumnDefinitions="Auto,*">
                 <TextBlock Grid.Column="0" Text="Tag:"
+                           FontSize="{DynamicResource FontSizeSmall}"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            Margin="0,0,8,0"/>
                 <TextBlock Grid.Column="1"
                            Text="{Binding Tag, Converter={StaticResource StringOrEmDashConverter}}"
+                           FontSize="{DynamicResource FontSizeSmall}"
                            FontFamily="Consolas"
                            AutomationProperties.AutomationId="DetailTag"/>
               </Grid>
@@ -92,22 +98,25 @@
               <!-- Value -->
               <Grid ColumnDefinitions="Auto,*">
                 <TextBlock Grid.Column="0" Text="Value:"
+                           FontSize="{DynamicResource FontSizeSmall}"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            Margin="0,0,8,0"/>
                 <TextBlock Grid.Column="1"
                            Text="{Binding Value, StringFormat='{}{0:N0} gp'}"
+                           FontSize="{DynamicResource FontSizeSmall}"
                            AutomationProperties.AutomationId="DetailValue"/>
               </Grid>
 
               <!-- Source -->
               <Grid ColumnDefinitions="Auto,*">
                 <TextBlock Grid.Column="0" Text="Source:"
+                           FontSize="{DynamicResource FontSizeSmall}"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            Margin="0,0,8,0"/>
                 <TextBlock Grid.Column="1"
                            Text="{Binding ., Converter={StaticResource SourceDisplayConverter}}"
+                           FontSize="{DynamicResource FontSizeSmall}"
                            FontFamily="Consolas"
-                           FontSize="11"
                            AutomationProperties.AutomationId="DetailSourceLocation"/>
               </Grid>
 
@@ -118,11 +127,11 @@
                       Margin="0,4,0,0">
                 <StackPanel Spacing="2">
                   <TextBlock Text="Properties:"
-                             Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                             FontSize="11"/>
+                             FontSize="{DynamicResource FontSizeSmall}"
+                             Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                   <TextBlock Text="{Binding ., Converter={StaticResource PropertiesDisplayConverter}}"
+                             FontSize="{DynamicResource FontSizeSmall}"
                              TextWrapping="Wrap"
-                             FontSize="11"
                              AutomationProperties.AutomationId="DetailProperties"/>
                 </StackPanel>
               </Border>

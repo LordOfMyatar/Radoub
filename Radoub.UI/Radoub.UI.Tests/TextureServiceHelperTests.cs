@@ -1,8 +1,8 @@
-using Quartermaster.Services;
+using Radoub.UI.Services;
 using Radoub.Formats.Plt;
 using Xunit;
 
-namespace Quartermaster.Tests;
+namespace Radoub.UI.Tests;
 
 /// <summary>
 /// Tests for TextureService pure byte/pixel helpers (internal methods).

@@ -7,9 +7,8 @@ using Radoub.Formats.Logging;
 using Radoub.Formats.Plt;
 using Radoub.Formats.Services;
 using Radoub.Formats.Tga;
-using Radoub.UI.Services;
 
-namespace Quartermaster.Services;
+namespace Radoub.UI.Services;
 
 /// <summary>
 /// Service for loading and rendering textures for model preview.

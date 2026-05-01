@@ -6,7 +6,7 @@ using System.Numerics;
 using Radoub.Formats.Logging;
 using Silk.NET.OpenGL;
 
-namespace Quartermaster.Controls;
+namespace Radoub.UI.Controls;
 
 /// <summary>
 /// Manages OpenGL shader compilation, linking, uniform setting, and cleanup.

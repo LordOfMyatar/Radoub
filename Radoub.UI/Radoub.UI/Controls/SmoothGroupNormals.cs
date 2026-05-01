@@ -28,7 +28,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using Radoub.Formats.Mdl;
 
-namespace Quartermaster.Controls;
+namespace Radoub.UI.Controls;
 
 public static class SmoothGroupNormals
 {
