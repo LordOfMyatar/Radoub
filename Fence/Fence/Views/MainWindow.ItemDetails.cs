@@ -3,14 +3,21 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using MerchantEditor.Services;
 using MerchantEditor.ViewModels;
-using Radoub.Formats.Utm;
+using Radoub.Formats.Services;
+using Radoub.Formats.Uti;
 using Radoub.UI.ViewModels;
 using System.Linq;
 
 namespace MerchantEditor.Views;
 
 /// <summary>
-/// MainWindow partial: Item details panel and context menu operations.
+/// MainWindow partial: Item details panel selection handling and context menu operations.
+///
+/// Field display lives in the shared <see cref="Radoub.UI.Controls.ItemDetailsPanel"/>
+/// (item-only fields) and <see cref="MerchantEditor.Controls.StoreItemExtrasPanel"/>
+/// (Fence-only sell/buy/infinite/panel) — each populated via DataContext.
+/// This partial handles selection routing between store-grid and palette-grid and
+/// the visibility toggle for the whole details column.
 /// </summary>
 public partial class MainWindow
 {
@@ -28,7 +35,7 @@ public partial class MainWindow
             _updatingSelection = true;
             ItemPaletteGrid.SelectedItem = null;
             _updatingSelection = false;
-            UpdateItemDetails(selected);
+            ShowStoreItemDetails(selected);
         }
         else
         {
@@ -46,66 +53,52 @@ public partial class MainWindow
             _updatingSelection = true;
             StoreInventoryGrid.SelectedItem = null;
             _updatingSelection = false;
-            UpdateItemDetailsFromPalette(selected);
+            ShowPaletteItemDetails(selected);
         }
     }
 
-    private void UpdateItemDetails(StoreItemViewModel item)
+    private void ShowStoreItemDetails(StoreItemViewModel item)
     {
-        NoSelectionText.IsVisible = false;
-        ItemDetailsScroll.IsVisible = true;
-
-        DetailItemIcon.Source = _itemIconService?.GetItemIcon(item.BaseItemIndex);
-        DetailItemName.Text = item.DisplayName;
-        DetailItemType.Text = item.BaseItemType;
-        DetailResRef.Text = item.ResRef;
-        DetailTag.Text = !string.IsNullOrEmpty(item.Tag) ? item.Tag : "(none)";
-        DetailValue.Text = $"{item.BaseValue:N0} gp";
-        DetailSellPrice.Text = $"{item.SellPrice:N0} gp";
-        DetailBuyPrice.Text = $"{item.BuyPrice:N0} gp";
-        DetailInfinite.Text = item.Infinite ? "Yes ∞" : "No";
-        DetailStorePanel.Text = StorePanels.GetPanelName(item.PanelId);
-        DetailSourceLocation.Text = !string.IsNullOrEmpty(item.SourceLocation) ? item.SourceLocation : "—";
-
-        // Resolve item properties from UTI via game data chain
+        // Build a shared ItemViewModel from the store item so the shared panel
+        // can render the standard fields. PropertiesDisplay is resolved on demand
+        // from the item resolution chain (same as before extraction).
         var resolved = _itemResolutionService?.ResolveItem(item.ResRef);
-        var props = resolved?.PropertiesDisplay;
-        DetailProperties.Text = !string.IsNullOrEmpty(props) ? props : "(none)";
-        DetailPropertiesBorder.IsVisible = true;
+
+        var detailVm = new ItemViewModel
+        {
+            ResRef = item.ResRef,
+            Tag = item.Tag,
+            BaseItem = item.BaseItemIndex,
+            Value = (uint)System.Math.Max(0, item.BaseValue),
+            Source = GameResourceSource.Bif,
+        };
+        detailVm.Name = !string.IsNullOrEmpty(item.DisplayName) ? item.DisplayName : item.ResRef;
+        detailVm.BaseItemName = item.BaseItemType;
+        detailVm.PropertiesDisplay = resolved?.PropertiesDisplay ?? string.Empty;
+        detailVm.SourceLocation = item.SourceLocation;
+        detailVm.IconBitmap = item.IconBitmap ?? _itemIconService?.GetItemIcon(item.BaseItemIndex);
+
+        ItemDetailsView.DataContext = detailVm;
+        StoreItemExtrasView.DataContext = item;
     }
 
-    private void UpdateItemDetailsFromPalette(ItemViewModel item)
+    private void ShowPaletteItemDetails(ItemViewModel item)
     {
-        NoSelectionText.IsVisible = false;
-        ItemDetailsScroll.IsVisible = true;
+        // Palette items already are ItemViewModel — bind directly.
+        // Fence-only extras don't apply to palette items, so clear that DataContext.
+        if (item.IconBitmap == null && _itemIconService != null)
+        {
+            item.IconBitmap = _itemIconService.GetItemIcon(item.BaseItem);
+        }
 
-        DetailItemIcon.Source = item.IconBitmap ?? _itemIconService?.GetItemIcon(item.BaseItem);
-        DetailItemName.Text = item.Name;
-        DetailItemType.Text = item.BaseItemName;
-        DetailResRef.Text = item.ResRef;
-        DetailTag.Text = "(palette item)";
-        DetailValue.Text = $"{item.Value:N0} gp";
-
-        // Calculate prices from current markup/markdown
-        var markUp = int.TryParse(SellMarkupBox.Text, out var mu) ? mu : 100;
-        var markDown = int.TryParse(BuyMarkdownBox.Text, out var md) ? md : 50;
-        DetailSellPrice.Text = $"{(int)System.Math.Ceiling(item.Value * markUp / 100.0):N0} gp";
-        DetailBuyPrice.Text = $"{(int)System.Math.Floor(item.Value * markDown / 100.0):N0} gp";
-        DetailInfinite.Text = "—";
-        DetailStorePanel.Text = StorePanels.GetPanelName(
-            GetStorePanelForBaseItemType(item.BaseItem));
-        DetailSourceLocation.Text = !string.IsNullOrEmpty(item.SourceLocation) ? item.SourceLocation : "—";
-
-        // Display cached properties from palette
-        DetailProperties.Text = !string.IsNullOrEmpty(item.PropertiesDisplay) ? item.PropertiesDisplay : "(none)";
-        DetailPropertiesBorder.IsVisible = true;
+        ItemDetailsView.DataContext = item;
+        StoreItemExtrasView.DataContext = null;
     }
 
     private void ClearItemDetails()
     {
-        NoSelectionText.IsVisible = true;
-        ItemDetailsScroll.IsVisible = false;
-        DetailItemIcon.Source = null;
+        ItemDetailsView.DataContext = null;
+        StoreItemExtrasView.DataContext = null;
     }
 
     #endregion
@@ -227,9 +220,11 @@ public partial class MainWindow
 
         _documentState.MarkDirty();
 
-        // Refresh details if single selection
+        // Refresh details if single selection (StoreItemExtrasPanel binds to Infinite directly,
+        // so PropertyChanged on the existing VM updates the display automatically — but we still
+        // refresh to keep the shared ItemDetailsPanel in sync if anything else changed).
         if (selectedItems.Count == 1)
-            UpdateItemDetails(selectedItems[0]);
+            ShowStoreItemDetails(selectedItems[0]);
     }
 
     private async void OnContextCopyStoreResRef(object? sender, RoutedEventArgs e)

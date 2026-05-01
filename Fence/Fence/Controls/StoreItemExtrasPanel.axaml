@@ -1,0 +1,71 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:MerchantEditor.ViewModels"
+             xmlns:converters="using:MerchantEditor.Converters"
+             mc:Ignorable="d" d:DesignWidth="260" d:DesignHeight="160"
+             x:Class="MerchantEditor.Controls.StoreItemExtrasPanel"
+             x:DataType="vm:StoreItemViewModel">
+
+  <UserControl.Resources>
+    <converters:StorePanelNameConverter x:Key="StorePanelNameConverter"/>
+    <converters:InfiniteDisplayConverter x:Key="InfiniteDisplayConverter"/>
+  </UserControl.Resources>
+
+  <!-- Visible only when DataContext is bound to a StoreItemViewModel. -->
+  <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+          BorderThickness="1"
+          CornerRadius="4"
+          IsVisible="{Binding $parent[UserControl].DataContext, Converter={x:Static ObjectConverters.IsNotNull}}">
+    <DockPanel>
+      <Border DockPanel.Dock="Top"
+              Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+              Padding="8">
+        <TextBlock Text="Store Listing" FontWeight="Bold"/>
+      </Border>
+
+      <StackPanel Margin="10" Spacing="6">
+        <!-- Sell Price -->
+        <Grid ColumnDefinitions="Auto,*">
+          <TextBlock Grid.Column="0" Text="Sell:"
+                     Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                     Margin="0,0,8,0"/>
+          <TextBlock Grid.Column="1"
+                     Text="{Binding SellPrice, StringFormat='{}{0:N0} gp'}"
+                     AutomationProperties.AutomationId="ExtrasSellPrice"/>
+        </Grid>
+
+        <!-- Buy Price -->
+        <Grid ColumnDefinitions="Auto,*">
+          <TextBlock Grid.Column="0" Text="Buy:"
+                     Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                     Margin="0,0,8,0"/>
+          <TextBlock Grid.Column="1"
+                     Text="{Binding BuyPrice, StringFormat='{}{0:N0} gp'}"
+                     AutomationProperties.AutomationId="ExtrasBuyPrice"/>
+        </Grid>
+
+        <!-- Infinite -->
+        <Grid ColumnDefinitions="Auto,*">
+          <TextBlock Grid.Column="0" Text="Infinite:"
+                     Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                     Margin="0,0,8,0"/>
+          <TextBlock Grid.Column="1"
+                     Text="{Binding Infinite, Converter={StaticResource InfiniteDisplayConverter}}"
+                     AutomationProperties.AutomationId="ExtrasInfinite"/>
+        </Grid>
+
+        <!-- Store Panel -->
+        <Grid ColumnDefinitions="Auto,*">
+          <TextBlock Grid.Column="0" Text="Panel:"
+                     Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                     Margin="0,0,8,0"/>
+          <TextBlock Grid.Column="1"
+                     Text="{Binding PanelId, Converter={StaticResource StorePanelNameConverter}}"
+                     AutomationProperties.AutomationId="ExtrasStorePanel"/>
+        </Grid>
+      </StackPanel>
+    </DockPanel>
+  </Border>
+</UserControl>

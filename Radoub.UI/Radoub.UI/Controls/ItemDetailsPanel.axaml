@@ -1,0 +1,135 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Radoub.UI.ViewModels"
+             xmlns:converters="using:Radoub.UI.Converters"
+             mc:Ignorable="d" d:DesignWidth="260" d:DesignHeight="500"
+             x:Class="Radoub.UI.Controls.ItemDetailsPanel"
+             x:DataType="vm:ItemViewModel">
+
+  <UserControl.Resources>
+    <converters:ItemViewModelSourceDisplayConverter x:Key="SourceDisplayConverter"/>
+    <converters:ItemViewModelPropertiesDisplayConverter x:Key="PropertiesDisplayConverter"/>
+    <converters:StringOrEmDashConverter x:Key="StringOrEmDashConverter"/>
+  </UserControl.Resources>
+
+  <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+          BorderThickness="1"
+          CornerRadius="4">
+    <DockPanel>
+      <!-- Header -->
+      <Border DockPanel.Dock="Top"
+              Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+              Padding="8">
+        <TextBlock Text="Item Details" FontWeight="Bold"/>
+      </Border>
+
+      <!-- Placeholder when DataContext is null -->
+      <TextBlock Name="NoSelectionText"
+                 Text="Select an item to view details"
+                 FontStyle="Italic"
+                 Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                 VerticalAlignment="Center"
+                 HorizontalAlignment="Center"
+                 TextWrapping="Wrap"
+                 IsVisible="{Binding $parent[UserControl].DataContext, Converter={x:Static ObjectConverters.IsNull}}"
+                 AutomationProperties.AutomationId="NoSelectionText"/>
+
+      <!-- Item details (visible only when DataContext is bound) -->
+      <ScrollViewer Name="ItemDetailsScroll"
+                    VerticalScrollBarVisibility="Auto"
+                    IsVisible="{Binding $parent[UserControl].DataContext, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <StackPanel Spacing="8" Margin="10">
+          <!-- Icon -->
+          <Image Width="64" Height="64"
+                 Stretch="Uniform"
+                 HorizontalAlignment="Center"
+                 Source="{Binding IconBitmap}"
+                 AutomationProperties.AutomationId="DetailItemIcon"/>
+
+          <!-- Name -->
+          <TextBlock Text="{Binding Name}"
+                     FontWeight="SemiBold"
+                     TextWrapping="Wrap"
+                     HorizontalAlignment="Center"
+                     AutomationProperties.AutomationId="DetailItemName"/>
+
+          <!-- Base Item Type -->
+          <TextBlock Text="{Binding BaseItemName}"
+                     Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                     HorizontalAlignment="Center"
+                     AutomationProperties.AutomationId="DetailItemType"/>
+
+          <!-- Field rows -->
+          <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                  BorderThickness="0,1,0,0"
+                  Padding="0,8,0,0"
+                  Margin="0,4,0,0">
+            <StackPanel Spacing="6">
+              <!-- ResRef -->
+              <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="ResRef:"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           Margin="0,0,8,0"/>
+                <TextBlock Grid.Column="1"
+                           Text="{Binding ResRef, Converter={StaticResource StringOrEmDashConverter}}"
+                           FontFamily="Consolas"
+                           AutomationProperties.AutomationId="DetailResRef"/>
+              </Grid>
+
+              <!-- Tag -->
+              <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="Tag:"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           Margin="0,0,8,0"/>
+                <TextBlock Grid.Column="1"
+                           Text="{Binding Tag, Converter={StaticResource StringOrEmDashConverter}}"
+                           FontFamily="Consolas"
+                           AutomationProperties.AutomationId="DetailTag"/>
+              </Grid>
+
+              <!-- Value -->
+              <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="Value:"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           Margin="0,0,8,0"/>
+                <TextBlock Grid.Column="1"
+                           Text="{Binding Value, StringFormat='{}{0:N0} gp'}"
+                           AutomationProperties.AutomationId="DetailValue"/>
+              </Grid>
+
+              <!-- Source -->
+              <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="Source:"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           Margin="0,0,8,0"/>
+                <TextBlock Grid.Column="1"
+                           Text="{Binding ., Converter={StaticResource SourceDisplayConverter}}"
+                           FontFamily="Consolas"
+                           FontSize="11"
+                           AutomationProperties.AutomationId="DetailSourceLocation"/>
+              </Grid>
+
+              <!-- Properties -->
+              <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                      BorderThickness="0,1,0,0"
+                      Padding="0,6,0,0"
+                      Margin="0,4,0,0">
+                <StackPanel Spacing="2">
+                  <TextBlock Text="Properties:"
+                             Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                             FontSize="11"/>
+                  <TextBlock Text="{Binding ., Converter={StaticResource PropertiesDisplayConverter}}"
+                             TextWrapping="Wrap"
+                             FontSize="11"
+                             AutomationProperties.AutomationId="DetailProperties"/>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+    </DockPanel>
+  </Border>
+</UserControl>
