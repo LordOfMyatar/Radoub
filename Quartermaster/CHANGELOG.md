@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.90-alpha] - 2026-05-01
-**Branch**: `radoub/feat/promote-model-preview` | **PR**: #TBD
+**Branch**: `radoub/feat/promote-model-preview` | **PR**: #2156
 
 ### Refactor: Promote ModelPreviewGLControl to Radoub.UI (#1908 prep)
 

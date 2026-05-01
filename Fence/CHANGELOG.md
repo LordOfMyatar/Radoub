@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.30-alpha] - 2026-05-01
-**Branch**: `radoub/feat/promote-model-preview` | **PR**: #TBD
+**Branch**: `radoub/feat/promote-model-preview` | **PR**: #2156
 
 ### Fix: Restore themable FontSize bindings on shared ItemDetailsPanel (#2155)
 
