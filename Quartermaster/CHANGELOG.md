@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.88-alpha] - 2026-04-29
-**Branch**: `radoub/issue-2144` | **PR**: #TBD
+**Branch**: `radoub/issue-2144` | **PR**: #2150
 
 ### Refactor: Consolidate duplicate _cachedPaletteData (#2144)
 
