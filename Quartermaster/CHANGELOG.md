@@ -5,6 +5,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.90-alpha] - 2026-05-01
+**Branch**: `radoub/feat/promote-model-preview` | **PR**: #TBD
+
+### Refactor: Promote ModelPreviewGLControl to Radoub.UI (#1908 prep)
+
+- Move `ModelPreviewGLControl`, `OpenGLShaderManager`, `ModelViewController`, `MeshSkipHeuristic`, `SmoothGroupNormals`, `VertexWelder`, and `TextureService` from Quartermaster to `Radoub.UI`
+- Pure structural move — no rendering behavior changes; QM creature preview continues to render identically
+- Memory-leak hardening from #2034 (LRU caches, EventSubscriptions, Unloaded cleanup, TRACE-level MDL logs, PreferBifTextures cache-clear) preserved verbatim
+- Restore themable `FontSize` bindings on shared `ItemDetailsPanel` (#2155)
+
+---
+
 ## [0.2.89-alpha] - 2026-04-30
 **Branch**: `radoub/issue-1996` | **PR**: #2151
 
