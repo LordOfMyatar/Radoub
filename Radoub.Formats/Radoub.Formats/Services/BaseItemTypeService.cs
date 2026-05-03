@@ -112,7 +112,19 @@ public class BaseItemTypeService
             if (invSlotHeightStr != null && invSlotHeightStr != "****" && int.TryParse(invSlotHeightStr, out var ish))
                 invSlotHeight = ish;
 
-            _cachedTypes.Add(new BaseItemTypeInfo(i, displayName, label, storePanel, modelType, descriptionText, stacking, chargesStarting, invSlotWidth, invSlotHeight));
+            // WeaponWield: BioWare uses **** as a sentinel meaning "default melee weapon
+            // held in one or two hands depending on creature size" — capture as -1 so the
+            // IsHeldWeapon flag can include this category.
+            var weaponWieldStr = baseItems.GetValue(i, "WeaponWield");
+            int weaponWield;
+            if (weaponWieldStr == "****")
+                weaponWield = -1;
+            else if (!string.IsNullOrEmpty(weaponWieldStr) && int.TryParse(weaponWieldStr, out var ww))
+                weaponWield = ww;
+            else
+                weaponWield = 1; // missing column or unparseable → treat as nonweapon
+
+            _cachedTypes.Add(new BaseItemTypeInfo(i, displayName, label, storePanel, modelType, descriptionText, stacking, chargesStarting, invSlotWidth, invSlotHeight, weaponWield));
         }
 
         _cachedTypes = _cachedTypes.OrderBy(t => t.DisplayName).ToList();
@@ -297,6 +309,14 @@ public class BaseItemTypeInfo
     /// <summary>Inventory slot height from baseitems.2da InvSlotHeight column. Default 1.</summary>
     public int InvSlotHeight { get; }
 
+    /// <summary>
+    /// WeaponWield style from baseitems.2da WeaponWield column.
+    /// Values: -1 (****) = melee weapon held in one or two hands; 1 = nonweapon;
+    /// 4 = pole; 5 = bow; 6 = crossbow; 7 = shield; 8 = two-bladed; 9 = creature weapon;
+    /// 10 = sling; 11 = thrown.
+    /// </summary>
+    public int WeaponWield { get; }
+
     // Computed convenience properties (used by Relique)
     public bool HasColorFields => ModelType is 1 or 3;
     public bool HasArmorParts => ModelType == 3;
@@ -305,11 +325,20 @@ public class BaseItemTypeInfo
     public bool IsStackable => Stacking > 1;
     public bool HasCharges => ChargesStarting > 0;
 
+    /// <summary>
+    /// True for items wielded as held weapons (sword, bow, crossbow, two-bladed, sling,
+    /// thrown, pole). Used by Relique's 3D preview to apply a vertical orientation
+    /// rotation; in-game these items get their orientation from the bone they attach to.
+    /// Excludes shields (held but not "linear") and creature weapons.
+    /// </summary>
+    public bool IsHeldWeapon => WeaponWield is -1 or 4 or 5 or 6 or 8 or 10 or 11;
+
     public BaseItemTypeInfo(
         int baseItemIndex, string displayName, string label,
         int storePanel = 4, int modelType = 0, string descriptionText = "",
         int stacking = 1, int chargesStarting = 0,
-        int invSlotWidth = 1, int invSlotHeight = 1)
+        int invSlotWidth = 1, int invSlotHeight = 1,
+        int weaponWield = 1)
     {
         BaseItemIndex = baseItemIndex;
         DisplayName = displayName;
@@ -321,6 +350,7 @@ public class BaseItemTypeInfo
         ChargesStarting = chargesStarting;
         InvSlotWidth = invSlotWidth;
         InvSlotHeight = invSlotHeight;
+        WeaponWield = weaponWield;
     }
 
     public override string ToString() => DisplayName;

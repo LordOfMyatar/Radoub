@@ -1,11 +1,14 @@
 using ItemEditor.ViewModels;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Mdl;
+using Radoub.Formats.Services;
 using Radoub.Formats.Uti;
 using Radoub.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
+using System.Numerics;
 
 namespace ItemEditor.Services;
 
@@ -39,8 +42,17 @@ public sealed class ItemPreviewController
     private readonly ItemModelResolver _resolver;
     private readonly MdlPartComposer _composer;
     private readonly IItemPreviewRenderer _renderer;
+    private readonly BaseItemTypeService _baseItemTypeService;
     private readonly string _armorMannequinPrefix;
     private readonly bool _debounceManually;
+
+    /// <summary>
+    /// Held-weapon vertical orientation: rotate 90° around X so the MDL's +Y "forward"
+    /// axis (the blade) becomes +Z (up), giving a hilt-down/blade-up trophy view.
+    /// In-game this rotation comes from the rhand/lhand bone the weapon attaches to.
+    /// </summary>
+    private static readonly Quaternion HeldWeaponRotation =
+        Quaternion.CreateFromAxisAngle(Vector3.UnitX, MathF.PI / 2f);
 
     private ItemViewModel? _viewModel;
     private bool _pendingUpdate;
@@ -49,12 +61,14 @@ public sealed class ItemPreviewController
         ItemModelResolver resolver,
         MdlPartComposer composer,
         IItemPreviewRenderer renderer,
+        BaseItemTypeService baseItemTypeService,
         string armorMannequinPrefix = "pmh0",
         bool debounceManually = false)
     {
         _resolver = resolver;
         _composer = composer;
         _renderer = renderer;
+        _baseItemTypeService = baseItemTypeService;
         _armorMannequinPrefix = armorMannequinPrefix;
         _debounceManually = debounceManually;
     }
@@ -103,7 +117,13 @@ public sealed class ItemPreviewController
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == null || !WatchedProperties.Contains(e.PropertyName))
+        if (e.PropertyName == null) return;
+
+        // ItemViewModel.SetArmorPart fires PropertyChanged("ArmorPart_{partName}") for each
+        // of the 19 NWN body part keys (Belt, Torso, LBicep, etc.). Match the prefix instead
+        // of enumerating all 19 here so renames or additions stay in sync automatically.
+        bool isArmorPart = e.PropertyName.StartsWith("ArmorPart_", StringComparison.Ordinal);
+        if (!isArmorPart && !WatchedProperties.Contains(e.PropertyName))
             return;
 
         _pendingUpdate = true;
@@ -140,6 +160,8 @@ public sealed class ItemPreviewController
                 return;
             }
 
+            ApplyTrophyRotationIfHeldWeapon(uti, composed);
+
             _renderer.SetModel(composed);
 
             if (resolution.HasColorFields)
@@ -153,6 +175,25 @@ public sealed class ItemPreviewController
                 $"ItemPreviewController.ApplyUpdate failed: {ex.GetType().Name}: {ex.Message}");
             _renderer.Clear();
         }
+    }
+
+    /// <summary>
+    /// For held weapons (sword, bow, crossbow, pole, two-bladed, sling, thrown), apply a
+    /// 90° X-axis rotation to the composed model's root so the +Y "forward" axis the MDL
+    /// was authored on becomes +Z up. Without this, weapons display lying horizontally
+    /// because in-game the rhand/lhand bone supplies the rotation. Items that aren't held
+    /// weapons (helmets, amulets, armor parts) keep identity rotation.
+    /// </summary>
+    private void ApplyTrophyRotationIfHeldWeapon(UtiFile uti, MdlModel composed)
+    {
+        var typeInfo = _baseItemTypeService
+            .GetBaseItemTypes()
+            .FirstOrDefault(t => t.BaseItemIndex == uti.BaseItem);
+
+        if (typeInfo == null || !typeInfo.IsHeldWeapon) return;
+        if (composed.GeometryRoot == null) return;
+
+        composed.GeometryRoot.Orientation = HeldWeaponRotation;
     }
 
     private void ApplyColors(bool isArmor, ItemViewModel vm)

@@ -52,7 +52,8 @@ public partial class MainWindow
         _previewController = new ItemPreviewController(
             _previewResolver,
             _previewComposer,
-            _previewRendererAdapter);
+            _previewRendererAdapter,
+            baseItemSvc);
 
         _previewDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(PreviewDebounceMs) };
         _previewDebounceTimer.Tick += (_, _) =>

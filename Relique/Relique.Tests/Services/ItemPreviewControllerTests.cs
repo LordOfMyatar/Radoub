@@ -38,10 +38,12 @@ public class ItemPreviewControllerTests
         public int ClearCount { get; private set; }
         public (int metal1, int metal2, int cloth1, int cloth2, int leather1, int leather2)? LastArmorColors { get; private set; }
         public int ArmorColorsCallCount { get; private set; }
+        public Quaternion LastModelRootOrientation { get; private set; } = Quaternion.Identity;
 
         public void SetModel(MdlModel model)
         {
             CurrentModel = model;
+            LastModelRootOrientation = model.GeometryRoot?.Orientation ?? Quaternion.Identity;
             PlaceholderVisible = false;
             LoadCount++;
         }
@@ -67,16 +69,20 @@ public class ItemPreviewControllerTests
         var game = new MockGameDataService(includeSampleData: false);
 
         var baseItems = new TwoDAFile();
-        baseItems.Columns.AddRange(new[] { "Label", "ItemClass", "ModelType", "DefaultModel" });
+        baseItems.Columns.AddRange(new[] { "Label", "ItemClass", "ModelType", "DefaultModel", "WeaponWield" });
 
-        // Row 0: Simple weapon
-        baseItems.Rows.Add(new TwoDARow { Label = "0", Values = new() { "BASE_ITEM_LONGSWORD", "w_swrd", "0", "w_swrd_001" } });
-        // Row 1: Layered (cloak)
-        baseItems.Rows.Add(new TwoDARow { Label = "1", Values = new() { "BASE_ITEM_CLOAK", "cloak", "1", "cloak_001" } });
-        // Row 2: Composite weapon
-        baseItems.Rows.Add(new TwoDARow { Label = "2", Values = new() { "BASE_ITEM_TWOBLADEDSWORD", "wdbsw", "2", "wdbsw_b_001" } });
-        // Row 3: Armor
-        baseItems.Rows.Add(new TwoDARow { Label = "3", Values = new() { "BASE_ITEM_ARMOR", "armor", "3", "****" } });
+        // Row 0: Simple weapon (longsword) — WeaponWield=**** (default melee held weapon)
+        baseItems.Rows.Add(new TwoDARow { Label = "0", Values = new() { "BASE_ITEM_LONGSWORD", "w_swrd", "0", "w_swrd_001", "****" } });
+        // Row 1: Layered (cloak) — WeaponWield=1 (nonweapon)
+        baseItems.Rows.Add(new TwoDARow { Label = "1", Values = new() { "BASE_ITEM_CLOAK", "cloak", "1", "cloak_001", "1" } });
+        // Row 2: Composite weapon (twobladed) — WeaponWield=8 (two-bladed)
+        baseItems.Rows.Add(new TwoDARow { Label = "2", Values = new() { "BASE_ITEM_TWOBLADEDSWORD", "wdbsw", "2", "wdbsw_b_001", "8" } });
+        // Row 3: Armor — WeaponWield=1 (nonweapon)
+        baseItems.Rows.Add(new TwoDARow { Label = "3", Values = new() { "BASE_ITEM_ARMOR", "armor", "3", "****", "1" } });
+        // Row 4: Helmet — ModelType=0, WeaponWield=1 (nonweapon — should NOT rotate even though ModelType matches simple weapon)
+        baseItems.Rows.Add(new TwoDARow { Label = "4", Values = new() { "BASE_ITEM_HELMET", "helm", "0", "helm_001", "1" } });
+        // Row 5: Bow — WeaponWield=5 (held; should rotate)
+        baseItems.Rows.Add(new TwoDARow { Label = "5", Values = new() { "BASE_ITEM_LONGBOW", "w_bow", "0", "w_bow_001", "5" } });
 
         game.With2DA("baseitems", baseItems);
         return game;
@@ -107,12 +113,13 @@ public class ItemPreviewControllerTests
         // Register a placeholder MDL byte for any ResRef — the loader func returns synthetic MdlModels
         setupResources?.Invoke(game);
 
-        var resolver = new ItemModelResolver(new BaseItemTypeService(game), game);
+        var baseItemSvc = new BaseItemTypeService(game);
+        var resolver = new ItemModelResolver(baseItemSvc, game);
         var composer = new MdlPartComposer(game, (resRef, _) => MakePartModel(resRef));
         var renderer = new FakePreviewRenderer();
 
         // Test mode: pump debounce manually via FlushDebounce()
-        var controller = new ItemPreviewController(resolver, composer, renderer, debounceManually: true);
+        var controller = new ItemPreviewController(resolver, composer, renderer, baseItemSvc, debounceManually: true);
         return (renderer, controller, game);
     }
 
@@ -338,5 +345,119 @@ public class ItemPreviewControllerTests
         controller.FlushDebounce();
 
         Assert.Equal(loadsAfterBind, renderer.LoadCount);
+    }
+
+    // ----- New tests for orientation + ArmorParts watching (#1908 PR3b follow-up) -----
+
+    [Fact]
+    public void ArmorPartChange_TriggersReload()
+    {
+        var (renderer, controller, game) = BuildController(g =>
+        {
+            g.SetResource("pmh0_chest005", ResourceTypes.Mdl, new byte[] { 1 });
+            g.SetResource("pmh0_chest010", ResourceTypes.Mdl, new byte[] { 1 });
+        });
+        var uti = new UtiFile { BaseItem = 3 };
+        uti.ArmorParts["Torso"] = 5;
+        var vm = new ItemViewModel(uti);
+
+        controller.BindViewModel(vm);
+        controller.FlushDebounce();
+        var loadsAfterInitial = renderer.LoadCount;
+
+        // Change Torso part — fires PropertyChanged("ArmorPart_Torso")
+        vm.SetArmorPart("Torso", 10);
+        controller.FlushDebounce();
+
+        Assert.Equal(loadsAfterInitial + 1, renderer.LoadCount);
+    }
+
+    [Fact]
+    public void Bind_HeldWeapon_AppliesXRotationToModelRoot()
+    {
+        var (renderer, controller, _) = BuildController(g =>
+            g.SetResource("w_swrd_001", ResourceTypes.Mdl, new byte[] { 1 }));
+        // BaseItem=0 → longsword in our test 2DA, WeaponWield=**** → IsHeldWeapon=true
+        var vm = new ItemViewModel(new UtiFile { BaseItem = 0, ModelPart1 = 1 });
+
+        controller.BindViewModel(vm);
+        controller.FlushDebounce();
+
+        Assert.NotNull(renderer.CurrentModel);
+        // Held weapons should be rotated 90° around X so Y-axis-up becomes Z-axis-up.
+        // The exact quaternion: (sin(45°), 0, 0, cos(45°)) ≈ (0.707, 0, 0, 0.707).
+        const float tol = 0.001f;
+        var expected = Quaternion.CreateFromAxisAngle(Vector3.UnitX, MathF.PI / 2f);
+        Assert.Equal(expected.X, renderer.LastModelRootOrientation.X, tol);
+        Assert.Equal(expected.Y, renderer.LastModelRootOrientation.Y, tol);
+        Assert.Equal(expected.Z, renderer.LastModelRootOrientation.Z, tol);
+        Assert.Equal(expected.W, renderer.LastModelRootOrientation.W, tol);
+    }
+
+    [Fact]
+    public void Bind_CompositeWeapon_AppliesXRotationToModelRoot()
+    {
+        var (renderer, controller, _) = BuildController(g =>
+        {
+            g.SetResource("wdbsw_b_011", ResourceTypes.Mdl, new byte[] { 1 });
+            g.SetResource("wdbsw_m_011", ResourceTypes.Mdl, new byte[] { 1 });
+            g.SetResource("wdbsw_t_011", ResourceTypes.Mdl, new byte[] { 1 });
+        });
+        // BaseItem=2 → twobladed sword, WeaponWield=8 → IsHeldWeapon=true
+        var vm = new ItemViewModel(new UtiFile { BaseItem = 2, ModelPart1 = 11, ModelPart2 = 11, ModelPart3 = 11 });
+
+        controller.BindViewModel(vm);
+        controller.FlushDebounce();
+
+        Assert.NotNull(renderer.CurrentModel);
+        Assert.NotEqual(Quaternion.Identity, renderer.LastModelRootOrientation);
+    }
+
+    [Fact]
+    public void Bind_Helmet_DoesNotApplyRotation()
+    {
+        var (renderer, controller, _) = BuildController(g =>
+            g.SetResource("helm_001", ResourceTypes.Mdl, new byte[] { 1 }));
+        // BaseItem=4 → helmet, ModelType=0 BUT WeaponWield=1 → IsHeldWeapon=false
+        var vm = new ItemViewModel(new UtiFile { BaseItem = 4, ModelPart1 = 1 });
+
+        controller.BindViewModel(vm);
+        controller.FlushDebounce();
+
+        Assert.NotNull(renderer.CurrentModel);
+        Assert.Equal(Quaternion.Identity, renderer.LastModelRootOrientation);
+    }
+
+    [Fact]
+    public void Bind_Armor_DoesNotApplyRotation()
+    {
+        var (renderer, controller, _) = BuildController(g =>
+        {
+            g.SetResource("pmh0_chest005", ResourceTypes.Mdl, new byte[] { 1 });
+        });
+        var uti = new UtiFile { BaseItem = 3 };
+        uti.ArmorParts["Torso"] = 5;
+        var vm = new ItemViewModel(uti);
+
+        controller.BindViewModel(vm);
+        controller.FlushDebounce();
+
+        Assert.NotNull(renderer.CurrentModel);
+        Assert.Equal(Quaternion.Identity, renderer.LastModelRootOrientation);
+    }
+
+    [Fact]
+    public void Bind_Bow_AppliesXRotation()
+    {
+        var (renderer, controller, _) = BuildController(g =>
+            g.SetResource("w_bow_001", ResourceTypes.Mdl, new byte[] { 1 }));
+        // BaseItem=5 → bow, WeaponWield=5 → IsHeldWeapon=true
+        var vm = new ItemViewModel(new UtiFile { BaseItem = 5, ModelPart1 = 1 });
+
+        controller.BindViewModel(vm);
+        controller.FlushDebounce();
+
+        Assert.NotNull(renderer.CurrentModel);
+        Assert.NotEqual(Quaternion.Identity, renderer.LastModelRootOrientation);
     }
 }
