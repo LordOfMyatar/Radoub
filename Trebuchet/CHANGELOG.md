@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.32.0-alpha] - 2026-05-01
+**Branch**: `radoub/issue-2159` | **PR**: #2160
+
+### Fix: Replace hardcoded font sizes with themable DynamicResource bindings
+
+- Replace hardcoded `FontSize="11"` on `MarlinspikePanel` ModulePathText/DurationText and `ReplacePreviewWindow` backup notice with `{DynamicResource FontSizeSmall}`
+- Required for low-vision users — hardcoded font sizes do not scale with Trebuchet's own font-size slider
+
+---
+
 ## [1.31.0-alpha] - 2026-04-26
 **Branch**: `radoub/issue-2034-round-3` | **PR**: #2143
 

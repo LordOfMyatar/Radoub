@@ -44,7 +44,7 @@
                 BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                 BorderThickness="0,1,0,0">
             <TextBlock Text="⚠ Backup will be created in ~/Radoub/Backups/ before replacing."
-                       FontSize="11"
+                       FontSize="{DynamicResource FontSizeSmall}"
                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
         </Border>
 

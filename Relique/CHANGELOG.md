@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.11-alpha] - 2026-05-01
+**Branch**: `radoub/issue-2159` | **PR**: #2160
+
+### Fix: Replace hardcoded font sizes with themable DynamicResource bindings
+
+- Replace ~14 hardcoded `FontSize="11" / "16" / "20"` instances on MainWindow (Basic Properties, Descriptions, Flags and Quantities, Item Statistics, Item Properties section headers; description hint text; validation labels) and NewItemWizardWindow (step headers, validation, char counts, helper labels) with `{DynamicResource FontSizeSmall|FontSizeLarge|FontSizeXLarge}`
+- Required for low-vision users — hardcoded font sizes do not scale with the Trebuchet font-size slider
+
+---
+
 ## [0.10.10-alpha] - 2026-04-18
 **Branch**: `relique/sprint/1905-categories` | **PR**: #2107
 

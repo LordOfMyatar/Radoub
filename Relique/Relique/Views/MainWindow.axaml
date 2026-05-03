@@ -100,7 +100,7 @@
                                 VerticalAlignment="Center"
                                 IsVisible="True">
                         <TextBlock Text="No item loaded"
-                                   FontSize="20"
+                                   FontSize="{DynamicResource FontSizeXLarge}"
                                    HorizontalAlignment="Center"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                         <TextBlock Text="Open a .uti file to begin editing"
@@ -118,7 +118,7 @@
                         <StackPanel Margin="16" Spacing="16">
 
                             <!-- Basic Properties -->
-                            <TextBlock Text="Basic Properties" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                            <TextBlock Text="Basic Properties" FontSize="{DynamicResource FontSizeLarge}" FontWeight="SemiBold" Margin="0,0,0,4"/>
 
                             <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
                                   Margin="0,0,0,8">
@@ -214,13 +214,13 @@
                             </Grid>
 
                             <!-- Descriptions (side-by-side) -->
-                            <TextBlock Text="Descriptions" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                            <TextBlock Text="Descriptions" FontSize="{DynamicResource FontSizeLarge}" FontWeight="SemiBold" Margin="0,0,0,4"/>
                             <Grid ColumnDefinitions="*,16,*" Margin="0,0,0,8">
                                 <!-- Unidentified Description -->
                                 <StackPanel Grid.Column="0" x:Name="UnidentifiedDescriptionPanel">
                                     <TextBlock Text="Unidentified" FontWeight="SemiBold" Margin="0,0,0,2"/>
                                     <TextBlock Text="Shown before the item is identified"
-                                               FontSize="11"
+                                               FontSize="{DynamicResource FontSizeSmall}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                Margin="0,0,0,4"/>
                                     <controls:SpellCheckTextBox
@@ -233,7 +233,7 @@
                                         Watermark="Unidentified description"/>
                                     <TextBlock x:Name="IdentifiedHintLabel"
                                                Text="This item is flagged identified. Uncheck identified to be mysterious."
-                                               FontSize="11"
+                                               FontSize="{DynamicResource FontSizeSmall}"
                                                FontStyle="Italic"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                TextWrapping="Wrap"
@@ -245,7 +245,7 @@
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="Identified" FontWeight="SemiBold" Margin="0,0,0,2"/>
                                     <TextBlock Text="Shown after the item is identified"
-                                               FontSize="11"
+                                               FontSize="{DynamicResource FontSizeSmall}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                Margin="0,0,0,4"/>
                                     <controls:SpellCheckTextBox
@@ -262,7 +262,7 @@
                             <Separator/>
 
                             <!-- Flags & Quantities -->
-                            <TextBlock Text="Flags and Quantities" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                            <TextBlock Text="Flags and Quantities" FontSize="{DynamicResource FontSizeLarge}" FontWeight="SemiBold" Margin="0,0,0,4"/>
 
                             <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto"
                                   Margin="0,0,0,8">
@@ -518,7 +518,7 @@
 
                             <!-- Item Statistics (above Item Properties for visibility without scrolling) -->
                             <StackPanel x:Name="ItemStatisticsPanel" IsVisible="False">
-                                <TextBlock Text="Item Statistics" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <TextBlock Text="Item Statistics" FontSize="{DynamicResource FontSizeLarge}" FontWeight="SemiBold" Margin="0,0,0,4"/>
                                 <TextBox x:Name="ItemStatisticsText"
                                          IsReadOnly="True"
                                          AcceptsReturn="True"
@@ -530,7 +530,7 @@
                             </StackPanel>
 
                             <!-- Item Properties Editor -->
-                            <TextBlock Text="Item Properties" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                            <TextBlock Text="Item Properties" FontSize="{DynamicResource FontSizeLarge}" FontWeight="SemiBold" Margin="0,0,0,4"/>
 
                             <Grid ColumnDefinitions="*,Auto,*" RowDefinitions="Auto,*" MinHeight="300" Margin="0,0,0,8">
                                 <!-- Left: Available Properties header -->
@@ -688,7 +688,7 @@
                                             </StackPanel>
                                             <TextBlock x:Name="VariableValidationText"
                                                        Foreground="{DynamicResource ThemeError}"
-                                                       FontSize="11"
+                                                       FontSize="{DynamicResource FontSizeSmall}"
                                                        TextWrapping="Wrap"
                                                        IsVisible="False"/>
                                         </StackPanel>
@@ -716,7 +716,7 @@
                                                                          BorderBrush="{Binding HasError, Converter={StaticResource BoolToErrorBrushConverter}}"/>
                                                                 <TextBlock Text="{Binding ErrorMessage}"
                                                                            Foreground="{DynamicResource ThemeError}"
-                                                                           FontSize="11"
+                                                                           FontSize="{DynamicResource FontSizeSmall}"
                                                                            VerticalAlignment="Center"
                                                                            IsVisible="{Binding HasError}"/>
                                                             </StackPanel>

@@ -130,10 +130,10 @@
             <DockPanel>
                 <TextBlock x:Name="ModulePathText" DockPanel.Dock="Left"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                           VerticalAlignment="Center" FontSize="11"/>
+                           VerticalAlignment="Center" FontSize="{DynamicResource FontSizeSmall}"/>
                 <TextBlock x:Name="DurationText" DockPanel.Dock="Right"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                           VerticalAlignment="Center" FontSize="11"
+                           VerticalAlignment="Center" FontSize="{DynamicResource FontSizeSmall}"
                            HorizontalAlignment="Right"/>
             </DockPanel>
         </Border>

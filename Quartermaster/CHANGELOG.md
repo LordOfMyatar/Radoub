@@ -5,6 +5,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.91-alpha] - 2026-05-01
+**Branch**: `radoub/issue-2159` | **PR**: #2160
+
+### Refactor: Extract MdlPartComposer to Radoub.UI (#1908 prep PR3a)
+
+- Move part-mesh-onto-skeleton composition logic from `ModelService.LoadPartBasedCreatureModel` into shared `MdlPartComposer` in `Radoub.UI`
+- `LoadPartBasedCreatureModel` becomes a thin adapter that resolves creature appearance + armor overrides + human fallback, then delegates to the composer
+- No rendering behavior changes — QM creature preview renders identically (mesh re-parenting, texture-name overrides, #1557 seam-overlap nudge, bounds aggregation all preserved)
+- Enables Relique 3D item preview (#1908 PR3b) to compose composite weapons (3 parts) and armor (up to 19 parts) using the same mechanics
+
+### Fix: Replace hardcoded font sizes with themable DynamicResource bindings
+
+- Replace hardcoded `FontSize="11"` / `"12"` on `AppearancePanel.PreviewStateText` and `AdvancedPanel.VariableValidationText` / DataGrid error labels with `{DynamicResource FontSizeSmall}`
+- Required for low-vision users — hardcoded font sizes do not scale with the Trebuchet font-size slider
+
+---
+
 ## [0.2.90-alpha] - 2026-05-01
 **Branch**: `radoub/feat/promote-model-preview` | **PR**: #2156
 

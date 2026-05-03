@@ -7,29 +7,26 @@ using Radoub.Formats.Mdl;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
 using Radoub.Formats.Uti;
+using Radoub.UI.Services;
 
 namespace Quartermaster.Services;
 
 /// <summary>
 /// Service for loading and managing 3D models for creature preview.
-/// Handles model resolution from appearance.2da and resource loading.
+/// Handles creature-specific resolution from appearance.2da and equipped-armor lookup,
+/// then delegates part composition to the shared <see cref="MdlPartComposer"/>.
 /// </summary>
 public class ModelService
 {
     private readonly IGameDataService _gameDataService;
     private readonly MdlReader _mdlReader = new();
     private readonly Dictionary<string, MdlModel?> _modelCache = new();
-    private MdlModel? _currentSkeleton;
-
-    /// <summary>
-    /// Maps mesh node names to their body part type (e.g., "head", "neck", "chest").
-    /// Populated during TryAddBodyPart, consumed by AdjustSeamOverlaps.
-    /// </summary>
-    private readonly Dictionary<string, string> _meshPartTypes = new();
+    private readonly MdlPartComposer _composer;
 
     public ModelService(IGameDataService gameDataService)
     {
         _gameDataService = gameDataService;
+        _composer = new MdlPartComposer(_gameDataService, (resRef, _) => LoadModel(resRef));
     }
 
     /// <summary>
@@ -40,15 +37,6 @@ public class ModelService
     {
         var genderChar = gender == 1 ? 'f' : 'm';
         return $"p{genderChar}{race.ToLowerInvariant()}{phenotype}";
-    }
-
-    /// <summary>
-    /// Build a body part model name from prefix, part type, and part number.
-    /// Format: {prefix}_{partType}{partNumber:D3} (e.g., "pfo0_head001")
-    /// </summary>
-    internal static string BuildBodyPartName(string prefix, string partType, byte partNumber)
-    {
-        return $"{prefix}_{partType}{partNumber:D3}";
     }
 
     /// <summary>
@@ -64,7 +52,6 @@ public class ModelService
             var gender = creature.Gender;
             var phenotype = creature.Phenotype;
 
-            // Log equipped items for debugging
             UnifiedLogger.LogApplication(LogLevel.INFO,
                 $"LoadCreatureModel: {creature.EquipItemList.Count} equipped items");
             foreach (var equip in creature.EquipItemList)
@@ -73,11 +60,9 @@ public class ModelService
                     $"  Slot {equip.Slot}: '{equip.EquipRes}'");
             }
 
-            // Check if this is a part-based model
             var modelType = _gameDataService.Get2DAValue("appearance", appearanceId, "MODELTYPE");
             if (modelType?.ToUpperInvariant().Contains("P") == true)
             {
-                // Get armor-provided body part overrides
                 var armorOverrides = GetArmorPartOverrides(creature);
 
                 if (armorOverrides != null)
@@ -91,11 +76,9 @@ public class ModelService
                         $"LoadCreatureModel: No armor overrides (naked creature or no chest armor)");
                 }
 
-                // Part-based model - load body parts with armor overrides
                 return LoadPartBasedCreatureModel(creature, armorOverrides);
             }
 
-            // Simple/Full model - load single model
             return LoadModelForAppearance(appearanceId, gender, phenotype);
         }
         catch (Exception ex)
@@ -136,8 +119,7 @@ public class ModelService
 
     /// <summary>
     /// Get armor colors from equipped chest armor.
-    /// Returns null if no armor equipped.
-    /// Note: Color index 0 is a valid color (first in palette), so we always return colors if armor exists.
+    /// Returns null if no armor equipped. Color index 0 is valid (first palette entry).
     /// </summary>
     public (byte metal1, byte metal2, byte cloth1, byte cloth2, byte leather1, byte leather2)? GetArmorColors(UtcFile creature)
     {
@@ -150,9 +132,6 @@ public class ModelService
                 armor.Leather1Color, armor.Leather2Color);
     }
 
-    /// <summary>
-    /// Load the equipped chest armor UTI.
-    /// </summary>
     private UtiFile? LoadEquippedArmor(UtcFile creature)
     {
         var chestItem = creature.EquipItemList.FirstOrDefault(e => e.Slot == EquipmentSlots.Chest);
@@ -178,7 +157,7 @@ public class ModelService
     }
 
     /// <summary>
-    /// Load a part-based creature model by combining body part models.
+    /// Load a part-based creature model by combining body part models via the shared composer.
     /// </summary>
     /// <param name="creature">The creature to load</param>
     /// <param name="armorOverrides">Optional armor-provided body part overrides</param>
@@ -190,539 +169,96 @@ public class ModelService
             return null;
 
         var basePrefix = BuildModelPrefix(creature.Gender, race, creature.Phenotype);
-
         UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadPartBasedCreatureModel: basePrefix={basePrefix}");
 
-        // Clear part type tracking from previous load
-        _meshPartTypes.Clear();
-
-        // Load the base skeleton model first - it defines bone positions for body parts
-        // Use LoadSkeletonModel to prefer BIF over HAK — CEP HAKs override standard
-        // skeletons with incompatible versions (#1314)
-        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"LoadPartBasedCreatureModel: Attempting to load skeleton model '{basePrefix}'...");
-        var skeletonModel = LoadModel(basePrefix);
-        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"LoadPartBasedCreatureModel: LoadModel returned {(skeletonModel != null ? "model" : "null")}");
-        if (skeletonModel != null)
-        {
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadPartBasedCreatureModel: Loaded skeleton model {basePrefix}");
-            UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"  GeometryRoot: {skeletonModel.GeometryRoot?.Name ?? "null"}, children={skeletonModel.GeometryRoot?.Children.Count ?? 0}");
-            // Log ALL skeleton nodes regardless of position
-            var nodeCount = 0;
-            foreach (var node in skeletonModel.EnumerateAllNodes())
-            {
-                nodeCount++;
-                UnifiedLogger.LogApplication(LogLevel.INFO,
-                    $"  Skeleton node '{node.Name}': type={node.NodeType}, pos={node.Position}, children={node.Children.Count}");
-            }
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"  Total skeleton nodes: {nodeCount}");
-        }
-        else
-        {
-            UnifiedLogger.LogApplication(LogLevel.WARN, $"LoadPartBasedCreatureModel: Skeleton model {basePrefix} not found");
-        }
-
-        // Create a composite model to hold all parts
-        var compositeModel = new MdlModel
-        {
-            Name = basePrefix,
-            IsBinary = true
-        };
-
-        // Store skeleton for bone position lookup
-        _currentSkeleton = skeletonModel;
-
-        // Inherit the skeleton's animation list (and any already merged from
-        // its supermodel chain) so part-based creatures — humans, elves,
-        // halflings, dwarves, etc. — can play idle/walk/attack in the
-        // preview (#2124). Without this, composite models would have an
-        // empty Animations list because they skip the LoadModel code path.
-        if (skeletonModel?.Animations != null)
-        {
-            foreach (var anim in skeletonModel.Animations)
-                compositeModel.Animations.Add(anim);
-            compositeModel.SuperModel = skeletonModel.SuperModel;
-        }
-
-        // Use the skeleton's bone hierarchy as the composite root so animation
-        // pose lookup finds matching bone names through the full parent chain
-        // (#2124). Each body part mesh attaches under its target bone below.
-        if (skeletonModel?.GeometryRoot != null)
-        {
-            compositeModel.GeometryRoot = skeletonModel.GeometryRoot;
-        }
-
-        // Helper to get body part number.
-        // Creature value takes precedence — it reflects the user's explicit choice.
-        // Armor overrides only apply when the creature has the default part (non-zero)
-        // and the armor provides an alternative. Setting a body part to 0 = "invisible/none"
-        // and must always be honored regardless of armor.
+        // Helper: armor override beats creature value, but creature value of 0 (none/invisible)
+        // always wins regardless of armor.
         byte GetPartNumber(string armorKey, byte creatureValue)
         {
-            // If creature explicitly says 0 (none/invisible), honor that
             if (creatureValue == 0)
                 return 0;
 
-            // If armor provides an override for this part, use it
             if (armorOverrides != null && armorOverrides.TryGetValue(armorKey, out var armorValue) && armorValue > 0)
                 return armorValue;
 
             return creatureValue;
         }
 
-        // Load each body part (armor overrides take precedence where applicable)
-        // Head is special - uses AppearanceHead, not overridden by armor
-        TryAddBodyPart(compositeModel, basePrefix, "head", creature.AppearanceHead);
+        var parts = new List<(string PartType, string ResRef)>();
 
-        // Standard body parts (armor can override these)
-        // NWN body part naming: belt, bicepl/bicepr, chest, footl/footr, forel/forer,
-        // handl/handr, legl/legr, neck, pelvis, shinl/shinr, shol/shor
-        TryAddBodyPart(compositeModel, basePrefix, "neck", GetPartNumber("Neck", creature.BodyPart_Neck));
-        TryAddBodyPart(compositeModel, basePrefix, "chest", GetPartNumber("Torso", creature.BodyPart_Torso));
-        // Robe is armor-only (no creature body part) — use armor override or skip
+        // Head — special, uses AppearanceHead, never overridden by armor
+        AppendPart(parts, basePrefix, "head", creature.AppearanceHead);
+
+        AppendPart(parts, basePrefix, "neck", GetPartNumber("Neck", creature.BodyPart_Neck));
+        AppendPart(parts, basePrefix, "chest", GetPartNumber("Torso", creature.BodyPart_Torso));
+
+        // Robe is armor-only (no creature body part); only added if armor has a robe override
         var robePartNumber = (armorOverrides != null && armorOverrides.TryGetValue("Robe", out var robeValue) && robeValue > 0)
             ? robeValue : (byte)0;
-        TryAddBodyPart(compositeModel, basePrefix, "robe", robePartNumber);
-        TryAddBodyPart(compositeModel, basePrefix, "pelvis", GetPartNumber("Pelvis", creature.BodyPart_Pelvis));
-        TryAddBodyPart(compositeModel, basePrefix, "belt", GetPartNumber("Belt", creature.BodyPart_Belt));
+        AppendPart(parts, basePrefix, "robe", robePartNumber);
 
-        // Arms (armor can override these) - NWN uses shol/shor, bicepl/bicepr, forel/forer, handl/handr
-        TryAddBodyPart(compositeModel, basePrefix, "shol", GetPartNumber("LShoul", creature.BodyPart_LShoul));
-        TryAddBodyPart(compositeModel, basePrefix, "shor", GetPartNumber("RShoul", creature.BodyPart_RShoul));
-        TryAddBodyPart(compositeModel, basePrefix, "bicepl", GetPartNumber("LBicep", creature.BodyPart_LBicep));
-        TryAddBodyPart(compositeModel, basePrefix, "bicepr", GetPartNumber("RBicep", creature.BodyPart_RBicep));
-        TryAddBodyPart(compositeModel, basePrefix, "forel", GetPartNumber("LFArm", creature.BodyPart_LFArm));
-        TryAddBodyPart(compositeModel, basePrefix, "forer", GetPartNumber("RFArm", creature.BodyPart_RFArm));
-        TryAddBodyPart(compositeModel, basePrefix, "handl", GetPartNumber("LHand", creature.BodyPart_LHand));
-        TryAddBodyPart(compositeModel, basePrefix, "handr", GetPartNumber("RHand", creature.BodyPart_RHand));
+        AppendPart(parts, basePrefix, "pelvis", GetPartNumber("Pelvis", creature.BodyPart_Pelvis));
+        AppendPart(parts, basePrefix, "belt", GetPartNumber("Belt", creature.BodyPart_Belt));
 
-        // Legs (armor can override these) - NWN uses legl/legr (thighs), shinl/shinr, footl/footr
-        TryAddBodyPart(compositeModel, basePrefix, "legl", GetPartNumber("LThigh", creature.BodyPart_LThigh));
-        TryAddBodyPart(compositeModel, basePrefix, "legr", GetPartNumber("RThigh", creature.BodyPart_RThigh));
-        TryAddBodyPart(compositeModel, basePrefix, "shinl", GetPartNumber("LShin", creature.BodyPart_LShin));
-        TryAddBodyPart(compositeModel, basePrefix, "shinr", GetPartNumber("RShin", creature.BodyPart_RShin));
-        TryAddBodyPart(compositeModel, basePrefix, "footl", GetPartNumber("LFoot", creature.BodyPart_LFoot));
-        TryAddBodyPart(compositeModel, basePrefix, "footr", GetPartNumber("RFoot", creature.BodyPart_RFoot));
+        AppendPart(parts, basePrefix, "shol", GetPartNumber("LShoul", creature.BodyPart_LShoul));
+        AppendPart(parts, basePrefix, "shor", GetPartNumber("RShoul", creature.BodyPart_RShoul));
+        AppendPart(parts, basePrefix, "bicepl", GetPartNumber("LBicep", creature.BodyPart_LBicep));
+        AppendPart(parts, basePrefix, "bicepr", GetPartNumber("RBicep", creature.BodyPart_RBicep));
+        AppendPart(parts, basePrefix, "forel", GetPartNumber("LFArm", creature.BodyPart_LFArm));
+        AppendPart(parts, basePrefix, "forer", GetPartNumber("RFArm", creature.BodyPart_RFArm));
+        AppendPart(parts, basePrefix, "handl", GetPartNumber("LHand", creature.BodyPart_LHand));
+        AppendPart(parts, basePrefix, "handr", GetPartNumber("RHand", creature.BodyPart_RHand));
 
-        // Fix thin seams between adjacent body parts (#1557).
-        // NWN body parts rely on skeletal deformation for seamless joints, but our static
-        // preview places rigid meshes. Some races (elves) have very thin vertex overlap
-        // at joints that becomes visible under perspective projection. Nudge parts toward
-        // each other where overlap is too thin.
-        AdjustSeamOverlaps(compositeModel);
+        AppendPart(parts, basePrefix, "legl", GetPartNumber("LThigh", creature.BodyPart_LThigh));
+        AppendPart(parts, basePrefix, "legr", GetPartNumber("RThigh", creature.BodyPart_RThigh));
+        AppendPart(parts, basePrefix, "shinl", GetPartNumber("LShin", creature.BodyPart_LShin));
+        AppendPart(parts, basePrefix, "shinr", GetPartNumber("RShin", creature.BodyPart_RShin));
+        AppendPart(parts, basePrefix, "footl", GetPartNumber("LFoot", creature.BodyPart_LFoot));
+        AppendPart(parts, basePrefix, "footr", GetPartNumber("RFoot", creature.BodyPart_RFoot));
 
-        // Calculate combined bounding box
-        UpdateCompositeBounds(compositeModel);
-
-        var meshCount = compositeModel.GetMeshNodes().Count();
-        UnifiedLogger.LogApplication(LogLevel.INFO,
-            $"LoadPartBasedCreatureModel: Composite model has {meshCount} meshes, bounds={compositeModel.BoundingMin}-{compositeModel.BoundingMax}");
-
-        return meshCount > 0 ? compositeModel : null;
+        return _composer.Compose(basePrefix, parts);
     }
 
-    private void TryAddBodyPart(MdlModel compositeModel, string basePrefix, string partType, byte partNumber)
+    /// <summary>
+    /// Resolve a body part ResRef with race-specific lookup first, falling back to human
+    /// (pmh0/pfh0). Skips parts with partNumber=0 (none/invisible). Adds the resolved
+    /// (partType, resRef) tuple to the parts list if a model file exists.
+    /// </summary>
+    private void AppendPart(List<(string PartType, string ResRef)> parts, string basePrefix, string partType, byte partNumber)
     {
         if (partNumber == 0)
         {
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"TryAddBodyPart: Skipping {partType} (partNumber=0)");
-            return; // 0 often means "none" for optional parts
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"AppendPart: skipping {partType} (partNumber=0)");
+            return;
         }
 
-        try
+        var raceResRef = MdlPartNaming.BuildBodyPartName(basePrefix, partType, partNumber);
+        if (LoadModel(raceResRef) != null)
         {
-            TryAddBodyPartCore(compositeModel, basePrefix, partType, partNumber);
+            parts.Add((partType, raceResRef));
+            return;
         }
-        catch (Exception ex)
+
+        // Human fallback (pmh0/pfh0). NWN shares many body part models across races
+        // using the human models as the default reference set.
+        if (basePrefix.Length >= 2)
         {
-            UnifiedLogger.LogApplication(LogLevel.WARN,
-                $"TryAddBodyPart: Failed to add {partType}#{partNumber} for {basePrefix}: {ex.GetType().Name}: {ex.Message}");
-        }
-    }
-
-    private void TryAddBodyPartCore(MdlModel compositeModel, string basePrefix, string partType, byte partNumber)
-    {
-
-        var partName = BuildBodyPartName(basePrefix, partType, partNumber);
-        var partModel = LoadModel(partName);
-
-        // If not found with race-specific prefix, try human fallback
-        // NWN shares many body part models across races using pmh0/pfh0 (human male/female)
-        if (partModel == null && basePrefix.Length >= 2)
-        {
-            // Extract gender char (m/f) from position 1
             var genderChar = basePrefix[1];
-            var humanPrefix = $"p{genderChar}h0"; // e.g., pmh0 or pfh0
+            var humanPrefix = $"p{genderChar}h0";
             if (humanPrefix != basePrefix)
             {
-                var humanPartName = $"{humanPrefix}_{partType}{partNumber:D3}";
-                partModel = LoadModel(humanPartName);
-                if (partModel != null)
+                var humanResRef = MdlPartNaming.BuildBodyPartName(humanPrefix, partType, partNumber);
+                if (LoadModel(humanResRef) != null)
                 {
                     UnifiedLogger.LogApplication(LogLevel.INFO,
-                        $"TryAddBodyPart: Using human fallback '{humanPartName}' for '{partName}'");
-                    partName = humanPartName; // Update for logging
+                        $"AppendPart: using human fallback '{humanResRef}' for '{raceResRef}'");
+                    parts.Add((partType, humanResRef));
+                    return;
                 }
             }
         }
 
-        if (partModel != null)
-        {
-            // Body part MDL files have geometry at local origin
-            // We need to position and orient them at the corresponding bone in the skeleton
-            var (bonePosition, _) = GetBoneTransformForPart(partType);
-            var boneName = GetBoneNameForPart(partType);
-
-            var meshCount = 0;
-            // Add all mesh nodes from this part to the composite model
-            foreach (var node in partModel.EnumerateAllNodes())
-            {
-                if (node is Radoub.Formats.Mdl.MdlTrimeshNode trimesh)
-                {
-                    // Position the mesh at the bone location.
-                    // NOTE: We intentionally DON'T set Orientation here. All NWN part-based
-                    // skeleton bones have identity orientation, so setting it is a no-op in theory.
-                    // In practice, Matrix4x4.Decompose can return slightly non-identity quaternions
-                    // from accumulated floating-point error, which causes visible displacement
-                    // when the rendering pipeline applies the rotation to mesh vertices.
-                    trimesh.Position = bonePosition;
-
-                    // ALWAYS derive texture name for body parts - the texture field in body part MDLs
-                    // often contains stale/garbage data from reused file structures. NWN expects
-                    // body part textures to follow the naming convention: {prefix}_{partType}{number:D3}
-                    // For race-specific parts (head), try the original race prefix first
-                    // For limbs (which use human fallback models), use human texture prefix
-                    var derivedTexture = partName; // Default to model name (e.g., pme0_head001)
-
-                    // Check if this is a fallback model (human prefix loaded for non-human creature)
-                    // If so, use the human texture; otherwise use race-specific texture
-                    var isHumanFallback = partName.StartsWith("pmh0_") || partName.StartsWith("pfh0_");
-                    if (!isHumanFallback)
-                    {
-                        // Race-specific model - use race texture first (e.g., pme0_head001)
-                        derivedTexture = $"{basePrefix}_{partType}{partNumber:D3}";
-                    }
-                    // else: human fallback model - partName already has correct texture name
-
-                    var oldBitmap = trimesh.Bitmap;
-                    trimesh.Bitmap = derivedTexture;
-                    if (!string.IsNullOrEmpty(oldBitmap) && oldBitmap != derivedTexture)
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                            $"TryAddBodyPart: Overriding stale texture '{oldBitmap}' with '{derivedTexture}' for mesh '{trimesh.Name}'");
-                    }
-
-                    // Add to composite's root (or create root if needed)
-                    if (compositeModel.GeometryRoot == null)
-                    {
-                        compositeModel.GeometryRoot = new Radoub.Formats.Mdl.MdlNode { Name = "composite_root" };
-                    }
-
-                    // Parent the mesh under the target bone in the skeleton
-                    // so GetWorldTransform's parent-chain walk picks up
-                    // animated transforms from the supermodel (#2124). The
-                    // bone already holds the correct bind position; zero out
-                    // the mesh's own offset so it doesn't compound.
-                    Radoub.Formats.Mdl.MdlNode? bone = null;
-                    if (_currentSkeleton?.GeometryRoot != null)
-                        bone = FindBoneByName(_currentSkeleton.GeometryRoot, boneName);
-
-                    if (bone != null)
-                    {
-                        trimesh.Position = System.Numerics.Vector3.Zero;
-                        node.Parent = bone;
-                        bone.Children.Add(node);
-                    }
-                    else
-                    {
-                        // Fallback — skeleton bone missing, keep old flat behavior.
-                        trimesh.Position = bonePosition;
-                        node.Parent = compositeModel.GeometryRoot;
-                        compositeModel.GeometryRoot.Children.Add(node);
-                    }
-                    meshCount++;
-                    // Track which body part type this mesh belongs to (#1557)
-                    _meshPartTypes[trimesh.Name] = partType;
-                    // Log vertex bounds and texture info for debugging
-                    var hasUVs = trimesh.TextureCoords.Length > 0 && trimesh.TextureCoords[0].Length > 0;
-                    UnifiedLogger.LogApplication(LogLevel.INFO,
-                        $"TryAddBodyPart: Added mesh '{trimesh.Name}' from {partName}, " +
-                        $"bitmap='{trimesh.Bitmap}', hasUVs={hasUVs}, " +
-                        $"verts={trimesh.Vertices.Length}, faces={trimesh.Faces.Length}");
-                }
-            }
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"TryAddBodyPart: {partName} added {meshCount} meshes");
-        }
-        else
-        {
-            UnifiedLogger.LogApplication(LogLevel.WARN, $"TryAddBodyPart: {partName} not found");
-        }
-    }
-
-    /// <summary>
-    /// Get the world transform for a body part by looking up its bone in the skeleton.
-    /// Returns both position and orientation so body parts are correctly placed and rotated.
-    /// Body part names map to skeleton bone names with _g suffix.
-    /// </summary>
-    private static string GetBoneNameForPart(string partType) => partType switch
-    {
-        "head" => "head_g",
-        "neck" => "neck_g",
-        "chest" => "torso_g",
-        "robe" => "torso_g",
-        "pelvis" => "pelvis_g",
-        "belt" => "belt_g",
-        "shol" => "lshoulder_g",
-        "shor" => "rshoulder_g",
-        "bicepl" => "lbicep_g",
-        "bicepr" => "rbicep_g",
-        "forel" => "lforearm_g",
-        "forer" => "rforearm_g",
-        "handl" => "lhand_g",
-        "handr" => "rhand_g",
-        "legl" => "lthigh_g",
-        "legr" => "rthigh_g",
-        "shinl" => "lshin_g",
-        "shinr" => "rshin_g",
-        "footl" => "lfoot_g",
-        "footr" => "rfoot_g",
-        _ => partType + "_g"
-    };
-
-    private (System.Numerics.Vector3 Position, System.Numerics.Quaternion Orientation) GetBoneTransformForPart(string partType)
-    {
-        var identity = (System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity);
-
-        if (_currentSkeleton?.GeometryRoot == null)
-            return identity;
-
-        var boneName = GetBoneNameForPart(partType);
-
-        // Find the bone in the skeleton and calculate its world transform
-        var bone = FindBoneByName(_currentSkeleton.GeometryRoot, boneName);
-        if (bone == null)
-        {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"GetBoneTransformForPart: Bone '{boneName}' not found for part '{partType}'");
-            return identity;
-        }
-
-        // Compute full world transform matrix including rotations and scale
-        var worldMatrix = GetBoneWorldTransform(bone);
-
-        // Decompose to extract position and rotation
-        if (!System.Numerics.Matrix4x4.Decompose(worldMatrix, out _, out var rotation, out var translation))
-        {
-            UnifiedLogger.LogApplication(LogLevel.WARN, $"GetBoneTransformForPart: Matrix decompose failed for bone '{boneName}'");
-            return identity;
-        }
-
-        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"GetBoneTransformForPart: '{partType}' -> bone '{boneName}' pos={translation}, rot={rotation}");
-        return (translation, rotation);
-    }
-
-    private MdlNode? FindBoneByName(MdlNode root, string name)
-    {
-        if (root.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
-            return root;
-
-        foreach (var child in root.Children)
-        {
-            var found = FindBoneByName(child, name);
-            if (found != null)
-                return found;
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Calculate the full world transform of a bone by accumulating S*R*T matrices up the hierarchy.
-    /// Mirrors ModelPreviewGLControl.GetWorldTransform() to properly handle parent bone rotations.
-    /// </summary>
-    internal static System.Numerics.Matrix4x4 GetBoneWorldTransform(MdlNode bone)
-    {
-        var worldTransform = System.Numerics.Matrix4x4.Identity;
-        var current = bone;
-
-        while (current != null)
-        {
-            var scale = System.Numerics.Matrix4x4.CreateScale(current.Scale);
-            var rotation = System.Numerics.Matrix4x4.CreateFromQuaternion(current.Orientation);
-            var translation = System.Numerics.Matrix4x4.CreateTranslation(current.Position);
-
-            // Row-major local transform: S * R * T (same as ModelPreviewGLControl.GetWorldTransform)
-            var localTransform = scale * rotation * translation;
-
-            // Accumulate: node * parent * grandparent * ... * root
-            worldTransform = worldTransform * localTransform;
-
-            current = current.Parent;
-        }
-
-        return worldTransform;
-    }
-
-    private void UpdateCompositeBounds(MdlModel model)
-    {
-        var minX = float.MaxValue;
-        var minY = float.MaxValue;
-        var minZ = float.MaxValue;
-        var maxX = float.MinValue;
-        var maxY = float.MinValue;
-        var maxZ = float.MinValue;
-
-        foreach (var mesh in model.GetMeshNodes())
-        {
-            // Apply the mesh's full local transform (S*R*T) to get world-space vertex positions.
-            // Body parts have both position and orientation set from skeleton bones.
-            var localTransform = System.Numerics.Matrix4x4.CreateScale(mesh.Scale)
-                * System.Numerics.Matrix4x4.CreateFromQuaternion(mesh.Orientation)
-                * System.Numerics.Matrix4x4.CreateTranslation(mesh.Position);
-
-            foreach (var vertex in mesh.Vertices)
-            {
-                var worldVert = System.Numerics.Vector3.Transform(vertex, localTransform);
-
-                minX = Math.Min(minX, worldVert.X);
-                minY = Math.Min(minY, worldVert.Y);
-                minZ = Math.Min(minZ, worldVert.Z);
-                maxX = Math.Max(maxX, worldVert.X);
-                maxY = Math.Max(maxY, worldVert.Y);
-                maxZ = Math.Max(maxZ, worldVert.Z);
-            }
-        }
-
-        if (minX != float.MaxValue)
-        {
-            model.BoundingMin = new System.Numerics.Vector3(minX, minY, minZ);
-            model.BoundingMax = new System.Numerics.Vector3(maxX, maxY, maxZ);
-            model.Radius = (model.BoundingMax - model.BoundingMin).Length() / 2f;
-
-            UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"UpdateCompositeBounds: bounds=({minX:F2},{minY:F2},{minZ:F2}) to ({maxX:F2},{maxY:F2},{maxZ:F2}), radius={model.Radius:F2}");
-        }
-    }
-
-    /// <summary>
-    /// Adjust body part positions to ensure adequate overlap at joints (#1557).
-    /// NWN body parts rely on skeletal deformation for seamless connections. Our static
-    /// preview places rigid meshes at bone positions, which can leave thin seams between
-    /// adjacent parts. This method detects thin overlaps and nudges parts closer together.
-    /// </summary>
-    internal void AdjustSeamOverlaps(MdlModel compositeModel)
-    {
-        AdjustSeamOverlaps(compositeModel, _meshPartTypes);
-    }
-
-    /// <summary>
-    /// Overload accepting explicit part type map (for unit testing with synthetic data).
-    /// </summary>
-    internal static void AdjustSeamOverlaps(MdlModel compositeModel, Dictionary<string, string> meshPartTypes)
-    {
-        // Adjacent body part pairs that should overlap vertically.
-        // Format: (upper part type, lower part type)
-        // "Upper" = the part that is higher on the body (larger Z)
-        var adjacentPairs = new[]
-        {
-            ("head", "neck"),
-            ("neck", "chest"),
-        };
-
-        // Minimum overlap threshold in world units. Below this, parts get nudged.
-        // Measured overlaps: Human=0.112, Dwarf=0.090, Elf=0.048, Halfling=~0.05.
-        // NWN relies on skeletal deformation to close seams; our static preview needs
-        // enough raw vertex overlap to look seamless. Target human-like overlap.
-        const float minOverlap = 0.10f;
-
-        var meshes = compositeModel.GetMeshNodes().ToList();
-
-        // Log all mesh names and their part type mappings for diagnostics
-        UnifiedLogger.LogApplication(LogLevel.INFO,
-            $"AdjustSeamOverlaps: {meshes.Count} meshes, {meshPartTypes.Count} part type mappings");
-        foreach (var mesh in meshes)
-        {
-            meshPartTypes.TryGetValue(mesh.Name, out var pt);
-            UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                $"  mesh '{mesh.Name}' → partType='{pt ?? "(unmapped)"}', pos={mesh.Position}");
-        }
-
-        foreach (var (upperPartType, lowerPartType) in adjacentPairs)
-        {
-            // Match meshes by their tracked body part type, not by mesh node name
-            var upperMeshes = meshes.Where(m =>
-                meshPartTypes.TryGetValue(m.Name, out var pt) &&
-                string.Equals(pt, upperPartType, StringComparison.OrdinalIgnoreCase)).ToList();
-            var lowerMeshes = meshes.Where(m =>
-                meshPartTypes.TryGetValue(m.Name, out var pt) &&
-                string.Equals(pt, lowerPartType, StringComparison.OrdinalIgnoreCase)).ToList();
-
-            if (upperMeshes.Count == 0 || lowerMeshes.Count == 0)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"AdjustSeamOverlaps: {upperPartType}/{lowerPartType} — upper={upperMeshes.Count}, lower={lowerMeshes.Count} — skipping");
-                continue;
-            }
-
-            // Compute world-space Z bounds for each set of meshes
-            float upperMinZ = float.MaxValue;
-            foreach (var mesh in upperMeshes)
-            {
-                var transform = System.Numerics.Matrix4x4.CreateScale(mesh.Scale)
-                    * System.Numerics.Matrix4x4.CreateFromQuaternion(mesh.Orientation)
-                    * System.Numerics.Matrix4x4.CreateTranslation(mesh.Position);
-                foreach (var vertex in mesh.Vertices)
-                {
-                    var wv = System.Numerics.Vector3.Transform(vertex, transform);
-                    if (!float.IsNaN(wv.Z))
-                        upperMinZ = Math.Min(upperMinZ, wv.Z);
-                }
-            }
-
-            float lowerMaxZ = float.MinValue;
-            foreach (var mesh in lowerMeshes)
-            {
-                var transform = System.Numerics.Matrix4x4.CreateScale(mesh.Scale)
-                    * System.Numerics.Matrix4x4.CreateFromQuaternion(mesh.Orientation)
-                    * System.Numerics.Matrix4x4.CreateTranslation(mesh.Position);
-                foreach (var vertex in mesh.Vertices)
-                {
-                    var wv = System.Numerics.Vector3.Transform(vertex, transform);
-                    if (!float.IsNaN(wv.Z))
-                        lowerMaxZ = Math.Max(lowerMaxZ, wv.Z);
-                }
-            }
-
-            if (upperMinZ == float.MaxValue || lowerMaxZ == float.MinValue)
-                continue;
-
-            float overlap = lowerMaxZ - upperMinZ;
-            if (overlap >= minOverlap)
-            {
-                UnifiedLogger.LogApplication(LogLevel.INFO,
-                    $"AdjustSeamOverlaps: {upperPartType}/{lowerPartType} overlap={overlap:F4} >= {minOverlap} — OK");
-                continue;
-            }
-
-            // Need to increase overlap. Split the deficit evenly:
-            // push upper part down and lower part up.
-            float deficit = minOverlap - overlap;
-            float halfDeficit = deficit / 2f;
-
-            foreach (var mesh in upperMeshes)
-            {
-                mesh.Position = new System.Numerics.Vector3(
-                    mesh.Position.X, mesh.Position.Y, mesh.Position.Z - halfDeficit);
-            }
-            foreach (var mesh in lowerMeshes)
-            {
-                mesh.Position = new System.Numerics.Vector3(
-                    mesh.Position.X, mesh.Position.Y, mesh.Position.Z + halfDeficit);
-            }
-
-            UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"AdjustSeamOverlaps: {upperPartType}/{lowerPartType} overlap={overlap:F4} < {minOverlap} — " +
-                $"nudged ±{halfDeficit:F4} (new overlap≈{minOverlap:F4})");
-        }
+        UnifiedLogger.LogApplication(LogLevel.WARN, $"AppendPart: '{raceResRef}' not found (no human fallback either)");
     }
 
     /// <summary>
@@ -730,7 +266,6 @@ public class ModelService
     /// </summary>
     public MdlModel? LoadModelForAppearance(ushort appearanceId, byte gender = 0, int phenotype = 0)
     {
-        // Get the model type and race from appearance.2da
         var modelType = _gameDataService.Get2DAValue("appearance", appearanceId, "MODELTYPE");
         var race = _gameDataService.Get2DAValue("appearance", appearanceId, "RACE");
 
@@ -743,16 +278,13 @@ public class ModelService
             return null;
         }
 
-        // Determine model name based on model type
         string modelName;
         if (modelType?.ToUpperInvariant().Contains("P") == true)
         {
-            // Part-based model - RACE is just a letter (e.g., "O" for Half-Elf)
             modelName = BuildModelPrefix(gender, race, phenotype);
         }
         else
         {
-            // Simple/Full model - RACE is the model name directly
             modelName = race;
         }
 
@@ -761,7 +293,7 @@ public class ModelService
     }
 
     /// <summary>
-    /// Load a model by ResRef name.
+    /// Load a model by ResRef name. Cached.
     /// </summary>
     public MdlModel? LoadModel(string resRef)
     {
@@ -770,18 +302,16 @@ public class ModelService
 
         resRef = resRef.ToLowerInvariant();
 
-        // Check cache
         if (_modelCache.TryGetValue(resRef, out var cached))
         {
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadModel: '{resRef}' from cache, hasModel={cached != null}");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"LoadModel: '{resRef}' from cache, hasModel={cached != null}");
             return cached;
         }
 
-        // Try to load from game resources (Override → HAK → BIF)
         var resourceResult = _gameDataService.FindResourceWithSource(resRef, ResourceTypes.Mdl);
         if (resourceResult == null || resourceResult.Data.Length == 0)
         {
-            UnifiedLogger.LogApplication(LogLevel.WARN, $"LoadModel: '{resRef}' not found in game resources");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"LoadModel: '{resRef}' not found in game resources");
             _modelCache[resRef] = null;
             return null;
         }
@@ -802,7 +332,6 @@ public class ModelService
         }
         catch (Exception ex)
         {
-            // Model parsing failed
             UnifiedLogger.LogApplication(LogLevel.WARN, $"LoadModel: '{resRef}' parse failed: {ex.Message}");
             _modelCache[resRef] = null;
             return null;
@@ -811,10 +340,8 @@ public class ModelService
 
     /// <summary>
     /// NWN creatures inherit animations from a supermodel chain (e.g. a_ba, a_fa).
-    /// The leaf creature MDL usually only overrides geometry; idle/walk/attack/etc.
-    /// live in the parent. This walks the chain and appends every animation it
-    /// finds to the leaf model so the preview can play them. Missing supermodels
-    /// are logged and skipped — they're optional at runtime (#2124).
+    /// Walk the chain and append every animation found to the leaf so the preview can play
+    /// idle/walk/attack. Missing supermodels are logged and skipped (#2124).
     /// </summary>
     private void MergeSuperModelAnimations(MdlModel model, HashSet<string> visited)
     {
@@ -839,7 +366,6 @@ public class ModelService
             return;
         }
 
-        // Append parent animations that the leaf doesn't already define.
         var existing = new HashSet<string>(
             model.Animations.Select(a => a.Name),
             StringComparer.OrdinalIgnoreCase);
@@ -856,13 +382,6 @@ public class ModelService
             $"MergeSuperModelAnimations: '{model.Name}' inherited {added} animations from '{parentName}'");
     }
 
-    // #1676: LoadModelPreferBIF removed. All model loading now uses the public LoadModel()
-    // method above, which uses standard resolution (Override → HAK → Module → BIF).
-    // Investigation verified that both binary and ASCII CEP HAK models parse correctly.
-
-    /// <summary>
-    /// Clear the model cache.
-    /// </summary>
     public void ClearCache()
     {
         _modelCache.Clear();
