@@ -25,6 +25,13 @@ public class ItemViewModel : INotifyPropertyChanged
         _tlkResolver = tlkResolver;
     }
 
+    /// <summary>
+    /// The underlying UTI being edited. Returned by reference (the VM does not deep-copy
+    /// on every property change) so the preview controller can pass it to
+    /// <c>ItemModelResolver.Resolve</c> directly.
+    /// </summary>
+    public UtiFile Uti => _uti;
+
     public string Name
     {
         get => GetLocString(_uti.LocalizedName);
