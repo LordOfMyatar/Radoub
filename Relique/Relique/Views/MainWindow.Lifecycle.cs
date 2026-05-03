@@ -23,6 +23,9 @@ public partial class MainWindow
         // Initialize game data service on background thread (#1959)
         await InitializeGameDataAsync();
 
+        // Initialize 3D item preview pipeline (#1908 PR3b) — needs game data ready
+        InitializeItemPreview();
+
         // Initialize item browser panel
         InitializeItemBrowserPanel();
 
@@ -358,6 +361,7 @@ public partial class MainWindow
         }
 
         RadoubSettings.Instance.PropertyChanged -= OnRadoubSettingsChanged;
+        DisposeItemPreview();
         FileSessionLockService.ReleaseAllLocks();
         SaveWindowPosition();
     }

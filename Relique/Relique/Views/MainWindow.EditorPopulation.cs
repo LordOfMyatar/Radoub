@@ -39,6 +39,7 @@ public partial class MainWindow
             ItemStatisticsPanel.IsVisible = false;
             _itemViewModel = null;
             EditorContent.DataContext = null;
+            BindItemPreview(null);
             return;
         }
 
@@ -54,6 +55,9 @@ public partial class MainWindow
 
         // Wire up dirty tracking from ViewModel property changes
         _itemViewModel.PropertyChanged += OnItemPropertyChanged;
+
+        // Wire 3D preview to the new VM (#1908 PR3b)
+        BindItemPreview(_itemViewModel);
 
         // Display the correct base item type and palette category
         DisplayBaseItemType(_currentItem.BaseItem);
