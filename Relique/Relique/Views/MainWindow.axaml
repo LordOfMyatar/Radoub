@@ -508,7 +508,17 @@
 
                                     <!-- Armor Parts (ModelType 3 only) -->
                                     <StackPanel x:Name="ArmorPartsPanel" IsVisible="False">
-                                        <TextBlock Text="Armor Parts" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,4">
+                                            <TextBlock Grid.Column="0" Text="Armor Parts" FontWeight="SemiBold"
+                                                       VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6"
+                                                        VerticalAlignment="Center">
+                                                <TextBlock Text="Armor Class:" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                                <TextBlock x:Name="ArmorClassText" Text="—"
+                                                           ToolTip.Tip="Derived from parts_chest.2da ACBONUS for the current Torso part"/>
+                                            </StackPanel>
+                                        </Grid>
                                         <Grid x:Name="ArmorPartsGrid" ColumnDefinitions="120,*,16,120,*" Margin="0,0,0,8">
                                             <!-- Populated dynamically in code-behind -->
                                         </Grid>
