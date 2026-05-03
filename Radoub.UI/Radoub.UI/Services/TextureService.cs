@@ -72,6 +72,11 @@ public class TextureService
 
             var layerColors = BuildLayerColors(colorIndices);
 
+            // Diagnostic: when TRACE level is enabled, count layer usage. Lets users
+            // confirm whether a "color spinner has no visible effect" complaint is a
+            // bug or just a content limitation (PLT painted with only layer-1 pixels).
+            LogLayerHistogram(pltResRef, pltFile);
+
             // Render the PLT and flip to OpenGL orientation (bottom-up)
             var pixels = PltReader.Render(pltFile, palettes, layerColors);
             FlipVertically(pixels, pltFile.Width, pltFile.Height);
@@ -449,6 +454,53 @@ public class TextureService
 
         return null;
     }
+
+    /// <summary>Set of PLT ResRefs whose layer histogram has already been logged.</summary>
+    private readonly HashSet<string> _layerHistogramLogged = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// One-time-per-ResRef PLT layer pixel count log at INFO level. Used to confirm
+    /// whether a particular texture actually paints the metal2/cloth2/leather2 layers —
+    /// many BioWare base-game armors only use layer-1 (single-tone), so changes to the
+    /// "2" color spinners have no visible effect on those textures.
+    /// </summary>
+    private void LogLayerHistogram(string pltResRef, PltFile plt)
+    {
+        if (!_layerHistogramLogged.Add(pltResRef.ToLowerInvariant())) return;
+
+        var counts = new int[10];
+        foreach (var pixel in plt.Pixels)
+        {
+            if (pixel.LayerId < counts.Length) counts[pixel.LayerId]++;
+        }
+        var nonZero = new System.Text.StringBuilder();
+        for (int i = 0; i < counts.Length; i++)
+        {
+            if (counts[i] == 0) continue;
+            if (nonZero.Length > 0) nonZero.Append(", ");
+            nonZero.Append($"{LayerName(i)}={counts[i]}");
+        }
+        if (nonZero.Length == 0) nonZero.Append("(no painted pixels)");
+
+        Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+            Radoub.Formats.Logging.LogLevel.INFO,
+            $"PLT '{pltResRef}' layer pixel counts: {nonZero}");
+    }
+
+    private static string LayerName(int layerId) => layerId switch
+    {
+        PltLayers.Skin => "skin",
+        PltLayers.Hair => "hair",
+        PltLayers.Metal1 => "metal1",
+        PltLayers.Metal2 => "metal2",
+        PltLayers.Cloth1 => "cloth1",
+        PltLayers.Cloth2 => "cloth2",
+        PltLayers.Leather1 => "leather1",
+        PltLayers.Leather2 => "leather2",
+        PltLayers.Tattoo1 => "tattoo1",
+        PltLayers.Tattoo2 => "tattoo2",
+        _ => $"layer{layerId}",
+    };
 
     /// <summary>
     /// Build layer color mapping from PltColorIndices.

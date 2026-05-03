@@ -321,7 +321,8 @@
 
                             <!-- Appearance (collapsible, conditional on base item type) -->
                             <Expander x:Name="AppearanceExpander" Header="Appearance" IsExpanded="True" IsVisible="False" Margin="0,0,0,8">
-                                <StackPanel Spacing="8" Margin="0,4,0,0">
+                                <Grid ColumnDefinitions="*,16,Auto" Margin="0,4,0,0">
+                                <StackPanel Grid.Column="0" Spacing="8">
 
                                     <!-- Icon Preview + Browse Button -->
                                     <StackPanel x:Name="IconChooserPanel" IsVisible="False">
@@ -507,13 +508,51 @@
 
                                     <!-- Armor Parts (ModelType 3 only) -->
                                     <StackPanel x:Name="ArmorPartsPanel" IsVisible="False">
-                                        <TextBlock Text="Armor Parts" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,4">
+                                            <TextBlock Grid.Column="0" Text="Armor Parts" FontWeight="SemiBold"
+                                                       VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6"
+                                                        VerticalAlignment="Center">
+                                                <TextBlock Text="Armor Class:" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                                <TextBlock x:Name="ArmorClassText" Text="—"
+                                                           ToolTip.Tip="Derived from parts_chest.2da ACBONUS for the current Torso part"/>
+                                            </StackPanel>
+                                        </Grid>
                                         <Grid x:Name="ArmorPartsGrid" ColumnDefinitions="120,*,16,120,*" Margin="0,0,0,8">
                                             <!-- Populated dynamically in code-behind -->
                                         </Grid>
                                     </StackPanel>
 
                                 </StackPanel>
+
+                                <!-- Right column: 3D preview + view controls (#1908 PR3b) -->
+                                <StackPanel Grid.Column="2" Width="280" Spacing="6">
+                                    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                            BorderThickness="1" CornerRadius="2"
+                                            Width="280" Height="280">
+                                        <Grid>
+                                            <controls:ModelPreviewGLControl x:Name="ItemPreviewGL"
+                                                                            IsVisible="False"/>
+                                            <TextBlock x:Name="ItemPreviewPlaceholder"
+                                                       Text="No 3D model for this item type"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       TextWrapping="Wrap"
+                                                       TextAlignment="Center"
+                                                       Margin="16"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                        </Grid>
+                                    </Border>
+                                    <UniformGrid x:Name="ItemPreviewControls" Columns="5" IsVisible="False">
+                                        <Button Content="F" ToolTip.Tip="Front view" Click="OnItemPreviewFrontClick" Padding="6,2"/>
+                                        <Button Content="B" ToolTip.Tip="Back view" Click="OnItemPreviewBackClick" Padding="6,2"/>
+                                        <Button Content="L" ToolTip.Tip="Left view" Click="OnItemPreviewLeftClick" Padding="6,2"/>
+                                        <Button Content="R" ToolTip.Tip="Right view" Click="OnItemPreviewRightClick" Padding="6,2"/>
+                                        <Button Content="↺" ToolTip.Tip="Reset view" Click="OnItemPreviewResetClick" Padding="6,2"/>
+                                    </UniformGrid>
+                                </StackPanel>
+                                </Grid>
                             </Expander>
 
                             <!-- Item Statistics (above Item Properties for visibility without scrolling) -->

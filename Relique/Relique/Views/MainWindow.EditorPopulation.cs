@@ -6,6 +6,7 @@ using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
 using Radoub.UI.Services;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 
@@ -39,6 +40,7 @@ public partial class MainWindow
             ItemStatisticsPanel.IsVisible = false;
             _itemViewModel = null;
             EditorContent.DataContext = null;
+            BindItemPreview(null);
             return;
         }
 
@@ -54,6 +56,9 @@ public partial class MainWindow
 
         // Wire up dirty tracking from ViewModel property changes
         _itemViewModel.PropertyChanged += OnItemPropertyChanged;
+
+        // Wire 3D preview to the new VM (#1908 PR3b)
+        BindItemPreview(_itemViewModel);
 
         // Display the correct base item type and palette category
         DisplayBaseItemType(_currentItem.BaseItem);
@@ -89,7 +94,38 @@ public partial class MainWindow
             {
                 UpdateIdentifiedVisualCue();
             }
+
+            // Recompute Armor Class when the Torso part changes (#1908 follow-up).
+            if (e.PropertyName == "ArmorPart_Torso")
+            {
+                UpdateArmorClassDisplay();
+            }
         }
+    }
+
+    /// <summary>
+    /// Show derived Armor Class for the current item. Per the Aurora item format spec,
+    /// armor AC = ACBONUS column of parts_chest.2da at the row indicated by ArmorPart_Torso.
+    /// Read-only — AC is derived, not stored on the UTI.
+    /// </summary>
+    private void UpdateArmorClassDisplay()
+    {
+        if (_itemViewModel == null || _gameDataService == null || !_gameDataService.IsConfigured)
+        {
+            ArmorClassText.Text = "—";
+            return;
+        }
+
+        var torsoPart = _itemViewModel.GetArmorPart("Torso");
+        var acBonus = _gameDataService.Get2DAValue("parts_chest", torsoPart, "ACBONUS");
+
+        if (string.IsNullOrEmpty(acBonus) || acBonus == "****")
+        {
+            ArmorClassText.Text = "—";
+            return;
+        }
+
+        ArmorClassText.Text = acBonus;
     }
 
     private void DisplayBaseItemType(int baseItemIndex)
@@ -218,13 +254,47 @@ public partial class MainWindow
         }
     }
 
+    // Order matches the BioWare Aurora toolset's Appearance tab: anatomical top-to-bottom,
+    // left/right paired, robe last. Each entry is the GFF armor-part field key (UTI stores
+    // these as ArmorPart_<Name> fields).
     private static readonly string[] ArmorPartNames = new[]
     {
-        "Torso", "Belt", "Pelvis", "Neck", "Robe",
-        "LBicep", "RBicep", "LFArm", "RFArm",
-        "LHand", "RHand", "LShoul", "RShoul",
-        "LThigh", "RThigh", "LShin", "RShin",
-        "LFoot", "RFoot"
+        "Neck",
+        "Torso",
+        "Belt",
+        "Pelvis",
+        "RShoul", "LShoul",
+        "RBicep", "LBicep",
+        "RFArm",  "LFArm",
+        "RHand",  "LHand",
+        "RThigh", "LThigh",
+        "RShin",  "LShin",
+        "RFoot",  "LFoot",
+        "Robe",
+    };
+
+    // User-friendly display labels for armor part dropdown rows.
+    private static readonly Dictionary<string, string> ArmorPartLabels = new(StringComparer.Ordinal)
+    {
+        ["Neck"] = "Neck",
+        ["Torso"] = "Torso",
+        ["Belt"] = "Belt",
+        ["Pelvis"] = "Pelvis",
+        ["RShoul"] = "Right Shoulder",
+        ["LShoul"] = "Left Shoulder",
+        ["RBicep"] = "Right Bicep",
+        ["LBicep"] = "Left Bicep",
+        ["RFArm"] = "Right Forearm",
+        ["LFArm"] = "Left Forearm",
+        ["RHand"] = "Right Hand",
+        ["LHand"] = "Left Hand",
+        ["RThigh"] = "Right Thigh",
+        ["LThigh"] = "Left Thigh",
+        ["RShin"] = "Right Shin",
+        ["LShin"] = "Left Shin",
+        ["RFoot"] = "Right Foot",
+        ["LFoot"] = "Left Foot",
+        ["Robe"] = "Robe",
     };
 
     private void PopulateArmorPartsGrid()
@@ -247,7 +317,7 @@ public partial class MainWindow
 
             var label = new TextBlock
             {
-                Text = partName,
+                Text = ArmorPartLabels.TryGetValue(partName, out var friendly) ? friendly : partName,
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
                 Margin = new Thickness(0, 0, 8, 8)
             };
@@ -277,6 +347,8 @@ public partial class MainWindow
         }
         // Handle odd count
         if (ArmorPartNames.Length % 2 == 1) row++;
+
+        UpdateArmorClassDisplay();
     }
 
     // --- Icon Preview + Picker ---
@@ -524,11 +596,11 @@ public partial class MainWindow
         swatch.Background = _paletteColorService.CreateGradientBrush(paletteName, colorIndex);
     }
 
-    private async void OpenColorPicker(string paletteName, byte currentIndex, Action<byte> onColorSelected)
+    private async void OpenColorPicker(string paletteName, byte currentIndex, string dialogTitle, Action<byte> onColorSelected)
     {
         if (_paletteColorService == null) return;
 
-        var picker = new Radoub.UI.Views.ColorPickerWindow(_paletteColorService, paletteName, currentIndex);
+        var picker = new Radoub.UI.Views.ColorPickerWindow(_paletteColorService, paletteName, currentIndex, dialogTitle);
         await picker.ShowDialog(this);
 
         if (picker.Confirmed)
@@ -540,7 +612,7 @@ public partial class MainWindow
     private void OnCloth1ColorBrowse(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (_itemViewModel == null) return;
-        OpenColorPicker(PaletteColorService.Palettes.Cloth1, _itemViewModel.Cloth1Color, newIndex =>
+        OpenColorPicker(PaletteColorService.Palettes.Cloth1, _itemViewModel.Cloth1Color, "Select Cloth 1 Color", newIndex =>
         {
             _itemViewModel.Cloth1Color = newIndex;
             UpdateColorSwatch(Cloth1ColorSwatch, PaletteColorService.Palettes.Cloth1, newIndex);
@@ -550,7 +622,7 @@ public partial class MainWindow
     private void OnCloth2ColorBrowse(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (_itemViewModel == null) return;
-        OpenColorPicker(PaletteColorService.Palettes.Cloth2, _itemViewModel.Cloth2Color, newIndex =>
+        OpenColorPicker(PaletteColorService.Palettes.Cloth2, _itemViewModel.Cloth2Color, "Select Cloth 2 Color", newIndex =>
         {
             _itemViewModel.Cloth2Color = newIndex;
             UpdateColorSwatch(Cloth2ColorSwatch, PaletteColorService.Palettes.Cloth2, newIndex);
@@ -560,7 +632,7 @@ public partial class MainWindow
     private void OnLeather1ColorBrowse(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (_itemViewModel == null) return;
-        OpenColorPicker(PaletteColorService.Palettes.Leather1, _itemViewModel.Leather1Color, newIndex =>
+        OpenColorPicker(PaletteColorService.Palettes.Leather1, _itemViewModel.Leather1Color, "Select Leather 1 Color", newIndex =>
         {
             _itemViewModel.Leather1Color = newIndex;
             UpdateColorSwatch(Leather1ColorSwatch, PaletteColorService.Palettes.Leather1, newIndex);
@@ -570,7 +642,7 @@ public partial class MainWindow
     private void OnLeather2ColorBrowse(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (_itemViewModel == null) return;
-        OpenColorPicker(PaletteColorService.Palettes.Leather2, _itemViewModel.Leather2Color, newIndex =>
+        OpenColorPicker(PaletteColorService.Palettes.Leather2, _itemViewModel.Leather2Color, "Select Leather 2 Color", newIndex =>
         {
             _itemViewModel.Leather2Color = newIndex;
             UpdateColorSwatch(Leather2ColorSwatch, PaletteColorService.Palettes.Leather2, newIndex);
@@ -580,7 +652,7 @@ public partial class MainWindow
     private void OnMetal1ColorBrowse(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (_itemViewModel == null) return;
-        OpenColorPicker(PaletteColorService.Palettes.Metal1, _itemViewModel.Metal1Color, newIndex =>
+        OpenColorPicker(PaletteColorService.Palettes.Metal1, _itemViewModel.Metal1Color, "Select Metal 1 Color", newIndex =>
         {
             _itemViewModel.Metal1Color = newIndex;
             UpdateColorSwatch(Metal1ColorSwatch, PaletteColorService.Palettes.Metal1, newIndex);
@@ -590,7 +662,7 @@ public partial class MainWindow
     private void OnMetal2ColorBrowse(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (_itemViewModel == null) return;
-        OpenColorPicker(PaletteColorService.Palettes.Metal2, _itemViewModel.Metal2Color, newIndex =>
+        OpenColorPicker(PaletteColorService.Palettes.Metal2, _itemViewModel.Metal2Color, "Select Metal 2 Color", newIndex =>
         {
             _itemViewModel.Metal2Color = newIndex;
             UpdateColorSwatch(Metal2ColorSwatch, PaletteColorService.Palettes.Metal2, newIndex);

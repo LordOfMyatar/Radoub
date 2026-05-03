@@ -118,12 +118,14 @@ public class PaletteColorServiceTests
     [Fact]
     public void ItemPaletteConstants_AreCorrectFileNames()
     {
+        // Per Aurora item format spec Section 2.1.2.4: each material has ONE palette
+        // file shared between its "1" and "2" color slots. There is no pal_*02 in NWN.
         Assert.Equal("pal_cloth01", PaletteColorService.Palettes.Cloth1);
-        Assert.Equal("pal_cloth02", PaletteColorService.Palettes.Cloth2);
+        Assert.Equal("pal_cloth01", PaletteColorService.Palettes.Cloth2);
         Assert.Equal("pal_leath01", PaletteColorService.Palettes.Leather1);
-        Assert.Equal("pal_leath02", PaletteColorService.Palettes.Leather2);
+        Assert.Equal("pal_leath01", PaletteColorService.Palettes.Leather2);
         Assert.Equal("pal_armor01", PaletteColorService.Palettes.Metal1);
-        Assert.Equal("pal_armor02", PaletteColorService.Palettes.Metal2);
+        Assert.Equal("pal_armor01", PaletteColorService.Palettes.Metal2);
     }
 
     [Fact]

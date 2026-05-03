@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.12-alpha] - 2026-05-03
+**Branch**: `relique/issue-1908` | **PR**: #2157
+
+### Feature: Item Model 3D Preview (#1908, PR3b)
+
+- 3D preview of currently-edited item in the Appearance expander, with view-preset buttons (Front/Back/Left/Right/Reset) and a "No 3D model" placeholder
+- Static rendering only (no animations) via shared `ModelPreviewGLControl`
+- ModelType coverage: Simple weapons (single MDL), Layered items (single MDL + Cloth1/2 PLT colors), Composite weapons (3 ResRefs joined via `MdlPartComposer.ComposeFlat`), Armor (full `ArmorParts` dict on `pmh0` mannequin via `MdlPartComposer.Compose` + all 6 PLT colors)
+- 100ms debounce on color spinner `PropertyChanged` so rapid edits coalesce into a single reload
+- Per-MainWindow `TextureService` ownership matching QM's pattern
+- Held weapons (sword, bow, crossbow, polearm, two-bladed, sling, thrown) get a 90° X-axis trophy rotation so they display blade-up; helmets, armor, and other non-held items keep their authored orientation
+- ArmorParts changes (Torso, Pelvis, Belt, etc.) now trigger preview reloads via prefix-matched `ArmorPart_*` PropertyChanged events
+
+### UI Polish
+
+- Armor Parts list reordered to match Aurora's anatomical top-to-bottom + left/right paired layout, with Robe last
+- User-friendly armor part labels ("Right Shoulder" instead of "RShoul")
+- New Armor Class display next to the Armor Parts header (read-only, derived from `parts_chest.2da[Torso].ACBONUS` per Aurora item format spec)
+
+### Shared Library Fixes (Radoub.Formats + Radoub.UI)
+
+- Layer-2 color slots (Cloth2/Leather2/Metal2/Tattoo2) now correctly index the `pal_*01.tga` palette files — the `_02` files don't exist in NWN per Aurora item format spec Section 2.1.2.4. Fixes ColorPickerWindow showing all-gray swatches for layer-2 slots and layer-2 color spinners having no visible effect on PLT-rendered armor textures.
+- `BaseItemTypeInfo.WeaponWield` + `IsHeldWeapon` exposed for tools that need to distinguish held weapons from other items.
+- `MdlPartComposer.Compose/ComposeFlat`, `MdlPartBoneMap`, `MdlPartNaming` and `ItemModelResolver` shipped earlier in PR3a (#2160) and PR1 (#2151); this PR is the consumer wiring.
+
+### Diagnostics
+
+- `TextureService.RenderPltTexture` logs a one-time-per-PLT layer pixel histogram at INFO level for diagnosis of "color slot has no visible effect" reports
+- `PaletteColorService.GetPalette` logs DEBUG entries on TGA load failure (was silently returning gray)
+
+---
+
 ## [0.10.11-alpha] - 2026-05-01
 **Branch**: `radoub/issue-2159` | **PR**: #2160
 

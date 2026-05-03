@@ -30,7 +30,16 @@ public partial class ColorPickerWindow : Window
     [Obsolete("Designer use only", error: true)]
     public ColorPickerWindow() => throw new NotSupportedException("Use parameterized constructor");
 
-    public ColorPickerWindow(PaletteColorService paletteColorService, string paletteName, byte currentColorIndex)
+    /// <param name="paletteName">Palette TGA file name (e.g. "pal_cloth01"). Per the
+    /// Aurora item format spec, both "1" and "2" slots for a material share one palette,
+    /// so this no longer uniquely identifies the slot — pass <paramref name="dialogTitle"/>
+    /// for slot-specific titling.</param>
+    /// <param name="dialogTitle">User-facing dialog title (e.g. "Select Cloth 2 Color").</param>
+    public ColorPickerWindow(
+        PaletteColorService paletteColorService,
+        string paletteName,
+        byte currentColorIndex,
+        string? dialogTitle = null)
     {
         InitializeComponent();
 
@@ -43,7 +52,7 @@ public partial class ColorPickerWindow : Window
         _currentColorLabel = this.FindControl<TextBlock>("CurrentColorLabel")!;
         _titleLabel = this.FindControl<TextBlock>("TitleLabel")!;
 
-        _titleLabel.Text = GetPaletteDisplayName(paletteName);
+        _titleLabel.Text = dialogTitle ?? GetPaletteDisplayName(paletteName);
 
         BuildColorGrid();
         SelectColor(currentColorIndex);
@@ -54,19 +63,21 @@ public partial class ColorPickerWindow : Window
         AvaloniaXamlLoader.Load(this);
     }
 
+    /// <summary>
+    /// Fallback title for callers that don't pass an explicit dialogTitle. Cannot
+    /// distinguish "1" from "2" slots since they share a palette file — callers should
+    /// pass <c>dialogTitle</c> for slot-specific labels.
+    /// </summary>
     private static string GetPaletteDisplayName(string paletteName)
     {
         return paletteName switch
         {
             PaletteColorService.Palettes.Skin => "Select Skin Color",
             PaletteColorService.Palettes.Hair => "Select Hair Color",
-            PaletteColorService.Palettes.Tattoo1 or PaletteColorService.Palettes.Tattoo2 => "Select Tattoo Color",
-            PaletteColorService.Palettes.Cloth1 => "Select Cloth 1 Color",
-            PaletteColorService.Palettes.Cloth2 => "Select Cloth 2 Color",
-            PaletteColorService.Palettes.Leather1 => "Select Leather 1 Color",
-            PaletteColorService.Palettes.Leather2 => "Select Leather 2 Color",
-            PaletteColorService.Palettes.Metal1 => "Select Metal 1 Color",
-            PaletteColorService.Palettes.Metal2 => "Select Metal 2 Color",
+            PaletteColorService.Palettes.Tattoo1 => "Select Tattoo Color",
+            PaletteColorService.Palettes.Cloth1 => "Select Cloth Color",
+            PaletteColorService.Palettes.Leather1 => "Select Leather Color",
+            PaletteColorService.Palettes.Metal1 => "Select Metal Color",
             _ => "Select Color"
         };
     }
