@@ -166,18 +166,27 @@ public static class PltLayers
     /// <summary>
     /// Get the palette filename for a layer.
     /// </summary>
+    /// <summary>
+    /// Map a PLT layer ID to its palette TGA filename.
+    ///
+    /// Per the BioWare Aurora item format spec (Section 2.1.2.4): each material has a
+    /// SINGLE palette file used by both color slots (Metal1 and Metal2 both index
+    /// pal_armor01.tga, Cloth1/2 index pal_cloth01.tga, etc.). The "1" / "2" distinction
+    /// applies to which PLT layer pixel uses the looked-up color, not to a separate
+    /// palette file. There is no pal_*02 file in NWN.
+    /// </summary>
     public static string GetPaletteResRef(int layerId) => layerId switch
     {
         Skin => "pal_skin01",
         Hair => "pal_hair01",
         Metal1 => "pal_armor01",
-        Metal2 => "pal_armor02",
+        Metal2 => "pal_armor01",  // Same palette as Metal1
         Cloth1 => "pal_cloth01",
-        Cloth2 => "pal_cloth02",
+        Cloth2 => "pal_cloth01",  // Same palette as Cloth1
         Leather1 => "pal_leath01",
-        Leather2 => "pal_leath02",
+        Leather2 => "pal_leath01", // Same palette as Leather1
         Tattoo1 => "pal_tattoo01",
-        Tattoo2 => "pal_tattoo02",
+        Tattoo2 => "pal_tattoo01", // Same palette as Tattoo1
         _ => "pal_skin01"
     };
 }

@@ -596,11 +596,11 @@ public partial class MainWindow
         swatch.Background = _paletteColorService.CreateGradientBrush(paletteName, colorIndex);
     }
 
-    private async void OpenColorPicker(string paletteName, byte currentIndex, Action<byte> onColorSelected)
+    private async void OpenColorPicker(string paletteName, byte currentIndex, string dialogTitle, Action<byte> onColorSelected)
     {
         if (_paletteColorService == null) return;
 
-        var picker = new Radoub.UI.Views.ColorPickerWindow(_paletteColorService, paletteName, currentIndex);
+        var picker = new Radoub.UI.Views.ColorPickerWindow(_paletteColorService, paletteName, currentIndex, dialogTitle);
         await picker.ShowDialog(this);
 
         if (picker.Confirmed)
@@ -612,7 +612,7 @@ public partial class MainWindow
     private void OnCloth1ColorBrowse(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (_itemViewModel == null) return;
-        OpenColorPicker(PaletteColorService.Palettes.Cloth1, _itemViewModel.Cloth1Color, newIndex =>
+        OpenColorPicker(PaletteColorService.Palettes.Cloth1, _itemViewModel.Cloth1Color, "Select Cloth 1 Color", newIndex =>
         {
             _itemViewModel.Cloth1Color = newIndex;
             UpdateColorSwatch(Cloth1ColorSwatch, PaletteColorService.Palettes.Cloth1, newIndex);
@@ -622,7 +622,7 @@ public partial class MainWindow
     private void OnCloth2ColorBrowse(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (_itemViewModel == null) return;
-        OpenColorPicker(PaletteColorService.Palettes.Cloth2, _itemViewModel.Cloth2Color, newIndex =>
+        OpenColorPicker(PaletteColorService.Palettes.Cloth2, _itemViewModel.Cloth2Color, "Select Cloth 2 Color", newIndex =>
         {
             _itemViewModel.Cloth2Color = newIndex;
             UpdateColorSwatch(Cloth2ColorSwatch, PaletteColorService.Palettes.Cloth2, newIndex);
@@ -632,7 +632,7 @@ public partial class MainWindow
     private void OnLeather1ColorBrowse(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (_itemViewModel == null) return;
-        OpenColorPicker(PaletteColorService.Palettes.Leather1, _itemViewModel.Leather1Color, newIndex =>
+        OpenColorPicker(PaletteColorService.Palettes.Leather1, _itemViewModel.Leather1Color, "Select Leather 1 Color", newIndex =>
         {
             _itemViewModel.Leather1Color = newIndex;
             UpdateColorSwatch(Leather1ColorSwatch, PaletteColorService.Palettes.Leather1, newIndex);
@@ -642,7 +642,7 @@ public partial class MainWindow
     private void OnLeather2ColorBrowse(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (_itemViewModel == null) return;
-        OpenColorPicker(PaletteColorService.Palettes.Leather2, _itemViewModel.Leather2Color, newIndex =>
+        OpenColorPicker(PaletteColorService.Palettes.Leather2, _itemViewModel.Leather2Color, "Select Leather 2 Color", newIndex =>
         {
             _itemViewModel.Leather2Color = newIndex;
             UpdateColorSwatch(Leather2ColorSwatch, PaletteColorService.Palettes.Leather2, newIndex);
@@ -652,7 +652,7 @@ public partial class MainWindow
     private void OnMetal1ColorBrowse(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (_itemViewModel == null) return;
-        OpenColorPicker(PaletteColorService.Palettes.Metal1, _itemViewModel.Metal1Color, newIndex =>
+        OpenColorPicker(PaletteColorService.Palettes.Metal1, _itemViewModel.Metal1Color, "Select Metal 1 Color", newIndex =>
         {
             _itemViewModel.Metal1Color = newIndex;
             UpdateColorSwatch(Metal1ColorSwatch, PaletteColorService.Palettes.Metal1, newIndex);
@@ -662,7 +662,7 @@ public partial class MainWindow
     private void OnMetal2ColorBrowse(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (_itemViewModel == null) return;
-        OpenColorPicker(PaletteColorService.Palettes.Metal2, _itemViewModel.Metal2Color, newIndex =>
+        OpenColorPicker(PaletteColorService.Palettes.Metal2, _itemViewModel.Metal2Color, "Select Metal 2 Color", newIndex =>
         {
             _itemViewModel.Metal2Color = newIndex;
             UpdateColorSwatch(Metal2ColorSwatch, PaletteColorService.Palettes.Metal2, newIndex);

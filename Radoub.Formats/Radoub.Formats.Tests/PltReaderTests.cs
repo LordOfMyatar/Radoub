@@ -109,16 +109,18 @@ public class PltReaderTests
     [Fact]
     public void GetPaletteResRef_ReturnsCorrectNames()
     {
+        // Per Aurora item format spec Section 2.1.2.4: each material has ONE palette
+        // file shared between its "1" and "2" color slots. There is no pal_*02 in NWN.
         Assert.Equal("pal_skin01", PltLayers.GetPaletteResRef(PltLayers.Skin));
         Assert.Equal("pal_hair01", PltLayers.GetPaletteResRef(PltLayers.Hair));
         Assert.Equal("pal_armor01", PltLayers.GetPaletteResRef(PltLayers.Metal1));
-        Assert.Equal("pal_armor02", PltLayers.GetPaletteResRef(PltLayers.Metal2));
+        Assert.Equal("pal_armor01", PltLayers.GetPaletteResRef(PltLayers.Metal2));
         Assert.Equal("pal_cloth01", PltLayers.GetPaletteResRef(PltLayers.Cloth1));
-        Assert.Equal("pal_cloth02", PltLayers.GetPaletteResRef(PltLayers.Cloth2));
+        Assert.Equal("pal_cloth01", PltLayers.GetPaletteResRef(PltLayers.Cloth2));
         Assert.Equal("pal_leath01", PltLayers.GetPaletteResRef(PltLayers.Leather1));
-        Assert.Equal("pal_leath02", PltLayers.GetPaletteResRef(PltLayers.Leather2));
+        Assert.Equal("pal_leath01", PltLayers.GetPaletteResRef(PltLayers.Leather2));
         Assert.Equal("pal_tattoo01", PltLayers.GetPaletteResRef(PltLayers.Tattoo1));
-        Assert.Equal("pal_tattoo02", PltLayers.GetPaletteResRef(PltLayers.Tattoo2));
+        Assert.Equal("pal_tattoo01", PltLayers.GetPaletteResRef(PltLayers.Tattoo2));
     }
 
     [Fact]
