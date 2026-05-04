@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.33.0-alpha] - 2026-05-03
-**Branch**: `trebuchet/issue-1926` | **PR**: #TBD
+**Branch**: `trebuchet/issue-1926` | **PR**: #2169
 
 ### Feat: ResRef replace with file rename — batch rename support (#1926)
 
