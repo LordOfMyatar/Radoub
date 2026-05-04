@@ -7,16 +7,26 @@ using Avalonia.Controls;
 using Radoub.Formats.Common;
 using Radoub.Formats.Erf;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 
 namespace Radoub.UI.Controls;
 
 /// <summary>
-/// Item-specific entry with HAK support.
+/// Item-specific entry with HAK and BIF support.
 /// </summary>
 public class ItemBrowserEntry : FileBrowserEntry
 {
+    /// <summary>
+    /// True if this resource is from a base game BIF file.
+    /// </summary>
+    public bool IsFromBif { get; set; }
+
+    /// <summary>
+    /// Display name with source indicator for BIF entries (matches StoreBrowserEntry).
+    /// </summary>
+    public override string DisplayName => IsFromBif ? $"{Name} ({Source})" : base.DisplayName;
 }
 
 /// <summary>
@@ -31,14 +41,19 @@ internal class ItemHakCacheEntry
 
 /// <summary>
 /// Item browser panel for embedding in Relique's main window.
-/// Provides file list with optional HAK scanning for .uti files.
+/// Provides file list with optional HAK and BIF (base game) scanning for .uti files.
 /// </summary>
 public class ItemBrowserPanel : FileBrowserPanelBase
 {
+    private readonly CheckBox _showModuleCheckBox;
     private readonly CheckBox _showHakCheckBox;
+    private readonly CheckBox _showBifCheckBox;
     private bool _showHakItems;
     private bool _hakItemsLoaded;
+    private bool _showBifItems;
+    private bool _bifItemsLoaded;
     private List<ItemBrowserEntry> _hakItems = new();
+    private List<ItemBrowserEntry> _bifItems = new();
 
     // Static cache for HAK file contents - persists across panel instances
     private static readonly Dictionary<string, ItemHakCacheEntry> _hakCache = new();
@@ -48,6 +63,16 @@ public class ItemBrowserPanel : FileBrowserPanelBase
         FileExtension = ".uti";
         SearchWatermark = "Type to filter items...";
         HeaderTextContent = "Items";
+
+        // Module checkbox (checked by default — parity with Store/Creature browsers)
+        _showModuleCheckBox = new CheckBox
+        {
+            Content = "Module",
+            IsChecked = true,
+            Margin = new Avalonia.Thickness(0, 4, 0, 0)
+        };
+        ToolTip.SetTip(_showModuleCheckBox, "Show .uti files from module folder");
+        _showModuleCheckBox.IsCheckedChanged += OnModuleFilterChanged;
 
         // Create and wire up HAK checkbox
         _showHakCheckBox = new CheckBox
@@ -59,17 +84,70 @@ public class ItemBrowserPanel : FileBrowserPanelBase
         ToolTip.SetTip(_showHakCheckBox, "Include items from HAK files");
         _showHakCheckBox.IsCheckedChanged += OnShowHakChanged;
 
-        FilterOptionsContent = _showHakCheckBox;
+        // Create and wire up BIF (base game) checkbox (#2106)
+        _showBifCheckBox = new CheckBox
+        {
+            Content = "Base Game",
+            IsChecked = false,
+            Margin = new Avalonia.Thickness(0, 4, 0, 0)
+        };
+        ToolTip.SetTip(_showBifCheckBox, "Show item blueprints from base game BIF archives");
+        _showBifCheckBox.IsCheckedChanged += OnShowBifChanged;
+
+        var filterPanel = new StackPanel { Spacing = 2 };
+        filterPanel.Children.Add(_showModuleCheckBox);
+        filterPanel.Children.Add(_showHakCheckBox);
+        filterPanel.Children.Add(_showBifCheckBox);
+        FilterOptionsContent = filterPanel;
     }
+
+    private void OnModuleFilterChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        OnFilterOptionsChanged();
+    }
+
+    /// <summary>
+    /// Gets or sets the game data service for BIF resource access.
+    /// Must be set before BIF scanning will work.
+    /// </summary>
+    public IGameDataService? GameDataService { get; set; }
 
     protected override bool SupportsCopyToModule() => true;
 
-    protected override Task<byte[]?> ExtractArchiveBytesAsync(FileBrowserEntry entry)
-    {
-        if (!entry.IsFromHak || string.IsNullOrEmpty(entry.HakPath))
-            return Task.FromResult<byte[]?>(null);
+    protected override bool IsArchiveEntry(FileBrowserEntry entry) => IsItemArchiveEntry(entry);
 
-        return Task.FromResult(ExtractFromHak(entry.HakPath, entry.Name, ResourceTypes.Uti));
+    /// <summary>
+    /// Archive-entry classification for ItemBrowserPanel. Returns true for
+    /// ItemBrowserEntry rows that originated from a HAK or BIF archive.
+    /// Public so tools can route archive-row clicks to a read-only preview path.
+    /// </summary>
+    public static bool IsItemArchiveEntry(FileBrowserEntry entry)
+        => entry is ItemBrowserEntry i && (i.IsFromHak || i.IsFromBif);
+
+    protected override Task<byte[]?> ExtractArchiveBytesAsync(FileBrowserEntry entry)
+        => Task.FromResult(ExtractItemArchiveBytes(entry, GameDataService));
+
+    /// <summary>
+    /// Route an archive-sourced ItemBrowserEntry to the correct extraction path
+    /// (BIF via GameDataService, HAK via shared ExtractFromHak helper). Returns
+    /// null when the entry is not archive-sourced or required dependencies are missing.
+    /// Public so tools can load BIF/HAK items into a read-only preview (#2106).
+    /// </summary>
+    public static byte[]? ExtractItemArchiveBytes(FileBrowserEntry entry, IGameDataService? gameDataService)
+    {
+        if (entry is not ItemBrowserEntry itemEntry) return null;
+
+        if (itemEntry.IsFromBif)
+        {
+            if (gameDataService is { IsConfigured: true })
+                return gameDataService.FindResource(itemEntry.Name, ResourceTypes.Uti);
+            return null;
+        }
+
+        if (itemEntry.IsFromHak && !string.IsNullOrEmpty(itemEntry.HakPath))
+            return ExtractFromHak(itemEntry.HakPath, itemEntry.Name, ResourceTypes.Uti);
+
+        return null;
     }
 
     protected override Task<(string tag, string name)> ReadSourceMetadataAsync(byte[] bytes)
@@ -132,11 +210,27 @@ public class ItemBrowserPanel : FileBrowserPanelBase
         OnFilterOptionsChanged();
     }
 
+    private async void OnShowBifChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        _showBifItems = _showBifCheckBox.IsChecked == true;
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"ItemBrowserPanel: Show BIF items = {_showBifItems}");
+
+        if (_showBifItems && !_bifItemsLoaded)
+        {
+            await LoadBifItemsAsync();
+            MergeAdditionalEntries(_bifItems);
+        }
+
+        OnFilterOptionsChanged();
+    }
+
     protected override async Task<List<FileBrowserEntry>> LoadFilesFromModuleAsync(string modulePath)
     {
-        // Reset HAK state when module changes
+        // Reset HAK and BIF state when module changes
         _hakItemsLoaded = false;
         _hakItems.Clear();
+        _bifItemsLoaded = false;
+        _bifItems.Clear();
 
         return await Task.Run(() =>
         {
@@ -183,17 +277,39 @@ public class ItemBrowserPanel : FileBrowserPanelBase
             await LoadHakItemsAsync();
         }
 
-        return _hakItems.Cast<FileBrowserEntry>().ToList();
+        if (_showBifItems && !_bifItemsLoaded)
+        {
+            await LoadBifItemsAsync();
+        }
+
+        var additional = new List<FileBrowserEntry>();
+        additional.AddRange(_hakItems);
+        additional.AddRange(_bifItems);
+        return additional;
     }
 
     protected override IEnumerable<FileBrowserEntry> ApplyCustomFilters(IEnumerable<FileBrowserEntry> entries)
     {
-        if (!_showHakItems)
-        {
-            return entries.Where(e => !e.IsFromHak);
-        }
+        bool showModule = _showModuleCheckBox.IsChecked == true;
+        return entries.Where(e => PassesItemFilter(e, showModule, _showHakItems, _showBifItems));
+    }
 
-        return entries;
+    /// <summary>
+    /// Pure-logic test seam: classify a row against the three filter checkboxes
+    /// (Module / HAK / BIF). Mirrors the filter behavior in StoreBrowserPanel
+    /// and CreatureBrowserPanel for parity (#2106 follow-up).
+    /// </summary>
+    internal static bool PassesItemFilter(FileBrowserEntry entry, bool showModule, bool showHak, bool showBif)
+    {
+        if (entry is ItemBrowserEntry ie)
+        {
+            if (ie.IsFromBif) return showBif;
+            if (ie.IsFromHak) return showHak;
+            return showModule;
+        }
+        // Fallback for non-ItemBrowserEntry rows
+        if (entry.IsFromHak) return showHak;
+        return showModule;
     }
 
     protected override string FormatCountLabel(int moduleCount, int hakCount, int totalCount)
@@ -205,12 +321,65 @@ public class ItemBrowserPanel : FileBrowserPanelBase
             return "No items found";
         }
 
-        var countText = $"{moduleCount} module";
-        if (hakCount > 0)
+        // Separate BIF from HAK in the count display
+        var bifCount = _showBifItems ? _bifItems.Count : 0;
+        var actualHakCount = hakCount - (_showBifItems ? bifCount : 0);
+        var parts = new List<string>();
+
+        if (_showModuleCheckBox.IsChecked == true && moduleCount > 0)
+            parts.Add($"{moduleCount} module");
+        if (actualHakCount > 0)
+            parts.Add($"{actualHakCount} HAK");
+        if (_showBifItems && _bifItems.Count > 0)
+            parts.Add($"{_bifItems.Count} base game");
+
+        return parts.Count == 0 ? "No items shown" : string.Join(" + ", parts);
+    }
+
+    private async Task LoadBifItemsAsync()
+    {
+        if (GameDataService == null || !GameDataService.IsConfigured)
         {
-            countText += $" + {hakCount} HAK";
+            UnifiedLogger.LogApplication(LogLevel.INFO, "ItemBrowserPanel: GameDataService not available for BIF scanning");
+            _bifItemsLoaded = true;
+            return;
         }
-        return countText;
+
+        try
+        {
+            _bifItems.Clear();
+            ShowLoading("Scanning base game items...");
+
+            await Task.Run(() =>
+            {
+                var resources = GameDataService.ListResources(ResourceTypes.Uti)
+                    .Where(r => r.Source == GameResourceSource.Bif)
+                    .ToList();
+
+                foreach (var resource in resources)
+                {
+                    _bifItems.Add(new ItemBrowserEntry
+                    {
+                        Name = resource.ResRef,
+                        Source = "Base Game",
+                        IsFromHak = false,
+                        IsFromBif = true
+                    });
+                }
+            });
+
+            _bifItems = _bifItems.OrderBy(e => e.Name).ToList();
+            _bifItemsLoaded = true;
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"ItemBrowserPanel: Found {_bifItems.Count} base game items from BIF");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"ItemBrowserPanel: Failed to load BIF items: {ex.Message}");
+        }
+        finally
+        {
+            HideLoading();
+        }
     }
 
     private async Task LoadHakItemsAsync()

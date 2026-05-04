@@ -136,7 +136,33 @@ public partial class MainWindow
 
     private void UpdateAddCheckedButton()
     {
-        AddCheckedButton.IsEnabled = _checkedPropertyIndices.Count > 0 && _currentItem != null;
+        AddCheckedButton.IsEnabled = _checkedPropertyIndices.Count > 0 && _currentItem != null && !_documentState.IsReadOnly;
+    }
+
+    /// <summary>
+    /// Sync editor controls to the current document read-only state (#2106). Called
+    /// after PopulateEditor and from LoadArchiveItemAsync — toggles the read-only
+    /// banner and disables every control that mutates _currentItem.
+    /// </summary>
+    private void ApplyReadOnlyVisualState()
+    {
+        bool ro = _documentState.IsReadOnly;
+        ReadOnlyBanner.IsVisible = ro;
+
+        // Gate every control that writes to _currentItem. Buttons stay disabled
+        // even with selection while read-only.
+        if (ro)
+        {
+            AddPropertyButton.IsEnabled = false;
+            AddCheckedButton.IsEnabled = false;
+            EditPropertyButton.IsEnabled = false;
+            RemovePropertyButton.IsEnabled = false;
+            ClearAllPropertiesButton.IsEnabled = false;
+        }
+
+        // Disable the available-property tree so checkbox ticks (which feed AddChecked)
+        // can't accumulate _checkedPropertyIndices entries while previewing.
+        AvailablePropertiesTree.IsEnabled = !ro;
     }
 
     private void OnPropertySearchTextChanged(object? sender, TextChangedEventArgs e)
@@ -236,7 +262,7 @@ public partial class MainWindow
             {
                 _selectedPropertyType = propertyType;
                 UpdatePropertyConfigPanel(propertyType);
-                AddPropertyButton.IsEnabled = _currentItem != null;
+                AddPropertyButton.IsEnabled = _currentItem != null && !_documentState.IsReadOnly;
 
                 // If a subtype child node was selected, pre-select it in the dropdown
                 if (selectedNode.Tag is TwoDAEntry subtypeEntry && SubtypeComboBox.IsVisible)
@@ -344,6 +370,7 @@ public partial class MainWindow
     {
         if (_currentItem == null || _itemPropertyService == null || _selectedPropertyType == null)
             return;
+        if (_documentState.IsReadOnly) return;
 
         int subtypeIndex = 0;
         if (SubtypeComboBox.IsVisible && SubtypeComboBox.SelectedItem is ComboBoxItem subItem && subItem.Tag is int subIdx)
@@ -374,6 +401,7 @@ public partial class MainWindow
     {
         if (_currentItem == null || _itemPropertyService == null || _checkedPropertyIndices.Count == 0)
             return;
+        if (_documentState.IsReadOnly) return;
 
         var types = _itemPropertyService.GetAvailablePropertyTypes();
         int added = 0;
@@ -420,6 +448,7 @@ public partial class MainWindow
     {
         if (_currentItem == null)
             return;
+        if (_documentState.IsReadOnly) return;
 
         var selectedIndices = AssignedPropertiesList.Selection.SelectedIndexes
             .Where(i => i >= 0 && i < _currentItem.Properties.Count)
@@ -445,6 +474,7 @@ public partial class MainWindow
     {
         if (_currentItem == null || _currentItem.Properties.Count == 0)
             return;
+        if (_documentState.IsReadOnly) return;
 
         var count = _currentItem.Properties.Count;
         _currentItem.Properties.Clear();
@@ -457,14 +487,16 @@ public partial class MainWindow
     {
         var selectedCount = AssignedPropertiesList.Selection.SelectedIndexes.Count();
         bool hasSelection = selectedCount > 0;
-        RemovePropertyButton.IsEnabled = hasSelection;
-        EditPropertyButton.IsEnabled = selectedCount == 1;
+        bool ro = _documentState.IsReadOnly;
+        RemovePropertyButton.IsEnabled = hasSelection && !ro;
+        EditPropertyButton.IsEnabled = selectedCount == 1 && !ro;
     }
 
     private void OnEditPropertyClick(object? sender, RoutedEventArgs e)
     {
         if (_currentItem == null || _itemPropertyService == null || AssignedPropertiesList.SelectedIndex < 0)
             return;
+        if (_documentState.IsReadOnly) return;
 
         var index = AssignedPropertiesList.SelectedIndex;
         if (index >= _currentItem.Properties.Count)
@@ -564,7 +596,7 @@ public partial class MainWindow
 
         RemovePropertyButton.IsEnabled = false;
         EditPropertyButton.IsEnabled = false;
-        ClearAllPropertiesButton.IsEnabled = _currentItem.Properties.Count > 0;
+        ClearAllPropertiesButton.IsEnabled = _currentItem.Properties.Count > 0 && !_documentState.IsReadOnly;
 
         // Refresh available properties list to reflect move semantics (#1809)
         PopulateAvailableProperties(PropertySearchBox.Text);

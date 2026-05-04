@@ -7,6 +7,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.VisualTree;
 using Radoub.Formats.Erf;
 using Radoub.Formats.Logging;
 using Radoub.UI.Services;
@@ -411,6 +412,32 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
         if (FileListBox.SelectedItem is FileBrowserEntry entry)
         {
             FileSelected?.Invoke(this, new FileSelectedEventArgs(entry, isDoubleClick: true));
+        }
+    }
+
+    /// <summary>
+    /// Right-click should select the row under the pointer before the context menu
+    /// opens. Avalonia's ListBox doesn't do this by default — without it, the
+    /// context-menu Opening handlers see SelectedItem == null when the user
+    /// right-clicks an unselected row, and Copy-to-Module never appears (#2106).
+    /// </summary>
+    /// <summary>
+    /// ContextRequested fires before the context menu opens, giving us the source
+    /// element under the pointer. We walk up the visual tree to the ListBoxItem
+    /// and select its DataContext, so context-menu Opening handlers see a non-null
+    /// SelectedItem (#2106 — fixes Copy-to-Module visibility on right-click).
+    /// </summary>
+    private void OnFileListContextRequested(object? sender, Avalonia.Controls.ContextRequestedEventArgs e)
+    {
+        var source = e.Source as Avalonia.Visual;
+        while (source != null && source is not ListBoxItem)
+        {
+            source = source.GetVisualParent();
+        }
+
+        if (source is ListBoxItem lbi && lbi.DataContext is FileBrowserEntry entry)
+        {
+            FileListBox.SelectedItem = entry;
         }
     }
 

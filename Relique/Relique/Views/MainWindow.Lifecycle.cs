@@ -167,6 +167,9 @@ public partial class MainWindow
 
     private void InitializeItemBrowserPanel()
     {
+        // Wire GameDataService for "Base Game" (BIF) item scanning (#2106)
+        ItemBrowserPanel.GameDataService = _gameDataService;
+
         // Set initial module path from RadoubSettings (set by Trebuchet)
         var moduleDir = GetModuleWorkingDirectory(RadoubSettings.Instance.CurrentModulePath);
         if (!string.IsNullOrEmpty(moduleDir))
@@ -232,9 +235,19 @@ public partial class MainWindow
     {
         try
         {
-            if (e.Entry.IsFromHak)
+            // Archive items (HAK/BIF) — load read-only preview (#2106)
+            var isFromBif = e.Entry is ItemBrowserEntry { IsFromBif: true };
+            if (e.Entry.IsFromHak || isFromBif)
             {
-                UpdateStatus($"HAK items are read-only: {e.Entry.Name}");
+                // Prompt save if dirty before swapping out _currentItem
+                if (_isDirty)
+                {
+                    var saveResult = await PromptSaveChangesAsync();
+                    if (saveResult == SavePromptResult.Cancel) return;
+                    if (saveResult == SavePromptResult.Save && !await SaveCurrentFileAsync()) return;
+                }
+
+                await LoadArchiveItemAsync(e.Entry);
                 return;
             }
 
@@ -260,6 +273,51 @@ public partial class MainWindow
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error loading item from browser: {ex.Message}");
             UpdateStatus($"Error: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Load a UTI item from a HAK or BIF archive in read-only preview mode (#2106).
+    /// Mirrors Fence's LoadArchiveStore pattern.
+    /// </summary>
+    private async Task LoadArchiveItemAsync(FileBrowserEntry entry)
+    {
+        var isFromBif = entry is ItemBrowserEntry { IsFromBif: true };
+        var sourceLabel = isFromBif ? "base game" : "HAK";
+
+        try
+        {
+            UpdateStatus($"Loading {sourceLabel} item: {entry.Name}...");
+
+            var bytes = await Task.Run(() => ItemBrowserPanel.ExtractItemArchiveBytes(entry, _gameDataService));
+            if (bytes == null)
+            {
+                UpdateStatus($"Could not extract {entry.Name} from {sourceLabel} archives");
+                return;
+            }
+
+            // Release lock on previous file
+            if (!string.IsNullOrEmpty(_currentFilePath))
+            {
+                FileSessionLockService.ReleaseLock(_currentFilePath);
+            }
+
+            _currentItem = Radoub.Formats.Uti.UtiReader.Read(bytes);
+            _currentFilePath = null; // No file path — read-only archive resource
+            _documentState.IsReadOnly = true;
+            _documentState.ClearDirty();
+
+            PopulateEditor();
+            OnPropertyChanged(nameof(HasFile));
+
+            ItemBrowserPanel.CurrentFilePath = null;
+            UpdateTitle();
+            UpdateStatus($"{sourceLabel} item (read-only): {entry.Name}");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load {sourceLabel} item {entry.Name}: {ex.Message}");
+            UpdateStatus($"Error loading {sourceLabel} item: {ex.Message}");
         }
     }
 

@@ -21,7 +21,7 @@ public partial class MainWindow
         if (_currentItem == null)
         {
             EmptyStatePanel.IsVisible = true;
-            EditorContent.IsVisible = false;
+            EditorContentGrid.IsVisible = false;
             AppearanceExpander.IsVisible = false;
             ModelPartsPanel.IsVisible = false;
             ColorsPanel.IsVisible = false;
@@ -45,7 +45,8 @@ public partial class MainWindow
         }
 
         EmptyStatePanel.IsVisible = false;
-        EditorContent.IsVisible = true;
+        EditorContentGrid.IsVisible = true;
+        ApplyReadOnlyVisualState();
 
         // Create ViewModel and bind (pass TLK resolver for base game items with StrRef names)
         Func<uint, string?>? tlkResolver = _gameDataService?.IsConfigured == true

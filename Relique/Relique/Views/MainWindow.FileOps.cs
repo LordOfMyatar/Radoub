@@ -25,8 +25,10 @@ public partial class MainWindow
             if (!string.IsNullOrEmpty(_currentFilePath))
             {
                 FileSessionLockService.ReleaseLock(_currentFilePath);
-                _documentState.IsReadOnly = false;
             }
+
+            // Reset read-only — about to open a real file from disk (#2106)
+            _documentState.IsReadOnly = false;
 
             // Check for file lock from another tool instance
             var lockResult = FileSessionLockService.AcquireLock(filePath, "Relique");
