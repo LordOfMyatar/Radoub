@@ -11,9 +11,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Feature: Base Game (BIF) Item Support in ItemBrowserPanel (#2106)
 
-- Add "Base Game" checkbox to ItemBrowserPanel alongside HAK, lazily loading items from base game BIF archives via `IGameDataService.GetPaletteItems(ResourceTypes.Uti)`
-- BIF items now appear as Copy-to-Module candidates, unblocking the most common item-customization workflow (copy a base game item like `nw_wblcl001` as a template)
-- Pattern parity with Fence's StoreBrowserPanel and Quartermaster's CreatureBrowserPanel
+- Add "Base Game" checkbox to ItemBrowserPanel for lazy-loading base game items from BIF archives via `IGameDataService.ListResources(ResourceTypes.Uti)`
+- New "Module" checkbox alongside HAK / Base Game so module .uti files can be filtered out — full filter-row parity with `StoreBrowserPanel` / `CreatureBrowserPanel`
+- Click an HAK or BIF row to load it into the editor as a read-only preview (yellow `🔒 Read-Only` banner; Add / Add Checked / Edit / Remove / Clear All buttons disabled; available-property tree disabled; defensive guards in every mutator handler)
+- Right-click any HAK or BIF row → "Copy to Module" available, prefilled with source ResRef/Tag/Name, copies the resource into the module folder under a new ResRef
+- Bug fix: opening a real .uti file after previewing an archive item correctly resets read-only state
+
+### Shared (Radoub.UI) Improvements
+
+- New `ContextRequested` handler in `FileBrowserPanelBase` selects the row under the pointer before the context menu opens — fixes a latent bug where right-clicking an unselected row showed an empty/broken context menu (affected all four browsers: Item, Store, Creature, Dialog)
+- `ItemBrowserPanel.ExtractItemArchiveBytes` and `IsItemArchiveEntry` promoted to `public static` so consumer tools can route archive previews
 
 ---
 
