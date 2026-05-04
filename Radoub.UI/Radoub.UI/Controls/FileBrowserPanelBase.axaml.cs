@@ -421,12 +421,14 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
     /// context-menu Opening handlers see SelectedItem == null when the user
     /// right-clicks an unselected row, and Copy-to-Module never appears (#2106).
     /// </summary>
-    private void OnFileListPointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    /// <summary>
+    /// ContextRequested fires before the context menu opens, giving us the source
+    /// element under the pointer. We walk up the visual tree to the ListBoxItem
+    /// and select its DataContext, so context-menu Opening handlers see a non-null
+    /// SelectedItem (#2106 — fixes Copy-to-Module visibility on right-click).
+    /// </summary>
+    private void OnFileListContextRequested(object? sender, Avalonia.Controls.ContextRequestedEventArgs e)
     {
-        var props = e.GetCurrentPoint(FileListBox).Properties;
-        if (!props.IsRightButtonPressed) return;
-
-        // Walk up from the pressed control to find the ListBoxItem.
         var source = e.Source as Avalonia.Visual;
         while (source != null && source is not ListBoxItem)
         {

@@ -77,7 +77,7 @@
                          x:Name="FileListBox"
                          SelectionChanged="OnFileSelected"
                          DoubleTapped="OnFileDoubleClicked"
-                         PointerPressed="OnFileListPointerPressed"
+                         ContextRequested="OnFileListContextRequested"
                          Background="Transparent"
                          Margin="4,0,4,4">
                     <ListBox.ContextMenu>
