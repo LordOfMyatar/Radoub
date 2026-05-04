@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.10.13-alpha] - 2026-05-03
-**Branch**: `relique/issue-2106` | **PR**: #TBD
+**Branch**: `relique/issue-2106` | **PR**: #2165
 
 ### Feature: Base Game (BIF) Item Support in ItemBrowserPanel (#2106)
 
