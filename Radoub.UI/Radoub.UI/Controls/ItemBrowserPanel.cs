@@ -117,21 +117,23 @@ public class ItemBrowserPanel : FileBrowserPanelBase
     protected override bool IsArchiveEntry(FileBrowserEntry entry) => IsItemArchiveEntry(entry);
 
     /// <summary>
-    /// Pure-logic test seam: archive-entry classification for ItemBrowserPanel.
-    /// Returns true for ItemBrowserEntry rows that originated from a HAK or BIF archive.
+    /// Archive-entry classification for ItemBrowserPanel. Returns true for
+    /// ItemBrowserEntry rows that originated from a HAK or BIF archive.
+    /// Public so tools can route archive-row clicks to a read-only preview path.
     /// </summary>
-    internal static bool IsItemArchiveEntry(FileBrowserEntry entry)
+    public static bool IsItemArchiveEntry(FileBrowserEntry entry)
         => entry is ItemBrowserEntry i && (i.IsFromHak || i.IsFromBif);
 
     protected override Task<byte[]?> ExtractArchiveBytesAsync(FileBrowserEntry entry)
         => Task.FromResult(ExtractItemArchiveBytes(entry, GameDataService));
 
     /// <summary>
-    /// Pure-logic test seam: route an archive-sourced ItemBrowserEntry to the correct
-    /// extraction path (BIF via GameDataService, HAK via shared ExtractFromHak helper).
-    /// Returns null when the entry is not archive-sourced or required dependencies are missing.
+    /// Route an archive-sourced ItemBrowserEntry to the correct extraction path
+    /// (BIF via GameDataService, HAK via shared ExtractFromHak helper). Returns
+    /// null when the entry is not archive-sourced or required dependencies are missing.
+    /// Public so tools can load BIF/HAK items into a read-only preview (#2106).
     /// </summary>
-    internal static byte[]? ExtractItemArchiveBytes(FileBrowserEntry entry, IGameDataService? gameDataService)
+    public static byte[]? ExtractItemArchiveBytes(FileBrowserEntry entry, IGameDataService? gameDataService)
     {
         if (entry is not ItemBrowserEntry itemEntry) return null;
 
