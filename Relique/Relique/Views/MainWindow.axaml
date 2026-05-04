@@ -114,7 +114,25 @@
                     </StackPanel>
 
                     <!-- Editor content (shown when file is loaded) -->
-                    <ScrollViewer x:Name="EditorContent" IsVisible="False">
+                    <Grid x:Name="EditorContentGrid" RowDefinitions="Auto,*" IsVisible="False">
+
+                        <!-- Read-only banner (#2106) - visible only when document is read-only -->
+                        <Border x:Name="ReadOnlyBanner"
+                                Grid.Row="0"
+                                Background="#FFFBEB"
+                                BorderBrush="#F59E0B"
+                                BorderThickness="0,0,0,1"
+                                Padding="12,6"
+                                IsVisible="False">
+                            <TextBlock x:Name="ReadOnlyBannerText"
+                                       Text="🔒 Read-Only — base game / HAK item. Right-click in the browser to Copy to Module for editing."
+                                       FontSize="{DynamicResource FontSizeSmall}"
+                                       FontWeight="SemiBold"
+                                       Foreground="#92400E"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+
+                        <ScrollViewer Grid.Row="1" x:Name="EditorContent">
                         <StackPanel Margin="16" Spacing="16">
 
                             <!-- Basic Properties -->
@@ -804,7 +822,8 @@
                             </Expander>
 
                         </StackPanel>
-                    </ScrollViewer>
+                        </ScrollViewer>
+                    </Grid>
                 </Panel>
             </Border>
         </Grid>
