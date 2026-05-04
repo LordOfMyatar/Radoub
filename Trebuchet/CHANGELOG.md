@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.33.0-alpha] - 2026-05-03
+**Branch**: `trebuchet/issue-1926` | **PR**: #TBD
+
+### Feat: ResRef replace with file rename — batch rename support (#1926)
+
+- Enable ResRef field replace by renaming referenced files on disk and updating cross-file references
+- Collision detection, 16-char filename validation, and undo/backup support
+
+---
+
 ## [1.32.0-alpha] - 2026-05-01
 **Branch**: `radoub/issue-2159` | **PR**: #2160
 
