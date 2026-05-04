@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.13-alpha] - 2026-05-03
+**Branch**: `relique/issue-2106` | **PR**: #TBD
+
+### Feature: Base Game (BIF) Item Support in ItemBrowserPanel (#2106)
+
+- Add "Base Game" checkbox to ItemBrowserPanel alongside HAK, lazily loading items from base game BIF archives via `IGameDataService.GetPaletteItems(ResourceTypes.Uti)`
+- BIF items now appear as Copy-to-Module candidates, unblocking the most common item-customization workflow (copy a base game item like `nw_wblcl001` as a template)
+- Pattern parity with Fence's StoreBrowserPanel and Quartermaster's CreatureBrowserPanel
+
+---
+
 ## [0.10.12-alpha] - 2026-05-03
 **Branch**: `relique/issue-1908` | **PR**: #2157
 
