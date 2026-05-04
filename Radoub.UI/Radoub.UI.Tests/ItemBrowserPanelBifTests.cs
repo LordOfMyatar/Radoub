@@ -135,4 +135,37 @@ public class ItemBrowserPanelBifTests
 
         Assert.Same(mock, panel.GameDataService);
     }
+
+    // --- Filter classification (Module / HAK / BIF parity, #2106 follow-up) ---
+
+    [Theory]
+    [InlineData(true, false, false, true)]   // Module entry, only Module on → visible
+    [InlineData(false, false, false, false)]  // Module entry, Module off → hidden
+    [InlineData(true, true, true, true)]    // Module entry, all on → visible
+    public void PassesFilter_ModuleEntry_RespectsModuleCheckbox(
+        bool showModule, bool showHak, bool showBif, bool expected)
+    {
+        var entry = new ItemBrowserEntry { Name = "x", IsFromHak = false, IsFromBif = false };
+        Assert.Equal(expected, ItemBrowserPanel.PassesItemFilter(entry, showModule, showHak, showBif));
+    }
+
+    [Theory]
+    [InlineData(false, true, false, true)]   // HAK entry, HAK on → visible
+    [InlineData(true, false, true, false)]   // HAK entry, HAK off → hidden (Module/BIF irrelevant)
+    public void PassesFilter_HakEntry_RespectsHakCheckbox(
+        bool showModule, bool showHak, bool showBif, bool expected)
+    {
+        var entry = new ItemBrowserEntry { Name = "x", IsFromHak = true, IsFromBif = false };
+        Assert.Equal(expected, ItemBrowserPanel.PassesItemFilter(entry, showModule, showHak, showBif));
+    }
+
+    [Theory]
+    [InlineData(false, false, true, true)]   // BIF entry, BIF on → visible
+    [InlineData(true, true, false, false)]   // BIF entry, BIF off → hidden (Module/HAK irrelevant)
+    public void PassesFilter_BifEntry_RespectsBifCheckbox(
+        bool showModule, bool showHak, bool showBif, bool expected)
+    {
+        var entry = new ItemBrowserEntry { Name = "x", IsFromHak = false, IsFromBif = true };
+        Assert.Equal(expected, ItemBrowserPanel.PassesItemFilter(entry, showModule, showHak, showBif));
+    }
 }

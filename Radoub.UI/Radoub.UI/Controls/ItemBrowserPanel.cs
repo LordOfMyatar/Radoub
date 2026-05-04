@@ -45,6 +45,7 @@ internal class ItemHakCacheEntry
 /// </summary>
 public class ItemBrowserPanel : FileBrowserPanelBase
 {
+    private readonly CheckBox _showModuleCheckBox;
     private readonly CheckBox _showHakCheckBox;
     private readonly CheckBox _showBifCheckBox;
     private bool _showHakItems;
@@ -62,6 +63,16 @@ public class ItemBrowserPanel : FileBrowserPanelBase
         FileExtension = ".uti";
         SearchWatermark = "Type to filter items...";
         HeaderTextContent = "Items";
+
+        // Module checkbox (checked by default — parity with Store/Creature browsers)
+        _showModuleCheckBox = new CheckBox
+        {
+            Content = "Module",
+            IsChecked = true,
+            Margin = new Avalonia.Thickness(0, 4, 0, 0)
+        };
+        ToolTip.SetTip(_showModuleCheckBox, "Show .uti files from module folder");
+        _showModuleCheckBox.IsCheckedChanged += OnModuleFilterChanged;
 
         // Create and wire up HAK checkbox
         _showHakCheckBox = new CheckBox
@@ -84,9 +95,15 @@ public class ItemBrowserPanel : FileBrowserPanelBase
         _showBifCheckBox.IsCheckedChanged += OnShowBifChanged;
 
         var filterPanel = new StackPanel { Spacing = 2 };
+        filterPanel.Children.Add(_showModuleCheckBox);
         filterPanel.Children.Add(_showHakCheckBox);
         filterPanel.Children.Add(_showBifCheckBox);
         FilterOptionsContent = filterPanel;
+    }
+
+    private void OnModuleFilterChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        OnFilterOptionsChanged();
     }
 
     /// <summary>
@@ -271,18 +288,26 @@ public class ItemBrowserPanel : FileBrowserPanelBase
 
     protected override IEnumerable<FileBrowserEntry> ApplyCustomFilters(IEnumerable<FileBrowserEntry> entries)
     {
-        return entries.Where(e =>
+        bool showModule = _showModuleCheckBox.IsChecked == true;
+        return entries.Where(e => PassesItemFilter(e, showModule, _showHakItems, _showBifItems));
+    }
+
+    /// <summary>
+    /// Pure-logic test seam: classify a row against the three filter checkboxes
+    /// (Module / HAK / BIF). Mirrors the filter behavior in StoreBrowserPanel
+    /// and CreatureBrowserPanel for parity (#2106 follow-up).
+    /// </summary>
+    internal static bool PassesItemFilter(FileBrowserEntry entry, bool showModule, bool showHak, bool showBif)
+    {
+        if (entry is ItemBrowserEntry ie)
         {
-            if (e is ItemBrowserEntry ie)
-            {
-                if (ie.IsFromBif) return _showBifItems;
-                if (ie.IsFromHak) return _showHakItems;
-                return true; // module
-            }
-            // Fallback for non-ItemBrowserEntry rows
-            if (e.IsFromHak) return _showHakItems;
-            return true;
-        });
+            if (ie.IsFromBif) return showBif;
+            if (ie.IsFromHak) return showHak;
+            return showModule;
+        }
+        // Fallback for non-ItemBrowserEntry rows
+        if (entry.IsFromHak) return showHak;
+        return showModule;
     }
 
     protected override string FormatCountLabel(int moduleCount, int hakCount, int totalCount)
@@ -297,17 +322,16 @@ public class ItemBrowserPanel : FileBrowserPanelBase
         // Separate BIF from HAK in the count display
         var bifCount = _showBifItems ? _bifItems.Count : 0;
         var actualHakCount = hakCount - (_showBifItems ? bifCount : 0);
+        var parts = new List<string>();
 
-        var countText = $"{moduleCount} module";
+        if (_showModuleCheckBox.IsChecked == true && moduleCount > 0)
+            parts.Add($"{moduleCount} module");
         if (actualHakCount > 0)
-        {
-            countText += $" + {actualHakCount} HAK";
-        }
+            parts.Add($"{actualHakCount} HAK");
         if (_showBifItems && _bifItems.Count > 0)
-        {
-            countText += $" + {_bifItems.Count} base game";
-        }
-        return countText;
+            parts.Add($"{_bifItems.Count} base game");
+
+        return parts.Count == 0 ? "No items shown" : string.Join(" + ", parts);
     }
 
     private async Task LoadBifItemsAsync()
