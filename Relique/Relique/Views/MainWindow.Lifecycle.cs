@@ -167,6 +167,9 @@ public partial class MainWindow
 
     private void InitializeItemBrowserPanel()
     {
+        // Wire GameDataService for "Base Game" (BIF) item scanning (#2106)
+        ItemBrowserPanel.GameDataService = _gameDataService;
+
         // Set initial module path from RadoubSettings (set by Trebuchet)
         var moduleDir = GetModuleWorkingDirectory(RadoubSettings.Instance.CurrentModulePath);
         if (!string.IsNullOrEmpty(moduleDir))
