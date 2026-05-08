@@ -48,13 +48,8 @@ internal static class TestGffBuilder
     }
 
     // --- UTI ---
-    public static GffFile MakeUti(string? onAcquireScript = null)
-    {
-        var root = new GffStruct { Type = 0xFFFFFFFF };
-        if (onAcquireScript != null)
-            GffFieldBuilder.AddCResRefField(root, "OnAcquireItem", onAcquireScript);
-        return new GffFile { FileType = "UTI ", FileVersion = "V3.2", RootStruct = root };
-    }
+    // UTI files have no script-event fields per BioWare spec — items use
+    // ItemProperty slots, not script events. No builder needed for UTI scanning.
 
     // --- UTM ---
     public static GffFile MakeUtmWithItems(

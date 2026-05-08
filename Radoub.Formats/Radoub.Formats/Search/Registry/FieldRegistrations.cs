@@ -151,9 +151,10 @@ public static class FieldRegistrations
             new FieldDefinition { Name = "Identified Description", GffPath = "DescIdentified", FieldType = SearchFieldType.LocString, Category = SearchFieldCategory.Content, Description = "Identified item description" },
             new FieldDefinition { Name = "Tag", GffPath = "Tag", FieldType = SearchFieldType.Tag, Category = SearchFieldCategory.Identity, Description = "Item tag" },
             new FieldDefinition { Name = "Template ResRef", GffPath = "TemplateResRef", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Blueprint resource reference", IsReplaceable = false },
-            new FieldDefinition { Name = "Comment", GffPath = "Comment", FieldType = SearchFieldType.Text, Category = SearchFieldCategory.Metadata, Description = "Toolset comment" },
-            // Item event scripts (#1926)
-            new FieldDefinition { Name = "OnAcquireItem", GffPath = "OnAcquireItem", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "OnAcquired event script" }
+            new FieldDefinition { Name = "Comment", GffPath = "Comment", FieldType = SearchFieldType.Text, Category = SearchFieldCategory.Metadata, Description = "Toolset comment" }
+            // UTI files have no script-event fields per BioWare spec — items use ItemProperty
+            // slots, not script events. Plan spec Section 4 listing "all UTI script-event fields"
+            // is therefore vacuous; no fields registered here. (#1926)
         );
     }
 

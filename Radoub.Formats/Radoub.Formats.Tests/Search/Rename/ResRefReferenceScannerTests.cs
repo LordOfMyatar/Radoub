@@ -48,19 +48,10 @@ public class ResRefReferenceScannerTests
         Assert.Empty(refs);
     }
 
-    [Fact]
-    public void Scan_UtiOnAcquireScript_FindsReference()
-    {
-        var gff = TestGffBuilder.MakeUti(onAcquireScript: "open_door");
-        var scanner = new ResRefReferenceScanner();
-
-        var refs = scanner.Scan(gff, ResourceTypes.Uti, oldResRef: "open_door", filePath: "/m/key.uti");
-
-        Assert.Single(refs);
-        Assert.NotNull(refs[0].Field);
-        Assert.Equal(SearchFieldType.Script, refs[0].Field!.FieldType);
-        Assert.Equal(SearchFieldCategory.Script, refs[0].Field!.Category);
-    }
+    // UTI files have no script-event fields per BioWare spec — items use
+    // ItemProperty slots, not script events. No scanner test needed for UTI
+    // beyond TemplateResRef (which is a self-identifier, not a reference TO
+    // something else, and is therefore not in the scanner's scope).
 
     [Theory]
     [InlineData("OnEnter")]
@@ -281,7 +272,7 @@ public class ResRefReferenceScannerTests
         // resourceType, builder factory, oldResRef
         new object[] { ResourceTypes.Utc, (Func<GffFile>)(() => TestGffBuilder.MakeUtc(conversation: "rr")), "rr" },
         new object[] { ResourceTypes.Bic, (Func<GffFile>)(() => TestGffBuilder.MakeUtc(conversation: "rr")), "rr" },  // BIC == UTC
-        new object[] { ResourceTypes.Uti, (Func<GffFile>)(() => TestGffBuilder.MakeUti(onAcquireScript: "rr")), "rr" },
+        // UTI omitted: no script-event fields per BioWare spec; items use ItemProperty slots
         new object[] { ResourceTypes.Utm, (Func<GffFile>)(() => TestGffBuilder.MakeUtmWithItems("Weapons", "rr")), "rr" },
         new object[] { ResourceTypes.Utp, (Func<GffFile>)(() => TestGffBuilder.MakeUtpWithInventory("rr")), "rr" },
         new object[] { ResourceTypes.Utd, (Func<GffFile>)(() => TestGffBuilder.MakeUtd(conversation: "rr")), "rr" },
