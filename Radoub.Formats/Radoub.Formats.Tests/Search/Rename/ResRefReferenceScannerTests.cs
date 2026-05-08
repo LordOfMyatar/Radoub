@@ -118,4 +118,24 @@ public class ResRefReferenceScannerTests
         Assert.All(refs, r => Assert.Equal("louis", r.OldValue.ToLowerInvariant()));
         Assert.All(refs, r => Assert.Contains("Creature List", r.Location));
     }
+
+    [Theory]
+    [InlineData("Creature List",  "TemplateResRef")]
+    [InlineData("Door List",      "TemplateResRef")]
+    [InlineData("Placeable List", "TemplateResRef")]
+    [InlineData("StoreList",      "ResRef")]
+    [InlineData("WaypointList",   "TemplateResRef")]
+    [InlineData("Encounter List", "TemplateResRef")]
+    [InlineData("TriggerList",    "TemplateResRef")]
+    [InlineData("SoundList",      "TemplateResRef")]
+    public void Scan_GitAllInstanceLists_FindsReference(string listName, string resRefField)
+    {
+        var gff = TestGffBuilder.MakeGitWithList(listName, resRefField, "louis");
+        var scanner = new ResRefReferenceScanner();
+
+        var refs = scanner.Scan(gff, ResourceTypes.Git, oldResRef: "louis", filePath: "/m/area.git");
+
+        Assert.Single(refs);
+        Assert.Contains(listName, refs[0].Location);
+    }
 }
