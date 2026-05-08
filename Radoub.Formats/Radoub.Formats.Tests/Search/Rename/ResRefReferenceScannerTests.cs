@@ -263,4 +263,16 @@ public class ResRefReferenceScannerTests
             refs[0].Field?.GffPath == registeredGffPath || refs[0].Field?.Name == registeredGffPath,
             $"Expected field GffPath or Name '{registeredGffPath}', got Name='{refs[0].Field?.Name}' GffPath='{refs[0].Field?.GffPath}'");
     }
+
+    [Fact]
+    public void Scan_IfoModHakList_FindsReference()
+    {
+        var gff = TestGffBuilder.MakeIfoWithHakList("base_hak", "louis_hak", "extra_hak");
+        var scanner = new ResRefReferenceScanner();
+
+        var refs = scanner.Scan(gff, ResourceTypes.Ifo, oldResRef: "louis_hak", filePath: "/m/module.ifo");
+
+        Assert.Single(refs);
+        Assert.Contains("Mod_HakList", refs[0].Location);
+    }
 }

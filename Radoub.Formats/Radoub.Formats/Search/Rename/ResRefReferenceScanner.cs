@@ -54,7 +54,38 @@ public class ResRefReferenceScanner
         if (resourceType == ResourceTypes.Dlg)
             ScanDlgNodes(gffFile, oldResRef, filePath, results);
 
+        if (resourceType == ResourceTypes.Ifo)
+            ScanIfoHakList(gffFile, oldResRef, filePath, results);
+
         return results;
+    }
+
+    private static readonly FieldDefinition ModHakField = new()
+    {
+        Name = "HAK",
+        GffPath = "Mod_Hak",
+        FieldType = SearchFieldType.ResRef,
+        Category = SearchFieldCategory.Metadata,
+        Description = "HAK file ResRef (per entry in Mod_HakList)",
+        IsReplaceable = false
+    };
+
+    private void ScanIfoHakList(
+        GffFile gff, string oldResRef, string filePath, List<ResRefReference> results)
+    {
+        var hakListField = gff.RootStruct.GetField("Mod_HakList");
+        if (hakListField?.Value is not GffList hakList) return;
+
+        for (int i = 0; i < hakList.Elements.Count; i++)
+        {
+            var f = hakList.Elements[i].GetField("Mod_Hak");
+            if (f?.Value is string v
+                && string.Equals(v, oldResRef, StringComparison.OrdinalIgnoreCase))
+            {
+                results.Add(MakeRef(filePath, ResourceTypes.Ifo, ModHakField,
+                    $"Mod_HakList > Item {i} > Mod_Hak", v));
+            }
+        }
     }
 
     private static readonly FieldDefinition SoundField = new()
