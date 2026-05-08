@@ -51,6 +51,9 @@
                     <CheckBox Content="Include StrRef text" Margin="0,0,12,0"
                               IsChecked="{Binding SearchStrRefs}"
                               ToolTip.Tip="Also search TLK-resolved StrRef text (requires game TLK loaded). Off by default — most modules use embedded text."/>
+                    <CheckBox Content="Include filename/ResRef" Margin="0,0,12,0"
+                              IsChecked="{Binding SearchFilenameResRef}"
+                              ToolTip.Tip="When checked, search includes filename matches AND ResRef field matches become replaceable. See Marlinspike documentation for details."/>
                     <TextBlock Text="Fields:" VerticalAlignment="Center" Margin="8,0,4,0"/>
                     <ComboBox x:Name="CategoryCombo" MinWidth="120"
                               ItemsSource="{Binding Categories}"
@@ -91,8 +94,32 @@
                         <CheckBox Content="IFO" IsChecked="{Binding IncludeIfo}" Margin="0,0,8,0" MinWidth="65"/>
                         <CheckBox Content="FAC" IsChecked="{Binding IncludeFac}" Margin="0,0,8,0" MinWidth="65"/>
                         <CheckBox Content="ITP" IsChecked="{Binding IncludeItp}" Margin="0,0,8,0" MinWidth="65"/>
+                        <CheckBox Content="NSS" IsChecked="{Binding IncludeNss}" Margin="0,0,8,0" MinWidth="65"
+                                  ToolTip.Tip="Plain-text scan of .nss script source for ResRef references. Quoted matches are high confidence; bare substring matches are flagged 'verify'."/>
                     </WrapPanel>
                 </StackPanel>
+
+                <!-- Scope-narrowing warning (only visible when filename/ResRef on AND scope narrowed) -->
+                <Border IsVisible="{Binding ShowScopeNarrowingWarning}"
+                        BorderBrush="{DynamicResource ThemeWarning}"
+                        BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,4">
+                    <StackPanel Spacing="4">
+                        <TextBlock FontWeight="SemiBold" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource ThemeWarning}">
+                            ⚠ Some file types are excluded from the rename.
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}">
+                            References to renamed resources will only be updated in the file types you've checked.
+                            If references exist in unchecked types (e.g., a script in .nss, a creature in .git),
+                            they will be left untouched and may break.
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}" FontStyle="Italic">
+                            Common reasons to narrow scope: splitting one NPC into two; renaming only a specific class of resource.
+                            Less obvious risks: collaborative inconsistency from multiple developers; .ncs and 2DA references are
+                            never scanned. Always run a test session of your module after a rename to verify nothing broke.
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
             </StackPanel>
         </Border>
 
