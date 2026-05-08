@@ -202,4 +202,28 @@ public class ResRefReferenceScannerTests
         Assert.Single(refs);
         Assert.Contains("Entry 2", refs[0].Location);
     }
+
+    [Fact]
+    public void Scan_DlgActionParam_FindsSubstringMatch()
+    {
+        // Param value contains "louis" as substring (typical: "target_resref=louis")
+        var gff = TestGffBuilder.MakeDlgWithActionParam(0, "target_resref", "louis");
+        var scanner = new ResRefReferenceScanner();
+
+        var refs = scanner.Scan(gff, ResourceTypes.Dlg, oldResRef: "louis", filePath: "/m/x.dlg");
+
+        Assert.Contains(refs, r => r.ScopeTier == ResRefScopeTier.DlgScriptParam);
+    }
+
+    [Fact]
+    public void Scan_DlgActionParam_DoesNotMatchKey()
+    {
+        // Match in KEY (not value) — should NOT be returned per spec
+        var gff = TestGffBuilder.MakeDlgWithActionParam(0, "louis_target", "alice");
+        var scanner = new ResRefReferenceScanner();
+
+        var refs = scanner.Scan(gff, ResourceTypes.Dlg, oldResRef: "louis", filePath: "/m/x.dlg");
+
+        Assert.DoesNotContain(refs, r => r.ScopeTier == ResRefScopeTier.DlgScriptParam);
+    }
 }

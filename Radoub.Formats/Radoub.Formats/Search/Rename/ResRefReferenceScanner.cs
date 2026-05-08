@@ -93,6 +93,62 @@ public class ResRefReferenceScanner
                 results.Add(MakeRef(filePath, ResourceTypes.Dlg, SoundField,
                     $"{nodeKind} {i} > Sound", v));
             }
+
+            // ActionParams live directly on entry/reply nodes
+            ScanDlgParams(node, "ActionParams", nodeKind, i, oldResRef, filePath, results);
+
+            // ConditionParams live on link structs inside RepliesList (for entries)
+            // or EntriesList (for replies). Walk those links per node.
+            var linkListName = nodeKind == "Entry" ? "RepliesList" : "EntriesList";
+            var linkListField = node.GetField(linkListName);
+            if (linkListField?.Value is GffList linkList)
+            {
+                for (int linkIdx = 0; linkIdx < linkList.Elements.Count; linkIdx++)
+                {
+                    var link = linkList.Elements[linkIdx];
+                    ScanDlgParams(
+                        link, "ConditionParams",
+                        $"{nodeKind} {i} > {linkListName}[{linkIdx}]", -1,
+                        oldResRef, filePath, results);
+                }
+            }
+        }
+    }
+
+    private void ScanDlgParams(
+        GffStruct container, string paramFieldName, string nodeKind, int nodeIndex,
+        string oldResRef, string filePath, List<ResRefReference> results)
+    {
+        var paramListField = container.GetField(paramFieldName);
+        if (paramListField?.Value is not GffList paramList) return;
+
+        for (int p = 0; p < paramList.Elements.Count; p++)
+        {
+            var key = paramList.Elements[p].GetField("Key")?.Value as string ?? string.Empty;
+            var value = paramList.Elements[p].GetField("Value")?.Value as string ?? string.Empty;
+
+            // Substring match in VALUE only (per spec Tier 2 — keys are parameter names)
+            var idx = value.IndexOf(oldResRef, StringComparison.OrdinalIgnoreCase);
+            if (idx < 0) continue;
+
+            // Location format: when nodeIndex >= 0 (direct on node), use "{Kind} {N} > {field}..."
+            // When nodeIndex < 0, the caller already provided the full prefix in nodeKind.
+            var locationPrefix = nodeIndex >= 0
+                ? $"{nodeKind} {nodeIndex} > {paramFieldName}[{p}] ({key})"
+                : $"{nodeKind} > {paramFieldName}[{p}] ({key})";
+
+            results.Add(new ResRefReference
+            {
+                FilePath = filePath,
+                ResourceType = ResourceTypes.Dlg,
+                Field = null,  // no registered FieldDefinition for params; orchestrator branches on ScopeTier
+                Location = locationPrefix,
+                OldValue = value,
+                NewValue = string.Empty,
+                ScopeTier = ResRefScopeTier.DlgScriptParam,
+                MatchOffset = idx,
+                MatchLength = oldResRef.Length
+            });
         }
     }
 
