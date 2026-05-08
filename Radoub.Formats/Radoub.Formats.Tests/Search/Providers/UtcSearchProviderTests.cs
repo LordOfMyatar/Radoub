@@ -366,4 +366,81 @@ public class UtcSearchProviderTests
         Assert.Contains(".utc", provider.Extensions);
         Assert.Contains(".bic", provider.Extensions);
     }
+
+    // --- ResRef replace bypass (AllowResRefReplace) ---
+
+    [Fact]
+    public void Replace_ResRefField_WithAllowResRefReplace_Succeeds()
+    {
+        var provider = new UtcSearchProvider();
+        var gff = UtcToGff(CreateTestUtc());
+
+        var match = new SearchMatch
+        {
+            Field = new FieldDefinition
+            {
+                Name = "Conversation",
+                GffPath = "Conversation",
+                FieldType = SearchFieldType.ResRef,
+                Category = SearchFieldCategory.Metadata,
+                IsReplaceable = false
+            },
+            MatchedText = "louis_conv",
+            FullFieldValue = "louis_conv",
+            MatchOffset = 0,
+            MatchLength = "louis_conv".Length,
+            Location = "Conversation"
+        };
+
+        var op = new ReplaceOperation
+        {
+            Match = match,
+            ReplacementText = "louis",
+            AllowResRefReplace = true
+        };
+
+        var results = provider.Replace(gff, new[] { op });
+
+        Assert.Single(results);
+        Assert.True(results[0].Success);
+        Assert.Equal("louis_conv", results[0].OldValue);
+        Assert.Equal("louis", results[0].NewValue);
+    }
+
+    [Fact]
+    public void Replace_ResRefField_WithoutAllowResRefReplace_Skipped()
+    {
+        var provider = new UtcSearchProvider();
+        var gff = UtcToGff(CreateTestUtc());
+
+        var match = new SearchMatch
+        {
+            Field = new FieldDefinition
+            {
+                Name = "Conversation",
+                GffPath = "Conversation",
+                FieldType = SearchFieldType.ResRef,
+                Category = SearchFieldCategory.Metadata,
+                IsReplaceable = false
+            },
+            MatchedText = "louis_conv",
+            FullFieldValue = "louis_conv",
+            MatchOffset = 0,
+            MatchLength = "louis_conv".Length,
+            Location = "Conversation"
+        };
+
+        var op = new ReplaceOperation
+        {
+            Match = match,
+            ReplacementText = "louis"
+            // AllowResRefReplace defaults to false
+        };
+
+        var results = provider.Replace(gff, new[] { op });
+
+        Assert.Single(results);
+        Assert.False(results[0].Success);
+        Assert.True(results[0].Skipped);
+    }
 }

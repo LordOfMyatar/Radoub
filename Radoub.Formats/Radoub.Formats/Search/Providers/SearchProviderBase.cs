@@ -185,7 +185,12 @@ public abstract class SearchProviderBase
     {
         // ResRef fields are not replaceable — changing a ResRef without renaming
         // the referenced file on disk would silently break the reference.
-        if (!op.Match.Field.IsReplaceable)
+        // The rename orchestrator (Chunk 3) sets AllowResRefReplace=true on operations
+        // that update ResRef references as part of an atomic rename.
+        var allowResRef = op.AllowResRefReplace
+            && op.Match.Field.FieldType == SearchFieldType.ResRef;
+
+        if (!op.Match.Field.IsReplaceable && !allowResRef)
         {
             return new ReplaceResult
             {
