@@ -226,4 +226,16 @@ public class ResRefReferenceScannerTests
 
         Assert.DoesNotContain(refs, r => r.ScopeTier == ResRefScopeTier.DlgScriptParam);
     }
+
+    [Fact]
+    public void Scan_DlgConditionParam_FindsSubstringMatch()
+    {
+        var gff = TestGffBuilder.MakeDlgWithConditionParam(0, "check_resref", "louis");
+        var scanner = new ResRefReferenceScanner();
+
+        var refs = scanner.Scan(gff, ResourceTypes.Dlg, oldResRef: "louis", filePath: "/m/x.dlg");
+
+        Assert.Contains(refs, r => r.ScopeTier == ResRefScopeTier.DlgScriptParam
+            && r.Location.Contains("ConditionParams"));
+    }
 }
