@@ -238,4 +238,29 @@ public class ResRefReferenceScannerTests
         Assert.Contains(refs, r => r.ScopeTier == ResRefScopeTier.DlgScriptParam
             && r.Location.Contains("ConditionParams"));
     }
+
+    public static IEnumerable<object[]> IfoScalarFieldData() => new[]
+    {
+        new object[] { "Mod_Entry_Area", (Func<string, GffFile>)((string s) => TestGffBuilder.MakeIfo(entryArea: s)) },
+        new object[] { "Mod_DefaultBic", (Func<string, GffFile>)((string s) => TestGffBuilder.MakeIfo(defaultBic: s)) },
+        new object[] { "Mod_StartMovie", (Func<string, GffFile>)((string s) => TestGffBuilder.MakeIfo(startMovie: s)) },
+        new object[] { "Mod_CustomTlk",  (Func<string, GffFile>)((string s) => TestGffBuilder.MakeIfo(customTlk: s)) },
+        new object[] { "Mod_OnHeartbeat", (Func<string, GffFile>)((string s) => TestGffBuilder.MakeIfo(onHeartbeat: s)) }
+    };
+
+    [Theory]
+    [MemberData(nameof(IfoScalarFieldData))]
+    public void Scan_IfoScalarField_FindsReference(string registeredGffPath, Func<string, GffFile> builder)
+    {
+        var gff = builder("test_target");
+        var scanner = new ResRefReferenceScanner();
+
+        var refs = scanner.Scan(gff, ResourceTypes.Ifo, oldResRef: "test_target", filePath: "/m/module.ifo");
+
+        Assert.Single(refs);
+        // The registered Field.Name often differs from the GFF path — match on GffPath for robustness
+        Assert.True(
+            refs[0].Field?.GffPath == registeredGffPath || refs[0].Field?.Name == registeredGffPath,
+            $"Expected field GffPath or Name '{registeredGffPath}', got Name='{refs[0].Field?.Name}' GffPath='{refs[0].Field?.GffPath}'");
+    }
 }

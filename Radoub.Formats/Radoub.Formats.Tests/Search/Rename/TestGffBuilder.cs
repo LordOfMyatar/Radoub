@@ -224,7 +224,28 @@ internal static class TestGffBuilder
         string? defaultBic = null,
         string? startMovie = null,
         string? customTlk = null,
-        string? onPlayerHeartbeat = null) => throw new NotImplementedException();
+        string? onHeartbeat = null)
+    {
+        var root = new GffStruct { Type = 0xFFFFFFFF };
+        if (entryArea != null) GffFieldBuilder.AddCResRefField(root, "Mod_Entry_Area", entryArea);
+        if (defaultBic != null) GffFieldBuilder.AddCResRefField(root, "Mod_DefaultBic", defaultBic);
+        if (startMovie != null) GffFieldBuilder.AddCResRefField(root, "Mod_StartMovie", startMovie);
+        if (customTlk != null) GffFieldBuilder.AddCResRefField(root, "Mod_CustomTlk", customTlk);
+        if (onHeartbeat != null) GffFieldBuilder.AddCResRefField(root, "Mod_OnHeartbeat", onHeartbeat);
+        return new GffFile { FileType = "IFO ", FileVersion = "V3.2", RootStruct = root };
+    }
 
-    public static GffFile MakeIfoWithHakList(params string[] hakResRefs) => throw new NotImplementedException();
+    public static GffFile MakeIfoWithHakList(params string[] hakResRefs)
+    {
+        var root = new GffStruct { Type = 0xFFFFFFFF };
+        var haks = new List<GffStruct>();
+        foreach (var rr in hakResRefs)
+        {
+            var hakStruct = new GffStruct { Type = 0 };
+            GffFieldBuilder.AddCResRefField(hakStruct, "Mod_Hak", rr);
+            haks.Add(hakStruct);
+        }
+        GffFieldBuilder.AddListField(root, "Mod_HakList", haks);
+        return new GffFile { FileType = "IFO ", FileVersion = "V3.2", RootStruct = root };
+    }
 }
