@@ -27,12 +27,16 @@ public class BatchReplaceService
     /// <summary>
     /// Generate a preview of all changes from search results.
     /// All changes are selected by default.
+    /// When <paramref name="allowResRefReplace"/> is true, ResRef-typed fields
+    /// are also included in the preview even if their FieldDefinition.IsReplaceable
+    /// is false (used by the filename-rename mode — see spec Section 5).
     /// </summary>
     public BatchReplacePreview PreviewReplace(
         IReadOnlyList<FileSearchResult> fileResults,
-        string replacementText)
+        string replacementText,
+        bool allowResRefReplace = false)
     {
-        var preview = new BatchReplacePreview();
+        var preview = new BatchReplacePreview { AllowResRefReplace = allowResRefReplace };
 
         foreach (var fileResult in fileResults)
         {
@@ -44,7 +48,13 @@ public class BatchReplaceService
 
             foreach (var match in fileResult.Matches)
             {
-                if (!match.Field.IsReplaceable) continue;
+                // Original: skip non-replaceable fields.
+                // New: when allowResRefReplace is true, ResRef fields are also included
+                // even if their FieldDefinition.IsReplaceable is false.
+                var isReplaceable = match.Field.IsReplaceable
+                    || (allowResRefReplace && match.Field.FieldType == SearchFieldType.ResRef);
+
+                if (!isReplaceable) continue;
 
                 var change = new PendingChange
                 {

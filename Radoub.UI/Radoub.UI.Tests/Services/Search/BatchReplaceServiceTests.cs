@@ -1,3 +1,4 @@
+using Radoub.Formats.Common;
 using Radoub.Formats.Dlg;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Search;
@@ -200,4 +201,69 @@ public class BatchReplaceServiceTests : IDisposable
         Assert.True(result.Success);
         Assert.Equal(0, result.FilesModified);
     }
+
+    // --- ResRef bypass (allowResRefReplace) ---
+
+    [Fact]
+    public void PreviewReplace_WithAllowResRefReplace_IncludesResRefFields()
+    {
+        // Build a FileSearchResult containing a ResRef-field match with IsReplaceable=false
+        var resRefField = new FieldDefinition
+        {
+            Name = "TemplateResRef",
+            GffPath = "TemplateResRef",
+            FieldType = SearchFieldType.ResRef,
+            Category = SearchFieldCategory.Identity,
+            IsReplaceable = false  // ResRef fields are non-replaceable in normal mode
+        };
+        var match = MakeMatch(resRefField, "louis_roumain");
+        var fileResult = MakeFileResult(Path.Combine(_testDir, "test.utc"), new[] { match });
+
+        var preview = _service.PreviewReplace(
+            new[] { fileResult },
+            replacementText: "bob",
+            allowResRefReplace: true);
+
+        Assert.Single(preview.Changes);
+        Assert.Equal("TemplateResRef", preview.Changes[0].Match.Field.Name);
+        Assert.True(preview.AllowResRefReplace);
+    }
+
+    [Fact]
+    public void PreviewReplace_WithoutAllowResRefReplace_SkipsResRefFields()
+    {
+        var resRefField = new FieldDefinition
+        {
+            Name = "TemplateResRef", GffPath = "TemplateResRef",
+            FieldType = SearchFieldType.ResRef,
+            Category = SearchFieldCategory.Identity,
+            IsReplaceable = false
+        };
+        var match = MakeMatch(resRefField, "louis_roumain");
+        var fileResult = MakeFileResult(Path.Combine(_testDir, "test.utc"), new[] { match });
+
+        // Default (allowResRefReplace omitted, defaults to false)
+        var preview = _service.PreviewReplace(new[] { fileResult }, replacementText: "bob");
+
+        Assert.Empty(preview.Changes);
+        Assert.False(preview.AllowResRefReplace);
+    }
+
+    private static SearchMatch MakeMatch(FieldDefinition field, string value) => new()
+    {
+        Field = field,
+        MatchedText = value,
+        FullFieldValue = value,
+        MatchOffset = 0,
+        MatchLength = value.Length,
+        Location = "test"
+    };
+
+    private static FileSearchResult MakeFileResult(string path, IEnumerable<SearchMatch> matches) => new()
+    {
+        FilePath = path,
+        ResourceType = ResourceTypes.Utc,
+        ToolId = "quartermaster",
+        Matches = matches.ToList()
+    };
 }
