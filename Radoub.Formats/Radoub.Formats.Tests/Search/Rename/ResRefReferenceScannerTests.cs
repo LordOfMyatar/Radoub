@@ -21,4 +21,19 @@ public class ResRefReferenceScannerTests
         Assert.Equal("louis_roumain", refs[0].OldValue);
         Assert.Equal(ResRefScopeTier.TypedGffField, refs[0].ScopeTier);
     }
+
+    [Theory]
+    [InlineData("Louis_Roumain")]
+    [InlineData("LOUIS_ROUMAIN")]
+    [InlineData("louis_roumain")]
+    public void Scan_FindsCaseInsensitiveMatches(string actualValueInGff)
+    {
+        var gff = TestGffBuilder.MakeUtc(conversation: actualValueInGff);
+        var scanner = new ResRefReferenceScanner();
+
+        var refs = scanner.Scan(gff, ResourceTypes.Utc, oldResRef: "louis_roumain", filePath: "/m/test.utc");
+
+        Assert.Single(refs);
+        Assert.Equal(actualValueInGff, refs[0].OldValue);  // preserves original case in OldValue
+    }
 }
