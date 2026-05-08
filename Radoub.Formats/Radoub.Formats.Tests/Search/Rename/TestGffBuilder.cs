@@ -78,8 +78,20 @@ internal static class TestGffBuilder
     public static GffFile MakeGitWithList(string listName, string resRefField, params string[] resRefs) => throw new NotImplementedException();
 
     // --- ARE ---
-    public static GffFile MakeAre(string? onEnterScript = null) => throw new NotImplementedException();
-    public static GffFile MakeAreWithScriptField(string fieldName, string scriptResRef) => throw new NotImplementedException();
+    public static GffFile MakeAre(string? onEnterScript = null)
+    {
+        var root = new GffStruct { Type = 0xFFFFFFFF };
+        if (onEnterScript != null)
+            GffFieldBuilder.AddCResRefField(root, "OnEnter", onEnterScript);
+        return new GffFile { FileType = "ARE ", FileVersion = "V3.2", RootStruct = root };
+    }
+
+    public static GffFile MakeAreWithScriptField(string fieldName, string scriptResRef)
+    {
+        var root = new GffStruct { Type = 0xFFFFFFFF };
+        GffFieldBuilder.AddCResRefField(root, fieldName, scriptResRef);
+        return new GffFile { FileType = "ARE ", FileVersion = "V3.2", RootStruct = root };
+    }
 
     // --- IFO ---
     public static GffFile MakeIfo(

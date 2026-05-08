@@ -61,4 +61,20 @@ public class ResRefReferenceScannerTests
         Assert.Equal(SearchFieldType.Script, refs[0].Field!.FieldType);
         Assert.Equal(SearchFieldCategory.Script, refs[0].Field!.Category);
     }
+
+    [Theory]
+    [InlineData("OnEnter")]
+    [InlineData("OnExit")]
+    [InlineData("OnHeartbeat")]
+    [InlineData("OnUserDefined")]
+    public void Scan_AreScriptField_FindsReference(string fieldName)
+    {
+        var gff = TestGffBuilder.MakeAreWithScriptField(fieldName, "test_script");
+        var scanner = new ResRefReferenceScanner();
+
+        var refs = scanner.Scan(gff, ResourceTypes.Are, oldResRef: "test_script", filePath: "/m/area.are");
+
+        Assert.Single(refs);
+        Assert.Equal(fieldName, refs[0].Field?.Name);
+    }
 }
