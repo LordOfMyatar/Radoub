@@ -138,4 +138,19 @@ public class ResRefReferenceScannerTests
         Assert.Single(refs);
         Assert.Contains(listName, refs[0].Location);
     }
+
+    [Theory]
+    [InlineData("utc")]  // standard UTC creature blueprint
+    [InlineData("bic")]  // BIC player character — same structure
+    public void Scan_UtcEquipmentSlots_FindsReference(string ext)
+    {
+        var resourceType = ext == "utc" ? ResourceTypes.Utc : ResourceTypes.Bic;
+        var gff = TestGffBuilder.MakeUtc(equipResRefs: new[] { "louis_sword", "alice_shield", "louis_sword" });
+        var scanner = new ResRefReferenceScanner();
+
+        var refs = scanner.Scan(gff, resourceType, oldResRef: "louis_sword", filePath: $"/m/test.{ext}");
+
+        Assert.Equal(2, refs.Count);
+        Assert.All(refs, r => Assert.Contains("Equip_ItemList", r.Location));
+    }
 }

@@ -42,7 +42,64 @@ public class ResRefReferenceScanner
         if (resourceType == ResourceTypes.Git)
             ScanGitInstanceLists(gffFile, oldResRef, filePath, results);
 
+        if (resourceType == ResourceTypes.Utc || resourceType == ResourceTypes.Bic)
+            ScanUtcEquipAndInventory(gffFile, resourceType, oldResRef, filePath, results);
+
         return results;
+    }
+
+    private static readonly FieldDefinition EquipResField = new()
+    {
+        Name = "EquipRes",
+        GffPath = "EquipRes",
+        FieldType = SearchFieldType.ResRef,
+        Category = SearchFieldCategory.Identity,
+        Description = "Equipped item ResRef",
+        IsReplaceable = false
+    };
+
+    private static readonly FieldDefinition InventoryResField = new()
+    {
+        Name = "InventoryRes",
+        GffPath = "InventoryRes",
+        FieldType = SearchFieldType.ResRef,
+        Category = SearchFieldCategory.Identity,
+        Description = "Inventory item ResRef",
+        IsReplaceable = false
+    };
+
+    private static ResRefReference MakeRef(
+        string filePath, ushort resourceType, FieldDefinition field,
+        string location, string oldValue) => new()
+    {
+        FilePath = filePath,
+        ResourceType = resourceType,
+        Field = field,
+        Location = location,
+        OldValue = oldValue,
+        NewValue = string.Empty,
+        ScopeTier = ResRefScopeTier.TypedGffField
+    };
+
+    private void ScanUtcEquipAndInventory(
+        GffFile gff, ushort resourceType, string oldResRef, string filePath, List<ResRefReference> results)
+    {
+        var equipField = gff.RootStruct.GetField("Equip_ItemList");
+        if (equipField?.Value is GffList equipList)
+        {
+            for (int i = 0; i < equipList.Elements.Count; i++)
+            {
+                var f = equipList.Elements[i].GetField("EquipRes");
+                if (f?.Value is string v
+                    && string.Equals(v, oldResRef, StringComparison.OrdinalIgnoreCase))
+                {
+                    results.Add(MakeRef(filePath, resourceType, EquipResField,
+                        $"Equip_ItemList > Slot {i} > EquipRes", v));
+                }
+            }
+        }
+
+        // Inventory ItemList walked in Task 1b.12
     }
 
     private static readonly (string ListName, string ResRefField)[] GitInstanceLists =
