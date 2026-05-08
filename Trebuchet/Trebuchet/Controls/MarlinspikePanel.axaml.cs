@@ -327,7 +327,10 @@ public partial class MarlinspikePanel : UserControl
         if (filesWithMatches.Count == 0) return;
 
         var replaceText = _viewModel.ReplaceText;
-        var preview = _batchReplaceService!.PreviewReplace(filesWithMatches, replaceText);
+        var preview = _batchReplaceService!.PreviewReplace(
+            filesWithMatches,
+            replaceText,
+            allowResRefReplace: _viewModel.SearchFilenameResRef);
 
         var previewWindow = new ReplacePreviewWindow();
         previewWindow.Initialize(preview, _viewModel.SearchPattern, replaceText, _batchReplaceService);
