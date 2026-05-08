@@ -275,4 +275,31 @@ public class ResRefReferenceScannerTests
         Assert.Single(refs);
         Assert.Contains("Mod_HakList", refs[0].Location);
     }
+
+    public static IEnumerable<object[]> CoverageMatrixData() => new[]
+    {
+        // resourceType, builder factory, oldResRef
+        new object[] { ResourceTypes.Utc, (Func<GffFile>)(() => TestGffBuilder.MakeUtc(conversation: "rr")), "rr" },
+        new object[] { ResourceTypes.Bic, (Func<GffFile>)(() => TestGffBuilder.MakeUtc(conversation: "rr")), "rr" },  // BIC == UTC
+        new object[] { ResourceTypes.Uti, (Func<GffFile>)(() => TestGffBuilder.MakeUti(onAcquireScript: "rr")), "rr" },
+        new object[] { ResourceTypes.Utm, (Func<GffFile>)(() => TestGffBuilder.MakeUtmWithItems("Weapons", "rr")), "rr" },
+        new object[] { ResourceTypes.Utp, (Func<GffFile>)(() => TestGffBuilder.MakeUtpWithInventory("rr")), "rr" },
+        new object[] { ResourceTypes.Utd, (Func<GffFile>)(() => TestGffBuilder.MakeUtd(conversation: "rr")), "rr" },
+        new object[] { ResourceTypes.Dlg, (Func<GffFile>)(() => TestGffBuilder.MakeDlgWithSound(0, "rr")), "rr" },
+        new object[] { ResourceTypes.Git, (Func<GffFile>)(() => TestGffBuilder.MakeGitWithList("Creature List", "TemplateResRef", "rr")), "rr" },
+        new object[] { ResourceTypes.Are, (Func<GffFile>)(() => TestGffBuilder.MakeAreWithScriptField("OnEnter", "rr")), "rr" },
+        new object[] { ResourceTypes.Ifo, (Func<GffFile>)(() => TestGffBuilder.MakeIfo(entryArea: "rr")), "rr" }
+    };
+
+    [Theory]
+    [MemberData(nameof(CoverageMatrixData))]
+    public void Scan_CoversAllSpecTier1FileTypes(ushort resourceType, Func<GffFile> builder, string oldResRef)
+    {
+        var gff = builder();
+        var scanner = new ResRefReferenceScanner();
+
+        var refs = scanner.Scan(gff, resourceType, oldResRef, filePath: $"/m/test.{resourceType}");
+
+        Assert.NotEmpty(refs);
+    }
 }
