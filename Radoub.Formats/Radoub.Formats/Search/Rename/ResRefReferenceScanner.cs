@@ -48,7 +48,37 @@ public class ResRefReferenceScanner
         if (resourceType == ResourceTypes.Utp)
             ScanUtpInventory(gffFile, oldResRef, filePath, results);
 
+        if (resourceType == ResourceTypes.Utm)
+            ScanUtmStorePanels(gffFile, oldResRef, filePath, results);
+
         return results;
+    }
+
+    private void ScanUtmStorePanels(
+        GffFile gff, string oldResRef, string filePath, List<ResRefReference> results)
+    {
+        var storeListField = gff.RootStruct.GetField("StoreList");
+        if (storeListField?.Value is not GffList storeList) return;
+
+        foreach (var panel in storeList.Elements)
+        {
+            // UTM panel name comes from the struct Type discriminator (StorePanels constants).
+            var panelName = Utm.StorePanels.GetPanelName((int)panel.Type);
+
+            var itemListField = panel.GetField("ItemList");
+            if (itemListField?.Value is not GffList itemList) continue;
+
+            for (int i = 0; i < itemList.Elements.Count; i++)
+            {
+                var f = itemList.Elements[i].GetField("InventoryRes");
+                if (f?.Value is string v
+                    && string.Equals(v, oldResRef, StringComparison.OrdinalIgnoreCase))
+                {
+                    results.Add(MakeRef(filePath, ResourceTypes.Utm, InventoryResField,
+                        $"{panelName} > Item {i} > InventoryRes", v));
+                }
+            }
+        }
     }
 
     private void ScanUtpInventory(

@@ -177,4 +177,17 @@ public class ResRefReferenceScannerTests
         Assert.Equal(2, refs.Count);
         Assert.All(refs, r => Assert.Contains("ItemList", r.Location));
     }
+
+    [Fact]
+    public void Scan_UtmStorePanelItems_FindsReference()
+    {
+        var gff = TestGffBuilder.MakeUtmWithItems("Weapons", "louis_sword", "key3", "louis_sword");
+        var scanner = new ResRefReferenceScanner();
+
+        var refs = scanner.Scan(gff, ResourceTypes.Utm, oldResRef: "louis_sword", filePath: "/m/store.utm");
+
+        Assert.Equal(2, refs.Count);
+        Assert.All(refs, r => Assert.Contains("Weapons", r.Location));
+        Assert.All(refs, r => Assert.Contains("InventoryRes", r.Location));
+    }
 }

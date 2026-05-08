@@ -59,7 +59,36 @@ internal static class TestGffBuilder
     // --- UTM ---
     public static GffFile MakeUtmWithItems(
         string panelName,
-        params string[] itemResRefs) => throw new NotImplementedException();
+        params string[] itemResRefs)
+    {
+        var root = new GffStruct { Type = 0xFFFFFFFF };
+        var storeList = new List<GffStruct>();
+
+        // Map panel name to canonical store panel ID (used as struct.Type per UtmReader/Writer)
+        var panelId = panelName switch
+        {
+            "Armor" => Radoub.Formats.Utm.StorePanels.Armor,
+            "Miscellaneous" => Radoub.Formats.Utm.StorePanels.Miscellaneous,
+            "Potions/Scrolls" => Radoub.Formats.Utm.StorePanels.Potions,
+            "Rings/Amulets" => Radoub.Formats.Utm.StorePanels.RingsAmulets,
+            "Weapons" => Radoub.Formats.Utm.StorePanels.Weapons,
+            _ => 0
+        };
+        var panel = new GffStruct { Type = (uint)panelId };
+
+        var items = new List<GffStruct>();
+        foreach (var rr in itemResRefs)
+        {
+            var item = new GffStruct { Type = 0 };
+            GffFieldBuilder.AddCResRefField(item, "InventoryRes", rr);
+            items.Add(item);
+        }
+        GffFieldBuilder.AddListField(panel, "ItemList", items);
+        storeList.Add(panel);
+        GffFieldBuilder.AddListField(root, "StoreList", storeList);
+
+        return new GffFile { FileType = "UTM ", FileVersion = "V3.2", RootStruct = root };
+    }
 
     // --- UTP ---
     public static GffFile MakeUtpWithInventory(params string[] inventoryResRefs)
