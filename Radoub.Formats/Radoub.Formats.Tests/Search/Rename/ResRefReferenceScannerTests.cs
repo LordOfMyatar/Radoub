@@ -165,4 +165,16 @@ public class ResRefReferenceScannerTests
         Assert.Equal(2, refs.Count);
         Assert.All(refs, r => Assert.Contains("ItemList", r.Location));
     }
+
+    [Fact]
+    public void Scan_UtpInventory_FindsReference()
+    {
+        var gff = TestGffBuilder.MakeUtpWithInventory("trap_part", "key2", "trap_part");
+        var scanner = new ResRefReferenceScanner();
+
+        var refs = scanner.Scan(gff, ResourceTypes.Utp, oldResRef: "trap_part", filePath: "/m/chest.utp");
+
+        Assert.Equal(2, refs.Count);
+        Assert.All(refs, r => Assert.Contains("ItemList", r.Location));
+    }
 }

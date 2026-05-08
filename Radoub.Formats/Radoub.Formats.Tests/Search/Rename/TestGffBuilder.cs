@@ -62,7 +62,19 @@ internal static class TestGffBuilder
         params string[] itemResRefs) => throw new NotImplementedException();
 
     // --- UTP ---
-    public static GffFile MakeUtpWithInventory(params string[] inventoryResRefs) => throw new NotImplementedException();
+    public static GffFile MakeUtpWithInventory(params string[] inventoryResRefs)
+    {
+        var root = new GffStruct { Type = 0xFFFFFFFF };
+        var items = new List<GffStruct>();
+        foreach (var rr in inventoryResRefs)
+        {
+            var item = new GffStruct { Type = 0 };
+            GffFieldBuilder.AddCResRefField(item, "InventoryRes", rr);
+            items.Add(item);
+        }
+        GffFieldBuilder.AddListField(root, "ItemList", items);
+        return new GffFile { FileType = "UTP ", FileVersion = "V3.2", RootStruct = root };
+    }
 
     // --- UTD ---
     public static GffFile MakeUtd(string? conversation = null)

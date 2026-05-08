@@ -45,7 +45,28 @@ public class ResRefReferenceScanner
         if (resourceType == ResourceTypes.Utc || resourceType == ResourceTypes.Bic)
             ScanUtcEquipAndInventory(gffFile, resourceType, oldResRef, filePath, results);
 
+        if (resourceType == ResourceTypes.Utp)
+            ScanUtpInventory(gffFile, oldResRef, filePath, results);
+
         return results;
+    }
+
+    private void ScanUtpInventory(
+        GffFile gff, string oldResRef, string filePath, List<ResRefReference> results)
+    {
+        var itemListField = gff.RootStruct.GetField("ItemList");
+        if (itemListField?.Value is not GffList itemList) return;
+
+        for (int i = 0; i < itemList.Elements.Count; i++)
+        {
+            var f = itemList.Elements[i].GetField("InventoryRes");
+            if (f?.Value is string v
+                && string.Equals(v, oldResRef, StringComparison.OrdinalIgnoreCase))
+            {
+                results.Add(MakeRef(filePath, ResourceTypes.Utp, InventoryResField,
+                    $"ItemList > Item {i} > InventoryRes", v));
+            }
+        }
     }
 
     private static readonly FieldDefinition EquipResField = new()
