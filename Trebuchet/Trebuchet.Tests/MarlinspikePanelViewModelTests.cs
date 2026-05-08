@@ -346,6 +346,114 @@ public class MarlinspikePanelViewModelTests
         Assert.True(vm.CanSearch);
     }
 
+    // --- Filename/ResRef rename feature (Chunk 4) ---
+
+    [Fact]
+    public void SearchFilenameResRef_DefaultsToFalse()
+    {
+        var vm = new MarlinspikePanelViewModel();
+        Assert.False(vm.SearchFilenameResRef);
+    }
+
+    [Fact]
+    public void IncludeNss_DefaultsToTrue()
+    {
+        var vm = new MarlinspikePanelViewModel();
+        Assert.True(vm.IncludeNss);
+    }
+
+    [Fact]
+    public void HasAnyFileTypeSelected_TrueWhenOnlyNssChecked()
+    {
+        var vm = new MarlinspikePanelViewModel();
+        vm.DeselectAllFileTypes();
+        vm.IncludeNss = true;
+
+        Assert.True(vm.HasAnyFileTypeSelected);
+    }
+
+    [Fact]
+    public void TogglingSearchFilenameResRefOn_SelectsAllFileTypes()
+    {
+        var vm = new MarlinspikePanelViewModel();
+        vm.DeselectAllFileTypes();
+        vm.SelectedCategory = "Identity";
+
+        vm.SearchFilenameResRef = true;
+
+        Assert.True(vm.IncludeDlg);
+        Assert.True(vm.IncludeUtc);
+        Assert.True(vm.IncludeNss);
+        Assert.Equal("All Fields", vm.SelectedCategory);
+    }
+
+    [Fact]
+    public void TogglingSearchFilenameResRefOff_PreservesFileTypeSelection()
+    {
+        var vm = new MarlinspikePanelViewModel();
+        vm.SearchFilenameResRef = true;
+        vm.IncludeGit = false;
+        vm.IncludeIfo = false;
+
+        vm.SearchFilenameResRef = false;
+
+        Assert.False(vm.IncludeGit);
+        Assert.False(vm.IncludeIfo);
+    }
+
+    [Fact]
+    public void ShowScopeNarrowingWarning_FalseWhenSearchFilenameResRefIsOff()
+    {
+        var vm = new MarlinspikePanelViewModel();
+        vm.SearchFilenameResRef = false;
+        vm.IncludeGit = false;
+
+        Assert.False(vm.ShowScopeNarrowingWarning);
+    }
+
+    [Fact]
+    public void ShowScopeNarrowingWarning_FalseWhenAllFileTypesChecked()
+    {
+        var vm = new MarlinspikePanelViewModel();
+        vm.SearchFilenameResRef = true;
+
+        Assert.False(vm.ShowScopeNarrowingWarning);
+    }
+
+    [Fact]
+    public void ShowScopeNarrowingWarning_TrueWhenScopeNarrowed()
+    {
+        var vm = new MarlinspikePanelViewModel();
+        vm.SearchFilenameResRef = true;
+        vm.IncludeGit = false;
+
+        Assert.True(vm.ShowScopeNarrowingWarning);
+    }
+
+    [Fact]
+    public void BuildSearchCriteria_PropagatesIncludeFilenameResRef()
+    {
+        var vm = new MarlinspikePanelViewModel();
+        vm.SearchPattern = "louis";
+        vm.SearchFilenameResRef = true;
+
+        var criteria = vm.BuildSearchCriteria();
+
+        Assert.True(criteria.IncludeFilenameResRef);
+    }
+
+    [Fact]
+    public void BuildSearchCriteria_AllTypesChecked_IncludingNss_NullFileTypeFilter()
+    {
+        var vm = new MarlinspikePanelViewModel();
+        vm.SearchPattern = "test";
+        // All 18 types default to checked, including Nss.
+
+        var criteria = vm.BuildSearchCriteria();
+
+        Assert.Null(criteria.FileTypeFilter);
+    }
+
     private static ModuleSearchResults CreateTestResults()
     {
         var match = new SearchMatch

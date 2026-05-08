@@ -40,6 +40,10 @@ public partial class MarlinspikePanelViewModel : ObservableObject
     private bool _searchStrRefs;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowScopeNarrowingWarning))]
+    private bool _searchFilenameResRef;
+
+    [ObservableProperty]
     private string _selectedCategory = "All Fields";
 
     // --- Search state ---
@@ -68,23 +72,24 @@ public partial class MarlinspikePanelViewModel : ObservableObject
 
     // --- File type checkboxes ---
 
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeDlg = true;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeUtc = true;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeBic = true;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeUti = true;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeUtm = true;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeJrl = true;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeUtp = true;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeUtd = true;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeUte = true;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeUtt = true;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeUtw = true;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeUts = true;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeGit = true;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeAre = true;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeIfo = true;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeFac = true;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeItp = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected), nameof(ShowScopeNarrowingWarning))] private bool _includeDlg = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected), nameof(ShowScopeNarrowingWarning))] private bool _includeUtc = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected), nameof(ShowScopeNarrowingWarning))] private bool _includeBic = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected), nameof(ShowScopeNarrowingWarning))] private bool _includeUti = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected), nameof(ShowScopeNarrowingWarning))] private bool _includeUtm = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected), nameof(ShowScopeNarrowingWarning))] private bool _includeJrl = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected), nameof(ShowScopeNarrowingWarning))] private bool _includeUtp = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected), nameof(ShowScopeNarrowingWarning))] private bool _includeUtd = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected), nameof(ShowScopeNarrowingWarning))] private bool _includeUte = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected), nameof(ShowScopeNarrowingWarning))] private bool _includeUtt = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected), nameof(ShowScopeNarrowingWarning))] private bool _includeUtw = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected), nameof(ShowScopeNarrowingWarning))] private bool _includeUts = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected), nameof(ShowScopeNarrowingWarning))] private bool _includeGit = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected), nameof(ShowScopeNarrowingWarning))] private bool _includeAre = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected), nameof(ShowScopeNarrowingWarning))] private bool _includeIfo = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected), nameof(ShowScopeNarrowingWarning))] private bool _includeFac = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected), nameof(ShowScopeNarrowingWarning))] private bool _includeItp = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected), nameof(ShowScopeNarrowingWarning))] private bool _includeNss = true;
 
     // --- Category list ---
 
@@ -104,11 +109,41 @@ public partial class MarlinspikePanelViewModel : ObservableObject
         IncludeDlg || IncludeUtc || IncludeBic || IncludeUti || IncludeUtm ||
         IncludeJrl || IncludeUtp || IncludeUtd || IncludeUte || IncludeUtt ||
         IncludeUtw || IncludeUts || IncludeGit || IncludeAre || IncludeIfo ||
-        IncludeFac || IncludeItp;
+        IncludeFac || IncludeItp || IncludeNss;
 
     public bool CanSearch => !string.IsNullOrEmpty(SearchPattern) && !IsSearching && HasAnyFileTypeSelected;
 
     public bool CanReplace => HasResults && !string.IsNullOrEmpty(ReplaceText) && !IsSearching;
+
+    /// <summary>
+    /// Visible only when SearchFilenameResRef is ON and at least one file-type
+    /// checkbox is unchecked — warns the user that references in unchecked file
+    /// types will not be updated. See spec Section 8.
+    /// </summary>
+    public bool ShowScopeNarrowingWarning
+    {
+        get
+        {
+            if (!SearchFilenameResRef) return false;
+            return !(IncludeDlg && IncludeUtc && IncludeBic && IncludeUti && IncludeUtm &&
+                     IncludeJrl && IncludeUtp && IncludeUtd && IncludeUte && IncludeUtt &&
+                     IncludeUtw && IncludeUts && IncludeGit && IncludeAre && IncludeIfo &&
+                     IncludeFac && IncludeItp && IncludeNss);
+        }
+    }
+
+    /// <summary>
+    /// CommunityToolkit.MVVM source-generator partial method: when SearchFilenameResRef
+    /// flips ON, auto-select all file types and reset the category filter. Turning OFF
+    /// preserves whatever the user last set. Per spec Section 8.
+    /// </summary>
+    partial void OnSearchFilenameResRefChanged(bool value)
+    {
+        if (!value) return;
+
+        SelectAllFileTypes();
+        SelectedCategory = "All Fields";
+    }
 
     // --- Methods ---
 
@@ -141,7 +176,8 @@ public partial class MarlinspikePanelViewModel : ObservableObject
             SearchStrRefs = SearchStrRefs,
             TlkResolver = TlkResolver,
             CategoryFilter = BuildCategoryFilter(),
-            FileTypeFilter = BuildFileTypeFilter()
+            FileTypeFilter = BuildFileTypeFilter(),
+            IncludeFilenameResRef = SearchFilenameResRef
         };
     }
 
@@ -235,6 +271,7 @@ public partial class MarlinspikePanelViewModel : ObservableObject
         IncludeIfo = true;
         IncludeFac = true;
         IncludeItp = true;
+        IncludeNss = true;
     }
 
     /// <summary>
@@ -259,6 +296,7 @@ public partial class MarlinspikePanelViewModel : ObservableObject
         IncludeIfo = false;
         IncludeFac = false;
         IncludeItp = false;
+        IncludeNss = false;
     }
 
     // --- Private helpers ---
@@ -280,7 +318,7 @@ public partial class MarlinspikePanelViewModel : ObservableObject
         if (IncludeDlg && IncludeUtc && IncludeBic && IncludeUti && IncludeUtm &&
             IncludeJrl && IncludeUtp && IncludeUtd && IncludeUte && IncludeUtt &&
             IncludeUtw && IncludeUts && IncludeGit && IncludeAre && IncludeIfo &&
-            IncludeFac && IncludeItp)
+            IncludeFac && IncludeItp && IncludeNss)
             return null;
 
         var types = new List<ushort>();
@@ -301,6 +339,7 @@ public partial class MarlinspikePanelViewModel : ObservableObject
         if (IncludeIfo) types.Add(ResourceTypes.Ifo);
         if (IncludeFac) types.Add(ResourceTypes.Fac);
         if (IncludeItp) types.Add(ResourceTypes.Itp);
+        if (IncludeNss) types.Add(ResourceTypes.Nss);
         return types;
     }
 
