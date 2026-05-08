@@ -107,6 +107,41 @@ public class ModuleSearchService
             scanned++;
         }
 
+        // Filename rename mode: add filename matches as an additional pass.
+        // This is module-scoped (one call per module), not per-file.
+        if (criteria.IncludeFilenameResRef)
+        {
+            var filenameProvider = new FilenameSearchProvider();
+            var filenameResults = filenameProvider.Search(modulePath, criteria);
+
+            foreach (var fnResult in filenameResults)
+            {
+                // If a per-file provider already returned a result for this file, merge filename
+                // match into the existing result's Matches list. Otherwise, add as a new result.
+                var existing = results.FirstOrDefault(r => r.FilePath == fnResult.FilePath);
+                if (existing != null)
+                {
+                    var merged = new FileSearchResult
+                    {
+                        FilePath = existing.FilePath,
+                        ResourceType = existing.ResourceType,
+                        ToolId = existing.ToolId,
+                        Matches = existing.Matches.Concat(fnResult.Matches).ToList(),
+                        HadParseError = existing.HadParseError,
+                        ParseError = existing.ParseError
+                    };
+                    var idx = results.IndexOf(existing);
+                    results[idx] = merged;
+                    matchesSoFar += fnResult.MatchCount;
+                }
+                else
+                {
+                    results.Add(fnResult);
+                    matchesSoFar += fnResult.MatchCount;
+                }
+            }
+        }
+
         sw.Stop();
 
         progress?.Report(new ScanProgress
