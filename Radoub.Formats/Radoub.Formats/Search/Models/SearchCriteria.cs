@@ -46,6 +46,13 @@ public class SearchCriteria
     public bool SearchStrRefs { get; init; }
 
     /// <summary>
+    /// When true, the search additionally includes filename matches (via FilenameSearchProvider)
+    /// AND ResRef field matches become replaceable in the preview. Off by default.
+    /// See spec Section 5 (NonPublic/Trebuchet/2026-05-03-resref-rename-design.md).
+    /// </summary>
+    public bool IncludeFilenameResRef { get; init; }
+
+    /// <summary>
     /// Callback that resolves a StrRef to its TLK string. Set by the caller
     /// (e.g., Marlinspike panel) when SearchStrRefs is enabled.
     /// Providers pass this to SearchLocString when SearchStrRefs is true.
