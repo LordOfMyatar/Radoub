@@ -65,9 +65,20 @@ internal static class TestGffBuilder
     public static GffFile MakeUtpWithInventory(params string[] inventoryResRefs) => throw new NotImplementedException();
 
     // --- UTD ---
-    public static GffFile MakeUtd(string? conversation = null) => throw new NotImplementedException();
+    public static GffFile MakeUtd(string? conversation = null)
+    {
+        var root = new GffStruct { Type = 0xFFFFFFFF };
+        if (conversation != null)
+            GffFieldBuilder.AddCResRefField(root, "Conversation", conversation);
+        return new GffFile { FileType = "UTD ", FileVersion = "V3.2", RootStruct = root };
+    }
 
-    public static GffFile MakeUtdWithScriptField(string fieldName, string scriptResRef) => throw new NotImplementedException();
+    public static GffFile MakeUtdWithScriptField(string fieldName, string scriptResRef)
+    {
+        var root = new GffStruct { Type = 0xFFFFFFFF };
+        GffFieldBuilder.AddCResRefField(root, fieldName, scriptResRef);
+        return new GffFile { FileType = "UTD ", FileVersion = "V3.2", RootStruct = root };
+    }
 
     // --- DLG ---
     public static GffFile MakeDlgWithSound(int entryIndex, string sound) => throw new NotImplementedException();

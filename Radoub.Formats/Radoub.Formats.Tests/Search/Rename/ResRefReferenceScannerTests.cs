@@ -77,4 +77,31 @@ public class ResRefReferenceScannerTests
         Assert.Single(refs);
         Assert.Equal(fieldName, refs[0].Field?.Name);
     }
+
+    [Fact]
+    public void Scan_UtdConversation_FindsReference()
+    {
+        var gff = TestGffBuilder.MakeUtd(conversation: "door_dialog");
+        var scanner = new ResRefReferenceScanner();
+
+        var refs = scanner.Scan(gff, ResourceTypes.Utd, oldResRef: "door_dialog", filePath: "/m/door.utd");
+
+        Assert.Single(refs);
+        Assert.Equal("Conversation", refs[0].Field?.Name);
+    }
+
+    [Theory]
+    [InlineData("OnOpen")]
+    [InlineData("OnLock")]
+    [InlineData("OnUnlock")]
+    public void Scan_UtdScriptField_FindsReference(string fieldName)
+    {
+        var gff = TestGffBuilder.MakeUtdWithScriptField(fieldName, "door_script");
+        var scanner = new ResRefReferenceScanner();
+
+        var refs = scanner.Scan(gff, ResourceTypes.Utd, oldResRef: "door_script", filePath: "/m/door.utd");
+
+        Assert.Single(refs);
+        Assert.Equal(fieldName, refs[0].Field?.Name);
+    }
 }
