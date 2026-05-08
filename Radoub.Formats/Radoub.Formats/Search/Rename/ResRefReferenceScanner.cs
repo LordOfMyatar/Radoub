@@ -99,7 +99,20 @@ public class ResRefReferenceScanner
             }
         }
 
-        // Inventory ItemList walked in Task 1b.12
+        var itemListField = gff.RootStruct.GetField("ItemList");
+        if (itemListField?.Value is GffList itemList)
+        {
+            for (int i = 0; i < itemList.Elements.Count; i++)
+            {
+                var f = itemList.Elements[i].GetField("InventoryRes");
+                if (f?.Value is string v
+                    && string.Equals(v, oldResRef, StringComparison.OrdinalIgnoreCase))
+                {
+                    results.Add(MakeRef(filePath, resourceType, InventoryResField,
+                        $"ItemList > Item {i} > InventoryRes", v));
+                }
+            }
+        }
     }
 
     private static readonly (string ListName, string ResRefField)[] GitInstanceLists =
