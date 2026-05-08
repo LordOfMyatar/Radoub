@@ -10,6 +10,7 @@ using Avalonia.Interactivity;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Search;
+using Radoub.Formats.Search.Rename;
 using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 using Radoub.UI.Services.Search;
@@ -304,17 +305,17 @@ public partial class MarlinspikePanel : UserControl
         }
     }
 
-    private void OnReplaceAllClick(object? sender, RoutedEventArgs e)
+    private async void OnReplaceAllClick(object? sender, RoutedEventArgs e)
     {
-        OpenReplacePreview(selectAll: true);
+        await OpenReplacePreviewAsync(selectAll: true);
     }
 
-    private void OnReplaceSelectedClick(object? sender, RoutedEventArgs e)
+    private async void OnReplaceSelectedClick(object? sender, RoutedEventArgs e)
     {
-        OpenReplacePreview(selectAll: true);
+        await OpenReplacePreviewAsync(selectAll: true);
     }
 
-    private void OpenReplacePreview(bool selectAll)
+    private async Task OpenReplacePreviewAsync(bool selectAll)
     {
         if (_viewModel == null || _parentWindow == null) return;
 
@@ -332,10 +333,139 @@ public partial class MarlinspikePanel : UserControl
             replaceText,
             allowResRefReplace: _viewModel.SearchFilenameResRef);
 
+        // Dispatch to ResRef rename orchestrator when filename matches present.
+        if (RenameDispatchHelpers.HasFilenameMatches(preview))
+        {
+            await DispatchResRefRenameAsync(preview);
+            return;
+        }
+
         var previewWindow = new ReplacePreviewWindow();
         previewWindow.Initialize(preview, _viewModel.SearchPattern, replaceText, _batchReplaceService);
         previewWindow.ReplacementComplete += OnReplacementComplete;
         previewWindow.Show(_parentWindow);
+    }
+
+    /// <summary>
+    /// Run the ResRef rename pipeline: build plans, populate references, surface
+    /// auto-suffix collision dialogs, and execute via ResRefRenameOrchestrator.
+    /// </summary>
+    private async Task DispatchResRefRenameAsync(BatchReplacePreview preview)
+    {
+        if (_viewModel == null || _parentWindow == null) return;
+
+        var moduleDir = ModulePath.GetWorkingDirectory(RadoubSettings.Instance.CurrentModulePath);
+        if (string.IsNullOrEmpty(moduleDir))
+        {
+            _viewModel.StatusText = "No module loaded — cannot rename.";
+            return;
+        }
+
+        var validator = new ResRefValidator();
+        var plans = RenameDispatchHelpers.BuildRenamePlansFromPreview(preview, moduleDir, validator);
+
+        if (plans.Count == 0)
+        {
+            _viewModel.StatusText = "Rename skipped — no valid filename targets (validator rejected all proposed names).";
+            return;
+        }
+
+        // Surface auto-suffix collision dialogs before proceeding.
+        // Each plan whose validation triggered an auto-suffix must be confirmed.
+        var confirmedPlans = new List<ResRefRenamePlan>();
+        foreach (var plan in plans)
+        {
+            if (!plan.Validation.AutoSuffixApplied)
+            {
+                confirmedPlans.Add(plan);
+                continue;
+            }
+
+            var originalProposed = ComputeOriginalProposedName(preview, plan);
+            var dialog = new AutoSuffixCollisionDialog(originalProposed, plan.NewName, plan.SourceFilePath);
+            await dialog.ShowDialog(_parentWindow);
+
+            switch (dialog.Result)
+            {
+                case AutoSuffixDialogResult.Continue:
+                    confirmedPlans.Add(plan);
+                    break;
+                case AutoSuffixDialogResult.PickAnother:
+                    _viewModel.StatusText = "Rename cancelled — adjust the replacement text and click Replace again to choose a different name.";
+                    return;
+                case AutoSuffixDialogResult.Cancel:
+                default:
+                    _viewModel.StatusText = "Rename cancelled.";
+                    return;
+            }
+        }
+
+        if (confirmedPlans.Count == 0)
+        {
+            _viewModel.StatusText = "Rename cancelled — no plans confirmed.";
+            return;
+        }
+
+        _viewModel.StatusText = "Scanning module for references...";
+
+        try
+        {
+            var criteria = _viewModel.BuildSearchCriteria();
+            await RenameDispatchHelpers.PopulateReferencesAsync(
+                confirmedPlans, moduleDir, _viewModel.IncludeNss, criteria);
+
+            var snapshotPaths = confirmedPlans
+                .SelectMany(p => p.References.Select(r => r.FilePath)
+                    .Concat(new[] { p.SourceFilePath }))
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+            var snapshots = ResRefRenameOrchestrator.CaptureSnapshots(snapshotPaths);
+
+            var moduleName = !string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath)
+                ? Path.GetFileName(RadoubSettings.Instance.CurrentModulePath)
+                : "unknown";
+
+            var orchestrator = new ResRefRenameOrchestrator(new BackupService());
+            var result = await orchestrator.ExecuteAsync(confirmedPlans, moduleName, snapshots);
+
+            if (result.Success)
+            {
+                _viewModel.StatusText =
+                    $"Renamed {result.RenamedFiles} file{(result.RenamedFiles != 1 ? "s" : "")}, " +
+                    $"updated {result.ReferencesUpdated} reference{(result.ReferencesUpdated != 1 ? "s" : "")}. Backup created.";
+                _viewModel.ClearResults();
+                ResultsTree.ItemsSource = null;
+            }
+            else
+            {
+                var rollbackNote = result.RollbackAttempted
+                    ? (result.RollbackSucceeded ? " — rolled back" : " — ROLLBACK FAILED, see backup manifest")
+                    : string.Empty;
+                _viewModel.StatusText = $"Rename failed: {result.Error}{rollbackNote}";
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"ResRef rename failed: {ex.Message}");
+            _viewModel.StatusText = $"Rename error: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Recover the user's original proposed name (before validator auto-suffixing)
+    /// by re-running ApplyReplacement against the matching PendingChange. Used
+    /// to populate the auto-suffix collision dialog text.
+    /// </summary>
+    private static string ComputeOriginalProposedName(BatchReplacePreview preview, ResRefRenamePlan plan)
+    {
+        var change = preview.Changes.FirstOrDefault(c =>
+            string.Equals(c.FilePath, plan.SourceFilePath, StringComparison.OrdinalIgnoreCase) &&
+            c.Match.Field.GffPath == FilenameSearchProvider.FilenameField.GffPath);
+
+        if (change == null) return plan.NewName;
+
+        var oldName = Path.GetFileNameWithoutExtension(plan.SourceFilePath);
+        var raw = RenameDispatchHelpers.ApplyReplacement(oldName, change.Match, change.ReplacementText);
+        return raw.ToLowerInvariant();
     }
 
     private void OnReplacementComplete(object? sender, BatchReplaceResult result)

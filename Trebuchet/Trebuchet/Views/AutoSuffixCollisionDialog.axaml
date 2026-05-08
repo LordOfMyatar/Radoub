@@ -1,0 +1,46 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="RadoubLauncher.Views.AutoSuffixCollisionDialog"
+        Title="Filename Already Exists"
+        Width="480" Height="220"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False">
+
+    <Border Padding="16">
+        <DockPanel>
+            <!-- Buttons -->
+            <StackPanel DockPanel.Dock="Bottom"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Spacing="8"
+                        Margin="0,12,0,0">
+                <Button Content="Continue"
+                        Click="OnContinueClick"
+                        IsDefault="True"
+                        Padding="20,6"
+                        ToolTip.Tip="Use the auto-suffixed name and proceed with the rename."/>
+                <Button Content="Pick a different name"
+                        Click="OnPickAnotherClick"
+                        Padding="20,6"
+                        ToolTip.Tip="Cancel this rename so you can edit the replacement text and try again."/>
+                <Button Content="Cancel"
+                        Click="OnCancelClick"
+                        IsCancel="True"
+                        Padding="20,6"
+                        ToolTip.Tip="Cancel the entire rename operation."/>
+            </StackPanel>
+
+            <!-- Message -->
+            <StackPanel Spacing="8" VerticalAlignment="Center">
+                <TextBlock x:Name="HeaderText"
+                           FontSize="{DynamicResource FontSizeMedium}"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap"/>
+                <TextBlock x:Name="DetailText"
+                           TextWrapping="Wrap"
+                           Opacity="0.85"/>
+            </StackPanel>
+        </DockPanel>
+    </Border>
+</Window>
