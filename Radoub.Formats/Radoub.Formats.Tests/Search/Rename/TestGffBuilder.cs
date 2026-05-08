@@ -14,7 +14,38 @@ internal static class TestGffBuilder
     public static GffFile MakeUtc(
         string? conversation = null,
         IReadOnlyList<string>? equipResRefs = null,
-        IReadOnlyList<string>? inventoryResRefs = null) => throw new NotImplementedException();
+        IReadOnlyList<string>? inventoryResRefs = null)
+    {
+        var root = new GffStruct { Type = 0xFFFFFFFF };
+        if (conversation != null)
+            GffFieldBuilder.AddCResRefField(root, "Conversation", conversation);
+
+        if (equipResRefs != null)
+        {
+            var slots = new List<GffStruct>();
+            foreach (var rr in equipResRefs)
+            {
+                var slot = new GffStruct { Type = 0 };
+                GffFieldBuilder.AddCResRefField(slot, "EquipRes", rr);
+                slots.Add(slot);
+            }
+            GffFieldBuilder.AddListField(root, "Equip_ItemList", slots);
+        }
+
+        if (inventoryResRefs != null)
+        {
+            var items = new List<GffStruct>();
+            foreach (var rr in inventoryResRefs)
+            {
+                var item = new GffStruct { Type = 0 };
+                GffFieldBuilder.AddCResRefField(item, "InventoryRes", rr);
+                items.Add(item);
+            }
+            GffFieldBuilder.AddListField(root, "ItemList", items);
+        }
+
+        return new GffFile { FileType = "UTC ", FileVersion = "V3.2", RootStruct = root };
+    }
 
     // --- UTI ---
     public static GffFile MakeUti(string? onAcquireScript = null) => throw new NotImplementedException();
