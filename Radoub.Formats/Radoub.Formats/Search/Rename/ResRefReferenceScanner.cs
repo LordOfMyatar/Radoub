@@ -38,9 +38,73 @@ public class ResRefReferenceScanner
         var results = new List<ResRefReference>();
 
         ScanTopLevelScalarFields(gffFile, resourceType, oldResRef, filePath, results);
-        // Per-type nested handlers added in subsequent tasks
+
+        if (resourceType == ResourceTypes.Git)
+            ScanGitInstanceLists(gffFile, oldResRef, filePath, results);
 
         return results;
+    }
+
+    private static readonly (string ListName, string ResRefField)[] GitInstanceLists =
+    {
+        ("Creature List",  "TemplateResRef"),
+        ("Door List",      "TemplateResRef"),
+        ("Placeable List", "TemplateResRef"),
+        ("StoreList",      "ResRef"),
+        ("WaypointList",   "TemplateResRef"),
+        ("Encounter List", "TemplateResRef"),
+        ("TriggerList",    "TemplateResRef"),
+        ("SoundList",      "TemplateResRef")
+    };
+
+    private static readonly FieldDefinition GitTemplateResRefField = new()
+    {
+        Name = "Template ResRef",
+        GffPath = "TemplateResRef",
+        FieldType = SearchFieldType.ResRef,
+        Category = SearchFieldCategory.Identity,
+        Description = "Blueprint resource reference",
+        IsReplaceable = false
+    };
+
+    private static readonly FieldDefinition GitStoreResRefField = new()
+    {
+        Name = "ResRef",
+        GffPath = "ResRef",
+        FieldType = SearchFieldType.ResRef,
+        Category = SearchFieldCategory.Identity,
+        Description = "Store resource reference",
+        IsReplaceable = false
+    };
+
+    private void ScanGitInstanceLists(
+        GffFile gff, string oldResRef, string filePath, List<ResRefReference> results)
+    {
+        foreach (var (listName, resRefField) in GitInstanceLists)
+        {
+            var listField = gff.RootStruct.GetField(listName);
+            if (listField?.Value is not GffList list) continue;
+
+            for (int i = 0; i < list.Elements.Count; i++)
+            {
+                var rrField = list.Elements[i].GetField(resRefField);
+                if (rrField?.Value is string value
+                    && string.Equals(value, oldResRef, StringComparison.OrdinalIgnoreCase))
+                {
+                    var fieldDef = resRefField == "ResRef" ? GitStoreResRefField : GitTemplateResRefField;
+                    results.Add(new ResRefReference
+                    {
+                        FilePath = filePath,
+                        ResourceType = ResourceTypes.Git,
+                        Field = fieldDef,
+                        Location = $"{listName} > Item {i} > {resRefField}",
+                        OldValue = value,
+                        NewValue = string.Empty,
+                        ScopeTier = ResRefScopeTier.TypedGffField
+                    });
+                }
+            }
+        }
     }
 
     private void ScanTopLevelScalarFields(

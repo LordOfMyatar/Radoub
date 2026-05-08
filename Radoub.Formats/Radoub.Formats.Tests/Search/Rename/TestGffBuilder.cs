@@ -86,7 +86,19 @@ internal static class TestGffBuilder
     public static GffFile MakeDlgWithConditionParam(int entryIndex, string key, string value) => throw new NotImplementedException();
 
     // --- GIT ---
-    public static GffFile MakeGitWithList(string listName, string resRefField, params string[] resRefs) => throw new NotImplementedException();
+    public static GffFile MakeGitWithList(string listName, string resRefField, params string[] resRefs)
+    {
+        var root = new GffStruct { Type = 0xFFFFFFFF };
+        var instances = new List<GffStruct>();
+        foreach (var rr in resRefs)
+        {
+            var instance = new GffStruct { Type = 0 };
+            GffFieldBuilder.AddCResRefField(instance, resRefField, rr);
+            instances.Add(instance);
+        }
+        GffFieldBuilder.AddListField(root, listName, instances);
+        return new GffFile { FileType = "GIT ", FileVersion = "V3.2", RootStruct = root };
+    }
 
     // --- ARE ---
     public static GffFile MakeAre(string? onEnterScript = null)

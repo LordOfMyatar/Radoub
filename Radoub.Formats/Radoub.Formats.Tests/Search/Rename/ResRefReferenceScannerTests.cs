@@ -104,4 +104,18 @@ public class ResRefReferenceScannerTests
         Assert.Single(refs);
         Assert.Equal(fieldName, refs[0].Field?.Name);
     }
+
+    [Fact]
+    public void Scan_GitCreatureListInstances_FindsAllReferences()
+    {
+        var gff = TestGffBuilder.MakeGitWithList("Creature List", "TemplateResRef",
+            "louis", "alice", "louis", "bob");
+        var scanner = new ResRefReferenceScanner();
+
+        var refs = scanner.Scan(gff, ResourceTypes.Git, oldResRef: "louis", filePath: "/m/area.git");
+
+        Assert.Equal(2, refs.Count);
+        Assert.All(refs, r => Assert.Equal("louis", r.OldValue.ToLowerInvariant()));
+        Assert.All(refs, r => Assert.Contains("Creature List", r.Location));
+    }
 }
