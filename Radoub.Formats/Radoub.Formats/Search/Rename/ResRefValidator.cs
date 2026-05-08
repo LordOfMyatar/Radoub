@@ -8,6 +8,17 @@ public class ResRefValidator
 {
     private const int MaxLength = 16;
 
+    /// <summary>
+    /// Validates and normalizes a proposed ResRef name.
+    /// </summary>
+    /// <param name="proposedName">Raw user input. May include extension; will be trimmed and lowercased.</param>
+    /// <param name="existingNames">Existing ResRefs in the target scope, used for collision detection.
+    /// Caller must EXCLUDE the name being renamed — otherwise renaming "louis" → "louis" would falsely
+    /// trigger an auto-suffix.</param>
+    /// <param name="extension">Target file extension (e.g., ".dlg"). Used to detect and strip a user-typed
+    /// extension from <paramref name="proposedName"/>.</param>
+    /// <returns>A <see cref="ResRefValidationResult"/>. On collision, auto-suffixes _2.._99 are tried;
+    /// if all are taken, returns a Fail result.</returns>
     public ResRefValidationResult Validate(
         string proposedName,
         IReadOnlySet<string> existingNames,

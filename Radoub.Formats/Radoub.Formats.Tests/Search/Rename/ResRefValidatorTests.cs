@@ -150,4 +150,21 @@ public class ResRefValidatorTests
         Assert.Equal("abcdefghijklmn_3", result.NormalizedName);
         Assert.True(result.AutoSuffixApplied);
     }
+
+    [Fact]
+    public void Validate_RenameToSameName_NoCollisionWhenCallerExcludesOldName()
+    {
+        // Contract: caller is responsible for excluding the name being renamed
+        // from existingNames. When the caller does so, "renaming" louis -> louis
+        // is a no-op rename and validates without auto-suffix.
+        var validator = new ResRefValidator();
+        var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "alice", "bob" };
+        // Note: "louis" is intentionally NOT in `existing` (caller filtered it out)
+
+        var result = validator.Validate("louis", existing, ".dlg");
+
+        Assert.True(result.IsValid);
+        Assert.Equal("louis", result.NormalizedName);
+        Assert.False(result.AutoSuffixApplied);
+    }
 }
