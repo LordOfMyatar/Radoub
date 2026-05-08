@@ -36,4 +36,15 @@ public class ResRefReferenceScannerTests
         Assert.Single(refs);
         Assert.Equal(actualValueInGff, refs[0].OldValue);  // preserves original case in OldValue
     }
+
+    [Fact]
+    public void Scan_TypedField_DoesNotMatchSubstrings()
+    {
+        var gff = TestGffBuilder.MakeUtc(conversation: "louis_roumain_extra");
+        var scanner = new ResRefReferenceScanner();
+
+        var refs = scanner.Scan(gff, ResourceTypes.Utc, oldResRef: "louis_roumain", filePath: "/m/test.utc");
+
+        Assert.Empty(refs);
+    }
 }
