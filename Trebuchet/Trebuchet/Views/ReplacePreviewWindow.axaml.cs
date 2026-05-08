@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Search;
 using Radoub.UI.Services.Search;
 
 namespace RadoubLauncher.Views;
@@ -70,9 +71,17 @@ public partial class ReplacePreviewWindow : Window
 
                 var location = change.Match.Location?.ToString() ?? change.Match.Field.Name;
 
+                // Visual flag for ResRef-typed field rows when running in ResRef-replace mode.
+                // These are rows that would be skipped by the standard replace path but are
+                // visible because allowResRefReplace=true. See spec Section 5.
+                var resRefBadge = preview.AllowResRefReplace
+                    && change.Match.Field.FieldType == SearchFieldType.ResRef
+                    ? "\ud83d\udd17 " // \ud83d\udd17
+                    : string.Empty;
+
                 var matchCheckBox = new CheckBox
                 {
-                    Content = $"[{location}] {change.Match.Field.Name}: \"{oldText}\" \u2192 \"{newText}\"",
+                    Content = $"{resRefBadge}[{location}] {change.Match.Field.Name}: \"{oldText}\" \u2192 \"{newText}\"",
                     IsChecked = true,
                     Tag = change
                 };
