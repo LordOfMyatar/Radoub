@@ -48,7 +48,13 @@ internal static class TestGffBuilder
     }
 
     // --- UTI ---
-    public static GffFile MakeUti(string? onAcquireScript = null) => throw new NotImplementedException();
+    public static GffFile MakeUti(string? onAcquireScript = null)
+    {
+        var root = new GffStruct { Type = 0xFFFFFFFF };
+        if (onAcquireScript != null)
+            GffFieldBuilder.AddCResRefField(root, "OnAcquireItem", onAcquireScript);
+        return new GffFile { FileType = "UTI ", FileVersion = "V3.2", RootStruct = root };
+    }
 
     // --- UTM ---
     public static GffFile MakeUtmWithItems(

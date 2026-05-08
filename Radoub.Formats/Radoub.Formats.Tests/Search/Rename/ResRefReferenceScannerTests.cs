@@ -47,4 +47,18 @@ public class ResRefReferenceScannerTests
 
         Assert.Empty(refs);
     }
+
+    [Fact]
+    public void Scan_UtiOnAcquireScript_FindsReference()
+    {
+        var gff = TestGffBuilder.MakeUti(onAcquireScript: "open_door");
+        var scanner = new ResRefReferenceScanner();
+
+        var refs = scanner.Scan(gff, ResourceTypes.Uti, oldResRef: "open_door", filePath: "/m/key.uti");
+
+        Assert.Single(refs);
+        Assert.NotNull(refs[0].Field);
+        Assert.Equal(SearchFieldType.Script, refs[0].Field!.FieldType);
+        Assert.Equal(SearchFieldCategory.Script, refs[0].Field!.Category);
+    }
 }
