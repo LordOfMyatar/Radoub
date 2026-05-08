@@ -19,6 +19,7 @@ public class NssReferenceScanner
 
         var source = File.ReadAllText(nssFilePath);
         var results = new List<ResRefReference>();
+        var quotedRanges = new List<(int Start, int End)>();
 
         // Pass 1: quoted matches (high confidence) — pattern: "<oldResRef>"
         var quotedPattern = $"\"{Regex.Escape(oldResRef)}\"";
@@ -26,6 +27,8 @@ public class NssReferenceScanner
         {
             var inner = m.Index + 1;
             var innerLen = m.Length - 2;
+            quotedRanges.Add((m.Index, m.Index + m.Length));
+
             results.Add(new ResRefReference
             {
                 FilePath = nssFilePath,
@@ -37,6 +40,28 @@ public class NssReferenceScanner
                 ScopeTier = ResRefScopeTier.NssQuotedString,
                 MatchOffset = inner,
                 MatchLength = innerLen
+            });
+        }
+
+        // Pass 2: bare substring matches (low confidence) — skip ranges inside quoted matches
+        var barePattern = Regex.Escape(oldResRef);
+        foreach (Match m in Regex.Matches(source, barePattern, RegexOptions.IgnoreCase))
+        {
+            // Skip if this match falls entirely inside a quoted range
+            if (quotedRanges.Any(r => m.Index >= r.Start && (m.Index + m.Length) <= r.End))
+                continue;
+
+            results.Add(new ResRefReference
+            {
+                FilePath = nssFilePath,
+                ResourceType = ResourceTypes.Nss,
+                Field = null,
+                Location = $"Line {LineOf(source, m.Index)} (substring — verify)",
+                OldValue = source.Substring(m.Index, m.Length),
+                NewValue = string.Empty,
+                ScopeTier = ResRefScopeTier.NssBareSubstring,
+                MatchOffset = m.Index,
+                MatchLength = m.Length
             });
         }
 
