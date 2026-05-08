@@ -122,9 +122,70 @@ internal static class TestGffBuilder
     }
 
     // --- DLG ---
-    public static GffFile MakeDlgWithSound(int entryIndex, string sound) => throw new NotImplementedException();
-    public static GffFile MakeDlgWithActionParam(int entryIndex, string key, string value) => throw new NotImplementedException();
-    public static GffFile MakeDlgWithConditionParam(int entryIndex, string key, string value) => throw new NotImplementedException();
+    public static GffFile MakeDlgWithSound(int entryIndex, string sound)
+    {
+        var root = new GffStruct { Type = 0xFFFFFFFF };
+        var entries = new List<GffStruct>();
+        for (int i = 0; i <= entryIndex; i++)
+        {
+            var entry = new GffStruct { Type = 0 };
+            if (i == entryIndex)
+                GffFieldBuilder.AddCResRefField(entry, "Sound", sound);
+            entries.Add(entry);
+        }
+        GffFieldBuilder.AddListField(root, "EntryList", entries);
+        return new GffFile { FileType = "DLG ", FileVersion = "V3.2", RootStruct = root };
+    }
+
+    public static GffFile MakeDlgWithActionParam(int entryIndex, string key, string value)
+    {
+        var root = new GffStruct { Type = 0xFFFFFFFF };
+        var entries = new List<GffStruct>();
+        for (int i = 0; i <= entryIndex; i++)
+        {
+            var entry = new GffStruct { Type = 0 };
+            var actionParams = new List<GffStruct>();
+            if (i == entryIndex)
+            {
+                var param = new GffStruct { Type = 0 };
+                GffFieldBuilder.AddCExoStringField(param, "Key", key);
+                GffFieldBuilder.AddCExoStringField(param, "Value", value);
+                actionParams.Add(param);
+            }
+            GffFieldBuilder.AddListField(entry, "ActionParams", actionParams);
+            entries.Add(entry);
+        }
+        GffFieldBuilder.AddListField(root, "EntryList", entries);
+        return new GffFile { FileType = "DLG ", FileVersion = "V3.2", RootStruct = root };
+    }
+
+    public static GffFile MakeDlgWithConditionParam(int entryIndex, string key, string value)
+    {
+        // ConditionParams live on link structs inside RepliesList (per DLG spec).
+        // Build an entry with a single reply link that carries the condition param.
+        var root = new GffStruct { Type = 0xFFFFFFFF };
+        var entries = new List<GffStruct>();
+        for (int i = 0; i <= entryIndex; i++)
+        {
+            var entry = new GffStruct { Type = 0 };
+            var repliesList = new List<GffStruct>();
+            if (i == entryIndex)
+            {
+                var link = new GffStruct { Type = 0 };
+                var condParams = new List<GffStruct>();
+                var param = new GffStruct { Type = 0 };
+                GffFieldBuilder.AddCExoStringField(param, "Key", key);
+                GffFieldBuilder.AddCExoStringField(param, "Value", value);
+                condParams.Add(param);
+                GffFieldBuilder.AddListField(link, "ConditionParams", condParams);
+                repliesList.Add(link);
+            }
+            GffFieldBuilder.AddListField(entry, "RepliesList", repliesList);
+            entries.Add(entry);
+        }
+        GffFieldBuilder.AddListField(root, "EntryList", entries);
+        return new GffFile { FileType = "DLG ", FileVersion = "V3.2", RootStruct = root };
+    }
 
     // --- GIT ---
     public static GffFile MakeGitWithList(string listName, string resRefField, params string[] resRefs)

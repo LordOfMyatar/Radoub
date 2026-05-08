@@ -190,4 +190,16 @@ public class ResRefReferenceScannerTests
         Assert.All(refs, r => Assert.Contains("Weapons", r.Location));
         Assert.All(refs, r => Assert.Contains("InventoryRes", r.Location));
     }
+
+    [Fact]
+    public void Scan_DlgEntrySound_FindsReference()
+    {
+        var gff = TestGffBuilder.MakeDlgWithSound(entryIndex: 2, sound: "louis_voice");
+        var scanner = new ResRefReferenceScanner();
+
+        var refs = scanner.Scan(gff, ResourceTypes.Dlg, oldResRef: "louis_voice", filePath: "/m/x.dlg");
+
+        Assert.Single(refs);
+        Assert.Contains("Entry 2", refs[0].Location);
+    }
 }

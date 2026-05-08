@@ -51,7 +51,49 @@ public class ResRefReferenceScanner
         if (resourceType == ResourceTypes.Utm)
             ScanUtmStorePanels(gffFile, oldResRef, filePath, results);
 
+        if (resourceType == ResourceTypes.Dlg)
+            ScanDlgNodes(gffFile, oldResRef, filePath, results);
+
         return results;
+    }
+
+    private static readonly FieldDefinition SoundField = new()
+    {
+        Name = "Sound",
+        GffPath = "Sound",
+        FieldType = SearchFieldType.ResRef,
+        Category = SearchFieldCategory.Metadata,
+        Description = "Sound file reference",
+        IsReplaceable = false
+    };
+
+    private void ScanDlgNodes(
+        GffFile gff, string oldResRef, string filePath, List<ResRefReference> results)
+    {
+        ScanDlgNodeList(gff, "EntryList", "Entry", oldResRef, filePath, results);
+        ScanDlgNodeList(gff, "ReplyList", "Reply", oldResRef, filePath, results);
+    }
+
+    private void ScanDlgNodeList(
+        GffFile gff, string listFieldName, string nodeKind,
+        string oldResRef, string filePath, List<ResRefReference> results)
+    {
+        var listField = gff.RootStruct.GetField(listFieldName);
+        if (listField?.Value is not GffList nodes) return;
+
+        for (int i = 0; i < nodes.Elements.Count; i++)
+        {
+            var node = nodes.Elements[i];
+
+            // Sound field on the node itself
+            var soundField = node.GetField("Sound");
+            if (soundField?.Value is string v
+                && string.Equals(v, oldResRef, StringComparison.OrdinalIgnoreCase))
+            {
+                results.Add(MakeRef(filePath, ResourceTypes.Dlg, SoundField,
+                    $"{nodeKind} {i} > Sound", v));
+            }
+        }
     }
 
     private void ScanUtmStorePanels(
