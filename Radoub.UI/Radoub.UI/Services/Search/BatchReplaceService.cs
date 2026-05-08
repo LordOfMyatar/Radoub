@@ -126,7 +126,8 @@ public class BatchReplaceService
                 var operations = changes.Select(c => new ReplaceOperation
                 {
                     Match = c.Match,
-                    ReplacementText = c.ReplacementText
+                    ReplacementText = c.ReplacementText,
+                    AllowResRefReplace = preview.AllowResRefReplace
                 }).ToList();
 
                 var results = provider.Replace(gffFile, operations);

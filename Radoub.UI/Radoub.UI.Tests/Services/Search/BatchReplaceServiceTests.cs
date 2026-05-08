@@ -249,6 +249,43 @@ public class BatchReplaceServiceTests : IDisposable
         Assert.False(preview.AllowResRefReplace);
     }
 
+    [Fact]
+    public async Task ExecuteReplace_WithAllowResRefReplace_RewritesResRefField()
+    {
+        // Write a real UTC with Conversation = "louis_conv" (a ResRef field)
+        var utc = new UtcFile
+        {
+            FirstName = new CExoLocString { LocalizedStrings = new Dictionary<uint, string> { [0] = "Louis" } },
+            Tag = "LOUIS",
+            Conversation = "louis_conv"
+        };
+        var utcPath = WriteUtcFile("louis.utc", utc);
+
+        // Search the file — Conversation field will match since pattern is "louis_conv"
+        var searchService = new ModuleSearchService();
+        var fileResult = searchService.SearchSingleFile(utcPath, new SearchCriteria { Pattern = "louis_conv" });
+
+        // Confirm there's a Conversation match (ResRef field, IsReplaceable=false)
+        Assert.Contains(fileResult.Matches,
+            m => m.Field.Name == "Conversation" && m.Field.FieldType == SearchFieldType.ResRef);
+
+        var preview = _service.PreviewReplace(new[] { fileResult }, "louis", allowResRefReplace: true);
+        Assert.True(preview.AllowResRefReplace);
+
+        // Find the Conversation change in the preview
+        Assert.Contains(preview.Changes, c => c.Match.Field.Name == "Conversation");
+
+        var result = await _service.ExecuteReplaceAsync(preview, "TestModule");
+
+        Assert.True(result.Success);
+        Assert.True(result.ReplacementsMade >= 1);
+
+        // Verify the file on disk now has Conversation = "louis"
+        var rewrittenBytes = await File.ReadAllBytesAsync(utcPath);
+        var rewritten = UtcReader.Read(rewrittenBytes);
+        Assert.Equal("louis", rewritten.Conversation);
+    }
+
     private static SearchMatch MakeMatch(FieldDefinition field, string value) => new()
     {
         Field = field,
