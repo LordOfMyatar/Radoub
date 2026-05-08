@@ -1,0 +1,56 @@
+using Radoub.Formats.Gff;
+
+namespace Radoub.Formats.Tests.Search.Rename;
+
+/// <summary>
+/// Builds in-memory GFF structures for ResRefReferenceScanner tests.
+/// Each builder populates only the fields a specific test cares about;
+/// other fields are left absent.
+/// All ResRef-carrier fields use lowercase values per Aurora convention.
+/// </summary>
+internal static class TestGffBuilder
+{
+    // --- UTC ---
+    public static GffFile MakeUtc(
+        string? conversation = null,
+        IReadOnlyList<string>? equipResRefs = null,
+        IReadOnlyList<string>? inventoryResRefs = null) => throw new NotImplementedException();
+
+    // --- UTI ---
+    public static GffFile MakeUti(string? onAcquireScript = null) => throw new NotImplementedException();
+
+    // --- UTM ---
+    public static GffFile MakeUtmWithItems(
+        string panelName,
+        params string[] itemResRefs) => throw new NotImplementedException();
+
+    // --- UTP ---
+    public static GffFile MakeUtpWithInventory(params string[] inventoryResRefs) => throw new NotImplementedException();
+
+    // --- UTD ---
+    public static GffFile MakeUtd(string? conversation = null) => throw new NotImplementedException();
+
+    public static GffFile MakeUtdWithScriptField(string fieldName, string scriptResRef) => throw new NotImplementedException();
+
+    // --- DLG ---
+    public static GffFile MakeDlgWithSound(int entryIndex, string sound) => throw new NotImplementedException();
+    public static GffFile MakeDlgWithActionParam(int entryIndex, string key, string value) => throw new NotImplementedException();
+    public static GffFile MakeDlgWithConditionParam(int entryIndex, string key, string value) => throw new NotImplementedException();
+
+    // --- GIT ---
+    public static GffFile MakeGitWithList(string listName, string resRefField, params string[] resRefs) => throw new NotImplementedException();
+
+    // --- ARE ---
+    public static GffFile MakeAre(string? onEnterScript = null) => throw new NotImplementedException();
+    public static GffFile MakeAreWithScriptField(string fieldName, string scriptResRef) => throw new NotImplementedException();
+
+    // --- IFO ---
+    public static GffFile MakeIfo(
+        string? entryArea = null,
+        string? defaultBic = null,
+        string? startMovie = null,
+        string? customTlk = null,
+        string? onPlayerHeartbeat = null) => throw new NotImplementedException();
+
+    public static GffFile MakeIfoWithHakList(params string[] hakResRefs) => throw new NotImplementedException();
+}
