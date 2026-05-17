@@ -40,6 +40,20 @@ public class GffReferenceLocationApplier
             return ApplyDlgNode(gff, segments, refRow, newValue);
         }
 
+        // UTM panel pattern: "{PanelName} > Item N > InventoryRes" — panel name is dynamic,
+        // resolved by walking StoreList for a panel whose struct.Type maps back to the same name
+        // via Utm.StorePanels.GetPanelName. Try this BEFORE the generic nested-list branch since
+        // "Weapons", "Armor", etc. are not top-level field names on the root struct.
+        if (segments.Length == 3
+            && segments[1].StartsWith("Item ", StringComparison.Ordinal)
+            && segments[2] == "InventoryRes")
+        {
+            if (ApplyUtmStorePanel(gff, segments[0], segments[1], newValue))
+                return true;
+            // Fall through to generic — UTC/UTP also have ItemList > Item N > InventoryRes,
+            // where segments[0] is the literal top-level field name "ItemList".
+        }
+
         // Generic nested-list pattern: "ListName > Item N > FieldName" or
         // "ListName > Slot N > FieldName" (UTC Equip_ItemList uses "Slot" wording)
         if (segments.Length == 3
@@ -166,4 +180,29 @@ public class GffReferenceLocationApplier
         return true;
     }
 
+    private static bool ApplyUtmStorePanel(
+        GffFile gff, string panelName, string itemSegment, string newValue)
+    {
+        var storeList = gff.RootStruct.GetField("StoreList")?.Value as GffList;
+        if (storeList == null) return false;
+
+        // The scanner derives panelName from struct.Type via Utm.StorePanels.GetPanelName(int).
+        // Walk StoreList looking for the panel whose Type maps back to the same name.
+        var panel = storeList.Elements.FirstOrDefault(p =>
+            string.Equals(
+                Radoub.Formats.Utm.StorePanels.GetPanelName((int)p.Type),
+                panelName,
+                StringComparison.Ordinal));
+        if (panel == null) return false;
+
+        if (!int.TryParse(itemSegment["Item ".Length..], out var idx)) return false;
+
+        var items = panel.GetField("ItemList")?.Value as GffList;
+        if (items == null || idx >= items.Elements.Count) return false;
+
+        var f = items.Elements[idx].GetField("InventoryRes");
+        if (f == null) return false;
+        f.Value = newValue;
+        return true;
+    }
 }

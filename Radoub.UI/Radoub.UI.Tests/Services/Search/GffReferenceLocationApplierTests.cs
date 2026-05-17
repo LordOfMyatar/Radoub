@@ -88,6 +88,22 @@ public class GffReferenceLocationApplierTests
         Assert.False(_applier.Apply(gff, refRow, "bob"));
     }
 
+    [Fact]
+    public void Apply_UtmStorePanel_UpdatesValueByPanelName()
+    {
+        var gff = TestGffBuilder.MakeUtmWithItems("Weapons", "louis_sword", "alice_shield");
+        var refRow = MakeRef("Weapons > Item 0 > InventoryRes", ResRefScopeTier.TypedGffField, "louis_sword");
+
+        Assert.True(_applier.Apply(gff, refRow, "bob_sword"));
+
+        var storeList = gff.RootStruct.GetField("StoreList")?.Value as GffList;
+        Assert.NotNull(storeList);
+        var panel = storeList!.Elements[0];  // first (only) panel
+        var items = panel.GetField("ItemList")?.Value as GffList;
+        Assert.NotNull(items);
+        Assert.Equal("bob_sword", items!.Elements[0].GetField("InventoryRes")?.Value);
+    }
+
     private static ResRefReference MakeRef(string location, ResRefScopeTier tier, string oldValue) => new()
     {
         FilePath = "/m/test",
