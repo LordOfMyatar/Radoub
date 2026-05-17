@@ -30,4 +30,11 @@
     <ProjectReference Include="..\..\Radoub.TestUtilities\Radoub.TestUtilities\Radoub.TestUtilities.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Share the GFF fixture builder with Radoub.Formats.Tests to avoid duplication.
+         (Can't reference the test project directly — xUnit v2 vs v3 conflict.) -->
+    <Compile Include="..\..\Radoub.Formats\Radoub.Formats.Tests\Search\Rename\TestGffBuilder.cs"
+             Link="Services\Search\Shared\TestGffBuilder.cs" />
+  </ItemGroup>
+
 </Project>

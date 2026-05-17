@@ -8,7 +8,7 @@ namespace Radoub.Formats.Tests.Search.Rename;
 /// other fields are left absent.
 /// All ResRef-carrier fields use lowercase values per Aurora convention.
 /// </summary>
-internal static class TestGffBuilder
+public static class TestGffBuilder
 {
     // --- UTC ---
     public static GffFile MakeUtc(

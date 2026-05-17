@@ -13,6 +13,7 @@ public class ResRefRenameOrchestrator
 {
     private readonly BackupService _backupService;
     private readonly SearchProviderFactory _providerFactory;
+    private readonly GffReferenceLocationApplier _locationApplier = new();
 
     public ResRefRenameOrchestrator(BackupService backupService)
         : this(backupService, SearchProviderFactory.CreateDefault())
@@ -99,7 +100,7 @@ public class ResRefRenameOrchestrator
                 var gff = GffReader.Read(File.ReadAllBytes(kvp.Key));
                 foreach (var (refRow, newName) in kvp.Value)
                 {
-                    if (ApplyGffReferenceUpdate(gff, refRow, newName))
+                    if (_locationApplier.Apply(gff, refRow, newName))
                         refsUpdated++;
                 }
                 await WriteAtomicAsync(kvp.Key, GffWriter.Write(gff));
@@ -176,52 +177,6 @@ public class ResRefRenameOrchestrator
                 RollbackSucceeded = rollbackOk
             };
         }
-    }
-
-    /// <summary>
-    /// Apply a single GFF reference update. Returns true if the update was applied,
-    /// false if the location string did not parse to a known location format.
-    /// Currently handles: top-level scalar fields and the "Creature List > Item N > FieldName" GIT pattern.
-    /// Other nested locations (UTC Equip_ItemList, UTM StoreList[], DLG ActionParams, etc.) will be added in Chunk 5.
-    /// </summary>
-    private static bool ApplyGffReferenceUpdate(GffFile gff, ResRefReference refRow, string newValue)
-    {
-        var loc = refRow.Location ?? string.Empty;
-
-        // Pattern: "Creature List > Item N > FieldName"
-        if (loc.StartsWith("Creature List > Item ", StringComparison.Ordinal))
-        {
-            var parts = loc.Split(" > ");
-            if (parts.Length < 3) return false;
-            var idxText = parts[1].Substring("Item ".Length);
-            if (!int.TryParse(idxText, out var itemIdx)) return false;
-            var fieldName = parts[2];
-
-            var listField = gff.RootStruct.GetField("Creature List");
-            if (listField?.Value is GffList list && itemIdx < list.Elements.Count)
-            {
-                var f = list.Elements[itemIdx].GetField(fieldName);
-                if (f != null)
-                {
-                    f.Value = newValue;
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        // Top-level field: use Field.GffPath when present, otherwise the Location string itself.
-        var topFieldName = refRow.Field?.GffPath ?? loc;
-        if (string.IsNullOrEmpty(topFieldName)) return false;
-
-        var topField = gff.RootStruct.GetField(topFieldName);
-        if (topField != null)
-        {
-            topField.Value = newValue;
-            return true;
-        }
-
-        return false;
     }
 
     /// <summary>
