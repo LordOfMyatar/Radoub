@@ -284,6 +284,149 @@ public class ResRefRenameOrchestratorTests : IDisposable
     }
 
     [Fact]
+    public async Task ExecuteAsync_RichModule_RenamesAcrossAllScopeTiers()
+    {
+        var moduleDir = TestModuleFixture.CreateRichModule(_root);
+        var backupDir = Path.Combine(_root, ".backups");
+
+        // Plan A: rename louis_roumain.utc -> louis.utc
+        // References: GIT TemplateResRef + NSS quoted + NSS bare-substring
+        var planLouis = new ResRefRenamePlan
+        {
+            OldName = "louis_roumain",
+            NewName = "louis",
+            ResourceType = ResourceTypes.Utc,
+            Validation = ResRefValidationResult.Ok("louis"),
+            SourceFilePath = Path.Combine(moduleDir, "louis_roumain.utc"),
+            TargetFilePath = Path.Combine(moduleDir, "louis.utc")
+        };
+
+        // 1. TypedGffField — GIT
+        planLouis.References.Add(new ResRefReference
+        {
+            FilePath = Path.Combine(moduleDir, "area01.git"),
+            ResourceType = ResourceTypes.Git,
+            Field = null,
+            Location = "Creature List > Item 0 > TemplateResRef",
+            OldValue = "louis_roumain",
+            NewValue = "louis",
+            ScopeTier = ResRefScopeTier.TypedGffField,
+            IsSelected = true
+        });
+
+        // 2. NssQuotedString
+        var nssPath = Path.Combine(moduleDir, "script1.nss");
+        var nssText = await File.ReadAllTextAsync(nssPath);
+        var quotedOffset = nssText.IndexOf("\"louis_roumain\"", StringComparison.Ordinal) + 1;
+        planLouis.References.Add(new ResRefReference
+        {
+            FilePath = nssPath,
+            ResourceType = ResourceTypes.Nss,
+            Field = null,
+            Location = "Line 2 (quoted)",
+            OldValue = "louis_roumain",
+            NewValue = "louis",
+            ScopeTier = ResRefScopeTier.NssQuotedString,
+            MatchOffset = quotedOffset,
+            MatchLength = "louis_roumain".Length,
+            IsSelected = true
+        });
+
+        // 3. NssBareSubstring — first occurrence is in the line-1 comment
+        var bareOffset = nssText.IndexOf("louis_roumain", StringComparison.Ordinal);
+        planLouis.References.Add(new ResRefReference
+        {
+            FilePath = nssPath,
+            ResourceType = ResourceTypes.Nss,
+            Field = null,
+            Location = "Line 1 (substring - verify)",
+            OldValue = "louis_roumain",
+            NewValue = "louis",
+            ScopeTier = ResRefScopeTier.NssBareSubstring,
+            MatchOffset = bareOffset,
+            MatchLength = "louis_roumain".Length,
+            IsSelected = true
+        });
+
+        // Plan B: louis_sword.uti rename (file doesn't actually exist on disk —
+        // IsSelected = false skips the file rename, so we only test reference updates
+        // via UTM-panel applier and DLG-script-param applier).
+        var planSword = new ResRefRenamePlan
+        {
+            OldName = "louis_sword",
+            NewName = "blade",
+            ResourceType = ResourceTypes.Uti,
+            Validation = ResRefValidationResult.Ok("blade"),
+            SourceFilePath = Path.Combine(moduleDir, "louis_sword.uti"),
+            TargetFilePath = Path.Combine(moduleDir, "blade.uti"),
+            IsSelected = false  // don't try to rename — file doesn't exist
+        };
+
+        // 4. TypedGffField — UTM panel applier branch
+        planSword.References.Add(new ResRefReference
+        {
+            FilePath = Path.Combine(moduleDir, "store01.utm"),
+            ResourceType = ResourceTypes.Utm,
+            Field = null,
+            Location = "Weapons > Item 0 > InventoryRes",
+            OldValue = "louis_sword",
+            NewValue = "blade",
+            ScopeTier = ResRefScopeTier.TypedGffField,
+            IsSelected = true
+        });
+
+        // 5. DlgScriptParam — DLG ActionParams substring
+        planSword.References.Add(new ResRefReference
+        {
+            FilePath = Path.Combine(moduleDir, "louis_dlg.dlg"),
+            ResourceType = ResourceTypes.Dlg,
+            Field = null,
+            Location = "Entry 0 > ActionParams[0] (weapon_resref)",
+            OldValue = "louis_sword",
+            NewValue = "blade",
+            ScopeTier = ResRefScopeTier.DlgScriptParam,
+            MatchOffset = 0,
+            MatchLength = "louis_sword".Length,
+            IsSelected = true
+        });
+
+        var orchestrator = new ResRefRenameOrchestrator(new BackupService(backupDir));
+        var result = await orchestrator.ExecuteAsync(new[] { planLouis, planSword }, "rich-module-test");
+
+        Assert.True(result.Success, $"Execute failed: {result.Error}");
+        Assert.Equal(1, result.RenamedFiles);              // only planLouis renamed (planSword.IsSelected = false)
+        Assert.Equal(5, result.ReferencesUpdated);         // GIT + NSS quoted + NSS bare + UTM + DLG ActionParam
+
+        // 1. File was renamed
+        Assert.True(File.Exists(Path.Combine(moduleDir, "louis.utc")));
+        Assert.False(File.Exists(Path.Combine(moduleDir, "louis_roumain.utc")));
+
+        // 2. TypedGffField — GIT
+        Assert.Equal("louis", GetGitCreatureTemplateResRef(Path.Combine(moduleDir, "area01.git")));
+
+        // 3+4. NSS quoted + bare both rewritten — file no longer contains "louis_roumain"
+        var nssAfter = await File.ReadAllTextAsync(nssPath);
+        Assert.DoesNotContain("louis_roumain", nssAfter);
+        Assert.Contains("\"louis\"", nssAfter);
+
+        // 5. TypedGffField — UTM panel applier branch
+        var utm = GffReader.Read(File.ReadAllBytes(Path.Combine(moduleDir, "store01.utm")));
+        var storeList = utm.RootStruct.GetField("StoreList")?.Value as GffList;
+        Assert.NotNull(storeList);
+        var weaponsItems = storeList!.Elements[0].GetField("ItemList")?.Value as GffList;
+        Assert.NotNull(weaponsItems);
+        Assert.Equal("blade", weaponsItems!.Elements[0].GetField("InventoryRes")?.Value);
+
+        // 6. DlgScriptParam — DLG ActionParams Value substring updated
+        var dlg = GffReader.Read(File.ReadAllBytes(Path.Combine(moduleDir, "louis_dlg.dlg")));
+        var entries = dlg.RootStruct.GetField("EntryList")?.Value as GffList;
+        Assert.NotNull(entries);
+        var actionParams = entries!.Elements[0].GetField("ActionParams")?.Value as GffList;
+        Assert.NotNull(actionParams);
+        Assert.Equal("blade", actionParams!.Elements[0].GetField("Value")?.Value);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_RestoreAfterRename_ProducesByteIdenticalModule()
     {
         var moduleDir = TestModuleFixture.CreateMinimalModule(_root);

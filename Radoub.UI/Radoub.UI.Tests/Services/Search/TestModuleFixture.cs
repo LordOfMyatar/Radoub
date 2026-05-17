@@ -1,4 +1,5 @@
 using Radoub.Formats.Gff;
+using Radoub.Formats.Tests.Search.Rename;  // linked-in TestGffBuilder
 
 namespace Radoub.UI.Tests.Services.Search;
 
@@ -89,5 +90,46 @@ public static class TestModuleFixture
         GffFieldBuilder.AddCResRefField(instance, "TemplateResRef", templateResRef);
         GffFieldBuilder.AddListField(root, "Creature List", new[] { instance });
         return new GffFile { FileType = "GIT ", FileVersion = "V3.2", RootStruct = root };
+    }
+
+    /// <summary>
+    /// Build a richer fixture that exercises every ResRef scope tier the orchestrator
+    /// supports: TypedGffField (GIT, UTM panel), DlgScriptParam, NssQuotedString,
+    /// NssBareSubstring. Used by the orchestrator end-to-end test.
+    /// </summary>
+    public static string CreateRichModule(string parentDir)
+    {
+        var moduleDir = Path.Combine(parentDir, $"rich-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(moduleDir);
+
+        // The renamed-file blueprint
+        File.WriteAllBytes(Path.Combine(moduleDir, "louis_roumain.utc"),
+            GffWriter.Write(TestGffBuilder.MakeUtc(conversation: "louis_dlg")));
+
+        // DLG with an ActionParam carrying "louis_sword" (DlgScriptParam tier target)
+        File.WriteAllBytes(Path.Combine(moduleDir, "louis_dlg.dlg"),
+            GffWriter.Write(TestGffBuilder.MakeDlgWithActionParam(
+                entryIndex: 0, key: "weapon_resref", value: "louis_sword")));
+
+        // GIT instance points to louis_roumain (TypedGffField tier via GIT)
+        File.WriteAllBytes(Path.Combine(moduleDir, "area01.git"),
+            GffWriter.Write(TestGffBuilder.MakeGitWithList(
+                "Creature List", "TemplateResRef", "louis_roumain")));
+
+        // Minimal ARE
+        var areRoot = new GffStruct { Type = 0xFFFFFFFF };
+        File.WriteAllBytes(Path.Combine(moduleDir, "area01.are"),
+            GffWriter.Write(new GffFile { FileType = "ARE ", FileVersion = "V3.2", RootStruct = areRoot }));
+
+        // UTM with Weapons panel carrying louis_sword (TypedGffField via UTM panel branch)
+        File.WriteAllBytes(Path.Combine(moduleDir, "store01.utm"),
+            GffWriter.Write(TestGffBuilder.MakeUtmWithItems("Weapons", "louis_sword", "alice_shield")));
+
+        // NSS source with both quoted (high-confidence) and bare-substring (low-confidence) refs
+        File.WriteAllText(Path.Combine(moduleDir, "script1.nss"),
+            "// Reminder: louis_roumain has the merchant key\n" +
+            "void main() { object o = GetObjectByTag(\"louis_roumain\"); }\n");
+
+        return moduleDir;
     }
 }
