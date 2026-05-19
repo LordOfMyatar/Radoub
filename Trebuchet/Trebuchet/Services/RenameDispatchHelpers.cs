@@ -134,15 +134,22 @@ public static class RenameDispatchHelpers
     }
 
     /// <summary>
-    /// Walk every file in the module directory, parse each one, and append matching
-    /// references to each plan's References list. Honors the user's file-type filter
-    /// (unchecked types are skipped).
+    /// Walk files in the module directory, parse each one, and append matching
+    /// references to each plan's References list.
+    ///
+    /// Honors the user's file-type filter (unchecked types are skipped) AND, when
+    /// <paramref name="allowedFilePaths"/> is non-null, restricts the scan to ONLY
+    /// those paths. This is the "surgical rename" path — reference updates are
+    /// confined to files the user explicitly selected, leaving everything else
+    /// untouched. When <paramref name="allowedFilePaths"/> is null, the scan
+    /// covers every file in <paramref name="moduleDir"/> (legacy module-wide mode).
     /// </summary>
     public static async Task PopulateReferencesAsync(
         IReadOnlyList<ResRefRenamePlan> plans,
         string moduleDir,
         bool includeNss,
-        SearchCriteria criteria)
+        SearchCriteria criteria,
+        IReadOnlySet<string>? allowedFilePaths = null)
     {
         if (plans == null || plans.Count == 0) return;
         if (string.IsNullOrEmpty(moduleDir) || !Directory.Exists(moduleDir)) return;
@@ -154,6 +161,12 @@ public static class RenameDispatchHelpers
 
         foreach (var path in Directory.EnumerateFiles(moduleDir))
         {
+            // Surgical mode: skip any file outside the user's selection set.
+            // The file being renamed itself doesn't carry a self-reference, so
+            // excluding it from the scan is harmless when it's not in the set.
+            if (allowedFilePaths != null && !allowedFilePaths.Contains(path))
+                continue;
+
             var ext = Path.GetExtension(path);
             if (string.IsNullOrEmpty(ext)) continue;
 

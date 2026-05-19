@@ -203,6 +203,64 @@ public class RenameDispatchHelpersTests : IDisposable
         Assert.Contains(plan.References, r => r.ResourceType == ResourceTypes.Utc);
     }
 
+    [Fact]
+    public async Task PopulateReferencesAsync_AllowedFilePathsRestrictsToSelection()
+    {
+        // Two files in the module, both referencing "louis"
+        var utcPath = Path.Combine(_tempDir, "test.utc");
+        File.WriteAllBytes(utcPath, GffWriter.Write(MakeUtcWithConversation("louis")));
+
+        var gitPath = Path.Combine(_tempDir, "area.git");
+        File.WriteAllBytes(gitPath, GffWriter.Write(MakeGitWithCreature("louis")));
+
+        var plan = new ResRefRenamePlan
+        {
+            OldName = "louis",
+            NewName = "alice",
+            ResourceType = ResourceTypes.Dlg,
+            Validation = ResRefValidationResult.Ok("alice"),
+            SourceFilePath = "/dummy",
+            TargetFilePath = "/dummy"
+        };
+        var criteria = new SearchCriteria { Pattern = "louis" };
+
+        // Surgical mode: user selected only the UTC; the GIT must be ignored entirely.
+        var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { utcPath };
+
+        await RenameDispatchHelpers.PopulateReferencesAsync(
+            new[] { plan }, _tempDir, includeNss: false, criteria, allowed);
+
+        Assert.All(plan.References, r => Assert.NotEqual(ResourceTypes.Git, r.ResourceType));
+        Assert.Contains(plan.References, r => r.ResourceType == ResourceTypes.Utc);
+    }
+
+    [Fact]
+    public async Task PopulateReferencesAsync_NullAllowedFilePathsScansEverything()
+    {
+        // Regression: passing null for allowedFilePaths must preserve module-wide behavior.
+        File.WriteAllBytes(Path.Combine(_tempDir, "test.utc"),
+            GffWriter.Write(MakeUtcWithConversation("louis")));
+        File.WriteAllBytes(Path.Combine(_tempDir, "area.git"),
+            GffWriter.Write(MakeGitWithCreature("louis")));
+
+        var plan = new ResRefRenamePlan
+        {
+            OldName = "louis",
+            NewName = "alice",
+            ResourceType = ResourceTypes.Dlg,
+            Validation = ResRefValidationResult.Ok("alice"),
+            SourceFilePath = "/dummy",
+            TargetFilePath = "/dummy"
+        };
+
+        await RenameDispatchHelpers.PopulateReferencesAsync(
+            new[] { plan }, _tempDir, includeNss: false, new SearchCriteria { Pattern = "louis" },
+            allowedFilePaths: null);
+
+        Assert.Contains(plan.References, r => r.ResourceType == ResourceTypes.Utc);
+        Assert.Contains(plan.References, r => r.ResourceType == ResourceTypes.Git);
+    }
+
     // --- Test fixtures ---
 
     private static SearchMatch MakeMatchOn(FieldDefinition field) => new()

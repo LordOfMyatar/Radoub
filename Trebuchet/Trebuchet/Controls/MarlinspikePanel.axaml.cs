@@ -325,18 +325,29 @@ public partial class MarlinspikePanel : UserControl
     }
 
     /// <summary>
-    /// Walk ResultsTree.SelectedItems and collect the underlying file paths.
+    /// Walk the tree's selection and collect the underlying file paths.
     /// Selecting a file row pulls that file; selecting a match row pulls its parent file;
     /// selecting a group row pulls every file in the group.
+    /// Handles both single (SelectedItem) and multi (SelectedItems) selection.
     /// </summary>
     private HashSet<string> GetSelectedFilePaths()
     {
         var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (ResultsTree.SelectedItems == null) return paths;
 
-        foreach (var item in ResultsTree.SelectedItems)
+        // Combine plural and singular: Avalonia populates SelectedItem for the
+        // anchor; SelectedItems is the full multi-select set. Either may be the
+        // VM directly or a TreeViewItem wrapper depending on item-container
+        // lookup state — extract VMs via the DataContext if needed.
+        var collected = new List<object?>();
+        if (ResultsTree.SelectedItems != null)
+            collected.AddRange(ResultsTree.SelectedItems.Cast<object?>());
+        if (ResultsTree.SelectedItem != null && !collected.Contains(ResultsTree.SelectedItem))
+            collected.Add(ResultsTree.SelectedItem);
+
+        foreach (var raw in collected)
         {
-            switch (item)
+            var vm = raw is Avalonia.Controls.TreeViewItem tvi ? tvi.DataContext : raw;
+            switch (vm)
             {
                 case FileResultViewModel file:
                     paths.Add(file.FilePath);
@@ -378,9 +389,11 @@ public partial class MarlinspikePanel : UserControl
             allowResRefReplace: _viewModel.SearchFilenameResRef);
 
         // Dispatch to ResRef rename orchestrator when filename matches present.
+        // Pass the user's selection set down so reference updates are surgical —
+        // only files the user explicitly selected get their references rewritten.
         if (RenameDispatchHelpers.HasFilenameMatches(preview))
         {
-            await DispatchResRefRenameAsync(preview);
+            await DispatchResRefRenameAsync(preview, selectionFilter);
             return;
         }
 
@@ -393,8 +406,14 @@ public partial class MarlinspikePanel : UserControl
     /// <summary>
     /// Run the ResRef rename pipeline: build plans, populate references, surface
     /// auto-suffix collision dialogs, and execute via ResRefRenameOrchestrator.
+    ///
+    /// <paramref name="selectionFilter"/>, when non-null, restricts the reference
+    /// scan to only those file paths — the "surgical rename" mode (Path 1 per
+    /// design discussion). When null, references are populated module-wide.
     /// </summary>
-    private async Task DispatchResRefRenameAsync(BatchReplacePreview preview)
+    private async Task DispatchResRefRenameAsync(
+        BatchReplacePreview preview,
+        IReadOnlySet<string>? selectionFilter)
     {
         if (_viewModel == null || _parentWindow == null) return;
 
@@ -450,13 +469,15 @@ public partial class MarlinspikePanel : UserControl
             return;
         }
 
-        _viewModel.StatusText = "Scanning module for references...";
+        _viewModel.StatusText = selectionFilter != null
+            ? $"Scanning {selectionFilter.Count} selected file(s) for references..."
+            : "Scanning module for references...";
 
         try
         {
             var criteria = _viewModel.BuildSearchCriteria();
             await RenameDispatchHelpers.PopulateReferencesAsync(
-                confirmedPlans, moduleDir, _viewModel.IncludeNss, criteria);
+                confirmedPlans, moduleDir, _viewModel.IncludeNss, criteria, selectionFilter);
 
             var snapshotPaths = confirmedPlans
                 .SelectMany(p => p.References.Select(r => r.FilePath)
