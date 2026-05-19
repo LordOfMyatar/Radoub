@@ -317,7 +317,7 @@ public partial class MarlinspikePanel : UserControl
         {
             if (_viewModel != null)
                 _viewModel.StatusText =
-                    "Select rows first (click a row, or Ctrl+click for multiple), then click Replace Selected. Or use Replace All.";
+                    "Select a row first (click a file, match, or group), then click Replace Selected. Or use Replace All.";
             return;
         }
 
@@ -325,41 +325,35 @@ public partial class MarlinspikePanel : UserControl
     }
 
     /// <summary>
-    /// Walk the tree's selection and collect the underlying file paths.
-    /// Selecting a file row pulls that file; selecting a match row pulls its parent file;
-    /// selecting a group row pulls every file in the group.
-    /// Handles both single (SelectedItem) and multi (SelectedItems) selection.
+    /// Get file paths for the user's tree selection. Tree is single-select for
+    /// reliability — Avalonia's multi-select on TreeView had inconsistent behavior
+    /// with bound items, so we fall back to single-select. Multi-select can be
+    /// added later via a separate selection model if needed.
+    ///
+    /// Selecting a file row → that file.
+    /// Selecting a match row → its parent file.
+    /// Selecting a group row → every file in the group.
     /// </summary>
     private HashSet<string> GetSelectedFilePaths()
     {
         var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        // Combine plural and singular: Avalonia populates SelectedItem for the
-        // anchor; SelectedItems is the full multi-select set. Either may be the
-        // VM directly or a TreeViewItem wrapper depending on item-container
-        // lookup state — extract VMs via the DataContext if needed.
-        var collected = new List<object?>();
-        if (ResultsTree.SelectedItems != null)
-            collected.AddRange(ResultsTree.SelectedItems.Cast<object?>());
-        if (ResultsTree.SelectedItem != null && !collected.Contains(ResultsTree.SelectedItem))
-            collected.Add(ResultsTree.SelectedItem);
+        // SelectedItem may be the VM directly or wrapped in a TreeViewItem container.
+        var raw = ResultsTree.SelectedItem;
+        var vm = raw is Avalonia.Controls.TreeViewItem tvi ? tvi.DataContext : raw;
 
-        foreach (var raw in collected)
+        switch (vm)
         {
-            var vm = raw is Avalonia.Controls.TreeViewItem tvi ? tvi.DataContext : raw;
-            switch (vm)
-            {
-                case FileResultViewModel file:
-                    paths.Add(file.FilePath);
-                    break;
-                case MatchViewModel match:
-                    paths.Add(match.FilePath);
-                    break;
-                case FileTypeGroupViewModel group:
-                    foreach (var f in group.Files)
-                        paths.Add(f.FilePath);
-                    break;
-            }
+            case FileResultViewModel file:
+                paths.Add(file.FilePath);
+                break;
+            case MatchViewModel match:
+                paths.Add(match.FilePath);
+                break;
+            case FileTypeGroupViewModel group:
+                foreach (var f in group.Files)
+                    paths.Add(f.FilePath);
+                break;
         }
         return paths;
     }

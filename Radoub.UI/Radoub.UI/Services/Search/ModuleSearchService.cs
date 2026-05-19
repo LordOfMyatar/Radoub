@@ -248,8 +248,11 @@ public class ModuleSearchService
             if (!SearchableExtensions.Contains(ext))
                 continue;
 
-            // Apply file type filter if specified
-            if (fileTypeFilter != null && fileTypeFilter.Count > 0)
+            // Apply file type filter if specified.
+            // - null   = no filter, all types searched
+            // - empty  = filter to nothing, no file-type search (filename pass may still run)
+            // - non-empty = only these types searched
+            if (fileTypeFilter != null)
             {
                 var resourceType = ResourceTypes.FromExtension(ext);
                 if (!fileTypeFilter.Contains(resourceType))

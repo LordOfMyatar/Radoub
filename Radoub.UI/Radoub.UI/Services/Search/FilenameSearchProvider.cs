@@ -52,10 +52,11 @@ public class FilenameSearchProvider
 
             var resourceType = ResourceTypes.FromExtension(ext);
 
-            // Honor file-type filter — unchecked types are skipped per spec scope-respecting rule
-            if (criteria.FileTypeFilter != null && criteria.FileTypeFilter.Count > 0
-                && !criteria.FileTypeFilter.Contains(resourceType))
-                continue;
+            // Filename search is INDEPENDENT of the 18 file-type checkboxes.
+            // Those checkboxes gate file-CONTENT searching; filename matches are
+            // their own search domain enabled by SearchFilenameResRef. This lets
+            // the user search filenames alone (all 18 unchecked) — the surgical
+            // workflow this feature was designed for.
 
             var resRefPortion = Path.GetFileNameWithoutExtension(filePath);
             var match = pattern.Match(resRefPortion);

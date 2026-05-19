@@ -120,7 +120,6 @@
 
         <!-- Results Tree -->
         <TreeView x:Name="ResultsTree" Grid.Row="2" Margin="4"
-                  SelectionMode="Multiple"
                   DoubleTapped="OnResultDoubleTapped">
             <TreeView.Styles>
                 <Style Selector="TreeViewItem">

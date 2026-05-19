@@ -97,8 +97,13 @@ public class FilenameSearchProviderTests : IDisposable
     }
 
     [Fact]
-    public void Search_FileTypeFilter_ExcludesUncheckedTypes()
+    public void Search_FileTypeFilter_DoesNotGateFilenameSearch()
     {
+        // Filename search is independent of the 18 file-type content checkboxes.
+        // Those checkboxes gate file-CONTENT searching; filename matches are their
+        // own search domain enabled by SearchFilenameResRef. A user typing "louis"
+        // with only the filename/ResRef checkbox on should get matches across all
+        // file types — that's the surgical workflow.
         Touch("louis.dlg");
         Touch("louis.utc");
         Touch("louis.git");
@@ -108,13 +113,14 @@ public class FilenameSearchProviderTests : IDisposable
         {
             Pattern = "louis",
             IncludeFilenameResRef = true,
-            FileTypeFilter = new[] { ResourceTypes.Dlg }  // ONLY DLG
+            FileTypeFilter = new[] { ResourceTypes.Dlg }  // narrowed content filter
         };
 
         var results = provider.Search(_tempDir, criteria);
 
-        Assert.Single(results);
-        Assert.Equal("louis.dlg", results[0].FileName);
+        // All three filenames match — the file-type filter does NOT constrain
+        // filename search results.
+        Assert.Equal(3, results.Count);
     }
 
     [Fact]
