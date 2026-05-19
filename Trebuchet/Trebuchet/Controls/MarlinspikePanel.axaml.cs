@@ -316,8 +316,18 @@ public partial class MarlinspikePanel : UserControl
         if (selectedFilePaths.Count == 0)
         {
             if (_viewModel != null)
+            {
+                // Diagnostic: surface what the tree is reporting so we can debug
+                // selection-detection failures without a debugger.
+                var rawItem = ResultsTree.SelectedItem;
+                var rawType = rawItem?.GetType().Name ?? "null";
+                var dcType = (rawItem is Avalonia.Controls.TreeViewItem tvi
+                    ? tvi.DataContext?.GetType().Name
+                    : null) ?? "n/a";
                 _viewModel.StatusText =
-                    "Select a row first (click a file, match, or group), then click Replace Selected. Or use Replace All.";
+                    $"Select a row first (click a file, match, or group). " +
+                    $"[debug: SelectedItem={rawType}, DataContext={dcType}]";
+            }
             return;
         }
 
