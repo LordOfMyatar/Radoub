@@ -316,18 +316,8 @@ public partial class MarlinspikePanel : UserControl
         if (selectedFilePaths.Count == 0)
         {
             if (_viewModel != null)
-            {
-                // Diagnostic: surface what the tree is reporting so we can debug
-                // selection-detection failures without a debugger.
-                var rawItem = ResultsTree.SelectedItem;
-                var rawType = rawItem?.GetType().Name ?? "null";
-                var dcType = (rawItem is Avalonia.Controls.TreeViewItem tvi
-                    ? tvi.DataContext?.GetType().Name
-                    : null) ?? "n/a";
                 _viewModel.StatusText =
-                    $"Select a row first (click a file, match, or group). " +
-                    $"[debug: SelectedItem={rawType}, DataContext={dcType}]";
-            }
+                    "Select a row first (click a file, match, or group), then click Replace Selected. Or use Replace All.";
             return;
         }
 
@@ -335,34 +325,41 @@ public partial class MarlinspikePanel : UserControl
     }
 
     /// <summary>
-    /// Get file paths for the user's tree selection. Tree is single-select for
-    /// reliability — Avalonia's multi-select on TreeView had inconsistent behavior
-    /// with bound items, so we fall back to single-select. Multi-select can be
-    /// added later via a separate selection model if needed.
+    /// Get file paths for the user's tree selection. The tree is populated
+    /// programmatically with raw TreeViewItem instances that carry their row
+    /// data in the .Tag property (FileSearchResult, MatchInfo, or null for
+    /// group nodes). Inherited DataContext is the panel VM, so we read .Tag
+    /// directly — same pattern OnResultDoubleTapped uses.
     ///
     /// Selecting a file row → that file.
     /// Selecting a match row → its parent file.
-    /// Selecting a group row → every file in the group.
+    /// Selecting a group row → every file under that group.
     /// </summary>
     private HashSet<string> GetSelectedFilePaths()
     {
         var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        // SelectedItem may be the VM directly or wrapped in a TreeViewItem container.
-        var raw = ResultsTree.SelectedItem;
-        var vm = raw is Avalonia.Controls.TreeViewItem tvi ? tvi.DataContext : raw;
+        if (ResultsTree.SelectedItem is not Avalonia.Controls.TreeViewItem item)
+            return paths;
 
-        switch (vm)
+        switch (item.Tag)
         {
-            case FileResultViewModel file:
-                paths.Add(file.FilePath);
+            case MatchInfo matchInfo:
+                paths.Add(matchInfo.FilePath);
                 break;
-            case MatchViewModel match:
-                paths.Add(match.FilePath);
+            case FileSearchResult fileResult:
+                paths.Add(fileResult.FilePath);
                 break;
-            case FileTypeGroupViewModel group:
-                foreach (var f in group.Files)
-                    paths.Add(f.FilePath);
+            default:
+                // Group node (no Tag) — walk its child file-result items.
+                foreach (var child in item.Items)
+                {
+                    if (child is Avalonia.Controls.TreeViewItem childItem
+                        && childItem.Tag is FileSearchResult childFile)
+                    {
+                        paths.Add(childFile.FilePath);
+                    }
+                }
                 break;
         }
         return paths;
