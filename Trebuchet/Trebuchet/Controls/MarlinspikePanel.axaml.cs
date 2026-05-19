@@ -307,15 +307,53 @@ public partial class MarlinspikePanel : UserControl
 
     private async void OnReplaceAllClick(object? sender, RoutedEventArgs e)
     {
-        await OpenReplacePreviewAsync(selectAll: true);
+        await OpenReplacePreviewAsync(selectionFilter: null);
     }
 
     private async void OnReplaceSelectedClick(object? sender, RoutedEventArgs e)
     {
-        await OpenReplacePreviewAsync(selectAll: true);
+        var selectedFilePaths = GetSelectedFilePaths();
+        if (selectedFilePaths.Count == 0)
+        {
+            if (_viewModel != null)
+                _viewModel.StatusText =
+                    "Select rows first (click a row, or Ctrl+click for multiple), then click Replace Selected. Or use Replace All.";
+            return;
+        }
+
+        await OpenReplacePreviewAsync(selectionFilter: selectedFilePaths);
     }
 
-    private async Task OpenReplacePreviewAsync(bool selectAll)
+    /// <summary>
+    /// Walk ResultsTree.SelectedItems and collect the underlying file paths.
+    /// Selecting a file row pulls that file; selecting a match row pulls its parent file;
+    /// selecting a group row pulls every file in the group.
+    /// </summary>
+    private HashSet<string> GetSelectedFilePaths()
+    {
+        var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (ResultsTree.SelectedItems == null) return paths;
+
+        foreach (var item in ResultsTree.SelectedItems)
+        {
+            switch (item)
+            {
+                case FileResultViewModel file:
+                    paths.Add(file.FilePath);
+                    break;
+                case MatchViewModel match:
+                    paths.Add(match.FilePath);
+                    break;
+                case FileTypeGroupViewModel group:
+                    foreach (var f in group.Files)
+                        paths.Add(f.FilePath);
+                    break;
+            }
+        }
+        return paths;
+    }
+
+    private async Task OpenReplacePreviewAsync(IReadOnlySet<string>? selectionFilter)
     {
         if (_viewModel == null || _parentWindow == null) return;
 
@@ -325,6 +363,12 @@ public partial class MarlinspikePanel : UserControl
         EnsureServices();
 
         var filesWithMatches = lastResults.Files.Where(f => f.MatchCount > 0).ToList();
+        if (selectionFilter != null)
+        {
+            filesWithMatches = filesWithMatches
+                .Where(f => selectionFilter.Contains(f.FilePath))
+                .ToList();
+        }
         if (filesWithMatches.Count == 0) return;
 
         var replaceText = _viewModel.ReplaceText;
@@ -431,9 +475,11 @@ public partial class MarlinspikePanel : UserControl
             {
                 _viewModel.StatusText =
                     $"Renamed {result.RenamedFiles} file{(result.RenamedFiles != 1 ? "s" : "")}, " +
-                    $"updated {result.ReferencesUpdated} reference{(result.ReferencesUpdated != 1 ? "s" : "")}. Backup created.";
-                _viewModel.ClearResults();
-                ResultsTree.ItemsSource = null;
+                    $"updated {result.ReferencesUpdated} reference{(result.ReferencesUpdated != 1 ? "s" : "")}. " +
+                    "Backup created. Re-run search to refresh results.";
+                // Don't clear results tree — leaves the user wondering whether everything
+                // got renamed. Stale entries (renamed files at the old name) will simply
+                // not be found on the next search.
             }
             else
             {

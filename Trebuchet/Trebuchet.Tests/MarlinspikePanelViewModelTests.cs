@@ -231,6 +231,21 @@ public class MarlinspikePanelViewModelTests
     }
 
     [Fact]
+    public void CanSearch_NoFileTypesButFilenameResRefOn_ReturnsTrue()
+    {
+        // Filename/ResRef mode is a valid standalone search target — user
+        // can search filenames without any GFF file-types selected.
+        var vm = new MarlinspikePanelViewModel();
+        vm.SearchPattern = "louis";
+        vm.SearchFilenameResRef = true;  // auto-toggle would re-check file types, so deselect AFTER
+        vm.DeselectAllFileTypes();
+
+        Assert.False(vm.HasAnyFileTypeSelected);
+        Assert.True(vm.SearchFilenameResRef);
+        Assert.True(vm.CanSearch);
+    }
+
+    [Fact]
     public void HasAnyFileTypeSelected_OneChecked_ReturnsTrue()
     {
         var vm = new MarlinspikePanelViewModel();

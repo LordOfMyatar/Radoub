@@ -40,7 +40,7 @@ public partial class MarlinspikePanelViewModel : ObservableObject
     private bool _searchStrRefs;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ShowScopeNarrowingWarning))]
+    [NotifyPropertyChangedFor(nameof(ShowScopeNarrowingWarning), nameof(CanSearch))]
     private bool _searchFilenameResRef;
 
     [ObservableProperty]
@@ -111,7 +111,10 @@ public partial class MarlinspikePanelViewModel : ObservableObject
         IncludeUtw || IncludeUts || IncludeGit || IncludeAre || IncludeIfo ||
         IncludeFac || IncludeItp || IncludeNss;
 
-    public bool CanSearch => !string.IsNullOrEmpty(SearchPattern) && !IsSearching && HasAnyFileTypeSelected;
+    // Filename/ResRef mode can search filenames even with no GFF file-types selected;
+    // otherwise the user must have at least one file type checked.
+    public bool CanSearch => !string.IsNullOrEmpty(SearchPattern) && !IsSearching
+        && (HasAnyFileTypeSelected || SearchFilenameResRef);
 
     public bool CanReplace => HasResults && !string.IsNullOrEmpty(ReplaceText) && !IsSearching;
 
