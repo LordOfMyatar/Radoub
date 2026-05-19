@@ -99,14 +99,6 @@
                     </WrapPanel>
                 </StackPanel>
 
-                <!-- Scope-narrowing warning (only visible when filename/ResRef on AND scope narrowed) -->
-                <TextBlock IsVisible="{Binding ShowScopeNarrowingWarning}"
-                           Text="⚠ Unchecked file types are skipped — references there won't be renamed."
-                           TextWrapping="Wrap"
-                           FontSize="{DynamicResource FontSizeSmall}"
-                           Foreground="{DynamicResource ThemeWarning}"
-                           Margin="0,4,0,0"
-                           ToolTip.Tip="References in unchecked file types will not be updated and may break in-game. Compiled .ncs scripts and 2DA references are never scanned. See Marlinspike documentation for details."/>
             </StackPanel>
         </Border>
 

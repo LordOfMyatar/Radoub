@@ -388,61 +388,36 @@ public class MarlinspikePanelViewModelTests
     }
 
     [Fact]
-    public void TogglingSearchFilenameResRefOn_SelectsAllFileTypes()
+    public void TogglingSearchFilenameResRefOn_DoesNotAutoSelectFileTypes()
     {
+        // Per surgical-rename design: row selection IS the scope control.
+        // Toggling filename/ResRef must not bounce the file-type checkboxes
+        // the user deliberately set. Initial default state stays "all checked"
+        // (model defaults), but flipping the toggle does not re-check them.
         var vm = new MarlinspikePanelViewModel();
         vm.DeselectAllFileTypes();
         vm.SelectedCategory = "Identity";
 
         vm.SearchFilenameResRef = true;
 
-        Assert.True(vm.IncludeDlg);
-        Assert.True(vm.IncludeUtc);
-        Assert.True(vm.IncludeNss);
-        Assert.Equal("All Fields", vm.SelectedCategory);
+        Assert.False(vm.IncludeDlg);
+        Assert.False(vm.IncludeUtc);
+        Assert.False(vm.IncludeNss);
+        Assert.Equal("Identity", vm.SelectedCategory);  // category not bounced either
     }
 
     [Fact]
     public void TogglingSearchFilenameResRefOff_PreservesFileTypeSelection()
     {
         var vm = new MarlinspikePanelViewModel();
-        vm.SearchFilenameResRef = true;
         vm.IncludeGit = false;
         vm.IncludeIfo = false;
 
+        vm.SearchFilenameResRef = true;
         vm.SearchFilenameResRef = false;
 
         Assert.False(vm.IncludeGit);
         Assert.False(vm.IncludeIfo);
-    }
-
-    [Fact]
-    public void ShowScopeNarrowingWarning_FalseWhenSearchFilenameResRefIsOff()
-    {
-        var vm = new MarlinspikePanelViewModel();
-        vm.SearchFilenameResRef = false;
-        vm.IncludeGit = false;
-
-        Assert.False(vm.ShowScopeNarrowingWarning);
-    }
-
-    [Fact]
-    public void ShowScopeNarrowingWarning_FalseWhenAllFileTypesChecked()
-    {
-        var vm = new MarlinspikePanelViewModel();
-        vm.SearchFilenameResRef = true;
-
-        Assert.False(vm.ShowScopeNarrowingWarning);
-    }
-
-    [Fact]
-    public void ShowScopeNarrowingWarning_TrueWhenScopeNarrowed()
-    {
-        var vm = new MarlinspikePanelViewModel();
-        vm.SearchFilenameResRef = true;
-        vm.IncludeGit = false;
-
-        Assert.True(vm.ShowScopeNarrowingWarning);
     }
 
     [Fact]
