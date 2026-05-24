@@ -73,6 +73,12 @@ public class DialogBrowserPanel : FileBrowserPanelBase
     // DLG has no Tag or LocName equivalents — ResRef-only rename.
     protected override bool SupportsTagNameRename() => false;
 
+    // DLG format has no Tag/Name fields — restrict to ResRef sort mode only.
+    protected override IReadOnlyList<BrowserSortMode> SupportedSortModes { get; } = new[]
+    {
+        BrowserSortMode.ResRef
+    };
+
     protected override Task<byte[]?> ExtractArchiveBytesAsync(FileBrowserEntry entry)
     {
         if (!entry.IsFromHak || string.IsNullOrEmpty(entry.HakPath))

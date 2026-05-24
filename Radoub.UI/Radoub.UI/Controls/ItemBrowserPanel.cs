@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Radoub.Formats.Common;
@@ -167,6 +168,138 @@ public class ItemBrowserPanel : FileBrowserPanelBase
 
     protected override Task<byte[]> ApplyCopyCustomizationsAsync(byte[] sourceBytes, CopyToModuleResult result)
         => Task.FromResult(ApplyUtiCopyCustomizations(sourceBytes, result));
+
+    /// <summary>
+    /// Optional shared UTI palette cache. When provided, BIF/HAK entries pull
+    /// Tag/DisplayLabel from the cache (zero disk I/O) before falling back to
+    /// extraction. Module entries always read GFF directly.
+    /// </summary>
+    public ISharedPaletteCacheService? PaletteCache { get; set; }
+
+    /// <summary>
+    /// Background pass: populate Tag + DisplayLabel on every entry that does
+    /// not yet have metadata. Yields every 50 entries to keep the UI thread
+    /// responsive. Honors <paramref name="cancellationToken"/> between batches.
+    /// </summary>
+    protected override async Task IndexMetadataAsync(
+        IReadOnlyList<FileBrowserEntry> entries,
+        CancellationToken cancellationToken)
+    {
+        var paletteLookup = BuildPaletteLookup();
+        int processed = 0;
+
+        foreach (var entry in entries)
+        {
+            if (cancellationToken.IsCancellationRequested) return;
+            if (entry.MetadataLoaded) { processed++; continue; }
+
+            try
+            {
+                if (TryFillFromCache(entry, paletteLookup))
+                {
+                    entry.MetadataLoaded = true;
+                }
+                else
+                {
+                    var bytes = await ReadEntryBytesAsync(entry, cancellationToken);
+                    if (bytes != null)
+                    {
+                        var (tag, name) = await ReadSourceMetadataAsync(bytes);
+                        entry.Tag = tag;
+                        entry.DisplayLabel = name;
+                    }
+                    entry.MetadataLoaded = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"ItemBrowserPanel.IndexMetadataAsync({entry.Name}): {ex.Message}");
+                entry.MetadataLoaded = true; // don't retry forever
+            }
+
+            processed++;
+            if (processed % 50 == 0)
+            {
+                await Task.Yield();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Build a ResRef → cache-item lookup from the active palette cache. Returns
+    /// an empty dictionary when no cache is wired or the cache is empty.
+    /// </summary>
+    private Dictionary<string, SharedPaletteCacheItem> BuildPaletteLookup()
+    {
+        if (PaletteCache == null) return new Dictionary<string, SharedPaletteCacheItem>();
+
+        var items = PaletteCache.GetAggregatedCache();
+        if (items == null || items.Count == 0)
+            return new Dictionary<string, SharedPaletteCacheItem>();
+
+        var dict = new Dictionary<string, SharedPaletteCacheItem>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in items)
+        {
+            // First-write-wins matches the lookup order used elsewhere
+            // (Module > Override > HAK > BIF takes priority via insertion order).
+            dict.TryAdd(item.ResRef, item);
+        }
+        return dict;
+    }
+
+    /// <summary>
+    /// Pure-logic test seam: try to populate Tag + DisplayLabel from a cache
+    /// lookup. Returns true on hit, false on miss. Lookup is keyed by ResRef
+    /// (case-insensitive — caller responsible for using OrdinalIgnoreCase).
+    /// </summary>
+    internal static bool TryFillFromCache(
+        FileBrowserEntry entry,
+        Dictionary<string, SharedPaletteCacheItem> lookup)
+    {
+        if (lookup.Count == 0) return false;
+        if (!lookup.TryGetValue(entry.Name, out var item)) return false;
+
+        entry.Tag = item.Tag ?? string.Empty;
+        entry.DisplayLabel = item.DisplayName ?? string.Empty;
+        return true;
+    }
+
+    private async Task<byte[]?> ReadEntryBytesAsync(
+        FileBrowserEntry entry,
+        CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrEmpty(entry.FilePath) && File.Exists(entry.FilePath))
+        {
+            return await File.ReadAllBytesAsync(entry.FilePath, cancellationToken);
+        }
+
+        // HAK/BIF/archive entry — synchronous extraction wrapped in Task.Run
+        return await Task.Run(() => ExtractItemArchiveBytes(entry, GameDataService), cancellationToken);
+    }
+
+    /// <summary>
+    /// Reset metadata so the next indexing pass re-reads Tag + DisplayLabel for
+    /// the given entry. Called by tools after a save so the browser row updates
+    /// without a full reindex.
+    /// </summary>
+    public override async Task RefreshEntryMetadataAsync(FileBrowserEntry entry)
+    {
+        try
+        {
+            var bytes = await ReadEntryBytesAsync(entry, CancellationToken.None);
+            if (bytes == null) return;
+            var (tag, name) = await ReadSourceMetadataAsync(bytes);
+            entry.Tag = tag;
+            entry.DisplayLabel = name;
+            entry.MetadataLoaded = true;
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"ItemBrowserPanel.RefreshEntryMetadataAsync({entry.Name}): {ex.Message}");
+        }
+    }
 
     /// <summary>
     /// Rewrite a UTI byte blob with the user's new TemplateResRef/Tag/LocalizedName.

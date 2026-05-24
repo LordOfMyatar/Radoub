@@ -2,11 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Radoub.Formats.Erf;
 using Radoub.Formats.Logging;
@@ -26,6 +28,17 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
     private string? _modulePath;
     private string? _currentFilePath;
     private bool _isCollapsed;
+    private BrowserSortMode _sortMode = BrowserSortMode.ResRef;
+    private CancellationTokenSource? _indexingCts;
+
+    // DataGrid column indices (must match AXAML column order)
+    private const int ResRefColumnIndex = 0;
+    private const int NameColumnIndex = 1;
+    private const int TagColumnIndex = 2;
+
+    private DataGridColumn ResRefColumn => FileGrid.Columns[ResRefColumnIndex];
+    private DataGridColumn NameColumn => FileGrid.Columns[NameColumnIndex];
+    private DataGridColumn TagColumn => FileGrid.Columns[TagColumnIndex];
 
     /// <summary>
     /// Raised when a file is selected (single-click) or activated (double-click).
@@ -87,6 +100,61 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
         set => SearchBox.Watermark = value;
     }
 
+    /// <summary>
+    /// Sort modes this panel exposes in the SortMode ComboBox. Default is all
+    /// three modes. Override to restrict — e.g., DialogBrowserPanel returns
+    /// [ResRef] because DLG has no Tag/Name fields.
+    /// </summary>
+    protected virtual IReadOnlyList<BrowserSortMode> SupportedSortModes { get; } = new[]
+    {
+        BrowserSortMode.ResRef,
+        BrowserSortMode.Name,
+        BrowserSortMode.Tag
+    };
+
+    /// <summary>
+    /// Current sort/search mode. Setting this re-applies the filter and updates
+    /// the search-box watermark. Usually changed indirectly by clicking a
+    /// DataGrid column header.
+    /// </summary>
+    public BrowserSortMode SortMode
+    {
+        get => _sortMode;
+        set
+        {
+            if (_sortMode != value)
+            {
+                _sortMode = value;
+                UpdateSearchWatermark();
+                ApplyFilter();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Populate <see cref="FileBrowserEntry.DisplayLabel"/> and
+    /// <see cref="FileBrowserEntry.Tag"/> for the given entries in the background.
+    /// Default no-op. Tools override (Relique/Fence/Quartermaster) to read GFF
+    /// fields and/or pull from <see cref="SharedPaletteCacheService"/>.
+    /// </summary>
+    /// <param name="entries">Entries that still need metadata
+    /// (<see cref="FileBrowserEntry.MetadataLoaded"/> is false). The base loop
+    /// passes only un-indexed entries; the override may skip any it can't handle.</param>
+    /// <param name="cancellationToken">Cancelled on module change or when this
+    /// panel is disposed. Honor it between batches.</param>
+    protected virtual Task IndexMetadataAsync(
+        IReadOnlyList<FileBrowserEntry> entries,
+        CancellationToken cancellationToken)
+        => Task.CompletedTask;
+
+    /// <summary>
+    /// Re-read metadata for a single entry — typically called by the host tool
+    /// after a save so the browser row reflects the new Tag/Name without a full
+    /// reindex. Default no-op.
+    /// </summary>
+    public virtual Task RefreshEntryMetadataAsync(FileBrowserEntry entry)
+        => Task.CompletedTask;
+
     public FileBrowserPanelBase()
     {
         InitializeComponent();
@@ -97,7 +165,11 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
 
         // Lazily add Copy-to-Module menu item once the visual tree is ready so
         // subclass constructors have finished setting FileExtension/SupportsCopyToModule.
-        Loaded += (_, _) => TryAddCopyToModuleMenuItem();
+        Loaded += (_, _) =>
+        {
+            TryAddCopyToModuleMenuItem();
+            InitializeSortColumns();
+        };
     }
 
     #region IFileBrowserPanel Implementation
@@ -134,6 +206,7 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
             if (_modulePath != value)
             {
                 _modulePath = value;
+                CancelIndexing();
                 _ = RefreshAsync();
             }
         }
@@ -263,6 +336,7 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
                 $"FileBrowserPanel: Loaded {_allEntries.Count} files from {UnifiedLogger.SanitizePath(_modulePath)}");
 
             ApplyFilter();
+            KickoffIndexing();
         }
         catch (Exception ex)
         {
@@ -277,39 +351,22 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
 
     private void ApplyFilter()
     {
-        FileListBox.Items.Clear();
+        // Apply tool-specific filters (checkbox-based) BEFORE the shared sort/search
+        // so custom filters can use any FileBrowserEntry field they need.
+        var customFiltered = ApplyCustomFilters(_allEntries);
 
-        var searchText = SearchBox?.Text?.ToLowerInvariant() ?? "";
-
-        // Start with all entries
-        IEnumerable<FileBrowserEntry> filtered = _allEntries;
-
-        // Apply search filter
-        if (!string.IsNullOrWhiteSpace(searchText))
-        {
-            filtered = filtered.Where(e => e.Name.ToLowerInvariant().Contains(searchText));
-        }
-
-        // Apply tool-specific filters
-        filtered = ApplyCustomFilters(filtered);
-
-        // Sort: module files first, then by name
-        _filteredEntries = filtered
-            .OrderBy(e => e.IsFromHak ? 1 : 0)
-            .ThenBy(e => e.Name)
-            .ToList();
+        _filteredEntries = BrowserSortLogic.FilterAndSort(customFiltered, SearchBox?.Text, _sortMode);
 
         UpdateList();
     }
 
     private void UpdateList()
     {
-        FileListBox.Items.Clear();
-
-        foreach (var entry in _filteredEntries)
-        {
-            FileListBox.Items.Add(entry);
-        }
+        // Re-assign ItemsSource so the DataGrid rebinds. Setting to a new
+        // List<> instance forces a full refresh (we don't use ObservableCollection
+        // because the list is fully rebuilt on every filter/sort change anyway).
+        FileGrid.ItemsSource = null;
+        FileGrid.ItemsSource = _filteredEntries;
 
         // Update count
         var moduleCount = _filteredEntries.Count(e => !e.IsFromHak);
@@ -329,7 +386,7 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
     {
         if (string.IsNullOrEmpty(_currentFilePath))
         {
-            FileListBox.SelectedItem = null;
+            FileGrid.SelectedItem = null;
             return;
         }
 
@@ -347,8 +404,8 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
 
         if (entry != null)
         {
-            FileListBox.SelectedItem = entry;
-            FileListBox.ScrollIntoView(entry);
+            FileGrid.SelectedItem = entry;
+            FileGrid.ScrollIntoView(entry, null);
         }
     }
 
@@ -399,17 +456,17 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
         ApplyFilter();
     }
 
-    private void OnFileSelected(object? sender, SelectionChangedEventArgs e)
+    private void OnFileGridSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (FileListBox.SelectedItem is FileBrowserEntry entry)
+        if (FileGrid.SelectedItem is FileBrowserEntry entry)
         {
             FileSelected?.Invoke(this, new FileSelectedEventArgs(entry, isDoubleClick: false));
         }
     }
 
-    private void OnFileDoubleClicked(object? sender, RoutedEventArgs e)
+    private void OnFileGridDoubleTapped(object? sender, RoutedEventArgs e)
     {
-        if (FileListBox.SelectedItem is FileBrowserEntry entry)
+        if (FileGrid.SelectedItem is FileBrowserEntry entry)
         {
             FileSelected?.Invoke(this, new FileSelectedEventArgs(entry, isDoubleClick: true));
         }
@@ -417,28 +474,42 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
 
     /// <summary>
     /// Right-click should select the row under the pointer before the context menu
-    /// opens. Avalonia's ListBox doesn't do this by default — without it, the
-    /// context-menu Opening handlers see SelectedItem == null when the user
-    /// right-clicks an unselected row, and Copy-to-Module never appears (#2106).
+    /// opens (#2106 — fixes Copy-to-Module visibility on right-click). We walk up
+    /// the visual tree from the click source to the DataGridRow and select its
+    /// DataContext so context-menu Opening handlers see a non-null SelectedItem.
     /// </summary>
-    /// <summary>
-    /// ContextRequested fires before the context menu opens, giving us the source
-    /// element under the pointer. We walk up the visual tree to the ListBoxItem
-    /// and select its DataContext, so context-menu Opening handlers see a non-null
-    /// SelectedItem (#2106 — fixes Copy-to-Module visibility on right-click).
-    /// </summary>
-    private void OnFileListContextRequested(object? sender, Avalonia.Controls.ContextRequestedEventArgs e)
+    private void OnFileGridContextRequested(object? sender, Avalonia.Controls.ContextRequestedEventArgs e)
     {
         var source = e.Source as Avalonia.Visual;
-        while (source != null && source is not ListBoxItem)
+        while (source != null && source is not DataGridRow)
         {
             source = source.GetVisualParent();
         }
 
-        if (source is ListBoxItem lbi && lbi.DataContext is FileBrowserEntry entry)
+        if (source is DataGridRow row && row.DataContext is FileBrowserEntry entry)
         {
-            FileListBox.SelectedItem = entry;
+            FileGrid.SelectedItem = entry;
         }
+    }
+
+    /// <summary>
+    /// Intercept DataGrid column-header sorts: translate the clicked column into
+    /// a <see cref="BrowserSortMode"/>, set <see cref="SortMode"/> (which re-applies
+    /// the filter), and cancel the built-in sort so module-first tier is preserved.
+    /// </summary>
+    private void OnFileGridSorting(object? sender, DataGridColumnEventArgs e)
+    {
+        BrowserSortMode? requested = null;
+        if (ReferenceEquals(e.Column, ResRefColumn)) requested = BrowserSortMode.ResRef;
+        else if (ReferenceEquals(e.Column, NameColumn)) requested = BrowserSortMode.Name;
+        else if (ReferenceEquals(e.Column, TagColumn)) requested = BrowserSortMode.Tag;
+
+        if (requested == null) return;
+
+        // Suppress DataGrid's built-in sort (it would override our module-first tier).
+        e.Handled = true;
+
+        SortMode = requested.Value;
     }
 
     private void OnCollapseClick(object? sender, RoutedEventArgs e)
@@ -449,7 +520,7 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
     private void OnContextMenuOpening(object? sender, System.ComponentModel.CancelEventArgs e)
     {
         // Only enable Delete for module files (not HAK/vault resources)
-        var hasSelection = FileListBox.SelectedItem is FileBrowserEntry entry
+        var hasSelection = FileGrid.SelectedItem is FileBrowserEntry entry
             && !entry.IsFromHak
             && !string.IsNullOrEmpty(entry.FilePath);
         DeleteMenuItem.IsEnabled = hasSelection;
@@ -457,7 +528,7 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
 
     private void OnDeleteMenuItemClick(object? sender, RoutedEventArgs e)
     {
-        if (FileListBox.SelectedItem is FileBrowserEntry entry && !entry.IsFromHak && !string.IsNullOrEmpty(entry.FilePath))
+        if (FileGrid.SelectedItem is FileBrowserEntry entry && !entry.IsFromHak && !string.IsNullOrEmpty(entry.FilePath))
         {
             FileDeleteRequested?.Invoke(this, new FileDeleteRequestedEventArgs(entry));
         }
@@ -474,11 +545,14 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
     /// <summary>
     /// Merge additional entries into the master list (with name-based dedup).
     /// Call after lazy-loading entries (e.g., on checkbox toggle) so they
-    /// become visible to ApplyFilter/ApplyCustomFilters.
+    /// become visible to ApplyFilter/ApplyCustomFilters. Also triggers a
+    /// background indexing pass over any newly added entries.
     /// </summary>
     protected void MergeAdditionalEntries(IEnumerable<FileBrowserEntry> entries)
     {
-        MergeEntries(_allEntries, entries);
+        var materialized = entries.ToList();
+        MergeEntries(_allEntries, materialized);
+        KickoffIndexing();
     }
 
     /// <summary>
@@ -494,6 +568,91 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
                 target.Add(entry);
             }
         }
+    }
+
+    #endregion
+
+    #region Sort Mode + Indexing
+
+    /// <summary>
+    /// Apply the panel's <see cref="SupportedSortModes"/> to the DataGrid columns:
+    /// hide unsupported columns (e.g., Parley DLG hides Name/Tag), and update
+    /// the search-box watermark to match the current SortMode.
+    /// </summary>
+    private void InitializeSortColumns()
+    {
+        var modes = SupportedSortModes ?? new[] { BrowserSortMode.ResRef };
+        var modeSet = new HashSet<BrowserSortMode>(modes);
+
+        NameColumn.IsVisible = modeSet.Contains(BrowserSortMode.Name);
+        TagColumn.IsVisible = modeSet.Contains(BrowserSortMode.Tag);
+
+        UpdateSearchWatermark();
+    }
+
+    private void UpdateSearchWatermark()
+    {
+        SearchBox.Watermark = _sortMode switch
+        {
+            BrowserSortMode.Name => "Search by name...",
+            BrowserSortMode.Tag => "Search by tag...",
+            _ => "Search by resref..."
+        };
+    }
+
+    /// <summary>
+    /// Cancel any in-flight indexing task. Called on module change and disposal.
+    /// </summary>
+    private void CancelIndexing()
+    {
+        if (_indexingCts != null)
+        {
+            _indexingCts.Cancel();
+            _indexingCts.Dispose();
+            _indexingCts = null;
+        }
+    }
+
+    /// <summary>
+    /// Start a background indexing pass for any entries that don't yet have
+    /// metadata. Cancels and replaces any in-flight indexing. On completion,
+    /// re-applies the current filter so searches that ran during indexing
+    /// see fresh DisplayLabel/Tag data.
+    /// </summary>
+    private void KickoffIndexing()
+    {
+        CancelIndexing();
+
+        var pending = _allEntries.Where(e => !e.MetadataLoaded).ToList();
+        if (pending.Count == 0) return;
+
+        _indexingCts = new CancellationTokenSource();
+        var token = _indexingCts.Token;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await IndexMetadataAsync(pending, token);
+
+                if (token.IsCancellationRequested) return;
+
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    if (token.IsCancellationRequested) return;
+                    ApplyFilter();
+                });
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected on module change — no logging needed.
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"FileBrowserPanel: Indexing error: {ex.Message}");
+            }
+        }, token);
     }
 
     #endregion
@@ -569,7 +728,7 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
         _copyToModuleMenuItem = new MenuItem { Header = "Copy to Module" };
         _copyToModuleMenuItem.Click += async (_, _) =>
         {
-            if (FileListBox.SelectedItem is FileBrowserEntry entry)
+            if (FileGrid.SelectedItem is FileBrowserEntry entry)
                 await CopyArchiveEntryToModuleAsync(entry);
         };
 
@@ -584,7 +743,7 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
     {
         if (_copyToModuleMenuItem == null) return;
 
-        var entry = FileListBox.SelectedItem as FileBrowserEntry;
+        var entry = FileGrid.SelectedItem as FileBrowserEntry;
         var isArchive = entry != null && IsArchiveEntry(entry);
         _copyToModuleMenuItem.IsVisible = isArchive && !string.IsNullOrEmpty(ModulePath);
     }
