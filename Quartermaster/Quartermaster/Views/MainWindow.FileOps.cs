@@ -539,6 +539,11 @@ public partial class MainWindow
             ShowProgress(false);
             UpdateStatus($"Saved: {Path.GetFileName(_currentFilePath)}");
 
+            // Refresh browser row Tag/Name without full reindex (#2201).
+            // Fire-and-forget — save flow does not block on UI refresh.
+            var creatureBrowserPanel = this.FindControl<CreatureBrowserPanel>("CreatureBrowserPanel");
+            _ = Radoub.UI.Controls.BrowserSaveNotifier.NotifyAsync(creatureBrowserPanel, _currentFilePath);
+
             UnifiedLogger.LogCreature(LogLevel.INFO, $"Saved creature: {UnifiedLogger.SanitizePath(_currentFilePath)}");
         }
         catch (Exception ex)
