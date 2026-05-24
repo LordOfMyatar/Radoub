@@ -73,6 +73,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private ItemViewModelFactory? _itemViewModelFactory;
     private bool _servicesInitialized;
 
+    // Per-resource UTM palette cache for store browser Name/Tag indexing (#2200).
+    // Subdirectory keeps it isolated from the UTI ItemPalette cache so the two
+    // resource types do not collide on aggregation.
+    private readonly ISharedPaletteCacheService _storePaletteCache =
+        new SharedPaletteCacheService(Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "Radoub", "Cache", "StorePalette"));
+
     // Cancellation token for async operations - cancelled on window close
     private CancellationTokenSource? _windowCts;
 
@@ -177,6 +185,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 if (storeBrowserPanel != null && _gameDataService != null)
                 {
                     storeBrowserPanel.GameDataService = _gameDataService;
+                    storeBrowserPanel.PaletteCache = _storePaletteCache;
                 }
 
                 var searchBar = this.FindControl<SearchBar>("FileSearchBar");

@@ -363,6 +363,11 @@ public partial class MainWindow
             SettingsService.Instance.AddRecentFile(filePath);
             UpdateRecentFilesMenu();
 
+            // Refresh browser row Tag/Name without full reindex (#2200).
+            // Fire-and-forget — save flow does not block on UI refresh.
+            var storeBrowserPanel = this.FindControl<StoreBrowserPanel>("StoreBrowserPanel");
+            _ = Radoub.UI.Controls.BrowserSaveNotifier.NotifyAsync(storeBrowserPanel, filePath);
+
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Saved store: {UnifiedLogger.SanitizePath(filePath)}");
         }
         catch (Exception ex)
