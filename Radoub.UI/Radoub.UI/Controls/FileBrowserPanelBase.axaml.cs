@@ -570,6 +570,36 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
         }
     }
 
+    /// <summary>
+    /// Locate a browser entry by full file path (case-insensitive). Host tools
+    /// call this after saving a file so they can hand the entry to
+    /// <see cref="RefreshEntryMetadataAsync"/> for a targeted re-read (#2199).
+    /// Returns null when the path is empty/null, no entry matches, or the
+    /// matching entry has no FilePath (HAK/BIF rows).
+    /// </summary>
+    public FileBrowserEntry? FindEntryByFilePath(string filePath)
+        => FindEntryByFilePath(_allEntries, filePath);
+
+    /// <summary>
+    /// Pure-logic overload for testing. Same semantics as the instance method
+    /// but operates on a caller-supplied entry list.
+    /// </summary>
+    internal static FileBrowserEntry? FindEntryByFilePath(
+        IEnumerable<FileBrowserEntry> entries,
+        string filePath)
+    {
+        if (string.IsNullOrEmpty(filePath)) return null;
+        foreach (var entry in entries)
+        {
+            if (!string.IsNullOrEmpty(entry.FilePath)
+                && entry.FilePath.Equals(filePath, StringComparison.OrdinalIgnoreCase))
+            {
+                return entry;
+            }
+        }
+        return null;
+    }
+
     #endregion
 
     #region Sort Mode + Indexing

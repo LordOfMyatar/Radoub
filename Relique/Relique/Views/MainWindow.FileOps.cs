@@ -130,6 +130,11 @@ public partial class MainWindow
             UtiWriter.Write(_currentItem, _currentFilePath);
             _documentState.ClearDirty();
 
+            // Refresh browser row Tag/Name without full reindex (#2199).
+            // Fire-and-forget — save flow does not block on UI refresh.
+            _ = Radoub.UI.Controls.BrowserSaveNotifier
+                .NotifyAsync(ItemBrowserPanel, _currentFilePath);
+
             UpdateStatus("Ready");
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Saved: {UnifiedLogger.SanitizePath(_currentFilePath)}");
             return true;

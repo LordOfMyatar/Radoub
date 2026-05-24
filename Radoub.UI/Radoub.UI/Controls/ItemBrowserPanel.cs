@@ -44,7 +44,7 @@ internal class ItemHakCacheEntry
 /// Item browser panel for embedding in Relique's main window.
 /// Provides file list with optional HAK and BIF (base game) scanning for .uti files.
 /// </summary>
-public class ItemBrowserPanel : FileBrowserPanelBase
+public class ItemBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
 {
     private readonly CheckBox _showModuleCheckBox;
     private readonly CheckBox _showHakCheckBox;
@@ -298,6 +298,47 @@ public class ItemBrowserPanel : FileBrowserPanelBase
         {
             UnifiedLogger.LogApplication(LogLevel.WARN,
                 $"ItemBrowserPanel.RefreshEntryMetadataAsync({entry.Name}): {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// <see cref="IBrowserRowRefresher"/> implementation. Host tools should
+    /// depend on the interface (via <see cref="BrowserSaveNotifier"/>) rather
+    /// than calling the static method directly, so the post-save wire-up is
+    /// testable with a fake refresher.
+    /// </summary>
+    public Task RefreshRowAsync(string filePath)
+    {
+        var entry = FindEntryByFilePath(filePath);
+        return entry == null ? Task.CompletedTask : RefreshEntryFromDiskAsync(entry);
+    }
+
+    /// <summary>
+    /// Save-flow hook for module entries: re-read Tag + DisplayLabel from
+    /// the on-disk UTI bytes. Pure-static so host tools (Relique) can call
+    /// without holding an ItemBrowserPanel reference, and so the round-trip
+    /// is unit-testable without Avalonia (#2199 Sprint 2).
+    ///
+    /// No-op for entries without a FilePath (HAK/BIF rows are cache-driven).
+    /// On read or parse failure the entry is left untouched.
+    /// </summary>
+    public static async Task RefreshEntryFromDiskAsync(FileBrowserEntry entry)
+    {
+        if (string.IsNullOrEmpty(entry.FilePath)) return;
+        if (!File.Exists(entry.FilePath)) return;
+
+        try
+        {
+            var bytes = await File.ReadAllBytesAsync(entry.FilePath);
+            var uti = Radoub.Formats.Uti.UtiReader.Read(bytes);
+            entry.Tag = uti.Tag ?? string.Empty;
+            entry.DisplayLabel = uti.LocalizedName.GetDefault() ?? string.Empty;
+            entry.MetadataLoaded = true;
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"ItemBrowserPanel.RefreshEntryFromDiskAsync({entry.Name}): {ex.Message}");
         }
     }
 
