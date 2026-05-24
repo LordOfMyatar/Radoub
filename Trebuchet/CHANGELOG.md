@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.35.0-alpha] - 2026-05-24
-**Branch**: `radoub/issue-2218` | **PR**: #TBD
+**Branch**: `radoub/issue-2218` | **PR**: #2222
 
 ### Sprint: CI Flake Cleanup (#2218)
 
