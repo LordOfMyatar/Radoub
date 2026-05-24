@@ -222,6 +222,51 @@ public static class RenameDispatchHelpers
     }
 
     /// <summary>
+    /// Build a residual preview containing only the non-filename rows from the
+    /// original preview. Used by the rename dispatch flow so that content matches
+    /// (e.g. ITP Name field) that weren't consumed by the rename are still
+    /// processed by the standard replace path afterward.
+    ///
+    /// <paramref name="renameMap"/> maps source file paths to their post-rename
+    /// targets, used to remap any residual change whose FilePath refers to a file
+    /// that was just renamed. Rows whose FilePath is not in the map are passed
+    /// through unchanged.
+    ///
+    /// Preserves <see cref="BatchReplacePreview.AllowResRefReplace"/> and per-row
+    /// <see cref="PendingChange.IsSelected"/> state. Does not include FileGroups
+    /// (BatchReplaceService.ExecuteReplaceAsync iterates Changes, not FileGroups).
+    /// </summary>
+    public static BatchReplacePreview BuildResidualPreview(
+        BatchReplacePreview preview,
+        IReadOnlyDictionary<string, string> renameMap)
+    {
+        var residual = new BatchReplacePreview
+        {
+            AllowResRefReplace = preview?.AllowResRefReplace ?? false
+        };
+        if (preview == null) return residual;
+
+        foreach (var change in preview.Changes)
+        {
+            if (change.Match.Field.GffPath == FilenameSearchProvider.FilenameField.GffPath)
+                continue;  // filename rows are handled by the rename path
+
+            var newPath = renameMap != null && renameMap.TryGetValue(change.FilePath, out var mapped)
+                ? mapped
+                : change.FilePath;
+
+            residual.Changes.Add(new PendingChange
+            {
+                Match = change.Match,
+                ReplacementText = change.ReplacementText,
+                FilePath = newPath,
+                IsSelected = change.IsSelected
+            });
+        }
+        return residual;
+    }
+
+    /// <summary>
     /// ResRefReference is a class (not record) — duplicate explicit copy so we
     /// can attach the per-plan NewValue without mutating the scanner's outputs
     /// across multiple plans. See Chunk 1a Task 1a.16 for the design rationale.

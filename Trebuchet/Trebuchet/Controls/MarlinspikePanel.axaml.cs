@@ -603,9 +603,28 @@ public partial class MarlinspikePanel : UserControl
 
             if (result.Success)
             {
+                // Process any non-filename content matches that were in the same preview
+                // but weren't consumed by the rename (e.g. ITP Name field replaces).
+                // Without this, the user has to click Replace All twice to clean up
+                // residual content rows.
+                var renameMap = confirmedPlans.ToDictionary(
+                    p => p.SourceFilePath,
+                    p => p.TargetFilePath,
+                    StringComparer.OrdinalIgnoreCase);
+                var residualPreview = RenameDispatchHelpers.BuildResidualPreview(preview, renameMap);
+
+                int residualReplacements = 0;
+                if (residualPreview.Changes.Count > 0)
+                {
+                    var residualResult = await _batchReplaceService!.ExecuteReplaceAsync(
+                        residualPreview, moduleName);
+                    residualReplacements = residualResult.ReplacementsMade;
+                }
+
+                var totalRefs = result.ReferencesUpdated + residualReplacements;
                 _viewModel.StatusText =
                     $"Renamed {result.RenamedFiles} file{(result.RenamedFiles != 1 ? "s" : "")}, " +
-                    $"updated {result.ReferencesUpdated} reference{(result.ReferencesUpdated != 1 ? "s" : "")}. " +
+                    $"updated {totalRefs} reference{(totalRefs != 1 ? "s" : "")}. " +
                     "Backup created. Re-run search to refresh results.";
                 // Don't clear results tree — leaves the user wondering whether everything
                 // got renamed. Stale entries (renamed files at the old name) will simply
