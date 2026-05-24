@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.32-alpha] - 2026-05-24
+**Branch**: `fence/issue-2200` | **PR**: #2209
+
+### Feat: Adopt FileBrowserPanelBase Name/Tag sort + search (#2200)
+
+- Wire `StoreBrowserPanel` to expose Name/Tag sort + search for UTM merchant stores
+- Per-resource UTM palette cache at `~/Radoub/Cache/StorePalette/` (isolated from the UTI ItemPalette cache)
+- HAK/BIF stores eager-parsed on first scan and persisted to cache; subsequent loads index instantly from cache
+- Module stores indexed lazily in background via `UtmReader.Read`
+- Saving a UTM refreshes its browser-row Tag/Name without a full reindex (via `BrowserSaveNotifier`)
+- Column headers now toggle sort direction on repeat click for ResRef/Name/Tag (matches Source column behavior). Fixes a latent defect from Sprint 1 — benefits Relique + future Quartermaster Sprint 4.
+
+---
+
 ## [0.1.31-alpha] - 2026-05-01
 **Branch**: `radoub/issue-2159` | **PR**: #2160
 

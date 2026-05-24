@@ -167,6 +167,48 @@ public class BrowserSortLogicTests
     }
 
     [Fact]
+    public void SortByResRef_Descending_ReversesWithinTiers_ModuleFirstPreserved()
+    {
+        var result = BrowserSortLogic.FilterAndSort(
+            SampleEntries(), null, BrowserSortMode.ResRef, BrowserSortDirection.Descending);
+
+        // Module tier first (still), reversed within: mod_b, mod_a. HAK tier reversed: hak_d, hak_c.
+        Assert.Equal(new[] { "mod_b", "mod_a", "hak_d", "hak_c" }, result.Select(e => e.Name));
+    }
+
+    [Fact]
+    public void SortByName_Descending_ReversesByDisplayLabel_NullsStillLast()
+    {
+        var result = BrowserSortLogic.FilterAndSort(
+            SampleEntries(), null, BrowserSortMode.Name, BrowserSortDirection.Descending);
+
+        // Module tier: Beta Sword before Alpha Shield. HAK tier: Charlie Ring before null-label hak_d.
+        // Null labels still cluster at the bottom of their tier regardless of direction.
+        Assert.Equal(new[] { "mod_b", "mod_a", "hak_c", "hak_d" }, result.Select(e => e.Name));
+    }
+
+    [Fact]
+    public void SortByTag_Descending_ReversesByTag_NullsStillLast()
+    {
+        var result = BrowserSortLogic.FilterAndSort(
+            SampleEntries(), null, BrowserSortMode.Tag, BrowserSortDirection.Descending);
+
+        // Module: TAG_BETA before TAG_ALPHA. HAK: TAG_CHARLIE before null-tag hak_d.
+        Assert.Equal(new[] { "mod_b", "mod_a", "hak_c", "hak_d" }, result.Select(e => e.Name));
+    }
+
+    [Fact]
+    public void Ascending_DefaultBehavior_MatchesNoDirectionOverload()
+    {
+        var explicitAsc = BrowserSortLogic.FilterAndSort(
+            SampleEntries(), null, BrowserSortMode.Name, BrowserSortDirection.Ascending);
+        var implicitAsc = BrowserSortLogic.FilterAndSort(
+            SampleEntries(), null, BrowserSortMode.Name);
+
+        Assert.Equal(implicitAsc.Select(e => e.Name), explicitAsc.Select(e => e.Name));
+    }
+
+    [Fact]
     public void DefaultEntry_BehavesAsResRefMode()
     {
         var entries = new List<FileBrowserEntry>
