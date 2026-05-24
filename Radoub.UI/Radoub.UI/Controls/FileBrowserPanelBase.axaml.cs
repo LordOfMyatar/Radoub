@@ -2,11 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Radoub.Formats.Erf;
 using Radoub.Formats.Logging;
@@ -26,6 +28,9 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
     private string? _modulePath;
     private string? _currentFilePath;
     private bool _isCollapsed;
+    private BrowserSortMode _sortMode = BrowserSortMode.ResRef;
+    private CancellationTokenSource? _indexingCts;
+    private bool _sortModeBoxInitialized;
 
     /// <summary>
     /// Raised when a file is selected (single-click) or activated (double-click).
@@ -87,6 +92,60 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
         set => SearchBox.Watermark = value;
     }
 
+    /// <summary>
+    /// Sort modes this panel exposes in the SortMode ComboBox. Default is all
+    /// three modes. Override to restrict — e.g., DialogBrowserPanel returns
+    /// [ResRef] because DLG has no Tag/Name fields.
+    /// </summary>
+    protected virtual IReadOnlyList<BrowserSortMode> SupportedSortModes { get; } = new[]
+    {
+        BrowserSortMode.ResRef,
+        BrowserSortMode.Name,
+        BrowserSortMode.Tag
+    };
+
+    /// <summary>
+    /// Current sort/search mode. Setting this re-applies the filter and updates
+    /// the ComboBox selection.
+    /// </summary>
+    public BrowserSortMode SortMode
+    {
+        get => _sortMode;
+        set
+        {
+            if (_sortMode != value)
+            {
+                _sortMode = value;
+                UpdateSearchWatermark();
+                ApplyFilter();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Populate <see cref="FileBrowserEntry.DisplayLabel"/> and
+    /// <see cref="FileBrowserEntry.Tag"/> for the given entries in the background.
+    /// Default no-op. Tools override (Relique/Fence/Quartermaster) to read GFF
+    /// fields and/or pull from <see cref="SharedPaletteCacheService"/>.
+    /// </summary>
+    /// <param name="entries">Entries that still need metadata
+    /// (<see cref="FileBrowserEntry.MetadataLoaded"/> is false). The base loop
+    /// passes only un-indexed entries; the override may skip any it can't handle.</param>
+    /// <param name="cancellationToken">Cancelled on module change or when this
+    /// panel is disposed. Honor it between batches.</param>
+    protected virtual Task IndexMetadataAsync(
+        IReadOnlyList<FileBrowserEntry> entries,
+        CancellationToken cancellationToken)
+        => Task.CompletedTask;
+
+    /// <summary>
+    /// Re-read metadata for a single entry — typically called by the host tool
+    /// after a save so the browser row reflects the new Tag/Name without a full
+    /// reindex. Default no-op.
+    /// </summary>
+    public virtual Task RefreshEntryMetadataAsync(FileBrowserEntry entry)
+        => Task.CompletedTask;
+
     public FileBrowserPanelBase()
     {
         InitializeComponent();
@@ -97,7 +156,11 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
 
         // Lazily add Copy-to-Module menu item once the visual tree is ready so
         // subclass constructors have finished setting FileExtension/SupportsCopyToModule.
-        Loaded += (_, _) => TryAddCopyToModuleMenuItem();
+        Loaded += (_, _) =>
+        {
+            TryAddCopyToModuleMenuItem();
+            InitializeSortModeBox();
+        };
     }
 
     #region IFileBrowserPanel Implementation
@@ -134,6 +197,7 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
             if (_modulePath != value)
             {
                 _modulePath = value;
+                CancelIndexing();
                 _ = RefreshAsync();
             }
         }
@@ -263,6 +327,7 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
                 $"FileBrowserPanel: Loaded {_allEntries.Count} files from {UnifiedLogger.SanitizePath(_modulePath)}");
 
             ApplyFilter();
+            KickoffIndexing();
         }
         catch (Exception ex)
         {
@@ -279,25 +344,11 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
     {
         FileListBox.Items.Clear();
 
-        var searchText = SearchBox?.Text?.ToLowerInvariant() ?? "";
+        // Apply tool-specific filters (checkbox-based) BEFORE the shared sort/search
+        // so custom filters can use any FileBrowserEntry field they need.
+        var customFiltered = ApplyCustomFilters(_allEntries);
 
-        // Start with all entries
-        IEnumerable<FileBrowserEntry> filtered = _allEntries;
-
-        // Apply search filter
-        if (!string.IsNullOrWhiteSpace(searchText))
-        {
-            filtered = filtered.Where(e => e.Name.ToLowerInvariant().Contains(searchText));
-        }
-
-        // Apply tool-specific filters
-        filtered = ApplyCustomFilters(filtered);
-
-        // Sort: module files first, then by name
-        _filteredEntries = filtered
-            .OrderBy(e => e.IsFromHak ? 1 : 0)
-            .ThenBy(e => e.Name)
-            .ToList();
+        _filteredEntries = BrowserSortLogic.FilterAndSort(customFiltered, SearchBox?.Text, _sortMode);
 
         UpdateList();
     }
@@ -474,11 +525,14 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
     /// <summary>
     /// Merge additional entries into the master list (with name-based dedup).
     /// Call after lazy-loading entries (e.g., on checkbox toggle) so they
-    /// become visible to ApplyFilter/ApplyCustomFilters.
+    /// become visible to ApplyFilter/ApplyCustomFilters. Also triggers a
+    /// background indexing pass over any newly added entries.
     /// </summary>
     protected void MergeAdditionalEntries(IEnumerable<FileBrowserEntry> entries)
     {
-        MergeEntries(_allEntries, entries);
+        var materialized = entries.ToList();
+        MergeEntries(_allEntries, materialized);
+        KickoffIndexing();
     }
 
     /// <summary>
@@ -494,6 +548,112 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
                 target.Add(entry);
             }
         }
+    }
+
+    #endregion
+
+    #region Sort Mode + Indexing
+
+    private void InitializeSortModeBox()
+    {
+        if (_sortModeBoxInitialized) return;
+        _sortModeBoxInitialized = true;
+
+        var modes = SupportedSortModes;
+        if (modes == null || modes.Count <= 1)
+        {
+            // Nothing meaningful to choose — hide the row entirely.
+            SortModeRow.IsVisible = false;
+            return;
+        }
+
+        SortModeBox.ItemsSource = modes.Select(SortModeDisplayText).ToList();
+        var currentIndex = modes.ToList().IndexOf(_sortMode);
+        SortModeBox.SelectedIndex = currentIndex >= 0 ? currentIndex : 0;
+        SortModeRow.IsVisible = true;
+
+        UpdateSearchWatermark();
+    }
+
+    private void OnSortModeChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (SortModeBox.SelectedIndex < 0) return;
+        var modes = SupportedSortModes;
+        if (modes == null || SortModeBox.SelectedIndex >= modes.Count) return;
+
+        SortMode = modes[SortModeBox.SelectedIndex];
+    }
+
+    private void UpdateSearchWatermark()
+    {
+        SearchBox.Watermark = _sortMode switch
+        {
+            BrowserSortMode.Name => "Search by name...",
+            BrowserSortMode.Tag => "Search by tag...",
+            _ => "Search by resref..."
+        };
+    }
+
+    private static string SortModeDisplayText(BrowserSortMode mode) => mode switch
+    {
+        BrowserSortMode.Name => "Name",
+        BrowserSortMode.Tag => "Tag",
+        _ => "ResRef"
+    };
+
+    /// <summary>
+    /// Cancel any in-flight indexing task. Called on module change and disposal.
+    /// </summary>
+    private void CancelIndexing()
+    {
+        if (_indexingCts != null)
+        {
+            _indexingCts.Cancel();
+            _indexingCts.Dispose();
+            _indexingCts = null;
+        }
+    }
+
+    /// <summary>
+    /// Start a background indexing pass for any entries that don't yet have
+    /// metadata. Cancels and replaces any in-flight indexing. On completion,
+    /// re-applies the current filter so searches that ran during indexing
+    /// see fresh DisplayLabel/Tag data.
+    /// </summary>
+    private void KickoffIndexing()
+    {
+        CancelIndexing();
+
+        var pending = _allEntries.Where(e => !e.MetadataLoaded).ToList();
+        if (pending.Count == 0) return;
+
+        _indexingCts = new CancellationTokenSource();
+        var token = _indexingCts.Token;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await IndexMetadataAsync(pending, token);
+
+                if (token.IsCancellationRequested) return;
+
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    if (token.IsCancellationRequested) return;
+                    ApplyFilter();
+                });
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected on module change — no logging needed.
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"FileBrowserPanel: Indexing error: {ex.Message}");
+            }
+        }, token);
     }
 
     #endregion
