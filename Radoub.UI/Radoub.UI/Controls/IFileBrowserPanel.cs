@@ -58,6 +58,25 @@ public class FileBrowserEntry
     public string? HakPath { get; set; }
 
     /// <summary>
+    /// Localized in-game name (e.g., UTI.LocalizedName, UTM.LocName, UTC.FirstName+LastName).
+    /// Null until the panel's IndexMetadataAsync hook populates it. Used by
+    /// <see cref="BrowserSortMode.Name"/> sort/search.
+    /// </summary>
+    public string? DisplayLabel { get; set; }
+
+    /// <summary>
+    /// Script tag (e.g., UTI.Tag). Null until IndexMetadataAsync populates.
+    /// Used by <see cref="BrowserSortMode.Tag"/> sort/search.
+    /// </summary>
+    public string? Tag { get; set; }
+
+    /// <summary>
+    /// True once DisplayLabel/Tag have been populated (or attempted) for this entry.
+    /// Lets the panel skip re-indexing entries that already have metadata.
+    /// </summary>
+    public bool MetadataLoaded { get; set; }
+
+    /// <summary>
     /// Display name shown in the list. Override for custom formatting.
     /// </summary>
     public virtual string DisplayName => IsFromHak ? $"{Name} ({Source})" : Name;
