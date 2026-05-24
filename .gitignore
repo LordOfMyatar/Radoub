@@ -33,6 +33,11 @@ Desktop.ini
 ~$*
 nul
 
+# Root-level build/test logs (dev-local only)
+/build.log
+/test.log
+/flaui*.log
+
 # Python
 __pycache__/
 *.py[cod]
