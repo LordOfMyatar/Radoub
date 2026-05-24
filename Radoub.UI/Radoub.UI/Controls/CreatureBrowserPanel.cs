@@ -8,6 +8,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Radoub.Formats.Common;
 using Radoub.Formats.Erf;
+using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Resolver;
 using Radoub.Formats.Services;
@@ -201,11 +202,8 @@ public class CreatureBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
     {
         try
         {
-            var utc = Radoub.Formats.Utc.UtcReader.Read(bytes);
-            var firstName = utc.FirstName.GetDefault() ?? string.Empty;
-            var lastName = utc.LastName.GetDefault() ?? string.Empty;
-            var fullName = string.IsNullOrEmpty(lastName) ? firstName : $"{firstName} {lastName}".Trim();
-            return Task.FromResult((utc.Tag ?? string.Empty, fullName));
+            var (tag, name) = ReadCreatureMetadataFromGff(bytes);
+            return Task.FromResult((tag, name));
         }
         catch (Exception ex)
         {
@@ -213,6 +211,32 @@ public class CreatureBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
                 $"CreatureBrowserPanel.ReadSourceMetadataAsync: {ex.Message}");
             return Task.FromResult((string.Empty, string.Empty));
         }
+    }
+
+    /// <summary>
+    /// Pull Tag + FirstName/LastName from a UTC- or BIC-formatted GFF byte
+    /// buffer. Bypasses UtcReader/BicReader file-type validation so a single
+    /// path handles both resource types — they share Tag, FirstName, and
+    /// LastName field names at the root struct.
+    /// </summary>
+    private static (string tag, string name) ReadCreatureMetadataFromGff(byte[] bytes)
+    {
+        var gff = GffReader.Read(bytes);
+        var root = gff.RootStruct;
+        var tag = root.GetFieldValue<string>("Tag", string.Empty) ?? string.Empty;
+
+        var firstNameField = root.GetField("FirstName");
+        var firstName = firstNameField?.Value is CExoLocString fn
+            ? fn.GetDefault() ?? string.Empty
+            : string.Empty;
+
+        var lastNameField = root.GetField("LastName");
+        var lastName = lastNameField?.Value is CExoLocString ln
+            ? ln.GetDefault() ?? string.Empty
+            : string.Empty;
+
+        var fullName = string.IsNullOrEmpty(lastName) ? firstName : $"{firstName} {lastName}".Trim();
+        return (tag, fullName);
     }
 
     /// <summary>
@@ -382,11 +406,13 @@ public class CreatureBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
     }
 
     /// <summary>
-    /// Pure-logic helper: parse a UTC byte blob into a <see cref="SharedPaletteCacheItem"/>
-    /// for cache persistence. Returns null on parse failure so the populator can
-    /// skip corrupt entries without aborting an entire HAK scan. DisplayName uses
-    /// the canonical "{FirstName} {LastName}".Trim() formatting (matches
-    /// CreatureDisplayService.GetCreatureFullName).
+    /// Pure-logic helper: parse a UTC or BIC byte blob into a
+    /// <see cref="SharedPaletteCacheItem"/> for cache persistence. Returns null
+    /// on parse failure so the populator can skip corrupt entries without
+    /// aborting an entire HAK scan. DisplayName uses the canonical
+    /// "{FirstName} {LastName}".Trim() formatting (matches
+    /// CreatureDisplayService.GetCreatureFullName). BIC and UTC share Tag,
+    /// FirstName, and LastName fields, so a single helper handles both.
     /// </summary>
     public static SharedPaletteCacheItem? BuildPaletteItemFromUtc(
         byte[] bytes,
@@ -395,14 +421,11 @@ public class CreatureBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
     {
         try
         {
-            var utc = Radoub.Formats.Utc.UtcReader.Read(bytes);
-            var firstName = utc.FirstName.GetDefault() ?? string.Empty;
-            var lastName = utc.LastName.GetDefault() ?? string.Empty;
-            var fullName = string.IsNullOrEmpty(lastName) ? firstName : $"{firstName} {lastName}".Trim();
+            var (tag, fullName) = ReadCreatureMetadataFromGff(bytes);
             return new SharedPaletteCacheItem
             {
                 ResRef = resRef,
-                Tag = utc.Tag ?? string.Empty,
+                Tag = tag,
                 DisplayName = fullName,
                 SourceLocation = sourceLocation
             };
@@ -419,7 +442,8 @@ public class CreatureBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
     /// Save-flow hook for module + vault entries: re-read Tag + DisplayLabel
     /// from the on-disk UTC/BIC bytes. Pure-static so host tools (Quartermaster)
     /// can call without holding a CreatureBrowserPanel reference, and so the
-    /// round-trip is unit-testable without Avalonia (#2201).
+    /// round-trip is unit-testable without Avalonia (#2201). Handles both UTC
+    /// and BIC formats — they share Tag/FirstName/LastName field layout.
     ///
     /// No-op for entries without a FilePath (HAK/BIF rows are cache-driven).
     /// On read or parse failure the entry is left untouched.
@@ -432,13 +456,9 @@ public class CreatureBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
         try
         {
             var bytes = await File.ReadAllBytesAsync(entry.FilePath);
-            var utc = Radoub.Formats.Utc.UtcReader.Read(bytes);
-            var firstName = utc.FirstName.GetDefault() ?? string.Empty;
-            var lastName = utc.LastName.GetDefault() ?? string.Empty;
-            entry.Tag = utc.Tag ?? string.Empty;
-            entry.DisplayLabel = string.IsNullOrEmpty(lastName)
-                ? firstName
-                : $"{firstName} {lastName}".Trim();
+            var (tag, fullName) = ReadCreatureMetadataFromGff(bytes);
+            entry.Tag = tag;
+            entry.DisplayLabel = fullName;
             entry.MetadataLoaded = true;
         }
         catch (Exception ex)

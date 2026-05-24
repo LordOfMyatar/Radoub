@@ -1,3 +1,4 @@
+using Radoub.Formats.Bic;
 using Radoub.Formats.Utc;
 using Radoub.UI.Controls;
 using Radoub.UI.Services;
@@ -93,5 +94,26 @@ public class CreatureBrowserPanelCachePopulatorTests
             sourceLocation: "HAK: broken.hak");
 
         Assert.Null(item);
+    }
+
+    [Fact]
+    public void BuildPaletteItemFromUtc_AcceptsBicBytes_ExtractsFirstAndLastName()
+    {
+        // BIC and UTC share Tag/FirstName/LastName at the root struct, but
+        // BIC has FileType "BIC " — UtcReader would reject this. Verify the
+        // GFF-direct read path works for player-character bytes.
+        var bic = new BicFile { Tag = "PLAYER_TAG" };
+        bic.FirstName.SetString(0, "Aragorn");
+        bic.LastName.SetString(0, "Elessar");
+        var bytes = BicWriter.Write(bic);
+
+        var item = CreatureBrowserPanel.BuildPaletteItemFromUtc(
+            bytes,
+            resRef: "hero",
+            sourceLocation: "LocalVault");
+
+        Assert.NotNull(item);
+        Assert.Equal("PLAYER_TAG", item!.Tag);
+        Assert.Equal("Aragorn Elessar", item.DisplayName);
     }
 }

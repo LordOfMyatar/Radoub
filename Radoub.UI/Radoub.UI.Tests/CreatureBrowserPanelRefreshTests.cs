@@ -1,4 +1,5 @@
 using System.IO;
+using Radoub.Formats.Bic;
 using Radoub.Formats.Utc;
 using Radoub.UI.Controls;
 using Xunit;
@@ -112,6 +113,39 @@ public class CreatureBrowserPanelRefreshTests
 
         Assert.Equal("PRIOR_TAG", entry.Tag);
         Assert.Equal("Prior Name", entry.DisplayLabel);
+    }
+
+    [Fact]
+    public async Task RefreshEntryFromDiskAsync_BicFile_ReadsFirstAndLastName()
+    {
+        // Vault rows are BIC files. BIC has FileType "BIC " — UtcReader
+        // would reject it. Verify the GFF-direct path picks up Tag and the
+        // FirstName/LastName CExoLocStrings.
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            var bic = new BicFile { Tag = "PLAYER_TAG" };
+            bic.FirstName.SetString(0, "Aragorn");
+            bic.LastName.SetString(0, "Elessar");
+            File.WriteAllBytes(tempFile, BicWriter.Write(bic));
+
+            var entry = new CreatureBrowserEntry
+            {
+                Name = "hero",
+                FilePath = tempFile,
+                IsBic = true
+            };
+
+            await CreatureBrowserPanel.RefreshEntryFromDiskAsync(entry);
+
+            Assert.Equal("PLAYER_TAG", entry.Tag);
+            Assert.Equal("Aragorn Elessar", entry.DisplayLabel);
+            Assert.True(entry.MetadataLoaded);
+        }
+        finally
+        {
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
     }
 
     [Fact]
