@@ -13,6 +13,10 @@
 
     <Application.Styles>
         <FluentTheme />
+        <!-- DataGrid requires explicit style inclusion (#2210)
+             Used by FileBrowserPanelBase since #2198. Without this include the
+             DialogBrowserPanel DataGrid renders blank (no rows, no headers). -->
+        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
         <!-- Shared UI styles from Radoub.UI (#823, #1089) -->
         <StyleInclude Source="avares://Radoub.UI/Styles/FocusStyles.axaml"/>
         <StyleInclude Source="avares://Radoub.UI/Styles/ButtonStyles.axaml"/>
@@ -68,6 +72,11 @@
         </Style>
 
         <Style Selector="ListBox">
+            <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+        </Style>
+
+        <Style Selector="DataGrid">
             <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
             <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
         </Style>

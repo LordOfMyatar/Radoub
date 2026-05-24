@@ -4,6 +4,16 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
+## [0.1.168-alpha] - 2026-05-24
+**Branch**: `parley/issue-2210` | **PR**: #2214
+
+### Fix: DialogBrowserPanel shows no entries after Name/Tag sort infrastructure (#2210)
+
+- Regression from #2198 — Parley dialog browser was empty after FileBrowserPanelBase Name/Tag adoption
+- Restores `.dlg` listing while preserving ResRef-only sort for DLG (no Tag/LocName)
+
+---
+
 ## [0.1.167-alpha] - 2026-05-01
 **Branch**: `radoub/issue-2159` | **PR**: #2160
 
