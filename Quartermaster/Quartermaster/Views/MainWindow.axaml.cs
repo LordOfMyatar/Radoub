@@ -52,6 +52,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private AudioService? _audioService;
     private bool _servicesInitialized;
 
+    // Per-resource UTC palette cache for creature browser Name/Tag indexing (#2201).
+    // Subdirectory keeps it isolated from the UTI ItemPalette and UTM StorePalette caches.
+    private readonly ISharedPaletteCacheService _creaturePaletteCache =
+        new SharedPaletteCacheService(Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "Radoub", "Cache", "CreaturePalette"));
+
     // Service accessors with null guards - throw clear error instead of NullReferenceException
     private IGameDataService GameData => _gameDataService ?? throw new InvalidOperationException("GameDataService not initialized - services must be initialized before use");
     private CreatureDisplayService DisplayService => _creatureDisplayService ?? throw new InvalidOperationException("CreatureDisplayService not initialized");
@@ -246,10 +253,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         InventoryPanelContent.DeleteFromBackpackRequested += OnDeleteFromBackpackRequested;
 
         // Provide GameDataService to creature browser for BIF scanning (#1133)
+        // and shared palette cache for Name/Tag indexing (#2201).
         var creatureBrowserPanel = this.FindControl<CreatureBrowserPanel>("CreatureBrowserPanel");
         if (creatureBrowserPanel != null)
         {
             creatureBrowserPanel.GameDataService = _gameDataService;
+            creatureBrowserPanel.PaletteCache = _creaturePaletteCache;
         }
     }
 
