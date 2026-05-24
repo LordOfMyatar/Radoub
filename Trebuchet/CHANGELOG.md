@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.34.0-alpha] - 2026-05-24
-**Branch**: `trebuchet/issue-2216` | **PR**: #TBD
+**Branch**: `trebuchet/issue-2216` | **PR**: #2221
 
 ### Sprint: Marlinspike Bug Bash (#2216)
 
