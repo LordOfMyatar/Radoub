@@ -11,9 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Feature: Adopt FileBrowserPanelBase Name/Tag Sort + Search (#2199)
 
-- Wire `RefreshEntryMetadataAsync` to Relique save flow so saved UTI immediately reflects new Tag/Name in browser without full reindex
-- Round-trip tests with real sample UTI files (cache-hit, GFF-read, save-refresh paths)
-- Verify HAK + BIF panel toggles populate Name/Tag columns
+- Wire save flow to refresh the browser row's Tag/Name without a full reindex when a UTI is saved
+- New `IBrowserRowRefresher` + `BrowserSaveNotifier` seam in Radoub.UI so the post-save hook is unit-testable (regression guard if the call gets dropped in a future refactor)
+- New `FileBrowserPanelBase.FindEntryByFilePath` + `ItemBrowserPanel.RefreshEntryFromDiskAsync` static seams
 
 ---
 
