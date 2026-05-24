@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.32-alpha] - 2026-05-24
+**Branch**: `fence/issue-2200` | **PR**: #TBD
+
+### Feat: Adopt FileBrowserPanelBase Name/Tag sort + search (#2200)
+
+- Wire `StoreBrowserPanel` to expose Name/Tag sort + search for UTM merchant stores
+- HAK/BIF entries indexed via generalized `SharedPaletteCacheService` (UTM support added in Sprint 1)
+- Module entries indexed lazily via `UtmReader.Read`
+- Saving a UTM refreshes its browser-row Tag/Name
+
+---
+
 ## [0.1.31-alpha] - 2026-05-01
 **Branch**: `radoub/issue-2159` | **PR**: #2160
 
