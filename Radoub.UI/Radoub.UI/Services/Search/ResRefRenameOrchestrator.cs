@@ -129,19 +129,32 @@ public class ResRefRenameOrchestrator
                 refsUpdated += applied;
             }
 
-            // Phase 3c: Rename files (after references are updated)
+            // Phase 3c: Rename files (after references are updated). Clear any
+            // stale .tmp residue from Phase 3a/3b atomic writes before the move
+            // so an AV scanner that briefly grabbed the .tmp can't masquerade as
+            // an orphan after the rename (#2181).
             foreach (var (oldPath, newPath) in renameMap)
             {
+                var oldTmp = oldPath + ".tmp";
+                if (File.Exists(oldTmp))
+                {
+                    try { File.Delete(oldTmp); } catch { /* best-effort */ }
+                }
                 File.Move(oldPath, newPath);
                 completedRenames.Add((oldPath, newPath));
             }
 
-            // Phase 4: Verify
+            // Phase 4: Verify — with a short retry window. Windows can briefly
+            // report stale File.Exists results after File.Move when the
+            // directory cache / AV scanner / NTFS USN journal is settling
+            // (#2181: reverse rename "lompqj_qu1.nss" → "lompqj_qu.nss" failed
+            // intermittently because the orphan check fired before the OS had
+            // released the old path).
             foreach (var (oldPath, newPath) in renameMap)
             {
-                if (!File.Exists(newPath))
+                if (!await FileVerifyWithRetry.WaitForExistsAsync(newPath))
                     throw new IOException($"Verify failed: expected file at {newPath} after rename");
-                if (File.Exists(oldPath))
+                if (!await FileVerifyWithRetry.WaitForGoneAsync(oldPath))
                     throw new IOException($"Verify failed: orphan file remains at {oldPath} after rename");
             }
 
