@@ -51,6 +51,9 @@
                     <CheckBox Content="Include StrRef text" Margin="0,0,12,0"
                               IsChecked="{Binding SearchStrRefs}"
                               ToolTip.Tip="Also search TLK-resolved StrRef text (requires game TLK loaded). Off by default — most modules use embedded text."/>
+                    <CheckBox Content="Include filename/ResRef" Margin="0,0,12,0"
+                              IsChecked="{Binding SearchFilenameResRef}"
+                              ToolTip.Tip="When checked, search includes filename matches AND ResRef field matches become replaceable. See Marlinspike documentation for details."/>
                     <TextBlock Text="Fields:" VerticalAlignment="Center" Margin="8,0,4,0"/>
                     <ComboBox x:Name="CategoryCombo" MinWidth="120"
                               ItemsSource="{Binding Categories}"
@@ -91,8 +94,11 @@
                         <CheckBox Content="IFO" IsChecked="{Binding IncludeIfo}" Margin="0,0,8,0" MinWidth="65"/>
                         <CheckBox Content="FAC" IsChecked="{Binding IncludeFac}" Margin="0,0,8,0" MinWidth="65"/>
                         <CheckBox Content="ITP" IsChecked="{Binding IncludeItp}" Margin="0,0,8,0" MinWidth="65"/>
+                        <CheckBox Content="NSS" IsChecked="{Binding IncludeNss}" Margin="0,0,8,0" MinWidth="65"
+                                  ToolTip.Tip="Plain-text scan of .nss script source for ResRef references. Quoted matches are high confidence; bare substring matches are flagged 'verify'."/>
                     </WrapPanel>
                 </StackPanel>
+
             </StackPanel>
         </Border>
 

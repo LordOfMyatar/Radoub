@@ -1,3 +1,4 @@
+using Radoub.Formats.Common;
 using Radoub.Formats.Dlg;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Search;
@@ -200,4 +201,106 @@ public class BatchReplaceServiceTests : IDisposable
         Assert.True(result.Success);
         Assert.Equal(0, result.FilesModified);
     }
+
+    // --- ResRef bypass (allowResRefReplace) ---
+
+    [Fact]
+    public void PreviewReplace_WithAllowResRefReplace_IncludesResRefFields()
+    {
+        // Build a FileSearchResult containing a ResRef-field match with IsReplaceable=false
+        var resRefField = new FieldDefinition
+        {
+            Name = "TemplateResRef",
+            GffPath = "TemplateResRef",
+            FieldType = SearchFieldType.ResRef,
+            Category = SearchFieldCategory.Identity,
+            IsReplaceable = false  // ResRef fields are non-replaceable in normal mode
+        };
+        var match = MakeMatch(resRefField, "louis_roumain");
+        var fileResult = MakeFileResult(Path.Combine(_testDir, "test.utc"), new[] { match });
+
+        var preview = _service.PreviewReplace(
+            new[] { fileResult },
+            replacementText: "bob",
+            allowResRefReplace: true);
+
+        Assert.Single(preview.Changes);
+        Assert.Equal("TemplateResRef", preview.Changes[0].Match.Field.Name);
+        Assert.True(preview.AllowResRefReplace);
+    }
+
+    [Fact]
+    public void PreviewReplace_WithoutAllowResRefReplace_SkipsResRefFields()
+    {
+        var resRefField = new FieldDefinition
+        {
+            Name = "TemplateResRef", GffPath = "TemplateResRef",
+            FieldType = SearchFieldType.ResRef,
+            Category = SearchFieldCategory.Identity,
+            IsReplaceable = false
+        };
+        var match = MakeMatch(resRefField, "louis_roumain");
+        var fileResult = MakeFileResult(Path.Combine(_testDir, "test.utc"), new[] { match });
+
+        // Default (allowResRefReplace omitted, defaults to false)
+        var preview = _service.PreviewReplace(new[] { fileResult }, replacementText: "bob");
+
+        Assert.Empty(preview.Changes);
+        Assert.False(preview.AllowResRefReplace);
+    }
+
+    [Fact]
+    public async Task ExecuteReplace_WithAllowResRefReplace_RewritesResRefField()
+    {
+        // Write a real UTC with Conversation = "louis_conv" (a ResRef field)
+        var utc = new UtcFile
+        {
+            FirstName = new CExoLocString { LocalizedStrings = new Dictionary<uint, string> { [0] = "Louis" } },
+            Tag = "LOUIS",
+            Conversation = "louis_conv"
+        };
+        var utcPath = WriteUtcFile("louis.utc", utc);
+
+        // Search the file — Conversation field will match since pattern is "louis_conv"
+        var searchService = new ModuleSearchService();
+        var fileResult = searchService.SearchSingleFile(utcPath, new SearchCriteria { Pattern = "louis_conv" });
+
+        // Confirm there's a Conversation match (ResRef field, IsReplaceable=false)
+        Assert.Contains(fileResult.Matches,
+            m => m.Field.Name == "Conversation" && m.Field.FieldType == SearchFieldType.ResRef);
+
+        var preview = _service.PreviewReplace(new[] { fileResult }, "louis", allowResRefReplace: true);
+        Assert.True(preview.AllowResRefReplace);
+
+        // Find the Conversation change in the preview
+        Assert.Contains(preview.Changes, c => c.Match.Field.Name == "Conversation");
+
+        var result = await _service.ExecuteReplaceAsync(preview, "TestModule");
+
+        Assert.True(result.Success);
+        Assert.True(result.ReplacementsMade >= 1);
+
+        // Verify the file on disk now has Conversation = "louis"
+        var rewrittenBytes = await File.ReadAllBytesAsync(utcPath);
+        var rewritten = UtcReader.Read(rewrittenBytes);
+        Assert.Equal("louis", rewritten.Conversation);
+    }
+
+    private static SearchMatch MakeMatch(FieldDefinition field, string value) => new()
+    {
+        Field = field,
+        MatchedText = value,
+        FullFieldValue = value,
+        MatchOffset = 0,
+        MatchLength = value.Length,
+        Location = "test"
+    };
+
+    private static FileSearchResult MakeFileResult(string path, IEnumerable<SearchMatch> matches) => new()
+    {
+        FilePath = path,
+        ResourceType = ResourceTypes.Utc,
+        ToolId = "quartermaster",
+        Matches = matches.ToList()
+    };
 }

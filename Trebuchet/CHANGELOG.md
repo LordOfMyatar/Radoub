@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.33.0-alpha] - 2026-05-03
+**Branch**: `trebuchet/issue-1926` | **PR**: #2169
+
+### Feat: Marlinspike — Filename/ResRef rename with cross-file reference updates (#1926)
+
+- New "Include filename/ResRef" checkbox in the Marlinspike search panel converts text-replace into a module-wide rename
+- Renames files on disk AND updates every reference across:
+  - Typed GFF fields (UTC.Conversation, UTI scripts, UTM store inventory, UTP/UTD scripts, DLG.Sound, GIT instances, ARE/IFO event scripts, IFO HAK list, etc.)
+  - DLG `ActionParams` and `ConditionParams` value substrings
+  - `.nss` script source — quoted references (high confidence) and bare substrings (flagged "low confidence" — verify)
+- New NSS file-type checkbox (18th) controls whether `.nss` is scanned
+- Scope-respecting: unchecking a file type removes it from both search AND rename — what you see is what gets replaced
+- Scope-narrowing warning panel appears when the user filters file types in rename mode
+- Auto-suffix collision detection (`_2`..`_99`) with user confirmation dialog
+- 16-character ResRef validation, lowercase normalization
+- Backup + automatic rollback on failure via existing `BackupService`
+- Atomic file writes (temp + rename) prevent half-written state on process kill
+- Preflight check (mtime+size) detects concurrent file modification between preview and execute
+
+---
+
 ## [1.32.0-alpha] - 2026-05-01
 **Branch**: `radoub/issue-2159` | **PR**: #2160
 

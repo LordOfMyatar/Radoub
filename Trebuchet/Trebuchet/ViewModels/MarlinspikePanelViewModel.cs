@@ -40,6 +40,10 @@ public partial class MarlinspikePanelViewModel : ObservableObject
     private bool _searchStrRefs;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanSearch))]
+    private bool _searchFilenameResRef;
+
+    [ObservableProperty]
     private string _selectedCategory = "All Fields";
 
     // --- Search state ---
@@ -85,6 +89,7 @@ public partial class MarlinspikePanelViewModel : ObservableObject
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeIfo = true;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeFac = true;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeItp = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanSearch), nameof(HasAnyFileTypeSelected))] private bool _includeNss = true;
 
     // --- Category list ---
 
@@ -104,11 +109,16 @@ public partial class MarlinspikePanelViewModel : ObservableObject
         IncludeDlg || IncludeUtc || IncludeBic || IncludeUti || IncludeUtm ||
         IncludeJrl || IncludeUtp || IncludeUtd || IncludeUte || IncludeUtt ||
         IncludeUtw || IncludeUts || IncludeGit || IncludeAre || IncludeIfo ||
-        IncludeFac || IncludeItp;
+        IncludeFac || IncludeItp || IncludeNss;
 
-    public bool CanSearch => !string.IsNullOrEmpty(SearchPattern) && !IsSearching && HasAnyFileTypeSelected;
+    // Filename/ResRef mode can search filenames even with no GFF file-types selected;
+    // otherwise the user must have at least one file type checked.
+    public bool CanSearch => !string.IsNullOrEmpty(SearchPattern) && !IsSearching
+        && (HasAnyFileTypeSelected || SearchFilenameResRef);
 
     public bool CanReplace => HasResults && !string.IsNullOrEmpty(ReplaceText) && !IsSearching;
+
+
 
     // --- Methods ---
 
@@ -141,7 +151,8 @@ public partial class MarlinspikePanelViewModel : ObservableObject
             SearchStrRefs = SearchStrRefs,
             TlkResolver = TlkResolver,
             CategoryFilter = BuildCategoryFilter(),
-            FileTypeFilter = BuildFileTypeFilter()
+            FileTypeFilter = BuildFileTypeFilter(),
+            IncludeFilenameResRef = SearchFilenameResRef
         };
     }
 
@@ -235,6 +246,7 @@ public partial class MarlinspikePanelViewModel : ObservableObject
         IncludeIfo = true;
         IncludeFac = true;
         IncludeItp = true;
+        IncludeNss = true;
     }
 
     /// <summary>
@@ -259,6 +271,7 @@ public partial class MarlinspikePanelViewModel : ObservableObject
         IncludeIfo = false;
         IncludeFac = false;
         IncludeItp = false;
+        IncludeNss = false;
     }
 
     // --- Private helpers ---
@@ -280,7 +293,7 @@ public partial class MarlinspikePanelViewModel : ObservableObject
         if (IncludeDlg && IncludeUtc && IncludeBic && IncludeUti && IncludeUtm &&
             IncludeJrl && IncludeUtp && IncludeUtd && IncludeUte && IncludeUtt &&
             IncludeUtw && IncludeUts && IncludeGit && IncludeAre && IncludeIfo &&
-            IncludeFac && IncludeItp)
+            IncludeFac && IncludeItp && IncludeNss)
             return null;
 
         var types = new List<ushort>();
@@ -301,6 +314,7 @@ public partial class MarlinspikePanelViewModel : ObservableObject
         if (IncludeIfo) types.Add(ResourceTypes.Ifo);
         if (IncludeFac) types.Add(ResourceTypes.Fac);
         if (IncludeItp) types.Add(ResourceTypes.Itp);
+        if (IncludeNss) types.Add(ResourceTypes.Nss);
         return types;
     }
 

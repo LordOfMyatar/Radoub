@@ -46,6 +46,13 @@ public class BatchReplacePreview
 
     /// <summary>Number of selected changes</summary>
     public int SelectedChanges => Changes.Count(c => c.IsSelected);
+
+    /// <summary>
+    /// True when this preview was built with allowResRefReplace=true.
+    /// ExecuteReplaceAsync uses this to propagate the bypass to ReplaceOperation
+    /// instances passed into provider.Replace.
+    /// </summary>
+    public bool AllowResRefReplace { get; init; }
 }
 
 /// <summary>

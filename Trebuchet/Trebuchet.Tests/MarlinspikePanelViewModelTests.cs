@@ -231,6 +231,21 @@ public class MarlinspikePanelViewModelTests
     }
 
     [Fact]
+    public void CanSearch_NoFileTypesButFilenameResRefOn_ReturnsTrue()
+    {
+        // Filename/ResRef mode is a valid standalone search target — user
+        // can search filenames without any GFF file-types selected.
+        var vm = new MarlinspikePanelViewModel();
+        vm.SearchPattern = "louis";
+        vm.SearchFilenameResRef = true;  // auto-toggle would re-check file types, so deselect AFTER
+        vm.DeselectAllFileTypes();
+
+        Assert.False(vm.HasAnyFileTypeSelected);
+        Assert.True(vm.SearchFilenameResRef);
+        Assert.True(vm.CanSearch);
+    }
+
+    [Fact]
     public void HasAnyFileTypeSelected_OneChecked_ReturnsTrue()
     {
         var vm = new MarlinspikePanelViewModel();
@@ -344,6 +359,89 @@ public class MarlinspikePanelViewModelTests
         vm.SetSearching(false);
         Assert.False(vm.IsSearching);
         Assert.True(vm.CanSearch);
+    }
+
+    // --- Filename/ResRef rename feature (Chunk 4) ---
+
+    [Fact]
+    public void SearchFilenameResRef_DefaultsToFalse()
+    {
+        var vm = new MarlinspikePanelViewModel();
+        Assert.False(vm.SearchFilenameResRef);
+    }
+
+    [Fact]
+    public void IncludeNss_DefaultsToTrue()
+    {
+        var vm = new MarlinspikePanelViewModel();
+        Assert.True(vm.IncludeNss);
+    }
+
+    [Fact]
+    public void HasAnyFileTypeSelected_TrueWhenOnlyNssChecked()
+    {
+        var vm = new MarlinspikePanelViewModel();
+        vm.DeselectAllFileTypes();
+        vm.IncludeNss = true;
+
+        Assert.True(vm.HasAnyFileTypeSelected);
+    }
+
+    [Fact]
+    public void TogglingSearchFilenameResRefOn_DoesNotAutoSelectFileTypes()
+    {
+        // Per surgical-rename design: row selection IS the scope control.
+        // Toggling filename/ResRef must not bounce the file-type checkboxes
+        // the user deliberately set. Initial default state stays "all checked"
+        // (model defaults), but flipping the toggle does not re-check them.
+        var vm = new MarlinspikePanelViewModel();
+        vm.DeselectAllFileTypes();
+        vm.SelectedCategory = "Identity";
+
+        vm.SearchFilenameResRef = true;
+
+        Assert.False(vm.IncludeDlg);
+        Assert.False(vm.IncludeUtc);
+        Assert.False(vm.IncludeNss);
+        Assert.Equal("Identity", vm.SelectedCategory);  // category not bounced either
+    }
+
+    [Fact]
+    public void TogglingSearchFilenameResRefOff_PreservesFileTypeSelection()
+    {
+        var vm = new MarlinspikePanelViewModel();
+        vm.IncludeGit = false;
+        vm.IncludeIfo = false;
+
+        vm.SearchFilenameResRef = true;
+        vm.SearchFilenameResRef = false;
+
+        Assert.False(vm.IncludeGit);
+        Assert.False(vm.IncludeIfo);
+    }
+
+    [Fact]
+    public void BuildSearchCriteria_PropagatesIncludeFilenameResRef()
+    {
+        var vm = new MarlinspikePanelViewModel();
+        vm.SearchPattern = "louis";
+        vm.SearchFilenameResRef = true;
+
+        var criteria = vm.BuildSearchCriteria();
+
+        Assert.True(criteria.IncludeFilenameResRef);
+    }
+
+    [Fact]
+    public void BuildSearchCriteria_AllTypesChecked_IncludingNss_NullFileTypeFilter()
+    {
+        var vm = new MarlinspikePanelViewModel();
+        vm.SearchPattern = "test";
+        // All 18 types default to checked, including Nss.
+
+        var criteria = vm.BuildSearchCriteria();
+
+        Assert.Null(criteria.FileTypeFilter);
     }
 
     private static ModuleSearchResults CreateTestResults()

@@ -152,6 +152,9 @@ public static class FieldRegistrations
             new FieldDefinition { Name = "Tag", GffPath = "Tag", FieldType = SearchFieldType.Tag, Category = SearchFieldCategory.Identity, Description = "Item tag" },
             new FieldDefinition { Name = "Template ResRef", GffPath = "TemplateResRef", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Blueprint resource reference", IsReplaceable = false },
             new FieldDefinition { Name = "Comment", GffPath = "Comment", FieldType = SearchFieldType.Text, Category = SearchFieldCategory.Metadata, Description = "Toolset comment" }
+            // UTI files have no script-event fields per BioWare spec — items use ItemProperty
+            // slots, not script events. Plan spec Section 4 listing "all UTI script-event fields"
+            // is therefore vacuous; no fields registered here. (#1926)
         );
     }
 
@@ -262,7 +265,40 @@ public static class FieldRegistrations
         registry.RegisterFileType(ResourceTypes.Ifo,
             new FieldDefinition { Name = "Module Name", GffPath = "Mod_Name", FieldType = SearchFieldType.LocString, Category = SearchFieldCategory.Content, Description = "Module display name" },
             new FieldDefinition { Name = "Module Description", GffPath = "Mod_Description", FieldType = SearchFieldType.LocString, Category = SearchFieldCategory.Content, Description = "Module description" },
-            new FieldDefinition { Name = "Tag", GffPath = "Mod_Tag", FieldType = SearchFieldType.Tag, Category = SearchFieldCategory.Identity, Description = "Module tag" }
+            new FieldDefinition { Name = "Tag", GffPath = "Mod_Tag", FieldType = SearchFieldType.Tag, Category = SearchFieldCategory.Identity, Description = "Module tag" },
+
+            // ResRef fields (#1926)
+            new FieldDefinition { Name = "Entry Area", GffPath = "Mod_Entry_Area", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Area ResRef where players start", IsReplaceable = false },
+            new FieldDefinition { Name = "Default BIC", GffPath = "Mod_DefaultBic", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Identity, Description = "Default character (.bic) for new players", IsReplaceable = false },
+            new FieldDefinition { Name = "Start Movie", GffPath = "Mod_StartMovie", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Metadata, Description = "Startup movie (.bik) ResRef", IsReplaceable = false },
+            new FieldDefinition { Name = "Custom TLK", GffPath = "Mod_CustomTlk", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Metadata, Description = "Custom TLK file ResRef", IsReplaceable = false },
+            new FieldDefinition { Name = "HAK", GffPath = "Mod_Hak", FieldType = SearchFieldType.ResRef, Category = SearchFieldCategory.Metadata, Description = "HAK file ResRef (per entry in Mod_HakList)", IsReplaceable = false },
+
+            // Module event scripts (classic NWN)
+            new FieldDefinition { Name = "OnModuleLoad", GffPath = "Mod_OnModLoad", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script run when module loads" },
+            new FieldDefinition { Name = "OnClientEnter", GffPath = "Mod_OnClientEntr", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script run when a client enters" },
+            new FieldDefinition { Name = "OnClientLeave", GffPath = "Mod_OnClientLeav", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script run when a client leaves" },
+            new FieldDefinition { Name = "OnHeartbeat", GffPath = "Mod_OnHeartbeat", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Module heartbeat script" },
+            new FieldDefinition { Name = "OnAcquireItem", GffPath = "Mod_OnAcquirItem", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script run when an item is acquired" },
+            new FieldDefinition { Name = "OnActivateItem", GffPath = "Mod_OnActvtItem", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script run when an item is activated" },
+            new FieldDefinition { Name = "OnUnacquireItem", GffPath = "Mod_OnUnAqreItem", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script run when an item is unacquired" },
+            new FieldDefinition { Name = "OnPlayerDeath", GffPath = "Mod_OnPlrDeath", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script run when a player dies" },
+            new FieldDefinition { Name = "OnPlayerDying", GffPath = "Mod_OnPlrDying", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script run when a player is dying" },
+            new FieldDefinition { Name = "OnPlayerRest", GffPath = "Mod_OnPlrRest", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script run when a player rests" },
+            new FieldDefinition { Name = "OnPlayerEquipItem", GffPath = "Mod_OnPlrEqItm", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script run when a player equips an item" },
+            new FieldDefinition { Name = "OnPlayerUnequipItem", GffPath = "Mod_OnPlrUnEqItm", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script run when a player unequips an item" },
+            new FieldDefinition { Name = "OnPlayerLevelUp", GffPath = "Mod_OnPlrLvlUp", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script run when a player levels up" },
+            new FieldDefinition { Name = "OnUserDefined", GffPath = "Mod_OnUsrDefined", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script run on user-defined event" },
+            new FieldDefinition { Name = "OnSpawnButtonDown", GffPath = "Mod_OnSpawnBtnDn", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script run when respawn button is pressed" },
+            new FieldDefinition { Name = "OnCutsceneAbort", GffPath = "Mod_OnCutsnAbort", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script run when a cutscene is aborted" },
+
+            // Module event scripts (NWN:EE)
+            new FieldDefinition { Name = "OnModuleStart", GffPath = "Mod_OnModStart", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script run after OnModuleLoad (NWN:EE)" },
+            new FieldDefinition { Name = "OnPlayerChat", GffPath = "Mod_OnPlrChat", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script run when a player chats (NWN:EE)" },
+            new FieldDefinition { Name = "OnPlayerTarget", GffPath = "Mod_OnPlrTarget", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script run when a player targets something (NWN:EE)" },
+            new FieldDefinition { Name = "OnPlayerGuiEvent", GffPath = "Mod_OnPlrGuiEvt", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script run on player GUI event (NWN:EE)" },
+            new FieldDefinition { Name = "OnPlayerTileAction", GffPath = "Mod_OnPlrTileAct", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script run on player tile action (NWN:EE)" },
+            new FieldDefinition { Name = "OnNuiEvent", GffPath = "Mod_OnNuiEvent", FieldType = SearchFieldType.Script, Category = SearchFieldCategory.Script, Description = "Script run on NUI event (NWN:EE 1.80+)" }
         );
     }
 }

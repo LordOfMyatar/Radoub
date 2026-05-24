@@ -10,6 +10,7 @@ using Avalonia.Interactivity;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Search;
+using Radoub.Formats.Search.Rename;
 using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 using Radoub.UI.Services.Search;
@@ -304,17 +305,67 @@ public partial class MarlinspikePanel : UserControl
         }
     }
 
-    private void OnReplaceAllClick(object? sender, RoutedEventArgs e)
+    private async void OnReplaceAllClick(object? sender, RoutedEventArgs e)
     {
-        OpenReplacePreview(selectAll: true);
+        await OpenReplacePreviewAsync(selectionFilter: null);
     }
 
-    private void OnReplaceSelectedClick(object? sender, RoutedEventArgs e)
+    private async void OnReplaceSelectedClick(object? sender, RoutedEventArgs e)
     {
-        OpenReplacePreview(selectAll: true);
+        var selectedFilePaths = GetSelectedFilePaths();
+        if (selectedFilePaths.Count == 0)
+        {
+            if (_viewModel != null)
+                _viewModel.StatusText =
+                    "Select a row first (click a file, match, or group), then click Replace Selected. Or use Replace All.";
+            return;
+        }
+
+        await OpenReplacePreviewAsync(selectionFilter: selectedFilePaths);
     }
 
-    private void OpenReplacePreview(bool selectAll)
+    /// <summary>
+    /// Get file paths for the user's tree selection. The tree is populated
+    /// programmatically with raw TreeViewItem instances that carry their row
+    /// data in the .Tag property (FileSearchResult, MatchInfo, or null for
+    /// group nodes). Inherited DataContext is the panel VM, so we read .Tag
+    /// directly — same pattern OnResultDoubleTapped uses.
+    ///
+    /// Selecting a file row → that file.
+    /// Selecting a match row → its parent file.
+    /// Selecting a group row → every file under that group.
+    /// </summary>
+    private HashSet<string> GetSelectedFilePaths()
+    {
+        var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        if (ResultsTree.SelectedItem is not Avalonia.Controls.TreeViewItem item)
+            return paths;
+
+        switch (item.Tag)
+        {
+            case MatchInfo matchInfo:
+                paths.Add(matchInfo.FilePath);
+                break;
+            case FileSearchResult fileResult:
+                paths.Add(fileResult.FilePath);
+                break;
+            default:
+                // Group node (no Tag) — walk its child file-result items.
+                foreach (var child in item.Items)
+                {
+                    if (child is Avalonia.Controls.TreeViewItem childItem
+                        && childItem.Tag is FileSearchResult childFile)
+                    {
+                        paths.Add(childFile.FilePath);
+                    }
+                }
+                break;
+        }
+        return paths;
+    }
+
+    private async Task OpenReplacePreviewAsync(IReadOnlySet<string>? selectionFilter)
     {
         if (_viewModel == null || _parentWindow == null) return;
 
@@ -324,15 +375,165 @@ public partial class MarlinspikePanel : UserControl
         EnsureServices();
 
         var filesWithMatches = lastResults.Files.Where(f => f.MatchCount > 0).ToList();
+        if (selectionFilter != null)
+        {
+            filesWithMatches = filesWithMatches
+                .Where(f => selectionFilter.Contains(f.FilePath))
+                .ToList();
+        }
         if (filesWithMatches.Count == 0) return;
 
         var replaceText = _viewModel.ReplaceText;
-        var preview = _batchReplaceService!.PreviewReplace(filesWithMatches, replaceText);
+        var preview = _batchReplaceService!.PreviewReplace(
+            filesWithMatches,
+            replaceText,
+            allowResRefReplace: _viewModel.SearchFilenameResRef);
+
+        // Dispatch to ResRef rename orchestrator when filename matches present.
+        // Pass the user's selection set down so reference updates are surgical —
+        // only files the user explicitly selected get their references rewritten.
+        if (RenameDispatchHelpers.HasFilenameMatches(preview))
+        {
+            await DispatchResRefRenameAsync(preview, selectionFilter);
+            return;
+        }
 
         var previewWindow = new ReplacePreviewWindow();
         previewWindow.Initialize(preview, _viewModel.SearchPattern, replaceText, _batchReplaceService);
         previewWindow.ReplacementComplete += OnReplacementComplete;
         previewWindow.Show(_parentWindow);
+    }
+
+    /// <summary>
+    /// Run the ResRef rename pipeline: build plans, populate references, surface
+    /// auto-suffix collision dialogs, and execute via ResRefRenameOrchestrator.
+    ///
+    /// <paramref name="selectionFilter"/>, when non-null, restricts the reference
+    /// scan to only those file paths — the "surgical rename" mode (Path 1 per
+    /// design discussion). When null, references are populated module-wide.
+    /// </summary>
+    private async Task DispatchResRefRenameAsync(
+        BatchReplacePreview preview,
+        IReadOnlySet<string>? selectionFilter)
+    {
+        if (_viewModel == null || _parentWindow == null) return;
+
+        var moduleDir = ModulePath.GetWorkingDirectory(RadoubSettings.Instance.CurrentModulePath);
+        if (string.IsNullOrEmpty(moduleDir))
+        {
+            _viewModel.StatusText = "No module loaded — cannot rename.";
+            return;
+        }
+
+        var validator = new ResRefValidator();
+        var plans = RenameDispatchHelpers.BuildRenamePlansFromPreview(preview, moduleDir, validator);
+
+        if (plans.Count == 0)
+        {
+            _viewModel.StatusText = "Rename skipped — no valid filename targets (validator rejected all proposed names).";
+            return;
+        }
+
+        // Surface auto-suffix collision dialogs before proceeding.
+        // Each plan whose validation triggered an auto-suffix must be confirmed.
+        var confirmedPlans = new List<ResRefRenamePlan>();
+        foreach (var plan in plans)
+        {
+            if (!plan.Validation.AutoSuffixApplied)
+            {
+                confirmedPlans.Add(plan);
+                continue;
+            }
+
+            var originalProposed = ComputeOriginalProposedName(preview, plan);
+            var dialog = new AutoSuffixCollisionDialog(originalProposed, plan.NewName, plan.SourceFilePath);
+            await dialog.ShowDialog(_parentWindow);
+
+            switch (dialog.Result)
+            {
+                case AutoSuffixDialogResult.Continue:
+                    confirmedPlans.Add(plan);
+                    break;
+                case AutoSuffixDialogResult.PickAnother:
+                    _viewModel.StatusText = "Rename cancelled — adjust the replacement text and click Replace again to choose a different name.";
+                    return;
+                case AutoSuffixDialogResult.Cancel:
+                default:
+                    _viewModel.StatusText = "Rename cancelled.";
+                    return;
+            }
+        }
+
+        if (confirmedPlans.Count == 0)
+        {
+            _viewModel.StatusText = "Rename cancelled — no plans confirmed.";
+            return;
+        }
+
+        _viewModel.StatusText = selectionFilter != null
+            ? $"Scanning {selectionFilter.Count} selected file(s) for references..."
+            : "Scanning module for references...";
+
+        try
+        {
+            var criteria = _viewModel.BuildSearchCriteria();
+            await RenameDispatchHelpers.PopulateReferencesAsync(
+                confirmedPlans, moduleDir, _viewModel.IncludeNss, criteria, selectionFilter);
+
+            var snapshotPaths = confirmedPlans
+                .SelectMany(p => p.References.Select(r => r.FilePath)
+                    .Concat(new[] { p.SourceFilePath }))
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+            var snapshots = ResRefRenameOrchestrator.CaptureSnapshots(snapshotPaths);
+
+            var moduleName = !string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath)
+                ? Path.GetFileName(RadoubSettings.Instance.CurrentModulePath)
+                : "unknown";
+
+            var orchestrator = new ResRefRenameOrchestrator(new BackupService());
+            var result = await orchestrator.ExecuteAsync(confirmedPlans, moduleName, snapshots);
+
+            if (result.Success)
+            {
+                _viewModel.StatusText =
+                    $"Renamed {result.RenamedFiles} file{(result.RenamedFiles != 1 ? "s" : "")}, " +
+                    $"updated {result.ReferencesUpdated} reference{(result.ReferencesUpdated != 1 ? "s" : "")}. " +
+                    "Backup created. Re-run search to refresh results.";
+                // Don't clear results tree — leaves the user wondering whether everything
+                // got renamed. Stale entries (renamed files at the old name) will simply
+                // not be found on the next search.
+            }
+            else
+            {
+                var rollbackNote = result.RollbackAttempted
+                    ? (result.RollbackSucceeded ? " — rolled back" : " — ROLLBACK FAILED, see backup manifest")
+                    : string.Empty;
+                _viewModel.StatusText = $"Rename failed: {result.Error}{rollbackNote}";
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"ResRef rename failed: {ex.Message}");
+            _viewModel.StatusText = $"Rename error: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Recover the user's original proposed name (before validator auto-suffixing)
+    /// by re-running ApplyReplacement against the matching PendingChange. Used
+    /// to populate the auto-suffix collision dialog text.
+    /// </summary>
+    private static string ComputeOriginalProposedName(BatchReplacePreview preview, ResRefRenamePlan plan)
+    {
+        var change = preview.Changes.FirstOrDefault(c =>
+            string.Equals(c.FilePath, plan.SourceFilePath, StringComparison.OrdinalIgnoreCase) &&
+            c.Match.Field.GffPath == FilenameSearchProvider.FilenameField.GffPath);
+
+        if (change == null) return plan.NewName;
+
+        var oldName = Path.GetFileNameWithoutExtension(plan.SourceFilePath);
+        var raw = RenameDispatchHelpers.ApplyReplacement(oldName, change.Match, change.ReplacementText);
+        return raw.ToLowerInvariant();
     }
 
     private void OnReplacementComplete(object? sender, BatchReplaceResult result)

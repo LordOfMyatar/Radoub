@@ -388,6 +388,49 @@ public class ModuleSearchServiceTests : IDisposable
 
     #endregion
 
+    #region IncludeFilenameResRef
+
+    [Fact]
+    public async Task ScanModuleAsync_WithIncludeFilenameResRef_AddsFilenameMatches()
+    {
+        // Create a file whose name matches but whose CONTENT does not
+        WriteDlgFile("louis_roumain.dlg", "Nothing matching here.");
+
+        var service = new ModuleSearchService();
+        var criteria = new SearchCriteria
+        {
+            Pattern = "louis",
+            IncludeFilenameResRef = true
+        };
+
+        var results = await service.ScanModuleAsync(_tempDir, criteria);
+
+        // Should have a result for the filename match even though file content has no "louis"
+        Assert.Contains(results.Files, f =>
+            f.FileName == "louis_roumain.dlg" &&
+            f.Matches.Any(m => m.Field?.Name == "Filename"));
+    }
+
+    [Fact]
+    public async Task ScanModuleAsync_WithoutIncludeFilenameResRef_NoFilenameMatches()
+    {
+        WriteDlgFile("louis_roumain.dlg", "Nothing matching here.");
+
+        var service = new ModuleSearchService();
+        var criteria = new SearchCriteria
+        {
+            Pattern = "louis"
+            // IncludeFilenameResRef defaults to false
+        };
+
+        var results = await service.ScanModuleAsync(_tempDir, criteria);
+
+        // Without the flag, "louis_roumain.dlg" produces no matches because content has no "louis"
+        Assert.DoesNotContain(results.Files, f => f.Matches.Any(m => m.Field?.Name == "Filename"));
+    }
+
+    #endregion
+
     #region Helpers
 
     private static SearchMatch CreateDummyMatch()
