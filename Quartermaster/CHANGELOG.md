@@ -5,6 +5,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.92-alpha] - 2026-05-24
+**Branch**: `quartermaster/issue-2201` | **PR**: #TBD
+
+### Feat: Adopt FileBrowserPanelBase Name/Tag sort + search (#2201)
+
+Sprint 4 of #2186. `CreatureBrowserPanel` now supports Name and Tag sort/search via the FileBrowserPanelBase infrastructure landed in Sprint 1 (#2198), mirroring the Relique (#2199) and Fence (#2200) adoptions.
+
+- HAK/BIF creatures indexed instantly from persistent palette cache (`~/Radoub/Cache/CreaturePalette/`)
+- Module + vault creatures indexed lazily via background GFF read
+- Saving a UTC/BIC refreshes its browser row Tag/Name without full reindex
+- BIC files share the UTC indexing path (same GFF schema)
+
+---
+
 ## [0.2.91-alpha] - 2026-05-01
 **Branch**: `radoub/issue-2159` | **PR**: #2160
 
