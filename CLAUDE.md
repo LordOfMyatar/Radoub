@@ -359,6 +359,7 @@ userDict.AddWord("Waterdeep");
 - [ ] **Initialize CHANGELOG.md** with branch/PR format
 - [ ] **Create CLAUDE.md** with tool-specific patterns
 - [ ] **Add dictionary support** if tool has text editing fields
+- [ ] **Override `IndexMetadataAsync` + `ReadSourceMetadataAsync`** on the file browser panel if the format has Name and/or Tag fields — see [File Browser Adoption](#file-browser-adoption-filebrowserpanelbase)
 
 ### Trebuchet Integration
 
@@ -411,6 +412,150 @@ New tools must integrate with Trebuchet (the Radoub launcher):
 | Rebuild game data every launch | Cache to `~/Radoub/{Tool}/` |
 | Custom TLK loading | Use shared ITlkService |
 | Custom portrait browser | Use shared PortraitBrowserWindow |
+| Browser shows ResRef-only sort/search | Override `IndexMetadataAsync` + `ReadSourceMetadataAsync` on the panel (see [File Browser Adoption](#file-browser-adoption-filebrowserpanelbase)) |
+| Save flow doesn't refresh browser row | Call `BrowserSaveNotifier.NotifyAsync(panel, filePath)` after a successful save |
+| Synchronous GFF parse inside `LoadFilesFromModuleAsync` | Defer Name/Tag extraction to the background `IndexMetadataAsync` pass |
+
+### File Browser Adoption (FileBrowserPanelBase)
+
+If the new tool edits a resource type with a localized Name and/or script Tag (UTI, UTM, UTC, UTP, etc.), the file browser panel must expose Name/Tag sort and search alongside ResRef. The shared `FileBrowserPanelBase` does the DataGrid, column headers, search box, sort comparators, background prefetch, and cancellation; the tool wires three virtual hooks plus one host-side save-notify call. Epic [#2186](https://github.com/LordOfMyatar/Radoub/issues/2186) (PRs [#2204](https://github.com/LordOfMyatar/Radoub/pull/2204) Sprint 1 infra, [#2208](https://github.com/LordOfMyatar/Radoub/pull/2208) Relique adoption, [#2209](https://github.com/LordOfMyatar/Radoub/pull/2209) Fence adoption).
+
+**Panel-side virtual hooks** (in the `*BrowserPanel : FileBrowserPanelBase` subclass):
+
+| Hook | Required when | Purpose |
+|------|---------------|---------|
+| `ReadSourceMetadataAsync(byte[]) → (tag, name)` | Always (Name/Tag formats) | Pure parse of one resource's bytes → Tag + DisplayLabel. Same hook used by the copy-to-module flow — reuse the existing implementation. |
+| `IndexMetadataAsync(entries, ct)` | Always (Name/Tag formats) | Background pass: for each entry where `MetadataLoaded == false`, read bytes → call `ReadSourceMetadataAsync` → set `Tag` + `DisplayLabel`. Yield (`await Task.Yield()`) every ~50 entries. Honor the cancellation token between batches. Always set `MetadataLoaded = true` (even on parse failure) so the loop doesn't retry forever. |
+| `RefreshEntryMetadataAsync(entry)` | When tool supports save | Single-entry re-read called by the host after a save. No full reindex. |
+| `SupportedSortModes` (property) | Only to suppress a mode | Default exposes all three (`ResRef`, `Name`, `Tag`). Override only when the format lacks Name or Tag (Parley's `DialogBrowserPanel` returns `[ResRef]` because DLG has no Name/Tag fields). |
+
+**Worked example** (abbreviated from [Radoub.UI/Radoub.UI/Controls/ItemBrowserPanel.cs](Radoub.UI/Radoub.UI/Controls/ItemBrowserPanel.cs)):
+
+```csharp
+public class ItemBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
+{
+    public ISharedPaletteCacheService? PaletteCache { get; set; }
+
+    protected override Task<(string tag, string name)> ReadSourceMetadataAsync(byte[] bytes)
+    {
+        try
+        {
+            var uti = Radoub.Formats.Uti.UtiReader.Read(bytes);
+            return Task.FromResult(
+                (uti.Tag ?? string.Empty,
+                 uti.LocalizedName.GetDefault() ?? string.Empty));
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"ItemBrowserPanel.ReadSourceMetadataAsync: {ex.Message}");
+            return Task.FromResult((string.Empty, string.Empty));
+        }
+    }
+
+    protected override async Task IndexMetadataAsync(
+        IReadOnlyList<FileBrowserEntry> entries,
+        CancellationToken cancellationToken)
+    {
+        var paletteLookup = BuildPaletteLookup();
+        int processed = 0;
+
+        foreach (var entry in entries)
+        {
+            if (cancellationToken.IsCancellationRequested) return;
+            if (entry.MetadataLoaded) { processed++; continue; }
+
+            try
+            {
+                if (TryFillFromCache(entry, paletteLookup))
+                {
+                    entry.MetadataLoaded = true;
+                }
+                else
+                {
+                    var bytes = await ReadEntryBytesAsync(entry, cancellationToken);
+                    if (bytes != null)
+                    {
+                        var (tag, name) = await ReadSourceMetadataAsync(bytes);
+                        entry.Tag = tag;
+                        entry.DisplayLabel = name;
+                    }
+                    entry.MetadataLoaded = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"ItemBrowserPanel.IndexMetadataAsync({entry.Name}): {ex.Message}");
+                entry.MetadataLoaded = true; // don't retry forever
+            }
+
+            processed++;
+            if (processed % 50 == 0) await Task.Yield();
+        }
+    }
+
+    public override async Task RefreshEntryMetadataAsync(FileBrowserEntry entry)
+    {
+        var bytes = await ReadEntryBytesAsync(entry, CancellationToken.None);
+        if (bytes == null) return;
+        var (tag, name) = await ReadSourceMetadataAsync(bytes);
+        entry.Tag = tag;
+        entry.DisplayLabel = name;
+        entry.MetadataLoaded = true;
+    }
+
+    // IBrowserRowRefresher — host calls this via BrowserSaveNotifier
+    public Task RefreshRowAsync(string filePath)
+    {
+        var entry = FindEntryByFilePath(filePath);
+        return entry == null ? Task.CompletedTask : RefreshEntryFromDiskAsync(entry);
+    }
+}
+```
+
+**Host-side wiring** (in the tool's `MainWindow`):
+
+```csharp
+// Lifecycle: wire the (optional) shared palette cache on the panel.
+ItemBrowserPanel.PaletteCache = new SharedPaletteCacheService(/* see cache rules below */);
+
+// FileOps: notify the browser after every successful save so the row's
+// Tag/Name reflect the new values without a full reindex.
+_ = Radoub.UI.Controls.BrowserSaveNotifier.NotifyAsync(ItemBrowserPanel, _currentFilePath);
+```
+
+Live references: [Relique/Relique/Views/MainWindow.Lifecycle.cs:168](Relique/Relique/Views/MainWindow.Lifecycle.cs#L168) (cache wiring), [Relique/Relique/Views/MainWindow.FileOps.cs:135](Relique/Relique/Views/MainWindow.FileOps.cs#L135) (post-save notify), [Fence/Fence/Views/MainWindow.axaml.cs:79](Fence/Fence/Views/MainWindow.axaml.cs#L79) (per-resource cache instantiation).
+
+**Per-resource cache directory pattern**:
+
+`SharedPaletteCacheService` is keyed by source (BIF / Override / per-HAK) inside a single root directory. Different resource types (UTI / UTM / UTC / UTP) must use **separate root directories** so aggregated lookups don't return cross-type hits.
+
+| Tool | Resource | Cache directory |
+|------|----------|-----------------|
+| Relique | UTI | `~/Radoub/Cache/ItemPalette/` (default constructor) |
+| Fence | UTM | `~/Radoub/Cache/StorePalette/` (explicit path) |
+| Quartermaster | UTC | `~/Radoub/Cache/CreaturePalette/` (planned, [#2201](https://github.com/LordOfMyatar/Radoub/issues/2201)) |
+| Future placeable editor | UTP | `~/Radoub/Cache/PlaceablePalette/` |
+
+Naming convention: `~/Radoub/Cache/{Resource}Palette/`. For non-UTI tools, pass the path explicitly:
+
+```csharp
+private readonly ISharedPaletteCacheService _palette =
+    new SharedPaletteCacheService(Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+        "Radoub", "Cache", "StorePalette"));
+```
+
+A `PaletteCache` is optional — wire it only when HAK/BIF extraction is expensive enough that the cache pays for itself. Module-folder files are read directly on every indexing pass (cheap enough). When wired, populate the cache during the same archive scan that lists entries (see [Radoub.UI/Radoub.UI/Controls/StoreBrowserPanel.cs:568](Radoub.UI/Radoub.UI/Controls/StoreBrowserPanel.cs#L568) for Fence's populate-during-scan flow).
+
+**Host-side save plumbing**: `BrowserSaveNotifier.NotifyAsync` is null-safe on both the refresher and the path, so the call is safe to drop in early returns or on failed saves. The static helper exists so the post-save wire-up is unit-testable without a `MainWindow` — see [Radoub.UI/Radoub.UI.Tests/BrowserSaveNotifierTests.cs](Radoub.UI/Radoub.UI.Tests/BrowserSaveNotifierTests.cs).
+
+**Test seams**:
+
+- `BrowserSortLogic.FilterAndSort` ([Radoub.UI/Radoub.UI/Controls/BrowserSortLogic.cs](Radoub.UI/Radoub.UI/Controls/BrowserSortLogic.cs)) is a pure-static helper covering the comparator + filter behavior; mirror its test style in `BrowserSortLogicTests.cs` if extending sort semantics.
+- `TryFillFromCache(entry, lookup)` on each panel is an `internal static` seam — write cache-hit/miss tests against it (see `ItemBrowserPanelIndexingTests.cs`, `StoreBrowserPanelIndexingTests.cs`).
+- `BuildPaletteItemFromUtm` (`StoreBrowserPanel.cs:335`) shows the pure-logic pattern for converting raw bytes → `SharedPaletteCacheItem` so the populator path is testable independent of disk I/O.
 
 ### Post-Implementation Audit
 
