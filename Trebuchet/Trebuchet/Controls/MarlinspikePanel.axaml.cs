@@ -290,18 +290,79 @@ public partial class MarlinspikePanel : UserControl
             resourceType = fileResult.ResourceType;
         }
 
-        if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
-            return;
+        var plan = ResultDispatcher.Plan(
+            filePath,
+            resourceType,
+            ResourceTypeToToolName,
+            SettingsService.Instance.CodeEditorPath,
+            File.Exists);
 
-        if (ResourceTypeToToolName.TryGetValue(resourceType, out var toolName))
+        ExecuteDispatchPlan(plan);
+    }
+
+    private void ExecuteDispatchPlan(DispatchPlan plan)
+    {
+        switch (plan.Action)
         {
-            var launched = ToolLauncherService.Instance.LaunchTool(toolName, $"--file \"{filePath}\"");
-            if (!launched && _viewModel != null)
-                _viewModel.StatusText = $"Could not launch {toolName} for: {Path.GetFileName(filePath)}";
+            case DispatchAction.NoFile:
+            case DispatchAction.FileMissing:
+                return;
+
+            case DispatchAction.ToolLaunch:
+                var launched = ToolLauncherService.Instance.LaunchTool(
+                    plan.ToolName!, $"--file \"{plan.FilePath}\"");
+                if (!launched && _viewModel != null)
+                    _viewModel.StatusText =
+                        $"Could not launch {plan.ToolName} for: {Path.GetFileName(plan.FilePath)}";
+                return;
+
+            case DispatchAction.ExternalEditor:
+                StartExternalEditor(plan.EditorPath!, plan.FilePath!);
+                return;
+
+            case DispatchAction.OsDefault:
+                StartOsDefault(plan.FilePath!);
+                return;
         }
-        else if (_viewModel != null)
+    }
+
+    private void StartExternalEditor(string editorPath, string filePath)
+    {
+        try
         {
-            _viewModel.StatusText = $"No editor for .{Path.GetExtension(filePath).TrimStart('.')} files";
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = editorPath,
+                Arguments = $"\"{filePath}\"",
+                UseShellExecute = false
+            };
+            System.Diagnostics.Process.Start(startInfo)?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"External editor launch failed for {Path.GetFileName(filePath)}: {ex.Message}");
+            StartOsDefault(filePath);
+        }
+    }
+
+    private void StartOsDefault(string filePath)
+    {
+        try
+        {
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = filePath,
+                UseShellExecute = true
+            };
+            System.Diagnostics.Process.Start(startInfo)?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"OS default handler failed for {Path.GetFileName(filePath)}: {ex.Message}");
+            if (_viewModel != null)
+                _viewModel.StatusText = $"No editor for {Path.GetFileName(filePath)}";
         }
     }
 
