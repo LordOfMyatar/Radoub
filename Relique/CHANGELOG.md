@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.10.14-alpha] - 2026-05-24
-**Branch**: `relique/issue-2199` | **PR**: #TBD
+**Branch**: `relique/issue-2199` | **PR**: #2208
 
 ### Feature: Adopt FileBrowserPanelBase Name/Tag Sort + Search (#2199)
 
