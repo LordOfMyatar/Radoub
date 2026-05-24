@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.92-alpha] - 2026-05-24
-**Branch**: `quartermaster/issue-2201` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2201` | **PR**: #2213
 
 ### Feat: Adopt FileBrowserPanelBase Name/Tag sort + search (#2201)
 
