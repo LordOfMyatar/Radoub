@@ -104,6 +104,74 @@ public class GffReferenceLocationApplierTests
         Assert.Equal("bob_sword", items!.Elements[0].GetField("InventoryRes")?.Value);
     }
 
+    // --- ITP palette (#2178) ---
+
+    [Fact]
+    public void Apply_ItpFlatBlueprint_UpdatesResRef()
+    {
+        var gff = MakeFlatItp("louis_roumain", "alice_smith");
+        var refRow = MakeRef("MAIN > 0 > RESREF", ResRefScopeTier.TypedGffField, "louis_roumain");
+
+        Assert.True(_applier.Apply(gff, refRow, "bob"));
+
+        var main = gff.RootStruct.GetField("MAIN")?.Value as GffList;
+        Assert.NotNull(main);
+        Assert.Equal("bob", main!.Elements[0].GetField("RESREF")?.Value);
+        Assert.Equal("alice_smith", main.Elements[1].GetField("RESREF")?.Value);  // sibling untouched
+    }
+
+    [Fact]
+    public void Apply_ItpNestedBlueprint_UpdatesResRefByIndexPath()
+    {
+        // MAIN[0] = category with LIST[ blueprint "louis_roumain", blueprint "carol" ]
+        var blueprint0 = MakeBlueprintStruct("louis_roumain");
+        var blueprint1 = MakeBlueprintStruct("carol");
+
+        var category = new GffStruct { Type = 1 };
+        GffFieldBuilder.AddByteField(category, "ID", 0);
+        GffFieldBuilder.AddListField(category, "LIST", new[] { blueprint0, blueprint1 });
+
+        var root = new GffStruct { Type = 0xFFFFFFFF };
+        GffFieldBuilder.AddListField(root, "MAIN", new[] { category });
+        var gff = new GffFile { FileType = "ITP ", FileVersion = "V3.2", RootStruct = root };
+
+        var refRow = MakeRef("MAIN > 0/0 > RESREF", ResRefScopeTier.TypedGffField, "louis_roumain");
+
+        Assert.True(_applier.Apply(gff, refRow, "bob"));
+
+        var main = gff.RootStruct.GetField("MAIN")?.Value as GffList;
+        var nestedList = main!.Elements[0].GetField("LIST")?.Value as GffList;
+        Assert.Equal("bob", nestedList!.Elements[0].GetField("RESREF")?.Value);
+        Assert.Equal("carol", nestedList.Elements[1].GetField("RESREF")?.Value);  // sibling untouched
+    }
+
+    [Fact]
+    public void Apply_ItpInvalidIndexPath_ReturnsFalse()
+    {
+        var gff = MakeFlatItp("louis_roumain");
+        var refRow = MakeRef("MAIN > 99 > RESREF", ResRefScopeTier.TypedGffField, "louis_roumain");
+
+        Assert.False(_applier.Apply(gff, refRow, "bob"));
+    }
+
+    private static GffStruct MakeBlueprintStruct(string resRef)
+    {
+        var s = new GffStruct { Type = 0 };
+        GffFieldBuilder.AddCResRefField(s, "RESREF", resRef);
+        return s;
+    }
+
+    private static GffFile MakeFlatItp(params string[] resRefs)
+    {
+        var blueprints = new List<GffStruct>();
+        foreach (var rr in resRefs)
+            blueprints.Add(MakeBlueprintStruct(rr));
+
+        var root = new GffStruct { Type = 0xFFFFFFFF };
+        GffFieldBuilder.AddListField(root, "MAIN", blueprints);
+        return new GffFile { FileType = "ITP ", FileVersion = "V3.2", RootStruct = root };
+    }
+
     private static ResRefReference MakeRef(string location, ResRefScopeTier tier, string oldValue) => new()
     {
         FilePath = "/m/test",

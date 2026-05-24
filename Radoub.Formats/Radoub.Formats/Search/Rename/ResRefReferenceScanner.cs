@@ -57,7 +57,70 @@ public class ResRefReferenceScanner
         if (resourceType == ResourceTypes.Ifo)
             ScanIfoHakList(gffFile, oldResRef, filePath, results);
 
+        if (resourceType == ResourceTypes.Itp)
+            ScanItpPaletteTree(gffFile, oldResRef, filePath, results);
+
         return results;
+    }
+
+    private static readonly FieldDefinition ItpResRefField = new()
+    {
+        Name = "Palette ResRef",
+        GffPath = "RESREF",
+        FieldType = SearchFieldType.ResRef,
+        Category = SearchFieldCategory.Identity,
+        Description = "Palette blueprint ResRef",
+        IsReplaceable = false
+    };
+
+    /// <summary>
+    /// ITP palettes are GFF trees rooted at a "MAIN" list. Nodes are either
+    /// branches/categories (containing a child "LIST") or blueprint leaves
+    /// (carrying a "RESREF" field). #2178 fix: walk the tree and emit a
+    /// reference for every blueprint whose RESREF matches.
+    ///
+    /// Location format: "MAIN > {indexPath} > RESREF" where indexPath is a
+    /// slash-separated sequence of zero-based indices from the MAIN list
+    /// down through nested LIST lists. The applier mirrors this walk.
+    /// </summary>
+    private void ScanItpPaletteTree(
+        GffFile gff, string oldResRef, string filePath, List<ResRefReference> results)
+    {
+        var mainField = gff.RootStruct.GetField("MAIN");
+        if (mainField?.Value is not GffList mainList) return;
+
+        for (int i = 0; i < mainList.Elements.Count; i++)
+            ScanItpNode(mainList.Elements[i], oldResRef, filePath, $"{i}", results);
+    }
+
+    private void ScanItpNode(
+        GffStruct node, string oldResRef, string filePath, string indexPath,
+        List<ResRefReference> results)
+    {
+        var resRefField = node.GetField("RESREF");
+        if (resRefField?.Value is string resRef
+            && string.Equals(resRef, oldResRef, StringComparison.OrdinalIgnoreCase))
+        {
+            results.Add(new ResRefReference
+            {
+                FilePath = filePath,
+                ResourceType = ResourceTypes.Itp,
+                Field = ItpResRefField,
+                Location = $"MAIN > {indexPath} > RESREF",
+                OldValue = resRef,
+                NewValue = string.Empty,
+                ScopeTier = ResRefScopeTier.TypedGffField
+            });
+        }
+
+        // Recurse into LIST children if present (categories/branches).
+        var listField = node.GetField("LIST");
+        if (listField?.Value is GffList children)
+        {
+            for (int i = 0; i < children.Elements.Count; i++)
+                ScanItpNode(children.Elements[i], oldResRef, filePath,
+                    $"{indexPath}/{i}", results);
+        }
     }
 
     private static readonly FieldDefinition ModHakField = new()

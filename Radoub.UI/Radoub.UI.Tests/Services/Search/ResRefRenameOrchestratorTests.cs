@@ -473,4 +473,107 @@ public class ResRefRenameOrchestratorTests : IDisposable
             Assert.Equal(kvp.Value, File.ReadAllBytes(path));
         }
     }
+
+    // --- #2181: Reverse rename when filename contains old name as substring ---
+
+    [Fact]
+    public async Task ExecuteAsync_ReverseRenameWithSelfReference_DoesNotFailVerify()
+    {
+        // #2181 reproduction. The original report:
+        //   1. lompqj_qu.nss exists; rename to lompqj_qu1.nss → succeeds
+        //   2. Reverse rename lompqj_qu1.nss back to lompqj_qu.nss → fails verify
+        //      "orphan file remains at .../lompqj_qu1.nss after rename"
+        //
+        // The .nss content references its own filename as a bare substring.
+
+        var moduleDir = Path.Combine(_root, "lns_dlg");
+        Directory.CreateDirectory(moduleDir);
+        var backupDir = Path.Combine(_root, ".backups");
+
+        // Start state: file is already named lompqj_qu1.nss (mid-reverse-rename scenario).
+        var startPath = Path.Combine(moduleDir, "lompqj_qu1.nss");
+        var targetPath = Path.Combine(moduleDir, "lompqj_qu.nss");
+        var nssBody =
+            "// lompqj_qu1 script\n" +
+            "void main()\n" +
+            "{\n" +
+            "    // self-reference: lompqj_qu1\n" +
+            "    ExecuteScript(\"lompqj_qu1\", OBJECT_SELF);\n" +
+            "}\n";
+        await File.WriteAllTextAsync(startPath, nssBody);
+
+        // Plan: rename lompqj_qu1 → lompqj_qu, with bare-substring + quoted refs in self.
+        var plan = new ResRefRenamePlan
+        {
+            OldName = "lompqj_qu1",
+            NewName = "lompqj_qu",
+            ResourceType = ResourceTypes.Nss,
+            Validation = ResRefValidationResult.Ok("lompqj_qu"),
+            SourceFilePath = startPath,
+            TargetFilePath = targetPath
+        };
+
+        // Self-reference: the .nss file being renamed has bare substring + quoted
+        // matches for "lompqj_qu1" in its own content. These will be rewritten by
+        // Phase 3b, then Phase 3c renames the file.
+        var bareMatch1 = nssBody.IndexOf("lompqj_qu1", StringComparison.Ordinal);  // header comment
+        var bareMatch2 = nssBody.IndexOf("lompqj_qu1", bareMatch1 + 1, StringComparison.Ordinal);  // self-reference comment
+        var quotedInner = nssBody.IndexOf("\"lompqj_qu1\"", StringComparison.Ordinal) + 1;
+
+        plan.References.Add(new ResRefReference
+        {
+            FilePath = startPath,
+            ResourceType = ResourceTypes.Nss,
+            Field = null,
+            Location = "Line 1 (substring — verify)",
+            OldValue = "lompqj_qu1",
+            NewValue = "lompqj_qu",
+            ScopeTier = ResRefScopeTier.NssBareSubstring,
+            MatchOffset = bareMatch1,
+            MatchLength = "lompqj_qu1".Length,
+            IsSelected = true
+        });
+        plan.References.Add(new ResRefReference
+        {
+            FilePath = startPath,
+            ResourceType = ResourceTypes.Nss,
+            Field = null,
+            Location = "Line 4 (substring — verify)",
+            OldValue = "lompqj_qu1",
+            NewValue = "lompqj_qu",
+            ScopeTier = ResRefScopeTier.NssBareSubstring,
+            MatchOffset = bareMatch2,
+            MatchLength = "lompqj_qu1".Length,
+            IsSelected = true
+        });
+        plan.References.Add(new ResRefReference
+        {
+            FilePath = startPath,
+            ResourceType = ResourceTypes.Nss,
+            Field = null,
+            Location = "Line 5 (quoted)",
+            OldValue = "lompqj_qu1",
+            NewValue = "lompqj_qu",
+            ScopeTier = ResRefScopeTier.NssQuotedString,
+            MatchOffset = quotedInner,
+            MatchLength = "lompqj_qu1".Length,
+            IsSelected = true
+        });
+
+        var orchestrator = new ResRefRenameOrchestrator(new BackupService(backupDir));
+        var result = await orchestrator.ExecuteAsync(new[] { plan }, "test");
+
+        Assert.True(result.Success, $"Reverse rename failed: {result.Error}");
+        Assert.False(File.Exists(startPath), "old path still exists after reverse rename");
+        Assert.True(File.Exists(targetPath), "new path missing after reverse rename");
+
+        // Content has been rewritten — no more old name.
+        var content = await File.ReadAllTextAsync(targetPath);
+        Assert.DoesNotContain("lompqj_qu1", content);
+        Assert.Contains("lompqj_qu", content);
+
+        // No .tmp residue left behind anywhere.
+        var tmpResidue = Directory.GetFiles(moduleDir, "*.tmp");
+        Assert.Empty(tmpResidue);
+    }
 }

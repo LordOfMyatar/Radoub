@@ -12,6 +12,13 @@ public partial class ErfImportWindow : Window
 {
     private ErfImportViewModel? _viewModel;
 
+    /// <summary>
+    /// Raised when an import completes with at least one file imported and
+    /// no errors. Subscribers (e.g. MarlinspikePanel) use this to invalidate
+    /// caches that depend on module working-directory contents (#2072).
+    /// </summary>
+    public event EventHandler? ImportSucceeded;
+
     public ErfImportWindow()
     {
         InitializeComponent();
@@ -57,7 +64,8 @@ public partial class ErfImportWindow : Window
         var result = await _viewModel.ImportAsync();
         if (result != null && result.ErrorCount == 0 && result.ImportedCount > 0)
         {
-            // Auto-close on successful import with no errors
+            // Successful import — notify subscribers so dependent caches refresh.
+            ImportSucceeded?.Invoke(this, EventArgs.Empty);
         }
     }
 

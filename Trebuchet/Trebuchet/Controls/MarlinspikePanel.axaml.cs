@@ -31,6 +31,8 @@ public partial class MarlinspikePanel : UserControl
     private ItemResolutionService? _itemResolutionService;
     private TlkService? _tlkService;
     private CancellationTokenSource? _searchCts;
+    private DateTime? _indexedModuleDirMtime;
+    private string? _indexedModuleDirPath;
 
     /// <summary>Maps resource types to Trebuchet tool names for launch dispatch.</summary>
     private static readonly Dictionary<ushort, string> ResourceTypeToToolName = new()
@@ -79,19 +81,64 @@ public partial class MarlinspikePanel : UserControl
 
     private void EnsureServices()
     {
+        var modulePath = ModulePath.GetWorkingDirectory(RadoubSettings.Instance.CurrentModulePath);
+
+        // #2072 — invalidate cached services if the module working directory's
+        // mtime moved (ERF import wrote new files, external editor saved, etc.)
+        // or if the working directory itself changed.
+        if (_searchService != null)
+        {
+            var currentMtime = GetDirectoryMtime(modulePath);
+            var pathChanged = !string.Equals(_indexedModuleDirPath, modulePath, StringComparison.OrdinalIgnoreCase);
+            if (pathChanged || SearchIndexStaleness.IsStale(currentMtime, _indexedModuleDirMtime))
+            {
+                _itemResolutionService = null;
+                _searchService = null;
+            }
+        }
+
         if (_searchService == null)
         {
             var gameDataService = _mainViewModel?.ModuleEditorViewModel?.GameDataService;
             _itemResolutionService = new ItemResolutionService(gameDataService);
-            var modulePath = ModulePath.GetWorkingDirectory(RadoubSettings.Instance.CurrentModulePath);
             if (!string.IsNullOrEmpty(modulePath))
                 _itemResolutionService.SetModuleDirectory(modulePath);
 
             _searchService = new ModuleSearchService(
                 resRef => _itemResolutionService?.ResolveItem(resRef)?.DisplayName);
+
+            _indexedModuleDirPath = modulePath;
+            _indexedModuleDirMtime = GetDirectoryMtime(modulePath);
         }
         _batchReplaceService ??= new BatchReplaceService(new BackupService());
         EnsureTlkResolver();
+    }
+
+    private static DateTime? GetDirectoryMtime(string? path)
+    {
+        if (string.IsNullOrEmpty(path)) return null;
+        try
+        {
+            var di = new DirectoryInfo(path);
+            return di.Exists ? di.LastWriteTimeUtc : (DateTime?)null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Public invalidation hook (#2072) — called by callers that know the
+    /// working directory contents just changed (e.g. ErfImportWindow on
+    /// successful import). Forces the next search to rebuild the index.
+    /// </summary>
+    public void InvalidateSearchIndex()
+    {
+        _itemResolutionService = null;
+        _searchService = null;
+        _indexedModuleDirMtime = null;
+        _indexedModuleDirPath = null;
     }
 
     private void EnsureTlkResolver()
@@ -290,18 +337,79 @@ public partial class MarlinspikePanel : UserControl
             resourceType = fileResult.ResourceType;
         }
 
-        if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
-            return;
+        var plan = ResultDispatcher.Plan(
+            filePath,
+            resourceType,
+            ResourceTypeToToolName,
+            SettingsService.Instance.CodeEditorPath,
+            File.Exists);
 
-        if (ResourceTypeToToolName.TryGetValue(resourceType, out var toolName))
+        ExecuteDispatchPlan(plan);
+    }
+
+    private void ExecuteDispatchPlan(DispatchPlan plan)
+    {
+        switch (plan.Action)
         {
-            var launched = ToolLauncherService.Instance.LaunchTool(toolName, $"--file \"{filePath}\"");
-            if (!launched && _viewModel != null)
-                _viewModel.StatusText = $"Could not launch {toolName} for: {Path.GetFileName(filePath)}";
+            case DispatchAction.NoFile:
+            case DispatchAction.FileMissing:
+                return;
+
+            case DispatchAction.ToolLaunch:
+                var launched = ToolLauncherService.Instance.LaunchTool(
+                    plan.ToolName!, $"--file \"{plan.FilePath}\"");
+                if (!launched && _viewModel != null)
+                    _viewModel.StatusText =
+                        $"Could not launch {plan.ToolName} for: {Path.GetFileName(plan.FilePath)}";
+                return;
+
+            case DispatchAction.ExternalEditor:
+                StartExternalEditor(plan.EditorPath!, plan.FilePath!);
+                return;
+
+            case DispatchAction.OsDefault:
+                StartOsDefault(plan.FilePath!);
+                return;
         }
-        else if (_viewModel != null)
+    }
+
+    private void StartExternalEditor(string editorPath, string filePath)
+    {
+        try
         {
-            _viewModel.StatusText = $"No editor for .{Path.GetExtension(filePath).TrimStart('.')} files";
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = editorPath,
+                Arguments = $"\"{filePath}\"",
+                UseShellExecute = false
+            };
+            System.Diagnostics.Process.Start(startInfo)?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"External editor launch failed for {Path.GetFileName(filePath)}: {ex.Message}");
+            StartOsDefault(filePath);
+        }
+    }
+
+    private void StartOsDefault(string filePath)
+    {
+        try
+        {
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = filePath,
+                UseShellExecute = true
+            };
+            System.Diagnostics.Process.Start(startInfo)?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"OS default handler failed for {Path.GetFileName(filePath)}: {ex.Message}");
+            if (_viewModel != null)
+                _viewModel.StatusText = $"No editor for {Path.GetFileName(filePath)}";
         }
     }
 
@@ -495,9 +603,28 @@ public partial class MarlinspikePanel : UserControl
 
             if (result.Success)
             {
+                // Process any non-filename content matches that were in the same preview
+                // but weren't consumed by the rename (e.g. ITP Name field replaces).
+                // Without this, the user has to click Replace All twice to clean up
+                // residual content rows.
+                var renameMap = confirmedPlans.ToDictionary(
+                    p => p.SourceFilePath,
+                    p => p.TargetFilePath,
+                    StringComparer.OrdinalIgnoreCase);
+                var residualPreview = RenameDispatchHelpers.BuildResidualPreview(preview, renameMap);
+
+                int residualReplacements = 0;
+                if (residualPreview.Changes.Count > 0)
+                {
+                    var residualResult = await _batchReplaceService!.ExecuteReplaceAsync(
+                        residualPreview, moduleName);
+                    residualReplacements = residualResult.ReplacementsMade;
+                }
+
+                var totalRefs = result.ReferencesUpdated + residualReplacements;
                 _viewModel.StatusText =
                     $"Renamed {result.RenamedFiles} file{(result.RenamedFiles != 1 ? "s" : "")}, " +
-                    $"updated {result.ReferencesUpdated} reference{(result.ReferencesUpdated != 1 ? "s" : "")}. " +
+                    $"updated {totalRefs} reference{(totalRefs != 1 ? "s" : "")}. " +
                     "Backup created. Re-run search to refresh results.";
                 // Don't clear results tree — leaves the user wondering whether everything
                 // got renamed. Stale entries (renamed files at the old name) will simply
@@ -559,6 +686,8 @@ public partial class MarlinspikePanel : UserControl
     {
         _itemResolutionService = null;
         _searchService = null;
+        _indexedModuleDirMtime = null;
+        _indexedModuleDirPath = null;
         _viewModel?.ClearResults();
         ResultsTree.ItemsSource = null;
         DurationText.Text = "";

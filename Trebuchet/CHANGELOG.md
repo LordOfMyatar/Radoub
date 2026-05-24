@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.34.0-alpha] - 2026-05-24
+**Branch**: `trebuchet/issue-2216` | **PR**: #2221
+
+### Sprint: Marlinspike Bug Bash (#2216)
+
+- Fix Marlinspike search index staleness after ERF import or external file changes (#2072)
+- Extend ResRef rename to update `.itp` palette references (#2178)
+- Fix reverse rename `'orphan file remains'` when filename contains old name as substring (#2181)
+- Wire default external editor for `.nss` files (#2183)
+
+---
+
 ## [1.33.0-alpha] - 2026-05-03
 **Branch**: `trebuchet/issue-1926` | **PR**: #2169
 

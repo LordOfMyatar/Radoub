@@ -119,21 +119,94 @@ public class ItpSearchProvider : SearchProviderBase, IFileSearchProvider
 
     public IReadOnlyList<ReplaceResult> Replace(GffFile gffFile, IReadOnlyList<ReplaceOperation> operations)
     {
-        // ITP palette files: names are replaceable but ResRefs are not.
-        // For now, delegate to GenericGffSearchProvider for replace operations
-        // since palette editing is rare and the tree structure makes targeted replacement complex.
+        // ITP palette replace (#2178 follow-up): walk the MAIN tree, find every
+        // blueprint struct whose target field (RESREF or NAME) equals the
+        // operation's FullFieldValue, and apply the substring replacement at
+        // MatchOffset/MatchLength.
         if (operations.Count == 0) return Array.Empty<ReplaceResult>();
 
-        return operations.Select(op => new ReplaceResult
+        var mainField = gffFile.RootStruct.GetField("MAIN");
+        if (mainField?.Value is not GffList mainList)
         {
-            Success = false,
-            Field = op.Match.Field,
-            OldValue = op.Match.FullFieldValue,
-            NewValue = op.ReplacementText,
-            Skipped = true,
-            SkipReason = "ITP palette replace not yet supported"
-        }).ToList();
+            return operations.Select(op => MakeSkipped(op, "ITP has no MAIN list")).ToList();
+        }
+
+        var results = new List<ReplaceResult>();
+        foreach (var op in operations)
+        {
+            var fieldName = op.Match.Field.GffPath;  // "RESREF" or "NAME"
+            if (string.IsNullOrEmpty(fieldName))
+            {
+                results.Add(MakeSkipped(op, "Missing field path"));
+                continue;
+            }
+
+            bool isResRefField = op.Match.Field.FieldType == SearchFieldType.ResRef;
+            if (isResRefField && !op.AllowResRefReplace)
+            {
+                results.Add(MakeSkipped(op, "ResRef field requires allowResRefReplace"));
+                continue;
+            }
+
+            int updated = ReplaceInTree(mainList, fieldName, op);
+            if (updated > 0)
+            {
+                results.Add(new ReplaceResult
+                {
+                    Success = true,
+                    Field = op.Match.Field,
+                    OldValue = op.Match.FullFieldValue,
+                    NewValue = ComputeNewValue(op.Match.FullFieldValue, op.Match.MatchOffset, op.Match.MatchLength, op.ReplacementText)
+                });
+            }
+            else
+            {
+                results.Add(MakeSkipped(op, "No matching blueprint node found"));
+            }
+        }
+        return results;
     }
+
+    private static int ReplaceInTree(GffList list, string fieldName, ReplaceOperation op)
+    {
+        int updated = 0;
+        foreach (var node in list.Elements)
+        {
+            var f = node.GetField(fieldName);
+            if (f?.Value is string current
+                && string.Equals(current, op.Match.FullFieldValue, StringComparison.Ordinal))
+            {
+                f.Value = ComputeNewValue(current, op.Match.MatchOffset, op.Match.MatchLength, op.ReplacementText);
+                updated++;
+            }
+
+            // Recurse into nested LIST
+            var childList = node.GetField("LIST")?.Value as GffList;
+            if (childList != null)
+                updated += ReplaceInTree(childList, fieldName, op);
+        }
+        return updated;
+    }
+
+    private static string ComputeNewValue(string original, int offset, int length, string replacement)
+    {
+        if (offset < 0 || offset > original.Length) return original;
+        if (length < 0 || offset + length > original.Length) return original;
+        return string.Concat(
+            original.AsSpan(0, offset),
+            replacement,
+            original.AsSpan(offset + length));
+    }
+
+    private static ReplaceResult MakeSkipped(ReplaceOperation op, string reason) => new()
+    {
+        Success = false,
+        Field = op.Match.Field,
+        OldValue = op.Match.FullFieldValue,
+        NewValue = op.ReplacementText,
+        Skipped = true,
+        SkipReason = reason
+    };
 }
 
 /// <summary>

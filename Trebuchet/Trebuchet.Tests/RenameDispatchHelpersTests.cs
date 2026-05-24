@@ -261,6 +261,147 @@ public class RenameDispatchHelpersTests : IDisposable
         Assert.Contains(plan.References, r => r.ResourceType == ResourceTypes.Git);
     }
 
+    // --- BuildResidualPreview (#2178 follow-up) ---
+    //
+    // When the dispatch path runs rename for filename rows, non-filename content
+    // rows in the same preview (e.g. ITP Name field matches) must still be
+    // processed by the standard replace path. BuildResidualPreview produces a
+    // preview containing only those non-filename rows, with file paths remapped
+    // to post-rename targets when the source was renamed.
+
+    [Fact]
+    public void BuildResidualPreview_StripsFilenameRows()
+    {
+        var filenameChange = new PendingChange
+        {
+            Match = MakeMatchOn(FilenameSearchProvider.FilenameField),
+            ReplacementText = "lewie",
+            FilePath = "/m/louis.utc"
+        };
+        var nameField = new FieldDefinition
+        {
+            Name = "Name", GffPath = "NAME",
+            FieldType = SearchFieldType.Text,
+            Category = SearchFieldCategory.Content
+        };
+        var contentChange = new PendingChange
+        {
+            Match = MakeMatchOn(nameField),
+            ReplacementText = "Lewie",
+            FilePath = "/m/palette.itp"
+        };
+
+        var preview = new BatchReplacePreview { AllowResRefReplace = true };
+        preview.Changes.Add(filenameChange);
+        preview.Changes.Add(contentChange);
+
+        var residual = RenameDispatchHelpers.BuildResidualPreview(
+            preview, renameMap: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
+
+        Assert.Single(residual.Changes);
+        Assert.Same(contentChange.Match.Field, residual.Changes[0].Match.Field);
+        Assert.Equal("/m/palette.itp", residual.Changes[0].FilePath);
+        Assert.True(residual.AllowResRefReplace);
+    }
+
+    [Fact]
+    public void BuildResidualPreview_RemapsFilePathsForRenamedFiles()
+    {
+        // A non-filename change on a file that's about to be renamed must
+        // refer to the post-rename target path.
+        var resRefField = new FieldDefinition
+        {
+            Name = "ResRef", GffPath = "RESREF",
+            FieldType = SearchFieldType.ResRef,
+            Category = SearchFieldCategory.Identity,
+            IsReplaceable = false
+        };
+        var change = new PendingChange
+        {
+            Match = MakeMatchOn(resRefField),
+            ReplacementText = "lewie",
+            FilePath = "/m/louis.utc"
+        };
+        var preview = new BatchReplacePreview { AllowResRefReplace = true };
+        preview.Changes.Add(change);
+
+        var renameMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["/m/louis.utc"] = "/m/lewie.utc"
+        };
+
+        var residual = RenameDispatchHelpers.BuildResidualPreview(preview, renameMap);
+
+        Assert.Single(residual.Changes);
+        Assert.Equal("/m/lewie.utc", residual.Changes[0].FilePath);
+    }
+
+    [Fact]
+    public void BuildResidualPreview_PreservesAllowResRefReplaceFlag()
+    {
+        var preview = new BatchReplacePreview { AllowResRefReplace = true };
+        var residual = RenameDispatchHelpers.BuildResidualPreview(
+            preview, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
+        Assert.True(residual.AllowResRefReplace);
+
+        var preview2 = new BatchReplacePreview { AllowResRefReplace = false };
+        var residual2 = RenameDispatchHelpers.BuildResidualPreview(
+            preview2, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
+        Assert.False(residual2.AllowResRefReplace);
+    }
+
+    [Fact]
+    public void BuildResidualPreview_EmptyWhenAllRowsAreFilenameMatches()
+    {
+        var preview = new BatchReplacePreview();
+        preview.Changes.Add(new PendingChange
+        {
+            Match = MakeMatchOn(FilenameSearchProvider.FilenameField),
+            ReplacementText = "lewie",
+            FilePath = "/m/louis.utc"
+        });
+
+        var residual = RenameDispatchHelpers.BuildResidualPreview(
+            preview, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
+
+        Assert.Empty(residual.Changes);
+    }
+
+    [Fact]
+    public void BuildResidualPreview_PreservesIsSelectedState()
+    {
+        var nameField = new FieldDefinition
+        {
+            Name = "Name", GffPath = "NAME",
+            FieldType = SearchFieldType.Text,
+            Category = SearchFieldCategory.Content
+        };
+        var selectedChange = new PendingChange
+        {
+            Match = MakeMatchOn(nameField),
+            ReplacementText = "x",
+            FilePath = "/m/a.itp",
+            IsSelected = true
+        };
+        var unselectedChange = new PendingChange
+        {
+            Match = MakeMatchOn(nameField),
+            ReplacementText = "x",
+            FilePath = "/m/b.itp",
+            IsSelected = false
+        };
+        var preview = new BatchReplacePreview();
+        preview.Changes.Add(selectedChange);
+        preview.Changes.Add(unselectedChange);
+
+        var residual = RenameDispatchHelpers.BuildResidualPreview(
+            preview, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
+
+        Assert.Equal(2, residual.Changes.Count);
+        Assert.Contains(residual.Changes, c => c.FilePath == "/m/a.itp" && c.IsSelected);
+        Assert.Contains(residual.Changes, c => c.FilePath == "/m/b.itp" && !c.IsSelected);
+    }
+
     // --- Test fixtures ---
 
     private static SearchMatch MakeMatchOn(FieldDefinition field) => new()
