@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -61,7 +62,7 @@ internal class CreatureHakCacheEntry
 /// Creature browser panel for embedding in Quartermaster's main window.
 /// Provides .utc/.bic file list from module, vaults, and HAKs.
 /// </summary>
-public class CreatureBrowserPanel : FileBrowserPanelBase
+public class CreatureBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
 {
     private readonly IScriptBrowserContext? _context;
     private readonly CheckBox _showModuleCheck;
@@ -212,6 +213,251 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
                 $"CreatureBrowserPanel.ReadSourceMetadataAsync: {ex.Message}");
             return Task.FromResult((string.Empty, string.Empty));
         }
+    }
+
+    /// <summary>
+    /// Optional shared UTC palette cache. When provided, BIF/HAK entries pull
+    /// Tag/DisplayLabel from the cache (zero disk I/O) before falling back to
+    /// GFF extraction. Module + vault entries always read GFF directly.
+    /// Callers should construct a <see cref="SharedPaletteCacheService"/>
+    /// pointing at a UTC-specific subdirectory (e.g. ~/Radoub/Cache/CreaturePalette/)
+    /// so it does not collide with the UTI/UTM caches.
+    /// </summary>
+    public ISharedPaletteCacheService? PaletteCache { get; set; }
+
+    /// <summary>
+    /// Background pass: populate Tag + DisplayLabel on every entry that does
+    /// not yet have metadata. Yields every 50 entries to keep the UI thread
+    /// responsive. Honors <paramref name="cancellationToken"/> between batches.
+    /// </summary>
+    protected override async Task IndexMetadataAsync(
+        IReadOnlyList<FileBrowserEntry> entries,
+        CancellationToken cancellationToken)
+    {
+        var paletteLookup = BuildPaletteLookup();
+        int processed = 0;
+
+        foreach (var entry in entries)
+        {
+            if (cancellationToken.IsCancellationRequested) return;
+            if (entry.MetadataLoaded) { processed++; continue; }
+
+            try
+            {
+                if (TryFillFromCache(entry, paletteLookup))
+                {
+                    entry.MetadataLoaded = true;
+                }
+                else
+                {
+                    var bytes = await ReadEntryBytesAsync(entry, cancellationToken);
+                    if (bytes != null)
+                    {
+                        var (tag, name) = await ReadSourceMetadataAsync(bytes);
+                        entry.Tag = tag;
+                        entry.DisplayLabel = name;
+                    }
+                    entry.MetadataLoaded = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"CreatureBrowserPanel.IndexMetadataAsync({entry.Name}): {ex.Message}");
+                entry.MetadataLoaded = true; // don't retry forever
+            }
+
+            processed++;
+            if (processed % 50 == 0)
+            {
+                await Task.Yield();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Build a ResRef → cache-item lookup from the active palette cache. Returns
+    /// an empty dictionary when no cache is wired or the cache is empty.
+    /// </summary>
+    private Dictionary<string, SharedPaletteCacheItem> BuildPaletteLookup()
+    {
+        if (PaletteCache == null) return new Dictionary<string, SharedPaletteCacheItem>();
+
+        var items = PaletteCache.GetAggregatedCache();
+        if (items == null || items.Count == 0)
+            return new Dictionary<string, SharedPaletteCacheItem>();
+
+        var dict = new Dictionary<string, SharedPaletteCacheItem>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in items)
+        {
+            dict.TryAdd(item.ResRef, item);
+        }
+        return dict;
+    }
+
+    /// <summary>
+    /// Pure-logic test seam: try to populate Tag + DisplayLabel from a cache
+    /// lookup. Returns true on hit, false on miss. Lookup is keyed by ResRef
+    /// (case-insensitive — caller responsible for using OrdinalIgnoreCase).
+    /// </summary>
+    internal static bool TryFillFromCache(
+        FileBrowserEntry entry,
+        Dictionary<string, SharedPaletteCacheItem> lookup)
+    {
+        if (lookup.Count == 0) return false;
+        if (!lookup.TryGetValue(entry.Name, out var item)) return false;
+
+        entry.Tag = item.Tag ?? string.Empty;
+        entry.DisplayLabel = item.DisplayName ?? string.Empty;
+        return true;
+    }
+
+    private async Task<byte[]?> ReadEntryBytesAsync(
+        FileBrowserEntry entry,
+        CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrEmpty(entry.FilePath) && File.Exists(entry.FilePath))
+        {
+            return await File.ReadAllBytesAsync(entry.FilePath, cancellationToken);
+        }
+
+        // HAK/BIF/archive entry — synchronous extraction wrapped in Task.Run
+        return await Task.Run(() => ExtractCreatureArchiveBytes(entry, GameDataService), cancellationToken);
+    }
+
+    /// <summary>
+    /// Route an archive-sourced CreatureBrowserEntry to the correct extraction path
+    /// (BIF via GameDataService, HAK via shared ExtractFromHak helper). Returns
+    /// null when the entry is not archive-sourced or required dependencies are missing.
+    /// </summary>
+    private static byte[]? ExtractCreatureArchiveBytes(FileBrowserEntry entry, IGameDataService? gameDataService)
+    {
+        if (entry is not CreatureBrowserEntry creatureEntry) return null;
+
+        if (creatureEntry.IsFromBif)
+        {
+            if (gameDataService is { IsConfigured: true })
+                return gameDataService.FindResource(creatureEntry.Name, ResourceTypes.Utc);
+            return null;
+        }
+
+        if (creatureEntry.IsFromHak && !string.IsNullOrEmpty(creatureEntry.HakPath))
+            return ExtractFromHak(creatureEntry.HakPath, creatureEntry.Name, ResourceTypes.Utc);
+
+        return null;
+    }
+
+    /// <summary>
+    /// Re-read metadata for a single entry — called by the host tool after a
+    /// save so the browser row reflects the new Tag/Name without a full reindex.
+    /// </summary>
+    public override async Task RefreshEntryMetadataAsync(FileBrowserEntry entry)
+    {
+        try
+        {
+            var bytes = await ReadEntryBytesAsync(entry, CancellationToken.None);
+            if (bytes == null) return;
+            var (tag, name) = await ReadSourceMetadataAsync(bytes);
+            entry.Tag = tag;
+            entry.DisplayLabel = name;
+            entry.MetadataLoaded = true;
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"CreatureBrowserPanel.RefreshEntryMetadataAsync({entry.Name}): {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// <see cref="IBrowserRowRefresher"/> implementation. Host tools should
+    /// depend on the interface (via <see cref="BrowserSaveNotifier"/>) rather
+    /// than calling the static method directly, so the post-save wire-up is
+    /// testable with a fake refresher.
+    /// </summary>
+    public Task RefreshRowAsync(string filePath)
+    {
+        var entry = FindEntryByFilePath(filePath);
+        return entry == null ? Task.CompletedTask : RefreshEntryFromDiskAsync(entry);
+    }
+
+    /// <summary>
+    /// Pure-logic helper: parse a UTC byte blob into a <see cref="SharedPaletteCacheItem"/>
+    /// for cache persistence. Returns null on parse failure so the populator can
+    /// skip corrupt entries without aborting an entire HAK scan. DisplayName uses
+    /// the canonical "{FirstName} {LastName}".Trim() formatting (matches
+    /// CreatureDisplayService.GetCreatureFullName).
+    /// </summary>
+    public static SharedPaletteCacheItem? BuildPaletteItemFromUtc(
+        byte[] bytes,
+        string resRef,
+        string sourceLocation)
+    {
+        try
+        {
+            var utc = Radoub.Formats.Utc.UtcReader.Read(bytes);
+            var firstName = utc.FirstName.GetDefault() ?? string.Empty;
+            var lastName = utc.LastName.GetDefault() ?? string.Empty;
+            var fullName = string.IsNullOrEmpty(lastName) ? firstName : $"{firstName} {lastName}".Trim();
+            return new SharedPaletteCacheItem
+            {
+                ResRef = resRef,
+                Tag = utc.Tag ?? string.Empty,
+                DisplayName = fullName,
+                SourceLocation = sourceLocation
+            };
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"CreatureBrowserPanel.BuildPaletteItemFromUtc({resRef}): {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Save-flow hook for module + vault entries: re-read Tag + DisplayLabel
+    /// from the on-disk UTC/BIC bytes. Pure-static so host tools (Quartermaster)
+    /// can call without holding a CreatureBrowserPanel reference, and so the
+    /// round-trip is unit-testable without Avalonia (#2201).
+    ///
+    /// No-op for entries without a FilePath (HAK/BIF rows are cache-driven).
+    /// On read or parse failure the entry is left untouched.
+    /// </summary>
+    public static async Task RefreshEntryFromDiskAsync(FileBrowserEntry entry)
+    {
+        if (string.IsNullOrEmpty(entry.FilePath)) return;
+        if (!File.Exists(entry.FilePath)) return;
+
+        try
+        {
+            var bytes = await File.ReadAllBytesAsync(entry.FilePath);
+            var utc = Radoub.Formats.Utc.UtcReader.Read(bytes);
+            var firstName = utc.FirstName.GetDefault() ?? string.Empty;
+            var lastName = utc.LastName.GetDefault() ?? string.Empty;
+            entry.Tag = utc.Tag ?? string.Empty;
+            entry.DisplayLabel = string.IsNullOrEmpty(lastName)
+                ? firstName
+                : $"{firstName} {lastName}".Trim();
+            entry.MetadataLoaded = true;
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"CreatureBrowserPanel.RefreshEntryFromDiskAsync({entry.Name}): {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// True when the persistent palette cache for this HAK is missing or stale —
+    /// the populator should extract+parse the UTCs and write the cache. False
+    /// when no PaletteCache is wired or the existing cache is fresh.
+    /// </summary>
+    private bool ShouldPopulatePaletteCacheForHak(string hakPath, DateTime lastModified)
+    {
+        if (PaletteCache == null) return false;
+        if (PaletteCache.HasValidSourceCache("hak", hakPath)) return false;
+        return true;
     }
 
     protected override Task<byte[]> ApplyCopyCustomizationsAsync(byte[] sourceBytes, CopyToModuleResult result)
@@ -580,6 +826,11 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
                 Creatures = new List<CreatureBrowserEntry>()
             };
 
+            // Persistent palette cache: populate Tag/DisplayName for instant
+            // sort/search on subsequent panel loads (#2201).
+            var populate = ShouldPopulatePaletteCacheForHak(hakPath, lastModified);
+            var paletteItems = populate ? new List<SharedPaletteCacheItem>() : null;
+
             foreach (var resource in utcResources)
             {
                 var creatureEntry = new CreatureBrowserEntry
@@ -593,6 +844,16 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
 
                 newCacheEntry.Creatures.Add(creatureEntry);
 
+                if (populate && paletteItems != null)
+                {
+                    var bytes = ExtractFromHak(hakPath, resource.ResRef, ResourceTypes.Utc);
+                    if (bytes != null)
+                    {
+                        var item = BuildPaletteItemFromUtc(bytes, resource.ResRef, $"HAK: {hakFileName}");
+                        if (item != null) paletteItems.Add(item);
+                    }
+                }
+
                 // Skip if already have this creature
                 if (_hakEntries.Any(c => c.Name.Equals(resource.ResRef, StringComparison.OrdinalIgnoreCase)))
                     continue;
@@ -601,6 +862,15 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
             }
 
             _hakCache[hakPath] = newCacheEntry;
+
+            if (populate && paletteItems != null && PaletteCache != null)
+            {
+                _ = PaletteCache.SaveSourceCacheAsync(
+                    "hak",
+                    paletteItems,
+                    validationPath: hakPath,
+                    sourceModified: lastModified);
+            }
 
             UnifiedLogger.LogApplication(LogLevel.DEBUG,
                 $"CreatureBrowserPanel: Cached {utcResources.Count} creatures from {hakFileName}");
@@ -626,11 +896,18 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
             var sw = System.Diagnostics.Stopwatch.StartNew();
             ShowLoading("Scanning base game creatures...");
 
+            // Capture GameDataService into local for closure use inside Task.Run
+            var gameDataService = GameDataService;
+            var populate = PaletteCache != null && !PaletteCache.HasValidSourceCache("bif");
+            List<SharedPaletteCacheItem>? paletteItems = null;
+
             await Task.Run(() =>
             {
-                var resources = GameDataService.ListResources(ResourceTypes.Utc)
+                var resources = gameDataService.ListResources(ResourceTypes.Utc)
                     .Where(r => r.Source == GameResourceSource.Bif)
                     .ToList();
+
+                if (populate) paletteItems = new List<SharedPaletteCacheItem>();
 
                 foreach (var resource in resources)
                 {
@@ -642,11 +919,26 @@ public class CreatureBrowserPanel : FileBrowserPanelBase
                         IsFromBif = true,
                         IsBic = false
                     });
+
+                    if (populate && paletteItems != null)
+                    {
+                        var bytes = gameDataService.FindResource(resource.ResRef, ResourceTypes.Utc);
+                        if (bytes != null)
+                        {
+                            var item = BuildPaletteItemFromUtc(bytes, resource.ResRef, "Base Game");
+                            if (item != null) paletteItems.Add(item);
+                        }
+                    }
                 }
 
                 UnifiedLogger.LogApplication(LogLevel.INFO,
                     $"[TIMING] CreatureBrowserPanel: BIF scan — {_bifEntries.Count} creatures in {sw.ElapsedMilliseconds}ms (KEY cache lookup)");
             });
+
+            if (populate && paletteItems != null && PaletteCache != null)
+            {
+                _ = PaletteCache.SaveSourceCacheAsync("bif", paletteItems);
+            }
 
             _bifEntries = _bifEntries.OrderBy(e => e.Name).ToList();
             _bifCreaturesLoaded = true;
