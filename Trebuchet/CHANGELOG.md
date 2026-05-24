@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.35.0-alpha] - 2026-05-24
+**Branch**: `radoub/issue-2218` | **PR**: #TBD
+
+### Sprint: CI Flake Cleanup (#2218)
+
+- Eliminate `RadoubSettings` singleton race causing intermittent test failures (#2051)
+- Fix Avalonia `MenuItem` registry race on ubuntu-latest CI (#2212)
+- Add manual `ci-flake-soak` workflow for future stability verification
+
+---
+
 ## [1.34.0-alpha] - 2026-05-24
 **Branch**: `trebuchet/issue-2216` | **PR**: #2221
 
