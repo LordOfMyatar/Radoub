@@ -12,9 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Feat: Adopt FileBrowserPanelBase Name/Tag sort + search (#2200)
 
 - Wire `StoreBrowserPanel` to expose Name/Tag sort + search for UTM merchant stores
-- HAK/BIF entries indexed via generalized `SharedPaletteCacheService` (UTM support added in Sprint 1)
-- Module entries indexed lazily via `UtmReader.Read`
-- Saving a UTM refreshes its browser-row Tag/Name
+- Per-resource UTM palette cache at `~/Radoub/Cache/StorePalette/` (isolated from the UTI ItemPalette cache)
+- HAK/BIF stores eager-parsed on first scan and persisted to cache; subsequent loads index instantly from cache
+- Module stores indexed lazily in background via `UtmReader.Read`
+- Saving a UTM refreshes its browser-row Tag/Name without a full reindex (via `BrowserSaveNotifier`)
 
 ---
 
