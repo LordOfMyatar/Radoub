@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Radoub.Formats.Common;
 using Radoub.Formats.Settings;
+using Radoub.Formats.Tests.Settings;
 using Radoub.TestUtilities.Helpers;
 using Xunit;
 
@@ -9,46 +10,49 @@ namespace Radoub.Formats.Tests;
 /// <summary>
 /// Tests for RadoubSettings persistence and cross-process propagation (#1384).
 /// Verifies that settings written by one process (Trebuchet) can be read by another (child tools).
+///
+/// Singleton lifecycle (env var + temp dir + static reset) is owned by
+/// <see cref="RadoubSettingsFixture"/> via the "RadoubSettings" collection.
+/// Tests that need to re-bind the singleton mid-class (simulating a child
+/// process startup) call <see cref="ResetAndConfigure"/>.
 /// </summary>
 [Collection("RadoubSettings")]
-public class RadoubSettingsTests : IDisposable
+public class RadoubSettingsTests
 {
-    private readonly string _testDirectory;
+    private readonly RadoubSettingsFixture _fixture;
     private readonly string _fakeTlkPath;
     private readonly string _fakeModulePath;
 
-    public RadoubSettingsTests()
+    public RadoubSettingsTests(RadoubSettingsFixture fixture)
     {
-        _testDirectory = Path.Combine(Path.GetTempPath(), $"RadoubSettingsTest_{Guid.NewGuid():N}");
-        Directory.CreateDirectory(_testDirectory);
+        _fixture = fixture;
+        _fakeTlkPath = Path.Combine(_fixture.TestDirectory, "tlk", "custom.tlk");
+        _fakeModulePath = Path.Combine(_fixture.TestDirectory, "modules", "mymodule");
 
-        // Build privacy-safe test paths under temp
-        _fakeTlkPath = Path.Combine(_testDirectory, "tlk", "custom.tlk");
-        _fakeModulePath = Path.Combine(_testDirectory, "modules", "mymodule");
-
+        // The fixture is shared across the class, so prior tests may have written
+        // RadoubSettings.json into the same temp directory. Delete the persisted
+        // file at the start of each test so each fact gets the same "fresh process"
+        // semantics the original per-test temp-dir design provided. ResetAndConfigure
+        // (called mid-test by some facts) intentionally does NOT delete the file —
+        // those facts depend on file contents surviving a singleton reset.
+        var persistedFile = Path.Combine(_fixture.TestDirectory, "RadoubSettings.json");
+        if (File.Exists(persistedFile))
+        {
+            try { File.Delete(persistedFile); }
+            catch { /* best-effort */ }
+        }
         ResetAndConfigure();
     }
 
-    public void Dispose()
-    {
-        SingletonTestHelper.ResetSingleton<RadoubSettings>("_instance", "_settingsDirectory");
-        SingletonTestHelper.ConfigureSettingsDirectory("RADOUB_SETTINGS_DIR", null);
-
-        try
-        {
-            if (Directory.Exists(_testDirectory))
-                Directory.Delete(_testDirectory, true);
-        }
-        catch { /* Ignore cleanup errors */ }
-    }
-
     /// <summary>
-    /// Reset the RadoubSettings singleton and configure it to use the test directory.
+    /// Reset the RadoubSettings singleton and rebind the env var to the fixture's
+    /// test directory. Does NOT delete the persisted JSON file — tests that simulate
+    /// a child-process restart need the file contents to survive the singleton reset.
     /// </summary>
     private void ResetAndConfigure()
     {
         SingletonTestHelper.ResetSingleton<RadoubSettings>("_instance", "_settingsDirectory");
-        SingletonTestHelper.ConfigureSettingsDirectory("RADOUB_SETTINGS_DIR", _testDirectory);
+        SingletonTestHelper.ConfigureSettingsDirectory("RADOUB_SETTINGS_DIR", _fixture.TestDirectory);
     }
 
     [Fact]
@@ -58,7 +62,7 @@ public class RadoubSettingsTests : IDisposable
         settings.CustomTlkPath = _fakeTlkPath;
 
         // Verify the JSON file was written
-        var filePath = Path.Combine(_testDirectory, "RadoubSettings.json");
+        var filePath = Path.Combine(_fixture.TestDirectory, "RadoubSettings.json");
         Assert.True(File.Exists(filePath));
 
         var json = File.ReadAllText(filePath);
@@ -71,7 +75,7 @@ public class RadoubSettingsTests : IDisposable
         var settings = RadoubSettings.Instance;
         settings.CurrentModulePath = _fakeModulePath;
 
-        var filePath = Path.Combine(_testDirectory, "RadoubSettings.json");
+        var filePath = Path.Combine(_fixture.TestDirectory, "RadoubSettings.json");
         Assert.True(File.Exists(filePath));
 
         var json = File.ReadAllText(filePath);
@@ -81,10 +85,10 @@ public class RadoubSettingsTests : IDisposable
     [Fact]
     public void ReloadSettings_ReadsUpdatedValues()
     {
-        var originalTlk = Path.Combine(_testDirectory, "original", "path.tlk");
-        var originalModule = Path.Combine(_testDirectory, "original", "module");
-        var updatedTlk = Path.Combine(_testDirectory, "updated", "custom.tlk");
-        var updatedModule = Path.Combine(_testDirectory, "updated", "module");
+        var originalTlk = Path.Combine(_fixture.TestDirectory, "original", "path.tlk");
+        var originalModule = Path.Combine(_fixture.TestDirectory, "original", "module");
+        var updatedTlk = Path.Combine(_fixture.TestDirectory, "updated", "custom.tlk");
+        var updatedModule = Path.Combine(_fixture.TestDirectory, "updated", "module");
 
         var settings = RadoubSettings.Instance;
         settings.CustomTlkPath = originalTlk;
@@ -96,7 +100,7 @@ public class RadoubSettingsTests : IDisposable
         // Simulate another process writing updated values to the settings file.
         // Must use ContractPath since that's how RadoubSettings persists paths -
         // on Windows, temp paths are under user profile and get contracted to ~/...
-        var filePath = Path.Combine(_testDirectory, "RadoubSettings.json");
+        var filePath = Path.Combine(_fixture.TestDirectory, "RadoubSettings.json");
         var updatedData = new Dictionary<string, string>
         {
             ["CustomTlkPath"] = PathHelper.ContractPath(updatedTlk),
@@ -139,7 +143,7 @@ public class RadoubSettingsTests : IDisposable
         settings1.CustomTlkPath = fullPath;
 
         // The file should contain contracted path (~)
-        var filePath = Path.Combine(_testDirectory, "RadoubSettings.json");
+        var filePath = Path.Combine(_fixture.TestDirectory, "RadoubSettings.json");
         var json = File.ReadAllText(filePath);
         Assert.Contains("~", json);
 
@@ -168,7 +172,7 @@ public class RadoubSettingsTests : IDisposable
     public void LoadSettings_HandlesCorruptJson()
     {
         // Write corrupt JSON
-        var filePath = Path.Combine(_testDirectory, "RadoubSettings.json");
+        var filePath = Path.Combine(_fixture.TestDirectory, "RadoubSettings.json");
         File.WriteAllText(filePath, "{ this is not valid json }}}");
 
         // Should not throw, just use defaults
