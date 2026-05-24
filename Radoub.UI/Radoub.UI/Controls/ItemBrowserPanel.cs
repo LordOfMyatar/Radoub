@@ -302,6 +302,35 @@ public class ItemBrowserPanel : FileBrowserPanelBase
     }
 
     /// <summary>
+    /// Save-flow hook for module entries: re-read Tag + DisplayLabel from
+    /// the on-disk UTI bytes. Pure-static so host tools (Relique) can call
+    /// without holding an ItemBrowserPanel reference, and so the round-trip
+    /// is unit-testable without Avalonia (#2199 Sprint 2).
+    ///
+    /// No-op for entries without a FilePath (HAK/BIF rows are cache-driven).
+    /// On read or parse failure the entry is left untouched.
+    /// </summary>
+    public static async Task RefreshEntryFromDiskAsync(FileBrowserEntry entry)
+    {
+        if (string.IsNullOrEmpty(entry.FilePath)) return;
+        if (!File.Exists(entry.FilePath)) return;
+
+        try
+        {
+            var bytes = await File.ReadAllBytesAsync(entry.FilePath);
+            var uti = Radoub.Formats.Uti.UtiReader.Read(bytes);
+            entry.Tag = uti.Tag ?? string.Empty;
+            entry.DisplayLabel = uti.LocalizedName.GetDefault() ?? string.Empty;
+            entry.MetadataLoaded = true;
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"ItemBrowserPanel.RefreshEntryFromDiskAsync({entry.Name}): {ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// Rewrite a UTI byte blob with the user's new TemplateResRef/Tag/LocalizedName.
     /// </summary>
     internal static byte[] ApplyUtiCopyCustomizations(byte[] sourceBytes, CopyToModuleResult result)
