@@ -44,7 +44,7 @@ internal class ItemHakCacheEntry
 /// Item browser panel for embedding in Relique's main window.
 /// Provides file list with optional HAK and BIF (base game) scanning for .uti files.
 /// </summary>
-public class ItemBrowserPanel : FileBrowserPanelBase
+public class ItemBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
 {
     private readonly CheckBox _showModuleCheckBox;
     private readonly CheckBox _showHakCheckBox;
@@ -299,6 +299,18 @@ public class ItemBrowserPanel : FileBrowserPanelBase
             UnifiedLogger.LogApplication(LogLevel.WARN,
                 $"ItemBrowserPanel.RefreshEntryMetadataAsync({entry.Name}): {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// <see cref="IBrowserRowRefresher"/> implementation. Host tools should
+    /// depend on the interface (via <see cref="BrowserSaveNotifier"/>) rather
+    /// than calling the static method directly, so the post-save wire-up is
+    /// testable with a fake refresher.
+    /// </summary>
+    public Task RefreshRowAsync(string filePath)
+    {
+        var entry = FindEntryByFilePath(filePath);
+        return entry == null ? Task.CompletedTask : RefreshEntryFromDiskAsync(entry);
     }
 
     /// <summary>

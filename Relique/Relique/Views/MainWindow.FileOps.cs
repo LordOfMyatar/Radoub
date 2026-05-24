@@ -132,13 +132,8 @@ public partial class MainWindow
 
             // Refresh browser row Tag/Name without full reindex (#2199).
             // Fire-and-forget — save flow does not block on UI refresh.
-            var savedPath = _currentFilePath;
-            var savedEntry = ItemBrowserPanel.FindEntryByFilePath(savedPath);
-            if (savedEntry != null)
-            {
-                _ = Radoub.UI.Controls.ItemBrowserPanel
-                    .RefreshEntryFromDiskAsync(savedEntry);
-            }
+            _ = Radoub.UI.Controls.BrowserSaveNotifier
+                .NotifyAsync(ItemBrowserPanel, _currentFilePath);
 
             UpdateStatus("Ready");
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Saved: {UnifiedLogger.SanitizePath(_currentFilePath)}");
