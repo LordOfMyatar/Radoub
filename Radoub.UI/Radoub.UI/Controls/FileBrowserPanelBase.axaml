@@ -5,22 +5,11 @@
 
     <UserControl.Styles>
         <!-- Selection visibility fix for dark mode -->
-        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
-            <Setter Property="Foreground" Value="White"/>
+        <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="{DynamicResource SystemAccentColor}"/>
         </Style>
-        <Style Selector="ListBoxItem:selected:focus /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
-            <Setter Property="Foreground" Value="White"/>
-        </Style>
-        <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SystemAccentColorDark1}"/>
-            <Setter Property="Foreground" Value="White"/>
-        </Style>
-
-        <!-- Current file highlight -->
-        <Style Selector="ListBoxItem.current-file">
-            <Setter Property="FontWeight" Value="Bold"/>
+        <Style Selector="DataGridRow:selected /template/ Rectangle#PointerOverBackgroundRectangle">
+            <Setter Property="Fill" Value="{DynamicResource SystemAccentColorDark1}"/>
         </Style>
     </UserControl.Styles>
 
@@ -48,22 +37,8 @@
 
         <!-- Search and filters -->
         <StackPanel Grid.Row="1" Margin="8,8,8,4" Spacing="4">
-            <Grid x:Name="SortModeRow"
-                  ColumnDefinitions="Auto,*"
-                  IsVisible="False">
-                <TextBlock Grid.Column="0"
-                           Text="Sort:"
-                           VerticalAlignment="Center"
-                           Margin="0,0,6,0"
-                           FontSize="{DynamicResource FontSizeSmall}"/>
-                <ComboBox Grid.Column="1"
-                          x:Name="SortModeBox"
-                          HorizontalAlignment="Stretch"
-                          SelectionChanged="OnSortModeChanged"/>
-            </Grid>
-
             <TextBox x:Name="SearchBox"
-                     Watermark="Type to filter..."
+                     Watermark="Search by resref..."
                      TextChanged="OnSearchTextChanged"/>
 
             <!-- Tool-specific filter options go here via ContentPresenter -->
@@ -86,29 +61,47 @@
                            FontSize="{DynamicResource FontSizeSmall}"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
 
-                <!-- File ListBox -->
-                <ListBox Grid.Row="1"
-                         x:Name="FileListBox"
-                         SelectionChanged="OnFileSelected"
-                         DoubleTapped="OnFileDoubleClicked"
-                         ContextRequested="OnFileListContextRequested"
-                         Background="Transparent"
-                         Margin="4,0,4,4">
-                    <ListBox.ContextMenu>
+                <!-- File DataGrid: click column header to sort by that field -->
+                <DataGrid Grid.Row="1"
+                          x:Name="FileGrid"
+                          AutoGenerateColumns="False"
+                          CanUserReorderColumns="False"
+                          CanUserResizeColumns="True"
+                          CanUserSortColumns="True"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          GridLinesVisibility="Horizontal"
+                          HeadersVisibility="Column"
+                          RowHeight="22"
+                          SelectionChanged="OnFileGridSelectionChanged"
+                          DoubleTapped="OnFileGridDoubleTapped"
+                          ContextRequested="OnFileGridContextRequested"
+                          Sorting="OnFileGridSorting"
+                          Background="Transparent"
+                          Margin="4,0,4,4">
+                    <DataGrid.ContextMenu>
                         <ContextMenu x:Name="FileListContextMenu">
                             <MenuItem x:Name="DeleteMenuItem"
                                       Header="Delete"
                                       Click="OnDeleteMenuItemClick"/>
                         </ContextMenu>
-                    </ListBox.ContextMenu>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding DisplayName}"
-                                       TextTrimming="CharacterEllipsis"
-                                       Padding="4,2"/>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                    </DataGrid.ContextMenu>
+                    <DataGrid.Columns>
+                        <!-- Column order MUST match *ColumnIndex constants in code-behind -->
+                        <DataGridTextColumn Header="ResRef"
+                                            Binding="{Binding Name}"
+                                            Width="*"/>
+                        <DataGridTextColumn Header="Name"
+                                            Binding="{Binding DisplayLabel}"
+                                            Width="*"/>
+                        <DataGridTextColumn Header="Tag"
+                                            Binding="{Binding Tag}"
+                                            Width="*"/>
+                        <DataGridTextColumn Header="Source"
+                                            Binding="{Binding Source}"
+                                            Width="Auto"/>
+                    </DataGrid.Columns>
+                </DataGrid>
             </Grid>
         </Border>
 
