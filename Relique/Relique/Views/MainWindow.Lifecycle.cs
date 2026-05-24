@@ -170,6 +170,11 @@ public partial class MainWindow
         // Wire GameDataService for "Base Game" (BIF) item scanning (#2106)
         ItemBrowserPanel.GameDataService = _gameDataService;
 
+        // Wire shared UTI palette cache for Tag/Name indexing (#2186 / #2198).
+        // BIF + HAK entries pull from cache (warmed by Trebuchet) so first-time
+        // indexing is instant; cache miss falls back to per-file GFF read.
+        ItemBrowserPanel.PaletteCache = new SharedPaletteCacheService();
+
         // Set initial module path from RadoubSettings (set by Trebuchet)
         var moduleDir = GetModuleWorkingDirectory(RadoubSettings.Instance.CurrentModulePath);
         if (!string.IsNullOrEmpty(moduleDir))
