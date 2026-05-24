@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - HAK/BIF stores eager-parsed on first scan and persisted to cache; subsequent loads index instantly from cache
 - Module stores indexed lazily in background via `UtmReader.Read`
 - Saving a UTM refreshes its browser-row Tag/Name without a full reindex (via `BrowserSaveNotifier`)
+- Column headers now toggle sort direction on repeat click for ResRef/Name/Tag (matches Source column behavior). Fixes a latent defect from Sprint 1 — benefits Relique + future Quartermaster Sprint 4.
 
 ---
 

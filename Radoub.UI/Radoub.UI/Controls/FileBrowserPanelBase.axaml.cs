@@ -29,6 +29,7 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
     private string? _currentFilePath;
     private bool _isCollapsed;
     private BrowserSortMode _sortMode = BrowserSortMode.ResRef;
+    private BrowserSortDirection _sortDirection = BrowserSortDirection.Ascending;
     private CancellationTokenSource? _indexingCts;
 
     // DataGrid column indices (must match AXAML column order)
@@ -125,7 +126,29 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
             if (_sortMode != value)
             {
                 _sortMode = value;
+                // Switching column resets to ascending (matches column-header UX).
+                _sortDirection = BrowserSortDirection.Ascending;
                 UpdateSearchWatermark();
+                SyncColumnSortIndicators();
+                ApplyFilter();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Current sort direction for the active <see cref="SortMode"/>. Toggled by
+    /// repeat clicks on the same DataGrid column header; resets to Ascending
+    /// when switching to a different column (#2200).
+    /// </summary>
+    public BrowserSortDirection SortDirection
+    {
+        get => _sortDirection;
+        set
+        {
+            if (_sortDirection != value)
+            {
+                _sortDirection = value;
+                SyncColumnSortIndicators();
                 ApplyFilter();
             }
         }
@@ -355,7 +378,8 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
         // so custom filters can use any FileBrowserEntry field they need.
         var customFiltered = ApplyCustomFilters(_allEntries);
 
-        _filteredEntries = BrowserSortLogic.FilterAndSort(customFiltered, SearchBox?.Text, _sortMode);
+        _filteredEntries = BrowserSortLogic.FilterAndSort(
+            customFiltered, SearchBox?.Text, _sortMode, _sortDirection);
 
         UpdateList();
     }
@@ -509,7 +533,31 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
         // Suppress DataGrid's built-in sort (it would override our module-first tier).
         e.Handled = true;
 
-        SortMode = requested.Value;
+        // Repeat-click on the active column flips direction; switching column
+        // resets to ascending (the SortMode setter handles the reset).
+        if (requested.Value == _sortMode)
+        {
+            SortDirection = _sortDirection == BrowserSortDirection.Ascending
+                ? BrowserSortDirection.Descending
+                : BrowserSortDirection.Ascending;
+        }
+        else
+        {
+            SortMode = requested.Value;
+        }
+    }
+
+    /// <summary>
+    /// No-op on Avalonia: the Avalonia DataGrid doesn't expose a settable
+    /// SortDirection on DataGridColumn (WPF-only API). The built-in arrow
+    /// indicator follows whichever column was last clicked, which is good
+    /// enough — the actual sort state is reflected in the visible row order.
+    /// Kept as a named seam so future Avalonia versions or a custom header
+    /// adornment can plug in without changing the call sites.
+    /// </summary>
+    private void SyncColumnSortIndicators()
+    {
+        // Intentionally empty. See remarks above.
     }
 
     private void OnCollapseClick(object? sender, RoutedEventArgs e)
@@ -618,6 +666,7 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
         TagColumn.IsVisible = modeSet.Contains(BrowserSortMode.Tag);
 
         UpdateSearchWatermark();
+        SyncColumnSortIndicators();
     }
 
     private void UpdateSearchWatermark()

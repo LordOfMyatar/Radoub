@@ -26,6 +26,19 @@ internal static class BrowserSortLogic
         IEnumerable<FileBrowserEntry> entries,
         string? searchText,
         BrowserSortMode mode)
+        => FilterAndSort(entries, searchText, mode, BrowserSortDirection.Ascending);
+
+    /// <summary>
+    /// Sort direction overload. Descending reverses the active sort field
+    /// within each tier; the module-first tier and the null-last placement
+    /// for unindexed Name/Tag entries are preserved (so DESC doesn't bubble
+    /// unindexed rows to the top of their tier).
+    /// </summary>
+    public static List<FileBrowserEntry> FilterAndSort(
+        IEnumerable<FileBrowserEntry> entries,
+        string? searchText,
+        BrowserSortMode mode,
+        BrowserSortDirection direction)
     {
         var search = string.IsNullOrWhiteSpace(searchText)
             ? null
@@ -46,24 +59,50 @@ internal static class BrowserSortLogic
             };
         }
 
+        var desc = direction == BrowserSortDirection.Descending;
+
         return mode switch
         {
-            BrowserSortMode.Name => filtered
-                .OrderBy(e => e.IsFromHak ? 1 : 0)
-                .ThenBy(e => string.IsNullOrEmpty(e.DisplayLabel) ? 1 : 0)
-                .ThenBy(e => e.DisplayLabel ?? string.Empty, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase)
-                .ToList(),
-            BrowserSortMode.Tag => filtered
-                .OrderBy(e => e.IsFromHak ? 1 : 0)
-                .ThenBy(e => string.IsNullOrEmpty(e.Tag) ? 1 : 0)
-                .ThenBy(e => e.Tag ?? string.Empty, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase)
-                .ToList(),
-            _ => filtered
-                .OrderBy(e => e.IsFromHak ? 1 : 0)
-                .ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase)
-                .ToList()
+            BrowserSortMode.Name => SortByLabel(filtered, e => e.DisplayLabel, desc),
+            BrowserSortMode.Tag => SortByLabel(filtered, e => e.Tag, desc),
+            _ => SortByResRef(filtered, desc)
         };
+    }
+
+    /// <summary>
+    /// Sort by ResRef with module-first tier. Descending reverses ResRef order
+    /// within each tier; module tier stays before HAK tier either way.
+    /// </summary>
+    private static List<FileBrowserEntry> SortByResRef(IEnumerable<FileBrowserEntry> filtered, bool desc)
+    {
+        var ordered = filtered.OrderBy(e => e.IsFromHak ? 1 : 0);
+        return (desc
+            ? ordered.ThenByDescending(e => e.Name, StringComparer.OrdinalIgnoreCase)
+            : ordered.ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Sort by a nullable label field (DisplayLabel/Tag) with module-first tier
+    /// and null-last placement preserved regardless of direction.
+    /// </summary>
+    private static List<FileBrowserEntry> SortByLabel(
+        IEnumerable<FileBrowserEntry> filtered,
+        Func<FileBrowserEntry, string?> labelSelector,
+        bool desc)
+    {
+        var withTier = filtered
+            .OrderBy(e => e.IsFromHak ? 1 : 0)
+            .ThenBy(e => string.IsNullOrEmpty(labelSelector(e)) ? 1 : 0);
+
+        var withLabel = desc
+            ? withTier.ThenByDescending(e => labelSelector(e) ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+            : withTier.ThenBy(e => labelSelector(e) ?? string.Empty, StringComparer.OrdinalIgnoreCase);
+
+        // Stable tiebreaker by ResRef matches direction so DESC is fully reversed.
+        return (desc
+            ? withLabel.ThenByDescending(e => e.Name, StringComparer.OrdinalIgnoreCase)
+            : withLabel.ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase))
+            .ToList();
     }
 }
