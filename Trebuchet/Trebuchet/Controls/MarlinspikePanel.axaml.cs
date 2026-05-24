@@ -31,6 +31,8 @@ public partial class MarlinspikePanel : UserControl
     private ItemResolutionService? _itemResolutionService;
     private TlkService? _tlkService;
     private CancellationTokenSource? _searchCts;
+    private DateTime? _indexedModuleDirMtime;
+    private string? _indexedModuleDirPath;
 
     /// <summary>Maps resource types to Trebuchet tool names for launch dispatch.</summary>
     private static readonly Dictionary<ushort, string> ResourceTypeToToolName = new()
@@ -79,19 +81,64 @@ public partial class MarlinspikePanel : UserControl
 
     private void EnsureServices()
     {
+        var modulePath = ModulePath.GetWorkingDirectory(RadoubSettings.Instance.CurrentModulePath);
+
+        // #2072 — invalidate cached services if the module working directory's
+        // mtime moved (ERF import wrote new files, external editor saved, etc.)
+        // or if the working directory itself changed.
+        if (_searchService != null)
+        {
+            var currentMtime = GetDirectoryMtime(modulePath);
+            var pathChanged = !string.Equals(_indexedModuleDirPath, modulePath, StringComparison.OrdinalIgnoreCase);
+            if (pathChanged || SearchIndexStaleness.IsStale(currentMtime, _indexedModuleDirMtime))
+            {
+                _itemResolutionService = null;
+                _searchService = null;
+            }
+        }
+
         if (_searchService == null)
         {
             var gameDataService = _mainViewModel?.ModuleEditorViewModel?.GameDataService;
             _itemResolutionService = new ItemResolutionService(gameDataService);
-            var modulePath = ModulePath.GetWorkingDirectory(RadoubSettings.Instance.CurrentModulePath);
             if (!string.IsNullOrEmpty(modulePath))
                 _itemResolutionService.SetModuleDirectory(modulePath);
 
             _searchService = new ModuleSearchService(
                 resRef => _itemResolutionService?.ResolveItem(resRef)?.DisplayName);
+
+            _indexedModuleDirPath = modulePath;
+            _indexedModuleDirMtime = GetDirectoryMtime(modulePath);
         }
         _batchReplaceService ??= new BatchReplaceService(new BackupService());
         EnsureTlkResolver();
+    }
+
+    private static DateTime? GetDirectoryMtime(string? path)
+    {
+        if (string.IsNullOrEmpty(path)) return null;
+        try
+        {
+            var di = new DirectoryInfo(path);
+            return di.Exists ? di.LastWriteTimeUtc : (DateTime?)null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Public invalidation hook (#2072) — called by callers that know the
+    /// working directory contents just changed (e.g. ErfImportWindow on
+    /// successful import). Forces the next search to rebuild the index.
+    /// </summary>
+    public void InvalidateSearchIndex()
+    {
+        _itemResolutionService = null;
+        _searchService = null;
+        _indexedModuleDirMtime = null;
+        _indexedModuleDirPath = null;
     }
 
     private void EnsureTlkResolver()
@@ -620,6 +667,8 @@ public partial class MarlinspikePanel : UserControl
     {
         _itemResolutionService = null;
         _searchService = null;
+        _indexedModuleDirMtime = null;
+        _indexedModuleDirPath = null;
         _viewModel?.ClearResults();
         ResultsTree.ItemsSource = null;
         DurationText.Text = "";

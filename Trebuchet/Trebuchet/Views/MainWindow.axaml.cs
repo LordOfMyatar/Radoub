@@ -308,6 +308,14 @@ public partial class MainWindow : Window
 
         var window = new ErfImportWindow();
         window.Initialize(modulePath);
+        window.ImportSucceeded += (_, _) =>
+        {
+            // #2072 — module working directory contents just changed; invalidate
+            // Marlinspike's cached search/item-resolution services so the next
+            // search picks up the imported files.
+            var panel = this.FindControl<Controls.MarlinspikePanel>("MarlinspikePanel");
+            panel?.InvalidateSearchIndex();
+        };
         window.Show(this);
     }
 
