@@ -30,6 +30,14 @@ public class GffReferenceLocationApplier
 
         var segments = loc.Split(" > ", StringSplitOptions.TrimEntries);
 
+        // ITP palette tree: "MAIN > {indexPath} > RESREF" where indexPath is a
+        // slash-separated sequence of zero-based indices walking the MAIN list
+        // and any nested LIST lists. See ResRefReferenceScanner.ScanItpPaletteTree (#2178).
+        if (segments.Length == 3 && segments[0] == "MAIN" && segments[2] == "RESREF")
+        {
+            return ApplyItpPaletteNode(gff, segments[1], newValue);
+        }
+
         // DLG node: "Entry N > Sound" or "Reply N > Sound" or
         //          "Entry N > ActionParams[P] (key)" or
         //          "Entry N > RepliesList[L] > ConditionParams[P] (key)" (nested)
@@ -177,6 +185,40 @@ public class GffReferenceLocationApplier
             oldFullValue.AsSpan(0, refRow.MatchOffset),
             newValue,
             oldFullValue.AsSpan(refRow.MatchOffset + refRow.MatchLength));
+        return true;
+    }
+
+    /// <summary>
+    /// Apply a RESREF update to a node inside the ITP palette tree (#2178).
+    /// <paramref name="indexPath"/> is the slash-separated index sequence
+    /// emitted by ResRefReferenceScanner.ScanItpPaletteTree, e.g. "0/2/1".
+    /// </summary>
+    private static bool ApplyItpPaletteNode(GffFile gff, string indexPath, string newValue)
+    {
+        if (string.IsNullOrEmpty(indexPath)) return false;
+
+        var indices = indexPath.Split('/');
+        if (indices.Length == 0) return false;
+
+        var mainList = gff.RootStruct.GetField("MAIN")?.Value as GffList;
+        if (mainList == null) return false;
+        if (!int.TryParse(indices[0], out var topIdx)) return false;
+        if (topIdx < 0 || topIdx >= mainList.Elements.Count) return false;
+
+        var node = mainList.Elements[topIdx];
+
+        for (int depth = 1; depth < indices.Length; depth++)
+        {
+            var listField = node.GetField("LIST")?.Value as GffList;
+            if (listField == null) return false;
+            if (!int.TryParse(indices[depth], out var childIdx)) return false;
+            if (childIdx < 0 || childIdx >= listField.Elements.Count) return false;
+            node = listField.Elements[childIdx];
+        }
+
+        var resRefField = node.GetField("RESREF");
+        if (resRefField == null) return false;
+        resRefField.Value = newValue;
         return true;
     }
 
