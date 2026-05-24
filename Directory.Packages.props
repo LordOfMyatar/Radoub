@@ -5,13 +5,13 @@
 
   <ItemGroup>
     <!-- Avalonia UI Framework -->
-    <PackageVersion Include="Avalonia" Version="11.3.13" />
-    <PackageVersion Include="Avalonia.Desktop" Version="11.3.13" />
-    <PackageVersion Include="Avalonia.Themes.Fluent" Version="11.3.13" />
-    <PackageVersion Include="Avalonia.Fonts.Inter" Version="11.3.13" />
+    <PackageVersion Include="Avalonia" Version="11.3.16" />
+    <PackageVersion Include="Avalonia.Desktop" Version="11.3.16" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="11.3.16" />
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="11.3.16" />
     <PackageVersion Include="Avalonia.Controls.DataGrid" Version="11.3.13" />
-    <PackageVersion Include="Avalonia.Skia" Version="11.3.13" />
-    <PackageVersion Include="Avalonia.Diagnostics" Version="11.3.13" />
+    <PackageVersion Include="Avalonia.Skia" Version="11.3.16" />
+    <PackageVersion Include="Avalonia.Diagnostics" Version="11.3.16" />
 
     <!-- SkiaSharp -->
     <PackageVersion Include="SkiaSharp" Version="3.119.2" />
@@ -25,8 +25,8 @@
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
 
     <!-- DI / Logging -->
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.5" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.8" />
 
     <!-- Audio -->
     <PackageVersion Include="NAudio" Version="2.3.0" />
@@ -34,7 +34,7 @@
 
     <!-- Graphics / Rendering -->
     <PackageVersion Include="Pfim" Version="0.11.4" />
-    <PackageVersion Include="Silk.NET.OpenGL" Version="2.22.0" />
+    <PackageVersion Include="Silk.NET.OpenGL" Version="2.23.0" />
     <PackageVersion Include="Svg.Controls.Skia.Avalonia" Version="11.3.9.5" />
 
     <!-- Spell-checking -->
@@ -47,7 +47,7 @@
     <PackageVersion Include="AvaloniaGraphControl" Version="0.7.0" />
 
     <!-- Testing -->
-    <PackageVersion Include="Avalonia.Headless.XUnit" Version="11.3.13" />
+    <PackageVersion Include="Avalonia.Headless.XUnit" Version="11.3.16" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.5.1" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.v3" Version="3.2.2" />
