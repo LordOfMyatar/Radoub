@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.32-alpha] - 2026-05-24
-**Branch**: `fence/issue-2200` | **PR**: #TBD
+**Branch**: `fence/issue-2200` | **PR**: #2209
 
 ### Feat: Adopt FileBrowserPanelBase Name/Tag sort + search (#2200)
 
