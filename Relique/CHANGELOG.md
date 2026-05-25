@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.10.15-alpha] - 2026-05-24
+## [0.10.15-alpha] - 2026-05-25
 **Branch**: `relique/issue-2217` | **PR**: #2225
 
 ### Sprint: Relique Bug Bash (#2217)
