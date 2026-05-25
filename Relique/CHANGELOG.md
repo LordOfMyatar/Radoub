@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.16-alpha] - 2026-05-25
+**Branch**: `relique/issue-2229` | **PR**: #TBD
+
+### Sprint: Relique UI/UX Polish
+
+- Main editor UI polish: padding, height caps, field width constraints, Flags/Quantities above Description (#2229)
+- Available Properties tree: preserve expansion state after add (#2227)
+- Property edit: smooth Apply Changes friction (auto-apply or workflow improvement) (#2226)
+- Appearance: filtered Part-number dropdowns matching Aurora's `<value> (Part NNN)` style (#2164)
+- Appearance: move icon chooser from inline grid to modal picker dialog (#1912)
+
+---
+
 ## [0.10.15-alpha] - 2026-05-25
 **Branch**: `relique/issue-2217` | **PR**: #2225
 
