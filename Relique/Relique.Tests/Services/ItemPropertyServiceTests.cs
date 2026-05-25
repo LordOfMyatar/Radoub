@@ -900,5 +900,23 @@ public class ItemPropertyServiceTests
         Assert.True(result);
     }
 
+    [Fact]
+    public void IsPropertyAvailable_SameSubtype_AlreadyAssigned_BlocksDuplicate()
+    {
+        // Regression for #2166 follow-up: AC Bonus vs. Lawful Good added twice via
+        // the Add button because SubtypeComboBox kept the stale "Lawful Good" item
+        // after the first add. TryAddProperty must re-check IsPropertyAvailable.
+        var mock = CreateMockWithItemPropertyData();
+        var service = new ItemPropertyService(mock);
+
+        var assigned = new List<ItemProperty>
+        {
+            service.CreateItemProperty(propertyIndex: 0, subtypeIndex: 0, costValueIndex: 2, null)
+        };
+
+        Assert.False(service.IsPropertyAvailable(propertyIndex: 0, subtypeIndex: 0, assigned));
+        Assert.True(service.IsPropertyAvailable(propertyIndex: 0, subtypeIndex: 1, assigned));
+    }
+
     #endregion
 }

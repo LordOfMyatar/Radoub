@@ -602,6 +602,16 @@ public partial class MainWindow
             return;
         }
 
+        // Move-semantics recheck: SubtypeComboBox can hold stale entries after a successful add
+        // until the user re-selects from the tree, letting the same (prop, subtype) pair through twice.
+        if (!_itemPropertyService.IsPropertyAvailable(propertyType.PropertyIndex, subtypeIndex, _currentItem.Properties))
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"Refused duplicate {propertyType.DisplayName} (subtype {subtypeIndex})");
+            UpdateStatus($"{propertyType.DisplayName} already assigned with that subtype");
+            return;
+        }
+
         try
         {
             var property = _itemPropertyService.CreateItemProperty(
