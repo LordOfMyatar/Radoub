@@ -849,4 +849,56 @@ public class ItemPropertyServiceTests
     }
 
     #endregion
+
+    #region IsPropertyValidForBaseItem (#2166 — defensive recheck at add-time)
+
+    [Fact]
+    public void IsPropertyValidForBaseItem_ReturnsFalse_ForAcBonusOnLongsword()
+    {
+        var mock = CreateMockWithItemPropsData();
+        var service = new ItemPropertyService(mock);
+
+        // AC Bonus (row 1) is NOT valid for longsword (row 36) per itemprops.2da
+        var result = service.IsPropertyValidForBaseItem(propertyIndex: 1, baseItemIndex: 36);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void IsPropertyValidForBaseItem_ReturnsTrue_ForAcBonusOnAmulet()
+    {
+        var mock = CreateMockWithItemPropsData();
+        var service = new ItemPropertyService(mock);
+
+        // AC Bonus (row 1) IS valid for amulet (row 12)
+        var result = service.IsPropertyValidForBaseItem(propertyIndex: 1, baseItemIndex: 12);
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public void IsPropertyValidForBaseItem_ReturnsTrue_WhenValidationDataUnavailable()
+    {
+        // No itemprops.2da configured — fail-open so legacy data still loads.
+        // The crash-recovery wrapper at the handler is the safety net.
+        var mock = CreateMockWithItemPropertyData();
+        var service = new ItemPropertyService(mock);
+
+        var result = service.IsPropertyValidForBaseItem(propertyIndex: 1, baseItemIndex: 36);
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public void IsPropertyValidForBaseItem_ReturnsTrue_ForEnhancementBonusOnLongsword()
+    {
+        var mock = CreateMockWithItemPropsData();
+        var service = new ItemPropertyService(mock);
+
+        var result = service.IsPropertyValidForBaseItem(propertyIndex: 6, baseItemIndex: 36);
+
+        Assert.True(result);
+    }
+
+    #endregion
 }

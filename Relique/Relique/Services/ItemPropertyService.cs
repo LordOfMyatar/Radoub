@@ -308,6 +308,23 @@ public class ItemPropertyService
         return validIndices;
     }
 
+    /// <summary>
+    /// Defensive recheck of a single property × base item pair. Called at add-time
+    /// in addition to the tree-population filter, in case the tree is showing stale
+    /// data after a base item change or the filter has gaps for this combo (#2166).
+    ///
+    /// Returns true if validation data is unavailable (fail-open) — the try/catch
+    /// wrapper at the handler is the second safety net.
+    /// </summary>
+    public bool IsPropertyValidForBaseItem(int propertyIndex, int baseItemIndex)
+    {
+        var validIndices = GetValidPropertyIndicesForBaseItem(baseItemIndex);
+        if (validIndices == null)
+            return true; // No validation data — allow, rely on crash-recovery wrapper
+
+        return validIndices.Contains(propertyIndex);
+    }
+
     #region Private helpers
 
     private string? GetSubtypeResRef(int propertyIndex)
