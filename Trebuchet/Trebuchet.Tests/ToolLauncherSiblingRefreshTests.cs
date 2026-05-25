@@ -117,12 +117,13 @@ public class ToolLauncherSiblingRefreshTests : IDisposable
     }
 
     [Fact]
-    public void RefreshPathsFromSiblingDirectory_UsesAssemblyName_ForRelique()
+    public void RefreshPathsFromSiblingDirectory_FindsReliqueSibling()
     {
-        // Arrange: Relique's exe is ItemEditor.exe, not Relique.exe (see AssemblyName in ToolLauncherService)
+        // After #2080 the built exe is Relique.exe (AssemblyName aligned with tool name);
+        // sibling discovery walks Name → executable.
         var launcher = GetInstanceWithCleanSettings();
-        var stalePath = Path.Combine(_testDirectory, "old", "ItemEditor" + ExeExt);
-        var siblingPath = Path.Combine(_testDirectory, "ItemEditor" + ExeExt);
+        var stalePath = Path.Combine(_testDirectory, "old", "Relique" + ExeExt);
+        var siblingPath = Path.Combine(_testDirectory, "Relique" + ExeExt);
         File.WriteAllBytes(siblingPath, Array.Empty<byte>());
         RadoubSettings.Instance.ReliquePath = stalePath;
 
@@ -142,7 +143,7 @@ public class ToolLauncherSiblingRefreshTests : IDisposable
         var manifestSibling = Path.Combine(_testDirectory, "Manifest" + ExeExt);
         var qmSibling = Path.Combine(_testDirectory, "Quartermaster" + ExeExt);
         var fenceSibling = Path.Combine(_testDirectory, "Fence" + ExeExt);
-        var reliqueSibling = Path.Combine(_testDirectory, "ItemEditor" + ExeExt);
+        var reliqueSibling = Path.Combine(_testDirectory, "Relique" + ExeExt);
 
         foreach (var p in new[] { parleySibling, manifestSibling, qmSibling, fenceSibling, reliqueSibling })
         {
@@ -156,7 +157,7 @@ public class ToolLauncherSiblingRefreshTests : IDisposable
         settings.ManifestPath = Path.Combine(oldDir, "Manifest" + ExeExt);
         settings.QuartermasterPath = Path.Combine(oldDir, "Quartermaster" + ExeExt);
         settings.FencePath = Path.Combine(oldDir, "Fence" + ExeExt);
-        settings.ReliquePath = Path.Combine(oldDir, "ItemEditor" + ExeExt);
+        settings.ReliquePath = Path.Combine(oldDir, "Relique" + ExeExt);
 
         // Act
         launcher.RefreshPathsFromSiblingDirectory(_testDirectory);

@@ -11,7 +11,7 @@
     <Product>Relique - Item Blueprint Editor for Neverwinter Nights</Product>
     <Company>LNS Development</Company>
     <Copyright>Copyright 2025</Copyright>
-    <AssemblyName>ItemEditor</AssemblyName>
+    <AssemblyName>Relique</AssemblyName>
     <RootNamespace>ItemEditor</RootNamespace>
   </PropertyGroup>
 
