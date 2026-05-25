@@ -124,7 +124,37 @@ public class ToolLauncherService
             }
         };
 
+        // Repoint cached tool paths to siblings next to Trebuchet.exe before
+        // discovery runs. Fixes stale RadoubSettings entries left over from an
+        // earlier install location after Trebuchet is updated in place (#2079).
+        RefreshPathsFromSiblingDirectory(GetTrebuchetDirectory());
+
         DiscoverTools();
+    }
+
+    /// <summary>
+    /// Overwrite RadoubSettings tool paths with any sibling executable found
+    /// next to <paramref name="trebuchetDir"/>. If no sibling exists for a tool,
+    /// the existing cached path is left untouched and DiscoverTools() falls back
+    /// to its usual cascade (sibling-dir probe, dev path, common install paths).
+    ///
+    /// Null/empty directory is a no-op. Internal so Trebuchet.Tests can drive it
+    /// against a temp directory; not intended for production callers other than
+    /// the singleton constructor.
+    /// </summary>
+    internal void RefreshPathsFromSiblingDirectory(string? trebuchetDir)
+    {
+        if (string.IsNullOrEmpty(trebuchetDir)) return;
+
+        foreach (var tool in _tools)
+        {
+            var assemblyName = tool.AssemblyName ?? tool.Name;
+            var siblingPath = Path.Combine(trebuchetDir, GetExecutableName(assemblyName));
+            if (File.Exists(siblingPath))
+            {
+                CacheToolPath(tool.Name, siblingPath);
+            }
+        }
     }
 
     /// <summary>
