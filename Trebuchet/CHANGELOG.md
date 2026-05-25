@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.36.0-alpha] - 2026-05-24
-**Branch**: `trebuchet/issue-2219` | **PR**: #TBD
+**Branch**: `trebuchet/issue-2219` | **PR**: #2223
 
 ### Sprint: Launcher UX Polish (#2219)
 
