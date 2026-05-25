@@ -2,9 +2,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="RadoubLauncher.Views.AutoSuffixCollisionDialog"
         Title="Filename Already Exists"
-        Width="480" Height="220"
+        SizeToContent="WidthAndHeight"
+        MinWidth="480"
+        MinHeight="220"
         WindowStartupLocation="CenterOwner"
-        CanResize="False"
+        CanResize="True"
         ShowInTaskbar="False">
 
     <Border Padding="16">
