@@ -1,0 +1,56 @@
+name: CI Flake Soak
+
+# Manual-only workflow. Proves stability of the two test suites previously
+# affected by intermittent CI flakes (#2051 RadoubSettings race, #2212
+# Avalonia MenuItem registry race). Run via "Run workflow" from the Actions
+# tab on any branch; default 10 iterations × 2 operating systems = 20 jobs.
+#
+# fail-fast: false so a single flaky job does not hide the rest of the grid.
+# Retained in the repo post-merge for future flake hunts.
+
+on:
+  workflow_dispatch:
+    inputs:
+      iterations:
+        description: 'Iterations per OS (informational; matrix is hard-coded to 10)'
+        required: false
+        default: '10'
+
+jobs:
+  soak:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        iteration: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.os }} #${{ matrix.iteration }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0  # NBGV needs full history
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore Radoub.Formats.Tests
+      run: dotnet restore Radoub.Formats/Radoub.Formats.Tests/Radoub.Formats.Tests.csproj
+
+    - name: Build Radoub.Formats.Tests
+      run: dotnet build Radoub.Formats/Radoub.Formats.Tests/Radoub.Formats.Tests.csproj --configuration Release --no-restore
+
+    - name: Test Radoub.Formats.Tests
+      run: dotnet test Radoub.Formats/Radoub.Formats.Tests/Radoub.Formats.Tests.csproj --configuration Release --no-build --logger "console;verbosity=normal"
+
+    - name: Restore Radoub.UI.Tests
+      run: dotnet restore Radoub.UI/Radoub.UI.Tests/Radoub.UI.Tests.csproj
+
+    - name: Build Radoub.UI.Tests
+      run: dotnet build Radoub.UI/Radoub.UI.Tests/Radoub.UI.Tests.csproj --configuration Release --no-restore
+
+    - name: Test Radoub.UI.Tests
+      run: dotnet test Radoub.UI/Radoub.UI.Tests/Radoub.UI.Tests.csproj --configuration Release --no-build --logger "console;verbosity=normal"
