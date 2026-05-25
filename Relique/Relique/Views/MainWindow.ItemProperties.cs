@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using ItemEditor.Services;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Uti;
 using System;
 using System.Collections.Generic;
@@ -226,17 +227,7 @@ public partial class MainWindow
                 return; // All subtypes assigned
         }
 
-        var property = _itemPropertyService.CreateItemProperty(
-            propertyType.PropertyIndex,
-            subtypeIndex,
-            costValueIndex,
-            paramValueIndex: null);
-
-        _currentItem.Properties.Add(property);
-        RefreshAssignedProperties();
-        MarkDirty();
-
-        UpdateStatus($"Added property: {propertyType.DisplayName}");
+        TryAddProperty(propertyType, subtypeIndex, costValueIndex, paramValueIndex: null);
     }
 
     private void OnAvailablePropertySelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -384,17 +375,7 @@ public partial class MainWindow
         if (ParamValueComboBox.IsVisible && ParamValueComboBox.SelectedItem is ComboBoxItem paramItem && paramItem.Tag is int paramIdx)
             paramValueIndex = paramIdx;
 
-        var property = _itemPropertyService.CreateItemProperty(
-            _selectedPropertyType.PropertyIndex,
-            subtypeIndex,
-            costValueIndex,
-            paramValueIndex);
-
-        _currentItem.Properties.Add(property);
-        RefreshAssignedProperties();
-        MarkDirty();
-
-        UpdateStatus($"Added property: {_selectedPropertyType.DisplayName}");
+        TryAddProperty(_selectedPropertyType, subtypeIndex, costValueIndex, paramValueIndex);
     }
 
     private void OnAddCheckedClick(object? sender, RoutedEventArgs e)
@@ -405,11 +386,21 @@ public partial class MainWindow
 
         var types = _itemPropertyService.GetAvailablePropertyTypes();
         int added = 0;
+        var skipped = new List<string>();
 
         foreach (var propIndex in _checkedPropertyIndices)
         {
             var type = types.FirstOrDefault(t => t.PropertyIndex == propIndex);
             if (type == null) continue;
+
+            // Defensive: skip combos that the validation table marks invalid (#2166).
+            if (!_itemPropertyService.IsPropertyValidForBaseItem(propIndex, _currentItem.BaseItem))
+            {
+                skipped.Add(type.DisplayName);
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"Skipped invalid property {type.DisplayName} for base item {_currentItem.BaseItem}");
+                continue;
+            }
 
             // Use first available subtype (move semantics)
             int subtypeIndex = 0;
@@ -424,17 +415,30 @@ public partial class MainWindow
                     continue; // All subtypes assigned, skip
             }
 
-            var property = _itemPropertyService.CreateItemProperty(propIndex, subtypeIndex, 0, null);
-            _currentItem.Properties.Add(property);
-            added++;
+            try
+            {
+                var property = _itemPropertyService.CreateItemProperty(propIndex, subtypeIndex, 0, null);
+                _currentItem.Properties.Add(property);
+                added++;
+            }
+            catch (Exception ex)
+            {
+                skipped.Add(type.DisplayName);
+                UnifiedLogger.LogApplication(LogLevel.ERROR,
+                    $"Failed to add {type.DisplayName}: {ex.GetType().Name}: {ex.Message}");
+            }
         }
 
         if (added > 0)
         {
             RefreshAssignedProperties();
             MarkDirty();
-            UpdateStatus($"Added {added} properties");
         }
+
+        if (skipped.Count > 0)
+            UpdateStatus($"Added {added}; skipped {skipped.Count} ({string.Join(", ", skipped)})");
+        else if (added > 0)
+            UpdateStatus($"Added {added} properties");
 
         // Uncheck all after adding
         foreach (var item in AvailablePropertiesTree.Items)
@@ -548,21 +552,99 @@ public partial class MainWindow
         if (ParamValueComboBox.IsVisible && ParamValueComboBox.SelectedItem is ComboBoxItem paramItem && paramItem.Tag is int paramIdx)
             paramValueIndex = paramIdx;
 
-        var property = _itemPropertyService.CreateItemProperty(
-            _selectedPropertyType.PropertyIndex,
-            subtypeIndex,
-            costValueIndex,
-            paramValueIndex);
+        var oldProperty = _currentItem.Properties[_editingPropertyIndex];
 
-        _currentItem.Properties[_editingPropertyIndex] = property;
-        RefreshAssignedProperties();
-        MarkDirty();
+        try
+        {
+            var property = _itemPropertyService.CreateItemProperty(
+                _selectedPropertyType.PropertyIndex,
+                subtypeIndex,
+                costValueIndex,
+                paramValueIndex);
 
-        _editingPropertyIndex = -1;
-        ApplyEditButton.IsVisible = false;
-        PropertyConfigPanel.IsVisible = false;
+            _currentItem.Properties[_editingPropertyIndex] = property;
+            RefreshAssignedProperties();
+            MarkDirty();
 
-        UpdateStatus($"Updated property: {_selectedPropertyType.DisplayName}");
+            _editingPropertyIndex = -1;
+            ApplyEditButton.IsVisible = false;
+            PropertyConfigPanel.IsVisible = false;
+
+            UpdateStatus($"Updated property: {_selectedPropertyType.DisplayName}");
+        }
+        catch (Exception ex)
+        {
+            // Roll back to previous value and report — preserves item state on bad combos (#2166).
+            _currentItem.Properties[_editingPropertyIndex] = oldProperty;
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"Failed to update {_selectedPropertyType.DisplayName}: {ex.GetType().Name}: {ex.Message}");
+            UpdateStatus($"Cannot update {_selectedPropertyType.DisplayName}: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Add a property to the current item with crash-recovery and base-item validation (#2166).
+    /// Runs the validation recheck, then guards the Add + UI refresh in a try/catch so an
+    /// invalid base-item × property combo surfaces as a status-bar message instead of
+    /// killing the process.
+    /// </summary>
+    private void TryAddProperty(PropertyTypeInfo propertyType, int subtypeIndex, int costValueIndex, int? paramValueIndex)
+    {
+        if (_currentItem == null || _itemPropertyService == null)
+            return;
+
+        // Defense layer 2: re-check validity at add-time even if the tree filter let it through.
+        if (!_itemPropertyService.IsPropertyValidForBaseItem(propertyType.PropertyIndex, _currentItem.BaseItem))
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"Refused {propertyType.DisplayName} on base item {_currentItem.BaseItem} (validation table)");
+            UpdateStatus($"Cannot add {propertyType.DisplayName} to this item type");
+            return;
+        }
+
+        // Move-semantics recheck: SubtypeComboBox can hold stale entries after a successful add
+        // until the user re-selects from the tree, letting the same (prop, subtype) pair through twice.
+        if (!_itemPropertyService.IsPropertyAvailable(propertyType.PropertyIndex, subtypeIndex, _currentItem.Properties))
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"Refused duplicate {propertyType.DisplayName} (subtype {subtypeIndex})");
+            UpdateStatus($"{propertyType.DisplayName} already assigned with that subtype");
+            return;
+        }
+
+        try
+        {
+            var property = _itemPropertyService.CreateItemProperty(
+                propertyType.PropertyIndex,
+                subtypeIndex,
+                costValueIndex,
+                paramValueIndex);
+
+            _currentItem.Properties.Add(property);
+
+            try
+            {
+                RefreshAssignedProperties();
+                MarkDirty();
+                UpdateStatus($"Added property: {propertyType.DisplayName}");
+            }
+            catch (Exception refreshEx)
+            {
+                // UI refresh blew up — roll back the model change so the file stays consistent.
+                _currentItem.Properties.RemoveAt(_currentItem.Properties.Count - 1);
+                UnifiedLogger.LogApplication(LogLevel.ERROR,
+                    $"Refresh failed after adding {propertyType.DisplayName}: {refreshEx.GetType().Name}: {refreshEx.Message}");
+                UpdateStatus($"Cannot add {propertyType.DisplayName}: {refreshEx.Message}");
+                // Best-effort attempt to leave the assigned list usable.
+                try { RefreshAssignedProperties(); } catch { /* ignored */ }
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"Failed to add {propertyType.DisplayName}: {ex.GetType().Name}: {ex.Message}");
+            UpdateStatus($"Cannot add {propertyType.DisplayName}: {ex.Message}");
+        }
     }
 
     private static void SelectComboBoxByTag(ComboBox comboBox, int tagValue)

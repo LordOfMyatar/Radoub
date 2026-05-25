@@ -1,3 +1,4 @@
+using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Radoub.Formats.Common;
@@ -95,7 +96,16 @@ public partial class RadoubSettings
                     _quartermasterPath = PathHelper.ExpandPath(data.QuartermasterPath ?? "");
                     _fencePath = PathHelper.ExpandPath(data.FencePath ?? "");
                     _trebuchetPath = PathHelper.ExpandPath(data.TrebuchetPath ?? "");
-                    _reliquePath = PathHelper.ExpandPath(data.ReliquePath ?? "");
+
+                    var rawReliquePath = PathHelper.ExpandPath(data.ReliquePath ?? "");
+                    _reliquePath = ReliqueExePathMigration.Migrate(rawReliquePath) ?? "";
+                    // If the legacy-name migration rewrote the cached path, persist the new
+                    // value immediately so later launches (and other tools reading the
+                    // same RadoubSettings.json) see Relique.exe rather than ItemEditor.exe (#2080).
+                    if (!string.Equals(rawReliquePath, _reliquePath, StringComparison.Ordinal))
+                    {
+                        SaveSettings();
+                    }
                 }
             }
         }

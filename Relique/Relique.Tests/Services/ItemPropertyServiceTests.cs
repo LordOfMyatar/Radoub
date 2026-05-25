@@ -849,4 +849,74 @@ public class ItemPropertyServiceTests
     }
 
     #endregion
+
+    #region IsPropertyValidForBaseItem (#2166 — defensive recheck at add-time)
+
+    [Fact]
+    public void IsPropertyValidForBaseItem_ReturnsFalse_ForAcBonusOnLongsword()
+    {
+        var mock = CreateMockWithItemPropsData();
+        var service = new ItemPropertyService(mock);
+
+        // AC Bonus (row 1) is NOT valid for longsword (row 36) per itemprops.2da
+        var result = service.IsPropertyValidForBaseItem(propertyIndex: 1, baseItemIndex: 36);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void IsPropertyValidForBaseItem_ReturnsTrue_ForAcBonusOnAmulet()
+    {
+        var mock = CreateMockWithItemPropsData();
+        var service = new ItemPropertyService(mock);
+
+        // AC Bonus (row 1) IS valid for amulet (row 12)
+        var result = service.IsPropertyValidForBaseItem(propertyIndex: 1, baseItemIndex: 12);
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public void IsPropertyValidForBaseItem_ReturnsTrue_WhenValidationDataUnavailable()
+    {
+        // No itemprops.2da configured — fail-open so legacy data still loads.
+        // The crash-recovery wrapper at the handler is the safety net.
+        var mock = CreateMockWithItemPropertyData();
+        var service = new ItemPropertyService(mock);
+
+        var result = service.IsPropertyValidForBaseItem(propertyIndex: 1, baseItemIndex: 36);
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public void IsPropertyValidForBaseItem_ReturnsTrue_ForEnhancementBonusOnLongsword()
+    {
+        var mock = CreateMockWithItemPropsData();
+        var service = new ItemPropertyService(mock);
+
+        var result = service.IsPropertyValidForBaseItem(propertyIndex: 6, baseItemIndex: 36);
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public void IsPropertyAvailable_SameSubtype_AlreadyAssigned_BlocksDuplicate()
+    {
+        // Regression for #2166 follow-up: AC Bonus vs. Lawful Good added twice via
+        // the Add button because SubtypeComboBox kept the stale "Lawful Good" item
+        // after the first add. TryAddProperty must re-check IsPropertyAvailable.
+        var mock = CreateMockWithItemPropertyData();
+        var service = new ItemPropertyService(mock);
+
+        var assigned = new List<ItemProperty>
+        {
+            service.CreateItemProperty(propertyIndex: 0, subtypeIndex: 0, costValueIndex: 2, null)
+        };
+
+        Assert.False(service.IsPropertyAvailable(propertyIndex: 0, subtypeIndex: 0, assigned));
+        Assert.True(service.IsPropertyAvailable(propertyIndex: 0, subtypeIndex: 1, assigned));
+    }
+
+    #endregion
 }

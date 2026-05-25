@@ -167,7 +167,7 @@ public static class ItemEditorLauncher
         if (!string.IsNullOrEmpty(settingsPath) && File.Exists(settingsPath))
             return settingsPath;
 
-        var exeName = OperatingSystem.IsWindows() ? "ItemEditor.exe" : "ItemEditor";
+        var exeName = OperatingSystem.IsWindows() ? "Relique.exe" : "Relique";
         var currentExeDir = AppContext.BaseDirectory;
 
         // 2. Check sibling dev directory (e.g. bin/Debug/net9.0/ → ../../Relique/Relique/bin/Debug/net9.0/)

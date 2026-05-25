@@ -19,14 +19,14 @@ Relique creates and edits `.uti` (Item Blueprint) files for Neverwinter Nights. 
 
 ```bash
 # Start with empty editor
-ItemEditor
+Relique
 
 # Open a specific item
-ItemEditor sword.uti
-ItemEditor --file armor.uti
+Relique sword.uti
+Relique --file armor.uti
 
 # Start in safe mode (reset theme/fonts)
-ItemEditor --safemode
+Relique --safemode
 ```
 
 ## Building

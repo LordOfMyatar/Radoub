@@ -119,8 +119,7 @@ public class ToolLauncherService
                 Name = "Relique",
                 Description = "Item Editor",
                 FileTypes = ".uti",
-                Maturity = ToolMaturity.Alpha,
-                AssemblyName = "ItemEditor"
+                Maturity = ToolMaturity.Alpha
             }
         };
 
@@ -305,7 +304,7 @@ public class ToolLauncherService
     {
         // In development, tools are in sibling directories like:
         // Radoub/Parley/Parley/bin/Debug/net9.0/Parley.exe
-        // Radoub/Relique/Relique/bin/Debug/net9.0/ItemEditor.exe
+        // Radoub/Relique/Relique/bin/Debug/net9.0/Relique.exe
 
         try
         {

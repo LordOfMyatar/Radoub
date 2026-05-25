@@ -56,8 +56,11 @@ public static class TokenInsertionHelper
     }
 
     /// <summary>
-    /// Open the TokenInsertionWindow as a dialog, insert the selected token into the target TextBox.
-    /// Shared across all tools — captures cursor state before dialog opens.
+    /// Open the TokenSelectorWindow as a dialog, insert the selected token into the target TextBox.
+    /// Shared across all tools — captures cursor state before dialog opens. Uses
+    /// TokenSelectorWindow (4 tabs: Standard, Highlight, Custom Tokens, Custom Colors)
+    /// rather than the older TokenInsertionWindow (only Standard + Custom/Colors)
+    /// so user-defined custom tokens surface in the picker (#2075).
     /// </summary>
     public static async void OpenTokenWindow(TextBox targetTextBox, Window? owner)
     {
@@ -68,10 +71,10 @@ public static class TokenInsertionHelper
         var selLen = targetTextBox.SelectionEnd - targetTextBox.SelectionStart;
         var currentText = targetTextBox.Text ?? "";
 
-        var window = new TokenInsertionWindow();
-        var result = await window.ShowDialog<bool?>(owner);
+        var window = new TokenSelectorWindow();
+        var result = await window.ShowDialog<bool>(owner);
 
-        if (result == true && window.SelectedToken != null)
+        if (result && window.SelectedToken != null)
         {
             var insertion = ComputeInsertion(currentText, selStart, selLen, window.SelectedToken);
             targetTextBox.Text = insertion.NewText;

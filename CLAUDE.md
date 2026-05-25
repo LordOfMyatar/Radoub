@@ -359,15 +359,17 @@ userDict.AddWord("Waterdeep");
 - [ ] **Initialize CHANGELOG.md** with branch/PR format
 - [ ] **Create CLAUDE.md** with tool-specific patterns
 - [ ] **Add dictionary support** if tool has text editing fields
+- [ ] **`AssemblyName` matches the tool name** in the `.csproj` (e.g. `<AssemblyName>Relique</AssemblyName>` for the Relique tool). `RootNamespace` can differ if a legacy internal name is preferred, but the built binary must ship as `ToolName.exe` / `ToolName` — Trebuchet's sibling discovery (`ToolLauncherService.RefreshPathsFromSiblingDirectory`) walks `ToolInfo.Name`, and the release workflow / cross-tool launchers all assume `Radoub/ToolName.exe`. Mismatch causes silent launch failures + a forced rename later with a settings-path migration (#2080).
 - [ ] **Override `IndexMetadataAsync` + `ReadSourceMetadataAsync`** on the file browser panel if the format has Name and/or Tag fields — see [File Browser Adoption](#file-browser-adoption-filebrowserpanelbase)
 
 ### Trebuchet Integration
 
 New tools must integrate with Trebuchet (the Radoub launcher):
 
-- [ ] **Add to ToolLauncherService** - Register tool for discovery and launch
+- [ ] **Add to ToolLauncherService** - Register tool for discovery and launch. **Do not** set `AssemblyName` on the `ToolInfo` — leave it null so sibling discovery falls back to `Name`. Setting `AssemblyName` means the built `.csproj` `<AssemblyName>` diverges from the tool name, which the bootstrap checklist forbids (see Day 1 Requirements).
 - [ ] **Support `--file` argument** - Enable launching with a file from Trebuchet's MRU dropdown
 - [ ] **Use Radoub.UI file browsers** - Use `ModuleBrowserWindow`, `ScriptBrowserWindow`, `DialogBrowserWindow`, or create resource-specific browser instead of OS file pickers for module resources
+- [ ] **Register in `ToolDispatchService`** — map your `ResourceTypes.*` to `new DispatchableToolInfo { ToolName = "X", AssemblyName = "X" }`. Both fields must match the same identifier so search-bar dispatch and `ItemEditorLauncher`-style cross-tool launchers find the binary.
 
 ### Testing Requirements
 
@@ -391,6 +393,7 @@ New tools must integrate with Trebuchet (the Radoub launcher):
 | **Caching** | Cache game data if applicable (feats, spells, items) | Fence/Services/PaletteCacheService.cs |
 | **TLK Support** | Use shared ITlkService for localized strings | Radoub.UI/Services/ITlkService.cs |
 | **Spell-Check** | Use Radoub.Dictionary for game-facing text | Parley/Manifest patterns |
+| **Token Picker** | Right-click "All Tokens..." must open `Radoub.UI.Views.TokenSelectorWindow` (4 tabs: Standard / Highlight / Custom Tokens / Custom Colors). Route through `TokenInsertionHelper.OpenTokenWindow` — do NOT instantiate the older `TokenInsertionWindow` directly; it lacks the Custom Tokens tab (#2075). | Manifest.PropertyPanel, Relique post-#2075 |
 
 **Resource Browsers** (use shared implementations from Radoub.UI):
 
@@ -622,6 +625,7 @@ dotnet nbgv get-version --project [ToolDir]
 | Missing SafeMode support | Always implement `--safemode` flag |
 | Skipping unit tests | Create ToolName.Tests from day 1 |
 | Hardcoding version in .csproj | Use NBGV `version.json` — no version properties in .csproj |
+| `<AssemblyName>` differs from tool name (built exe is `Foo.exe` for tool "Bar") | Set `<AssemblyName>ToolName</AssemblyName>` to match the folder/tool name. Sibling discovery, release workflow, cross-tool launchers, and `ToolDispatchService` all assume `Radoub/ToolName.exe` — divergence requires a settings-path migration to fix (#2080). |
 
 ---
 
@@ -963,6 +967,7 @@ Write-Host "Found $($results.Count) items"
 - Never use bare `catch` blocks - catch specific types
 - Always log exceptions (at minimum `LogLevel.WARN`)
 - Never silently swallow exceptions
+- **UI handlers that mutate the editor model must wrap the `model.Add(...) → RefreshUI() → MarkDirty()` sequence in try/catch and roll back the model change if the refresh throws.** A populate-time validation filter is not enough — UI controls (ComboBox selections, tree expansion) hold stale state across refreshes, and a bad-state combo can crash deep in the Avalonia render loop instead of in your handler. See `MainWindow.ItemProperties.TryAddProperty` (Relique, #2166) for the canonical pattern: outer catch for `CreateItemProperty`, inner catch for `RefreshAssignedProperties` that removes the just-added entry. Combine with a validation-table recheck at add-time (defense in depth) so each layer covers the other's gaps.
 
 **Code Hygiene**:
 - No commented-out code blocks - use git history

@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.15-alpha] - 2026-05-25
+**Branch**: `relique/issue-2217` | **PR**: #2225
+
+### Sprint: Relique Bug Bash (#2217)
+
+- Fix Armor Bonus property crash on swords (#2166)
+- Restore Custom tokens category in right-click token insertion menu (#2075)
+- Rename built executable from `ItemEditor.exe` to `Relique.exe` (#2080)
+
+---
+
 ## [0.10.14-alpha] - 2026-05-24
 **Branch**: `relique/issue-2199` | **PR**: #2208
 

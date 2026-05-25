@@ -34,7 +34,7 @@ public class ToolDispatchService
         [ResourceTypes.Dlg] = new DispatchableToolInfo { ToolName = "Parley", AssemblyName = "Parley" },
         [ResourceTypes.Utc] = new DispatchableToolInfo { ToolName = "Quartermaster", AssemblyName = "Quartermaster" },
         [ResourceTypes.Bic] = new DispatchableToolInfo { ToolName = "Quartermaster", AssemblyName = "Quartermaster" },
-        [ResourceTypes.Uti] = new DispatchableToolInfo { ToolName = "Relique", AssemblyName = "ItemEditor" },
+        [ResourceTypes.Uti] = new DispatchableToolInfo { ToolName = "Relique", AssemblyName = "Relique" },
         [ResourceTypes.Utm] = new DispatchableToolInfo { ToolName = "Fence", AssemblyName = "Fence" },
         [ResourceTypes.Jrl] = new DispatchableToolInfo { ToolName = "Manifest", AssemblyName = "Manifest" },
     };

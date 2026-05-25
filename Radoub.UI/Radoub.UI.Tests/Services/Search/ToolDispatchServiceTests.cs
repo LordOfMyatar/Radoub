@@ -59,12 +59,12 @@ public class ToolDispatchServiceTests
     }
 
     [Fact]
-    public void GetToolForFileType_ReliqueHasDifferentAssemblyName()
+    public void GetToolForFileType_ReliqueAssemblyNameMatchesToolName()
     {
         var info = _service.GetToolForFileType(ResourceTypes.Uti);
 
         Assert.NotNull(info);
         Assert.Equal("Relique", info.ToolName);
-        Assert.Equal("ItemEditor", info.AssemblyName);
+        Assert.Equal("Relique", info.AssemblyName);
     }
 }
