@@ -20,6 +20,24 @@ public partial class MainWindow
     {
         PropertySearchBox.TextChanged += OnPropertySearchTextChanged;
         InitializeCategoryFilter();
+
+        // Auto-apply on combo change during edit mode (#2226). Suppressed when
+        // _suppressAutoApply is true (programmatic repopulation / pre-select).
+        SubtypeComboBox.SelectionChanged += OnEditComboSelectionChanged;
+        CostValueComboBox.SelectionChanged += OnEditComboSelectionChanged;
+        ParamValueComboBox.SelectionChanged += OnEditComboSelectionChanged;
+
+        // Apply button is no longer needed in auto-apply mode (#2226). Hidden permanently
+        // — kept in AXAML to avoid breaking the Click wireup, but never shown.
+        ApplyEditButton.IsVisible = false;
+    }
+
+    private void OnEditComboSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (!EditAutoApplyDecider.ShouldAutoApply(_editingPropertyIndex, _suppressAutoApply))
+            return;
+
+        ApplyEditCore(teardownOnSuccess: false);
     }
 
     private void InitializeCategoryFilter()
@@ -301,6 +319,12 @@ public partial class MainWindow
 
     private void UpdatePropertyConfigPanel(PropertyTypeInfo propertyType)
     {
+        // Suppress auto-apply while combos are being cleared/repopulated (#2226).
+        // Each SelectedIndex assignment below fires SelectionChanged; without
+        // suppression, opening an edit would auto-apply a half-built state.
+        _suppressAutoApply = true;
+        try
+        {
         PropertyConfigPanel.IsVisible = true;
         SelectedPropertyName.Text = propertyType.DisplayName;
 
@@ -376,6 +400,11 @@ public partial class MainWindow
             }
             if (ParamValueComboBox.Items.Count > 0)
                 ParamValueComboBox.SelectedIndex = 0;
+        }
+        }
+        finally
+        {
+            _suppressAutoApply = false;
         }
     }
 
@@ -542,19 +571,39 @@ public partial class MainWindow
         _selectedPropertyType = type;
         UpdatePropertyConfigPanel(type);
 
-        // Pre-select current values in dropdowns
-        SelectComboBoxByTag(SubtypeComboBox, prop.Subtype);
-        SelectComboBoxByTag(CostValueComboBox, prop.CostValue);
-        if (prop.Param1 != 0xFF)
-            SelectComboBoxByTag(ParamValueComboBox, prop.Param1Value);
+        // Pre-select current values without firing auto-apply (#2226).
+        _suppressAutoApply = true;
+        try
+        {
+            SelectComboBoxByTag(SubtypeComboBox, prop.Subtype);
+            SelectComboBoxByTag(CostValueComboBox, prop.CostValue);
+            if (prop.Param1 != 0xFF)
+                SelectComboBoxByTag(ParamValueComboBox, prop.Param1Value);
+        }
+        finally
+        {
+            _suppressAutoApply = false;
+        }
 
-        ApplyEditButton.IsVisible = true;
+        // ApplyEditButton stays hidden under auto-apply mode (#2226).
         AddPropertyButton.IsEnabled = false;
 
-        UpdateStatus($"Editing: {type.DisplayName}");
+        UpdateStatus($"Editing: {type.DisplayName} (auto-applies on change)");
     }
 
     private void OnApplyEditClick(object? sender, RoutedEventArgs e)
+    {
+        // Apply button hidden under auto-apply (#2226). Handler kept for AXAML wireup safety.
+        ApplyEditCore(teardownOnSuccess: true);
+    }
+
+    /// <summary>
+    /// Apply current PropertyConfigPanel ComboBox values to the property at _editingPropertyIndex (#2226).
+    /// teardownOnSuccess=true mirrors the old explicit-Apply flow (closes the edit panel, exits edit mode);
+    /// teardownOnSuccess=false is auto-apply mode (keeps panel open so user can keep tweaking).
+    /// Rollback to oldProperty on failure preserves item state for bad combos (#2166 pattern).
+    /// </summary>
+    private void ApplyEditCore(bool teardownOnSuccess)
     {
         if (_currentItem == null || _itemPropertyService == null || _selectedPropertyType == null)
             return;
@@ -575,6 +624,7 @@ public partial class MainWindow
             paramValueIndex = paramIdx;
 
         var oldProperty = _currentItem.Properties[_editingPropertyIndex];
+        var editingIndex = _editingPropertyIndex;
 
         try
         {
@@ -584,20 +634,34 @@ public partial class MainWindow
                 costValueIndex,
                 paramValueIndex);
 
-            _currentItem.Properties[_editingPropertyIndex] = property;
+            _currentItem.Properties[editingIndex] = property;
+
+            // RefreshAssignedProperties calls PopulateAvailableProperties which clears
+            // the assigned list selection. In auto-apply mode we re-select the same
+            // row + restore the edit state so the user can keep tweaking.
             RefreshAssignedProperties();
             MarkDirty();
 
-            _editingPropertyIndex = -1;
-            ApplyEditButton.IsVisible = false;
-            PropertyConfigPanel.IsVisible = false;
-
-            UpdateStatus($"Updated property: {_selectedPropertyType.DisplayName}");
+            if (teardownOnSuccess)
+            {
+                _editingPropertyIndex = -1;
+                ApplyEditButton.IsVisible = false;
+                PropertyConfigPanel.IsVisible = false;
+                UpdateStatus($"Updated property: {_selectedPropertyType.DisplayName}");
+            }
+            else
+            {
+                // Auto-apply: keep edit state intact, re-select the edited row.
+                if (editingIndex < AssignedPropertiesList.Items.Count)
+                    AssignedPropertiesList.SelectedIndex = editingIndex;
+                _editingPropertyIndex = editingIndex;
+                UpdateStatus($"Auto-applied: {_selectedPropertyType.DisplayName}");
+            }
         }
         catch (Exception ex)
         {
             // Roll back to previous value and report — preserves item state on bad combos (#2166).
-            _currentItem.Properties[_editingPropertyIndex] = oldProperty;
+            _currentItem.Properties[editingIndex] = oldProperty;
             UnifiedLogger.LogApplication(LogLevel.ERROR,
                 $"Failed to update {_selectedPropertyType.DisplayName}: {ex.GetType().Name}: {ex.Message}");
             UpdateStatus($"Cannot update {_selectedPropertyType.DisplayName}: {ex.Message}");
