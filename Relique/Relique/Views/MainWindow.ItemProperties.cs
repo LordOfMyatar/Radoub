@@ -42,6 +42,9 @@ public partial class MainWindow
 
     private void PopulateAvailableProperties(string? searchFilter = null)
     {
+        // Capture expansion state so a refresh after Add doesn't collapse the user's open category (#2227).
+        var expansionSnapshot = CaptureAvailablePropertiesExpansion();
+
         AvailablePropertiesTree.Items.Clear();
         _checkedPropertyIndices.Clear();
         UpdateAddCheckedButton();
@@ -127,12 +130,31 @@ public partial class MainWindow
                 }
             }
 
-            // Auto-expand when a subtype matched the search
-            if (hasMatchingSubtype)
+            // Auto-expand when a subtype matched the search, or when the user had this category
+            // open before the rebuild (#2227).
+            if (hasMatchingSubtype || expansionSnapshot.ShouldExpand(type.PropertyIndex))
                 node.IsExpanded = true;
 
             AvailablePropertiesTree.Items.Add(node);
         }
+    }
+
+    /// <summary>
+    /// Snapshot which top-level Available Properties tree nodes are currently expanded,
+    /// keyed by PropertyIndex. Caller restores via TreeExpansionSnapshot.ShouldExpand
+    /// during the rebuild loop (#2227).
+    /// </summary>
+    private TreeExpansionSnapshot CaptureAvailablePropertiesExpansion()
+    {
+        var expanded = new List<int>();
+        foreach (var obj in AvailablePropertiesTree.Items)
+        {
+            if (obj is TreeViewItem tvi && tvi.IsExpanded && tvi.Tag is PropertyTypeInfo pti)
+            {
+                expanded.Add(pti.PropertyIndex);
+            }
+        }
+        return TreeExpansionTracker.Capture(expanded);
     }
 
     private void UpdateAddCheckedButton()
