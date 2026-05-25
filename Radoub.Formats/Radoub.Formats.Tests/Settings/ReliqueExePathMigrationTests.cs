@@ -26,8 +26,10 @@ public class ReliqueExePathMigrationTests
     [Fact]
     public void Migrate_LinuxLegacyPath_RewritesToRelique()
     {
-        var result = ReliqueExePathMigration.Migrate("/home/user/Radoub/ItemEditor");
-        Assert.Equal("/home/user/Radoub/Relique", result);
+        // Use /opt/ rather than /home/<user>/ so CI's privacy-scan regex doesn't
+        // false-positive on the literal sample path.
+        var result = ReliqueExePathMigration.Migrate("/opt/Radoub/ItemEditor");
+        Assert.Equal("/opt/Radoub/Relique", result);
     }
 
     [Fact]
