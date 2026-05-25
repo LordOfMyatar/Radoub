@@ -106,7 +106,7 @@ public class ErfImportServiceTests : IDisposable
     {
         var erf = ErfReader.ReadMetadataOnly(_erfPath);
 
-        var result = await _service.ImportResourcesAsync(_erfPath, erf.Resources, _targetDir, overwriteExisting: false);
+        var result = await _service.ImportResourcesAsync(_erfPath, erf.Resources, _targetDir, overwriteExisting: false, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(3, result.ImportedCount);
         Assert.Equal(0, result.OverwrittenCount);
@@ -124,13 +124,13 @@ public class ErfImportServiceTests : IDisposable
         File.WriteAllBytes(Path.Combine(_targetDir, "test_item.uti"), existingContent);
         var erf = ErfReader.ReadMetadataOnly(_erfPath);
 
-        var result = await _service.ImportResourcesAsync(_erfPath, erf.Resources, _targetDir, overwriteExisting: false);
+        var result = await _service.ImportResourcesAsync(_erfPath, erf.Resources, _targetDir, overwriteExisting: false, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(2, result.ImportedCount);
         Assert.Equal(0, result.OverwrittenCount);
         Assert.Equal(1, result.SkippedCount);
         // Verify the existing file was NOT overwritten
-        var actual = await File.ReadAllBytesAsync(Path.Combine(_targetDir, "test_item.uti"));
+        var actual = await File.ReadAllBytesAsync(Path.Combine(_targetDir, "test_item.uti"), TestContext.Current.CancellationToken);
         Assert.Equal(existingContent, actual);
     }
 
@@ -140,20 +140,20 @@ public class ErfImportServiceTests : IDisposable
         File.WriteAllBytes(Path.Combine(_targetDir, "test_item.uti"), new byte[] { 0xFF, 0xFF });
         var erf = ErfReader.ReadMetadataOnly(_erfPath);
 
-        var result = await _service.ImportResourcesAsync(_erfPath, erf.Resources, _targetDir, overwriteExisting: true);
+        var result = await _service.ImportResourcesAsync(_erfPath, erf.Resources, _targetDir, overwriteExisting: true, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(2, result.ImportedCount);
         Assert.Equal(1, result.OverwrittenCount);
         Assert.Equal(3, result.TotalWritten);
         Assert.Equal(0, result.SkippedCount);
-        var actual = await File.ReadAllBytesAsync(Path.Combine(_targetDir, "test_item.uti"));
+        var actual = await File.ReadAllBytesAsync(Path.Combine(_targetDir, "test_item.uti"), TestContext.Current.CancellationToken);
         Assert.NotEqual(new byte[] { 0xFF, 0xFF }, actual);
     }
 
     [Fact]
     public async Task ImportResources_EmptyList_ReturnsZeroCounts()
     {
-        var result = await _service.ImportResourcesAsync(_erfPath, Array.Empty<ErfResourceEntry>(), _targetDir, overwriteExisting: false);
+        var result = await _service.ImportResourcesAsync(_erfPath, Array.Empty<ErfResourceEntry>(), _targetDir, overwriteExisting: false, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(0, result.ImportedCount);
         Assert.Equal(0, result.SkippedCount);
@@ -178,10 +178,10 @@ public class ErfImportServiceTests : IDisposable
         var progressReports = new List<ImportProgress>();
         var progress = new Progress<ImportProgress>(p => progressReports.Add(p));
 
-        await _service.ImportResourcesAsync(_erfPath, erf.Resources, _targetDir, overwriteExisting: false, progress: progress);
+        await _service.ImportResourcesAsync(_erfPath, erf.Resources, _targetDir, overwriteExisting: false, progress: progress, cancellationToken: TestContext.Current.CancellationToken);
 
         // Progress may be reported asynchronously, so allow a small delay
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
         Assert.True(progressReports.Count >= 1);
     }
 
@@ -191,7 +191,7 @@ public class ErfImportServiceTests : IDisposable
         var erf = ErfReader.ReadMetadataOnly(_erfPath);
         var selected = new List<ErfResourceEntry> { erf.Resources[0] }; // Only test_script
 
-        var result = await _service.ImportResourcesAsync(_erfPath, selected, _targetDir, overwriteExisting: false);
+        var result = await _service.ImportResourcesAsync(_erfPath, selected, _targetDir, overwriteExisting: false, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(1, result.ImportedCount);
         Assert.True(File.Exists(Path.Combine(_targetDir, "test_script.ncs")));
