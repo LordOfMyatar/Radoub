@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.36.0-alpha] - 2026-05-24
+**Branch**: `trebuchet/issue-2219` | **PR**: #2223
+
+### Sprint: Launcher UX Polish (#2219)
+
+- Refresh cached tool paths from sibling executables on startup — fixes stale paths after in-place Trebuchet update (#2079)
+- Document Windows SmartScreen first-launch workaround in README (#2079)
+- `AutoSuffixCollisionDialog` now auto-sizes to content and is user-resizable — readable at all font-size accessibility settings (#2184)
+
+---
+
 ## [1.35.0-alpha] - 2026-05-24
 **Branch**: `radoub/issue-2218` | **PR**: #2222
 

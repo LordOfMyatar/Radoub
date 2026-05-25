@@ -21,6 +21,17 @@ See [Known Issues](https://github.com/LordOfMyatar/Radoub/issues?q=is%3Aissue+is
 
 ---
 
+## First-launch SmartScreen warning (Windows)
+
+On first launch after downloading or updating Trebuchet, Windows SmartScreen may show a "Windows protected your PC" warning because the executable is not yet code-signed. To proceed:
+
+1. Click **More info** on the warning dialog.
+2. Click **Run anyway**.
+
+You may see this warning again the first time you launch each sibling tool (Parley, Manifest, Quartermaster, Fence, Relique) from Trebuchet. Code-signing is on the roadmap; see [#2079](https://github.com/LordOfMyatar/Radoub/issues/2079) for status.
+
+---
+
 ## Features
 
 ### Tool Launcher

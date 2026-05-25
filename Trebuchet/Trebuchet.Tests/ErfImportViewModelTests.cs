@@ -230,7 +230,7 @@ public class ErfImportViewModelTests : IDisposable
     }
 
     [Fact]
-    public async Task CanImport_FalseWhenNotLoaded()
+    public void CanImport_FalseWhenNotLoaded()
     {
         var vm = new ErfImportViewModel(_targetDir);
 
