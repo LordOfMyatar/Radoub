@@ -65,15 +65,16 @@
                  TextTrimming="CharacterEllipsis"
                  IsVisible="{Binding TertiaryText, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
 
-      <!-- File Path (right, trimmed) -->
+      <!-- File Path (right, leading-ellipsis trim so filename stays visible when path is long) -->
       <TextBlock x:Name="FilePathTextBlock"
                  Grid.Column="5"
                  Text="{Binding FilePath, RelativeSource={RelativeSource AncestorType=UserControl}}"
                  Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                  Margin="20,0,0,0"
                  VerticalAlignment="Center"
-                 TextTrimming="CharacterEllipsis"
-                 MaxWidth="300"
+                 TextTrimming="LeadingCharacterEllipsis"
+                 MaxWidth="500"
+                 ToolTip.Tip="{Binding FilePath, RelativeSource={RelativeSource AncestorType=UserControl}}"
                  IsVisible="{Binding FilePath, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
     </Grid>
   </Border>
