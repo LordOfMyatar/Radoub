@@ -86,6 +86,10 @@ Before releasing:
 
 ## Instructions
 
+> **Order hazard**: The NonPublic draft is the only persisted copy of the accumulated
+> highlights. Always synthesize → push the tag → THEN reset the draft. Resetting
+> before push means a failed push leaves nothing to retry from.
+
 1. **Verify Clean State**
    ```bash
    git status
@@ -142,22 +146,12 @@ Before releasing:
    # ...write synthesized notes to $TMP_NOTES...
    ```
 
-5. **Reset NonPublic Draft**
-
-   After confirming the notes, reset `NonPublic/release-notes.md` with a fresh template for the next release cycle:
-   ```markdown
-   # Release Notes (Draft)
-
-   Accumulated since last release: **radoub-vX.Y.Z** (YYYY-MM-DD)
-   ...
-   ```
-
-6. **Confirm with User**
+5. **Confirm with User**
    - Show the version and generated highlights
    - Show recent commits that will be included
    - Ask user to confirm: "Ready to release radoub-v0.8.4?"
 
-7. **Create and Push Tag** (notes embedded in tag annotation — no main commit required)
+6. **Create and Push Tag** (notes embedded in tag annotation — no main commit required)
 
    ```bash
    # Embed the TL;DR notes as the tag's annotated message (-F reads from file).
@@ -169,6 +163,20 @@ Before releasing:
    ```
 
    **Never** write or commit `release-notes.md` to the repo root (#2236).
+
+7. **Reset NonPublic Draft** (only after tag push succeeds)
+
+   **Order matters**: reset AFTER `git push origin <tag>` returns success. The
+   NonPublic draft is the only persisted copy of the accumulated highlights —
+   resetting before push means a failed push leaves you with nothing to retry from.
+   If the push fails, do NOT reset; debug + retry.
+
+   ```markdown
+   # Release Notes (Draft)
+
+   Accumulated since last release: **radoub-vX.Y.Z** (YYYY-MM-DD)
+   ...
+   ```
 
 8. **Provide Release Link**
    - `https://github.com/LordOfMyatar/Radoub/actions/workflows/radoub-release.yml`
