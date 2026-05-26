@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.33-alpha] - 2026-05-25
+**Branch**: `radoub/issue-2238` | **PR**: #2239
+
+### Fix: Severe memory bloat — Fence idle RSS dropped from 5 GB to 450 MB (#2238)
+
+- HAK index loading switched to `ErfReader.ReadMetadataOnly` so the resolver no longer buffers entire HAK byte arrays on the Large Object Heap. With a CEP3 module (8.9 GB of HAKs), Fence idle RSS drops from 4977 MB → 451 MB (10.9× smaller), eliminating the OOM-kill and hard-reboot risk when running multiple Radoub apps concurrently.
+
+---
+
 ## [0.1.32-alpha] - 2026-05-24
 **Branch**: `fence/issue-2200` | **PR**: #2209
 

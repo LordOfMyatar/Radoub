@@ -231,6 +231,125 @@ public class ErfReaderTests
         Assert.Equal(12345u, result.DescriptionStrRef);
     }
 
+    #region ReadMetadataOnly Equivalence
+
+    // Precondition for #2238 fix: GameResourceResolver must be safe to swap
+    // ErfReader.Read(hakPath) → ErfReader.ReadMetadataOnly(hakPath) without
+    // changing the parsed ErfFile shape. These tests pin that equivalence so
+    // a future change to either parser surfaces immediately.
+
+    [Fact]
+    public void ReadMetadataOnly_EmptyErf_MatchesRead()
+    {
+        var buffer = CreateMinimalErfFile("HAK ");
+
+        var fromFullRead = ErfReader.Read(buffer);
+        using var ms = new MemoryStream(buffer);
+        var fromMetadataOnly = ErfReader.ReadMetadataOnly(ms);
+
+        AssertEquivalentMetadata(fromFullRead, fromMetadataOnly);
+    }
+
+    [Fact]
+    public void ReadMetadataOnly_WithLocalizedString_MatchesRead()
+    {
+        var buffer = CreateErfWithLocalizedString("HAK description", languageId: 0);
+
+        var fromFullRead = ErfReader.Read(buffer);
+        using var ms = new MemoryStream(buffer);
+        var fromMetadataOnly = ErfReader.ReadMetadataOnly(ms);
+
+        AssertEquivalentMetadata(fromFullRead, fromMetadataOnly);
+    }
+
+    [Fact]
+    public void ReadMetadataOnly_WithMixedResources_MatchesRead()
+    {
+        var buffer = CreateErfWithResources(new[]
+        {
+            ("dlg1", (ushort)2029, new byte[] { 0x01, 0x02 }),
+            ("script1", (ushort)2009, new byte[] { 0x03, 0x04, 0x05 }),
+            ("uti1", (ushort)2025, new byte[] { 0x06 })
+        });
+
+        var fromFullRead = ErfReader.Read(buffer);
+        using var ms = new MemoryStream(buffer);
+        var fromMetadataOnly = ErfReader.ReadMetadataOnly(ms);
+
+        AssertEquivalentMetadata(fromFullRead, fromMetadataOnly);
+    }
+
+    [Fact]
+    public void ReadMetadataOnly_WithHeaderFields_MatchesRead()
+    {
+        var buffer = CreateMinimalErfFile("HAK ");
+        BitConverter.GetBytes(125u).CopyTo(buffer, 32);
+        BitConverter.GetBytes(100u).CopyTo(buffer, 36);
+        BitConverter.GetBytes(12345u).CopyTo(buffer, 40);
+
+        var fromFullRead = ErfReader.Read(buffer);
+        using var ms = new MemoryStream(buffer);
+        var fromMetadataOnly = ErfReader.ReadMetadataOnly(ms);
+
+        AssertEquivalentMetadata(fromFullRead, fromMetadataOnly);
+    }
+
+    [Fact]
+    public void ReadMetadataOnly_FromFilePath_MatchesReadFromFilePath()
+    {
+        var buffer = CreateErfWithResources(new[]
+        {
+            ("test1", (ushort)2029, new byte[] { 0xDE, 0xAD }),
+            ("test2", (ushort)2029, new byte[] { 0xBE, 0xEF })
+        });
+        var tempPath = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllBytes(tempPath, buffer);
+
+            var fromFullRead = ErfReader.Read(tempPath);
+            var fromMetadataOnly = ErfReader.ReadMetadataOnly(tempPath);
+
+            AssertEquivalentMetadata(fromFullRead, fromMetadataOnly);
+
+            // Per-resource extraction must still work after metadata-only load
+            var extracted = ErfReader.ExtractResource(tempPath, fromMetadataOnly.Resources[0]);
+            Assert.Equal(new byte[] { 0xDE, 0xAD }, extracted);
+        }
+        finally
+        {
+            File.Delete(tempPath);
+        }
+    }
+
+    private static void AssertEquivalentMetadata(ErfFile expected, ErfFile actual)
+    {
+        Assert.Equal(expected.FileType, actual.FileType);
+        Assert.Equal(expected.FileVersion, actual.FileVersion);
+        Assert.Equal(expected.BuildYear, actual.BuildYear);
+        Assert.Equal(expected.BuildDay, actual.BuildDay);
+        Assert.Equal(expected.DescriptionStrRef, actual.DescriptionStrRef);
+
+        Assert.Equal(expected.LocalizedStrings.Count, actual.LocalizedStrings.Count);
+        for (int i = 0; i < expected.LocalizedStrings.Count; i++)
+        {
+            Assert.Equal(expected.LocalizedStrings[i].LanguageId, actual.LocalizedStrings[i].LanguageId);
+            Assert.Equal(expected.LocalizedStrings[i].Text, actual.LocalizedStrings[i].Text);
+        }
+
+        Assert.Equal(expected.Resources.Count, actual.Resources.Count);
+        for (int i = 0; i < expected.Resources.Count; i++)
+        {
+            Assert.Equal(expected.Resources[i].ResRef, actual.Resources[i].ResRef);
+            Assert.Equal(expected.Resources[i].ResId, actual.Resources[i].ResId);
+            Assert.Equal(expected.Resources[i].ResourceType, actual.Resources[i].ResourceType);
+            Assert.Equal(expected.Resources[i].Offset, actual.Resources[i].Offset);
+            Assert.Equal(expected.Resources[i].Size, actual.Resources[i].Size);
+        }
+    }
+
+    #endregion
+
     #region Test Helpers
 
     private static byte[] CreateMinimalErfFile(string fileType)

@@ -360,7 +360,10 @@ public class GameResourceResolver : IDisposable
 
         try
         {
-            var hak = ErfReader.Read(hakPath);
+            // #2238: ReadMetadataOnly avoids materializing the full HAK byte[] on the
+            // Large Object Heap. ExtractResource(hakPath, entry) at the call site reads
+            // bytes via FileStream on demand, mirroring the BifReader pattern above.
+            var hak = ErfReader.ReadMetadataOnly(hakPath);
             if (_config.CacheArchives)
                 _hakCache[hakPath] = hak;
             return hak;

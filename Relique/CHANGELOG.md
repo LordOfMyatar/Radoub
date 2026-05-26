@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.17-alpha] - 2026-05-25
+**Branch**: `radoub/issue-2238` | **PR**: #2239
+
+### Fix: Severe memory bloat — idle RSS dropped from multi-GB to ~377 MB (#2238)
+
+- Shared `Radoub.Formats` resolver fix: HAK index loading switched to `ErfReader.ReadMetadataOnly` so the resolver no longer buffers entire HAK byte arrays on the Large Object Heap. Eliminates the OOM-kill and hard-reboot risk when running multiple Radoub apps concurrently against large-HAK modules (CEP3 etc.).
+
+---
+
 ## [0.10.16-alpha] - 2026-05-25
 **Branch**: `relique/issue-2229` | **PR**: #2230
 
