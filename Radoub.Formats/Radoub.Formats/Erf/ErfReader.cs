@@ -318,7 +318,8 @@ public static class ErfReader
     /// </summary>
     public static byte[] ExtractResource(byte[] erfBuffer, ErfResourceEntry entry)
     {
-        if (entry.Offset + entry.Size > erfBuffer.Length)
+        // Promote to long to detect uint overflow before bounds check (#2244).
+        if ((long)entry.Offset + entry.Size > erfBuffer.Length)
             throw new InvalidDataException($"Resource '{entry.ResRef}' extends beyond file boundary");
 
         var data = new byte[entry.Size];
