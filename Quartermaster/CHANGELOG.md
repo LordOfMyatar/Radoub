@@ -8,9 +8,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ## [0.2.93-alpha] - 2026-05-25
 **Branch**: `radoub/issue-2238` | **PR**: #2239
 
-### Fix: Severe memory leak — process RSS reaches 5GB+ (#2238)
+### Fix: Severe memory bloat — idle RSS dropped from 5 GB to under 1 GB (#2238)
 
-- Investigate and fix runaway memory growth observed during idle / module-load (Quartermaster killed by OOM at 5.09 GB anon-rss on an 8 GB system; concurrent Radoub apps were hard-rebooting the box)
+- Shared `Radoub.Formats` resolver fix: HAK index loading switched to `ErfReader.ReadMetadataOnly` so the resolver no longer buffers entire HAK byte arrays on the Large Object Heap. Eliminates the OOM-kill and hard-reboot risk when running multiple Radoub apps concurrently against large-HAK modules (CEP3 etc.).
 
 ---
 

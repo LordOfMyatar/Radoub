@@ -9,9 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.1.33-alpha] - 2026-05-25
 **Branch**: `radoub/issue-2238` | **PR**: #2239
 
-### Fix: Severe memory leak — process RSS reaches 5GB+ (#2238)
+### Fix: Severe memory bloat — Fence idle RSS dropped from 5 GB to 450 MB (#2238)
 
-- Investigate and fix runaway memory growth observed during idle / module-load (Fence killed by OOM at 4.98 GB anon-rss on an 8 GB system; concurrent Radoub apps were hard-rebooting the box)
+- HAK index loading switched to `ErfReader.ReadMetadataOnly` so the resolver no longer buffers entire HAK byte arrays on the Large Object Heap. With a CEP3 module (8.9 GB of HAKs), Fence idle RSS drops from 4977 MB → 451 MB (10.9× smaller), eliminating the OOM-kill and hard-reboot risk when running multiple Radoub apps concurrently.
 
 ---
 
