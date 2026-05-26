@@ -368,10 +368,18 @@ jobs:
       id: highlights
       shell: bash
       run: |
-        # Check for manually curated release notes first (created by /release command)
-        if [ -f "release-notes.md" ]; then
-          echo "Using curated release-notes.md"
-          cp release-notes.md highlights.md
+        TAG="${GITHUB_REF#refs/tags/}"
+
+        # Source priority for release notes:
+        #   1. Annotated tag message (canonical — /release writes notes here, no commit needed)
+        #   2. Auto-extract from per-tool CHANGELOGs (fallback only — e.g. lightweight tag)
+        # release-notes.md at repo root is deliberately not consulted (#2236). Curated
+        # notes must ride on the tag annotation; the source tree stays clean.
+        TAG_BODY=$(git tag -l --format='%(contents:body)' "$TAG")
+
+        if [ -n "$TAG_BODY" ] && [ "$(echo "$TAG_BODY" | wc -l)" -gt 1 ]; then
+          echo "Using annotated tag message as release notes"
+          printf '%s\n' "$TAG_BODY" > highlights.md
         else
           # Fallback: auto-extract from tool changelogs
           extract_changelog_section() {
