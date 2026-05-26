@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.34-alpha] - 2026-05-25
-**Branch**: `radoub/issue-2241` | **PR**: #TBD
+**Branch**: `radoub/issue-2241` | **PR**: #2265
 
 ### Fix: GFF 64-bit field types (DWORD64/INT64/DOUBLE) silently corrupt on round-trip (#2241)
 

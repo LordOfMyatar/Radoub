@@ -5,7 +5,7 @@ All notable changes to Parley. One-line highlights per version; full details in 
 ---
 
 ## [0.1.169-alpha] - 2026-05-25
-**Branch**: `radoub/issue-2241` | **PR**: #TBD
+**Branch**: `radoub/issue-2241` | **PR**: #2265
 
 ### Fix: GFF 64-bit field types (DWORD64/INT64/DOUBLE) silently corrupt on round-trip (#2241)
 
