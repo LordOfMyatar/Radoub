@@ -189,6 +189,20 @@ Each tool has its own installation instructions. See individual tool README file
 
 ---
 
+## Getting Started
+
+**Recommended first-launch path**: open your module through **Trebuchet**, then launch the per-resource tool (Parley, Relique, etc.) from there.
+
+Why: Trebuchet sets the active module context so the per-tool browsers populate with HAK / module / base-game resources automatically. Launching a per-tool first (e.g. opening Relique directly) leaves the module unset, so palette lookups fall back to defaults and the file browser only sees the current folder.
+
+1. **Launch Trebuchet** — `dotnet run --project Trebuchet/Trebuchet/Trebuchet.csproj` (or the published binary)
+2. **Open your `.mod`** via Trebuchet's module browser
+3. **Click the per-resource tool tile** (Dialog → Parley, Item → Relique, Creature → Quartermaster, Store → Fence, Journal → Manifest) — Trebuchet hands the active module + (optionally) a resource path to the tool over CLI
+
+Once a module is associated with a tool you can launch that tool directly in subsequent sessions; the most-recently-used module is remembered.
+
+---
+
 ## Development
 
 ### Building
