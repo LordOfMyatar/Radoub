@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.33-alpha] - 2026-05-25
+**Branch**: `radoub/issue-2238` | **PR**: #TBD
+
+### Fix: Severe memory leak — process RSS reaches 5GB+ (#2238)
+
+- Investigate and fix runaway memory growth observed during idle / module-load (Fence killed by OOM at 4.98 GB anon-rss on an 8 GB system; concurrent Radoub apps were hard-rebooting the box)
+
+---
+
 ## [0.1.32-alpha] - 2026-05-24
 **Branch**: `fence/issue-2200` | **PR**: #2209
 

@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.93-alpha] - 2026-05-25
+**Branch**: `radoub/issue-2238` | **PR**: #TBD
+
+### Fix: Severe memory leak — process RSS reaches 5GB+ (#2238)
+
+- Investigate and fix runaway memory growth observed during idle / module-load (Quartermaster killed by OOM at 5.09 GB anon-rss on an 8 GB system; concurrent Radoub apps were hard-rebooting the box)
+
+---
+
 ## [0.2.92-alpha] - 2026-05-24
 **Branch**: `quartermaster/issue-2201` | **PR**: #2213
 
