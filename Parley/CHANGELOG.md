@@ -5,7 +5,7 @@ All notable changes to Parley. One-line highlights per version; full details in 
 ---
 
 ## [0.1.170-alpha] - 2026-05-26
-**Branch**: `radoub/issue-2244` | **PR**: #TBD
+**Branch**: `radoub/issue-2244` | **PR**: #2266
 
 ### Fix: Radoub.Formats parser hardening — integer overflow, atomic writes, silent truncation (#2244)
 
