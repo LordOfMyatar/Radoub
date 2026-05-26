@@ -4,6 +4,15 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
+## [0.1.169-alpha] - 2026-05-25
+**Branch**: `radoub/issue-2241` | **PR**: #TBD
+
+### Fix: GFF 64-bit field types (DWORD64/INT64/DOUBLE) silently corrupt on round-trip (#2241)
+
+- Shared `Radoub.Formats` fix: DWORD64/INT64/DOUBLE were classified as simple types and read/written as 32-bit, silently zeroing values on save and producing wrong floats on load. Now treated as complex types per Aurora spec — value stored as 8 bytes in FieldData section. Affects every tool consuming GFF (UTC, UTI, UTM, BIC, IFO, JRL, DLG).
+
+---
+
 ## [0.1.168-alpha] - 2026-05-24
 **Branch**: `parley/issue-2210` | **PR**: #2214
 
