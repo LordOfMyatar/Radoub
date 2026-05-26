@@ -19,14 +19,19 @@ This avoids the need for a separate Radoub CHANGELOG - the tool changelogs track
 
 ## Release Notes Source
 
-**Primary**: `NonPublic/release-notes.md` — accumulated by `/pre-merge` during sprints.
-**Fallback**: Parse tool CHANGELOGs (old behavior, used if NonPublic file doesn't exist).
+**Draft source**: `NonPublic/release-notes.md` (gitignored) — accumulated by `/pre-merge` during sprints.
+**Synthesis**: User-facing TL;DR is generated from the draft at release time. Per-tool CHANGELOGs hold the per-PR detail.
+**Delivery**: Notes ride on the annotated tag message — `git tag -a -F <tempfile>`. The workflow extracts them via `git tag -l --format='%(contents:body)'`. **No file in repo root. No commit to main. No PR.**
 
 When `NonPublic/release-notes.md` exists:
-- Read it as the draft release notes
-- Highlights, bug fixes, and tool sections are already populated
+- Read it as the draft input
+- Compress the per-PR detail into a TL;DR (paragraph summary + bullet themes)
 - User has had time to edit/curate between sprints
-- Skip Phase 1 (highlight selection) — already done incrementally
+
+Hard rules:
+- Release notes are NEVER written to the repo root.
+- Per-PR detail belongs in CHANGELOGs, not release notes.
+- See #2236 for the rationale.
 
 ## Upfront Questions
 
@@ -81,6 +86,10 @@ Before releasing:
 
 ## Instructions
 
+> **Order hazard**: The NonPublic draft is the only persisted copy of the accumulated
+> highlights. Always synthesize → push the tag → THEN reset the draft. Resetting
+> before push means a failed push leaves nothing to retry from.
+
 1. **Verify Clean State**
    ```bash
    git status
@@ -104,7 +113,6 @@ Before releasing:
    - Read the file — it contains curated highlights, bug fixes, and tool sections
    - Fill in the Tool Versions table with NBGV-computed versions
    - Show draft to user for review (Phase 1 above)
-   - Copy final content to `release-notes.md` in repo root (read by workflow)
 
    **If `NonPublic/release-notes.md` does NOT exist** (fallback):
    - Parse tool CHANGELOGs for entries newer than last release date:
@@ -117,31 +125,57 @@ Before releasing:
    - Present numbered list for highlight selection (Phase 1 fallback)
    - Generate release notes from selection
 
-4. **Write Release Notes File**
+4. **Synthesize Final Notes (TL;DR style — high-level only)**
 
-   Write the final notes to `release-notes.md` in repo root.
-   This file is read by the workflow during release.
+   Release notes are user-facing and must be short. Per-tool CHANGELOGs hold the
+   per-PR detail; release notes are the headline pass.
 
-5. **Reset NonPublic Draft**
+   Rules:
+   - One paragraph summary at the top (the headline story).
+   - 4-6 bullet "What changed" themes in plain language.
+   - One short "User-reported fixes" list if applicable.
+   - Tool versions table.
+   - **No** per-PR walls of text. Link to CHANGELOGs for details.
 
-   After writing `release-notes.md`, reset `NonPublic/release-notes.md` with a fresh template for the next release cycle:
+   Write the synthesized notes to a tempfile:
+
+   ```bash
+   # Workflow reads release notes from the annotated tag message.
+   # NEVER write release-notes.md to the repo root (#2236).
+   TMP_NOTES=$(mktemp --suffix=.md)
+   # ...write synthesized notes to $TMP_NOTES...
+   ```
+
+5. **Confirm with User**
+   - Show the version and generated highlights
+   - Show recent commits that will be included
+   - Ask user to confirm: "Ready to release radoub-v0.8.4?"
+
+6. **Create and Push Tag** (notes embedded in tag annotation — no main commit required)
+
+   ```bash
+   # Embed the TL;DR notes as the tag's annotated message (-F reads from file).
+   # The workflow extracts the tag body via `git tag -l --format='%(contents:body)'`
+   # and uses it as the GitHub release body. No file in repo root, no PR.
+   git tag -a radoub-vX.Y.Z -F "$TMP_NOTES"
+   git push origin radoub-vX.Y.Z
+   rm "$TMP_NOTES"
+   ```
+
+   **Never** write or commit `release-notes.md` to the repo root (#2236).
+
+7. **Reset NonPublic Draft** (only after tag push succeeds)
+
+   **Order matters**: reset AFTER `git push origin <tag>` returns success. The
+   NonPublic draft is the only persisted copy of the accumulated highlights —
+   resetting before push means a failed push leaves you with nothing to retry from.
+   If the push fails, do NOT reset; debug + retry.
+
    ```markdown
    # Release Notes (Draft)
 
    Accumulated since last release: **radoub-vX.Y.Z** (YYYY-MM-DD)
    ...
-   ```
-
-6. **Confirm with User**
-   - Show the version and generated highlights
-   - Show recent commits that will be included
-   - Ask user to confirm: "Ready to release radoub-v0.8.4?"
-
-7. **Create and Push Tag**
-
-   ```bash
-   git tag -a radoub-vX.Y.Z -m "Radoub Release vX.Y.Z"
-   git push origin radoub-vX.Y.Z
    ```
 
 8. **Provide Release Link**

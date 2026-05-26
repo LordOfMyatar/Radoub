@@ -51,4 +51,7 @@ venv/
 /.claude/scheduled_tasks.lock
 NonPublic
 TestOutput
+
+# Release notes ride on the annotated tag message — not committed to the repo (#2236).
+/release-notes.md
 /Radoub.IntegrationTests/TestOutput
