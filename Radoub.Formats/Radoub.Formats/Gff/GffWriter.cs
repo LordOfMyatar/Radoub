@@ -355,6 +355,28 @@ public static class GffWriter
         // Note: Struct and List are handled directly in WriteFieldData, not here
         switch (field.Type)
         {
+            // 64-bit types: 8 bytes appended to FieldData (Aurora spec / neverwinter.nim gff.nim:147)
+            case GffField.DWORD64:
+                {
+                    var value = field.Value is ulong u ? u : 0UL;
+                    fieldData.Write(BitConverter.GetBytes(value), 0, 8);
+                }
+                break;
+
+            case GffField.INT64:
+                {
+                    var value = field.Value is long s ? s : 0L;
+                    fieldData.Write(BitConverter.GetBytes(value), 0, 8);
+                }
+                break;
+
+            case GffField.DOUBLE:
+                {
+                    var value = field.Value is double d ? d : 0.0;
+                    fieldData.Write(BitConverter.GetBytes(value), 0, 8);
+                }
+                break;
+
             case GffField.CExoString:
                 WriteCExoString(fieldData, field.Value as string ?? string.Empty);
                 break;
