@@ -4,6 +4,15 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
+## [0.1.170-alpha] - 2026-05-26
+**Branch**: `radoub/issue-2244` | **PR**: #TBD
+
+### Fix: Radoub.Formats parser hardening — integer overflow, atomic writes, silent truncation (#2244)
+
+- Shared `Radoub.Formats` hardening from full-codebase review. ERF/KEY/BIF: uint arithmetic that wrapped before bounds checks now uses long-promoted comparisons; `ErfWriter.UpdateResource` switched to `File.Replace` (atomic, original survives mid-rename failures); ERF `ResId` preserved instead of silently renumbered to sequential index. GFF: `ReadCExoString` / `CExoLocString` no longer abandon entire string tables on a single oversized entry; bare `catch {}` in `GffFile.GetFieldValue<T>` narrowed and logged. TLK: `CleanResRef` no longer strips mid-string whitespace asymmetric with the writer. Dead UTF-8 fallback removed. Affects every tool consuming GFF/ERF/KEY/BIF/TLK.
+
+---
+
 ## [0.1.169-alpha] - 2026-05-25
 **Branch**: `radoub/issue-2241` | **PR**: #2265
 
