@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.16-alpha] - 2026-05-25
+**Branch**: `relique/issue-2229` | **PR**: #2230
+
+### Sprint: Relique UI/UX Polish
+
+- Main editor UI polish: padding (16→25px right), field width caps, Name/Tag and ResRef/Cost paired side-by-side, Stack+Charges paired, Flags/Quantities moved above Descriptions, Item Properties soft height cap (#2229)
+- Available Properties tree preserves expansion state across add (#2227)
+- Property edit auto-applies on combo change — `Apply Changes` button retired (#2226)
+- Appearance: filtered Part-number dropdowns for armor (parts_*.2da, ACBONUS-sorted) and composite weapons (MDL scan, sorted ascending). Labels read `Part N — ID NNN`, with `(AC ±X)` on Torso only since only parts_chest contributes to item AC (#2164)
+- Item Statistics panel prepends `Base Armor Class: N` for armor items (sprint feedback, ties to #2164)
+- StatusBar file path now uses leading ellipsis + 500px cap so the filename stays visible when paths are long; tooltip shows full sanitized path (shared `Radoub.UI.StatusBarControl`, affects all tools)
+- Filed during sprint: #2231 (epic: Undo/Redo across all tools — bootstrap checklist updated), #2232 (mannequin idle pose), #2233 (composite weapon parts render misaligned, cross-tool with QM), #2234 (Add vs Add Checked UX rationalization), #2235 (real Cost computation engine)
+
+---
+
 ## [0.10.15-alpha] - 2026-05-25
 **Branch**: `relique/issue-2217` | **PR**: #2225
 

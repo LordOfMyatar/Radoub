@@ -30,9 +30,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private ItemStatisticsService? _itemStatisticsService;
     private PropertyTypeInfo? _selectedPropertyType;
     private int _editingPropertyIndex = -1; // -1 = add mode, >= 0 = editing that index
+    private bool _suppressAutoApply; // true while combos are being repopulated programmatically (#2226)
     private readonly HashSet<int> _checkedPropertyIndices = new();
     private readonly ObservableCollection<VariableViewModel> _variables = new();
     private ItemIconService? _itemIconService;
+    private ArmorPartCatalogService? _armorPartCatalog; // #2164
+    private CompositeWeaponPartCatalogService? _compositeWeaponCatalog; // #2164
     private PaletteColorService? _paletteColorService;
     private SpellCheckTextBox? _nameTextBox;
     private SpellCheckTextBox? _descriptionTextBox;

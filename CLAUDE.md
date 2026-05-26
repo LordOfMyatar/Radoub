@@ -361,6 +361,7 @@ userDict.AddWord("Waterdeep");
 - [ ] **Add dictionary support** if tool has text editing fields
 - [ ] **`AssemblyName` matches the tool name** in the `.csproj` (e.g. `<AssemblyName>Relique</AssemblyName>` for the Relique tool). `RootNamespace` can differ if a legacy internal name is preferred, but the built binary must ship as `ToolName.exe` / `ToolName` — Trebuchet's sibling discovery (`ToolLauncherService.RefreshPathsFromSiblingDirectory`) walks `ToolInfo.Name`, and the release workflow / cross-tool launchers all assume `Radoub/ToolName.exe`. Mismatch causes silent launch failures + a forced rename later with a settings-path migration (#2080).
 - [ ] **Override `IndexMetadataAsync` + `ReadSourceMetadataAsync`** on the file browser panel if the format has Name and/or Tag fields — see [File Browser Adoption](#file-browser-adoption-filebrowserpanelbase)
+- [ ] **Wire Undo/Redo via shared `UndoRedoManager`** — register Ctrl+Z / Ctrl+Y and route every user-initiated mutation through `IUndoableCommand` so the standard Undo/Redo menu items work from day one (#2231). Do **not** ship disabled Undo/Redo menu stubs — either wire them correctly or omit them.
 
 ### Trebuchet Integration
 
@@ -394,6 +395,7 @@ New tools must integrate with Trebuchet (the Radoub launcher):
 | **TLK Support** | Use shared ITlkService for localized strings | Radoub.UI/Services/ITlkService.cs |
 | **Spell-Check** | Use Radoub.Dictionary for game-facing text | Parley/Manifest patterns |
 | **Token Picker** | Right-click "All Tokens..." must open `Radoub.UI.Views.TokenSelectorWindow` (4 tabs: Standard / Highlight / Custom Tokens / Custom Colors). Route through `TokenInsertionHelper.OpenTokenWindow` — do NOT instantiate the older `TokenInsertionWindow` directly; it lacks the Custom Tokens tab (#2075). | Manifest.PropertyPanel, Relique post-#2075 |
+| **Undo/Redo** | Wire shared `UndoRedoManager` + Ctrl+Z / Ctrl+Y; route mutating actions through `IUndoableCommand`. No disabled "Not yet implemented" menu stubs (#2231). | (TBD — pending epic #2231 reference impl) |
 
 **Resource Browsers** (use shared implementations from Radoub.UI):
 

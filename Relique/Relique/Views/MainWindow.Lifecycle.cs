@@ -107,6 +107,8 @@ public partial class MainWindow
             _itemStatisticsService = itemStatisticsService;
             _itemIconService = itemIconService;
             _paletteColorService = paletteColorService;
+            _armorPartCatalog = new ArmorPartCatalogService(gameDataService); // #2164
+            _compositeWeaponCatalog = new CompositeWeaponPartCatalogService(gameDataService); // #2164
 
             // UI updates must happen on UI thread
             LoadPaletteCategories(paletteCategories);
