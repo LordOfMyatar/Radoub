@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.33-alpha] - 2026-05-25
-**Branch**: `radoub/issue-2238` | **PR**: #TBD
+**Branch**: `radoub/issue-2238` | **PR**: #2239
 
 ### Fix: Severe memory leak — process RSS reaches 5GB+ (#2238)
 
