@@ -819,7 +819,40 @@ public partial class MainWindow
         }
 
         var stats = _itemStatisticsService.GenerateStatistics(_currentItem.Properties);
+
+        // For armor items, prepend the base AC derived from parts_chest[Torso].ACBONUS
+        // so the Item Statistics panel shows the AC that comes from the armor itself,
+        // separate from any AC Bonus item-properties listed below (#2164 followup).
+        var baseAc = ResolveBaseArmorAc();
+        if (baseAc != null)
+        {
+            stats = string.IsNullOrEmpty(stats)
+                ? $"Base Armor Class: {baseAc}"
+                : $"Base Armor Class: {baseAc}{System.Environment.NewLine}{stats}";
+        }
+
         ItemStatisticsText.Text = stats;
         ItemStatisticsPanel.IsVisible = true;
+    }
+
+    /// <summary>
+    /// Look up the base AC from parts_chest.ACBONUS at the row indicated by
+    /// ArmorPart_Torso. Returns null if not an armor item, no game data, or AC unset.
+    /// Mirrors UpdateArmorClassDisplay's logic but returns a value instead of mutating UI.
+    /// </summary>
+    private string? ResolveBaseArmorAc()
+    {
+        if (_itemViewModel == null || _gameDataService == null || !_gameDataService.IsConfigured)
+            return null;
+
+        // Only armor (ModelType 3) has Torso parts → base AC.
+        var typeInfo = _baseItemTypes?.FirstOrDefault(t => t.BaseItemIndex == _itemViewModel.BaseItem);
+        if (typeInfo == null || !typeInfo.HasArmorParts) return null;
+
+        var torsoPart = _itemViewModel.GetArmorPart("Torso");
+        var acBonus = _gameDataService.Get2DAValue("parts_chest", torsoPart, "ACBONUS");
+
+        if (string.IsNullOrEmpty(acBonus) || acBonus == "****") return null;
+        return acBonus;
     }
 }
