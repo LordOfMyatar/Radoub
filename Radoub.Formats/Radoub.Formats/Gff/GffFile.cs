@@ -312,19 +312,21 @@ public static class GffFieldTypeExtensions
         return fieldType switch
         {
             GffField.BYTE or GffField.CHAR or GffField.WORD or GffField.SHORT or
-            GffField.DWORD or GffField.INT or GffField.DWORD64 or GffField.INT64 or
-            GffField.FLOAT or GffField.DOUBLE => true,
+            GffField.DWORD or GffField.INT or GffField.FLOAT => true,
             _ => false
         };
     }
 
     /// <summary>
     /// Returns true if the field type uses DataOrDataOffset as an offset.
+    /// DWORD64/INT64/DOUBLE are 8-byte values stored in FieldData (lower 32 bits of value
+    /// won't fit in DataOrDataOffset), per Aurora GFF spec / neverwinter.nim gff.nim:147.
     /// </summary>
     public static bool IsComplexType(this uint fieldType)
     {
         return fieldType switch
         {
+            GffField.DWORD64 or GffField.INT64 or GffField.DOUBLE or
             GffField.CExoString or GffField.CResRef or GffField.CExoLocString or
             GffField.VOID or GffField.Struct or GffField.List => true,
             _ => false

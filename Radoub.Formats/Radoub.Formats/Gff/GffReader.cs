@@ -335,10 +335,7 @@ public static class GffReader
                 GffField.SHORT => (object)(short)(field.DataOrDataOffset & 0xFFFF),
                 GffField.DWORD => (object)field.DataOrDataOffset,
                 GffField.INT => (object)(int)field.DataOrDataOffset,
-                GffField.DWORD64 => (object)(ulong)field.DataOrDataOffset,
-                GffField.INT64 => (object)(long)field.DataOrDataOffset,
                 GffField.FLOAT => (object)BitConverter.Int32BitsToSingle((int)field.DataOrDataOffset),
-                GffField.DOUBLE => (object)BitConverter.Int64BitsToDouble((long)field.DataOrDataOffset),
                 _ => (object)field.DataOrDataOffset
             };
         }
@@ -349,6 +346,10 @@ public static class GffReader
 
             return field.Type switch
             {
+                // 64-bit types: 8 bytes stored in FieldData (Aurora spec / neverwinter.nim gff.nim:147)
+                GffField.DWORD64 => ReadDword64(buffer, dataOffset),
+                GffField.INT64 => ReadInt64(buffer, dataOffset),
+                GffField.DOUBLE => ReadDouble(buffer, dataOffset),
                 GffField.CExoString => ReadCExoString(buffer, dataOffset),
                 GffField.CResRef => ReadCResRef(buffer, dataOffset),
                 GffField.CExoLocString => ReadCExoLocString(buffer, dataOffset),
@@ -507,6 +508,24 @@ public static class GffReader
         var result = BitConverter.ToUInt32(buffer, offset);
         offset += 4;
         return result;
+    }
+
+    private static ulong ReadDword64(byte[] buffer, int offset)
+    {
+        ValidateAccess(buffer, offset, 8);
+        return BitConverter.ToUInt64(buffer, offset);
+    }
+
+    private static long ReadInt64(byte[] buffer, int offset)
+    {
+        ValidateAccess(buffer, offset, 8);
+        return BitConverter.ToInt64(buffer, offset);
+    }
+
+    private static double ReadDouble(byte[] buffer, int offset)
+    {
+        ValidateAccess(buffer, offset, 8);
+        return BitConverter.ToDouble(buffer, offset);
     }
 
     private static void ValidateAccess(byte[] buffer, int offset, int length)

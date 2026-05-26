@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.94-alpha] - 2026-05-25
+**Branch**: `radoub/issue-2241` | **PR**: #2265
+
+### Fix: GFF 64-bit field types (DWORD64/INT64/DOUBLE) silently corrupt on round-trip (#2241)
+
+- Shared `Radoub.Formats` fix: DWORD64/INT64/DOUBLE were classified as simple types and read/written as 32-bit, silently zeroing values on save and producing wrong floats on load. Now treated as complex types per Aurora spec — value stored as 8 bytes in FieldData section. Affects every tool consuming GFF (UTC, UTI, UTM, BIC, IFO, JRL, DLG).
+
+---
+
 ## [0.2.93-alpha] - 2026-05-25
 **Branch**: `radoub/issue-2238` | **PR**: #2239
 
