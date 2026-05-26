@@ -34,6 +34,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private readonly HashSet<int> _checkedPropertyIndices = new();
     private readonly ObservableCollection<VariableViewModel> _variables = new();
     private ItemIconService? _itemIconService;
+    private ArmorPartCatalogService? _armorPartCatalog; // #2164
+    private CompositeWeaponPartCatalogService? _compositeWeaponCatalog; // #2164
     private PaletteColorService? _paletteColorService;
     private SpellCheckTextBox? _nameTextBox;
     private SpellCheckTextBox? _descriptionTextBox;

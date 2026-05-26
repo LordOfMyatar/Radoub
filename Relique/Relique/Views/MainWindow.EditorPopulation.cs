@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
 using ItemEditor.ViewModels;
 using Radoub.Formats.Gff;
@@ -235,9 +236,13 @@ public partial class MainWindow
         {
             // Parts 2 & 3 only for Composite (ModelType 2)
             ModelPart2Label.IsVisible = showMultipleParts;
-            ModelPart2UpDown.IsVisible = showMultipleParts;
+            ModelPart2Combo.IsVisible = showMultipleParts;
             ModelPart3Label.IsVisible = showMultipleParts;
-            ModelPart3UpDown.IsVisible = showMultipleParts;
+            ModelPart3Combo.IsVisible = showMultipleParts;
+
+            // Populate composite-weapon dropdowns from MDL scan (#2164). For Simple/Layered
+            // we still wire Part 1 as a free-text byte so the existing numeric workflow works.
+            PopulateModelPartCombos(baseItemIndex, showMultipleParts);
         }
 
         // Colors: show for Layered (1) and Armor (3)
@@ -326,23 +331,15 @@ public partial class MainWindow
             Grid.SetColumn(label, col);
             ArmorPartsGrid.Children.Add(label);
 
-            var upDown = new NumericUpDown
-            {
-                Value = _itemViewModel.GetArmorPart(partName),
-                Minimum = 0,
-                Maximum = 255,
-                FormatString = "N0",
-                Margin = new Thickness(0, 0, 0, 8)
-            };
+            // #2164: Filtered ComboBox of engine-valid parts (sourced from parts_*.2da
+            // where ACBONUS != ****). Editable so HAK / forward-compat parts can still
+            // be typed in. Display matches Aurora: "<rowIndex> (Part <displayIndex>)".
             var capturedPartName = partName;
-            upDown.ValueChanged += (_, args) =>
-            {
-                if (_isLoading || _itemViewModel == null) return;
-                _itemViewModel.SetArmorPart(capturedPartName, (byte)(args.NewValue ?? 0));
-            };
-            Grid.SetRow(upDown, row);
-            Grid.SetColumn(upDown, col + 1);
-            ArmorPartsGrid.Children.Add(upDown);
+            byte currentValue = _itemViewModel.GetArmorPart(partName);
+            var combo = BuildArmorPartComboBox(capturedPartName, currentValue);
+            Grid.SetRow(combo, row);
+            Grid.SetColumn(combo, col + 1);
+            ArmorPartsGrid.Children.Add(combo);
 
             if (i % 2 == 1) row++;
         }
@@ -350,6 +347,181 @@ public partial class MainWindow
         if (ArmorPartNames.Length % 2 == 1) row++;
 
         UpdateArmorClassDisplay();
+    }
+
+    /// <summary>
+    /// Populate the three ModelPart ComboBoxes with the current ViewModel values, and
+    /// (for composite weapons) the catalog of available <itemClass>_b/m/t_NNN.mdl parts.
+    /// Simple/Layered base types only get Part 1; ComboBox stays editable so the user
+    /// can still type a raw byte (#2164).
+    /// </summary>
+    private void PopulateModelPartCombos(int baseItemIndex, bool isComposite)
+    {
+        if (_itemViewModel == null) return;
+
+        string? itemClass = _gameDataService?.Get2DAValue("baseitems", baseItemIndex, "ItemClass");
+        if (string.IsNullOrEmpty(itemClass) || itemClass == "****") itemClass = null;
+
+        WireModelPartCombo(ModelPart1Combo, partIndex: 1, _itemViewModel.ModelPart1,
+            v => _itemViewModel.ModelPart1 = v, isComposite, itemClass);
+
+        if (isComposite)
+        {
+            WireModelPartCombo(ModelPart2Combo, partIndex: 2, _itemViewModel.ModelPart2,
+                v => _itemViewModel.ModelPart2 = v, isComposite: true, itemClass);
+            WireModelPartCombo(ModelPart3Combo, partIndex: 3, _itemViewModel.ModelPart3,
+                v => _itemViewModel.ModelPart3 = v, isComposite: true, itemClass);
+        }
+    }
+
+    /// <summary>
+    /// Wire one ModelPart ComboBox: clear + repopulate from the composite-weapon catalog
+    /// (if applicable), pre-select the current value, and re-attach the SelectionChanged /
+    /// LostFocus handlers that write through to the ViewModel.
+    /// </summary>
+    private void WireModelPartCombo(ComboBox combo, int partIndex, byte currentValue,
+        System.Action<byte> setter, bool isComposite, string? itemClass)
+    {
+        // Detach prior handlers (PopulateEditor can run multiple times per session).
+        if (combo.Tag is System.Collections.Generic.List<System.Delegate> oldHandlers)
+        {
+            // We stored (SelectionChanged, LostFocus) handlers as Delegates so we can remove them
+            // before re-wiring.
+            foreach (var h in oldHandlers)
+            {
+                if (h is System.EventHandler<SelectionChangedEventArgs> sh) combo.SelectionChanged -= sh;
+                else if (h is System.EventHandler<RoutedEventArgs> lh) combo.LostFocus -= lh;
+            }
+        }
+
+        combo.Items.Clear();
+
+        ComboBoxItem? matched = null;
+        if (isComposite && itemClass != null && _compositeWeaponCatalog != null)
+        {
+            int displayIndex = 1;
+            foreach (var partNumber in _compositeWeaponCatalog.GetAvailableParts(itemClass, partIndex))
+            {
+                var item = new ComboBoxItem
+                {
+                    // Match armor-part label scheme: "Part N — ID NNN". Composite weapons
+                    // have no AC bonus, so we omit that field. (#2164 manual-feedback revision)
+                    Content = $"Part {displayIndex} — ID {partNumber}",
+                    Tag = partNumber,
+                };
+                combo.Items.Add(item);
+                if (partNumber == currentValue) matched = item;
+                displayIndex++;
+            }
+        }
+
+        if (matched != null)
+        {
+            combo.SelectedItem = matched;
+        }
+        else
+        {
+            combo.Text = currentValue == 0 ? "0" :
+                (isComposite ? $"{currentValue} (unverified)" : currentValue.ToString());
+        }
+
+        var selectionHandler = new System.EventHandler<SelectionChangedEventArgs>((_, _) =>
+        {
+            if (_isLoading || _itemViewModel == null) return;
+            if (combo.SelectedItem is ComboBoxItem item && item.Tag is int rowIdx)
+            {
+                setter((byte)System.Math.Clamp(rowIdx, 0, 255));
+            }
+        });
+        var lostFocusHandler = new System.EventHandler<RoutedEventArgs>((_, _) =>
+        {
+            if (_isLoading || _itemViewModel == null) return;
+            if (combo.SelectedItem is ComboBoxItem) return;
+            if (byte.TryParse((combo.Text ?? string.Empty).Trim(), out var parsed))
+            {
+                setter(parsed);
+            }
+        });
+
+        combo.SelectionChanged += selectionHandler;
+        combo.LostFocus += lostFocusHandler;
+        combo.Tag = new System.Collections.Generic.List<System.Delegate>
+        {
+            selectionHandler, lostFocusHandler,
+        };
+    }
+
+    /// <summary>
+    /// Build an editable ComboBox for an armor part slot, populated from parts_*.2da
+    /// via ArmorPartCatalogService (#2164). Items are tagged with the stored byte so
+    /// SelectionChanged can write it back to the ViewModel; the .Text fallback handles
+    /// HAK / forward-compat custom entries the user types in.
+    /// </summary>
+    private ComboBox BuildArmorPartComboBox(string partName, byte currentValue)
+    {
+        var combo = new ComboBox
+        {
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+            Margin = new Thickness(0, 0, 0, 8),
+            // Editable: lets advanced users type a custom byte (HAK / unverified parts).
+            // The catalog only knows about base-game parts_*.2da rows.
+            IsEditable = true,
+        };
+
+        ComboBoxItem? matched = null;
+        // Only the Torso (parts_chest) row's ACBONUS affects item AC, per the engine.
+        // Showing (AC ±X) on other slots misleads — keep it on Torso only.
+        bool showAc = partName == "Torso";
+        if (_armorPartCatalog != null)
+        {
+            foreach (var entry in _armorPartCatalog.GetAvailableParts(partName))
+            {
+                var item = new ComboBoxItem
+                {
+                    Content = entry.ToDisplayString(includeAcBonus: showAc),
+                    Tag = entry.RowIndex,
+                };
+                combo.Items.Add(item);
+                if (entry.RowIndex == currentValue) matched = item;
+            }
+        }
+
+        if (matched != null)
+        {
+            combo.SelectedItem = matched;
+        }
+        else
+        {
+            // Current value not in the catalog (custom / HAK / out-of-range). Show the raw
+            // byte with an (unverified) hint so the user knows it didn't come from the 2DA.
+            combo.Text = currentValue == 0 ? "0" : $"{currentValue} (unverified)";
+        }
+
+        combo.SelectionChanged += (_, _) =>
+        {
+            if (_isLoading || _itemViewModel == null) return;
+            if (combo.SelectedItem is ComboBoxItem item && item.Tag is int rowIdx)
+            {
+                _itemViewModel.SetArmorPart(partName, (byte)System.Math.Clamp(rowIdx, 0, 255));
+                UpdateArmorClassDisplay();
+            }
+        };
+
+        // Free-text path: user types a raw byte (HAK / forward-compat). After the labelled
+        // format change, the dropdown text is no longer parseable as a leading byte, so
+        // we only honor a bare numeric entry like "42".
+        combo.LostFocus += (_, _) =>
+        {
+            if (_isLoading || _itemViewModel == null) return;
+            if (combo.SelectedItem is ComboBoxItem) return; // selection handler already wrote it
+            if (byte.TryParse((combo.Text ?? string.Empty).Trim(), out var parsed))
+            {
+                _itemViewModel.SetArmorPart(partName, parsed);
+                UpdateArmorClassDisplay();
+            }
+        };
+
+        return combo;
     }
 
     // --- Icon Preview + Picker ---
