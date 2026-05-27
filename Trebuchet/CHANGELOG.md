@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.36.3-alpha] - 2026-05-26
-**Branch**: `trebuchet/issue-2245` | **PR**: #TBD
+**Branch**: `trebuchet/issue-2245` | **PR**: #2274
 
 ### Fix: ERF import path traversal — unsanitized ResRef in Path.Combine (#2245)
 
