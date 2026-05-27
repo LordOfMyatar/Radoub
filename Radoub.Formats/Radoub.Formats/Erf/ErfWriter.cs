@@ -12,6 +12,14 @@ public static class ErfWriter
     private const int KeyEntrySize = 24;
     private const int ResourceEntrySize = 8;
 
+    private static readonly Encoding NwnEncoding;
+
+    static ErfWriter()
+    {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        NwnEncoding = Encoding.GetEncoding(1252);
+    }
+
     /// <summary>
     /// Write an ERF file to disk.
     /// </summary>
@@ -139,7 +147,9 @@ public static class ErfWriter
         using var ms = new MemoryStream();
         foreach (var str in strings)
         {
-            var textBytes = Encoding.UTF8.GetBytes(str.Text);
+            // NWN1 native encoding is Windows-1252 (#2242, matches
+            // neverwinter.nim erf.nim:227-228 → util.nim getNwnEncoding default).
+            var textBytes = NwnEncoding.GetBytes(str.Text);
             ms.Write(BitConverter.GetBytes(str.LanguageId), 0, 4);
             ms.Write(BitConverter.GetBytes((uint)textBytes.Length), 0, 4);
             ms.Write(textBytes, 0, textBytes.Length);

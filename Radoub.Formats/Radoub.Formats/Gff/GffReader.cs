@@ -11,6 +11,14 @@ public static class GffReader
 {
     private const int HeaderSize = 56; // 14 uint32_t fields
 
+    private static readonly Encoding NwnEncoding;
+
+    static GffReader()
+    {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        NwnEncoding = Encoding.GetEncoding(1252);
+    }
+
     /// <summary>
     /// Read a GFF file from a file path.
     /// </summary>
@@ -376,21 +384,10 @@ public static class GffReader
 
         ValidateAccess(buffer, offset, (int)length);
 
-        // Try UTF-8 first, fall back to Windows-1252 if invalid
-        try
-        {
-            var result = Encoding.UTF8.GetString(buffer, offset, (int)length);
-            if (!result.Contains('\uFFFD'))
-                return result.TrimEnd('\0');
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogParser(LogLevel.DEBUG, $"UTF-8 decode failed, falling back to Windows-1252: {ex.Message}");
-        }
-
-        // Fall back to Windows-1252
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-        return Encoding.GetEncoding(1252).GetString(buffer, offset, (int)length).TrimEnd('\0');
+        // NWN1 native encoding is Windows-1252 (#2242, matches neverwinter.nim
+        // gff.nim:461 \u2192 util.nim getNwnEncoding default). CP-1252 is a total
+        // encoding (every byte \u2192 a character), so no fallback is needed.
+        return NwnEncoding.GetString(buffer, offset, (int)length).TrimEnd('\0');
     }
 
     private static string ReadCResRef(byte[] buffer, int offset)
@@ -444,22 +441,9 @@ public static class GffReader
                 continue;
             }
 
-            // Try UTF-8 first, fall back to Windows-1252
-            string text;
-            try
-            {
-                text = Encoding.UTF8.GetString(buffer, offset, (int)stringLength);
-                if (text.Contains('\uFFFD'))
-                {
-                    Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-                    text = Encoding.GetEncoding(1252).GetString(buffer, offset, (int)stringLength);
-                }
-            }
-            catch
-            {
-                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-                text = Encoding.GetEncoding(1252).GetString(buffer, offset, (int)stringLength);
-            }
+            // NWN1 native encoding is Windows-1252 (#2242, matches
+            // neverwinter.nim gff.nim:452 \u2192 util.nim getNwnEncoding default).
+            var text = NwnEncoding.GetString(buffer, offset, (int)stringLength);
 
             locString.LocalizedStrings[languageId] = text.TrimEnd('\0');
             offset += (int)stringLength;

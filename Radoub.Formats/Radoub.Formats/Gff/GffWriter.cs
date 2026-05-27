@@ -10,6 +10,14 @@ public static class GffWriter
 {
     private const int HeaderSize = 56;
 
+    private static readonly Encoding NwnEncoding;
+
+    static GffWriter()
+    {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        NwnEncoding = Encoding.GetEncoding(1252);
+    }
+
     /// <summary>
     /// Write a GFF file to a file path.
     /// </summary>
@@ -407,7 +415,9 @@ public static class GffWriter
 
     private static void WriteCExoString(MemoryStream stream, string value)
     {
-        var bytes = Encoding.UTF8.GetBytes(value);
+        // NWN1 native encoding is Windows-1252 (#2242, matches neverwinter.nim
+        // gff.nim:623 → util.nim getNwnEncoding default).
+        var bytes = NwnEncoding.GetBytes(value);
         var lengthBytes = BitConverter.GetBytes((uint)bytes.Length);
         stream.Write(lengthBytes, 0, 4);
         stream.Write(bytes, 0, bytes.Length);
@@ -433,7 +443,7 @@ public static class GffWriter
         var substringsSize = 0;
         foreach (var kvp in locString.LocalizedStrings)
         {
-            substringsSize += 8 + Encoding.UTF8.GetByteCount(kvp.Value); // langId + length + string
+            substringsSize += 8 + NwnEncoding.GetByteCount(kvp.Value); // langId + length + string (CP-1252, #2242)
         }
         // Add size for empty padding entries (8 bytes each: langId + length=0)
         substringsSize += (int)paddingCount * 8;
@@ -455,7 +465,7 @@ public static class GffWriter
             var langIdBytes = BitConverter.GetBytes(kvp.Key);
             stream.Write(langIdBytes, 0, 4);
 
-            var stringBytes = Encoding.UTF8.GetBytes(kvp.Value);
+            var stringBytes = NwnEncoding.GetBytes(kvp.Value); // CP-1252 (#2242)
             var stringLengthBytes = BitConverter.GetBytes((uint)stringBytes.Length);
             stream.Write(stringLengthBytes, 0, 4);
             stream.Write(stringBytes, 0, stringBytes.Length);

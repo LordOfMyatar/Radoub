@@ -8,6 +8,14 @@ namespace Radoub.Formats.Erf;
 /// </summary>
 public static class ErfReader
 {
+    private static readonly Encoding NwnEncoding;
+
+    static ErfReader()
+    {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        NwnEncoding = Encoding.GetEncoding(1252);
+    }
+
     private const int HeaderSize = 160;
     private const int KeyEntrySize = 24;
     private const int ResourceEntrySize = 8;
@@ -252,7 +260,9 @@ public static class ErfReader
                     return;
                 }
 
-                text = Encoding.UTF8.GetString(buffer, currentOffset, (int)stringSize).TrimEnd('\0');
+                // NWN1 native encoding is Windows-1252 (#2242, matches
+                // neverwinter.nim erf.nim:80 → util.nim getNwnEncoding default).
+                text = NwnEncoding.GetString(buffer, currentOffset, (int)stringSize).TrimEnd('\0');
                 currentOffset += (int)stringSize;
             }
 
