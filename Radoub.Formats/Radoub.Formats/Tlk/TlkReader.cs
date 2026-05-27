@@ -132,8 +132,10 @@ public static class TlkReader
     }
 
     /// <summary>
-    /// Clean a ResRef by removing null bytes and invalid legacy characters.
-    /// Per neverwinter.nim: strips 0xC0 artifacts from old editors.
+    /// Clean a ResRef by reading up to the first null terminator.
+    /// Strips legacy 0xC0 artifacts (per neverwinter.nim) but preserves
+    /// internal whitespace — symmetric with TlkWriter which only null-pads.
+    /// Stripping whitespace was asymmetric and corrupted on round-trip (#2244).
     /// </summary>
     private static string CleanResRef(byte[] bytes)
     {
@@ -146,10 +148,6 @@ public static class TlkReader
 
             // Skip invalid legacy editor artifacts (0xC0)
             if (b == 0xC0)
-                continue;
-
-            // Skip whitespace
-            if (char.IsWhiteSpace((char)b))
                 continue;
 
             sb.Append((char)b);
