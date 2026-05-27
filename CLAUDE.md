@@ -819,10 +819,11 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 
 ## CHANGELOG Management
 
-**Per-tool CHANGELOGs only** — no repository-level CHANGELOG. Git history is the detailed archive.
+**Per-tool CHANGELOGs for tool-specific work, plus a root `/CHANGELOG.md` for shared-library and cross-cutting work.** Git history is the detailed archive.
 
 | Location | Contents |
 |----------|----------|
+| `/CHANGELOG.md` (repo root) | `Radoub.Formats`, `Radoub.UI`, `Radoub.Dictionary`, and cross-cutting work that does not belong to a single tool |
 | `Parley/CHANGELOG.md` | Parley highlights |
 | `Manifest/CHANGELOG.md` | Manifest highlights |
 | `Quartermaster/CHANGELOG.md` | Quartermaster highlights |
@@ -830,13 +831,19 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 | `Relique/CHANGELOG.md` | Relique highlights |
 | `Trebuchet/CHANGELOG.md` | Trebuchet highlights |
 
+**Routing rules**:
+- Pure shared-library change (no immediate tool-facing behavior) → root `/CHANGELOG.md` only
+- Shared-library change with tool-visible impact → root `/CHANGELOG.md` is the canonical entry; tool CHANGELOGs may add a one-liner that links the root entry (no duplication of details)
+- Tool-specific work → tool CHANGELOG only
+- Cross-tool sprint touching multiple tools → each affected tool gets its own one-liner; root `/CHANGELOG.md` only if a shared-library change is also part of the sprint
+
 **Rules**:
 - Highlights only — major features, breaking changes, notable fixes
 - Git history is the detailed archive
-- Cross-tool sprints: each affected tool gets its own one-liner entry
-- No cross-references between CHANGELOGs
+- No cross-references between tool CHANGELOGs (shared-lib changes go in root)
 - Never use `[Unreleased]` — all entries go in versioned sections
 - One entry per feature, not implementation checklists
+- Root `/CHANGELOG.md` versions per shared library (e.g. `[Radoub.Formats 0.2.60-alpha]`) since the shared libraries version independently of tools
 
 ---
 
