@@ -111,20 +111,12 @@ public static class TlkReader
             var absoluteStringOffset = stringDataOffset + stringOffset;
             if (absoluteStringOffset + stringLength <= buffer.Length)
             {
-                // Use Windows-1252 encoding for NWN text (common for legacy BioWare files)
-                // Fall back to UTF-8 if invalid
-                try
-                {
-                    var encoding = Encoding.GetEncoding(1252);
-                    entry.Text = encoding.GetString(buffer, (int)absoluteStringOffset, (int)stringLength);
-                }
-                catch
-                {
-                    entry.Text = Encoding.UTF8.GetString(buffer, (int)absoluteStringOffset, (int)stringLength);
-                }
-
-                // Trim any trailing nulls
-                entry.Text = entry.Text.TrimEnd('\0');
+                // CP-1252 is a total encoding (every byte → a character).
+                // GetString cannot throw here, so the prior try/catch + UTF-8
+                // fallback was dead code — removed (#2244).
+                entry.Text = Encoding.GetEncoding(1252)
+                    .GetString(buffer, (int)absoluteStringOffset, (int)stringLength)
+                    .TrimEnd('\0');
             }
         }
 
