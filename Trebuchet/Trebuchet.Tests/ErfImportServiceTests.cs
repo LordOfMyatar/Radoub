@@ -200,4 +200,112 @@ public class ErfImportServiceTests : IDisposable
     }
 
     #endregion
+
+    #region Path Traversal (#2245)
+
+    // Security: a crafted ERF/HAK with traversal sequences in ResRef
+    // (e.g. "../../tmp/pwned") must not be allowed to write outside targetDirectory.
+    // ErfReader reads ResRef as raw ASCII without filtering "/", "\", or "..".
+    // Path.Combine alone does NOT reject absolute or traversal segments.
+
+    [Theory]
+    [InlineData("../pwned")]
+    [InlineData("..\\pwned")]
+    [InlineData("../../pwned")]
+    [InlineData("..\\..\\pwned")]
+    [InlineData("foo/bar")]
+    [InlineData("foo\\bar")]
+    public void DetectConflicts_MaliciousResRef_DoesNotEscape(string maliciousResRef)
+    {
+        var entries = new List<ErfResourceEntry>
+        {
+            new() { ResRef = maliciousResRef, ResourceType = ResourceTypes.Uti, ResId = 0, Offset = 0, Size = 4 }
+        };
+
+        // Plant a decoy file at the would-be-escaped location so a naive
+        // Path.Combine would report a conflict. Validated impl must NOT.
+        var escapedPath = Path.GetFullPath(Path.Combine(_targetDir, maliciousResRef + ".uti"));
+        Directory.CreateDirectory(Path.GetDirectoryName(escapedPath)!);
+        File.WriteAllBytes(escapedPath, new byte[] { 0xAA });
+
+        var conflicts = _service.DetectConflicts(entries, _targetDir);
+
+        Assert.Empty(conflicts);
+    }
+
+    [Theory]
+    [InlineData("../pwned")]
+    [InlineData("..\\pwned")]
+    [InlineData("../../../../tmp/pwned")]
+    [InlineData("foo/bar")]
+    public async Task ImportResources_MaliciousResRef_DoesNotWriteOutsideTarget(string maliciousResRef)
+    {
+        var sourceErf = ErfReader.ReadMetadataOnly(_erfPath);
+        var realEntry = sourceErf.Resources[0];
+
+        // Inject malicious ResRef while keeping valid Offset/Size so
+        // ExtractResource reads real bytes (worst-case scenario).
+        var entries = new List<ErfResourceEntry>
+        {
+            new()
+            {
+                ResRef = maliciousResRef,
+                ResourceType = realEntry.ResourceType,
+                ResId = realEntry.ResId,
+                Offset = realEntry.Offset,
+                Size = realEntry.Size
+            }
+        };
+
+        var escapedPath = Path.GetFullPath(Path.Combine(_targetDir, maliciousResRef + ResourceTypes.GetExtension(realEntry.ResourceType)));
+        var escapedExistedBefore = File.Exists(escapedPath);
+        var escapedSizeBefore = escapedExistedBefore ? new FileInfo(escapedPath).Length : -1L;
+
+        var result = await _service.ImportResourcesAsync(_erfPath, entries, _targetDir, overwriteExisting: true, cancellationToken: TestContext.Current.CancellationToken);
+
+        // Either skipped via validation or errored — must NOT count as imported.
+        Assert.Equal(0, result.ImportedCount);
+        Assert.Equal(0, result.OverwrittenCount);
+
+        // No file written outside targetDirectory.
+        if (escapedExistedBefore)
+        {
+            Assert.Equal(escapedSizeBefore, new FileInfo(escapedPath).Length);
+        }
+        else
+        {
+            Assert.False(File.Exists(escapedPath), $"File leaked outside target: {escapedPath}");
+        }
+    }
+
+    [Theory]
+    [InlineData("valid_name")]
+    [InlineData("test_item")]
+    [InlineData("a")]
+    [InlineData("abcdefghij012345")] // 16 chars — Aurora ResRef max
+    [InlineData("name_with-dash")]
+    public async Task ImportResources_LegitimateResRef_StillWorks(string legitResRef)
+    {
+        var sourceErf = ErfReader.ReadMetadataOnly(_erfPath);
+        var realEntry = sourceErf.Resources[0];
+
+        var entries = new List<ErfResourceEntry>
+        {
+            new()
+            {
+                ResRef = legitResRef,
+                ResourceType = realEntry.ResourceType,
+                ResId = realEntry.ResId,
+                Offset = realEntry.Offset,
+                Size = realEntry.Size
+            }
+        };
+
+        var result = await _service.ImportResourcesAsync(_erfPath, entries, _targetDir, overwriteExisting: false, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, result.ImportedCount);
+        Assert.True(File.Exists(Path.Combine(_targetDir, legitResRef + ResourceTypes.GetExtension(realEntry.ResourceType))));
+    }
+
+    #endregion
 }
