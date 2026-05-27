@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.36.3-alpha] - 2026-05-26
+**Branch**: `trebuchet/issue-2245` | **PR**: #TBD
+
+### Fix: ERF import path traversal — unsanitized ResRef in Path.Combine (#2245)
+
+---
+
 ## [1.36.2-alpha] - 2026-05-26
 **Branch**: `radoub/issue-2244` | **PR**: #2266
 
