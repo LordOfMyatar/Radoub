@@ -138,21 +138,29 @@ public class ToolRecentFilesService
     }
 
     private string? GetSettingsPath(string toolName)
+        => GetSettingsPathFor(_radoubSettingsDir, toolName);
+
+    /// <summary>
+    /// Pure helper: map a tool name to its settings file path under the given Radoub directory.
+    /// Returns null for unknown tools. Exposed internally so the mapping can be unit-tested
+    /// without singleton/UserProfile entanglement.
+    /// </summary>
+    internal static string? GetSettingsPathFor(string radoubSettingsDir, string toolName)
     {
-        // Map tool names to their settings file paths
         var settingsFileName = toolName switch
         {
             "Parley" => "ParleySettings.json",
             "Quartermaster" => "QuartermasterSettings.json",
             "Manifest" => "ManifestSettings.json",
             "Fence" => "FenceSettings.json",
+            "Relique" => "ReliqueSettings.json",
             _ => null
         };
 
         if (settingsFileName == null)
             return null;
 
-        return Path.Combine(_radoubSettingsDir, toolName, settingsFileName);
+        return Path.Combine(radoubSettingsDir, toolName, settingsFileName);
     }
 }
 
