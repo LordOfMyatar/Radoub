@@ -104,33 +104,10 @@ public static class ErfReader
 
     private static void ReadLocalizedStringsFromBuffer(byte[] buffer, ErfFile erf, uint count)
     {
-        var currentOffset = 0;
-
-        for (uint i = 0; i < count; i++)
-        {
-            if (currentOffset + 8 > buffer.Length)
-                throw new InvalidDataException($"Localized string entry {i} header extends beyond buffer boundary (offset {currentOffset}, buffer size {buffer.Length})");
-
-            var languageId = BitConverter.ToUInt32(buffer, currentOffset);
-            var stringSize = BitConverter.ToUInt32(buffer, currentOffset + 4);
-            currentOffset += 8;
-
-            var text = string.Empty;
-            if (stringSize > 0)
-            {
-                if (currentOffset + (int)stringSize > buffer.Length)
-                    throw new InvalidDataException($"Localized string entry {i} data extends beyond buffer boundary (offset {currentOffset}, size {stringSize}, buffer size {buffer.Length})");
-
-                text = Encoding.UTF8.GetString(buffer, currentOffset, (int)stringSize).TrimEnd('\0');
-                currentOffset += (int)stringSize;
-            }
-
-            erf.LocalizedStrings.Add(new ErfLocalizedString
-            {
-                LanguageId = languageId,
-                Text = text
-            });
-        }
+        // ReadMetadataOnly path — buffer is a tight slice sized exactly to
+        // the localized-string block, so use the strict reader (throws on
+        // truncation) starting at offset 0 with the whole buffer as the limit.
+        ReadLocalizedStringsCore(buffer, erf, count, startOffset: 0, endOffset: buffer.Length, strict: true);
     }
 
     private static void ReadResourcesFromBuffers(byte[] keyListBuffer, byte[] resourceListBuffer, ErfFile erf, uint count)
@@ -223,7 +200,9 @@ public static class ErfReader
 
     private static void ReadLocalizedStrings(byte[] buffer, ErfFile erf, uint count, uint offset, uint totalSize)
     {
-        // Validate offsets before casting to avoid integer overflow
+        // Full-buffer Read() path — defensive: clamp endOffset to declared
+        // block size and use the lenient reader (silently breaks on truncation)
+        // to preserve historical tolerance for sloppy third-party ERFs.
         if (offset > int.MaxValue)
             throw new InvalidDataException($"Localized string offset {offset} exceeds maximum supported value");
 
@@ -231,21 +210,48 @@ public static class ErfReader
         if (endOffsetLong > buffer.Length)
             throw new InvalidDataException($"Localized strings extend beyond file boundary");
 
-        var currentOffset = (int)offset;
         var endOffset = (int)Math.Min(endOffsetLong, int.MaxValue);
+        ReadLocalizedStringsCore(buffer, erf, count, startOffset: (int)offset, endOffset: endOffset, strict: false);
+    }
+
+    /// <summary>
+    /// Shared implementation for both ReadLocalizedStringsFromBuffer (strict)
+    /// and ReadLocalizedStrings (lenient) — extracted to remove near-duplicate
+    /// drift (#2244).
+    /// </summary>
+    private static void ReadLocalizedStringsCore(
+        byte[] buffer, ErfFile erf, uint count, int startOffset, int endOffset, bool strict)
+    {
+        var currentOffset = startOffset;
 
         for (uint i = 0; i < count; i++)
         {
             if (currentOffset + 8 > buffer.Length || currentOffset >= endOffset)
+            {
+                if (strict)
+                    throw new InvalidDataException(
+                        $"Localized string entry {i} header extends beyond buffer boundary (offset {currentOffset}, buffer size {buffer.Length})");
                 break;
+            }
 
             var languageId = BitConverter.ToUInt32(buffer, currentOffset);
             var stringSize = BitConverter.ToUInt32(buffer, currentOffset + 4);
             currentOffset += 8;
 
             var text = string.Empty;
-            if (stringSize > 0 && stringSize <= int.MaxValue && currentOffset + (int)stringSize <= buffer.Length)
+            if (stringSize > 0)
             {
+                bool inBounds = stringSize <= int.MaxValue && currentOffset + (long)stringSize <= buffer.Length;
+                if (!inBounds)
+                {
+                    if (strict)
+                        throw new InvalidDataException(
+                            $"Localized string entry {i} data extends beyond buffer boundary (offset {currentOffset}, size {stringSize}, buffer size {buffer.Length})");
+                    // Lenient: append empty entry and stop (we don't know real size)
+                    erf.LocalizedStrings.Add(new ErfLocalizedString { LanguageId = languageId, Text = string.Empty });
+                    return;
+                }
+
                 text = Encoding.UTF8.GetString(buffer, currentOffset, (int)stringSize).TrimEnd('\0');
                 currentOffset += (int)stringSize;
             }
@@ -318,7 +324,8 @@ public static class ErfReader
     /// </summary>
     public static byte[] ExtractResource(byte[] erfBuffer, ErfResourceEntry entry)
     {
-        if (entry.Offset + entry.Size > erfBuffer.Length)
+        // Promote to long to detect uint overflow before bounds check (#2244).
+        if ((long)entry.Offset + entry.Size > erfBuffer.Length)
             throw new InvalidDataException($"Resource '{entry.ResRef}' extends beyond file boundary");
 
         var data = new byte[entry.Size];

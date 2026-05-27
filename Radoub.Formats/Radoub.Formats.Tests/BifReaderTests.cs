@@ -56,7 +56,7 @@ public class BifReaderTests
         Assert.Equal(200u, res.Offset);
         Assert.Equal(4u, res.PartCount);
         Assert.Equal(128u, res.PartSize);
-        Assert.Equal(512u, res.TotalSize); // 4 * 128
+        Assert.Equal(512UL, res.TotalSize); // 4 * 128
         Assert.Equal(3u, res.ResourceType);
     }
 

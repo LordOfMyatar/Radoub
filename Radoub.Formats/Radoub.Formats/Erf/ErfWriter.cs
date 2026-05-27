@@ -95,7 +95,11 @@ public static class ErfWriter
             Array.Copy(nameBytes, 0, resRefBytes, 0, copyLen);
             // Remaining bytes are already 0 (null) from byte[] initialization
             Array.Copy(resRefBytes, 0, keyList, keyOffset, 16);
-            BitConverter.GetBytes((uint)i).CopyTo(keyList, keyOffset + 16); // ResId = index
+            // Preserve original ResId; fall back to index only if unset (#2244).
+            // Third-party ERFs with non-sequential ResIds were silently
+            // renumbered to 0..N-1 before this fix.
+            var resId = entry.ResId != 0 ? entry.ResId : (uint)i;
+            BitConverter.GetBytes(resId).CopyTo(keyList, keyOffset + 16);
             BitConverter.GetBytes(entry.ResourceType).CopyTo(keyList, keyOffset + 20);
             // Bytes 22-23: Unused (zeroed)
 
@@ -207,13 +211,14 @@ public static class ErfWriter
         {
             Write(erf, tempPath, resourceData);
 
-            // Replace original with temp
-            File.Delete(erfPath);
-            File.Move(tempPath, erfPath);
+            // Atomic replace — original stays in place until the rename
+            // completes. A failure between Delete and Move (AV lock,
+            // permission, disk full) previously left no ERF on disk (#2244).
+            File.Move(tempPath, erfPath, overwrite: true);
         }
         finally
         {
-            // Clean up temp file if it still exists
+            // Clean up temp file if it still exists (e.g. Write threw)
             if (File.Exists(tempPath))
                 File.Delete(tempPath);
         }

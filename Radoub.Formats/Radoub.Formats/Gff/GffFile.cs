@@ -143,9 +143,13 @@ public class GffStruct
                 return (T)(object)Convert.ToUInt64(sourceValue);
             }
         }
-        catch
+        // Narrow catch (#2244): only swallow numeric-conversion failures.
+        // Bare catch{} previously masked NREs, IConvertible bugs, etc.
+        catch (Exception ex) when (ex is OverflowException || ex is InvalidCastException || ex is FormatException)
         {
-            // Conversion failed, return default
+            Radoub.Formats.Logging.UnifiedLogger.LogParser(
+                Radoub.Formats.Logging.LogLevel.WARN,
+                $"GFF GetFieldValue<{targetType.Name}>('{label}') conversion failed: {ex.GetType().Name}: {ex.Message}");
         }
 
         return defaultValue;

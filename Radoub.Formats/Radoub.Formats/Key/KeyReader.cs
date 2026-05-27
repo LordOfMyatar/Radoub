@@ -69,12 +69,18 @@ public static class KeyReader
 
     private static void ReadBifEntries(byte[] buffer, KeyFile key, uint count, uint offset)
     {
-        // Calculate filename table offset (after BIF entries)
-        var filenameTableOffset = offset + (count * BifEntrySize);
+        // Validate base offset before loop (matches ErfReader.ReadResources, #2244)
+        if (offset > int.MaxValue)
+            throw new InvalidDataException($"BIF table offset {offset} exceeds maximum supported value");
 
         for (uint i = 0; i < count; i++)
         {
-            var entryOffset = (int)(offset + (i * BifEntrySize));
+            // Use long arithmetic to detect overflow before casting to int
+            long entryOffsetLong = (long)offset + ((long)i * BifEntrySize);
+            if (entryOffsetLong > int.MaxValue)
+                throw new InvalidDataException($"BIF entry {i} offset {entryOffsetLong} exceeds maximum supported value");
+
+            var entryOffset = (int)entryOffsetLong;
 
             if (entryOffset + BifEntrySize > buffer.Length)
                 throw new InvalidDataException($"BIF entry {i} extends beyond file boundary");
@@ -87,14 +93,13 @@ public static class KeyReader
                 Drives = BitConverter.ToUInt16(buffer, entryOffset + 10)
             };
 
-            // Read filename from filename table
-            // FilenameOffset is relative to start of file
-            var nameOffset = (int)entry.FilenameOffset;
-            var nameLength = entry.FilenameLength;
-
-            if (nameOffset + nameLength <= buffer.Length)
+            // Read filename from filename table.
+            // FilenameOffset is relative to start of file; promote to long
+            // before bounds check so a near-uint-max value can't wrap.
+            long nameEndLong = (long)entry.FilenameOffset + entry.FilenameLength;
+            if (entry.FilenameOffset <= int.MaxValue && nameEndLong <= buffer.Length)
             {
-                entry.Filename = Encoding.ASCII.GetString(buffer, nameOffset, nameLength).TrimEnd('\0');
+                entry.Filename = Encoding.ASCII.GetString(buffer, (int)entry.FilenameOffset, entry.FilenameLength).TrimEnd('\0');
                 // Normalize path separators
                 entry.Filename = entry.Filename.Replace('\\', Path.DirectorySeparatorChar);
             }
@@ -105,9 +110,18 @@ public static class KeyReader
 
     private static void ReadKeyEntries(byte[] buffer, KeyFile key, uint count, uint offset)
     {
+        // Validate base offset before loop (matches ErfReader.ReadResources, #2244)
+        if (offset > int.MaxValue)
+            throw new InvalidDataException($"Key table offset {offset} exceeds maximum supported value");
+
         for (uint i = 0; i < count; i++)
         {
-            var entryOffset = (int)(offset + (i * KeyEntrySize));
+            // Use long arithmetic to detect overflow before casting to int
+            long entryOffsetLong = (long)offset + ((long)i * KeyEntrySize);
+            if (entryOffsetLong > int.MaxValue)
+                throw new InvalidDataException($"Key entry {i} offset {entryOffsetLong} exceeds maximum supported value");
+
+            var entryOffset = (int)entryOffsetLong;
 
             if (entryOffset + KeyEntrySize > buffer.Length)
                 throw new InvalidDataException($"Key entry {i} extends beyond file boundary");
