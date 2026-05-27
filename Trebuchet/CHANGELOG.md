@@ -11,6 +11,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fix: ERF import path traversal — unsanitized ResRef in Path.Combine (#2245)
 
+- Crafted ERF/HAK with traversal sequences in ResRef could write outside the import target; now validated against Aurora ResRef regex with a Path.GetFullPath containment fallback.
+
 ---
 
 ## [1.36.2-alpha] - 2026-05-26
