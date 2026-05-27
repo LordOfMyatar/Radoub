@@ -749,18 +749,30 @@ public partial class MainWindowViewModel : ObservableObject
             ToolName = "Trebuchet",
             Subtitle = "Radoub Launcher for Neverwinter Nights",
             Version = VersionHelper.GetVersion(),
-            AdditionalInfo = "Radoub Toolset includes:\n" +
-                "Parley - Dialog Editor\n" +
-                "Manifest - Journal Editor\n" +
-                "Quartermaster - Creature/Item Editor\n" +
-                "Fence - Merchant Editor\n\n" +
-                "Third-Party Components:\n" +
-                "nwn_script_comp - NWScript Compiler (MIT License)\n" +
-                "by Bernhard Stöckner (niv)",
+            AdditionalInfo = BuildAdditionalInfo(_toolLauncher.Tools),
             ThirdPartyUrl = "https://github.com/niv/neverwinter.nim",
             ThirdPartyLinkText = "github.com/niv/neverwinter.nim"
         });
         aboutWindow.Show(_parentWindow);  // Non-modal about window
+    }
+
+    /// <summary>
+    /// Build the About dialog body from the registered tool list so new tools
+    /// auto-appear without code edits. Internal for testability (#2247).
+    /// </summary>
+    internal static string BuildAdditionalInfo(IEnumerable<ToolInfo> tools)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("Radoub Toolset includes:");
+        foreach (var tool in tools)
+        {
+            sb.AppendLine($"{tool.Name} - {tool.Description}");
+        }
+        sb.AppendLine();
+        sb.AppendLine("Third-Party Components:");
+        sb.AppendLine("nwn_script_comp - NWScript Compiler (MIT License)");
+        sb.Append("by Bernhard Stöckner (niv)");
+        return sb.ToString();
     }
 
     [RelayCommand]
