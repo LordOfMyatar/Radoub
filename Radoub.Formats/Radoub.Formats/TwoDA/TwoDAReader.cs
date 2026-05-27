@@ -12,13 +12,21 @@ public static class TwoDAReader
     private const string EmptyCell = "****";
     private const int MaxColumns = 1024;
 
+    private static readonly Encoding NwnEncoding;
+
+    static TwoDAReader()
+    {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        NwnEncoding = Encoding.GetEncoding(1252);
+    }
+
     /// <summary>
     /// Read a 2DA file from a file path.
     /// </summary>
     public static TwoDAFile Read(string filePath)
     {
-        var text = File.ReadAllText(filePath, Encoding.UTF8);
-        return Parse(text);
+        var buffer = File.ReadAllBytes(filePath);
+        return Read(buffer);
     }
 
     /// <summary>
@@ -26,17 +34,27 @@ public static class TwoDAReader
     /// </summary>
     public static TwoDAFile Read(Stream stream)
     {
-        using var reader = new StreamReader(stream, Encoding.UTF8);
-        var text = reader.ReadToEnd();
-        return Parse(text);
+        using var ms = new MemoryStream();
+        stream.CopyTo(ms);
+        return Read(ms.ToArray());
     }
 
     /// <summary>
-    /// Read a 2DA file from a byte buffer.
+    /// Read a 2DA file from a byte buffer. NWN1 2DAs are Windows-1252 (#2242,
+    /// matches neverwinter.nim twoda.nim:118). A UTF-8 BOM (EF BB BF) opts the
+    /// reader into UTF-8 to keep hand-edited / tool-exported UTF-8 2DAs working.
     /// </summary>
     public static TwoDAFile Read(byte[] buffer)
     {
-        var text = Encoding.UTF8.GetString(buffer);
+        string text;
+        if (buffer.Length >= 3 && buffer[0] == 0xEF && buffer[1] == 0xBB && buffer[2] == 0xBF)
+        {
+            text = Encoding.UTF8.GetString(buffer, 3, buffer.Length - 3);
+        }
+        else
+        {
+            text = NwnEncoding.GetString(buffer);
+        }
         return Parse(text);
     }
 
