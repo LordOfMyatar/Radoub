@@ -148,6 +148,7 @@ public class BifFixedResource
 
     /// <summary>
     /// Total size of the resource (PartCount * PartSize).
+    /// Returned as ulong because uint * uint silently wraps at 2^32 (#2244).
     /// </summary>
-    public uint TotalSize => PartCount * PartSize;
+    public ulong TotalSize => (ulong)PartCount * PartSize;
 }
