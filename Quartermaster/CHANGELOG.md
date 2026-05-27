@@ -5,6 +5,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.96-alpha] - 2026-05-26
+**Branch**: `quartermaster/issue-2249` | **PR**: #TBD
+
+### Fix: Down-Level corrupts .bic files + CreatureCopy strips BIC-only fields (#2249)
+
+---
+
 ## [0.2.95-alpha] - 2026-05-26
 **Branch**: `radoub/issue-2244` | **PR**: #2266
 
