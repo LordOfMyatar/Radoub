@@ -207,13 +207,14 @@ public static class ErfWriter
         {
             Write(erf, tempPath, resourceData);
 
-            // Replace original with temp
-            File.Delete(erfPath);
-            File.Move(tempPath, erfPath);
+            // Atomic replace — original stays in place until the rename
+            // completes. A failure between Delete and Move (AV lock,
+            // permission, disk full) previously left no ERF on disk (#2244).
+            File.Move(tempPath, erfPath, overwrite: true);
         }
         finally
         {
-            // Clean up temp file if it still exists
+            // Clean up temp file if it still exists (e.g. Write threw)
             if (File.Exists(tempPath))
                 File.Delete(tempPath);
         }
