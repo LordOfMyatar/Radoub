@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.36.4-alpha] - 2026-05-27
-**Branch**: `trebuchet/issue-2247` | **PR**: #TBD
+**Branch**: `trebuchet/issue-2247` | **PR**: #2279
 
 ### Fix: Relique integration gaps in Trebuchet (#2247)
 
