@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.36.5-alpha] - 2026-05-27
-**Branch**: `trebuchet/issue-2246` | **PR**: #TBD
+**Branch**: `trebuchet/issue-2246` | **PR**: #2281
 
 ### Fix: Module pack + faction reindex — atomic write + backup (#2246)
 
