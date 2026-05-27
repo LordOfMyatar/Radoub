@@ -8,6 +8,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Quartermaster.Services;
 using Quartermaster.Views.Dialogs;
+using Radoub.Formats.Bic;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
 using DialogHelper = Quartermaster.Views.Helpers.DialogHelper;
@@ -307,23 +308,24 @@ public partial class MainWindow
 
         try
         {
-            // Create a deep copy (serialize and deserialize)
-            var copy = CreateCreatureCopy(_currentCreature);
+            // Deep clone preserving runtime type — a BicFile source stays a
+            // BicFile so player-only fields (Age, Gold, Experience, QBList,
+            // ReputationList, LvlStatList) survive the copy.
+            var copy = CreatureCloning.Clone(_currentCreature);
+
+            // If saving to .bic but the source was a UTC, promote to BIC so
+            // CreatureCloning.Save can dispatch correctly. Player-only fields
+            // get default values from FromUtcFile.
+            if (savePath.EndsWith(".bic", StringComparison.OrdinalIgnoreCase) && copy is not BicFile)
+            {
+                copy = BicFile.FromUtcFile(copy);
+            }
 
             // Strip the copy to level 1
             StripCreatureToLevelOne(copy);
 
-            // Save the copy
-            if (savePath.EndsWith(".bic", StringComparison.OrdinalIgnoreCase))
-            {
-                // BIC files wrap the UTC data in an additional layer
-                // For simplicity, just save as UTC for now
-                Radoub.Formats.Utc.UtcWriter.Write(copy, savePath);
-            }
-            else
-            {
-                Radoub.Formats.Utc.UtcWriter.Write(copy, savePath);
-            }
+            // Dispatches to BicWriter for .bic, UtcWriter otherwise.
+            CreatureCloning.Save(copy, savePath);
 
             UpdateStatus($"Saved level 1 copy to {System.IO.Path.GetFileName(savePath)}");
         }
@@ -331,13 +333,6 @@ public partial class MainWindow
         {
             ShowErrorDialog("Save Failed", $"Failed to save level 1 copy: {ex.Message}");
         }
-    }
-
-    private UtcFile CreateCreatureCopy(UtcFile original)
-    {
-        // Create a copy by serializing and deserializing
-        var buffer = Radoub.Formats.Utc.UtcWriter.Write(original);
-        return Radoub.Formats.Utc.UtcReader.Read(buffer);
     }
 
     private void StripCreatureToLevelOne(UtcFile creature)
@@ -376,6 +371,20 @@ public partial class MainWindow
         // Reset all skills to 0
         for (int i = 0; i < creature.SkillList.Count; i++)
             creature.SkillList[i] = 0;
+
+        // BIC-only: reset XP to level-1 minimum (0) and truncate LvlStatList to
+        // match the new class structure. Gold, Age, QBList, ReputationList,
+        // FirstName/LastName, and Portrait are preserved as user data.
+        if (creature is BicFile bic)
+        {
+            bic.Experience = 0u;
+            if (bic.LvlStatList.Count > 1)
+            {
+                var firstLevel = bic.LvlStatList[0];
+                bic.LvlStatList.Clear();
+                bic.LvlStatList.Add(firstLevel);
+            }
+        }
     }
 
     private void ShowErrorDialog(string title, string message)

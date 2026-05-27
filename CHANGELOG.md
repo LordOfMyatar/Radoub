@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.Formats 0.2.61-alpha] - 2026-05-27
+**Branch**: `quartermaster/issue-2249` | **PR**: #2275
+
+### Feat: Add CreatureCloning helper for runtime-type-preserving deep clone + extension-dispatched save (#2249)
+
+- New `Radoub.Formats.Utc.CreatureCloning` with `Clone` (preserves `BicFile` runtime type so player-only fields survive a round-trip) and `Save` (dispatches BIC/UTC based on file extension, throws on `.bic` paired with non-BIC). Used by Quartermaster's Down-Level flow to stop silent BIC→UTC corruption. 14 new tests.
+
+---
+
 ## [Radoub.Formats 0.2.60-alpha] - 2026-05-26
 **Branch**: `radoub/issue-2242` | **PR**: #2272
 
