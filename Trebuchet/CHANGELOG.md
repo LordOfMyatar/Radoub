@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.36.5-alpha] - 2026-05-27
+**Branch**: `trebuchet/issue-2246` | **PR**: #TBD
+
+### Fix: Module pack + faction reindex — atomic write + backup (#2246)
+
+- `PackDirectoryToMod`, `RecompileSelectedScripts`, and faction reindex (`ReindexGitFiles` / `ReindexUtcFiles`) now snapshot to `~/Radoub/Backups/` and write via temp-file + `File.Replace` so a crash or locked-file mid-pack can no longer destroy the user's only `.mod` or leave faction references inconsistent across UTC/GIT files.
+
+---
+
 ## [1.36.4-alpha] - 2026-05-27
 **Branch**: `trebuchet/issue-2247` | **PR**: #2279
 
