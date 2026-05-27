@@ -70,9 +70,19 @@ public static class SsfReader
             UnifiedLogger.LogParser(LogLevel.DEBUG, $"Read SSF with {ssf.Entries.Count} entries");
             return ssf;
         }
-        catch (Exception ex)
+        catch (EndOfStreamException ex)
         {
-            UnifiedLogger.LogParser(LogLevel.ERROR, $"Failed to parse SSF: {ex.Message}");
+            UnifiedLogger.LogParser(LogLevel.ERROR, $"SSF truncated or invalid offset: {ex.Message}");
+            return null;
+        }
+        catch (InvalidDataException ex)
+        {
+            UnifiedLogger.LogParser(LogLevel.ERROR, $"SSF invalid data: {ex.Message}");
+            return null;
+        }
+        catch (ArgumentException ex)
+        {
+            UnifiedLogger.LogParser(LogLevel.ERROR, $"SSF invalid argument while parsing: {ex.Message}");
             return null;
         }
     }
