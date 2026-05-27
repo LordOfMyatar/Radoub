@@ -368,7 +368,10 @@ public static class GffReader
         var length = ReadUInt32(buffer, ref offset);
 
         if (length == 0) return string.Empty;
-        if (length > 65535)
+        // Cap raised from 64KiB to int.MaxValue (#2244). The 64KiB ceiling
+        // rejected legitimately long descriptions; ValidateAccess below
+        // still rejects anything that exceeds the buffer.
+        if (length > int.MaxValue)
             throw new InvalidDataException($"CExoString length too large: {length}");
 
         ValidateAccess(buffer, offset, (int)length);
@@ -423,32 +426,43 @@ public static class GffReader
             var languageId = ReadUInt32(buffer, ref offset);
             var stringLength = ReadUInt32(buffer, ref offset);
 
-            if (stringLength > 0 && stringLength < 65535 && offset + stringLength <= buffer.Length)
+            if (stringLength == 0)
             {
-                // Try UTF-8 first, fall back to Windows-1252
-                string text;
-                try
-                {
-                    text = Encoding.UTF8.GetString(buffer, offset, (int)stringLength);
-                    if (text.Contains('\uFFFD'))
-                    {
-                        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-                        text = Encoding.GetEncoding(1252).GetString(buffer, offset, (int)stringLength);
-                    }
-                }
-                catch
+                // Empty substring \u2014 record empty and continue
+                locString.LocalizedStrings[languageId] = string.Empty;
+                continue;
+            }
+
+            // Bounds check on the actual buffer (no arbitrary 64KiB cap, #2244).
+            // If the claim exceeds the buffer or int.MaxValue, log + skip this
+            // substring without advancing offset (we don't know its real size)
+            // and continue parsing the rest of the localized-string table.
+            if (stringLength > int.MaxValue || offset + (long)stringLength > buffer.Length)
+            {
+                UnifiedLogger.LogParser(LogLevel.WARN,
+                    $"CExoLocString substring {i} (lang {languageId}) claims {stringLength} bytes \u2014 exceeds buffer; skipping entry");
+                continue;
+            }
+
+            // Try UTF-8 first, fall back to Windows-1252
+            string text;
+            try
+            {
+                text = Encoding.UTF8.GetString(buffer, offset, (int)stringLength);
+                if (text.Contains('\uFFFD'))
                 {
                     Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
                     text = Encoding.GetEncoding(1252).GetString(buffer, offset, (int)stringLength);
                 }
-
-                locString.LocalizedStrings[languageId] = text.TrimEnd('\0');
-                offset += (int)stringLength;
             }
-            else if (stringLength >= 65535)
+            catch
             {
-                break;
+                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+                text = Encoding.GetEncoding(1252).GetString(buffer, offset, (int)stringLength);
             }
+
+            locString.LocalizedStrings[languageId] = text.TrimEnd('\0');
+            offset += (int)stringLength;
         }
 
         return locString;
