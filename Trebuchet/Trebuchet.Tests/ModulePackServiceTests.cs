@@ -103,6 +103,46 @@ public class ModulePackServiceTests : IDisposable
     }
 
     [Fact]
+    public void PackDirectoryToMod_InjectedReaderThrows_LeavesPreviousModIntact()
+    {
+        // Deterministic equivalent of the locked-source-file scenario without
+        // relying on OS file-lock semantics (Windows shares reads liberally).
+        WriteScript("good01", "void main() {}");
+        WriteScript("good02", "void main() {}");
+        WriteScript("bad01", "void main() {}");
+        var marker = MakeMarkerModBytes();
+        File.WriteAllBytes(_modPath, marker);
+
+        var failingReader = new ThrowOnNameReader(failOnFileNameContaining: "bad01");
+
+        var ex = Record.Exception(() =>
+            ModulePackService.PackDirectoryToMod(_workingDir, _modPath, _backupRoot, failingReader));
+
+        Assert.NotNull(ex);
+        Assert.IsType<IOException>(ex);
+        // Prior .mod untouched
+        Assert.Equal(marker, File.ReadAllBytes(_modPath));
+        // No .tmp leftover
+        var tempFiles = Directory.GetFiles(Path.GetDirectoryName(_modPath)!, "*.tmp");
+        Assert.Empty(tempFiles);
+    }
+
+    private sealed class ThrowOnNameReader : IFileBytesReader
+    {
+        private readonly string _failOnFileNameContaining;
+        public ThrowOnNameReader(string failOnFileNameContaining)
+        {
+            _failOnFileNameContaining = failOnFileNameContaining;
+        }
+        public byte[] ReadAllBytes(string path)
+        {
+            if (Path.GetFileName(path).Contains(_failOnFileNameContaining, StringComparison.OrdinalIgnoreCase))
+                throw new IOException($"Simulated read failure for {Path.GetFileName(path)}");
+            return File.ReadAllBytes(path);
+        }
+    }
+
+    [Fact]
     public void PackDirectoryToMod_RoundTrip_ProducesValidErf()
     {
         WriteScript("nw_s0_test", "void main() {}");

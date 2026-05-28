@@ -9,6 +9,22 @@ using Radoub.UI.Services.Search;
 namespace RadoubLauncher.Services;
 
 /// <summary>
+/// Reads a file's bytes. Production uses File.ReadAllBytes; tests inject a
+/// fake to deterministically force read failures without OS-level file
+/// locking gymnastics (Windows shares reads liberally, so simulating an
+/// unreadable file via FileShare.None is unreliable across editors / AVs).
+/// </summary>
+public interface IFileBytesReader
+{
+    byte[] ReadAllBytes(string path);
+}
+
+internal sealed class SystemFileBytesReader : IFileBytesReader
+{
+    public byte[] ReadAllBytes(string path) => File.ReadAllBytes(path);
+}
+
+/// <summary>
 /// Packs a working directory back into a .mod (or .erf) archive with safe-write
 /// guarantees:
 ///   1. Pre-read every source file into memory before any write begins — a
@@ -28,12 +44,17 @@ public static class ModulePackService
     /// <param name="backupRoot">
     /// Optional override for backup root (tests). Default is ~/Radoub/Backups/.
     /// </param>
+    /// <param name="fileReader">
+    /// Optional injection seam for the pre-read pass. Null = real filesystem.
+    /// Tests inject a fake to force deterministic read failures.
+    /// </param>
     /// <returns>Resource count written.</returns>
-    public static int PackDirectoryToMod(string workingDir, string modFilePath, string? backupRoot = null)
+    public static int PackDirectoryToMod(string workingDir, string modFilePath, string? backupRoot = null, IFileBytesReader? fileReader = null)
     {
         if (string.IsNullOrEmpty(workingDir)) throw new ArgumentException("workingDir required", nameof(workingDir));
         if (string.IsNullOrEmpty(modFilePath)) throw new ArgumentException("modFilePath required", nameof(modFilePath));
 
+        var reader = fileReader ?? new SystemFileBytesReader();
         var files = Directory.GetFiles(workingDir);
         var resourceData = new Dictionary<(string ResRef, ushort Type), byte[]>();
         var resources = new List<ErfResourceEntry>();
@@ -48,7 +69,7 @@ public static class ModulePackService
                 continue;
 
             var resRef = Path.GetFileNameWithoutExtension(filePath);
-            var data = File.ReadAllBytes(filePath);
+            var data = reader.ReadAllBytes(filePath);
             var key = (resRef.ToLowerInvariant(), resourceType);
 
             resourceData[key] = data;
