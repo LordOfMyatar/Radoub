@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.10.20-alpha] - 2026-05-28
-**Branch**: `relique/issue-2257-2261` | **PR**: #TBD
+**Branch**: `relique/issue-2257-2261` | **PR**: #2283
 
 ### Sprint: Critical lock + HAK cache fixes (#2257, #2261)
 
