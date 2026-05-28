@@ -76,9 +76,13 @@ public static class ModulePackService
             {
                 var moduleName = Path.GetFileNameWithoutExtension(modFilePath);
                 var backupService = new BackupService(backupRoot);
-                // BackupService is async-only; block here because the pack
-                // pipeline is already running on a Task.Run worker.
-                backupService.BackupArchiveAsync(modFilePath, moduleName).GetAwaiter().GetResult();
+                // Wrap in Task.Run so this works whether the caller is on a
+                // worker thread (Build flow) or the UI thread (future direct
+                // callers / tests). BackupService awaits without
+                // ConfigureAwait(false), so a bare .GetAwaiter().GetResult()
+                // would deadlock on the captured sync context.
+                System.Threading.Tasks.Task.Run(() =>
+                    backupService.BackupArchiveAsync(modFilePath, moduleName)).GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {

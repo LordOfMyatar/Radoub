@@ -127,6 +127,70 @@ public class AreaScanServiceReindexBackupTests : IDisposable
     }
 
     [Fact]
+    public void ReindexFactions_OnSingleThreadedSyncContext_DoesNotDeadlock()
+    {
+        // Regression for the hardlock when deleting a faction: BackupService
+        // awaits without ConfigureAwait(false), so a naive sync-over-async
+        // bridge deadlocks if the caller holds a captured sync context (the
+        // Avalonia UI thread is exactly that shape).
+        CreateGitFile("area001", new uint[] { 5 });
+
+        var previous = SynchronizationContext.Current;
+        var ctx = new SingleThreadSyncContext();
+        SynchronizationContext.SetSynchronizationContext(ctx);
+
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var task = Task.Run(() =>
+                AreaScanService.ReindexFactions(_workingDir, deletedIndex: 5, parentFactionId: 3, backupRoot: _backupRoot));
+
+            // Pump the sync context until the work completes, with a hard
+            // timeout. A deadlock would leave task.IsCompleted false forever.
+            while (!task.IsCompleted)
+            {
+                if (cts.IsCancellationRequested)
+                    throw new TimeoutException("ReindexFactions deadlocked under a single-threaded sync context");
+                ctx.RunPending();
+                Thread.Sleep(10);
+            }
+
+            Assert.Equal(1, task.Result.FilesModified);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previous);
+        }
+    }
+
+    private sealed class SingleThreadSyncContext : SynchronizationContext
+    {
+        private readonly Queue<(SendOrPostCallback cb, object? state)> _queue = new();
+        private readonly object _gate = new();
+
+        public override void Post(SendOrPostCallback d, object? state)
+        {
+            lock (_gate) _queue.Enqueue((d, state));
+        }
+
+        public override void Send(SendOrPostCallback d, object? state) => d(state);
+
+        public void RunPending()
+        {
+            while (true)
+            {
+                (SendOrPostCallback cb, object? state) item;
+                lock (_gate)
+                {
+                    if (_queue.Count == 0) return;
+                    item = _queue.Dequeue();
+                }
+                item.cb(item.state);
+            }
+        }
+    }
+
+    [Fact]
     public void ReindexFactions_NoBackupRoot_StillWritesAtomically()
     {
         var area1 = CreateGitFile("area001", new uint[] { 5 });

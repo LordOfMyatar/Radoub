@@ -325,10 +325,15 @@ public static class AreaScanService
     /// </summary>
     private static void SafeWriteGff(GffFile gff, string filePath, BackupService backupService, string moduleName)
     {
-        // Snapshot the prior file before we touch it.
+        // Snapshot the prior file before we touch it. Wrap in Task.Run because
+        // BackupService.BackupArchiveAsync awaits without ConfigureAwait(false)
+        // and ReindexFactions is called on the UI thread from
+        // FactionEditorViewModel — a direct .GetAwaiter().GetResult() deadlocks
+        // when the continuation tries to resume on the captured sync context.
         try
         {
-            backupService.BackupArchiveAsync(filePath, moduleName).GetAwaiter().GetResult();
+            System.Threading.Tasks.Task.Run(() =>
+                backupService.BackupArchiveAsync(filePath, moduleName)).GetAwaiter().GetResult();
         }
         catch (Exception ex)
         {
