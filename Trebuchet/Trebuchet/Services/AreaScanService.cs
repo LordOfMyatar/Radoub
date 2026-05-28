@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services.Search;
 
 namespace RadoubLauncher.Services;
 
@@ -142,13 +143,21 @@ public static class AreaScanService
     /// <param name="workingDirectory">Module working directory containing .git/.utc files</param>
     /// <param name="deletedIndex">Index of the faction being deleted</param>
     /// <param name="parentFactionId">FactionParentID of the deleted faction (for reassignment)</param>
+    /// <param name="backupRoot">
+    /// Optional override for backup root (tests). Default is ~/Radoub/Backups/.
+    /// Backups snapshot every modified .git/.utc file before mutation (#2246).
+    /// </param>
     /// <returns>Summary of changes made</returns>
-    public static ReindexResult ReindexFactions(string? workingDirectory, uint deletedIndex, uint parentFactionId)
+    public static ReindexResult ReindexFactions(string? workingDirectory, uint deletedIndex, uint parentFactionId, string? backupRoot = null)
     {
         var result = new ReindexResult();
 
         if (string.IsNullOrEmpty(workingDirectory))
             return result;
+
+        var backupService = new BackupService(backupRoot);
+        var moduleName = Path.GetFileName(workingDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        if (string.IsNullOrEmpty(moduleName)) moduleName = "module";
 
         // Determine the effective reassignment target.
         // If parent is also above deleted index, it needs decrementing too.
@@ -169,10 +178,10 @@ public static class AreaScanService
         }
 
         // Reindex .git files (area creature/encounter instances)
-        ReindexGitFiles(workingDirectory, deletedIndex, reassignTarget, result);
+        ReindexGitFiles(workingDirectory, deletedIndex, reassignTarget, result, backupService, moduleName);
 
         // Reindex .utc files (creature blueprints)
-        ReindexUtcFiles(workingDirectory, deletedIndex, reassignTarget, result);
+        ReindexUtcFiles(workingDirectory, deletedIndex, reassignTarget, result, backupService, moduleName);
 
         UnifiedLogger.LogApplication(LogLevel.INFO,
             $"Faction reindex complete: {result.FilesScanned} files scanned, {result.FilesModified} modified, " +
@@ -183,7 +192,7 @@ public static class AreaScanService
     }
 
     private static void ReindexGitFiles(string workingDirectory, uint deletedIndex,
-        uint reassignTarget, ReindexResult result)
+        uint reassignTarget, ReindexResult result, BackupService backupService, string moduleName)
     {
         var gitFiles = FindGitFiles(workingDirectory);
         result.FilesScanned += gitFiles.Length;
@@ -247,7 +256,7 @@ public static class AreaScanService
 
                 if (fileModified)
                 {
-                    GffWriter.Write(gff, filePath);
+                    SafeWriteGff(gff, filePath, backupService, moduleName);
                     result.FilesModified++;
                     UnifiedLogger.LogApplication(LogLevel.INFO,
                         $"Reindexed factions in {Path.GetFileName(filePath)}");
@@ -263,7 +272,7 @@ public static class AreaScanService
     }
 
     private static void ReindexUtcFiles(string workingDirectory, uint deletedIndex,
-        uint reassignTarget, ReindexResult result)
+        uint reassignTarget, ReindexResult result, BackupService backupService, string moduleName)
     {
         var utcFiles = FindUtcFiles(workingDirectory);
         result.FilesScanned += utcFiles.Length;
@@ -293,7 +302,7 @@ public static class AreaScanService
 
                 if (modified)
                 {
-                    GffWriter.Write(gff, filePath);
+                    SafeWriteGff(gff, filePath, backupService, moduleName);
                     result.FilesModified++;
                     UnifiedLogger.LogApplication(LogLevel.INFO,
                         $"Reindexed faction in blueprint {Path.GetFileName(filePath)}");
@@ -304,6 +313,42 @@ public static class AreaScanService
                 UnifiedLogger.LogApplication(LogLevel.ERROR,
                     $"Failed to reindex faction in {Path.GetFileName(filePath)}: {ex.Message}");
                 result.Errors.Add($"{Path.GetFileName(filePath)}: {ex.Message}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Snapshot the existing file via BackupService, then write the modified GFF
+    /// to a temp sibling and atomically rename. A crash between Phase 1 (backup)
+    /// and Phase 3 (replace) leaves the original on disk; recovery is from the
+    /// snapshot. Issue #2246.
+    /// </summary>
+    private static void SafeWriteGff(GffFile gff, string filePath, BackupService backupService, string moduleName)
+    {
+        // Snapshot the prior file before we touch it.
+        try
+        {
+            backupService.BackupArchiveAsync(filePath, moduleName).GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            // Log loudly but do not abort — the atomic write below still
+            // protects against mid-write corruption.
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"Pre-reindex backup failed for {Path.GetFileName(filePath)}: {ex.Message}");
+        }
+
+        var tempPath = filePath + ".tmp";
+        try
+        {
+            GffWriter.Write(gff, tempPath);
+            File.Move(tempPath, filePath, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+            {
+                try { File.Delete(tempPath); } catch { /* swallow cleanup failure */ }
             }
         }
     }

@@ -111,7 +111,7 @@ public partial class MainWindowViewModel
 
             // Pack the module
             BuildStatusText = "Packing module...";
-            var resourceCount = await Task.Run(() => PackDirectoryToMod(workingDir, modFilePath));
+            var resourceCount = await Task.Run(() => ModulePackService.PackDirectoryToMod(workingDir, modFilePath));
 
             UnifiedLogger.LogApplication(LogLevel.INFO,
                 $"Built {resourceCount} resources to {UnifiedLogger.SanitizePath(modFilePath)}");
@@ -366,7 +366,7 @@ public partial class MainWindowViewModel
 
                 if (!string.IsNullOrEmpty(workingDir) && !string.IsNullOrEmpty(modFilePath))
                 {
-                    var resourceCount = await Task.Run(() => PackDirectoryToMod(workingDir, modFilePath));
+                    var resourceCount = await Task.Run(() => ModulePackService.PackDirectoryToMod(workingDir, modFilePath));
                     BuildStatusText = $"Built {resourceCount} files to {Path.GetFileName(modFilePath)}";
                     StaleScriptCount = 0;
                     IsModuleDirty = false;
@@ -456,55 +456,4 @@ public partial class MainWindowViewModel
         StaleScriptCount = staleScripts.Count;
     }
 
-    /// <summary>
-    /// Pack a working directory into a .mod file.
-    /// </summary>
-    private static int PackDirectoryToMod(string workingDir, string modFilePath)
-    {
-        // Collect all files from working directory
-        var files = Directory.GetFiles(workingDir);
-        var resourceData = new Dictionary<(string ResRef, ushort Type), byte[]>();
-        var resources = new List<ErfResourceEntry>();
-
-        foreach (var filePath in files)
-        {
-            var fileName = Path.GetFileName(filePath);
-            var extension = Path.GetExtension(filePath);
-            var resRef = Path.GetFileNameWithoutExtension(filePath);
-
-            // Get resource type from extension
-            var resourceType = ResourceTypes.FromExtension(extension);
-            if (resourceType == ResourceTypes.Invalid)
-            {
-                // Skip unknown file types
-                continue;
-            }
-
-            var data = File.ReadAllBytes(filePath);
-            var key = (resRef.ToLowerInvariant(), resourceType);
-
-            resourceData[key] = data;
-            resources.Add(new ErfResourceEntry
-            {
-                ResRef = resRef,
-                ResourceType = resourceType,
-                ResId = (uint)resources.Count
-            });
-        }
-
-        // Create ERF structure
-        var erf = new ErfFile
-        {
-            FileType = "MOD ",
-            FileVersion = "V1.0",
-            BuildYear = (uint)(DateTime.Now.Year - 1900),
-            BuildDay = (uint)DateTime.Now.DayOfYear
-        };
-        erf.Resources.AddRange(resources);
-
-        // Write to .mod file
-        ErfWriter.Write(erf, modFilePath, resourceData);
-
-        return resources.Count;
-    }
 }
