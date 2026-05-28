@@ -15,11 +15,17 @@ public class FactionEditorReindexTests : IDisposable
     private readonly string _testDirectory;
     private readonly FactionEditorViewModel _viewModel;
 
+    private readonly string _backupRoot;
+
     public FactionEditorReindexTests()
     {
         _testDirectory = Path.Combine(Path.GetTempPath(), $"FactionReindexTest_{Guid.NewGuid():N}");
         Directory.CreateDirectory(_testDirectory);
-        _viewModel = new FactionEditorViewModel();
+        _backupRoot = Path.Combine(_testDirectory, "_Backups");
+        _viewModel = new FactionEditorViewModel
+        {
+            BackupRootOverride = _backupRoot
+        };
     }
 
     public void Dispose()

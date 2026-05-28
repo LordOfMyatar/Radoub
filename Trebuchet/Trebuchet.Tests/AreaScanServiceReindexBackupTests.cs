@@ -191,14 +191,15 @@ public class AreaScanServiceReindexBackupTests : IDisposable
     }
 
     [Fact]
-    public void ReindexFactions_NoBackupRoot_StillWritesAtomically()
+    public void ReindexFactions_LeavesNoTempFiles()
     {
+        // Atomicity check: even with backup wired, the .tmp sibling created by
+        // SafeWriteGff must be cleaned up after a successful File.Move.
         var area1 = CreateGitFile("area001", new uint[] { 5 });
 
-        var result = AreaScanService.ReindexFactions(_workingDir, deletedIndex: 5, parentFactionId: 3);
+        var result = AreaScanService.ReindexFactions(_workingDir, deletedIndex: 5, parentFactionId: 3, backupRoot: _backupRoot);
 
         Assert.Equal(1, result.FilesModified);
-        // No .tmp leftover after success
         var tempFiles = Directory.GetFiles(_workingDir, "*.tmp");
         Assert.Empty(tempFiles);
     }

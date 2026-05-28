@@ -136,6 +136,13 @@ public partial class FactionEditorViewModel : ObservableObject
     private string? _workingDirectoryPath;
     private bool _isReadOnly;
 
+    /// <summary>
+    /// Test seam: override the BackupService root used by faction reindex so
+    /// unit tests don't write to the real ~/Radoub/Backups/ profile directory.
+    /// Null in production (production uses BackupService default).
+    /// </summary>
+    internal string? BackupRootOverride { get; set; }
+
     public ObservableCollection<FactionViewModel> Factions { get; } = new();
 
     [ObservableProperty]
@@ -533,7 +540,7 @@ public partial class FactionEditorViewModel : ObservableObject
         try
         {
             var result = Services.AreaScanService.ReindexFactions(
-                _workingDirectoryPath, deletedIndex, parentFactionId);
+                _workingDirectoryPath, deletedIndex, parentFactionId, BackupRootOverride);
 
             if (result.HasErrors)
             {
