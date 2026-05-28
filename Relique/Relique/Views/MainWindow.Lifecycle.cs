@@ -381,6 +381,14 @@ public partial class MainWindow
         {
             var isDeletingCurrent = string.Equals(_currentFilePath, entry.FilePath, StringComparison.OrdinalIgnoreCase);
 
+            // Release the file session lock before deleting — the lock sidecar lives
+            // next to the file and would otherwise survive the delete, blocking other
+            // tools from editing a recreated file with the same path (#2257).
+            if (isDeletingCurrent && !string.IsNullOrEmpty(_currentFilePath))
+            {
+                Radoub.UI.Services.FileSessionLockService.ReleaseLock(_currentFilePath);
+            }
+
             File.Delete(entry.FilePath);
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Deleted item file: {fileName}");
 
