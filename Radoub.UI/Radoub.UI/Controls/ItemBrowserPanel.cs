@@ -8,6 +8,7 @@ using Avalonia.Controls;
 using Radoub.Formats.Common;
 using Radoub.Formats.Erf;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Resolver;
 using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
 using Radoub.UI.Services;
@@ -562,34 +563,26 @@ public class ItemBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
         {
             _hakItems.Clear();
 
-            var hakPaths = new List<string>();
-
-            if (!string.IsNullOrEmpty(ModulePath) && Directory.Exists(ModulePath))
+            // Restrict to module-referenced HAKs only — match StoreBrowserPanel / CreatureBrowserPanel (#2261)
+            if (string.IsNullOrEmpty(ModulePath) || !Directory.Exists(ModulePath))
             {
-                hakPaths.AddRange(GetHakFilesFromPath(ModulePath));
-            }
-
-            var userPath = RadoubSettings.Instance.NeverwinterNightsPath;
-            if (!string.IsNullOrEmpty(userPath) && Directory.Exists(userPath))
-            {
-                var hakFolder = Path.Combine(userPath, "hak");
-                if (Directory.Exists(hakFolder))
-                {
-                    hakPaths.AddRange(GetHakFilesFromPath(hakFolder));
-                }
-            }
-
-            hakPaths = hakPaths.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-
-            if (hakPaths.Count == 0)
-            {
-                UnifiedLogger.LogApplication(LogLevel.INFO, "ItemBrowserPanel: No HAK files found to scan");
+                UnifiedLogger.LogApplication(LogLevel.INFO, "ItemBrowserPanel: No module path for HAK scanning");
                 _hakItemsLoaded = true;
                 return;
             }
 
-            ShowLoading($"Scanning {hakPaths.Count} HAK files...");
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"ItemBrowserPanel: Scanning {hakPaths.Count} HAK files");
+            var hakSearchPaths = RadoubSettings.Instance.GetAllHakSearchPaths().ToList();
+            var hakPaths = ModuleHakResolver.ResolveModuleHakPaths(ModulePath, hakSearchPaths);
+
+            if (hakPaths.Count == 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO, "ItemBrowserPanel: No module-referenced HAK files found");
+                _hakItemsLoaded = true;
+                return;
+            }
+
+            ShowLoading($"Scanning {hakPaths.Count} module HAK files...");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"ItemBrowserPanel: Scanning {hakPaths.Count} module-referenced HAK files");
 
             for (int i = 0; i < hakPaths.Count; i++)
             {
