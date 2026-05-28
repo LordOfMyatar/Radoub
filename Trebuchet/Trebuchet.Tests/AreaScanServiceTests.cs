@@ -10,11 +10,13 @@ namespace Trebuchet.Tests;
 public class AreaScanServiceTests : IDisposable
 {
     private readonly string _testDirectory;
+    private readonly string _backupRoot;
 
     public AreaScanServiceTests()
     {
         _testDirectory = Path.Combine(Path.GetTempPath(), $"AreaScanTest_{Guid.NewGuid():N}");
         Directory.CreateDirectory(_testDirectory);
+        _backupRoot = Path.Combine(_testDirectory, "_Backups");
     }
 
     public void Dispose()
@@ -262,7 +264,7 @@ public class AreaScanServiceTests : IDisposable
         // Creature has FactionID=5, deleting faction 5 with parent 3
         var filePath = CreateGitFile("area001", new uint[] { 5 });
 
-        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3);
+        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3, backupRoot: _backupRoot);
 
         Assert.Equal(1, result.FilesModified);
         Assert.Equal(1, result.CreaturesReindexed);
@@ -277,7 +279,7 @@ public class AreaScanServiceTests : IDisposable
         // Creature has FactionID=7, deleting faction 5 — should become 6
         var filePath = CreateGitFile("area001", new uint[] { 7 });
 
-        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3);
+        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3, backupRoot: _backupRoot);
 
         Assert.Equal(1, result.FilesModified);
         var factionIds = ReadCreatureFactionIds(filePath);
@@ -290,7 +292,7 @@ public class AreaScanServiceTests : IDisposable
         // Creature has FactionID=2, deleting faction 5 — should stay 2
         var filePath = CreateGitFile("area001", new uint[] { 2 });
 
-        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3);
+        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3, backupRoot: _backupRoot);
 
         Assert.Equal(0, result.FilesModified);
         var factionIds = ReadCreatureFactionIds(filePath);
@@ -302,7 +304,7 @@ public class AreaScanServiceTests : IDisposable
     {
         var filePath = CreateGitFile("area001", Array.Empty<uint>(), new uint[] { 5 });
 
-        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3);
+        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3, backupRoot: _backupRoot);
 
         Assert.Equal(1, result.FilesModified);
         Assert.Equal(1, result.EncountersReindexed);
@@ -316,7 +318,7 @@ public class AreaScanServiceTests : IDisposable
     {
         var filePath = CreateGitFile("area001", Array.Empty<uint>(), new uint[] { 8 });
 
-        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3);
+        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3, backupRoot: _backupRoot);
 
         var factions = ReadEncounterFactions(filePath);
         Assert.Equal(7u, factions[0]);
@@ -331,7 +333,7 @@ public class AreaScanServiceTests : IDisposable
             new uint[] { 5, 7, 2 },
             new uint[] { 5 });
 
-        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3);
+        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3, backupRoot: _backupRoot);
 
         Assert.Equal(1, result.FilesModified);
         Assert.Equal(1, result.CreaturesReindexed);
@@ -358,7 +360,7 @@ public class AreaScanServiceTests : IDisposable
         // Small delay to ensure timestamp difference
         System.Threading.Thread.Sleep(50);
 
-        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3);
+        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3, backupRoot: _backupRoot);
 
         Assert.Equal(1, result.FilesModified);
         Assert.Equal(2, result.FilesScanned);
@@ -370,7 +372,7 @@ public class AreaScanServiceTests : IDisposable
         CreateGitFile("area001", new uint[] { 0, 1, 2 });
         CreateGitFile("area002", new uint[] { 3 });
 
-        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3);
+        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3, backupRoot: _backupRoot);
 
         Assert.Equal(0, result.FilesModified);
         Assert.Equal(0, result.CreaturesReindexed);
@@ -379,7 +381,7 @@ public class AreaScanServiceTests : IDisposable
     [Fact]
     public void ReindexFactions_EmptyDirectory_ZeroResult()
     {
-        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3);
+        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3, backupRoot: _backupRoot);
 
         Assert.Equal(0, result.FilesScanned);
         Assert.Equal(0, result.FilesModified);
@@ -393,7 +395,7 @@ public class AreaScanServiceTests : IDisposable
         // So creature should end up at 6.
         var filePath = CreateGitFile("area001", new uint[] { 5 });
 
-        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 7);
+        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 7, backupRoot: _backupRoot);
 
         var factionIds = ReadCreatureFactionIds(filePath);
         // Parent 7 is above deleted 5, so the new parent index after deletion is 6
@@ -406,7 +408,7 @@ public class AreaScanServiceTests : IDisposable
         // Deleting faction 5 with no parent (0xFFFFFFFF)
         var filePath = CreateGitFile("area001", new uint[] { 5 });
 
-        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 0xFFFFFFFF);
+        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 0xFFFFFFFF, backupRoot: _backupRoot);
 
         var factionIds = ReadCreatureFactionIds(filePath);
         // 0xFFFFFFFF means "no parent" — fall back to Commoner (2), a safe neutral faction.
@@ -420,7 +422,7 @@ public class AreaScanServiceTests : IDisposable
         // Creature FactionID is WORD (ushort) in .git files — verify type preserved after reindex
         var filePath = CreateGitFile("area001", new uint[] { 5 });
 
-        AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3);
+        AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3, backupRoot: _backupRoot);
 
         var gff = GffReader.Read(filePath);
         var creatureList = gff.RootStruct.GetField("Creature List")?.Value as GffList;
@@ -439,7 +441,7 @@ public class AreaScanServiceTests : IDisposable
     {
         var utcPath = CreateUtcFile("bandit001", 5);
 
-        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3);
+        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3, backupRoot: _backupRoot);
 
         Assert.Equal(1, result.BlueprintsReindexed);
         Assert.Equal(3u, ReadUtcFactionId(utcPath));
@@ -450,7 +452,7 @@ public class AreaScanServiceTests : IDisposable
     {
         var utcPath = CreateUtcFile("guard001", 7);
 
-        AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3);
+        AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3, backupRoot: _backupRoot);
 
         Assert.Equal(6u, ReadUtcFactionId(utcPath));
     }
@@ -460,7 +462,7 @@ public class AreaScanServiceTests : IDisposable
     {
         var utcPath = CreateUtcFile("merchant001", 2);
 
-        AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3);
+        AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3, backupRoot: _backupRoot);
 
         Assert.Equal(2u, ReadUtcFactionId(utcPath));
     }
@@ -471,7 +473,7 @@ public class AreaScanServiceTests : IDisposable
         var gitPath = CreateGitFile("area001", new uint[] { 5 });
         var utcPath = CreateUtcFile("bandit001", 5);
 
-        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3);
+        var result = AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3, backupRoot: _backupRoot);
 
         Assert.Equal(1, result.CreaturesReindexed);
         Assert.Equal(1, result.BlueprintsReindexed);
@@ -485,7 +487,7 @@ public class AreaScanServiceTests : IDisposable
     {
         var utcPath = CreateUtcFile("bandit001", 5);
 
-        AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3);
+        AreaScanService.ReindexFactions(_testDirectory, deletedIndex: 5, parentFactionId: 3, backupRoot: _backupRoot);
 
         var gff = GffReader.Read(utcPath);
         var field = gff.RootStruct.GetField("FactionID");

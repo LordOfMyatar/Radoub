@@ -1,0 +1,142 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using Radoub.Formats.Common;
+using Radoub.Formats.Erf;
+using Radoub.Formats.Logging;
+using Radoub.UI.Services.Search;
+
+namespace RadoubLauncher.Services;
+
+/// <summary>
+/// Reads a file's bytes. Production uses File.ReadAllBytes; tests inject a
+/// fake to deterministically force read failures without OS-level file
+/// locking gymnastics (Windows shares reads liberally, so simulating an
+/// unreadable file via FileShare.None is unreliable across editors / AVs).
+/// </summary>
+public interface IFileBytesReader
+{
+    byte[] ReadAllBytes(string path);
+}
+
+internal sealed class SystemFileBytesReader : IFileBytesReader
+{
+    public byte[] ReadAllBytes(string path) => File.ReadAllBytes(path);
+}
+
+/// <summary>
+/// Packs a working directory back into a .mod (or .erf) archive with safe-write
+/// guarantees:
+///   1. Pre-read every source file into memory before any write begins — a
+///      locked/unreadable input fails fast and leaves the prior .mod intact.
+///   2. Snapshot the prior .mod to ~/Radoub/Backups/&lt;modname&gt;/&lt;timestamp&gt;/
+///      before touching it (issue #2246).
+///   3. Write to a sibling .tmp then atomic File.Replace, so a crash mid-write
+///      cannot destroy the user's only .mod copy.
+/// </summary>
+public static class ModulePackService
+{
+    /// <summary>
+    /// Pack a working directory into a .mod file.
+    /// </summary>
+    /// <param name="workingDir">Directory holding the unpacked module resources.</param>
+    /// <param name="modFilePath">Destination .mod (or .erf) path.</param>
+    /// <param name="backupRoot">
+    /// Optional override for backup root (tests). Default is ~/Radoub/Backups/.
+    /// </param>
+    /// <param name="fileReader">
+    /// Optional injection seam for the pre-read pass. Null = real filesystem.
+    /// Tests inject a fake to force deterministic read failures.
+    /// </param>
+    /// <returns>Resource count written.</returns>
+    public static int PackDirectoryToMod(string workingDir, string modFilePath, string? backupRoot = null, IFileBytesReader? fileReader = null)
+    {
+        if (string.IsNullOrEmpty(workingDir)) throw new ArgumentException("workingDir required", nameof(workingDir));
+        if (string.IsNullOrEmpty(modFilePath)) throw new ArgumentException("modFilePath required", nameof(modFilePath));
+
+        var reader = fileReader ?? new SystemFileBytesReader();
+        var files = Directory.GetFiles(workingDir);
+        var resourceData = new Dictionary<(string ResRef, ushort Type), byte[]>();
+        var resources = new List<ErfResourceEntry>();
+
+        // Phase 1 — pre-read every file. A read failure here throws BEFORE any
+        // destructive write, so the prior .mod stays intact. Issue #2246.
+        foreach (var filePath in files)
+        {
+            var extension = Path.GetExtension(filePath);
+            var resourceType = ResourceTypes.FromExtension(extension);
+            if (resourceType == ResourceTypes.Invalid)
+                continue;
+
+            var resRef = Path.GetFileNameWithoutExtension(filePath);
+            var data = reader.ReadAllBytes(filePath);
+            var key = (resRef.ToLowerInvariant(), resourceType);
+
+            resourceData[key] = data;
+            resources.Add(new ErfResourceEntry
+            {
+                ResRef = resRef,
+                ResourceType = resourceType,
+                ResId = (uint)resources.Count
+            });
+        }
+
+        var erf = new ErfFile
+        {
+            FileType = "MOD ",
+            FileVersion = "V1.0",
+            BuildYear = (uint)(DateTime.Now.Year - 1900),
+            BuildDay = (uint)DateTime.Now.DayOfYear
+        };
+        erf.Resources.AddRange(resources);
+
+        // Phase 2 — snapshot prior .mod if one exists.
+        if (File.Exists(modFilePath))
+        {
+            try
+            {
+                var moduleName = Path.GetFileNameWithoutExtension(modFilePath);
+                var backupService = new BackupService(backupRoot);
+                // Wrap in Task.Run so this works whether the caller is on a
+                // worker thread (Build flow) or the UI thread (future direct
+                // callers / tests). BackupService awaits without
+                // ConfigureAwait(false), so a bare .GetAwaiter().GetResult()
+                // would deadlock on the captured sync context.
+                System.Threading.Tasks.Task.Run(() =>
+                    backupService.BackupArchiveAsync(modFilePath, moduleName)).GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                // Backup failure must NOT abort the pack — but log loudly.
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"Pre-pack backup failed for {UnifiedLogger.SanitizePath(modFilePath)}: {ex.Message}");
+            }
+        }
+
+        // Phase 3 — write via temp + atomic replace.
+        var tempPath = modFilePath + ".tmp";
+        try
+        {
+            ErfWriter.Write(erf, tempPath, resourceData);
+
+            if (File.Exists(modFilePath))
+            {
+                // overwrite:true required because target exists.
+                File.Move(tempPath, modFilePath, overwrite: true);
+            }
+            else
+            {
+                File.Move(tempPath, modFilePath);
+            }
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+            {
+                try { File.Delete(tempPath); } catch { /* swallow cleanup failure */ }
+            }
+        }
+
+        return resources.Count;
+    }
+}
