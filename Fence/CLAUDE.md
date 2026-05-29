@@ -171,14 +171,24 @@ Follow Quartermaster patterns:
 
 ### Modal vs Non-Modal
 
-**IMPORTANT**: This tool uses non-modal windows exclusively:
+**IMPORTANT**: Informational windows (Settings, About, warnings, notifications) are
+non-modal — they must never block the main window:
 ```csharp
-// ❌ WRONG - blocks main window
+// ❌ WRONG - blocks main window for an info/notification window
 await dialog.ShowDialog(this);
 
 // ✅ CORRECT - non-blocking
 dialog.Show(this);
 ```
+
+**Carve-outs (modal is correct)** — consistent with the root CLAUDE.md UI/UX guidelines:
+
+- **Resource selection pickers** (e.g. `StoreBrowserWindow` open picker) are modal.
+  The open flow has no meaningful work to do until the user picks a file or cancels,
+  and the selection is read back from the closed window. This matches the rest of the
+  toolset's browser pickers.
+- **Destructive-action confirmations** (delete, overwrite) may be modal — the user
+  must answer before the destructive action proceeds.
 
 ---
 
