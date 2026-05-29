@@ -490,6 +490,10 @@ public class CharacterCreationService
         var appStr = _gameDataService.Get2DAValue("racialtypes", raceId, "Appearance");
         if (!string.IsNullOrEmpty(appStr) && appStr != "****" && ushort.TryParse(appStr, out ushort appId))
             return appId;
-        return 6; // Human fallback
+        // #2251 — WARN-once when racialtypes.2da Appearance is missing.
+        GameDataWarnOnce.Warn(
+            $"default_appearance_race_{raceId}",
+            $"CharacterCreationService.GetDefaultAppearanceForRace: racialtypes.2da Appearance missing for race {raceId} — falling back to 6 (Human)");
+        return 6;
     }
 }

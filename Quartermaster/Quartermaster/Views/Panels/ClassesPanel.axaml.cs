@@ -627,37 +627,27 @@ public partial class ClassesPanel : BasePanelControl
         return _displayService?.GetClassSkillPointBase(classId) ?? 2;
     }
 
-    private static string GetClassFeatures(int classId)
+    private string GetClassFeatures(int classId)
     {
-        // Class features are descriptive summaries not stored in 2DA.
-        // This is acceptable hardcoding - it's display-only flavor text.
-        return classId switch
+        // #2251 — Source from classes.2da Description column (TLK strref).
+        // Old hardcoded English switch broke for non-English TLK and custom
+        // content (CEP/PRC). If both lookups fail, return empty string and
+        // WARN-once so missing data is visible.
+        var gameData = _displayService?.GameDataService;
+        if (gameData != null)
         {
-            0 => "Rage, Fast Movement",
-            1 => "Bardic Music, Spells",
-            2 => "Divine Spells, Turn Undead",
-            3 => "Nature Spells, Wild Shape",
-            4 => "Bonus Feats",
-            5 => "Flurry, Unarmed Strike",
-            6 => "Lay on Hands, Smite Evil",
-            7 => "Dual Wield, Animal Companion",
-            8 => "Sneak Attack, Evasion",
-            9 => "Arcane Spells (Cha)",
-            10 => "Arcane Spells (Int)",
-            11 => "Hide in Plain Sight",
-            12 => "Favored Enemy, Spells",
-            13 => "Enchant Arrow",
-            14 => "Death Attack, Sneak Attack",
-            15 => "Sneak Attack, Dark Blessing",
-            16 => "Lay on Hands, Divine Wrath",
-            17 => "Weapon of Choice",
-            18 => "Undead Graft",
-            19 => "Greater Wild Shape",
-            20 => "Defensive Stance",
-            21 => "Dragon Abilities",
-            27 => "Inspire Courage",
-            _ => ""
-        };
+            var strRef = gameData.Get2DAValue("classes", classId, "Description");
+            if (!string.IsNullOrEmpty(strRef) && strRef != "****")
+            {
+                var tlk = gameData.GetString(strRef);
+                if (!string.IsNullOrEmpty(tlk))
+                    return tlk;
+            }
+        }
+        GameDataWarnOnce.Warn(
+            $"class_description_{classId}",
+            $"ClassesPanel.GetClassFeatures: classes.2da Description missing for class {classId} — leaving features text blank");
+        return string.Empty;
     }
 
     #endregion

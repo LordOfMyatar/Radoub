@@ -806,6 +806,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
+    // #2252 — re-entrancy guard: language switch reloads GameDataService,
+    // rebuilds feat cache, and reloads palette cache in sequence. A second
+    // click before completion previously kicked off a concurrent rebuild that
+    // raced the in-flight palette load and left caches in mixed state.
+    private int _languageSwitchInFlight;
+
     private async void OnLanguageMenuItemClick(object? sender, RoutedEventArgs e)
     {
         if (sender is not MenuItem menuItem || menuItem.Tag is not (string langCode, bool useFemale))
@@ -818,22 +824,29 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (langCode == oldLang && useFemale == oldFemale)
             return;
 
-        settings.TlkLanguage = langCode;
-        settings.TlkUseFemale = useFemale;
+        if (Interlocked.Exchange(ref _languageSwitchInFlight, 1) == 1)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                "Language switch ignored — previous switch still in progress");
+            return;
+        }
 
         var langDisplay = LanguageHelper.GetDisplayName(
             LanguageHelper.FromLanguageCode(langCode) ?? Language.English);
         var genderDisplay = useFemale ? " (Female)" : "";
 
-        UnifiedLogger.LogApplication(LogLevel.INFO,
-            $"Language changed to {langDisplay}{genderDisplay}");
-
-        PopulateLanguageMenu();
-
-        UpdateStatus($"Switching to {langDisplay}{genderDisplay}...");
-
         try
         {
+            settings.TlkLanguage = langCode;
+            settings.TlkUseFemale = useFemale;
+
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Language changed to {langDisplay}{genderDisplay}");
+
+            PopulateLanguageMenu();
+
+            UpdateStatus($"Switching to {langDisplay}{genderDisplay}...");
+
             await Task.Run(() =>
             {
                 _gameDataService?.ReloadConfiguration();
@@ -846,6 +859,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 }
             });
 
+            // Rebuild feat cache BEFORE palette reload so any palette consumers
+            // that touch FeatCacheService see fresh data (#2252).
             if (_creatureDisplayService != null)
             {
                 await _creatureDisplayService.Feats.RebuildCacheAsync();
@@ -868,6 +883,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Language switch failed: {ex.Message}");
             UpdateStatus("Language switch failed");
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _languageSwitchInFlight, 0);
         }
     }
 

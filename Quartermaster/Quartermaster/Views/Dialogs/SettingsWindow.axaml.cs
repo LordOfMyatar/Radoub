@@ -84,7 +84,11 @@ public partial class SettingsWindow : Window
                         var ifo = Radoub.Formats.Ifo.IfoReader.Read(ifoPath);
                         displayName = ifo.ModuleName.GetDefault();
                     }
-                    catch { /* fall through to path-based name */ }
+                    catch (Exception ex) when (ex is IOException or InvalidDataException) // #2252
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                            $"SettingsWindow: module.ifo read failed ({ex.GetType().Name}): {ex.Message}");
+                    }
                 }
             }
 

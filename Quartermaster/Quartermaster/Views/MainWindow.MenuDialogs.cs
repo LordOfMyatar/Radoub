@@ -65,12 +65,14 @@ public partial class MainWindow
             var trebuchetPath = Radoub.Formats.Settings.RadoubSettings.Instance.TrebuchetPath;
             if (!string.IsNullOrEmpty(trebuchetPath) && System.IO.File.Exists(trebuchetPath))
             {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                // #2252 — use ArgumentList per repo CLAUDE.md (no string-concat arg parsing).
+                var psi = new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = trebuchetPath,
-                    Arguments = "--settings",
                     UseShellExecute = false
-                });
+                };
+                psi.ArgumentList.Add("--settings");
+                System.Diagnostics.Process.Start(psi);
             }
             else
             {

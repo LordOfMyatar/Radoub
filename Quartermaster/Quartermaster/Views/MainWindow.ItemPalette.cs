@@ -565,8 +565,11 @@ public partial class MainWindow
             var ifo = Radoub.Formats.Ifo.IfoReader.Read(ifoPath);
             return ifo.HakList.Count > 0;
         }
-        catch
+        catch (Exception ex) when (ex is IOException or InvalidDataException)
         {
+            // #2252 — narrow bare-catch; corrupt/locked module.ifo means no HAKs known
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"HasModuleWithHaks: failed to read module.ifo ({ex.GetType().Name}): {ex.Message}");
             return false;
         }
     }

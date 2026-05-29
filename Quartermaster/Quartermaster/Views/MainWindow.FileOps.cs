@@ -272,104 +272,6 @@ public partial class MainWindow
         }
     }
 
-    /// <summary>
-    /// Creates a new UtcFile with sensible defaults for a basic humanoid creature.
-    /// </summary>
-    private static UtcFile CreateNewCreature()
-    {
-        return new UtcFile
-        {
-            // Identity - StrRef = 0xFFFFFFFF means no TLK reference (use embedded string)
-            FirstName = new CExoLocString { StrRef = 0xFFFFFFFF },
-            LastName = new CExoLocString { StrRef = 0xFFFFFFFF },
-            Tag = "new_creature",
-            TemplateResRef = "new_creature",
-            Description = new CExoLocString { StrRef = 0xFFFFFFFF },
-
-            // Palette - Custom category (1) so creature appears in toolset palette
-            PaletteID = 1,
-
-            // Basic info - Human male by default
-            Race = 6, // Human (racialtypes.2da)
-            Gender = 0, // Male
-
-            // Appearance - Human appearance type
-            AppearanceType = 6, // Human (appearance.2da)
-            Phenotype = 0, // Normal
-            PortraitId = 1, // First portrait
-
-            // Default body parts for part-based model (all set to 1 = basic)
-            AppearanceHead = 1,
-            BodyPart_Belt = 0,
-            BodyPart_LBicep = 1,
-            BodyPart_RBicep = 1,
-            BodyPart_LFArm = 1,
-            BodyPart_RFArm = 1,
-            BodyPart_LFoot = 1,
-            BodyPart_RFoot = 1,
-            BodyPart_LHand = 1,
-            BodyPart_RHand = 1,
-            BodyPart_LShin = 1,
-            BodyPart_RShin = 1,
-            BodyPart_LShoul = 0,
-            BodyPart_RShoul = 0,
-            BodyPart_LThigh = 1,
-            BodyPart_RThigh = 1,
-            BodyPart_Neck = 1,
-            BodyPart_Pelvis = 1,
-            BodyPart_Torso = 1,
-
-            // Colors - neutral defaults
-            Color_Skin = 0,
-            Color_Hair = 0,
-            Color_Tattoo1 = 0,
-            Color_Tattoo2 = 0,
-
-            // Ability scores - standard array
-            Str = 10,
-            Dex = 10,
-            Con = 10,
-            Int = 10,
-            Wis = 10,
-            Cha = 10,
-
-            // Hit points - minimal for level 1
-            HitPoints = 4,
-            CurrentHitPoints = 4,
-            MaxHitPoints = 4,
-
-            // Alignment - True Neutral
-            GoodEvil = 50,
-            LawfulChaotic = 50,
-
-            // Behavior defaults
-            FactionID = 1, // Commoner faction
-            PerceptionRange = 11, // Default perception
-            WalkRate = 4, // PC walk rate
-            DecayTime = 5000, // 5 seconds
-
-            // Interruptable by default
-            Interruptable = true,
-
-            // Must have at least one class - Commoner level 1
-            ClassList = new List<CreatureClass>
-            {
-                new CreatureClass
-                {
-                    Class = 255, // Commoner (classes.2da row 255, not 7 which is Ranger)
-                    ClassLevel = 1
-                }
-            },
-
-            // Initialize empty lists
-            FeatList = new List<ushort>(),
-            SkillList = new List<byte>(),
-            SpecAbilityList = new List<SpecialAbility>(),
-            ItemList = new List<InventoryItem>(),
-            EquipItemList = new List<EquippedItem>()
-        };
-    }
-
     private async Task OpenFile()
     {
         // Use custom CreatureBrowserWindow for consistent UX (#1083)
@@ -385,7 +287,7 @@ public partial class MainWindow
         }
     }
 
-    private Task LoadFile(string filePath)
+    private async Task LoadFile(string filePath)
     {
         try
         {
@@ -415,14 +317,20 @@ public partial class MainWindow
             var extension = Path.GetExtension(filePath).ToLowerInvariant();
             _isBicFile = extension == ".bic";
 
-            if (_isBicFile)
+            // #2252 — actually-async parse: BicReader/UtcReader do blocking disk I/O
+            // plus full GFF parse. Push to Task.Run so the UI thread stays responsive
+            // (deep-inventory BIC parses were freezing the window).
+            var isBic = _isBicFile;
+            var creature = await Task.Run<UtcFile>(() =>
+                isBic ? BicReader.Read(filePath) : UtcReader.Read(filePath));
+
+            _currentCreature = creature;
+            if (isBic)
             {
-                _currentCreature = BicReader.Read(filePath);
                 UnifiedLogger.LogCreature(LogLevel.INFO, $"Loaded BIC (player character): {UnifiedLogger.SanitizePath(filePath)}");
             }
             else
             {
-                _currentCreature = UtcReader.Read(filePath);
                 UnifiedLogger.LogCreature(LogLevel.INFO, $"Loaded UTC (creature blueprint): {UnifiedLogger.SanitizePath(filePath)}");
             }
 
@@ -488,7 +396,6 @@ public partial class MainWindow
             UpdateStatus($"Error loading file: {ex.Message}");
             ShowErrorDialog("Load Error", $"Failed to load creature file:\n{ex.Message}");
         }
-        return Task.CompletedTask;
     }
 
     private async Task SaveFile()
@@ -571,7 +478,11 @@ public partial class MainWindow
             if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
             {
                 try { suggestedFolder = await StorageProvider.TryGetFolderFromPathAsync(dir); }
-                catch { /* fall back to OS default */ }
+                catch (Exception ex) // #2252 — log; fall back to OS default
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"SaveFileAs: TryGetFolderFromPathAsync failed for {UnifiedLogger.SanitizePath(dir)}: {ex.Message}");
+                }
             }
         }
 

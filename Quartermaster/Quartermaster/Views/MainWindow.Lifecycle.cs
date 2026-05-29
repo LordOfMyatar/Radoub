@@ -54,9 +54,13 @@ public partial class MainWindow
 
             token.ThrowIfCancellationRequested();
 
-            // Fire-and-forget cache and item loading in parallel
-            _ = InitializeCachesAsync(token);
+            // #2252 — Await cache init before the startup file load. Previously
+            // InitializeCachesAsync was fire-and-forget while HandleStartupFileAsync
+            // ran immediately, so a high-level cold launch hit the slow direct-2DA
+            // path per feat and froze the UI for seconds. Item palette load stays
+            // fire-and-forget — it doesn't gate the startup-file panel population.
             StartGameItemsLoad(token);
+            await InitializeCachesAsync(token);
 
             await HandleStartupFileAsync();
 
@@ -175,13 +179,25 @@ public partial class MainWindow
         SaveCreatureBrowserPanelSize();
     }
 
+    // #2252 — re-entrancy guard: HandleClosingAsync sets e.Cancel=true when it
+    // needed to await a "save before close" prompt; the trailing Close() call
+    // re-fires OnWindowClosing. Without this flag the disposes ran twice.
+    private bool _isClosingConfirmed;
+
     private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
     {
+        if (_isClosingConfirmed)
+        {
+            // Second pass triggered by the trailing Close() below — let it through.
+            return;
+        }
+
         var shouldClose = await Radoub.UI.Services.FileOperationsHelper.HandleClosingAsync(
             this, e, _documentState.IsDirty, async () => { await SaveFile(); return true; });
 
         if (shouldClose)
         {
+            _isClosingConfirmed = true;
             _documentState.ClearDirty();
             Radoub.UI.Services.ThemeManager.Instance.ThemeApplied -= OnThemeApplied;
             Radoub.UI.Services.FileSessionLockService.ReleaseAllLocks();
@@ -195,6 +211,7 @@ public partial class MainWindow
             _gameDataService?.Dispose();
             _paletteCacheCts?.Dispose();
             (_sharedCacheService as IDisposable)?.Dispose();
+            (_creaturePaletteCache as IDisposable)?.Dispose();
 
             if (e.Cancel)
             {

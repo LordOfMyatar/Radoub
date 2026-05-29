@@ -388,6 +388,62 @@ public class FeatCacheServiceTests
 
     #endregion
 
+    #region Concurrent Reader/Writer (#2252)
+
+    [Fact]
+    public async Task ConcurrentCacheFeatAndTryGet_DoesNotThrow()
+    {
+        // Regression for #2252 — non-concurrent Dictionary<,> produced KeyNotFoundException
+        // or torn reads when BuildCacheAsync wrote on a background thread while
+        // panel-load TryGetFeat ran on the UI thread.
+        var service = CreateService();
+
+        // Seed so reader has something to find
+        for (int i = 0; i < 100; i++)
+            service.CacheFeat(CreateEntry(i, $"Seed_{i}"));
+
+        var writer = Task.Run(() =>
+        {
+            for (int i = 100; i < 5000; i++)
+                service.CacheFeat(CreateEntry(i, $"Concurrent_{i}"));
+        });
+
+        var reader = Task.Run(() =>
+        {
+            for (int i = 0; i < 5000; i++)
+                service.TryGetFeat(i % 5000, out _);
+        });
+
+        await Task.WhenAll(writer, reader);
+
+        // Final sanity: at least the high feat is reachable
+        Assert.True(service.TryGetFeat(4999, out var entry));
+        Assert.Equal("Concurrent_4999", entry!.Name);
+    }
+
+    [Fact]
+    public async Task ConcurrentCacheClassGrantedFeats_DoesNotThrow()
+    {
+        var service = CreateService();
+
+        var writer = Task.Run(() =>
+        {
+            for (int classId = 0; classId < 256; classId++)
+                service.CacheClassGrantedFeats(classId, new HashSet<int> { classId });
+        });
+
+        var reader = Task.Run(() =>
+        {
+            for (int i = 0; i < 5000; i++)
+                service.TryGetClassGrantedFeats(i % 256, out _);
+        });
+
+        await Task.WhenAll(writer, reader);
+        Assert.True(service.TryGetClassGrantedFeats(255, out _));
+    }
+
+    #endregion
+
     #region SaveCacheToDisk Edge Cases
 
     [Fact]

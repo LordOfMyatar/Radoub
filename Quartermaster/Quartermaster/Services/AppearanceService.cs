@@ -297,9 +297,13 @@ public class AppearanceService
             });
         }
 
-        // If no 2DA data, return hardcoded defaults
+        // #2251 — Last-ditch synthetic Normal/Large phenotypes when phenotype.2da
+        // is empty. WARN-once so the empty 2DA is visible in logs.
         if (phenotypes.Count == 0)
         {
+            GameDataWarnOnce.Warn(
+                "phenotype_2da_empty",
+                "AppearanceService.GetAllPhenotypes: phenotype.2da empty or unreadable — synthesizing Normal (0) and Large (2)");
             phenotypes.Add(new PhenotypeInfo { PhenotypeId = 0, Name = "Normal", Label = "Normal" });
             phenotypes.Add(new PhenotypeInfo { PhenotypeId = 2, Name = "Large", Label = "Large" });
         }

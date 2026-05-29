@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Radoub.Formats.Logging;
@@ -9,16 +10,23 @@ namespace Quartermaster.Services;
 /// Caches feat data to improve startup and panel load performance.
 /// Uses file-based persistence via GameDataCacheService.
 /// </summary>
+/// <remarks>
+/// #2252 — Reads and writes are interleaved (UI thread calls TryGetFeat during
+/// panel load while BuildCacheAsync runs in Task.Run). Backed by
+/// <see cref="ConcurrentDictionary{TKey,TValue}"/> so concurrent reader+writer
+/// access is well-defined. _allFeatIds is replaced wholesale on each
+/// SetAllFeatIds call — atomic reference swap, no in-place mutation.
+/// </remarks>
 public class FeatCacheService
 {
     private const int CacheVersion = 1;
     private readonly GameDataCacheService<CachedFeatEntry> _cacheService;
 
-    // In-memory caches for fast repeated lookups
-    private Dictionary<int, CachedFeatEntry>? _featCache;
-    private List<int>? _allFeatIds;
-    private Dictionary<int, HashSet<int>>? _classGrantedFeats;
-    private Dictionary<int, HashSet<int>>? _raceGrantedFeats;
+    // In-memory caches for fast repeated lookups (concurrent — see remarks)
+    private ConcurrentDictionary<int, CachedFeatEntry>? _featCache;
+    private volatile List<int>? _allFeatIds;
+    private ConcurrentDictionary<int, HashSet<int>>? _classGrantedFeats;
+    private ConcurrentDictionary<int, HashSet<int>>? _raceGrantedFeats;
 
     public FeatCacheService()
     {
@@ -44,14 +52,17 @@ public class FeatCacheService
             return false;
 
         // Build in-memory lookup dictionaries
-        _featCache = new Dictionary<int, CachedFeatEntry>();
-        _allFeatIds = new List<int>();
+        var newCache = new ConcurrentDictionary<int, CachedFeatEntry>();
+        var newIds = new List<int>();
 
         foreach (var entry in cachedEntries)
         {
-            _featCache[entry.FeatId] = entry;
-            _allFeatIds.Add(entry.FeatId);
+            newCache[entry.FeatId] = entry;
+            newIds.Add(entry.FeatId);
         }
+
+        _featCache = newCache;
+        _allFeatIds = newIds;
 
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {_featCache.Count} feats from cache");
         return true;
@@ -102,7 +113,7 @@ public class FeatCacheService
     /// </summary>
     public void CacheFeat(CachedFeatEntry entry)
     {
-        _featCache ??= new Dictionary<int, CachedFeatEntry>();
+        _featCache ??= new ConcurrentDictionary<int, CachedFeatEntry>();
         _featCache[entry.FeatId] = entry;
     }
 
@@ -135,7 +146,7 @@ public class FeatCacheService
     /// </summary>
     public void CacheClassGrantedFeats(int classId, HashSet<int> feats)
     {
-        _classGrantedFeats ??= new Dictionary<int, HashSet<int>>();
+        _classGrantedFeats ??= new ConcurrentDictionary<int, HashSet<int>>();
         _classGrantedFeats[classId] = feats;
     }
 
@@ -155,7 +166,7 @@ public class FeatCacheService
     /// </summary>
     public void CacheRaceGrantedFeats(int raceId, HashSet<int> feats)
     {
-        _raceGrantedFeats ??= new Dictionary<int, HashSet<int>>();
+        _raceGrantedFeats ??= new ConcurrentDictionary<int, HashSet<int>>();
         _raceGrantedFeats[raceId] = feats;
     }
 

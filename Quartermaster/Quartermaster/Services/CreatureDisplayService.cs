@@ -73,17 +73,12 @@ public partial class CreatureDisplayService
                 return tlkName;
         }
 
-        return raceId switch
-        {
-            0 => "Dwarf",
-            1 => "Elf",
-            2 => "Gnome",
-            3 => "Halfling",
-            4 => "Half-Elf",
-            5 => "Half-Orc",
-            6 => "Human",
-            _ => $"Race {raceId}"
-        };
+        // #2251 — No per-id hardcoded table. Localized/custom races (CEP/PRC/non-English TLK)
+        // were getting wrong English names from the old switch. Last-ditch generic label only.
+        GameDataWarnOnce.Warn(
+            $"race_name_{raceId}",
+            $"CreatureDisplayService.GetRaceName: 2DA/TLK lookup failed for race {raceId} — using generic label");
+        return $"Race {raceId}";
     }
 
     /// <summary>
@@ -404,33 +399,12 @@ public partial class CreatureDisplayService
             return points;
         }
 
-        // Fallback to hardcoded values
-        return classId switch
-        {
-            0 => 4,  // Barbarian
-            1 => 6,  // Bard
-            2 => 2,  // Cleric
-            3 => 4,  // Druid
-            4 => 2,  // Fighter
-            5 => 4,  // Monk
-            6 => 2,  // Paladin
-            7 => 6,  // Ranger
-            8 => 8,  // Rogue
-            9 => 2,  // Sorcerer
-            10 => 2, // Wizard
-            11 => 6, // Shadowdancer
-            12 => 4, // Harper Scout
-            13 => 4, // Arcane Archer
-            14 => 4, // Assassin
-            15 => 2, // Blackguard
-            16 => 2, // Champion of Torm
-            17 => 2, // Weapon Master
-            18 => 2, // Pale Master
-            19 => 4, // Shifter
-            20 => 2, // Dwarven Defender
-            21 => 2, // Dragon Disciple
-            _ => 2   // Default
-        };
+        // #2251 — No per-id hardcoded table. The old switch masked "class not in classes.2da"
+        // as "Wizard (2 sp)". Return engine default 2 with a WARN-once so missing data is visible.
+        GameDataWarnOnce.Warn(
+            $"class_skillpointbase_{classId}",
+            $"CreatureDisplayService.GetClassSkillPointBase: classes.2da SkillPointBase missing for class {classId} — using engine default 2");
+        return 2;
     }
 
     /// <summary>
