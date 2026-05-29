@@ -117,7 +117,11 @@ public partial class FeatService
                 return tlkName;
         }
 
-        // Fallback to hardcoded common feats
+        // #2251 — Last-ditch fallback for the 12 most common stock feats only.
+        // WARN-once per id so missing 2DA/TLK lookups surface in logs.
+        GameDataWarnOnce.Warn(
+            $"feat_name_{featId}",
+            $"FeatService.LookupFeatName: 2DA/TLK lookup failed for feat {featId} — using hardcoded fallback");
         return featId switch
         {
             0 => "Alertness",

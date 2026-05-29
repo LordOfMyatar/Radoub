@@ -414,14 +414,16 @@ public class CreatureDisplayServiceTests
     }
 
     [Fact]
-    public void GetRaceName_UnconfiguredService_ReturnsHardcodedFallback()
+    public void GetRaceName_UnconfiguredService_ReturnsGenericFallback()
     {
+        // #2251 — Per-id hardcoded race table was removed. Missing 2DA/TLK now
+        // returns a generic "Race N" label so non-English TLK and custom-content
+        // (CEP/PRC) races can't silently get wrong English names.
         var unconfiguredMock = new MockGameDataService(includeSampleData: false).AsUnconfigured();
         var service = new CreatureDisplayService(unconfiguredMock);
 
-        // Should fall back to hardcoded values
         var result = service.GetRaceName(6);
-        Assert.Equal("Human", result); // Hardcoded fallback
+        Assert.Equal("Race 6", result);
     }
 
     #endregion

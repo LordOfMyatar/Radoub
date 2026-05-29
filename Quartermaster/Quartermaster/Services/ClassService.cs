@@ -662,23 +662,13 @@ public class ClassService
 
     private static int EstimateBab(int classId, int classLevel)
     {
-        // BAB progression: Full (1.0), 3/4 (0.75), 1/2 (0.5)
-        double progression = classId switch
-        {
-            0 => 1.0,   // Barbarian
-            1 => 0.75,  // Bard
-            2 => 0.75,  // Cleric
-            3 => 0.75,  // Druid
-            4 => 1.0,   // Fighter
-            5 => 0.75,  // Monk
-            6 => 1.0,   // Paladin
-            7 => 1.0,   // Ranger
-            8 => 0.75,  // Rogue
-            9 => 0.5,   // Sorcerer
-            10 => 0.5,  // Wizard
-            _ => 0.75
-        };
-        return (int)(classLevel * progression);
+        // #2251 — No per-id hardcoded progression table. AttackBonusTable rows
+        // are authoritative; if the 2DA lookup miss reached here, log loudly
+        // and fall back to the mid 3/4 progression used by most classes.
+        GameDataWarnOnce.Warn(
+            $"bab_estimate_{classId}",
+            $"ClassService.EstimateBab: classes.2da AttackBonusTable missing or unparseable for class {classId} — estimating at 3/4 progression");
+        return (int)(classLevel * 0.75);
     }
 
     private bool CanCastArcaneSpells(UtcFile creature, int minLevel)

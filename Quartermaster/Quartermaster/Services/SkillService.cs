@@ -32,7 +32,11 @@ public class SkillService
                 return tlkName;
         }
 
-        // Fallback to hardcoded common skills
+        // #2251 — Last-ditch fallback for stock 28 NWN skills. Custom content
+        // (PRC/CEP) above index 27 returns $"Skill {id}". Logged WARN-once per id.
+        GameDataWarnOnce.Warn(
+            $"skill_name_{skillId}",
+            $"SkillService.GetSkillName: 2DA/TLK lookup failed for skill {skillId} — using hardcoded fallback");
         return skillId switch
         {
             0 => "Animal Empathy",
@@ -77,7 +81,10 @@ public class SkillService
         if (!string.IsNullOrEmpty(ability) && ability != "****")
             return ability;
 
-        // Fallback to hardcoded values
+        // #2251 — Last-ditch fallback for stock 28 NWN skills. WARN-once per id.
+        GameDataWarnOnce.Warn(
+            $"skill_keyability_{skillId}",
+            $"SkillService.GetSkillKeyAbility: 2DA lookup failed for skill {skillId} — using hardcoded fallback");
         return skillId switch
         {
             0 => "CHA",  // Animal Empathy

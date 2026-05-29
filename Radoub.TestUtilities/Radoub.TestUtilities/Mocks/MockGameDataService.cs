@@ -301,19 +301,27 @@ public class MockGameDataService : IGameDataService
         //   Paladin: 0x15 prohibited on both axes → cannot be N/C/E (must be Lawful Good)
         var classes = new TwoDAFile();
         classes.Columns.AddRange(new[] { "Label", "Name", "HitDie", "AttackBonusTable",
-            "AlignRestrict", "AlignRstrctType", "InvertRestrict", "PlayerClass" });
-        AddRow(classes, "0", "Barbarian", "40", "12", "CLS_ATK_1", "0x02", "0x01", "0", "1");
-        AddRow(classes, "1", "Bard", "41", "6", "CLS_ATK_2", "0x02", "0x01", "0", "1");
-        AddRow(classes, "2", "Cleric", "42", "8", "CLS_ATK_2", "0x00", "0x00", "0", "1");
-        AddRow(classes, "3", "Druid", "43", "8", "CLS_ATK_2", "0x01", "0x03", "1", "1");
-        AddRow(classes, "4", "Fighter", "44", "10", "CLS_ATK_1", "0x00", "0x01", "0", "1");
-        AddRow(classes, "5", "Monk", "45", "8", "CLS_ATK_2", "0x05", "0x01", "0", "1");
-        AddRow(classes, "6", "Paladin", "46", "10", "CLS_ATK_1", "0x15", "0x03", "0", "1");
-        AddRow(classes, "7", "Ranger", "47", "10", "CLS_ATK_1", "0x00", "0x00", "0", "1");
-        AddRow(classes, "8", "Rogue", "48", "6", "CLS_ATK_2", "0x00", "0x00", "0", "1");
-        AddRow(classes, "9", "Sorcerer", "49", "4", "CLS_ATK_3", "0x00", "0x00", "0", "1");
-        AddRow(classes, "10", "Wizard", "50", "4", "CLS_ATK_3", "0x00", "0x00", "0", "1");
+            "AlignRestrict", "AlignRstrctType", "InvertRestrict", "PlayerClass", "SkillPointBase" });
+        AddRow(classes, "0", "Barbarian", "40", "12", "CLS_ATK_1", "0x02", "0x01", "0", "1", "4");
+        AddRow(classes, "1", "Bard", "41", "6", "CLS_ATK_2", "0x02", "0x01", "0", "1", "6");
+        AddRow(classes, "2", "Cleric", "42", "8", "CLS_ATK_2", "0x00", "0x00", "0", "1", "2");
+        AddRow(classes, "3", "Druid", "43", "8", "CLS_ATK_2", "0x01", "0x03", "1", "1", "4");
+        AddRow(classes, "4", "Fighter", "44", "10", "CLS_ATK_1", "0x00", "0x01", "0", "1", "2");
+        AddRow(classes, "5", "Monk", "45", "8", "CLS_ATK_2", "0x05", "0x01", "0", "1", "4");
+        AddRow(classes, "6", "Paladin", "46", "10", "CLS_ATK_1", "0x15", "0x03", "0", "1", "2");
+        AddRow(classes, "7", "Ranger", "47", "10", "CLS_ATK_1", "0x00", "0x00", "0", "1", "6");
+        AddRow(classes, "8", "Rogue", "48", "6", "CLS_ATK_2", "0x00", "0x00", "0", "1", "8");
+        AddRow(classes, "9", "Sorcerer", "49", "4", "CLS_ATK_3", "0x00", "0x00", "0", "1", "2");
+        AddRow(classes, "10", "Wizard", "50", "4", "CLS_ATK_3", "0x00", "0x00", "0", "1", "2");
         _2daFiles["classes"] = classes;
+
+        // CLS_ATK_1 — full BAB progression (1.0): row N has BAB = N+1.
+        // CLS_ATK_2 — 3/4 BAB progression: floor((N+1) * 0.75).
+        // CLS_ATK_3 — half BAB progression: floor((N+1) * 0.5).
+        // 40 rows each (NWN level cap).
+        _2daFiles["cls_atk_1"] = BuildBabTable(level => level);
+        _2daFiles["cls_atk_2"] = BuildBabTable(level => (level * 3) / 4);
+        _2daFiles["cls_atk_3"] = BuildBabTable(level => level / 2);
 
         // gender.2da
         var gender = new TwoDAFile();
@@ -588,6 +596,18 @@ public class MockGameDataService : IGameDataService
             Label = label,
             Values = values.ToList()
         });
+    }
+
+    private static TwoDAFile BuildBabTable(Func<int, int> bab)
+    {
+        var table = new TwoDAFile();
+        table.Columns.AddRange(new[] { "BAB" });
+        for (int row = 0; row < 40; row++)
+        {
+            int level = row + 1;
+            AddRow(table, row.ToString(), bab(level).ToString());
+        }
+        return table;
     }
 
     #endregion
