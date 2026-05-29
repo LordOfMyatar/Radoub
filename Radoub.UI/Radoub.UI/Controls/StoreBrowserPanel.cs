@@ -58,8 +58,10 @@ public class StoreBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
     private List<StoreBrowserEntry> _hakStores = new();
     private List<StoreBrowserEntry> _bifStores = new();
 
-    // Static cache for HAK file contents - persists across panel instances
-    private static readonly Dictionary<string, StoreHakCacheEntry> _hakCache = new();
+    // Static cache for HAK file contents - persists across panel instances.
+    // ConcurrentDictionary so concurrent panel instances can safely race on
+    // Task.Run scans (#2262).
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, StoreHakCacheEntry> _hakCache = new();
 
     public StoreBrowserPanel() : this(null)
     {

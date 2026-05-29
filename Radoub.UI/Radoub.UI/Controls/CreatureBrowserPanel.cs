@@ -80,8 +80,10 @@ public class CreatureBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
     private bool _showBifCreatures;
     private bool _bifCreaturesLoaded;
 
-    // Static cache for HAK file contents - persists across panel instances
-    private static readonly Dictionary<string, CreatureHakCacheEntry> _hakCache = new();
+    // Static cache for HAK file contents - persists across panel instances.
+    // ConcurrentDictionary so concurrent panel instances can safely race on
+    // Task.Run scans (#2262).
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, CreatureHakCacheEntry> _hakCache = new();
 
     public CreatureBrowserPanel() : this(null)
     {

@@ -57,8 +57,10 @@ public class ItemBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
     private List<ItemBrowserEntry> _hakItems = new();
     private List<ItemBrowserEntry> _bifItems = new();
 
-    // Static cache for HAK file contents - persists across panel instances
-    private static readonly Dictionary<string, ItemHakCacheEntry> _hakCache = new();
+    // Static cache for HAK file contents - persists across panel instances.
+    // ConcurrentDictionary so concurrent panel instances (multi-window tool,
+    // Trebuchet preview + main tool) can safely race on Task.Run scans (#2262).
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ItemHakCacheEntry> _hakCache = new();
 
     public ItemBrowserPanel()
     {
