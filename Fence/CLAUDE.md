@@ -32,25 +32,17 @@ Fence/
 │   ├── Program.cs
 │   ├── App.axaml[.cs]
 │   ├── Assets/ (fence.ico)
+│   ├── Controls/             # Fence-local custom controls
 │   ├── Converters/
 │   │   └── InfiniteToSymbolConverter.cs
-│   ├── Services/
-│   │   ├── BaseItemTypeService.cs      # Base item types from baseitems.2da
+│   ├── Services/             # Fence-local only — shared services live in Radoub.UI / Radoub.Formats
 │   │   ├── CommandLineService.cs
-│   │   ├── FenceScriptBrowserContext.cs # IScriptBrowserContext for shared browser
-│   │   ├── ItemResolutionService.cs
-│   │   ├── PaletteCacheService.cs      # Cached palette loading
+│   │   ├── FenceScriptBrowserContext.cs  # IScriptBrowserContext adapter
 │   │   └── SettingsService.cs
 │   ├── Views/
-│   │   ├── MainWindow.axaml[.cs]
-│   │   ├── MainWindow.FileOps.cs       # File open/save/new
-│   │   ├── MainWindow.ItemDetails.cs   # Item detail panel
-│   │   ├── MainWindow.ItemPalette.cs   # Palette search/filter
-│   │   ├── MainWindow.LanguageMenu.cs  # TLK language selection
-│   │   ├── MainWindow.Scripts.cs       # Script assignment
-│   │   ├── MainWindow.StoreBrowser.cs  # Collapsible store browser (F4)
-│   │   ├── MainWindow.StoreOperations.cs # Store properties
-│   │   ├── MainWindow.Variables.cs     # Local variables
+│   │   ├── MainWindow.axaml[.cs] + partials (FileOps, ItemDetails, ItemPalette,
+│   │   │                                     LanguageMenu, Scripts, StoreBrowser,
+│   │   │                                     StoreOperations, Variables)
 │   │   └── SettingsWindow.axaml[.cs]
 │   └── ViewModels/
 │       ├── PaletteItemViewModel.cs
@@ -58,13 +50,23 @@ Fence/
 │       ├── StoreItemViewModel.cs
 │       └── VariableViewModel.cs
 └── Fence.Tests/
-    ├── BaseItemTypeServiceTests.cs
+    ├── BaseItemTypeServiceWithGameDataTests.cs
     ├── CommandLineServiceTests.cs
-    ├── ItemResolutionServiceTests.cs
-    ├── PaletteCacheServiceTests.cs
+    ├── SelectableBaseItemTypeViewModelTests.cs
     ├── SettingsServiceTests.cs
-    └── UtmRoundTripTests.cs
+    ├── StoreItemIconTests.cs
+    ├── StoreItemViewModelTests.cs
+    ├── UtmRoundTripTests.cs
+    └── VariableValidationTests.cs
 ```
+
+**Moved to shared libraries (do NOT add to `Fence/Services/`)**:
+
+| Service | Now lives in |
+|---------|--------------|
+| BaseItemTypeService | `Radoub.Formats/Services/` |
+| ItemResolutionService | `Radoub.UI/Services/` |
+| SharedPaletteCacheService | `Radoub.UI/Services/` (replaces the old `PaletteCacheService`) |
 
 ### Key Design Decisions
 
@@ -103,7 +105,10 @@ UTM files are GFF-based store blueprints containing:
 
 ---
 
-## Current Features (v0.1.8-alpha)
+## Current Features
+
+(Version managed by NBGV — see `version.json` and `CHANGELOG.md`)
+
 
 ### Store Properties
 - Edit all store metadata (name, tag, gold, prices)
@@ -192,7 +197,7 @@ Changes go in `Fence/CHANGELOG.md` (not Radoub CHANGELOG).
 
 ## Resources
 
-- **UTM Parser**: `Radoub.Formats/Radoub.Formats/Aurora/Utm/`
+- **UTM Parser**: `Radoub.Formats/Radoub.Formats/Utm/`
 - **Shared UI**: `Radoub.UI/`
 - **StoreBrowserWindow**: `Radoub.UI/Radoub.UI/Views/StoreBrowserWindow.axaml`
 

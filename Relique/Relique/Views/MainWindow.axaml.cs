@@ -108,7 +108,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (textBox == null) return;
         textBox.ContextMenuExtras = menu =>
             TokenContextMenu.AppendTokenMenu(menu, textBox, () =>
-                TokenInsertionHelper.OpenTokenWindow(textBox, this),
+                _ = TokenInsertionHelper.OpenTokenWindowAsync(textBox, this),
                 _quickTokenService);
     }
 

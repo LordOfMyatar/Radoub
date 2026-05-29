@@ -57,8 +57,10 @@ public class ItemBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
     private List<ItemBrowserEntry> _hakItems = new();
     private List<ItemBrowserEntry> _bifItems = new();
 
-    // Static cache for HAK file contents - persists across panel instances
-    private static readonly Dictionary<string, ItemHakCacheEntry> _hakCache = new();
+    // Static cache for HAK file contents - persists across panel instances.
+    // ConcurrentDictionary so concurrent panel instances (multi-window tool,
+    // Trebuchet preview + main tool) can safely race on Task.Run scans (#2262).
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ItemHakCacheEntry> _hakCache = new();
 
     public ItemBrowserPanel()
     {
@@ -634,11 +636,12 @@ public class ItemBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
             // Check cache first
             if (_hakCache.TryGetValue(hakPath, out var cached) && cached.LastModified == lastModified)
             {
+                // No inner dedup against _hakItems: MergeAdditionalEntries
+                // (via MergeEntries) handles case-insensitive dedup against
+                // _allEntries at merge time. The old inner skip dropped
+                // valid HAK overrides across HAKs and module ResRefs (#2262).
                 foreach (var item in cached.Items)
                 {
-                    if (_hakItems.Any(s => s.Name.Equals(item.Name, StringComparison.OrdinalIgnoreCase)))
-                        continue;
-
                     _hakItems.Add(new ItemBrowserEntry
                     {
                         Name = item.Name,
@@ -672,9 +675,7 @@ public class ItemBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
 
                 newCacheEntry.Items.Add(itemEntry);
 
-                if (_hakItems.Any(s => s.Name.Equals(resource.ResRef, StringComparison.OrdinalIgnoreCase)))
-                    continue;
-
+                // No inner dedup: MergeAdditionalEntries handles it (#2262).
                 _hakItems.Add(itemEntry);
             }
 

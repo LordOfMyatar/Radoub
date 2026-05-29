@@ -40,8 +40,10 @@ public class DialogBrowserPanel : FileBrowserPanelBase
     private bool _hakDialogsLoaded;
     private List<DialogBrowserEntry> _hakDialogs = new();
 
-    // Static cache for HAK file contents - persists across panel instances
-    private static readonly Dictionary<string, DialogHakCacheEntry> _hakCache = new();
+    // Static cache for HAK file contents - persists across panel instances.
+    // ConcurrentDictionary so concurrent panel instances can safely race on
+    // Task.Run scans (#2262).
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, DialogHakCacheEntry> _hakCache = new();
 
     public DialogBrowserPanel() : this(null)
     {
@@ -290,12 +292,11 @@ public class DialogBrowserPanel : FileBrowserPanelBase
             // Check cache first
             if (_hakCache.TryGetValue(hakPath, out var cached) && cached.LastModified == lastModified)
             {
+                // No inner dedup against _hakDialogs: MergeAdditionalEntries
+                // handles case-insensitive dedup against _allEntries at merge
+                // time. The old inner skip dropped valid HAK overrides (#2262).
                 foreach (var dialog in cached.Dialogs)
                 {
-                    // Skip if already have this dialog from module or another HAK
-                    if (_hakDialogs.Any(d => d.Name.Equals(dialog.Name, StringComparison.OrdinalIgnoreCase)))
-                        continue;
-
                     _hakDialogs.Add(new DialogBrowserEntry
                     {
                         Name = dialog.Name,
@@ -329,10 +330,7 @@ public class DialogBrowserPanel : FileBrowserPanelBase
 
                 newCacheEntry.Dialogs.Add(dialogEntry);
 
-                // Skip if already have this dialog
-                if (_hakDialogs.Any(d => d.Name.Equals(resource.ResRef, StringComparison.OrdinalIgnoreCase)))
-                    continue;
-
+                // No inner dedup: MergeAdditionalEntries handles it (#2262).
                 _hakDialogs.Add(dialogEntry);
             }
 

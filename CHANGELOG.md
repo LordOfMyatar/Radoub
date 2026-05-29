@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.1.61-alpha] - 2026-05-28
+**Branch**: `radoub/issue-2262` | **PR**: #2288
+
+### Fix: Static cache race, CT leak, async-void API, theme race, HAK dedup drops valid entries (#2262)
+
+- Static HAK caches in `{Item,Store,Creature,Dialog}BrowserPanel` and `HakScriptScanner` made thread-safe (concurrent panel instances no longer race on writes).
+- `FileBrowserPanelBase` now cancels and disposes `_indexingCts` on detach (no orphaned token/task on host teardown).
+- `TokenInsertionHelper.OpenTokenWindow` replaced with awaitable `OpenTokenWindowAsync`; old `async void` shim kept only where event-handler subscription requires it.
+- `ThemeManager.ApplyTheme` serialized against concurrent callers (no variant flicker / interleaved resource writes during settings+startup race).
+- HAK item/store/creature/dialog browsers no longer drop valid HAK overrides; redundant inner dedup removed in favor of base-class `MergeAdditionalEntries` dedup.
+- `TokenSelectorWindow` `</Start>` close-tag literal consolidated into a single `TokenDefinitions` constant.
+
+---
+
 ## [Radoub.UI 0.1.60-alpha] - 2026-05-28
 **Branch**: `relique/issue-2257-2261` | **PR**: #2283
 

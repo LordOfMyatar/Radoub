@@ -8,12 +8,14 @@ Project guidance for Claude Code sessions working with the Trebuchet (Radoub Lau
 
 **Trebuchet** is the central hub for the Radoub toolset. It provides:
 
-- **Tool Launcher** - Discover and launch Parley, Manifest, Quartermaster, Fence with recent file support
+- **Tool Launcher** - Discover and launch Parley, Manifest, Quartermaster, Fence, Relique with recent file support
 - **Module Editor** - Edit module.ifo properties (metadata, scripts, HAKs, variables, entry points)
-- **Module Management** - Unpack, edit, and build/pack modules
+- **Module Management** - Unpack, edit, and build/pack modules (with backup + area scan)
 - **Game Launcher** - Launch NWN:EE with selected module for testing
 - **Global Settings** - Game paths, TLK configuration, theme/font preferences
 - **Theme Editor** - Create and customize themes
+- **Marlinspike** - Search & replace across module resources (shipped as embedded Trebuchet tab)
+- **ERF Import** - Import .erf into the working module with collision detection
 
 ---
 
@@ -30,36 +32,56 @@ Trebuchet/
 │   ├── Controls/
 │   │   ├── ModuleEditorPanel.axaml(.cs)     # IFO editor embedded panel
 │   │   ├── FactionEditorPanel.axaml(.cs)    # Faction editor embedded panel
-│   │   ├── LaunchTestPanel.axaml(.cs)       # Game launch & build status panel
+│   │   ├── LaunchTestPanel.axaml(.cs)       # Build & Test tab
+│   │   ├── MarlinspikePanel.axaml(.cs)      # Search/replace tab
 │   │   ├── SidebarToolItemControl.axaml(.cs)# Tool card in sidebar
 │   │   └── ToolCardControl.axaml(.cs)
 │   ├── Services/
-│   │   ├── CommandLineService.cs      # CLI args parsing (--help, --safemode, --module)
-│   │   ├── GameLauncherService.cs     # Launch NWN:EE with module
-│   │   ├── ScriptCompilerService.cs   # NWScript compiler wrapper
-│   │   ├── SettingsService.cs         # Tool-specific settings (window, recent modules)
-│   │   ├── ToolLauncherService.cs     # Discover and launch Radoub tools
-│   │   ├── ToolRecentFilesService.cs  # Read tool MRU from settings
-│   │   └── UpdateService.cs           # Check for updates
+│   │   ├── AreaScanService.cs              # Module area indexing
+│   │   ├── BuildLogService.cs              # Build/compile log buffer
+│   │   ├── CommandLineService.cs           # CLI args (--help, --safemode, --module)
+│   │   ├── ErfImportService.cs             # ERF import with collision detect
+│   │   ├── GameLauncherService.cs          # Launch NWN:EE with module
+│   │   ├── ModuleFileLockService.cs        # Per-file lock during pack
+│   │   ├── ModulePackService.cs            # .mod pack/unpack
+│   │   ├── ModulePathHelper.cs             # Path resolution helpers
+│   │   ├── PaletteCacheWarmupService.cs    # Pre-warm shared palette caches
+│   │   ├── RenameDispatchHelpers.cs        # Cross-tool rename dispatch
+│   │   ├── ResultDispatcher.cs             # Async result dispatch helpers
+│   │   ├── ScriptCompilerService.cs        # NWScript compiler wrapper
+│   │   ├── SearchIndexStaleness.cs         # Marlinspike index staleness check
+│   │   ├── SettingsService.cs              # Tool-specific settings
+│   │   ├── ToolLauncherService.cs          # Discover/launch Radoub tools
+│   │   ├── ToolRecentFilesService.cs       # Read tool MRU
+│   │   ├── TrebuchetScriptBrowserContext.cs# IScriptBrowserContext adapter
+│   │   └── UpdateService.cs                # Check for updates
 │   ├── ViewModels/
-│   │   ├── MainWindowViewModel.cs
-│   │   ├── ModuleEditorViewModel.cs   # IFO editing logic
-│   │   ├── FactionEditorViewModel.cs  # Faction editing logic
+│   │   ├── MainWindowViewModel.cs + Build/DefaultBic/GameLaunch/Modules partials
+│   │   ├── ModuleEditorViewModel.cs + Changes/Collections/Loading/
+│   │   │                              Persistence/Scripts/Sync/Version partials
+│   │   ├── FactionEditorViewModel.cs
+│   │   ├── MarlinspikePanelViewModel.cs
+│   │   ├── ErfImportViewModel.cs
+│   │   ├── ErfResourceViewModel.cs
 │   │   ├── SettingsWindowViewModel.cs
-│   │   └── ThemeEditorViewModel.cs
+│   │   ├── ThemeEditorViewModel.cs
+│   │   └── VariableViewModel.cs
 │   ├── Views/
-│   │   ├── MainWindow.axaml(.cs)      # Main layout: sidebar + workspace tabs
+│   │   ├── MainWindow.axaml(.cs)         # sidebar + workspace tabs
 │   │   ├── SettingsWindow.axaml(.cs)
 │   │   ├── ThemeEditorWindow.axaml(.cs)
+│   │   ├── ErfImportWindow.axaml(.cs)
+│   │   ├── ReplacePreviewWindow.axaml(.cs)
+│   │   ├── AlertDialog.axaml(.cs)
+│   │   ├── AutoSuffixCollisionDialog.axaml(.cs)
 │   │   ├── AddFactionDialog.axaml(.cs)
 │   │   └── ConfirmDialog.axaml(.cs)
-│   ├── Themes/
-│   │   ├── light.json
-│   │   └── dark.json
 │   └── Assets/
-├── Trebuchet.Tests/     # Unit tests (CommandLineService, SettingsService)
+├── Trebuchet.Tests/     # Unit tests
 └── (Radoub.IntegrationTests/Trebuchet/) # FlaUI UI tests (in root project)
 ```
+
+Themes live in `Radoub.UI/Themes/` (shared across all tools, ~8 built-in themes) — not in `Trebuchet/`. Trebuchet's `ThemeEditorViewModel` reads/writes the shared theme directory.
 
 ### Key Design Decisions
 
@@ -67,7 +89,7 @@ Trebuchet/
 - **Namespace**: `RadoubLauncher` (internal, like Parley uses `ConversationEditor`)
 - **Assembly**: `Trebuchet`
 
-### Main Window Layout (Sprint 1-4, Epic #1160)
+### Main Window Layout
 
 ```
 ┌──────────────────────────────────────────────┐
@@ -78,7 +100,7 @@ Trebuchet/
 ├────────┬─────────────────────────────────────┤
 │SIDEBAR │ Workspace Tabs                      │
 │        │ ┌────────┬──────────┬─────────────┐ │
-│ TOOLS  │ │ Module │ Factions │ Launch&Test  │ │
+│ TOOLS  │ │ Module │ Factions │ Build&Test  │ │
 │ ────── │ ├────────┴──────────┴─────────────┤ │
 │ Parley │ │                                 │ │
 │ Manif. │ │  Tab Content Panel              │ │
@@ -98,10 +120,11 @@ Trebuchet/
 **Workspace Tabs**:
 - **Module** (default): IFO metadata, version, HAKs, time, entry point, scripts, variables
 - **Factions**: Visual faction relationship editor (reputation matrix)
-- **Launch & Test**: Game launch buttons, DefaultBic, build status, compile options
+- **Build & Test**: Game launch buttons, DefaultBic, build status, compile options
+- **Marlinspike**: Search & replace across module resources
 
 **Keyboard Shortcuts**:
-- Ctrl+1/2/3: Switch workspace tabs (Module/Factions/Launch & Test)
+- Ctrl+1/2/3/4: Switch workspace tabs (Module / Factions / Build & Test / Marlinspike)
 - Ctrl+S: Save (toolbar)
 
 **Empty State**: When no module loaded, workspace shows welcome message with "Open Module..." button.
@@ -113,10 +136,12 @@ Trebuchet/
 
 ---
 
-## Current Features (v1.13.0-alpha)
+## Current Features
+
+(Version managed by NBGV — see `version.json` and `CHANGELOG.md`)
 
 ### Tool Launcher
-- Discover installed Radoub tools (Parley, Manifest, Quartermaster, Fence)
+- Discover installed Radoub tools (Parley, Manifest, Quartermaster, Fence, Relique)
 - Launch tools with optional file argument
 - Recent files dropdown per tool (reads from tool's settings.json)
 
@@ -248,9 +273,9 @@ When a working directory exists alongside the .mod file, Trebuchet loads from th
 
 Uses `Radoub.UI.ThemeManager` for consistent theming across tools:
 
-- Theme files in `Themes/` folder (light, dark, custom)
+- Theme files ship in `Radoub.UI/Themes/` (shared across all tools, ~8 built-in themes)
 - Theme ID format: `org.radoub.theme.{name}` (universal IDs for shared themes)
-- On startup, Trebuchet copies bundled themes to `~/Radoub/Themes/` so other tools can access them
+- Users can author custom themes via Trebuchet's Theme Editor; output goes to the per-user shared theme directory
 - Accessibility: Font size scaling, high contrast support
 
 ---
@@ -289,20 +314,10 @@ Before committing:
 
 ---
 
-## Upcoming Features
-
-### NWScript Compiler Integration (#1116)
-- Bundle neverwinter.nim's `nwn_script_comp.exe`
-- Compile .nss files before packing
-- Checkbox to enable/disable compilation (for large modules)
-- Timestamp comparison: prompt if .nss newer than .ncs
-
----
-
 ## Resources
 
 - [Trebuchet CHANGELOG](CHANGELOG.md)
 - [RadoubSettings.cs](../Radoub.Formats/Radoub.Formats/Settings/RadoubSettings.cs)
 - [ThemeManager.cs](../Radoub.UI/Radoub.UI/Services/ThemeManager.cs)
-- [IfoFile.cs](../Radoub.Formats/Radoub.Formats/Aurora/Ifo/IfoFile.cs)
+- [IfoFile.cs](../Radoub.Formats/Radoub.Formats/Ifo/IfoFile.cs)
 - [neverwinter.nim](https://github.com/niv/neverwinter.nim) - Reference implementation

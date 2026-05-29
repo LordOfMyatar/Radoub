@@ -326,7 +326,7 @@ public partial class MainWindow
 
                     if (tokenTarget != null)
                     {
-                        TokenInsertionHelper.OpenTokenWindow(tokenTarget, this);
+                        _ = TokenInsertionHelper.OpenTokenWindowAsync(tokenTarget, this);
                         e.Handled = true;
                     }
                     break;

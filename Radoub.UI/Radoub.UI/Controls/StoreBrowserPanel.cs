@@ -58,8 +58,10 @@ public class StoreBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
     private List<StoreBrowserEntry> _hakStores = new();
     private List<StoreBrowserEntry> _bifStores = new();
 
-    // Static cache for HAK file contents - persists across panel instances
-    private static readonly Dictionary<string, StoreHakCacheEntry> _hakCache = new();
+    // Static cache for HAK file contents - persists across panel instances.
+    // ConcurrentDictionary so concurrent panel instances can safely race on
+    // Task.Run scans (#2262).
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, StoreHakCacheEntry> _hakCache = new();
 
     public StoreBrowserPanel() : this(null)
     {
@@ -677,12 +679,11 @@ public class StoreBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
             // Check in-memory HAK index cache first
             if (_hakCache.TryGetValue(hakPath, out var cached) && cached.LastModified == lastModified)
             {
+                // No inner dedup against _hakStores: MergeAdditionalEntries
+                // handles case-insensitive dedup against _allEntries at merge
+                // time. The old inner skip dropped valid HAK overrides (#2262).
                 foreach (var store in cached.Stores)
                 {
-                    // Skip if already have this store from module or another HAK
-                    if (_hakStores.Any(s => s.Name.Equals(store.Name, StringComparison.OrdinalIgnoreCase)))
-                        continue;
-
                     _hakStores.Add(new StoreBrowserEntry
                     {
                         Name = store.Name,
@@ -731,10 +732,7 @@ public class StoreBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
                     }
                 }
 
-                // Skip duplicates in visible list
-                if (_hakStores.Any(s => s.Name.Equals(resource.ResRef, StringComparison.OrdinalIgnoreCase)))
-                    continue;
-
+                // No inner dedup: MergeAdditionalEntries handles it (#2262).
                 _hakStores.Add(storeEntry);
             }
 

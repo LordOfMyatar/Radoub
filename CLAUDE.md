@@ -27,7 +27,11 @@ Project guidance for Claude Code sessions working with the Radoub multi-tool rep
 
 ### Planned Tools
 
-Future tools will be added as subdirectories with their own README, CLAUDE.md, and development infrastructure.
+| Tool | Description | Status |
+|------|-------------|--------|
+| **Reliquary** | (TBD — placeholder for future tool) | Planned; bootstrap FlaUI infra tracked in [#2304](https://github.com/LordOfMyatar/Radoub/issues/2304) |
+
+Future tools land as subdirectories with their own README, CLAUDE.md, and development infrastructure. Bootstrap follows the [New Tool Bootstrap Checklist](#new-tool-bootstrap-checklist).
 
 ---
 
@@ -424,6 +428,8 @@ New tools must integrate with Trebuchet (the Radoub launcher):
 ### File Browser Adoption (FileBrowserPanelBase)
 
 If the new tool edits a resource type with a localized Name and/or script Tag (UTI, UTM, UTC, UTP, etc.), the file browser panel must expose Name/Tag sort and search alongside ResRef. The shared `FileBrowserPanelBase` does the DataGrid, column headers, search box, sort comparators, background prefetch, and cancellation; the tool wires three virtual hooks plus one host-side save-notify call. Epic [#2186](https://github.com/LordOfMyatar/Radoub/issues/2186) (PRs [#2204](https://github.com/LordOfMyatar/Radoub/pull/2204) Sprint 1 infra, [#2208](https://github.com/LordOfMyatar/Radoub/pull/2208) Relique adoption, [#2209](https://github.com/LordOfMyatar/Radoub/pull/2209) Fence adoption).
+
+**Lifecycle (base-class — do not duplicate)**: `FileBrowserPanelBase` owns the indexing `CancellationTokenSource` and disposes it via an `OnDetachedFromVisualTree` override that calls `CancelIndexing()` (#2262). Subclasses must **not** add their own detach handler for the indexing CTS, must not re-cancel in `Unloaded`, and must not hold a reference to the CTS. If a subclass needs to cancel its own background work, it must own a separate CTS and dispose it from its own detach handler — never reuse `_indexingCts`.
 
 **Panel-side virtual hooks** (in the `*BrowserPanel : FileBrowserPanelBase` subclass):
 

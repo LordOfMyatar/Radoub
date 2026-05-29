@@ -80,8 +80,10 @@ public class CreatureBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
     private bool _showBifCreatures;
     private bool _bifCreaturesLoaded;
 
-    // Static cache for HAK file contents - persists across panel instances
-    private static readonly Dictionary<string, CreatureHakCacheEntry> _hakCache = new();
+    // Static cache for HAK file contents - persists across panel instances.
+    // ConcurrentDictionary so concurrent panel instances can safely race on
+    // Task.Run scans (#2262).
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, CreatureHakCacheEntry> _hakCache = new();
 
     public CreatureBrowserPanel() : this(null)
     {
@@ -818,12 +820,11 @@ public class CreatureBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
             // Check cache first
             if (_hakCache.TryGetValue(hakPath, out var cached) && cached.LastModified == lastModified)
             {
+                // No inner dedup against _hakEntries: MergeAdditionalEntries
+                // handles case-insensitive dedup against _allEntries at merge
+                // time. The old inner skip dropped valid HAK overrides (#2262).
                 foreach (var creature in cached.Creatures)
                 {
-                    // Skip if already have this creature from module or another HAK
-                    if (_hakEntries.Any(c => c.Name.Equals(creature.Name, StringComparison.OrdinalIgnoreCase)))
-                        continue;
-
                     _hakEntries.Add(new CreatureBrowserEntry
                     {
                         Name = creature.Name,
@@ -874,10 +875,7 @@ public class CreatureBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
                     }
                 }
 
-                // Skip if already have this creature
-                if (_hakEntries.Any(c => c.Name.Equals(resource.ResRef, StringComparison.OrdinalIgnoreCase)))
-                    continue;
-
+                // No inner dedup: MergeAdditionalEntries handles it (#2262).
                 _hakEntries.Add(creatureEntry);
             }
 

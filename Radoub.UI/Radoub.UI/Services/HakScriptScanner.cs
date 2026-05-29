@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -25,9 +26,13 @@ internal class ScriptHakCacheEntry
 /// </summary>
 public class HakScriptScanner
 {
-    // Static cache for HAK file contents - persists across scanner instances
-    // Bounded to prevent unbounded memory growth when scanning many HAK files
-    private static readonly Dictionary<string, ScriptHakCacheEntry> _hakCache = new();
+    // Static cache for HAK file contents - persists across scanner instances.
+    // ConcurrentDictionary so multiple scanners running Task.Run scans in
+    // parallel (e.g. one tool open while Trebuchet previews another) can
+    // safely race on writes (#2262). Bounded to prevent unbounded memory
+    // growth when scanning many HAK files. Eviction is non-atomic but only
+    // racey under high contention — worst case drops an extra entry.
+    private static readonly ConcurrentDictionary<string, ScriptHakCacheEntry> _hakCache = new();
     private const int MaxCacheEntries = 64;
 
     /// <summary>
@@ -133,9 +138,11 @@ public class HakScriptScanner
             if (_hakCache.Count >= MaxCacheEntries && !_hakCache.ContainsKey(hakPath))
             {
                 var oldest = _hakCache.OrderBy(kvp => kvp.Value.LastModified).First().Key;
-                _hakCache.Remove(oldest);
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"HakScriptScanner: Evicted cache entry for {Path.GetFileName(oldest)}");
+                if (_hakCache.TryRemove(oldest, out _))
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"HakScriptScanner: Evicted cache entry for {Path.GetFileName(oldest)}");
+                }
             }
 
             // Update cache

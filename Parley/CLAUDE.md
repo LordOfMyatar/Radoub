@@ -22,18 +22,32 @@ Parley/
 ├── CHANGELOG.md
 ├── CLAUDE.md (this file)
 ├── Parley/
-│   ├── Views/
-│   │   ├── MainWindow.axaml(.cs)
-│   │   ├── SettingsWindow.axaml(.cs)
-│   │   └── Controllers/ (settings section controllers)
-│   ├── ViewModels/MainViewModel.cs
-│   ├── Models/ (Dialog, DialogNode, DialogPtr)
-│   ├── Services/ (DialogFileService, SoundService, ScriptService, etc.)
-│   ├── Handlers/ (UI event handlers)
-│   └── Themes/ (JSON theme files)
+│   ├── App.axaml(.cs)
+│   ├── Program.cs
+│   ├── Controls/         (Avalonia user controls)
+│   ├── Models/           (~23 files — ConversationNode, DialogStructures,
+│   │                      FlowchartGraph, LinkRegistry, UndoManager, etc.)
+│   ├── Parsers/          (DLG/JRL parser plumbing)
+│   ├── Services/         (~50 files — DialogFileService, SoundService,
+│   │                      ScriptService, plus many extracted concerns)
+│   ├── Handlers/         (NodePropertiesHelper only; legacy single-file folder)
+│   ├── Utils/            (helpers, extensions)
+│   ├── ViewModels/
+│   │   ├── MainViewModel.cs                  (~380 lines — closed for new logic)
+│   │   ├── MainViewModel.EditOperations.cs
+│   │   ├── MainViewModel.FileOperations.cs
+│   │   ├── MainViewModel.NodeOperations.cs
+│   │   ├── MainViewModel.ScrapOperations.cs
+│   │   └── MainViewModel.TreeOperations.cs
+│   └── Views/
+│       ├── MainWindow.axaml(.cs)
+│       ├── SettingsWindow.axaml(.cs)
+│       └── Controllers/ (settings section controllers)
 ├── Parley.Tests/ (unit tests)
 └── TestingTools/ (debug/analysis tools)
 ```
+
+Themes live in `Radoub.UI/Themes/` (shared across all tools) — not in `Parley/`.
 
 ---
 
@@ -41,7 +55,7 @@ Parley/
 
 ### MainViewModel is Closed for New Logic
 
-MainViewModel.cs has been refactored from 3,500+ to ~1,500 lines. **Do not add new logic here.**
+`MainViewModel.cs` has been refactored from 3,500+ lines down to ~380 lines, with operations extracted to 5 partials (`Edit`, `File`, `Node`, `Scrap`, `Tree`). **Do not add new logic here.**
 
 **Pattern**:
 ```csharp
