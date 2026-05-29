@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.Dictionary 0.2.3-alpha] - 2026-05-29
+**Branch**: `radoub/issue-2263` | **PR**: #TBD
+
+### Fix: Dual-singleton + no file locking causes user custom-word loss (#2263)
+
+- Single source of truth for custom-word writes and atomic, cross-process-safe save of the user dictionary so words no longer vanish when tools run together.
+
+---
+
 ## [Radoub.Formats 0.2.62-alpha] - 2026-05-29
 **Branch**: `fence/issue-2256` | **PR**: #2306
 
