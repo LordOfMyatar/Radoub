@@ -122,8 +122,11 @@ public partial class MarlinspikePanel : UserControl
             var di = new DirectoryInfo(path);
             return di.Exists ? di.LastWriteTimeUtc : (DateTime?)null;
         }
-        catch
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+                                   or System.Security.SecurityException or ArgumentException)
         {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"GetDirectoryMtime failed for {UnifiedLogger.SanitizePath(path)}: {ex.Message}");
             return null;
         }
     }
