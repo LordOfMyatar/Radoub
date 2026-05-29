@@ -5,6 +5,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.112-alpha] - 2026-05-28
+**Branch**: `quartermaster/issue-2252` | **PR**: #TBD
+
+### Sprint: Hygiene + game-data sourcing (#2252, #2251)
+
+- Lifecycle, async, and process-launch hygiene (#2252)
+- Hardcoded game-data fallback tables replaced with 2DA/TLK lookup + WARN-once fallback (#2251)
+
+---
+
 ## [0.2.96-alpha] - 2026-05-26
 **Branch**: `quartermaster/issue-2249` | **PR**: #2275
 
