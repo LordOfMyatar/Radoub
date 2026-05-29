@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.36.6-alpha] - 2026-05-29
-**Branch**: `trebuchet/issue-2248` | **PR**: #TBD
+**Branch**: `trebuchet/issue-2248` | **PR**: #2312
 
 ### Fix: Process launch + lifecycle hygiene (#2248)
 
