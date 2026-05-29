@@ -473,7 +473,11 @@ public partial class MainWindow
             if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
             {
                 try { suggestedFolder = await StorageProvider.TryGetFolderFromPathAsync(dir); }
-                catch { /* fall back to OS default */ }
+                catch (Exception ex) // #2252 — log; fall back to OS default
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"SaveFileAs: TryGetFolderFromPathAsync failed for {UnifiedLogger.SanitizePath(dir)}: {ex.Message}");
+                }
             }
         }
 

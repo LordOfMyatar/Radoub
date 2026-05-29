@@ -1,8 +1,10 @@
+using System;
 using System.IO;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
 
 namespace Quartermaster.Views.Dialogs;
@@ -101,7 +103,11 @@ public partial class NewCharacterWizardWindow
                 }
             }
         }
-        catch { /* fallback to no suggestion */ }
+        catch (Exception ex) // #2252 — log; fallback to no suggestion
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"NewCharacterWizard.FileType: suggested-folder lookup failed: {ex.Message}");
+        }
 
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
