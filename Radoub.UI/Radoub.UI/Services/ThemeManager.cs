@@ -295,7 +295,16 @@ public partial class ThemeManager
     }
 
     /// <summary>
-    /// Apply a theme manifest
+    /// Apply a theme manifest.
+    /// Serialized against other ApplyTheme/ApplySharedTheme callers via the
+    /// shared <see cref="_lock"/> so the Step-1-opposite / Step-2-real-variant
+    /// dance cannot interleave with a second caller's Step 1, which produced
+    /// variant flicker and interleaved resource writes when the startup race
+    /// hit the settings dialog (#2262). The Dispatcher.UIThread.Post in
+    /// Step 2b runs outside the critical section's continuation chain — its
+    /// continuation is serialized by the UI thread itself, and queueing it
+    /// while holding _lock cannot deadlock with a concurrent caller waiting
+    /// on _lock because Post returns immediately without pumping the UI loop.
     /// </summary>
     public bool ApplyTheme(ThemeManifest theme)
     {
@@ -315,30 +324,33 @@ public partial class ThemeManager
                 _ => ThemeVariant.Light
             };
 
-            // Step 1: Set opposite variant to force Fluent to fully re-derive
-            // its internal resource dictionaries. This ensures controls like
-            // Button, CheckBox, TabItem pick up the new colors.
-            var oppositeVariant = targetVariant == ThemeVariant.Light
-                ? ThemeVariant.Dark
-                : ThemeVariant.Light;
-            app.RequestedThemeVariant = oppositeVariant;
-
-            // Step 2a: Apply semantic colors synchronously so BrushManager
-            // can resolve ThemeInfo/ThemeSuccess/etc. immediately — before any
-            // window constructors run. These are custom resources that don't
-            // depend on Fluent's variant re-derivation.
-            if (theme.Colors != null)
-                ApplySemanticColors(app.Resources, theme.Colors);
-
-            // Step 2b: Yield to the UI thread so Avalonia processes the variant
-            // change (style detach/reattach, resource re-derivation). Then set
-            // the real variant and apply our full color overrides.
-            var capturedTheme = theme;
-            Dispatcher.UIThread.Post(() =>
+            lock (_lock)
             {
-                app.RequestedThemeVariant = targetVariant;
-                ApplyThemeResources(app, capturedTheme);
-            }, DispatcherPriority.Send);
+                // Step 1: Set opposite variant to force Fluent to fully re-derive
+                // its internal resource dictionaries. This ensures controls like
+                // Button, CheckBox, TabItem pick up the new colors.
+                var oppositeVariant = targetVariant == ThemeVariant.Light
+                    ? ThemeVariant.Dark
+                    : ThemeVariant.Light;
+                app.RequestedThemeVariant = oppositeVariant;
+
+                // Step 2a: Apply semantic colors synchronously so BrushManager
+                // can resolve ThemeInfo/ThemeSuccess/etc. immediately — before any
+                // window constructors run. These are custom resources that don't
+                // depend on Fluent's variant re-derivation.
+                if (theme.Colors != null)
+                    ApplySemanticColors(app.Resources, theme.Colors);
+
+                // Step 2b: Yield to the UI thread so Avalonia processes the variant
+                // change (style detach/reattach, resource re-derivation). Then set
+                // the real variant and apply our full color overrides.
+                var capturedTheme = theme;
+                Dispatcher.UIThread.Post(() =>
+                {
+                    app.RequestedThemeVariant = targetVariant;
+                    ApplyThemeResources(app, capturedTheme);
+                }, DispatcherPriority.Send);
+            }
 
             return true;
         }
