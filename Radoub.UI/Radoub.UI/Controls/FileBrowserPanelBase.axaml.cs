@@ -710,7 +710,9 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
     }
 
     /// <summary>
-    /// Cancel any in-flight indexing task. Called on module change and disposal.
+    /// Cancel any in-flight indexing task. Called on module change and on
+    /// detach (#2262) so a host disposing the panel mid-index doesn't orphan
+    /// the CancellationTokenSource and its background Task.
     /// </summary>
     private void CancelIndexing()
     {
@@ -720,6 +722,15 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
             _indexingCts.Dispose();
             _indexingCts = null;
         }
+    }
+
+    /// <inheritdoc/>
+    protected override void OnDetachedFromVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
+    {
+        // Free the in-flight indexing CTS so detaching the panel mid-index
+        // doesn't leak it until the next ModulePath setter (#2262).
+        CancelIndexing();
+        base.OnDetachedFromVisualTree(e);
     }
 
     /// <summary>
