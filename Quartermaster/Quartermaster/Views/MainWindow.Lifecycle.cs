@@ -175,13 +175,25 @@ public partial class MainWindow
         SaveCreatureBrowserPanelSize();
     }
 
+    // #2252 — re-entrancy guard: HandleClosingAsync sets e.Cancel=true when it
+    // needed to await a "save before close" prompt; the trailing Close() call
+    // re-fires OnWindowClosing. Without this flag the disposes ran twice.
+    private bool _isClosingConfirmed;
+
     private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
     {
+        if (_isClosingConfirmed)
+        {
+            // Second pass triggered by the trailing Close() below — let it through.
+            return;
+        }
+
         var shouldClose = await Radoub.UI.Services.FileOperationsHelper.HandleClosingAsync(
             this, e, _documentState.IsDirty, async () => { await SaveFile(); return true; });
 
         if (shouldClose)
         {
+            _isClosingConfirmed = true;
             _documentState.ClearDirty();
             Radoub.UI.Services.ThemeManager.Instance.ThemeApplied -= OnThemeApplied;
             Radoub.UI.Services.FileSessionLockService.ReleaseAllLocks();
@@ -195,7 +207,7 @@ public partial class MainWindow
             _gameDataService?.Dispose();
             _paletteCacheCts?.Dispose();
             (_sharedCacheService as IDisposable)?.Dispose();
-            (_creaturePaletteCache as IDisposable)?.Dispose(); // #2252
+            (_creaturePaletteCache as IDisposable)?.Dispose();
 
             if (e.Cancel)
             {
