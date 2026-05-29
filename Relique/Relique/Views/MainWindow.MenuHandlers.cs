@@ -100,6 +100,13 @@ public partial class MainWindow
             _itemViewModel.PropertyChanged -= OnItemPropertyChanged;
         }
 
+        // Release file session lock before clearing the path — otherwise the lock
+        // sidecar persists until window close, blocking other Radoub tools (#2257).
+        if (!string.IsNullOrEmpty(_currentFilePath))
+        {
+            Radoub.UI.Services.FileSessionLockService.ReleaseLock(_currentFilePath);
+        }
+
         _currentItem = null;
         _currentFilePath = null;
         _itemViewModel = null;

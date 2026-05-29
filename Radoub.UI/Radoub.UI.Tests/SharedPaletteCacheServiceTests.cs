@@ -183,6 +183,41 @@ public class SharedPaletteCacheServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task HasValidSourceCache_Hak_ReturnsFalse_WhenHakFileDeleted()
+    {
+        // #2261 — deleted HAK must invalidate its cache. Previously fell through to return true.
+        var hakPath = Path.Combine(_testCacheDir, "ephemeral.hak");
+        File.WriteAllText(hakPath, "original");
+        var modTime = File.GetLastWriteTimeUtc(hakPath);
+
+        await _service.SaveSourceCacheAsync("hak", CreateTestItems(),
+            validationPath: hakPath, sourceModified: modTime);
+        Assert.True(_service.HasValidSourceCache("hak", hakPath));
+
+        // Delete the underlying HAK
+        File.Delete(hakPath);
+
+        // Cache must report invalid now — otherwise ghost entries forever
+        Assert.False(_service.HasValidSourceCache("hak", hakPath));
+    }
+
+    [Fact]
+    public async Task LoadSourceCache_Hak_ReturnsNull_WhenHakFileDeleted()
+    {
+        // #2261 — LoadSourceCache must also check source existence for HAKs.
+        var hakPath = Path.Combine(_testCacheDir, "ephemeral_load.hak");
+        File.WriteAllText(hakPath, "original");
+
+        await _service.SaveSourceCacheAsync("hak", CreateTestItems(),
+            validationPath: hakPath, sourceModified: File.GetLastWriteTimeUtc(hakPath));
+        Assert.NotNull(_service.LoadSourceCache("hak", hakPath));
+
+        File.Delete(hakPath);
+
+        Assert.Null(_service.LoadSourceCache("hak", hakPath));
+    }
+
+    [Fact]
     public async Task HasValidSourceCache_ReturnsFalse_WhenCacheFileCorrupted()
     {
         await _service.SaveSourceCacheAsync("bif", CreateTestItems(), validationPath: "/path");

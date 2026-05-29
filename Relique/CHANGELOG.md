@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.20-alpha] - 2026-05-28
+**Branch**: `relique/issue-2257-2261` | **PR**: #2283
+
+### Sprint: Critical lock + HAK cache fixes (#2257, #2261)
+
+- File lock leaks on close/delete/open-failure paths + disabled Undo/Redo menu stubs (#2257)
+- Shared HAK cache marked valid forever after HAK deletion; `ItemBrowserPanel` scans every HAK instead of module-referenced subset, unlike sibling Store/Creature panels (#2261)
+
+---
+
 ## [0.10.19-alpha] - 2026-05-26
 **Branch**: `radoub/issue-2244` | **PR**: #2266
 

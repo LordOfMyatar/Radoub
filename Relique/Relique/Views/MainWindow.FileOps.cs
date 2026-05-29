@@ -16,16 +16,17 @@ public partial class MainWindow
 
     private async Task<bool> OpenFileAsync(string filePath)
     {
+        // Hold the previous path's lock until the new file is successfully read.
+        // If UtiReader.Read throws we must NOT have orphaned the old lock or kept
+        // a lock on a file we failed to open. (#2257)
+        var previousFilePath = _currentFilePath;
+        var newLockAcquired = false;
+        var newLockIsReadOnly = false;
+
         try
         {
             _isLoading = true;
             UpdateStatus($"Opening {Path.GetFileName(filePath)}...");
-
-            // Release lock on previous file if any
-            if (!string.IsNullOrEmpty(_currentFilePath))
-            {
-                FileSessionLockService.ReleaseLock(_currentFilePath);
-            }
 
             // Reset read-only — about to open a real file from disk (#2106)
             _documentState.IsReadOnly = false;
@@ -39,9 +40,22 @@ public partial class MainWindow
                 UnifiedLogger.LogApplication(LogLevel.WARN, $"File locked by {toolName} — opening read-only: {UnifiedLogger.SanitizePath(filePath)}");
                 UpdateStatus($"File is open in {toolName} — opening read-only");
                 _documentState.IsReadOnly = true;
+                newLockIsReadOnly = true;
+            }
+            else if (lockResult == LockResult.Acquired)
+            {
+                newLockAcquired = true;
             }
 
             var item = UtiReader.Read(filePath);
+
+            // Read succeeded — safe to release the previous file's lock now.
+            if (!string.IsNullOrEmpty(previousFilePath) &&
+                !string.Equals(previousFilePath, filePath, System.StringComparison.OrdinalIgnoreCase))
+            {
+                FileSessionLockService.ReleaseLock(previousFilePath);
+            }
+
             _currentItem = item;
             _currentFilePath = filePath;
             _documentState.ClearDirty();
@@ -76,6 +90,13 @@ public partial class MainWindow
         }
         catch (System.Exception ex)
         {
+            // Release any lock we just acquired on the file we failed to read.
+            // Do NOT touch the previous file's lock — it was never released. (#2257)
+            if (newLockAcquired && !newLockIsReadOnly)
+            {
+                FileSessionLockService.ReleaseLock(filePath);
+            }
+
             UpdateStatus("Error opening file");
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open {UnifiedLogger.SanitizePath(filePath)}: {ex.Message}");
             await ShowErrorAsync($"Failed to open file:\n{ex.Message}");

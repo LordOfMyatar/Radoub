@@ -81,10 +81,17 @@ public class SharedPaletteCacheService : ISharedPaletteCacheService, IDisposable
                 return false;
             }
 
-            // HAK-specific: validate file modification time
+            // HAK-specific: validate that source file still exists, then check mod time. #2261
             if (source.Equals("hak", StringComparison.OrdinalIgnoreCase) &&
-                !string.IsNullOrEmpty(sourcePath) && File.Exists(sourcePath))
+                !string.IsNullOrEmpty(sourcePath))
             {
+                if (!File.Exists(sourcePath))
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"Shared palette HAK cache invalidated - {Path.GetFileName(sourcePath)} missing");
+                    return false;
+                }
+
                 var hakModified = File.GetLastWriteTimeUtc(sourcePath);
                 if (cache.SourceModified != hakModified)
                 {
@@ -109,6 +116,15 @@ public class SharedPaletteCacheService : ISharedPaletteCacheService, IDisposable
         var cacheFile = GetCacheFilePath(source, sourcePath);
         if (!File.Exists(cacheFile))
             return null;
+
+        // HAK source: refuse to return cache for a HAK that no longer exists. #2261
+        if (source.Equals("hak", StringComparison.OrdinalIgnoreCase) &&
+            !string.IsNullOrEmpty(sourcePath) && !File.Exists(sourcePath))
+        {
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Shared palette HAK cache skipped - {Path.GetFileName(sourcePath)} missing");
+            return null;
+        }
 
         try
         {

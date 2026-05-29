@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.1.60-alpha] - 2026-05-28
+**Branch**: `relique/issue-2257-2261` | **PR**: #2283
+
+### Fix: Stale HAK cache + ItemBrowserPanel HAK scan asymmetry (#2261)
+
+- `SharedPaletteCacheService.HasValidSourceCache` and `LoadSourceCache` now invalidate HAK caches when the underlying HAK file no longer exists; previously deleted HAKs left their caches marked valid forever, producing ghost browser entries no extraction path could resolve. Affects every tool consuming `ISharedPaletteCacheService` (Relique, Fence, Quartermaster).
+- `ItemBrowserPanel.LoadHakItemsAsync` now resolves HAK paths through `ModuleHakResolver` instead of scanning every HAK in the module + NWN/hak folders, matching `StoreBrowserPanel` and `CreatureBrowserPanel`. Eliminates slow Relique cold starts on large HAK collections (CEP, PRC) and removes irrelevant items from the item browser. Tool-specific notes in [Relique CHANGELOG](Relique/CHANGELOG.md#01020-alpha--2026-05-28).
+
+---
+
 ## [Radoub.Formats 0.2.61-alpha] - 2026-05-27
 **Branch**: `quartermaster/issue-2249` | **PR**: #2275
 

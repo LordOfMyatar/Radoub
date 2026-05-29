@@ -50,9 +50,6 @@
                 <MenuItem Header="E_xit" Click="OnExitClick" InputGesture="Alt+F4"/>
             </MenuItem>
             <MenuItem Header="_Edit">
-                <MenuItem Header="_Undo" InputGesture="Ctrl+Z" IsEnabled="False" ToolTip.Tip="Not yet implemented"/>
-                <MenuItem Header="_Redo" InputGesture="Ctrl+Y" IsEnabled="False" ToolTip.Tip="Not yet implemented"/>
-                <Separator/>
                 <MenuItem Header="_Find..." Click="OnFindClick" InputGesture="Ctrl+F" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
                 <MenuItem Header="_Replace..." Click="OnFindReplaceClick" InputGesture="Ctrl+H" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
             </MenuItem>
