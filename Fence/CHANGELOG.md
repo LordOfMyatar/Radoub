@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.36-alpha] - 2026-05-29
+**Branch**: `fence/issue-2256` | **PR**: #TBD
+
+### Fix: Modal picker, ContinueWith fault handling, non-atomic save (#2256)
+
+- File-open flow hardening: guard inventory-population faults so the editor can't get stuck loading, set `IsLoading` before reading, switch save to atomic `File.Replace`, and resolve the modal-vs-non-modal picker inconsistency against Fence's own UI doc.
+
+---
+
 ## [0.1.35-alpha] - 2026-05-26
 **Branch**: `radoub/issue-2244` | **PR**: #2266
 
