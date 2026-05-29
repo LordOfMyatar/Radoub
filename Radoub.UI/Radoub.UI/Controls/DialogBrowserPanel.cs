@@ -292,12 +292,11 @@ public class DialogBrowserPanel : FileBrowserPanelBase
             // Check cache first
             if (_hakCache.TryGetValue(hakPath, out var cached) && cached.LastModified == lastModified)
             {
+                // No inner dedup against _hakDialogs: MergeAdditionalEntries
+                // handles case-insensitive dedup against _allEntries at merge
+                // time. The old inner skip dropped valid HAK overrides (#2262).
                 foreach (var dialog in cached.Dialogs)
                 {
-                    // Skip if already have this dialog from module or another HAK
-                    if (_hakDialogs.Any(d => d.Name.Equals(dialog.Name, StringComparison.OrdinalIgnoreCase)))
-                        continue;
-
                     _hakDialogs.Add(new DialogBrowserEntry
                     {
                         Name = dialog.Name,
@@ -331,10 +330,7 @@ public class DialogBrowserPanel : FileBrowserPanelBase
 
                 newCacheEntry.Dialogs.Add(dialogEntry);
 
-                // Skip if already have this dialog
-                if (_hakDialogs.Any(d => d.Name.Equals(resource.ResRef, StringComparison.OrdinalIgnoreCase)))
-                    continue;
-
+                // No inner dedup: MergeAdditionalEntries handles it (#2262).
                 _hakDialogs.Add(dialogEntry);
             }
 

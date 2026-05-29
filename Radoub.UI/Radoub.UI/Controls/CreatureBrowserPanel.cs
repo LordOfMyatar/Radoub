@@ -820,12 +820,11 @@ public class CreatureBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
             // Check cache first
             if (_hakCache.TryGetValue(hakPath, out var cached) && cached.LastModified == lastModified)
             {
+                // No inner dedup against _hakEntries: MergeAdditionalEntries
+                // handles case-insensitive dedup against _allEntries at merge
+                // time. The old inner skip dropped valid HAK overrides (#2262).
                 foreach (var creature in cached.Creatures)
                 {
-                    // Skip if already have this creature from module or another HAK
-                    if (_hakEntries.Any(c => c.Name.Equals(creature.Name, StringComparison.OrdinalIgnoreCase)))
-                        continue;
-
                     _hakEntries.Add(new CreatureBrowserEntry
                     {
                         Name = creature.Name,
@@ -876,10 +875,7 @@ public class CreatureBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
                     }
                 }
 
-                // Skip if already have this creature
-                if (_hakEntries.Any(c => c.Name.Equals(resource.ResRef, StringComparison.OrdinalIgnoreCase)))
-                    continue;
-
+                // No inner dedup: MergeAdditionalEntries handles it (#2262).
                 _hakEntries.Add(creatureEntry);
             }
 

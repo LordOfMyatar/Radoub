@@ -679,12 +679,11 @@ public class StoreBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
             // Check in-memory HAK index cache first
             if (_hakCache.TryGetValue(hakPath, out var cached) && cached.LastModified == lastModified)
             {
+                // No inner dedup against _hakStores: MergeAdditionalEntries
+                // handles case-insensitive dedup against _allEntries at merge
+                // time. The old inner skip dropped valid HAK overrides (#2262).
                 foreach (var store in cached.Stores)
                 {
-                    // Skip if already have this store from module or another HAK
-                    if (_hakStores.Any(s => s.Name.Equals(store.Name, StringComparison.OrdinalIgnoreCase)))
-                        continue;
-
                     _hakStores.Add(new StoreBrowserEntry
                     {
                         Name = store.Name,
@@ -733,10 +732,7 @@ public class StoreBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
                     }
                 }
 
-                // Skip duplicates in visible list
-                if (_hakStores.Any(s => s.Name.Equals(resource.ResRef, StringComparison.OrdinalIgnoreCase)))
-                    continue;
-
+                // No inner dedup: MergeAdditionalEntries handles it (#2262).
                 _hakStores.Add(storeEntry);
             }
 

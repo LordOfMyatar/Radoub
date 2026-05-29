@@ -636,11 +636,12 @@ public class ItemBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
             // Check cache first
             if (_hakCache.TryGetValue(hakPath, out var cached) && cached.LastModified == lastModified)
             {
+                // No inner dedup against _hakItems: MergeAdditionalEntries
+                // (via MergeEntries) handles case-insensitive dedup against
+                // _allEntries at merge time. The old inner skip dropped
+                // valid HAK overrides across HAKs and module ResRefs (#2262).
                 foreach (var item in cached.Items)
                 {
-                    if (_hakItems.Any(s => s.Name.Equals(item.Name, StringComparison.OrdinalIgnoreCase)))
-                        continue;
-
                     _hakItems.Add(new ItemBrowserEntry
                     {
                         Name = item.Name,
@@ -674,9 +675,7 @@ public class ItemBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
 
                 newCacheEntry.Items.Add(itemEntry);
 
-                if (_hakItems.Any(s => s.Name.Equals(resource.ResRef, StringComparison.OrdinalIgnoreCase)))
-                    continue;
-
+                // No inner dedup: MergeAdditionalEntries handles it (#2262).
                 _hakItems.Add(itemEntry);
             }
 
