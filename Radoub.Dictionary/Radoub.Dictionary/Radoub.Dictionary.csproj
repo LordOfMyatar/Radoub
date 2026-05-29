@@ -11,6 +11,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Radoub.Dictionary.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="WeCantSpell.Hunspell" />
   </ItemGroup>
 

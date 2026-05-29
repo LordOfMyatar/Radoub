@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Radoub.Dictionary.Models;
+using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 
 namespace Radoub.Dictionary;
@@ -286,37 +287,154 @@ public class UserDictionaryService
     }
 
     /// <summary>
-    /// Save user dictionary to disk (JSON format).
+    /// Cross-process lock acquisition retry budget for <see cref="Save"/>. Each attempt
+    /// opens the lock file with <see cref="FileShare.None"/>; a sharing violation means
+    /// another tool process is mid-save, so we back off and retry.
+    /// </summary>
+    private const int SaveLockRetries = 10;
+    private const int SaveLockDelayMs = 25;
+
+    private static readonly object _saveSerializer = new();
+
+    /// <summary>
+    /// Save the user dictionary to disk (JSON format), merging any words written by
+    /// other tool instances/processes since this instance last read the file (#2263).
+    ///
+    /// Read-merge-write + atomic swap: the on-disk dictionary is re-read and unioned with
+    /// this instance's words before writing, so concurrent writers no longer clobber each
+    /// other (last-writer-wins becomes merge-then-write). The write goes to a sibling temp
+    /// file and is swapped in via <see cref="AtomicFile.Replace"/>, so a reader never sees
+    /// a half-written file. A coarse in-process lock plus a cross-process file lock serialize
+    /// concurrent savers.
     /// </summary>
     public void Save()
     {
+        // Serialize savers within this process first (the file lock handles other processes).
+        lock (_saveSerializer)
+        {
+            FileStream? lockStream = null;
+            try
+            {
+                lockStream = AcquireSaveLock();
+
+                // Merge external words written since we loaded, folding them back into our
+                // own set so this instance's view stays consistent with disk.
+                var merged = MergeWithDisk();
+
+                var dict = new CustomDictionary
+                {
+                    Source = "Radoub User Dictionary",
+                    Description = "Custom words added by the user (shared across all Radoub tools)",
+                    Words = merged
+                };
+
+                var options = new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+                var json = JsonSerializer.Serialize(dict, options);
+
+                var tempPath = _dictionaryPath + ".tmp";
+                var backupPath = _dictionaryPath + ".bak";
+                try
+                {
+                    File.WriteAllText(tempPath, json);
+                    // Back up the prior file so a corrupt/overwritten dictionary is recoverable.
+                    AtomicFile.Replace(tempPath, _dictionaryPath, backupPath);
+                }
+                finally
+                {
+                    // AtomicFile.Replace consumes tempPath on success; on failure (serialize/write
+                    // threw, or the swap failed) it may remain — never leave a partial temp behind.
+                    if (File.Exists(tempPath))
+                    {
+                        try { File.Delete(tempPath); } catch { /* best-effort cleanup */ }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.Log(LogLevel.WARN, $"Failed to save user dictionary: {ex.Message}", "UserDictionaryService", "Dictionary");
+            }
+            finally
+            {
+                lockStream?.Dispose();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Re-read the on-disk dictionary and union it with this instance's in-memory words,
+    /// updating <see cref="_userWords"/> so the instance reflects external additions.
+    /// Returns the merged, sorted snapshot to persist.
+    /// </summary>
+    private List<string> MergeWithDisk()
+    {
+        var diskWords = ReadDiskWords();
+
+        lock (_wordsLock)
+        {
+            foreach (var word in diskWords)
+            {
+                if (!string.IsNullOrWhiteSpace(word))
+                    _userWords.Add(word.Trim());
+            }
+            return _userWords.OrderBy(w => w, StringComparer.OrdinalIgnoreCase).ToList();
+        }
+    }
+
+    /// <summary>
+    /// Read the current words from the on-disk JSON dictionary. Returns an empty list if
+    /// the file is absent or unreadable (a transient/partial read must not drop in-memory
+    /// words — the union still contains them).
+    /// </summary>
+    private List<string> ReadDiskWords()
+    {
+        if (!File.Exists(_dictionaryPath))
+            return new List<string>();
+
         try
         {
-            List<string> snapshot;
-            lock (_wordsLock)
-            {
-                snapshot = _userWords.OrderBy(w => w, StringComparer.OrdinalIgnoreCase).ToList();
-            }
-
-            var dict = new CustomDictionary
-            {
-                Source = "Radoub User Dictionary",
-                Description = "Custom words added by the user (shared across all Radoub tools)",
-                Words = snapshot
-            };
-
-            var options = new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
-            var json = JsonSerializer.Serialize(dict, options);
-            File.WriteAllText(_dictionaryPath, json);
+            var json = File.ReadAllText(_dictionaryPath);
+            var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+            var dict = JsonSerializer.Deserialize<CustomDictionary>(json, options);
+            return dict?.AllWords.ToList() ?? new List<string>();
         }
         catch (Exception ex)
         {
-            UnifiedLogger.Log(LogLevel.WARN, $"Failed to save user dictionary: {ex.Message}", "UserDictionaryService", "Dictionary");
+            UnifiedLogger.Log(LogLevel.WARN, $"Could not read existing dictionary for merge: {ex.Message}", "UserDictionaryService", "Dictionary");
+            return new List<string>();
         }
+    }
+
+    /// <summary>
+    /// Acquire a cross-process advisory lock by opening a sidecar lock file with
+    /// <see cref="FileShare.None"/>. Retries on sharing violation; returns null if the
+    /// lock cannot be acquired within the retry budget (the save then proceeds best-effort).
+    /// </summary>
+    private FileStream? AcquireSaveLock()
+    {
+        var lockPath = _dictionaryPath + ".lock";
+        for (int attempt = 0; attempt < SaveLockRetries; attempt++)
+        {
+            try
+            {
+                return new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            }
+            catch (IOException)
+            {
+                Thread.Sleep(SaveLockDelayMs);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Cannot create/open lock file at all; proceed without the cross-process lock.
+                return null;
+            }
+        }
+
+        UnifiedLogger.Log(LogLevel.WARN, "Timed out acquiring user-dictionary save lock; saving without cross-process lock", "UserDictionaryService", "Dictionary");
+        return null;
     }
 
     /// <summary>

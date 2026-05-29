@@ -49,14 +49,13 @@ public class SpellCheckService : IDisposable
     private readonly SemaphoreSlim _initLock = new(1, 1);
 
     /// <summary>
-    /// Tracks words added by the user (separate from loaded dictionaries).
-    /// </summary>
-    private readonly HashSet<string> _userAddedWords = new(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>
     /// Path to the Radoub-wide custom dictionary file.
     /// Located at ~/Radoub/Dictionaries/custom.dic
     /// </summary>
+    /// <remarks>
+    /// Retained for diagnostics/logging only. As of #2263, <see cref="UserDictionaryService"/>
+    /// is the single owner of reads and writes to this file; SpellCheckService is a consumer.
+    /// </remarks>
     private readonly string _customDictionaryPath;
 
     /// <summary>
@@ -137,9 +136,6 @@ public class SpellCheckService : IDisposable
 
         // Clear discovery cache to pick up any new dictionaries
         _discovery?.ClearCache();
-
-        // Clear user-added words tracking (will be repopulated from file)
-        _userAddedWords.Clear();
 
         // Create fresh dictionary manager and spell checker
         _dictionaryManager = new DictionaryManager();
@@ -321,12 +317,15 @@ public class SpellCheckService : IDisposable
         if (!string.IsNullOrWhiteSpace(word))
         {
             var trimmedWord = word.Trim();
-            _dictionaryManager.AddWord(trimmedWord);
-            _userAddedWords.Add(trimmedWord);
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added '{trimmedWord}' to custom dictionary");
 
-            // Save immediately
-            _ = SaveCustomDictionaryAsync();
+            // Update the live spell-checker so the word stops being flagged immediately.
+            _dictionaryManager.AddWord(trimmedWord);
+
+            // Persist through the single source of truth (#2263). UserDictionaryService owns
+            // the atomic, cross-process-safe write to custom.dic; we no longer write it here.
+            UserDictionaryService.Instance.AddWord(trimmedWord);
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added '{trimmedWord}' to custom dictionary");
         }
     }
 
@@ -391,86 +390,56 @@ public class SpellCheckService : IDisposable
     }
 
     /// <summary>
-    /// Load the Radoub-wide custom dictionary if it exists.
+    /// Load the Radoub-wide custom dictionary words into the live spell-checker.
+    /// Words come from <see cref="UserDictionaryService"/> (the single source of truth, #2263),
+    /// which owns reading custom.dic and custom_dictionary.txt.
     /// </summary>
-    private async Task LoadCustomDictionaryInternalAsync()
+    private Task LoadCustomDictionaryInternalAsync()
     {
-        if (!File.Exists(_customDictionaryPath))
-        {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "No custom dictionary file found, starting fresh");
-            return;
-        }
-
         try
         {
-            // Load the file to get words
-            var json = await File.ReadAllTextAsync(_customDictionaryPath);
-            var dict = System.Text.Json.JsonSerializer.Deserialize<CustomDictionary>(json,
-                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
-
-            if (dict != null)
+            int count = 0;
+            foreach (var word in UserDictionaryService.Instance.Words)
             {
-                // Track user-added words separately
-                foreach (var word in dict.AllWords)
+                if (!string.IsNullOrWhiteSpace(word))
                 {
-                    if (!string.IsNullOrWhiteSpace(word))
-                    {
-                        _userAddedWords.Add(word.Trim());
-                        _dictionaryManager.AddWord(word.Trim());
-                    }
+                    _dictionaryManager.AddWord(word.Trim());
+                    count++;
                 }
-
-                UnifiedLogger.LogApplication(LogLevel.INFO,
-                    $"Loaded custom dictionary: {_userAddedWords.Count} user words");
             }
+
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded custom dictionary: {count} user words");
         }
         catch (Exception ex)
         {
             UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to load custom dictionary: {ex.Message}");
         }
+
+        return Task.CompletedTask;
     }
 
     /// <summary>
-    /// Save the custom dictionary to disk (only user-added words).
+    /// Persist the custom dictionary. As of #2263, persistence is owned by
+    /// <see cref="UserDictionaryService"/> (words are saved when added via
+    /// <see cref="AddToCustomDictionary"/>); this method forces a save of the
+    /// current user-dictionary state and is retained for API compatibility.
     /// </summary>
-    public async Task SaveCustomDictionaryAsync()
+    public Task SaveCustomDictionaryAsync()
     {
-        try
-        {
-            var dict = new CustomDictionary
-            {
-                Source = "Radoub Custom Dictionary",
-                Description = "User-added custom words for spell checking",
-                Words = _userAddedWords.OrderBy(w => w, StringComparer.OrdinalIgnoreCase).ToList()
-            };
-
-            var json = System.Text.Json.JsonSerializer.Serialize(dict,
-                new System.Text.Json.JsonSerializerOptions
-                {
-                    WriteIndented = true,
-                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
-                });
-
-            await File.WriteAllTextAsync(_customDictionaryPath, json);
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                $"Saved custom dictionary: {_userAddedWords.Count} user words");
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to save custom dictionary: {ex.Message}");
-        }
+        UserDictionaryService.Instance.Save();
+        return Task.CompletedTask;
     }
 
     /// <summary>
-    /// Reload the custom dictionary from disk.
-    /// Useful when another Radoub tool has updated the dictionary.
+    /// Reload the custom dictionary so words another Radoub tool added become visible.
+    /// Reloads <see cref="UserDictionaryService"/> from disk, then re-applies its words
+    /// to the live spell-checker.
     /// </summary>
     public async Task ReloadCustomDictionaryAsync()
     {
         try
         {
-            // Clear and reload
+            UserDictionaryService.Instance.Load();
             await LoadCustomDictionaryInternalAsync();
             UnifiedLogger.LogApplication(LogLevel.INFO, "Reloaded custom dictionary");
         }
