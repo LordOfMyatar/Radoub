@@ -2,9 +2,11 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia.Controls;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
+using Radoub.UI.Controls;
 using Radoub.UI.Views;
 using DialogHelper = Quartermaster.Views.Helpers.DialogHelper;
 
@@ -176,12 +178,13 @@ public partial class MainWindow
             return;
         }
 
+        var oldFilePath = _currentFilePath;
         try
         {
             // Rename file on disk
-            File.Move(_currentFilePath, newFilePath);
+            File.Move(oldFilePath, newFilePath);
             UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"Renamed file: {UnifiedLogger.SanitizePath(_currentFilePath)} -> {UnifiedLogger.SanitizePath(newFilePath)}");
+                $"Renamed file: {UnifiedLogger.SanitizePath(oldFilePath)} -> {UnifiedLogger.SanitizePath(newFilePath)}");
 
             // Update internal ResRef to match new filename
             _currentCreature.TemplateResRef = newName;
@@ -189,6 +192,17 @@ public partial class MainWindow
             // Save file to persist the new ResRef
             _currentFilePath = newFilePath;
             await SaveFile();
+
+            // #2285 — Refresh CreatureBrowser so the stale pre-rename row stops
+            // pointing at a path that no longer exists and the new file shows up.
+            // Remove the old row first; full RefreshAsync re-scans module + vault
+            // and triggers the metadata indexing pass so Tag/Name populate.
+            var creatureBrowserPanel = this.FindControl<CreatureBrowserPanel>("CreatureBrowserPanel");
+            if (creatureBrowserPanel != null)
+            {
+                creatureBrowserPanel.RemoveEntryByFilePath(oldFilePath);
+                await creatureBrowserPanel.RefreshAsync();
+            }
 
             // Update UI
             AdvancedPanelContent.UpdateResRefDisplay(newName);

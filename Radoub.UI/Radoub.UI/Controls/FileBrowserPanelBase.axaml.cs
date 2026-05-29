@@ -648,6 +648,36 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
         return null;
     }
 
+    /// <summary>
+    /// Remove the entry whose FilePath matches <paramref name="filePath"/> and
+    /// rebind the DataGrid. Host tools call this after a rename so the stale
+    /// pre-rename row doesn't linger pointing at a path that no longer exists
+    /// (#2285). Returns true when an entry was found and removed; false on
+    /// null/empty path or unknown path.
+    /// </summary>
+    public bool RemoveEntryByFilePath(string filePath)
+    {
+        var removed = RemoveEntryByFilePath(_allEntries, filePath);
+        if (removed) ApplyFilter();
+        return removed;
+    }
+
+    /// <summary>
+    /// Pure-logic overload for testing. Same semantics as the instance method
+    /// but operates on a caller-supplied entry list. Returns true when an
+    /// entry was removed.
+    /// </summary>
+    internal static bool RemoveEntryByFilePath(List<FileBrowserEntry> entries, string filePath)
+    {
+        if (string.IsNullOrEmpty(filePath)) return false;
+        var index = entries.FindIndex(e =>
+            !string.IsNullOrEmpty(e.FilePath)
+            && e.FilePath.Equals(filePath, StringComparison.OrdinalIgnoreCase));
+        if (index < 0) return false;
+        entries.RemoveAt(index);
+        return true;
+    }
+
     #endregion
 
     #region Sort Mode + Indexing
