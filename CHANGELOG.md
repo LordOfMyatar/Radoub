@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Radoub.UI 0.1.61-alpha] - 2026-05-28
-**Branch**: `radoub/issue-2262` | **PR**: #TBD
+**Branch**: `radoub/issue-2262` | **PR**: #2288
 
 ### Fix: Static cache race, CT leak, async-void API, theme race, HAK dedup drops valid entries (#2262)
 
