@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.36-alpha] - 2026-05-29
-**Branch**: `fence/issue-2256` | **PR**: #TBD
+**Branch**: `fence/issue-2256` | **PR**: #2306
 
 ### Fix: Modal picker, ContinueWith fault handling, non-atomic save (#2256)
 
