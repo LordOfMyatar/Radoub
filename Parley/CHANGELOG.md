@@ -5,7 +5,7 @@ All notable changes to Parley. One-line highlights per version; full details in 
 ---
 
 ## [0.1.171-alpha] - 2026-05-29
-**Branch**: `parley/issue-2259` | **PR**: #TBD
+**Branch**: `parley/issue-2259` | **PR**: #2309
 
 ### Fix: Remove duplicate TokenSelectorWindow, route to shared Radoub.UI version (#2259)
 
