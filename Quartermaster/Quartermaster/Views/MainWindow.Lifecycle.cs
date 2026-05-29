@@ -54,9 +54,13 @@ public partial class MainWindow
 
             token.ThrowIfCancellationRequested();
 
-            // Fire-and-forget cache and item loading in parallel
-            _ = InitializeCachesAsync(token);
+            // #2252 — Await cache init before the startup file load. Previously
+            // InitializeCachesAsync was fire-and-forget while HandleStartupFileAsync
+            // ran immediately, so a high-level cold launch hit the slow direct-2DA
+            // path per feat and froze the UI for seconds. Item palette load stays
+            // fire-and-forget — it doesn't gate the startup-file panel population.
             StartGameItemsLoad(token);
+            await InitializeCachesAsync(token);
 
             await HandleStartupFileAsync();
 
