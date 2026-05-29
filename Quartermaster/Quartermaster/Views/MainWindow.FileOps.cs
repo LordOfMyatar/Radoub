@@ -287,7 +287,7 @@ public partial class MainWindow
         }
     }
 
-    private Task LoadFile(string filePath)
+    private async Task LoadFile(string filePath)
     {
         try
         {
@@ -317,14 +317,20 @@ public partial class MainWindow
             var extension = Path.GetExtension(filePath).ToLowerInvariant();
             _isBicFile = extension == ".bic";
 
-            if (_isBicFile)
+            // #2252 — actually-async parse: BicReader/UtcReader do blocking disk I/O
+            // plus full GFF parse. Push to Task.Run so the UI thread stays responsive
+            // (deep-inventory BIC parses were freezing the window).
+            var isBic = _isBicFile;
+            var creature = await Task.Run<UtcFile>(() =>
+                isBic ? BicReader.Read(filePath) : UtcReader.Read(filePath));
+
+            _currentCreature = creature;
+            if (isBic)
             {
-                _currentCreature = BicReader.Read(filePath);
                 UnifiedLogger.LogCreature(LogLevel.INFO, $"Loaded BIC (player character): {UnifiedLogger.SanitizePath(filePath)}");
             }
             else
             {
-                _currentCreature = UtcReader.Read(filePath);
                 UnifiedLogger.LogCreature(LogLevel.INFO, $"Loaded UTC (creature blueprint): {UnifiedLogger.SanitizePath(filePath)}");
             }
 
@@ -390,7 +396,6 @@ public partial class MainWindow
             UpdateStatus($"Error loading file: {ex.Message}");
             ShowErrorDialog("Load Error", $"Failed to load creature file:\n{ex.Message}");
         }
-        return Task.CompletedTask;
     }
 
     private async Task SaveFile()
