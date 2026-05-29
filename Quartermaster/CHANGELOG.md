@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.112-alpha] - 2026-05-28
-**Branch**: `quartermaster/issue-2252` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2252` | **PR**: #2284
 
 ### Sprint: Hygiene + game-data sourcing (#2252, #2251)
 
