@@ -174,7 +174,7 @@ public partial class CharacterPanel : UserControl
         if (textBox == null) return;
         textBox.ContextMenuExtras = menu =>
             TokenContextMenu.AppendTokenMenu(menu, textBox, () =>
-                TokenInsertionHelper.OpenTokenWindow(textBox, this.VisualRoot as Window),
+                _ = TokenInsertionHelper.OpenTokenWindowAsync(textBox, this.VisualRoot as Window),
                 _quickTokenService);
     }
 
@@ -187,7 +187,7 @@ public partial class CharacterPanel : UserControl
 
         if (target != null)
         {
-            TokenInsertionHelper.OpenTokenWindow(target, this.VisualRoot as Window);
+            _ = TokenInsertionHelper.OpenTokenWindowAsync(target, this.VisualRoot as Window);
             return true;
         }
         return false;

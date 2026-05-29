@@ -816,7 +816,7 @@ public partial class AdvancedPanel : BasePanelControl
         if (textBox == null) return;
         textBox.ContextMenuExtras = menu =>
             TokenContextMenu.AppendTokenMenu(menu, textBox, () =>
-                TokenInsertionHelper.OpenTokenWindow(textBox, this.VisualRoot as Avalonia.Controls.Window),
+                _ = TokenInsertionHelper.OpenTokenWindowAsync(textBox, this.VisualRoot as Avalonia.Controls.Window),
                 _quickTokenService);
     }
 

@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Radoub.UI.Views;
 
@@ -61,8 +62,13 @@ public static class TokenInsertionHelper
     /// TokenSelectorWindow (4 tabs: Standard, Highlight, Custom Tokens, Custom Colors)
     /// rather than the older TokenInsertionWindow (only Standard + Custom/Colors)
     /// so user-defined custom tokens surface in the picker (#2075).
+    ///
+    /// Returns Task so exceptions thrown after the first await surface to
+    /// callers instead of being swallowed by the SynchronizationContext, and
+    /// so host code that needs to await completion can (#2262). Call sites
+    /// that fit an Action callback discard the Task at the call: `_ = ...`.
     /// </summary>
-    public static async void OpenTokenWindow(TextBox targetTextBox, Window? owner)
+    public static async Task OpenTokenWindowAsync(TextBox targetTextBox, Window? owner)
     {
         if (owner == null) return;
 
