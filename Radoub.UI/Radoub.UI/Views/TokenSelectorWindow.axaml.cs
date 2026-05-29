@@ -258,7 +258,7 @@ namespace Radoub.UI.Views
                 color = "#FF0000";
             }
 
-            HighlightPreviewRaw.Text = $"<{type}>{content}</Start>";
+            HighlightPreviewRaw.Text = $"<{type}>{content}{TokenDefinitions.HighlightCloseTag}";
             HighlightPreviewFormatted.Text = content;
             HighlightPreviewFormatted.Foreground = new SolidColorBrush(Color.Parse(color));
         }
@@ -323,7 +323,7 @@ namespace Radoub.UI.Views
                     }
 
                     TokenOutputTextBox.Text = !string.IsNullOrEmpty(content)
-                        ? $"<{type}>{content}</Start>"
+                        ? $"<{type}>{content}{TokenDefinitions.HighlightCloseTag}"
                         : "";
                     break;
 
