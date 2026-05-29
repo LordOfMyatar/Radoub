@@ -32,25 +32,57 @@ Relique/
 │   ├── Program.cs
 │   ├── App.axaml(.cs)
 │   ├── app.manifest
-│   ├── Services/
+│   ├── Services/                     # Relique-local
+│   │   ├── ArmorPartCatalogService.cs
+│   │   ├── BaseItemCategoryService.cs
 │   │   ├── CommandLineService.cs
+│   │   ├── CompositeWeaponPartCatalogService.cs
+│   │   ├── EditAutoApplyDecider.cs
+│   │   ├── IItemPreviewRenderer.cs
+│   │   ├── ItemNamingService.cs
+│   │   ├── ItemPreviewController.cs
+│   │   ├── ItemPropertyService.cs
+│   │   ├── ItemStatisticsService.cs
+│   │   ├── PropertyCategoryService.cs
 │   │   ├── SettingsService.cs
-│   │   ├── BaseItemTypeService.cs
-│   │   └── ItemPropertyService.cs
+│   │   └── TreeExpansionTracker.cs
 │   ├── Views/
-│   │   └── MainWindow.axaml(.cs)
+│   │   ├── MainWindow.axaml(.cs) + 5 partials (EditorPopulation, FileOps,
+│   │   │                                       ItemPreview, ItemProperties,
+│   │   │                                       Lifecycle, MenuHandlers)
+│   │   ├── BaseItemTypePickerWindow.axaml(.cs)
+│   │   ├── ItemIconPickerWindow.axaml(.cs)
+│   │   ├── NewItemWizardWindow.axaml(.cs)
+│   │   └── SettingsWindow.axaml(.cs)
 │   ├── ViewModels/
-│   │   └── ItemViewModel.cs
+│   │   ├── ItemViewModel.cs
+│   │   └── VariableViewModel.cs
 │   └── Assets/
 └── Relique.Tests/                    (namespace: ItemEditor.Tests)
     ├── Relique.Tests.csproj
     ├── CommandLineServiceTests.cs
     ├── SettingsServiceTests.cs
+    ├── Services/
+    │   ├── ArmorPartCatalogServiceTests.cs
+    │   ├── BaseItemCategoryServiceTests.cs
+    │   ├── CompositeWeaponPartCatalogServiceTests.cs
+    │   ├── EditAutoApplyDeciderTests.cs
+    │   ├── ItemNamingServiceTests.cs
+    │   ├── ItemPreviewControllerTests.cs
+    │   ├── ItemPropertyOperationTests.cs
+    │   ├── ItemPropertyServiceTests.cs
+    │   ├── ItemStatisticsServiceTests.cs
+    │   ├── NewItemCommandLineTests.cs
+    │   ├── PropertyCategoryServiceTests.cs
+    │   └── TreeExpansionTrackerTests.cs
     └── ViewModels/
-        ├── ItemViewModelTests.cs
+        ├── ItemEditingRoundTripTests.cs
         ├── ItemViewModelConditionalTests.cs
-        └── ItemEditingRoundTripTests.cs
+        ├── ItemViewModelTests.cs
+        └── VariableViewModelTests.cs
 ```
+
+**Note**: `BaseItemTypeService` is a shared service in `Radoub.Formats/Services/`, not local to Relique.
 
 ---
 

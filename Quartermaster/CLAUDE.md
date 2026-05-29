@@ -55,8 +55,6 @@ Quartermaster/
 ├── Quartermaster/ (source code)
 │   ├── App.axaml(.cs) - Application entry, theme/icon setup
 │   ├── Program.cs - Entry point, logging init
-│   ├── Controls/
-│   │   └── ModelPreviewGLControl.cs - OpenGL 3D model preview
 │   ├── ViewModels/
 │   │   ├── BindableBase.cs - MVVM property binding base
 │   │   ├── RelayCommand.cs - ICommand implementation
@@ -64,25 +62,7 @@ Quartermaster/
 │   │   ├── SpellListViewModel.cs
 │   │   ├── SpecialAbilityViewModel.cs
 │   │   └── VariableViewModel.cs
-│   ├── Services/ (18 files)
-│   │   ├── CommandLineService.cs - CLI argument parsing
-│   │   ├── SettingsService.cs - User preferences
-│   │   ├── CreatureDisplayService.cs - Creature display (partial)
-│   │   ├── CreatureDisplayService.Combat.cs - Combat stats partial
-│   │   ├── CharacterSheetService.cs - Character sheet calculations
-│   │   ├── ClassService.cs - NWN class data
-│   │   ├── FeatService.cs - Feat lookup and validation
-│   │   ├── FeatCacheService.cs - Feat data caching
-│   │   ├── SkillService.cs - Skill calculations
-│   │   ├── SpellService.cs - Spell lookup
-│   │   ├── AppearanceService.cs - Appearance/color data
-│   │   ├── ModelService.cs - 3D model loading
-│   │   ├── TextureService.cs - Texture loading and caching
-│   │   ├── ItemIconService.cs - Item icon management
-│   │   ├── LevelHistoryService.cs - Level/class progression
-│   │   ├── ModularPaletteCacheService.cs - Multi-source item caching
-│   │   ├── PaletteColorService.cs - Palette color utilities
-│   │   └── QuartermasterScriptBrowserContext.cs - Script browser
+│   ├── Services/ (~27 files; see Services table below)
 │   ├── Views/
 │   │   ├── MainWindow.axaml(.cs) - Main window (9 partial files)
 │   │   ├── MainWindow.CreatureBrowser.cs
@@ -100,7 +80,8 @@ Quartermaster/
 │   │   ├── Dialogs/
 │   │   │   ├── SettingsWindow.axaml(.cs) - Settings (2 partials)
 │   │   │   ├── SettingsWindow.Paths.cs
-│   │   │   ├── NewCharacterWizardWindow.axaml(.cs) - Wizard (10 partials)
+│   │   │   ├── NewCharacterWizardWindow.axaml(.cs) - Wizard (13 partials)
+│   │   │   ├── NewCharacterWizardWindow.FileType.cs
 │   │   │   ├── NewCharacterWizardWindow.Race.cs
 │   │   │   ├── NewCharacterWizardWindow.Identity.cs
 │   │   │   ├── NewCharacterWizardWindow.Appearance.cs
@@ -108,12 +89,13 @@ Quartermaster/
 │   │   │   ├── NewCharacterWizardWindow.Abilities.cs
 │   │   │   ├── NewCharacterWizardWindow.Skills.cs
 │   │   │   ├── NewCharacterWizardWindow.Feats.cs
+│   │   │   ├── NewCharacterWizardWindow.Spells.cs
 │   │   │   ├── NewCharacterWizardWindow.EquipmentAndSummary.cs
 │   │   │   ├── NewCharacterWizardWindow.BuildCreature.cs
+│   │   │   ├── NewCharacterWizardWindow.Navigation.cs
 │   │   │   ├── LevelUpWizardWindow.axaml(.cs)
 │   │   │   ├── ClassBrowserWindow.axaml(.cs)
 │   │   │   ├── ClassPickerWindow.axaml(.cs)
-│   │   │   ├── ColorPickerWindow.axaml(.cs)
 │   │   │   ├── FactionPickerWindow.axaml(.cs)
 │   │   │   ├── PackagePickerWindow.axaml(.cs)
 │   │   │   └── SpellPickerWindow.axaml(.cs)
@@ -166,8 +148,8 @@ Quartermaster uses C# partial classes extensively to keep files manageable (~500
 
 | Class | Files | Total Lines |
 |-------|-------|-------------|
-| **MainWindow** | 9 partials | ~3,392 |
-| **NewCharacterWizardWindow** | 10 partials | ~3,690 |
+| **MainWindow** | 9 partials | ~4,404 |
+| **NewCharacterWizardWindow** | 13 partials | ~4,388 |
 | **SettingsWindow** | 2 partials | ~805 |
 | **CreatureDisplayService** | 2 partials | ~927 |
 | **FeatsPanel** | 5 partials | ~1,109 |
@@ -176,32 +158,39 @@ Quartermaster uses C# partial classes extensively to keep files manageable (~500
 | **AppearancePanel** | 3 partials | ~921 |
 | **CharacterPanel** | 3 partials | ~959 |
 
+Line counts drift between commits; numbers above are approximate. Confirm with `wc -l` before relying on them.
+
 ### MainWindow Partials
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| MainWindow.axaml.cs | 742 | Core: fields, constructor, panels, navigation, edit ops, UI updates, keyboard shortcuts |
-| MainWindow.CreatureBrowser.cs | 382 | Creature browser panel init, visibility, file selection, delete |
-| MainWindow.FileOps.cs | 713 | Recent files, menu handlers, export, open/save/new/close |
-| MainWindow.FileValidation.cs | 207 | Aurora filename validation, BIC class validation, rename workflow |
-| MainWindow.Inventory.cs | 506 | Populate inventory from creature data |
-| MainWindow.ItemPalette.cs | 420 | Item palette with modular caching (BIF/Override/HAK) |
+| MainWindow.axaml.cs | 918 | Core: fields, constructor, panels, navigation, edit ops, UI updates, keyboard shortcuts |
+| MainWindow.CreatureBrowser.cs | 501 | Creature browser panel init, visibility, file selection, delete |
+| MainWindow.FileOps.cs | 741 | Recent files, menu handlers, export, open/save/new/close |
+| MainWindow.FileValidation.cs | 223 | Aurora filename validation, BIC class validation, rename workflow |
+| MainWindow.Inventory.cs | 602 | Populate inventory from creature data |
+| MainWindow.ItemPalette.cs | 639 | Item palette with modular caching (BIF/Override/HAK) |
 | MainWindow.ItemResolution.cs | 157 | UTI resolution from module/Override/HAK/BIF |
-| MainWindow.Lifecycle.cs | 216 | Window opened, service init, caches, startup file, closing |
-| MainWindow.MenuDialogs.cs | 249 | Settings, About, Level Up, Re-Level, Down-Level dialogs |
+| MainWindow.Lifecycle.cs | 225 | Window opened, service init, caches, startup file, closing |
+| MainWindow.MenuDialogs.cs | 398 | Settings, About, Level Up, Re-Level, Down-Level dialogs |
 
 ### NewCharacterWizardWindow Partials
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| .axaml.cs | ~900 | Core: wizard navigation, step management, save location, factions |
-| .Race.cs | ~170 | Step 2: Race selection with info panel |
-| .Identity.cs | ~115 | Step 3: Identity — name, portrait, voice set, filename validation |
-| .Appearance.cs | ~220 | Step 4: Appearance, phenotype, body parts, colors |
-| .ClassSelection.cs | ~500 | Step 5: Class, package, domains, familiar |
-| .Abilities.cs | ~400 | Step 6: Point-buy ability allocation |
-| .Feats.cs | ~420 | Step 7: Feat selection with prereqs and descriptions |
-| .Skills.cs | ~350 | Step 8: Skill assignment |
+| .axaml.cs | ~695 | Core: wizard chrome, save location, factions |
+| .FileType.cs | ~131 | Step 1: UTC/BIC selection with save location picker |
+| .Race.cs | ~160 | Step 2: Race selection with info panel |
+| .Identity.cs | ~119 | Step 3: Identity — name, portrait, voice set, filename validation |
+| .Appearance.cs | ~219 | Step 4: Appearance, phenotype, body parts, colors |
+| .ClassSelection.cs | ~719 | Step 5: Class, package, domains, familiar |
+| .Abilities.cs | ~425 | Step 6: Point-buy ability allocation |
+| .Feats.cs | ~362 | Step 7: Feat selection with prereqs and descriptions |
+| .Skills.cs | ~298 | Step 8: Skill assignment |
+| .Spells.cs | ~454 | Step 9: Spell selection for caster classes |
+| .EquipmentAndSummary.cs | ~418 | Steps 10-11: Equipment and summary review |
+| .BuildCreature.cs | ~80 | Build orchestration delegating to CharacterCreationService |
+| .Navigation.cs | ~308 | Wizard step navigation, validation, next/prev wiring |
 | .EquipmentAndSummary.cs | ~400 | Steps 10-11: Equipment and summary review |
 | .BuildCreature.cs | ~450 | Character build and GFF field population |
 
@@ -245,7 +234,7 @@ To add a new panel:
 
 ## Services
 
-26 services in the `Services/` directory:
+~27 service files in the `Services/` directory (including partials):
 
 | Service | Purpose |
 |---------|---------|
@@ -259,25 +248,36 @@ To add a new panel:
 | CreatureDisplayService | Creature display state + combat stats (2 partials) |
 | DomainService | Domain info from domains.2da |
 | FeatCacheService | Feat data caching |
-| FeatService | Feat lookup and validation (+ LevelUp, Prerequisites partials) |
-| ItemIconService | Item icon management |
+| FeatService | Feat lookup and validation (+ LevelUp, Prerequisites, Subtypes partials) |
+| GameDataWarnOnce | One-shot logger for missing-2DA warnings |
 | LevelHistoryService | Level/class progression tracking |
 | LevelUpApplicationService | Level-up application (extracted from wizard) |
-| ModelService | 3D model loading (+ RenderDebug partial) |
-| ModularPaletteCacheService | Multi-source item caching (BIF/Override/HAK) |
-| PaletteColorService | Palette color utilities |
+| ModelService | 3D model loading |
+| PathSafety | Path traversal validation helpers |
 | QuartermasterScriptBrowserContext | Script browser integration |
 | ScriptTemplateService | Script templates for events |
 | SettingsService | User preferences, singleton with env var override |
+| SkillDisplayHelper | Skill UI helpers |
 | SkillService | Skill calculations |
 | SpellService | Spell lookup |
-| TextureService | Texture loading and caching |
 | ValidationLevel | Validation helper enum |
 
+**Moved to shared libraries (do NOT add to `Quartermaster/Services/`)**:
+
+| Service | Now lives in |
+|---------|--------------|
+| ItemIconService | `Radoub.UI/Services/` |
+| TextureService | `Radoub.UI/Services/` |
+| PaletteColorService | `Radoub.UI/Services/` |
+| ModelPreviewGLControl | `Radoub.UI/Controls/` |
+| SharedPaletteCacheService | `Radoub.UI/Services/` (replaces the old `ModularPaletteCacheService`) |
+
 Service patterns:
-- **Singleton** with `Instance` property
+- **Singleton** for IO-fronting services (SettingsService, FeatCacheService) — `Instance` property
+- **Stateless static** for pure helpers (AppearanceFilterHelper, PathSafety, SkillDisplayHelper)
+- **Per-instance** for orchestration services (CharacterCreationService, LevelUpApplicationService) — constructed where used
 - **Environment variable override** for testing (e.g., `QUARTERMASTER_SETTINGS_DIR`)
-- **INotifyPropertyChanged** for bindable settings
+- **INotifyPropertyChanged** for bindable singletons
 
 ---
 

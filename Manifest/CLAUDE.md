@@ -32,14 +32,16 @@ Manifest/
 │   │   ├── CommandLineService.cs
 │   │   ├── ManifestBrowserContext.cs
 │   │   ├── SettingsService.cs
-│   │   ├── SpellCheckService.cs
 │   │   └── TlkService.cs
 │   └── Views/
-│       ├── MainWindow.axaml(.cs) + partials (FileOps, Navigation, SpellCheck, TreeViewOps)
+│       ├── MainWindow.axaml(.cs) + partials (EditOps, FileOps, PropertyPanel)
 │       └── SettingsWindow.axaml(.cs) + partials
-└── Manifest.Tests/ (unit tests)
-    └── TestData/
+└── Manifest.Tests/ (unit tests — CommandLineService, EditOps, JrlRoundTrip,
+                    ManifestHeadless, PropertyPanel, SettingsService,
+                    SpellCheck, SpellCheckService, TlkService)
 ```
+
+Spell-check is integrated via shared `Radoub.Dictionary` (no Manifest-local `SpellCheckService.cs` — see `SpellCheckServiceTests.cs` for what gets covered through the shared library).
 
 ---
 
