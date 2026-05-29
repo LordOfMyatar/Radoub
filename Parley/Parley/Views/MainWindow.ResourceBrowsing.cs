@@ -36,7 +36,7 @@ namespace DialogEditor.Views
                 var savedSelEnd = textBox?.SelectionEnd ?? 0;
                 var savedText = textBox?.Text ?? "";
 
-                var tokenWindow = new TokenSelectorWindow();
+                var tokenWindow = new Radoub.UI.Views.TokenSelectorWindow();
                 var result = await tokenWindow.ShowDialog<bool>(this);
 
                 if (result && !string.IsNullOrEmpty(tokenWindow.SelectedToken) && textBox != null)

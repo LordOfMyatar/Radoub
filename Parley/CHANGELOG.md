@@ -9,7 +9,7 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ### Fix: Remove duplicate TokenSelectorWindow, route to shared Radoub.UI version (#2259)
 
-- Deleted Parley's local `TokenSelectorWindow` and routed the token picker through the shared `Radoub.UI` window via `TokenInsertionHelper.OpenTokenWindow`, so token-tab additions in the shared window reach Parley (#2075).
+- Deleted Parley's local `TokenSelectorWindow` and pointed the token picker at the shared `Radoub.UI.Views.TokenSelectorWindow`, so token-tab additions in the shared window reach Parley (#2075).
 
 ---
 
