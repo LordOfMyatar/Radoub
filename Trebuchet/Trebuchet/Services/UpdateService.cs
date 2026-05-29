@@ -22,6 +22,8 @@ public class UpdateService : INotifyPropertyChanged, IDisposable
     private static UpdateService? _instance;
     public static UpdateService Instance => _instance ??= new UpdateService();
 
+    private bool _disposed;
+
     private const string GitHubOwner = "LordOfMyatar";
     private const string GitHubRepo = "Radoub";
     private const string ReleasesApiUrl = $"https://api.github.com/repos/{GitHubOwner}/{GitHubRepo}/releases/latest";
@@ -88,7 +90,10 @@ public class UpdateService : INotifyPropertyChanged, IDisposable
 
     private UpdateService()
     {
-        _httpClient = new HttpClient();
+        // No client-wide timeout: downloads can legitimately run long. The update *check*
+        // applies its own 15s budget via a linked CTS (#2248); the streamed download relies
+        // on caller cancellation.
+        _httpClient = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "Radoub-Trebuchet");
         _httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github+json");
 
@@ -147,7 +152,11 @@ public class UpdateService : INotifyPropertyChanged, IDisposable
         {
             UnifiedLogger.LogApplication(LogLevel.INFO, "Checking for updates...");
 
-            var response = await _httpClient.GetAsync(ReleasesApiUrl, cancellationToken);
+            // 15s budget for the check so a flaky network can't hang it (#2248).
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutCts.CancelAfter(TimeSpan.FromSeconds(15));
+
+            var response = await _httpClient.GetAsync(ReleasesApiUrl, timeoutCts.Token);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -155,7 +164,7 @@ public class UpdateService : INotifyPropertyChanged, IDisposable
                 return false;
             }
 
-            var release = await response.Content.ReadFromJsonAsync<GitHubRelease>(cancellationToken);
+            var release = await response.Content.ReadFromJsonAsync<GitHubRelease>(timeoutCts.Token);
             if (release == null)
             {
                 UnifiedLogger.LogApplication(LogLevel.WARN, "Failed to parse release response");
@@ -182,6 +191,11 @@ public class UpdateService : INotifyPropertyChanged, IDisposable
             }
 
             UnifiedLogger.LogApplication(LogLevel.INFO, $"No update available (current: {CurrentVersion}, latest: {LatestVersion})");
+            return false;
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, "Update check timed out after 15s");
             return false;
         }
         catch (OperationCanceledException)
@@ -260,40 +274,42 @@ public class UpdateService : INotifyPropertyChanged, IDisposable
     /// <summary>
     /// Compare two version strings to determine if the first is newer.
     /// </summary>
-    private bool IsNewerVersion(string latest, string current)
+    internal static bool IsNewerVersion(string latest, string current)
     {
-        try
+        // Strip prerelease (-alpha) and build-metadata (+gitHash) suffixes so a segment
+        // like "0+abc123" doesn't blow up the numeric compare. Unparseable segments are
+        // treated as 0 via TryParse rather than throwing and silently suppressing the
+        // update (#2248).
+        var latestClean = StripSuffixes(latest);
+        var currentClean = StripSuffixes(current);
+
+        var latestParts = latestClean.Split('.');
+        var currentParts = currentClean.Split('.');
+
+        for (int i = 0; i < Math.Max(latestParts.Length, currentParts.Length); i++)
         {
-            // Handle alpha/beta suffixes
-            var latestClean = latest.Split('-')[0];
-            var currentClean = current.Split('-')[0];
+            int latestNum = i < latestParts.Length && int.TryParse(latestParts[i], out var ln) ? ln : 0;
+            int currentNum = i < currentParts.Length && int.TryParse(currentParts[i], out var cn) ? cn : 0;
 
-            var latestParts = latestClean.Split('.');
-            var currentParts = currentClean.Split('.');
-
-            for (int i = 0; i < Math.Max(latestParts.Length, currentParts.Length); i++)
-            {
-                int latestNum = i < latestParts.Length ? int.Parse(latestParts[i]) : 0;
-                int currentNum = i < currentParts.Length ? int.Parse(currentParts[i]) : 0;
-
-                if (latestNum > currentNum) return true;
-                if (latestNum < currentNum) return false;
-            }
-
-            // If base versions are equal, check for alpha/beta
-            // Released version (no suffix) is newer than alpha/beta
-            bool latestIsPrerelease = latest.Contains('-');
-            bool currentIsPrerelease = current.Contains('-');
-
-            if (!latestIsPrerelease && currentIsPrerelease) return true;
-
-            return false;
+            if (latestNum > currentNum) return true;
+            if (latestNum < currentNum) return false;
         }
-        catch (FormatException)
-        {
-            // Version string parsing failed - assume no update available
-            return false;
-        }
+
+        // If base versions are equal, a released version (no -prerelease suffix) is
+        // newer than an alpha/beta.
+        bool latestIsPrerelease = latest.Contains('-');
+        bool currentIsPrerelease = current.Contains('-');
+
+        if (!latestIsPrerelease && currentIsPrerelease) return true;
+
+        return false;
+    }
+
+    private static string StripSuffixes(string version)
+    {
+        var s = version.Split('-')[0];
+        var plus = s.IndexOf('+');
+        return plus >= 0 ? s[..plus] : s;
     }
 
     /// <summary>
@@ -357,7 +373,7 @@ public class UpdateService : INotifyPropertyChanged, IDisposable
                 }
             }
 
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Update downloaded to: {tempPath}");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Update downloaded to: {UnifiedLogger.SanitizePath(tempPath)}");
             return tempPath;
         }
         catch (OperationCanceledException)
@@ -374,7 +390,16 @@ public class UpdateService : INotifyPropertyChanged, IDisposable
 
     public void Dispose()
     {
+        if (_disposed) return;
+        _disposed = true;
         _httpClient.Dispose();
+
+        // Clear the singleton so a later Instance access constructs a fresh service
+        // instead of handing back this disposed one (#2248).
+        if (ReferenceEquals(_instance, this))
+        {
+            _instance = null;
+        }
     }
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
