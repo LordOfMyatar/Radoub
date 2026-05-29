@@ -113,9 +113,12 @@ public partial class MainWindow
                 _documentState.IsReadOnly = true;
             }
 
+            // Set IsLoading before the read so any subscriber reacting to the
+            // _currentStore change is already guarded against treating the load as a
+            // user edit (#2256).
+            _documentState.IsLoading = true;
             _currentStore = UtmReader.Read(filePath);
             _currentFilePath = filePath;
-            _documentState.IsLoading = true;
 
             // Infer module path from file location (#1208)
             RadoubSettings.Instance.TryInferModuleFromFile(filePath);
@@ -143,24 +146,47 @@ public partial class MainWindow
             // Scan module directory for loose .uti files
             PopulateModuleItems();
 
-            // Load inventory async to avoid blocking UI during item resolution
+            // Load inventory async to avoid blocking UI during item resolution.
             // Keep IsLoading true until inventory is fully populated to prevent
-            // collection change events from marking the document dirty (#1743)
-            _ = PopulateStoreInventoryAsync(filePath).ContinueWith(_ =>
-            {
-                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                {
-                    _documentState.IsLoading = false;
-                    _documentState.ClearDirty();
-                    UpdateTitle();
-                });
-            });
+            // collection change events from marking the document dirty (#1743).
+            // Always clear IsLoading — even if population faults — so the editor
+            // can't get permanently stuck in the loading state (#2256).
+            _ = LoadInventoryAndFinalizeAsync(filePath);
         }
         catch (Exception ex)
         {
             _documentState.IsLoading = false;
             ShowError($"Failed to load file: {ex.Message}");
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load store: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Populates the store inventory and finalizes the load state. IsLoading is cleared
+    /// in a finally block so a fault during population can't leave the editor stuck
+    /// loading (no dirty events, ClearDirty never runs) (#2256).
+    /// </summary>
+    private async Task LoadInventoryAndFinalizeAsync(string filePath)
+    {
+        try
+        {
+            await PopulateStoreInventoryAsync(filePath);
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"Failed to populate store inventory: {ex.Message}");
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                UpdateStatusBar("Loaded with errors — some inventory items may be missing."));
+        }
+        finally
+        {
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                _documentState.IsLoading = false;
+                _documentState.ClearDirty();
+                UpdateTitle();
+            });
         }
     }
 
@@ -314,35 +340,21 @@ public partial class MainWindow
             var resRef = Path.GetFileNameWithoutExtension(filePath).ToLowerInvariant();
             _currentStore.ResRef = resRef;
 
-            // Create backup before overwriting (if file exists)
-            if (File.Exists(filePath))
-            {
-                var bakPath = filePath + ".bak";
-                try
-                {
-                    File.Copy(filePath, bakPath, overwrite: true);
-                }
-                catch (IOException ex)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to create backup: {ex.Message}");
-                }
-            }
-
-            // Write to temp file first, then atomic replace
+            // Write to a temp file beside the destination (same volume = atomic move),
+            // then swap it into place with the shared cross-OS atomic helper. The helper
+            // backs up the previous file to .bak and performs a single File.Move
+            // (overwrite:true) so the original is never missing mid-save (#2256).
             var tempPath = filePath + ".tmp";
             var store = _currentStore;
             try
             {
                 await Task.Run(() => UtmWriter.Write(store, tempPath));
 
-                // Replace original with temp (atomic on same volume)
-                if (File.Exists(filePath))
-                    File.Delete(filePath);
-                File.Move(tempPath, filePath);
+                Radoub.Formats.Common.AtomicFile.Replace(tempPath, filePath, filePath + ".bak");
             }
             finally
             {
-                // Clean up temp file if it still exists (write failed)
+                // Clean up temp file if it still exists (write failed before the move)
                 if (File.Exists(tempPath))
                 {
                     try { File.Delete(tempPath); }

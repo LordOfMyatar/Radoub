@@ -221,10 +221,12 @@ public static class ErfWriter
         {
             Write(erf, tempPath, resourceData);
 
-            // Atomic replace — original stays in place until the rename
-            // completes. A failure between Delete and Move (AV lock,
-            // permission, disk full) previously left no ERF on disk (#2244).
-            File.Move(tempPath, erfPath, overwrite: true);
+            // Atomic replace via the shared cross-OS helper (#2256). The original
+            // stays in place until the rename completes — a failure mid-swap (AV
+            // lock, permission, disk full) no longer leaves no ERF on disk (#2244).
+            // backupPath is null: this method already created its own timestamped
+            // backup above when createBackup was set.
+            Radoub.Formats.Common.AtomicFile.Replace(tempPath, erfPath, backupPath: null);
         }
         finally
         {

@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.Formats 0.2.62-alpha] - 2026-05-29
+**Branch**: `fence/issue-2256` | **PR**: #2306
+
+### Feat: Shared cross-OS atomic file-replace helper (`AtomicFile.Replace`) (#2256)
+
+- New `Radoub.Formats.Common.AtomicFile.Replace(source, dest, backupPath?)` consolidates the write-temp-then-swap pattern with a single `File.Move(overwrite:true)` — atomic on the same volume on Windows (MoveFileEx) and Unix (rename(2)). Optional `.bak` backup, handles the create-new case, and throws on a missing source. `ErfWriter.UpdateResource` and Fence's UTM save now route through it instead of inline rename logic.
+
+---
+
 ## [Radoub.UI 0.1.61-alpha] - 2026-05-28
 **Branch**: `radoub/issue-2262` | **PR**: #2288
 
