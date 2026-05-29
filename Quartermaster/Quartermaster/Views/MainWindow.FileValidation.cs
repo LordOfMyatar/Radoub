@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
 using Radoub.UI.Views;
@@ -164,9 +165,10 @@ public partial class MainWindow
 
         var newFilePath = Path.GetFullPath(Path.Combine(directory, newName + extension));
 
-        // Validate path stays within the original directory (prevent traversal)
-        var resolvedDirectory = Path.GetFullPath(directory);
-        if (!newFilePath.StartsWith(resolvedDirectory, StringComparison.OrdinalIgnoreCase))
+        // Validate path stays within the original directory (prevent traversal).
+        // Use PathSafety.IsPathWithinDirectory so a sibling directory sharing the
+        // same name prefix (e.g. "C:\mod" vs "C:\modfiles") cannot pass (#2252).
+        if (!PathSafety.IsPathWithinDirectory(newFilePath, directory))
         {
             UnifiedLogger.LogApplication(LogLevel.WARN, "Path traversal attempt detected in rename");
             DialogHelper.ShowMessageDialog(this, "Invalid Name",
