@@ -356,8 +356,8 @@ public partial class MarlinspikePanel : UserControl
                 return;
 
             case DispatchAction.ToolLaunch:
-                var launched = ToolLauncherService.Instance.LaunchTool(
-                    plan.ToolName!, $"--file \"{plan.FilePath}\"");
+                var launched = ToolLauncherService.Instance.LaunchToolWithFile(
+                    plan.ToolName!, plan.FilePath!);
                 if (!launched && _viewModel != null)
                     _viewModel.StatusText =
                         $"Could not launch {plan.ToolName} for: {Path.GetFileName(plan.FilePath)}";
@@ -380,9 +380,12 @@ public partial class MarlinspikePanel : UserControl
             var startInfo = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = editorPath,
-                Arguments = $"\"{filePath}\"",
                 UseShellExecute = false
             };
+            foreach (var arg in ProcessArgumentBuilder.SingleFileArg(filePath))
+            {
+                startInfo.ArgumentList.Add(arg);
+            }
             System.Diagnostics.Process.Start(startInfo)?.Dispose();
         }
         catch (Exception ex)

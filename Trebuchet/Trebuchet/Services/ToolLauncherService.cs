@@ -193,12 +193,45 @@ public class ToolLauncherService
     }
 
     /// <summary>
+    /// Launch a tool by name, opening a file via the --file argument.
+    /// Uses ProcessStartInfo.ArgumentList so paths containing special characters
+    /// (including a literal quote, legal on Linux/macOS) parse correctly (#2248).
+    /// </summary>
+    public bool LaunchToolWithFile(string toolName, string filePath)
+    {
+        var tool = _tools.FirstOrDefault(t => t.Name.Equals(toolName, StringComparison.OrdinalIgnoreCase));
+        if (tool == null)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Unknown tool: {toolName}");
+            return false;
+        }
+
+        return LaunchToolWithFile(tool, filePath);
+    }
+
+    /// <summary>
     /// Launch a tool.
     /// </summary>
     /// <param name="tool">Tool to launch</param>
     /// <param name="arguments">Optional command line arguments</param>
     /// <returns>True if launched successfully</returns>
     public bool LaunchTool(ToolInfo tool, string? arguments = null)
+    {
+        // Legacy string-arg entry point: callers that pass "--file \"path\"" should
+        // use LaunchToolWithFile instead. A bare flag (no embedded paths) is split on
+        // whitespace into ArgumentList elements.
+        var argList = string.IsNullOrWhiteSpace(arguments)
+            ? System.Array.Empty<string>()
+            : arguments.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return LaunchTool(tool, argList);
+    }
+
+    /// <summary>
+    /// Launch a tool with an explicit argument list. Each element is one argument
+    /// with no surrounding quotes — ArgumentList escapes per-OS so paths with spaces
+    /// or quotes survive intact (#2248).
+    /// </summary>
+    public bool LaunchTool(ToolInfo tool, IReadOnlyList<string> arguments)
     {
         if (!tool.IsAvailable)
         {
@@ -212,10 +245,13 @@ public class ToolLauncherService
             var startInfo = new ProcessStartInfo
             {
                 FileName = tool.ExecutablePath!,
-                Arguments = arguments ?? "",
-                UseShellExecute = true,
+                UseShellExecute = false,
                 WorkingDirectory = toolDir ?? ""
             };
+            foreach (var arg in arguments)
+            {
+                startInfo.ArgumentList.Add(arg);
+            }
 
             Process.Start(startInfo)?.Dispose();
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Launched {tool.Name}: {UnifiedLogger.SanitizePath(tool.ExecutablePath!)}");
@@ -236,7 +272,7 @@ public class ToolLauncherService
     /// <returns>True if launched successfully</returns>
     public bool LaunchToolWithFile(ToolInfo tool, string filePath)
     {
-        return LaunchTool(tool, $"--file \"{filePath}\"");
+        return LaunchTool(tool, ProcessArgumentBuilder.FileOpenArgs(filePath));
     }
 
     private void DiscoverTools()
