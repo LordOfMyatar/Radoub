@@ -195,6 +195,7 @@ public partial class MainWindow
             _gameDataService?.Dispose();
             _paletteCacheCts?.Dispose();
             (_sharedCacheService as IDisposable)?.Dispose();
+            (_creaturePaletteCache as IDisposable)?.Dispose(); // #2252
 
             if (e.Cancel)
             {
