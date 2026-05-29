@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Radoub.Dictionary 0.2.3-alpha] - 2026-05-29
-**Branch**: `radoub/issue-2263` | **PR**: #TBD
+**Branch**: `radoub/issue-2263` | **PR**: #2308
 
 ### Fix: Dual-singleton + no file locking causes user custom-word loss (#2263)
 
