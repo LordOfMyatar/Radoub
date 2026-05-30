@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.37-alpha] - 2026-05-30
+**Branch**: `fence/issue-2321` | **PR**: #TBD
+
+### Feat: Promote Fence from Alpha to Beta (#2321)
+
+- Maturity label updated from Alpha to Beta across Trebuchet tile/sidebar badge, wiki, and release notes.
+
+---
+
 ## [0.1.36-alpha] - 2026-05-29
 **Branch**: `fence/issue-2256` | **PR**: #2306
 
