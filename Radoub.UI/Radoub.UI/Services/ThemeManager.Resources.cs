@@ -327,6 +327,21 @@ public partial class ThemeManager
     /// <summary>
     /// Apply font values to resource dictionary
     /// </summary>
+    /// <summary>
+    /// Resolves the effective global font size (#2152). The Trebuchet slider
+    /// (<paramref name="sharedFontSize"/>) is the single authority; a theme's own
+    /// <c>fonts.size</c> is only a fallback used when no shared value is available
+    /// (sharedFontSize &lt;= 0). Pure logic for unit testing.
+    /// </summary>
+    public static double ResolveEffectiveFontSize(ThemeFonts? fonts, double sharedFontSize)
+    {
+        if (sharedFontSize > 0)
+            return sharedFontSize;
+
+        // No shared value — fall back to the theme's size, then the 14 default.
+        return (fonts?.Size is int s && s > 0) ? s : 14.0;
+    }
+
     private void ApplyFonts(IResourceDictionary resources, ThemeFonts fonts)
     {
         // Apply font family - empty or "$Default" means system default
@@ -349,8 +364,11 @@ public partial class ThemeManager
             resources["GlobalFontFamily"] = FontFamily.Default;
         }
 
-        // Use theme's font size or default to 14
-        var baseSize = (fonts.Size.HasValue && fonts.Size.Value > 0) ? (double)fonts.Size.Value : 14.0;
+        // Global font size: the Trebuchet slider (RadoubSettings.SharedFontSize) is the
+        // single authority. The theme's own fonts.size is only a fallback used when no
+        // shared value is configured — otherwise every theme apply would clobber the
+        // user's global font-size choice back to the theme default (#2152).
+        var baseSize = ResolveEffectiveFontSize(fonts, RadoubSettings.Instance.SharedFontSize);
         resources["GlobalFontSize"] = baseSize;
 
         // Derived font sizes for UI hierarchy (all scale with base size)
