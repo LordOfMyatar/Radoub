@@ -116,24 +116,24 @@ public partial class App : Application
         base.OnFrameworkInitializationCompleted();
     }
 
-    private void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    private void OnSharedSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        switch (e.PropertyName)
+        if (e.PropertyName == nameof(Radoub.Formats.Settings.RadoubSettings.SharedFontSize) ||
+            e.PropertyName == nameof(Radoub.Formats.Settings.RadoubSettings.SharedFontFamily))
         {
-            case nameof(SettingsService.FontSizeScale):
-                ApplyFontSettings();
-                break;
+            ApplyFontSettings();
         }
     }
 
     private void ApplyFontSettings()
     {
         var radoubSettings = Radoub.Formats.Settings.RadoubSettings.Instance;
-        var fontSizeScale = SettingsService.Instance.FontSizeScale;
 
         if (Resources != null)
         {
-            var baseSize = radoubSettings.SharedFontSize * fontSizeScale;
+            // SharedFontSize is the global font size in points — Trebuchet is the authority
+            // and applies it directly (no scale multiplier). All tools read the same value (#2152).
+            var baseSize = radoubSettings.SharedFontSize;
 
             // Update base font size
             Resources["GlobalFontSize"] = baseSize;
@@ -147,7 +147,7 @@ public partial class App : Application
             Resources["FontSizeXLarge"] = baseSize + 6;
             Resources["FontSizeTitle"] = baseSize + 10;
 
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Applied font size: {baseSize:F0}pt (base {radoubSettings.SharedFontSize} × {fontSizeScale:P0})");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Applied font size: {baseSize:F0}pt (SharedFontSize)");
         }
 
         if (Resources != null)

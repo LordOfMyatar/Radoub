@@ -20,7 +20,7 @@ public partial class SettingsWindowViewModel : ObservableObject
 {
     private readonly Window _window;
     private readonly string? _originalThemeId;
-    private readonly double _originalFontSizeScale;
+    private readonly double _originalFontSizePoints;
     private static IBrush SuccessBrush => BrushManager.GetSuccessBrush();
     private static IBrush ErrorBrush => BrushManager.GetErrorBrush();
 
@@ -49,9 +49,9 @@ public partial class SettingsWindowViewModel : ObservableObject
     private string _selectedTheme = "Light";
 
     [ObservableProperty]
-    private double _fontSizeScale = 1.0;
+    private double _fontSizePoints = 14.0;
 
-    public string FontSizePercentText => $"{(int)(FontSizeScale * 100)}%";
+    public string FontSizePointsText => $"{(int)FontSizePoints}pt";
 
     // Logging settings
     [ObservableProperty]
@@ -86,7 +86,7 @@ public partial class SettingsWindowViewModel : ObservableObject
 
         // Store originals for cancel revert
         _originalThemeId = ThemeManager.Instance.CurrentTheme?.Plugin.Id;
-        _originalFontSizeScale = SettingsService.Instance.FontSizeScale;
+        _originalFontSizePoints = RadoubSettings.Instance.SharedFontSize;
 
         // Load current settings
         LoadSettings();
@@ -115,7 +115,7 @@ public partial class SettingsWindowViewModel : ObservableObject
 
         GameInstallPath = sharedSettings.BaseGameInstallPath ?? "";
         NwnDocumentsPath = sharedSettings.NeverwinterNightsPath ?? "";
-        FontSizeScale = localSettings.FontSizeScale;
+        FontSizePoints = sharedSettings.SharedFontSize;
 
         // Logging settings — show effective log level
         LogRetentionSessions = localSettings.LogRetentionSessions;
@@ -179,12 +179,13 @@ public partial class SettingsWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(HasNwnDocumentsValidation));
     }
 
-    partial void OnFontSizeScaleChanged(double value)
+    partial void OnFontSizePointsChanged(double value)
     {
-        OnPropertyChanged(nameof(FontSizePercentText));
+        OnPropertyChanged(nameof(FontSizePointsText));
 
-        // Live preview: apply font scale immediately as slider moves
-        SettingsService.Instance.FontSizeScale = value;
+        // Live preview: write the global font size as the slider moves. Trebuchet is the
+        // sole authority for SharedFontSize (#2152); all tools read this value on launch.
+        RadoubSettings.Instance.SharedFontSize = value;
     }
 
     partial void OnLogRetentionSessionsChanged(int value)
@@ -284,7 +285,7 @@ public partial class SettingsWindowViewModel : ObservableObject
 
         sharedSettings.BaseGameInstallPath = GameInstallPath;
         sharedSettings.NeverwinterNightsPath = NwnDocumentsPath;
-        localSettings.FontSizeScale = FontSizeScale;
+        sharedSettings.SharedFontSize = FontSizePoints;
 
         // Logging settings
         localSettings.LogRetentionSessions = LogRetentionSessions;
@@ -322,8 +323,8 @@ public partial class SettingsWindowViewModel : ObservableObject
             ThemeManager.Instance.ApplyTheme(_originalThemeId);
         }
 
-        // Revert font scale if changed
-        SettingsService.Instance.FontSizeScale = _originalFontSizeScale;
+        // Revert font size if changed
+        RadoubSettings.Instance.SharedFontSize = _originalFontSizePoints;
 
         _window.Close();
     }
