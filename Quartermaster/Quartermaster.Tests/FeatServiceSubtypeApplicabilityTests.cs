@@ -11,8 +11,12 @@ namespace Quartermaster.Tests;
 ///
 /// In feat.2da, Skill Focus subtypes carry REQSKILL (the governed skill) and are
 /// universal (ALLCLASSESCANUSE=1); Spell Focus subtypes carry MINSPELLLVL>0. The
-/// subtype picker must drop subtypes the character can't meaningfully take:
-///   - Skill Focus (X): only when skill X is a class skill for the character.
+/// subtype picker drops subtypes the character can't meaningfully take:
+///   - Skill Focus (X): only when skill X is AVAILABLE to the character — i.e. it
+///     appears in any of their class skill tables (class OR cross-class), or is
+///     universal. Skill Focus is allowed for cross-class skills, so only skills no
+///     class can train at all (e.g. Use Magic Device for a Fighter) are barred.
+///     Multiclass widens availability (#2096 multiclass regression).
 ///   - Spell Focus (X): only when the character has a spellcasting class.
 /// Strict mode additionally requires the subtype's own prereqs to be met.
 /// </summary>
@@ -23,20 +27,22 @@ public class FeatServiceSubtypeApplicabilityTests
     private readonly FeatService _featService;
 
     // Skill IDs
-    private const int SkillSpot = 9;        // Fighter class skill (set up below)
-    private const int SkillSpellcraft = 19; // NOT a Fighter class skill
+    private const int SkillSpot = 9;          // Fighter class skill
+    private const int SkillSpellcraft = 19;   // Fighter cross-class, Sorcerer class skill
+    private const int SkillUseMagicDevice = 27; // In NO class table set up here → barred for Fighter
 
     // Feat IDs (Skill Focus subtypes)
     private const int FeatSkillFocusSpot = 173;
     private const int FeatSkillFocusSpellcraft = 174;
+    private const int FeatSkillFocusUmd = 175;
 
     // Feat IDs (Spell Focus subtypes)
     private const int FeatSpellFocusAbj = 35;
-    private const int FeatSpellFocusCon = 166;
 
     // Class IDs
-    private const int ClassFighter = 4;  // no SpellGainTable
-    private const int ClassWizard = 10;  // has SpellGainTable
+    private const int ClassFighter = 4;   // no SpellGainTable (non-caster)
+    private const int ClassWizard = 10;   // caster
+    private const int ClassSorcerer = 11; // caster; Spellcraft is a class skill
 
     public FeatServiceSubtypeApplicabilityTests()
     {
@@ -59,34 +65,40 @@ public class FeatServiceSubtypeApplicabilityTests
         _mock.Set2DAValue("feat", FeatSkillFocusSpellcraft, "ALLCLASSESCANUSE", "1");
         _mock.Set2DAValue("feat", FeatSkillFocusSpellcraft, "REQSKILL", SkillSpellcraft.ToString());
 
-        // --- Spell Focus subtypes: MINSPELLLVL=1 ---
+        _mock.Set2DAValue("feat", FeatSkillFocusUmd, "LABEL", "SkillFocusUMD");
+        _mock.Set2DAValue("feat", FeatSkillFocusUmd, "MASTERFEAT", "4");
+        _mock.Set2DAValue("feat", FeatSkillFocusUmd, "ALLCLASSESCANUSE", "1");
+        _mock.Set2DAValue("feat", FeatSkillFocusUmd, "REQSKILL", SkillUseMagicDevice.ToString());
+
+        // --- Spell Focus subtype: MINSPELLLVL=1 ---
         _mock.Set2DAValue("feat", FeatSpellFocusAbj, "LABEL", "SpellFocusAbj");
         _mock.Set2DAValue("feat", FeatSpellFocusAbj, "MASTERFEAT", "3");
         _mock.Set2DAValue("feat", FeatSpellFocusAbj, "ALLCLASSESCANUSE", "0");
         _mock.Set2DAValue("feat", FeatSpellFocusAbj, "MINSPELLLVL", "1");
 
-        _mock.Set2DAValue("feat", FeatSpellFocusCon, "LABEL", "SpellFocusCon");
-        _mock.Set2DAValue("feat", FeatSpellFocusCon, "MASTERFEAT", "3");
-        _mock.Set2DAValue("feat", FeatSpellFocusCon, "ALLCLASSESCANUSE", "0");
-        _mock.Set2DAValue("feat", FeatSpellFocusCon, "MINSPELLLVL", "1");
-
-        // --- Fighter: has a skills table where Spot is a class skill, Spellcraft is not ---
+        // --- Fighter skills table: Spot (class), Spellcraft (cross-class). UMD absent. ---
         _mock.Set2DAValue("classes", ClassFighter, "SkillsTable", "cls_skill_fight");
         _mock.Set2DAValue("cls_skill_fight", 0, "SkillIndex", SkillSpot.ToString());
         _mock.Set2DAValue("cls_skill_fight", 0, "ClassSkill", "1");
         _mock.Set2DAValue("cls_skill_fight", 1, "SkillIndex", SkillSpellcraft.ToString());
-        _mock.Set2DAValue("cls_skill_fight", 1, "ClassSkill", "0"); // cross-class only
-        // Fighter has NO SpellGainTable (non-caster)
+        _mock.Set2DAValue("cls_skill_fight", 1, "ClassSkill", "0"); // cross-class — still available
+        // No UMD row → UMD unavailable to Fighter.
 
-        // --- Wizard: caster (SpellGainTable set), Spellcraft is a class skill ---
+        // --- Wizard: caster, Spellcraft class skill ---
         _mock.Set2DAValue("classes", ClassWizard, "SpellGainTable", "cls_spgn_wiz");
-        // SpellGainTable is indexed by (classLevel - 1). Wizard() below is level 4 → row 3.
-        // Populate rows 0..3 so the MINSPELLLVL caster prereq check finds a level-1 slot.
         for (int row = 0; row <= 3; row++)
             _mock.Set2DAValue("cls_spgn_wiz", row, "SpellLevel1", "1");
         _mock.Set2DAValue("classes", ClassWizard, "SkillsTable", "cls_skill_wiz");
         _mock.Set2DAValue("cls_skill_wiz", 0, "SkillIndex", SkillSpellcraft.ToString());
         _mock.Set2DAValue("cls_skill_wiz", 0, "ClassSkill", "1");
+
+        // --- Sorcerer: caster, Spellcraft class skill (for multiclass Fighter+Sorc) ---
+        _mock.Set2DAValue("classes", ClassSorcerer, "SpellGainTable", "cls_spgn_sorc");
+        for (int row = 0; row <= 3; row++)
+            _mock.Set2DAValue("cls_spgn_sorc", row, "SpellLevel1", "1");
+        _mock.Set2DAValue("classes", ClassSorcerer, "SkillsTable", "cls_skill_sorc");
+        _mock.Set2DAValue("cls_skill_sorc", 0, "SkillIndex", SkillSpellcraft.ToString());
+        _mock.Set2DAValue("cls_skill_sorc", 0, "ClassSkill", "1");
     }
 
     private static UtcFile Fighter() =>
@@ -94,6 +106,16 @@ public class FeatServiceSubtypeApplicabilityTests
 
     private static UtcFile Wizard() =>
         new() { ClassList = { new CreatureClass { Class = ClassWizard, ClassLevel = 4 } } };
+
+    private static UtcFile FighterSorcerer() =>
+        new()
+        {
+            ClassList =
+            {
+                new CreatureClass { Class = ClassFighter, ClassLevel = 4 },
+                new CreatureClass { Class = ClassSorcerer, ClassLevel = 1 }
+            }
+        };
 
     // --- Skill Focus structural filtering ---
 
@@ -104,16 +126,39 @@ public class FeatServiceSubtypeApplicabilityTests
     }
 
     [Fact]
-    public void SkillFocus_NonClassSkill_IsNotApplicableToFighter()
+    public void SkillFocus_CrossClassSkill_IsApplicableToFighter()
     {
-        // Spellcraft is not a Fighter class skill — should be filtered out.
-        Assert.False(_featService.IsSubtypeStructurallyApplicable(Fighter(), FeatSkillFocusSpellcraft));
+        // Spellcraft is cross-class for Fighter (ClassSkill=0) but still trainable → allowed.
+        Assert.True(_featService.IsSubtypeStructurallyApplicable(Fighter(), FeatSkillFocusSpellcraft));
+    }
+
+    [Fact]
+    public void SkillFocus_SkillNoClassCanTrain_IsNotApplicableToFighter()
+    {
+        // Use Magic Device is in no Fighter skill table → barred.
+        Assert.False(_featService.IsSubtypeStructurallyApplicable(Fighter(), FeatSkillFocusUmd));
     }
 
     [Fact]
     public void SkillFocus_ClassSkillForWizard_IsApplicable()
     {
         Assert.True(_featService.IsSubtypeStructurallyApplicable(Wizard(), FeatSkillFocusSpellcraft));
+    }
+
+    // --- Multiclass (#2096 regression: Fighter+Sorc must see Sorc-trainable subtypes) ---
+
+    [Fact]
+    public void SkillFocus_MulticlassWidensAvailability()
+    {
+        // Spellcraft is a Sorcerer class skill; a Fighter/Sorcerer must see Skill Focus (Spellcraft).
+        Assert.True(_featService.IsSubtypeStructurallyApplicable(FighterSorcerer(), FeatSkillFocusSpellcraft));
+    }
+
+    [Fact]
+    public void SpellFocus_MulticlassWithCaster_IsApplicable()
+    {
+        // Fighter alone can't take Spell Focus, but Fighter/Sorcerer can (Sorc is a caster).
+        Assert.True(_featService.IsSubtypeStructurallyApplicable(FighterSorcerer(), FeatSpellFocusAbj));
     }
 
     // --- Spell Focus structural filtering ---
@@ -144,19 +189,25 @@ public class FeatServiceSubtypeApplicabilityTests
         Assert.True(_featService.HasCasterClass(Wizard()));
     }
 
+    [Fact]
+    public void HasCasterClass_FighterSorcerer_True()
+    {
+        Assert.True(_featService.HasCasterClass(FighterSorcerer()));
+    }
+
     // --- Combined IsSubtypeApplicable (validation-level aware) ---
 
     [Fact]
     public void IsSubtypeApplicable_CeMode_UsesStructuralOnly()
     {
-        // CE mode: structural filter still drops a non-class-skill Skill Focus.
+        // CE mode: structural filter still drops a skill no class can train.
         Assert.False(_featService.IsSubtypeApplicable(
-            Fighter(), FeatSkillFocusSpellcraft, ValidationLevel.None,
+            Fighter(), FeatSkillFocusUmd, ValidationLevel.None,
             new HashSet<ushort>(), _ => 0, _ => ""));
 
-        // ...but keeps a valid one.
+        // ...but keeps an available one (cross-class is fine).
         Assert.True(_featService.IsSubtypeApplicable(
-            Fighter(), FeatSkillFocusSpot, ValidationLevel.None,
+            Fighter(), FeatSkillFocusSpellcraft, ValidationLevel.None,
             new HashSet<ushort>(), _ => 0, _ => ""));
     }
 

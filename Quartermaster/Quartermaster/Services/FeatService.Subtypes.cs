@@ -143,21 +143,24 @@ public partial class FeatService
     /// Structural applicability of a MASTERFEAT subtype to a creature, independent of
     /// validation level (#2096). Filters subtypes the character is fundamentally barred from
     /// regardless of strictness:
-    ///   - REQSKILL set: the governed skill must be a class skill for one of the creature's classes
-    ///     (Skill Focus subtypes are universal, so this is the only meaningful gate).
+    ///   - REQSKILL set: the governed skill must be available to the creature — i.e. it appears
+    ///     in at least one of the creature's class skill tables (as a class OR cross-class skill),
+    ///     or is usable by all classes. Skill Focus can be taken for cross-class skills, so the
+    ///     gate is availability, not class-skill status. Only skills no class can train at all
+    ///     (e.g. Use Magic Device for a Fighter) are barred. Multiclass widens availability.
     ///   - MINSPELLLVL &gt; 0: the creature must have a spellcasting class (Spell Focus subtypes).
     /// Returns true when no structural gate applies.
     /// </summary>
     public bool IsSubtypeStructurallyApplicable(UtcFile creature, int subtypeFeatId)
     {
-        // Skill-governed subtype (e.g. Skill Focus): require the skill to be a class skill.
+        // Skill-governed subtype (e.g. Skill Focus): require the skill to be usable by the
+        // creature (class or cross-class). IsSkillAvailable honors all of the creature's
+        // classes, so a multiclass build sees every subtype any of its classes can train.
         var reqSkillStr = _gameDataService.Get2DAValue("feat", subtypeFeatId, "REQSKILL");
         if (!string.IsNullOrEmpty(reqSkillStr) && reqSkillStr != "****" &&
             int.TryParse(reqSkillStr, out int reqSkillId))
         {
-            bool isClassSkillSomewhere = creature.ClassList
-                .Any(cc => _skillService.IsClassSkill(cc.Class, reqSkillId));
-            if (!isClassSkillSomewhere)
+            if (!_skillService.IsSkillAvailable(creature, reqSkillId))
                 return false;
         }
 
