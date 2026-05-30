@@ -15,9 +15,9 @@ public class ProcessArgumentBuilderTests
     [Fact]
     public void FileOpenArgs_EmitsFileFlagAndRawPath_NoQuotes()
     {
-        var args = ProcessArgumentBuilder.FileOpenArgs(@"C:\Users\me\my dialog.dlg");
+        var args = ProcessArgumentBuilder.FileOpenArgs(@"C:\data\my dialog.dlg");
 
-        Assert.Equal(new[] { "--file", @"C:\Users\me\my dialog.dlg" }, args);
+        Assert.Equal(new[] { "--file", @"C:\data\my dialog.dlg" }, args);
     }
 
     [Fact]
@@ -26,7 +26,7 @@ public class ProcessArgumentBuilderTests
         // A path containing a double-quote is legal on Linux/macOS. The old
         // $"--file \"{path}\"" concat would corrupt parsing; ArgumentList must
         // carry the raw path so the OS layer escapes it correctly.
-        var weird = "/home/me/od\"d.dlg";
+        var weird = "/srv/od\"d.dlg";
         var args = ProcessArgumentBuilder.FileOpenArgs(weird);
 
         Assert.Equal(new[] { "--file", weird }, args);
