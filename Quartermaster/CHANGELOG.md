@@ -5,6 +5,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.114-alpha] - 2026-05-30
+**Branch**: `quartermaster/issue-2220` | **PR**: #TBD
+
+### Sprint: Non-Rendering Bug Cleanup (#2220)
+
+- Filter master-feat subtypes by class eligibility (#2096)
+- Honor Trebuchet font-size slider in QM (#2152)
+- Show appearance label instead of "Appearance N" fallback (#2162)
+
+---
+
 ## [0.2.113-alpha] - 2026-05-29
 **Branch**: `quartermaster/issue-1735` | **PR**: #2317
 
