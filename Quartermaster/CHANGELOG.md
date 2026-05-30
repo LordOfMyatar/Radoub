@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.113-alpha] - 2026-05-29
-**Branch**: `quartermaster/issue-1735` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1735` | **PR**: #2317
 
 ### Fix: Dynamic Brownie part-based models render with misplaced parts (#1735)
 
