@@ -10,7 +10,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ### Fix: Dynamic Brownie part-based models render with misplaced parts (#1735)
 
-- Root cause + fix in shared `Radoub.UI` `MdlPartComposer` (world-space seam/bounds) — see root CHANGELOG [Radoub.UI 0.1.63-alpha].
+- Root cause + fix in shared `Radoub.UI` `MdlPartComposer` (world-space seam/bounds, no cache mutation, height-scaled seam threshold) — see root CHANGELOG [Radoub.UI 0.1.63-alpha].
 
 ---
 
