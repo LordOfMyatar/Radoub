@@ -122,9 +122,12 @@ public partial class MainWindow
 
     /// <summary>
     /// Rename the currently-open creature file to an already-validated path
-    /// (the shared browser menu prompted + validated; #2320). Lock-aware:
-    /// save-if-dirty → release lock(old) → move → reload(new) which reacquires
-    /// the lock, syncs ResRef to the new filename, and refreshes the browser.
+    /// (the shared browser menu prompted + validated; #2320). Lock-aware and
+    /// in-place: save-if-dirty → release lock(old) → move → update ResRef +
+    /// path → re-save → reacquire lock(new) → refresh browser. The creature is
+    /// already in memory and correct, so we do NOT reload — a full LoadFile
+    /// re-parses the UTC and rebuilds every panel (appearance/feats/spells),
+    /// which caused a visible lag after the dialog closed.
     /// </summary>
     private async Task RenameOpenFileAsync(string oldPath, string newPath)
     {
@@ -146,7 +149,7 @@ public partial class MainWindow
                 await SaveFile();
 
             // Release the lock on the old path before moving so the sidecar
-            // doesn't orphan; LoadFile reacquires on the new path.
+            // doesn't orphan; we reacquire on the new path below.
             FileSessionLockService.ReleaseLock(oldPath);
             _documentState.IsReadOnly = false;
 
@@ -154,16 +157,22 @@ public partial class MainWindow
             UnifiedLogger.LogApplication(LogLevel.INFO,
                 $"Renamed open file: {UnifiedLogger.SanitizePath(oldPath)} -> {UnifiedLogger.SanitizePath(newPath)}");
 
-            // Reload from the new path: reacquires lock, rebinds editor, sets
-            // _currentFilePath. The save-syncs-ResRef-to-filename rule means the
-            // next save fixes the internal ResRef; do it now so disk matches.
-            await LoadFile(newPath);
-            _currentCreature!.TemplateResRef = Path.GetFileNameWithoutExtension(newPath).ToLowerInvariant();
+            // In-place: point at the new file, sync ResRef to the new filename,
+            // re-save to persist it, then reacquire the session lock.
+            var newName = Path.GetFileNameWithoutExtension(newPath).ToLowerInvariant();
+            _currentFilePath = newPath;
+            _currentCreature.TemplateResRef = newName;
             await SaveFile();
+            FileSessionLockService.AcquireLock(newPath, "Quartermaster");
+
+            AdvancedPanelContent.UpdateResRefDisplay(newName);
+            UpdateTitle();
+            UpdateRecentFilesMenu();
 
             var creatureBrowserPanel = this.FindControl<CreatureBrowserPanel>("CreatureBrowserPanel");
             if (creatureBrowserPanel != null)
             {
+                creatureBrowserPanel.CurrentFilePath = newPath;
                 creatureBrowserPanel.RemoveEntryByFilePath(oldPath);
                 await creatureBrowserPanel.RefreshAsync();
             }
