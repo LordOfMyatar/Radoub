@@ -5,7 +5,7 @@ All notable changes to Parley. One-line highlights per version; full details in 
 ---
 
 ## [0.1.172-alpha] - 2026-05-30
-**Branch**: `parley/issue-2260` | **PR**: #TBD
+**Branch**: `parley/issue-2260` | **PR**: #2323
 
 ### Fix: TTS arg string-concat + AddNode rollback + empty catches + UndoManager trim (#2260)
 
