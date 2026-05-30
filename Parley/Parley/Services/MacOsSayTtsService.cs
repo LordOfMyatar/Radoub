@@ -128,25 +128,19 @@ namespace DialogEditor.Services
                 int speed = (int)(175 * rate);
                 speed = Math.Clamp(speed, 1, 500);
 
-                var args = $"-r {speed}";
-                if (!string.IsNullOrEmpty(voiceName))
-                {
-                    args += $" -v \"{voiceName}\"";
-                }
-
-                // Escape text for shell - replace quotes
-                var escapedText = text.Replace("\"", "\\\"");
-                args += $" \"{escapedText}\"";
-
                 var psi = new ProcessStartInfo
                 {
                     FileName = "say",
-                    Arguments = args,
                     UseShellExecute = false,
                     CreateNoWindow = true,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true
                 };
+
+                // Use ArgumentList so shell metacharacters in the spoken text are passed
+                // verbatim and never reinterpreted (#2260).
+                foreach (var token in BuildArguments(speed, voiceName, text))
+                    psi.ArgumentList.Add(token);
 
                 _currentProcess = Process.Start(psi);
                 _isSpeaking = true;
@@ -169,6 +163,22 @@ namespace DialogEditor.Services
                 UnifiedLogger.LogApplication(LogLevel.ERROR,
                     $"MacOsSayTtsService: Speak failed - {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Builds the macOS `say` argument token list for ProcessStartInfo.ArgumentList (#2260).
+        /// Each element is a separate, unquoted, unescaped token; the text is passed verbatim.
+        /// </summary>
+        public static IReadOnlyList<string> BuildArguments(int rate, string? voiceName, string text)
+        {
+            var args = new List<string> { "-r", rate.ToString() };
+            if (!string.IsNullOrEmpty(voiceName))
+            {
+                args.Add("-v");
+                args.Add(voiceName);
+            }
+            args.Add(text);
+            return args;
         }
 
         public void Stop()

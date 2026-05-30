@@ -24,8 +24,11 @@ namespace Parley.Models
     /// </summary>
     public class UndoManager
     {
-        private readonly Stack<UndoState> _undoStack = new();
-        private readonly Stack<UndoState> _redoStack = new();
+        // LinkedList instead of Stack so that trimming the oldest item when the stack is
+        // over capacity is O(1) (RemoveFirst) instead of O(N) array copy (#2260).
+        // Newest item is at the tail (Last); oldest is at the head (First).
+        private readonly LinkedList<UndoState> _undoStack = new();
+        private readonly LinkedList<UndoState> _redoStack = new();
         private readonly int _maxStackSize;
         private bool _isRestoring = false;
 
@@ -78,22 +81,17 @@ namespace Parley.Models
                     ExpandedNodePaths = expandedNodePaths != null ? new HashSet<string>(expandedNodePaths) : new HashSet<string>()
                 };
 
-                // Add to undo stack
-                _undoStack.Push(undoState);
+                // Add newest state to the tail
+                _undoStack.AddLast(undoState);
 
                 // Clear redo stack when new action is performed
                 _redoStack.Clear();
 
-                // Limit stack size to prevent excessive memory usage
+                // Limit stack size to prevent excessive memory usage.
+                // O(1) per trim: drop the oldest (head) item.
                 while (_undoStack.Count > _maxStackSize)
                 {
-                    // Remove oldest item from bottom of stack
-                    var items = _undoStack.ToArray();
-                    _undoStack.Clear();
-                    for (int i = 1; i < items.Length; i++)
-                    {
-                        _undoStack.Push(items[items.Length - i]);
-                    }
+                    _undoStack.RemoveFirst();
                 }
 
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Saved undo state: {description} (Stack size: {_undoStack.Count})");
@@ -125,10 +123,11 @@ namespace Parley.Models
                     SelectedNodePath = currentSelectedPath,
                     ExpandedNodePaths = currentExpandedPaths != null ? new HashSet<string>(currentExpandedPaths) : new HashSet<string>()
                 };
-                _redoStack.Push(currentState);
+                _redoStack.AddLast(currentState);
 
-                // Pop and restore previous state
-                var previousState = _undoStack.Pop();
+                // Pop and restore previous state (newest = tail)
+                var previousState = _undoStack.Last!.Value;
+                _undoStack.RemoveLast();
 
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Undo performed (Remaining: {_undoStack.Count}, RestoreSelection: {previousState.SelectedNodePath ?? "none"})");
                 return previousState;
@@ -164,10 +163,11 @@ namespace Parley.Models
                     SelectedNodePath = currentSelectedPath,
                     ExpandedNodePaths = currentExpandedPaths != null ? new HashSet<string>(currentExpandedPaths) : new HashSet<string>()
                 };
-                _undoStack.Push(currentState);
+                _undoStack.AddLast(currentState);
 
-                // Pop and restore next state
-                var nextState = _redoStack.Pop();
+                // Pop and restore next state (newest = tail)
+                var nextState = _redoStack.Last!.Value;
+                _redoStack.RemoveLast();
 
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Redo performed (Remaining: {_redoStack.Count}, RestoreSelection: {nextState.SelectedNodePath ?? "none"})");
                 return nextState;
@@ -303,6 +303,18 @@ namespace Parley.Models
                 clone.Add(kvp.Key, kvp.Value);
             }
             return clone;
+        }
+
+        /// <summary>
+        /// Discards the most recently saved undo state (#2260).
+        /// Used to revert undo state when an operation rolls back after calling SaveState.
+        /// Returns true if a state was discarded.
+        /// </summary>
+        public bool DiscardLastSavedState()
+        {
+            if (_undoStack.Count == 0) return false;
+            _undoStack.RemoveLast();
+            return true;
         }
 
         /// <summary>

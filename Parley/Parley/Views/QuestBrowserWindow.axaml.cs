@@ -321,23 +321,27 @@ namespace DialogEditor.Views
                     UnifiedLogger.LogApplication(LogLevel.INFO, "Manifest already running - opening file in existing instance");
                 }
 
-                // Build command line arguments
-                // Format: Manifest.exe --file "path/to/module.jrl" --quest "quest_tag" [--entry 123]
-                var args = $"--file \"{journalPath}\" --quest \"{_selectedCategory.Tag}\"";
-                if (_selectedEntry != null)
-                {
-                    args += $" --entry {_selectedEntry.ID}";
-                }
-
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Opening Manifest: {UnifiedLogger.SanitizePath(manifestPath)} {args}");
-
-                // Launch Manifest
+                // Build command line arguments via ArgumentList so paths/tags with spaces or
+                // metacharacters are passed verbatim — no manual quoting (#2260).
+                // Format: Manifest.exe --file <module.jrl> --quest <quest_tag> [--entry 123]
                 var startInfo = new ProcessStartInfo
                 {
                     FileName = manifestPath,
-                    Arguments = args,
                     UseShellExecute = false
                 };
+                startInfo.ArgumentList.Add("--file");
+                startInfo.ArgumentList.Add(journalPath);
+                startInfo.ArgumentList.Add("--quest");
+                startInfo.ArgumentList.Add(_selectedCategory.Tag);
+                if (_selectedEntry != null)
+                {
+                    startInfo.ArgumentList.Add("--entry");
+                    startInfo.ArgumentList.Add(_selectedEntry.ID.ToString());
+                }
+
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Opening Manifest: {UnifiedLogger.SanitizePath(manifestPath)} {string.Join(" ", startInfo.ArgumentList)}");
+
                 _manifestProcess = Process.Start(startInfo);
 
                 // Save the path if it wasn't already set (auto-detection success)
@@ -439,7 +443,11 @@ namespace DialogEditor.Views
                         UseShellExecute = true
                     });
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN,
+                        $"Failed to open releases URL in browser: {ex.Message}");
+                }
             };
             panel.Children.Add(linkButton);
 

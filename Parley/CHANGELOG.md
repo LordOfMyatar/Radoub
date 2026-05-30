@@ -4,6 +4,15 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
+## [0.1.172-alpha] - 2026-05-30
+**Branch**: `parley/issue-2260` | **PR**: #2323
+
+### Fix: TTS arg string-concat + AddNode rollback + empty catches + UndoManager trim (#2260)
+
+- Switched TTS/external-process argument building from string concatenation to `ProcessStartInfo.ArgumentList`, added rollback to `AddNodeWithUndoAndRefresh`, logged previously-empty catch, linked the reflection-trampoline TODO, and made `UndoManager` stack trim O(1).
+
+---
+
 ## [0.1.171-alpha] - 2026-05-29
 **Branch**: `parley/issue-2259` | **PR**: #2309
 

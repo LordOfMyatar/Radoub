@@ -59,12 +59,14 @@ namespace DialogEditor.Services
                     UnifiedLogger.LogApplication(LogLevel.INFO,
                         $"OpenScript: Opening '{UnifiedLogger.SanitizePath(scriptPath)}' with '{UnifiedLogger.SanitizePath(editorPath)}'");
 
-                    Process.Start(new ProcessStartInfo
+                    var editorPsi = new ProcessStartInfo
                     {
                         FileName = editorPath,
-                        Arguments = $"\"{scriptPath}\"",
                         UseShellExecute = false
-                    });
+                    };
+                    // ArgumentList passes the path verbatim — no manual quoting (#2260).
+                    editorPsi.ArgumentList.Add(scriptPath);
+                    Process.Start(editorPsi);
                 }
                 else
                 {

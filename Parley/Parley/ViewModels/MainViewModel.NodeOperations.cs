@@ -41,12 +41,44 @@ namespace DialogEditor.ViewModels
             // Create node via delegate
             var newNode = createNode(parentNode, parentPtr);
 
-            // Focus on the newly created node after tree refresh
-            CoordinatedRefreshAndSelect(newNode);
+            try
+            {
+                // Focus on the newly created node after tree refresh
+                CoordinatedRefreshAndSelect(newNode);
+            }
+            catch (Exception ex)
+            {
+                // Refresh threw after the node was attached. Roll back the model so it is
+                // not left half-attached with HasUnsavedChanges flipped (Relique #2166 pattern, #2260).
+                UnifiedLogger.LogApplication(LogLevel.ERROR,
+                    $"AddNodeWithUndoAndRefresh: refresh failed, rolling back '{undoDescription}': {ex.Message}");
+                DetachCreatedNode(CurrentDialog!, newNode);
+                _undoRedoService.DiscardLastSavedState();
+                StatusMessage = $"Failed to add node: {ex.Message}";
+                return newNode;
+            }
+
             HasUnsavedChanges = true;
             StatusMessage = successMessage;
 
             return newNode;
+        }
+
+        /// <summary>
+        /// Removes a just-created leaf node from the dialog model. Used to roll back a failed
+        /// add when the tree refresh throws (#2260). The node has no children yet, so it is
+        /// enough to drop it from Entries/Replies and remove any pointer that references it.
+        /// </summary>
+        private static void DetachCreatedNode(Dialog dialog, DialogNode newNode)
+        {
+            dialog.Starts.RemoveAll(ptr => ptr.Node == newNode);
+            foreach (var entry in dialog.Entries)
+                entry.Pointers.RemoveAll(ptr => ptr.Node == newNode);
+            foreach (var reply in dialog.Replies)
+                reply.Pointers.RemoveAll(ptr => ptr.Node == newNode);
+
+            dialog.Entries.Remove(newNode);
+            dialog.Replies.Remove(newNode);
         }
 
         public void AddSmartNode(TreeViewSafeNode? selectedNode = null)
@@ -169,7 +201,7 @@ namespace DialogEditor.ViewModels
         }
 
         // COMPATIBILITY: Kept for existing tests that use reflection to access this method
-        // TODO: Update tests to use public DeleteNode API instead
+        // TODO (#2324): Update tests to use public DeleteNode API and remove this trampoline
         #pragma warning disable IDE0051 // Remove unused private members
         private void DeleteNodeRecursive(DialogNode node)
         {

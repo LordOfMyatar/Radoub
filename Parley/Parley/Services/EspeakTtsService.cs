@@ -237,22 +237,12 @@ namespace DialogEditor.Services
                 int speed = (int)(175 * rate);
                 speed = Math.Clamp(speed, 80, 450);
 
-                var args = $"-s {speed}";
-                if (!string.IsNullOrEmpty(voiceName))
-                {
-                    // Translate display name to espeak voice code (e.g., "English (Male)" -> "en+m3")
-                    var espeakCode = GetVoiceCode(voiceName);
-                    args += $" -v \"{espeakCode}\"";
-                }
-
-                // Escape text for shell
-                var escapedText = text.Replace("\"", "\\\"");
-                args += $" \"{escapedText}\"";
+                // Translate display name to espeak voice code (e.g., "English (Male)" -> "en+m3")
+                string? espeakCode = string.IsNullOrEmpty(voiceName) ? null : GetVoiceCode(voiceName);
 
                 var psi = new ProcessStartInfo
                 {
                     FileName = _espeakPath,
-                    Arguments = args,
                     UseShellExecute = false,
                     CreateNoWindow = true,
                     // Don't redirect stdout/stderr - espeak-ng needs direct audio device access
@@ -260,6 +250,11 @@ namespace DialogEditor.Services
                     RedirectStandardOutput = false,
                     RedirectStandardError = false
                 };
+
+                // Use ArgumentList (not a concatenated string) so shell metacharacters in the
+                // spoken text are passed verbatim and never reinterpreted (#2260).
+                foreach (var token in BuildArguments(speed, espeakCode, text))
+                    psi.ArgumentList.Add(token);
 
                 _currentProcess = Process.Start(psi);
                 _isSpeaking = true;
@@ -282,6 +277,22 @@ namespace DialogEditor.Services
                 UnifiedLogger.LogApplication(LogLevel.ERROR,
                     $"EspeakTtsService: Speak failed - {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Builds the espeak-ng argument token list for ProcessStartInfo.ArgumentList (#2260).
+        /// Each element is a separate, unquoted, unescaped token; the text is passed verbatim.
+        /// </summary>
+        public static IReadOnlyList<string> BuildArguments(int speed, string? espeakVoiceCode, string text)
+        {
+            var args = new List<string> { "-s", speed.ToString() };
+            if (!string.IsNullOrEmpty(espeakVoiceCode))
+            {
+                args.Add("-v");
+                args.Add(espeakVoiceCode);
+            }
+            args.Add(text);
+            return args;
         }
 
         public void Stop()
