@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -8,6 +9,8 @@ using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 using Radoub.Formats.Logging;
 using Radoub.UI.Services;
 
@@ -34,6 +37,10 @@ public partial class PortraitBrowserWindow : Window
     private List<PortraitEntry> _allPortraits = new();
     private List<PortraitEntry> _filteredPortraits = new();
     private PortraitEntry? _selectedPortrait;
+
+    // Incremented on each list rebuild; in-flight async thumbnail loads from an
+    // older filter state stop applying when this changes (#2291).
+    private int _thumbnailGeneration;
 
     /// <summary>
     /// Gets the selected portrait ID, or null if cancelled.
@@ -200,23 +207,69 @@ public partial class PortraitBrowserWindow : Window
             .OrderBy(p => p.ResRef)
             .ToList();
 
-        // Populate with mini icon items
+        // Populate with mini icon items. Thumbnails are decoded lazily off the
+        // UI thread (LoadThumbnailsAsync) so the dialog opens instantly even with
+        // hundreds of portraits (#2291) — decoding inline here blocked on open.
+        var pending = new List<(PortraitEntry Portrait, Image Image)>(_filteredPortraits.Count);
         foreach (var portrait in _filteredPortraits)
         {
-            var item = CreatePortraitItem(portrait);
+            var item = CreatePortraitItem(portrait, out var image);
             _portraitListBox.Items.Add(item);
+            pending.Add((portrait, image));
         }
 
         _portraitCountLabel.Text = $"{_filteredPortraits.Count} portrait{(_filteredPortraits.Count == 1 ? "" : "s")}";
+
+        // Bump the generation so any in-flight load from a previous filter state
+        // stops applying stale bitmaps to recycled images.
+        int generation = ++_thumbnailGeneration;
+        _ = LoadThumbnailsAsync(pending, generation);
     }
 
-    private ListBoxItem CreatePortraitItem(PortraitEntry portrait)
+    /// <summary>
+    /// Decodes portrait thumbnails on a background thread and applies them to the
+    /// list images on the UI thread. Cancels itself if a newer filter pass has
+    /// started (generation mismatch).
+    /// </summary>
+    private async Task LoadThumbnailsAsync(List<(PortraitEntry Portrait, Image Image)> pending, int generation)
     {
-        // Create mini icon (roughly 50% size = ~32x40 for typical NWN portraits)
+        if (_context == null)
+            return;
+
+        foreach (var (portrait, image) in pending)
+        {
+            if (generation != _thumbnailGeneration)
+                return; // a newer filter pass superseded this one
+
+            Bitmap? bitmap = null;
+            try
+            {
+                bitmap = await Task.Run(() => _context.GetPortraitBitmap(portrait.ResRef));
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Failed to load thumbnail for {portrait.ResRef}: {ex.Message}");
+            }
+
+            if (bitmap == null || generation != _thumbnailGeneration)
+                continue;
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                if (generation == _thumbnailGeneration)
+                    image.Source = bitmap;
+            });
+        }
+    }
+
+    private ListBoxItem CreatePortraitItem(PortraitEntry portrait, out Image image)
+    {
+        // Create mini icon (roughly 50% size = ~32x40 for typical NWN portraits).
+        // Source is left null here and filled in by LoadThumbnailsAsync.
         const int thumbnailWidth = 32;
         const int thumbnailHeight = 40;
 
-        var image = new Image
+        image = new Image
         {
             Width = thumbnailWidth,
             Height = thumbnailHeight,
@@ -224,16 +277,6 @@ public partial class PortraitBrowserWindow : Window
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Center
         };
-
-        // Try to load the portrait thumbnail
-        try
-        {
-            image.Source = _context?.GetPortraitBitmap(portrait.ResRef);
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Failed to load thumbnail for {portrait.ResRef}: {ex.Message}");
-        }
 
         // Wrap image in a border for visual feedback
         var border = new Border
