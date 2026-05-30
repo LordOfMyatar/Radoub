@@ -91,16 +91,20 @@ public sealed class MdlPartComposer
             compositeModel.SuperModel = skeletonModel.SuperModel;
         }
 
-        // Use the skeleton's bone hierarchy as the composite root so animation pose lookup
-        // finds matching bone names through the full parent chain (#2124).
+        // Use a CLONE of the skeleton's bone hierarchy as the composite root so animation pose
+        // lookup finds matching bone names through the full parent chain (#2124) WITHOUT mutating
+        // the cached skeleton model. ModelService caches and reuses parsed MdlModel instances; the
+        // composer reparents part meshes onto bones and nudges part positions, so it must never
+        // touch the shared cache — otherwise parts accumulate and nudges restack on every re-render
+        // (#1735, "models get worse and worse when toggling races").
         if (skeletonModel?.GeometryRoot != null)
-            compositeModel.GeometryRoot = skeletonModel.GeometryRoot;
+            compositeModel.GeometryRoot = CloneNode(skeletonModel.GeometryRoot, parent: null);
 
         var meshPartTypes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var (partType, resRef) in parts)
         {
-            TryAddBodyPart(compositeModel, skeletonModel, partType, resRef, meshPartTypes);
+            TryAddBodyPart(compositeModel, partType, resRef, meshPartTypes);
         }
 
         if (adjustSeams)
@@ -168,7 +172,6 @@ public sealed class MdlPartComposer
 
     private void TryAddBodyPart(
         MdlModel compositeModel,
-        MdlModel? skeletonModel,
         string partType,
         string partResRef,
         Dictionary<string, string> meshPartTypes)
@@ -182,10 +185,13 @@ public sealed class MdlPartComposer
                 return;
             }
 
+            // Bone lookup targets the composite's OWN (cloned) skeleton root — never the cached
+            // skeleton model. Attaching to / nudging the cached skeleton would corrupt it for the
+            // next render (#1735).
             var boneName = _boneNameForPart(partType);
-            MdlNode? bone = null;
-            if (skeletonModel?.GeometryRoot != null)
-                bone = FindBoneByName(skeletonModel.GeometryRoot, boneName);
+            MdlNode? bone = compositeModel.GeometryRoot != null
+                ? FindBoneByName(compositeModel.GeometryRoot, boneName)
+                : null;
 
             // Compute a fallback world position for parts whose bones can't be found.
             // (The skeleton lookup may miss in synthetic test models or partial skeletons.)
@@ -199,7 +205,12 @@ public sealed class MdlPartComposer
 
             foreach (var node in partModel.EnumerateAllNodes())
             {
-                if (node is not MdlTrimeshNode trimesh) continue;
+                if (node is not MdlTrimeshNode sourceTrimesh) continue;
+
+                // Clone the part mesh before attaching — the source is a cached MdlModel shared
+                // across renders; we set Bitmap/Position/Parent on the CLONE only (#1735). Geometry
+                // arrays (vertices, normals, faces, UVs) are immutable here, so they're shared.
+                var trimesh = CloneTrimeshShallow(sourceTrimesh);
 
                 // Body part MDL files have geometry at local origin. Body part bitmap fields
                 // often contain stale data from reused file structures — derive the texture
@@ -221,16 +232,16 @@ public sealed class MdlPartComposer
                     // Parent under the bone — its bind position carries the world transform,
                     // so zero out the mesh's own offset to avoid double-application.
                     trimesh.Position = Vector3.Zero;
-                    node.Parent = bone;
-                    bone.Children.Add(node);
+                    trimesh.Parent = bone;
+                    bone.Children.Add(trimesh);
                 }
                 else
                 {
                     // Fallback: skeleton bone missing, attach at the bone's would-be world
                     // position under the composite root.
                     trimesh.Position = fallbackPosition;
-                    node.Parent = compositeModel.GeometryRoot;
-                    compositeModel.GeometryRoot.Children.Add(node);
+                    trimesh.Parent = compositeModel.GeometryRoot;
+                    compositeModel.GeometryRoot.Children.Add(trimesh);
                 }
 
                 meshPartTypes[trimesh.Name] = partType;
@@ -242,6 +253,84 @@ public sealed class MdlPartComposer
                 $"MdlPartComposer.TryAddBodyPart: failed to add '{partType}' from '{partResRef}': {ex.GetType().Name}: {ex.Message}");
         }
     }
+
+    /// <summary>
+    /// Recursively clone a node hierarchy (transform + structure), giving each clone its own
+    /// Children list and Parent pointer. Trimesh geometry arrays are shared (immutable during
+    /// composition); only the per-node transform/parent state is duplicated. Used to build a
+    /// composite skeleton root without mutating the cached source model (#1735).
+    /// </summary>
+    private static MdlNode CloneNode(MdlNode source, MdlNode? parent)
+    {
+        var clone = source is MdlTrimeshNode mesh
+            ? CloneTrimeshShallow(mesh)
+            : new MdlNode
+            {
+                NodeType = source.NodeType,
+                Name = source.Name,
+                Position = source.Position,
+                Orientation = source.Orientation,
+                Scale = source.Scale,
+                Wirecolor = source.Wirecolor,
+                InheritColor = source.InheritColor,
+                PositionTimes = source.PositionTimes,
+                PositionValues = source.PositionValues,
+                OrientationTimes = source.OrientationTimes,
+                OrientationValues = source.OrientationValues,
+                ScaleTimes = source.ScaleTimes,
+                ScaleValues = source.ScaleValues,
+            };
+
+        clone.Parent = parent;
+        foreach (var child in source.Children)
+            clone.Children.Add(CloneNode(child, clone));
+
+        return clone;
+    }
+
+    /// <summary>
+    /// Shallow-clone a trimesh node: copies the per-node transform/material/flags but SHARES the
+    /// large immutable geometry arrays (vertices, normals, faces, UVs, colors). Composition only
+    /// mutates Position / Bitmap / Parent on the clone, so sharing geometry is safe and cheap.
+    /// Children are NOT copied here (CloneNode handles hierarchy).
+    /// </summary>
+    private static MdlTrimeshNode CloneTrimeshShallow(MdlTrimeshNode s) => new()
+    {
+        NodeType = s.NodeType,
+        Name = s.Name,
+        Position = s.Position,
+        Orientation = s.Orientation,
+        Scale = s.Scale,
+        Wirecolor = s.Wirecolor,
+        InheritColor = s.InheritColor,
+        PositionTimes = s.PositionTimes,
+        PositionValues = s.PositionValues,
+        OrientationTimes = s.OrientationTimes,
+        OrientationValues = s.OrientationValues,
+        ScaleTimes = s.ScaleTimes,
+        ScaleValues = s.ScaleValues,
+        Vertices = s.Vertices,
+        Normals = s.Normals,
+        TextureCoords = s.TextureCoords,
+        VertexColors = s.VertexColors,
+        Faces = s.Faces,
+        Bitmap = s.Bitmap,
+        Bitmap2 = s.Bitmap2,
+        MaterialName = s.MaterialName,
+        Ambient = s.Ambient,
+        Diffuse = s.Diffuse,
+        Specular = s.Specular,
+        Shininess = s.Shininess,
+        Alpha = s.Alpha,
+        SelfIllumColor = s.SelfIllumColor,
+        Render = s.Render,
+        Shadow = s.Shadow,
+        Beaming = s.Beaming,
+        RotateTexture = s.RotateTexture,
+        TransparencyHint = s.TransparencyHint,
+        Tilefade = s.Tilefade,
+        RenderOrder = s.RenderOrder,
+    };
 
     /// <summary>
     /// Find a node in the bone hierarchy by name (case-insensitive).
