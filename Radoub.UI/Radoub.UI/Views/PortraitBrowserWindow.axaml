@@ -1,6 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        x:Class="Quartermaster.Views.PortraitBrowserWindow"
+        x:Class="Radoub.UI.Views.PortraitBrowserWindow"
         Title="Portrait Browser"
         AutomationProperties.AutomationId="PortraitBrowserWindow"
         Width="700" Height="550"

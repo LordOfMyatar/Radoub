@@ -46,7 +46,8 @@ public partial class CharacterPanel
             }
 
             UnifiedLogger.Log(LogLevel.INFO, "CharacterPanel: Opening portrait browser", "CharacterPanel", "UI");
-            var browser = new PortraitBrowserWindow(_gameDataService, _itemIconService);
+            var context = new QuartermasterPortraitBrowserContext(_gameDataService, _itemIconService);
+            var browser = PortraitBrowserWindow.Create(context);
 
             var topLevel = TopLevel.GetTopLevel(this);
             if (topLevel is Window parentWindow)
