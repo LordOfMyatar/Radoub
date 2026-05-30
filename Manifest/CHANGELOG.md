@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.15.9-alpha] - 2026-05-29
-**Branch**: `manifest/issue-2254` | **PR**: #TBD
+**Branch**: `manifest/issue-2254` | **PR**: #2316
 
 ### Fix: Model-mutation rollback + async lifecycle hygiene (#2254)
 
