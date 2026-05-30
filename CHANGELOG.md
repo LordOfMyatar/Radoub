@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.1.63-alpha] - 2026-05-29
+**Branch**: `quartermaster/issue-1735` | **PR**: #2317
+
+### Fix: Part-based creature seam/bounds used mesh-local transform, scattering non-human models (#1735)
+
+- `MdlPartComposer` seam-overlap and bounds now measure each body part in world space (parent bone chain × mesh-local), matching the renderer. Previously they read only the mesh-local transform, so bone-parented parts (whose local position is zeroed) collapsed to the bone origin — misfiring the seam nudge and scattering parts on non-human skeletons (Brownie, elf).
+
+---
+
 ## [Radoub.Dictionary 0.2.4-alpha] - 2026-05-29
 **Branch**: `radoub/issue-2314` | **PR**: #2315
 

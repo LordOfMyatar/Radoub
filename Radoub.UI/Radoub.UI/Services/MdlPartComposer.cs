@@ -266,6 +266,8 @@ public sealed class MdlPartComposer
     /// Calculate the full world transform of a bone by accumulating S*R*T matrices up the hierarchy.
     /// Mirrors <c>ModelPreviewGLControl.GetWorldTransform()</c> to handle parent rotations correctly.
     /// </summary>
+    public static Matrix4x4 GetMeshWorldTransform(MdlNode mesh) => GetBoneWorldTransform(mesh);
+
     public static Matrix4x4 GetBoneWorldTransform(MdlNode bone)
     {
         var worldTransform = Matrix4x4.Identity;
@@ -311,12 +313,13 @@ public sealed class MdlPartComposer
             if (upperMeshes.Count == 0 || lowerMeshes.Count == 0)
                 continue;
 
+            // Measure overlap in WORLD space. Body-part meshes are reparented under skeleton
+            // bones with their own Position zeroed (#1735), so the world Z lives in the bone
+            // chain — the mesh-local transform alone reads every part at the bone-local origin.
             float upperMinZ = float.MaxValue;
             foreach (var mesh in upperMeshes)
             {
-                var transform = Matrix4x4.CreateScale(mesh.Scale)
-                    * Matrix4x4.CreateFromQuaternion(mesh.Orientation)
-                    * Matrix4x4.CreateTranslation(mesh.Position);
+                var transform = GetMeshWorldTransform(mesh);
                 foreach (var vertex in mesh.Vertices)
                 {
                     var wv = Vector3.Transform(vertex, transform);
@@ -328,9 +331,7 @@ public sealed class MdlPartComposer
             float lowerMaxZ = float.MinValue;
             foreach (var mesh in lowerMeshes)
             {
-                var transform = Matrix4x4.CreateScale(mesh.Scale)
-                    * Matrix4x4.CreateFromQuaternion(mesh.Orientation)
-                    * Matrix4x4.CreateTranslation(mesh.Position);
+                var transform = GetMeshWorldTransform(mesh);
                 foreach (var vertex in mesh.Vertices)
                 {
                     var wv = Vector3.Transform(vertex, transform);
@@ -370,13 +371,14 @@ public sealed class MdlPartComposer
 
         foreach (var mesh in model.GetMeshNodes())
         {
-            var localTransform = Matrix4x4.CreateScale(mesh.Scale)
-                * Matrix4x4.CreateFromQuaternion(mesh.Orientation)
-                * Matrix4x4.CreateTranslation(mesh.Position);
+            // Use the FULL world transform (parent bone chain × mesh-local). Parts reparented
+            // under skeleton bones carry their world position in the chain, not in mesh.Position
+            // (#1735) — the mesh-local transform alone collapses every part to the bone origin.
+            var worldTransform = GetMeshWorldTransform(mesh);
 
             foreach (var vertex in mesh.Vertices)
             {
-                var worldVert = Vector3.Transform(vertex, localTransform);
+                var worldVert = Vector3.Transform(vertex, worldTransform);
 
                 minX = Math.Min(minX, worldVert.X);
                 minY = Math.Min(minY, worldVert.Y);
