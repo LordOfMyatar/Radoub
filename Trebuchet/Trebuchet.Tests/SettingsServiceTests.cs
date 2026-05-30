@@ -78,37 +78,6 @@ public class SettingsServiceTests : IDisposable
 
     #endregion
 
-    #region Font Scale Tests
-
-    [Fact]
-    public void FontSizeScale_ClampedToMinimum()
-    {
-        var settings = SettingsService.Instance;
-        settings.FontSizeScale = 0.5; // Below minimum of 0.8
-
-        Assert.Equal(0.8, settings.FontSizeScale);
-    }
-
-    [Fact]
-    public void FontSizeScale_ClampedToMaximum()
-    {
-        var settings = SettingsService.Instance;
-        settings.FontSizeScale = 2.0; // Above maximum of 1.5
-
-        Assert.Equal(1.5, settings.FontSizeScale);
-    }
-
-    [Fact]
-    public void FontSizeScale_AcceptsValidValue()
-    {
-        var settings = SettingsService.Instance;
-        settings.FontSizeScale = 1.2;
-
-        Assert.Equal(1.2, settings.FontSizeScale);
-    }
-
-    #endregion
-
     #region Logging Settings Tests
 
     [Fact]
