@@ -14,6 +14,24 @@ Prepare an implementation plan for an upcoming sprint or issue while the current
 
 ## Workflow
 
+### Step 0: Check for Existing Pre-Warm Plan
+
+Before doing anything else, check whether a plan for this issue already exists:
+
+```bash
+ls NonPublic/Plans/*-[number]-plan.md 2>/dev/null
+```
+
+**If one or more plans exist**, do NOT silently create a new one. Read each, then ask the user how to proceed:
+
+- **Update existing** — the prior plan is the spine; refresh it with new findings (re-verify any code line refs and linked issue states, which may be stale).
+- **Supersede** — write a fresh plan and delete the old one(s).
+- **Merge** — combine a richer-but-older plan with newer corrected facts (state which leads).
+
+When merging or updating, **re-verify the old plan's hard references** — code moves between sessions (line numbers, file paths) and linked issues may have closed. Confirm before citing.
+
+**If no plan exists**, proceed to Step 1.
+
 ### Step 1: Fetch Issue Details
 
 ```bash
