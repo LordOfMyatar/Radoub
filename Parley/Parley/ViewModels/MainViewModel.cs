@@ -63,7 +63,7 @@ namespace DialogEditor.ViewModels
 
         public TreeRefreshCoordinator? TreeRefreshCoordinator { get; set; }
 
-        internal void CoordinatedRefreshAndSelect(DialogNode target)
+        internal virtual void CoordinatedRefreshAndSelect(DialogNode target)
         {
             if (TreeRefreshCoordinator != null)
                 TreeRefreshCoordinator.RefreshAndSelectNode(target);

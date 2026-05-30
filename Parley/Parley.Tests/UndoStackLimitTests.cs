@@ -60,6 +60,69 @@ namespace Parley.Tests
         }
 
         [Fact]
+        public void UndoManager_PreservesLifoOrder_AfterTrim()
+        {
+            // Arrange: maxStackSize = 3 so trimming kicks in quickly (#2260 LinkedList refactor).
+            var undoManager = new UndoManager(maxStackSize: 3);
+            var dialog = new Dialog();
+            var entry = new DialogNode { Type = DialogNodeType.Entry, Text = new LocString() };
+            entry.Text.Add(0, "v0");
+            dialog.Entries.Add(entry);
+
+            // Act: save 5 states "v0".."v4"; only the newest 3 (v2,v3,v4) survive.
+            for (int i = 0; i < 5; i++)
+            {
+                entry.Text.Strings[0] = $"v{i}";
+                undoManager.SaveState(dialog, $"State {i}");
+            }
+
+            // Assert: undo returns newest-first (LIFO): v4, v3, v2, then empty.
+            Dialog? current = dialog;
+            var seen = new System.Collections.Generic.List<string>();
+            while (undoManager.CanUndo)
+            {
+                var state = undoManager.Undo(current!);
+                Assert.NotNull(state);
+                current = state!.Dialog;
+                seen.Add(current.Entries[0].Text.Strings[0]);
+            }
+
+            Assert.Equal(new[] { "v4", "v3", "v2" }, seen);
+        }
+
+        [Fact]
+        public void UndoManager_DiscardLastSavedState_RemovesNewestOnly()
+        {
+            // Arrange
+            var undoManager = new UndoManager();
+            var dialog = new Dialog();
+            var entry = new DialogNode { Type = DialogNodeType.Entry, Text = new LocString() };
+            entry.Text.Add(0, "a");
+            dialog.Entries.Add(entry);
+
+            undoManager.SaveState(dialog, "first");
+            entry.Text.Strings[0] = "b";
+            undoManager.SaveState(dialog, "second");
+
+            // Act: discard the most recent ("second")
+            bool discarded = undoManager.DiscardLastSavedState();
+
+            // Assert: one state discarded, one remains
+            Assert.True(discarded);
+            Assert.True(undoManager.CanUndo);
+            var state = undoManager.Undo(dialog);
+            Assert.NotNull(state);
+            Assert.False(undoManager.CanUndo); // only "first" was left
+        }
+
+        [Fact]
+        public void UndoManager_DiscardLastSavedState_OnEmpty_ReturnsFalse()
+        {
+            var undoManager = new UndoManager();
+            Assert.False(undoManager.DiscardLastSavedState());
+        }
+
+        [Fact]
         public void UndoManager_PreservesIsLinkFlags_AtStackLimit()
         {
             // Arrange: Create UndoManager and dialog with linked structure

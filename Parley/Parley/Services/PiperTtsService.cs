@@ -215,20 +215,20 @@ namespace DialogEditor.Services
                 var tempWavFile = Path.Combine(Path.GetTempPath(), $"piper_tts_{Guid.NewGuid()}.wav");
                 _currentTempFile = tempWavFile;
 
-                // Build piper command
-                // piper --model <path> --output_file <file> --length_scale <scale>
-                var args = $"--model \"{modelPath}\" --output_file \"{tempWavFile}\" --length_scale {lengthScale:F2}";
-
                 var psi = new ProcessStartInfo
                 {
                     FileName = _piperPath,
-                    Arguments = args,
                     RedirectStandardInput = true,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
+
+                // Use ArgumentList so model/output paths with spaces or metacharacters are
+                // passed verbatim (#2260). The spoken text is fed via stdin below, not args.
+                foreach (var token in BuildArguments(modelPath, tempWavFile, lengthScale))
+                    psi.ArgumentList.Add(token);
 
                 _currentProcess = Process.Start(psi);
                 if (_currentProcess == null)
@@ -285,6 +285,21 @@ namespace DialogEditor.Services
                 UnifiedLogger.LogApplication(LogLevel.ERROR,
                     $"PiperTtsService: Speak failed - {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Builds the piper argument token list for ProcessStartInfo.ArgumentList (#2260).
+        /// Each element is a separate, unquoted token so paths with spaces survive verbatim.
+        /// The spoken text is supplied via stdin, not via these arguments.
+        /// </summary>
+        public static IReadOnlyList<string> BuildArguments(string modelPath, string outputFile, double lengthScale)
+        {
+            return new List<string>
+            {
+                "--model", modelPath,
+                "--output_file", outputFile,
+                "--length_scale", lengthScale.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)
+            };
         }
 
         private void PlayWavFile(string wavFile)

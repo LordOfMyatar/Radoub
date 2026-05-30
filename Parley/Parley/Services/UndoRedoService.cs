@@ -148,6 +148,15 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
+        /// Discards the most recently saved undo state (#2260).
+        /// Used to revert undo state when an operation rolls back after SaveState.
+        /// </summary>
+        public bool DiscardLastSavedState()
+        {
+            return _undoManager.DiscardLastSavedState();
+        }
+
+        /// <summary>
         /// Clears all undo/redo history
         /// </summary>
         public void Clear()
