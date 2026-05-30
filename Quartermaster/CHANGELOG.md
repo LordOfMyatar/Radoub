@@ -12,7 +12,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 - Filter master-feat subtypes by class eligibility (#2096)
 - Honor Trebuchet font-size slider in QM (#2152)
-- Show appearance label instead of "Appearance N" fallback (#2162)
+- Appearance "Appearance N" fallback (#2162) — not reproducible on current main; CEP3 high rows resolve correctly via module-HAK 2DA merge. Added regression test, closed.
 
 ---
 
