@@ -26,6 +26,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.1.62-alpha] - 2026-05-29
+**Branch**: `radoub/issue-2314` | **PR**: #TBD
+
+### Fix: Marlinspike NSS checkbox is dead code — .nss files never searched (#2314)
+
+- Marlinspike content search now discovers `.nss` (NWN script) files, so the "Include NSS" filter actually returns results.
+
+---
+
 ## [Radoub.UI 0.1.61-alpha] - 2026-05-28
 **Branch**: `radoub/issue-2262` | **PR**: #2288
 
