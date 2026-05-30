@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.37-alpha] - 2026-05-30
-**Branch**: `fence/issue-2321` | **PR**: #TBD
+**Branch**: `fence/issue-2321` | **PR**: #2325
 
 ### Feat: Promote Fence from Alpha to Beta (#2321)
 
