@@ -66,6 +66,18 @@ gh issue view [issue-number] --json state -q '.state'
 gh issue close [issue-number] --comment "Completed in PR #[pr-number]"
 ```
 
+### Step 4b: Remove Pre-Warmed Plans for Closed Issues
+
+Pre-warm plans (`NonPublic/Plans/*-[number]-plan.md`) are throwaway planning artifacts. Once the issue they planned is merged + closed, delete them so stale plans don't accumulate and get picked up by a future `/pre-warm` or `/init-item`.
+
+For each issue number closed in Step 4:
+
+```bash
+rm -f NonPublic/Plans/*-[number]-plan.md
+```
+
+Report which plan files were removed (if any). Plans live in `NonPublic/` and are not tracked in git, so no commit is needed.
+
 ### Step 5: Update Parent Epic (if applicable)
 
 **Extract epic from PR body**:
@@ -194,6 +206,7 @@ The `/release` command handles:
 |------|--------|
 | Local branch | ✅ Deleted (default) / ⏭️ Kept (--noclean) |
 | Issues closed | ✅ #x, #y / N/A |
+| Pre-warm plans | ✅ Removed [files] / ⏭️ None |
 | Epic updated | ✅ #z / N/A |
 | Dev docs updated | ✅ [list pages] / ⏭️ No mapped pages |
 | Stale user docs | ✅ Issues cut: #a, #b / ⏭️ None stale |

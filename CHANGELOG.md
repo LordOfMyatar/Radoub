@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.1.63-alpha] - 2026-05-29
+**Branch**: `quartermaster/issue-1735` | **PR**: #2317
+
+### Fix: Part-based creature models rendered with misplaced/accumulating parts (#1735)
+
+- `MdlPartComposer` had three defects in part-based creature assembly: (1) seam-overlap and bounds measured each part with the mesh-local transform instead of the full world transform (parent bone chain × mesh-local), collapsing bone-parented parts to the bone origin; (2) composition mutated the cached skeleton/part models, so parts accumulated and nudges restacked on every re-render (models got "worse and worse" when toggling races); (3) the seam-overlap threshold was an absolute human-scale constant that over-nudged tiny human-proportioned creatures (Brownie), shoving the head into the chest. Seam/bounds now use world transforms, composition clones into a fresh composite without touching the cache, and the seam threshold scales with model height.
+
+---
+
 ## [Radoub.Dictionary 0.2.4-alpha] - 2026-05-29
 **Branch**: `radoub/issue-2314` | **PR**: #2315
 

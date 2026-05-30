@@ -27,10 +27,30 @@ public sealed class MdlPartComposer
     private readonly Func<string, string> _boneNameForPart;
 
     /// <summary>
-    /// Minimum overlap in world units between adjacent body parts before the seam nudge kicks in.
-    /// Measured: human=0.112, dwarf=0.090, elf=0.048, halfling≈0.05. Target = human-like.
+    /// Minimum overlap in world units between adjacent body parts before the seam nudge kicks in,
+    /// at human scale. Measured on full-size skeletons: human=0.112, dwarf=0.090, elf=0.048,
+    /// halfling≈0.05. Target = human-like. For non-human-scale skeletons this is scaled by model
+    /// height — see <see cref="SeamOverlapHeightRatio"/> and <see cref="GetSeamThreshold"/> (#1735).
     /// </summary>
     public const float MinSeamOverlap = 0.10f;
+
+    /// <summary>
+    /// Reference body height (world units) the <see cref="MinSeamOverlap"/> constant was tuned for —
+    /// a standard NWN human is ≈1.9 tall. The effective seam threshold scales with the actual model
+    /// height so a tiny but human-PROPORTIONED creature (Brownie ≈0.45× scale) gets a proportionally
+    /// small threshold instead of the full human deficit, which would shove its head into its chest.
+    /// </summary>
+    public const float ReferenceBodyHeight = 1.9f;
+
+    /// <summary>Seam threshold as a fraction of model height (= MinSeamOverlap / ReferenceBodyHeight).</summary>
+    public const float SeamOverlapHeightRatio = MinSeamOverlap / ReferenceBodyHeight;
+
+    /// <summary>
+    /// Effective seam threshold for a model of the given world-space Z height. Scales linearly with
+    /// height (#1735); falls back to the human-scale constant for degenerate/zero heights.
+    /// </summary>
+    public static float GetSeamThreshold(float modelHeight)
+        => modelHeight > 0f ? modelHeight * SeamOverlapHeightRatio : MinSeamOverlap;
 
     /// <summary>Adjacent (upper, lower) part-type pairs that get the seam-overlap nudge.</summary>
     private static readonly (string Upper, string Lower)[] SeamPairs =
@@ -91,16 +111,20 @@ public sealed class MdlPartComposer
             compositeModel.SuperModel = skeletonModel.SuperModel;
         }
 
-        // Use the skeleton's bone hierarchy as the composite root so animation pose lookup
-        // finds matching bone names through the full parent chain (#2124).
+        // Use a CLONE of the skeleton's bone hierarchy as the composite root so animation pose
+        // lookup finds matching bone names through the full parent chain (#2124) WITHOUT mutating
+        // the cached skeleton model. ModelService caches and reuses parsed MdlModel instances; the
+        // composer reparents part meshes onto bones and nudges part positions, so it must never
+        // touch the shared cache — otherwise parts accumulate and nudges restack on every re-render
+        // (#1735, "models get worse and worse when toggling races").
         if (skeletonModel?.GeometryRoot != null)
-            compositeModel.GeometryRoot = skeletonModel.GeometryRoot;
+            compositeModel.GeometryRoot = CloneNode(skeletonModel.GeometryRoot, parent: null);
 
         var meshPartTypes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var (partType, resRef) in parts)
         {
-            TryAddBodyPart(compositeModel, skeletonModel, partType, resRef, meshPartTypes);
+            TryAddBodyPart(compositeModel, partType, resRef, meshPartTypes);
         }
 
         if (adjustSeams)
@@ -168,7 +192,6 @@ public sealed class MdlPartComposer
 
     private void TryAddBodyPart(
         MdlModel compositeModel,
-        MdlModel? skeletonModel,
         string partType,
         string partResRef,
         Dictionary<string, string> meshPartTypes)
@@ -182,10 +205,13 @@ public sealed class MdlPartComposer
                 return;
             }
 
+            // Bone lookup targets the composite's OWN (cloned) skeleton root — never the cached
+            // skeleton model. Attaching to / nudging the cached skeleton would corrupt it for the
+            // next render (#1735).
             var boneName = _boneNameForPart(partType);
-            MdlNode? bone = null;
-            if (skeletonModel?.GeometryRoot != null)
-                bone = FindBoneByName(skeletonModel.GeometryRoot, boneName);
+            MdlNode? bone = compositeModel.GeometryRoot != null
+                ? FindBoneByName(compositeModel.GeometryRoot, boneName)
+                : null;
 
             // Compute a fallback world position for parts whose bones can't be found.
             // (The skeleton lookup may miss in synthetic test models or partial skeletons.)
@@ -199,7 +225,12 @@ public sealed class MdlPartComposer
 
             foreach (var node in partModel.EnumerateAllNodes())
             {
-                if (node is not MdlTrimeshNode trimesh) continue;
+                if (node is not MdlTrimeshNode sourceTrimesh) continue;
+
+                // Clone the part mesh before attaching — the source is a cached MdlModel shared
+                // across renders; we set Bitmap/Position/Parent on the CLONE only (#1735). Geometry
+                // arrays (vertices, normals, faces, UVs) are immutable here, so they're shared.
+                var trimesh = CloneTrimeshShallow(sourceTrimesh);
 
                 // Body part MDL files have geometry at local origin. Body part bitmap fields
                 // often contain stale data from reused file structures — derive the texture
@@ -221,16 +252,16 @@ public sealed class MdlPartComposer
                     // Parent under the bone — its bind position carries the world transform,
                     // so zero out the mesh's own offset to avoid double-application.
                     trimesh.Position = Vector3.Zero;
-                    node.Parent = bone;
-                    bone.Children.Add(node);
+                    trimesh.Parent = bone;
+                    bone.Children.Add(trimesh);
                 }
                 else
                 {
                     // Fallback: skeleton bone missing, attach at the bone's would-be world
                     // position under the composite root.
                     trimesh.Position = fallbackPosition;
-                    node.Parent = compositeModel.GeometryRoot;
-                    compositeModel.GeometryRoot.Children.Add(node);
+                    trimesh.Parent = compositeModel.GeometryRoot;
+                    compositeModel.GeometryRoot.Children.Add(trimesh);
                 }
 
                 meshPartTypes[trimesh.Name] = partType;
@@ -242,6 +273,84 @@ public sealed class MdlPartComposer
                 $"MdlPartComposer.TryAddBodyPart: failed to add '{partType}' from '{partResRef}': {ex.GetType().Name}: {ex.Message}");
         }
     }
+
+    /// <summary>
+    /// Recursively clone a node hierarchy (transform + structure), giving each clone its own
+    /// Children list and Parent pointer. Trimesh geometry arrays are shared (immutable during
+    /// composition); only the per-node transform/parent state is duplicated. Used to build a
+    /// composite skeleton root without mutating the cached source model (#1735).
+    /// </summary>
+    private static MdlNode CloneNode(MdlNode source, MdlNode? parent)
+    {
+        var clone = source is MdlTrimeshNode mesh
+            ? CloneTrimeshShallow(mesh)
+            : new MdlNode
+            {
+                NodeType = source.NodeType,
+                Name = source.Name,
+                Position = source.Position,
+                Orientation = source.Orientation,
+                Scale = source.Scale,
+                Wirecolor = source.Wirecolor,
+                InheritColor = source.InheritColor,
+                PositionTimes = source.PositionTimes,
+                PositionValues = source.PositionValues,
+                OrientationTimes = source.OrientationTimes,
+                OrientationValues = source.OrientationValues,
+                ScaleTimes = source.ScaleTimes,
+                ScaleValues = source.ScaleValues,
+            };
+
+        clone.Parent = parent;
+        foreach (var child in source.Children)
+            clone.Children.Add(CloneNode(child, clone));
+
+        return clone;
+    }
+
+    /// <summary>
+    /// Shallow-clone a trimesh node: copies the per-node transform/material/flags but SHARES the
+    /// large immutable geometry arrays (vertices, normals, faces, UVs, colors). Composition only
+    /// mutates Position / Bitmap / Parent on the clone, so sharing geometry is safe and cheap.
+    /// Children are NOT copied here (CloneNode handles hierarchy).
+    /// </summary>
+    private static MdlTrimeshNode CloneTrimeshShallow(MdlTrimeshNode s) => new()
+    {
+        NodeType = s.NodeType,
+        Name = s.Name,
+        Position = s.Position,
+        Orientation = s.Orientation,
+        Scale = s.Scale,
+        Wirecolor = s.Wirecolor,
+        InheritColor = s.InheritColor,
+        PositionTimes = s.PositionTimes,
+        PositionValues = s.PositionValues,
+        OrientationTimes = s.OrientationTimes,
+        OrientationValues = s.OrientationValues,
+        ScaleTimes = s.ScaleTimes,
+        ScaleValues = s.ScaleValues,
+        Vertices = s.Vertices,
+        Normals = s.Normals,
+        TextureCoords = s.TextureCoords,
+        VertexColors = s.VertexColors,
+        Faces = s.Faces,
+        Bitmap = s.Bitmap,
+        Bitmap2 = s.Bitmap2,
+        MaterialName = s.MaterialName,
+        Ambient = s.Ambient,
+        Diffuse = s.Diffuse,
+        Specular = s.Specular,
+        Shininess = s.Shininess,
+        Alpha = s.Alpha,
+        SelfIllumColor = s.SelfIllumColor,
+        Render = s.Render,
+        Shadow = s.Shadow,
+        Beaming = s.Beaming,
+        RotateTexture = s.RotateTexture,
+        TransparencyHint = s.TransparencyHint,
+        Tilefade = s.Tilefade,
+        RenderOrder = s.RenderOrder,
+    };
 
     /// <summary>
     /// Find a node in the bone hierarchy by name (case-insensitive).
@@ -266,6 +375,8 @@ public sealed class MdlPartComposer
     /// Calculate the full world transform of a bone by accumulating S*R*T matrices up the hierarchy.
     /// Mirrors <c>ModelPreviewGLControl.GetWorldTransform()</c> to handle parent rotations correctly.
     /// </summary>
+    public static Matrix4x4 GetMeshWorldTransform(MdlNode mesh) => GetBoneWorldTransform(mesh);
+
     public static Matrix4x4 GetBoneWorldTransform(MdlNode bone)
     {
         var worldTransform = Matrix4x4.Identity;
@@ -299,6 +410,24 @@ public sealed class MdlPartComposer
     {
         var meshes = compositeModel.GetMeshNodes().ToList();
 
+        // Seam threshold scales with model height so tiny human-proportioned creatures (Brownie)
+        // aren't over-nudged by the human-scale constant (#1735). Height = world-space Z extent
+        // across all part meshes.
+        float modelMinZ = float.MaxValue, modelMaxZ = float.MinValue;
+        foreach (var mesh in meshes)
+        {
+            var t = GetMeshWorldTransform(mesh);
+            foreach (var vertex in mesh.Vertices)
+            {
+                var wz = Vector3.Transform(vertex, t).Z;
+                if (float.IsNaN(wz)) continue;
+                modelMinZ = Math.Min(modelMinZ, wz);
+                modelMaxZ = Math.Max(modelMaxZ, wz);
+            }
+        }
+        float modelHeight = (modelMaxZ > modelMinZ) ? modelMaxZ - modelMinZ : 0f;
+        float threshold = GetSeamThreshold(modelHeight);
+
         foreach (var (upperPartType, lowerPartType) in SeamPairs)
         {
             var upperMeshes = meshes.Where(m =>
@@ -311,12 +440,13 @@ public sealed class MdlPartComposer
             if (upperMeshes.Count == 0 || lowerMeshes.Count == 0)
                 continue;
 
+            // Measure overlap in WORLD space. Body-part meshes are reparented under skeleton
+            // bones with their own Position zeroed (#1735), so the world Z lives in the bone
+            // chain — the mesh-local transform alone reads every part at the bone-local origin.
             float upperMinZ = float.MaxValue;
             foreach (var mesh in upperMeshes)
             {
-                var transform = Matrix4x4.CreateScale(mesh.Scale)
-                    * Matrix4x4.CreateFromQuaternion(mesh.Orientation)
-                    * Matrix4x4.CreateTranslation(mesh.Position);
+                var transform = GetMeshWorldTransform(mesh);
                 foreach (var vertex in mesh.Vertices)
                 {
                     var wv = Vector3.Transform(vertex, transform);
@@ -328,9 +458,7 @@ public sealed class MdlPartComposer
             float lowerMaxZ = float.MinValue;
             foreach (var mesh in lowerMeshes)
             {
-                var transform = Matrix4x4.CreateScale(mesh.Scale)
-                    * Matrix4x4.CreateFromQuaternion(mesh.Orientation)
-                    * Matrix4x4.CreateTranslation(mesh.Position);
+                var transform = GetMeshWorldTransform(mesh);
                 foreach (var vertex in mesh.Vertices)
                 {
                     var wv = Vector3.Transform(vertex, transform);
@@ -343,10 +471,21 @@ public sealed class MdlPartComposer
                 continue;
 
             float overlap = lowerMaxZ - upperMinZ;
-            if (overlap >= MinSeamOverlap)
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"Seam[{upperPartType}/{lowerPartType}]: overlap={overlap:F3} " +
+                $"threshold={threshold:F3} (modelH={modelHeight:F3}) " +
+                $"{(overlap >= threshold ? "no-nudge" : "nudge")}");
+
+            if (overlap >= threshold)
                 continue;
 
-            float deficit = MinSeamOverlap - overlap;
+            // Cap the nudge so parts that already overlap are never driven PAST each other:
+            // the total move can't exceed the existing overlap. For an actual gap (overlap ≤ 0)
+            // there's nothing to push through, so close the full deficit.
+            float deficit = threshold - overlap;
+            if (overlap > 0f)
+                deficit = Math.Min(deficit, overlap);
             float halfDeficit = deficit / 2f;
 
             foreach (var mesh in upperMeshes)
@@ -370,13 +509,14 @@ public sealed class MdlPartComposer
 
         foreach (var mesh in model.GetMeshNodes())
         {
-            var localTransform = Matrix4x4.CreateScale(mesh.Scale)
-                * Matrix4x4.CreateFromQuaternion(mesh.Orientation)
-                * Matrix4x4.CreateTranslation(mesh.Position);
+            // Use the FULL world transform (parent bone chain × mesh-local). Parts reparented
+            // under skeleton bones carry their world position in the chain, not in mesh.Position
+            // (#1735) — the mesh-local transform alone collapses every part to the bone origin.
+            var worldTransform = GetMeshWorldTransform(mesh);
 
             foreach (var vertex in mesh.Vertices)
             {
-                var worldVert = Vector3.Transform(vertex, localTransform);
+                var worldVert = Vector3.Transform(vertex, worldTransform);
 
                 minX = Math.Min(minX, worldVert.X);
                 minY = Math.Min(minY, worldVert.Y);
