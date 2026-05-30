@@ -95,7 +95,7 @@
                         <CheckBox Content="FAC" IsChecked="{Binding IncludeFac}" Margin="0,0,8,0" MinWidth="65"/>
                         <CheckBox Content="ITP" IsChecked="{Binding IncludeItp}" Margin="0,0,8,0" MinWidth="65"/>
                         <CheckBox Content="NSS" IsChecked="{Binding IncludeNss}" Margin="0,0,8,0" MinWidth="65"
-                                  ToolTip.Tip="Plain-text scan of .nss script source for ResRef references. Quoted matches are high confidence; bare substring matches are flagged 'verify'."/>
+                                  ToolTip.Tip="Plain-text search of .nss NWScript source. Matches are reported with line numbers."/>
                     </WrapPanel>
                 </StackPanel>
 

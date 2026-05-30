@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using Radoub.Formats.Common;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
@@ -15,11 +16,24 @@ public class ModuleSearchService
 {
     private readonly SearchProviderFactory _factory;
 
-    /// <summary>Known GFF file extensions that can be searched</summary>
+    /// <summary>Searchable file extensions. GFF formats are parsed and searched by field;
+    /// .nss is plain NWScript source, searched line-by-line as text (#2314).</summary>
     private static readonly HashSet<string> SearchableExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".dlg", ".utc", ".bic", ".uti", ".utm", ".jrl", ".ifo", ".fac",
-        ".are", ".git", ".utp", ".ute", ".utt", ".utw", ".utd", ".uts", ".itp"
+        ".are", ".git", ".utp", ".ute", ".utt", ".utw", ".utd", ".uts", ".itp",
+        ".nss"
+    };
+
+    /// <summary>Virtual field for NSS source-content matches (not a GFF field).</summary>
+    private static readonly FieldDefinition NssSourceField = new()
+    {
+        Name = "Script Source",
+        GffPath = "<nss-source>",
+        FieldType = SearchFieldType.Text,
+        Category = SearchFieldCategory.Script,
+        Description = "NWScript source line",
+        IsReplaceable = false
     };
 
     /// <summary>Map resource type to Radoub tool identifier for dispatch</summary>
@@ -186,6 +200,10 @@ public class ModuleSearchService
         var resourceType = GetResourceType(filePath);
         var toolId = GetToolId(resourceType);
 
+        // NSS is plain NWScript source, not GFF — search it as text.
+        if (resourceType == ResourceTypes.Nss)
+            return SearchNssFileInternal(filePath, resourceType, toolId, criteria);
+
         try
         {
             var gffFile = GffReader.Read(filePath);
@@ -228,6 +246,78 @@ public class ModuleSearchService
                 ParseError = ex.Message
             };
         }
+    }
+
+    /// <summary>
+    /// Search NWScript (.nss) source as plain text, one match per regex hit, with line numbers.
+    /// </summary>
+    private FileSearchResult? SearchNssFileInternal(
+        string filePath, ushort resourceType, string toolId, SearchCriteria criteria)
+    {
+        try
+        {
+            var source = File.ReadAllText(filePath);
+            var regex = criteria.ToRegex();
+            var matches = new List<SearchMatch>();
+
+            foreach (Match m in regex.Matches(source))
+            {
+                matches.Add(new SearchMatch
+                {
+                    Field = NssSourceField,
+                    MatchedText = m.Value,
+                    FullFieldValue = LineTextAt(source, m.Index),
+                    MatchOffset = m.Index - LineStartAt(source, m.Index),
+                    MatchLength = m.Length,
+                    Location = $"Line {LineNumberAt(source, m.Index)}"
+                });
+            }
+
+            return new FileSearchResult
+            {
+                FilePath = filePath,
+                ResourceType = resourceType,
+                ToolId = toolId,
+                Matches = matches
+            };
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"Failed to search {Path.GetFileName(filePath)}: {ex.Message}");
+
+            return new FileSearchResult
+            {
+                FilePath = filePath,
+                ResourceType = resourceType,
+                ToolId = toolId,
+                Matches = Array.Empty<SearchMatch>(),
+                HadParseError = true,
+                ParseError = ex.Message
+            };
+        }
+    }
+
+    private static int LineNumberAt(string text, int index)
+    {
+        int line = 1;
+        for (int i = 0; i < index && i < text.Length; i++)
+            if (text[i] == '\n') line++;
+        return line;
+    }
+
+    private static int LineStartAt(string text, int index)
+    {
+        int start = text.LastIndexOf('\n', Math.Min(index, text.Length - 1));
+        return start < 0 ? 0 : start + 1;
+    }
+
+    private static string LineTextAt(string text, int index)
+    {
+        int start = LineStartAt(text, index);
+        int end = text.IndexOf('\n', start);
+        if (end < 0) end = text.Length;
+        return text.Substring(start, end - start).TrimEnd('\r');
     }
 
     /// <summary>
