@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Radoub.UI 0.1.66-alpha] - 2026-05-30
-**Branch**: `reliquary/issue-2291` | **PR**: #TBD
+**Branch**: `reliquary/issue-2291` | **PR**: #2328
 
 ### Sprint 1: PortraitBrowser extract (#2291)
 
@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Radoub.Formats 0.2.63-alpha] - 2026-05-30
-**Branch**: `reliquary/issue-2291` | **PR**: #TBD
+**Branch**: `reliquary/issue-2291` | **PR**: #2328
 
 ### Sprint 1: PlaceableAppearanceService (#2291)
 
