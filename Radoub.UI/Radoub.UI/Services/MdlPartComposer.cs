@@ -27,10 +27,30 @@ public sealed class MdlPartComposer
     private readonly Func<string, string> _boneNameForPart;
 
     /// <summary>
-    /// Minimum overlap in world units between adjacent body parts before the seam nudge kicks in.
-    /// Measured: human=0.112, dwarf=0.090, elf=0.048, halfling≈0.05. Target = human-like.
+    /// Minimum overlap in world units between adjacent body parts before the seam nudge kicks in,
+    /// at human scale. Measured on full-size skeletons: human=0.112, dwarf=0.090, elf=0.048,
+    /// halfling≈0.05. Target = human-like. For non-human-scale skeletons this is scaled by model
+    /// height — see <see cref="SeamOverlapHeightRatio"/> and <see cref="GetSeamThreshold"/> (#1735).
     /// </summary>
     public const float MinSeamOverlap = 0.10f;
+
+    /// <summary>
+    /// Reference body height (world units) the <see cref="MinSeamOverlap"/> constant was tuned for —
+    /// a standard NWN human is ≈1.9 tall. The effective seam threshold scales with the actual model
+    /// height so a tiny but human-PROPORTIONED creature (Brownie ≈0.45× scale) gets a proportionally
+    /// small threshold instead of the full human deficit, which would shove its head into its chest.
+    /// </summary>
+    public const float ReferenceBodyHeight = 1.9f;
+
+    /// <summary>Seam threshold as a fraction of model height (= MinSeamOverlap / ReferenceBodyHeight).</summary>
+    public const float SeamOverlapHeightRatio = MinSeamOverlap / ReferenceBodyHeight;
+
+    /// <summary>
+    /// Effective seam threshold for a model of the given world-space Z height. Scales linearly with
+    /// height (#1735); falls back to the human-scale constant for degenerate/zero heights.
+    /// </summary>
+    public static float GetSeamThreshold(float modelHeight)
+        => modelHeight > 0f ? modelHeight * SeamOverlapHeightRatio : MinSeamOverlap;
 
     /// <summary>Adjacent (upper, lower) part-type pairs that get the seam-overlap nudge.</summary>
     private static readonly (string Upper, string Lower)[] SeamPairs =
@@ -390,6 +410,24 @@ public sealed class MdlPartComposer
     {
         var meshes = compositeModel.GetMeshNodes().ToList();
 
+        // Seam threshold scales with model height so tiny human-proportioned creatures (Brownie)
+        // aren't over-nudged by the human-scale constant (#1735). Height = world-space Z extent
+        // across all part meshes.
+        float modelMinZ = float.MaxValue, modelMaxZ = float.MinValue;
+        foreach (var mesh in meshes)
+        {
+            var t = GetMeshWorldTransform(mesh);
+            foreach (var vertex in mesh.Vertices)
+            {
+                var wz = Vector3.Transform(vertex, t).Z;
+                if (float.IsNaN(wz)) continue;
+                modelMinZ = Math.Min(modelMinZ, wz);
+                modelMaxZ = Math.Max(modelMaxZ, wz);
+            }
+        }
+        float modelHeight = (modelMaxZ > modelMinZ) ? modelMaxZ - modelMinZ : 0f;
+        float threshold = GetSeamThreshold(modelHeight);
+
         foreach (var (upperPartType, lowerPartType) in SeamPairs)
         {
             var upperMeshes = meshes.Where(m =>
@@ -433,10 +471,21 @@ public sealed class MdlPartComposer
                 continue;
 
             float overlap = lowerMaxZ - upperMinZ;
-            if (overlap >= MinSeamOverlap)
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"Seam[{upperPartType}/{lowerPartType}]: overlap={overlap:F3} " +
+                $"threshold={threshold:F3} (modelH={modelHeight:F3}) " +
+                $"{(overlap >= threshold ? "no-nudge" : "nudge")}");
+
+            if (overlap >= threshold)
                 continue;
 
-            float deficit = MinSeamOverlap - overlap;
+            // Cap the nudge so parts that already overlap are never driven PAST each other:
+            // the total move can't exceed the existing overlap. For an actual gap (overlap ≤ 0)
+            // there's nothing to push through, so close the full deficit.
+            float deficit = threshold - overlap;
+            if (overlap > 0f)
+                deficit = Math.Min(deficit, overlap);
             float halfDeficit = deficit / 2f;
 
             foreach (var mesh in upperMeshes)
