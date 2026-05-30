@@ -81,11 +81,11 @@ public partial class MainWindow
         {
             UpdateStatus($"Renamed to: {System.IO.Path.GetFileName(args.NewPath)}");
         };
-        // Renaming the OPEN creature routes to the existing lock-aware
-        // save-rename-reload flow (#2285 / #2320).
-        creatureBrowserPanel.FileRenameRequested += async (_, _) =>
+        // Renaming the OPEN creature: the base already prompted + validated the
+        // new path; run the lock-aware save → move → reload here (#2285 / #2320).
+        creatureBrowserPanel.FileRenameRequested += async (_, args) =>
         {
-            await RenameCurrentFileAsync();
+            await RenameOpenFileAsync(args.OldPath, args.NewPath);
         };
 
         // Restore panel state from settings

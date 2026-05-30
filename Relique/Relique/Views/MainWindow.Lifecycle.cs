@@ -206,13 +206,11 @@ public partial class MainWindow
         {
             UpdateStatus($"Renamed to: {Path.GetFileName(args.NewPath)}");
         };
-        // Renaming the OPEN item isn't supported from the browser yet — it holds
-        // a session lock and an in-memory ResRef. Guide the user (#2320).
-        ItemBrowserPanel.FileRenameRequested += (_, _) =>
+        // Renaming the OPEN item: base prompted + validated; run lock-aware
+        // save → move → reopen here (#2320).
+        ItemBrowserPanel.FileRenameRequested += async (_, args) =>
         {
-            UpdateStatus("Close the file (or use Save As) to rename the item that's open.");
-            UnifiedLogger.LogApplication(LogLevel.INFO,
-                "Browser rename of the open item deferred — not yet supported in Relique.");
+            await RenameOpenFileAsync(args.OldPath, args.NewPath);
         };
 
         UpdateItemBrowserMenuState();

@@ -691,15 +691,6 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
             return;
         }
 
-        // Renaming the currently-open file is the host's job — it holds the
-        // session lock and the in-memory ResRef the panel can't see. Defer.
-        if (!string.IsNullOrEmpty(_currentFilePath)
-            && sourcePath.Equals(_currentFilePath, StringComparison.OrdinalIgnoreCase))
-        {
-            FileRenameRequested?.Invoke(this, new FileRenameRequestedEventArgs(entry));
-            return;
-        }
-
         var owner = TopLevel.GetTopLevel(this) as Window;
         if (owner == null) return;
 
@@ -707,6 +698,9 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
         var currentName = Path.GetFileNameWithoutExtension(sourcePath);
         var extension = Path.GetExtension(sourcePath);
 
+        // Prompt + validate up front so both paths (open / not-open) share the
+        // exact same name validation. Clicking a row to reach this menu usually
+        // also loads it, so the open-file case is the common one (#2320).
         var newName = await RenameDialog.ShowAsync(
             owner, currentName, directory, extension, actionLabel: "Rename", allowUnchanged: false);
         if (string.IsNullOrEmpty(newName)) return; // cancelled
@@ -716,6 +710,17 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
         {
             UnifiedLogger.LogApplication(LogLevel.WARN,
                 $"FileBrowserPanel: Rename rejected: {resolved.ErrorMessage}");
+            return;
+        }
+
+        // Renaming the currently-open file is the host's job — it holds the
+        // session lock and the in-memory ResRef the panel can't see. Hand it the
+        // already-validated destination and let it save → move → reload.
+        if (!string.IsNullOrEmpty(_currentFilePath)
+            && sourcePath.Equals(_currentFilePath, StringComparison.OrdinalIgnoreCase))
+        {
+            FileRenameRequested?.Invoke(this,
+                new FileRenameRequestedEventArgs(entry, sourcePath, resolved.DestinationPath));
             return;
         }
 

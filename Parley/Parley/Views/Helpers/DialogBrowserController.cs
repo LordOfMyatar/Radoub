@@ -109,13 +109,11 @@ namespace Parley.Views.Helpers
             {
                 _viewModel.StatusMessage = $"Renamed to: {Path.GetFileName(args.NewPath)}";
             };
-            // Renaming the OPEN dialog isn't supported from the browser yet — it
-            // holds a session lock. Guide the user (#2320).
-            dialogBrowserPanel.FileRenameRequested += (_, _) =>
+            // Renaming the OPEN dialog: the base prompted + validated; run the
+            // lock-aware save → move → reload here (#2320).
+            dialogBrowserPanel.FileRenameRequested += async (_, args) =>
             {
-                _viewModel.StatusMessage = "Close the file (or use Save As) to rename the dialog that's open.";
-                UnifiedLogger.LogApplication(LogLevel.INFO,
-                    "Browser rename of the open dialog deferred — not yet supported in Parley.");
+                await RenameOpenFileAsync(args.OldPath, args.NewPath);
             };
 
             // Update menu item checkmark
@@ -219,6 +217,51 @@ namespace Parley.Views.Helpers
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to delete {fileName}: {ex.Message}");
                 _viewModel.StatusMessage = $"Delete failed: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// Rename the currently-open dialog to an already-validated path (the
+        /// shared browser menu prompted + validated; #2320). DLG has no internal
+        /// ResRef field, so this is save-if-dirty → release lock(old) → move →
+        /// reload(new), where reload reacquires the lock and rebinds the editor.
+        /// </summary>
+        private async Task RenameOpenFileAsync(string oldPath, string newPath)
+        {
+            if (string.IsNullOrEmpty(_viewModel.CurrentFilePath))
+                return;
+            if (!string.Equals(_viewModel.CurrentFilePath, oldPath, StringComparison.OrdinalIgnoreCase))
+                return; // selection changed underneath us
+
+            try
+            {
+                if (_viewModel.HasUnsavedChanges)
+                    await _viewModel.SaveDialogAsync(oldPath);
+
+                // Release the lock before moving; LoadDialogAsync reacquires on the new path.
+                Radoub.UI.Services.FileSessionLockService.ReleaseLock(oldPath);
+
+                File.Move(oldPath, newPath);
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Renamed open dialog: {UnifiedLogger.SanitizePath(oldPath)} -> {UnifiedLogger.SanitizePath(newPath)}");
+
+                await _viewModel.LoadDialogAsync(newPath);
+
+                var dialogBrowserPanel = _window.FindControl<DialogBrowserPanel>("DialogBrowserPanel");
+                if (dialogBrowserPanel != null)
+                {
+                    dialogBrowserPanel.CurrentFilePath = newPath;
+                    dialogBrowserPanel.RemoveEntryByFilePath(oldPath);
+                    await dialogBrowserPanel.RefreshAsync();
+                }
+
+                _viewModel.StatusMessage = $"Renamed to: {Path.GetFileName(newPath)}";
+                _populateRecentFilesMenu();
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to rename open dialog: {ex.Message}");
+                _viewModel.StatusMessage = $"Rename failed: {ex.Message}";
             }
         }
 

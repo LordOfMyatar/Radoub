@@ -7,6 +7,7 @@ using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
 using Radoub.UI.Controls;
+using Radoub.UI.Services;
 using Radoub.UI.Views;
 using DialogHelper = Quartermaster.Views.Helpers.DialogHelper;
 
@@ -117,6 +118,63 @@ public partial class MainWindow
     private async void OnRenameRequested(object? sender, EventArgs e)
     {
         await RenameCurrentFileAsync();
+    }
+
+    /// <summary>
+    /// Rename the currently-open creature file to an already-validated path
+    /// (the shared browser menu prompted + validated; #2320). Lock-aware:
+    /// save-if-dirty → release lock(old) → move → reload(new) which reacquires
+    /// the lock, syncs ResRef to the new filename, and refreshes the browser.
+    /// </summary>
+    private async Task RenameOpenFileAsync(string oldPath, string newPath)
+    {
+        if (_currentCreature == null || string.IsNullOrEmpty(_currentFilePath))
+            return;
+        if (!string.Equals(_currentFilePath, oldPath, StringComparison.OrdinalIgnoreCase))
+            return; // selection changed underneath us
+
+        if (_isBicFile)
+        {
+            DialogHelper.ShowMessageDialog(this, "Cannot Rename",
+                "Player character (BIC) files cannot be renamed this way. Use File > Save As.");
+            return;
+        }
+
+        try
+        {
+            if (_isDirty)
+                await SaveFile();
+
+            // Release the lock on the old path before moving so the sidecar
+            // doesn't orphan; LoadFile reacquires on the new path.
+            FileSessionLockService.ReleaseLock(oldPath);
+            _documentState.IsReadOnly = false;
+
+            File.Move(oldPath, newPath);
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Renamed open file: {UnifiedLogger.SanitizePath(oldPath)} -> {UnifiedLogger.SanitizePath(newPath)}");
+
+            // Reload from the new path: reacquires lock, rebinds editor, sets
+            // _currentFilePath. The save-syncs-ResRef-to-filename rule means the
+            // next save fixes the internal ResRef; do it now so disk matches.
+            await LoadFile(newPath);
+            _currentCreature!.TemplateResRef = Path.GetFileNameWithoutExtension(newPath).ToLowerInvariant();
+            await SaveFile();
+
+            var creatureBrowserPanel = this.FindControl<CreatureBrowserPanel>("CreatureBrowserPanel");
+            if (creatureBrowserPanel != null)
+            {
+                creatureBrowserPanel.RemoveEntryByFilePath(oldPath);
+                await creatureBrowserPanel.RefreshAsync();
+            }
+
+            UpdateStatus($"Renamed to: {Path.GetFileName(newPath)}");
+        }
+        catch (IOException ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to rename open file: {ex.Message}");
+            DialogHelper.ShowMessageDialog(this, "Rename Failed", $"Could not rename file:\n\n{ex.Message}");
+        }
     }
 
     /// <summary>

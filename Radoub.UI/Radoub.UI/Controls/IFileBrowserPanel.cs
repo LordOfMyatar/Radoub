@@ -102,19 +102,29 @@ public class FileDeleteRequestedEventArgs : EventArgs
 
 /// <summary>
 /// Event args raised when the user asks to rename the file that is CURRENTLY
-/// OPEN in the editor (#2320). The panel does NOT touch the file in this case —
-/// renaming an open file is entangled with the host's session lock and the
-/// editor's in-memory ResRef, which the shared panel can't see. The host runs
-/// its own lock-aware save-rename-reload, then should refresh the browser.
+/// OPEN in the editor (#2320). The panel has already prompted for and validated
+/// the new name (<see cref="NewPath"/>) but does NOT move the file — renaming an
+/// open file is entangled with the host's session lock and the editor's
+/// in-memory ResRef, which the shared panel can't see. The host runs its own
+/// save → release-lock → move → update-ResRef → reacquire-lock → reload, then
+/// refreshes the browser.
 /// </summary>
 public class FileRenameRequestedEventArgs : EventArgs
 {
     /// <summary>The entry the user asked to rename (the open file).</summary>
     public FileBrowserEntry Entry { get; }
 
-    public FileRenameRequestedEventArgs(FileBrowserEntry entry)
+    /// <summary>Current full path of the open file (the move source).</summary>
+    public string OldPath { get; }
+
+    /// <summary>Validated full destination path the host should move the file to.</summary>
+    public string NewPath { get; }
+
+    public FileRenameRequestedEventArgs(FileBrowserEntry entry, string oldPath, string newPath)
     {
         Entry = entry;
+        OldPath = oldPath;
+        NewPath = newPath;
     }
 }
 
