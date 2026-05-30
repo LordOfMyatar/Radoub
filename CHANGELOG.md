@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub docs] - 2026-05-30
+**Branch**: `reliquary/issue-2290` | **PR**: #TBD
+
+### Sprint: Bootstrap doc extraction (#2290)
+
+- New-tool bootstrap content moved out of always-loaded `CLAUDE.md` into on-demand `Documentation/NEW_TOOL_BOOTSTRAP.md`; 5 documented gaps fixed (portrait browser location, placeable appearance service, model preview control, shared variables panel, cross-tool dispatch). Reliquary epic #2289 pre-work.
+
+---
+
 ## [Radoub.UI 0.1.65-alpha] - 2026-05-30
 **Branch**: `quartermaster/issue-2220` | **PR**: #2326
 
