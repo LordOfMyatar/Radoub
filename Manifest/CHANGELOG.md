@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.15.9-alpha] - 2026-05-29
+**Branch**: `manifest/issue-2254` | **PR**: #TBD
+
+### Fix: Model-mutation rollback + async lifecycle hygiene (#2254)
+
+- Add-category/add-entry handlers now roll back the model if tree refresh throws (#2166 pattern). Window closing guarded against re-entrant double-save. Startup `OnWindowOpened` wrapped in try/catch with cancellation.
+
+---
+
 ## [0.15.8-alpha] - 2026-05-26
 **Branch**: `radoub/issue-2244` | **PR**: #2266
 
