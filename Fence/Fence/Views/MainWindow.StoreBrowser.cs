@@ -67,6 +67,25 @@ public partial class MainWindow
             UpdateStatusBar($"Copied to module: {Path.GetFileName(destPath)}");
         };
 
+        // Shared browser Copy/Rename context-menu feedback (#2320). The panel
+        // performs the disk op + refresh for non-open files; we just report it.
+        storeBrowserPanel.FileCopied += (_, args) =>
+        {
+            UpdateStatusBar($"Copied: {Path.GetFileName(args.NewPath)}");
+        };
+        storeBrowserPanel.FileRenamed += (_, args) =>
+        {
+            UpdateStatusBar($"Renamed to: {Path.GetFileName(args.NewPath)}");
+        };
+        // Renaming the OPEN store isn't supported from the browser yet — it holds
+        // a session lock and an in-memory ResRef. Guide the user (#2320).
+        storeBrowserPanel.FileRenameRequested += (_, _) =>
+        {
+            UpdateStatusBar("Close the file (or use Save As) to rename the store that's open.");
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                "Browser rename of the open store deferred — not yet supported in Fence.");
+        };
+
         // Restore panel state from settings
         RestoreStoreBrowserPanelState();
 

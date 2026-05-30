@@ -64,6 +64,30 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
     public event EventHandler<string>? FileCopiedToModule;
 
     /// <summary>
+    /// Raised when the user asks to rename the file CURRENTLY OPEN in the editor
+    /// (#2320). The panel does not touch the file; the host runs its own
+    /// lock-aware save-rename-reload (the open file may hold a session lock and
+    /// has an in-memory ResRef the panel can't see), then refreshes the browser.
+    /// </summary>
+    public event EventHandler<FileRenameRequestedEventArgs>? FileRenameRequested;
+
+    /// <summary>
+    /// Raised AFTER the panel renames a NON-open module file on disk and
+    /// refreshes the browser (#2320). The host updates the status bar. The disk
+    /// move and the browser refresh are already done — the host must not repeat
+    /// them. (Renaming the open file goes through <see cref="FileRenameRequested"/>
+    /// instead.)
+    /// </summary>
+    public event EventHandler<FileRenamedEventArgs>? FileRenamed;
+
+    /// <summary>
+    /// Raised AFTER the panel copies a module file on disk and refreshes the
+    /// browser (#2320). The host typically updates the status bar. The disk copy
+    /// and the browser refresh are already done.
+    /// </summary>
+    public event EventHandler<FileCopiedEventArgs>? FileCopied;
+
+    /// <summary>
     /// The header text displayed at the top of the panel.
     /// </summary>
     public static readonly StyledProperty<string> HeaderTextProperty =
@@ -567,11 +591,14 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
 
     private void OnContextMenuOpening(object? sender, System.ComponentModel.CancelEventArgs e)
     {
-        // Only enable Delete for module files (not HAK/vault resources)
-        var hasSelection = FileGrid.SelectedItem is FileBrowserEntry entry
+        // Copy/Rename/Delete operate on on-disk module files only (not HAK/BIF
+        // archive resources, which have no FilePath).
+        var isModuleFile = FileGrid.SelectedItem is FileBrowserEntry entry
             && !entry.IsFromHak
             && !string.IsNullOrEmpty(entry.FilePath);
-        DeleteMenuItem.IsEnabled = hasSelection;
+        DeleteMenuItem.IsEnabled = isModuleFile;
+        CopyMenuItem.IsEnabled = isModuleFile;
+        RenameMenuItem.IsEnabled = isModuleFile;
     }
 
     private void OnDeleteMenuItemClick(object? sender, RoutedEventArgs e)
@@ -579,6 +606,140 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
         if (FileGrid.SelectedItem is FileBrowserEntry entry && !entry.IsFromHak && !string.IsNullOrEmpty(entry.FilePath))
         {
             FileDeleteRequested?.Invoke(this, new FileDeleteRequestedEventArgs(entry));
+        }
+    }
+
+    /// <summary>
+    /// Copy a module file to a new ResRef in the same directory (#2320). The
+    /// disk copy, browser refresh, and post-event are all handled here so every
+    /// tool gets identical behavior — no per-tool refresh drift. The host only
+    /// reacts to <see cref="FileCopied"/> for status-bar feedback.
+    /// </summary>
+    private async void OnCopyMenuItemClick(object? sender, RoutedEventArgs e)
+    {
+        if (FileGrid.SelectedItem is not FileBrowserEntry entry
+            || entry.IsFromHak || string.IsNullOrEmpty(entry.FilePath))
+            return;
+
+        var sourcePath = entry.FilePath!;
+        if (!File.Exists(sourcePath))
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"FileBrowserPanel: Copy source missing: {UnifiedLogger.SanitizePath(sourcePath)}");
+            return;
+        }
+
+        var owner = TopLevel.GetTopLevel(this) as Window;
+        if (owner == null) return;
+
+        var directory = Path.GetDirectoryName(sourcePath) ?? string.Empty;
+        var currentName = Path.GetFileNameWithoutExtension(sourcePath);
+        var extension = Path.GetExtension(sourcePath);
+
+        var newName = await RenameDialog.ShowAsync(
+            owner, currentName, directory, extension, actionLabel: "Copy", allowUnchanged: true);
+        if (string.IsNullOrEmpty(newName)) return; // cancelled
+
+        var resolved = FileBrowserOperations.ResolveCopyDestination(sourcePath, newName, extension);
+        if (!resolved.IsValid || resolved.DestinationPath == null)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"FileBrowserPanel: Copy rejected: {resolved.ErrorMessage}");
+            return;
+        }
+
+        try
+        {
+            // overwrite:false — the dialog already rejected an existing target.
+            File.Copy(sourcePath, resolved.DestinationPath, overwrite: false);
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Copied file: {UnifiedLogger.SanitizePath(sourcePath)} -> {UnifiedLogger.SanitizePath(resolved.DestinationPath)}");
+
+            await RefreshAsync();
+            FileCopied?.Invoke(this, new FileCopiedEventArgs(sourcePath, resolved.DestinationPath));
+        }
+        catch (IOException ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"FileBrowserPanel: Copy failed: {ex.Message}");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"FileBrowserPanel: Copy failed (access): {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Rename a module file on disk to a new ResRef in the same directory
+    /// (#2320). The disk move, browser refresh (drop stale row + re-scan), and
+    /// post-event are handled here. The host reacts to <see cref="FileRenamed"/>
+    /// to fix editor state — e.g. update the open-file path if the renamed file
+    /// was the one loaded — and the status bar.
+    /// </summary>
+    private async void OnRenameMenuItemClick(object? sender, RoutedEventArgs e)
+    {
+        if (FileGrid.SelectedItem is not FileBrowserEntry entry
+            || entry.IsFromHak || string.IsNullOrEmpty(entry.FilePath))
+            return;
+
+        var sourcePath = entry.FilePath!;
+        if (!File.Exists(sourcePath))
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"FileBrowserPanel: Rename source missing: {UnifiedLogger.SanitizePath(sourcePath)}");
+            return;
+        }
+
+        // Renaming the currently-open file is the host's job — it holds the
+        // session lock and the in-memory ResRef the panel can't see. Defer.
+        if (!string.IsNullOrEmpty(_currentFilePath)
+            && sourcePath.Equals(_currentFilePath, StringComparison.OrdinalIgnoreCase))
+        {
+            FileRenameRequested?.Invoke(this, new FileRenameRequestedEventArgs(entry));
+            return;
+        }
+
+        var owner = TopLevel.GetTopLevel(this) as Window;
+        if (owner == null) return;
+
+        var directory = Path.GetDirectoryName(sourcePath) ?? string.Empty;
+        var currentName = Path.GetFileNameWithoutExtension(sourcePath);
+        var extension = Path.GetExtension(sourcePath);
+
+        var newName = await RenameDialog.ShowAsync(
+            owner, currentName, directory, extension, actionLabel: "Rename", allowUnchanged: false);
+        if (string.IsNullOrEmpty(newName)) return; // cancelled
+
+        var resolved = FileBrowserOperations.ResolveRenameDestination(sourcePath, newName, extension);
+        if (!resolved.IsValid || resolved.DestinationPath == null)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"FileBrowserPanel: Rename rejected: {resolved.ErrorMessage}");
+            return;
+        }
+
+        try
+        {
+            File.Move(sourcePath, resolved.DestinationPath);
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Renamed file: {UnifiedLogger.SanitizePath(sourcePath)} -> {UnifiedLogger.SanitizePath(resolved.DestinationPath)}");
+
+            // Drop the stale pre-rename row before re-scanning so it doesn't
+            // linger pointing at a path that no longer exists (#2285 pattern).
+            RemoveEntryByFilePath(sourcePath);
+            await RefreshAsync();
+            FileRenamed?.Invoke(this, new FileRenamedEventArgs(sourcePath, resolved.DestinationPath));
+        }
+        catch (IOException ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"FileBrowserPanel: Rename failed: {ex.Message}");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"FileBrowserPanel: Rename failed (access): {ex.Message}");
         }
     }
 

@@ -71,6 +71,23 @@ public partial class MainWindow
             UpdateStatus($"Copied to module: {System.IO.Path.GetFileName(destPath)}");
         };
 
+        // Shared browser Copy/Rename context-menu feedback (#2320). The panel
+        // performs the disk op + refresh for non-open files; we just report it.
+        creatureBrowserPanel.FileCopied += (_, args) =>
+        {
+            UpdateStatus($"Copied: {System.IO.Path.GetFileName(args.NewPath)}");
+        };
+        creatureBrowserPanel.FileRenamed += (_, args) =>
+        {
+            UpdateStatus($"Renamed to: {System.IO.Path.GetFileName(args.NewPath)}");
+        };
+        // Renaming the OPEN creature routes to the existing lock-aware
+        // save-rename-reload flow (#2285 / #2320).
+        creatureBrowserPanel.FileRenameRequested += async (_, _) =>
+        {
+            await RenameCurrentFileAsync();
+        };
+
         // Restore panel state from settings
         RestoreCreatureBrowserPanelState();
 

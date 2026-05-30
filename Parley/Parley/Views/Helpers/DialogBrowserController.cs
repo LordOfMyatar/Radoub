@@ -99,6 +99,25 @@ namespace Parley.Views.Helpers
                 _viewModel.StatusMessage = $"Copied to module: {Path.GetFileName(destPath)}";
             };
 
+            // Shared browser Copy/Rename context-menu feedback (#2320). The panel
+            // performs the disk op + refresh for non-open files; we just report it.
+            dialogBrowserPanel.FileCopied += (_, args) =>
+            {
+                _viewModel.StatusMessage = $"Copied: {Path.GetFileName(args.NewPath)}";
+            };
+            dialogBrowserPanel.FileRenamed += (_, args) =>
+            {
+                _viewModel.StatusMessage = $"Renamed to: {Path.GetFileName(args.NewPath)}";
+            };
+            // Renaming the OPEN dialog isn't supported from the browser yet — it
+            // holds a session lock. Guide the user (#2320).
+            dialogBrowserPanel.FileRenameRequested += (_, _) =>
+            {
+                _viewModel.StatusMessage = "Close the file (or use Save As) to rename the dialog that's open.";
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    "Browser rename of the open dialog deferred — not yet supported in Parley.");
+            };
+
             // Update menu item checkmark
             UpdateMenuState();
         }

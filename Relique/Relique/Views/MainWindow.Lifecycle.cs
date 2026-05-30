@@ -196,6 +196,25 @@ public partial class MainWindow
             UpdateStatus($"Copied to module: {Path.GetFileName(destPath)}");
         };
 
+        // Shared browser Copy/Rename context-menu feedback (#2320). The panel
+        // performs the disk op + refresh for non-open files; we just report it.
+        ItemBrowserPanel.FileCopied += (_, args) =>
+        {
+            UpdateStatus($"Copied: {Path.GetFileName(args.NewPath)}");
+        };
+        ItemBrowserPanel.FileRenamed += (_, args) =>
+        {
+            UpdateStatus($"Renamed to: {Path.GetFileName(args.NewPath)}");
+        };
+        // Renaming the OPEN item isn't supported from the browser yet — it holds
+        // a session lock and an in-memory ResRef. Guide the user (#2320).
+        ItemBrowserPanel.FileRenameRequested += (_, _) =>
+        {
+            UpdateStatus("Close the file (or use Save As) to rename the item that's open.");
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                "Browser rename of the open item deferred — not yet supported in Relique.");
+        };
+
         UpdateItemBrowserMenuState();
         UnifiedLogger.LogUI(LogLevel.INFO, "ItemBrowserPanel initialized");
     }
