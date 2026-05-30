@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Radoub.Dictionary 0.2.4-alpha] - 2026-05-29
-**Branch**: `radoub/issue-2264` | **PR**: #TBD
+**Branch**: `radoub/issue-2264` | **PR**: #2313
 
 ### Fix: Color-token regex hole, CheckText O(N²), thread-unsafe DictionaryManager (#2264)
 
