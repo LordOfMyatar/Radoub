@@ -84,4 +84,48 @@ public class EditOpsTests
     }
 
     #endregion
+
+    #region TryMutateWithRollback (#2254)
+
+    [Fact]
+    public void TryMutateWithRollback_RefreshSucceeds_KeepsItemAndReturnsTrue()
+    {
+        var list = new List<string> { "a", "b" };
+        var refreshed = false;
+
+        var result = MainWindow.TryMutateWithRollback(list, "c", () => refreshed = true);
+
+        Assert.True(result);
+        Assert.True(refreshed);
+        Assert.Equal(new[] { "a", "b", "c" }, list);
+    }
+
+    [Fact]
+    public void TryMutateWithRollback_RefreshThrows_RemovesItemAndReturnsFalse()
+    {
+        var list = new List<string> { "a", "b" };
+
+        var result = MainWindow.TryMutateWithRollback(
+            list, "c", () => throw new InvalidOperationException("refresh blew up"));
+
+        Assert.False(result);
+        // Model rolled back to pre-add state — the half-added item is gone.
+        Assert.Equal(new[] { "a", "b" }, list);
+    }
+
+    [Fact]
+    public void TryMutateWithRollback_RefreshThrows_OnlyRemovesTheAddedItem()
+    {
+        // Rollback must remove the specific item it added, not blindly the last element.
+        var list = new List<string> { "a", "b" };
+
+        MainWindow.TryMutateWithRollback(
+            list, "c", () => throw new InvalidOperationException());
+
+        // "b" (a pre-existing last element) must survive.
+        Assert.Contains("b", list);
+        Assert.DoesNotContain("c", list);
+    }
+
+    #endregion
 }

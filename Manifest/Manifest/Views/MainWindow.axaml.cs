@@ -39,6 +39,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private object? _selectedItem;
     private Language _currentViewLanguage = Language.English;
 
+    // #2254 — guard against OnWindowClosing re-entry. HandleClosingAsync sets e.Cancel=true
+    // and we call Close() again to actually close; without this flag the second Close() re-runs
+    // the dirty-check/save dialog (double-save hazard / recursion).
+    private bool _isClosingConfirmed;
+
+    // #2254 — cancellation for async startup work in OnWindowOpened.
+    private System.Threading.CancellationTokenSource? _windowCts;
+
     // Convenience accessor for document state file path
     private string? _currentFilePath
     {
@@ -106,9 +114,24 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Only handle once
         Opened -= OnWindowOpened;
 
-        UpdateRecentFilesMenu();
-        UpdateModuleIndicator();
-        await HandleStartupFileAsync();
+        // #2254 — async void with no guard previously swallowed any startup exception,
+        // leaving the app silently empty. Wrap in try/catch + cancellation (QM Lifecycle pattern).
+        _windowCts = new System.Threading.CancellationTokenSource();
+        try
+        {
+            UpdateRecentFilesMenu();
+            UpdateModuleIndicator();
+            await HandleStartupFileAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Window initialization cancelled");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Startup initialization failed: {ex.Message}");
+            UpdateStatus("Startup failed — see logs.");
+        }
     }
 
     private void RestoreWindowPosition()
@@ -137,11 +160,18 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
     {
+        // #2254 — second entry from our own Close() call below: allow the close to proceed
+        // without re-running the dirty-check/save dialog.
+        if (_isClosingConfirmed)
+            return;
+
         var shouldClose = await FileOperationsHelper.HandleClosingAsync(
             this, e, _documentState.IsDirty, async () => { await SaveFile(); return true; });
 
         if (shouldClose)
         {
+            _isClosingConfirmed = true;
+            _windowCts?.Cancel();
             _documentState.ClearDirty();
             Radoub.UI.Services.ThemeManager.Instance.ThemeApplied -= OnThemeApplied;
             Radoub.UI.Services.FileSessionLockService.ReleaseAllLocks();

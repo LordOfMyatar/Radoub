@@ -117,7 +117,6 @@ public partial class MainWindow
 
     private async Task LoadFile(string filePath)
     {
-        await Task.CompletedTask; // Async signature preserved for future async I/O
         try
         {
             // Release lock on previous file if any
@@ -138,7 +137,9 @@ public partial class MainWindow
                 _documentState.IsReadOnly = true;
             }
 
-            _currentJrl = JrlReader.Read(filePath);
+            // #2254 — actually-async parse: JrlReader.Read does blocking disk I/O + GFF
+            // parse. Push to Task.Run so the UI thread stays responsive on large journals.
+            _currentJrl = await Task.Run(() => JrlReader.Read(filePath));
             _documentState.CurrentFilePath = filePath;
             _documentState.ClearDirty();
 
@@ -193,7 +194,6 @@ public partial class MainWindow
 
     private async Task SaveFile()
     {
-        await Task.CompletedTask; // Async signature preserved for future async I/O
         if (_currentJrl == null || string.IsNullOrEmpty(_currentFilePath)) return;
 
         if (_documentState.IsReadOnly)
@@ -205,7 +205,10 @@ public partial class MainWindow
 
         try
         {
-            JrlWriter.Write(_currentJrl, _currentFilePath);
+            // #2254 — actually-async write so multi-MB journals don't block the UI thread.
+            var jrl = _currentJrl;
+            var path = _currentFilePath!;
+            await Task.Run(() => JrlWriter.Write(jrl, path));
             _documentState.ClearDirty();
             UpdateTitle();
             UpdateStatus($"Saved: {Path.GetFileName(_currentFilePath)}");

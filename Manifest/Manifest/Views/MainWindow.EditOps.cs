@@ -37,15 +37,46 @@ public partial class MainWindow
             Comment = ""
         };
 
-        _currentJrl.Categories.Add(newCategory);
+        // #2254 — guard the model.Add → UpdateTree sequence: if UpdateTree throws,
+        // the category is rolled back so the model never ends up dirty + half-rendered.
+        if (!TryMutateWithRollback(_currentJrl.Categories, newCategory, UpdateTree))
+        {
+            UnifiedLogger.LogJournal(LogLevel.ERROR, $"Add category rolled back (tree refresh failed): {uniqueTag}");
+            UpdateStatus("Could not add category — change was rolled back.");
+            return;
+        }
+
         MarkDirty();
-        UpdateTree();
         UpdateStatusBarCounts();
 
         // Select the new category and focus the name field
         SelectNewCategory(newCategory);
 
         UnifiedLogger.LogJournal(LogLevel.INFO, $"Added new category with tag: {uniqueTag}");
+    }
+
+    /// <summary>
+    /// Add <paramref name="item"/> to <paramref name="list"/>, then run <paramref name="refresh"/>.
+    /// If the refresh throws, the item is removed (model rolled back) and the exception is
+    /// swallowed after logging, so callers never leave a dirty model behind a failed UI refresh.
+    /// Canonical #2166 rollback pattern (see Relique MainWindow.ItemProperties.TryAddProperty).
+    /// </summary>
+    /// <returns>True if the refresh succeeded; false if it threw and the add was rolled back.</returns>
+    internal static bool TryMutateWithRollback<T>(IList<T> list, T item, Action refresh)
+    {
+        list.Add(item);
+        try
+        {
+            refresh();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            list.Remove(item);
+            UnifiedLogger.LogJournal(LogLevel.ERROR,
+                $"Refresh failed after add — rolled back: {ex.GetType().Name}: {ex.Message}");
+            return false;
+        }
     }
 
     internal static string GenerateUniqueTag(string baseTag, HashSet<string> existingTags)
@@ -98,9 +129,15 @@ public partial class MainWindow
             End = false
         };
 
-        category.Entries.Add(newEntry);
+        // #2254 — same rollback guard as OnAddCategoryClick.
+        if (!TryMutateWithRollback(category.Entries, newEntry, UpdateTree))
+        {
+            UnifiedLogger.LogJournal(LogLevel.ERROR, $"Add entry rolled back (tree refresh failed): ID {nextId}");
+            UpdateStatus("Could not add entry — change was rolled back.");
+            return;
+        }
+
         MarkDirty();
-        UpdateTree();
         UpdateStatusBarCounts();
 
         // Select the new entry and focus the text field
