@@ -27,7 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Radoub.UI 0.1.62-alpha] - 2026-05-29
-**Branch**: `radoub/issue-2314` | **PR**: #TBD
+**Branch**: `radoub/issue-2314` | **PR**: #2315
 
 ### Fix: Marlinspike NSS checkbox is dead code — .nss files never searched (#2314)
 
