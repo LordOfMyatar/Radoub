@@ -133,22 +133,25 @@ public partial class SpellChecker : IDisposable
         if (string.IsNullOrWhiteSpace(text))
             yield break;
 
-        // Find all <TOKEN> ranges to exclude from spell checking (NWN variables like <FirstName>)
-        var tokenRanges = new List<(int Start, int End)>();
-        var tokenMatches = TokenPattern().Matches(text);
-        foreach (Match tokenMatch in tokenMatches)
-        {
-            tokenRanges.Add((tokenMatch.Index, tokenMatch.Index + tokenMatch.Length));
-        }
+        // Build sorted, non-overlapping token-tag ranges to exclude from spell checking
+        // (NWN variables like <FirstName> and color tags like <cRGB>).
+        var tokenRanges = BuildTokenRanges(text);
 
         var matches = WordPattern().Matches(text);
+        int rangeCursor = 0;
         foreach (Match match in matches)
         {
-            // Skip words that are inside a <TOKEN> range
             var wordStart = match.Index;
             var wordEnd = match.Index + match.Length;
-            var isInsideToken = tokenRanges.Any(range =>
-                wordStart >= range.Start && wordEnd <= range.End);
+
+            // Ranges are sorted by Start and words are enumerated left-to-right, so we can
+            // advance a cursor instead of re-scanning every range per word (Finding #2: was O(words × tokens)).
+            while (rangeCursor < tokenRanges.Count && tokenRanges[rangeCursor].End <= wordStart)
+                rangeCursor++;
+
+            var isInsideToken = rangeCursor < tokenRanges.Count
+                && wordStart >= tokenRanges[rangeCursor].Start
+                && wordEnd <= tokenRanges[rangeCursor].End;
 
             if (isInsideToken)
                 continue;
@@ -282,10 +285,54 @@ public partial class SpellChecker : IDisposable
         return d[m, n];
     }
 
+    /// <summary>
+    /// Builds the sorted, non-overlapping list of token-tag ranges (the tags themselves, not their
+    /// content) that should be skipped during spell checking.
+    ///
+    /// NWN color tags are "&lt;c" + exactly three raw RGB bytes + "&gt;". A channel byte can legally be
+    /// 0x3E ('&gt;'), so the generic "&lt;[^&gt;]+&gt;" token pattern truncates the tag and leaks the
+    /// remaining tag bytes as plain text (Finding #1). Color tags are therefore matched first by
+    /// consuming three chars after "&lt;c" and then the following "&gt;", before the generic pass.
+    /// </summary>
+    private static List<(int Start, int End)> BuildTokenRanges(string text)
+    {
+        var ranges = new List<(int Start, int End)>();
+
+        // Pass 1: color open tags "<c" + 3 RGB bytes (i+2..i+4) + ">" (i+5),
+        // regardless of '>' bytes inside the RGB triplet.
+        for (int i = 0; i + 5 < text.Length; i++)
+        {
+            if (text[i] == '<' && text[i + 1] == 'c' && text[i + 5] == '>')
+            {
+                ranges.Add((i, i + 6));
+                i += 5; // skip past this tag (loop's i++ moves to the char after '>')
+            }
+        }
+
+        // Pass 2: generic tokens "<...>" (standard variables, "</c>", "<CUSTOM####>", etc.),
+        // skipping anything already covered by a color tag.
+        foreach (Match m in TokenPattern().Matches(text))
+        {
+            var start = m.Index;
+            var end = m.Index + m.Length;
+            bool overlaps = false;
+            foreach (var r in ranges)
+            {
+                if (start < r.End && r.Start < end) { overlaps = true; break; }
+            }
+            if (!overlaps)
+                ranges.Add((start, end));
+        }
+
+        ranges.Sort((a, b) => a.Start.CompareTo(b.Start));
+        return ranges;
+    }
+
     [GeneratedRegex(@"\b[\w']+\b", RegexOptions.Compiled)]
     private static partial Regex WordPattern();
 
-    // Matches NWN token variables like <FirstName>, <CUSTOM1016>, etc.
+    // Matches NWN token variables like <FirstName>, <CUSTOM1016>, and "</c>" close tags.
+    // Color OPEN tags are handled separately in BuildTokenRanges because a channel byte may be '>'.
     [GeneratedRegex(@"<[^>]+>", RegexOptions.Compiled)]
     private static partial Regex TokenPattern();
 

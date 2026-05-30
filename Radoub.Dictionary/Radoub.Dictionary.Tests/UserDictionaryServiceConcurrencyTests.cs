@@ -110,4 +110,29 @@ public class UserDictionaryServiceConcurrencyTests : IDisposable
         Assert.NotNull(dict);
         Assert.Contains("ValidJsonCheck", dict!.AllWords);
     }
+
+    [Fact]
+    public void WordAdded_HandlerThatAddsAnotherWord_DoesNotThrowAndBothPersist()
+    {
+        // Finding #3: a WordAdded handler that calls back into AddWord must not deadlock,
+        // recurse unboundedly, or lose either word. The handler adds a derived word exactly once.
+        var writer = NewInstance();
+        var added = new List<string>();
+
+        writer.WordAdded += (_, w) =>
+        {
+            added.Add(w);
+            if (w == "Seed")
+                writer.AddWord("Derived");   // re-entrant add from inside the notification
+        };
+
+        writer.AddWord("Seed");
+
+        Assert.Contains("Seed", added);
+        Assert.Contains("Derived", added);
+
+        var onDisk = ReadWordsFromDisk();
+        Assert.Contains("Seed", onDisk);
+        Assert.Contains("Derived", onDisk);
+    }
 }

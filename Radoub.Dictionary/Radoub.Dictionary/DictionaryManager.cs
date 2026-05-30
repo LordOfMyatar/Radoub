@@ -14,6 +14,10 @@ public class DictionaryManager
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
+    // Guards _words, _ignoredWords, and _loadedDictionaries. HashSet/List are not safe for
+    // concurrent write+read, and SpellCheckService loads dictionaries on a worker thread while
+    // the UI reads via IsKnown (Finding #5).
+    private readonly object _lock = new();
     private readonly HashSet<string> _words = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _ignoredWords = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<CustomDictionary> _loadedDictionaries = [];
@@ -21,24 +25,24 @@ public class DictionaryManager
     /// <summary>
     /// Gets the count of unique words in all loaded dictionaries.
     /// </summary>
-    public int WordCount => _words.Count;
+    public int WordCount { get { lock (_lock) return _words.Count; } }
 
     /// <summary>
     /// Gets the count of ignored words.
     /// </summary>
-    public int IgnoredWordCount => _ignoredWords.Count;
+    public int IgnoredWordCount { get { lock (_lock) return _ignoredWords.Count; } }
 
     /// <summary>
     /// Gets the number of dictionaries currently loaded.
     /// </summary>
-    public int DictionaryCount => _loadedDictionaries.Count;
+    public int DictionaryCount { get { lock (_lock) return _loadedDictionaries.Count; } }
 
     /// <summary>
     /// Checks if a word exists in any loaded dictionary.
     /// </summary>
     public bool ContainsWord(string word)
     {
-        return _words.Contains(word);
+        lock (_lock) return _words.Contains(word);
     }
 
     /// <summary>
@@ -46,7 +50,7 @@ public class DictionaryManager
     /// </summary>
     public bool IsIgnored(string word)
     {
-        return _ignoredWords.Contains(word);
+        lock (_lock) return _ignoredWords.Contains(word);
     }
 
     /// <summary>
@@ -54,7 +58,7 @@ public class DictionaryManager
     /// </summary>
     public bool IsKnown(string word)
     {
-        return ContainsWord(word) || IsIgnored(word);
+        lock (_lock) return _words.Contains(word) || _ignoredWords.Contains(word);
     }
 
     /// <summary>
@@ -85,23 +89,26 @@ public class DictionaryManager
     /// </summary>
     public void MergeDictionary(CustomDictionary dictionary)
     {
-        foreach (var word in dictionary.AllWords)
+        lock (_lock)
         {
-            if (!string.IsNullOrWhiteSpace(word))
+            foreach (var word in dictionary.AllWords)
             {
-                _words.Add(word.Trim());
+                if (!string.IsNullOrWhiteSpace(word))
+                {
+                    _words.Add(word.Trim());
+                }
             }
-        }
 
-        foreach (var word in dictionary.IgnoredWords)
-        {
-            if (!string.IsNullOrWhiteSpace(word))
+            foreach (var word in dictionary.IgnoredWords)
             {
-                _ignoredWords.Add(word.Trim());
+                if (!string.IsNullOrWhiteSpace(word))
+                {
+                    _ignoredWords.Add(word.Trim());
+                }
             }
-        }
 
-        _loadedDictionaries.Add(dictionary);
+            _loadedDictionaries.Add(dictionary);
+        }
     }
 
     /// <summary>
@@ -111,7 +118,7 @@ public class DictionaryManager
     {
         if (!string.IsNullOrWhiteSpace(word))
         {
-            _words.Add(word.Trim());
+            lock (_lock) _words.Add(word.Trim());
         }
     }
 
@@ -122,7 +129,7 @@ public class DictionaryManager
     {
         if (!string.IsNullOrWhiteSpace(word))
         {
-            _ignoredWords.Add(word.Trim());
+            lock (_lock) _ignoredWords.Add(word.Trim());
         }
     }
 
@@ -131,7 +138,7 @@ public class DictionaryManager
     /// </summary>
     public void RemoveIgnoredWord(string word)
     {
-        _ignoredWords.Remove(word);
+        lock (_lock) _ignoredWords.Remove(word);
     }
 
     /// <summary>
@@ -139,9 +146,12 @@ public class DictionaryManager
     /// </summary>
     public void Clear()
     {
-        _words.Clear();
-        _ignoredWords.Clear();
-        _loadedDictionaries.Clear();
+        lock (_lock)
+        {
+            _words.Clear();
+            _ignoredWords.Clear();
+            _loadedDictionaries.Clear();
+        }
     }
 
     /// <summary>
@@ -149,13 +159,16 @@ public class DictionaryManager
     /// </summary>
     public CustomDictionary CreateDictionary(string source, string? description = null)
     {
-        return new CustomDictionary
+        lock (_lock)
         {
-            Source = source,
-            Description = description,
-            Words = _words.OrderBy(w => w, StringComparer.OrdinalIgnoreCase).ToList(),
-            IgnoredWords = _ignoredWords.OrderBy(w => w, StringComparer.OrdinalIgnoreCase).ToList()
-        };
+            return new CustomDictionary
+            {
+                Source = source,
+                Description = description,
+                Words = _words.OrderBy(w => w, StringComparer.OrdinalIgnoreCase).ToList(),
+                IgnoredWords = _ignoredWords.OrderBy(w => w, StringComparer.OrdinalIgnoreCase).ToList()
+            };
+        }
     }
 
     /// <summary>
@@ -182,7 +195,9 @@ public class DictionaryManager
     /// </summary>
     public IEnumerable<string> GetAllWords()
     {
-        return _words.OrderBy(w => w, StringComparer.OrdinalIgnoreCase);
+        // Materialize the snapshot under the lock; callers enumerate the returned list freely.
+        lock (_lock)
+            return _words.OrderBy(w => w, StringComparer.OrdinalIgnoreCase).ToList();
     }
 
     /// <summary>
@@ -190,6 +205,7 @@ public class DictionaryManager
     /// </summary>
     public IEnumerable<string> GetIgnoredWords()
     {
-        return _ignoredWords.OrderBy(w => w, StringComparer.OrdinalIgnoreCase);
+        lock (_lock)
+            return _ignoredWords.OrderBy(w => w, StringComparer.OrdinalIgnoreCase).ToList();
     }
 }

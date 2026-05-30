@@ -229,4 +229,62 @@ public class DictionaryManagerTests
         Assert.Equal(3, manager.WordCount); // Aribeth, Fenthick, Desther
         Assert.Equal(2, manager.DictionaryCount);
     }
+
+    [Fact]
+    public void ConcurrentAddAndRead_DoesNotThrowOrCorrupt()
+    {
+        // Finding #5: HashSet is documented unsafe for concurrent write+read.
+        // Hammer AddWord from several writers while readers call IsKnown / GetAllWords / WordCount.
+        var manager = new DictionaryManager();
+        const int writers = 4;
+        const int perWriter = 2000;
+
+        var exceptions = new System.Collections.Concurrent.ConcurrentQueue<Exception>();
+        using var start = new ManualResetEventSlim(false);
+        var tasks = new List<Task>();
+
+        for (int w = 0; w < writers; w++)
+        {
+            int writerId = w;
+            tasks.Add(Task.Run(() =>
+            {
+                start.Wait();
+                try
+                {
+                    for (int i = 0; i < perWriter; i++)
+                        manager.AddWord($"word_{writerId}_{i}");
+                }
+                catch (Exception ex) { exceptions.Enqueue(ex); }
+            }));
+        }
+
+        // Readers
+        for (int r = 0; r < 2; r++)
+        {
+            tasks.Add(Task.Run(() =>
+            {
+                start.Wait();
+                try
+                {
+                    for (int i = 0; i < perWriter * writers; i++)
+                    {
+                        _ = manager.IsKnown($"word_0_{i % perWriter}");
+                        if (i % 256 == 0)
+                        {
+                            _ = manager.WordCount;
+                            foreach (var _ in manager.GetAllWords()) { /* force enumeration */ }
+                        }
+                    }
+                }
+                catch (Exception ex) { exceptions.Enqueue(ex); }
+            }));
+        }
+
+        start.Set();
+        Task.WaitAll(tasks.ToArray());
+
+        Assert.True(exceptions.IsEmpty,
+            $"Concurrent access threw: {string.Join("; ", exceptions.Select(e => e.GetType().Name + ": " + e.Message))}");
+        Assert.Equal(writers * perWriter, manager.WordCount);
+    }
 }

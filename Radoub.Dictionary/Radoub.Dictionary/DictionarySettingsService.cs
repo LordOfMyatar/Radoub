@@ -48,6 +48,12 @@ public class DictionarySettingsService
     /// </summary>
     public event EventHandler<bool>? SpellCheckEnabledChanged;
 
+    // Settings setters are typically called on the UI thread, while consumers
+    // (e.g. SpellCheckService) respond by awaiting a SemaphoreSlim-guarded reload.
+    // Dispatching event invocations off the caller's thread keeps a synchronous setter
+    // call from re-entering a consumer that is mid-reload (Finding #4).
+    private static void RaiseOffThread(Action raise) => Task.Run(raise);
+
     private DictionarySettingsService()
     {
         var userDictPath = DictionaryDiscovery.GetDefaultUserDictionaryPath();
@@ -109,7 +115,9 @@ public class DictionarySettingsService
             {
                 _settings.PrimaryLanguage = value;
                 SaveSettings();
-                PrimaryLanguageChanged?.Invoke(this, value);
+                var handler = PrimaryLanguageChanged;
+                if (handler != null)
+                    RaiseOffThread(() => handler(this, value));
             }
         }
     }
@@ -126,7 +134,9 @@ public class DictionarySettingsService
             {
                 _settings.SpellCheckEnabled = value;
                 SaveSettings();
-                SpellCheckEnabledChanged?.Invoke(this, value);
+                var handler = SpellCheckEnabledChanged;
+                if (handler != null)
+                    RaiseOffThread(() => handler(this, value));
             }
         }
     }
@@ -163,7 +173,9 @@ public class DictionarySettingsService
         if (changed)
         {
             SaveSettings();
-            CustomDictionaryToggled?.Invoke(this, new DictionaryToggleEventArgs(dictionaryId, enabled));
+            var handler = CustomDictionaryToggled;
+            if (handler != null)
+                RaiseOffThread(() => handler(this, new DictionaryToggleEventArgs(dictionaryId, enabled)));
         }
     }
 

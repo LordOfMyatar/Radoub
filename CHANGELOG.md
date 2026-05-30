@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.Dictionary 0.2.4-alpha] - 2026-05-29
+**Branch**: `radoub/issue-2314` | **PR**: #2315
+
+### Fix: Color-token regex hole, CheckText O(N²), thread-unsafe DictionaryManager (#2264)
+
+- Spell-check now ignores NWN `<cRGB>` color tokens even when a raw channel byte is `0x3E` (`>`), `CheckText` is linear in token count, and `DictionaryManager` is thread-safe.
+
+---
+
 ## [Radoub.Dictionary 0.2.3-alpha] - 2026-05-29
 **Branch**: `radoub/issue-2263` | **PR**: #2308
 
