@@ -72,8 +72,8 @@ public partial class App : Application
             ApplyFontSettings();
         }
 
-        // Subscribe to settings changes
-        SettingsService.Instance.PropertyChanged += OnSettingsPropertyChanged;
+        // Subscribe to shared settings changes (font size is the global SharedFontSize, #2152)
+        Radoub.Formats.Settings.RadoubSettings.Instance.PropertyChanged += OnSharedSettingsPropertyChanged;
 
         // Re-apply font settings whenever theme finishes applying (theme resets font sizes
         // via Dispatcher.Post, so our inline ApplyFontSettings above runs too early)
@@ -108,7 +108,7 @@ public partial class App : Application
             // Unsubscribe from singleton events and dispose services on app exit (#1282, #1292)
             desktop.Exit += (_, _) =>
             {
-                SettingsService.Instance.PropertyChanged -= OnSettingsPropertyChanged;
+                Radoub.Formats.Settings.RadoubSettings.Instance.PropertyChanged -= OnSharedSettingsPropertyChanged;
                 UpdateService.Instance.Dispose();
             };
         }
