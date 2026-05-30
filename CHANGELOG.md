@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Radoub.UI 0.1.64-alpha] - 2026-05-29
-**Branch**: `radoub/issue-2320` | **PR**: #TBD
+**Branch**: `radoub/issue-2320` | **PR**: #2322
 
 ### Feat: Copy and Rename in file browser right-click menu (#2320)
 
