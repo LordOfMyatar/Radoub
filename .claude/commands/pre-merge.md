@@ -271,7 +271,7 @@ The `/release` command reads this file to generate GitHub release notes.
 |------|---------|----------|
 | Parley | TBD | Beta |
 | Manifest | TBD | Beta |
-| Fence | TBD | Alpha |
+| Fence | TBD | Beta |
 | Trebuchet | TBD | Alpha |
 | Quartermaster | TBD | Alpha |
 
