@@ -316,4 +316,81 @@ public class SpellCheckerTests
         // Should not throw on second dispose
         checker.Dispose();
     }
+
+    #region Color-token exclusion (#2264)
+
+    // Builds an NWN color tag: "<c" + 3 raw RGB bytes + ">".
+    private static string ColorTag(byte r, byte g, byte b)
+        => "<c" + (char)r + (char)g + (char)b + ">";
+
+    [Fact]
+    public void CheckText_ColorTokenWithGtByteInRed_DoesNotLeakTagBytes()
+    {
+        // R byte = 0x3E ('>') — the legacy <[^>]+> token regex truncates the open tag here,
+        // leaking the remaining tag bytes (G, B) as plain text and spell-checking them.
+        var manager = new DictionaryManager();
+        manager.AddWord("Hello");
+        var checker = new SpellChecker(manager);
+
+        var text = ColorTag(0x3E, 0xFF, 0xFF) + "Hello" + "</c>";
+        var errors = checker.CheckText(text).ToList();
+
+        // The colored CONTENT "Hello" is valid; the raw tag bytes must not surface as errors.
+        Assert.Empty(errors);
+    }
+
+    [Fact]
+    public void CheckText_ColorTokenWithGtByteInGreen_DoesNotLeakTagBytes()
+    {
+        var manager = new DictionaryManager();
+        manager.AddWord("Hello");
+        var checker = new SpellChecker(manager);
+
+        var text = ColorTag(0xFE, 0x3E, 0x20) + "Hello" + "</c>";
+        var errors = checker.CheckText(text).ToList();
+
+        Assert.Empty(errors);
+    }
+
+    [Fact]
+    public void CheckText_ColorTokenContent_IsStillSpellChecked()
+    {
+        // Colored content is real display text — a misspelling inside it must still be flagged.
+        var manager = new DictionaryManager();
+        var checker = new SpellChecker(manager);
+
+        var text = ColorTag(0xFE, 0x20, 0x20) + "Neverwinter" + "</c>";
+        var errors = checker.CheckText(text).ToList();
+
+        Assert.Single(errors);
+        Assert.Equal("Neverwinter", errors[0].Word);
+    }
+
+    [Fact]
+    public void CheckText_StandardToken_StillExcluded()
+    {
+        // Regression: standard NWN tokens like <FirstName> are excluded entirely.
+        var manager = new DictionaryManager();
+        manager.AddWord("Hello");
+        var checker = new SpellChecker(manager);
+
+        var errors = checker.CheckText("Hello <FirstName>").ToList();
+
+        Assert.Empty(errors);
+    }
+
+    [Fact]
+    public void CheckText_ColorTokenWithNormalBytes_ContentChecked()
+    {
+        var manager = new DictionaryManager();
+        manager.AddWord("red");
+        var checker = new SpellChecker(manager);
+
+        var text = ColorTag(0xFE, 0x20, 0x20) + "red" + "</c>";
+        var errors = checker.CheckText(text).ToList();
+
+        Assert.Empty(errors);
+    }
+
+    #endregion
 }

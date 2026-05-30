@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
 using Radoub.Dictionary.Models;
+using Radoub.Formats.Logging;
 
 namespace Radoub.Dictionary;
 
@@ -38,6 +39,7 @@ public class DictionaryDiscovery
     };
 
     private readonly string _userDictionaryPath;
+    private readonly object _cacheLock = new();
     private List<DictionaryInfo>? _cachedDictionaries;
 
     /// <summary>
@@ -64,19 +66,24 @@ public class DictionaryDiscovery
     /// <param name="forceRescan">If true, ignores cached results.</param>
     public List<DictionaryInfo> ScanForDictionaries(bool forceRescan = false)
     {
-        if (_cachedDictionaries != null && !forceRescan)
-            return _cachedDictionaries;
+        // Lock so two concurrent callers don't both see a null cache and both rescan
+        // (wasted I/O), and so the cache field is published safely (Finding #7).
+        lock (_cacheLock)
+        {
+            if (_cachedDictionaries != null && !forceRescan)
+                return _cachedDictionaries;
 
-        var dictionaries = new List<DictionaryInfo>();
+            var dictionaries = new List<DictionaryInfo>();
 
-        // Discover bundled dictionaries
-        dictionaries.AddRange(DiscoverBundledDictionaries());
+            // Discover bundled dictionaries
+            dictionaries.AddRange(DiscoverBundledDictionaries());
 
-        // Discover user-installed dictionaries
-        dictionaries.AddRange(DiscoverUserDictionaries());
+            // Discover user-installed dictionaries
+            dictionaries.AddRange(DiscoverUserDictionaries());
 
-        _cachedDictionaries = dictionaries;
-        return dictionaries;
+            _cachedDictionaries = dictionaries;
+            return dictionaries;
+        }
     }
 
     /// <summary>
@@ -108,7 +115,10 @@ public class DictionaryDiscovery
     /// </summary>
     public void ClearCache()
     {
-        _cachedDictionaries = null;
+        lock (_cacheLock)
+        {
+            _cachedDictionaries = null;
+        }
     }
 
     private List<DictionaryInfo> DiscoverBundledDictionaries()
@@ -254,9 +264,13 @@ public class DictionaryDiscovery
                 WordCount = dict.Words.Count + (dict.Entries?.Count ?? 0)
             };
         }
-        catch
+        catch (Exception ex)
         {
-            // Invalid JSON or not a dictionary file - skip it
+            // Invalid JSON or not a dictionary file — skip it, but log so a user whose custom
+            // dictionary silently failed to appear has a breadcrumb (Finding #6).
+            UnifiedLogger.Log(LogLevel.DEBUG,
+                $"Skipped malformed dictionary file '{Path.GetFileName(filePath)}': {ex.Message}",
+                "DictionaryDiscovery", "Dictionary");
             return null;
         }
     }

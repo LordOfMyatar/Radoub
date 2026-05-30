@@ -129,12 +129,15 @@ public class UserDictionaryService
 
         if (added)
         {
-            WordAdded?.Invoke(this, trimmedWord);
-
+            // Save first, then notify. Notifying before the save lets a handler that calls back
+            // into AddWord kick off a nested Save that races the one below (Finding #3). Snapshot
+            // the delegate so a handler subscribing/unsubscribing mid-fire can't tear the list.
             if (autoSave)
             {
                 Save();
             }
+
+            WordAdded?.Invoke(this, trimmedWord);
         }
     }
 
@@ -162,14 +165,19 @@ public class UserDictionaryService
             }
         }
 
-        foreach (var added in addedWords)
-        {
-            WordAdded?.Invoke(this, added);
-        }
-
+        // Save first, then notify (see AddWord — avoids a handler triggering a nested racing Save).
         if (anyAdded && autoSave)
         {
             Save();
+        }
+
+        var handler = WordAdded;
+        if (handler != null)
+        {
+            foreach (var added in addedWords)
+            {
+                handler(this, added);
+            }
         }
     }
 

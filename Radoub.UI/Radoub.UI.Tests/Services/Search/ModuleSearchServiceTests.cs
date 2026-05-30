@@ -132,17 +132,117 @@ public class ModuleSearchServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task ScanModule_IgnoresNonGffFiles()
+    public async Task ScanModule_IgnoresUnsupportedExtensions()
     {
         WriteDlgFile("test.dlg", "Searchable text.");
         File.WriteAllText(Path.Combine(_tempDir, "readme.txt"), "Searchable text.");
-        File.WriteAllText(Path.Combine(_tempDir, "script.nss"), "Searchable text.");
 
         var criteria = new SearchCriteria { Pattern = "Searchable" };
         var results = await _service.ScanModuleAsync(_tempDir, criteria);
 
-        // Only the DLG file should be scanned (txt and nss are not GFF)
+        // .txt is not a searchable extension; only the DLG is scanned.
         Assert.Equal(1, results.TotalFilesScanned);
+    }
+
+    #endregion
+
+    #region ScanModuleAsync — NSS Content Search (#2314)
+
+    private string WriteNssFile(string name, string source)
+    {
+        var filePath = Path.Combine(_tempDir, name);
+        File.WriteAllText(filePath, source);
+        return filePath;
+    }
+
+    [Fact]
+    public async Task ScanModule_SearchesNssContent()
+    {
+        WriteNssFile("door_open.nss", "void main()\n{\n    ActionOpenDoor(GetObjectByTag(\"front_gate\"));\n}\n");
+
+        var criteria = new SearchCriteria { Pattern = "front_gate" };
+        var results = await _service.ScanModuleAsync(_tempDir, criteria);
+
+        Assert.Equal(1, results.TotalFilesScanned);
+        Assert.Equal(1, results.FilesWithMatches);
+        var file = Assert.Single(results.Files);
+        Assert.Equal(ResourceTypes.Nss, file.ResourceType);
+        Assert.Equal("nss", file.Extension);
+        Assert.True(file.MatchCount >= 1);
+    }
+
+    [Fact]
+    public async Task ScanModule_NssContent_HonorsFileTypeFilter_Excluded()
+    {
+        WriteNssFile("door_open.nss", "ActionOpenDoor(GetObjectByTag(\"front_gate\"));");
+
+        // NSS not in the filter — must not be searched.
+        var criteria = new SearchCriteria
+        {
+            Pattern = "front_gate",
+            FileTypeFilter = new[] { ResourceTypes.Dlg }
+        };
+        var results = await _service.ScanModuleAsync(_tempDir, criteria);
+
+        Assert.Equal(0, results.TotalFilesScanned);
+        Assert.Equal(0, results.TotalMatches);
+    }
+
+    [Fact]
+    public async Task ScanModule_NssContent_HonorsFileTypeFilter_Included()
+    {
+        WriteNssFile("door_open.nss", "ActionOpenDoor(GetObjectByTag(\"front_gate\"));");
+
+        var criteria = new SearchCriteria
+        {
+            Pattern = "front_gate",
+            FileTypeFilter = new[] { ResourceTypes.Nss }
+        };
+        var results = await _service.ScanModuleAsync(_tempDir, criteria);
+
+        Assert.Equal(1, results.TotalFilesScanned);
+        Assert.Equal(1, results.FilesWithMatches);
+    }
+
+    [Fact]
+    public async Task ScanModule_NssContent_ReportsLineNumber()
+    {
+        WriteNssFile("greet.nss", "void main()\n{\n    SpeakString(\"Welcome traveller\");\n}\n");
+
+        var criteria = new SearchCriteria { Pattern = "Welcome traveller" };
+        var results = await _service.ScanModuleAsync(_tempDir, criteria);
+
+        var file = Assert.Single(results.Files);
+        var match = Assert.Single(file.Matches);
+        Assert.Equal("Welcome traveller", match.MatchedText);
+        // Match is on line 3.
+        Assert.Equal("Line 3", match.Location?.ToString());
+    }
+
+    [Fact]
+    public async Task ScanModule_NssContent_NoMatch_NotReported()
+    {
+        WriteNssFile("idle.nss", "void main() { }");
+
+        var criteria = new SearchCriteria { Pattern = "front_gate" };
+        var results = await _service.ScanModuleAsync(_tempDir, criteria);
+
+        Assert.Equal(1, results.TotalFilesScanned);
+        Assert.Equal(0, results.FilesWithMatches);
+    }
+
+    [Fact]
+    public void SearchSingleFile_NssContent_FindsMatches()
+    {
+        var filePath = WriteNssFile("script.nss", "AssignCommand(oPC, ActionSpeakString(\"hello\"));");
+        var criteria = new SearchCriteria { Pattern = "ActionSpeakString" };
+
+        var result = _service.SearchSingleFile(filePath, criteria);
+
+        Assert.True(result.MatchCount >= 1);
+        Assert.Equal("nss", result.Extension);
+        Assert.Equal(ResourceTypes.Nss, result.ResourceType);
+        Assert.False(result.HadParseError);
     }
 
     #endregion
