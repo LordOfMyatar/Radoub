@@ -101,6 +101,76 @@ public class FileDeleteRequestedEventArgs : EventArgs
 }
 
 /// <summary>
+/// Event args raised when the user asks to rename the file that is CURRENTLY
+/// OPEN in the editor (#2320). The panel has already prompted for and validated
+/// the new name (<see cref="NewPath"/>) but does NOT move the file — renaming an
+/// open file is entangled with the host's session lock and the editor's
+/// in-memory ResRef, which the shared panel can't see. The host runs its own
+/// save → release-lock → move → update-ResRef → reacquire-lock → reload, then
+/// refreshes the browser.
+/// </summary>
+public class FileRenameRequestedEventArgs : EventArgs
+{
+    /// <summary>The entry the user asked to rename (the open file).</summary>
+    public FileBrowserEntry Entry { get; }
+
+    /// <summary>Current full path of the open file (the move source).</summary>
+    public string OldPath { get; }
+
+    /// <summary>Validated full destination path the host should move the file to.</summary>
+    public string NewPath { get; }
+
+    public FileRenameRequestedEventArgs(FileBrowserEntry entry, string oldPath, string newPath)
+    {
+        Entry = entry;
+        OldPath = oldPath;
+        NewPath = newPath;
+    }
+}
+
+/// <summary>
+/// Event args raised AFTER the panel has renamed a file on disk and refreshed
+/// the browser (#2320). The host uses this to fix editor state — if the renamed
+/// file was the one open in the editor, update its current-file path — and to
+/// update the status bar. The panel has already done the disk move and the
+/// browser refresh; the host must NOT repeat those.
+/// </summary>
+public class FileRenamedEventArgs : EventArgs
+{
+    /// <summary>Full path of the file before the rename.</summary>
+    public string OldPath { get; }
+
+    /// <summary>Full path of the file after the rename.</summary>
+    public string NewPath { get; }
+
+    public FileRenamedEventArgs(string oldPath, string newPath)
+    {
+        OldPath = oldPath;
+        NewPath = newPath;
+    }
+}
+
+/// <summary>
+/// Event args raised AFTER the panel has copied a file on disk and refreshed
+/// the browser (#2320). The host uses this for status-bar feedback. The panel
+/// has already done the disk copy and the browser refresh.
+/// </summary>
+public class FileCopiedEventArgs : EventArgs
+{
+    /// <summary>Full path of the source file that was copied.</summary>
+    public string SourcePath { get; }
+
+    /// <summary>Full path of the newly created copy.</summary>
+    public string NewPath { get; }
+
+    public FileCopiedEventArgs(string sourcePath, string newPath)
+    {
+        SourcePath = sourcePath;
+        NewPath = newPath;
+    }
+}
+
+/// <summary>
 /// Interface for embeddable file browser panels.
 /// Implemented by tool-specific panels (DialogBrowserPanel, StoreBrowserPanel, etc.)
 /// </summary>

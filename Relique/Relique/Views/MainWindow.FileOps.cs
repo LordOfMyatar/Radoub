@@ -14,6 +14,49 @@ public partial class MainWindow
 {
     // --- File Operations ---
 
+    /// <summary>
+    /// Rename the currently-open item to an already-validated path (the shared
+    /// browser menu prompted + validated; #2320). Lock-aware: save-if-dirty →
+    /// release lock(old) → move → reopen(new) which reacquires the lock, rebinds
+    /// the editor, and syncs the in-memory ResRef to the new filename.
+    /// </summary>
+    private async Task RenameOpenFileAsync(string oldPath, string newPath)
+    {
+        if (_currentItem == null || string.IsNullOrEmpty(_currentFilePath))
+            return;
+        if (!string.Equals(_currentFilePath, oldPath, System.StringComparison.OrdinalIgnoreCase))
+            return; // selection changed underneath us
+
+        try
+        {
+            if (_documentState.IsDirty)
+                await SaveCurrentFileAsync();
+
+            // Release the lock before moving; OpenFileAsync reacquires on the new path.
+            Radoub.UI.Services.FileSessionLockService.ReleaseLock(oldPath);
+            _documentState.IsReadOnly = false;
+
+            File.Move(oldPath, newPath);
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Renamed open item: {UnifiedLogger.SanitizePath(oldPath)} -> {UnifiedLogger.SanitizePath(newPath)}");
+
+            // Reopen from the new path: reacquires lock, rebinds editor, and
+            // OpenFileAsync syncs TemplateResRef to the new filename on read.
+            await OpenFileAsync(newPath);
+
+            ItemBrowserPanel.CurrentFilePath = newPath;
+            ItemBrowserPanel.RemoveEntryByFilePath(oldPath);
+            await ItemBrowserPanel.RefreshAsync();
+
+            UpdateStatus($"Renamed to: {Path.GetFileName(newPath)}");
+        }
+        catch (IOException ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to rename open item: {ex.Message}");
+            UpdateStatus($"Rename failed: {ex.Message}");
+        }
+    }
+
     private async Task<bool> OpenFileAsync(string filePath)
     {
         // Hold the previous path's lock until the new file is successfully read.

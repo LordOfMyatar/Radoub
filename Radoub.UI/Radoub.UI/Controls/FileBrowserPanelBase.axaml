@@ -81,6 +81,13 @@
                           Margin="4,0,4,4">
                     <DataGrid.ContextMenu>
                         <ContextMenu x:Name="FileListContextMenu">
+                            <MenuItem x:Name="CopyMenuItem"
+                                      Header="Copy..."
+                                      Click="OnCopyMenuItemClick"/>
+                            <MenuItem x:Name="RenameMenuItem"
+                                      Header="Rename..."
+                                      Click="OnRenameMenuItemClick"/>
+                            <Separator x:Name="FileOpsSeparator"/>
                             <MenuItem x:Name="DeleteMenuItem"
                                       Header="Delete"
                                       Click="OnDeleteMenuItemClick"/>

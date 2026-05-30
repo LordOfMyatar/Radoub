@@ -540,6 +540,61 @@ public partial class MainWindow
     }
 
     /// <summary>
+    /// Rename the currently-open store to an already-validated path (the shared
+    /// browser menu prompted + validated; #2320). Lock-aware: save-if-dirty →
+    /// release lock(old) → move → update ResRef + re-save → reacquire lock(new)
+    /// → refresh browser. Editor state stays bound in place (no reload).
+    /// </summary>
+    private async Task RenameOpenFileAsync(string oldPath, string newPath)
+    {
+        if (_currentStore == null || string.IsNullOrEmpty(_currentFilePath))
+            return;
+        if (!string.Equals(_currentFilePath, oldPath, StringComparison.OrdinalIgnoreCase))
+            return; // selection changed underneath us
+
+        try
+        {
+            if (_isDirty)
+                await SaveFile(oldPath);
+
+            FileSessionLockService.ReleaseLock(oldPath);
+            _documentState.IsReadOnly = false;
+
+            File.Move(oldPath, newPath);
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Renamed open store: {UnifiedLogger.SanitizePath(oldPath)} -> {UnifiedLogger.SanitizePath(newPath)}");
+
+            var newName = Path.GetFileNameWithoutExtension(newPath);
+            _currentStore.ResRef = newName;
+            _currentFilePath = newPath;
+            await SaveFile(newPath); // persist new ResRef
+
+            // Reacquire the session lock on the new path so the editor keeps
+            // ownership and other tools see it as open.
+            FileSessionLockService.AcquireLock(newPath, "Fence");
+
+            StoreResRefBox.Text = newName;
+            UpdateTitle();
+            UpdateRecentFilesMenu();
+
+            var storeBrowserPanel = this.FindControl<StoreBrowserPanel>("StoreBrowserPanel");
+            if (storeBrowserPanel != null)
+            {
+                storeBrowserPanel.CurrentFilePath = newPath;
+                storeBrowserPanel.RemoveEntryByFilePath(oldPath);
+                await storeBrowserPanel.RefreshAsync();
+            }
+
+            UpdateStatusBar($"Renamed to: {Path.GetFileName(newPath)}");
+        }
+        catch (IOException ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to rename open store: {ex.Message}");
+            ShowError($"Could not rename file:\n\n{ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// Renames the current file using a safe save-rename-reload workflow.
     /// </summary>
     private async Task RenameCurrentFileAsync()

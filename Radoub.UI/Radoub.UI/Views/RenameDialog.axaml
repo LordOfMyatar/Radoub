@@ -55,6 +55,7 @@
 
         <!-- Warning about references -->
         <Border Grid.Row="4"
+                x:Name="WarningBorder"
                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                 BorderBrush="{DynamicResource ThemeWarning}"
                 BorderThickness="1"
@@ -63,7 +64,8 @@
                 Margin="0,0,0,10">
             <StackPanel>
                 <TextBlock Text="⚠ Important:" FontWeight="SemiBold" Foreground="{DynamicResource ThemeWarning}" Margin="0,0,0,5"/>
-                <TextBlock TextWrapping="Wrap"
+                <TextBlock x:Name="WarningText"
+                           TextWrapping="Wrap"
                            Text="This renames the file only. You must manually update any scripts or triggers that reference this resource in Aurora Toolset."/>
             </StackPanel>
         </Border>

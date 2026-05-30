@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.1.64-alpha] - 2026-05-29
+**Branch**: `radoub/issue-2320` | **PR**: #2322
+
+### Feat: Copy and Rename in file browser right-click menu (#2320)
+
+- Shared `FileBrowserPanelBase` context menu now offers Copy (duplicate to a new ResRef) and Rename (rename the on-disk file) alongside Delete, with Aurora 16-char filename validation and browser-row refresh. Every tool's file browser gains both at once.
+
+---
+
 ## [Radoub.UI 0.1.63-alpha] - 2026-05-29
 **Branch**: `quartermaster/issue-1735` | **PR**: #2317
 

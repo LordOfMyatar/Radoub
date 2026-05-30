@@ -312,8 +312,9 @@ Flag if >30 days old and code changed.
 |-------|--------|
 | Privacy scan | ✅/⚠️ |
 | Tech debt | ✅ / ⚠️ Warning (800+) / ⚠️ Tracked (#N) / ⚠️ NEW issue created (#N) |
-| Unit tests | ✅ N passed / ❌ N failed |
+| Unit tests (local, Windows) | ✅ N passed / ❌ N failed |
 | UI tests | ⏭️ Skipped / 🔄 Auto-triggered / ✅ N passed / ❌ N failed |
+| CI checks (incl. Linux) | ✅ All pass / ⏳ In progress / ❌ [N] failed (see Step 7c) |
 
 **UI Test Reason**: [Manual --ui-tests / Auto-detected UI changes / Skipped (no UI changes)]
 **UIFilter**: [filter expression / "all" / N/A]
@@ -348,6 +349,44 @@ If any tech debt issues were created (`gh issue create`) or the PR was edited, r
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".claude/scripts/Refresh-GitHubCache.ps1" -Force
 ```
 
+### Step 7c: Verify CI Checks (catch cross-platform failures)
+
+Local tests only run on Windows. CI also runs the test suite on **ubuntu-latest**, which catches platform-specific bugs the local run cannot — most commonly path-handling tests that assume Windows semantics (`Path.Combine("C:", ...)` is absolute on Windows but **relative** on Linux, so `Path.GetFullPath` resolves it against the runner CWD and string-equality assertions diverge). The Linux/Windows test split is exactly the gap that slipped a green local pre-merge into a red PR.
+
+After marking the PR ready, check the live CI check status:
+
+```bash
+gh pr checks [number]
+```
+
+**Interpret the result**:
+
+| State | Action |
+|-------|--------|
+| All checks `pass` | ✅ Report "CI green" in the checklist. |
+| Any check `pending`/`in progress` | ⏳ CI still running. Report "CI in progress — re-run `gh pr checks [number]` before merge." Do NOT claim ready. |
+| Any check `fail` | ❌ **Block.** Pull the failing job's log and fix before declaring ready (see below). |
+
+**On failure**, get the real assertion (not the runner's summary line — the `##[error]Unable to process file command 'env'` / `Invalid format` annotations are often a downstream symptom, not the cause):
+
+```bash
+# List failing checks and their run/job URLs
+gh pr checks [number]
+
+# Pull only the failed steps for the job ID from the URL
+gh run view --job [jobId] --log-failed 2>&1 | grep -iE "\[FAIL\]|Assert|Expected:|Actual:|error CS|\.cs\(" | head -30
+```
+
+Common Linux-only failure: a unit test asserts a literal Windows path. Fix the **test** (root paths at `Path.GetTempPath()` and compute the expected value with the same `Path.GetFullPath` the code under test uses) — not the production code, which is usually correct. Re-run local tests, push, and re-check `gh pr checks` until green.
+
+**Report in the checklist**:
+
+```
+| CI checks (incl. Linux) | ✅ All pass / ⏳ In progress / ❌ [N] failed — [job], fix before merge |
+```
+
+A pre-merge is only "Ready" when CI is green (or explicitly deferred by the user). Green-local + unknown-CI is **not** ready.
+
 ## Test Script Reference
 
 ```powershell
@@ -368,3 +407,4 @@ powershell -ExecutionPolicy Bypass -File "d:\LOM\workspace\Radoub\Radoub.Integra
 - Shared library changes → include shared tests
 - Wiki updates done separately with `/documentation`
 - **Hands-off keyboard during UI tests** - focus stealing can cause failures
+- **CI runs on Linux too** (Step 7c) - local pre-merge only runs Windows. Always check `gh pr checks` after marking ready; never claim "Ready" on green-local + unknown-CI. The classic miss is a test asserting a Windows-literal path that fails under Linux `Path.GetFullPath`.

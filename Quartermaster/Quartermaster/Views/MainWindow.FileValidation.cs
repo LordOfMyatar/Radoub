@@ -7,6 +7,7 @@ using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
 using Radoub.UI.Controls;
+using Radoub.UI.Services;
 using Radoub.UI.Views;
 using DialogHelper = Quartermaster.Views.Helpers.DialogHelper;
 
@@ -117,6 +118,72 @@ public partial class MainWindow
     private async void OnRenameRequested(object? sender, EventArgs e)
     {
         await RenameCurrentFileAsync();
+    }
+
+    /// <summary>
+    /// Rename the currently-open creature file to an already-validated path
+    /// (the shared browser menu prompted + validated; #2320). Lock-aware and
+    /// in-place: save-if-dirty → release lock(old) → move → update ResRef +
+    /// path → re-save → reacquire lock(new) → refresh browser. The creature is
+    /// already in memory and correct, so we do NOT reload — a full LoadFile
+    /// re-parses the UTC and rebuilds every panel (appearance/feats/spells),
+    /// which caused a visible lag after the dialog closed.
+    /// </summary>
+    private async Task RenameOpenFileAsync(string oldPath, string newPath)
+    {
+        if (_currentCreature == null || string.IsNullOrEmpty(_currentFilePath))
+            return;
+        if (!string.Equals(_currentFilePath, oldPath, StringComparison.OrdinalIgnoreCase))
+            return; // selection changed underneath us
+
+        if (_isBicFile)
+        {
+            DialogHelper.ShowMessageDialog(this, "Cannot Rename",
+                "Player character (BIC) files cannot be renamed this way. Use File > Save As.");
+            return;
+        }
+
+        try
+        {
+            if (_isDirty)
+                await SaveFile();
+
+            // Release the lock on the old path before moving so the sidecar
+            // doesn't orphan; we reacquire on the new path below.
+            FileSessionLockService.ReleaseLock(oldPath);
+            _documentState.IsReadOnly = false;
+
+            File.Move(oldPath, newPath);
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Renamed open file: {UnifiedLogger.SanitizePath(oldPath)} -> {UnifiedLogger.SanitizePath(newPath)}");
+
+            // In-place: point at the new file, sync ResRef to the new filename,
+            // re-save to persist it, then reacquire the session lock.
+            var newName = Path.GetFileNameWithoutExtension(newPath).ToLowerInvariant();
+            _currentFilePath = newPath;
+            _currentCreature.TemplateResRef = newName;
+            await SaveFile();
+            FileSessionLockService.AcquireLock(newPath, "Quartermaster");
+
+            AdvancedPanelContent.UpdateResRefDisplay(newName);
+            UpdateTitle();
+            UpdateRecentFilesMenu();
+
+            var creatureBrowserPanel = this.FindControl<CreatureBrowserPanel>("CreatureBrowserPanel");
+            if (creatureBrowserPanel != null)
+            {
+                creatureBrowserPanel.CurrentFilePath = newPath;
+                creatureBrowserPanel.RemoveEntryByFilePath(oldPath);
+                await creatureBrowserPanel.RefreshAsync();
+            }
+
+            UpdateStatus($"Renamed to: {Path.GetFileName(newPath)}");
+        }
+        catch (IOException ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to rename open file: {ex.Message}");
+            DialogHelper.ShowMessageDialog(this, "Rename Failed", $"Could not rename file:\n\n{ex.Message}");
+        }
     }
 
     /// <summary>

@@ -67,6 +67,23 @@ public partial class MainWindow
             UpdateStatusBar($"Copied to module: {Path.GetFileName(destPath)}");
         };
 
+        // Shared browser Copy/Rename context-menu feedback (#2320). The panel
+        // performs the disk op + refresh for non-open files; we just report it.
+        storeBrowserPanel.FileCopied += (_, args) =>
+        {
+            UpdateStatusBar($"Copied: {Path.GetFileName(args.NewPath)}");
+        };
+        storeBrowserPanel.FileRenamed += (_, args) =>
+        {
+            UpdateStatusBar($"Renamed to: {Path.GetFileName(args.NewPath)}");
+        };
+        // Renaming the OPEN store: base prompted + validated; run lock-aware
+        // save → move → re-save → refresh here (#2320).
+        storeBrowserPanel.FileRenameRequested += async (_, args) =>
+        {
+            await RenameOpenFileAsync(args.OldPath, args.NewPath);
+        };
+
         // Restore panel state from settings
         RestoreStoreBrowserPanelState();
 

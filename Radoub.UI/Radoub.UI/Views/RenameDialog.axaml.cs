@@ -29,31 +29,53 @@ public partial class RenameDialog : Window
     }
 
     /// <summary>
-    /// Shows the rename dialog and returns the new filename if confirmed.
+    /// Shows the rename/copy name dialog and returns the chosen filename if confirmed.
     /// </summary>
     /// <param name="owner">Parent window</param>
     /// <param name="currentName">Current filename without extension</param>
     /// <param name="directory">Directory containing the file</param>
     /// <param name="extension">File extension including dot (e.g., ".dlg")</param>
+    /// <param name="actionLabel">Confirm-button label and dialog verb. "Rename"
+    /// (default) or "Copy" — the Copy flow reuses this validated-input dialog
+    /// (#2320) so both actions share one source of name validation.</param>
+    /// <param name="allowUnchanged">When true (Copy), an unchanged-from-source
+    /// name is permitted as long as no duplicate file exists; when false
+    /// (Rename), an unchanged name is rejected as a no-op.</param>
     /// <returns>New filename without extension, or null if cancelled</returns>
-    public static async Task<string?> ShowAsync(Window owner, string currentName, string directory, string extension)
+    public static async Task<string?> ShowAsync(
+        Window owner, string currentName, string directory, string extension,
+        string actionLabel = "Rename", bool allowUnchanged = false)
     {
         var dialog = new RenameDialog();
-        dialog.Configure(currentName, directory, extension);
+        dialog.Configure(currentName, directory, extension, actionLabel, allowUnchanged);
         await dialog.ShowDialog(owner);
         return dialog.NewName;
     }
 
-    private void Configure(string currentName, string directory, string extension)
+    private string _actionLabel = "Rename";
+    private bool _allowUnchanged;
+
+    private void Configure(string currentName, string directory, string extension,
+        string actionLabel, bool allowUnchanged)
     {
         _currentName = currentName;
         _directory = directory;
         _extension = extension;
+        _actionLabel = actionLabel;
+        _allowUnchanged = allowUnchanged;
 
-        Title = $"Rename {extension.TrimStart('.')} File";
+        Title = $"{actionLabel} {extension.TrimStart('.')} File";
+        RenameButton.Content = actionLabel;
         CurrentNameBox.Text = currentName;
         NewNameBox.Text = currentName;
         NewNameBox.SelectAll();
+
+        if (allowUnchanged)
+        {
+            // Copy flow: the "you must update references" rename warning doesn't apply.
+            WarningText.Text = "This creates a duplicate file. The copy starts with the " +
+                "same contents as the source; edit it after copying.";
+        }
 
         UpdateValidation();
     }
@@ -93,8 +115,10 @@ public partial class RenameDialog : Window
                 ?? BrushManager.GetDisabledBrush(); // theme-ok: fallback when resource unavailable
         }
 
-        // Check if unchanged
-        if (newName.Equals(_currentName, StringComparison.OrdinalIgnoreCase))
+        // Check if unchanged. For Rename this is a no-op and is rejected.
+        // For Copy (allowUnchanged) the same stem in the same directory still
+        // collides, so let the duplicate-file check below handle it.
+        if (!_allowUnchanged && newName.Equals(_currentName, StringComparison.OrdinalIgnoreCase))
         {
             ShowValidation("Name is unchanged.", isError: false);
             RenameButton.IsEnabled = false;

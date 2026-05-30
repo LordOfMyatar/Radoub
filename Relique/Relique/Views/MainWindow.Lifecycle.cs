@@ -196,6 +196,23 @@ public partial class MainWindow
             UpdateStatus($"Copied to module: {Path.GetFileName(destPath)}");
         };
 
+        // Shared browser Copy/Rename context-menu feedback (#2320). The panel
+        // performs the disk op + refresh for non-open files; we just report it.
+        ItemBrowserPanel.FileCopied += (_, args) =>
+        {
+            UpdateStatus($"Copied: {Path.GetFileName(args.NewPath)}");
+        };
+        ItemBrowserPanel.FileRenamed += (_, args) =>
+        {
+            UpdateStatus($"Renamed to: {Path.GetFileName(args.NewPath)}");
+        };
+        // Renaming the OPEN item: base prompted + validated; run lock-aware
+        // save → move → reopen here (#2320).
+        ItemBrowserPanel.FileRenameRequested += async (_, args) =>
+        {
+            await RenameOpenFileAsync(args.OldPath, args.NewPath);
+        };
+
         UpdateItemBrowserMenuState();
         UnifiedLogger.LogUI(LogLevel.INFO, "ItemBrowserPanel initialized");
     }
