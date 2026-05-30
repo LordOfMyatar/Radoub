@@ -112,7 +112,7 @@ public class ToolLauncherService
                 Name = "Fence",
                 Description = "Merchant Editor",
                 FileTypes = ".utm",
-                Maturity = ToolMaturity.Alpha
+                Maturity = ToolMaturity.Beta
             },
             new ToolInfo
             {
