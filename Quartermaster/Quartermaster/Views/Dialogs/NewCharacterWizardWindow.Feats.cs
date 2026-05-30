@@ -62,12 +62,20 @@ public partial class NewCharacterWizardWindow
         {
             string name;
             FeatCategory category;
+            List<int> applicableSubtypes = new();
             if (group.IsMasterFeat)
             {
+                // Drop subtypes the character is structurally barred from — e.g. Skill Focus
+                // for a non-class skill, Spell Focus for a non-caster (#2096).
+                applicableSubtypes = group.SubtypeIds
+                    .Where(id => _displayService.Feats.IsSubtypeStructurallyApplicable(_tempCreature, id))
+                    .ToList();
+                if (applicableSubtypes.Count == 0) continue;
+
                 // group.FeatId is a masterfeats.2da row — look up via GetMasterFeatName
                 name = _displayService.Feats.GetMasterFeatName(group.FeatId);
                 // Category comes from a child feat (all subtypes share the same category)
-                category = _displayService.Feats.GetFeatCategory(group.SubtypeIds[0]);
+                category = _displayService.Feats.GetFeatCategory(applicableSubtypes[0]);
             }
             else
             {
@@ -85,7 +93,7 @@ public partial class NewCharacterWizardWindow
                 MeetsPrereqs = true,
                 SourceLabel = "",
                 IsMasterFeat = group.IsMasterFeat,
-                SubtypeIds = group.IsMasterFeat ? group.SubtypeIds.ToList() : new List<int>()
+                SubtypeIds = group.IsMasterFeat ? applicableSubtypes : new List<int>()
             });
         }
 

@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.36.7-alpha] - 2026-05-30
+**Branch**: `quartermaster/issue-2220` | **PR**: #2326
+
+### Fix: Font-size slider now propagates to all tools (#2152)
+
+- The font-size slider is now an absolute point size (8–32) bound directly to the shared `SharedFontSize` setting instead of a Trebuchet-local percent that other tools never read. Combined with the Radoub.UI ThemeManager fix, changing the slider and relaunching a tool now resizes its text.
+
+---
+
 ## [1.36.6-alpha] - 2026-05-29
 **Branch**: `trebuchet/issue-2248` | **PR**: #2312
 

@@ -163,12 +163,19 @@ public partial class LevelUpWizardWindow
                 var masterName = _displayService.Feats.GetMasterFeatName(group.FeatId);
                 if (string.IsNullOrEmpty(masterName)) continue;
 
+                // Drop subtypes the character is structurally barred from — e.g. Skill Focus
+                // for a non-class skill, Spell Focus for a non-caster (#2096).
+                var applicableSubtypes = group.SubtypeIds
+                    .Where(id => _displayService.Feats.IsSubtypeStructurallyApplicable(_creature, id))
+                    .ToList();
+                if (applicableSubtypes.Count == 0) continue;
+
                 // Master row: aggregate selectability from children. A master is "selectable"
                 // if at least one subtype is selectable under the current validation level.
                 bool anySelectable = false;
                 FeatCategory masterCategory = FeatCategory.Other;
                 bool sampleIsClassFeat = false;
-                foreach (var childId in group.SubtypeIds)
+                foreach (var childId in applicableSubtypes)
                 {
                     var childPrereq = _displayService.Feats.CheckFeatPrerequisites(
                         _creature, childId, currentFeats,
@@ -198,7 +205,7 @@ public partial class LevelUpWizardWindow
                     IsClassFeat = sampleIsClassFeat,
                     CanSelect = anySelectable,
                     IsMasterFeat = true,
-                    SubtypeIds = group.SubtypeIds.ToList()
+                    SubtypeIds = applicableSubtypes
                 });
                 continue;
             }

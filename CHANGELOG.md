@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.1.65-alpha] - 2026-05-30
+**Branch**: `quartermaster/issue-2220` | **PR**: #2326
+
+### Fix: Trebuchet global font-size slider not propagating to tools (#2152)
+
+- All bundled theme JSONs hardcode `fonts.size=14`, so `ThemeManager.ApplyFonts` reset the global font size to the theme default on every theme apply. `RadoubSettings.SharedFontSize` (Trebuchet slider) is now the sole authority for global font size; theme `fonts.size` is a fallback only when no shared value is set. Applies to all tools.
+
+---
+
 ## [Radoub.UI 0.1.64-alpha] - 2026-05-29
 **Branch**: `radoub/issue-2320` | **PR**: #2322
 

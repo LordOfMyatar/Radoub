@@ -117,13 +117,13 @@
                                     Orientation="Horizontal"
                                     Spacing="8"
                                     Margin="0,8,0,0">
-                            <Slider Value="{Binding FontSizeScale}"
-                                    Minimum="0.8"
-                                    Maximum="1.5"
-                                    TickFrequency="0.1"
+                            <Slider Value="{Binding FontSizePoints}"
+                                    Minimum="8"
+                                    Maximum="32"
+                                    TickFrequency="1"
                                     IsSnapToTickEnabled="True"
                                     Width="200"/>
-                            <TextBlock Text="{Binding FontSizePercentText}"
+                            <TextBlock Text="{Binding FontSizePointsText}"
                                        VerticalAlignment="Center"
                                        Width="50"/>
                         </StackPanel>

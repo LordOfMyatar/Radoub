@@ -43,9 +43,6 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
     protected override double DefaultWindowWidth => 900;
     protected override double DefaultWindowHeight => 600;
 
-    // UI settings
-    private double _fontSizeScale = 1.0;
-
     // Recent modules (Trebuchet tracks modules, not individual files)
     private const int DefaultMaxRecentModules = 10;
     private List<string> _recentModules = new();
@@ -77,13 +74,6 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
     protected override void OnLoggingLevelChanged(LogLevel level)
     {
         RadoubSettings.Instance.SharedLogLevel = level;
-    }
-
-    // UI properties
-    public double FontSizeScale
-    {
-        get => _fontSizeScale;
-        set { if (SetProperty(ref _fontSizeScale, Math.Max(0.8, Math.Min(1.5, value)))) SaveSettings(); }
     }
 
     // Recent Modules
@@ -175,8 +165,6 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
 
     protected override void LoadToolSettings(SettingsData settings)
     {
-        _fontSizeScale = Math.Max(0.8, Math.Min(1.5, settings.FontSizeScale));
-
         // Load recent modules
         _recentModules = PathHelper.ExpandPaths(settings.RecentModules ?? new List<string>()).ToList();
         _maxRecentModules = settings.MaxRecentModules > 0 && settings.MaxRecentModules <= 20
@@ -200,7 +188,6 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
 
     protected override void SaveToolSettings(SettingsData settings)
     {
-        settings.FontSizeScale = FontSizeScale;
         settings.RecentModules = PathHelper.ContractPaths(_recentModules).ToList();
         settings.MaxRecentModules = MaxRecentModules;
         settings.CompileScriptsEnabled = CompileScriptsEnabled;
@@ -212,8 +199,6 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
 
     public class SettingsData : BaseSettingsData
     {
-        public double FontSizeScale { get; set; } = 1.0;
-
         public List<string> RecentModules { get; set; } = new();
         public int MaxRecentModules { get; set; } = DefaultMaxRecentModules;
 

@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using Radoub.Formats.Utc;
 
 namespace Quartermaster.Services;
 
@@ -120,5 +122,85 @@ public partial class FeatService
         }
 
         return groups;
+    }
+
+    /// <summary>
+    /// True if the creature has at least one spellcasting class (SpellGainTable set in classes.2da).
+    /// Used to filter Spell Focus and other caster-only MASTERFEAT subtypes (#2096).
+    /// </summary>
+    public bool HasCasterClass(UtcFile creature)
+    {
+        foreach (var cc in creature.ClassList)
+        {
+            var spellGainTable = _gameDataService.Get2DAValue("classes", cc.Class, "SpellGainTable");
+            if (!string.IsNullOrEmpty(spellGainTable) && spellGainTable != "****")
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Structural applicability of a MASTERFEAT subtype to a creature, independent of
+    /// validation level (#2096). Filters subtypes the character is fundamentally barred from
+    /// regardless of strictness:
+    ///   - REQSKILL set: the governed skill must be available to the creature — i.e. it appears
+    ///     in at least one of the creature's class skill tables (as a class OR cross-class skill),
+    ///     or is usable by all classes. Skill Focus can be taken for cross-class skills, so the
+    ///     gate is availability, not class-skill status. Only skills no class can train at all
+    ///     (e.g. Use Magic Device for a Fighter) are barred. Multiclass widens availability.
+    ///   - MINSPELLLVL &gt; 0: the creature must have a spellcasting class (Spell Focus subtypes).
+    /// Returns true when no structural gate applies.
+    /// </summary>
+    public bool IsSubtypeStructurallyApplicable(UtcFile creature, int subtypeFeatId)
+    {
+        // Skill-governed subtype (e.g. Skill Focus): require the skill to be usable by the
+        // creature (class or cross-class). IsSkillAvailable honors all of the creature's
+        // classes, so a multiclass build sees every subtype any of its classes can train.
+        var reqSkillStr = _gameDataService.Get2DAValue("feat", subtypeFeatId, "REQSKILL");
+        if (!string.IsNullOrEmpty(reqSkillStr) && reqSkillStr != "****" &&
+            int.TryParse(reqSkillStr, out int reqSkillId))
+        {
+            if (!_skillService.IsSkillAvailable(creature, reqSkillId))
+                return false;
+        }
+
+        // Caster-gated subtype (e.g. Spell Focus): require a spellcasting class.
+        var minSpellStr = _gameDataService.Get2DAValue("feat", subtypeFeatId, "MINSPELLLVL");
+        if (!string.IsNullOrEmpty(minSpellStr) && minSpellStr != "****" &&
+            int.TryParse(minSpellStr, out int minSpellLvl) && minSpellLvl > 0)
+        {
+            if (!HasCasterClass(creature))
+                return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Decides whether a MASTERFEAT subtype should be offered to the user (#2096).
+    /// Structural gates (class skill / caster class) always apply. In Strict validation
+    /// the subtype's own prerequisites must also be met.
+    /// </summary>
+    public bool IsSubtypeApplicable(
+        UtcFile creature,
+        int subtypeFeatId,
+        ValidationLevel validationLevel,
+        HashSet<ushort> creatureFeats,
+        Func<UtcFile, int> calculateBab,
+        Func<int, string> getClassName,
+        FeatPrereqOverrides? overrides = null)
+    {
+        if (!IsSubtypeStructurallyApplicable(creature, subtypeFeatId))
+            return false;
+
+        if (validationLevel == ValidationLevel.Strict)
+        {
+            var prereq = CheckFeatPrerequisites(
+                creature, subtypeFeatId, creatureFeats, calculateBab, getClassName, overrides);
+            if (!prereq.AllMet)
+                return false;
+        }
+
+        return true;
     }
 }
