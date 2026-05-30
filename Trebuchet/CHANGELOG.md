@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.36.6-alpha] - 2026-05-29
+**Branch**: `trebuchet/issue-2248` | **PR**: #2312
+
+### Fix: Process launch + lifecycle hygiene (#2248)
+
+- Process launches (tool/file, external editor, NWScript compiler) switched to `ProcessStartInfo.ArgumentList` so paths containing quotes parse correctly.
+- DefaultBic save no longer silently overwrites unsaved in-memory IFO edits; timer/singleton/HttpClient lifecycle hardened; username leak in update log sanitized; version comparison uses `TryParse`; bare-catch blocks narrowed to specific I/O exceptions.
+
+---
+
 ## [1.36.5-alpha] - 2026-05-28
 **Branch**: `trebuchet/issue-2246` | **PR**: #2281
 

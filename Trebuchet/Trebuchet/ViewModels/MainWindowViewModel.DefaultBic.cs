@@ -192,6 +192,35 @@ public partial class MainWindowViewModel
     /// </summary>
     private async Task SaveDefaultBicToModuleAsync(string defaultBic, CancellationToken cancellationToken = default)
     {
+        // If the module editor is loaded it owns the in-memory IFO (name, scripts,
+        // HAKs, variables, etc.). A direct disk round-trip here would re-read the
+        // on-disk IFO, mutate only DefaultBic, and write it back — silently discarding
+        // every other unsaved editor edit (#2248). Route the change through the editor
+        // so the full in-memory IFO is persisted together.
+        if (_moduleEditorViewModel != null)
+        {
+            _moduleEditorViewModel.UseDefaultBic = !string.IsNullOrEmpty(defaultBic);
+            _moduleEditorViewModel.DefaultBic = defaultBic;
+
+            try
+            {
+                await _moduleEditorViewModel.SaveCommand.ExecuteAsync(null);
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to save DefaultBic via editor: {ex.Message}");
+                return;
+            }
+
+            RadoubSettings.Instance.CurrentModuleDefaultBic = defaultBic;
+            OnPropertyChanged(nameof(CanLoadModule));
+            OnPropertyChanged(nameof(LoadModuleTooltip));
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                string.IsNullOrEmpty(defaultBic) ? "Cleared DefaultBic (via editor)" : $"Saved DefaultBic: {defaultBic} (via editor)");
+            return;
+        }
+
+        // No editor loaded: no in-memory edits at risk, so a direct disk write is safe.
         var workingDir = GetWorkingDirectoryPath();
         if (string.IsNullOrEmpty(workingDir))
         {

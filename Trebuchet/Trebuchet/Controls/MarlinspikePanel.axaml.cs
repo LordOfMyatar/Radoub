@@ -122,8 +122,11 @@ public partial class MarlinspikePanel : UserControl
             var di = new DirectoryInfo(path);
             return di.Exists ? di.LastWriteTimeUtc : (DateTime?)null;
         }
-        catch
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+                                   or System.Security.SecurityException or ArgumentException)
         {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"GetDirectoryMtime failed for {UnifiedLogger.SanitizePath(path)}: {ex.Message}");
             return null;
         }
     }
@@ -356,8 +359,8 @@ public partial class MarlinspikePanel : UserControl
                 return;
 
             case DispatchAction.ToolLaunch:
-                var launched = ToolLauncherService.Instance.LaunchTool(
-                    plan.ToolName!, $"--file \"{plan.FilePath}\"");
+                var launched = ToolLauncherService.Instance.LaunchToolWithFile(
+                    plan.ToolName!, plan.FilePath!);
                 if (!launched && _viewModel != null)
                     _viewModel.StatusText =
                         $"Could not launch {plan.ToolName} for: {Path.GetFileName(plan.FilePath)}";
@@ -380,9 +383,12 @@ public partial class MarlinspikePanel : UserControl
             var startInfo = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = editorPath,
-                Arguments = $"\"{filePath}\"",
                 UseShellExecute = false
             };
+            foreach (var arg in ProcessArgumentBuilder.SingleFileArg(filePath))
+            {
+                startInfo.ArgumentList.Add(arg);
+            }
             System.Diagnostics.Process.Start(startInfo)?.Dispose();
         }
         catch (Exception ex)

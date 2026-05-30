@@ -294,29 +294,27 @@ public class ScriptCompilerService
 
         try
         {
-            var args = new StringBuilder();
-            args.Append("-c ");
-            args.Append($"\"{nssPath}\"");
-
-            // Add game path for includes if available (--root for NWN installation)
-            if (!string.IsNullOrEmpty(gamePath) && Directory.Exists(gamePath))
-            {
-                args.Append($" --root \"{gamePath}\"");
-            }
+            var includeRoot = (!string.IsNullOrEmpty(gamePath) && Directory.Exists(gamePath))
+                ? gamePath
+                : null;
+            var argList = ProcessArgumentBuilder.CompileArgs(new[] { nssPath }, includeRoot);
 
             var startInfo = new ProcessStartInfo
             {
                 FileName = CompilerPath,
-                Arguments = args.ToString(),
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 CreateNoWindow = true,
                 WorkingDirectory = Path.GetDirectoryName(nssPath) ?? "."
             };
+            foreach (var arg in argList)
+            {
+                startInfo.ArgumentList.Add(arg);
+            }
 
             UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"Running: {CompilerPath} {args} (cwd: {startInfo.WorkingDirectory})");
+                $"Running: {CompilerPath} {string.Join(' ', argList)} (cwd: {startInfo.WorkingDirectory})");
 
             using var process = new Process { StartInfo = startInfo };
             var output = new StringBuilder();
@@ -503,19 +501,11 @@ public class ScriptCompilerService
         // Build args: -c <files...> -y (continue on error) -j N (parallel)
         // -j requires an explicit thread count; omitting it causes the next flag to be parsed as the integer
         var threadCount = Math.Max(1, Environment.ProcessorCount);
-        var args = new StringBuilder();
-        args.Append("-c");
-        foreach (var scriptPath in scriptPaths)
-        {
-            args.Append($" \"{scriptPath}\"");
-        }
-        args.Append($" -y -j {threadCount}");
-
-        // Add game path for includes if available
-        if (!string.IsNullOrEmpty(gamePath) && Directory.Exists(gamePath))
-        {
-            args.Append($" --root \"{gamePath}\"");
-        }
+        var includeRoot = (!string.IsNullOrEmpty(gamePath) && Directory.Exists(gamePath))
+            ? gamePath
+            : null;
+        var argList = ProcessArgumentBuilder.CompileArgs(
+            scriptPaths, includeRoot, continueOnError: true, threadCount: threadCount);
 
         // Use the directory of the first script as working directory
         var workingDir = Path.GetDirectoryName(scriptPaths[0]) ?? ".";
@@ -523,13 +513,16 @@ public class ScriptCompilerService
         var startInfo = new ProcessStartInfo
         {
             FileName = CompilerPath,
-            Arguments = args.ToString(),
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             CreateNoWindow = true,
             WorkingDirectory = workingDir
         };
+        foreach (var arg in argList)
+        {
+            startInfo.ArgumentList.Add(arg);
+        }
 
         UnifiedLogger.LogApplication(LogLevel.INFO,
             $"Running: {Path.GetFileName(CompilerPath!)} -c [{scriptPaths.Count} files] -y -j (cwd: {workingDir})");

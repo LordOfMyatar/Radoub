@@ -491,7 +491,19 @@ public partial class MainWindowViewModel : ObservableObject
     /// </summary>
     public void Cleanup()
     {
-        _lockPollTimer?.Dispose();
+        // Block until any in-flight PollModFileLock callback finishes before we cancel
+        // the CTS and unsubscribe — the parameterless Dispose() returns immediately and
+        // lets a running callback race the rest of Cleanup (#2248).
+        if (_lockPollTimer != null)
+        {
+            using var timerDisposed = new System.Threading.ManualResetEvent(false);
+            if (_lockPollTimer.Dispose(timerDisposed))
+            {
+                timerDisposed.WaitOne(TimeSpan.FromSeconds(2));
+            }
+            _lockPollTimer = null;
+        }
+
         _cts.Cancel();
         _cts.Dispose();
         RadoubSettings.Instance.PropertyChanged -= OnSharedSettingsChanged;

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Radoub.Formats.Logging;
 
 namespace RadoubLauncher.Services;
 
@@ -29,8 +30,13 @@ public static class ModuleFileLockService
         {
             return true;
         }
-        catch
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+                                   or System.Security.SecurityException)
         {
+            // Non-sharing I/O error, or no write permission — not a lock we hold-out for.
+            // Treat as "not locked by another process" so the caller proceeds.
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"IsFileLocked probe failed for {UnifiedLogger.SanitizePath(filePath)}: {ex.Message}");
             return false;
         }
     }
