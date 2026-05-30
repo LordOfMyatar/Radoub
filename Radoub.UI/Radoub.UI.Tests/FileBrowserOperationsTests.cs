@@ -9,34 +9,46 @@ namespace Radoub.UI.Tests;
 /// for the shared file-browser Copy and Rename context-menu actions (#2320).
 /// The disk I/O (File.Copy / File.Move) and dialog UI live in
 /// FileBrowserPanelBase; this covers the testable decision logic.
+///
+/// Paths are built from a rooted base (Path.GetTempPath) and expectations are
+/// computed with the same Path.GetFullPath the implementation uses, so the
+/// tests pass identically on Windows and Linux (CI runs both). A bare
+/// Path.Combine("C:", ...) is a relative path on Linux and breaks GetFullPath.
 /// </summary>
 public class FileBrowserOperationsTests
 {
+    // Rooted directory that exists on both OSes (e.g. C:\Temp\... or /tmp/...).
+    private static readonly string ModDir = Path.Combine(Path.GetTempPath(), "radoub_mod");
+    private static readonly string SubDir = Path.Combine(ModDir, "sub");
+
+    private static string Expected(string dir, string stem, string ext)
+        => Path.GetFullPath(Path.Combine(dir, stem + ext));
+
     // ---- ResolveCopyDestination ---------------------------------------
 
     [Fact]
     public void ResolveCopyDestination_BuildsPathFromNewResRefAndExtension()
     {
         var result = FileBrowserOperations.ResolveCopyDestination(
-            sourcePath: Path.Combine("C:", "mod", "sword.uti"),
+            sourcePath: Path.Combine(ModDir, "sword.uti"),
             newResRef: "sword_copy",
             extension: ".uti");
 
         Assert.True(result.IsValid);
-        Assert.Equal(Path.Combine("C:", "mod", "sword_copy.uti"), result.DestinationPath);
+        Assert.Equal(Expected(ModDir, "sword_copy", ".uti"), result.DestinationPath);
     }
 
     [Fact]
     public void ResolveCopyDestination_DestinationInSameDirectoryAsSource()
     {
         var result = FileBrowserOperations.ResolveCopyDestination(
-            sourcePath: Path.Combine("C:", "mod", "sub", "ring.uti"),
+            sourcePath: Path.Combine(SubDir, "ring.uti"),
             newResRef: "ring2",
             extension: ".uti");
 
         Assert.True(result.IsValid);
         Assert.Equal(
-            Path.GetDirectoryName(Path.Combine("C:", "mod", "sub", "ring.uti")),
+            Path.GetFullPath(SubDir),
             Path.GetDirectoryName(result.DestinationPath));
     }
 
@@ -44,7 +56,7 @@ public class FileBrowserOperationsTests
     public void ResolveCopyDestination_InvalidResRef_IsInvalid()
     {
         var result = FileBrowserOperations.ResolveCopyDestination(
-            sourcePath: Path.Combine("C:", "mod", "sword.uti"),
+            sourcePath: Path.Combine(ModDir, "sword.uti"),
             newResRef: "Has Spaces",
             extension: ".uti");
 
@@ -56,7 +68,7 @@ public class FileBrowserOperationsTests
     public void ResolveCopyDestination_TooLongResRef_IsInvalid()
     {
         var result = FileBrowserOperations.ResolveCopyDestination(
-            sourcePath: Path.Combine("C:", "mod", "sword.uti"),
+            sourcePath: Path.Combine(ModDir, "sword.uti"),
             newResRef: "this_name_is_way_too_long",
             extension: ".uti");
 
@@ -67,7 +79,7 @@ public class FileBrowserOperationsTests
     public void ResolveCopyDestination_EmptyResRef_IsInvalid()
     {
         var result = FileBrowserOperations.ResolveCopyDestination(
-            sourcePath: Path.Combine("C:", "mod", "sword.uti"),
+            sourcePath: Path.Combine(ModDir, "sword.uti"),
             newResRef: "",
             extension: ".uti");
 
@@ -80,19 +92,19 @@ public class FileBrowserOperationsTests
     public void ResolveRenameDestination_BuildsPathInSameDirectory()
     {
         var result = FileBrowserOperations.ResolveRenameDestination(
-            sourcePath: Path.Combine("C:", "mod", "old_name.utc"),
+            sourcePath: Path.Combine(ModDir, "old_name.utc"),
             newResRef: "new_name",
             extension: ".utc");
 
         Assert.True(result.IsValid);
-        Assert.Equal(Path.Combine("C:", "mod", "new_name.utc"), result.DestinationPath);
+        Assert.Equal(Expected(ModDir, "new_name", ".utc"), result.DestinationPath);
     }
 
     [Fact]
     public void ResolveRenameDestination_InvalidResRef_IsInvalid()
     {
         var result = FileBrowserOperations.ResolveRenameDestination(
-            sourcePath: Path.Combine("C:", "mod", "old_name.utc"),
+            sourcePath: Path.Combine(ModDir, "old_name.utc"),
             newResRef: "BadName",
             extension: ".utc");
 
@@ -100,13 +112,26 @@ public class FileBrowserOperationsTests
     }
 
     [Fact]
-    public void ResolveRenameDestination_TraversalAttempt_IsInvalid()
+    public void ResolveRenameDestination_BackslashTraversalAttempt_IsInvalid()
     {
-        // A new name that escapes the source directory must be rejected even if
-        // it would pass the Aurora character check after Path.Combine resolves it.
+        // Backslash is rejected by the Aurora character check; on Linux it's a
+        // valid filename char but still not in [a-z0-9_], so still invalid.
         var result = FileBrowserOperations.ResolveRenameDestination(
-            sourcePath: Path.Combine("C:", "mod", "old_name.utc"),
+            sourcePath: Path.Combine(ModDir, "old_name.utc"),
             newResRef: "..\\evil",
+            extension: ".utc");
+
+        Assert.False(result.IsValid);
+    }
+
+    [Fact]
+    public void ResolveRenameDestination_ForwardSlashTraversalAttempt_IsInvalid()
+    {
+        // Forward slash is a path separator on both OSes and not an Aurora-legal
+        // character — must be rejected so a name can't escape the directory.
+        var result = FileBrowserOperations.ResolveRenameDestination(
+            sourcePath: Path.Combine(ModDir, "old_name.utc"),
+            newResRef: "../evil",
             extension: ".utc");
 
         Assert.False(result.IsValid);
@@ -117,7 +142,7 @@ public class FileBrowserOperationsTests
     {
         // Renaming to the identical stem is a no-op and should be rejected.
         var result = FileBrowserOperations.ResolveRenameDestination(
-            sourcePath: Path.Combine("C:", "mod", "old_name.utc"),
+            sourcePath: Path.Combine(ModDir, "old_name.utc"),
             newResRef: "old_name",
             extension: ".utc");
 
