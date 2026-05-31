@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Radoub.UI 0.1.67-alpha] - 2026-05-30
-**Branch**: `reliquary/issue-2293` | **PR**: #TBD
+**Branch**: `reliquary/issue-2293` | **PR**: #2330
 
 ### Sprint 3: Shared VariablesPanel + migrate 4 tools (#2293)
 
