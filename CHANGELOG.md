@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Sprint 1: PortraitBrowser extract (#2291)
 
 - `PortraitBrowserWindow` moved into `Radoub.UI` driven by the shared `IPortraitBrowserContext`, so any tool can reuse it. Reliquary epic #2289 pre-work.
+- Portrait thumbnails now decode on a background thread instead of blocking the dialog open.
 
 ---
 

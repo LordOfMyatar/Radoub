@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.115-alpha] - 2026-05-30
+**Branch**: `reliquary/issue-2291` | **PR**: #2328
+
+### Fix: Blank portraits leading the browser list (#2291)
+
+- Portrait browser now skips any blank or all-asterisk `portraits.2da` cell (e.g. CEP `***` padding), not just exact `****`, so empty tiles no longer sort to the front.
+
+---
+
 ## [0.2.114-alpha] - 2026-05-30
 **Branch**: `quartermaster/issue-2220` | **PR**: #2326
 
