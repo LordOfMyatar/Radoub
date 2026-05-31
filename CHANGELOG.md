@@ -8,6 +8,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.1.66-alpha] - 2026-05-30
+**Branch**: `reliquary/issue-2291` | **PR**: #2328
+
+### Sprint 1: PortraitBrowser extract (#2291)
+
+- `PortraitBrowserWindow` moved into `Radoub.UI` driven by the shared `IPortraitBrowserContext`, so any tool can reuse it. Reliquary epic #2289 pre-work.
+- Portrait thumbnails now decode on a background thread instead of blocking the dialog open.
+
+---
+
+## [Radoub.Formats 0.2.63-alpha] - 2026-05-30
+**Branch**: `reliquary/issue-2291` | **PR**: #2328
+
+### Sprint 1: PlaceableAppearanceService (#2291)
+
+- New `IPlaceableAppearanceService` reads `placeables.2da` for placeable model/display names (StrRef→TLK with LABEL fallback). Reliquary epic #2289 pre-work.
+
+---
+
 ## [Radoub docs] - 2026-05-30
 **Branch**: `reliquary/issue-2290` | **PR**: #2327
 

@@ -4,6 +4,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Quartermaster.Services;
 using Radoub.UI.Services;
+using Radoub.UI.Views;
 
 namespace Quartermaster.Views.Dialogs;
 
@@ -87,7 +88,8 @@ public partial class NewCharacterWizardWindow
         if (_itemIconService == null)
             return;
 
-        var browser = new PortraitBrowserWindow(_gameDataService, _itemIconService);
+        var context = new QuartermasterPortraitBrowserContext(_gameDataService, _itemIconService);
+        var browser = PortraitBrowserWindow.Create(context);
         browser.SetInitialFilters(_selectedRaceId, _selectedGender);
 
         var result = await browser.ShowDialog<ushort?>(this);

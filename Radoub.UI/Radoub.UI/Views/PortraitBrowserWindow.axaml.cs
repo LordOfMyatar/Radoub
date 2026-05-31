@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -8,20 +9,22 @@ using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
-using Quartermaster.Services;
+using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 using Radoub.Formats.Logging;
-using Radoub.Formats.Services;
 using Radoub.UI.Services;
 
-namespace Quartermaster.Views;
+namespace Radoub.UI.Views;
 
 /// <summary>
-/// Portrait browser window with race/gender filtering and preview.
+/// Shared portrait browser window with race/gender filtering and preview.
+/// Driven by an <see cref="IPortraitBrowserContext"/> so any tool can reuse it
+/// without depending on tool-specific game-data or icon services (#2291,
+/// Epic #959 UI Uniformity).
 /// </summary>
 public partial class PortraitBrowserWindow : Window
 {
-    private readonly IGameDataService? _gameDataService;
-    private readonly ItemIconService? _itemIconService;
+    private readonly IPortraitBrowserContext? _context;
     private readonly ListBox _portraitListBox;
     private readonly ComboBox _raceFilterComboBox;
     private readonly ComboBox _genderFilterComboBox;
@@ -31,14 +34,24 @@ public partial class PortraitBrowserWindow : Window
     private readonly TextBlock _portraitNameLabel;
     private readonly Image _portraitPreviewImage;
 
-    private List<PortraitInfo> _allPortraits = new();
-    private List<PortraitInfo> _filteredPortraits = new();
-    private PortraitInfo? _selectedPortrait;
+    private List<PortraitEntry> _allPortraits = new();
+    private List<PortraitEntry> _filteredPortraits = new();
+    private PortraitEntry? _selectedPortrait;
+
+    // Incremented on each list rebuild; in-flight async thumbnail loads from an
+    // older filter state stop applying when this changes (#2291).
+    private int _thumbnailGeneration;
 
     /// <summary>
     /// Gets the selected portrait ID, or null if cancelled.
     /// </summary>
     public ushort? SelectedPortraitId => _selectedPortrait?.Id;
+
+    /// <summary>
+    /// Number of portraits currently loaded from the context (pre-filter).
+    /// Exposed for tests and host diagnostics.
+    /// </summary>
+    public int PortraitCount => _allPortraits.Count;
 
     /// <summary>
     /// Parameterless constructor for XAML designer.
@@ -56,19 +69,20 @@ public partial class PortraitBrowserWindow : Window
         _portraitPreviewImage = this.FindControl<Image>("PortraitPreviewImage")!;
     }
 
-    /// <summary>
-    /// Creates a new portrait browser window.
-    /// </summary>
-    /// <param name="gameDataService">Game data service for 2DA lookups</param>
-    /// <param name="itemIconService">Item icon service for loading portrait images</param>
-    public PortraitBrowserWindow(IGameDataService gameDataService, ItemIconService itemIconService) : this()
+    private PortraitBrowserWindow(IPortraitBrowserContext context) : this()
     {
-        _gameDataService = gameDataService ?? throw new ArgumentNullException(nameof(gameDataService));
-        _itemIconService = itemIconService ?? throw new ArgumentNullException(nameof(itemIconService));
+        _context = context ?? throw new ArgumentNullException(nameof(context));
 
         InitializeFilters();
         LoadPortraits();
     }
+
+    /// <summary>
+    /// Creates a new portrait browser window driven by the given context.
+    /// </summary>
+    /// <param name="context">Tool-provided portrait data source.</param>
+    public static PortraitBrowserWindow Create(IPortraitBrowserContext context)
+        => new PortraitBrowserWindow(context);
 
     /// <summary>
     /// Pre-selects the race and gender filters before the window is shown.
@@ -131,85 +145,31 @@ public partial class PortraitBrowserWindow : Window
 
     private void LoadPortraits()
     {
-        if (_gameDataService == null)
+        if (_context == null)
         {
-            UnifiedLogger.LogApplication(LogLevel.WARN, "PortraitBrowser: GameDataService is null");
+            UnifiedLogger.LogApplication(LogLevel.WARN, "PortraitBrowser: context is null");
             return;
         }
 
-        UnifiedLogger.LogApplication(LogLevel.INFO, "PortraitBrowser: Loading portraits from portraits.2da");
-        _allPortraits.Clear();
+        UnifiedLogger.LogApplication(LogLevel.INFO, "PortraitBrowser: Loading portraits from context");
+        _allPortraits = _context.ListPortraits().ToList();
+
         var races = new HashSet<int>();
-
-        // Load portraits from portraits.2da
-        int rowCount = _gameDataService.Get2DA("portraits")?.RowCount ?? 500;
-        for (int i = 0; i < rowCount; i++)
+        foreach (var portrait in _allPortraits)
         {
-            var baseResRef = _gameDataService.Get2DAValue("portraits", i, "BaseResRef");
-            if (string.IsNullOrEmpty(baseResRef) || baseResRef == "****")
-                continue;
-
-            // Get race and sex columns
-            var raceStr = _gameDataService.Get2DAValue("portraits", i, "Race");
-            var sexStr = _gameDataService.Get2DAValue("portraits", i, "Sex");
-
-            int race = -1;
-            int sex = -1;
-
-            if (!string.IsNullOrEmpty(raceStr) && raceStr != "****")
-                int.TryParse(raceStr, out race);
-
-            if (!string.IsNullOrEmpty(sexStr) && sexStr != "****")
-                int.TryParse(sexStr, out sex);
-
-            if (race >= 0)
-                races.Add(race);
-
-            _allPortraits.Add(new PortraitInfo
-            {
-                Id = (ushort)i,
-                ResRef = baseResRef,
-                Race = race,
-                Sex = sex
-            });
+            if (portrait.Race >= 0)
+                races.Add(portrait.Race);
         }
 
         // Populate race filter with found races
         foreach (var raceId in races.OrderBy(r => r))
         {
-            var raceName = GetRaceName(raceId);
+            var raceName = _context.GetRaceName(raceId);
             _raceFilterComboBox.Items.Add(new ComboBoxItem { Content = raceName, Tag = raceId });
         }
 
-        UnifiedLogger.LogApplication(LogLevel.INFO, $"PortraitBrowser: Loaded {_allPortraits.Count} portraits from portraits.2da");
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"PortraitBrowser: Loaded {_allPortraits.Count} portraits from context");
         UpdatePortraitList();
-    }
-
-    private string GetRaceName(int raceId)
-    {
-        if (raceId < 0 || _gameDataService == null)
-            return "Unknown";
-
-        var strRef = _gameDataService.Get2DAValue("racialtypes", raceId, "Name");
-        if (!string.IsNullOrEmpty(strRef) && strRef != "****" && uint.TryParse(strRef, out var tlkRef))
-        {
-            var name = _gameDataService.GetString(tlkRef);
-            if (!string.IsNullOrEmpty(name))
-                return name;
-        }
-
-        // Fallback names for common races
-        return raceId switch
-        {
-            0 => "Dwarf",
-            1 => "Elf",
-            2 => "Gnome",
-            3 => "Halfling",
-            4 => "Half-Elf",
-            5 => "Half-Orc",
-            6 => "Human",
-            _ => $"Race {raceId}"
-        };
     }
 
     private void UpdatePortraitList()
@@ -247,23 +207,69 @@ public partial class PortraitBrowserWindow : Window
             .OrderBy(p => p.ResRef)
             .ToList();
 
-        // Populate with mini icon items
+        // Populate with mini icon items. Thumbnails are decoded lazily off the
+        // UI thread (LoadThumbnailsAsync) so the dialog opens instantly even with
+        // hundreds of portraits (#2291) — decoding inline here blocked on open.
+        var pending = new List<(PortraitEntry Portrait, Image Image)>(_filteredPortraits.Count);
         foreach (var portrait in _filteredPortraits)
         {
-            var item = CreatePortraitItem(portrait);
+            var item = CreatePortraitItem(portrait, out var image);
             _portraitListBox.Items.Add(item);
+            pending.Add((portrait, image));
         }
 
         _portraitCountLabel.Text = $"{_filteredPortraits.Count} portrait{(_filteredPortraits.Count == 1 ? "" : "s")}";
+
+        // Bump the generation so any in-flight load from a previous filter state
+        // stops applying stale bitmaps to recycled images.
+        int generation = ++_thumbnailGeneration;
+        _ = LoadThumbnailsAsync(pending, generation);
     }
 
-    private ListBoxItem CreatePortraitItem(PortraitInfo portrait)
+    /// <summary>
+    /// Decodes portrait thumbnails on a background thread and applies them to the
+    /// list images on the UI thread. Cancels itself if a newer filter pass has
+    /// started (generation mismatch).
+    /// </summary>
+    private async Task LoadThumbnailsAsync(List<(PortraitEntry Portrait, Image Image)> pending, int generation)
     {
-        // Create mini icon (roughly 50% size = ~32x40 for typical NWN portraits)
+        if (_context == null)
+            return;
+
+        foreach (var (portrait, image) in pending)
+        {
+            if (generation != _thumbnailGeneration)
+                return; // a newer filter pass superseded this one
+
+            Bitmap? bitmap = null;
+            try
+            {
+                bitmap = await Task.Run(() => _context.GetPortraitBitmap(portrait.ResRef));
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Failed to load thumbnail for {portrait.ResRef}: {ex.Message}");
+            }
+
+            if (bitmap == null || generation != _thumbnailGeneration)
+                continue;
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                if (generation == _thumbnailGeneration)
+                    image.Source = bitmap;
+            });
+        }
+    }
+
+    private ListBoxItem CreatePortraitItem(PortraitEntry portrait, out Image image)
+    {
+        // Create mini icon (roughly 50% size = ~32x40 for typical NWN portraits).
+        // Source is left null here and filled in by LoadThumbnailsAsync.
         const int thumbnailWidth = 32;
         const int thumbnailHeight = 40;
 
-        var image = new Image
+        image = new Image
         {
             Width = thumbnailWidth,
             Height = thumbnailHeight,
@@ -271,20 +277,6 @@ public partial class PortraitBrowserWindow : Window
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Center
         };
-
-        // Try to load the portrait thumbnail
-        if (_itemIconService != null)
-        {
-            try
-            {
-                var bitmap = _itemIconService.GetPortrait(portrait.ResRef);
-                image.Source = bitmap;
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Failed to load thumbnail for {portrait.ResRef}: {ex.Message}");
-            }
-        }
 
         // Wrap image in a border for visual feedback
         var border = new Border
@@ -324,7 +316,7 @@ public partial class PortraitBrowserWindow : Window
     {
         try
         {
-            if (_portraitListBox.SelectedItem is ListBoxItem item && item.Tag is PortraitInfo portrait)
+            if (_portraitListBox.SelectedItem is ListBoxItem item && item.Tag is PortraitEntry portrait)
             {
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"PortraitBrowser: Selected portrait ID={portrait.Id} ResRef='{portrait.ResRef}'");
                 _selectedPortrait = portrait;
@@ -332,19 +324,16 @@ public partial class PortraitBrowserWindow : Window
                 _portraitNameLabel.Text = portrait.ResRef;
 
                 // Load portrait preview
-                if (_itemIconService != null)
+                try
                 {
-                    try
-                    {
-                        var bitmap = _itemIconService.GetPortrait(portrait.ResRef);
-                        _portraitPreviewImage.Source = bitmap;
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"PortraitBrowser: Preview loaded: {(bitmap != null ? "success" : "null")}");
-                    }
-                    catch (Exception ex)
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to load portrait preview: {ex.Message}");
-                        _portraitPreviewImage.Source = null;
-                    }
+                    var bitmap = _context?.GetPortraitBitmap(portrait.ResRef);
+                    _portraitPreviewImage.Source = bitmap;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"PortraitBrowser: Preview loaded: {(bitmap != null ? "success" : "null")}");
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to load portrait preview: {ex.Message}");
+                    _portraitPreviewImage.Source = null;
                 }
             }
             else
@@ -402,17 +391,6 @@ public partial class PortraitBrowserWindow : Window
     {
         UnifiedLogger.LogApplication(LogLevel.DEBUG, "PortraitBrowser: Cancel clicked");
         Close(null);
-    }
-
-    /// <summary>
-    /// Internal class to hold portrait information.
-    /// </summary>
-    private class PortraitInfo
-    {
-        public ushort Id { get; set; }
-        public string ResRef { get; set; } = "";
-        public int Race { get; set; } = -1;
-        public int Sex { get; set; } = -1;
     }
 
     #region Title Bar Events
