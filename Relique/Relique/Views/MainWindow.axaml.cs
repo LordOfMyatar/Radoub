@@ -10,6 +10,7 @@ using Radoub.UI.Controls;
 using Radoub.UI.Services;
 using Radoub.UI.Services.Search;
 using System;
+using VariableViewModel = Radoub.UI.ViewModels.VariableViewModel;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
