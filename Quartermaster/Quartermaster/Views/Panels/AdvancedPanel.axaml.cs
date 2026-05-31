@@ -608,6 +608,10 @@ public partial class AdvancedPanel : BasePanelControl
         _subs.Track(
             attach: () => _variablesPanel.DeleteRequested += OnVariableDeleteRequested,
             detach: () => _variablesPanel.DeleteRequested -= OnVariableDeleteRequested);
+        // Panel self-validates and raises VariablesChanged only on real user edits.
+        _subs.Track(
+            attach: () => _variablesPanel.VariablesChanged += OnPanelVariablesChanged,
+            detach: () => _variablesPanel.VariablesChanged -= OnPanelVariablesChanged);
     }
 
     /// <summary>
@@ -615,34 +619,21 @@ public partial class AdvancedPanel : BasePanelControl
     /// </summary>
     private void PopulateVariables()
     {
-        // Unsubscribe from existing items
-        foreach (var vm in Variables)
-        {
-            vm.PropertyChanged -= OnVariablePropertyChanged;
-        }
-
         Variables.Clear();
 
         if (CurrentCreature == null) return;
 
         foreach (var variable in CurrentCreature.VarTable)
-        {
-            var vm = VariableViewModel.FromVariable(variable);
-            vm.PropertyChanged += OnVariablePropertyChanged;
-            Variables.Add(vm);
-        }
+            Variables.Add(VariableViewModel.FromVariable(variable));
 
         _variablesPanel?.RevalidateNames();
         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Loaded {Variables.Count} local variables");
     }
 
-    private void OnVariablePropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    private void OnPanelVariablesChanged(object? sender, EventArgs e)
     {
         if (IsLoading) return;
         VariablesChanged?.Invoke(this, EventArgs.Empty);
-
-        if (e.PropertyName == nameof(VariableViewModel.Name))
-            _variablesPanel?.RevalidateNames();
     }
 
     /// <summary>
@@ -680,21 +671,16 @@ public partial class AdvancedPanel : BasePanelControl
             counter++;
         }
 
-        var newVar = new VariableViewModel
-        {
-            Name = name,
-            Type = VariableType.Int,
-            IntValue = 0
-        };
-
-        newVar.PropertyChanged += OnVariablePropertyChanged;
-        Variables.Add(newVar);
+        var newVar = new VariableViewModel { Name = name, Type = VariableType.Int };
+        Variables.Add(newVar); // panel auto-validates via CollectionChanged
 
         if (_variablesPanel != null)
+        {
             _variablesPanel.SelectedVariable = newVar;
+            _variablesPanel.FocusSelectedName();
+        }
 
         VariablesChanged?.Invoke(this, EventArgs.Empty);
-        _variablesPanel?.RevalidateNames();
         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added new variable: {name}");
     }
 
@@ -703,13 +689,9 @@ public partial class AdvancedPanel : BasePanelControl
         if (e.Variables.Count == 0) return;
 
         foreach (var item in e.Variables)
-        {
-            item.PropertyChanged -= OnVariablePropertyChanged;
             Variables.Remove(item);
-        }
 
         VariablesChanged?.Invoke(this, EventArgs.Empty);
-        _variablesPanel?.RevalidateNames();
         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed {e.Variables.Count} variable(s)");
     }
 
@@ -724,10 +706,7 @@ public partial class AdvancedPanel : BasePanelControl
 
     private void ClearVariables()
     {
-        foreach (var vm in Variables)
-        {
-            vm.PropertyChanged -= OnVariablePropertyChanged;
-        }
+        // Panel manages per-item subscriptions internally; just clear the collection.
         Variables.Clear();
     }
 
