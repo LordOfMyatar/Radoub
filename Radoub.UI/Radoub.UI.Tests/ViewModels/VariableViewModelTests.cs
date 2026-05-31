@@ -344,6 +344,39 @@ public class VariableViewModelTests
         Assert.Equal("1.2.3", vm.ValueText);
     }
 
+    // --- Float requires an explicit decimal point with >=1 digit after (#2293 follow-up) ---
+
+    [Theory]
+    [InlineData("0.0", true)]
+    [InlineData("5.0", true)]
+    [InlineData("-2.5", true)]
+    [InlineData("1.250", true)]
+    [InlineData("5", false)]      // no decimal point
+    [InlineData("5.", false)]     // point but no digit after
+    [InlineData(".5", false)]     // no digit before — require N.N form
+    [InlineData("", false)]
+    public void FloatValue_RequiresDecimalPointAndTrailingDigit(string text, bool expected)
+    {
+        var vm = new VariableViewModel { Type = VariableType.Float, ValueText = text };
+        Assert.Equal(expected, vm.IsValueValid());
+    }
+
+    [Fact]
+    public void FromVariable_Float_EmitsDecimalForm()
+    {
+        var vm = VariableViewModel.FromVariable(Variable.CreateFloat("f", 5f));
+        Assert.Equal("5.0", vm.ValueText);   // not "5"
+        Assert.True(vm.IsValueValid());
+    }
+
+    [Fact]
+    public void FloatValue_Setter_EmitsDecimalForm()
+    {
+        var vm = new VariableViewModel { Type = VariableType.Float, FloatValue = 7m };
+        Assert.Equal("7.0", vm.ValueText);
+        Assert.True(vm.IsValueValid());
+    }
+
     [Fact]
     public void ValueText_Change_RaisesValueDisplay()
     {

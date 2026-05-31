@@ -30,6 +30,12 @@ public partial class VariableViewModel : ObservableObject
 
     private static readonly Regex NamePattern = new("^[A-Za-z0-9_]+$", RegexOptions.Compiled);
 
+    // Float must be written with an explicit decimal point and >=1 digit on each side (e.g. 5.0, -2.5).
+    private static readonly Regex FloatPattern = new(@"^-?\d+\.\d+$", RegexOptions.Compiled);
+
+    /// <summary>Invariant float format that always emits a decimal point + trailing digit (5 -> "5.0").</summary>
+    private const string FloatFormat = "0.0###";
+
     [ObservableProperty]
     private string _name = string.Empty;
 
@@ -110,7 +116,7 @@ public partial class VariableViewModel : ObservableObject
         get => float.TryParse(ValueText, NumberStyles.Float, CultureInfo.InvariantCulture, out var f)
             ? (decimal)Math.Round(f, 3)
             : 0m;
-        set => ValueText = ((float)Math.Round((double)value, 3)).ToString(CultureInfo.InvariantCulture);
+        set => ValueText = ((float)Math.Round((double)value, 3)).ToString(FloatFormat, CultureInfo.InvariantCulture);
     }
 
     /// <summary>Object-id view over <see cref="ValueText"/>. Returns OBJECT_INVALID if not a valid uint.</summary>
@@ -200,7 +206,8 @@ public partial class VariableViewModel : ObservableObject
     public bool IsValueValid() => Type switch
     {
         VariableType.Int => int.TryParse(ValueText, NumberStyles.Integer, CultureInfo.InvariantCulture, out _),
-        VariableType.Float => float.TryParse(ValueText, NumberStyles.Float, CultureInfo.InvariantCulture, out _),
+        VariableType.Float => FloatPattern.IsMatch(ValueText)
+            && float.TryParse(ValueText, NumberStyles.Float, CultureInfo.InvariantCulture, out _),
         VariableType.Object => uint.TryParse(ValueText, NumberStyles.Integer, CultureInfo.InvariantCulture, out _),
         _ => true
     };
@@ -218,7 +225,7 @@ public partial class VariableViewModel : ObservableObject
             var expected = Type switch
             {
                 VariableType.Int => "a whole number",
-                VariableType.Float => "a number",
+                VariableType.Float => "a decimal number (needs a point and a digit after, e.g. 5.0)",
                 VariableType.Object => "a non-negative object id",
                 _ => "valid"
             };
@@ -242,7 +249,7 @@ public partial class VariableViewModel : ObservableObject
                 vm.ValueText = variable.GetInt().ToString(CultureInfo.InvariantCulture);
                 break;
             case VariableType.Float:
-                vm.ValueText = variable.GetFloat().ToString(CultureInfo.InvariantCulture);
+                vm.ValueText = variable.GetFloat().ToString(FloatFormat, CultureInfo.InvariantCulture);
                 break;
             case VariableType.String:
                 vm.ValueText = variable.GetString();
