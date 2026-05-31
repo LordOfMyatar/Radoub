@@ -2,7 +2,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:converters="using:Radoub.UI.Converters"
              xmlns:controls="using:Radoub.UI.Controls"
              mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="900"
              x:Class="Quartermaster.Views.Panels.AdvancedPanel">
@@ -162,7 +161,7 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Local Variables Section (UTC only - hidden for BIC) -->
+                <!-- Local Variables Section (UTC only - hidden for BIC; shared Radoub.UI control, #2293) -->
                 <Border x:Name="VariablesSection"
                         BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1"
@@ -170,98 +169,7 @@
                         Padding="15">
                     <StackPanel Spacing="10">
                         <TextBlock Text="Local Variables" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
-
-                        <DockPanel>
-                            <!-- Action Buttons -->
-                            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
-                                <Button x:Name="AddVariableButton" Content="Add"
-                                        AutomationProperties.AutomationId="AddVariableButton"/>
-                                <Button x:Name="RemoveVariableButton" Content="Remove"
-                                        AutomationProperties.AutomationId="RemoveVariableButton"/>
-                            </StackPanel>
-
-                            <!-- Validation Summary -->
-                            <TextBlock x:Name="VariableValidationText"
-                                       DockPanel.Dock="Bottom"
-                                       Foreground="{DynamicResource ThemeError}"
-                                       FontSize="{DynamicResource FontSizeSmall}"
-                                       TextWrapping="Wrap"
-                                       IsVisible="False"
-                                       Margin="0,4,0,0"/>
-
-                            <!-- Variables DataGrid -->
-                            <DataGrid x:Name="VariablesGrid"
-                                      AutoGenerateColumns="False"
-                                      CanUserReorderColumns="True"
-                                      CanUserResizeColumns="True"
-                                      CanUserSortColumns="True"
-                                      IsReadOnly="False"
-                                      SelectionMode="Extended"
-                                      GridLinesVisibility="Horizontal"
-                                      MaxHeight="200"
-                                      AutomationProperties.AutomationId="VariablesGrid">
-                                <DataGrid.Resources>
-                                    <converters:BoolToErrorBrushConverter x:Key="BoolToErrorBrushConverter"/>
-                                </DataGrid.Resources>
-                                <DataGrid.Columns>
-                                    <DataGridTemplateColumn Header="Name" Width="140">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <StackPanel Orientation="Horizontal" Spacing="4">
-                                                    <TextBox Text="{Binding Name}"
-                                                             HorizontalAlignment="Stretch"
-                                                             MinWidth="80"
-                                                             BorderBrush="{Binding HasError, Converter={StaticResource BoolToErrorBrushConverter}}"/>
-                                                    <TextBlock Text="{Binding ErrorMessage}"
-                                                               Foreground="{DynamicResource ThemeError}"
-                                                               FontSize="{DynamicResource FontSizeSmall}"
-                                                               VerticalAlignment="Center"
-                                                               IsVisible="{Binding HasError}"/>
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="Type" Width="80">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <ComboBox SelectedIndex="{Binding TypeIndex}"
-                                                          HorizontalAlignment="Stretch"
-                                                          Margin="2">
-                                                    <ComboBoxItem Content="Int"/>
-                                                    <ComboBoxItem Content="Float"/>
-                                                    <ComboBoxItem Content="String"/>
-                                                </ComboBox>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="Value" Width="*">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <Grid>
-                                                    <!-- Int value editor -->
-                                                    <NumericUpDown Value="{Binding IntValue}"
-                                                                   IsVisible="{Binding IsIntType}"
-                                                                   Minimum="-2147483648"
-                                                                   Maximum="2147483647"
-                                                                   FormatString="0"
-                                                                   Margin="2"/>
-                                                    <!-- Float value editor -->
-                                                    <NumericUpDown Value="{Binding FloatValue}"
-                                                                   IsVisible="{Binding IsFloatType}"
-                                                                   FormatString="F3"
-                                                                   Increment="0.1"
-                                                                   Margin="2"/>
-                                                    <!-- String value editor -->
-                                                    <TextBox Text="{Binding StringValue}"
-                                                             IsVisible="{Binding IsStringType}"
-                                                             Margin="2"/>
-                                                </Grid>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </DockPanel>
+                        <controls:VariablesPanel x:Name="VariablesPanelControl" MaxHeight="240"/>
                     </StackPanel>
                 </Border>
             </StackPanel>

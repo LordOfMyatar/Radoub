@@ -14,6 +14,7 @@ using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
 using Radoub.UI.Controls;
 using Radoub.UI.Services;
+using VariableViewModel = Radoub.UI.ViewModels.VariableViewModel;
 
 namespace Quartermaster.Views.Panels;
 
@@ -49,12 +50,9 @@ public partial class AdvancedPanel : BasePanelControl
     private ComboBox? _decayTimeComboBox;
     private ComboBox? _bodyBagComboBox;
 
-    // Variables
+    // Variables (shared Radoub.UI control, #2293)
     private Border? _variablesSection;
-    private DataGrid? _variablesGrid;
-    private Button? _addVariableButton;
-    private Button? _removeVariableButton;
-    private TextBlock? _variableValidationText;
+    private Radoub.UI.Controls.VariablesPanel? _variablesPanel;
 
     private CreatureDisplayService? _displayService;
     private string? _currentModuleDirectory;
@@ -115,12 +113,9 @@ public partial class AdvancedPanel : BasePanelControl
         _decayTimeComboBox = this.FindControl<ComboBox>("DecayTimeComboBox");
         _bodyBagComboBox = this.FindControl<ComboBox>("BodyBagComboBox");
 
-        // Variables
+        // Variables (shared Radoub.UI control, #2293)
         _variablesSection = this.FindControl<Border>("VariablesSection");
-        _variablesGrid = this.FindControl<DataGrid>("VariablesGrid");
-        _addVariableButton = this.FindControl<Button>("AddVariableButton");
-        _removeVariableButton = this.FindControl<Button>("RemoveVariableButton");
-        _variableValidationText = this.FindControl<TextBlock>("VariableValidationText");
+        _variablesPanel = this.FindControl<Radoub.UI.Controls.VariablesPanel>("VariablesPanelControl");
 
         // Wire up events — track every subscription so DetachAll() can release them
         if (_copyResRefButton != null)
@@ -599,18 +594,20 @@ public partial class AdvancedPanel : BasePanelControl
 
     #region Variables
 
+    private bool _variablesPanelWired;
+
     private void WireUpVariables()
     {
-        if (_addVariableButton != null)
-            _subs.Track(
-                attach: () => _addVariableButton.Click += OnAddVariable,
-                detach: () => _addVariableButton.Click -= OnAddVariable);
-        if (_removeVariableButton != null)
-            _subs.Track(
-                attach: () => _removeVariableButton.Click += OnRemoveVariable,
-                detach: () => _removeVariableButton.Click -= OnRemoveVariable);
-        if (_variablesGrid != null)
-            _variablesGrid.ItemsSource = Variables;
+        if (_variablesPanel == null || _variablesPanelWired) return;
+        _variablesPanelWired = true;
+
+        _variablesPanel.Variables = Variables;
+        _subs.Track(
+            attach: () => _variablesPanel.AddRequested += OnVariableAddRequested,
+            detach: () => _variablesPanel.AddRequested -= OnVariableAddRequested);
+        _subs.Track(
+            attach: () => _variablesPanel.DeleteRequested += OnVariableDeleteRequested,
+            detach: () => _variablesPanel.DeleteRequested -= OnVariableDeleteRequested);
     }
 
     /// <summary>
@@ -618,10 +615,6 @@ public partial class AdvancedPanel : BasePanelControl
     /// </summary>
     private void PopulateVariables()
     {
-        // Unbind grid first to avoid UI updates during population
-        if (_variablesGrid != null)
-            _variablesGrid.ItemsSource = null;
-
         // Unsubscribe from existing items
         foreach (var vm in Variables)
         {
@@ -639,12 +632,7 @@ public partial class AdvancedPanel : BasePanelControl
             Variables.Add(vm);
         }
 
-        ValidateVariablesRealTime();
-
-        // Rebind grid after population complete
-        if (_variablesGrid != null)
-            _variablesGrid.ItemsSource = Variables;
-
+        _variablesPanel?.RevalidateNames();
         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Loaded {Variables.Count} local variables");
     }
 
@@ -654,7 +642,7 @@ public partial class AdvancedPanel : BasePanelControl
         VariablesChanged?.Invoke(this, EventArgs.Empty);
 
         if (e.PropertyName == nameof(VariableViewModel.Name))
-            ValidateVariablesRealTime();
+            _variablesPanel?.RevalidateNames();
     }
 
     /// <summary>
@@ -677,7 +665,7 @@ public partial class AdvancedPanel : BasePanelControl
         }
     }
 
-    private void OnAddVariable(object? sender, RoutedEventArgs e)
+    private void OnVariableAddRequested(object? sender, VariableAddRequestedEventArgs e)
     {
         if (CurrentCreature == null) return;
 
@@ -702,31 +690,27 @@ public partial class AdvancedPanel : BasePanelControl
         newVar.PropertyChanged += OnVariablePropertyChanged;
         Variables.Add(newVar);
 
-        if (_variablesGrid != null)
-            _variablesGrid.SelectedItem = newVar;
+        if (_variablesPanel != null)
+            _variablesPanel.SelectedVariable = newVar;
 
         VariablesChanged?.Invoke(this, EventArgs.Empty);
-        ValidateVariablesRealTime();
+        _variablesPanel?.RevalidateNames();
         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added new variable: {name}");
     }
 
-    private void OnRemoveVariable(object? sender, RoutedEventArgs e)
+    private void OnVariableDeleteRequested(object? sender, VariableDeleteRequestedEventArgs e)
     {
-        if (_variablesGrid == null) return;
+        if (e.Variables.Count == 0) return;
 
-        var selectedItems = _variablesGrid.SelectedItems?.Cast<VariableViewModel>().ToList();
-        if (selectedItems == null || selectedItems.Count == 0)
-            return;
-
-        foreach (var item in selectedItems)
+        foreach (var item in e.Variables)
         {
             item.PropertyChanged -= OnVariablePropertyChanged;
             Variables.Remove(item);
         }
 
         VariablesChanged?.Invoke(this, EventArgs.Empty);
-        ValidateVariablesRealTime();
-        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed {selectedItems.Count} variable(s)");
+        _variablesPanel?.RevalidateNames();
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed {e.Variables.Count} variable(s)");
     }
 
     /// <summary>
@@ -736,64 +720,6 @@ public partial class AdvancedPanel : BasePanelControl
     public bool HasDuplicateVariableErrors()
     {
         return Variables.Any(v => v.HasError && !string.IsNullOrWhiteSpace(v.Name));
-    }
-
-    /// <summary>
-    /// Real-time validation: mark variables with errors for visual feedback.
-    /// </summary>
-    private void ValidateVariablesRealTime()
-    {
-        var nameCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        foreach (var vm in Variables)
-        {
-            if (string.IsNullOrWhiteSpace(vm.Name)) continue;
-            nameCounts.TryGetValue(vm.Name, out var count);
-            nameCounts[vm.Name] = count + 1;
-        }
-
-        foreach (var vm in Variables)
-        {
-            if (string.IsNullOrWhiteSpace(vm.Name))
-            {
-                vm.HasError = true;
-                vm.ErrorMessage = "Variable name is required";
-            }
-            else if (nameCounts.TryGetValue(vm.Name, out var count) && count > 1)
-            {
-                vm.HasError = true;
-                vm.ErrorMessage = $"Duplicate name: \"{vm.Name}\"";
-            }
-            else
-            {
-                vm.HasError = false;
-                vm.ErrorMessage = string.Empty;
-            }
-        }
-
-        // Update validation summary
-        if (_variableValidationText == null) return;
-
-        var errors = new List<string>();
-        var emptyCount = Variables.Count(v => string.IsNullOrWhiteSpace(v.Name));
-        if (emptyCount > 0)
-            errors.Add($"{emptyCount} variable(s) missing name");
-
-        var dupNames = Variables
-            .Where(v => v.HasError && !string.IsNullOrWhiteSpace(v.Name))
-            .Select(v => v.Name)
-            .Distinct(StringComparer.OrdinalIgnoreCase);
-        foreach (var dup in dupNames)
-            errors.Add($"Duplicate: \"{dup}\"");
-
-        if (errors.Count > 0)
-        {
-            _variableValidationText.Text = string.Join(" | ", errors);
-            _variableValidationText.IsVisible = true;
-        }
-        else
-        {
-            _variableValidationText.IsVisible = false;
-        }
     }
 
     private void ClearVariables()
