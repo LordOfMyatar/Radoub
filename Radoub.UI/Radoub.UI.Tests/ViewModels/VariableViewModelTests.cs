@@ -292,4 +292,68 @@ public class VariableViewModelTests
         var v = new VariableViewModel { Name = "", Type = VariableType.Int, IntValue = 0 }.ToVariable();
         Assert.Equal("", v.Name);
     }
+
+    // --- Raw value text is never discarded on bad input (#2293 follow-up) ---
+
+    [Fact]
+    public void BadIntText_IsKept_NotReverted()
+    {
+        var vm = new VariableViewModel { Type = VariableType.Int, ValueText = "5" };
+
+        vm.ValueText = "abc"; // user typed letters into an int
+
+        Assert.Equal("abc", vm.ValueText);     // text preserved, not undone
+        Assert.False(vm.IsValueValid());
+        Assert.Equal(0, vm.IntValue);          // typed accessor degrades safely
+    }
+
+    [Fact]
+    public void ValidateValue_ReturnsMessage_ForBadInt()
+    {
+        var vm = new VariableViewModel { Type = VariableType.Int, ValueText = "abc" };
+
+        var msg = vm.ValidateValue();
+
+        Assert.NotNull(msg);
+        Assert.Contains("whole number", msg!);
+    }
+
+    [Fact]
+    public void SwitchingTypeToString_MakesBadNumberValid()
+    {
+        var vm = new VariableViewModel { Type = VariableType.Int, ValueText = "abc" };
+        Assert.False(vm.IsValueValid());
+
+        vm.Type = VariableType.String; // user corrects by switching type
+
+        Assert.True(vm.IsValueValid());
+        Assert.Equal("abc", vm.StringValue); // their text survives the switch
+    }
+
+    [Fact]
+    public void IsValueValid_StringAlwaysValid()
+    {
+        Assert.True(new VariableViewModel { Type = VariableType.String, ValueText = "anything @#$" }.IsValueValid());
+    }
+
+    [Fact]
+    public void BadFloatText_FlaggedButKept()
+    {
+        var vm = new VariableViewModel { Type = VariableType.Float, ValueText = "1.2.3" };
+        Assert.False(vm.IsValueValid());
+        Assert.Equal("1.2.3", vm.ValueText);
+    }
+
+    [Fact]
+    public void ValueText_Change_RaisesValueDisplay()
+    {
+        var vm = new VariableViewModel { Type = VariableType.Int };
+        var changed = new List<string>();
+        vm.PropertyChanged += (_, e) => { if (e.PropertyName != null) changed.Add(e.PropertyName); };
+
+        vm.ValueText = "42";
+
+        Assert.Contains(nameof(VariableViewModel.ValueText), changed);
+        Assert.Contains(nameof(VariableViewModel.ValueDisplay), changed);
+    }
 }

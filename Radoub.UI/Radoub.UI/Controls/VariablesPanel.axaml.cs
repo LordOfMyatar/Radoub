@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
-using Radoub.Formats.Gff;
+using Avalonia.VisualTree;
 using Radoub.UI.ViewModels;
 
 namespace Radoub.UI.Controls;
@@ -18,6 +20,14 @@ namespace Radoub.UI.Controls;
 /// does not mutate <see cref="Variables"/> itself on Add/Delete; the host owns the mutation
 /// so it can wrap it in an <c>IUndoableCommand</c> (#2293, Reliquary epic #2289).
 /// </summary>
+/// <remarks>
+/// The panel owns validation: it subscribes to its <see cref="Variables"/> collection and each
+/// item's <see cref="INotifyPropertyChanged"/>, revalidating on every edit (name format, value
+/// parse, duplicate names). Hosts no longer re-implement this — that gap previously left
+/// Trebuchet with stale validation. A user edit raises <see cref="VariablesChanged"/> (the host's
+/// dirty signal); assigning the collection during populate does NOT, so screen switches don't
+/// falsely mark the document dirty.
+/// </remarks>
 public partial class VariablesPanel : UserControl
 {
     public static readonly StyledProperty<ObservableCollection<VariableViewModel>> VariablesProperty =
@@ -26,6 +36,8 @@ public partial class VariablesPanel : UserControl
 
     public static readonly StyledProperty<VariableViewModel?> SelectedVariableProperty =
         AvaloniaProperty.Register<VariablesPanel, VariableViewModel?>(nameof(SelectedVariable));
+
+    private ObservableCollection<VariableViewModel>? _subscribedCollection;
 
     /// <summary>The variables shown in the grid. Host owns the collection and its mutations.</summary>
     public ObservableCollection<VariableViewModel> Variables
@@ -50,7 +62,14 @@ public partial class VariablesPanel : UserControl
     /// <summary>Raised when the user clicks Delete with a selection. Host removes the variable(s).</summary>
     public event EventHandler<VariableDeleteRequestedEventArgs>? DeleteRequested;
 
-    /// <summary>Raised after name re-validation so the host can refresh any save-blocking state.</summary>
+    /// <summary>
+    /// Raised when the USER changes a variable (edits a field, or add/delete completes).
+    /// This is the host's dirty signal. NOT raised when the host assigns <see cref="Variables"/>
+    /// during populate, so loading a file / switching screens does not mark the document dirty.
+    /// </summary>
+    public event EventHandler? VariablesChanged;
+
+    /// <summary>Raised after re-validation so a host can refresh save-blocking state if it wants.</summary>
     public event EventHandler? ValidationChanged;
 
     public VariablesPanel()
@@ -58,13 +77,67 @@ public partial class VariablesPanel : UserControl
         InitializeComponent();
     }
 
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == VariablesProperty)
+            HookCollection(change.GetNewValue<ObservableCollection<VariableViewModel>>());
+    }
+
+    /// <summary>(Re)subscribe to the active collection + its items. Assignment is a populate, not a user edit.</summary>
+    private void HookCollection(ObservableCollection<VariableViewModel>? collection)
+    {
+        if (ReferenceEquals(_subscribedCollection, collection)) return;
+
+        if (_subscribedCollection != null)
+        {
+            _subscribedCollection.CollectionChanged -= OnVariablesCollectionChanged;
+            foreach (var vm in _subscribedCollection)
+                vm.PropertyChanged -= OnItemPropertyChanged;
+        }
+
+        _subscribedCollection = collection;
+
+        if (_subscribedCollection != null)
+        {
+            _subscribedCollection.CollectionChanged += OnVariablesCollectionChanged;
+            foreach (var vm in _subscribedCollection)
+                vm.PropertyChanged += OnItemPropertyChanged;
+        }
+
+        // Validate the freshly-assigned set, but do NOT raise VariablesChanged (this is a populate).
+        RevalidateNames();
+    }
+
+    private void OnVariablesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.OldItems != null)
+            foreach (VariableViewModel vm in e.OldItems)
+                vm.PropertyChanged -= OnItemPropertyChanged;
+        if (e.NewItems != null)
+            foreach (VariableViewModel vm in e.NewItems)
+                vm.PropertyChanged += OnItemPropertyChanged;
+
+        RevalidateNames();
+    }
+
+    private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        // HasError/ErrorMessage are set BY validation — ignore them to avoid re-entrancy.
+        if (e.PropertyName == nameof(VariableViewModel.HasError) ||
+            e.PropertyName == nameof(VariableViewModel.ErrorMessage))
+            return;
+
+        RevalidateNames();
+        VariablesChanged?.Invoke(this, EventArgs.Empty); // user edited a field
+    }
+
     // --- Public API (callable from tests and host code) ---
 
     /// <summary>Request an Add. Raises <see cref="AddRequested"/>; the host performs the mutation.</summary>
     public void RequestAdd()
     {
-        var args = new VariableAddRequestedEventArgs();
-        AddRequested?.Invoke(this, args);
+        AddRequested?.Invoke(this, new VariableAddRequestedEventArgs());
     }
 
     /// <summary>Request a Replace of the selected variable. No-op without a selection.</summary>
@@ -83,9 +156,47 @@ public partial class VariablesPanel : UserControl
     }
 
     /// <summary>
-    /// Re-run name validation across the whole collection: empty, invalid characters/length,
-    /// and case-insensitive duplicates all set <see cref="VariableViewModel.HasError"/> +
-    /// <see cref="VariableViewModel.ErrorMessage"/>. Updates the validation summary.
+    /// Focus the Name cell of the currently selected row and begin editing it. Called after Add
+    /// so the user lands directly in the new variable's name field (rather than outside it,
+    /// which would surface the "name required" error before they type).
+    /// </summary>
+    public void FocusSelectedName()
+    {
+        if (VariablesGrid is null || SelectedVariable is null) return;
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            VariablesGrid.ScrollIntoView(SelectedVariable, VariablesGrid.Columns.Count > 0 ? VariablesGrid.Columns[0] : null);
+            VariablesGrid.SelectedItem = SelectedVariable;
+            VariablesGrid.CurrentColumn = VariablesGrid.Columns.Count > 0 ? VariablesGrid.Columns[0] : null;
+            VariablesGrid.BeginEdit();
+
+            // Drill into the row's first TextBox and focus it.
+            Dispatcher.UIThread.Post(() =>
+            {
+                var tb = FindNameTextBox(SelectedVariable);
+                if (tb != null) { tb.Focus(); tb.SelectAll(); }
+            }, DispatcherPriority.Background);
+        }, DispatcherPriority.Background);
+    }
+
+    private TextBox? FindNameTextBox(VariableViewModel target)
+    {
+        foreach (var d in VariablesGrid.GetVisualDescendants())
+        {
+            if (d is DataGridRow row && ReferenceEquals(row.DataContext, target))
+            {
+                foreach (var child in row.GetVisualDescendants())
+                    if (child is TextBox tb) return tb;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Re-validate the whole collection: per-variable name format + value parse, plus
+    /// case-insensitive duplicate-name detection. Sets <see cref="VariableViewModel.HasError"/>/
+    /// <see cref="VariableViewModel.ErrorMessage"/> and updates the validation summary.
     /// </summary>
     public void RevalidateNames()
     {
@@ -103,30 +214,25 @@ public partial class VariablesPanel : UserControl
         var errors = new List<string>();
         foreach (var vm in vars)
         {
+            string? error;
             if (string.IsNullOrWhiteSpace(vm.Name))
-            {
-                Flag(vm, "Variable name is required");
-            }
+                error = "Variable name is required";
             else if (!VariableViewModel.IsValidName(vm.Name))
-            {
-                Flag(vm, $"Invalid name \"{vm.Name}\" — use ≤{VariableViewModel.MaxNameLength} chars of A-Z, 0-9, _");
-            }
+                error = $"Invalid name \"{vm.Name}\" — use ≤{VariableViewModel.MaxNameLength} chars of A-Z, 0-9, _";
             else if (nameCounts.TryGetValue(vm.Name, out var c) && c > 1)
-            {
-                Flag(vm, $"Duplicate name: \"{vm.Name}\"");
-            }
+                error = $"Duplicate name: \"{vm.Name}\"";
             else
-            {
-                vm.HasError = false;
-                vm.ErrorMessage = string.Empty;
-            }
+                error = vm.ValidateValue(); // value parse (null if value OK)
+
+            vm.HasError = error != null;
+            vm.ErrorMessage = error ?? string.Empty;
         }
 
         var emptyCount = vars.Count(v => string.IsNullOrWhiteSpace(v.Name));
         if (emptyCount > 0) errors.Add($"{emptyCount} variable(s) missing name");
-        foreach (var dup in vars.Where(v => v.HasError && !string.IsNullOrWhiteSpace(v.Name))
-                                .Select(v => v.Name).Distinct(StringComparer.OrdinalIgnoreCase))
-            errors.Add($"Issue: \"{dup}\"");
+        foreach (var msg in vars.Where(v => v.HasError && !string.IsNullOrWhiteSpace(v.Name))
+                                .Select(v => v.ErrorMessage).Distinct())
+            errors.Add(msg);
 
         if (ValidationText is not null)
         {
@@ -135,12 +241,6 @@ public partial class VariablesPanel : UserControl
         }
 
         ValidationChanged?.Invoke(this, EventArgs.Empty);
-
-        static void Flag(VariableViewModel vm, string msg)
-        {
-            vm.HasError = true;
-            vm.ErrorMessage = msg;
-        }
     }
 
     /// <summary>True if any variable currently has a validation error.</summary>

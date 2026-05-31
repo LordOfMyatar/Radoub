@@ -115,4 +115,59 @@ public class VariablesPanelTests
 
         Assert.True(bad.HasError);
     }
+
+    // --- Self-validation: panel validates on edit without host plumbing (#2293 follow-up) ---
+
+    [AvaloniaFact]
+    public void EditingItemName_AutoValidates_NoManualRevalidateCall()
+    {
+        var a = new VariableViewModel { Name = "ok", Type = VariableType.Int, ValueText = "1" };
+        var b = new VariableViewModel { Name = "unique", Type = VariableType.Int, ValueText = "2" };
+        var panel = new VariablesPanel { Variables = new ObservableCollection<VariableViewModel> { a, b } };
+
+        b.Name = "ok"; // create a duplicate by editing — panel must catch it on its own
+
+        Assert.True(a.HasError);
+        Assert.True(b.HasError);
+    }
+
+    [AvaloniaFact]
+    public void BadValue_FlaggedByPanel()
+    {
+        var v = new VariableViewModel { Name = "n", Type = VariableType.Int, ValueText = "1" };
+        var panel = new VariablesPanel { Variables = new ObservableCollection<VariableViewModel> { v } };
+
+        v.ValueText = "abc"; // bad int
+
+        Assert.True(v.HasError);
+        Assert.Contains("whole number", v.ErrorMessage);
+    }
+
+    [AvaloniaFact]
+    public void VariablesChanged_RaisedOnUserEdit_NotOnAssign()
+    {
+        var panel = new VariablesPanel();
+        var raised = 0;
+        panel.VariablesChanged += (_, _) => raised++;
+
+        // Assigning the collection (host populate) must NOT count as a user edit.
+        var v = new VariableViewModel { Name = "n", Type = VariableType.Int, ValueText = "1" };
+        panel.Variables = new ObservableCollection<VariableViewModel> { v };
+        Assert.Equal(0, raised);
+
+        // Editing an item IS a user edit.
+        v.ValueText = "2";
+        Assert.True(raised >= 1);
+    }
+
+    [AvaloniaFact]
+    public void HasValidationErrors_TrueWhenValueBad()
+    {
+        var v = new VariableViewModel { Name = "n", Type = VariableType.Int, ValueText = "x" };
+        var panel = new VariablesPanel { Variables = new ObservableCollection<VariableViewModel> { v } };
+
+        panel.RevalidateNames();
+
+        Assert.True(panel.HasValidationErrors);
+    }
 }

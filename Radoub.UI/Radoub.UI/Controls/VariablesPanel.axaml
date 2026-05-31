@@ -77,14 +77,11 @@
           <DataGridTemplateColumn.CellTemplate>
             <DataTemplate x:DataType="vm:VariableViewModel">
               <Panel Margin="2">
-                <NumericUpDown Value="{Binding IntValue, Mode=TwoWay}" FormatString="0"
-                               IsVisible="{Binding IsIntType}" ShowButtonSpinner="False"/>
-                <NumericUpDown Value="{Binding FloatValue, Mode=TwoWay}" FormatString="0.###"
-                               Increment="0.1" IsVisible="{Binding IsFloatType}" ShowButtonSpinner="False"/>
-                <TextBox Text="{Binding StringValue, Mode=TwoWay}" IsVisible="{Binding IsStringType}"/>
-                <NumericUpDown Value="{Binding ObjectIdValue, Mode=TwoWay}" FormatString="0"
-                               IsVisible="{Binding IsObjectType}" ShowButtonSpinner="False"
-                               ToolTip.Tip="Object id (uint). 0x7F000000 = OBJECT_INVALID"/>
+                <!-- Int/Float/String/Object share one raw-text editor so bad input is kept
+                     and flagged, never silently reverted (#2293 follow-up). -->
+                <TextBox Text="{Binding ValueText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         IsVisible="{Binding !IsLocationType}"
+                         ToolTip.Tip="{Binding ErrorMessage}"/>
                 <!-- Location: compact 7-field editor -->
                 <WrapPanel IsVisible="{Binding IsLocationType}" Orientation="Horizontal">
                   <NumericUpDown Value="{Binding LocationArea, Mode=TwoWay}" FormatString="0" Width="80"
