@@ -7,6 +7,7 @@ using Radoub.Formats.Common;
 using Radoub.Formats.Ifo;
 using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
+using VariableViewModel = Radoub.UI.ViewModels.VariableViewModel;
 
 namespace RadoubLauncher.ViewModels;
 

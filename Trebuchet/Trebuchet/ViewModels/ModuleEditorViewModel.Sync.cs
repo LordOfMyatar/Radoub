@@ -6,6 +6,7 @@ using Radoub.Formats.Gff;
 using Radoub.Formats.Ifo;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
+using VariableViewModel = Radoub.UI.ViewModels.VariableViewModel;
 
 namespace RadoubLauncher.ViewModels;
 
@@ -95,14 +96,9 @@ public partial class ModuleEditorViewModel
             UseDefaultBic = false;
         }
 
-        // Variables
+        // Variables (shared Radoub.UI VariableViewModel, #2293)
         Variables = new ObservableCollection<VariableViewModel>(
-            _ifoFile.VarTable.Select(v =>
-            {
-                var vm = new VariableViewModel(v);
-                vm.SetUniquenessCheck(IsVariableNameUnique);
-                return vm;
-            }));
+            _ifoFile.VarTable.Select(VariableViewModel.FromVariable));
     }
 
     private void UpdateIfoFromViewModel()
