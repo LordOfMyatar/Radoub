@@ -1,0 +1,121 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Radoub.UI.ViewModels"
+             xmlns:conv="clr-namespace:Radoub.UI.Converters"
+             mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="300"
+             x:Class="Radoub.UI.Controls.VariablesPanel"
+             x:DataType="vm:VariableViewModel">
+
+  <UserControl.Resources>
+    <conv:BoolToErrorBrushConverter x:Key="ErrorBrushConverter"/>
+  </UserControl.Resources>
+
+  <Grid RowDefinitions="Auto,*,Auto">
+
+    <!-- Toolbar: Add / Replace / Delete -->
+    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6" Margin="0,0,0,6">
+      <Button x:Name="AddButton" AutomationProperties.AutomationId="Variables_AddButton"
+              Content="Add" Click="OnAddClick" ToolTip.Tip="Add a new variable"/>
+      <Button x:Name="ReplaceButton" AutomationProperties.AutomationId="Variables_ReplaceButton"
+              Content="Replace" Click="OnReplaceClick"
+              ToolTip.Tip="Replace the selected variable's value with the edited fields"/>
+      <Button x:Name="DeleteButton" AutomationProperties.AutomationId="Variables_DeleteButton"
+              Content="Delete" Click="OnDeleteClick" ToolTip.Tip="Delete the selected variable(s)"/>
+    </StackPanel>
+
+    <!-- Variable grid: Name | Type | Value -->
+    <DataGrid x:Name="VariablesGrid"
+              Grid.Row="1"
+              AutomationProperties.AutomationId="Variables_Grid"
+              ItemsSource="{Binding Variables, RelativeSource={RelativeSource AncestorType=UserControl}}"
+              SelectedItem="{Binding SelectedVariable, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
+              AutoGenerateColumns="False"
+              CanUserResizeColumns="True"
+              SelectionMode="Extended"
+              GridLinesVisibility="Horizontal">
+      <DataGrid.Columns>
+
+        <!-- Name (editable, error-aware) -->
+        <DataGridTemplateColumn Header="Name" Width="*">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate x:DataType="vm:VariableViewModel">
+              <Border BorderThickness="0,0,0,2" Margin="6,0"
+                      BorderBrush="{Binding HasError, Converter={StaticResource ErrorBrushConverter}}">
+                <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
+                           ToolTip.Tip="{Binding ErrorMessage}"/>
+              </Border>
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+          <DataGridTemplateColumn.CellEditingTemplate>
+            <DataTemplate x:DataType="vm:VariableViewModel">
+              <TextBox Text="{Binding Name, Mode=TwoWay}" MaxLength="32"/>
+            </DataTemplate>
+          </DataGridTemplateColumn.CellEditingTemplate>
+        </DataGridTemplateColumn>
+
+        <!-- Type (combo, 5 types) -->
+        <DataGridTemplateColumn Header="Type" Width="110">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate x:DataType="vm:VariableViewModel">
+              <ComboBox SelectedIndex="{Binding TypeIndex, Mode=TwoWay}"
+                        HorizontalAlignment="Stretch" Margin="2"
+                        SelectionChanged="OnTypeSelectionChanged">
+                <ComboBoxItem>Int</ComboBoxItem>
+                <ComboBoxItem>Float</ComboBoxItem>
+                <ComboBoxItem>String</ComboBoxItem>
+                <ComboBoxItem>Object</ComboBoxItem>
+                <ComboBoxItem>Location</ComboBoxItem>
+              </ComboBox>
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+
+        <!-- Value (editor switches on type) -->
+        <DataGridTemplateColumn Header="Value" Width="2*">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate x:DataType="vm:VariableViewModel">
+              <Panel Margin="2">
+                <NumericUpDown Value="{Binding IntValue, Mode=TwoWay}" FormatString="0"
+                               IsVisible="{Binding IsIntType}" ShowButtonSpinner="False"/>
+                <NumericUpDown Value="{Binding FloatValue, Mode=TwoWay}" FormatString="0.###"
+                               Increment="0.1" IsVisible="{Binding IsFloatType}" ShowButtonSpinner="False"/>
+                <TextBox Text="{Binding StringValue, Mode=TwoWay}" IsVisible="{Binding IsStringType}"/>
+                <NumericUpDown Value="{Binding ObjectIdValue, Mode=TwoWay}" FormatString="0"
+                               IsVisible="{Binding IsObjectType}" ShowButtonSpinner="False"
+                               ToolTip.Tip="Object id (uint). 0x7F000000 = OBJECT_INVALID"/>
+                <!-- Location: compact 7-field editor -->
+                <WrapPanel IsVisible="{Binding IsLocationType}" Orientation="Horizontal">
+                  <NumericUpDown Value="{Binding LocationArea, Mode=TwoWay}" FormatString="0" Width="80"
+                                 ShowButtonSpinner="False" ToolTip.Tip="Area object id"/>
+                  <NumericUpDown Value="{Binding LocationPositionX, Mode=TwoWay}" FormatString="0.##" Width="70"
+                                 ShowButtonSpinner="False" ToolTip.Tip="Position X"/>
+                  <NumericUpDown Value="{Binding LocationPositionY, Mode=TwoWay}" FormatString="0.##" Width="70"
+                                 ShowButtonSpinner="False" ToolTip.Tip="Position Y"/>
+                  <NumericUpDown Value="{Binding LocationPositionZ, Mode=TwoWay}" FormatString="0.##" Width="70"
+                                 ShowButtonSpinner="False" ToolTip.Tip="Position Z"/>
+                  <NumericUpDown Value="{Binding LocationOrientationX, Mode=TwoWay}" FormatString="0.##" Width="70"
+                                 ShowButtonSpinner="False" ToolTip.Tip="Orientation X"/>
+                  <NumericUpDown Value="{Binding LocationOrientationY, Mode=TwoWay}" FormatString="0.##" Width="70"
+                                 ShowButtonSpinner="False" ToolTip.Tip="Orientation Y"/>
+                  <NumericUpDown Value="{Binding LocationOrientationZ, Mode=TwoWay}" FormatString="0.##" Width="70"
+                                 ShowButtonSpinner="False" ToolTip.Tip="Orientation Z"/>
+                </WrapPanel>
+              </Panel>
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+
+      </DataGrid.Columns>
+    </DataGrid>
+
+    <!-- Validation summary -->
+    <TextBlock x:Name="ValidationText"
+               Grid.Row="2"
+               AutomationProperties.AutomationId="Variables_ValidationText"
+               Margin="0,6,0,0"
+               IsVisible="False"
+               Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"/>
+  </Grid>
+</UserControl>
