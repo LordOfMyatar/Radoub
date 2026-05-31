@@ -1044,7 +1044,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             "Comment" => "CommentBox",
             "OnOpenStore" => "OnOpenStoreBox",
             "OnStoreClosed" => "OnStoreClosedBox",
-            "VarTable" => "VariablesGrid",
+            "VarTable" => "VariablesPanelControl",
             _ => null
         };
 

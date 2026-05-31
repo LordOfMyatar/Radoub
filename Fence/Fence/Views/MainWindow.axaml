@@ -6,7 +6,6 @@
         xmlns:radoubControls="using:Radoub.UI.Controls"
         xmlns:converters="using:MerchantEditor.Converters"
         xmlns:merchantControls="using:MerchantEditor.Controls"
-        xmlns:sharedConverters="using:Radoub.UI.Converters"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
         x:Class="MerchantEditor.Views.MainWindow"
         x:Name="MainWindowInstance"
@@ -300,93 +299,11 @@
                     </Border>
                 </Expander>
 
-                <!-- Local Variables Panel -->
+                <!-- Local Variables Panel (shared Radoub.UI control, #2293) -->
                 <Expander Grid.Column="2" Header="Local Variables" IsExpanded="False"
                           AutomationProperties.AutomationId="VariablesExpander">
                     <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,4,0,0">
-                        <DockPanel>
-                            <!-- Action Buttons -->
-                            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
-                                <Button Content="Add" Click="OnAddVariable" AutomationProperties.AutomationId="AddVariableButton"/>
-                                <Button Content="Remove" Click="OnRemoveVariable" AutomationProperties.AutomationId="RemoveVariableButton"/>
-                            </StackPanel>
-
-                            <!-- Validation Summary -->
-                            <TextBlock x:Name="VariableValidationText"
-                                       DockPanel.Dock="Bottom"
-                                       Foreground="{DynamicResource ThemeError}"
-                                       FontSize="{DynamicResource FontSizeSmall}"
-                                       TextWrapping="Wrap"
-                                       IsVisible="False"
-                                       Margin="0,4,0,0"/>
-
-                            <!-- Variables DataGrid -->
-                            <DataGrid x:Name="VariablesGrid"
-                                      AutoGenerateColumns="False"
-                                      CanUserReorderColumns="True"
-                                      CanUserResizeColumns="True"
-                                      CanUserSortColumns="True"
-                                      IsReadOnly="False"
-                                      SelectionMode="Extended"
-                                      GridLinesVisibility="Horizontal"
-                                      MaxHeight="180"
-                                      AutomationProperties.AutomationId="VariablesGrid">
-                                <DataGrid.Resources>
-                                    <sharedConverters:BoolToErrorBrushConverter x:Key="BoolToErrorBrushConverter"/>
-                                </DataGrid.Resources>
-                                <DataGrid.Columns>
-                                    <DataGridTemplateColumn Header="Name" Width="140">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <StackPanel Orientation="Horizontal" Spacing="4">
-                                                    <TextBox Text="{Binding Name}"
-                                                             HorizontalAlignment="Stretch"
-                                                             MinWidth="80"
-                                                             BorderBrush="{Binding HasError, Converter={StaticResource BoolToErrorBrushConverter}}"/>
-                                                    <TextBlock Text="{Binding ErrorMessage}"
-                                                               Foreground="{DynamicResource ThemeError}"
-                                                               FontSize="{DynamicResource FontSizeSmall}"
-                                                               VerticalAlignment="Center"
-                                                               IsVisible="{Binding HasError}"/>
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="Type" Width="70">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding TypeDisplay}" VerticalAlignment="Center" Margin="4,0"/>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                        <DataGridTemplateColumn.CellEditingTemplate>
-                                            <DataTemplate>
-                                                <ComboBox SelectedIndex="{Binding TypeIndex}" Margin="0">
-                                                    <ComboBoxItem Content="Int"/>
-                                                    <ComboBoxItem Content="Float"/>
-                                                    <ComboBoxItem Content="String"/>
-                                                </ComboBox>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellEditingTemplate>
-                                    </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="Value" Width="*">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding ValueDisplay}" VerticalAlignment="Center" Margin="4,0"/>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                        <DataGridTemplateColumn.CellEditingTemplate>
-                                            <DataTemplate>
-                                                <Grid>
-                                                    <NumericUpDown Value="{Binding IntValue}" IsVisible="{Binding IsIntType}" Minimum="-2147483648" Maximum="2147483647"/>
-                                                    <NumericUpDown Value="{Binding FloatValue}" IsVisible="{Binding IsFloatType}" Increment="0.001" FormatString="F3"/>
-                                                    <TextBox Text="{Binding StringValue}" IsVisible="{Binding IsStringType}"/>
-                                                </Grid>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellEditingTemplate>
-                                    </DataGridTemplateColumn>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </DockPanel>
+                        <controls:VariablesPanel x:Name="VariablesPanelControl" MaxHeight="220"/>
                     </Border>
                 </Expander>
             </Grid>
