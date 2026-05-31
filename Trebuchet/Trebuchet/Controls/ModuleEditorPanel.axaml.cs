@@ -26,11 +26,13 @@ public partial class ModuleEditorPanel : UserControl
         viewModel.SetParentWindow(parentWindow);
 
         // Route the shared VariablesPanel's Add/Delete events to the ViewModel (#2293).
+        // The panel self-validates on edit and raises VariablesChanged for the dirty flag.
         if (!_variablesWired)
         {
             _variablesWired = true;
             VariablesPanelControl.AddRequested += OnVariableAddRequested;
             VariablesPanelControl.DeleteRequested += OnVariableDeleteRequested;
+            VariablesPanelControl.VariablesChanged += OnPanelVariablesChanged;
         }
     }
 
@@ -47,12 +49,17 @@ public partial class ModuleEditorPanel : UserControl
     private void OnVariableAddRequested(object? sender, VariableAddRequestedEventArgs e)
     {
         _viewModel?.AddVariable();
-        VariablesPanelControl.RevalidateNames();
+        VariablesPanelControl.FocusSelectedName(); // land in the new variable's name field
     }
 
     private void OnVariableDeleteRequested(object? sender, VariableDeleteRequestedEventArgs e)
     {
         _viewModel?.RemoveVariables(e.Variables);
-        VariablesPanelControl.RevalidateNames();
+    }
+
+    private void OnPanelVariablesChanged(object? sender, System.EventArgs e)
+    {
+        if (_viewModel != null)
+            _viewModel.HasUnsavedChanges = true;
     }
 }
