@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Avalonia.Media.Imaging;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
@@ -37,8 +38,9 @@ public class QuartermasterPortraitBrowserContext : IPortraitBrowserContext
         for (int i = 0; i < rowCount; i++)
         {
             var baseResRef = _gameDataService.Get2DAValue("portraits", i, "BaseResRef");
-            if (string.IsNullOrEmpty(baseResRef) || baseResRef == "****")
+            if (IsEmptyCell(baseResRef))
                 continue;
+            baseResRef = baseResRef!.Trim();
 
             var raceStr = _gameDataService.Get2DAValue("portraits", i, "Race");
             var sexStr = _gameDataService.Get2DAValue("portraits", i, "Sex");
@@ -63,6 +65,17 @@ public class QuartermasterPortraitBrowserContext : IPortraitBrowserContext
 
         UnifiedLogger.LogApplication(LogLevel.INFO, $"PortraitBrowserContext: Loaded {portraits.Count} portraits from portraits.2da");
         return portraits;
+    }
+
+    /// <summary>
+    /// True for 2DA "empty" cells: null, blank/whitespace, or any all-asterisk run.
+    /// Aurora writes "****" but custom/CEP content uses shorter runs like "***" (#2291).
+    /// </summary>
+    private static bool IsEmptyCell(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return true;
+        return value.Trim().All(c => c == '*');
     }
 
     public Bitmap? GetPortraitBitmap(string resRef) => _itemIconService.GetPortrait(resRef);
