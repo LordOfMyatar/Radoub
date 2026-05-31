@@ -30,6 +30,8 @@ public partial class MainWindow
         VariablesPanelControl.Variables = Variables;
         VariablesPanelControl.AddRequested += OnVariableAddRequested;
         VariablesPanelControl.DeleteRequested += OnVariableDeleteRequested;
+        // Panel self-validates and raises VariablesChanged only on real user edits.
+        VariablesPanelControl.VariablesChanged += (_, _) => _documentState.MarkDirty();
     }
 
     /// <summary>
@@ -39,35 +41,15 @@ public partial class MainWindow
     {
         WireUpVariables();
 
-        // Unsubscribe from existing items
-        foreach (var vm in Variables)
-        {
-            vm.PropertyChanged -= OnVariablePropertyChanged;
-        }
-
         Variables.Clear();
 
         if (_currentStore == null) return;
 
         foreach (var variable in _currentStore.VarTable)
-        {
-            var vm = VariableViewModel.FromVariable(variable);
-            vm.PropertyChanged += OnVariablePropertyChanged;
-            Variables.Add(vm);
-        }
+            Variables.Add(VariableViewModel.FromVariable(variable));
 
         VariablesPanelControl.RevalidateNames();
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {Variables.Count} local variables");
-    }
-
-    private void OnVariablePropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-    {
-        // Mark dirty when any variable property changes
-        _documentState.MarkDirty();
-
-        // Re-validate on name changes (panel owns the validation summary)
-        if (e.PropertyName == nameof(VariableViewModel.Name))
-            VariablesPanelControl.RevalidateNames();
     }
 
     /// <summary>
@@ -119,19 +101,12 @@ public partial class MainWindow
         }
 
         // Create new variable with empty name - user will fill it in
-        var newVar = new VariableViewModel
-        {
-            Name = string.Empty,
-            Type = Radoub.Formats.Gff.VariableType.Int,
-            IntValue = 0
-        };
-
-        newVar.PropertyChanged += OnVariablePropertyChanged;
-        Variables.Add(newVar);
+        var newVar = new VariableViewModel { Name = string.Empty, Type = Radoub.Formats.Gff.VariableType.Int };
+        Variables.Add(newVar); // panel auto-validates via CollectionChanged
         VariablesPanelControl.SelectedVariable = newVar;
+        VariablesPanelControl.FocusSelectedName(); // land in the name field
 
         _documentState.MarkDirty();
-        VariablesPanelControl.RevalidateNames();
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "Added new variable (awaiting name)");
     }
@@ -141,13 +116,9 @@ public partial class MainWindow
         if (e.Variables.Count == 0) return;
 
         foreach (var item in e.Variables)
-        {
-            item.PropertyChanged -= OnVariablePropertyChanged;
             Variables.Remove(item);
-        }
 
         _documentState.MarkDirty();
-        VariablesPanelControl.RevalidateNames();
 
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed {e.Variables.Count} variable(s)");
     }
