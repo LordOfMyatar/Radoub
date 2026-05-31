@@ -581,7 +581,8 @@ public partial class MainWindow
 
     private bool _variablesWired;
 
-    /// <summary>Wire the shared panel to the local collection and its add/remove/validation events once.</summary>
+    /// <summary>Wire the shared panel to the local collection once. The panel owns validation
+    /// and raises VariablesChanged only on real user edits (not on populate).</summary>
     private void WireUpVariables()
     {
         if (_variablesWired) return;
@@ -590,38 +591,22 @@ public partial class MainWindow
         VariablesPanelControl.Variables = _variables;
         VariablesPanelControl.AddRequested += OnVariableAddRequested;
         VariablesPanelControl.DeleteRequested += OnVariableDeleteRequested;
-        VariablesPanelControl.ValidationChanged += (_, _) => { if (!_isLoading) MarkDirty(); };
+        VariablesPanelControl.VariablesChanged += (_, _) => { if (!_isLoading) MarkDirty(); };
     }
 
     private void PopulateVariables()
     {
         WireUpVariables();
 
-        foreach (var vm in _variables)
-            vm.PropertyChanged -= OnVariablePropertyChanged;
-
         _variables.Clear();
 
         if (_currentItem == null) return;
 
         foreach (var variable in _currentItem.VarTable)
-        {
-            var vm = VariableViewModel.FromVariable(variable);
-            vm.PropertyChanged += OnVariablePropertyChanged;
-            _variables.Add(vm);
-        }
+            _variables.Add(VariableViewModel.FromVariable(variable));
 
         VariablesPanelControl.RevalidateNames();
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {_variables.Count} local variables");
-    }
-
-    private void OnVariablePropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (!_isLoading) MarkDirty();
-
-        // Re-validate on name changes (panel owns the validation summary)
-        if (e.PropertyName == nameof(VariableViewModel.Name))
-            VariablesPanelControl.RevalidateNames();
     }
 
     private void UpdateVarTable()
@@ -669,19 +654,12 @@ public partial class MainWindow
     {
         if (_currentItem == null) return;
 
-        var newVar = new VariableViewModel
-        {
-            Name = string.Empty,
-            Type = VariableType.Int,
-            IntValue = 0
-        };
-
-        newVar.PropertyChanged += OnVariablePropertyChanged;
-        _variables.Add(newVar);
+        var newVar = new VariableViewModel { Name = string.Empty, Type = VariableType.Int };
+        _variables.Add(newVar); // panel auto-validates via CollectionChanged
         VariablesPanelControl.SelectedVariable = newVar;
+        VariablesPanelControl.FocusSelectedName(); // land in the name field
 
         MarkDirty();
-        VariablesPanelControl.RevalidateNames();
     }
 
     private void OnVariableDeleteRequested(object? sender, VariableDeleteRequestedEventArgs e)
@@ -689,13 +667,9 @@ public partial class MainWindow
         if (e.Variables.Count == 0) return;
 
         foreach (var item in e.Variables)
-        {
-            item.PropertyChanged -= OnVariablePropertyChanged;
             _variables.Remove(item);
-        }
 
         MarkDirty();
-        VariablesPanelControl.RevalidateNames();
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed {e.Variables.Count} variable(s)");
     }
 
