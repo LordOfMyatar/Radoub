@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.1.67-alpha] - 2026-05-30
+**Branch**: `reliquary/issue-2293` | **PR**: #TBD
+
+### Sprint 3: Shared VariablesPanel + migrate 4 tools (#2293)
+
+- New shared `Radoub.UI.Controls.VariablesPanel` + superset `VariableViewModel` (all 5 var types: Int/Float/String/Object/Location, name validation, duplicate detection). Reliquary epic #2289 pre-work.
+- Quartermaster, Fence, Relique, and Trebuchet migrated to the shared panel; tool-local `VariableViewModel.cs` and duplicate VM tests removed.
+
+---
+
 ## [Radoub.UI 0.1.66-alpha] - 2026-05-30
 **Branch**: `reliquary/issue-2291` | **PR**: #2328
 
