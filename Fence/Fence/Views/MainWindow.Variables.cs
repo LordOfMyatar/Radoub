@@ -100,8 +100,12 @@ public partial class MainWindow
             return;
         }
 
-        // Create new variable with empty name - user will fill it in
-        var newVar = new VariableViewModel { Name = string.Empty, Type = Radoub.Formats.Gff.VariableType.Int };
+        // Seed a unique default name so the user lands on a valid, ready-to-overtype field
+        var newVar = new VariableViewModel
+        {
+            Name = VariableViewModel.NextDefaultName(Variables.Select(v => v.Name)),
+            Type = Radoub.Formats.Gff.VariableType.Int
+        };
         Variables.Add(newVar); // panel auto-validates via CollectionChanged
         VariablesPanelControl.SelectedVariable = newVar;
         VariablesPanelControl.FocusSelectedName(); // land in the name field

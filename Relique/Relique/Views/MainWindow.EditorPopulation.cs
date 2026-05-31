@@ -654,10 +654,14 @@ public partial class MainWindow
     {
         if (_currentItem == null) return;
 
-        var newVar = new VariableViewModel { Name = string.Empty, Type = VariableType.Int };
+        var newVar = new VariableViewModel
+        {
+            Name = VariableViewModel.NextDefaultName(_variables.Select(v => v.Name)),
+            Type = VariableType.Int
+        };
         _variables.Add(newVar); // panel auto-validates via CollectionChanged
         VariablesPanelControl.SelectedVariable = newVar;
-        VariablesPanelControl.FocusSelectedName(); // land in the name field
+        VariablesPanelControl.FocusSelectedName(); // land in the name field, ready to overtype
 
         MarkDirty();
     }

@@ -200,6 +200,23 @@ public partial class VariableViewModel : ObservableObject
         !string.IsNullOrEmpty(name) && name.Length <= MaxNameLength && NamePattern.IsMatch(name);
 
     /// <summary>
+    /// Generate a unique default name ("NewVar", "NewVar1", "NewVar2", …) not already present
+    /// in <paramref name="existingNames"/> (case-insensitive). New variables seed this so the
+    /// user lands on a valid name with no "name required" error, ready to overtype.
+    /// </summary>
+    public static string NextDefaultName(System.Collections.Generic.IEnumerable<string> existingNames)
+    {
+        var taken = new System.Collections.Generic.HashSet<string>(existingNames, StringComparer.OrdinalIgnoreCase);
+        const string baseName = "NewVar";
+        if (!taken.Contains(baseName)) return baseName;
+        for (var i = 1; ; i++)
+        {
+            var candidate = baseName + i;
+            if (!taken.Contains(candidate)) return candidate;
+        }
+    }
+
+    /// <summary>
     /// True if <see cref="ValueText"/> parses for the current <see cref="Type"/>.
     /// String accepts anything; Location is edited via numeric fields and is always valid here.
     /// </summary>

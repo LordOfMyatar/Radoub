@@ -71,7 +71,11 @@ public partial class ModuleEditorViewModel
     /// <summary>Append a new int variable and select it. Called from the panel's AddRequested event.</summary>
     public void AddVariable()
     {
-        var newVar = new VariableViewModel { Name = string.Empty, Type = VariableType.Int, IntValue = 0 };
+        var newVar = new VariableViewModel
+        {
+            Name = VariableViewModel.NextDefaultName(Variables.Select(v => v.Name)),
+            Type = VariableType.Int
+        };
         Variables.Add(newVar);
         SelectedVariable = newVar;
         HasUnsavedChanges = true;

@@ -660,17 +660,7 @@ public partial class AdvancedPanel : BasePanelControl
     {
         if (CurrentCreature == null) return;
 
-        // Generate a unique variable name
-        var baseName = "NewVar";
-        var counter = 1;
-        var name = baseName;
-
-        while (Variables.Any(v => v.Name == name))
-        {
-            name = $"{baseName}{counter}";
-            counter++;
-        }
-
+        var name = VariableViewModel.NextDefaultName(Variables.Select(v => v.Name));
         var newVar = new VariableViewModel { Name = name, Type = VariableType.Int };
         Variables.Add(newVar); // panel auto-validates via CollectionChanged
 

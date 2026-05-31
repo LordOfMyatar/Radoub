@@ -284,6 +284,27 @@ public class VariableViewModelTests
         Assert.False(VariableViewModel.IsValidName(new string('a', 33)));
     }
 
+    // --- Unique default name for new variables (#2293 follow-up) ---
+
+    [Fact]
+    public void NextDefaultName_EmptyCollection_ReturnsBase()
+    {
+        Assert.Equal("NewVar", VariableViewModel.NextDefaultName(System.Array.Empty<string>()));
+    }
+
+    [Fact]
+    public void NextDefaultName_SkipsExisting_CaseInsensitive()
+    {
+        Assert.Equal("NewVar1", VariableViewModel.NextDefaultName(new[] { "NewVar" }));
+        Assert.Equal("NewVar2", VariableViewModel.NextDefaultName(new[] { "newvar", "NEWVAR1" }));
+    }
+
+    [Fact]
+    public void NextDefaultName_IsAlwaysValid()
+    {
+        Assert.True(VariableViewModel.IsValidName(VariableViewModel.NextDefaultName(new[] { "NewVar", "NewVar1" })));
+    }
+
     // --- ToVariable with empty name still succeeds (validation is UI-layer) ---
 
     [Fact]
