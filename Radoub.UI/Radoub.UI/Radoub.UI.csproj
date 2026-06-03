@@ -21,6 +21,7 @@
   <ItemGroup>
     <!-- Avalonia packages - match version used by Parley (11.3.11) -->
     <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Skia" VersionOverride="11.3.17" />
     <PackageReference Include="Avalonia.Themes.Fluent" />
     <PackageReference Include="Avalonia.Controls.DataGrid" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
