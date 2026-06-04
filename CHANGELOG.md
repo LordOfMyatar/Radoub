@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub 0.1.0-deps] - 2026-06-03
+**Branch**: `radoub/issue-2332` | **PR**: #TBD
+
+### Dependabot: Avalonia + SkiaSharp patch bumps
+
+- Avalonia framework 11.3.16 → 11.3.17 (all core packages + Headless.XUnit); SkiaSharp 3.119.2 → 3.119.4. Consolidates #2333, #2334, #2335, #2336, #2338, #2339, #2340.
+
+---
+
 ## [Radoub.UI 0.1.67-alpha] - 2026-05-30
 **Branch**: `reliquary/issue-2293` | **PR**: #2330
 
