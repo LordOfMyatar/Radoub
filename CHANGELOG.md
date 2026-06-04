@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - New shared `Radoub.UI.Controls.VariablesPanel` + superset `VariableViewModel` (all 5 var types: Int/Float/String/Object/Location, name validation, duplicate detection). Reliquary epic #2289 pre-work.
 - Quartermaster, Fence, Relique, and Trebuchet migrated to the shared panel; tool-local `VariableViewModel.cs` and duplicate VM tests removed.
+- Panel now self-validates on every edit (fixes stale validation), raises a distinct edit signal so screen switches no longer mark documents dirty, and keeps invalid numeric input instead of silently reverting it (fix or switch type to String).
+- New variables seed a unique default name and focus the name cell; floats require an explicit decimal point (e.g. `5.0`); the grid scrolls when the host caps its height; Add is disabled until a document is loaded.
 
 ---
 
