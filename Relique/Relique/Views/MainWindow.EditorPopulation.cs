@@ -5,7 +5,9 @@ using Avalonia.Media.Imaging;
 using ItemEditor.ViewModels;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
+using Radoub.UI.Controls;
 using Radoub.UI.Services;
+using VariableViewModel = Radoub.UI.ViewModels.VariableViewModel;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -575,37 +577,37 @@ public partial class MainWindow
         }
     }
 
-    // --- Local Variables ---
+    // --- Local Variables (shared Radoub.UI VariablesPanel, #2293) ---
+
+    private bool _variablesWired;
+
+    /// <summary>Wire the shared panel to the local collection once. The panel owns validation
+    /// and raises VariablesChanged only on real user edits (not on populate).</summary>
+    private void WireUpVariables()
+    {
+        if (_variablesWired) return;
+        _variablesWired = true;
+
+        VariablesPanelControl.Variables = _variables;
+        VariablesPanelControl.AddRequested += OnVariableAddRequested;
+        VariablesPanelControl.DeleteRequested += OnVariableDeleteRequested;
+        VariablesPanelControl.VariablesChanged += (_, _) => { if (!_isLoading) MarkDirty(); };
+    }
 
     private void PopulateVariables()
     {
-        VariablesGrid.ItemsSource = null;
-
-        foreach (var vm in _variables)
-            vm.PropertyChanged -= OnVariablePropertyChanged;
+        WireUpVariables();
 
         _variables.Clear();
+        VariablesPanelControl.CanAdd = _currentItem != null; // gate Add until an item is loaded
 
         if (_currentItem == null) return;
 
         foreach (var variable in _currentItem.VarTable)
-        {
-            var vm = VariableViewModel.FromVariable(variable);
-            vm.PropertyChanged += OnVariablePropertyChanged;
-            _variables.Add(vm);
-        }
+            _variables.Add(VariableViewModel.FromVariable(variable));
 
-        VariablesGrid.ItemsSource = _variables;
+        VariablesPanelControl.RevalidateNames();
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {_variables.Count} local variables");
-    }
-
-    private void OnVariablePropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (!_isLoading) MarkDirty();
-
-        // Re-validate on name changes
-        if (e.PropertyName == nameof(VariableViewModel.Name))
-            ValidateVariablesRealTime();
     }
 
     private void UpdateVarTable()
@@ -621,6 +623,7 @@ public partial class MainWindow
         }
     }
 
+    /// <summary>Save-time validation: blocks save on duplicate names, warns on empty names.</summary>
     private string? ValidateVariables()
     {
         var names = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -648,92 +651,31 @@ public partial class MainWindow
         return null;
     }
 
-    private void ValidateVariablesRealTime()
-    {
-        var nameCounts = new System.Collections.Generic.Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        foreach (var vm in _variables)
-        {
-            if (string.IsNullOrWhiteSpace(vm.Name)) continue;
-            nameCounts.TryGetValue(vm.Name, out var count);
-            nameCounts[vm.Name] = count + 1;
-        }
-
-        var errors = new System.Collections.Generic.List<string>();
-        foreach (var vm in _variables)
-        {
-            if (string.IsNullOrWhiteSpace(vm.Name))
-            {
-                vm.HasError = true;
-                vm.ErrorMessage = "Variable name is required";
-            }
-            else if (nameCounts.TryGetValue(vm.Name, out var count) && count > 1)
-            {
-                vm.HasError = true;
-                vm.ErrorMessage = $"Duplicate name: \"{vm.Name}\"";
-                if (!errors.Contains($"Duplicate: \"{vm.Name}\""))
-                    errors.Add($"Duplicate: \"{vm.Name}\"");
-            }
-            else
-            {
-                vm.HasError = false;
-                vm.ErrorMessage = string.Empty;
-            }
-        }
-
-        var emptyCount = _variables.Count(v => string.IsNullOrWhiteSpace(v.Name));
-        if (emptyCount > 0)
-            errors.Insert(0, $"{emptyCount} variable(s) missing name");
-
-        if (errors.Count > 0)
-        {
-            VariableValidationText.Text = string.Join(" | ", errors);
-            VariableValidationText.IsVisible = true;
-        }
-        else
-        {
-            VariableValidationText.IsVisible = false;
-        }
-    }
-
-    private void OnAddVariable(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    private void OnVariableAddRequested(object? sender, VariableAddRequestedEventArgs e)
     {
         if (_currentItem == null) return;
 
         var newVar = new VariableViewModel
         {
-            Name = string.Empty,
-            Type = VariableType.Int,
-            IntValue = 0
+            Name = VariableViewModel.NextDefaultName(_variables.Select(v => v.Name)),
+            Type = VariableType.Int
         };
-
-        newVar.PropertyChanged += OnVariablePropertyChanged;
-        _variables.Add(newVar);
-        VariablesGrid.SelectedItem = newVar;
-
-        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-        {
-            VariablesGrid.ScrollIntoView(newVar, VariablesGrid.Columns[0]);
-            VariablesGrid.BeginEdit();
-        }, Avalonia.Threading.DispatcherPriority.Background);
+        _variables.Add(newVar); // panel auto-validates via CollectionChanged
+        VariablesPanelControl.SelectedVariable = newVar;
+        VariablesPanelControl.FocusSelectedName(); // land in the name field, ready to overtype
 
         MarkDirty();
-        ValidateVariablesRealTime();
     }
 
-    private void OnRemoveVariable(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    private void OnVariableDeleteRequested(object? sender, VariableDeleteRequestedEventArgs e)
     {
-        var selectedItems = VariablesGrid.SelectedItems?.Cast<VariableViewModel>().ToList();
-        if (selectedItems == null || selectedItems.Count == 0) return;
+        if (e.Variables.Count == 0) return;
 
-        foreach (var item in selectedItems)
-        {
-            item.PropertyChanged -= OnVariablePropertyChanged;
+        foreach (var item in e.Variables)
             _variables.Remove(item);
-        }
 
         MarkDirty();
-        ValidateVariablesRealTime();
-        UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed {selectedItems.Count} variable(s)");
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed {e.Variables.Count} variable(s)");
     }
 
     // --- Identified Visual Cue (#1810) ---

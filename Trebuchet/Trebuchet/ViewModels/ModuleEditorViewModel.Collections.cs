@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using CommunityToolkit.Mvvm.Input;
 using Radoub.Formats.Gff;
+using VariableViewModel = Radoub.UI.ViewModels.VariableViewModel;
 
 namespace RadoubLauncher.ViewModels;
 
@@ -65,13 +66,16 @@ public partial class ModuleEditorViewModel
         }
     }
 
-    // Variable Commands
+    // Variable operations (invoked by the shared VariablesPanel's Add/Delete events, #2293)
 
-    [RelayCommand]
-    private void AddVariable()
+    /// <summary>Append a new int variable and select it. Called from the panel's AddRequested event.</summary>
+    public void AddVariable()
     {
-        var newVar = new VariableViewModel(Variable.CreateInt("", 0));
-        newVar.SetUniquenessCheck(IsVariableNameUnique);
+        var newVar = new VariableViewModel
+        {
+            Name = VariableViewModel.NextDefaultName(Variables.Select(v => v.Name)),
+            Type = VariableType.Int
+        };
         Variables.Add(newVar);
         SelectedVariable = newVar;
         HasUnsavedChanges = true;
@@ -80,24 +84,14 @@ public partial class ModuleEditorViewModel
         VariableAdded?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <summary>
-    /// Check if a variable name is unique within the collection.
-    /// </summary>
-    private bool IsVariableNameUnique(string name, VariableViewModel currentVar)
+    /// <summary>Remove the given variables. Called from the panel's DeleteRequested event.</summary>
+    public void RemoveVariables(System.Collections.Generic.IEnumerable<VariableViewModel> toRemove)
     {
-        if (string.IsNullOrEmpty(name)) return true; // Empty names handled separately
+        var removed = false;
+        foreach (var v in toRemove)
+            removed |= Variables.Remove(v);
 
-        return !Variables.Any(v => v != currentVar &&
-            string.Equals(v.Name, name, StringComparison.OrdinalIgnoreCase));
-    }
-
-    [RelayCommand]
-    private void RemoveVariable()
-    {
-        if (SelectedVariable != null)
-        {
-            Variables.Remove(SelectedVariable);
+        if (removed)
             HasUnsavedChanges = true;
-        }
     }
 }

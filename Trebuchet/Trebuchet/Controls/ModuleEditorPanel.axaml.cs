@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using Avalonia.Controls;
-using Avalonia.Threading;
-using Avalonia.VisualTree;
+using Radoub.UI.Controls;
 using RadoubLauncher.ViewModels;
 
 namespace RadoubLauncher.Controls;
@@ -9,6 +8,7 @@ namespace RadoubLauncher.Controls;
 public partial class ModuleEditorPanel : UserControl
 {
     private ModuleEditorViewModel? _viewModel;
+    private bool _variablesWired;
 
     public ModuleEditorPanel()
     {
@@ -25,8 +25,15 @@ public partial class ModuleEditorPanel : UserControl
         DataContext = viewModel;
         viewModel.SetParentWindow(parentWindow);
 
-        // Subscribe to variable added event to auto-focus the name field
-        viewModel.VariableAdded += OnVariableAdded;
+        // Route the shared VariablesPanel's Add/Delete events to the ViewModel (#2293).
+        // The panel self-validates on edit and raises VariablesChanged for the dirty flag.
+        if (!_variablesWired)
+        {
+            _variablesWired = true;
+            VariablesPanelControl.AddRequested += OnVariableAddRequested;
+            VariablesPanelControl.DeleteRequested += OnVariableDeleteRequested;
+            VariablesPanelControl.VariablesChanged += OnPanelVariablesChanged;
+        }
     }
 
     /// <summary>
@@ -36,46 +43,23 @@ public partial class ModuleEditorPanel : UserControl
     {
         if (_viewModel == null) return;
         await _viewModel.LoadCurrentModuleAsync();
+        VariablesPanelControl.RevalidateNames();
     }
 
-    private void OnVariableAdded(object? sender, System.EventArgs e)
+    private void OnVariableAddRequested(object? sender, VariableAddRequestedEventArgs e)
     {
-        // Delay to let the DataGrid render the new row, then focus the Name field
-        Dispatcher.UIThread.Post(() =>
-        {
-            // Scroll to the new item and select its first cell
-            VariablesDataGrid.ScrollIntoView(VariablesDataGrid.SelectedItem, null);
-            VariablesDataGrid.BeginEdit();
-
-            // Find the Name TextBox in the selected row and focus it
-            Dispatcher.UIThread.Post(() =>
-            {
-                var nameTextBox = FindNameTextBoxInSelectedRow();
-                if (nameTextBox != null)
-                {
-                    nameTextBox.Focus();
-                    nameTextBox.SelectAll();
-                }
-            }, DispatcherPriority.Background);
-        }, DispatcherPriority.Background);
+        _viewModel?.AddVariable();
+        VariablesPanelControl.FocusSelectedName(); // land in the new variable's name field
     }
 
-    private TextBox? FindNameTextBoxInSelectedRow()
+    private void OnVariableDeleteRequested(object? sender, VariableDeleteRequestedEventArgs e)
     {
-        if (VariablesDataGrid.SelectedItem == null) return null;
+        _viewModel?.RemoveVariables(e.Variables);
+    }
 
-        // Find the DataGridRow matching our selected item, then grab its first TextBox
-        foreach (var descendant in VariablesDataGrid.GetVisualDescendants())
-        {
-            if (descendant is DataGridRow row && row.DataContext == VariablesDataGrid.SelectedItem)
-            {
-                foreach (var child in row.GetVisualDescendants())
-                {
-                    if (child is TextBox tb)
-                        return tb;
-                }
-            }
-        }
-        return null;
+    private void OnPanelVariablesChanged(object? sender, System.EventArgs e)
+    {
+        if (_viewModel != null)
+            _viewModel.HasUnsavedChanges = true;
     }
 }

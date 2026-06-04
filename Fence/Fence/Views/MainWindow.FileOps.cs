@@ -457,6 +457,7 @@ public partial class MainWindow
 
         StoreItems.Clear();
         Variables.Clear();
+        VariablesPanelControl.CanAdd = false; // no store loaded
         ClearStoreProperties();
 
         _documentState.IsLoading = false;
