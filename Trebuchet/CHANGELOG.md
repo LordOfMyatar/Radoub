@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Batch script compilation now chunks the file list so large modules no longer exceed the Windows command-line length limit (#2343).
 - Marlinspike filename/resref rename now respects the file-type scope, so `.nss` scripts are no longer silently renamed when cleaning up items (#2341).
+- Marlinspike filename rename now shows a confirmation dialog listing every old → new name before renaming any files (#2346).
 
 ---
 
