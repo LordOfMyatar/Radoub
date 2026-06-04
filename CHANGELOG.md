@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Radoub 0.1.0-deps] - 2026-06-03
-**Branch**: `radoub/issue-2332` | **PR**: #TBD
+**Branch**: `radoub/issue-2332` | **PR**: #2342
 
 ### Dependabot: Avalonia + SkiaSharp patch bumps
 
