@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.36.8-alpha] - 2026-06-04
-**Branch**: `trebuchet/sprint/compile-marlinspike-scope` | **PR**: #TBD
+**Branch**: `trebuchet/sprint/compile-marlinspike-scope` | **PR**: #2345
 
 ### Sprint: Compile + Marlinspike scope fixes
 
