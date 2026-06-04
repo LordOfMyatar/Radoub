@@ -739,7 +739,7 @@
                             <Expander Header="Local Variables" IsExpanded="False" Margin="0,0,0,8">
                                 <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                         BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,4,0,0">
-                                    <controls:VariablesPanel x:Name="VariablesPanelControl" MaxHeight="220"/>
+                                    <controls:VariablesPanel x:Name="VariablesPanelControl" GridMaxHeight="220"/>
                                 </Border>
                             </Expander>
 

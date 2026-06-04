@@ -303,7 +303,7 @@
                 <Expander Grid.Column="2" Header="Local Variables" IsExpanded="False"
                           AutomationProperties.AutomationId="VariablesExpander">
                     <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,4,0,0">
-                        <controls:VariablesPanel x:Name="VariablesPanelControl" MaxHeight="220"/>
+                        <controls:VariablesPanel x:Name="VariablesPanelControl" GridMaxHeight="220"/>
                     </Border>
                 </Expander>
             </Grid>

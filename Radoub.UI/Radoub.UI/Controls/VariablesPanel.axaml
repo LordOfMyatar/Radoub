@@ -28,6 +28,7 @@
     <!-- Variable grid: Name | Type | Value -->
     <DataGrid x:Name="VariablesGrid"
               Grid.Row="1"
+              MaxHeight="{Binding GridMaxHeight, RelativeSource={RelativeSource AncestorType=UserControl}}"
               AutomationProperties.AutomationId="Variables_Grid"
               ItemsSource="{Binding Variables, RelativeSource={RelativeSource AncestorType=UserControl}}"
               SelectedItem="{Binding SelectedVariable, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"

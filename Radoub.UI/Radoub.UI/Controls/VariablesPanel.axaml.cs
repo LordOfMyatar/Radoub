@@ -37,6 +37,22 @@ public partial class VariablesPanel : UserControl
     public static readonly StyledProperty<VariableViewModel?> SelectedVariableProperty =
         AvaloniaProperty.Register<VariablesPanel, VariableViewModel?>(nameof(SelectedVariable));
 
+    /// <summary>
+    /// Max height for the inner grid. MUST be bounded by the host when the panel sits inside a
+    /// ScrollViewer/StackPanel that offers infinite height — otherwise the DataGrid measures to
+    /// fit every row and its own scrollbar never engages (rows past the cap become unreachable).
+    /// Setting MaxHeight on the panel UserControl is NOT enough; the bound must reach the grid.
+    /// </summary>
+    public static readonly StyledProperty<double> GridMaxHeightProperty =
+        AvaloniaProperty.Register<VariablesPanel, double>(nameof(GridMaxHeight), defaultValue: double.PositiveInfinity);
+
+    /// <summary>Max height applied directly to the inner DataGrid so it scrolls when content overflows.</summary>
+    public double GridMaxHeight
+    {
+        get => GetValue(GridMaxHeightProperty);
+        set => SetValue(GridMaxHeightProperty, value);
+    }
+
     private ObservableCollection<VariableViewModel>? _subscribedCollection;
 
     /// <summary>The variables shown in the grid. Host owns the collection and its mutations.</summary>

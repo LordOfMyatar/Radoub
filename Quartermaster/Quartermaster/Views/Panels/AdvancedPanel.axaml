@@ -169,7 +169,7 @@
                         Padding="15">
                     <StackPanel Spacing="10">
                         <TextBlock Text="Local Variables" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
-                        <controls:VariablesPanel x:Name="VariablesPanelControl" MaxHeight="240"/>
+                        <controls:VariablesPanel x:Name="VariablesPanelControl" GridMaxHeight="240"/>
                     </StackPanel>
                 </Border>
             </StackPanel>

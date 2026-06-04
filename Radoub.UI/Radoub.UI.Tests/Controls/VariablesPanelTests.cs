@@ -1,5 +1,9 @@
 using System.Collections.ObjectModel;
+using System.Linq;
+using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Radoub.Formats.Gff;
 using Radoub.UI.Controls;
 using Radoub.UI.ViewModels;
@@ -169,5 +173,20 @@ public class VariablesPanelTests
         panel.RevalidateNames();
 
         Assert.True(panel.HasValidationErrors);
+    }
+
+    // --- GridMaxHeight bounds the inner DataGrid so it scrolls (#2293 follow-up) ---
+
+    [AvaloniaFact]
+    public void GridMaxHeight_BoundsTheInnerGrid()
+    {
+        var panel = new VariablesPanel { GridMaxHeight = 240 };
+        var window = new Window { Content = panel };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        var grid = panel.GetVisualDescendants().OfType<DataGrid>().FirstOrDefault();
+        Assert.NotNull(grid);
+        Assert.Equal(240, grid!.MaxHeight);
     }
 }
