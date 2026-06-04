@@ -42,6 +42,7 @@ public partial class MainWindow
         WireUpVariables();
 
         Variables.Clear();
+        VariablesPanelControl.CanAdd = _currentStore != null; // gate Add until a store is loaded
 
         if (_currentStore == null) return;
 

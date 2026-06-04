@@ -178,6 +178,26 @@ public class VariablesPanelTests
     // --- GridMaxHeight bounds the inner DataGrid so it scrolls (#2293 follow-up) ---
 
     [AvaloniaFact]
+    public void CanAdd_False_DisablesAddButton()
+    {
+        var panel = new VariablesPanel { CanAdd = false };
+        var window = new Window { Content = panel };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        var addBtn = panel.GetVisualDescendants().OfType<Button>()
+            .FirstOrDefault(b => b.Name == "AddButton");
+        Assert.NotNull(addBtn);
+        Assert.False(addBtn!.IsEnabled);
+    }
+
+    [AvaloniaFact]
+    public void CanAdd_DefaultsTrue()
+    {
+        Assert.True(new VariablesPanel().CanAdd);
+    }
+
+    [AvaloniaFact]
     public void GridMaxHeight_BoundsTheInnerGrid()
     {
         var panel = new VariablesPanel { GridMaxHeight = 240 };

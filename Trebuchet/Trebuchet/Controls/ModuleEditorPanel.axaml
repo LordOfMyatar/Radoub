@@ -555,7 +555,8 @@
                 <controls:VariablesPanel x:Name="VariablesPanelControl"
                                          Margin="8"
                                          Variables="{Binding Variables}"
-                                         SelectedVariable="{Binding SelectedVariable, Mode=TwoWay}"/>
+                                         SelectedVariable="{Binding SelectedVariable, Mode=TwoWay}"
+                                         CanAdd="{Binding IsModuleLoaded}"/>
             </TabItem>
         </TabControl>
     </Grid>

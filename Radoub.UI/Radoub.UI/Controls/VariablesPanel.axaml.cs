@@ -53,6 +53,21 @@ public partial class VariablesPanel : UserControl
         set => SetValue(GridMaxHeightProperty, value);
     }
 
+    /// <summary>
+    /// Whether the Add button is enabled. Hosts set this false when no document is loaded so
+    /// Add doesn't silently no-op (the host's add handler gates on a loaded creature/store/item).
+    /// Defaults true.
+    /// </summary>
+    public static readonly StyledProperty<bool> CanAddProperty =
+        AvaloniaProperty.Register<VariablesPanel, bool>(nameof(CanAdd), defaultValue: true);
+
+    /// <summary>Enables/disables the Add button (host gates on a loaded document).</summary>
+    public bool CanAdd
+    {
+        get => GetValue(CanAddProperty);
+        set => SetValue(CanAddProperty, value);
+    }
+
     private ObservableCollection<VariableViewModel>? _subscribedCollection;
 
     /// <summary>The variables shown in the grid. Host owns the collection and its mutations.</summary>

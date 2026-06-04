@@ -599,6 +599,7 @@ public partial class MainWindow
         WireUpVariables();
 
         _variables.Clear();
+        VariablesPanelControl.CanAdd = _currentItem != null; // gate Add until an item is loaded
 
         if (_currentItem == null) return;
 

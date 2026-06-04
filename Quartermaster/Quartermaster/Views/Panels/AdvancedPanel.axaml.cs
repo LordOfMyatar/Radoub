@@ -471,6 +471,7 @@ public partial class AdvancedPanel : BasePanelControl
     {
         IsLoading = true;
         CurrentCreature = creature;
+        if (_variablesPanel != null) _variablesPanel.CanAdd = creature != null;
 
         if (creature == null)
         {
@@ -602,6 +603,7 @@ public partial class AdvancedPanel : BasePanelControl
         _variablesPanelWired = true;
 
         _variablesPanel.Variables = Variables;
+        _variablesPanel.CanAdd = CurrentCreature != null; // gate Add until a creature is loaded
         _subs.Track(
             attach: () => _variablesPanel.AddRequested += OnVariableAddRequested,
             detach: () => _variablesPanel.AddRequested -= OnVariableAddRequested);

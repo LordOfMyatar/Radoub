@@ -17,7 +17,8 @@
     <!-- Toolbar: Add / Replace / Delete -->
     <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6" Margin="0,0,0,6">
       <Button x:Name="AddButton" AutomationProperties.AutomationId="Variables_AddButton"
-              Content="Add" Click="OnAddClick" ToolTip.Tip="Add a new variable"/>
+              Content="Add" Click="OnAddClick" ToolTip.Tip="Add a new variable"
+              IsEnabled="{Binding CanAdd, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
       <Button x:Name="ReplaceButton" AutomationProperties.AutomationId="Variables_ReplaceButton"
               Content="Replace" Click="OnReplaceClick"
               ToolTip.Tip="Replace the selected variable's value with the edited fields"/>
