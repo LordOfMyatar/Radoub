@@ -4,6 +4,15 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
+## [0.1.173-alpha] - 2026-06-05
+**Branch**: `radoub/issue-2350` | **PR**: #TBD
+
+### Fix: Browser delete now backs up first (#2350)
+
+- Deleting a dialog from the browser backs it up to `~/Radoub/Backups/` first instead of removing it outright. See shared `Radoub.UI` 0.1.68-alpha (root CHANGELOG).
+
+---
+
 ## [0.1.172-alpha] - 2026-05-30
 **Branch**: `parley/issue-2260` | **PR**: #2323
 

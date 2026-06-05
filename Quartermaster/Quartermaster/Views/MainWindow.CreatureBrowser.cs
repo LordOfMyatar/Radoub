@@ -59,8 +59,8 @@ public partial class MainWindow
         // Subscribe to file selection events
         creatureBrowserPanel.FileSelected += OnCreatureBrowserFileSelected;
 
-        // Subscribe to file delete events (#1368)
-        creatureBrowserPanel.FileDeleteRequested += OnCreatureBrowserFileDeleteRequested;
+        // Subscribe to file delete events (#1368; shared backup-delete #2350)
+        creatureBrowserPanel.FileDeleted += OnCreatureBrowserFileDeleted;
 
         // Subscribe to collapse/expand events
         creatureBrowserPanel.CollapsedChanged += OnCreatureBrowserCollapsedChanged;
@@ -447,49 +447,19 @@ public partial class MainWindow
     /// Handles file delete request from creature browser panel (#1368).
     /// Shows confirmation dialog, deletes file, and refreshes list.
     /// </summary>
-    private async void OnCreatureBrowserFileDeleteRequested(object? sender, FileDeleteRequestedEventArgs e)
+    // The browser panel owns confirm + backup + delete + refresh (#2350). The host
+    // only reacts here to close the editor if the open file got deleted. Previously
+    // this did a bare File.Delete with no backup — a misclick was unrecoverable.
+    private void OnCreatureBrowserFileDeleted(object? sender, FileDeletedEventArgs e)
     {
-        var entry = e.Entry;
-        if (string.IsNullOrEmpty(entry.FilePath) || !File.Exists(entry.FilePath))
+        var fileName = Path.GetFileName(e.FilePath);
+
+        if (e.WasCurrentFile)
         {
-            UpdateStatus("File not found on disk");
-            return;
+            CloseFile();
         }
 
-        var fileName = Path.GetFileName(entry.FilePath);
-
-        // Modal confirmation dialog (destructive action)
-        var confirmed = await DialogHelper.ShowConfirmationDialog(
-            this, "Confirm Delete", $"Delete \"{fileName}\" from disk?\n\nThis cannot be undone.");
-        if (!confirmed)
-            return;
-
-        try
-        {
-            var isDeletingCurrent = string.Equals(_currentFilePath, entry.FilePath, StringComparison.OrdinalIgnoreCase);
-
-            File.Delete(entry.FilePath);
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Deleted creature file: {fileName}");
-
-            if (isDeletingCurrent)
-            {
-                CloseFile();
-            }
-
-            UpdateStatus($"Deleted {fileName}");
-
-            // Refresh the creature browser panel
-            var creatureBrowserPanel = this.FindControl<CreatureBrowserPanel>("CreatureBrowserPanel");
-            if (creatureBrowserPanel != null)
-            {
-                await creatureBrowserPanel.RefreshAsync();
-            }
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to delete {fileName}: {ex.Message}");
-            UpdateStatus($"Delete failed: {ex.Message}");
-        }
+        UpdateStatus($"Deleted {fileName}");
     }
 
     /// <summary>
