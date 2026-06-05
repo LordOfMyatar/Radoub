@@ -7,7 +7,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 ---
 
 ## [0.1.0-alpha] - 2026-06-05
-**Branch**: `reliquary/issue-2294` | **PR**: #TBD
+**Branch**: `reliquary/issue-2294` | **PR**: #2349
 
 ### Sprint 4: Tool scaffolding + ReliquaryPath + browser panel + fixtures
 
