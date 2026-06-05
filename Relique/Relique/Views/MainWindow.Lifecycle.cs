@@ -357,13 +357,16 @@ public partial class MainWindow
         var fileName = Path.GetFileName(entry.FilePath);
 
         // Confirm deletion (destructive action — modal OK per CLAUDE.md)
+        // SizeToContent so the button row is never clipped — a fixed Height + non-resizable
+        // window pushed Delete/Cancel off-screen with no way to reach them (#2348).
         var dialog = new Avalonia.Controls.Window
         {
             Title = "Confirm Delete",
-            Width = 380,
-            Height = 150,
+            Width = 400,
+            MinHeight = 160,
+            SizeToContent = Avalonia.Controls.SizeToContent.Height,
             WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.CenterOwner,
-            CanResize = false
+            CanResize = true
         };
 
         var confirmed = false;
