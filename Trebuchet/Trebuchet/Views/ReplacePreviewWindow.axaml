@@ -6,7 +6,7 @@
         MinWidth="450" MinHeight="350"
         WindowStartupLocation="CenterOwner">
 
-    <Grid RowDefinitions="Auto,*,Auto,Auto">
+    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto">
 
         <!-- Header -->
         <Border Grid.Row="0" Padding="12,8"
@@ -29,8 +29,19 @@
             </StackPanel>
         </Border>
 
+        <!-- .nss script notice (shown only when script-source content matches were skipped) -->
+        <Border x:Name="NssNotice" Grid.Row="1" Padding="12,8" IsVisible="False"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                BorderThickness="0,0,0,1">
+            <TextBlock x:Name="NssNoticeText"
+                       TextWrapping="Wrap"
+                       FontSize="{DynamicResource FontSizeSmall}"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+        </Border>
+
         <!-- Change list -->
-        <TreeView x:Name="ChangeTree" Grid.Row="1" Margin="4">
+        <TreeView x:Name="ChangeTree" Grid.Row="2" Margin="4">
             <TreeView.Styles>
                 <Style Selector="TreeViewItem">
                     <Setter Property="IsExpanded" Value="True"/>
@@ -39,7 +50,7 @@
         </TreeView>
 
         <!-- Backup notice -->
-        <Border Grid.Row="2" Padding="8,4"
+        <Border Grid.Row="3" Padding="8,4"
                 Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                 BorderThickness="0,1,0,0">
@@ -49,7 +60,7 @@
         </Border>
 
         <!-- Buttons -->
-        <Border Grid.Row="3" Padding="12,8"
+        <Border Grid.Row="4" Padding="12,8"
                 Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                 BorderThickness="0,1,0,0">

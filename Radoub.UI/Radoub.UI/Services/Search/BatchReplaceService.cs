@@ -54,7 +54,15 @@ public class BatchReplaceService
                 var isReplaceable = match.Field.IsReplaceable
                     || (allowResRefReplace && match.Field.FieldType == SearchFieldType.ResRef);
 
-                if (!isReplaceable) continue;
+                if (!isReplaceable)
+                {
+                    // .nss script-source content matches are found by search but can't be
+                    // replaced here (plain text — edit in a code editor). Count them so the
+                    // UI can explain the otherwise-empty preview (#2341).
+                    if (match.Field.GffPath == "<nss-source>")
+                        preview.SkippedNssContentMatches++;
+                    continue;
+                }
 
                 var change = new PendingChange
                 {

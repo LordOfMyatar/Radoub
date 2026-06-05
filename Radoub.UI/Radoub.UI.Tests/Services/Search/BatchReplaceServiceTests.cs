@@ -86,6 +86,27 @@ public class BatchReplaceServiceTests : IDisposable
     }
 
     [Fact]
+    public void PreviewReplace_NssContentMatch_SkippedAndCounted()
+    {
+        // .nss content is plain-text script — Marlinspike doesn't edit it. The match
+        // is found by search but must be dropped from the preview AND counted so the
+        // UI can tell the user to use a code editor (#2341). Without the count, the
+        // preview is silently empty and reads as broken.
+        var dir = Path.Combine(_testDir, "module");
+        Directory.CreateDirectory(dir);
+        var nssPath = Path.Combine(dir, "_list.nss");
+        File.WriteAllText(nssPath, "void main() { ExecuteScript(\"louis\"); }");
+
+        var searchService = new ModuleSearchService();
+        var fileResult = searchService.SearchSingleFile(nssPath, new SearchCriteria { Pattern = "louis" });
+
+        var preview = _service.PreviewReplace(new[] { fileResult }, "lewie");
+
+        Assert.Empty(preview.Changes);              // nothing replaceable
+        Assert.True(preview.SkippedNssContentMatches > 0); // but the user is told why
+    }
+
+    [Fact]
     public void PreviewReplace_GroupsByFile()
     {
         var utcPath = WriteUtcFile("louis.utc", CreateTestUtc());
