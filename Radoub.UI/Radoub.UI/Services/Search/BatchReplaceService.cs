@@ -122,7 +122,7 @@ public class BatchReplaceService
                 if (provider == null)
                 {
                     var skipReason = ext == ".nss"
-                        ? ".nss is plain-text script — edit it in your code editor, not Marlinspike content-replace."
+                        ? "Manage NSS files in your code editor."
                         : $"No provider for extension: {ext}";
                     allResults.AddRange(changes.Select(c => new ReplaceResult
                     {

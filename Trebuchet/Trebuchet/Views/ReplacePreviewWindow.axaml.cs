@@ -43,7 +43,7 @@ public partial class ReplacePreviewWindow : Window
             var n = preview.SkippedNssContentMatches;
             NssNoticeText.Text =
                 $"\u26a0 {n} match{(n == 1 ? "" : "es")} in .nss script files {(n == 1 ? "is" : "are")} not shown \u2014 " +
-                "NWScript is plain text and isn't edited by Marlinspike. Open the script in your code editor to change it.";
+                "manage NSS files in your code editor.";
             NssNotice.IsVisible = true;
         }
 
