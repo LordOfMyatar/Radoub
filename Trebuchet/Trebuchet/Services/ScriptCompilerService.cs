@@ -504,11 +504,78 @@ public class ScriptCompilerService
         var includeRoot = (!string.IsNullOrEmpty(gamePath) && Directory.Exists(gamePath))
             ? gamePath
             : null;
-        var argList = ProcessArgumentBuilder.CompileArgs(
-            scriptPaths, includeRoot, continueOnError: true, threadCount: threadCount);
 
         // Use the directory of the first script as working directory
         var workingDir = Path.GetDirectoryName(scriptPaths[0]) ?? ".";
+
+        // Chunk the script list so each invocation stays under the OS command-line
+        // limit (#2343). Windows caps CreateProcess at 32,767 chars; ~1100 absolute
+        // paths overflowed it and threw error 206 before the compiler ran. Reserve
+        // a generous margin below the hard cap for safety across shells/OSes.
+        const int MaxCommandLine = 30000;
+        var fixedArgsLength = ProcessArgumentBuilder
+            .CompileArgs(System.Array.Empty<string>(), includeRoot, continueOnError: true, threadCount: threadCount)
+            .Sum(a => a.Length + 1);
+        var chunks = ProcessArgumentBuilder.ChunkScriptPaths(scriptPaths, fixedArgsLength, MaxCommandLine);
+
+        if (chunks.Count > 1)
+        {
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Command line too long for one invocation — split {scriptPaths.Count} scripts into {chunks.Count} chunks.");
+        }
+
+        try
+        {
+            var compiledSoFar = 0;
+            foreach (var chunk in chunks)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var chunkOk = await CompileChunkAsync(
+                    chunk, includeRoot, threadCount, workingDir, batchResult,
+                    compiledSoFar, scriptPaths.Count, progress, cancellationToken);
+                compiledSoFar += chunk.Count;
+                if (!chunkOk && batchResult.ErrorMessage == "Compilation timed out")
+                    return batchResult; // hard stop on timeout, matching prior behavior
+            }
+
+            batchResult.Success = batchResult.FailedScripts.Count == 0
+                && string.IsNullOrEmpty(batchResult.ErrorMessage);
+
+            progress?.Invoke(scriptPaths.Count, scriptPaths.Count, "done");
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Batch compilation complete: {batchResult.SuccessCount}/{batchResult.TotalScripts} succeeded");
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            batchResult.ErrorMessage = ex.Message;
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Batch compilation error: {ex.Message}");
+        }
+
+        return batchResult;
+    }
+
+    /// <summary>
+    /// Compile a single chunk of scripts (one compiler invocation) and append the
+    /// per-script results into <paramref name="batchResult"/>. Returns false if the
+    /// chunk timed out (caller stops the whole batch).
+    /// </summary>
+    private async Task<bool> CompileChunkAsync(
+        IReadOnlyList<string> scriptPaths,
+        string? includeRoot,
+        int threadCount,
+        string workingDir,
+        BatchCompilationResult batchResult,
+        int compiledSoFar,
+        int grandTotal,
+        Action<int, int, string>? progress,
+        CancellationToken cancellationToken)
+    {
+        var argList = ProcessArgumentBuilder.CompileArgs(
+            scriptPaths, includeRoot, continueOnError: true, threadCount: threadCount);
 
         var startInfo = new ProcessStartInfo
         {
@@ -527,7 +594,8 @@ public class ScriptCompilerService
         UnifiedLogger.LogApplication(LogLevel.INFO,
             $"Running: {Path.GetFileName(CompilerPath!)} -c [{scriptPaths.Count} files] -y -j (cwd: {workingDir})");
 
-        try
+        progress?.Invoke(compiledSoFar, grandTotal, $"compiling {scriptPaths.Count}...");
+
         {
             using var process = new Process { StartInfo = startInfo };
             var output = new StringBuilder();
@@ -555,7 +623,7 @@ public class ScriptCompilerService
                 try { process.Kill(); } catch (Exception) { }
                 batchResult.ErrorMessage = "Compilation timed out";
                 UnifiedLogger.LogApplication(LogLevel.ERROR, "Batch compilation timed out");
-                return batchResult;
+                return false;
             }
 
             // Wait again to ensure async output handlers finish
@@ -620,7 +688,9 @@ public class ScriptCompilerService
                 }
             }
 
-            // Build per-script results
+            // Build per-script results. Track failures THIS chunk added so the
+            // exit-code fallback below scopes to this invocation, not the whole batch.
+            var chunkFailedCount = 0;
             foreach (var scriptPath in scriptPaths)
             {
                 var scriptName = Path.GetFileName(scriptPath);
@@ -639,6 +709,7 @@ public class ScriptCompilerService
                     result.ErrorMessage = errors.FirstOrDefault() ?? "Compilation failed";
                     result.ErrorOutput = string.Join("\n", errors);
                     batchResult.FailedScripts.Add(scriptName);
+                    chunkFailedCount++;
                     UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed: {scriptName}: {result.ErrorMessage}");
                 }
                 else
@@ -651,9 +722,9 @@ public class ScriptCompilerService
 
             // Exit code is the authoritative indicator of success.
             // If the compiler returned non-zero but our stderr parsing didn't identify
-            // specific failures, mark the whole batch as failed so we don't silently
-            // report success when scripts actually failed to compile.
-            if (exitCode != 0 && batchResult.FailedScripts.Count == 0)
+            // specific failures in THIS chunk, fall back to per-file heuristics so we
+            // don't silently report success when scripts actually failed to compile.
+            if (exitCode != 0 && chunkFailedCount == 0)
             {
                 UnifiedLogger.LogApplication(LogLevel.WARN,
                     $"Compiler exit code {exitCode} but no per-script errors parsed from stderr. Marking batch as failed.");
@@ -689,45 +760,32 @@ public class ScriptCompilerService
                     }
                 }
 
-                // If we still can't identify which scripts failed, mark all as failed
+                // If we still can't identify which scripts failed, mark every script
+                // in THIS chunk as failed (don't touch other chunks' results).
                 if (!anyIdentified)
                 {
                     UnifiedLogger.LogApplication(LogLevel.WARN,
-                        "Cannot identify specific failures — marking all scripts as failed");
-                    foreach (var result in batchResult.Results)
+                        "Cannot identify specific failures — marking this chunk's scripts as failed");
+                    foreach (var scriptPath in scriptPaths)
                     {
-                        result.Success = false;
+                        var result = batchResult.Results.First(r => r.ScriptPath == scriptPath);
+                        if (result.Success)
+                        {
+                            result.Success = false;
+                            batchResult.SuccessCount--;
+                            batchResult.FailedScripts.Add(Path.GetFileName(scriptPath)!);
+                        }
                         result.ExitCode = exitCode;
                         result.ErrorMessage = !string.IsNullOrWhiteSpace(errorText)
                             ? errorText.Trim()
                             : "Compilation failed (compiler returned non-zero exit code)";
                         result.ErrorOutput = errorText;
                     }
-                    batchResult.FailedScripts.Clear();
-                    batchResult.FailedScripts.AddRange(scriptPaths.Select(Path.GetFileName)!);
-                    batchResult.SuccessCount = 0;
                 }
             }
-
-            batchResult.Success = exitCode == 0 && batchResult.FailedScripts.Count == 0;
-
-            // Signal completion
-            progress?.Invoke(scriptPaths.Count, scriptPaths.Count, "done");
-
-            UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"Batch compilation complete: {batchResult.SuccessCount}/{batchResult.TotalScripts} succeeded");
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            batchResult.ErrorMessage = ex.Message;
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Batch compilation error: {ex.Message}");
         }
 
-        return batchResult;
+        return true;
     }
 
 }

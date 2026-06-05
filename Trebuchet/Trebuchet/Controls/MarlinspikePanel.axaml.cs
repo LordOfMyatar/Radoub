@@ -548,6 +548,17 @@ public partial class MarlinspikePanel : UserControl
             return;
         }
 
+        // Confirm the rename before touching any files (#2346). Filename rename used
+        // to run with no review step — a typo in the replacement text renamed files
+        // silently. Show the full old → new list and require explicit confirmation.
+        var confirmDialog = new RenameConfirmDialog(plans);
+        await confirmDialog.ShowDialog(_parentWindow);
+        if (!confirmDialog.Confirmed)
+        {
+            _viewModel.StatusText = "Rename cancelled.";
+            return;
+        }
+
         // Surface auto-suffix collision dialogs before proceeding.
         // Each plan whose validation triggered an auto-suffix must be confirmed.
         var confirmedPlans = new List<ResRefRenamePlan>();

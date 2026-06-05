@@ -53,6 +53,14 @@ public class BatchReplacePreview
     /// instances passed into provider.Replace.
     /// </summary>
     public bool AllowResRefReplace { get; init; }
+
+    /// <summary>
+    /// Count of .nss script-source content matches that were found by search but
+    /// dropped from the preview because Marlinspike does not edit plain-text script
+    /// content (#2341). The UI surfaces this so the user knows the matches exist but
+    /// must be edited in a code editor — otherwise an empty preview reads as "broken".
+    /// </summary>
+    public int SkippedNssContentMatches { get; set; }
 }
 
 /// <summary>

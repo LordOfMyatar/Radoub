@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.21-alpha] - 2026-06-04
+**Branch**: `trebuchet/sprint/compile-marlinspike-scope` | **PR**: #2345
+
+### Fix: Item delete now backs up first (#2347)
+
+- Deleting an item blueprint now saves a backup to `~/Radoub/Backups/` before removing the file, so a misclick can be restored.
+- Delete-confirm dialog now sizes to content and is resizable so the Delete/Cancel buttons are never clipped off-window (#2348).
+
+---
+
 ## [0.10.20-alpha] - 2026-05-28
 **Branch**: `relique/issue-2257-2261` | **PR**: #2283
 

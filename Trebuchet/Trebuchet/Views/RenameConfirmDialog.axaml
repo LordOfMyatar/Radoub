@@ -1,0 +1,63 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="RadoubLauncher.Views.RenameConfirmDialog"
+        Title="Confirm Rename"
+        SizeToContent="Height"
+        Width="560"
+        MinWidth="480"
+        MaxHeight="600"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True"
+        ShowInTaskbar="False">
+
+    <Border Padding="16">
+        <DockPanel>
+            <!-- Header -->
+            <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,12">
+                <TextBlock x:Name="HeaderText"
+                           FontSize="{DynamicResource FontSizeMedium}"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap"/>
+                <TextBlock x:Name="DetailText"
+                           TextWrapping="Wrap"
+                           Opacity="0.85"
+                           Text="These files will be renamed and any references to them updated. This cannot be undone from the app (a backup is saved first)."/>
+            </StackPanel>
+
+            <!-- Buttons -->
+            <StackPanel DockPanel.Dock="Bottom"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Spacing="8"
+                        Margin="0,12,0,0">
+                <Button Content="Rename"
+                        Click="OnConfirmClick"
+                        IsDefault="True"
+                        Padding="20,6"
+                        ToolTip.Tip="Proceed with the renames listed above."/>
+                <Button Content="Cancel"
+                        Click="OnCancelClick"
+                        IsCancel="True"
+                        Padding="20,6"
+                        ToolTip.Tip="Abort — no files are renamed."/>
+            </StackPanel>
+
+            <!-- Rename list -->
+            <Border BorderThickness="1"
+                    BorderBrush="{DynamicResource ThemeBorderMidBrush}"
+                    CornerRadius="4">
+                <ScrollViewer MaxHeight="420" Padding="8">
+                    <ItemsControl x:Name="RenameList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Margin="0,2"
+                                           TextWrapping="NoWrap"
+                                           Text="{Binding}"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+        </DockPanel>
+    </Border>
+</Window>

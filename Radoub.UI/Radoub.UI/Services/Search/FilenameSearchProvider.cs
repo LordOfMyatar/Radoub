@@ -52,11 +52,15 @@ public class FilenameSearchProvider
 
             var resourceType = ResourceTypes.FromExtension(ext);
 
-            // Filename search is INDEPENDENT of the 18 file-type checkboxes.
-            // Those checkboxes gate file-CONTENT searching; filename matches are
-            // their own search domain enabled by SearchFilenameResRef. This lets
-            // the user search filenames alone (all 18 unchecked) — the surgical
-            // workflow this feature was designed for.
+            // Honor FileTypeFilter, matching RenameDispatchHelpers' convention (#2341):
+            //   null or empty = all searchable types matched (surgical filename-only
+            //                   workflow — user can search names with no type checked)
+            //   non-empty     = only the listed types are matched
+            // Previously filename search ignored the checkboxes entirely, so a search
+            // scoped to items (.uti) also swept .nss scripts into the rename — silently
+            // renaming scripts and breaking ExecuteScript/#include references.
+            if (criteria.FileTypeFilter is { Count: > 0 } filter && !filter.Contains(resourceType))
+                continue;
 
             var resRefPortion = Path.GetFileNameWithoutExtension(filePath);
             var match = pattern.Match(resRefPortion);

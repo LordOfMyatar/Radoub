@@ -35,6 +35,18 @@ public partial class ReplacePreviewWindow : Window
         _batchReplaceService = batchReplaceService;
 
         HeaderText.Text = $"Replacing \"{searchPattern}\" \u2192 \"{replaceText}\"";
+
+        // .nss script-source matches were found but can't be replaced here \u2014 tell the
+        // user instead of showing an unexplained empty/short preview (#2341).
+        if (preview.SkippedNssContentMatches > 0)
+        {
+            var n = preview.SkippedNssContentMatches;
+            NssNoticeText.Text =
+                $"\u26a0 {n} match{(n == 1 ? "" : "es")} in .nss script files {(n == 1 ? "is" : "are")} not shown \u2014 " +
+                "manage NSS files in your code editor.";
+            NssNotice.IsVisible = true;
+        }
+
         BuildChangeTree(preview);
         UpdateSelectionCount();
     }

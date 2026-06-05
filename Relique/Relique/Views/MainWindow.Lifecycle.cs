@@ -357,20 +357,23 @@ public partial class MainWindow
         var fileName = Path.GetFileName(entry.FilePath);
 
         // Confirm deletion (destructive action — modal OK per CLAUDE.md)
+        // SizeToContent so the button row is never clipped — a fixed Height + non-resizable
+        // window pushed Delete/Cancel off-screen with no way to reach them (#2348).
         var dialog = new Avalonia.Controls.Window
         {
             Title = "Confirm Delete",
-            Width = 380,
-            Height = 150,
+            Width = 400,
+            MinHeight = 160,
+            SizeToContent = Avalonia.Controls.SizeToContent.Height,
             WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.CenterOwner,
-            CanResize = false
+            CanResize = true
         };
 
         var confirmed = false;
         var panel = new Avalonia.Controls.StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 16 };
         panel.Children.Add(new Avalonia.Controls.TextBlock
         {
-            Text = $"Delete \"{fileName}\" from disk?\n\nThis cannot be undone.",
+            Text = $"Delete \"{fileName}\" from disk?\n\nA backup is saved to ~/Radoub/Backups first.",
             TextWrapping = Avalonia.Media.TextWrapping.Wrap
         });
 
@@ -406,8 +409,14 @@ public partial class MainWindow
                 Radoub.UI.Services.FileSessionLockService.ReleaseLock(_currentFilePath);
             }
 
-            File.Delete(entry.FilePath);
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Deleted item file: {fileName}");
+            // Back up before deleting so a misclick is recoverable (#2347).
+            var modulePath = RadoubSettings.Instance.CurrentModulePath;
+            var moduleName = !string.IsNullOrEmpty(modulePath)
+                ? Path.GetFileNameWithoutExtension(modulePath)
+                : "unknown";
+            await ItemEditor.Services.FileDeletionService.DeleteWithBackupAsync(
+                entry.FilePath, moduleName, new Radoub.UI.Services.Search.BackupService());
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Deleted item file (backed up): {fileName}");
 
             if (isDeletingCurrent)
             {

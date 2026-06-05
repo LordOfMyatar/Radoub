@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.36.8-alpha] - 2026-06-04
+**Branch**: `trebuchet/sprint/compile-marlinspike-scope` | **PR**: #2345
+
+### Sprint: Compile + Marlinspike scope fixes
+
+- Batch script compilation now chunks the file list so large modules no longer exceed the Windows command-line length limit (#2343).
+- Marlinspike filename/resref rename now respects the file-type scope, so `.nss` scripts are no longer silently renamed when cleaning up items (#2341).
+- Marlinspike filename rename now shows a confirmation dialog listing every old → new name before renaming any files (#2346).
+
+---
+
 ## [1.36.7-alpha] - 2026-05-30
 **Branch**: `quartermaster/issue-2220` | **PR**: #2326
 
