@@ -97,13 +97,11 @@ public class FilenameSearchProviderTests : IDisposable
     }
 
     [Fact]
-    public void Search_FileTypeFilter_DoesNotGateFilenameSearch()
+    public void Search_NonEmptyFileTypeFilter_GatesFilenameSearch()
     {
-        // Filename search is independent of the 18 file-type content checkboxes.
-        // Those checkboxes gate file-CONTENT searching; filename matches are their
-        // own search domain enabled by SearchFilenameResRef. A user typing "louis"
-        // with only the filename/ResRef checkbox on should get matches across all
-        // file types — that's the surgical workflow.
+        // #2341: filename search now HONORS the file-type filter. A non-empty filter
+        // (e.g. only .dlg checked) must constrain filename matches too, so a rename
+        // scoped to one type can't sweep unrelated file types (esp. .nss scripts).
         Touch("louis.dlg");
         Touch("louis.utc");
         Touch("louis.git");
@@ -113,13 +111,34 @@ public class FilenameSearchProviderTests : IDisposable
         {
             Pattern = "louis",
             IncludeFilenameResRef = true,
-            FileTypeFilter = new[] { ResourceTypes.Dlg }  // narrowed content filter
+            FileTypeFilter = new[] { ResourceTypes.Dlg }
         };
 
         var results = provider.Search(_tempDir, criteria);
 
-        // All three filenames match — the file-type filter does NOT constrain
-        // filename search results.
+        Assert.Single(results);
+        Assert.Equal("louis.dlg", results[0].FileName);
+    }
+
+    [Fact]
+    public void Search_NullFileTypeFilter_MatchesAllTypes()
+    {
+        // Null filter = surgical filename-only workflow: every searchable type still
+        // matches, preserving the original design intent (#2341).
+        Touch("louis.dlg");
+        Touch("louis.utc");
+        Touch("louis.git");
+
+        var provider = new FilenameSearchProvider();
+        var criteria = new SearchCriteria
+        {
+            Pattern = "louis",
+            IncludeFilenameResRef = true,
+            FileTypeFilter = null
+        };
+
+        var results = provider.Search(_tempDir, criteria);
+
         Assert.Equal(3, results.Count);
     }
 
