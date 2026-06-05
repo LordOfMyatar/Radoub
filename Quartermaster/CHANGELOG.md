@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.116-alpha] - 2026-06-05
-**Branch**: `radoub/issue-2350` | **PR**: #TBD
+**Branch**: `radoub/issue-2350` | **PR**: #2351
 
 ### Fix: Browser delete now backs up first (#2350)
 

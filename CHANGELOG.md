@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Radoub.UI 0.1.68-alpha] - 2026-06-05
-**Branch**: `radoub/issue-2350` | **PR**: #TBD
+**Branch**: `radoub/issue-2350` | **PR**: #2351
 
 ### Delete-with-backup extracted to FileBrowserPanelBase (#2350)
 

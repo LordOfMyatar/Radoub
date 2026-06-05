@@ -5,7 +5,7 @@ All notable changes to Parley. One-line highlights per version; full details in 
 ---
 
 ## [0.1.173-alpha] - 2026-06-05
-**Branch**: `radoub/issue-2350` | **PR**: #TBD
+**Branch**: `radoub/issue-2350` | **PR**: #2351
 
 ### Fix: Browser delete now backs up first (#2350)
 
