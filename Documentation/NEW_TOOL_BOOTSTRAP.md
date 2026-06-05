@@ -11,6 +11,7 @@ This guide holds the full checklist and detailed patterns for adding a new tool 
   - [Pre-Coding Checklist](#pre-coding-checklist)
   - [Required Components (Every Tool)](#required-components-every-tool)
   - [Shared Library References](#shared-library-references)
+  - [Backups Before Destructive File Operations](#backups-before-destructive-file-operations)
   - [Spell-Check Integration (Radoub.Dictionary)](#spell-check-integration-radoubdictionary)
   - [Implementation Checklist](#implementation-checklist)
   - [Trebuchet Integration](#trebuchet-integration)
@@ -92,6 +93,27 @@ Every tool should reference these shared libraries:
 | Service | Resource | Resolves |
 |---------|----------|----------|
 | `Radoub.Formats.Services.PlaceableAppearanceService` *(Sprint 1)* | placeables.2da | appearance ID → model name + display name (TLK with LABEL fallback) |
+
+### Backups Before Destructive File Operations
+
+**MANDATORY**: Any operation that deletes, overwrites, or renames a user file must back it up first. Backups are not optional — every destructive path in the toolset snapshots before touching disk, and a tool that skips this loses user data on a misclick.
+
+Use the shared `Radoub.UI.Services.Search.BackupService`. Do not roll your own.
+
+| Operation | Pattern |
+|-----------|---------|
+| Delete a file | `await backupService.BackupFilesAsync(new[]{ path }, moduleName)` → then `File.Delete(path)` |
+| Overwrite a file | Back up the existing file before writing, or write via temp + atomic replace and snapshot the prior version |
+| Rename a file | Back up source (and any reference files you rewrite) before the move — see `ResRefRenameOrchestrator` |
+| Repack an archive (.mod/.erf) | `await backupService.BackupArchiveAsync(modPath, moduleName)` before replacing — see `ModulePackService` |
+
+Rules:
+- Backups go to the shared root `~/Radoub/Backups/{moduleName}/{timestamp}/` — `BackupService` handles this; never hardcode a backup path.
+- `moduleName` = `Path.GetFileNameWithoutExtension(RadoubSettings.Instance.CurrentModulePath)` (fall back to `"unknown"`).
+- The confirm dialog for a destructive action should tell the user a backup is saved — don't say "cannot be undone" when it can.
+- Compiled/derived output that regenerates from source (e.g. `.ncs` from `.nss`) is exempt — backing it up is wasteful.
+
+Reference: Relique item delete (#2347), `ModulePackService` (#2246), `ResRefRenameOrchestrator`.
 
 ### Spell-Check Integration (Radoub.Dictionary)
 
@@ -441,6 +463,7 @@ dotnet nbgv get-version --project [ToolDir]
 | Skipping unit tests | Create ToolName.Tests from day 1 |
 | Hardcoding version in .csproj | Use NBGV `version.json` — no version properties in .csproj |
 | `<AssemblyName>` differs from tool name (built exe is `Foo.exe` for tool "Bar") | Set `<AssemblyName>ToolName</AssemblyName>` to match the folder/tool name. Sibling discovery, release workflow, cross-tool launchers, and `ToolDispatchService` all assume `Radoub/ToolName.exe` — divergence requires a settings-path migration to fix (#2080). |
+| Destructive file op with no backup (delete / overwrite / rename) | Back up via `Radoub.UI.Services.Search.BackupService` first. A bare `File.Delete` / `File.WriteAllBytes` over a user file is unrecoverable (#2347). See **Backups Before Destructive File Operations**. |
 
 [↑ TOC](#table-of-contents)
 
