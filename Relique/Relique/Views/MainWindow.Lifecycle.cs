@@ -370,7 +370,7 @@ public partial class MainWindow
         var panel = new Avalonia.Controls.StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 16 };
         panel.Children.Add(new Avalonia.Controls.TextBlock
         {
-            Text = $"Delete \"{fileName}\" from disk?\n\nThis cannot be undone.",
+            Text = $"Delete \"{fileName}\" from disk?\n\nA backup is saved to ~/Radoub/Backups first.",
             TextWrapping = Avalonia.Media.TextWrapping.Wrap
         });
 
@@ -406,8 +406,14 @@ public partial class MainWindow
                 Radoub.UI.Services.FileSessionLockService.ReleaseLock(_currentFilePath);
             }
 
-            File.Delete(entry.FilePath);
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Deleted item file: {fileName}");
+            // Back up before deleting so a misclick is recoverable (#2347).
+            var modulePath = RadoubSettings.Instance.CurrentModulePath;
+            var moduleName = !string.IsNullOrEmpty(modulePath)
+                ? Path.GetFileNameWithoutExtension(modulePath)
+                : "unknown";
+            await ItemEditor.Services.FileDeletionService.DeleteWithBackupAsync(
+                entry.FilePath, moduleName, new Radoub.UI.Services.Search.BackupService());
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Deleted item file (backed up): {fileName}");
 
             if (isDeletingCurrent)
             {
