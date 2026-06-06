@@ -79,7 +79,8 @@
         <!-- Main Content Area -->
         <Grid x:Name="OuterContentGrid" ColumnDefinitions="250,4,*">
             <!-- Item Browser Panel (left sidebar) -->
-            <controls:ItemBrowserPanel Grid.Column="0" x:Name="ItemBrowserPanel"/>
+            <controls:ItemBrowserPanel Grid.Column="0" x:Name="ItemBrowserPanel"
+                                       AutomationProperties.AutomationId="Relique_ItemBrowserPanel"/>
 
             <!-- Splitter -->
             <GridSplitter Grid.Column="1" x:Name="ItemBrowserSplitter"
@@ -155,6 +156,7 @@
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" Classes="label"/>
                                 <controls:SpellCheckTextBox Grid.Row="0" Grid.Column="1"
                                          x:Name="NameTextBox"
+                                         AutomationProperties.AutomationId="Relique_Field_Name"
                                          Text="{Binding Name, Mode=TwoWay}"
                                          Width="300"
                                          HorizontalAlignment="Left"
@@ -162,6 +164,7 @@
                                 <TextBlock Grid.Row="0" Grid.Column="3" Text="Tag" Classes="label"/>
                                 <TextBox Grid.Row="0" Grid.Column="4"
                                          x:Name="TagTextBox"
+                                         AutomationProperties.AutomationId="Relique_Field_Tag"
                                          Text="{Binding Tag, Mode=TwoWay}"
                                          MaxLength="32"
                                          Width="260"
