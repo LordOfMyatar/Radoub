@@ -7,7 +7,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 ---
 
 ## [0.5.0-alpha] - 2026-06-06
-**Branch**: `radoub/sprint/flaui-coverage` | **PR**: #TBD
+**Branch**: `radoub/sprint/flaui-coverage` | **PR**: #2365
 
 ### FlaUI coverage beyond smoke (#2304)
 

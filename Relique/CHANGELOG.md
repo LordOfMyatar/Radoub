@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.10.22-alpha] - 2026-06-06
-**Branch**: `radoub/sprint/flaui-coverage` | **PR**: #TBD
+**Branch**: `radoub/sprint/flaui-coverage` | **PR**: #2365
 
 ### FlaUI integration tests (#2168, closes #2303)
 
