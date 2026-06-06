@@ -438,6 +438,7 @@ public partial class MainWindow
         var types = _itemPropertyService.GetAvailablePropertyTypes();
         int added = 0;
         var skipped = new List<string>();
+        var toAdd = new List<ItemProperty>();
 
         foreach (var propIndex in _checkedPropertyIndices)
         {
@@ -469,8 +470,7 @@ public partial class MainWindow
             try
             {
                 var property = _itemPropertyService.CreateItemProperty(propIndex, subtypeIndex, 0, null);
-                _currentItem.Properties.Add(property);
-                added++;
+                toAdd.Add(property);
             }
             catch (Exception ex)
             {
@@ -480,10 +480,22 @@ public partial class MainWindow
             }
         }
 
-        if (added > 0)
+        // Batch-add with rollback: if the UI refresh throws, every added entry is removed (#2258).
+        if (toAdd.Count > 0)
         {
-            RefreshAssignedProperties();
-            MarkDirty();
+            if (PropertyListMutator.BatchAdd(_currentItem.Properties, toAdd, RefreshAssignedProperties))
+            {
+                added = toAdd.Count;
+                MarkDirty();
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR,
+                    $"Refresh failed after batch-adding {toAdd.Count} properties; rolled back");
+                UpdateStatus("Could not add properties (UI refresh failed)");
+                try { RefreshAssignedProperties(); } catch { /* best-effort */ }
+                return;
+            }
         }
 
         if (skipped.Count > 0)
@@ -513,12 +525,16 @@ public partial class MainWindow
         if (selectedIndices.Count == 0)
             return;
 
-        foreach (var index in selectedIndices)
+        // Remove with rollback: re-inserts removed entries if the UI refresh throws (#2258).
+        if (!PropertyListMutator.RemoveAt(_currentItem.Properties, selectedIndices, RefreshAssignedProperties))
         {
-            _currentItem.Properties.RemoveAt(index);
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"Refresh failed after removing {selectedIndices.Count} properties; rolled back");
+            UpdateStatus("Could not remove properties (UI refresh failed)");
+            try { RefreshAssignedProperties(); } catch { /* best-effort */ }
+            return;
         }
 
-        RefreshAssignedProperties();
         MarkDirty();
 
         var count = selectedIndices.Count;
@@ -532,8 +548,17 @@ public partial class MainWindow
         if (_documentState.IsReadOnly) return;
 
         var count = _currentItem.Properties.Count;
-        _currentItem.Properties.Clear();
-        RefreshAssignedProperties();
+
+        // Clear with rollback: restores the snapshot if the UI refresh throws (#2258).
+        if (!PropertyListMutator.ClearAll(_currentItem.Properties, RefreshAssignedProperties))
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"Refresh failed after clearing {count} properties; rolled back");
+            UpdateStatus("Could not clear properties (UI refresh failed)");
+            try { RefreshAssignedProperties(); } catch { /* best-effort */ }
+            return;
+        }
+
         MarkDirty();
         UpdateStatus($"Cleared {count} properties");
     }

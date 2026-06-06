@@ -366,8 +366,13 @@ public partial class MainWindow
         UpdateStatus($"Deleted {fileName}");
     }
 
+    private bool _cleanedUp;
+
     private async void OnWindowClosing(object? sender, Avalonia.Controls.WindowClosingEventArgs e)
     {
+        // The dirty path cancels the close, prompts, then calls Close() re-entrantly — which
+        // re-fires this handler. Both the inner and outer invocation would otherwise reach the
+        // cleanup block. Guard so cleanup runs exactly once across the re-entry (#2258).
         if (_isDirty)
         {
             e.Cancel = true;
@@ -382,8 +387,13 @@ public partial class MainWindow
             }
 
             _documentState.ClearDirty();
-            Close();
+            Close(); // re-enters this handler with _isDirty == false → runs cleanup once
+            return;  // outer invocation must not fall through to a second cleanup pass
         }
+
+        if (_cleanedUp)
+            return;
+        _cleanedUp = true;
 
         RadoubSettings.Instance.PropertyChanged -= OnRadoubSettingsChanged;
         DisposeItemPreview();
