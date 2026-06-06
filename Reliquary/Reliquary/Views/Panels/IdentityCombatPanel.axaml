@@ -32,7 +32,12 @@
 
                 <!-- Identity + combat fields -->
                 <StackPanel Grid.Column="2" Spacing="6">
-                    <Grid ColumnDefinitions="90,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+                    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" MinWidth="90"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" VerticalAlignment="Center"/>
                         <TextBox Grid.Row="0" Grid.Column="1"
                                  Text="{Binding Name, Mode=TwoWay}"
@@ -61,41 +66,55 @@
                                   AutomationProperties.AutomationId="Reliquary_Combo_Appearance"/>
                     </Grid>
 
-                    <!-- Combat stats -->
-                    <Grid ColumnDefinitions="70,120,70,120" Margin="0,4,0,0">
+                    <!-- Combat stats. Auto columns + MinWidth floors so large fonts grow the
+                         cells instead of clipping (QM StatsPanel pattern). NumericUpDowns also
+                         carry their own MinWidth so the editable text + spinners always fit. -->
+                    <Grid Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" MinWidth="70"/>
+                            <ColumnDefinition Width="Auto" MinWidth="135"/>
+                            <ColumnDefinition Width="Auto" MinWidth="90"/>
+                            <ColumnDefinition Width="Auto" MinWidth="120"/>
+                        </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="HP" VerticalAlignment="Center"/>
                         <NumericUpDown Grid.Column="1" Minimum="0" Maximum="32767" Increment="1"
-                                       FormatString="0"
+                                       FormatString="0" MinWidth="135" Margin="0,0,12,0"
                                        Value="{Binding HP, Mode=TwoWay}"
                                        IsEnabled="{Binding IsCombatEnabled}"
                                        AutomationProperties.AutomationId="Reliquary_Numeric_HP"/>
                         <TextBlock Grid.Column="2" Text="Hardness" VerticalAlignment="Center" Margin="8,0,0,0"/>
                         <NumericUpDown Grid.Column="3" Minimum="0" Maximum="255" Increment="1"
-                                       FormatString="0"
+                                       FormatString="0" MinWidth="120"
                                        Value="{Binding Hardness, Mode=TwoWay}"
                                        IsEnabled="{Binding IsDamageEnabled}"
                                        AutomationProperties.AutomationId="Reliquary_Numeric_Hardness"/>
                     </Grid>
-                    <Grid ColumnDefinitions="70,90,70,90,70,90" Margin="0,4,0,0">
-                        <TextBlock Grid.Column="0" Text="Fort" VerticalAlignment="Center"/>
-                        <NumericUpDown Grid.Column="1" Minimum="0" Maximum="255" Increment="1"
-                                       FormatString="0"
-                                       Value="{Binding Fort, Mode=TwoWay}"
-                                       IsEnabled="{Binding IsCombatEnabled}"
-                                       AutomationProperties.AutomationId="Reliquary_Numeric_Fort"/>
-                        <TextBlock Grid.Column="2" Text="Ref" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                        <NumericUpDown Grid.Column="3" Minimum="0" Maximum="255" Increment="1"
-                                       FormatString="0"
-                                       Value="{Binding Ref, Mode=TwoWay}"
-                                       IsEnabled="{Binding IsCombatEnabled}"
-                                       AutomationProperties.AutomationId="Reliquary_Numeric_Ref"/>
-                        <TextBlock Grid.Column="4" Text="Will" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                        <NumericUpDown Grid.Column="5" Minimum="0" Maximum="255" Increment="1"
-                                       FormatString="0"
-                                       Value="{Binding Will, Mode=TwoWay}"
-                                       IsEnabled="{Binding IsCombatEnabled}"
-                                       AutomationProperties.AutomationId="Reliquary_Numeric_Will"/>
-                    </Grid>
+                    <WrapPanel Margin="0,4,0,0">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,16,4">
+                            <TextBlock Text="Fort" VerticalAlignment="Center" MinWidth="40"/>
+                            <NumericUpDown Minimum="0" Maximum="255" Increment="1"
+                                           FormatString="0" MinWidth="120"
+                                           Value="{Binding Fort, Mode=TwoWay}"
+                                           IsEnabled="{Binding IsCombatEnabled}"
+                                           AutomationProperties.AutomationId="Reliquary_Numeric_Fort"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,16,4">
+                            <TextBlock Text="Ref" VerticalAlignment="Center" MinWidth="40"/>
+                            <NumericUpDown Minimum="0" Maximum="255" Increment="1"
+                                           FormatString="0" MinWidth="120"
+                                           Value="{Binding Ref, Mode=TwoWay}"
+                                           IsEnabled="{Binding IsCombatEnabled}"
+                                           AutomationProperties.AutomationId="Reliquary_Numeric_Ref"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,16,4">
+                            <TextBlock Text="Will" VerticalAlignment="Center" MinWidth="40"/>
+                            <NumericUpDown Minimum="0" Maximum="255" Increment="1"
+                                           FormatString="0" MinWidth="120"
+                                           Value="{Binding Will, Mode=TwoWay}"
+                                           IsEnabled="{Binding IsCombatEnabled}"
+                                           AutomationProperties.AutomationId="Reliquary_Numeric_Will"/>
+                        </StackPanel>
+                    </WrapPanel>
 
                     <!-- Flags -->
                     <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,4,0,0">

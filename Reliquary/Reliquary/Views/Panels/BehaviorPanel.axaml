@@ -46,7 +46,14 @@
 
             <!-- Advanced -->
             <TextBlock Text="Advanced" FontWeight="SemiBold"/>
-            <Grid ColumnDefinitions="120,200,16,120,200" RowDefinitions="Auto,Auto,Auto">
+            <Grid RowDefinitions="Auto,Auto,Auto">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" MinWidth="120"/>
+                    <ColumnDefinition Width="*" MinWidth="160"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="Auto" MinWidth="120"/>
+                    <ColumnDefinition Width="Auto" MinWidth="120"/>
+                </Grid.ColumnDefinitions>
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Faction" VerticalAlignment="Center"/>
                 <ComboBox Grid.Row="0" Grid.Column="1" x:Name="FactionCombo"
                           HorizontalAlignment="Stretch"
@@ -55,7 +62,7 @@
 
                 <TextBlock Grid.Row="0" Grid.Column="3" Text="Initial State" VerticalAlignment="Center"/>
                 <NumericUpDown Grid.Row="0" Grid.Column="4" Minimum="0" Maximum="255" Increment="1"
-                               FormatString="0"
+                               FormatString="0" MinWidth="120"
                                Value="{Binding InitialState, Mode=TwoWay}"
                                AutomationProperties.AutomationId="Reliquary_Numeric_InitialState"/>
 
@@ -66,7 +73,7 @@
 
                 <TextBlock Grid.Row="1" Grid.Column="3" Text="Treasure Model" VerticalAlignment="Center"/>
                 <NumericUpDown Grid.Row="1" Grid.Column="4" Minimum="0" Maximum="255" Increment="1"
-                               FormatString="0"
+                               FormatString="0" MinWidth="120"
                                Value="{Binding TreasureModel, Mode=TwoWay}"
                                AutomationProperties.AutomationId="Reliquary_Numeric_TreasureModel"/>
             </Grid>
