@@ -6,6 +6,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 
 ---
 
+## [0.2.0-alpha] - 2026-06-05
+**Branch**: `reliquary/issue-2295` | **PR**: #TBD
+
+### Sprint 5: IdentityCombat + Behavior panels
+
+- IdentityCombatPanel: portrait, identity fields, 3D preview; HasInventory/Static/Plot flag wiring.
+- BehaviorPanel: 13 script slots, advanced behavior fields, shared VariablesPanel, script set presets.
+- All mutations undoable via UndoRedoManager; placeable round-trip tests.
+
+---
+
 ## [0.1.0-alpha] - 2026-06-05
 **Branch**: `reliquary/issue-2294` | **PR**: #2349
 
