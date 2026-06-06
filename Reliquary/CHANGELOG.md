@@ -7,7 +7,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 ---
 
 ## [0.7.0-alpha] - 2026-06-06
-**Branch**: `reliquary/sprint/epic-2289-followups` | **PR**: #TBD
+**Branch**: `reliquary/sprint/epic-2289-followups` | **PR**: #2377
 
 ### Sprint: Epic #2289 placeable-editor follow-ups
 
