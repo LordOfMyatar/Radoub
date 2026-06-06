@@ -6,6 +6,7 @@ using Avalonia.Interactivity;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Utp;
 using Radoub.UI.Controls;
+using Radoub.UI.Services;
 using Radoub.UI.Undo;
 using Radoub.UI.ViewModels;
 using PlaceableEditor.Commands;
@@ -42,6 +43,7 @@ public partial class MainWindow
             behavior.Variables.AddRequested += OnVariableAddRequested;
             behavior.Variables.DeleteRequested += OnVariableDeleteRequested;
             behavior.ScriptBrowseRequested += OnScriptBrowseRequested;
+            behavior.ScriptEditRequested += OnScriptEditRequested;
         }
     }
 
@@ -162,9 +164,21 @@ public partial class MainWindow
         var result = await browser.ShowDialog<string?>(this);
         if (string.IsNullOrEmpty(result)) return;
 
-        var old = slot.ResRef;
         _undo.Execute(new SetFieldCommand<string>(
             () => slot.ResRef, v => slot.ResRef = v, result, $"set {slot.EventName} script"));
-        _ = old; // captured by the command at Do-time
+    }
+
+    private void OnScriptEditRequested(object? sender, ScriptSlotViewModel slot)
+    {
+        if (string.IsNullOrWhiteSpace(slot.ResRef))
+        {
+            UpdateStatus($"No script assigned to {slot.EventName} — assign one first.");
+            return;
+        }
+
+        var fileDir = string.IsNullOrEmpty(_currentFilePath) ? null : Path.GetDirectoryName(_currentFilePath);
+        var moduleDir = GetModuleWorkingDirectory();
+        if (!ExternalEditorService.OpenScript(slot.ResRef, fileDir, moduleDir))
+            UpdateStatus($"Could not open {slot.ResRef}.nss — not found near the placeable or module.");
     }
 }

@@ -225,7 +225,7 @@ namespace DialogEditor.Views
                 getSelectedNode: () => _selectedNode,
                 autoSaveProperty: AutoSaveProperty,
                 settings: _services.Settings,
-                externalEditorService: Program.Services.GetRequiredService<ExternalEditorService>());
+                externalEditorService: Program.Services.GetRequiredService<DialogEditor.Services.ExternalEditorService>());
 
             _controllers.ParameterBrowser = new ParameterBrowserController(
                 controls: _controls,

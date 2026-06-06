@@ -11,9 +11,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Radoub.UI 0.1.69-alpha] - 2026-06-05
 **Branch**: `reliquary/issue-2295` | **PR**: #2352
 
-### Shared undo/redo foundation (#2295, epic #2231)
+### Shared undo/redo foundation + cross-tool script editor (#2295, epic #2231)
 
 - New `Radoub.UI.Undo`: `UndoRedoManager`, `IUndoableCommand`, `SetFieldCommand<T>`, `RelayUndoableCommand`. First consumer is Reliquary; foundation for the cross-tool undo epic.
+- New shared `Radoub.UI.Services.ExternalEditorService` opens `.nss` scripts in the user's editor (or OS default), reading the new `RadoubSettings.CodeEditorPath`. Trebuchet's `CodeEditorPath` now persists there (one source for all tools; existing values migrate automatically).
 
 ---
 

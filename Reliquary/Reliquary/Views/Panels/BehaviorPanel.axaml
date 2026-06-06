@@ -6,14 +6,27 @@
              mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="500"
              x:Class="PlaceableEditor.Views.Panels.BehaviorPanel">
     <UserControl.Resources>
-        <!-- One script slot: label + ResRef textbox + browse button. -->
+        <!-- One script slot: label + ResRef textbox + browse + edit buttons.
+             Label column is Auto with a MinWidth so long event names aren't clipped at large fonts. -->
         <DataTemplate x:Key="ScriptSlotTemplate">
-            <Grid ColumnDefinitions="120,*,Auto" Margin="0,2">
+            <Grid Margin="0,2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" MinWidth="120"/>
+                    <ColumnDefinition Width="*" MinWidth="80"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="{Binding Label}" VerticalAlignment="Center"/>
                 <TextBox Grid.Column="1" Text="{Binding ResRef, Mode=TwoWay}" MaxLength="16"
                          AutomationProperties.AutomationId="{Binding EventName, StringFormat=Reliquary_Script_{0}}"/>
                 <Button Grid.Column="2" Content="..." Margin="4,0,0,0"
                         Click="OnBrowseScriptClick"
+                        ToolTip.Tip="Browse for a script"
+                        Tag="{Binding}"/>
+                <Button Grid.Column="3" Content="Edit" Margin="4,0,0,0"
+                        Click="OnEditScriptClick"
+                        ToolTip.Tip="Open the script in your configured editor"
+                        AutomationProperties.AutomationId="{Binding EventName, StringFormat=Reliquary_ScriptEdit_{0}}"
                         Tag="{Binding}"/>
             </Grid>
         </DataTemplate>

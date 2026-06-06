@@ -22,6 +22,9 @@ public partial class BehaviorPanel : UserControl
     /// <summary>Raised when a script slot's [...] button is clicked (carries the slot).</summary>
     public event EventHandler<ScriptSlotViewModel>? ScriptBrowseRequested;
 
+    /// <summary>Raised when a script slot's [Edit] button is clicked (carries the slot).</summary>
+    public event EventHandler<ScriptSlotViewModel>? ScriptEditRequested;
+
     /// <summary>Raised when Save Script Set is clicked.</summary>
     public event EventHandler? SaveScriptSetRequested;
 
@@ -62,6 +65,12 @@ public partial class BehaviorPanel : UserControl
     {
         if (sender is Control { Tag: ScriptSlotViewModel slot })
             ScriptBrowseRequested?.Invoke(this, slot);
+    }
+
+    private void OnEditScriptClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Control { Tag: ScriptSlotViewModel slot })
+            ScriptEditRequested?.Invoke(this, slot);
     }
 
     private void OnSaveScriptSetClick(object? sender, RoutedEventArgs e)
