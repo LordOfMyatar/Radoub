@@ -108,6 +108,8 @@ public partial class RadoubSettings
                     }
 
                     _reliquaryPath = PathHelper.ExpandPath(data.ReliquaryPath ?? "");
+
+                    _codeEditorPath = PathHelper.ExpandPath(data.CodeEditorPath ?? "");
                 }
             }
         }
@@ -159,6 +161,9 @@ public partial class RadoubSettings
                 TrebuchetPath = PathHelper.ContractPath(_trebuchetPath),
                 ReliquePath = PathHelper.ContractPath(_reliquePath),
                 ReliquaryPath = PathHelper.ContractPath(_reliquaryPath),
+
+                // Cross-tool editor preference
+                CodeEditorPath = PathHelper.ContractPath(_codeEditorPath),
 
                 // Backup settings
                 BackupRetentionDays = _backupRetentionDays,
@@ -224,6 +229,9 @@ public partial class RadoubSettings
         public string? TrebuchetPath { get; set; }
         public string? ReliquePath { get; set; }
         public string? ReliquaryPath { get; set; }
+
+        // Cross-tool editor preference (VS Code / Cursor / Notepad / …)
+        public string? CodeEditorPath { get; set; }
 
         /// <summary>
         /// Legacy key — reads old "ItemEditorPath" from JSON and migrates to ReliquePath.

@@ -6,6 +6,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 
 ---
 
+## [0.2.0-alpha] - 2026-06-05
+**Branch**: `reliquary/issue-2295` | **PR**: #2352
+
+### Sprint 5: IdentityCombat + Behavior panels
+
+- IdentityCombatPanel: identity/combat fields, Static/Plot field enablement, appearance combo + 3D model preview.
+- BehaviorPanel: 13 script slots with Browse + Edit (opens in the configured editor), advanced fields, shared VariablesPanel.
+- All field/variable/script edits undoable via UndoRedoManager (Ctrl+Z/Y); placeable round-trip tests.
+- Faction list, portrait browser, and script-set presets deferred to follow-ups (#2354 and later sprints).
+
+---
+
 ## [0.1.0-alpha] - 2026-06-05
 **Branch**: `reliquary/issue-2294` | **PR**: #2349
 

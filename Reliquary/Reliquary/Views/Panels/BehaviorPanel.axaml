@@ -2,16 +2,108 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="200"
+             xmlns:ctrl="clr-namespace:Radoub.UI.Controls;assembly=Radoub.UI"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="500"
              x:Class="PlaceableEditor.Views.Panels.BehaviorPanel">
-    <Border Padding="20" Background="{DynamicResource ThemeBackground}">
-        <StackPanel Spacing="8">
-            <TextBlock Text="Behavior"
-                       FontWeight="Bold"
+    <UserControl.Resources>
+        <!-- One script slot: label + ResRef textbox + browse + edit buttons.
+             Label column is Auto with a MinWidth so long event names aren't clipped at large fonts. -->
+        <DataTemplate x:Key="ScriptSlotTemplate">
+            <Grid Margin="0,2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" MinWidth="120"/>
+                    <ColumnDefinition Width="*" MinWidth="80"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="{Binding Label}" VerticalAlignment="Center"/>
+                <TextBox Grid.Column="1" Text="{Binding ResRef, Mode=TwoWay}" MaxLength="16"
+                         AutomationProperties.AutomationId="{Binding EventName, StringFormat=Reliquary_Script_{0}}"/>
+                <Button Grid.Column="2" Content="..." Margin="4,0,0,0"
+                        Click="OnBrowseScriptClick"
+                        ToolTip.Tip="Browse for a script"
+                        Tag="{Binding}"/>
+                <Button Grid.Column="3" Content="Edit" Margin="4,0,0,0"
+                        Click="OnEditScriptClick"
+                        ToolTip.Tip="Open the script in your configured editor"
+                        AutomationProperties.AutomationId="{Binding EventName, StringFormat=Reliquary_ScriptEdit_{0}}"
+                        Tag="{Binding}"/>
+            </Grid>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Border Padding="16" Background="{DynamicResource ThemeBackground}"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+            BorderThickness="1" CornerRadius="4">
+        <StackPanel Spacing="10">
+            <TextBlock Text="Behavior" FontWeight="Bold"
                        FontSize="{DynamicResource FontSizeMedium}"/>
-            <TextBlock Text="13 event scripts, advanced settings, and the variables grid land in Sprint 5."
-                       TextWrapping="Wrap"
-                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+
+            <!-- Scripts: two columns -->
+            <TextBlock Text="Scripts" FontWeight="SemiBold"/>
+            <Grid ColumnDefinitions="*,16,*">
+                <ItemsControl Grid.Column="0" x:Name="ScriptsLeft"
+                              ItemTemplate="{StaticResource ScriptSlotTemplate}"/>
+                <ItemsControl Grid.Column="2" x:Name="ScriptsRight"
+                              ItemTemplate="{StaticResource ScriptSlotTemplate}"/>
+            </Grid>
+
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Save Script Set" Click="OnSaveScriptSetClick"
+                        AutomationProperties.AutomationId="Reliquary_Button_SaveScriptSet"/>
+                <Button Content="Load Script Set" Click="OnLoadScriptSetClick"
+                        AutomationProperties.AutomationId="Reliquary_Button_LoadScriptSet"/>
+            </StackPanel>
+
+            <Separator Margin="0,4"/>
+
+            <!-- Advanced -->
+            <TextBlock Text="Advanced" FontWeight="SemiBold"/>
+            <Grid RowDefinitions="Auto,Auto,Auto">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" MinWidth="120"/>
+                    <ColumnDefinition Width="*" MinWidth="160"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="Auto" MinWidth="120"/>
+                    <ColumnDefinition Width="Auto" MinWidth="120"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Faction" VerticalAlignment="Center"/>
+                <ComboBox Grid.Row="0" Grid.Column="1" x:Name="FactionCombo"
+                          HorizontalAlignment="Stretch"
+                          SelectionChanged="OnFactionChanged"
+                          AutomationProperties.AutomationId="Reliquary_Combo_Faction"/>
+
+                <TextBlock Grid.Row="0" Grid.Column="3" Text="Initial State" VerticalAlignment="Center"/>
+                <NumericUpDown Grid.Row="0" Grid.Column="4" Minimum="0" Maximum="255" Increment="1"
+                               FormatString="0" MinWidth="120"
+                               Value="{Binding InitialState, Mode=TwoWay}"
+                               AutomationProperties.AutomationId="Reliquary_Numeric_InitialState"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Conversation" VerticalAlignment="Center"/>
+                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Conversation, Mode=TwoWay}"
+                         MaxLength="16"
+                         AutomationProperties.AutomationId="Reliquary_Field_Conversation"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="3" Text="Treasure Model" VerticalAlignment="Center"/>
+                <NumericUpDown Grid.Row="1" Grid.Column="4" Minimum="0" Maximum="255" Increment="1"
+                               FormatString="0" MinWidth="120"
+                               Value="{Binding TreasureModel, Mode=TwoWay}"
+                               AutomationProperties.AutomationId="Reliquary_Numeric_TreasureModel"/>
+            </Grid>
+            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2,0,0">
+                <Button Content="Edit → Parley" Click="OnEditConversationClick"
+                        IsEnabled="False"
+                        ToolTip.Tip="Cross-tool dispatch to Parley lands in Sprint 7."
+                        AutomationProperties.AutomationId="Reliquary_Button_EditConversation"/>
+                <CheckBox Content="No Interrupt" IsChecked="{Binding NoInterrupt, Mode=TwoWay}"
+                          AutomationProperties.AutomationId="Reliquary_Check_NoInterrupt"/>
+            </StackPanel>
+
+            <Separator Margin="0,4"/>
+
+            <!-- Variables (shared control) -->
+            <TextBlock Text="Variables" FontWeight="SemiBold"/>
+            <ctrl:VariablesPanel x:Name="VariablesPanel" GridMaxHeight="220"/>
         </StackPanel>
     </Border>
 </UserControl>

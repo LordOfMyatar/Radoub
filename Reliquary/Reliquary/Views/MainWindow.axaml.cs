@@ -2,6 +2,7 @@ using System;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Avalonia.Platform.Storage;
 using Radoub.Formats.Logging;
 
 namespace PlaceableEditor.Views;
@@ -20,6 +21,8 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         WireBrowserPanel();
+        WireEditor();
+        WireServices();
     }
 
     private void InitializeComponent()
@@ -38,10 +41,20 @@ public partial class MainWindow : Window
 
     private async void OnOpenClick(object? sender, RoutedEventArgs e)
     {
-        // File open wiring lands in Sprint 5. The browser sidebar is the primary
-        // open path for the skeleton; this menu item is a placeholder.
-        UpdateStatus("Open from the browser sidebar — File > Open wiring lands in Sprint 5.");
-        await System.Threading.Tasks.Task.CompletedTask;
+        var files = await StorageProvider.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
+        {
+            Title = "Open Placeable",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new Avalonia.Platform.Storage.FilePickerFileType("Placeable Blueprint") { Patterns = new[] { "*.utp" } },
+                new Avalonia.Platform.Storage.FilePickerFileType("All Files") { Patterns = new[] { "*.*" } }
+            }
+        });
+
+        var path = files.Count > 0 ? files[0].TryGetLocalPath() : null;
+        if (!string.IsNullOrEmpty(path))
+            LoadPlaceable(path);
     }
 
     private void OnAboutClick(object? sender, RoutedEventArgs e)

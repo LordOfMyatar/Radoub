@@ -180,7 +180,7 @@ sealed class Program
 
         // Services that were previously accessed via .Instance (#1233)
         services.AddSingleton<GameResourceService>();
-        services.AddSingleton<ExternalEditorService>();
+        services.AddSingleton<DialogEditor.Services.ExternalEditorService>();
         services.AddSingleton<SoundCache>();
         services.AddSingleton<CoverageTracker>();
         // TTS factory deferred to first use — DI singleton only calls Create() on first GetRequiredService (#1961)

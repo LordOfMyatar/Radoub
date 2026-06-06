@@ -35,17 +35,14 @@ public partial class MainWindow
 
     private void OnBrowserFileSelected(object? sender, FileSelectedEventArgs e)
     {
-        // Editor load wiring lands in Sprint 5. For the skeleton we only track the
-        // selected path and surface it in the status bar.
         if (string.IsNullOrEmpty(e.Entry.FilePath)) return;
-
-        _currentFilePath = e.Entry.FilePath;
 
         var browser = this.FindControl<PlaceableBrowserPanel>("PlaceableBrowserPanel");
         if (browser != null)
-            browser.CurrentFilePath = _currentFilePath;
+            browser.CurrentFilePath = e.Entry.FilePath;
 
-        UpdateStatus($"Selected {Path.GetFileName(_currentFilePath)} — editor wiring lands in Sprint 5.");
+        // Load the selected placeable into the editor (#2295).
+        LoadPlaceable(e.Entry.FilePath);
     }
 
     // The browser panel owns confirm + backup + delete + refresh (#2350). The host

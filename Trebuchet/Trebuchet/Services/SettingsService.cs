@@ -52,7 +52,6 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
     private bool _compileScriptsEnabled;
     private bool _buildUncompiledScriptsEnabled;
     private bool _alwaysSaveBeforeTesting;
-    private string _codeEditorPath = "";
     private string _scriptCompilerPath = "";
 
     private SettingsService()
@@ -151,10 +150,19 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
         set { if (SetProperty(ref _alwaysSaveBeforeTesting, value)) SaveSettings(); }
     }
 
+    /// <summary>
+    /// Preferred code editor for opening scripts. Now a passthrough to the shared
+    /// <see cref="RadoubSettings.CodeEditorPath"/> so every Radoub tool reads one value (#2295).
+    /// </summary>
     public string CodeEditorPath
     {
-        get => _codeEditorPath;
-        set { if (SetProperty(ref _codeEditorPath, value ?? "")) SaveSettings(); }
+        get => RadoubSettings.Instance.CodeEditorPath;
+        set
+        {
+            if (RadoubSettings.Instance.CodeEditorPath == (value ?? "")) return;
+            RadoubSettings.Instance.CodeEditorPath = value ?? "";
+            OnPropertyChanged();
+        }
     }
 
     public string ScriptCompilerPath
@@ -182,8 +190,16 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
         _compileScriptsEnabled = settings.CompileScriptsEnabled;
         _buildUncompiledScriptsEnabled = settings.BuildUncompiledScriptsEnabled;
         _alwaysSaveBeforeTesting = settings.AlwaysSaveBeforeTesting;
-        _codeEditorPath = settings.CodeEditorPath ?? "";
         _scriptCompilerPath = settings.ScriptCompilerPath ?? "";
+
+        // One-time migration: a CodeEditorPath previously stored in Trebuchet's own settings
+        // moves to shared RadoubSettings (the new single source). Only adopt the legacy value
+        // if the shared one is still empty, so we never clobber a value set elsewhere (#2295).
+        if (!string.IsNullOrEmpty(settings.CodeEditorPath) &&
+            string.IsNullOrEmpty(RadoubSettings.Instance.CodeEditorPath))
+        {
+            RadoubSettings.Instance.CodeEditorPath = settings.CodeEditorPath;
+        }
     }
 
     protected override void SaveToolSettings(SettingsData settings)
@@ -193,7 +209,7 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
         settings.CompileScriptsEnabled = CompileScriptsEnabled;
         settings.BuildUncompiledScriptsEnabled = BuildUncompiledScriptsEnabled;
         settings.AlwaysSaveBeforeTesting = AlwaysSaveBeforeTesting;
-        settings.CodeEditorPath = CodeEditorPath;
+        // CodeEditorPath now persists via shared RadoubSettings; not written to tool settings (#2295).
         settings.ScriptCompilerPath = ScriptCompilerPath;
     }
 

@@ -118,6 +118,9 @@ public partial class RadoubSettings : INotifyPropertyChanged
     private string _reliquePath = "";
     private string _reliquaryPath = "";
 
+    // Cross-tool editor preference (set in Trebuchet; read by any tool's script Edit action)
+    private string _codeEditorPath = "";
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     private RadoubSettings()
@@ -535,6 +538,16 @@ public partial class RadoubSettings : INotifyPropertyChanged
     {
         get => _reliquaryPath;
         set { if (SetProperty(ref _reliquaryPath, value ?? "")) SaveSettings(); }
+    }
+
+    /// <summary>
+    /// Path to the user's preferred code editor (VS Code, Cursor, Notepad, …). Configured in
+    /// Trebuchet; read by any tool's script "Edit" action to open .nss files. Empty = use OS default.
+    /// </summary>
+    public string CodeEditorPath
+    {
+        get => _codeEditorPath;
+        set { if (SetProperty(ref _codeEditorPath, value ?? "")) SaveSettings(); }
     }
 
     /// <summary>

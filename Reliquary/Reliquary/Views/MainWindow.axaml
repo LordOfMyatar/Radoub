@@ -13,8 +13,13 @@
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
                 <MenuItem Header="_Open..." Click="OnOpenClick"/>
+                <MenuItem Header="_Save" Click="OnSaveClick" InputGesture="Ctrl+S"/>
                 <Separator/>
                 <MenuItem Header="E_xit" Click="OnExitClick"/>
+            </MenuItem>
+            <MenuItem Header="_Edit">
+                <MenuItem x:Name="UndoMenuItem" Header="_Undo" Click="OnUndoClick" InputGesture="Ctrl+Z"/>
+                <MenuItem x:Name="RedoMenuItem" Header="_Redo" Click="OnRedoClick" InputGesture="Ctrl+Y"/>
             </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="_About" Click="OnAboutClick"/>
@@ -37,8 +42,8 @@
                           Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <ScrollViewer Grid.Column="2">
                 <StackPanel Margin="8" Spacing="8">
-                    <panels:IdentityCombatPanel/>
-                    <panels:BehaviorPanel/>
+                    <panels:IdentityCombatPanel x:Name="IdentityCombatPanel"/>
+                    <panels:BehaviorPanel x:Name="BehaviorPanel"/>
                     <panels:TextPanel/>
                     <panels:InventoryPanel/>
                 </StackPanel>
