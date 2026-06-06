@@ -170,4 +170,33 @@ public class PlaceableViewModelTests
         vm.Conversation = "new_dlg";
         Assert.Equal("new_dlg", utp.Conversation);
     }
+
+    // --- New Placeable factory (#2367) ---
+
+    [Fact]
+    public void NewPlaceable_ProducesUseableEmptyPlaceable()
+    {
+        var vm = PlaceableViewModel.NewPlaceable();
+
+        Assert.Equal(string.Empty, vm.Name);
+        Assert.Equal(string.Empty, vm.Tag);
+        Assert.Equal(string.Empty, vm.TemplateResRef);
+        Assert.True(vm.Useable);        // a fresh placeable should be interactable by default
+        Assert.False(vm.HasInventory);  // no backpack until the user opts in
+        Assert.False(vm.Static);
+        Assert.False(vm.Plot);
+    }
+
+    [Fact]
+    public void NewPlaceable_RoundTripsThroughWriter()
+    {
+        var vm = PlaceableViewModel.NewPlaceable();
+
+        // A blank placeable must survive write→read so Save produces a valid .utp.
+        var bytes = UtpWriter.Write(vm.WriteToUtp());
+        var reread = UtpReader.Read(bytes);
+
+        Assert.Equal("UTP ", reread.FileType);
+        Assert.Equal(string.Empty, reread.Tag);
+    }
 }

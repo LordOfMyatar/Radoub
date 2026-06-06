@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 
 ---
 
+## [0.6.0-alpha] - 2026-06-06
+**Branch**: `reliquary/issue-2367` | **PR**: #2371
+
+### Post-epic audit follow-ups
+
+- New Placeable flow: `File → New` (Ctrl+N) creates a blank, round-trippable placeable; first Save routes through Save As (#2367).
+- Recent Files: MRU now persists to `ReliquarySettings.json` with an Open Recent menu, and Reliquary is registered in Trebuchet's per-tool Recent Files dropdown (#2368).
+
+---
+
 ## [0.5.0-alpha] - 2026-06-06
 **Branch**: `radoub/sprint/flaui-coverage` | **PR**: #2365
 

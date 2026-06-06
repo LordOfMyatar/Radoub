@@ -25,6 +25,15 @@ public sealed class PlaceableViewModel : INotifyPropertyChanged
         Scripts = BuildScriptSlots();
     }
 
+    /// <summary>
+    /// Create a blank placeable for File → New (#2367). Defaults to a useable, non-inventory,
+    /// non-static placeable — the most common starting point — with empty Name/Tag/ResRef the
+    /// user fills in. UtpFile's own defaults (FileType "UTP ", FileVersion "V3.2") make it
+    /// round-trip immediately, so Save produces a valid file with no further setup.
+    /// </summary>
+    public static PlaceableViewModel NewPlaceable()
+        => new(new UtpFile { Useable = true });
+
     /// <summary>The wrapped model. Returned by reference for preview/resolution callers.</summary>
     public UtpFile Utp => _utp;
 
