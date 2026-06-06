@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.1.69-alpha] - 2026-06-05
+**Branch**: `reliquary/issue-2295` | **PR**: #2352
+
+### Shared undo/redo foundation (#2295, epic #2231)
+
+- New `Radoub.UI.Undo`: `UndoRedoManager`, `IUndoableCommand`, `SetFieldCommand<T>`, `RelayUndoableCommand`. First consumer is Reliquary; foundation for the cross-tool undo epic.
+
+---
+
 ## [Radoub.Formats 0.2.64-alpha] - 2026-06-05
 **Branch**: `reliquary/issue-2294` | **PR**: #2349
 

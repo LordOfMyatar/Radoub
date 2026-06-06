@@ -20,6 +20,8 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         WireBrowserPanel();
+        WireEditor();
+        WireServices();
     }
 
     private void InitializeComponent()
