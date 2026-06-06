@@ -7,7 +7,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 ---
 
 ## [0.3.0-alpha] - 2026-06-06
-**Branch**: `reliquary/issue-2296` | **PR**: #TBD
+**Branch**: `reliquary/issue-2296` | **PR**: #2358
 
 ### Sprint 6: Text + Inventory + browser metadata
 
