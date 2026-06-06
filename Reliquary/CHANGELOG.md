@@ -11,9 +11,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 
 ### Sprint 5: IdentityCombat + Behavior panels
 
-- IdentityCombatPanel: portrait, identity fields, 3D preview; HasInventory/Static/Plot flag wiring.
-- BehaviorPanel: 13 script slots, advanced behavior fields, shared VariablesPanel, script set presets.
-- All mutations undoable via UndoRedoManager; placeable round-trip tests.
+- IdentityCombatPanel: identity/combat fields, Static/Plot field enablement, appearance combo + 3D model preview.
+- BehaviorPanel: 13 script slots with Browse + Edit (opens in the configured editor), advanced fields, shared VariablesPanel.
+- All field/variable/script edits undoable via UndoRedoManager (Ctrl+Z/Y); placeable round-trip tests.
+- Faction list, portrait browser, and script-set presets deferred to follow-ups (#2354 and later sprints).
 
 ---
 
