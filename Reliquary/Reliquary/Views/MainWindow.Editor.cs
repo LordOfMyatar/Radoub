@@ -56,6 +56,8 @@ public partial class MainWindow
             behavior.SaveScriptSetRequested += OnSaveScriptSetRequested;
             behavior.LoadScriptSetRequested += OnLoadScriptSetRequested;
             behavior.EditConversationRequested += OnEditConversationRequested;
+            behavior.ConversationBrowseRequested += OnConversationBrowseRequested;
+            behavior.FactionChanged += OnFactionSelected;
         }
     }
 
@@ -149,6 +151,7 @@ public partial class MainWindow
         }
 
         PopulateAppearanceAndPreview(); // appearance combo + 3D model (when game data configured)
+        PopulateFactionCombo();         // faction combo from the module's repute.fac (#2354)
         RefreshInventory();             // backpack + palette (visible only when Has Inventory)
 
         TrackPlaceableEdits(_placeable); // any field/variable/inventory edit marks the document dirty
@@ -473,5 +476,22 @@ public partial class MainWindow
             UpdateStatus($"Could not launch Parley for {resRef}.dlg — Parley may not be installed alongside Reliquary.");
         else
             UpdateStatus($"Opening {resRef}.dlg in Parley…");
+    }
+
+    /// <summary>
+    /// Open the shared DialogBrowserWindow and set the Conversation ResRef from the selection (#2373).
+    /// Routes the change through undo (SetFieldCommand), mirroring the script-slot browse.
+    /// </summary>
+    private async void OnConversationBrowseRequested(object? sender, EventArgs e)
+    {
+        if (_placeable is null) return;
+
+        var context = new PlaceableEditor.Services.ReliquaryScriptBrowserContext(_currentFilePath, _gameData);
+        var browser = new Radoub.UI.Views.DialogBrowserWindow(context);
+        var result = await browser.ShowDialog<string?>(this);
+        if (string.IsNullOrEmpty(result)) return;
+
+        _undo.Execute(new SetFieldCommand<string>(
+            () => _placeable.Conversation, v => _placeable.Conversation = v, result, "set conversation"));
     }
 }
