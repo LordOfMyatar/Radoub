@@ -6,6 +6,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 
 ---
 
+## [0.4.0-alpha] - 2026-06-06
+**Branch**: `reliquary/issue-2297` | **PR**: #2364
+
+### Sprint 7: Cross-tool dispatch + FlaUI + v0.1.0-alpha release
+
+- Cross-tool dispatch: `.utp` registered with ToolDispatchService; Conversation field opens DLG in Parley.
+- FlaUI smoke test for the placeable editor; Reliquary added to `run-tests.ps1 -Tool`.
+- Fixed: a placeable passed via `--file` now opens at startup, and the title bar shows the open file.
+- UI uniformity audit against the bootstrap checklist (12/12 pass).
+
+---
+
 ## [0.3.0-alpha] - 2026-06-06
 **Branch**: `reliquary/issue-2296` | **PR**: #2358
 

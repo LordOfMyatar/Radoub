@@ -80,11 +80,13 @@ public abstract class FlaUITestBase : IDisposable
         var quartermasterSettingsDir = Path.Combine(_isolatedSettingsDir, "Quartermaster");
         var fenceSettingsDir = Path.Combine(_isolatedSettingsDir, "Fence");
         var trebuchetSettingsDir = Path.Combine(_isolatedSettingsDir, "Trebuchet");
+        var reliquarySettingsDir = Path.Combine(_isolatedSettingsDir, "Reliquary");
         Directory.CreateDirectory(parleySettingsDir);
         Directory.CreateDirectory(manifestSettingsDir);
         Directory.CreateDirectory(quartermasterSettingsDir);
         Directory.CreateDirectory(fenceSettingsDir);
         Directory.CreateDirectory(trebuchetSettingsDir);
+        Directory.CreateDirectory(reliquarySettingsDir);
 
         // Pre-seed Parley settings with test-friendly defaults
         // SideBySide layout is most stable for automated testing (no separate windows)
@@ -115,6 +117,10 @@ public abstract class FlaUITestBase : IDisposable
         // Pre-seed Trebuchet settings with test-friendly defaults
         var trebuchetSettings = @"{}";
         File.WriteAllText(Path.Combine(trebuchetSettingsDir, "TrebuchetSettings.json"), trebuchetSettings);
+
+        // Pre-seed Reliquary settings with test-friendly defaults
+        var reliquarySettings = @"{}";
+        File.WriteAllText(Path.Combine(reliquarySettingsDir, "ReliquarySettings.json"), reliquarySettings);
 
         // Pre-seed RadoubSettings with test data paths (for Sound Browser, etc.)
         // These paths point to our test data which includes HAK files with sounds
@@ -148,6 +154,7 @@ public abstract class FlaUITestBase : IDisposable
         processInfo.Environment["QUARTERMASTER_SETTINGS_DIR"] = quartermasterSettingsDir;
         processInfo.Environment["FENCE_SETTINGS_DIR"] = fenceSettingsDir;
         processInfo.Environment["TREBUCHET_SETTINGS_DIR"] = trebuchetSettingsDir;
+        processInfo.Environment["RELIQUARY_SETTINGS_DIR"] = reliquarySettingsDir;
 
         // GetMainWindow can return null when the desktop is racing with the
         // launching app — the window appears in time but UIA doesn't enumerate

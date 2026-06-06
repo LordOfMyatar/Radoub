@@ -4,10 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Utp;
 using Radoub.UI.Controls;
 using Radoub.UI.Services;
+using Radoub.UI.Services.Search;
 using Radoub.UI.Undo;
 using Radoub.UI.ViewModels;
 using PlaceableEditor.Commands;
@@ -49,6 +51,7 @@ public partial class MainWindow
             behavior.Variables.DeleteRequested += OnVariableDeleteRequested;
             behavior.ScriptBrowseRequested += OnScriptBrowseRequested;
             behavior.ScriptEditRequested += OnScriptEditRequested;
+            behavior.EditConversationRequested += OnEditConversationRequested;
         }
     }
 
@@ -62,6 +65,7 @@ public partial class MainWindow
             _currentFilePath = filePath;
             _documentState.IsReadOnly = false;
             BindPlaceable(new PlaceableViewModel(utp));
+            UpdateTitle(); // BindPlaceable's ClearDirty is a no-op when already clean, so refresh the title explicitly
             UpdateStatus($"Loaded {Path.GetFileName(filePath)}");
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException)
@@ -89,6 +93,7 @@ public partial class MainWindow
             _currentFilePath = null;          // no backing file — read-only resource
             _documentState.IsReadOnly = true;
             BindPlaceable(new PlaceableViewModel(utp));
+            UpdateTitle(); // surface the [Read-Only] marker (ClearDirty is a no-op when already clean)
             UpdateStatus($"Base-game placeable (read-only): {name}");
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException)
@@ -290,5 +295,36 @@ public partial class MainWindow
         var moduleDir = GetModuleWorkingDirectory();
         if (!ExternalEditorService.OpenScript(slot.ResRef, fileDir, moduleDir))
             UpdateStatus($"Could not open {slot.ResRef}.nss — not found near the placeable or module.");
+    }
+
+    // --- Conversation (cross-tool dispatch to Parley, Sprint 7 #2297) ---
+
+    /// <summary>
+    /// Resolve the placeable's Conversation ResRef to a .dlg near the file/module and open it in Parley
+    /// via the shared <see cref="ToolDispatchService"/>. Reports status when blank, unresolved, or the
+    /// launch fails (e.g. Parley not deployed alongside Reliquary).
+    /// </summary>
+    private void OnEditConversationRequested(object? sender, EventArgs e)
+    {
+        var resRef = _placeable?.Conversation;
+        if (string.IsNullOrWhiteSpace(resRef))
+        {
+            UpdateStatus("No conversation set — enter a DLG resref first.");
+            return;
+        }
+
+        var fileDir = string.IsNullOrEmpty(_currentFilePath) ? null : Path.GetDirectoryName(_currentFilePath);
+        var moduleDir = GetModuleWorkingDirectory();
+        var dlgPath = ExternalEditorService.ResolveResourcePath(resRef, ".dlg", fileDir, moduleDir);
+        if (dlgPath is null)
+        {
+            UpdateStatus($"Could not open {resRef}.dlg — not found near the placeable or module.");
+            return;
+        }
+
+        if (!new ToolDispatchService().LaunchTool(ResourceTypes.Dlg, dlgPath))
+            UpdateStatus($"Could not launch Parley for {resRef}.dlg — Parley may not be installed alongside Reliquary.");
+        else
+            UpdateStatus($"Opening {resRef}.dlg in Parley…");
     }
 }

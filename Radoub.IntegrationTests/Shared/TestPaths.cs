@@ -94,6 +94,25 @@ public static class TestPaths
         return Path.Combine(RepoRoot, "Trebuchet", "Trebuchet", "bin", configuration, "net9.0", "Trebuchet.exe");
     }
 
+    /// <summary>
+    /// Gets the path to a built Reliquary executable.
+    /// </summary>
+    /// <param name="configuration">Build configuration (Debug or Release)</param>
+    public static string GetReliquaryExePath(string configuration = "Debug")
+    {
+        return Path.Combine(RepoRoot, "Reliquary", "Reliquary", "bin", configuration, "net9.0", "Reliquary.exe");
+    }
+
+    /// <summary>
+    /// Gets the Reliquary test-fixtures directory (real UTPs extracted from LNS_DLG, #2294).
+    /// </summary>
+    public static string ReliquaryTestFiles => Path.Combine(RepoRoot, "Reliquary", "Reliquary.Tests", "Fixtures");
+
+    /// <summary>
+    /// Gets a specific Reliquary UTP fixture path.
+    /// </summary>
+    public static string GetReliquaryTestFile(string filename) => Path.Combine(ReliquaryTestFiles, filename);
+
     #region Integration Test Data (Spoofed NWN Environment)
 
     /// <summary>
