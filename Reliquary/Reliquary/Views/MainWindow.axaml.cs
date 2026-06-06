@@ -6,6 +6,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
 using Radoub.Formats.Logging;
 using Radoub.UI.Services;
+using PlaceableEditor.Views.Panels;
 
 namespace PlaceableEditor.Views;
 
@@ -70,7 +71,21 @@ public partial class MainWindow : Window
     /// </summary>
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)
     {
+        // F4 toggles the browser sidebar (no modifier).
+        if (e.Key == Key.F4 && e.KeyModifiers == KeyModifiers.None)
+        {
+            var browser = this.FindControl<PlaceableBrowserPanel>("PlaceableBrowserPanel");
+            if (browser != null) browser.IsCollapsed = !browser.IsCollapsed;
+            e.Handled = true;
+            return;
+        }
+
         if (e.KeyModifiers != KeyModifiers.Control) return;
+
+        // When a text editor has focus, Ctrl+Z/Y belong to the TextBox's own undo stack — text
+        // edits flow through binding, not the document UndoRedoManager, so intercepting here would
+        // run an unrelated document undo and desync the text field. Let the TextBox handle them.
+        bool textFocused = TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is TextBox;
 
         switch (e.Key)
         {
@@ -83,10 +98,12 @@ public partial class MainWindow : Window
                 e.Handled = true;
                 break;
             case Key.Z:
+                if (textFocused) break; // let the TextBox undo its own edits
                 OnUndoClick(sender, e);
                 e.Handled = true;
                 break;
             case Key.Y:
+                if (textFocused) break;
                 OnRedoClick(sender, e);
                 e.Handled = true;
                 break;
