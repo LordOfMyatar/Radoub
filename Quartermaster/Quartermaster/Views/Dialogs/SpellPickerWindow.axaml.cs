@@ -83,9 +83,9 @@ public partial class SpellPickerWindow : Window
         }
         else
         {
+            // Shared, tested match logic (#2360).
             _filteredSpells = _allSpells
-                .Where(s => s.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
-                            s.Id.ToString().Contains(searchText))
+                .Where(s => Radoub.UI.Services.PickerSearchHelper.Matches(searchText, s.Name, s.Id.ToString()))
                 .ToList();
         }
 

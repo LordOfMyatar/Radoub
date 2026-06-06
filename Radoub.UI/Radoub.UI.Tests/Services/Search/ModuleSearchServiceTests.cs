@@ -1,3 +1,4 @@
+using System.Linq;
 using Radoub.Formats.Common;
 using Radoub.Formats.Dlg;
 using Radoub.Formats.Gff;
@@ -142,6 +143,61 @@ public class ModuleSearchServiceTests : IDisposable
 
         // .txt is not a searchable extension; only the DLG is scanned.
         Assert.Equal(1, results.TotalFilesScanned);
+    }
+
+    #endregion
+
+    #region ScanModuleAsync — Category Filtering (#2360)
+
+    [Fact]
+    public async Task ScanModule_CategoryFilter_Content_OnlyMatchesDialogText()
+    {
+        // "louis" appears in BOTH the speaker tag (Identity) and the entry text (Content).
+        WriteDlgFile("merchant.dlg", "Greetings from louis the trader.", speaker: "louis_npc");
+
+        var criteria = new SearchCriteria
+        {
+            Pattern = "louis",
+            CategoryFilter = new[] { SearchFieldCategory.Content }
+        };
+        var results = await _service.ScanModuleAsync(_tempDir, criteria);
+
+        // Only the Content field (dialog text) should match — the Identity speaker tag is excluded.
+        Assert.Equal(1, results.FilesWithMatches);
+        Assert.All(results.Files.SelectMany(f => f.Matches),
+            m => Assert.Equal(SearchFieldCategory.Content, m.Field.Category));
+    }
+
+    [Fact]
+    public async Task ScanModule_CategoryFilter_Identity_OnlyMatchesSpeakerTag()
+    {
+        WriteDlgFile("merchant.dlg", "Greetings from louis the trader.", speaker: "louis_npc");
+
+        var criteria = new SearchCriteria
+        {
+            Pattern = "louis",
+            CategoryFilter = new[] { SearchFieldCategory.Identity }
+        };
+        var results = await _service.ScanModuleAsync(_tempDir, criteria);
+
+        // Only the Identity field (speaker tag) should match — the Content dialog text is excluded.
+        Assert.Equal(1, results.FilesWithMatches);
+        Assert.All(results.Files.SelectMany(f => f.Matches),
+            m => Assert.Equal(SearchFieldCategory.Identity, m.Field.Category));
+    }
+
+    [Fact]
+    public async Task ScanModule_NoCategoryFilter_MatchesAllCategories()
+    {
+        WriteDlgFile("merchant.dlg", "Greetings from louis the trader.", speaker: "louis_npc");
+
+        var criteria = new SearchCriteria { Pattern = "louis" };
+        var results = await _service.ScanModuleAsync(_tempDir, criteria);
+
+        // Without a category filter, both the Content and Identity hits are returned.
+        var categories = results.Files.SelectMany(f => f.Matches).Select(m => m.Field.Category).Distinct().ToList();
+        Assert.Contains(SearchFieldCategory.Content, categories);
+        Assert.Contains(SearchFieldCategory.Identity, categories);
     }
 
     #endregion
