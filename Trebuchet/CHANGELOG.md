@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.36.9-alpha] - 2026-06-06
-**Branch**: `trebuchet/sprint/data-loss-marlinspike` | **PR**: #TBD
+**Branch**: `trebuchet/sprint/data-loss-marlinspike` | **PR**: #2387
 
 ### Sprint: Critical Data Loss + Marlinspike Polish
 
