@@ -4,6 +4,7 @@ using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 
 namespace PlaceableEditor.Views;
 
@@ -15,15 +16,37 @@ namespace PlaceableEditor.Views;
 /// </summary>
 public partial class MainWindow : Window
 {
-    private string? _currentFilePath;
+    private readonly DocumentState _documentState = new("Reliquary");
+
+    /// <summary>Current file path, tracked by the shared <see cref="DocumentState"/> (drives the title bar).</summary>
+    private string? _currentFilePath
+    {
+        get => _documentState.CurrentFilePath;
+        set => _documentState.CurrentFilePath = value;
+    }
+
+    /// <summary>True while loading a file — suppresses dirty marking from binding-driven VM updates.</summary>
+    private bool _isLoading
+    {
+        get => _documentState.IsLoading;
+        set => _documentState.IsLoading = value;
+    }
+
+    private bool _isDirty => _documentState.IsDirty;
 
     public MainWindow()
     {
         InitializeComponent();
+
+        _documentState.DirtyStateChanged += () => Title = _documentState.GetTitle();
+        Title = _documentState.GetTitle();
+
         WireBrowserPanel();
         WireEditor();
         WireServices();
         WireInventory();
+
+        Closing += OnWindowClosing;
     }
 
     private void InitializeComponent()
@@ -54,8 +77,9 @@ public partial class MainWindow : Window
         });
 
         var path = files.Count > 0 ? files[0].TryGetLocalPath() : null;
-        if (!string.IsNullOrEmpty(path))
-            LoadPlaceable(path);
+        if (string.IsNullOrEmpty(path)) return;
+        if (!await ConfirmDiscardAsync()) return; // prompt before discarding unsaved edits
+        LoadPlaceable(path);
     }
 
     private void OnAboutClick(object? sender, RoutedEventArgs e)

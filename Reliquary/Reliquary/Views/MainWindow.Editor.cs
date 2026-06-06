@@ -35,6 +35,10 @@ public partial class MainWindow
         _editorWired = true;
 
         _undo.StateChanged += (_, _) => RefreshUndoMenu();
+        // Command-based edits (appearance, scripts, variables, inventory) flow through the undo
+        // manager; binding-based edits (identity/text fields) flow through the VM. Mark dirty on
+        // both so the title bar + save prompt reflect any change. MarkDirty no-ops while loading.
+        _undo.StateChanged += (_, _) => MarkDirty();
         RefreshUndoMenu();
 
         var behavior = this.FindControl<BehaviorPanel>("BehaviorPanel");
@@ -52,6 +56,7 @@ public partial class MainWindow
     {
         try
         {
+            _isLoading = true; // suppress dirty marking while panels rebind to the new VM
             var utp = UtpReader.Read(filePath);
             _placeable = new PlaceableViewModel(utp);
             _currentFilePath = filePath;
@@ -71,8 +76,10 @@ public partial class MainWindow
             PopulateAppearanceAndPreview(); // appearance combo + 3D model (when game data configured)
             RefreshInventory();             // backpack + palette (visible only when Has Inventory)
 
+            TrackPlaceableEdits(_placeable); // any field/variable/inventory edit now marks the document dirty
             _undo.Clear(); // fresh history per file
             RefreshUndoMenu();
+            _documentState.ClearDirty();
             UpdateStatus($"Loaded {Path.GetFileName(filePath)}");
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException)
@@ -80,6 +87,10 @@ public partial class MainWindow
             UnifiedLogger.LogApplication(LogLevel.WARN,
                 $"Reliquary: failed to load {UnifiedLogger.SanitizePath(filePath)}: {ex.Message}");
             UpdateStatus($"Could not load {Path.GetFileName(filePath)}: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
         }
     }
 
@@ -96,6 +107,7 @@ public partial class MainWindow
         try
         {
             UtpWriter.Write(_placeable.WriteToUtp(), _currentFilePath);
+            _documentState.ClearDirty();
 
             // Refresh the browser row's Tag/Name without a full reindex (design §5.5).
             // Fire-and-forget — the save flow does not block on UI refresh.

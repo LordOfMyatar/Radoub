@@ -33,9 +33,16 @@ public partial class MainWindow
         }
     }
 
-    private void OnBrowserFileSelected(object? sender, FileSelectedEventArgs e)
+    private async void OnBrowserFileSelected(object? sender, FileSelectedEventArgs e)
     {
         if (string.IsNullOrEmpty(e.Entry.FilePath)) return;
+
+        // Already open — nothing to discard or reload.
+        if (string.Equals(_currentFilePath, e.Entry.FilePath, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        // Prompt before discarding unsaved edits on the current placeable.
+        if (!await ConfirmDiscardAsync()) return;
 
         var browser = this.FindControl<PlaceableBrowserPanel>("PlaceableBrowserPanel");
         if (browser != null)
