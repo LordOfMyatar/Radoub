@@ -23,6 +23,7 @@ public partial class MainWindow : Window
         WireBrowserPanel();
         WireEditor();
         WireServices();
+        WireInventory();
     }
 
     private void InitializeComponent()

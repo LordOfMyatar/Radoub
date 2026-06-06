@@ -69,6 +69,7 @@ public partial class MainWindow
             }
 
             PopulateAppearanceAndPreview(); // appearance combo + 3D model (when game data configured)
+            RefreshInventory();             // backpack + palette (visible only when Has Inventory)
 
             _undo.Clear(); // fresh history per file
             RefreshUndoMenu();

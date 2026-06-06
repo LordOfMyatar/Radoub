@@ -47,6 +47,7 @@ public partial class MainWindow
                 _appearances = new PlaceableAppearanceService(_gameData);
                 _modelLoader = new PlaceableModelLoader(_gameData, _appearances);
                 _textureService = new TextureService(_gameData);
+                _itemFactory = new Radoub.UI.ViewModels.ItemViewModelFactory(_gameData);
                 UnifiedLogger.LogApplication(LogLevel.INFO, "Reliquary: GameDataService configured.");
             }
             else

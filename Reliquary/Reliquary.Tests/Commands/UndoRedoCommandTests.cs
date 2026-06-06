@@ -134,4 +134,115 @@ public class UndoRedoCommandTests
         Assert.Empty(ui);
         Assert.Empty(model);
     }
+
+    // --- AddInventoryItem (keeps PlaceableItem model list + ItemViewModel UI in lock-step) ---
+
+    private static ItemViewModel BackpackItem(string resRef)
+        => new ItemViewModel { Name = resRef, ResRef = resRef };
+
+    [Fact]
+    public void AddInventoryItem_AddsToModelAndUi()
+    {
+        var model = new List<PlaceableItem>();
+        var ui = new ObservableCollection<ItemViewModel>();
+        var mgr = new UndoRedoManager();
+
+        mgr.Execute(new AddInventoryItemCommand(model, ui, BackpackItem("nw_it_gold001")));
+
+        Assert.Single(model);
+        Assert.Single(ui);
+        Assert.Equal("nw_it_gold001", model[0].InventoryRes);
+    }
+
+    [Fact]
+    public void AddInventoryItem_UndoRemovesFromBoth()
+    {
+        var model = new List<PlaceableItem>();
+        var ui = new ObservableCollection<ItemViewModel>();
+        var mgr = new UndoRedoManager();
+
+        mgr.Execute(new AddInventoryItemCommand(model, ui, BackpackItem("nw_it_gold001")));
+        mgr.Undo();
+
+        Assert.Empty(model);
+        Assert.Empty(ui);
+    }
+
+    [Fact]
+    public void AddInventoryItem_RedoReappliesToBoth()
+    {
+        var model = new List<PlaceableItem>();
+        var ui = new ObservableCollection<ItemViewModel>();
+        var mgr = new UndoRedoManager();
+
+        mgr.Execute(new AddInventoryItemCommand(model, ui, BackpackItem("nw_it_gold001")));
+        mgr.Undo();
+        mgr.Redo();
+
+        Assert.Single(model);
+        Assert.Single(ui);
+        Assert.Equal("nw_it_gold001", ui[0].ResRef);
+    }
+
+    // --- RemoveInventoryItem ---
+
+    [Fact]
+    public void RemoveInventoryItem_RemovesFromBoth()
+    {
+        var a = BackpackItem("item_a");
+        var b = BackpackItem("item_b");
+        var model = new List<PlaceableItem>
+        {
+            new() { InventoryRes = "item_a" },
+            new() { InventoryRes = "item_b" }
+        };
+        var ui = new ObservableCollection<ItemViewModel> { a, b };
+        var mgr = new UndoRedoManager();
+
+        mgr.Execute(new RemoveInventoryItemCommand(model, ui, b));
+
+        Assert.Single(ui);
+        Assert.Single(model);
+        Assert.Equal("item_a", ui[0].ResRef);
+        Assert.Equal("item_a", model[0].InventoryRes);
+    }
+
+    [Fact]
+    public void RemoveInventoryItem_UndoReinsertsAtOriginalIndex()
+    {
+        var a = BackpackItem("item_a");
+        var b = BackpackItem("item_b");
+        var c = BackpackItem("item_c");
+        var model = new List<PlaceableItem>
+        {
+            new() { InventoryRes = "item_a" },
+            new() { InventoryRes = "item_b" },
+            new() { InventoryRes = "item_c" }
+        };
+        var ui = new ObservableCollection<ItemViewModel> { a, b, c };
+        var mgr = new UndoRedoManager();
+
+        mgr.Execute(new RemoveInventoryItemCommand(model, ui, b)); // remove middle
+        mgr.Undo();
+
+        Assert.Equal(3, ui.Count);
+        Assert.Equal("item_b", ui[1].ResRef);
+        Assert.Equal("item_b", model[1].InventoryRes);
+    }
+
+    [Fact]
+    public void RemoveInventoryItem_RedoRemovesAgain()
+    {
+        var a = BackpackItem("item_a");
+        var model = new List<PlaceableItem> { new() { InventoryRes = "item_a" } };
+        var ui = new ObservableCollection<ItemViewModel> { a };
+        var mgr = new UndoRedoManager();
+
+        mgr.Execute(new RemoveInventoryItemCommand(model, ui, a));
+        mgr.Undo();
+        mgr.Redo();
+
+        Assert.Empty(ui);
+        Assert.Empty(model);
+    }
 }
