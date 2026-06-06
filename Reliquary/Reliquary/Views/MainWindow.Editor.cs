@@ -55,6 +55,25 @@ public partial class MainWindow
         }
     }
 
+    /// <summary>File → New (#2367): prompt to discard, then bind a blank placeable as an unsaved document.</summary>
+    private async void OnNewClick(object? sender, RoutedEventArgs e)
+    {
+        if (!await ConfirmDiscardAsync()) return;
+        try
+        {
+            _isLoading = true; // suppress dirty marking while panels rebind to the new VM
+            _currentFilePath = null;          // unsaved — first Save routes through Save As
+            _documentState.IsReadOnly = false;
+            BindPlaceable(PlaceableViewModel.NewPlaceable());
+            UpdateTitle(); // BindPlaceable's ClearDirty is a no-op when already clean, so refresh the title
+            UpdateStatus("New placeable — fill in name/tag, then Save.");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
     /// <summary>Load a UTP file into the editor, wrap it in a VM, and bind the panels.</summary>
     private void LoadPlaceable(string filePath)
     {
@@ -66,6 +85,7 @@ public partial class MainWindow
             _documentState.IsReadOnly = false;
             BindPlaceable(new PlaceableViewModel(utp));
             UpdateTitle(); // BindPlaceable's ClearDirty is a no-op when already clean, so refresh the title explicitly
+            AddRecentFile(filePath);
             UpdateStatus($"Loaded {Path.GetFileName(filePath)}");
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException)
@@ -202,6 +222,7 @@ public partial class MainWindow
         {
             UtpWriter.Write(_placeable.WriteToUtp(), path);
             _documentState.ClearDirty();
+            AddRecentFile(path);
 
             // Refresh the browser row's Tag/Name without a full reindex (design §5.5).
             var browser = this.FindControl<PlaceableBrowserPanel>("PlaceableBrowserPanel");
@@ -217,6 +238,45 @@ public partial class MainWindow
                 $"Reliquary: save failed for {UnifiedLogger.SanitizePath(path)}: {ex.Message}");
             UpdateStatus($"Save failed: {ex.Message}");
             return false;
+        }
+    }
+
+    // --- Recent Files (MRU) ---
+    // Persistence is inherited from BaseToolSettingsService (RecentFiles / AddRecentFile);
+    // Trebuchet reads ~/Radoub/Reliquary/ReliquarySettings.json via ToolRecentFilesService (#2368).
+
+    /// <summary>Record a file in the MRU and refresh the Open Recent submenu.</summary>
+    private void AddRecentFile(string filePath)
+    {
+        PlaceableEditor.Services.SettingsService.Instance.AddRecentFile(filePath);
+        PopulateRecentFiles();
+    }
+
+    /// <summary>Rebuild the Open Recent submenu from the persisted MRU list.</summary>
+    private void PopulateRecentFiles()
+    {
+        var menu = this.FindControl<MenuItem>("RecentFilesMenu");
+        if (menu == null) return;
+
+        menu.Items.Clear();
+        var recent = PlaceableEditor.Services.SettingsService.Instance.RecentFiles;
+
+        if (recent.Count == 0)
+        {
+            menu.Items.Add(new MenuItem { Header = "(none)", IsEnabled = false });
+            return;
+        }
+
+        foreach (var path in recent)
+        {
+            var item = new MenuItem { Header = Path.GetFileName(path), Tag = path };
+            ToolTip.SetTip(item, UnifiedLogger.SanitizePath(path));
+            item.Click += async (_, _) =>
+            {
+                if (!await ConfirmDiscardAsync()) return;
+                LoadPlaceable((string)item.Tag!);
+            };
+            menu.Items.Add(item);
         }
     }
 

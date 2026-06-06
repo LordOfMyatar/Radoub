@@ -154,6 +154,7 @@ public class ToolRecentFilesService
             "Manifest" => "ManifestSettings.json",
             "Fence" => "FenceSettings.json",
             "Relique" => "ReliqueSettings.json",
+            "Reliquary" => "ReliquarySettings.json",
             _ => null
         };
 
