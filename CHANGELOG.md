@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.1-alpha] - 2026-06-06
+**Branch**: `reliquary/sprint/epic-2289-followups` | **PR**: #2377
+
+### Cross-tool dispatch: resolve target tool from settings
+
+- `ToolDispatchService` now looks up the target tool's path from shared `RadoubSettings` (written when that tool runs) before falling back to relative-directory discovery. Fixes cross-tool "open in X" launches failing in dev/portable layouts where tools live in separate bin trees.
+
+---
+
 ## [Docs] - 2026-06-06
 **Branch**: `reliquary/issue-2367` | **PR**: #2371
 
