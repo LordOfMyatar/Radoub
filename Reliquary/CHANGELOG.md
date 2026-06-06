@@ -13,7 +13,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 
 - TextPanel: Description (TLK) + builder Comments, token insertion, spell-check.
 - InventoryPanel (when Has Inventory): backpack list + UTI palette + read-only resolved details, undoable add/remove. (UTP stores only item ResRef + position, so no per-instance stack/charges editor.)
-- Browser metadata indexing (UTP tag/name) with background pass and save notifier.
+- Browser metadata indexing (UTP tag/name) with background pass and save notifier; lists module .utp plus base-game/HAK, with read-only preview of archive placeables.
+- Document dirty-tracking + Save / Save As (Ctrl+S / Ctrl+Shift+S) with save-on-close/switch prompts; Save As copies a base-game placeable into the module to edit.
+- Keyboard shortcuts (Ctrl+S/Z/Y/O, F4 to toggle the browser).
 
 ---
 
