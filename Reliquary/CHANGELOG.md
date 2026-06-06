@@ -6,6 +6,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 
 ---
 
+## [0.7.0-alpha] - 2026-06-06
+**Branch**: `reliquary/sprint/epic-2289-followups` | **PR**: #TBD
+
+### Sprint: Epic #2289 placeable-editor follow-ups
+
+- Faction combo populated from the module's `repute.fac`; selection is undoable (#2354).
+- Inventory column resize, palette panel gaps, and non-resizable MainWindow fixed for large-font support (#2363).
+- ResRef/Tag auto-sync with name (Relique-style linked checkbox) (#2372).
+- Conversation field gains a Browse button to the shared DialogBrowserWindow (undoable) (#2373).
+- 3D model preview now fits its allotted area in the IdentityCombat panel (#2375).
+- Initial State edited as a named dropdown of placeable animation states instead of a raw number (#2376).
+
+---
+
 ## [0.6.0-alpha] - 2026-06-06
 **Branch**: `reliquary/issue-2367` | **PR**: #2371
 
