@@ -6,6 +6,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 
 ---
 
+## [0.3.0-alpha] - 2026-06-06
+**Branch**: `reliquary/issue-2296` | **PR**: #TBD
+
+### Sprint 6: Text + Inventory + browser metadata
+
+- TextPanel: Description (TLK) + builder Comments, token insertion, spell-check.
+- InventoryPanel: backpack list + UTI palette + per-instance editor (stack/charges/plot), undoable add/remove.
+- Browser metadata indexing (UTP tag/name) with background pass and save notifier.
+
+---
+
 ## [0.2.0-alpha] - 2026-06-05
 **Branch**: `reliquary/issue-2295` | **PR**: #2352
 
