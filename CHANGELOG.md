@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Docs] - 2026-06-06
-**Branch**: `reliquary/issue-2367` | **PR**: #TBD
+**Branch**: `reliquary/issue-2367` | **PR**: #2371
 
 ### Bootstrap: require New-resource flow + audit gaps (post-Reliquary audit)
 
