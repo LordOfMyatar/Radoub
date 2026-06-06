@@ -33,6 +33,24 @@ public partial class MainWindow
 
     private async void OnBrowserFileSelected(object? sender, FileSelectedEventArgs e)
     {
+        var browser = this.FindControl<PlaceableBrowserPanel>("PlaceableBrowserPanel");
+        var isArchive = e.Entry is PlaceableBrowserEntry { IsFromBif: true } || e.Entry.IsFromHak;
+
+        // Archive (HAK/BIF) entries have no file path — load a read-only preview.
+        if (isArchive)
+        {
+            if (!await ConfirmDiscardAsync()) return;
+            var bytes = browser?.ExtractArchiveBytes(e.Entry);
+            if (bytes == null)
+            {
+                UpdateStatus($"Could not extract {e.Entry.Name} from archives.");
+                return;
+            }
+            LoadPlaceableFromBytes(bytes, e.Entry.Name);
+            if (browser != null) browser.CurrentFilePath = null;
+            return;
+        }
+
         if (string.IsNullOrEmpty(e.Entry.FilePath)) return;
 
         // Already open — nothing to discard or reload.
@@ -42,7 +60,6 @@ public partial class MainWindow
         // Prompt before discarding unsaved edits on the current placeable.
         if (!await ConfirmDiscardAsync()) return;
 
-        var browser = this.FindControl<PlaceableBrowserPanel>("PlaceableBrowserPanel");
         if (browser != null)
             browser.CurrentFilePath = e.Entry.FilePath;
 

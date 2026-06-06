@@ -58,28 +58,9 @@ public partial class MainWindow
         {
             _isLoading = true; // suppress dirty marking while panels rebind to the new VM
             var utp = UtpReader.Read(filePath);
-            _placeable = new PlaceableViewModel(utp);
             _currentFilePath = filePath;
-
-            var identity = this.FindControl<IdentityCombatPanel>("IdentityCombatPanel");
-            var behavior = this.FindControl<BehaviorPanel>("BehaviorPanel");
-            var text = this.FindControl<TextPanel>("TextPanel");
-            if (identity != null) identity.DataContext = _placeable;
-            if (text != null) text.DataContext = _placeable;
-            if (behavior != null)
-            {
-                behavior.DataContext = _placeable;
-                behavior.Variables.Variables = new System.Collections.ObjectModel.ObservableCollection<VariableViewModel>(
-                    _placeable.VarTable.Select(VariableViewModel.FromVariable));
-            }
-
-            PopulateAppearanceAndPreview(); // appearance combo + 3D model (when game data configured)
-            RefreshInventory();             // backpack + palette (visible only when Has Inventory)
-
-            TrackPlaceableEdits(_placeable); // any field/variable/inventory edit now marks the document dirty
-            _undo.Clear(); // fresh history per file
-            RefreshUndoMenu();
-            _documentState.ClearDirty();
+            _documentState.IsReadOnly = false;
+            BindPlaceable(new PlaceableViewModel(utp));
             UpdateStatus($"Loaded {Path.GetFileName(filePath)}");
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException)
@@ -92,6 +73,58 @@ public partial class MainWindow
         {
             _isLoading = false;
         }
+    }
+
+    /// <summary>
+    /// Load a UTP from raw bytes (HAK/BIF archive entry) as a read-only preview — no file path, so
+    /// Save is a no-op until the user does Save As (future). Mirrors Relique's archive preview.
+    /// </summary>
+    private void LoadPlaceableFromBytes(byte[] bytes, string name)
+    {
+        try
+        {
+            _isLoading = true;
+            var utp = UtpReader.Read(bytes);
+            _currentFilePath = null;          // no backing file — read-only resource
+            _documentState.IsReadOnly = true;
+            BindPlaceable(new PlaceableViewModel(utp));
+            UpdateStatus($"Base-game placeable (read-only): {name}");
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Reliquary: failed to load archive {name}: {ex.Message}");
+            UpdateStatus($"Could not load {name}: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    /// <summary>Bind a freshly-loaded placeable VM to all panels + reset undo/dirty. Caller sets _isLoading.</summary>
+    private void BindPlaceable(PlaceableViewModel placeable)
+    {
+        _placeable = placeable;
+
+        var identity = this.FindControl<IdentityCombatPanel>("IdentityCombatPanel");
+        var behavior = this.FindControl<BehaviorPanel>("BehaviorPanel");
+        var text = this.FindControl<TextPanel>("TextPanel");
+        if (identity != null) identity.DataContext = _placeable;
+        if (text != null) text.DataContext = _placeable;
+        if (behavior != null)
+        {
+            behavior.DataContext = _placeable;
+            behavior.Variables.Variables = new System.Collections.ObjectModel.ObservableCollection<VariableViewModel>(
+                _placeable.VarTable.Select(VariableViewModel.FromVariable));
+        }
+
+        PopulateAppearanceAndPreview(); // appearance combo + 3D model (when game data configured)
+        RefreshInventory();             // backpack + palette (visible only when Has Inventory)
+
+        TrackPlaceableEdits(_placeable); // any field/variable/inventory edit marks the document dirty
+        _undo.Clear(); // fresh history per file
+        RefreshUndoMenu();
+        _documentState.ClearDirty();
     }
 
     private void OnSaveClick(object? sender, RoutedEventArgs e) => SavePlaceable();

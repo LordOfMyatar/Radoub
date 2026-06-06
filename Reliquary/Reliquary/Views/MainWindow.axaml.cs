@@ -48,6 +48,9 @@ public partial class MainWindow : Window
         WireServices();
         WireInventory();
 
+        // Tunnel so F4 reaches us before a focused child (ComboBox etc.) can consume it.
+        AddHandler(KeyDownEvent, OnWindowKeyDownTunnel, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+
         Closing += OnWindowClosing;
     }
 
@@ -69,17 +72,19 @@ public partial class MainWindow : Window
     /// Window-level keyboard shortcuts. MenuItem InputGesture only renders the hint text in
     /// Avalonia — it does not register a global accelerator — so the gestures are dispatched here.
     /// </summary>
-    private void OnWindowKeyDown(object? sender, KeyEventArgs e)
+    /// <summary>Tunnel handler: catch F4 (toggle browser) before a focused child consumes it.</summary>
+    private void OnWindowKeyDownTunnel(object? sender, KeyEventArgs e)
     {
-        // F4 toggles the browser sidebar (no modifier).
         if (e.Key == Key.F4 && e.KeyModifiers == KeyModifiers.None)
         {
             var browser = this.FindControl<PlaceableBrowserPanel>("PlaceableBrowserPanel");
             if (browser != null) browser.IsCollapsed = !browser.IsCollapsed;
             e.Handled = true;
-            return;
         }
+    }
 
+    private void OnWindowKeyDown(object? sender, KeyEventArgs e)
+    {
         if (e.KeyModifiers != KeyModifiers.Control) return;
 
         // When a text editor has focus, Ctrl+Z/Y belong to the TextBox's own undo stack — text

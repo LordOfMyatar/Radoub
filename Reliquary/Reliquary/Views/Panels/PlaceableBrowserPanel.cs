@@ -131,6 +131,10 @@ public class PlaceableBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
     protected override Task<byte[]?> ExtractArchiveBytesAsync(FileBrowserEntry entry)
         => Task.FromResult(ExtractPlaceableArchiveBytes(entry, GameDataService));
 
+    /// <summary>Extract UTP bytes for a HAK/BIF entry so the host can open it read-only. Null on miss.</summary>
+    public byte[]? ExtractArchiveBytes(FileBrowserEntry entry)
+        => ExtractPlaceableArchiveBytes(entry, GameDataService);
+
     private static byte[]? ExtractPlaceableArchiveBytes(FileBrowserEntry entry, IGameDataService? gameDataService)
     {
         if (entry is not PlaceableBrowserEntry pe) return null;
