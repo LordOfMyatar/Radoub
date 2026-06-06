@@ -213,4 +213,36 @@ public class RadoubSettingsTests
 
         Assert.Equal("", settings.CurrentModulePath);
     }
+
+    // ---- Bool persistence round-trip coverage (#2361) ----
+
+    [Fact]
+    public void TlkUseFemale_RoundTrips()
+    {
+        // Default is false; flip to true and confirm it survives a singleton reset.
+        RadoubSettings.Instance.TlkUseFemale = true;
+
+        ResetAndConfigure();
+
+        Assert.True(RadoubSettings.Instance.TlkUseFemale);
+    }
+
+    [Fact]
+    public void UseSharedLogging_RoundTrips()
+    {
+        // Default is true; flip to false and confirm it survives a singleton reset.
+        RadoubSettings.Instance.UseSharedLogging = false;
+
+        ResetAndConfigure();
+
+        Assert.False(RadoubSettings.Instance.UseSharedLogging);
+    }
+
+    [Fact]
+    public void BoolDefaults_AreStable()
+    {
+        var settings = RadoubSettings.Instance;
+        Assert.False(settings.TlkUseFemale);
+        Assert.True(settings.UseSharedLogging);
+    }
 }

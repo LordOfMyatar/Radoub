@@ -456,7 +456,8 @@ public partial class ItemFilterPanel : UserControl
         }
     }
 
-    private bool MatchesFilter(
+    // Multi-criteria match logic extracted to a pure, testable predicate (#2360).
+    private static bool MatchesFilter(
         ItemViewModel item,
         string searchLower,
         string propertySearchLower,
@@ -464,54 +465,8 @@ public partial class ItemFilterPanel : UserControl
         SlotFilterInfo? slotFilter,
         bool showStandard,
         bool showCustom)
-    {
-        // Source filter (Standard = BIF, Custom = Override/HAK/Module)
-        if (item.IsStandard && !showStandard) return false;
-        if (item.IsCustom && !showCustom) return false;
-
-        // Type filter
-        if (typeFilter != null && !typeFilter.IsAllTypes)
-        {
-            if (item.BaseItem != typeFilter.BaseItemIndex)
-                return false;
-        }
-
-        // Slot filter
-        if (slotFilter != null && !slotFilter.IsAllSlots)
-        {
-            if (slotFilter.IsNonEquipable)
-            {
-                // Show only items that cannot be equipped
-                if (item.IsEquipable) return false;
-            }
-            else
-            {
-                // Show only items that can go in the selected slot
-                if ((item.EquipableSlotFlags & slotFilter.SlotFlag) == 0) return false;
-            }
-        }
-
-        // Text search (name, tag, resref)
-        if (!string.IsNullOrEmpty(searchLower))
-        {
-            var nameMatch = item.Name.ToLowerInvariant().Contains(searchLower);
-            var tagMatch = item.Tag.ToLowerInvariant().Contains(searchLower);
-            var resRefMatch = item.ResRef.ToLowerInvariant().Contains(searchLower);
-
-            if (!nameMatch && !tagMatch && !resRefMatch)
-                return false;
-        }
-
-        // Property search (searches resolved property strings)
-        if (!string.IsNullOrEmpty(propertySearchLower))
-        {
-            var propsLower = item.PropertiesDisplay.ToLowerInvariant();
-            if (!propsLower.Contains(propertySearchLower))
-                return false;
-        }
-
-        return true;
-    }
+        => ItemFilterPredicate.Matches(
+            item, searchLower, propertySearchLower, typeFilter, slotFilter, showStandard, showCustom);
 
     private void UpdateResultCount(int matchCount, int totalCount)
     {

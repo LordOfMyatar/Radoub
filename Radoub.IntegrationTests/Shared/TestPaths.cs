@@ -113,6 +113,25 @@ public static class TestPaths
     /// </summary>
     public static string GetReliquaryTestFile(string filename) => Path.Combine(ReliquaryTestFiles, filename);
 
+    /// <summary>
+    /// Gets the path to a built Relique executable.
+    /// </summary>
+    /// <param name="configuration">Build configuration (Debug or Release)</param>
+    public static string GetReliqueExePath(string configuration = "Debug")
+    {
+        return Path.Combine(RepoRoot, "Relique", "Relique", "bin", configuration, "net9.0", "Relique.exe");
+    }
+
+    /// <summary>
+    /// Gets the Relique test-fixtures directory (real UTIs from LNS_DLG, #2168).
+    /// </summary>
+    public static string ReliqueTestFiles => Path.Combine(RepoRoot, "Relique", "Relique.Tests", "Fixtures");
+
+    /// <summary>
+    /// Gets a specific Relique UTI fixture path.
+    /// </summary>
+    public static string GetReliqueTestFile(string filename) => Path.Combine(ReliqueTestFiles, filename);
+
     #region Integration Test Data (Spoofed NWN Environment)
 
     /// <summary>

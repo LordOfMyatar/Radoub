@@ -184,23 +184,13 @@ namespace Radoub.UI.Controls
 
         private SearchCriteria BuildCriteria(string pattern)
         {
-            SearchFieldCategory[]? categoryFilter = null;
-
-            if (GetFieldFilterCombo()?.SelectedItem is ComboBoxItem item && item.Tag is string categoryTag)
-            {
-                if (Enum.TryParse<SearchFieldCategory>(categoryTag, out var category))
-                {
-                    categoryFilter = new[] { category };
-                }
-            }
-
-            return new SearchCriteria
-            {
-                Pattern = pattern,
-                IsRegex = GetRegexCheck()?.IsChecked == true,
-                CaseSensitive = GetCaseSensitiveCheck()?.IsChecked == true,
-                CategoryFilter = categoryFilter
-            };
+            // Criteria assembly extracted to a pure, testable factory (#2360).
+            var categoryTag = (GetFieldFilterCombo()?.SelectedItem as ComboBoxItem)?.Tag as string;
+            return Radoub.UI.Models.SearchBarCriteriaFactory.Build(
+                pattern,
+                isRegex: GetRegexCheck()?.IsChecked == true,
+                caseSensitive: GetCaseSensitiveCheck()?.IsChecked == true,
+                categoryTag: categoryTag);
         }
 
         private void UpdateMatchCount()

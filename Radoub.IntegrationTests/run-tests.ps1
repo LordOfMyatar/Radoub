@@ -300,6 +300,7 @@ $toolUiTests = @{
     "Fence" = @{ Name = "Radoub.IntegrationTests.Fence"; Path = "Radoub.IntegrationTests"; Filter = "FullyQualifiedName~Radoub.IntegrationTests.Fence" }
     "Trebuchet" = @{ Name = "Radoub.IntegrationTests.Trebuchet"; Path = "Radoub.IntegrationTests"; Filter = "FullyQualifiedName~Radoub.IntegrationTests.Trebuchet" }
     "Reliquary" = @{ Name = "Radoub.IntegrationTests.Reliquary"; Path = "Radoub.IntegrationTests"; Filter = "FullyQualifiedName~Radoub.IntegrationTests.Reliquary" }
+    "Relique" = @{ Name = "Radoub.IntegrationTests.Relique"; Path = "Radoub.IntegrationTests"; Filter = "FullyQualifiedName~Radoub.IntegrationTests.Relique" }
 }
 
 # Build test list based on parameters

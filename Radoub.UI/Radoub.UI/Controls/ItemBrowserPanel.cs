@@ -76,6 +76,7 @@ public class ItemBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
             Margin = new Avalonia.Thickness(0, 4, 0, 0)
         };
         ToolTip.SetTip(_showModuleCheckBox, "Show .uti files from module folder");
+        Avalonia.Automation.AutomationProperties.SetAutomationId(_showModuleCheckBox, "ItemBrowser_Check_Module");
         _showModuleCheckBox.IsCheckedChanged += OnModuleFilterChanged;
 
         // Create and wire up HAK checkbox
@@ -86,6 +87,7 @@ public class ItemBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
             Margin = new Avalonia.Thickness(0, 4, 0, 0)
         };
         ToolTip.SetTip(_showHakCheckBox, "Include items from HAK files");
+        Avalonia.Automation.AutomationProperties.SetAutomationId(_showHakCheckBox, "ItemBrowser_Check_Hak");
         _showHakCheckBox.IsCheckedChanged += OnShowHakChanged;
 
         // Create and wire up BIF (base game) checkbox (#2106)
@@ -96,6 +98,7 @@ public class ItemBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
             Margin = new Avalonia.Thickness(0, 4, 0, 0)
         };
         ToolTip.SetTip(_showBifCheckBox, "Show item blueprints from base game BIF archives");
+        Avalonia.Automation.AutomationProperties.SetAutomationId(_showBifCheckBox, "ItemBrowser_Check_Bif");
         _showBifCheckBox.IsCheckedChanged += OnShowBifChanged;
 
         var filterPanel = new StackPanel { Spacing = 2 };
