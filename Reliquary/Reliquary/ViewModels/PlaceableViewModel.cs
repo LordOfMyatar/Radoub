@@ -182,6 +182,9 @@ public sealed class PlaceableViewModel : INotifyPropertyChanged
         set { if (_utp.AnimationState == value) return; _utp.AnimationState = value; OnPropertyChanged(); }
     }
 
+    /// <summary>Named animation states for the Initial State combo (#2376). Engine-fixed catalog.</summary>
+    public IReadOnlyList<PlaceableAnimationState> AnimationStates => PlaceableAnimationState.All;
+
     /// <summary>Body-bag index (design "Treasure Model").</summary>
     public byte TreasureModel
     {

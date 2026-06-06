@@ -74,10 +74,12 @@
                           AutomationProperties.AutomationId="Reliquary_Combo_Faction"/>
 
                 <TextBlock Grid.Row="0" Grid.Column="3" Text="Initial State" VerticalAlignment="Center"/>
-                <NumericUpDown Grid.Row="0" Grid.Column="4" Minimum="0" Maximum="255" Increment="1"
-                               FormatString="0" MinWidth="120"
-                               Value="{Binding InitialState, Mode=TwoWay}"
-                               AutomationProperties.AutomationId="Reliquary_Numeric_InitialState"/>
+                <ComboBox Grid.Row="0" Grid.Column="4" MinWidth="120"
+                          ItemsSource="{Binding AnimationStates}"
+                          SelectedValue="{Binding InitialState, Mode=TwoWay}"
+                          SelectedValueBinding="{Binding Value}"
+                          DisplayMemberBinding="{Binding Display}"
+                          AutomationProperties.AutomationId="Reliquary_Combo_InitialState"/>
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Conversation" VerticalAlignment="Center"/>
                 <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Conversation, Mode=TwoWay}"
