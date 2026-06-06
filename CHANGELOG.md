@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.1.70-alpha] - 2026-06-06
+**Branch**: `reliquary/issue-2297` | **PR**: #2364
+
+### Generic resource-path resolution for cross-tool dispatch (#2297)
+
+- `ExternalEditorService.ResolveResourcePath(resRef, extension, …)` resolves any ResRef (not just `.nss`) to a file near the open document or module; `ResolveScriptPath` now delegates to it. Enables Reliquary's Conversation field to dispatch a `.dlg` to Parley.
+
+---
+
 ## [Radoub.UI 0.1.69-alpha] - 2026-06-05
 **Branch**: `reliquary/issue-2295` | **PR**: #2352
 

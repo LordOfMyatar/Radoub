@@ -13,7 +13,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 
 - Cross-tool dispatch: `.utp` registered with ToolDispatchService; Conversation field opens DLG in Parley.
 - FlaUI smoke test for the placeable editor; Reliquary added to `run-tests.ps1 -Tool`.
-- UI uniformity audit against the bootstrap checklist; v0.1.0-alpha release tag.
+- Fixed: a placeable passed via `--file` now opens at startup, and the title bar shows the open file.
+- UI uniformity audit against the bootstrap checklist (12/12 pass).
 
 ---
 
