@@ -1,9 +1,11 @@
 using System;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media.Imaging;
 using Radoub.Formats.Services;
 using Radoub.UI.Controls;
+using PlaceableEditor.Services;
 
 namespace PlaceableEditor.Views.Panels;
 
@@ -26,7 +28,42 @@ public partial class IdentityCombatPanel : UserControl
     public IdentityCombatPanel()
     {
         InitializeComponent();
+        var name = this.FindControl<TextBox>("NameTextBox");
+        if (name != null) name.TextChanged += OnNameChanged;
     }
+
+    // --- Tag/ResRef sync with name (#2372), mirroring Relique's NewItem naming UX ---
+
+    private void OnNameChanged(object? sender, TextChangedEventArgs e) => ApplyNameSync();
+
+    private void OnSyncTagChanged(object? sender, RoutedEventArgs e)
+    {
+        var tag = this.FindControl<TextBox>("TagTextBox");
+        var check = this.FindControl<CheckBox>("SyncTagCheck");
+        if (tag is null || check is null) return;
+        tag.IsReadOnly = check.IsChecked == true;
+        if (check.IsChecked == true) tag.Text = PlaceableNamingService.GenerateTag(CurrentName);
+    }
+
+    private void OnSyncResRefChanged(object? sender, RoutedEventArgs e)
+    {
+        var resRef = this.FindControl<TextBox>("ResRefTextBox");
+        var check = this.FindControl<CheckBox>("SyncResRefCheck");
+        if (resRef is null || check is null) return;
+        resRef.IsReadOnly = check.IsChecked == true;
+        if (check.IsChecked == true) resRef.Text = PlaceableNamingService.GenerateResRef(CurrentName);
+    }
+
+    /// <summary>Re-derive Tag/ResRef from the current name for whichever sync checkboxes are on.</summary>
+    private void ApplyNameSync()
+    {
+        if (this.FindControl<CheckBox>("SyncTagCheck")?.IsChecked == true)
+            this.FindControl<TextBox>("TagTextBox")!.Text = PlaceableNamingService.GenerateTag(CurrentName);
+        if (this.FindControl<CheckBox>("SyncResRefCheck")?.IsChecked == true)
+            this.FindControl<TextBox>("ResRefTextBox")!.Text = PlaceableNamingService.GenerateResRef(CurrentName);
+    }
+
+    private string CurrentName => this.FindControl<TextBox>("NameTextBox")?.Text ?? string.Empty;
 
     private void InitializeComponent()
     {
