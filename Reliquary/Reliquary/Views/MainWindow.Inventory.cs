@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
+using Radoub.Formats.Settings;
 using Radoub.Formats.Uti;
 using Radoub.UI.Services;
 using Radoub.UI.ViewModels;
@@ -161,38 +163,148 @@ public partial class MainWindow
     /// ~/Radoub/Cache/ItemPalette). No rebuild here — if the cache is cold the palette is empty
     /// and the user can still add module items by ResRef later. Loaded once per session.
     /// </summary>
-    private void EnsurePaletteLoaded(InventoryPanel inv)
+    private async void EnsurePaletteLoaded(InventoryPanel inv)
     {
         if (_paletteLoaded) return;
         _paletteLoaded = true;
 
-        List<SharedPaletteCacheItem>? cache;
-        try { cache = _itemCache.GetAggregatedCache(); }
+        UpdateStatus("Loading item palette...");
+        try
+        {
+            // Build any missing source caches (BIF/Override/HAK) in the background, then read
+            // the aggregated UTI cache (shared with QM/Relique at ~/Radoub/Cache/ItemPalette).
+            await BuildItemCacheAsync();
+
+            var cache = _itemCache.GetAggregatedCache() ?? new List<SharedPaletteCacheItem>();
+            var vms = cache.Select(c => new ItemViewModel
+            {
+                ResRef = c.ResRef,
+                Name = c.DisplayName,
+                BaseItemName = c.BaseItemTypeName,
+                BaseItem = c.BaseItemType,
+                Value = c.BaseValue,
+                Tag = string.IsNullOrEmpty(c.Tag) ? c.ResRef : c.Tag,
+                PropertiesDisplay = c.PropertiesDisplay,
+                Source = c.IsStandard ? GameResourceSource.Bif : GameResourceSource.Override
+            }).ToList();
+
+            // Add loose module-directory UTIs (not in BIF/Override/HAK) so module items show too.
+            var moduleResRefs = new HashSet<string>(vms.Select(v => v.ResRef), StringComparer.OrdinalIgnoreCase);
+            foreach (var moduleVm in LoadModuleItemViewModels())
+                if (moduleResRefs.Add(moduleVm.ResRef))
+                    vms.Add(moduleVm);
+
+            inv.SetPaletteItems(vms);
+            UpdateStatus(vms.Count > 0
+                ? $"Item palette: {vms.Count:N0} items."
+                : "Item palette empty — configure game paths in Settings to populate.");
+        }
         catch (Exception ex)
         {
-            UnifiedLogger.LogApplication(LogLevel.WARN, $"Reliquary: item palette cache read failed: {ex.Message}");
-            return;
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Reliquary: item palette load failed: {ex.Message}");
+            UpdateStatus("Item palette load failed — see log.");
         }
-        if (cache == null || cache.Count == 0)
+    }
+
+    /// <summary>
+    /// Build missing UTI source caches (BIF, Override, module HAKs) so the aggregated cache is
+    /// populated on first inventory use. Source caches are shared and skipped when already valid,
+    /// so this is cheap on subsequent runs / after QM/Relique already built them.
+    /// </summary>
+    private async Task BuildItemCacheAsync()
+    {
+        if (_gameData is not { IsConfigured: true } || _itemFactory == null) return;
+
+        await Task.Run(() =>
         {
-            UpdateStatus("Item palette cache empty — build it in Quartermaster/Relique to populate.");
-            return;
+            foreach (var (gameSource, cacheSource) in new[]
+            {
+                (GameResourceSource.Bif, "bif"),
+                (GameResourceSource.Override, "override")
+            })
+            {
+                if (_itemCache.HasValidSourceCache(cacheSource)) continue;
+                if (!_itemCache.AcquireBuildLock(cacheSource)) continue; // another tool is building
+                try { BuildSourceCache(gameSource, cacheSource); }
+                finally { _itemCache.ReleaseBuildLock(cacheSource); }
+            }
+        });
+
+        // Module HAKs (shared scanner manages its own threading + per-HAK cache validity).
+        var moduleDir = GetModuleWorkingDirectory();
+        if (!string.IsNullOrEmpty(moduleDir))
+        {
+            var hakSearchPaths = RadoubSettings.Instance.GetAllHakSearchPaths();
+            await new HakPaletteScannerService()
+                .ScanAndCacheModuleHaksAsync(moduleDir, hakSearchPaths, _itemCache, default);
         }
 
-        var vms = cache.Select(c => new ItemViewModel
-        {
-            ResRef = c.ResRef,
-            Name = c.DisplayName,
-            BaseItemName = c.BaseItemTypeName,
-            BaseItem = c.BaseItemType,
-            Value = c.BaseValue,
-            Tag = string.IsNullOrEmpty(c.Tag) ? c.ResRef : c.Tag,
-            PropertiesDisplay = c.PropertiesDisplay,
-            Source = c.IsStandard ? GameResourceSource.Bif : GameResourceSource.Override
-        }).ToList();
+        _itemCache.InvalidateAggregatedCache(); // force a rebuild from the refreshed sources
+    }
 
-        inv.SetPaletteItems(vms);
-        UpdateStatus($"Item palette: {vms.Count:N0} items.");
+    /// <summary>Build one source cache (BIF or Override) from the game data resource list.</summary>
+    private void BuildSourceCache(GameResourceSource gameSource, string cacheSource)
+    {
+        if (_gameData == null || _itemFactory == null) return;
+
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var items = new List<SharedPaletteCacheItem>();
+
+        foreach (var res in _gameData.ListResources(ResourceTypes.Uti).Where(r => r.Source == gameSource))
+        {
+            if (!seen.Add(res.ResRef)) continue;
+            try
+            {
+                var bytes = _gameData.FindResource(res.ResRef, ResourceTypes.Uti);
+                if (bytes == null) continue;
+                var uti = UtiReader.Read(bytes);
+                items.Add(new SharedPaletteCacheItem
+                {
+                    ResRef = res.ResRef,
+                    Tag = uti.Tag ?? string.Empty,
+                    DisplayName = _itemFactory.GetItemDisplayName(uti),
+                    BaseItemTypeName = _itemFactory.GetBaseItemTypeName(uti.BaseItem),
+                    PropertiesDisplay = _itemFactory.GetPropertiesDisplay(uti.Properties),
+                    BaseItemType = uti.BaseItem,
+                    BaseValue = uti.Cost,
+                    IsStandard = gameSource == GameResourceSource.Bif,
+                    SourceLocation = string.IsNullOrEmpty(res.SourcePath)
+                        ? res.Source.ToString() : Path.GetFileName(res.SourcePath)
+                });
+            }
+            catch (Exception ex) when (ex is IOException or InvalidDataException)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Reliquary: skip UTI {res.ResRef}: {ex.Message}");
+            }
+        }
+
+        if (items.Count == 0) return;
+        var validationPath = cacheSource == "bif"
+            ? RadoubSettings.Instance.BaseGameInstallPath
+            : RadoubSettings.Instance.NeverwinterNightsPath;
+        _itemCache.SaveSourceCacheAsync(cacheSource, items, validationPath).GetAwaiter().GetResult();
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Reliquary: built {cacheSource} item cache ({items.Count} items).");
+    }
+
+    /// <summary>Load loose .uti files from the open placeable's directory as palette items.</summary>
+    private List<ItemViewModel> LoadModuleItemViewModels()
+    {
+        var vms = new List<ItemViewModel>();
+        if (string.IsNullOrEmpty(_currentFilePath) || _itemFactory == null) return vms;
+
+        var dir = Path.GetDirectoryName(_currentFilePath);
+        if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir)) return vms;
+
+        foreach (var file in Directory.GetFiles(dir, "*.uti", SearchOption.TopDirectoryOnly))
+        {
+            try { vms.Add(_itemFactory.Create(UtiReader.Read(file), GameResourceSource.Module)); }
+            catch (Exception ex) when (ex is IOException or InvalidDataException)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"Reliquary: skip module UTI {Path.GetFileName(file)}: {ex.Message}");
+            }
+        }
+        return vms;
     }
 
     // --- Add / Remove (panel events → undoable commands) ---
