@@ -116,6 +116,7 @@ public partial class RadoubSettings : INotifyPropertyChanged
     private string _fencePath = "";
     private string _trebuchetPath = "";
     private string _reliquePath = "";
+    private string _reliquaryPath = "";
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -525,6 +526,15 @@ public partial class RadoubSettings : INotifyPropertyChanged
     {
         get => _reliquePath;
         set { if (SetProperty(ref _reliquePath, value ?? "")) SaveSettings(); }
+    }
+
+    /// <summary>
+    /// Path to Reliquary (PlaceableEditor) executable. Auto-set when Reliquary runs.
+    /// </summary>
+    public string ReliquaryPath
+    {
+        get => _reliquaryPath;
+        set { if (SetProperty(ref _reliquaryPath, value ?? "")) SaveSettings(); }
     }
 
     /// <summary>
