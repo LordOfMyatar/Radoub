@@ -11,10 +11,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Critical Data Loss + Marlinspike Polish
 
-- Investigating script-loss after Relique delete + Trebuchet save (#2344, deferred).
-- Marlinspike replace-preview now shows the substituted value, not raw replacement text (#2224).
-- Marlinspike results support multi-select with checkboxes for rename scope (#2179).
-- Clearer Marlinspike validator error wording (#2182).
+- Marlinspike replace-preview now shows the substituted field value, not the raw replacement term (#2224).
+- Marlinspike results gained checkbox-per-row rename scope with tri-state group cascade (#2179).
+- Clearer Marlinspike validator error wording — suggested truncation and named invalid characters (#2182).
+- Script-loss after Relique delete + Trebuchet save (#2344): investigated, deferred (likely a stale external working directory; left open for in-the-act capture).
 
 ---
 
