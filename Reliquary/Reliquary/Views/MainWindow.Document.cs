@@ -22,6 +22,9 @@ public partial class MainWindow
         _documentState.MarkDirty();
     }
 
+    /// <summary>Refresh the title bar from document state (ClearDirty only fires on dirty→clean).</summary>
+    private void UpdateTitle() => Title = _documentState.GetTitle();
+
     /// <summary>Subscribe the just-loaded VM's edits to dirty-tracking (called from LoadPlaceable).</summary>
     private void TrackPlaceableEdits(ViewModels.PlaceableViewModel vm)
     {
@@ -38,8 +41,7 @@ public partial class MainWindow
         if (result == SavePromptResult.Cancel) return;
         if (result == SavePromptResult.Save)
         {
-            SavePlaceable();
-            if (_isDirty) return; // save failed — keep the window open
+            if (!await SavePlaceableAsync()) return; // save failed/cancelled — keep the window open
         }
 
         _documentState.ClearDirty();
@@ -57,10 +59,7 @@ public partial class MainWindow
         var result = await PromptSaveChangesAsync();
         if (result == SavePromptResult.Cancel) return false;
         if (result == SavePromptResult.Save)
-        {
-            SavePlaceable();
-            return !_isDirty; // false if the save failed
-        }
+            return await SavePlaceableAsync(); // false if the save failed/was cancelled
         return true; // Don't Save
     }
 

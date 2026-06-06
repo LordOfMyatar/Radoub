@@ -85,7 +85,8 @@ public partial class MainWindow : Window
 
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.KeyModifiers != KeyModifiers.Control) return;
+        // Require Control; allow an optional Shift (for Ctrl+Shift+S = Save As).
+        if (!e.KeyModifiers.HasFlag(KeyModifiers.Control)) return;
 
         // When a text editor has focus, Ctrl+Z/Y belong to the TextBox's own undo stack — text
         // edits flow through binding, not the document UndoRedoManager, so intercepting here would
@@ -95,7 +96,10 @@ public partial class MainWindow : Window
         switch (e.Key)
         {
             case Key.S:
-                OnSaveClick(sender, e);
+                if (e.KeyModifiers.HasFlag(KeyModifiers.Shift))
+                    OnSaveAsClick(sender, e);
+                else
+                    OnSaveClick(sender, e);
                 e.Handled = true;
                 break;
             case Key.O:

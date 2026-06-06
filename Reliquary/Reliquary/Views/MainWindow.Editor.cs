@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Radoub.Formats.Logging;
@@ -127,35 +128,90 @@ public partial class MainWindow
         _documentState.ClearDirty();
     }
 
-    private void OnSaveClick(object? sender, RoutedEventArgs e) => SavePlaceable();
+    private async void OnSaveClick(object? sender, RoutedEventArgs e) => await SavePlaceableAsync();
 
-    private void SavePlaceable()
+    private async void OnSaveAsClick(object? sender, RoutedEventArgs e) => await SaveAsPlaceableAsync();
+
+    /// <summary>
+    /// Save to the current file. Read-only (base-game/HAK preview) or never-saved documents route
+    /// to Save As so the user picks a module destination — this is how a base-game placeable is
+    /// copied into the module for editing. Returns true on a successful write.
+    /// </summary>
+    private async Task<bool> SavePlaceableAsync()
     {
-        if (_placeable is null || string.IsNullOrEmpty(_currentFilePath))
+        if (_placeable is null)
         {
             UpdateStatus("Nothing to save — open a placeable first.");
-            return;
+            return false;
         }
 
+        // No backing file (base-game/HAK preview) → Save As to choose a destination.
+        if (string.IsNullOrEmpty(_currentFilePath) || _documentState.IsReadOnly)
+            return await SaveAsPlaceableAsync();
+
+        return WritePlaceable(_currentFilePath);
+    }
+
+    /// <summary>Prompt for a destination and save there (copies a read-only preview into the module).</summary>
+    private async Task<bool> SaveAsPlaceableAsync()
+    {
+        if (_placeable is null)
+        {
+            UpdateStatus("Nothing to save — open a placeable first.");
+            return false;
+        }
+
+        var suggested = _placeable.TemplateResRef;
+        if (string.IsNullOrEmpty(suggested))
+            suggested = Path.GetFileNameWithoutExtension(_currentFilePath ?? "placeable");
+
+        var file = await StorageProvider.SaveFilePickerAsync(new Avalonia.Platform.Storage.FilePickerSaveOptions
+        {
+            Title = "Save Placeable As",
+            DefaultExtension = "utp",
+            SuggestedFileName = suggested + ".utp",
+            FileTypeChoices = new[]
+            {
+                new Avalonia.Platform.Storage.FilePickerFileType("Placeable Blueprint") { Patterns = new[] { "*.utp" } },
+                new Avalonia.Platform.Storage.FilePickerFileType("All Files") { Patterns = new[] { "*.*" } }
+            }
+        });
+
+        var path = file?.Path.LocalPath;
+        if (string.IsNullOrEmpty(path)) return false;
+
+        if (!WritePlaceable(path)) return false;
+
+        // The saved copy is now the editable document.
+        _currentFilePath = path;
+        _documentState.IsReadOnly = false;
+        UpdateTitle();
+        return true;
+    }
+
+    /// <summary>Write the model to disk + clear dirty + notify the browser. Returns false on failure.</summary>
+    private bool WritePlaceable(string path)
+    {
+        if (_placeable is null) return false;
         try
         {
-            UtpWriter.Write(_placeable.WriteToUtp(), _currentFilePath);
+            UtpWriter.Write(_placeable.WriteToUtp(), path);
             _documentState.ClearDirty();
 
             // Refresh the browser row's Tag/Name without a full reindex (design §5.5).
-            // Fire-and-forget — the save flow does not block on UI refresh.
             var browser = this.FindControl<PlaceableBrowserPanel>("PlaceableBrowserPanel");
-            _ = Radoub.UI.Controls.BrowserSaveNotifier.NotifyAsync(browser, _currentFilePath);
+            _ = Radoub.UI.Controls.BrowserSaveNotifier.NotifyAsync(browser, path);
 
-            UpdateStatus($"Saved {Path.GetFileName(_currentFilePath)}");
-            UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"Reliquary: saved {UnifiedLogger.SanitizePath(_currentFilePath)}");
+            UpdateStatus($"Saved {Path.GetFileName(path)}");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Reliquary: saved {UnifiedLogger.SanitizePath(path)}");
+            return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             UnifiedLogger.LogApplication(LogLevel.WARN,
-                $"Reliquary: save failed for {UnifiedLogger.SanitizePath(_currentFilePath)}: {ex.Message}");
+                $"Reliquary: save failed for {UnifiedLogger.SanitizePath(path)}: {ex.Message}");
             UpdateStatus($"Save failed: {ex.Message}");
+            return false;
         }
     }
 
