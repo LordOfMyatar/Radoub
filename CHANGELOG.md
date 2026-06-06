@@ -17,7 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - UI palette/picker filter coverage — ItemFilterPanel, SearchBar, DialogBrowserPanel, shared picker match helper (#2360).
 - Relique FlaUI tests — smoke + ItemBrowserPanel + deeper interaction coverage (#2168, closes #2303).
 - Reliquary FlaUI tests — verified bootstrap infra and extended beyond smoke (#2304).
-- FlaUI reliability hardening — permanent fix for the "doesn't pass on first run" flake (launch/focus/serialization).
+- FlaUI reliability hardening — a 3x soak caught the recurring "fails on first (cold) run" flake in FlaUIGlobalMutexTests (threadpool-starved `Task.Run`); fixed by switching to a dedicated foreground thread. Follow-up soak confirmation tracked in #2366.
 
 ---
 
