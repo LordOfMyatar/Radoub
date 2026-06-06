@@ -104,10 +104,42 @@ public class ToolDispatchService
     }
 
     /// <summary>
-    /// Try to discover a tool executable relative to the executing assembly.
+    /// Map a dispatchable tool to the shared RadoubSettings path it registers when it runs.
+    /// Mirrors Parley's FindManifestPath: settings written by a tool on launch are the authoritative
+    /// way one tool finds another in dev + portable layouts (where tools are NOT siblings on disk).
+    /// </summary>
+    private static string? GetRegisteredToolPath(string toolName)
+    {
+        var settings = Radoub.Formats.Settings.RadoubSettings.Instance;
+        return toolName switch
+        {
+            "Parley" => settings.ParleyPath,
+            "Manifest" => settings.ManifestPath,
+            "Quartermaster" => settings.QuartermasterPath,
+            "Fence" => settings.FencePath,
+            "Relique" => settings.ReliquePath,
+            "Reliquary" => settings.ReliquaryPath,
+            "Trebuchet" => settings.TrebuchetPath,
+            _ => null
+        };
+    }
+
+    /// <summary>
+    /// Try to discover a tool executable: first the path the tool registered in shared settings when
+    /// it last ran, then locations relative to the executing assembly (sibling deployment layouts).
     /// </summary>
     private static void DiscoverTool(DispatchableToolInfo info)
     {
+        // Settings-first: the tool writes its own path to RadoubSettings on launch. This is how
+        // cross-tool dispatch works in dev (separate bin trees) — relative discovery only finds
+        // siblings in a packaged deployment.
+        var registered = GetRegisteredToolPath(info.ToolName);
+        if (!string.IsNullOrEmpty(registered) && File.Exists(registered))
+        {
+            info.ExecutablePath = registered;
+            return;
+        }
+
         var baseDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
         if (baseDir == null) return;
 

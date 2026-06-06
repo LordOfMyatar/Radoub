@@ -142,6 +142,25 @@ public partial class MainWindow
         UpdateModelPreview(appearanceId);
     }
 
+    /// <summary>Populate the Behavior panel's Faction combo from the module's repute.fac (#2354).</summary>
+    private void PopulateFactionCombo()
+    {
+        if (_placeable is null) return;
+        var behavior = this.FindControl<PlaceableEditor.Views.Panels.BehaviorPanel>("BehaviorPanel");
+        if (behavior is null) return;
+
+        var factions = PlaceableEditor.Services.FactionService.Load(GetModuleWorkingDirectory());
+        behavior.PopulateFactions(factions, _placeable.Faction);
+    }
+
+    /// <summary>Route a faction pick through undo (host owns the repute.fac list + undo wrapping).</summary>
+    private void OnFactionSelected(object? sender, uint factionId)
+    {
+        if (_placeable is null) return;
+        _undo.Execute(new Radoub.UI.Undo.SetFieldCommand<uint>(
+            () => _placeable.Faction, v => _placeable.Faction = v, factionId, "change faction"));
+    }
+
     private async void OnPortraitBrowseRequested(object? sender, EventArgs e)
     {
         if (_placeable is null) return;

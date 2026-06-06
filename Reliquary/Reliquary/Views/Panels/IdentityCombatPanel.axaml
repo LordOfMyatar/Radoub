@@ -39,24 +39,28 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="0" Grid.Column="1"
+                        <TextBox Grid.Row="0" Grid.Column="1" x:Name="NameTextBox"
                                  Text="{Binding Name, Mode=TwoWay}"
                                  AutomationProperties.AutomationId="Reliquary_Field_Name"/>
 
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Tag" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="1" Grid.Column="1"
+                        <TextBox Grid.Row="1" Grid.Column="1" x:Name="TagTextBox"
                                  Text="{Binding Tag, Mode=TwoWay}"
                                  MaxLength="32"
                                  AutomationProperties.AutomationId="Reliquary_Field_Tag"/>
+                        <!-- One checkbox drives both Tag + ResRef sync (#2354 follow-up). Spans the Tag
+                             and ResRef rows so it reads as governing both fields. -->
+                        <CheckBox Grid.Row="1" Grid.RowSpan="2" Grid.Column="2" x:Name="SyncNameCheck"
+                                  Content="= Name" Margin="6,0,0,0" VerticalAlignment="Center"
+                                  ToolTip.Tip="Keep Tag (UPPERCASE) and ResRef (lowercase, ≤16) in sync with the Name."
+                                  IsCheckedChanged="OnSyncNameChanged"
+                                  AutomationProperties.AutomationId="Reliquary_Check_SyncName"/>
 
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="ResRef" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="2" Grid.Column="1"
+                        <TextBox Grid.Row="2" Grid.Column="1" x:Name="ResRefTextBox"
                                  Text="{Binding TemplateResRef, Mode=TwoWay}"
                                  MaxLength="16"
                                  AutomationProperties.AutomationId="Reliquary_Field_ResRef"/>
-                        <TextBlock Grid.Row="2" Grid.Column="2" Text="(16 ch)" Margin="6,0,0,0"
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
 
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="Appearance" VerticalAlignment="Center"/>
                         <ComboBox Grid.Row="3" Grid.Column="1"
@@ -132,12 +136,18 @@
                 <GridSplitter Grid.Column="3" Width="4"
                               Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
 
-                <!-- 3D preview -->
-                <Border Grid.Column="4"
+                <!-- 3D preview. Square (260x260) so the model fits at a 1:1 aspect; the panel root is
+                     a StackPanel, so an explicit Height (not just MinHeight) is required to give the GL
+                     control real bounds to render/camera-fit into (#2375). The control stretches to
+                     fill the Border, matching Quartermaster's AppearancePanel preview. -->
+                <Border Grid.Column="4" VerticalAlignment="Top"
+                        Height="260"
                         Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                         BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                        BorderThickness="1" MinHeight="200">
+                        BorderThickness="1">
                     <ctrl:ModelPreviewGLControl x:Name="ModelPreview"
+                                                HorizontalAlignment="Stretch"
+                                                VerticalAlignment="Stretch"
                                                 AutomationProperties.AutomationId="Reliquary_ModelPreview"/>
                 </Border>
             </Grid>

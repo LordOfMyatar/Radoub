@@ -19,12 +19,15 @@
             <!-- Backpack LEFT | UTI palette MIDDLE | details RIGHT (design §5.4, 3 splitters).
                  Adventurer-backpack model: flat list, no body slots. -->
             <Grid x:Name="InventoryGrid" MinHeight="320">
+                <!-- All three content columns are proportional (star) so the two GridSplitters
+                     redistribute space cleanly without leaving empty gaps; MinWidth floors keep
+                     each pane usable at large fonts (#2363). -->
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="300" MinWidth="200"/>
+                    <ColumnDefinition Width="3*" MinWidth="200"/>
                     <ColumnDefinition Width="5"/>
-                    <ColumnDefinition Width="*" MinWidth="240"/>
+                    <ColumnDefinition Width="4*" MinWidth="240"/>
                     <ColumnDefinition Width="5"/>
-                    <ColumnDefinition Width="260" MinWidth="200"/>
+                    <ColumnDefinition Width="3*" MinWidth="200"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Placeable Contents (backpack) -->

@@ -1,9 +1,11 @@
 using System;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media.Imaging;
 using Radoub.Formats.Services;
 using Radoub.UI.Controls;
+using PlaceableEditor.Services;
 
 namespace PlaceableEditor.Views.Panels;
 
@@ -26,7 +28,34 @@ public partial class IdentityCombatPanel : UserControl
     public IdentityCombatPanel()
     {
         InitializeComponent();
+        var name = this.FindControl<TextBox>("NameTextBox");
+        if (name != null) name.TextChanged += OnNameChanged;
     }
+
+    // --- Tag/ResRef sync with name (#2372), mirroring Relique's NewItem naming UX. One checkbox
+    //     drives both fields (#2354 follow-up): checked → Tag/ResRef track the name and lock. ---
+
+    private void OnNameChanged(object? sender, TextChangedEventArgs e) => ApplyNameSync();
+
+    private void OnSyncNameChanged(object? sender, RoutedEventArgs e)
+    {
+        var on = this.FindControl<CheckBox>("SyncNameCheck")?.IsChecked == true;
+        var tag = this.FindControl<TextBox>("TagTextBox");
+        var resRef = this.FindControl<TextBox>("ResRefTextBox");
+        if (tag != null) tag.IsReadOnly = on;
+        if (resRef != null) resRef.IsReadOnly = on;
+        if (on) ApplyNameSync();
+    }
+
+    /// <summary>Re-derive Tag + ResRef from the current name while the sync checkbox is on.</summary>
+    private void ApplyNameSync()
+    {
+        if (this.FindControl<CheckBox>("SyncNameCheck")?.IsChecked != true) return;
+        this.FindControl<TextBox>("TagTextBox")!.Text = PlaceableNamingService.GenerateTag(CurrentName);
+        this.FindControl<TextBox>("ResRefTextBox")!.Text = PlaceableNamingService.GenerateResRef(CurrentName);
+    }
+
+    private string CurrentName => this.FindControl<TextBox>("NameTextBox")?.Text ?? string.Empty;
 
     private void InitializeComponent()
     {

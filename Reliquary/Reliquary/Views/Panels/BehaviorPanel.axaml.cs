@@ -34,6 +34,15 @@ public partial class BehaviorPanel : UserControl
     /// <summary>Raised when the conversation Edit→Parley button is clicked (Sprint 7 dispatch).</summary>
     public event EventHandler? EditConversationRequested;
 
+    /// <summary>Raised when the conversation Browse… button is clicked (#2373; host opens the shared DialogBrowser).</summary>
+    public event EventHandler? ConversationBrowseRequested;
+
+    /// <summary>Raised when the user picks a faction (carries the faction id) for the host to wrap in undo.</summary>
+    public event EventHandler<uint>? FactionChanged;
+
+    /// <summary>Suppresses <see cref="FactionChanged"/> while the host populates/preselects the combo.</summary>
+    private bool _suppressFactionEvent;
+
     public BehaviorPanel()
     {
         InitializeComponent();
@@ -82,8 +91,43 @@ public partial class BehaviorPanel : UserControl
     private void OnEditConversationClick(object? sender, RoutedEventArgs e)
         => EditConversationRequested?.Invoke(this, EventArgs.Empty);
 
+    private void OnBrowseConversationClick(object? sender, RoutedEventArgs e)
+        => ConversationBrowseRequested?.Invoke(this, EventArgs.Empty);
+
+    /// <summary>
+    /// Fill the Faction combo from the host-provided list (loaded from the module's repute.fac). The
+    /// combo intentionally starts with no selection (per #2354 follow-up): the user opens the dropdown
+    /// to assign a faction, rather than the combo asserting a faction the placeable may not have meant.
+    /// The stored faction value is untouched until the user picks. The host owns the list + undo
+    /// wrapping; the combo only raises <see cref="FactionChanged"/> on user edits, never on populate.
+    /// </summary>
+    public void PopulateFactions(System.Collections.Generic.IReadOnlyList<(ushort Id, string Name)> factions, uint selectedId)
+    {
+        var combo = this.FindControl<ComboBox>("FactionCombo");
+        if (combo is null) return;
+
+        _suppressFactionEvent = true;
+        try
+        {
+            combo.ItemsSource = factions.Select(f => new FactionItem(f.Id, f.Name)).ToList();
+            combo.SelectedItem = null; // start blank; user pulls down to choose (#2354 follow-up)
+        }
+        finally
+        {
+            _suppressFactionEvent = false;
+        }
+    }
+
     private void OnFactionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        // Faction binding flows through the host, which owns the repute.fac list + undo wrapping.
+        if (_suppressFactionEvent) return;
+        if (sender is ComboBox { SelectedItem: FactionItem item })
+            FactionChanged?.Invoke(this, item.Id);
+    }
+
+    /// <summary>Display item for the Faction combo: shows the name, carries the faction id.</summary>
+    private sealed record FactionItem(ushort Id, string Name)
+    {
+        public override string ToString() => Name;
     }
 }

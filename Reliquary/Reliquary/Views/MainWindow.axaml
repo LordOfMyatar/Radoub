@@ -7,6 +7,7 @@
         x:Class="PlaceableEditor.Views.MainWindow"
         Title="Reliquary"
         Width="1000" Height="700"
+        MinWidth="800" MinHeight="600"
         WindowStartupLocation="CenterScreen"
         KeyDown="OnWindowKeyDown">
 
@@ -38,10 +39,9 @@
                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
         </Border>
 
-        <Grid x:Name="OuterContentGrid" ColumnDefinitions="Auto,Auto,*">
+        <Grid x:Name="OuterContentGrid" ColumnDefinitions="260,4,*">
             <panels:PlaceableBrowserPanel x:Name="PlaceableBrowserPanel"
-                                          Grid.Column="0"
-                                          Width="260"/>
+                                          Grid.Column="0"/>
             <GridSplitter x:Name="BrowserSplitter" Grid.Column="1" Width="4"
                           Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <ScrollViewer Grid.Column="2">
