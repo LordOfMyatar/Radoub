@@ -14,7 +14,7 @@
 #   .\run-tests.ps1 -TechDebt                 # Include tech debt scan (large files)
 
 param(
-    [ValidateSet("Parley", "Quartermaster", "Manifest", "Fence", "Trebuchet", "Relique", "Radoub")]
+    [ValidateSet("Parley", "Quartermaster", "Manifest", "Fence", "Trebuchet", "Relique", "Reliquary", "Radoub")]
     [string]$Tool,
     [switch]$SkipShared,
     [switch]$UIOnly,
@@ -54,7 +54,7 @@ function Invoke-PrivacyScan {
     Write-Host "`n=== Privacy Scan ===" -ForegroundColor Magenta
     Write-Host "Checking for hardcoded paths..." -ForegroundColor Yellow
 
-    $searchDirs = @("Parley", "Radoub.Formats", "Radoub.UI", "Radoub.Dictionary", "Manifest", "Quartermaster", "Fence", "Trebuchet", "Relique")
+    $searchDirs = @("Parley", "Radoub.Formats", "Radoub.UI", "Radoub.Dictionary", "Manifest", "Quartermaster", "Fence", "Trebuchet", "Relique", "Reliquary")
 
     $patterns = @(
         'C:\\Users\\[A-Za-z]',
@@ -156,7 +156,7 @@ function Invoke-ThemeCompatScan {
             $scanDirs += @("Radoub.UI", "Radoub.Formats", "Radoub.Dictionary")
         }
     } else {
-        $scanDirs = @("Parley", "Manifest", "Quartermaster", "Fence", "Trebuchet", "Relique", "Radoub.UI", "Radoub.Formats", "Radoub.Dictionary")
+        $scanDirs = @("Parley", "Manifest", "Quartermaster", "Fence", "Trebuchet", "Relique", "Reliquary", "Radoub.UI", "Radoub.Formats", "Radoub.Dictionary")
     }
 
     # Patterns to detect in .cs files
@@ -290,6 +290,7 @@ $toolUnitTests = @{
     "Fence" = @{ Name = "Fence.Tests"; Path = "Fence\Fence.Tests" }
     "Trebuchet" = @{ Name = "Trebuchet.Tests"; Path = "Trebuchet\Trebuchet.Tests" }
     "Relique" = @{ Name = "Relique.Tests"; Path = "Relique\Relique.Tests" }
+    "Reliquary" = @{ Name = "Reliquary.Tests"; Path = "Reliquary\Reliquary.Tests" }
 }
 
 $toolUiTests = @{
