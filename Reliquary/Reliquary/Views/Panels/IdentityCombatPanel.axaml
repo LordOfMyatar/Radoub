@@ -62,7 +62,7 @@
                     </Grid>
 
                     <!-- Combat stats -->
-                    <Grid ColumnDefinitions="90,80,90,80,90,80" Margin="0,4,0,0">
+                    <Grid ColumnDefinitions="70,120,70,120" Margin="0,4,0,0">
                         <TextBlock Grid.Column="0" Text="HP" VerticalAlignment="Center"/>
                         <NumericUpDown Grid.Column="1" Minimum="0" Maximum="32767" Increment="1"
                                        FormatString="0"
@@ -76,7 +76,7 @@
                                        IsEnabled="{Binding IsDamageEnabled}"
                                        AutomationProperties.AutomationId="Reliquary_Numeric_Hardness"/>
                     </Grid>
-                    <Grid ColumnDefinitions="90,80,90,80,90,80">
+                    <Grid ColumnDefinitions="70,90,70,90,70,90" Margin="0,4,0,0">
                         <TextBlock Grid.Column="0" Text="Fort" VerticalAlignment="Center"/>
                         <NumericUpDown Grid.Column="1" Minimum="0" Maximum="255" Increment="1"
                                        FormatString="0"
