@@ -609,11 +609,16 @@ public partial class MarlinspikePanel : UserControl
         }
 
         var validator = new ResRefValidator();
-        var plans = RenameDispatchHelpers.BuildRenamePlansFromPreview(preview, moduleDir, validator);
+        var rejected = new List<string>();
+        var plans = RenameDispatchHelpers.BuildRenamePlansFromPreview(preview, moduleDir, validator, rejected);
 
         if (plans.Count == 0)
         {
-            _viewModel.StatusText = "Rename skipped — no valid filename targets (validator rejected all proposed names).";
+            // Surface the specific validator reason (suggested truncation / named bad
+            // chars) instead of a generic "all rejected" line (#2182).
+            _viewModel.StatusText = rejected.Count > 0
+                ? $"Rename skipped — {rejected[0]}"
+                : "Rename skipped — no valid filename targets.";
             return;
         }
 

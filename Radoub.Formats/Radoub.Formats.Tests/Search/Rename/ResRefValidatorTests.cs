@@ -55,6 +55,32 @@ public class ResRefValidatorTests
         Assert.Contains("lowercase letters, digits, and underscores", result.Error);
     }
 
+    // #2182 — length error should suggest a 16-char truncation the user can use.
+    [Fact]
+    public void Validate_TooLong_ErrorSuggestsTruncatedName()
+    {
+        var validator = new ResRefValidator();
+        var result = validator.Validate("longitem_blueprint_extra", new HashSet<string>(), ".uti");
+        Assert.False(result.IsValid);
+        Assert.NotNull(result.Error);
+        // Suggests the first 16 characters of the normalized name.
+        Assert.Contains("longitem_bluepri", result.Error);
+    }
+
+    // #2182 — char error should name the offending characters, not just the rule.
+    [Theory]
+    [InlineData("louis-roumain", "'-'")]
+    [InlineData("louis roumain", "space")]
+    [InlineData("louis@home", "'@'")]
+    public void Validate_InvalidCharacters_ErrorNamesTheBadChars(string input, string badCharText)
+    {
+        var validator = new ResRefValidator();
+        var result = validator.Validate(input, new HashSet<string>(), ".dlg");
+        Assert.False(result.IsValid);
+        Assert.NotNull(result.Error);
+        Assert.Contains(badCharText, result.Error);
+    }
+
     [Fact]
     public void Validate_StartsWithDigit_ReturnsOkWithWarning()
     {
