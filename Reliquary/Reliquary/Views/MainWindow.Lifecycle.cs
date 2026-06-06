@@ -35,12 +35,23 @@ public partial class MainWindow
             browser.ModulePath = moduleDir;
     }
 
-    /// <summary>Collapse/expand the browser sidebar by zeroing its width and hiding the splitter.</summary>
+    /// <summary>
+    /// Collapse/expand the browser sidebar. Zeroes the browser + splitter *columns* (not just the
+    /// panel width) and hides both controls, so the editor reclaims the full row — mirroring Relique's
+    /// SetItemBrowserPanelVisible. Zeroing only the panel width left the Auto column occupying a blank
+    /// gap (#2363 follow-up).
+    /// </summary>
     private void SetBrowserCollapsed(bool collapsed)
     {
         var browser = this.FindControl<PlaceableBrowserPanel>("PlaceableBrowserPanel");
         var splitter = this.FindControl<GridSplitter>("BrowserSplitter");
-        if (browser != null) browser.Width = collapsed ? 0 : 260;
+        var grid = this.FindControl<Grid>("OuterContentGrid");
+        if (grid != null)
+        {
+            grid.ColumnDefinitions[0].Width = new Avalonia.Controls.GridLength(collapsed ? 0 : 260, Avalonia.Controls.GridUnitType.Pixel);
+            grid.ColumnDefinitions[1].Width = new Avalonia.Controls.GridLength(collapsed ? 0 : 4, Avalonia.Controls.GridUnitType.Pixel);
+        }
+        if (browser != null) browser.IsVisible = !collapsed;
         if (splitter != null) splitter.IsVisible = !collapsed;
     }
 

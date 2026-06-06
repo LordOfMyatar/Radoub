@@ -95,9 +95,11 @@ public partial class BehaviorPanel : UserControl
         => ConversationBrowseRequested?.Invoke(this, EventArgs.Empty);
 
     /// <summary>
-    /// Fill the Faction combo from the host-provided list (loaded from the module's repute.fac) and
-    /// preselect <paramref name="selectedId"/>. The host owns the list + undo wrapping; the combo
-    /// only raises <see cref="FactionChanged"/> on user edits, never during this populate.
+    /// Fill the Faction combo from the host-provided list (loaded from the module's repute.fac). The
+    /// combo intentionally starts with no selection (per #2354 follow-up): the user opens the dropdown
+    /// to assign a faction, rather than the combo asserting a faction the placeable may not have meant.
+    /// The stored faction value is untouched until the user picks. The host owns the list + undo
+    /// wrapping; the combo only raises <see cref="FactionChanged"/> on user edits, never on populate.
     /// </summary>
     public void PopulateFactions(System.Collections.Generic.IReadOnlyList<(ushort Id, string Name)> factions, uint selectedId)
     {
@@ -107,9 +109,8 @@ public partial class BehaviorPanel : UserControl
         _suppressFactionEvent = true;
         try
         {
-            var items = factions.Select(f => new FactionItem(f.Id, f.Name)).ToList();
-            combo.ItemsSource = items;
-            combo.SelectedItem = items.FirstOrDefault(i => i.Id == selectedId);
+            combo.ItemsSource = factions.Select(f => new FactionItem(f.Id, f.Name)).ToList();
+            combo.SelectedItem = null; // start blank; user pulls down to choose (#2354 follow-up)
         }
         finally
         {

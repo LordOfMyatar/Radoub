@@ -48,22 +48,19 @@
                                  Text="{Binding Tag, Mode=TwoWay}"
                                  MaxLength="32"
                                  AutomationProperties.AutomationId="Reliquary_Field_Tag"/>
-                        <CheckBox Grid.Row="1" Grid.Column="2" x:Name="SyncTagCheck" Content="= Name"
-                                  Margin="6,0,0,0" VerticalAlignment="Center"
-                                  ToolTip.Tip="Keep Tag in sync with the Name (uppercased)."
-                                  IsCheckedChanged="OnSyncTagChanged"
-                                  AutomationProperties.AutomationId="Reliquary_Check_SyncTag"/>
+                        <!-- One checkbox drives both Tag + ResRef sync (#2354 follow-up). Spans the Tag
+                             and ResRef rows so it reads as governing both fields. -->
+                        <CheckBox Grid.Row="1" Grid.RowSpan="2" Grid.Column="2" x:Name="SyncNameCheck"
+                                  Content="= Name" Margin="6,0,0,0" VerticalAlignment="Center"
+                                  ToolTip.Tip="Keep Tag (UPPERCASE) and ResRef (lowercase, ≤16) in sync with the Name."
+                                  IsCheckedChanged="OnSyncNameChanged"
+                                  AutomationProperties.AutomationId="Reliquary_Check_SyncName"/>
 
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="ResRef" VerticalAlignment="Center"/>
                         <TextBox Grid.Row="2" Grid.Column="1" x:Name="ResRefTextBox"
                                  Text="{Binding TemplateResRef, Mode=TwoWay}"
                                  MaxLength="16"
                                  AutomationProperties.AutomationId="Reliquary_Field_ResRef"/>
-                        <CheckBox Grid.Row="2" Grid.Column="2" x:Name="SyncResRefCheck" Content="= Name"
-                                  Margin="6,0,0,0" VerticalAlignment="Center"
-                                  ToolTip.Tip="Keep ResRef in sync with the Name (lowercased, ≤16 chars)."
-                                  IsCheckedChanged="OnSyncResRefChanged"
-                                  AutomationProperties.AutomationId="Reliquary_Check_SyncResRef"/>
 
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="Appearance" VerticalAlignment="Center"/>
                         <ComboBox Grid.Row="3" Grid.Column="1"
