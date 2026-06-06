@@ -1,15 +1,16 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Radoub.UI.Services.Search;
 
-namespace ItemEditor.Services;
+namespace Radoub.UI.Services.Search;
 
 /// <summary>
-/// Deletes item files with a backup-first guarantee (#2347). Relique previously
-/// deleted with a bare File.Delete and no backup, making the action
-/// unrecoverable. This snapshots the file to ~/Radoub/Backups/{module}/{timestamp}/
-/// (the shared backup root used by every other destructive Radoub operation)
-/// before removing it, so a misclick can be restored.
+/// Deletes user files with a backup-first guarantee (#2350, originally Relique #2347).
+/// Before #2350, three tools (Quartermaster, Fence, Parley) deleted browser files
+/// with a bare File.Delete and no backup, making a misclick unrecoverable. This is
+/// the single shared implementation that snapshots the file to
+/// ~/Radoub/Backups/{module}/{timestamp}/ (the shared backup root used by every
+/// destructive Radoub operation) before removing it. Used by
+/// <see cref="Radoub.UI.Controls.FileBrowserPanelBase"/> so every tool inherits it.
 /// </summary>
 public static class FileDeletionService
 {

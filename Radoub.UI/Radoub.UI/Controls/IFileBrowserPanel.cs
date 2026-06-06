@@ -101,6 +101,26 @@ public class FileDeleteRequestedEventArgs : EventArgs
 }
 
 /// <summary>
+/// Event args raised after the browser panel has backed up and deleted a module
+/// file on disk and refreshed the list (#2350). The host reacts to fix editor
+/// state and the status bar — the delete and refresh are already done.
+/// </summary>
+public class FileDeletedEventArgs : EventArgs
+{
+    /// <summary>Full path of the file that was deleted.</summary>
+    public string FilePath { get; }
+
+    /// <summary>True if the deleted file was the one currently open in the editor.</summary>
+    public bool WasCurrentFile { get; }
+
+    public FileDeletedEventArgs(string filePath, bool wasCurrentFile)
+    {
+        FilePath = filePath;
+        WasCurrentFile = wasCurrentFile;
+    }
+}
+
+/// <summary>
 /// Event args raised when the user asks to rename the file that is CURRENTLY
 /// OPEN in the editor (#2320). The panel has already prompted for and validated
 /// the new name (<see cref="NewPath"/>) but does NOT move the file — renaming an

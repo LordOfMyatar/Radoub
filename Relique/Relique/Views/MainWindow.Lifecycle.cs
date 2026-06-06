@@ -187,7 +187,7 @@ public partial class MainWindow
 
         // Subscribe to events
         ItemBrowserPanel.FileSelected += OnItemBrowserFileSelected;
-        ItemBrowserPanel.FileDeleteRequested += OnItemBrowserFileDeleteRequested;
+        ItemBrowserPanel.FileDeleted += OnItemBrowserFileDeleted;
         ItemBrowserPanel.CollapsedChanged += (_, isCollapsed) => SetItemBrowserPanelVisible(!isCollapsed);
 
         // Copy-to-Module status feedback (#1479)
@@ -345,99 +345,25 @@ public partial class MainWindow
         }
     }
 
-    private async void OnItemBrowserFileDeleteRequested(object? sender, FileDeleteRequestedEventArgs e)
+    // The browser panel owns confirm + backup + delete + refresh (#2350). The host
+    // only reacts here to close the editor if the file that was open got deleted.
+    private void OnItemBrowserFileDeleted(object? sender, FileDeletedEventArgs e)
     {
-        var entry = e.Entry;
-        if (string.IsNullOrEmpty(entry.FilePath) || !File.Exists(entry.FilePath))
+        var fileName = Path.GetFileName(e.FilePath);
+
+        if (e.WasCurrentFile)
         {
-            UpdateStatus("File not found on disk");
-            return;
+            if (_itemViewModel != null)
+                _itemViewModel.PropertyChanged -= OnItemPropertyChanged;
+
+            _currentItem = null;
+            _currentFilePath = null;
+            _documentState.ClearDirty();
+            PopulateEditor();
+            OnPropertyChanged(nameof(HasFile));
         }
 
-        var fileName = Path.GetFileName(entry.FilePath);
-
-        // Confirm deletion (destructive action — modal OK per CLAUDE.md)
-        // SizeToContent so the button row is never clipped — a fixed Height + non-resizable
-        // window pushed Delete/Cancel off-screen with no way to reach them (#2348).
-        var dialog = new Avalonia.Controls.Window
-        {
-            Title = "Confirm Delete",
-            Width = 400,
-            MinHeight = 160,
-            SizeToContent = Avalonia.Controls.SizeToContent.Height,
-            WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.CenterOwner,
-            CanResize = true
-        };
-
-        var confirmed = false;
-        var panel = new Avalonia.Controls.StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 16 };
-        panel.Children.Add(new Avalonia.Controls.TextBlock
-        {
-            Text = $"Delete \"{fileName}\" from disk?\n\nA backup is saved to ~/Radoub/Backups first.",
-            TextWrapping = Avalonia.Media.TextWrapping.Wrap
-        });
-
-        var buttons = new Avalonia.Controls.StackPanel
-        {
-            Orientation = Avalonia.Layout.Orientation.Horizontal,
-            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
-            Spacing = 8
-        };
-        var deleteBtn = new Avalonia.Controls.Button { Content = "Delete", Width = 80 };
-        deleteBtn.Click += (_, _) => { confirmed = true; dialog.Close(); };
-        var cancelBtn = new Avalonia.Controls.Button { Content = "Cancel", Width = 80 };
-        cancelBtn.Click += (_, _) => dialog.Close();
-        buttons.Children.Add(deleteBtn);
-        buttons.Children.Add(cancelBtn);
-        panel.Children.Add(buttons);
-        dialog.Content = panel;
-
-        await dialog.ShowDialog(this);
-
-        if (!confirmed)
-            return;
-
-        try
-        {
-            var isDeletingCurrent = string.Equals(_currentFilePath, entry.FilePath, StringComparison.OrdinalIgnoreCase);
-
-            // Release the file session lock before deleting — the lock sidecar lives
-            // next to the file and would otherwise survive the delete, blocking other
-            // tools from editing a recreated file with the same path (#2257).
-            if (isDeletingCurrent && !string.IsNullOrEmpty(_currentFilePath))
-            {
-                Radoub.UI.Services.FileSessionLockService.ReleaseLock(_currentFilePath);
-            }
-
-            // Back up before deleting so a misclick is recoverable (#2347).
-            var modulePath = RadoubSettings.Instance.CurrentModulePath;
-            var moduleName = !string.IsNullOrEmpty(modulePath)
-                ? Path.GetFileNameWithoutExtension(modulePath)
-                : "unknown";
-            await ItemEditor.Services.FileDeletionService.DeleteWithBackupAsync(
-                entry.FilePath, moduleName, new Radoub.UI.Services.Search.BackupService());
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Deleted item file (backed up): {fileName}");
-
-            if (isDeletingCurrent)
-            {
-                if (_itemViewModel != null)
-                    _itemViewModel.PropertyChanged -= OnItemPropertyChanged;
-
-                _currentItem = null;
-                _currentFilePath = null;
-                _documentState.ClearDirty();
-                PopulateEditor();
-                OnPropertyChanged(nameof(HasFile));
-            }
-
-            UpdateStatus($"Deleted {fileName}");
-            await ItemBrowserPanel.RefreshAsync();
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to delete {fileName}: {ex.Message}");
-            UpdateStatus($"Delete failed: {ex.Message}");
-        }
+        UpdateStatus($"Deleted {fileName}");
     }
 
     private async void OnWindowClosing(object? sender, Avalonia.Controls.WindowClosingEventArgs e)

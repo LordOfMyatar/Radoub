@@ -48,9 +48,24 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
 
     /// <summary>
     /// Raised when the user requests deletion of a file from the browser panel.
-    /// The parent window handles confirmation and actual deletion.
     /// </summary>
+    /// <remarks>
+    /// DEPRECATED (#2350): the base now owns the confirm + backup + delete + refresh
+    /// itself so every tool inherits delete-with-backup. Hosts should subscribe to
+    /// <see cref="FileDeleted"/> for editor cleanup instead of handling this event.
+    /// Retained only for back-compat; no longer raised by the base.
+    /// </remarks>
     public event EventHandler<FileDeleteRequestedEventArgs>? FileDeleteRequested;
+
+    /// <summary>
+    /// Raised AFTER the panel backs up, deletes a module file on disk, and refreshes
+    /// the browser (#2350). The disk delete and browser refresh are already done — the
+    /// host must not repeat them. The host reacts to fix editor state (e.g. close the
+    /// file if the deleted one was open) and update the status bar.
+    /// <see cref="FileDeletedEventArgs.WasCurrentFile"/> is true when the deleted file
+    /// was the one set via <see cref="CurrentFilePath"/>.
+    /// </summary>
+    public event EventHandler<FileDeletedEventArgs>? FileDeleted;
 
     /// <summary>
     /// Raised when the panel's collapsed state changes.
@@ -601,11 +616,71 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
         RenameMenuItem.IsEnabled = isModuleFile;
     }
 
-    private void OnDeleteMenuItemClick(object? sender, RoutedEventArgs e)
+    /// <summary>
+    /// Confirm, back up, then delete a module file on disk (#2350). The confirm
+    /// dialog, backup (to ~/Radoub/Backups/{module}/{timestamp}/), delete, and
+    /// browser refresh are all handled here so every tool gets identical
+    /// data-safe behavior — no per-tool hand-rolled File.Delete that loses data
+    /// on a misclick. The host only reacts to <see cref="FileDeleted"/> to close
+    /// the open file and update the status bar.
+    /// </summary>
+    private async void OnDeleteMenuItemClick(object? sender, RoutedEventArgs e)
     {
-        if (FileGrid.SelectedItem is FileBrowserEntry entry && !entry.IsFromHak && !string.IsNullOrEmpty(entry.FilePath))
+        if (FileGrid.SelectedItem is not FileBrowserEntry entry
+            || entry.IsFromHak || string.IsNullOrEmpty(entry.FilePath))
+            return;
+
+        var filePath = entry.FilePath!;
+        if (!File.Exists(filePath))
         {
-            FileDeleteRequested?.Invoke(this, new FileDeleteRequestedEventArgs(entry));
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"FileBrowserPanel: Delete source missing: {UnifiedLogger.SanitizePath(filePath)}");
+            return;
+        }
+
+        var owner = TopLevel.GetTopLevel(this) as Window;
+        if (owner == null) return;
+
+        var fileName = Path.GetFileName(filePath);
+        var confirmed = await DialogHelper.ShowConfirmAsync(
+            owner, "Confirm Delete",
+            $"Delete \"{fileName}\" from disk?\n\nA backup is saved to ~/Radoub/Backups first, so this can be restored.");
+        if (!confirmed) return;
+
+        var wasCurrentFile = !string.IsNullOrEmpty(_currentFilePath)
+            && filePath.Equals(_currentFilePath, StringComparison.OrdinalIgnoreCase);
+
+        try
+        {
+            // Release the file session lock before deleting the open file — the lock
+            // sidecar lives next to the file and would otherwise survive the delete,
+            // blocking other tools from editing a recreated file (#2257). No-op if
+            // unlocked.
+            if (wasCurrentFile)
+                FileSessionLockService.ReleaseLock(filePath);
+
+            // Back up before deleting so a misclick is recoverable (#2347/#2350).
+            var modulePath = Radoub.Formats.Settings.RadoubSettings.Instance.CurrentModulePath;
+            var moduleName = !string.IsNullOrEmpty(modulePath)
+                ? Path.GetFileNameWithoutExtension(modulePath)
+                : "unknown";
+            await Services.Search.FileDeletionService.DeleteWithBackupAsync(
+                filePath, moduleName, new Services.Search.BackupService());
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Deleted file (backed up): {UnifiedLogger.SanitizePath(filePath)}");
+
+            await RefreshAsync();
+            FileDeleted?.Invoke(this, new FileDeletedEventArgs(filePath, wasCurrentFile));
+        }
+        catch (IOException ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"FileBrowserPanel: Delete failed: {ex.Message}");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"FileBrowserPanel: Delete failed (access): {ex.Message}");
         }
     }
 

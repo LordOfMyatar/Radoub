@@ -17,6 +17,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.1.68-alpha] - 2026-06-05
+**Branch**: `radoub/issue-2350` | **PR**: #2351
+
+### Delete-with-backup extracted to FileBrowserPanelBase (#2350)
+
+- The shared file browser now backs every file up to `~/Radoub/Backups/` before deleting it, so a misclick is recoverable. Fixes silent data loss in Quartermaster, Fence, and Parley, which previously deleted browser files outright. All tools (and future ones) inherit the safe path.
+
+---
+
 ## [Radoub.UI 0.1.67-alpha] - 2026-05-30
 **Branch**: `reliquary/issue-2293` | **PR**: #2330
 

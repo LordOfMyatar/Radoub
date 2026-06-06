@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.116-alpha] - 2026-06-05
+**Branch**: `radoub/issue-2350` | **PR**: #2351
+
+### Fix: Browser delete now backs up first (#2350)
+
+- Deleting a creature from the browser backs it up to `~/Radoub/Backups/` first instead of removing it outright. See shared `Radoub.UI` 0.1.68-alpha (root CHANGELOG).
+
+---
+
 ## [0.2.115-alpha] - 2026-05-30
 **Branch**: `reliquary/issue-2291` | **PR**: #2328
 
