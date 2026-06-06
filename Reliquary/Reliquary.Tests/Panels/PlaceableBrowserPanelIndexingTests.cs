@@ -1,4 +1,6 @@
 using Radoub.Formats.Utp;
+using Radoub.UI.Controls;
+using Radoub.UI.Services;
 using PlaceableEditor.Views.Panels;
 
 namespace PlaceableEditor.Tests.Panels;
@@ -50,5 +52,92 @@ public class PlaceableBrowserPanelIndexingTests
 
         Assert.Equal("", tag);
         Assert.Equal("", name);
+    }
+
+    // --- TryFillFromCache (cache fast-path during background indexing, design §5.5) ---
+
+    private static Dictionary<string, SharedPaletteCacheItem> Lookup(
+        params SharedPaletteCacheItem[] items)
+    {
+        var dict = new Dictionary<string, SharedPaletteCacheItem>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in items)
+            dict.TryAdd(item.ResRef, item);
+        return dict;
+    }
+
+    [Fact]
+    public void TryFillFromCache_PopulatesTagAndDisplayLabel_OnHit()
+    {
+        var entry = new PlaceableBrowserEntry { Name = "boulder001" };
+        var lookup = Lookup(new SharedPaletteCacheItem
+        {
+            ResRef = "boulder001",
+            Tag = "BOULDER_TAG",
+            DisplayName = "Granite Boulder"
+        });
+
+        var hit = PlaceableBrowserPanel.TryFillFromCache(entry, lookup);
+
+        Assert.True(hit);
+        Assert.Equal("BOULDER_TAG", entry.Tag);
+        Assert.Equal("Granite Boulder", entry.DisplayLabel);
+    }
+
+    [Fact]
+    public void TryFillFromCache_ReturnsFalse_OnMiss()
+    {
+        var entry = new PlaceableBrowserEntry { Name = "missing_plc" };
+        var lookup = Lookup(new SharedPaletteCacheItem
+        {
+            ResRef = "different_plc",
+            Tag = "X",
+            DisplayName = "Y"
+        });
+
+        var hit = PlaceableBrowserPanel.TryFillFromCache(entry, lookup);
+
+        Assert.False(hit);
+        Assert.Null(entry.Tag);
+        Assert.Null(entry.DisplayLabel);
+    }
+
+    [Fact]
+    public void TryFillFromCache_EmptyLookup_ReturnsFalse()
+    {
+        var entry = new PlaceableBrowserEntry { Name = "anything" };
+        var lookup = new Dictionary<string, SharedPaletteCacheItem>(StringComparer.OrdinalIgnoreCase);
+
+        Assert.False(PlaceableBrowserPanel.TryFillFromCache(entry, lookup));
+    }
+
+    [Fact]
+    public void TryFillFromCache_CaseInsensitiveLookup()
+    {
+        var entry = new PlaceableBrowserEntry { Name = "BOULDER001" }; // uppercase
+        var lookup = Lookup(new SharedPaletteCacheItem
+        {
+            ResRef = "boulder001", // lowercase cache key
+            Tag = "TAG",
+            DisplayName = "Name"
+        });
+
+        Assert.True(PlaceableBrowserPanel.TryFillFromCache(entry, lookup));
+        Assert.Equal("TAG", entry.Tag);
+    }
+
+    [Fact]
+    public void TryFillFromCache_NullTagOrName_ResolveToEmpty()
+    {
+        var entry = new PlaceableBrowserEntry { Name = "plc" };
+        var lookup = Lookup(new SharedPaletteCacheItem
+        {
+            ResRef = "plc",
+            Tag = null!,
+            DisplayName = null!
+        });
+
+        Assert.True(PlaceableBrowserPanel.TryFillFromCache(entry, lookup));
+        Assert.Equal(string.Empty, entry.Tag);
+        Assert.Equal(string.Empty, entry.DisplayLabel);
     }
 }

@@ -93,6 +93,12 @@ public partial class MainWindow
         try
         {
             UtpWriter.Write(_placeable.WriteToUtp(), _currentFilePath);
+
+            // Refresh the browser row's Tag/Name without a full reindex (design §5.5).
+            // Fire-and-forget — the save flow does not block on UI refresh.
+            var browser = this.FindControl<PlaceableBrowserPanel>("PlaceableBrowserPanel");
+            _ = Radoub.UI.Controls.BrowserSaveNotifier.NotifyAsync(browser, _currentFilePath);
+
             UpdateStatus($"Saved {Path.GetFileName(_currentFilePath)}");
             UnifiedLogger.LogApplication(LogLevel.INFO,
                 $"Reliquary: saved {UnifiedLogger.SanitizePath(_currentFilePath)}");
