@@ -38,7 +38,7 @@ This guide holds the full checklist and detailed patterns for adding a new tool 
 
 ### Reference Implementation
 
-**Quartermaster is the canonical reference** for new Radoub tools. Study its structure before starting.
+**Quartermaster is the canonical reference** for new Radoub tools. Study its structure before starting. For the single-resource blueprint pattern specifically (one file = one editable resource), **Relique, Fence, and Quartermaster are the most feature-complete** — study all three for the full surface (new-resource flow, recent files, properties, preview, settings) before deciding what your tool needs.
 
 ### Pre-Coding Checklist
 
@@ -65,8 +65,8 @@ ToolName/
 │   │   ├── CommandLineService.cs     # --file, --safemode, --help
 │   │   └── SettingsService.cs        # Tool-specific settings + theme
 │   ├── Views/
-│   │   ├── MainWindow.axaml          # Standard menu structure
-│   │   └── Dialogs/                  # About, Settings windows
+│   │   ├── MainWindow.axaml          # Standard menu structure (incl. File → New)
+│   │   └── Dialogs/                  # About, Settings, New-resource flow
 │   ├── ViewModels/
 │   │   └── MainWindowViewModel.cs    # MVVM pattern
 │   └── Controls/                     # Custom controls
@@ -175,6 +175,8 @@ userDict.AddWord("Waterdeep");
 - [ ] **`AssemblyName` matches the tool name** in the `.csproj` (e.g. `<AssemblyName>Relique</AssemblyName>` for the Relique tool). `RootNamespace` can differ if a legacy internal name is preferred, but the built binary must ship as `ToolName.exe` / `ToolName` — Trebuchet's sibling discovery (`ToolLauncherService.RefreshPathsFromSiblingDirectory`) walks `ToolInfo.Name`, and the release workflow / cross-tool launchers all assume `Radoub/ToolName.exe`. Mismatch causes silent launch failures + a forced rename later with a settings-path migration (#2080).
 - [ ] **Override `IndexMetadataAsync` + `ReadSourceMetadataAsync`** on the file browser panel if the format has Name and/or Tag fields — see [File Browser Adoption](#file-browser-adoption-filebrowserpanelbase)
 - [ ] **Wire Undo/Redo via shared `UndoRedoManager`** — register Ctrl+Z / Ctrl+Y and route every user-initiated mutation through `IUndoableCommand` so the standard Undo/Redo menu items work from day one (#2231). Do **not** ship disabled Undo/Redo menu stubs — either wire them correctly or omit them.
+- [ ] **Ship a New-resource flow** (`File → New`, Ctrl+N) — the tool must let the user create a blank resource from scratch, not only edit existing files. A `SaveFilePicker`/`Save As`-into-module path that *copies* a base-game blueprint is **not** a substitute: it can't make a resource that isn't already in the game data. Match the lightest pattern that fits the format — Relique's New Item Wizard (base-item-type branching), Fence's simpler new-store, or a plain blank-document `File → New`. A tool that can only edit pre-existing files is incomplete. (Reliquary shipped without this — #2367 — because Save-As-copy masked the gap.)
+- [ ] **Wire Recent Files / MRU on BOTH ends** — see [Trebuchet Integration](#trebuchet-integration). Easy to get for free via `BaseToolSettingsService` + a `ToolRecentFilesService` case; easy to forget entirely (#2247, #2368).
 
 ### Trebuchet Integration
 
@@ -407,9 +409,14 @@ A `PaletteCache` is optional — wire it only when HAK/BIF extraction is expensi
 After a new tool's initial implementation is complete (before first release), run a UI uniformity audit against the checklist table above:
 
 - [ ] **Run UI uniformity audit** — verify all criteria in the UI Uniformity Checklist table pass
+- [ ] **Verify New-resource flow** — `File → New` creates a blank resource (NOT just Save-As-copy of an existing file). A tool that can only edit pre-existing files fails this check (#2367).
+- [ ] **Verify Recent Files end-to-end** — open a file, relaunch Trebuchet, confirm it appears under the tool's card. Empty dropdown = the #2247 regression (missing MRU persistence and/or `ToolRecentFilesService` registration).
+- [ ] **Verify no dead controls** — every menu item and button performs an action or is removed. An event-raised-but-unhandled control (handler-less `Click`, no `+=` subscription) is a no-op stub and violates #2231 (#2369).
 - [ ] **Run `run-tests.ps1 -Tool [ToolName]`** — confirm clean pass (privacy, tech-debt, unit tests)
 - [ ] **Verify Trebuchet integration** — tool registered in ToolLauncherService, `--file` argument works
 - [ ] **Add FlaUI smoke test** — basic launch/close test in `Radoub.IntegrationTests/[ToolName]/` (requires CI infrastructure from #1905)
+
+> These three audit rows exist because Reliquary passed a 12/12 UI-uniformity audit while missing the New-resource flow, Recent Files, and with two dead buttons — the checklist didn't catch what the prose required. Audit against behavior, not just the uniformity table.
 
 ### Versioning (NBGV)
 

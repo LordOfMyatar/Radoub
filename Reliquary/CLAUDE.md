@@ -23,14 +23,23 @@ Tool-specific guidance for Claude Code sessions working on Reliquary (PlaceableE
 
 ## Status
 
-**Sprint 4 (scaffolding) complete** — demoable skeleton only. Editor wiring lands in Sprints 5-7:
+**Epic #2289 complete** — all 7 sprints landed; shipped as v0.1.0-alpha. Full editor wired (IdentityCombat, Behavior, Text, Inventory), undo/redo, browser metadata, cross-tool dispatch, FlaUI coverage.
 
-| Sprint | Scope |
-|--------|-------|
-| 4 (done) | Project + services + browser panel + fixtures + Trebuchet registration |
-| 5 | IdentityCombat + Behavior panels wired with UndoRedoManager |
-| 6 | Text + Inventory panels, item palette caching, BrowserSaveNotifier |
-| 7 | Cross-tool dispatch (Conversation → Parley), FlaUI smoke, v0.1.0-alpha release |
+| Sprint | Scope | State |
+|--------|-------|-------|
+| 4 | Project + services + browser panel + fixtures + Trebuchet registration | Done (#2349) |
+| 5 | IdentityCombat + Behavior panels wired with UndoRedoManager | Done (#2352) |
+| 6 | Text + Inventory panels, item palette caching, BrowserSaveNotifier | Done (#2358) |
+| 7 | Cross-tool dispatch (Conversation → Parley), FlaUI smoke, v0.1.0-alpha release | Done (#2364) |
+
+### Open follow-ups (post-epic audit 2026-06-06)
+
+- #2367 — New Placeable flow (`File → New`; currently only Save-As-copy)
+- #2368 — Recent Files / MRU (persist + register in Trebuchet)
+- #2369 — Dead Save/Load Script Set buttons (wire or remove)
+- #2370 — Portrait Browse → shared `PortraitBrowserWindow`
+- #2354 — Faction combo from module repute.fac
+- #2363 — Inventory column resize / palette gaps / non-resizable window
 
 ---
 
