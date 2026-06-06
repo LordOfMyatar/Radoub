@@ -1,5 +1,6 @@
 using System;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
@@ -62,6 +63,35 @@ public partial class MainWindow : Window
     }
 
     private void OnExitClick(object? sender, RoutedEventArgs e) => Close();
+
+    /// <summary>
+    /// Window-level keyboard shortcuts. MenuItem InputGesture only renders the hint text in
+    /// Avalonia — it does not register a global accelerator — so the gestures are dispatched here.
+    /// </summary>
+    private void OnWindowKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.KeyModifiers != KeyModifiers.Control) return;
+
+        switch (e.Key)
+        {
+            case Key.S:
+                OnSaveClick(sender, e);
+                e.Handled = true;
+                break;
+            case Key.O:
+                OnOpenClick(sender, e);
+                e.Handled = true;
+                break;
+            case Key.Z:
+                OnUndoClick(sender, e);
+                e.Handled = true;
+                break;
+            case Key.Y:
+                OnRedoClick(sender, e);
+                e.Handled = true;
+                break;
+        }
+    }
 
     private async void OnOpenClick(object? sender, RoutedEventArgs e)
     {

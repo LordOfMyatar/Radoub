@@ -46,6 +46,13 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
     /// <summary>Resolve a cache-loaded palette item into a fully-loaded item for the details pane.</summary>
     public Func<ItemViewModel, ItemViewModel?>? ItemResolver { get; set; }
 
+    /// <summary>Give the palette filter game data so its item-type dropdown can populate from 2DA.</summary>
+    public void SetGameDataService(Radoub.Formats.Services.IGameDataService gameDataService)
+    {
+        if (_paletteFilter != null)
+            _paletteFilter.GameDataService = gameDataService;
+    }
+
     public InventoryPanel()
     {
         InitializeComponent();
@@ -67,7 +74,11 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
             _backpackList.SelectionChanged += OnBackpackSelectionChanged;
         }
         if (_paletteFilter != null)
+        {
             _paletteFilter.Items = _paletteItems;
+            // Filter writes its results into the same collection the list shows (QM pattern).
+            _paletteFilter.FilteredItems = _filteredPaletteItems;
+        }
         if (_paletteList != null)
         {
             _paletteList.Items = _filteredPaletteItems;

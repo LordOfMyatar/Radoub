@@ -62,6 +62,7 @@ public partial class MainWindow
 
         if (!_placeable.HasInventory) return;
 
+        if (_gameData != null) inv.SetGameDataService(_gameData);
         inv.SetBackpackItems(BuildBackpackItems());
         EnsurePaletteLoaded(inv);
     }
@@ -96,7 +97,12 @@ public partial class MainWindow
     {
         var (uti, source) = ResolveUtiFile(resRef);
         if (uti != null && _itemFactory != null)
+        {
+            // BIF UTIs often carry an empty TemplateResRef (the ResRef lives in the BIF index, not
+            // the file). Stamp it so the VM's ResRef — and the model InventoryRes — is correct.
+            if (string.IsNullOrEmpty(uti.TemplateResRef)) uti.TemplateResRef = resRef;
             return _itemFactory.Create(uti, source);
+        }
 
         // Unresolved UTI — show a placeholder so the row is still visible/removable.
         return new ItemViewModel
@@ -108,12 +114,14 @@ public partial class MainWindow
         };
     }
 
-    /// <summary>Resolve a palette row to full data for the read-only details pane.</summary>
+    /// <summary>Resolve a palette row to full data for the read-only details pane / backpack add.</summary>
     private ItemViewModel? ResolveForDetails(ItemViewModel cacheItem)
     {
         if (cacheItem.Item != null) return cacheItem; // already fully loaded
         var (uti, source) = ResolveUtiFile(cacheItem.ResRef);
-        return uti != null && _itemFactory != null ? _itemFactory.Create(uti, source) : cacheItem;
+        if (uti == null || _itemFactory == null) return cacheItem;
+        if (string.IsNullOrEmpty(uti.TemplateResRef)) uti.TemplateResRef = cacheItem.ResRef;
+        return _itemFactory.Create(uti, source);
     }
 
     /// <summary>UTI resolution cascade: module directory → Override → HAK → BIF.</summary>
