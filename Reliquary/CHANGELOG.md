@@ -7,7 +7,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 ---
 
 ## [0.2.0-alpha] - 2026-06-05
-**Branch**: `reliquary/issue-2295` | **PR**: #TBD
+**Branch**: `reliquary/issue-2295` | **PR**: #2352
 
 ### Sprint 5: IdentityCombat + Behavior panels
 
