@@ -75,6 +75,11 @@ public partial class MainWindow
     {
         var modulePath = RadoubSettings.Instance.CurrentModulePath;
         if (string.IsNullOrEmpty(modulePath)) return null;
+
+        // Settings store paths with a leading ~ for the user profile; expand before any
+        // filesystem check (Directory.Exists does not understand ~ on Windows).
+        modulePath = Radoub.Formats.Common.PathHelper.ExpandPath(modulePath);
+
         if (System.IO.Directory.Exists(modulePath)) return modulePath;
 
         if (System.IO.File.Exists(modulePath) &&

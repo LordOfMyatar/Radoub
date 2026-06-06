@@ -23,14 +23,12 @@ public partial class MainWindow
         browser.FileSelected += OnBrowserFileSelected;
         browser.FileDeleted += OnBrowserFileDeleted;
 
-        // Point the browser at the current module so it lists its .utp files.
-        var modulePath = RadoubSettings.Instance.CurrentModulePath;
-        if (!string.IsNullOrEmpty(modulePath))
-        {
-            var moduleDir = Path.GetDirectoryName(modulePath);
-            if (!string.IsNullOrEmpty(moduleDir) && Directory.Exists(moduleDir))
-                browser.ModulePath = moduleDir;
-        }
+        // Point the browser at the current module's working directory so it lists its .utp files.
+        // CurrentModulePath is already the module dir (or a .mod file) — resolve, don't take the
+        // parent (that pointed at the modules/ folder, which has no loose .utp).
+        var moduleDir = GetModuleWorkingDirectory();
+        if (!string.IsNullOrEmpty(moduleDir))
+            browser.ModulePath = moduleDir;
     }
 
     private async void OnBrowserFileSelected(object? sender, FileSelectedEventArgs e)
