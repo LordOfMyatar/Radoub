@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.36.9-alpha] - 2026-06-06
+**Branch**: `trebuchet/sprint/data-loss-marlinspike` | **PR**: #TBD
+
+### Sprint: Critical Data Loss + Marlinspike Polish
+
+- Investigating script-loss after Relique delete + Trebuchet save (#2344, deferred).
+- Marlinspike replace-preview now shows the substituted value, not raw replacement text (#2224).
+- Marlinspike results support multi-select with checkboxes for rename scope (#2179).
+- Clearer Marlinspike validator error wording (#2182).
+
+---
+
 ## [1.36.8-alpha] - 2026-06-04
 **Branch**: `trebuchet/sprint/compile-marlinspike-scope` | **PR**: #2345
 
