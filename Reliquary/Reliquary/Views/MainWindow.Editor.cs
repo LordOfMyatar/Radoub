@@ -65,6 +65,7 @@ public partial class MainWindow
             _currentFilePath = filePath;
             _documentState.IsReadOnly = false;
             BindPlaceable(new PlaceableViewModel(utp));
+            UpdateTitle(); // BindPlaceable's ClearDirty is a no-op when already clean, so refresh the title explicitly
             UpdateStatus($"Loaded {Path.GetFileName(filePath)}");
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException)
@@ -92,6 +93,7 @@ public partial class MainWindow
             _currentFilePath = null;          // no backing file — read-only resource
             _documentState.IsReadOnly = true;
             BindPlaceable(new PlaceableViewModel(utp));
+            UpdateTitle(); // surface the [Read-Only] marker (ClearDirty is a no-op when already clean)
             UpdateStatus($"Base-game placeable (read-only): {name}");
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException)

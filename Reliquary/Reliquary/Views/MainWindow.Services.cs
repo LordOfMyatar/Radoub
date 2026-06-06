@@ -69,6 +69,13 @@ public partial class MainWindow
             identity.AppearanceChanged += OnAppearanceChanged;
             identity.PortraitBrowseRequested += OnPortraitBrowseRequested;
         }
+
+        // Open the startup file from the command line (--file), now that services + the model
+        // preview are ready. Relique pattern (#2295). FilePath is already module-resolved by
+        // CommandLineService.Parse → ResolveModuleName.
+        var startupFile = CommandLineService.Options.FilePath;
+        if (!string.IsNullOrEmpty(startupFile) && System.IO.File.Exists(startupFile))
+            LoadPlaceable(startupFile);
     }
 
     private static string? GetModuleWorkingDirectory()
