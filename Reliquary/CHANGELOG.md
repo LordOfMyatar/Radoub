@@ -7,7 +7,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 ---
 
 ## [0.4.0-alpha] - 2026-06-06
-**Branch**: `reliquary/issue-2297` | **PR**: #TBD
+**Branch**: `reliquary/issue-2297` | **PR**: #2364
 
 ### Sprint 7: Cross-tool dispatch + FlaUI + v0.1.0-alpha release
 
