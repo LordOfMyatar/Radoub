@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,6 +14,7 @@ using Radoub.UI.Services.Search;
 using Radoub.UI.Undo;
 using Radoub.UI.ViewModels;
 using PlaceableEditor.Commands;
+using PlaceableEditor.Services;
 using PlaceableEditor.ViewModels;
 using PlaceableEditor.Views.Panels;
 
@@ -51,6 +53,8 @@ public partial class MainWindow
             behavior.Variables.DeleteRequested += OnVariableDeleteRequested;
             behavior.ScriptBrowseRequested += OnScriptBrowseRequested;
             behavior.ScriptEditRequested += OnScriptEditRequested;
+            behavior.SaveScriptSetRequested += OnSaveScriptSetRequested;
+            behavior.LoadScriptSetRequested += OnLoadScriptSetRequested;
             behavior.EditConversationRequested += OnEditConversationRequested;
         }
     }
@@ -355,6 +359,89 @@ public partial class MainWindow
         var moduleDir = GetModuleWorkingDirectory();
         if (!ExternalEditorService.OpenScript(slot.ResRef, fileDir, moduleDir))
             UpdateStatus($"Could not open {slot.ResRef}.nss — not found near the placeable or module.");
+    }
+
+    // --- Script sets (save/load a reusable preset, #2369) ---
+
+    private async void OnSaveScriptSetRequested(object? sender, EventArgs e)
+    {
+        if (_placeable is null)
+        {
+            UpdateStatus("Open or create a placeable before saving a script set.");
+            return;
+        }
+
+        var file = await StorageProvider.SaveFilePickerAsync(new Avalonia.Platform.Storage.FilePickerSaveOptions
+        {
+            Title = "Save Script Set",
+            DefaultExtension = "json",
+            SuggestedFileName = "placeable-scripts.json",
+            FileTypeChoices = new[]
+            {
+                new Avalonia.Platform.Storage.FilePickerFileType("Script Set") { Patterns = new[] { "*.json" } }
+            }
+        });
+
+        var path = file?.Path.LocalPath;
+        if (string.IsNullOrEmpty(path)) return;
+
+        try
+        {
+            File.WriteAllBytes(path, ScriptSetService.Serialize(_placeable.Scripts));
+            UpdateStatus($"Saved script set to {Path.GetFileName(path)}");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"Reliquary: script-set save failed for {UnifiedLogger.SanitizePath(path)}: {ex.Message}");
+            UpdateStatus($"Could not save script set: {ex.Message}");
+        }
+    }
+
+    private async void OnLoadScriptSetRequested(object? sender, EventArgs e)
+    {
+        if (_placeable is null)
+        {
+            UpdateStatus("Open or create a placeable before loading a script set.");
+            return;
+        }
+
+        var files = await StorageProvider.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
+        {
+            Title = "Load Script Set",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new Avalonia.Platform.Storage.FilePickerFileType("Script Set") { Patterns = new[] { "*.json" } }
+            }
+        });
+
+        var path = files.Count > 0 ? files[0].Path.LocalPath : null;
+        if (string.IsNullOrEmpty(path)) return;
+
+        IReadOnlyDictionary<string, string> set;
+        try
+        {
+            set = ScriptSetService.Parse(File.ReadAllBytes(path));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"Reliquary: script-set load failed for {UnifiedLogger.SanitizePath(path)}: {ex.Message}");
+            UpdateStatus($"Could not load script set: {ex.Message}");
+            return;
+        }
+
+        // Snapshot the current 13 slots so the whole apply is a single undo step.
+        var before = _placeable.Scripts.ToDictionary(s => s.EventName, s => s.ResRef);
+        var slots = _placeable.Scripts;
+
+        _undo.Execute(new RelayUndoableCommand(
+            () => { ScriptSetService.Apply(slots, set); },
+            () => { ScriptSetService.Apply(slots, before); },
+            "load script set"));
+
+        UpdateStatus($"Loaded script set from {Path.GetFileName(path)}");
     }
 
     // --- Conversation (cross-tool dispatch to Parley, Sprint 7 #2297) ---
