@@ -70,6 +70,58 @@ public class ExternalEditorServiceTests
         Assert.Null(ExternalEditorService.ResolveScriptPath("", TempDir(), null));
     }
 
+    // --- ResolveResourcePath (generic, any extension) ---
+
+    [Fact]
+    public void ResolveResourcePath_FindsDlgInCurrentFileDirectory()
+    {
+        var dir = TempDir();
+        var dlg = Path.Combine(dir, "chat01.dlg");
+        File.WriteAllText(dlg, "");
+
+        var result = ExternalEditorService.ResolveResourcePath("chat01", ".dlg", dir, null);
+
+        Assert.Equal(dlg, result);
+        Directory.Delete(dir, true);
+    }
+
+    [Fact]
+    public void ResolveResourcePath_StripsMatchingExtensionFromName()
+    {
+        var dir = TempDir();
+        File.WriteAllText(Path.Combine(dir, "chat01.dlg"), "");
+
+        var result = ExternalEditorService.ResolveResourcePath("chat01.dlg", ".dlg", dir, null);
+
+        Assert.EndsWith("chat01.dlg", result);
+        Directory.Delete(dir, true);
+    }
+
+    [Fact]
+    public void ResolveResourcePath_FallsBackToModuleDirectory()
+    {
+        var moduleDir = TempDir();
+        var dlg = Path.Combine(moduleDir, "mod_chat.dlg");
+        File.WriteAllText(dlg, "");
+
+        var result = ExternalEditorService.ResolveResourcePath("mod_chat", ".dlg", "C:/nonexistent_dir", moduleDir);
+
+        Assert.Equal(dlg, result);
+        Directory.Delete(moduleDir, true);
+    }
+
+    [Fact]
+    public void ResolveResourcePath_ReturnsNullWhenNotFound()
+    {
+        Assert.Null(ExternalEditorService.ResolveResourcePath("ghost", ".dlg", "C:/nope", "C:/also_nope"));
+    }
+
+    [Fact]
+    public void ResolveResourcePath_ReturnsNullForEmptyName()
+    {
+        Assert.Null(ExternalEditorService.ResolveResourcePath("", ".dlg", TempDir(), null));
+    }
+
     // --- ChooseEditor ---
 
     [Fact]

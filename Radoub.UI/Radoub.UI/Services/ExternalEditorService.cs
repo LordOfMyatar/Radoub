@@ -20,11 +20,20 @@ public static class ExternalEditorService
     /// no side effects (testable seam).
     /// </summary>
     public static string? ResolveScriptPath(string? scriptName, string? currentFileDir, string? moduleDir)
-    {
-        if (string.IsNullOrWhiteSpace(scriptName)) return null;
+        => ResolveResourcePath(scriptName, ".nss", currentFileDir, moduleDir);
 
-        var name = scriptName.Replace(".nss", "", StringComparison.OrdinalIgnoreCase);
-        var fileName = $"{name}.nss";
+    /// <summary>
+    /// Resolve a ResRef to a file of the given <paramref name="extension"/> (e.g. ".dlg"), searching
+    /// the current file's directory first, then the module directory. A trailing copy of the extension
+    /// on the name is stripped before searching. Returns null if the name is blank or no file is found.
+    /// Pure — no side effects (testable seam). Used for cross-tool dispatch (conversation → Parley).
+    /// </summary>
+    public static string? ResolveResourcePath(string? resRef, string extension, string? currentFileDir, string? moduleDir)
+    {
+        if (string.IsNullOrWhiteSpace(resRef)) return null;
+
+        var name = resRef.Replace(extension, "", StringComparison.OrdinalIgnoreCase);
+        var fileName = $"{name}{extension}";
 
         foreach (var dir in new[] { currentFileDir, moduleDir })
         {
