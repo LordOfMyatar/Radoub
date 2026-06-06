@@ -120,6 +120,13 @@ public class ToolLauncherService
                 Description = "Item Editor",
                 FileTypes = ".uti",
                 Maturity = ToolMaturity.Alpha
+            },
+            new ToolInfo
+            {
+                Name = "Reliquary",
+                Description = "Placeable Editor",
+                FileTypes = ".utp",
+                Maturity = ToolMaturity.Alpha
             }
         };
 
@@ -392,6 +399,7 @@ public class ToolLauncherService
             "quartermaster" => RadoubSettings.Instance.QuartermasterPath,
             "fence" => RadoubSettings.Instance.FencePath,
             "relique" => RadoubSettings.Instance.ReliquePath,
+            "reliquary" => RadoubSettings.Instance.ReliquaryPath,
             _ => null
         };
     }
@@ -411,6 +419,7 @@ public class ToolLauncherService
                 case "quartermaster": settings.QuartermasterPath = path; break;
                 case "fence": settings.FencePath = path; break;
                 case "relique": settings.ReliquePath = path; break;
+                case "reliquary": settings.ReliquaryPath = path; break;
             }
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Cached {toolName} path to settings: {UnifiedLogger.SanitizePath(path)}");
         }
