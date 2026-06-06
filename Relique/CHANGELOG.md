@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.23-alpha] - 2026-06-06
+**Branch**: `relique/issue-2258` | **PR**: #2379
+
+### Fix: Property handlers skip #2166 rollback pattern (#2258)
+
+- Batch-add, remove, and clear-all property handlers now roll back model changes when `RefreshAssignedProperties` throws.
+- Guarded `OnWindowClosing` re-entry so cleanup runs once.
+
+---
+
 ## [0.10.22-alpha] - 2026-06-06
 **Branch**: `radoub/sprint/flaui-coverage` | **PR**: #2365
 

@@ -1,0 +1,120 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Radoub.Formats.Uti;
+
+namespace ItemEditor.Services;
+
+/// <summary>
+/// Pure model-mutation helpers for the item property list with refresh-failure rollback (#2258).
+///
+/// Each operation mutates the <see cref="List{ItemProperty}"/>, runs a UI <c>refresh</c> callback,
+/// and rolls the model back to its pre-call state if the refresh throws — mirroring the canonical
+/// TryAddProperty pattern (#2166). UI controls (combo selections, tree expansion) can hold stale
+/// state across a refresh and crash deep in the Avalonia render loop; rolling back keeps the
+/// model consistent with what the user sees instead of leaving orphaned/lost properties.
+///
+/// All methods return <c>true</c> when the mutation was applied and the refresh succeeded,
+/// <c>false</c> when nothing was done (no-op input) or the refresh threw and was rolled back.
+/// The refresh exception is swallowed here so callers can report via the status bar; the caller
+/// supplies a refresh delegate that does its own logging.
+/// </summary>
+public static class PropertyListMutator
+{
+    /// <summary>
+    /// Append <paramref name="toAdd"/> to <paramref name="properties"/>, then refresh.
+    /// On refresh failure, removes exactly the appended entries.
+    /// </summary>
+    public static bool BatchAdd(
+        List<ItemProperty> properties,
+        IReadOnlyList<ItemProperty> toAdd,
+        Action refresh)
+    {
+        if (properties == null) throw new ArgumentNullException(nameof(properties));
+        if (toAdd == null) throw new ArgumentNullException(nameof(toAdd));
+        if (refresh == null) throw new ArgumentNullException(nameof(refresh));
+        if (toAdd.Count == 0) return false;
+
+        int originalCount = properties.Count;
+        properties.AddRange(toAdd);
+
+        try
+        {
+            refresh();
+            return true;
+        }
+        catch
+        {
+            // Roll back: truncate the appended entries so the model matches the pre-add state.
+            properties.RemoveRange(originalCount, properties.Count - originalCount);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Remove the entries at <paramref name="indices"/> from <paramref name="properties"/>, then refresh.
+    /// On refresh failure, re-inserts the removed entries at their original positions.
+    /// </summary>
+    public static bool RemoveAt(
+        List<ItemProperty> properties,
+        IReadOnlyList<int> indices,
+        Action refresh)
+    {
+        if (properties == null) throw new ArgumentNullException(nameof(properties));
+        if (indices == null) throw new ArgumentNullException(nameof(indices));
+        if (refresh == null) throw new ArgumentNullException(nameof(refresh));
+
+        // Capture (index, value) for valid indices in descending order so removal does not shift
+        // later targets. Ascending re-insert on rollback restores original positions.
+        var removed = indices
+            .Where(i => i >= 0 && i < properties.Count)
+            .Distinct()
+            .OrderByDescending(i => i)
+            .Select(i => (Index: i, Value: properties[i]))
+            .ToList();
+
+        if (removed.Count == 0) return false;
+
+        foreach (var (index, _) in removed)
+            properties.RemoveAt(index);
+
+        try
+        {
+            refresh();
+            return true;
+        }
+        catch
+        {
+            foreach (var (index, value) in removed.OrderBy(r => r.Index))
+                properties.Insert(index, value);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Clear <paramref name="properties"/>, then refresh.
+    /// On refresh failure, restores the original list contents in order.
+    /// </summary>
+    public static bool ClearAll(
+        List<ItemProperty> properties,
+        Action refresh)
+    {
+        if (properties == null) throw new ArgumentNullException(nameof(properties));
+        if (refresh == null) throw new ArgumentNullException(nameof(refresh));
+        if (properties.Count == 0) return false;
+
+        var snapshot = new List<ItemProperty>(properties);
+        properties.Clear();
+
+        try
+        {
+            refresh();
+            return true;
+        }
+        catch
+        {
+            properties.AddRange(snapshot);
+            return false;
+        }
+    }
+}
