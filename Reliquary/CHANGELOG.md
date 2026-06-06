@@ -12,7 +12,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 ### Sprint 6: Text + Inventory + browser metadata
 
 - TextPanel: Description (TLK) + builder Comments, token insertion, spell-check.
-- InventoryPanel: backpack list + UTI palette + per-instance editor (stack/charges/plot), undoable add/remove.
+- InventoryPanel (when Has Inventory): backpack list + UTI palette + read-only resolved details, undoable add/remove. (UTP stores only item ResRef + position, so no per-instance stack/charges editor.)
 - Browser metadata indexing (UTP tag/name) with background pass and save notifier.
 
 ---
