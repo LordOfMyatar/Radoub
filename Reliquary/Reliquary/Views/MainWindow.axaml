@@ -44,8 +44,8 @@
                 <StackPanel Margin="8" Spacing="8">
                     <panels:IdentityCombatPanel x:Name="IdentityCombatPanel"/>
                     <panels:BehaviorPanel x:Name="BehaviorPanel"/>
-                    <panels:TextPanel/>
-                    <panels:InventoryPanel/>
+                    <panels:TextPanel x:Name="TextPanel"/>
+                    <panels:InventoryPanel x:Name="InventoryPanel"/>
                 </StackPanel>
             </ScrollViewer>
         </Grid>

@@ -58,7 +58,9 @@ public partial class MainWindow
 
             var identity = this.FindControl<IdentityCombatPanel>("IdentityCombatPanel");
             var behavior = this.FindControl<BehaviorPanel>("BehaviorPanel");
+            var text = this.FindControl<TextPanel>("TextPanel");
             if (identity != null) identity.DataContext = _placeable;
+            if (text != null) text.DataContext = _placeable;
             if (behavior != null)
             {
                 behavior.DataContext = _placeable;
