@@ -32,12 +32,13 @@ Tool-specific guidance for Claude Code sessions working on Reliquary (PlaceableE
 | 6 | Text + Inventory panels, item palette caching, BrowserSaveNotifier | Done (#2358) |
 | 7 | Cross-tool dispatch (Conversation → Parley), FlaUI smoke, v0.1.0-alpha release | Done (#2364) |
 
-### Open follow-ups (post-epic audit 2026-06-06)
+### Post-epic audit follow-ups (2026-06-06)
 
-- #2367 — New Placeable flow (`File → New`; currently only Save-As-copy)
-- #2368 — Recent Files / MRU (persist + register in Trebuchet)
-- #2369 — Dead Save/Load Script Set buttons (wire or remove)
-- #2370 — Portrait Browse → shared `PortraitBrowserWindow`
+Resolved in PR #2371: #2367 (New Placeable flow), #2368 (Recent Files / MRU),
+#2369 (Save/Load Script Set wired), #2370 (Portrait Browse).
+
+Still open:
+
 - #2354 — Faction combo from module repute.fac
 - #2363 — Inventory column resize / palette gaps / non-resizable window
 
