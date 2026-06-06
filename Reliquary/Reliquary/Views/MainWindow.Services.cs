@@ -23,6 +23,7 @@ public partial class MainWindow
     private IPlaceableAppearanceService? _appearances;
     private PlaceableModelLoader? _modelLoader;
     private TextureService? _textureService;
+    private ItemIconService? _itemIconService;
     private bool _servicesInitialized;
 
     private void WireServices()
@@ -47,6 +48,7 @@ public partial class MainWindow
                 _appearances = new PlaceableAppearanceService(_gameData);
                 _modelLoader = new PlaceableModelLoader(_gameData, _appearances);
                 _textureService = new TextureService(_gameData);
+                _itemIconService = new ItemIconService(_gameData);
                 _itemFactory = new Radoub.UI.ViewModels.ItemViewModelFactory(_gameData);
                 UnifiedLogger.LogApplication(LogLevel.INFO, "Reliquary: GameDataService configured.");
             }
@@ -121,6 +123,7 @@ public partial class MainWindow
             identity.PopulateAppearances(_appearances, _placeable.Appearance);
 
         UpdateModelPreview(_placeable.Appearance);
+        RefreshPortraitPreview();
     }
 
     private void UpdateModelPreview(uint appearanceId)
@@ -139,12 +142,44 @@ public partial class MainWindow
         UpdateModelPreview(appearanceId);
     }
 
-    private void OnPortraitBrowseRequested(object? sender, EventArgs e)
+    private async void OnPortraitBrowseRequested(object? sender, EventArgs e)
     {
-        // The shared PortraitBrowserWindow needs an IPortraitBrowserContext (portraits.2da +
-        // bitmap loading) that currently lives only in Quartermaster. Sharing that context is
-        // tracked as follow-up; until then the button surfaces a status hint rather than a
-        // half-built portrait service. PortraitId still round-trips via the model.
-        UpdateStatus("Portrait browser pending shared IPortraitBrowserContext extract (follow-up).");
+        if (_placeable is null) return;
+        if (_gameData is null || !_gameData.IsConfigured || _itemIconService is null)
+        {
+            UpdateStatus("Portrait browser needs a configured game install (set paths in Trebuchet).");
+            return;
+        }
+
+        var context = new PlaceableEditor.Services.ReliquaryPortraitBrowserContext(_gameData, _itemIconService);
+        var browser = Radoub.UI.Views.PortraitBrowserWindow.Create(context);
+        var result = await browser.ShowDialog<ushort?>(this);
+        if (result is not { } portraitId) return; // cancelled
+
+        // Route the change through undo, then refresh the preview image.
+        _undo.Execute(new Radoub.UI.Undo.SetFieldCommand<ushort>(
+            () => _placeable.PortraitId, v => _placeable.PortraitId = v, portraitId, "change portrait"));
+
+        RefreshPortraitPreview();
+    }
+
+    /// <summary>Resolve the placeable's PortraitId to a bitmap and push it into the identity panel.</summary>
+    private void RefreshPortraitPreview()
+    {
+        if (_placeable is null || _gameData is null || _itemIconService is null) return;
+        var identity = this.FindControl<IdentityCombatPanel>("IdentityCombatPanel");
+        if (identity is null) return;
+
+        var resRef = _gameData.Get2DAValue("portraits", _placeable.PortraitId, "BaseResRef");
+        if (string.IsNullOrWhiteSpace(resRef) || resRef.Trim().Trim('*').Length == 0)
+        {
+            identity.SetPortrait(null);
+            return;
+        }
+
+        // GetPortraitBitmap takes the base ResRef and resolves the size suffix internally
+        // (same path the browser thumbnails use).
+        var context = new PlaceableEditor.Services.ReliquaryPortraitBrowserContext(_gameData, _itemIconService);
+        identity.SetPortrait(context.GetPortraitBitmap(resRef.Trim()));
     }
 }

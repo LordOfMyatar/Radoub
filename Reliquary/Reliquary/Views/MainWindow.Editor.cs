@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,6 +14,7 @@ using Radoub.UI.Services.Search;
 using Radoub.UI.Undo;
 using Radoub.UI.ViewModels;
 using PlaceableEditor.Commands;
+using PlaceableEditor.Services;
 using PlaceableEditor.ViewModels;
 using PlaceableEditor.Views.Panels;
 
@@ -51,7 +53,28 @@ public partial class MainWindow
             behavior.Variables.DeleteRequested += OnVariableDeleteRequested;
             behavior.ScriptBrowseRequested += OnScriptBrowseRequested;
             behavior.ScriptEditRequested += OnScriptEditRequested;
+            behavior.SaveScriptSetRequested += OnSaveScriptSetRequested;
+            behavior.LoadScriptSetRequested += OnLoadScriptSetRequested;
             behavior.EditConversationRequested += OnEditConversationRequested;
+        }
+    }
+
+    /// <summary>File → New (#2367): prompt to discard, then bind a blank placeable as an unsaved document.</summary>
+    private async void OnNewClick(object? sender, RoutedEventArgs e)
+    {
+        if (!await ConfirmDiscardAsync()) return;
+        try
+        {
+            _isLoading = true; // suppress dirty marking while panels rebind to the new VM
+            _currentFilePath = null;          // unsaved — first Save routes through Save As
+            _documentState.IsReadOnly = false;
+            BindPlaceable(PlaceableViewModel.NewPlaceable());
+            UpdateTitle(); // BindPlaceable's ClearDirty is a no-op when already clean, so refresh the title
+            UpdateStatus("New placeable — fill in name/tag, then Save.");
+        }
+        finally
+        {
+            _isLoading = false;
         }
     }
 
@@ -66,6 +89,7 @@ public partial class MainWindow
             _documentState.IsReadOnly = false;
             BindPlaceable(new PlaceableViewModel(utp));
             UpdateTitle(); // BindPlaceable's ClearDirty is a no-op when already clean, so refresh the title explicitly
+            AddRecentFile(filePath);
             UpdateStatus($"Loaded {Path.GetFileName(filePath)}");
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException)
@@ -202,6 +226,7 @@ public partial class MainWindow
         {
             UtpWriter.Write(_placeable.WriteToUtp(), path);
             _documentState.ClearDirty();
+            AddRecentFile(path);
 
             // Refresh the browser row's Tag/Name without a full reindex (design §5.5).
             var browser = this.FindControl<PlaceableBrowserPanel>("PlaceableBrowserPanel");
@@ -217,6 +242,45 @@ public partial class MainWindow
                 $"Reliquary: save failed for {UnifiedLogger.SanitizePath(path)}: {ex.Message}");
             UpdateStatus($"Save failed: {ex.Message}");
             return false;
+        }
+    }
+
+    // --- Recent Files (MRU) ---
+    // Persistence is inherited from BaseToolSettingsService (RecentFiles / AddRecentFile);
+    // Trebuchet reads ~/Radoub/Reliquary/ReliquarySettings.json via ToolRecentFilesService (#2368).
+
+    /// <summary>Record a file in the MRU and refresh the Open Recent submenu.</summary>
+    private void AddRecentFile(string filePath)
+    {
+        PlaceableEditor.Services.SettingsService.Instance.AddRecentFile(filePath);
+        PopulateRecentFiles();
+    }
+
+    /// <summary>Rebuild the Open Recent submenu from the persisted MRU list.</summary>
+    private void PopulateRecentFiles()
+    {
+        var menu = this.FindControl<MenuItem>("RecentFilesMenu");
+        if (menu == null) return;
+
+        menu.Items.Clear();
+        var recent = PlaceableEditor.Services.SettingsService.Instance.RecentFiles;
+
+        if (recent.Count == 0)
+        {
+            menu.Items.Add(new MenuItem { Header = "(none)", IsEnabled = false });
+            return;
+        }
+
+        foreach (var path in recent)
+        {
+            var item = new MenuItem { Header = Path.GetFileName(path), Tag = path };
+            ToolTip.SetTip(item, UnifiedLogger.SanitizePath(path));
+            item.Click += async (_, _) =>
+            {
+                if (!await ConfirmDiscardAsync()) return;
+                LoadPlaceable((string)item.Tag!);
+            };
+            menu.Items.Add(item);
         }
     }
 
@@ -295,6 +359,89 @@ public partial class MainWindow
         var moduleDir = GetModuleWorkingDirectory();
         if (!ExternalEditorService.OpenScript(slot.ResRef, fileDir, moduleDir))
             UpdateStatus($"Could not open {slot.ResRef}.nss — not found near the placeable or module.");
+    }
+
+    // --- Script sets (save/load a reusable preset, #2369) ---
+
+    private async void OnSaveScriptSetRequested(object? sender, EventArgs e)
+    {
+        if (_placeable is null)
+        {
+            UpdateStatus("Open or create a placeable before saving a script set.");
+            return;
+        }
+
+        var file = await StorageProvider.SaveFilePickerAsync(new Avalonia.Platform.Storage.FilePickerSaveOptions
+        {
+            Title = "Save Script Set",
+            DefaultExtension = "txt",
+            SuggestedFileName = "placeable-scripts.txt",
+            FileTypeChoices = new[]
+            {
+                new Avalonia.Platform.Storage.FilePickerFileType("Script Set") { Patterns = new[] { "*.txt" } }
+            }
+        });
+
+        var path = file?.Path.LocalPath;
+        if (string.IsNullOrEmpty(path)) return;
+
+        try
+        {
+            File.WriteAllBytes(path, ScriptSetService.Serialize(_placeable.Scripts));
+            UpdateStatus($"Saved script set to {Path.GetFileName(path)}");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"Reliquary: script-set save failed for {UnifiedLogger.SanitizePath(path)}: {ex.Message}");
+            UpdateStatus($"Could not save script set: {ex.Message}");
+        }
+    }
+
+    private async void OnLoadScriptSetRequested(object? sender, EventArgs e)
+    {
+        if (_placeable is null)
+        {
+            UpdateStatus("Open or create a placeable before loading a script set.");
+            return;
+        }
+
+        var files = await StorageProvider.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
+        {
+            Title = "Load Script Set",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new Avalonia.Platform.Storage.FilePickerFileType("Script Set") { Patterns = new[] { "*.txt" } }
+            }
+        });
+
+        var path = files.Count > 0 ? files[0].Path.LocalPath : null;
+        if (string.IsNullOrEmpty(path)) return;
+
+        IReadOnlyDictionary<string, string> set;
+        try
+        {
+            set = ScriptSetService.Parse(File.ReadAllBytes(path));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"Reliquary: script-set load failed for {UnifiedLogger.SanitizePath(path)}: {ex.Message}");
+            UpdateStatus($"Could not load script set: {ex.Message}");
+            return;
+        }
+
+        // Snapshot the current 13 slots so the whole apply is a single undo step.
+        var before = _placeable.Scripts.ToDictionary(s => s.EventName, s => s.ResRef);
+        var slots = _placeable.Scripts;
+
+        _undo.Execute(new RelayUndoableCommand(
+            () => { ScriptSetService.Apply(slots, set); },
+            () => { ScriptSetService.Apply(slots, before); },
+            "load script set"));
+
+        UpdateStatus($"Loaded script set from {Path.GetFileName(path)}");
     }
 
     // --- Conversation (cross-tool dispatch to Parley, Sprint 7 #2297) ---

@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Docs] - 2026-06-06
+**Branch**: `reliquary/issue-2367` | **PR**: #2371
+
+### Bootstrap: require New-resource flow + audit gaps (post-Reliquary audit)
+
+- `NEW_TOOL_BOOTSTRAP.md`: added a Day-1 requirement that every tool ship a `File → New` flow (Save-As-copy is not a substitute), plus verifiable Post-Implementation Audit rows for New-resource, Recent Files end-to-end, and no-dead-controls — gaps a 12/12 uniformity audit missed on Reliquary.
+- Reliquary `CLAUDE.md`: corrected stale Status (all 7 sprints done, v0.1.0-alpha) and linked open follow-ups (#2367–#2370, #2354, #2363).
+
+---
+
 ## [IntegrationTests 0.1.0-alpha] - 2026-06-06
 **Branch**: `radoub/sprint/flaui-coverage` | **PR**: #2365
 

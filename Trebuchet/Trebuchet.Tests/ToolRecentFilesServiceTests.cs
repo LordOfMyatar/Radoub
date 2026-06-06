@@ -17,6 +17,7 @@ public class ToolRecentFilesServiceTests
     [InlineData("Manifest", "/fake/radoub/Manifest/ManifestSettings.json")]
     [InlineData("Fence", "/fake/radoub/Fence/FenceSettings.json")]
     [InlineData("Relique", "/fake/radoub/Relique/ReliqueSettings.json")]
+    [InlineData("Reliquary", "/fake/radoub/Reliquary/ReliquarySettings.json")]
     public void GetSettingsPath_KnownTool_ReturnsExpectedPath(string toolName, string expectedSuffix)
     {
         var actual = ToolRecentFilesService.GetSettingsPathFor(FakeRadoubDir, toolName);
@@ -32,6 +33,16 @@ public class ToolRecentFilesServiceTests
         // Regression: #2247 - "Relique" case was missing from the switch,
         // causing GetRecentFiles("Relique") to return an empty list always.
         var path = ToolRecentFilesService.GetSettingsPathFor(FakeRadoubDir, "Relique");
+
+        Assert.NotNull(path);
+    }
+
+    [Fact]
+    public void GetSettingsPath_Reliquary_IsNotNull()
+    {
+        // #2368 - same regression shape as #2247: Reliquary shipped without an MRU
+        // registration, so its tool-card dropdown was permanently empty.
+        var path = ToolRecentFilesService.GetSettingsPathFor(FakeRadoubDir, "Reliquary");
 
         Assert.NotNull(path);
     }

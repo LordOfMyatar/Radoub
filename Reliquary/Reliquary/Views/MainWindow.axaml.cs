@@ -47,6 +47,7 @@ public partial class MainWindow : Window
         WireEditor();
         WireServices();
         WireInventory();
+        PopulateRecentFiles(); // show persisted MRU at launch (#2368)
 
         // Tunnel so F4 reaches us before a focused child (ComboBox etc.) can consume it.
         AddHandler(KeyDownEvent, OnWindowKeyDownTunnel, Avalonia.Interactivity.RoutingStrategies.Tunnel);
@@ -100,6 +101,11 @@ public partial class MainWindow : Window
                     OnSaveAsClick(sender, e);
                 else
                     OnSaveClick(sender, e);
+                e.Handled = true;
+                break;
+            case Key.N:
+                if (e.KeyModifiers.HasFlag(KeyModifiers.Shift)) break;
+                OnNewClick(sender, e);
                 e.Handled = true;
                 break;
             case Key.O:
