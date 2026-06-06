@@ -50,6 +50,29 @@ public class ScriptSetServiceTests
     }
 
     [Fact]
+    public void Serialize_WritesPlainTextKeyValueLines()
+    {
+        var vm = MakePlaceable();
+        SetSlot(vm, "OnOpen", "chest_open");
+
+        var text = System.Text.Encoding.UTF8.GetString(ScriptSetService.Serialize(vm.Scripts));
+
+        Assert.Contains("OnOpen=chest_open", text);
+        Assert.DoesNotContain("{", text); // not JSON
+    }
+
+    [Fact]
+    public void Parse_ToleratesBlankLinesAndComments()
+    {
+        var text = "# placeable script set\n\nOnOpen=chest_open\n  \nOnClosed = chest_close \n";
+        var map = ScriptSetService.Parse(System.Text.Encoding.UTF8.GetBytes(text));
+
+        Assert.Equal(2, map.Count);
+        Assert.Equal("chest_open", map["OnOpen"]);
+        Assert.Equal("chest_close", map["OnClosed"]); // trims whitespace around key + value
+    }
+
+    [Fact]
     public void Apply_IgnoresUnknownEventNames()
     {
         var target = MakePlaceable();

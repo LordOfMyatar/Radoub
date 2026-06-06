@@ -374,11 +374,11 @@ public partial class MainWindow
         var file = await StorageProvider.SaveFilePickerAsync(new Avalonia.Platform.Storage.FilePickerSaveOptions
         {
             Title = "Save Script Set",
-            DefaultExtension = "json",
-            SuggestedFileName = "placeable-scripts.json",
+            DefaultExtension = "txt",
+            SuggestedFileName = "placeable-scripts.txt",
             FileTypeChoices = new[]
             {
-                new Avalonia.Platform.Storage.FilePickerFileType("Script Set") { Patterns = new[] { "*.json" } }
+                new Avalonia.Platform.Storage.FilePickerFileType("Script Set") { Patterns = new[] { "*.txt" } }
             }
         });
 
@@ -412,7 +412,7 @@ public partial class MainWindow
             AllowMultiple = false,
             FileTypeFilter = new[]
             {
-                new Avalonia.Platform.Storage.FilePickerFileType("Script Set") { Patterns = new[] { "*.json" } }
+                new Avalonia.Platform.Storage.FilePickerFileType("Script Set") { Patterns = new[] { "*.txt" } }
             }
         });
 
