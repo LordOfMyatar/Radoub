@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 
 ---
 
+## [0.5.0-alpha] - 2026-06-06
+**Branch**: `radoub/sprint/flaui-coverage` | **PR**: #TBD
+
+### FlaUI coverage beyond smoke (#2304)
+
+- Verified bootstrap FlaUI infra and extended Reliquary UI tests past launch/close. See root [CHANGELOG](../CHANGELOG.md) sprint entry.
+
+---
+
 ## [0.4.0-alpha] - 2026-06-06
 **Branch**: `reliquary/issue-2297` | **PR**: #2364
 

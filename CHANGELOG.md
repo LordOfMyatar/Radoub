@@ -8,6 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [IntegrationTests 0.1.0-alpha] - 2026-06-06
+**Branch**: `radoub/sprint/flaui-coverage` | **PR**: #TBD
+
+### Sprint: FlaUI depth + test reliability (#2361, #2360, #2168, #2304, #2303)
+
+- Settings-bool persistence round-trip coverage — Parley (19 bools), Quartermaster, Trebuchet, RadoubSettings (#2361).
+- UI palette/picker filter coverage — ItemFilterPanel, SearchBar, DialogBrowserPanel, shared picker match helper (#2360).
+- Relique FlaUI tests — smoke + ItemBrowserPanel + deeper interaction coverage (#2168, closes #2303).
+- Reliquary FlaUI tests — verified bootstrap infra and extended beyond smoke (#2304).
+- FlaUI reliability hardening — permanent fix for the "doesn't pass on first run" flake (launch/focus/serialization).
+
+---
+
 ## [Radoub.UI 0.1.70-alpha] - 2026-06-06
 **Branch**: `reliquary/issue-2297` | **PR**: #2364
 

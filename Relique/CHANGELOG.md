@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.22-alpha] - 2026-06-06
+**Branch**: `radoub/sprint/flaui-coverage` | **PR**: #TBD
+
+### FlaUI integration tests (#2168, closes #2303)
+
+- Added Relique FlaUI tests (smoke + ItemBrowserPanel + deeper coverage). See root [CHANGELOG](../CHANGELOG.md) sprint entry.
+
+---
+
 ## [0.10.21-alpha] - 2026-06-04
 **Branch**: `trebuchet/sprint/compile-marlinspike-scope` | **PR**: #2345
 
