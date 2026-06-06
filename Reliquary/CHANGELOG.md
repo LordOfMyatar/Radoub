@@ -6,6 +6,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 
 ---
 
+## [0.3.0-alpha] - 2026-06-06
+**Branch**: `reliquary/issue-2296` | **PR**: #2358
+
+### Sprint 6: Text + Inventory + browser metadata
+
+- TextPanel: Description (TLK) + builder Comments, token insertion, spell-check.
+- InventoryPanel (when Has Inventory): backpack list + UTI palette + read-only resolved details, undoable add/remove. (UTP stores only item ResRef + position, so no per-instance stack/charges editor.)
+- Browser metadata indexing (UTP tag/name) with background pass and save notifier; lists module .utp plus base-game/HAK, with read-only preview of archive placeables.
+- Document dirty-tracking + Save / Save As (Ctrl+S / Ctrl+Shift+S) with save-on-close/switch prompts; Save As copies a base-game placeable into the module to edit.
+- Keyboard shortcuts (Ctrl+S/Z/Y/O, F4 to toggle the browser).
+
+---
+
 ## [0.2.0-alpha] - 2026-06-05
 **Branch**: `reliquary/issue-2295` | **PR**: #2352
 

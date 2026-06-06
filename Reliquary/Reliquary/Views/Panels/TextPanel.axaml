@@ -2,16 +2,48 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="200"
+             xmlns:ctrl="clr-namespace:Radoub.UI.Controls;assembly=Radoub.UI"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="320"
              x:Class="PlaceableEditor.Views.Panels.TextPanel">
-    <Border Padding="20" Background="{DynamicResource ThemeBackground}">
-        <StackPanel Spacing="8">
-            <TextBlock Text="Text"
+    <Border Padding="16" Background="{DynamicResource ThemeBackground}"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+            BorderThickness="1" CornerRadius="4">
+        <Grid RowDefinitions="Auto,Auto,*,Auto,Auto">
+            <TextBlock Grid.Row="0" Text="Text"
                        FontWeight="Bold"
-                       FontSize="{DynamicResource FontSizeMedium}"/>
-            <TextBlock Text="Description and builder comments land in Sprint 6."
-                       TextWrapping="Wrap"
+                       FontSize="{DynamicResource FontSizeMedium}"
+                       Margin="0,0,0,10"/>
+
+            <!-- Description: localized (TLK), shown in-game on examine. Token insertion via
+                 right-click, spell-checked via Radoub.Dictionary (design §5.3). -->
+            <TextBlock Grid.Row="1" Text="Description (shown in-game on examine)"
+                       Margin="0,0,0,4"
                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-        </StackPanel>
+            <ctrl:SpellCheckTextBox Grid.Row="2"
+                                    x:Name="DescriptionTextBox"
+                                    Text="{Binding Description, Mode=TwoWay}"
+                                    IsSpellCheckEnabled="True"
+                                    AcceptsReturn="True"
+                                    TextWrapping="Wrap"
+                                    MinHeight="120"
+                                    VerticalContentAlignment="Top"
+                                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                    AutomationProperties.AutomationId="Reliquary_Text_Description"/>
+
+            <!-- Comments: plain string, builder-only, never shown to the player. -->
+            <TextBlock Grid.Row="3" Text="Comments (builder notes, never shown to player)"
+                       Margin="0,12,0,4"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+            <ctrl:SpellCheckTextBox Grid.Row="4"
+                                    x:Name="CommentTextBox"
+                                    Text="{Binding Comment, Mode=TwoWay}"
+                                    IsSpellCheckEnabled="True"
+                                    AcceptsReturn="True"
+                                    TextWrapping="Wrap"
+                                    MinHeight="80"
+                                    VerticalContentAlignment="Top"
+                                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                    AutomationProperties.AutomationId="Reliquary_Text_Comment"/>
+        </Grid>
     </Border>
 </UserControl>

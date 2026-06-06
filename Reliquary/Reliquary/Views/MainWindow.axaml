@@ -7,13 +7,15 @@
         x:Class="PlaceableEditor.Views.MainWindow"
         Title="Reliquary"
         Width="1000" Height="700"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        KeyDown="OnWindowKeyDown">
 
     <DockPanel>
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
-                <MenuItem Header="_Open..." Click="OnOpenClick"/>
+                <MenuItem Header="_Open..." Click="OnOpenClick" InputGesture="Ctrl+O"/>
                 <MenuItem Header="_Save" Click="OnSaveClick" InputGesture="Ctrl+S"/>
+                <MenuItem Header="Save _As..." Click="OnSaveAsClick" InputGesture="Ctrl+Shift+S"/>
                 <Separator/>
                 <MenuItem Header="E_xit" Click="OnExitClick"/>
             </MenuItem>
@@ -34,18 +36,18 @@
                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
         </Border>
 
-        <Grid ColumnDefinitions="Auto,Auto,*">
+        <Grid x:Name="OuterContentGrid" ColumnDefinitions="Auto,Auto,*">
             <panels:PlaceableBrowserPanel x:Name="PlaceableBrowserPanel"
                                           Grid.Column="0"
                                           Width="260"/>
-            <GridSplitter Grid.Column="1" Width="4"
+            <GridSplitter x:Name="BrowserSplitter" Grid.Column="1" Width="4"
                           Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
             <ScrollViewer Grid.Column="2">
                 <StackPanel Margin="8" Spacing="8">
                     <panels:IdentityCombatPanel x:Name="IdentityCombatPanel"/>
                     <panels:BehaviorPanel x:Name="BehaviorPanel"/>
-                    <panels:TextPanel/>
-                    <panels:InventoryPanel/>
+                    <panels:TextPanel x:Name="TextPanel"/>
+                    <panels:InventoryPanel x:Name="InventoryPanel"/>
                 </StackPanel>
             </ScrollViewer>
         </Grid>

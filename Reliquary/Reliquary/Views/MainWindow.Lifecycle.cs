@@ -23,21 +23,56 @@ public partial class MainWindow
         browser.FileSelected += OnBrowserFileSelected;
         browser.FileDeleted += OnBrowserFileDeleted;
 
-        // Point the browser at the current module so it lists its .utp files.
-        var modulePath = RadoubSettings.Instance.CurrentModulePath;
-        if (!string.IsNullOrEmpty(modulePath))
-        {
-            var moduleDir = Path.GetDirectoryName(modulePath);
-            if (!string.IsNullOrEmpty(moduleDir) && Directory.Exists(moduleDir))
-                browser.ModulePath = moduleDir;
-        }
+        // The base panel only flips its ◀/▶ button + raises CollapsedChanged; the host owns the
+        // actual collapse by zeroing the browser's width and hiding the splitter (QM/Relique pattern).
+        browser.CollapsedChanged += (_, collapsed) => SetBrowserCollapsed(collapsed);
+
+        // Point the browser at the current module's working directory so it lists its .utp files.
+        // CurrentModulePath is already the module dir (or a .mod file) — resolve, don't take the
+        // parent (that pointed at the modules/ folder, which has no loose .utp).
+        var moduleDir = GetModuleWorkingDirectory();
+        if (!string.IsNullOrEmpty(moduleDir))
+            browser.ModulePath = moduleDir;
     }
 
-    private void OnBrowserFileSelected(object? sender, FileSelectedEventArgs e)
+    /// <summary>Collapse/expand the browser sidebar by zeroing its width and hiding the splitter.</summary>
+    private void SetBrowserCollapsed(bool collapsed)
     {
+        var browser = this.FindControl<PlaceableBrowserPanel>("PlaceableBrowserPanel");
+        var splitter = this.FindControl<GridSplitter>("BrowserSplitter");
+        if (browser != null) browser.Width = collapsed ? 0 : 260;
+        if (splitter != null) splitter.IsVisible = !collapsed;
+    }
+
+    private async void OnBrowserFileSelected(object? sender, FileSelectedEventArgs e)
+    {
+        var browser = this.FindControl<PlaceableBrowserPanel>("PlaceableBrowserPanel");
+        var isArchive = e.Entry is PlaceableBrowserEntry { IsFromBif: true } || e.Entry.IsFromHak;
+
+        // Archive (HAK/BIF) entries have no file path — load a read-only preview.
+        if (isArchive)
+        {
+            if (!await ConfirmDiscardAsync()) return;
+            var bytes = browser?.ExtractArchiveBytes(e.Entry);
+            if (bytes == null)
+            {
+                UpdateStatus($"Could not extract {e.Entry.Name} from archives.");
+                return;
+            }
+            LoadPlaceableFromBytes(bytes, e.Entry.Name);
+            if (browser != null) browser.CurrentFilePath = null;
+            return;
+        }
+
         if (string.IsNullOrEmpty(e.Entry.FilePath)) return;
 
-        var browser = this.FindControl<PlaceableBrowserPanel>("PlaceableBrowserPanel");
+        // Already open — nothing to discard or reload.
+        if (string.Equals(_currentFilePath, e.Entry.FilePath, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        // Prompt before discarding unsaved edits on the current placeable.
+        if (!await ConfirmDiscardAsync()) return;
+
         if (browser != null)
             browser.CurrentFilePath = e.Entry.FilePath;
 

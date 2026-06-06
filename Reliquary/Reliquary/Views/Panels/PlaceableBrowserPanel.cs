@@ -131,6 +131,10 @@ public class PlaceableBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
     protected override Task<byte[]?> ExtractArchiveBytesAsync(FileBrowserEntry entry)
         => Task.FromResult(ExtractPlaceableArchiveBytes(entry, GameDataService));
 
+    /// <summary>Extract UTP bytes for a HAK/BIF entry so the host can open it read-only. Null on miss.</summary>
+    public byte[]? ExtractArchiveBytes(FileBrowserEntry entry)
+        => ExtractPlaceableArchiveBytes(entry, GameDataService);
+
     private static byte[]? ExtractPlaceableArchiveBytes(FileBrowserEntry entry, IGameDataService? gameDataService)
     {
         if (entry is not PlaceableBrowserEntry pe) return null;
@@ -152,6 +156,7 @@ public class PlaceableBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
         IReadOnlyList<FileBrowserEntry> entries,
         CancellationToken cancellationToken)
     {
+        var paletteLookup = BuildPaletteLookup();
         int processed = 0;
         foreach (var entry in entries)
         {
@@ -160,14 +165,21 @@ public class PlaceableBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
 
             try
             {
-                var bytes = await ReadEntryBytesAsync(entry, cancellationToken);
-                if (bytes != null)
+                if (TryFillFromCache(entry, paletteLookup))
                 {
-                    var (tag, name) = ReadUtpMetadata(bytes);
-                    entry.Tag = tag;
-                    entry.DisplayLabel = name;
+                    entry.MetadataLoaded = true;
                 }
-                entry.MetadataLoaded = true;
+                else
+                {
+                    var bytes = await ReadEntryBytesAsync(entry, cancellationToken);
+                    if (bytes != null)
+                    {
+                        var (tag, name) = ReadUtpMetadata(bytes);
+                        entry.Tag = tag;
+                        entry.DisplayLabel = name;
+                    }
+                    entry.MetadataLoaded = true;
+                }
             }
             catch (Exception ex)
             {
@@ -180,6 +192,43 @@ public class PlaceableBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
             if (processed % 50 == 0)
                 await Task.Yield();
         }
+    }
+
+    /// <summary>
+    /// Build a ResRef → cache-item lookup from the active palette cache. Returns
+    /// an empty dictionary when no cache is wired or the cache is empty.
+    /// First-write-wins preserves Module > Override > HAK > BIF insertion priority.
+    /// </summary>
+    private Dictionary<string, SharedPaletteCacheItem> BuildPaletteLookup()
+    {
+        if (PaletteCache == null) return new Dictionary<string, SharedPaletteCacheItem>();
+
+        var items = PaletteCache.GetAggregatedCache();
+        if (items == null || items.Count == 0)
+            return new Dictionary<string, SharedPaletteCacheItem>();
+
+        var dict = new Dictionary<string, SharedPaletteCacheItem>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in items)
+            dict.TryAdd(item.ResRef, item);
+        return dict;
+    }
+
+    /// <summary>
+    /// Pure-logic test seam: try to populate Tag + DisplayLabel from a cache
+    /// lookup. Returns true on hit, false on miss. Lookup is keyed by ResRef
+    /// (case-insensitive — caller responsible for using OrdinalIgnoreCase).
+    /// Mirrors ItemBrowserPanel.TryFillFromCache for parity.
+    /// </summary>
+    internal static bool TryFillFromCache(
+        FileBrowserEntry entry,
+        Dictionary<string, SharedPaletteCacheItem> lookup)
+    {
+        if (lookup.Count == 0) return false;
+        if (!lookup.TryGetValue(entry.Name, out var item)) return false;
+
+        entry.Tag = item.Tag ?? string.Empty;
+        entry.DisplayLabel = item.DisplayName ?? string.Empty;
+        return true;
     }
 
     private async Task<byte[]?> ReadEntryBytesAsync(FileBrowserEntry entry, CancellationToken cancellationToken)

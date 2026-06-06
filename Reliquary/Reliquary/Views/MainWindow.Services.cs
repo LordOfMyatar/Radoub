@@ -47,6 +47,7 @@ public partial class MainWindow
                 _appearances = new PlaceableAppearanceService(_gameData);
                 _modelLoader = new PlaceableModelLoader(_gameData, _appearances);
                 _textureService = new TextureService(_gameData);
+                _itemFactory = new Radoub.UI.ViewModels.ItemViewModelFactory(_gameData);
                 UnifiedLogger.LogApplication(LogLevel.INFO, "Reliquary: GameDataService configured.");
             }
             else
@@ -74,6 +75,11 @@ public partial class MainWindow
     {
         var modulePath = RadoubSettings.Instance.CurrentModulePath;
         if (string.IsNullOrEmpty(modulePath)) return null;
+
+        // Settings store paths with a leading ~ for the user profile; expand before any
+        // filesystem check (Directory.Exists does not understand ~ on Windows).
+        modulePath = Radoub.Formats.Common.PathHelper.ExpandPath(modulePath);
+
         if (System.IO.Directory.Exists(modulePath)) return modulePath;
 
         if (System.IO.File.Exists(modulePath) &&

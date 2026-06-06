@@ -2,16 +2,89 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="200"
-             x:Class="PlaceableEditor.Views.Panels.InventoryPanel">
-    <Border Padding="20" Background="{DynamicResource ThemeBackground}">
-        <StackPanel Spacing="8">
-            <TextBlock Text="Inventory"
+             xmlns:controls="using:Radoub.UI.Controls"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="420"
+             x:Class="PlaceableEditor.Views.Panels.InventoryPanel"
+             x:Name="InventoryPanelInstance"
+             IsVisible="False">
+    <Border Padding="16" Background="{DynamicResource ThemeBackground}"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+            BorderThickness="1" CornerRadius="4">
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Top" Text="Inventory"
                        FontWeight="Bold"
-                       FontSize="{DynamicResource FontSizeMedium}"/>
-            <TextBlock Text="UTI palette and placeable contents (when Has Inventory is set) land in Sprint 6."
-                       TextWrapping="Wrap"
-                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-        </StackPanel>
+                       FontSize="{DynamicResource FontSizeMedium}"
+                       Margin="0,0,0,10"/>
+
+            <!-- Backpack LEFT | UTI palette MIDDLE | details RIGHT (design §5.4, 3 splitters).
+                 Adventurer-backpack model: flat list, no body slots. -->
+            <Grid x:Name="InventoryGrid" MinHeight="320">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="300" MinWidth="200"/>
+                    <ColumnDefinition Width="5"/>
+                    <ColumnDefinition Width="*" MinWidth="240"/>
+                    <ColumnDefinition Width="5"/>
+                    <ColumnDefinition Width="260" MinWidth="200"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Placeable Contents (backpack) -->
+                <Border Grid.Column="0"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                        BorderThickness="1" Padding="5">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="Placeable Contents"
+                                   FontWeight="Bold" Margin="0,0,0,5"/>
+                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
+                                    Spacing="5" Margin="0,5,0,0">
+                            <Button Content="Remove" Click="OnRemoveClick"
+                                    IsEnabled="{Binding HasBackpackSelection, ElementName=InventoryPanelInstance}"
+                                    Padding="8,4"
+                                    AutomationProperties.AutomationId="Reliquary_Button_RemoveItem"/>
+                            <TextBlock x:Name="ContentsCount" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        </StackPanel>
+                        <controls:ItemListView x:Name="BackpackList"
+                                               ContextKey="ReliquaryBackpack"
+                                               AutomationProperties.AutomationId="Reliquary_BackpackList"/>
+                    </DockPanel>
+                </Border>
+
+                <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
+                              Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+
+                <!-- UTI Palette -->
+                <Border Grid.Column="2"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                        BorderThickness="1" Padding="5">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="UTI Palette"
+                                   FontWeight="Bold" Margin="0,0,0,5"/>
+                        <controls:ItemFilterPanel x:Name="PaletteFilter"
+                                                  DockPanel.Dock="Top"
+                                                  ContextKey="ReliquaryPalette"
+                                                  Margin="0,0,0,5"
+                                                  AutomationProperties.AutomationId="Reliquary_PaletteFilter"/>
+                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
+                                    Spacing="5" Margin="0,5,0,0">
+                            <Button Content="Add Selected" Click="OnAddSelectedClick"
+                                    IsEnabled="{Binding HasPaletteSelection, ElementName=InventoryPanelInstance}"
+                                    Padding="8,4"
+                                    AutomationProperties.AutomationId="Reliquary_Button_AddItem"/>
+                        </StackPanel>
+                        <controls:ItemListView x:Name="PaletteList"
+                                               ContextKey="ReliquaryPalette"
+                                               AutomationProperties.AutomationId="Reliquary_PaletteList"/>
+                    </DockPanel>
+                </Border>
+
+                <GridSplitter Grid.Column="3" Width="5" HorizontalAlignment="Stretch"
+                              Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+
+                <!-- Item Details (read-only resolved UTI values; UTP stores no per-instance fields) -->
+                <controls:ItemDetailsPanel Grid.Column="4"
+                                           x:Name="ItemDetailsView"
+                                           AutomationProperties.AutomationId="Reliquary_ItemDetails"/>
+            </Grid>
+        </DockPanel>
     </Border>
 </UserControl>
