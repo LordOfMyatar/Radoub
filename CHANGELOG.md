@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.Formats 0.2.64-alpha] - 2026-06-05
+**Branch**: `reliquary/issue-2294` | **PR**: #2349
+
+### Add ReliquaryPath to RadoubSettings (#2294)
+
+- New `ReliquaryPath` cross-tool discovery property so Trebuchet can launch the Reliquary placeable editor (mirrors the existing per-tool path properties).
+
+---
+
 ## [Radoub 0.1.0-deps] - 2026-06-03
 **Branch**: `radoub/issue-2332` | **PR**: #2342
 

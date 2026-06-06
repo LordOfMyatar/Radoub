@@ -106,6 +106,8 @@ public partial class RadoubSettings
                     {
                         SaveSettings();
                     }
+
+                    _reliquaryPath = PathHelper.ExpandPath(data.ReliquaryPath ?? "");
                 }
             }
         }
@@ -156,6 +158,7 @@ public partial class RadoubSettings
                 FencePath = PathHelper.ContractPath(_fencePath),
                 TrebuchetPath = PathHelper.ContractPath(_trebuchetPath),
                 ReliquePath = PathHelper.ContractPath(_reliquePath),
+                ReliquaryPath = PathHelper.ContractPath(_reliquaryPath),
 
                 // Backup settings
                 BackupRetentionDays = _backupRetentionDays,
@@ -220,6 +223,7 @@ public partial class RadoubSettings
         public string? FencePath { get; set; }
         public string? TrebuchetPath { get; set; }
         public string? ReliquePath { get; set; }
+        public string? ReliquaryPath { get; set; }
 
         /// <summary>
         /// Legacy key — reads old "ItemEditorPath" from JSON and migrates to ReliquePath.

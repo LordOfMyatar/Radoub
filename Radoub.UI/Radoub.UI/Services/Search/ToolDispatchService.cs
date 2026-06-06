@@ -37,6 +37,7 @@ public class ToolDispatchService
         [ResourceTypes.Uti] = new DispatchableToolInfo { ToolName = "Relique", AssemblyName = "Relique" },
         [ResourceTypes.Utm] = new DispatchableToolInfo { ToolName = "Fence", AssemblyName = "Fence" },
         [ResourceTypes.Jrl] = new DispatchableToolInfo { ToolName = "Manifest", AssemblyName = "Manifest" },
+        [ResourceTypes.Utp] = new DispatchableToolInfo { ToolName = "Reliquary", AssemblyName = "Reliquary" },
     };
 
     /// <summary>

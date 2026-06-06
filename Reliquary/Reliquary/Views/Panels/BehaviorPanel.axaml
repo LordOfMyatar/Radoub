@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="200"
+             x:Class="PlaceableEditor.Views.Panels.BehaviorPanel">
+    <Border Padding="20" Background="{DynamicResource ThemeBackground}">
+        <StackPanel Spacing="8">
+            <TextBlock Text="Behavior"
+                       FontWeight="Bold"
+                       FontSize="{DynamicResource FontSizeMedium}"/>
+            <TextBlock Text="13 event scripts, advanced settings, and the variables grid land in Sprint 5."
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+        </StackPanel>
+    </Border>
+</UserControl>
