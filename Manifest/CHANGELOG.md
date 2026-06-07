@@ -9,9 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.15.10-alpha] - 2026-06-07
 **Branch**: `fence/issue-2383` | **PR**: #2410
 
-### Fix: Atomic journal save + duplicate-ID validation (#2253)
+### Fix: Atomic journal save + duplicate-ID handling (#2253)
 
-- Journal save now uses an atomic write. Duplicate entry-ID validation added. Bundled in Fence sprint #2383; Undo/Redo split to Epic #2231.
+- Journal save now uses an atomic write, with a once-per-session backup to `~/Radoub/Backups/`. Duplicate entry IDs within a category bump to the next free ID instead of being accepted. Bundled in Fence sprint #2383; Undo/Redo split to Epic #2231.
 
 ---
 
