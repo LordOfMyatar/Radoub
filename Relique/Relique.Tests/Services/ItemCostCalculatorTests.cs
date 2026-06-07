@@ -42,6 +42,17 @@ public class ItemCostCalculatorTests
         mock.Set2DAValue("baseitems", 41, "ItemMultiplier", "1");
         mock.Set2DAValue("baseitems", 41, "ModelType", "0");
 
+        // 1 = longsword (BaseCost 15), 0 = dagger (BaseCost 10) — verified against the toolset.
+        // Weapons have ItemMultiplier 2 (the toolset doubles the bracket for them).
+        mock.Set2DAValue("baseitems", 1, "BaseCost", "15");
+        mock.Set2DAValue("baseitems", 1, "Stacking", "1");
+        mock.Set2DAValue("baseitems", 1, "ItemMultiplier", "2");
+        mock.Set2DAValue("baseitems", 1, "ModelType", "0");
+        mock.Set2DAValue("baseitems", 0, "BaseCost", "10");
+        mock.Set2DAValue("baseitems", 0, "Stacking", "1");
+        mock.Set2DAValue("baseitems", 0, "ItemMultiplier", "2");
+        mock.Set2DAValue("baseitems", 0, "ModelType", "0");
+
         // armor.2da: row = base AC, COST column
         mock.Set2DAValue("armor", 0, "COST", "0");
         mock.Set2DAValue("armor", 5, "COST", "400");   // AC 5 armor base cost 400
@@ -67,11 +78,30 @@ public class ItemCostCalculatorTests
         mock.Set2DAValue("itempropdef", 30, "Cost", "0");
         mock.Set2DAValue("itempropdef", 30, "SubTypeResRef", "****");
         mock.Set2DAValue("itempropdef", 30, "CostTableResRef", "5");
+        //  1 = AC Bonus: nonzero PropertyCost (0.9) acts as a MULTIPLIER on CostValue (NWN:EE),
+        //      not an additive term. Matches the real studded-leather +2 AC case.
+        mock.Set2DAValue("itempropdef", 1, "Cost", "0.9");
+        mock.Set2DAValue("itempropdef", 1, "SubTypeResRef", "****");
+        mock.Set2DAValue("itempropdef", 1, "CostTableResRef", "9");
+        // 16 = Damage Bonus: real PropertyCost 3.5 multiplier, CostTable 4 (verified vs toolset).
+        mock.Set2DAValue("itempropdef", 16, "Cost", "3.5");
+        mock.Set2DAValue("itempropdef", 16, "SubTypeResRef", "****");
+        mock.Set2DAValue("itempropdef", 16, "CostTableResRef", "4");
 
         // iprp_costtable.2da: index → cost 2da name
         mock.Set2DAValue("iprp_costtable", 2, "Name", "iprp_bonuscost");
         mock.Set2DAValue("iprp_costtable", 3, "Name", "iprp_spellcost");
+        mock.Set2DAValue("iprp_costtable", 4, "Name", "iprp_damagecost");
         mock.Set2DAValue("iprp_costtable", 5, "Name", "iprp_negcost");
+        mock.Set2DAValue("iprp_costtable", 9, "Name", "iprp_armorcost");
+
+        // iprp_armorcost.2da: AC bonus magnitudes
+        mock.Set2DAValue("iprp_armorcost", 2, "Cost", "1.9");  // +2 AC → 1.9
+
+        // iprp_bonuscost.2da: enhancement +5 → 4.9, +2 → 1.9 (verified vs toolset)
+        mock.Set2DAValue("iprp_bonuscost", 5, "Cost", "4.9");
+        // iprp_damagecost.2da: damage value 5 → magnitude 1.0
+        mock.Set2DAValue("iprp_damagecost", 5, "Cost", "1");
 
         // iprp_bonuscost.2da: CostValue row → Cost column
         mock.Set2DAValue("iprp_bonuscost", 1, "Cost", "1");   // +1 → cost 1
@@ -194,6 +224,48 @@ public class ItemCostCalculatorTests
         // [10 + 1000*(0) + 20] * 1 * 1 = 30
         var uti = Uti(40, 0, Prop(15, costValue: 2, costTable: 3, subtype: 0));
         Assert.Equal(30u, calc.Calculate(uti));
+    }
+
+    [Fact]
+    public void Calculate_AcBonus_PropertyCostMultipliesCostValue_MatchesAuroraToolset()
+    {
+        var mock = CreateMock();
+        // Reproduce the real studded-leather +2 AC case verified against the Aurora toolset:
+        // armor base item 16, torso → AC 3 → armor.2da[3].COST = 15.
+        mock.Set2DAValue("parts_chest", 4, "ACBONUS", "3");
+        mock.Set2DAValue("armor", 3, "COST", "15");
+        var calc = new ItemCostCalculator(mock);
+
+        var uti = Uti(16, 0, Prop(1, costValue: 2, costTable: 9));
+        uti.ArmorParts["Torso"] = 4;
+
+        // PropertyCost 0.9 × CostValue 1.9 = 1.71 → [15 + 1000*(1.71^2)] = 15 + 2924 = 2939.
+        Assert.Equal(2939u, calc.Calculate(uti));
+    }
+
+    [Fact]
+    public void Calculate_WeaponEnhancement5_MatchesAuroraToolset()
+    {
+        var calc = new ItemCostCalculator(CreateMock());
+        // Longsword (base item 1, BaseCost 15) + Enhancement +5 (prop 6, costVal 5 → 4.9).
+        // PropertyCost 1 × 4.9 = 4.9 → [15 + 1000*4.9²] = 15 + 24010 = 48050 (toolset-verified).
+        var uti = Uti(1, 0, Prop(6, costValue: 5, costTable: 2));
+        Assert.Equal(48050u, calc.Calculate(uti));
+    }
+
+    [Fact]
+    public void Calculate_MultipleProperties_SumThenSquare_MatchesAuroraToolset()
+    {
+        var mock = CreateMock();
+        // Real enhancement +2 magnitude is 1.9 (the base mock uses round 2 elsewhere).
+        mock.Set2DAValue("iprp_bonuscost", 2, "Cost", "1.9");
+        var calc = new ItemCostCalculator(mock);
+        // Dagger (base item 0, BaseCost 10, ItemMultiplier 2) + Enhancement +2 (1×1.9=1.9)
+        // + Damage 5 (3.5×1.0=3.5). Mult = 5.4 → [10 + 1000*5.4²]*2 = 29170*2 = 58340 (toolset).
+        var uti = Uti(0, 0,
+            Prop(6, costValue: 2, costTable: 2),
+            Prop(16, costValue: 5, costTable: 4));
+        Assert.Equal(58340u, calc.Calculate(uti));
     }
 
     [Fact]

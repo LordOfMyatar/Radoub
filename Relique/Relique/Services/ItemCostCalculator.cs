@@ -78,7 +78,6 @@ public class ItemCostCalculator
             + spellTotal;
 
         double total = bracket * maxStack * baseMult + uti.AddCost;
-
         if (total < 0) total = 0;
         return (uint)Math.Round(total, MidpointRounding.AwayFromZero);
     }
@@ -98,15 +97,26 @@ public class ItemCostCalculator
     }
 
     /// <summary>
-    /// Per-property cost (non-spell) = PropertyCost + SubtypeCost + CostValue.
-    /// SubtypeCost only applies when PropertyCost is 0 (§4.4.2).
+    /// Per-property cost. The BioWare doc (§4.4.2) describes this additively
+    /// (PropertyCost + SubtypeCost + CostValue), but NWN:EE actually treats the
+    /// itempropdef.2da <c>Cost</c> column as a <b>multiplier</b> on the property's
+    /// magnitude, not an additive term. Verified against the Aurora toolset:
+    /// studded leather +2 AC → PropertyCost 0.9 × CostValue 1.9 = 1.71, and
+    /// 15 + 1000·1.71² = 2939 (matches the toolset; the additive reading gave 7855).
+    ///
+    /// Model: magnitude = CostValue (+ SubtypeCost only when there is no PropertyCost
+    /// multiplier); cost = PropertyCost × magnitude, treating a missing/zero
+    /// PropertyCost as a multiplier of 1 so magnitude-only properties still count.
     /// </summary>
     private double CalculatePropertyCost(ItemProperty prop)
     {
         double propertyCost = GetPropertyCost(prop.PropertyName);
-        double subtypeCost = propertyCost == 0 ? GetSubtypeCost(prop) : 0;
         double costValue = GetCostValue(prop);
-        return propertyCost + subtypeCost + costValue;
+        double subtypeCost = propertyCost == 0 ? GetSubtypeCost(prop) : 0;
+
+        double magnitude = costValue + subtypeCost;
+        double multiplier = propertyCost == 0 ? 1.0 : propertyCost;
+        return multiplier * magnitude;
     }
 
     /// <summary>
