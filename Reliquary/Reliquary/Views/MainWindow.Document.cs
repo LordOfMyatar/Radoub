@@ -31,6 +31,20 @@ public partial class MainWindow
         vm.PropertyChanged += (_, _) => MarkDirty();
     }
 
+    /// <summary>
+    /// Clear the loading guard only after pending UI events drain. Combo SelectionChanged from
+    /// populating the appearance/faction/category combos on load can dispatch on a later UI tick;
+    /// resetting <c>_isLoading</c> synchronously in the load finally lets those deferred events slip
+    /// past <see cref="MarkDirty"/> and mark a freshly-opened document dirty (#2416 follow-up). Post
+    /// the reset at Background priority so it runs after those events, which still see _isLoading=true.
+    /// </summary>
+    private void ScheduleLoadingReset()
+    {
+        Avalonia.Threading.Dispatcher.UIThread.Post(
+            () => _isLoading = false,
+            Avalonia.Threading.DispatcherPriority.Background);
+    }
+
     private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
     {
         if (!_isDirty) return;

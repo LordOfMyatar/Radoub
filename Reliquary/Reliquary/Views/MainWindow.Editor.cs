@@ -99,11 +99,11 @@ public partial class MainWindow
             UnifiedLogger.LogApplication(LogLevel.WARN,
                 $"Reliquary: failed to load {UnifiedLogger.SanitizePath(filePath)}: {ex.Message}");
             UpdateStatus($"Could not load {Path.GetFileName(filePath)}: {ex.Message}");
+            _isLoading = false; // error path: reset immediately, no deferred combo events to drain
+            return;
         }
-        finally
-        {
-            _isLoading = false;
-        }
+        // Defer the guard reset so deferred combo SelectionChanged events don't mark dirty (#2416 follow-up).
+        ScheduleLoadingReset();
     }
 
     /// <summary>
@@ -126,11 +126,10 @@ public partial class MainWindow
         {
             UnifiedLogger.LogApplication(LogLevel.WARN, $"Reliquary: failed to load archive {name}: {ex.Message}");
             UpdateStatus($"Could not load {name}: {ex.Message}");
+            _isLoading = false; // error path: reset immediately
+            return;
         }
-        finally
-        {
-            _isLoading = false;
-        }
+        ScheduleLoadingReset(); // defer so deferred combo events don't mark dirty (#2416 follow-up)
     }
 
     /// <summary>Bind a freshly-loaded placeable VM to all panels + reset undo/dirty. Caller sets _isLoading.</summary>
@@ -141,7 +140,14 @@ public partial class MainWindow
         var identity = this.FindControl<IdentityCombatPanel>("IdentityCombatPanel");
         var behavior = this.FindControl<BehaviorPanel>("BehaviorPanel");
         var text = this.FindControl<TextPanel>("TextPanel");
-        if (identity != null) identity.DataContext = _placeable;
+        if (identity != null)
+        {
+            identity.DataContext = _placeable;
+            // ResRef is read-only for an already-saved file (editing it desyncs the F4 row from
+            // disk; rename a saved file via the browser instead). Editable only for a new, unsaved
+            // placeable so the first Save names it. Tracked-rename flow is a separate follow-up.
+            identity.SetResRefLocked(!string.IsNullOrEmpty(_currentFilePath));
+        }
         if (text != null) text.DataContext = _placeable;
         if (behavior != null)
         {
@@ -218,6 +224,8 @@ public partial class MainWindow
         // The saved copy is now the editable document.
         _currentFilePath = path;
         _documentState.IsReadOnly = false;
+        // Now backed by a file → lock ResRef (rename goes through the browser, #2424).
+        this.FindControl<IdentityCombatPanel>("IdentityCombatPanel")?.SetResRefLocked(true);
         UpdateTitle();
         return true;
     }

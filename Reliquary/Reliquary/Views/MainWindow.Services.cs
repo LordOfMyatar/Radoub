@@ -138,7 +138,9 @@ public partial class MainWindow
 
     private void OnAppearanceChanged(object? sender, uint appearanceId)
     {
-        if (_placeable is null) return;
+        // Combo SelectionChanged can dispatch deferred (after load's _isLoading resets + the panel's
+        // own suppress flag clears), so guard here too — otherwise selecting on load marks dirty.
+        if (_isLoading || _placeable is null) return;
         // Route the appearance change through undo, then refresh the preview.
         _undo.Execute(new Radoub.UI.Undo.SetFieldCommand<uint>(
             () => _placeable.Appearance, v => _placeable.Appearance = v, appearanceId, "change appearance"));
@@ -159,7 +161,7 @@ public partial class MainWindow
     /// <summary>Route a faction pick through undo (host owns the repute.fac list + undo wrapping).</summary>
     private void OnFactionSelected(object? sender, uint factionId)
     {
-        if (_placeable is null) return;
+        if (_isLoading || _placeable is null) return;
         _undo.Execute(new Radoub.UI.Undo.SetFieldCommand<uint>(
             () => _placeable.Faction, v => _placeable.Faction = v, factionId, "change faction"));
     }
@@ -195,7 +197,7 @@ public partial class MainWindow
     /// <summary>Route a category pick through undo (host owns the .itp list + undo wrapping).</summary>
     private void OnPaletteCategorySelected(object? sender, byte paletteId)
     {
-        if (_placeable is null) return;
+        if (_isLoading || _placeable is null) return;
         _undo.Execute(new Radoub.UI.Undo.SetFieldCommand<byte>(
             () => _placeable.PaletteID, v => _placeable.PaletteID = v, paletteId, "change category"));
     }
