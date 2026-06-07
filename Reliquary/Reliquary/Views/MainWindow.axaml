@@ -44,7 +44,9 @@
                                           Grid.Column="0"/>
             <GridSplitter x:Name="BrowserSplitter" Grid.Column="1" Width="4"
                           Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
-            <ScrollViewer Grid.Column="2">
+            <ScrollViewer Grid.Column="2"
+                          AllowAutoHide="False"
+                          VerticalScrollBarVisibility="Visible">
                 <StackPanel Margin="8" Spacing="8">
                     <panels:IdentityCombatPanel x:Name="IdentityCombatPanel"/>
                     <panels:BehaviorPanel x:Name="BehaviorPanel"/>
