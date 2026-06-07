@@ -227,7 +227,14 @@ public partial class MainWindow
         if (_placeable is null) return false;
         try
         {
-            UtpWriter.Write(_placeable.WriteToUtp(), path);
+            var utp = _placeable.WriteToUtp();
+            // Backstop: never write a damageable placeable with HP 0 (Aurora divide-by-zero, #2417).
+            if (PlaceableEditor.Services.PlaceableDefaults.EnsureGameSafe(utp))
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    "Reliquary: backfilled HP on save (damageable placeable had HP 0) (#2417)");
+            }
+            UtpWriter.Write(utp, path);
             _documentState.ClearDirty();
             AddRecentFile(path);
 

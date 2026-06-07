@@ -62,6 +62,18 @@ public class PlaceableViewModelTests
     }
 
     [Fact]
+    public void NewPlaceable_SeedsGameSafeDefaults()
+    {
+        // A bare File → New placeable must not save with HP 0 (Aurora divide-by-zero, #2417).
+        var vm = PlaceableViewModel.NewPlaceable();
+
+        Assert.True(vm.Utp.HP > 0);
+        Assert.True(vm.Utp.CurrentHP > 0);
+        Assert.Equal((byte)5, vm.Utp.Hardness);
+        Assert.True(vm.Utp.Useable);
+    }
+
+    [Fact]
     public void SettingSameValue_DoesNotRaisePropertyChanged()
     {
         var vm = new PlaceableViewModel(MakeUtp());
