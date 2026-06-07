@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.15.10-alpha] - 2026-06-07
-**Branch**: `fence/issue-2383` | **PR**: #TBD
+**Branch**: `fence/issue-2383` | **PR**: #2410
 
 ### Fix: Atomic journal save + duplicate-ID validation (#2253)
 
