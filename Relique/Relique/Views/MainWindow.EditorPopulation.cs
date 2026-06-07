@@ -36,7 +36,6 @@ public partial class MainWindow
             _selectedPropertyType = null;
             _editingPropertyIndex = -1;
             AddPropertyButton.IsEnabled = false;
-            AddCheckedButton.IsEnabled = false;
             EditPropertyButton.IsEnabled = false;
             RemovePropertyButton.IsEnabled = false;
             ClearAllPropertiesButton.IsEnabled = false;
