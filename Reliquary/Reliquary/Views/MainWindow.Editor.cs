@@ -239,9 +239,10 @@ public partial class MainWindow
             _documentState.ClearDirty();
             AddRecentFile(path);
 
-            // Refresh the browser row's Tag/Name without a full reindex (design §5.5).
+            // Refresh the browser row's Tag/Name in place, or add+select the row if the saved file
+            // is new to the list (Save As of a New placeable). One shared helper handles both (#2413).
             var browser = this.FindControl<PlaceableBrowserPanel>("PlaceableBrowserPanel");
-            _ = Radoub.UI.Controls.BrowserSaveNotifier.NotifyAsync(browser, path);
+            _ = Radoub.UI.Controls.BrowserSaveNotifier.NotifyOrAddAsync(browser, path);
 
             UpdateStatus($"Saved {Path.GetFileName(path)}");
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Reliquary: saved {UnifiedLogger.SanitizePath(path)}");
