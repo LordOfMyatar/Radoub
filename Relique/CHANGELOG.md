@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.10.24-alpha] - 2026-06-07
-**Branch**: `relique/issue-2385` | **PR**: #TBD
+**Branch**: `relique/issue-2385` | **PR**: #2402
 
 ### Sprint: Cost, UX & SafeMode (#2385)
 
