@@ -4,10 +4,11 @@ namespace MerchantEditor.Controls;
 
 /// <summary>
 /// Fence-only companion to the shared <c>ItemDetailsPanel</c>. Displays
-/// store-listing fields (sell price, buy price, infinite flag, store panel)
-/// for the currently selected <see cref="MerchantEditor.ViewModels.StoreItemViewModel"/>.
-/// Read-only: the proper two-way <c>StoreItemExtrasViewModel</c> is tracked as
-/// follow-up tech-debt — see plan doc for the sprint that introduced this control.
+/// store-listing fields (sell price, buy price, infinite flag, store panel) for the
+/// currently selected store item, bound to a dedicated
+/// <see cref="MerchantEditor.ViewModels.StoreItemExtrasViewModel"/> (#2153).
+/// Read-only display: sell/buy are computed, infinite/panel are edited elsewhere
+/// (grid + context menu); this panel reflects them live via the VM.
 /// </summary>
 public partial class StoreItemExtrasPanel : UserControl
 {

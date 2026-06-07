@@ -79,7 +79,7 @@ public partial class MainWindow
         detailVm.IconBitmap = item.IconBitmap ?? _itemIconService?.GetItemIcon(item.BaseItemIndex);
 
         ItemDetailsView.DataContext = detailVm;
-        StoreItemExtrasView.DataContext = item;
+        SetStoreItemExtras(new StoreItemExtrasViewModel(item));
     }
 
     private void ShowPaletteItemDetails(ItemViewModel item)
@@ -92,13 +92,23 @@ public partial class MainWindow
         }
 
         ItemDetailsView.DataContext = item;
-        StoreItemExtrasView.DataContext = null;
+        SetStoreItemExtras(null);
     }
 
     private void ClearItemDetails()
     {
         ItemDetailsView.DataContext = null;
-        StoreItemExtrasView.DataContext = null;
+        SetStoreItemExtras(null);
+    }
+
+    /// <summary>
+    /// Swap the store-extras panel's DataContext, detaching the previous
+    /// <see cref="StoreItemExtrasViewModel"/> so it stops tracking its source (#2153).
+    /// </summary>
+    private void SetStoreItemExtras(StoreItemExtrasViewModel? extras)
+    {
+        (StoreItemExtrasView.DataContext as StoreItemExtrasViewModel)?.Detach();
+        StoreItemExtrasView.DataContext = extras;
     }
 
     #endregion

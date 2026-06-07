@@ -6,7 +6,7 @@
              xmlns:converters="using:MerchantEditor.Converters"
              mc:Ignorable="d" d:DesignWidth="260" d:DesignHeight="160"
              x:Class="MerchantEditor.Controls.StoreItemExtrasPanel"
-             x:DataType="vm:StoreItemViewModel">
+             x:DataType="vm:StoreItemExtrasViewModel">
 
   <UserControl.Resources>
     <converters:StorePanelNameConverter x:Key="StorePanelNameConverter"/>
