@@ -154,8 +154,9 @@ namespace DialogEditor.Services
         /// <summary>
         /// Recursively deletes a node and its children.
         /// Preserves nodes that have incoming links from elsewhere.
+        /// #2324: internal (was private) so MainViewModel + tests can call directly without reflection.
         /// </summary>
-        private void DeleteNodeRecursive(Dialog dialog, DialogNode node)
+        internal void DeleteNodeRecursive(Dialog dialog, DialogNode node)
         {
             // Recursively delete children, but only if they're not shared by other nodes
             if (node.Pointers != null && node.Pointers.Count > 0)

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using Xunit;
 using Xunit.Abstractions;
 using DialogEditor.Models;
@@ -313,10 +312,7 @@ namespace Parley.Tests
             // Act
             var sw = Stopwatch.StartNew();
 
-            var deleteMethod = typeof(MainViewModel).GetMethod("DeleteNodeRecursive",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            Assert.NotNull(deleteMethod);
-            deleteMethod.Invoke(viewModel, new object?[] { firstEntry });
+            viewModel.DeleteNodeRecursive(firstEntry);
             dialog.RemoveNodeInternal(firstEntry, firstEntry.Type);
 
             // Remove start pointer
@@ -364,10 +360,7 @@ namespace Parley.Tests
             // Act
             var sw = Stopwatch.StartNew();
 
-            var deleteMethod = typeof(MainViewModel).GetMethod("DeleteNodeRecursive",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            Assert.NotNull(deleteMethod);
-            deleteMethod.Invoke(viewModel, new object?[] { firstEntry });
+            viewModel.DeleteNodeRecursive(firstEntry);
             dialog.RemoveNodeInternal(firstEntry, firstEntry.Type);
 
             var startToRemove = dialog.Starts.FirstOrDefault(s => s.Node == firstEntry);
@@ -417,9 +410,7 @@ namespace Parley.Tests
             _output.WriteLine($"Shared reply: '{sharedReply.Text?.GetDefault()}'");
 
             // Act: Delete the main chain (but NOT the external entry)
-            var deleteMethod = typeof(MainViewModel).GetMethod("DeleteNodeRecursive",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            deleteMethod?.Invoke(viewModel, new object[] { deleteTarget });
+            viewModel.DeleteNodeRecursive(deleteTarget);
             dialog.RemoveNodeInternal(deleteTarget, deleteTarget.Type);
 
             var startToRemove = dialog.Starts.FirstOrDefault(s => s.Node == deleteTarget);
@@ -461,9 +452,7 @@ namespace Parley.Tests
             // Act
             var sw = Stopwatch.StartNew();
 
-            var deleteMethod = typeof(MainViewModel).GetMethod("DeleteNodeRecursive",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            deleteMethod?.Invoke(viewModel, new object[] { firstEntry });
+            viewModel.DeleteNodeRecursive(firstEntry);
             dialog.RemoveNodeInternal(firstEntry, firstEntry.Type);
 
             var startToRemove = dialog.Starts.FirstOrDefault(s => s.Node == firstEntry);
@@ -526,9 +515,7 @@ namespace Parley.Tests
             var firstEntry = dialog.Entries.First();
 
             sw.Restart();
-            var deleteMethod = typeof(MainViewModel).GetMethod("DeleteNodeRecursive",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            deleteMethod?.Invoke(viewModel, new object[] { firstEntry });
+            viewModel.DeleteNodeRecursive(firstEntry);
             dialog.RemoveNodeInternal(firstEntry, firstEntry.Type);
             sw.Stop();
 
@@ -563,9 +550,7 @@ namespace Parley.Tests
             var firstEntry = dialog.Entries.First();
 
             sw.Restart();
-            var deleteMethod = typeof(MainViewModel).GetMethod("DeleteNodeRecursive",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            deleteMethod?.Invoke(viewModel, new object[] { firstEntry });
+            viewModel.DeleteNodeRecursive(firstEntry);
             dialog.RemoveNodeInternal(firstEntry, firstEntry.Type);
             sw.Stop();
 

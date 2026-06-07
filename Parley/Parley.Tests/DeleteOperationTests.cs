@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Xunit;
 using DialogEditor.Services;
@@ -145,10 +144,8 @@ namespace Parley.Tests
                 dialog.Starts.Remove(startToRemove);
             }
 
-            // Use reflection to call the private DeleteNodeRecursive method
-            var deleteMethod = typeof(MainViewModel).GetMethod("DeleteNodeRecursive",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            deleteMethod?.Invoke(viewModel, new object[] { entry3 });
+            // #2324: direct internal call (was reflection on a private trampoline)
+            viewModel.DeleteNodeRecursive(entry3);
 
             // Remove from collection
             dialog.RemoveNodeInternal(entry3, entry3.Type);
@@ -379,10 +376,8 @@ namespace Parley.Tests
                 dialog.Starts.Remove(startToRemove);
             }
 
-            // Use reflection to call DeleteNodeRecursive
-            var deleteMethod = typeof(MainViewModel).GetMethod("DeleteNodeRecursive",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            deleteMethod?.Invoke(viewModel, new object[] { container });
+            // #2324: direct internal call (was reflection on a private trampoline)
+            viewModel.DeleteNodeRecursive(container);
 
             // Remove from collection
             dialog.RemoveNodeInternal(container, container.Type);

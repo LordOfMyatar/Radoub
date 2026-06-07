@@ -3,7 +3,6 @@ using System.Linq;
 using Xunit;
 using DialogEditor.Models;
 using DialogEditor.ViewModels;
-using System.Reflection;
 
 namespace Parley.Tests
 {
@@ -109,11 +108,8 @@ namespace Parley.Tests
             int initialReplies = dialog.Replies.Count;
 
             // Act - Delete the first entry (should cascade down the chain)
-            // Use reflection to call the private DeleteNodeRecursive method
-            var deleteMethod = typeof(MainViewModel).GetMethod("DeleteNodeRecursive",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            Assert.NotNull(deleteMethod);
-            deleteMethod.Invoke(viewModel, new object?[] { firstEntry });
+            // #2324: direct internal call (was reflection on a private trampoline)
+            viewModel.DeleteNodeRecursive(firstEntry!);
 
             dialog.RemoveNodeInternal(firstEntry!, firstEntry!.Type);
 
@@ -241,9 +237,7 @@ namespace Parley.Tests
             dialog.LinkRegistry.RegisterLink(ptr6);
 
             // Act - Delete entry1 (top of diamond)
-            var deleteMethod = typeof(MainViewModel).GetMethod("DeleteNodeRecursive",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            deleteMethod?.Invoke(viewModel, new object[] { entry1 });
+            viewModel.DeleteNodeRecursive(entry1);
             dialog.RemoveNodeInternal(entry1, entry1.Type);
 
             // Assert

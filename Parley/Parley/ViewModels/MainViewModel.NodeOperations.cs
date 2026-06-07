@@ -200,20 +200,13 @@ namespace DialogEditor.ViewModels
             }
         }
 
-        // COMPATIBILITY: Kept for existing tests that use reflection to access this method
-        // TODO (#2324): Update tests to use public DeleteNode API and remove this trampoline
-        #pragma warning disable IDE0051 // Remove unused private members
-        private void DeleteNodeRecursive(DialogNode node)
+        // #2324: Test seam for the recursive-delete behavior that bypasses the full DeleteNode
+        // flow (no orphan cleanup). internal + typed delegation — no reflection.
+        internal void DeleteNodeRecursive(DialogNode node)
         {
             if (CurrentDialog == null) return;
-
-            // Delegate to NodeOperationsManager's internal implementation via reflection
-            var managerType = _nodeOpsManager.GetType();
-            var deleteMethod = managerType.GetMethod("DeleteNodeRecursive",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            deleteMethod?.Invoke(_nodeOpsManager, new object[] { CurrentDialog, node });
+            _nodeOpsManager.DeleteNodeRecursive(CurrentDialog, node);
         }
-        #pragma warning restore IDE0051
 
         // Phase 2a: Node Reordering
         public void MoveNodeUp(TreeViewSafeNode nodeToMove)
