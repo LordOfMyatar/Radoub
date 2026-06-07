@@ -10,18 +10,25 @@ public class MannequinPoseAdjusterTests
 {
     private static MdlModel BuildSkeleton()
     {
-        // root → torso_g → {lbicep_g→lforearm_g, rbicep_g}, pelvis_g → {lthigh_g, rthigh_g}
+        // root → torso_g → {lbicep_g→lforearm_g, rbicep_g→rforearm_g},
+        //         pelvis_g → {lthigh_g→lshin_g, rthigh_g→rshin_g}
         var lforearm = new MdlNode { Name = "lforearm_g", Orientation = Quaternion.Identity };
         var lbicep = new MdlNode { Name = "lbicep_g", Orientation = Quaternion.Identity };
         lbicep.Children.Add(lforearm); lforearm.Parent = lbicep;
+        var rforearm = new MdlNode { Name = "rforearm_g", Orientation = Quaternion.Identity };
         var rbicep = new MdlNode { Name = "rbicep_g", Orientation = Quaternion.Identity };
+        rbicep.Children.Add(rforearm); rforearm.Parent = rbicep;
 
         var torso = new MdlNode { Name = "torso_g", Orientation = Quaternion.Identity };
         torso.Children.Add(lbicep); lbicep.Parent = torso;
         torso.Children.Add(rbicep); rbicep.Parent = torso;
 
+        var lshin = new MdlNode { Name = "lshin_g", Orientation = Quaternion.Identity };
         var lthigh = new MdlNode { Name = "lthigh_g", Orientation = Quaternion.Identity };
+        lthigh.Children.Add(lshin); lshin.Parent = lthigh;
+        var rshin = new MdlNode { Name = "rshin_g", Orientation = Quaternion.Identity };
         var rthigh = new MdlNode { Name = "rthigh_g", Orientation = Quaternion.Identity };
+        rthigh.Children.Add(rshin); rshin.Parent = rthigh;
         var pelvis = new MdlNode { Name = "pelvis_g", Orientation = Quaternion.Identity };
         pelvis.Children.Add(lthigh); lthigh.Parent = pelvis;
         pelvis.Children.Add(rthigh); rthigh.Parent = pelvis;
@@ -78,11 +85,22 @@ public class MannequinPoseAdjusterTests
         var model = BuildSkeleton();
         MannequinPoseAdjuster.ApplyRelaxedPose(model);
 
-        // torso, pelvis, forearm, root are not adjusted directly.
+        // torso, pelvis, root are not adjusted directly.
         Assert.Equal(Quaternion.Identity, Find(model, "torso_g").Orientation);
         Assert.Equal(Quaternion.Identity, Find(model, "pelvis_g").Orientation);
-        Assert.Equal(Quaternion.Identity, Find(model, "lforearm_g").Orientation);
         Assert.Equal(Quaternion.Identity, Find(model, "root").Orientation);
+    }
+
+    [Fact]
+    public void ApplyRelaxedPose_FlexesForearmAndShinBones()
+    {
+        var model = BuildSkeleton();
+        MannequinPoseAdjuster.ApplyRelaxedPose(model);
+
+        Assert.NotEqual(Quaternion.Identity, Find(model, "lforearm_g").Orientation);
+        Assert.NotEqual(Quaternion.Identity, Find(model, "rforearm_g").Orientation);
+        Assert.NotEqual(Quaternion.Identity, Find(model, "lshin_g").Orientation);
+        Assert.NotEqual(Quaternion.Identity, Find(model, "rshin_g").Orientation);
     }
 
     [Fact]

@@ -29,6 +29,12 @@ public static class MannequinPoseAdjuster
     /// <summary>Thigh separation angle (degrees) — opens the stance to hip width.</summary>
     public const float LegSeparationDegrees = 9f;
 
+    /// <summary>Elbow flexion (degrees) — slight forearm bend so arms aren't locked straight.</summary>
+    public const float ElbowFlexionDegrees = 5f;
+
+    /// <summary>Knee flexion (degrees) — slight shin bend so legs aren't locked straight.</summary>
+    public const float KneeFlexionDegrees = 4f;
+
     /// <summary>
     /// Local rotation axis for arm abduction. NWN bicep bones run down the limb; rotating
     /// about the forward (Y) axis swings the arm in the frontal (X-Z) plane — out to the side.
@@ -38,6 +44,12 @@ public static class MannequinPoseAdjuster
     /// <summary>Local rotation axis for thigh separation (same frontal-plane swing).</summary>
     private static readonly Vector3 LegSeparationAxis = Vector3.UnitY;
 
+    /// <summary>
+    /// Local rotation axis for elbow/knee flexion. Rotating about the side (X) axis bends the
+    /// limb in the sagittal plane — forearm forward, shin back — for a relaxed, non-locked pose.
+    /// </summary>
+    private static readonly Vector3 FlexionAxis = Vector3.UnitX;
+
     private static readonly (string Bone, Vector3 Axis, float Degrees)[] Adjustments =
     {
         // Left/right mirrored: opposite signs so both limbs swing outward symmetrically.
@@ -45,6 +57,12 @@ public static class MannequinPoseAdjuster
         ("rbicep_g", ArmAbductionAxis, -ArmAbductionDegrees),
         ("lthigh_g", LegSeparationAxis,  LegSeparationDegrees),
         ("rthigh_g", LegSeparationAxis, -LegSeparationDegrees),
+
+        // Slight elbow/knee bend so limbs aren't locked straight (same sign both sides).
+        ("lforearm_g", FlexionAxis, ElbowFlexionDegrees),
+        ("rforearm_g", FlexionAxis, ElbowFlexionDegrees),
+        ("lshin_g", FlexionAxis, -KneeFlexionDegrees),
+        ("rshin_g", FlexionAxis, -KneeFlexionDegrees),
     };
 
     /// <summary>
