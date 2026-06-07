@@ -4,6 +4,13 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
+## [0.1.175-alpha] - 2026-06-06
+**Branch**: `parley/issue-2392` | **PR**: #TBD
+
+### Fix: Drag-drop reparent selects sibling instead of moved node (#2392)
+
+---
+
 ## [0.1.174-alpha] - 2026-06-06
 **Branch**: `parley/issue-2382` | **PR**: #2388
 
