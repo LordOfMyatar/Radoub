@@ -103,6 +103,8 @@ public class TextureServiceHelperTests
 
     [Theory]
     [InlineData("cre_017_t_b01", "cre_017_t_b01_d")] // #1755 CEP3 PBR beetle texture
+    [InlineData("c2_spidgi_b01", "c2_spidgi_b01_d")] // #1760 CEP spider (giant)
+    [InlineData("c2_spidgl_b01", "c2_spidgl_b01_d")] // #1760 CEP spider (glow)
     [InlineData("c_dragon_red", "c_dragon_red_d")]
     public void PbrDiffuseFallbackName_AppendsDSuffix(string baseName, string expected)
     {
