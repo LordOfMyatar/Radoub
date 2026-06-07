@@ -219,7 +219,8 @@ namespace DialogEditor.Services
             }
 
             // Can't drop on descendant (would create circular reference)
-            if (IsDescendantOf(target, source))
+            // #2109: Shared graph-walk check (was a broken tree-walk that only caught self).
+            if (DialogDragDropValidator.IsDescendant(source.OriginalNode, target.OriginalNode))
             {
                 result.ErrorMessage = "Cannot drop node on its own descendant";
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"TreeViewDragDrop.ValidateDrop: REJECTED - {result.ErrorMessage}");
@@ -322,225 +323,42 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
-        /// Checks if target is a descendant of source (would create circular reference).
-        /// </summary>
-        private bool IsDescendantOf(TreeViewSafeNode target, TreeViewSafeNode source)
-        {
-            var current = target;
-            while (current != null)
-            {
-                if (current.OriginalNode == source.OriginalNode)
-                    return true;
-
-                // Walk up to parent - need to find parent in tree
-                current = FindParentTreeNode(current);
-            }
-            return false;
-        }
-
-        /// <summary>
         /// Gets the DialogNode parent of a TreeViewSafeNode.
         /// Returns null only if the node is at root level (child of ROOT container).
+        /// #2109: Delegates to the shared DialogDragDropValidator.ResolveParent so both
+        /// views resolve parents identically.
         /// </summary>
         private DialogNode? GetParentNode(TreeViewSafeNode node)
         {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                $"TreeViewDragDrop.GetParentNode: Finding parent for '{node.DisplayText}' (Type={node.OriginalNode.Type})");
-
             // TreeViewRootNode is the ROOT container - it has no parent
             if (node is TreeViewRootNode)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "TreeViewDragDrop.GetParentNode: Node is TreeViewRootNode - returning null");
                 return null;
-            }
 
-            // The source pointer tells us where this node came from
-            var sourcePointer = node.SourcePointer;
             var dialog = node.OriginalNode.Parent;
-
             if (dialog == null)
             {
                 UnifiedLogger.LogApplication(LogLevel.WARN, "TreeViewDragDrop.GetParentNode: dialog is null - returning null");
                 return null;
             }
 
-            UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                $"TreeViewDragDrop.GetParentNode: sourcePointer={sourcePointer?.Node?.DisplayText ?? "null"}, dialog has {dialog.Entries.Count} entries, {dialog.Replies.Count} replies");
-
-            // Check if this node is a root-level entry (in Starts list)
-            // Root-level entries have no parent DialogNode (they're children of ROOT container)
-            foreach (var start in dialog.Starts)
-            {
-                if (start.Node == node.OriginalNode)
-                {
-                    // This is a root-level entry - no parent DialogNode
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "TreeViewDragDrop.GetParentNode: Node is in Starts list - returning null (root level)");
-                    return null;
-                }
-            }
-
-            // For non-root nodes, find the parent by searching who has a pointer to this node
-            if (sourcePointer != null)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "TreeViewDragDrop.GetParentNode: Searching by sourcePointer reference...");
-                // Search entries for the node containing this pointer
-                foreach (var entry in dialog.Entries)
-                {
-                    if (entry.Pointers.Contains(sourcePointer))
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"TreeViewDragDrop.GetParentNode: Found parent Entry '{entry.DisplayText}' by sourcePointer");
-                        return entry;
-                    }
-                }
-                // Search replies for the node containing this pointer
-                foreach (var reply in dialog.Replies)
-                {
-                    if (reply.Pointers.Contains(sourcePointer))
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"TreeViewDragDrop.GetParentNode: Found parent Reply '{reply.DisplayText}' by sourcePointer");
-                        return reply;
-                    }
-                }
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "TreeViewDragDrop.GetParentNode: sourcePointer not found in any node's Pointers list, trying fallback...");
-            }
-
-            // Fallback: Search all nodes for any pointer pointing to this node
-            // This handles cases where sourcePointer doesn't match (e.g., recreated pointers)
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "TreeViewDragDrop.GetParentNode: Fallback search by target node reference...");
-            var targetNode = node.OriginalNode;
-            foreach (var entry in dialog.Entries)
-            {
-                foreach (var ptr in entry.Pointers)
-                {
-                    if (ptr.Node == targetNode)
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"TreeViewDragDrop.GetParentNode: Found parent Entry '{entry.DisplayText}' by fallback search");
-                        return entry;
-                    }
-                }
-            }
-            foreach (var reply in dialog.Replies)
-            {
-                foreach (var ptr in reply.Pointers)
-                {
-                    if (ptr.Node == targetNode)
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"TreeViewDragDrop.GetParentNode: Found parent Reply '{reply.DisplayText}' by fallback search");
-                        return reply;
-                    }
-                }
-            }
-
-            // If we get here, the node is likely a root-level entry that wasn't in Starts
-            // (shouldn't happen in valid dialogs, but handle gracefully)
-            UnifiedLogger.LogApplication(LogLevel.WARN,
-                $"TreeViewDragDrop.GetParentNode: Could not find parent for node '{node.DisplayText}' - treating as root level");
-            return null;
-        }
-
-        /// <summary>
-        /// Gets the DialogNode parent of a DialogNode (for grandparent lookups).
-        /// Similar to GetParentNode but works directly with DialogNode.
-        /// </summary>
-        private DialogNode? GetParentNodeForDialogNode(DialogNode node)
-        {
-            var dialog = node.Parent;
-            if (dialog == null)
-                return null;
-
-            // Check if this is a root-level entry
-            foreach (var start in dialog.Starts)
-            {
-                if (start.Node == node)
-                    return null; // Root level
-            }
-
-            // Search for parent by finding who has a pointer to this node
-            foreach (var entry in dialog.Entries)
-            {
-                foreach (var ptr in entry.Pointers)
-                {
-                    if (ptr.Node == node)
-                        return entry;
-                }
-            }
-            foreach (var reply in dialog.Replies)
-            {
-                foreach (var ptr in reply.Pointers)
-                {
-                    if (ptr.Node == node)
-                        return reply;
-                }
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Gets sibling index for a DialogNode relative to its parent.
-        /// Used when we need to insert relative to a DialogNode (not TreeViewSafeNode).
-        /// </summary>
-        private int GetSiblingIndexForDialogNode(DialogNode? sibling, DialogNode? parent, bool insertAfter)
-        {
-            if (sibling == null)
-                return 0;
-
-            if (parent == null)
-            {
-                // Root level - index in Starts list
-                var dialog = sibling.Parent;
-                if (dialog != null)
-                {
-                    var index = dialog.Starts.FindIndex(s => s.Node == sibling);
-                    return insertAfter ? index + 1 : Math.Max(0, index);
-                }
-                return 0;
-            }
-
-            // Find index in parent's pointers
-            var pointerIndex = parent.Pointers.FindIndex(p => p.Node == sibling);
-            return insertAfter ? pointerIndex + 1 : Math.Max(0, pointerIndex);
+            return DialogDragDropValidator.ResolveParent(node.OriginalNode, dialog);
         }
 
         /// <summary>
         /// Gets the index where a node should be inserted relative to target.
+        /// #2109: Delegates to the shared DialogDragDropValidator.GetSiblingInsertIndex.
         /// </summary>
         private int GetSiblingIndex(TreeViewSafeNode target, DialogNode? parent, bool insertAfter)
         {
-            if (parent == null)
+            var dialog = target.OriginalNode.Parent;
+            if (dialog == null)
             {
-                // Root level - index in Starts list
-                var dialog = target.OriginalNode.Parent;
-                if (dialog != null)
-                {
-                    var index = dialog.Starts.FindIndex(s => s.Node == target.OriginalNode);
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                        $"TreeViewDragDrop.GetSiblingIndex: ROOT level, target='{target.OriginalNode.DisplayText}', " +
-                        $"index={index}, insertAfter={insertAfter}, result={( insertAfter ? index + 1 : index )}");
-                    return insertAfter ? index + 1 : index;
-                }
                 UnifiedLogger.LogApplication(LogLevel.WARN,
-                    $"TreeViewDragDrop.GetSiblingIndex: ROOT level but dialog is NULL for target='{target.OriginalNode.DisplayText}'");
+                    $"TreeViewDragDrop.GetSiblingIndex: dialog is NULL for target='{target.OriginalNode.DisplayText}'");
                 return 0;
             }
 
-            // Find index in parent's pointers - use Node property which references the actual DialogNode
-            var pointerIndex = parent.Pointers.FindIndex(p => p.Node == target.OriginalNode);
-            UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                $"TreeViewDragDrop.GetSiblingIndex: Parent='{parent.DisplayText}', target='{target.OriginalNode.DisplayText}', " +
-                $"pointerIndex={pointerIndex}, insertAfter={insertAfter}, result={( insertAfter ? pointerIndex + 1 : Math.Max(0, pointerIndex) )}");
-
-            return insertAfter ? pointerIndex + 1 : Math.Max(0, pointerIndex);
-        }
-
-        /// <summary>
-        /// Finds the parent TreeViewSafeNode for a given node.
-        /// </summary>
-        private TreeViewSafeNode? FindParentTreeNode(TreeViewSafeNode node)
-        {
-            // This would need access to the tree structure
-            // For now, return null - full implementation requires tree traversal
-            return null;
+            return DialogDragDropValidator.GetSiblingInsertIndex(target.OriginalNode, parent, dialog, insertAfter);
         }
 
         /// <summary>

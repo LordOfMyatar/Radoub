@@ -65,6 +65,12 @@ namespace DialogEditor.Views
         // Node selection state (shared across partial files)
         private TreeViewSafeNode? _selectedNode;
 
+        // #2382: The DialogNode the property panel was last populated FROM. Guards
+        // SaveCurrentNodeProperties against flushing stale TextBox values onto a
+        // different node when selection changes without a repopulate (e.g. drag-drop
+        // refresh restoring selection to a sibling).
+        private DialogNode? _lastPopulatedNode;
+
         public MainWindow(IServiceProvider serviceProvider)
         {
             InitializeComponent();

@@ -824,42 +824,22 @@ namespace DialogEditor.Views
 
         /// <summary>
         /// Checks if two FlowchartNodes are siblings (share the same parent in the dialog structure).
+        /// #2109: Delegates to the shared DialogDragDropValidator so FlowView and TreeView agree.
         /// </summary>
         private bool AreSiblings(FlowchartNode a, FlowchartNode b)
         {
             if (a.OriginalNode == null || b.OriginalNode == null) return false;
 
-            var graph = _viewModel.FlowchartGraph;
-            if (graph == null) return false;
-
-            // Check if both are root-level (in Dialog.Starts)
             var dialog = _viewModel.CurrentDialog;
             if (dialog == null) return false;
 
-            bool aIsRoot = dialog.Starts.Any(s => s.Node == a.OriginalNode);
-            bool bIsRoot = dialog.Starts.Any(s => s.Node == b.OriginalNode);
-            if (aIsRoot && bIsRoot) return true;
-
-            // Check if they share a parent
-            foreach (var entry in dialog.Entries)
-            {
-                bool hasA = entry.Pointers.Any(p => p.Node == a.OriginalNode);
-                bool hasB = entry.Pointers.Any(p => p.Node == b.OriginalNode);
-                if (hasA && hasB) return true;
-            }
-            foreach (var reply in dialog.Replies)
-            {
-                bool hasA = reply.Pointers.Any(p => p.Node == a.OriginalNode);
-                bool hasB = reply.Pointers.Any(p => p.Node == b.OriginalNode);
-                if (hasA && hasB) return true;
-            }
-
-            return false;
+            return DialogDragDropValidator.AreSiblings(a.OriginalNode, b.OriginalNode, dialog);
         }
 
         /// <summary>
         /// Resolves sibling indices and raises SiblingReorderRequested event (#240).
         /// MainWindow handles undo state + actual reorder execution.
+        /// #2109: Index/parent resolution delegated to the shared DialogDragDropValidator.
         /// </summary>
         private void ExecuteSiblingReorder(FlowchartNode draggedNode, FlowchartNode targetNode, Point dropPoint)
         {
@@ -868,43 +848,12 @@ namespace DialogEditor.Views
             var dialog = _viewModel.CurrentDialog;
             if (dialog == null) return;
 
-            // Find shared parent and indices
-            DialogNode? parent = null;
-            int fromIndex = -1;
-            int toIndex = -1;
-
-            // Check root level
-            bool draggedIsRoot = false;
-            for (int i = 0; i < dialog.Starts.Count; i++)
-            {
-                if (dialog.Starts[i].Node == draggedNode.OriginalNode) { fromIndex = i; draggedIsRoot = true; }
-                if (dialog.Starts[i].Node == targetNode.OriginalNode) toIndex = i;
-            }
-
-            if (!draggedIsRoot)
-            {
-                // Find parent node
-                foreach (var entry in dialog.Entries.Concat(dialog.Replies))
-                {
-                    fromIndex = -1;
-                    toIndex = -1;
-                    for (int i = 0; i < entry.Pointers.Count; i++)
-                    {
-                        if (entry.Pointers[i].Node == draggedNode.OriginalNode) fromIndex = i;
-                        if (entry.Pointers[i].Node == targetNode.OriginalNode) toIndex = i;
-                    }
-                    if (fromIndex >= 0 && toIndex >= 0)
-                    {
-                        parent = entry;
-                        break;
-                    }
-                }
-            }
-
-            if (fromIndex < 0 || toIndex < 0) return;
+            var reorder = DialogDragDropValidator.ResolveSiblingReorder(
+                draggedNode.OriginalNode, targetNode.OriginalNode, dialog);
+            if (!reorder.Found) return;
 
             // Raise event for MainWindow to handle undo + execution
-            SiblingReorderRequested?.Invoke(draggedNode.OriginalNode, parent, fromIndex, toIndex);
+            SiblingReorderRequested?.Invoke(draggedNode.OriginalNode, reorder.Parent, reorder.FromIndex, reorder.ToIndex);
         }
 
         /// <summary>

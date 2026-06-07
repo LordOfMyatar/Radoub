@@ -192,7 +192,11 @@ namespace Parley.Views.Helpers
                 // GetPosition(targetItem) returns position relative to targetItem, so Y starts at 0
                 // We need bounds relative to self (starting at 0,0) for correct zone calculation
                 var pointerPos = e.GetPosition(targetItem);
-                var itemBounds = new Rect(0, 0, targetItem.Bounds.Width, targetItem.Bounds.Height);
+                // #2382: An expanded item's Bounds.Height includes its child subtree, which
+                // would push the header row into the top-20% "Before" zone. Use header height.
+                var zoneHeight = DropZoneHeightService.ResolveZoneHeight(
+                    targetItem.Bounds.Height, GetHeaderHeight(targetItem));
+                var itemBounds = new Rect(0, 0, targetItem.Bounds.Width, zoneHeight);
                 var dropPosition = _dragDropService.CalculateDropPosition(pointerPos, itemBounds);
 
                 // Validate the drop
@@ -242,8 +246,11 @@ namespace Parley.Views.Helpers
 
             if (targetItem?.DataContext is TreeViewSafeNode targetNode)
             {
-                // Use 0,0-based bounds - GetPosition returns relative coordinates
-                var itemBounds = new Rect(0, 0, targetItem.Bounds.Width, targetItem.Bounds.Height);
+                // Use 0,0-based bounds - GetPosition returns relative coordinates.
+                // #2382: Use header height, not full bounds (expanded items include children).
+                var zoneHeight = DropZoneHeightService.ResolveZoneHeight(
+                    targetItem.Bounds.Height, GetHeaderHeight(targetItem));
+                var itemBounds = new Rect(0, 0, targetItem.Bounds.Width, zoneHeight);
                 var dropPosition = _dragDropService.CalculateDropPosition(e.GetPosition(targetItem), itemBounds);
 
                 var validation = _dragDropService.ValidateDrop(draggedNode, targetNode, dropPosition);
@@ -299,6 +306,29 @@ namespace Parley.Views.Helpers
             // Walk up from the source to find a TreeViewItem
             var source = e.Source as Control;
             return source?.FindAncestorOfType<TreeViewItem>();
+        }
+
+        /// <summary>
+        /// #2382: Returns the height of a TreeViewItem's header row (the PART_LayoutRoot
+        /// Border in the default template), excluding any expanded child subtree. Returns
+        /// null when the part can't be found so callers fall back to the full item height.
+        /// </summary>
+        private static double? GetHeaderHeight(TreeViewItem item)
+        {
+            // The item's own header Border, not a child item's: take the first PART_LayoutRoot
+            // that has no intervening TreeViewItem between it and this item (expanded items
+            // nest child TreeViewItems, each with their own PART_LayoutRoot).
+            foreach (var border in item.GetVisualDescendants().OfType<Border>())
+            {
+                if (border.Name != "PART_LayoutRoot")
+                    continue;
+
+                var ancestorItem = border.FindAncestorOfType<TreeViewItem>();
+                if (ReferenceEquals(ancestorItem, item))
+                    return border.Bounds.Height;
+            }
+
+            return null;
         }
 
         /// <summary>

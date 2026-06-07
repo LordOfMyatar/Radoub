@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using DialogEditor.Models;
+using DialogEditor.Services;
 
 using Radoub.Formats.Logging;
 using DialogEditor.ViewModels;
@@ -33,6 +34,18 @@ namespace DialogEditor.Views
             }
 
             var dialogNode = _selectedNode.OriginalNode;
+
+            // #2382: Refuse to flush when the panel is out of sync with the selection.
+            // After a drag-drop refresh the TreeView can restore selection to a sibling
+            // while the panel still shows the dragged node — flushing here would write the
+            // displayed node's text onto the newly-selected node (data loss).
+            if (!PropertyFlushGuard.ShouldFlush(dialogNode, _lastPopulatedNode))
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"SaveCurrentNodeProperties: skipped — panel ('{_lastPopulatedNode?.Text?.GetDefault()}') " +
+                    $"out of sync with selection ('{dialogNode.Text?.GetDefault()}')");
+                return;
+            }
 
             // Issue #342: Use SafeControlFinder for cleaner null-safe control access
             // Update Speaker (only if editable)
@@ -137,6 +150,10 @@ namespace DialogEditor.Views
             }
 
             var dialogNode = node.OriginalNode;
+
+            // #2382: Record the node the panel is now populated from, so a later flush
+            // can verify it still matches the current selection before writing back.
+            _lastPopulatedNode = dialogNode;
 
             // Debug: Log node type for Issue #12 investigation
             UnifiedLogger.LogApplication(LogLevel.DEBUG,

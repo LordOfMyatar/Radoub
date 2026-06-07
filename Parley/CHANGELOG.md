@@ -4,6 +4,19 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
+## [0.1.174-alpha] - 2026-06-06
+**Branch**: `parley/issue-2382` | **PR**: #2388
+
+### Sprint: Settings Migration & Drag-Drop Unification (#2382)
+
+- Unify TreeView/FlowView drag-drop validation (#2109)
+- Replace reflection-based DeleteNodeRecursive trampoline (#2324)
+- Migrate ExternalEditorPath/ManifestPath onto RadoubSettings (#2357)
+- Fix drag-drop onto expanded TreeView threads (header-height drop zone)
+- Fix data loss: stale property panel overwriting wrong node after drag-drop reparent
+
+---
+
 ## [0.1.173-alpha] - 2026-06-05
 **Branch**: `radoub/issue-2350` | **PR**: #2351
 
