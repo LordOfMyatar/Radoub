@@ -117,5 +117,45 @@ namespace Parley.Tests
             Assert.True(treeViewDecision.IsValid);
             Assert.True(flowViewDecision.IsValid);
         }
+
+        // #2109: Sibling-reorder parity — both views resolve parent + indices through
+        // the same shared helpers, so a reorder produces identical (parent, from, to).
+
+        [Fact]
+        public void SiblingReorder_RepliesUnderEntry_ResolvesIdenticallyForBothViews()
+        {
+            // Arrange: entry with two reply children
+            var dialog = BuildDialog(out var entry, out var reply);
+            var reply2 = dialog.CreateNode(DialogNodeType.Reply)!;
+            reply2.Text.Add(0, "Reply2");
+            dialog.AddNodeInternal(reply2, reply2.Type);
+            var ptr = dialog.CreatePtr()!;
+            ptr.Node = reply2;
+            ptr.Type = DialogNodeType.Reply;
+            ptr.Index = 1;
+            entry.Pointers.Add(ptr);
+
+            // Both views call the same resolver — represent each view's call once.
+            var treeView = DialogDragDropValidator.ResolveSiblingReorder(reply, reply2, dialog);
+            var flowView = DialogDragDropValidator.ResolveSiblingReorder(reply, reply2, dialog);
+
+            Assert.True(treeView.Found);
+            Assert.True(DialogDragDropValidator.AreSiblings(reply, reply2, dialog));
+            Assert.Equal(treeView.Found, flowView.Found);
+            Assert.Same(treeView.Parent, flowView.Parent);
+            Assert.Equal(treeView.FromIndex, flowView.FromIndex);
+            Assert.Equal(treeView.ToIndex, flowView.ToIndex);
+            Assert.Same(entry, treeView.Parent);
+        }
+
+        [Fact]
+        public void NonSiblings_AreNotReordered_ForEitherView()
+        {
+            // Arrange: entry -> reply (parent/child, not siblings)
+            var dialog = BuildDialog(out var entry, out var reply);
+
+            Assert.False(DialogDragDropValidator.AreSiblings(entry, reply, dialog));
+            Assert.False(DialogDragDropValidator.ResolveSiblingReorder(entry, reply, dialog).Found);
+        }
     }
 }
