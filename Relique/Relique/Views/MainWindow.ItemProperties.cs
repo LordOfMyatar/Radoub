@@ -65,7 +65,7 @@ public partial class MainWindow
 
         AvailablePropertiesTree.Items.Clear();
         _checkedPropertyIndices.Clear();
-        UpdateAddCheckedButton();
+        UpdateAddButtonState();
 
         if (_itemPropertyService == null)
             return;
@@ -111,7 +111,7 @@ public partial class MainWindow
                     _checkedPropertyIndices.Add(capturedType.PropertyIndex);
                 else
                     _checkedPropertyIndices.Remove(capturedType.PropertyIndex);
-                UpdateAddCheckedButton();
+                UpdateAddButtonState();
             };
 
             var node = new TreeViewItem
@@ -175,9 +175,16 @@ public partial class MainWindow
         return TreeExpansionTracker.Capture(expanded);
     }
 
-    private void UpdateAddCheckedButton()
+    /// <summary>
+    /// The single Add button (#2234) is enabled when the document is editable and there
+    /// is something to add — either checked properties (bulk path) or a selected property
+    /// (configured path).
+    /// </summary>
+    private void UpdateAddButtonState()
     {
-        AddCheckedButton.IsEnabled = _checkedPropertyIndices.Count > 0 && _currentItem != null && !_documentState.IsReadOnly;
+        AddPropertyButton.IsEnabled = _currentItem != null
+            && !_documentState.IsReadOnly
+            && (_checkedPropertyIndices.Count > 0 || _selectedPropertyType != null);
     }
 
     /// <summary>
@@ -195,7 +202,6 @@ public partial class MainWindow
         if (ro)
         {
             AddPropertyButton.IsEnabled = false;
-            AddCheckedButton.IsEnabled = false;
             EditPropertyButton.IsEnabled = false;
             RemovePropertyButton.IsEnabled = false;
             ClearAllPropertiesButton.IsEnabled = false;
@@ -293,7 +299,7 @@ public partial class MainWindow
             {
                 _selectedPropertyType = propertyType;
                 UpdatePropertyConfigPanel(propertyType);
-                AddPropertyButton.IsEnabled = _currentItem != null && !_documentState.IsReadOnly;
+                UpdateAddButtonState();
 
                 // If a subtype child node was selected, pre-select it in the dropdown
                 if (selectedNode.Tag is TwoDAEntry subtypeEntry && SubtypeComboBox.IsVisible)
@@ -313,7 +319,7 @@ public partial class MainWindow
         {
             _selectedPropertyType = null;
             PropertyConfigPanel.IsVisible = false;
-            AddPropertyButton.IsEnabled = false;
+            UpdateAddButtonState();
         }
     }
 
@@ -408,7 +414,23 @@ public partial class MainWindow
         }
     }
 
+    /// <summary>
+    /// Single Add button (#2234). If any properties are checked in the tree, bulk-add
+    /// them with default values; otherwise add the selected property using the configured
+    /// values from the PropertyConfigPanel. One button, behavior follows the active state.
+    /// </summary>
     private void OnAddPropertyClick(object? sender, RoutedEventArgs e)
+    {
+        if (_currentItem == null || _itemPropertyService == null) return;
+        if (_documentState.IsReadOnly) return;
+
+        if (_checkedPropertyIndices.Count > 0)
+            AddCheckedProperties();
+        else
+            AddConfiguredProperty();
+    }
+
+    private void AddConfiguredProperty()
     {
         if (_currentItem == null || _itemPropertyService == null || _selectedPropertyType == null)
             return;
@@ -429,7 +451,7 @@ public partial class MainWindow
         TryAddProperty(_selectedPropertyType, subtypeIndex, costValueIndex, paramValueIndex);
     }
 
-    private void OnAddCheckedClick(object? sender, RoutedEventArgs e)
+    private void AddCheckedProperties()
     {
         if (_currentItem == null || _itemPropertyService == null || _checkedPropertyIndices.Count == 0)
             return;
@@ -858,6 +880,27 @@ public partial class MainWindow
 
         ItemStatisticsText.Text = stats;
         ItemStatisticsPanel.IsVisible = true;
+
+        RecomputeCost();
+    }
+
+    /// <summary>
+    /// Recompute the engine-derived item Cost (wiki Ch4 §4.4) and push it to the
+    /// view model so the read-only Cost field reflects the value the game will use.
+    /// Falls back to the stored value when game data is unavailable (#2235).
+    /// </summary>
+    private void RecomputeCost()
+    {
+        if (_itemViewModel == null || _currentItem == null || _itemCostCalculator == null)
+            return;
+
+        // Don't mutate read-only archive items — their Cost display stays as stored.
+        if (_documentState.IsReadOnly)
+            return;
+
+        var computed = _itemCostCalculator.Calculate(_currentItem);
+        if (computed.HasValue)
+            _itemViewModel.Cost = computed.Value;
     }
 
     /// <summary>

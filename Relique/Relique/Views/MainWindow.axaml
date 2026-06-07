@@ -185,17 +185,17 @@
                                          Watermark="(set from filename)"/>
                                 <TextBlock Grid.Row="1" Grid.Column="3" Text="Cost" Classes="label"/>
                                 <StackPanel Grid.Row="1" Grid.Column="4" Orientation="Horizontal" Margin="0,0,0,8">
-                                    <!-- Cost is calculated by the engine from base AC + iprp_*.Cost rows; making
-                                         it editable is misleading since it gets recomputed on load. Show as
-                                         read-only display; AddCost is the user-adjustable adjustment.
-                                         Real computation engine tracked in #2235. -->
+                                    <!-- Cost is recomputed live from the Aurora formula (wiki Ch4 §4.4):
+                                         base cost (armor.2da[AC] or baseitems.BaseCost) + property cost
+                                         multipliers + spell costs, scaled by stack/ItemMultiplier (#2235).
+                                         Read-only; AddCost is the user-adjustable adjustment. -->
                                     <TextBox x:Name="CostDisplay"
                                              Text="{Binding Cost, Mode=OneWay}"
                                              IsReadOnly="True"
                                              Width="140"
                                              Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                             ToolTip.Tip="Calculated base cost (engine-derived). Edit Additional to adjust the final price."
-                                             Watermark="(calculated)"/>
+                                             ToolTip.Tip="Computed base cost (Aurora formula). Edit Additional to adjust the final price."
+                                             Watermark="(computed)"/>
                                     <TextBlock Text="Additional" VerticalAlignment="Center" Margin="10,0,8,0"/>
                                     <NumericUpDown x:Name="AddCostUpDown"
                                                    Value="{Binding AddCost, Mode=TwoWay}"
@@ -640,15 +640,7 @@
                                             HorizontalContentAlignment="Center"
                                             Margin="0,0,0,8"
                                             IsEnabled="False"
-                                            ToolTip.Tip="Add selected property with configured values"/>
-                                    <Button x:Name="AddCheckedButton"
-                                            Content="Add Checked &gt;"
-                                            Click="OnAddCheckedClick"
-                                            Width="100"
-                                            HorizontalContentAlignment="Center"
-                                            Margin="0,0,0,8"
-                                            IsEnabled="False"
-                                            ToolTip.Tip="Add all checked properties with default values"/>
+                                            ToolTip.Tip="Add checked properties (defaults), or the selected property with configured values if none are checked"/>
                                     <Button x:Name="EditPropertyButton"
                                             Content="Edit"
                                             Click="OnEditPropertyClick"

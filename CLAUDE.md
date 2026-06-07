@@ -753,6 +753,37 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\.claude\scripts\Searc
 
 ---
 
+## Mutual Workflow Testing (Claude + Human Loop)
+
+For verifying computed/derived values against the real game (e.g. item cost vs the Aurora
+toolset, model preview vs in-game), Claude and the human split the loop:
+
+**Claude can:**
+1. **Generate fixture files** with known inputs (e.g. `.claude/scripts/New-CostTestUti.ps1`,
+   `New-AppearanceTestUtc.ps1`) written into a test module (`LNS_DLG`). These use the built
+   `Radoub.Formats.dll` via PS7 so the GFF round-trip matches the tool.
+2. **Launch the tool directed at a fixture** — `dotnet run --project <Tool>/<Tool>/<Tool>.csproj
+   -- --mod <Module> --file <file>` (a GUI launch; run with `run_in_background`).
+3. **Read the tool's own logs** to capture computed values — add temporary `[Tag]` diagnostic
+   log lines (e.g. `[CostCalc]`) to the code under test, then
+   `grep` the newest `~/Radoub/{Tool}/Logs/Session_*/` for that tag.
+4. **Stop the app** between fixtures: `Get-Process <Tool> | Stop-Process -Force` (PowerShell tool).
+
+**Human verifies** the same fixture in the authoritative source — open it in the Aurora toolset
+to read the ground-truth value, or run UAT for behavior Claude can't observe from logs.
+
+**Loop**: Claude generates fixtures + collects tool values → human reads Aurora/UAT values →
+Claude compares, fixes, regenerates. Remove the temporary diagnostic logging before committing.
+
+**Notes**:
+- App launch is a real GUI process (not FlaUI) — fine to launch for log capture; still stop it
+  when done so it doesn't lock the build output (`Relique.exe` is locked while running).
+- This is distinct from FlaUI integration tests (which drive the UI and take over the desktop —
+  never run without explicit user request).
+- Keep generated fixtures in the test module; they are throwaway, not committed.
+
+---
+
 ## Agent Skills (obra/superpowers)
 
 Installed skills in `.agents/skills/` provide structured methodologies. Claude **must** follow these skills when their trigger conditions are met — no user invocation needed, no skipping without explicit user override.

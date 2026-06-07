@@ -36,7 +36,6 @@ public partial class MainWindow
             _selectedPropertyType = null;
             _editingPropertyIndex = -1;
             AddPropertyButton.IsEnabled = false;
-            AddCheckedButton.IsEnabled = false;
             EditPropertyButton.IsEnabled = false;
             RemovePropertyButton.IsEnabled = false;
             ClearAllPropertiesButton.IsEnabled = false;
@@ -130,6 +129,9 @@ public partial class MainWindow
         }
 
         ArmorClassText.Text = acBonus;
+
+        // Base AC feeds armor BaseCost, so a torso-part change shifts the computed Cost (#2235).
+        RecomputeCost();
     }
 
     private void DisplayBaseItemType(int baseItemIndex)
@@ -153,6 +155,7 @@ public partial class MainWindow
             DisplayBaseItemType(picker.SelectedBaseItemIndex.Value);
             UpdateConditionalFields(picker.SelectedBaseItemIndex.Value);
             PopulateAvailableProperties(PropertySearchBox.Text); // Refresh for new base item type (#1972)
+            RecomputeCost(); // Base item drives BaseCost/MaxStack/ItemMultiplier (#2235)
         }
     }
 
@@ -163,22 +166,29 @@ public partial class MainWindow
 
     private void SelectPaletteCategoryInComboBox(byte paletteId)
     {
-        for (int i = 0; i < PaletteCategoryComboBox.Items.Count; i++)
-        {
-            if (PaletteCategoryComboBox.Items[i] is ComboBoxItem item && item.Tag is byte id && id == paletteId)
-            {
-                _isLoading = true;
-                PaletteCategoryComboBox.SelectedIndex = i;
-                _isLoading = false;
-                return;
-            }
-        }
-        // Not found — select first item if available
-        if (PaletteCategoryComboBox.Items.Count > 0)
+        // Save/restore the loading flag rather than forcing it false. This runs *inside*
+        // PopulateEditor, which the file-open path wraps in _isLoading=true. Forcing false
+        // here un-guarded everything later in PopulateEditor (e.g. the Cost recompute),
+        // which then marked the freshly-loaded document dirty (#2385 spot-check).
+        var wasLoading = _isLoading;
+        try
         {
             _isLoading = true;
-            PaletteCategoryComboBox.SelectedIndex = 0;
-            _isLoading = false;
+            for (int i = 0; i < PaletteCategoryComboBox.Items.Count; i++)
+            {
+                if (PaletteCategoryComboBox.Items[i] is ComboBoxItem item && item.Tag is byte id && id == paletteId)
+                {
+                    PaletteCategoryComboBox.SelectedIndex = i;
+                    return;
+                }
+            }
+            // Not found — select first item if available
+            if (PaletteCategoryComboBox.Items.Count > 0)
+                PaletteCategoryComboBox.SelectedIndex = 0;
+        }
+        finally
+        {
+            _isLoading = wasLoading;
         }
     }
 

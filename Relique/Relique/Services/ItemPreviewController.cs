@@ -160,6 +160,12 @@ public sealed class ItemPreviewController
                 return;
             }
 
+            // Relax the armor mannequin's stance so limb parts (hands, forearms, boots) are
+            // visible from the default camera (#2232). Armor only — the skeleton composition
+            // path is the mannequin; flat composites (weapons) have no skeleton.
+            if (resolution.HasArmorParts)
+                MannequinPoseAdjuster.ApplyRelaxedPose(composed);
+
             ApplyTrophyRotationIfHeldWeapon(uti, composed);
 
             _renderer.SetModel(composed);

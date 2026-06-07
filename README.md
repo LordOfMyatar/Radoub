@@ -21,6 +21,7 @@ A collection of cross-platform tools for creating and editing Neverwinter Nights
 | Quartermaster | `.utc`, `.bic` | Creature/inventory editor |
 | Fence | `.utm` | Merchant/store editor |
 | Relique | `.uti` | Item blueprint editor |
+| Reliquary | `.utp` | Placeable blueprint editor |
 | Trebuchet | — | Launcher/hub (manages `.mod` modules) |
 
 ### Ready for Preview
@@ -112,6 +113,23 @@ Cross-platform item blueprint editor for Neverwinter Nights `.uti` files.
 
 **Learn more**: [Relique/README.md](Relique/README.md) | [Wiki](https://github.com/LordOfMyatar/Radoub/wiki/Relique)
 
+#### Reliquary - Placeable Blueprint Editor
+
+Cross-platform placeable blueprint editor for Neverwinter Nights `.utp` files (chests, doors, statues, containers).
+
+**Status**: User Preview (Alpha)
+**Platforms**: Windows, Linux, macOS (experimental)
+**Key Features**:
+- Placeable blueprint editing (identity, combat, behavior, text, appearance, scripts)
+- Visual appearance preview with OpenGL 3D rendering
+- Inventory editing for placeables that hold items (UTI palette, undoable add/remove)
+- 13 event script slots with Browse/Edit and reusable script-set presets
+- Faction editor sourced from the module's `repute.fac`
+- Portrait browser, named animation-state dropdown, ResRef/Tag auto-sync
+- New Placeable flow, recent files, full undo/redo
+
+**Learn more**: [Reliquary/README.md](Reliquary/README.md) | [Wiki](https://github.com/LordOfMyatar/Radoub/wiki/Reliquary)
+
 #### Trebuchet - Tool Launcher & Module Hub
 
 Central launcher and module management hub for the Radoub toolset.
@@ -139,7 +157,7 @@ Central launcher and module management hub for the Radoub toolset.
 
 Aurora Engine file format parsers used by all tools.
 
-**Supported Formats**: GFF, KEY, BIF, TLK, 2DA, ERF, DLG, JRL, UTC, UTI, UTM, BIC, IFO, SSF
+**Supported Formats**: GFF, KEY, BIF, TLK, 2DA, ERF, DLG, JRL, UTC, UTI, UTM, UTP, BIC, IFO, SSF
 
 #### Radoub.UI
 
@@ -223,6 +241,7 @@ dotnet build Manifest/Manifest/Manifest.csproj
 dotnet build Quartermaster/Quartermaster/Quartermaster.csproj
 dotnet build Fence/Fence/Fence.csproj
 dotnet build Relique/Relique/Relique.csproj
+dotnet build Reliquary/Reliquary/Reliquary.csproj
 dotnet build Trebuchet/Trebuchet/Trebuchet.csproj
 ```
 
