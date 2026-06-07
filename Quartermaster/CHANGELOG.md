@@ -13,9 +13,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 - Fire/stag/bombardier beetle (Txpple) and giant/glow spider (CEP `una`) now render textured, not white (#1755, #1760) — PBR diffuse fallback in shared Radoub.UI 0.2.3-alpha (see root CHANGELOG)
 - Dire rat (CEP `una`) now renders textured; softer preview lighting so models aren't washed out (#1762) — shared Radoub.UI 0.2.4-alpha (see root CHANGELOG)
 - Fey/pixy (`c_fairy`) and other CEP creatures render their own pack's textures, not a base-game stub (#1758) — preview textures follow the model's source tier (shared Radoub.UI 0.2.5-alpha, see root CHANGELOG)
-- Robe armor rendering gaps / missing lower body parts (#1989)
+- Robe armor renders as a proper combined body — no more back-gaps/missing-legs/ballooned arms; suppresses the body parts the robe replaces and grafts the robe's own posed subtree (#1989) — shared Radoub.UI 0.2.6-alpha (see root CHANGELOG). Per-variant residuals tracked in #2398/#2399.
 - Snake preview floating fangs + flat pose (#2126)
-- Level-by-level stats history tracking in comments (#875)
 
 ---
 

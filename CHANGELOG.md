@@ -17,6 +17,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.6-alpha] - 2026-06-07
+**Branch**: `quartermaster/issue-2381` | **PR**: #2394
+
+### Model preview: graft full-body parts (robes) as a subtree (#1989)
+
+- A robe is a near-complete posed body (its own torso/limb hierarchy + coat/arms skin meshes), not a single part. The composer now grafts a robe's whole subtree preserving its internal transforms instead of splicing individual meshes onto skeleton bones (which collapsed/ballooned the arms). Skin meshes keep their `MdlSkinNode` type through cloning. Static-pose render now matches Aurora; per-variant residuals (Render=false limb meshes, cloak placement) tracked in #2398, animation in #2399.
+
+---
+
 ## [Radoub.UI 0.2.5-alpha] - 2026-06-07
 **Branch**: `quartermaster/issue-2381` | **PR**: #2394
 
