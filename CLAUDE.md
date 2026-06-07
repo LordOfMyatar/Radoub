@@ -17,6 +17,7 @@ Project guidance for Claude Code sessions working with the Radoub multi-tool rep
 | **Quartermaster** | QM | Creature/inventory editor (`.utc`, `.bic` files) | `Quartermaster/CLAUDE.md` |
 | **Fence** | FEN | Merchant/store editor (`.utm` files) | `Fence/CLAUDE.md` |
 | **Relique** | REL | Item blueprint editor (`.uti` files) | `Relique/CLAUDE.md` |
+| **Reliquary** | RLQ | Placeable blueprint editor (`.utp` files; namespace `PlaceableEditor`) | `Reliquary/CLAUDE.md` |
 | **Trebuchet** | TRE | Radoub launcher/hub | `Trebuchet/CLAUDE.md` |
 | **Marlinspike** | MAR | Search & replace across files (lives in Trebuchet) | `Trebuchet/CLAUDE.md` |
 | **Radoub** | RAD | Repository-level / shared | This file |
@@ -27,11 +28,7 @@ Project guidance for Claude Code sessions working with the Radoub multi-tool rep
 
 ### Planned Tools
 
-| Tool | Description | Status |
-|------|-------------|--------|
-| **Reliquary** | (TBD — placeholder for future tool) | Planned; bootstrap FlaUI infra tracked in [#2304](https://github.com/LordOfMyatar/Radoub/issues/2304) |
-
-Future tools land as subdirectories with their own README, CLAUDE.md, and development infrastructure. Bootstrap follows the [New Tool Bootstrap guide](Documentation/NEW_TOOL_BOOTSTRAP.md).
+None currently. Future tools land as subdirectories with their own README, CLAUDE.md, and development infrastructure. Bootstrap follows the [New Tool Bootstrap guide](Documentation/NEW_TOOL_BOOTSTRAP.md).
 
 ---
 
