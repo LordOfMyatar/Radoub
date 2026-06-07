@@ -5,7 +5,7 @@ All notable changes to Parley. One-line highlights per version; full details in 
 ---
 
 ## [0.1.174-alpha] - 2026-06-06
-**Branch**: `parley/issue-2382` | **PR**: #TBD
+**Branch**: `parley/issue-2382` | **PR**: #2388
 
 ### Sprint: Settings Migration & Drag-Drop Unification (#2382)
 
