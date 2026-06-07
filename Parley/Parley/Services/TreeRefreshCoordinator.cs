@@ -275,6 +275,11 @@ namespace DialogEditor.Services
             if (parent.OriginalNode == target)
                 return parent;
 
+            // #2392: Tree children are lazy-loaded (#82) — a node reparented under
+            // a collapsed ancestor is not yet materialized, so force-populate at each
+            // level before descending. Mirrors the search-navigation fix (#1842).
+            parent.PopulateChildren();
+
             if (parent.Children != null)
             {
                 foreach (var child in parent.Children)
