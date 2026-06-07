@@ -24,6 +24,11 @@ namespace Manifest.Views;
 /// </summary>
 public partial class MainWindow
 {
+    // Paths backed up this session — we snapshot a journal to ~/Radoub/Backups/ only on
+    // the first save after open, not on every save, to avoid backup clutter (#2253).
+    private readonly HashSet<string> _backedUpThisSession =
+        new(StringComparer.OrdinalIgnoreCase);
+
     private void UpdateRecentFilesMenu()
     {
         Radoub.UI.Services.RecentFilesMenuHelper.Populate(
@@ -207,7 +212,7 @@ public partial class MainWindow
         // Write to a temp file beside the destination (same volume = atomic move),
         // then swap it into place with the shared cross-OS atomic helper. A single
         // File.Move(overwrite:true) means the original is never missing mid-save
-        // (#2253, #2256). The pre-save backup goes to the shared ~/Radoub/Backups/
+        // (#2253, #2256). A one-per-session snapshot goes to the shared ~/Radoub/Backups/
         // folder (under retention) rather than a .bak in the module dir — modules hold
         // exactly one .jrl and must not accumulate backup clutter (#2253).
         var jrl = _currentJrl;
@@ -215,13 +220,16 @@ public partial class MainWindow
         var tempPath = path + ".tmp";
         try
         {
-            // Snapshot the existing journal to the shared Backups folder before replacing.
-            if (File.Exists(path))
+            // Snapshot the existing journal to the shared Backups folder before the first
+            // save of this file this session. Atomic write below protects every save from
+            // mid-write corruption; the backup is a once-per-session safety net.
+            if (File.Exists(path) && !_backedUpThisSession.Contains(path))
             {
                 var moduleName = Path.GetFileName(Path.GetDirectoryName(path)) ?? "Manifest";
                 try
                 {
                     await new BackupService().BackupFilesAsync(new[] { path }, moduleName);
+                    _backedUpThisSession.Add(path);
                 }
                 catch (Exception bex)
                 {
