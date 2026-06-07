@@ -129,9 +129,8 @@ Quartermaster/
 │   │       ├── QuickBarPanel.axaml(.cs) - Quick access bar
 │   │       └── PlaceholderPanel.axaml(.cs) - Placeholder
 │   └── Assets/
-└── Quartermaster.Tests/ (unit tests)
-    ├── CommandLineServiceTests.cs
-    └── SettingsServiceTests.cs
+└── Quartermaster.Tests/ (43 unit-test files — services, wizard logic, round-trip,
+                          appearance/HAK-merge, feat/skill/spell, level history)
 ```
 
 ---
@@ -291,6 +290,26 @@ Items are resolved in this order:
 
 ---
 
+## Model Preview & Textures
+
+The 3D appearance preview lives in shared `Radoub.UI` (`ModelPreviewGLControl`,
+`TextureService`, `MeshSkipHeuristic` — all in `Radoub.UI/Controls` + `Radoub.UI/Services`),
+not in Quartermaster. Edit there for rendering bugs.
+
+**PBR texture resolution (#1755, #1760)**: NWN:EE creature skins resolve textures two
+ways — (1) an `.mtr` material file named by the mesh's `materialname`, or (2) a fixed
+suffix convention where the bare `<name>` has companion maps `<name>_d` (diffuse),
+`_n` (normal), `_r` (roughness), `_i` (illum). MDL meshes reference the bare name;
+`TextureService.LoadTextureWithKind` falls back to `<name>_d` when the bare name misses.
+CEP3 creatures ported from NWN2 (Txpple beetles, CEP `una` spiders) rely on this — without
+the fallback they render **white**.
+
+**Known gap**: the binary MDL reader declares `MaterialName` but never reads it, and `.mtr`
+files (resource type 3007) are not parsed. MTR-driven creatures whose diffuse has a non-`_d`
+name still render white. If a white-model bug isn't explained by the `_d` convention, suspect MTR.
+
+---
+
 ## Testing
 
 ### Unit Tests
@@ -299,14 +318,15 @@ Items are resolved in this order:
 dotnet test Quartermaster/Quartermaster.Tests
 ```
 
-35+ test files covering:
-- AbilityPointBuyService, AlignmentRestriction, Appearance (3 variants)
+43 test files covering:
+- AbilityPointBuyService, AlignmentRestriction, Appearance (analysis/filter/service/HAK-merge)
 - CharacterCreation, CharacterSheet, ClassAlignment, ClassDomain, Combat
-- CreatureDisplay, Domain, FeatCache, FeatService (4 variants)
+- CreatureDisplay, Domain, FeatCache, FeatService (4 variants + prereq-override + subtype)
 - LevelHistory, LevelUpApplication, LevelUpSkillDisplay, Metamagic
-- ModelService (2 variants), NcwHardening, PaletteColor
-- PrestigePrerequisite, RoundTripValidation, ScriptBrowserContext
-- ScriptTemplate, SkillService, SpellService, CommandLineService, SettingsService
+- ModelNameConstruction, NcwHardening, PaletteColor, PltColorIndices
+- PrestigePrerequisite, RoundTripValidation, ScriptBrowserContext, PortraitBrowserContext
+- ScriptTemplate, SkillService, SpellService, CommandLineService, SettingsService (+ bool persistence)
+- WizardDisplayItem, PathSafety, GameDataWarnOnce
 
 ### Integration Tests
 
@@ -315,6 +335,19 @@ FlaUI smoke tests in `Radoub.IntegrationTests/Quartermaster/`:
 ```bash
 dotnet test Radoub.IntegrationTests --filter "Category=Smoke&FullyQualifiedName~Quartermaster"
 ```
+
+### Manual Model-Preview Fixtures
+
+To eyeball a specific appearance, clone Bucky.utc with a swapped `Appearance_Type` into
+LNS_DLG (PS7 required — loads the net9.0 Radoub.Formats.dll; do NOT use Windows PowerShell 5.1
+or the WindowsApps `pwsh` stub):
+
+```bash
+& "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass `
+  -File ".claude/scripts/New-AppearanceTestUtc.ps1" -Appearances a4=159,a5=3951
+```
+
+Open the generated `aN.utc` in QM → Appearance panel to verify rendering.
 
 ---
 

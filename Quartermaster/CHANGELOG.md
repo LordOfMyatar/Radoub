@@ -5,6 +5,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.117-alpha] - 2026-06-06
+**Branch**: `quartermaster/issue-2381` | **PR**: #2394
+
+### Sprint: Rendering Bug Cleanup (#2381)
+
+- Fire/stag/bombardier beetle (Txpple) and giant/glow spider (CEP `una`) now render textured, not white (#1755, #1760) — PBR diffuse fallback in shared Radoub.UI 0.2.3-alpha (see root CHANGELOG)
+- Dire rat (CEP `una`) now renders textured; softer preview lighting so models aren't washed out (#1762) — shared Radoub.UI 0.2.4-alpha (see root CHANGELOG)
+- Fey/pixy (`c_fairy`) and other CEP creatures render their own pack's textures, not a base-game stub (#1758) — preview textures follow the model's source tier (shared Radoub.UI 0.2.5-alpha, see root CHANGELOG)
+- Robe armor renders as a proper combined body — no more back-gaps/missing-legs/ballooned arms; suppresses the body parts the robe replaces and grafts the robe's own posed subtree (#1989) — shared Radoub.UI 0.2.6-alpha (see root CHANGELOG). Per-variant residuals tracked in #2398/#2399.
+- Snake floating fangs + flat pose (#2126) — root-caused as the un-applied skin-mesh deformation; deferred to skinning epic #2400 (not fixable without the shared renderer's bone-weight deformation work)
+- Removed the disabled "Not yet implemented" Undo/Redo/Cut/Copy/Paste Edit-menu stubs (#2250) per the #2231 UI-uniformity rule
+
+---
+
 ## [0.2.116-alpha] - 2026-06-05
 **Branch**: `radoub/issue-2350` | **PR**: #2351
 

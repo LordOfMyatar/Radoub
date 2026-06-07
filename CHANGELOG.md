@@ -17,6 +17,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.6-alpha] - 2026-06-07
+**Branch**: `quartermaster/issue-2381` | **PR**: #2394
+
+### Model preview: graft full-body parts (robes) as a subtree (#1989)
+
+- A robe is a near-complete posed body (its own torso/limb hierarchy + coat/arms skin meshes), not a single part. The composer now grafts a robe's whole subtree preserving its internal transforms instead of splicing individual meshes onto skeleton bones (which collapsed/ballooned the arms). Skin meshes keep their `MdlSkinNode` type through cloning. Static-pose render now matches Aurora; per-variant residuals (Render=false limb meshes, cloak placement) tracked in #2398, animation in #2399.
+
+---
+
+## [Radoub.UI 0.2.5-alpha] - 2026-06-07
+**Branch**: `quartermaster/issue-2381` | **PR**: #2394
+
+### Model preview: textures follow the model's source tier (#1758)
+
+- A creature model loaded from a HAK/Module now resolves its textures from the normal HAK-first chain instead of being forced to base-game BIF, so CEP-only skins (e.g. the green pixie `c_fairy`) render correctly instead of a stale 32×32 base stub. Base-game/Override models keep the BIF-preferred behavior (#1867 bat-wing fix). When a HAK creature's texture still falls back to a base-game stub, the preview now warns that it may be inaccurate. See follow-up refactor #2397.
+
+---
+
+## [Radoub.UI 0.2.4-alpha] - 2026-06-06
+**Branch**: `quartermaster/issue-2381` | **PR**: #2394
+
+### Model preview: softer lighting, less wash-out (#1762)
+
+- Lowered preview ambient (0.95→0.70) and the midtone gamma lift (1/1.6→1/1.1) so textures show their real color instead of bleached/faded. The PBR `_d` fallback (0.2.3) made the old over-bright lighting obvious on many creatures; this restores accurate tone across all models.
+
+---
+
+## [Radoub.UI 0.2.3-alpha] - 2026-06-06
+**Branch**: `quartermaster/issue-2381` | **PR**: #2394
+
+### Model preview: PBR diffuse texture fallback (#1755)
+
+- Creature skins that reference a bare texture name now fall back to the NWN:EE PBR diffuse map (`<name>_d`) when the bare name is missing. Fixes white/untextured CEP3 creatures ported from NWN2 (e.g. Txpple beetles).
+
+---
+
 ## [Radoub.UI 0.2.2-alpha] - 2026-06-06
 **Branch**: `trebuchet/sprint/data-loss-marlinspike` | **PR**: #2387
 

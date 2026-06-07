@@ -4,6 +4,7 @@ using System.Linq;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Mdl;
+using Radoub.Formats.Resolver;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
 using Radoub.Formats.Uti;
@@ -21,7 +22,17 @@ public class ModelService
     private readonly IGameDataService _gameDataService;
     private readonly MdlReader _mdlReader = new();
     private readonly Dictionary<string, MdlModel?> _modelCache = new();
+    private readonly Dictionary<string, ResourceSource> _modelSourceCache = new();
     private readonly MdlPartComposer _composer;
+
+    /// <summary>
+    /// Source of the most recent model resolved by <see cref="LoadModel"/>. Drives the
+    /// preview's texture-source policy (#1758): a HAK/Module creature should use its own
+    /// pack's textures, a base/Override creature keeps the #1867 BIF-prefer behavior.
+    /// Defaults to <see cref="ResourceSource.Bif"/> so part-based player bodies (composed
+    /// from base parts) keep BIF-preferred textures.
+    /// </summary>
+    public ResourceSource LastLoadedModelSource { get; private set; } = ResourceSource.Bif;
 
     public ModelService(IGameDataService gameDataService)
     {
@@ -76,7 +87,11 @@ public class ModelService
                         $"LoadCreatureModel: No armor overrides (naked creature or no chest armor)");
                 }
 
-                return LoadPartBasedCreatureModel(creature, armorOverrides);
+                var partModel = LoadPartBasedCreatureModel(creature, armorOverrides);
+                // Part-based player/creature bodies are composed from base-game parts;
+                // keep BIF-preferred textures (#1867) regardless of which part loaded last.
+                LastLoadedModelSource = ResourceSource.Bif;
+                return partModel;
             }
 
             return LoadModelForAppearance(appearanceId, gender, phenotype);
@@ -186,35 +201,57 @@ public class ModelService
 
         var parts = new List<(string PartType, string ResRef)>();
 
-        // Head — special, uses AppearanceHead, never overridden by armor
-        AppendPart(parts, basePrefix, "head", creature.AppearanceHead);
-
-        AppendPart(parts, basePrefix, "neck", GetPartNumber("Neck", creature.BodyPart_Neck));
-        AppendPart(parts, basePrefix, "chest", GetPartNumber("Torso", creature.BodyPart_Torso));
-
-        // Robe is armor-only (no creature body part); only added if armor has a robe override
+        // Robe is armor-only (no creature body part); only added if armor has a robe override.
         var robePartNumber = (armorOverrides != null && armorOverrides.TryGetValue("Robe", out var robeValue) && robeValue > 0)
             ? robeValue : (byte)0;
-        AppendPart(parts, basePrefix, "robe", robePartNumber);
 
-        AppendPart(parts, basePrefix, "pelvis", GetPartNumber("Pelvis", creature.BodyPart_Pelvis));
-        AppendPart(parts, basePrefix, "belt", GetPartNumber("Belt", creature.BodyPart_Belt));
+        // #1989: load the robe FIRST and only suppress the body parts it covers if it actually
+        // resolved. Otherwise (robe model missing for this mannequin) we'd strip the torso/arms/
+        // legs AND have no robe to replace them — an empty render (the dana/pmo0 case).
+        if (robePartNumber > 0)
+            AppendPart(parts, basePrefix, "robe", robePartNumber);
+        bool robeActive = parts.Any(p => p.PartType.Equals("robe", System.StringComparison.OrdinalIgnoreCase));
+        if (robePartNumber > 0 && !robeActive)
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"LoadPartBasedCreatureModel: robe #{robePartNumber} did not resolve — keeping body parts (no suppression)");
 
-        AppendPart(parts, basePrefix, "shol", GetPartNumber("LShoul", creature.BodyPart_LShoul));
-        AppendPart(parts, basePrefix, "shor", GetPartNumber("RShoul", creature.BodyPart_RShoul));
-        AppendPart(parts, basePrefix, "bicepl", GetPartNumber("LBicep", creature.BodyPart_LBicep));
-        AppendPart(parts, basePrefix, "bicepr", GetPartNumber("RBicep", creature.BodyPart_RBicep));
-        AppendPart(parts, basePrefix, "forel", GetPartNumber("LFArm", creature.BodyPart_LFArm));
-        AppendPart(parts, basePrefix, "forer", GetPartNumber("RFArm", creature.BodyPart_RFArm));
-        AppendPart(parts, basePrefix, "handl", GetPartNumber("LHand", creature.BodyPart_LHand));
-        AppendPart(parts, basePrefix, "handr", GetPartNumber("RHand", creature.BodyPart_RHand));
+        // A robe is a near-complete posed body covering torso/pelvis/limbs; skip those individual
+        // parts when a robe actually loaded — loading them additively causes z-fighting and gaps.
+        void AddPart(string partType, byte partNumber)
+        {
+            if (RobePartSuppression.IsSuppressedByRobe(partType, robeActive))
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"LoadPartBasedCreatureModel: skipping '{partType}' (covered by robe #{robePartNumber})");
+                return;
+            }
+            AppendPart(parts, basePrefix, partType, partNumber);
+        }
 
-        AppendPart(parts, basePrefix, "legl", GetPartNumber("LThigh", creature.BodyPart_LThigh));
-        AppendPart(parts, basePrefix, "legr", GetPartNumber("RThigh", creature.BodyPart_RThigh));
-        AppendPart(parts, basePrefix, "shinl", GetPartNumber("LShin", creature.BodyPart_LShin));
-        AppendPart(parts, basePrefix, "shinr", GetPartNumber("RShin", creature.BodyPart_RShin));
-        AppendPart(parts, basePrefix, "footl", GetPartNumber("LFoot", creature.BodyPart_LFoot));
-        AppendPart(parts, basePrefix, "footr", GetPartNumber("RFoot", creature.BodyPart_RFoot));
+        // Head — special, uses AppearanceHead, never overridden by armor
+        AddPart("head", creature.AppearanceHead);
+
+        AddPart("neck", GetPartNumber("Neck", creature.BodyPart_Neck));
+        AddPart("chest", GetPartNumber("Torso", creature.BodyPart_Torso));
+
+        AddPart("pelvis", GetPartNumber("Pelvis", creature.BodyPart_Pelvis));
+        AddPart("belt", GetPartNumber("Belt", creature.BodyPart_Belt));
+
+        AddPart("shol", GetPartNumber("LShoul", creature.BodyPart_LShoul));
+        AddPart("shor", GetPartNumber("RShoul", creature.BodyPart_RShoul));
+        AddPart("bicepl", GetPartNumber("LBicep", creature.BodyPart_LBicep));
+        AddPart("bicepr", GetPartNumber("RBicep", creature.BodyPart_RBicep));
+        AddPart("forel", GetPartNumber("LFArm", creature.BodyPart_LFArm));
+        AddPart("forer", GetPartNumber("RFArm", creature.BodyPart_RFArm));
+        AddPart("handl", GetPartNumber("LHand", creature.BodyPart_LHand));
+        AddPart("handr", GetPartNumber("RHand", creature.BodyPart_RHand));
+
+        AddPart("legl", GetPartNumber("LThigh", creature.BodyPart_LThigh));
+        AddPart("legr", GetPartNumber("RThigh", creature.BodyPart_RThigh));
+        AddPart("shinl", GetPartNumber("LShin", creature.BodyPart_LShin));
+        AddPart("shinr", GetPartNumber("RShin", creature.BodyPart_RShin));
+        AddPart("footl", GetPartNumber("LFoot", creature.BodyPart_LFoot));
+        AddPart("footr", GetPartNumber("RFoot", creature.BodyPart_RFoot));
 
         return _composer.Compose(basePrefix, parts);
     }
@@ -305,6 +342,8 @@ public class ModelService
         if (_modelCache.TryGetValue(resRef, out var cached))
         {
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"LoadModel: '{resRef}' from cache, hasModel={cached != null}");
+            if (_modelSourceCache.TryGetValue(resRef, out var cachedSource))
+                LastLoadedModelSource = cachedSource;
             return cached;
         }
 
@@ -316,6 +355,8 @@ public class ModelService
             return null;
         }
 
+        LastLoadedModelSource = resourceResult.Source;
+        _modelSourceCache[resRef] = resourceResult.Source;
         var modelData = resourceResult.Data;
         var sourceFile = System.IO.Path.GetFileName(resourceResult.SourcePath);
         UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadModel: '{resRef}' from {resourceResult.Source} ({sourceFile}), {modelData.Length} bytes");

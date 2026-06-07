@@ -80,6 +80,7 @@ public partial class AppearancePanel
         {
             _modelPreviewGL.PreviewStateChanged += OnPreviewStateChanged;
             _modelPreviewGL.MeshInfoChanged += OnMeshInfoChanged;
+            _modelPreviewGL.TextureSourceChanged += OnTextureSourceChanged;
         }
 
         // 3D Preview button events
@@ -389,6 +390,7 @@ public partial class AppearancePanel
         {
             _modelPreviewGL.PreviewStateChanged -= OnPreviewStateChanged;
             _modelPreviewGL.MeshInfoChanged -= OnMeshInfoChanged;
+            _modelPreviewGL.TextureSourceChanged -= OnTextureSourceChanged;
         }
 
         if (_rotateLeftButton != null)
@@ -643,6 +645,25 @@ public partial class AppearancePanel
             default:
                 _previewStateOverlay.IsVisible = false;
                 break;
+        }
+    }
+
+    private void OnTextureSourceChanged(object? sender, bool usedBaseFallback)
+    {
+        // #1758: a CEP creature whose own pack lacked the texture fell back to a
+        // base-game stub — warn that the preview skin may not match the asset.
+        if (_textureSourceStatusText == null) return;
+
+        if (usedBaseFallback)
+        {
+            _textureSourceStatusText.Text =
+                "⚠ Preview may be inaccurate — using base-game textures (model's pack has no matching texture)";
+            _textureSourceStatusText.Foreground = BrushManager.GetWarningBrush(this);
+            _textureSourceStatusText.IsVisible = true;
+        }
+        else
+        {
+            _textureSourceStatusText.IsVisible = false;
         }
     }
 

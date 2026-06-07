@@ -184,11 +184,13 @@ public partial class AppearancePanel
                     armorColors.Value.leather1, armorColors.Value.leather2);
             }
 
-            // Prefer BIF textures for creature models to avoid CEP texture
-            // incompatibilities (e.g., reversed bat wings from CEP texture) (#1867)
-            _modelPreviewGL.PreferBifTextures = true;
-
+            // Texture-source policy (#1758): load the model first, then prefer BIF
+            // textures only when the model itself came from base game/Override (#1867
+            // bat-wing fix). HAK/Module creatures (CEP) use their own pack's textures
+            // so CEP-only skins like c_fairy resolve correctly instead of a base stub.
             var model = _modelService.LoadCreatureModel(_currentCreature);
+            _modelPreviewGL.PreferBifTextures =
+                TextureSourcePolicy.PreferBif(_modelService.LastLoadedModelSource);
             _modelPreviewGL.Model = model;
             RefreshAnimationList(model);
         }

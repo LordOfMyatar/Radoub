@@ -129,8 +129,10 @@ void main()
 
     vec3 result = (ambient + diffuse) * baseColor;
 
-    // Gamma correction: NWN textures are sRGB; brighten midtones to match toolset look
-    result = pow(result, vec3(1.0 / 1.6));
+    // Gamma correction: NWN textures are sRGB; a mild midtone lift matches the
+    // toolset look. 1/1.6 over-brightened and washed out textures (esp. NWN2-ported
+    // PBR _d diffuse maps); 1/1.1 keeps only a slight lift without bleaching (#1762).
+    result = pow(result, vec3(1.0 / 1.1));
 
     FragColor = vec4(result, 1.0);
 }

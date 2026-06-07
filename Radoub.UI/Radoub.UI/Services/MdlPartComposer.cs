@@ -205,6 +205,20 @@ public sealed class MdlPartComposer
                 return;
             }
 
+            EnsureCompositeRoot(compositeModel);
+
+            // #1989: a robe is not a single body part — it is a near-complete posed body that
+            // ships its own nested bone hierarchy (torso_g→rbicep_g→rforearm_g→rhand_g, etc.)
+            // plus skin meshes (coat, arms). Splicing its individual meshes onto the skeleton's
+            // bones discards the robe's internal local transforms and balloons the arms/legs.
+            // Instead graft the robe's whole subtree, preserving its hierarchy, so each mesh keeps
+            // the exact world transform Aurora computes from the robe's own node chain.
+            if (IsFullBodyPart(partType, partModel))
+            {
+                GraftPartSubtree(compositeModel, partModel, partType, partResRef, meshPartTypes);
+                return;
+            }
+
             // Bone lookup targets the composite's OWN (cloned) skeleton root — never the cached
             // skeleton model. Attaching to / nudging the cached skeleton would corrupt it for the
             // next render (#1735).
@@ -213,8 +227,6 @@ public sealed class MdlPartComposer
                 ? FindBoneByName(compositeModel.GeometryRoot, boneName)
                 : null;
 
-            // Compute a fallback world position for parts whose bones can't be found.
-            // (The skeleton lookup may miss in synthetic test models or partial skeletons.)
             var fallbackPosition = Vector3.Zero;
             if (bone != null)
             {
@@ -228,8 +240,7 @@ public sealed class MdlPartComposer
                 if (node is not MdlTrimeshNode sourceTrimesh) continue;
 
                 // Clone the part mesh before attaching — the source is a cached MdlModel shared
-                // across renders; we set Bitmap/Position/Parent on the CLONE only (#1735). Geometry
-                // arrays (vertices, normals, faces, UVs) are immutable here, so they're shared.
+                // across renders; we set Bitmap/Position/Parent on the CLONE only (#1735).
                 var trimesh = CloneTrimeshShallow(sourceTrimesh);
 
                 // Body part MDL files have geometry at local origin. Body part bitmap fields
@@ -237,31 +248,17 @@ public sealed class MdlPartComposer
                 // name from the part ResRef instead.
                 trimesh.Bitmap = partResRef;
 
-                if (compositeModel.GeometryRoot == null)
-                {
-                    compositeModel.GeometryRoot = new MdlNode
-                    {
-                        Name = "composite_root",
-                        Orientation = Quaternion.Identity,
-                        Scale = 1.0f,
-                    };
-                }
-
                 if (bone != null)
                 {
-                    // Parent under the bone — its bind position carries the world transform,
-                    // so zero out the mesh's own offset to avoid double-application.
                     trimesh.Position = Vector3.Zero;
                     trimesh.Parent = bone;
                     bone.Children.Add(trimesh);
                 }
                 else
                 {
-                    // Fallback: skeleton bone missing, attach at the bone's would-be world
-                    // position under the composite root.
                     trimesh.Position = fallbackPosition;
                     trimesh.Parent = compositeModel.GeometryRoot;
-                    compositeModel.GeometryRoot.Children.Add(trimesh);
+                    compositeModel.GeometryRoot!.Children.Add(trimesh);
                 }
 
                 meshPartTypes[trimesh.Name] = partType;
@@ -272,6 +269,72 @@ public sealed class MdlPartComposer
             UnifiedLogger.LogApplication(LogLevel.WARN,
                 $"MdlPartComposer.TryAddBodyPart: failed to add '{partType}' from '{partResRef}': {ex.GetType().Name}: {ex.Message}");
         }
+    }
+
+    private static void EnsureCompositeRoot(MdlModel compositeModel)
+    {
+        if (compositeModel.GeometryRoot == null)
+        {
+            compositeModel.GeometryRoot = new MdlNode
+            {
+                Name = "composite_root",
+                Orientation = Quaternion.Identity,
+                Scale = 1.0f,
+            };
+        }
+    }
+
+    /// <summary>
+    /// A "full body" part carries its own multi-node body hierarchy rather than a single mesh
+    /// at the origin. Robes are the case that matters (#1989); detect by part type.
+    /// </summary>
+    private static bool IsFullBodyPart(string partType, MdlModel partModel) =>
+        partType.Equals("robe", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Graft a full-body part's entire node subtree under the composite root, preserving its
+    /// internal hierarchy and per-node local transforms. The part's root dummy aligns with the
+    /// skeleton root (both at the same world origin), so its children attach directly under the
+    /// composite root and reproduce the part's own world transforms (#1989).
+    /// </summary>
+    private void GraftPartSubtree(
+        MdlModel compositeModel,
+        MdlModel partModel,
+        string partType,
+        string partResRef,
+        Dictionary<string, string> meshPartTypes)
+    {
+        if (partModel.GeometryRoot == null)
+            return;
+
+        EnsureCompositeRoot(compositeModel);
+        var root = compositeModel.GeometryRoot!;
+
+        // Graft the part root's CHILDREN (skip the part's own root dummy, whose translation
+        // duplicates the skeleton root's). Each child subtree is cloned with hierarchy intact.
+        int grafted = 0;
+        foreach (var child in partModel.GeometryRoot.Children)
+        {
+            var clone = CloneNode(child, root);
+            ApplyPartBitmap(clone, partResRef, partType, meshPartTypes);
+            root.Children.Add(clone);
+            grafted++;
+        }
+
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"MdlPartComposer: grafted full-body part '{partType}' ({partResRef}) — {grafted} subtree(s)");
+    }
+
+    /// <summary>Set the texture name + record the part type on every mesh in a grafted subtree.</summary>
+    private static void ApplyPartBitmap(MdlNode node, string partResRef, string partType, Dictionary<string, string> meshPartTypes)
+    {
+        if (node is MdlTrimeshNode mesh && mesh.Vertices.Length > 0)
+        {
+            mesh.Bitmap = partResRef;
+            meshPartTypes[mesh.Name] = partType;
+        }
+        foreach (var child in node.Children)
+            ApplyPartBitmap(child, partResRef, partType, meshPartTypes);
     }
 
     /// <summary>
@@ -314,43 +377,58 @@ public sealed class MdlPartComposer
     /// mutates Position / Bitmap / Parent on the clone, so sharing geometry is safe and cheap.
     /// Children are NOT copied here (CloneNode handles hierarchy).
     /// </summary>
-    private static MdlTrimeshNode CloneTrimeshShallow(MdlTrimeshNode s) => new()
+    private static MdlTrimeshNode CloneTrimeshShallow(MdlTrimeshNode s)
     {
-        NodeType = s.NodeType,
-        Name = s.Name,
-        Position = s.Position,
-        Orientation = s.Orientation,
-        Scale = s.Scale,
-        Wirecolor = s.Wirecolor,
-        InheritColor = s.InheritColor,
-        PositionTimes = s.PositionTimes,
-        PositionValues = s.PositionValues,
-        OrientationTimes = s.OrientationTimes,
-        OrientationValues = s.OrientationValues,
-        ScaleTimes = s.ScaleTimes,
-        ScaleValues = s.ScaleValues,
-        Vertices = s.Vertices,
-        Normals = s.Normals,
-        TextureCoords = s.TextureCoords,
-        VertexColors = s.VertexColors,
-        Faces = s.Faces,
-        Bitmap = s.Bitmap,
-        Bitmap2 = s.Bitmap2,
-        MaterialName = s.MaterialName,
-        Ambient = s.Ambient,
-        Diffuse = s.Diffuse,
-        Specular = s.Specular,
-        Shininess = s.Shininess,
-        Alpha = s.Alpha,
-        SelfIllumColor = s.SelfIllumColor,
-        Render = s.Render,
-        Shadow = s.Shadow,
-        Beaming = s.Beaming,
-        RotateTexture = s.RotateTexture,
-        TransparencyHint = s.TransparencyHint,
-        Tilefade = s.Tilefade,
-        RenderOrder = s.RenderOrder,
-    };
+        // Preserve the runtime type so a skin mesh stays an MdlSkinNode (#1989): the
+        // tiny-trimesh skip heuristic and mesh-info counts key on `is MdlSkinNode`, and a
+        // robe's coat/arms are skins. Bone arrays are shared (immutable during composition).
+        MdlTrimeshNode clone = s is MdlSkinNode sk
+            ? new MdlSkinNode
+            {
+                BoneWeights = sk.BoneWeights,
+                BoneNodeNames = sk.BoneNodeNames,
+                BoneQuaternions = sk.BoneQuaternions,
+                BoneTranslations = sk.BoneTranslations,
+                NodeToBoneMap = sk.NodeToBoneMap,
+            }
+            : new MdlTrimeshNode();
+
+        clone.NodeType = s.NodeType;
+        clone.Name = s.Name;
+        clone.Position = s.Position;
+        clone.Orientation = s.Orientation;
+        clone.Scale = s.Scale;
+        clone.Wirecolor = s.Wirecolor;
+        clone.InheritColor = s.InheritColor;
+        clone.PositionTimes = s.PositionTimes;
+        clone.PositionValues = s.PositionValues;
+        clone.OrientationTimes = s.OrientationTimes;
+        clone.OrientationValues = s.OrientationValues;
+        clone.ScaleTimes = s.ScaleTimes;
+        clone.ScaleValues = s.ScaleValues;
+        clone.Vertices = s.Vertices;
+        clone.Normals = s.Normals;
+        clone.TextureCoords = s.TextureCoords;
+        clone.VertexColors = s.VertexColors;
+        clone.Faces = s.Faces;
+        clone.Bitmap = s.Bitmap;
+        clone.Bitmap2 = s.Bitmap2;
+        clone.MaterialName = s.MaterialName;
+        clone.Ambient = s.Ambient;
+        clone.Diffuse = s.Diffuse;
+        clone.Specular = s.Specular;
+        clone.Shininess = s.Shininess;
+        clone.Alpha = s.Alpha;
+        clone.SelfIllumColor = s.SelfIllumColor;
+        clone.Render = s.Render;
+        clone.Shadow = s.Shadow;
+        clone.Beaming = s.Beaming;
+        clone.RotateTexture = s.RotateTexture;
+        clone.TransparencyHint = s.TransparencyHint;
+        clone.Tilefade = s.Tilefade;
+        clone.RenderOrder = s.RenderOrder;
+        return clone;
+    }
 
     /// <summary>
     /// Find a node in the bone hierarchy by name (case-insensitive).
