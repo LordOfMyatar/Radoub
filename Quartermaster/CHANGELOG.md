@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.117-alpha] - 2026-06-06
-**Branch**: `quartermaster/issue-2381` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2381` | **PR**: #2394
 
 ### Sprint: Rendering Bug Cleanup (#2381)
 
