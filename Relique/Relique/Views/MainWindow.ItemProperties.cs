@@ -858,6 +858,27 @@ public partial class MainWindow
 
         ItemStatisticsText.Text = stats;
         ItemStatisticsPanel.IsVisible = true;
+
+        RecomputeCost();
+    }
+
+    /// <summary>
+    /// Recompute the engine-derived item Cost (wiki Ch4 §4.4) and push it to the
+    /// view model so the read-only Cost field reflects the value the game will use.
+    /// Falls back to the stored value when game data is unavailable (#2235).
+    /// </summary>
+    private void RecomputeCost()
+    {
+        if (_itemViewModel == null || _currentItem == null || _itemCostCalculator == null)
+            return;
+
+        // Don't mutate read-only archive items — their Cost display stays as stored.
+        if (_documentState.IsReadOnly)
+            return;
+
+        var computed = _itemCostCalculator.Calculate(_currentItem);
+        if (computed.HasValue)
+            _itemViewModel.Cost = computed.Value;
     }
 
     /// <summary>

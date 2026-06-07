@@ -105,6 +105,7 @@ public partial class MainWindow
             _baseItemTypes = baseItemTypes;
             _itemPropertyService = itemPropertyService;
             _itemStatisticsService = itemStatisticsService;
+            _itemCostCalculator = new ItemCostCalculator(gameDataService); // #2235
             _itemIconService = itemIconService;
             _paletteColorService = paletteColorService;
             _armorPartCatalog = new ArmorPartCatalogService(gameDataService); // #2164

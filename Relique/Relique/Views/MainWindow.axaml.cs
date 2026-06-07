@@ -29,6 +29,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private ItemPropertyService? _itemPropertyService;
     private readonly PropertyCategoryService _categoryService = new();
     private ItemStatisticsService? _itemStatisticsService;
+    private ItemCostCalculator? _itemCostCalculator;
     private PropertyTypeInfo? _selectedPropertyType;
     private int _editingPropertyIndex = -1; // -1 = add mode, >= 0 = editing that index
     private bool _suppressAutoApply; // true while combos are being repopulated programmatically (#2226)
