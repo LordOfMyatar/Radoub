@@ -11,7 +11,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ### Sprint: Rendering Bug Cleanup (#2381)
 
 - Fire/stag/bombardier beetle (Txpple) and giant/glow spider (CEP `una`) now render textured, not white (#1755, #1760) — PBR diffuse fallback in shared Radoub.UI 0.2.3-alpha (see root CHANGELOG)
-- Fey/pixy, dire rat model rendering fixes (#1758, #1762)
+- Dire rat (CEP `una`) now renders textured; softer preview lighting so models aren't washed out (#1762) — shared Radoub.UI 0.2.4-alpha (see root CHANGELOG)
+- Fey/pixy model rendering fix (#1758)
 - Robe armor rendering gaps / missing lower body parts (#1989)
 - Snake preview floating fangs + flat pose (#2126)
 - Level-by-level stats history tracking in comments (#875)

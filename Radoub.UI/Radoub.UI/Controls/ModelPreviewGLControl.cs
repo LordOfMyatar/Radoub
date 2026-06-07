@@ -913,8 +913,8 @@ public class ModelPreviewGLControl : OpenGlControlBase
         // surface cues.
         var lightDir = Vector3.Normalize(new Vector3(0.3f, -0.5f, 0.8f));
         _shaderManager!.SetUniformVec3("lightDir", lightDir);
-        _shaderManager!.SetUniformVec3("lightColor", new Vector3(0.15f, 0.15f, 0.15f));
-        _shaderManager!.SetUniformVec3("ambientColor", new Vector3(0.95f, 0.95f, 0.95f));
+        _shaderManager!.SetUniformVec3("lightColor", new Vector3(0.25f, 0.25f, 0.25f));
+        _shaderManager!.SetUniformVec3("ambientColor", new Vector3(0.70f, 0.70f, 0.70f));
         _shaderManager!.SetUniformInt("debugMode", _debugMode);
 
         // Bind VAO and draw

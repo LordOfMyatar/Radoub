@@ -17,6 +17,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.4-alpha] - 2026-06-06
+**Branch**: `quartermaster/issue-2381` | **PR**: #2394
+
+### Model preview: softer lighting, less wash-out (#1762)
+
+- Lowered preview ambient (0.95→0.70) and the midtone gamma lift (1/1.6→1/1.1) so textures show their real color instead of bleached/faded. The PBR `_d` fallback (0.2.3) made the old over-bright lighting obvious on many creatures; this restores accurate tone across all models.
+
+---
+
 ## [Radoub.UI 0.2.3-alpha] - 2026-06-06
 **Branch**: `quartermaster/issue-2381` | **PR**: #2394
 
