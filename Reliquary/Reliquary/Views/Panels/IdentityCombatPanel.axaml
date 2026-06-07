@@ -133,6 +133,7 @@
                         <CheckBox Content="Plot" IsChecked="{Binding Plot, Mode=TwoWay}"
                                   AutomationProperties.AutomationId="Reliquary_Check_Plot"/>
                         <CheckBox Content="Useable" IsChecked="{Binding Useable, Mode=TwoWay}"
+                                  IsEnabled="{Binding IsUseableEnabled}"
                                   AutomationProperties.AutomationId="Reliquary_Check_Useable"/>
                         <CheckBox Content="Has Inventory" IsChecked="{Binding HasInventory, Mode=TwoWay}"
                                   AutomationProperties.AutomationId="Reliquary_Check_HasInventory"/>

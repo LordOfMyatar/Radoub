@@ -122,6 +122,49 @@ public class PlaceableViewModelTests
         Assert.False(vm.IsDamageEnabled);
     }
 
+    // #2412: Static and Useable are mutually exclusive — a Static placeable is baked into the
+    // area geometry and cannot be interacted with, so Useable has no meaning when Static is set.
+
+    [Fact]
+    public void Static_ForcesUseableOff_AndDisablesIt()
+    {
+        var utp = MakeUtp();
+        utp.Useable = true;
+        var vm = new PlaceableViewModel(utp);
+
+        vm.Static = true;
+
+        Assert.False(vm.Useable);
+        Assert.False(vm.IsUseableEnabled);
+        Assert.False(vm.Utp.Useable); // forced through to the model
+    }
+
+    [Fact]
+    public void ClearingStatic_ReenablesUseable()
+    {
+        var vm = new PlaceableViewModel(MakeUtp());
+        vm.Static = true;
+
+        vm.Static = false;
+
+        Assert.True(vm.IsUseableEnabled);
+    }
+
+    [Fact]
+    public void SettingStatic_RaisesUseableAndIsUseableEnabledChanges()
+    {
+        var utp = MakeUtp();
+        utp.Useable = true;
+        var vm = new PlaceableViewModel(utp);
+        var changed = new System.Collections.Generic.List<string?>();
+        vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        vm.Static = true;
+
+        Assert.Contains(nameof(vm.Useable), changed);
+        Assert.Contains(nameof(vm.IsUseableEnabled), changed);
+    }
+
     [Fact]
     public void SettingStatic_RaisesIsCombatEnabledChange()
     {

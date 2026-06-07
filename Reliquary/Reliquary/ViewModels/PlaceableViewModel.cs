@@ -147,14 +147,25 @@ public sealed class PlaceableViewModel : INotifyPropertyChanged
         {
             if (_utp.Static == value) return;
             _utp.Static = value;
+            // Static and Useable are mutually exclusive (#2412): a static placeable is baked into
+            // the area geometry and cannot be interacted with. Force Useable off when going static.
+            if (value && _utp.Useable)
+            {
+                _utp.Useable = false;
+                OnPropertyChanged(nameof(Useable));
+            }
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsCombatEnabled));
             OnPropertyChanged(nameof(IsDamageEnabled));
+            OnPropertyChanged(nameof(IsUseableEnabled));
         }
     }
 
     /// <summary>HP/Hardness/saves are editable only on a non-static placeable (design §5.1).</summary>
     public bool IsCombatEnabled => !_utp.Static;
+
+    /// <summary>Useable is editable only on a non-static placeable (#2412); they are mutually exclusive.</summary>
+    public bool IsUseableEnabled => !_utp.Static;
 
     /// <summary>Damage-related fields are editable only when neither Static nor Plot (design §5.1).</summary>
     public bool IsDamageEnabled => !_utp.Static && !_utp.Plot;
