@@ -52,6 +52,10 @@ public partial class MainWindow
         // Clear item resolution context (no file yet)
         _itemResolutionService?.SetCurrentFilePath(null);
 
+        // Deselect the previously-loaded file's row so the browser panel state matches
+        // the new unsaved in-memory document (no on-disk file selected) (#2307).
+        UpdateStoreBrowserCurrentFile(null);
+
         // Update UI
         PopulateStoreProperties();
         StoreItems.Clear();
