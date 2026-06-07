@@ -253,6 +253,61 @@ namespace DialogEditor.Tests
         }
 
         [Fact]
+        public void RefreshAndSelectNode_MovedNodeUnderCollapsedParent_SelectsMovedNode()
+        {
+            // #2392: After a drag-drop reparent, the moved node lands under a
+            // collapsed parent whose children are still lazy (placeholder only).
+            // FindNodeByKey must populate-and-descend to find the moved node
+            // instead of falling back to a sibling at NodeIndex-1.
+            var dialog = new Dialog();
+
+            // Two replies in the global Replies list: a sibling at index 0 and
+            // the moved node at index 1.
+            var siblingReply = new DialogNode { Type = DialogNodeType.Reply };
+            var movedReply = new DialogNode { Type = DialogNodeType.Reply };
+            dialog.Replies.Add(siblingReply); // index 0
+            dialog.Replies.Add(movedReply);   // index 1
+
+            // Parent entry that owns the moved reply via a real (non-link) pointer.
+            var parentEntry = new DialogNode { Type = DialogNodeType.Entry };
+            parentEntry.Pointers.Add(new DialogPtr
+            {
+                Type = DialogNodeType.Reply,
+                Index = 1,
+                Node = movedReply,
+                IsLink = false
+            });
+            dialog.Entries.Add(parentEntry);
+
+            // Rebuilt tree: root → parentEntry (collapsed: children are lazy,
+            // so only a placeholder exists; movedReply is NOT yet materialized).
+            var rootNode = new TreeViewRootNode(new Dialog());
+            var parentSafe = new TreeViewSafeNode(parentEntry);
+            rootNode.Children!.Add(parentSafe);
+            var treeNodes = new ObservableCollection<TreeViewSafeNode> { rootNode };
+
+            TreeViewSafeNode? restoredNode = null;
+
+            _coordinator = new TreeRefreshCoordinator(
+                populateDialogNodes: (skip) => { },
+                saveExpansionState: () => new HashSet<DialogNode>(),
+                restoreExpansionState: (nodes, refs) => { },
+                getDialogNodes: () => treeNodes,
+                getCurrentDialog: () => dialog,
+                getSelectedNode: () => null,
+                setSelectedNode: (node) => restoredNode = node,
+                getFocusedFieldInfo: () => (null, null),
+                restoreFocusedField: (name, pos) => { },
+                publishDialogRefreshed: (source) => { },
+                scheduleDeferred: action => action());
+
+            _coordinator.RefreshAndSelectNode(movedReply);
+
+            Assert.NotNull(restoredNode);
+            Assert.Same(movedReply, restoredNode!.OriginalNode);
+        }
+
+        [Fact]
         public void RefreshToRoot_DoesNotCallSetSelectedNode()
         {
             bool setSelectedCalled = false;
