@@ -101,6 +101,25 @@ public class TextureServiceHelperTests
         Assert.Equal(10, result[PltLayers.Tattoo2]);
     }
 
+    [Theory]
+    [InlineData("cre_017_t_b01", "cre_017_t_b01_d")] // #1755 CEP3 PBR beetle texture
+    [InlineData("c_dragon_red", "c_dragon_red_d")]
+    public void PbrDiffuseFallbackName_AppendsDSuffix(string baseName, string expected)
+    {
+        // #1755: NWN:EE PBR textures are stored as <name>_d (diffuse), _n, _r, _i.
+        // MDL meshes reference the bare <name>; when bare lookups miss we must try _d.
+        Assert.Equal(expected, TextureService.PbrDiffuseFallbackName(baseName));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(null)]
+    [InlineData("cre_017_t_b01_d")] // already a diffuse map — don't double-suffix
+    public void PbrDiffuseFallbackName_NoFallbackWhenInapplicable(string? baseName)
+    {
+        Assert.Null(TextureService.PbrDiffuseFallbackName(baseName));
+    }
+
     [Fact]
     public void ConvertBiowareDdsToStandard_TooShort_ReturnsNull()
     {

@@ -17,6 +17,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.3-alpha] - 2026-06-06
+**Branch**: `quartermaster/issue-2381` | **PR**: #2394
+
+### Model preview: PBR diffuse texture fallback (#1755)
+
+- Creature skins that reference a bare texture name now fall back to the NWN:EE PBR diffuse map (`<name>_d`) when the bare name is missing. Fixes white/untextured CEP3 creatures ported from NWN2 (e.g. Txpple beetles).
+
+---
+
 ## [Radoub.UI 0.2.2-alpha] - 2026-06-06
 **Branch**: `trebuchet/sprint/data-loss-marlinspike` | **PR**: #2387
 
