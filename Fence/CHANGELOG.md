@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.39-alpha] - 2026-06-07
+**Branch**: `fence/issue-2383` | **PR**: #2410
+
+### Sprint: Critical Save + Cross-Tool Data Integrity (#2383)
+
+- Save-on-close race and palette cache disposal leak fixed (#2255).
+- File browser panel refreshes after creating a New file (#2307).
+- ItemDetails code-behind binding replaced with StoreItemExtrasViewModel (#2153).
+
+Undo/Redo work split out to Epic #2231.
+
+---
+
 ## [0.1.38-alpha] - 2026-06-05
 **Branch**: `radoub/issue-2350` | **PR**: #2351
 

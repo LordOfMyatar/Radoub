@@ -3,6 +3,7 @@ using Avalonia.Interactivity;
 using Manifest.Services;
 using Radoub.Formats.Common;
 using Radoub.Formats.Gff;
+using Radoub.Formats.Jrl;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Tokens;
 using System.Collections.Generic;
@@ -266,18 +267,63 @@ public partial class MainWindow
         }
     }
 
+    /// <summary>
+    /// True if <paramref name="proposedId"/> collides with another entry in the same
+    /// category (#2253). The entry being edited never counts as a collision with itself.
+    /// NWN's journal system treats two entries sharing an ID within one category as
+    /// ambiguous, so duplicates must be resolved.
+    /// </summary>
+    internal static bool IsEntryIdDuplicate(JournalCategory? category, JournalEntry editing, uint proposedId)
+    {
+        if (category == null) return false;
+        foreach (var entry in category.Entries)
+        {
+            if (!ReferenceEquals(entry, editing) && entry.ID == proposedId)
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Resolve a duplicate entry ID by incrementing by 1 until a free slot is found
+    /// within the category (#2253). Entries are naturally spaced by 100 on add, so a
+    /// +1 bump drops the entry just after the colliding one (or fills a gap) — better
+    /// UX than reverting the user's edit. Returns <paramref name="proposedId"/>
+    /// unchanged when it is already unique.
+    /// </summary>
+    internal static uint NextFreeEntryId(JournalCategory? category, JournalEntry editing, uint proposedId)
+    {
+        var candidate = proposedId;
+        while (IsEntryIdDuplicate(category, editing, candidate) && candidate < uint.MaxValue)
+            candidate++;
+        return candidate;
+    }
+
     private void OnEntryIdChanged(object? sender, NumericUpDownValueChangedEventArgs e)
     {
         if (_isUpdatingPanel || _selectedItem is not EntryTreeItem entItem) return;
 
         var newId = (uint)(EntryIdBox.Value ?? 0);
-        if (entItem.Entry.ID != newId)
+        if (entItem.Entry.ID == newId) return;
+
+        // Resolve duplicate IDs within the same category by bumping +1 to the next free
+        // slot rather than persisting an ambiguous journal (#2253). Natural 100-step
+        // spacing means the bumped entry lands just after the collision.
+        var resolvedId = NextFreeEntryId(entItem.ParentCategory, entItem.Entry, newId);
+        if (resolvedId != newId)
         {
-            entItem.Entry.ID = newId;
-            MarkDirty();
-            UpdateTreeItemHeader(entItem);
-            UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Entry ID changed to: {newId}");
+            UnifiedLogger.LogJournal(LogLevel.INFO,
+                $"Entry ID {newId} taken in category '{entItem.ParentCategory?.Tag}' — bumped to {resolvedId}");
+            UpdateStatus($"Entry ID {newId} already exists — used {resolvedId} instead.");
+            _isUpdatingPanel = true;
+            try { EntryIdBox.Value = resolvedId; }
+            finally { _isUpdatingPanel = false; }
         }
+
+        entItem.Entry.ID = resolvedId;
+        MarkDirty();
+        UpdateTreeItemHeader(entItem);
+        UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Entry ID changed to: {resolvedId}");
     }
 
     private void OnEntryEndChanged(object? sender, RoutedEventArgs e)

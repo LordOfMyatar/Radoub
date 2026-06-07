@@ -52,6 +52,10 @@ public partial class MainWindow
         // Clear item resolution context (no file yet)
         _itemResolutionService?.SetCurrentFilePath(null);
 
+        // Deselect the previously-loaded file's row so the browser panel state matches
+        // the new unsaved in-memory document (no on-disk file selected) (#2307).
+        UpdateStoreBrowserCurrentFile(null);
+
         // Update UI
         PopulateStoreProperties();
         StoreItems.Clear();
@@ -270,7 +274,7 @@ public partial class MainWindow
         // If no file path yet (new file), redirect to Save As
         if (string.IsNullOrEmpty(_currentFilePath))
         {
-            OnSaveAsClick(sender, e);
+            await SaveAsAsync();
             return;
         }
 
@@ -279,8 +283,19 @@ public partial class MainWindow
 
     private async void OnSaveAsClick(object? sender, RoutedEventArgs e)
     {
+        await SaveAsAsync();
+    }
+
+    /// <summary>
+    /// Show the Save As picker and save to the chosen path. Returns true if the file
+    /// was written, false if the user cancelled or no store is loaded. Awaitable so the
+    /// close path can wait for the save to finish before deciding to close (#2255) —
+    /// the old fire-and-forget OnSaveAsClick let the close decision race the picker.
+    /// </summary>
+    private async Task<bool> SaveAsAsync()
+    {
         if (_currentStore == null)
-            return;
+            return false;
 
         // Default to current module directory if available
         IStorageFolder? suggestedFolder = null;
@@ -305,10 +320,11 @@ public partial class MainWindow
             SuggestedStartLocation = suggestedFolder
         });
 
-        if (file != null)
-        {
-            await SaveFile(file.Path.LocalPath);
-        }
+        if (file == null)
+            return false;
+
+        await SaveFile(file.Path.LocalPath);
+        return true;
     }
 
     private async Task SaveFile(string filePath)

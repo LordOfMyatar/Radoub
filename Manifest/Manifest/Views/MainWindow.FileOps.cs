@@ -10,6 +10,7 @@ using DirtyCheckResult = Radoub.UI.Services.DirtyCheckResult;
 using FileOperationsHelper = Radoub.UI.Services.FileOperationsHelper;
 using FileSessionLockService = Radoub.UI.Services.FileSessionLockService;
 using LockResult = Radoub.UI.Services.LockResult;
+using BackupService = Radoub.UI.Services.Search.BackupService;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -23,6 +24,11 @@ namespace Manifest.Views;
 /// </summary>
 public partial class MainWindow
 {
+    // Paths backed up this session — we snapshot a journal to ~/Radoub/Backups/ only on
+    // the first save after open, not on every save, to avoid backup clutter (#2253).
+    private readonly HashSet<string> _backedUpThisSession =
+        new(StringComparer.OrdinalIgnoreCase);
+
     private void UpdateRecentFilesMenu()
     {
         Radoub.UI.Services.RecentFilesMenuHelper.Populate(
@@ -203,12 +209,41 @@ public partial class MainWindow
             return;
         }
 
+        // Write to a temp file beside the destination (same volume = atomic move),
+        // then swap it into place with the shared cross-OS atomic helper. A single
+        // File.Move(overwrite:true) means the original is never missing mid-save
+        // (#2253, #2256). A one-per-session snapshot goes to the shared ~/Radoub/Backups/
+        // folder (under retention) rather than a .bak in the module dir — modules hold
+        // exactly one .jrl and must not accumulate backup clutter (#2253).
+        var jrl = _currentJrl;
+        var path = _currentFilePath!;
+        var tempPath = path + ".tmp";
         try
         {
+            // Snapshot the existing journal to the shared Backups folder before the first
+            // save of this file this session. Atomic write below protects every save from
+            // mid-write corruption; the backup is a once-per-session safety net.
+            if (File.Exists(path) && !_backedUpThisSession.Contains(path))
+            {
+                var moduleName = Path.GetFileName(Path.GetDirectoryName(path)) ?? "Manifest";
+                try
+                {
+                    await new BackupService().BackupFilesAsync(new[] { path }, moduleName);
+                    _backedUpThisSession.Add(path);
+                }
+                catch (Exception bex)
+                {
+                    // Backup is best-effort; a failed snapshot must not block the save.
+                    UnifiedLogger.LogJournal(LogLevel.WARN, $"Pre-save backup failed: {bex.Message}");
+                }
+            }
+
             // #2254 — actually-async write so multi-MB journals don't block the UI thread.
-            var jrl = _currentJrl;
-            var path = _currentFilePath!;
-            await Task.Run(() => JrlWriter.Write(jrl, path));
+            await Task.Run(() => JrlWriter.Write(jrl, tempPath));
+
+            // backupPath null: the in-module .bak is intentionally not created (see above).
+            Radoub.Formats.Common.AtomicFile.Replace(tempPath, path, backupPath: null);
+
             _documentState.ClearDirty();
             UpdateTitle();
             UpdateStatus($"Saved: {Path.GetFileName(_currentFilePath)}");
@@ -220,6 +255,15 @@ public partial class MainWindow
             UnifiedLogger.LogJournal(LogLevel.ERROR, $"Failed to save journal: {ex.Message}");
             UpdateStatus($"Error saving file: {ex.Message}");
             ShowErrorDialog("Save Error", $"Failed to save journal file:\n{ex.Message}");
+        }
+        finally
+        {
+            // Clean up temp file if it still exists (write failed before the move)
+            if (File.Exists(tempPath))
+            {
+                try { File.Delete(tempPath); }
+                catch { /* temp cleanup is best-effort */ }
+            }
         }
     }
 
