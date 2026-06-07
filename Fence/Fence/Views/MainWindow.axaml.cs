@@ -356,9 +356,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             {
                 if (string.IsNullOrEmpty(_currentFilePath))
                 {
-                    // New unsaved file - trigger SaveAs
-                    OnSaveAsClick(null, new RoutedEventArgs());
-                    return !_documentState.IsDirty; // true if save succeeded
+                    // New unsaved file - await SaveAs so the close decision does not
+                    // race the file picker (#2255). Returns true only if a file was written.
+                    return await SaveAsAsync();
                 }
                 await SaveFile(_currentFilePath);
                 return true;
@@ -386,8 +386,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             // Dispose TlkService to unsubscribe from settings events
             _tlkService?.Dispose();
 
-            // Dispose shared palette cache lock (#2034)
+            // Dispose shared palette cache locks (#2034). Both cache services are
+            // IDisposable; _storePaletteCache was previously leaked on close (#2255).
             (_sharedCacheService as IDisposable)?.Dispose();
+            (_storePaletteCache as IDisposable)?.Dispose();
 
             if (e.Cancel)
             {
