@@ -167,6 +167,13 @@ public sealed class PlaceableViewModel : INotifyPropertyChanged
         set { if (_utp.Faction == value) return; _utp.Faction = value; OnPropertyChanged(); }
     }
 
+    /// <summary>Palette category (placeablepal.itp). Drives which toolset folder the blueprint lands in (#2416).</summary>
+    public byte PaletteID
+    {
+        get => _utp.PaletteID;
+        set { if (_utp.PaletteID == value) return; _utp.PaletteID = value; OnPropertyChanged(); }
+    }
+
     public string Conversation
     {
         get => _utp.Conversation;

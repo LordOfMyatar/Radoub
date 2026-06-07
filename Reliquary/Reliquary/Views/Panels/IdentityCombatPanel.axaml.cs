@@ -3,8 +3,10 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media.Imaging;
+using System.Collections.Generic;
 using Radoub.Formats.Services;
 using Radoub.UI.Controls;
+using Radoub.UI.Utils;
 using PlaceableEditor.Services;
 
 namespace PlaceableEditor.Views.Panels;
@@ -24,6 +26,11 @@ public partial class IdentityCombatPanel : UserControl
 
     /// <summary>Raised when the user picks a different appearance (carries the new appearance id).</summary>
     public event EventHandler<uint>? AppearanceChanged;
+
+    /// <summary>Raised when the user picks a different palette category (carries the new PaletteID).</summary>
+    public event EventHandler<byte>? PaletteCategoryChanged;
+
+    private bool _suppressCategoryEvent;
 
     public IdentityCombatPanel()
     {
@@ -85,6 +92,34 @@ public partial class IdentityCombatPanel : UserControl
         {
             _suppressAppearanceEvent = false;
         }
+    }
+
+    /// <summary>
+    /// Fill the palette-category combo from the placeable palette skeleton via the shared binder
+    /// (#2416). Categories come from the host's IGameDataService (placeablepal.itp) — never hardcoded.
+    /// </summary>
+    public void PopulatePaletteCategories(IReadOnlyList<PaletteCategory>? categories, byte selectedId)
+    {
+        var combo = this.FindControl<ComboBox>("PaletteCategoryCombo");
+        if (combo is null) return;
+
+        _suppressCategoryEvent = true;
+        try
+        {
+            PaletteCategoryComboBinder.Populate(combo, categories);
+            PaletteCategoryComboBinder.SelectById(combo, selectedId);
+        }
+        finally
+        {
+            _suppressCategoryEvent = false;
+        }
+    }
+
+    private void OnPaletteCategoryChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressCategoryEvent) return;
+        var id = PaletteCategoryComboBinder.GetSelectedId(sender as ComboBox);
+        if (id.HasValue) PaletteCategoryChanged?.Invoke(this, id.Value);
     }
 
     /// <summary>Set the portrait preview image (host resolves the bitmap from PortraitId).</summary>

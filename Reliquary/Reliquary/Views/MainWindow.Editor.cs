@@ -152,6 +152,7 @@ public partial class MainWindow
 
         PopulateAppearanceAndPreview(); // appearance combo + 3D model (when game data configured)
         PopulateFactionCombo();         // faction combo from the module's repute.fac (#2354)
+        PopulatePaletteCategoryCombo(); // category combo from placeablepal.itp (#2416)
         RefreshInventory();             // backpack + palette (visible only when Has Inventory)
 
         TrackPlaceableEdits(_placeable); // any field/variable/inventory edit marks the document dirty

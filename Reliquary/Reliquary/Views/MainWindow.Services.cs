@@ -1,6 +1,8 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
@@ -70,6 +72,7 @@ public partial class MainWindow
             identity.Preview.SetTextureService(_textureService);
             identity.AppearanceChanged += OnAppearanceChanged;
             identity.PortraitBrowseRequested += OnPortraitBrowseRequested;
+            identity.PaletteCategoryChanged += OnPaletteCategorySelected;
         }
 
         // Open the startup file from the command line (--file), now that services + the model
@@ -159,6 +162,42 @@ public partial class MainWindow
         if (_placeable is null) return;
         _undo.Execute(new Radoub.UI.Undo.SetFieldCommand<uint>(
             () => _placeable.Faction, v => _placeable.Faction = v, factionId, "change faction"));
+    }
+
+    /// <summary>
+    /// Populate the Category combo from placeablepal.itp via the shared binder (#2416). Categories
+    /// come from IGameDataService.GetPaletteCategories — never hardcoded. Falls back to the binder's
+    /// default list when game data is unconfigured.
+    /// </summary>
+    private void PopulatePaletteCategoryCombo()
+    {
+        if (_placeable is null) return;
+        var identity = this.FindControl<IdentityCombatPanel>("IdentityCombatPanel");
+        if (identity is null) return;
+
+        System.Collections.Generic.List<Radoub.Formats.Services.PaletteCategory>? categories = null;
+        if (_gameData is { IsConfigured: true })
+        {
+            try
+            {
+                categories = _gameData.GetPaletteCategories(ResourceTypes.Utp).ToList();
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"Reliquary: palette categories load failed, using fallback: {ex.Message}");
+            }
+        }
+
+        identity.PopulatePaletteCategories(categories, _placeable.PaletteID);
+    }
+
+    /// <summary>Route a category pick through undo (host owns the .itp list + undo wrapping).</summary>
+    private void OnPaletteCategorySelected(object? sender, byte paletteId)
+    {
+        if (_placeable is null) return;
+        _undo.Execute(new Radoub.UI.Undo.SetFieldCommand<byte>(
+            () => _placeable.PaletteID, v => _placeable.PaletteID = v, paletteId, "change category"));
     }
 
     private async void OnPortraitBrowseRequested(object? sender, EventArgs e)

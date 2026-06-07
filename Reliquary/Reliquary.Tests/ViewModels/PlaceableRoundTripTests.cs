@@ -43,6 +43,18 @@ public class PlaceableRoundTripTests
 
     [Theory]
     [MemberData(nameof(AllFixtures))]
+    public void Load_MutatePaletteID_Preserved(string fixture)
+    {
+        // #2416: setting the palette category survives a save/reload round-trip.
+        var vm = new PlaceableViewModel(UtpReader.Read(Path.Combine(FixtureDir, fixture)));
+        vm.PaletteID = 9;
+        var reread = UtpReader.Read(UtpWriter.Write(vm.WriteToUtp()));
+
+        Assert.Equal((byte)9, reread.PaletteID);
+    }
+
+    [Theory]
+    [MemberData(nameof(AllFixtures))]
     public void Load_MutateTag_OnlyTagChanges(string fixture)
     {
         var original = UtpReader.Read(Path.Combine(FixtureDir, fixture));
