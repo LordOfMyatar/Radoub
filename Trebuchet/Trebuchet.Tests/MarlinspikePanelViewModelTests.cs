@@ -44,6 +44,30 @@ public class MarlinspikePanelViewModelTests
         Assert.Equal("All Fields", vm.SelectedCategory);
         Assert.False(vm.IsSearching);
         Assert.Equal("Ready", vm.StatusText);
+        Assert.False(vm.StatusIsWarning);
+    }
+
+    // #2182 — validator-rejection status must render in the warning color so it's
+    // visible. SetWarningStatus flags it; any later plain StatusText set clears it.
+    [Fact]
+    public void SetWarningStatus_SetsTextAndWarningFlag()
+    {
+        var vm = new MarlinspikePanelViewModel();
+        vm.SetWarningStatus("Rename skipped — 'foo' has invalid char '-'");
+
+        Assert.Equal("Rename skipped — 'foo' has invalid char '-'", vm.StatusText);
+        Assert.True(vm.StatusIsWarning);
+    }
+
+    [Fact]
+    public void PlainStatusText_ClearsWarningFlag()
+    {
+        var vm = new MarlinspikePanelViewModel();
+        vm.SetWarningStatus("bad");
+        Assert.True(vm.StatusIsWarning);
+
+        vm.StatusText = "Ready";
+        Assert.False(vm.StatusIsWarning);
     }
 
     [Fact]

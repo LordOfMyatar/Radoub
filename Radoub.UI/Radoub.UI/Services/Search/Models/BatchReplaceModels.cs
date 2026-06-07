@@ -18,6 +18,28 @@ public class PendingChange
 
     /// <summary>User can toggle individual changes on/off</summary>
     public bool IsSelected { get; set; } = true;
+
+    /// <summary>
+    /// The full field value after the replacement is applied — the same literal
+    /// substring substitution the write path performs
+    /// (SearchProviderBase.ReplaceInString): splice ReplacementText in at the match
+    /// offset, leaving the rest of the field intact. Used by the Replace Preview so
+    /// it shows the real post-replace value, not the bare replacement term (#2224).
+    /// No case folding: the write path does not lowercase, so neither does the preview.
+    /// </summary>
+    public string ComputedNewFieldValue
+    {
+        get
+        {
+            var full = Match.FullFieldValue;
+            var start = Match.MatchOffset;
+            var end = Match.MatchOffset + Match.MatchLength;
+            // Defensive: a malformed match offset/length must not throw in the UI.
+            if (start < 0 || end > full.Length || start > end)
+                return ReplacementText;
+            return full[..start] + ReplacementText + full[end..];
+        }
+    }
 }
 
 /// <summary>

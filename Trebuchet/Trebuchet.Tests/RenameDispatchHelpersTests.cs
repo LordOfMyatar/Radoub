@@ -132,6 +132,39 @@ public class RenameDispatchHelpersTests : IDisposable
         Assert.Empty(plans);  // validator rejects > 16 chars; plan skipped
     }
 
+    // #2182 — rejected entries report the specific validator reason so the UI can
+    // show actionable text instead of "validator rejected all proposed names".
+    [Fact]
+    public void BuildRenamePlansFromPreview_CapturesRejectionReasons()
+    {
+        File.WriteAllText(Path.Combine(_tempDir, "valid_name.dlg"), "x");
+
+        var preview = new BatchReplacePreview();
+        preview.Changes.Add(new PendingChange
+        {
+            Match = new SearchMatch
+            {
+                Field = FilenameSearchProvider.FilenameField,
+                MatchedText = "valid_name",
+                FullFieldValue = "valid_name",
+                MatchOffset = 0,
+                MatchLength = "valid_name".Length,
+                Location = "test"
+            },
+            ReplacementText = "bad-name",  // hyphen → invalid chars
+            FilePath = Path.Combine(_tempDir, "valid_name.dlg")
+        });
+
+        var reasons = new List<string>();
+        var plans = RenameDispatchHelpers.BuildRenamePlansFromPreview(
+            preview, _tempDir, new ResRefValidator(), reasons);
+
+        Assert.Empty(plans);
+        Assert.Single(reasons);
+        Assert.Contains("'-'", reasons[0]);            // names the bad char (#2182)
+        Assert.Contains("bad-name", reasons[0]);       // names the offending file/name
+    }
+
     [Fact]
     public void BuildRenamePlansFromPreview_BuildsValidPlanForSimpleRename()
     {

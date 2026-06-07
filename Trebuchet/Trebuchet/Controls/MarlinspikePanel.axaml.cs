@@ -34,6 +34,13 @@ public partial class MarlinspikePanel : UserControl
     private DateTime? _indexedModuleDirMtime;
     private string? _indexedModuleDirPath;
 
+    // #2179 — checkbox-per-row rename scope. The pure model owns the tri-state /
+    // cascade rules; these lists let us sync the visual checkbox controls when a
+    // group cascade or a child toggle changes derived state.
+    private readonly RenameScopeSelection _scopeSelection = new();
+    private readonly List<(CheckBox Box, string GroupKey)> _groupCheckBoxes = new();
+    private readonly List<(CheckBox Box, string FilePath, string GroupKey)> _fileCheckBoxes = new();
+
     /// <summary>Maps resource types to Trebuchet tool names for launch dispatch.</summary>
     private static readonly Dictionary<ushort, string> ResourceTypeToToolName = new()
     {
@@ -205,7 +212,7 @@ public partial class MarlinspikePanel : UserControl
         var validationError = criteria.Validate();
         if (validationError != null)
         {
-            _viewModel.StatusText = $"Invalid pattern: {validationError}";
+            _viewModel.SetWarningStatus($"Invalid pattern: {validationError}");
             return;
         }
 
@@ -261,25 +268,52 @@ public partial class MarlinspikePanel : UserControl
             return;
         }
 
+        // Reset the rename-scope model + checkbox tracking for this fresh result set.
+        ResetScopeSelection();
+
         var treeItems = new List<TreeViewItem>();
         var grouped = results.GroupByExtension();
 
         foreach (var (extension, files) in grouped.OrderBy(g => g.Key))
         {
             var totalMatches = files.Sum(f => f.MatchCount);
+
+            // Group-row checkbox: tri-state, cascades to all file rows under it (#2179).
+            var groupCheckBox = new CheckBox
+            {
+                Content = $"{GetFileTypeLabel(extension)} (.{extension}) \u2014 {files.Count} file{(files.Count != 1 ? "s" : "")}, {totalMatches} match{(totalMatches != 1 ? "es" : "")}",
+                IsChecked = true,
+                IsThreeState = true,
+                Tag = extension
+            };
+            groupCheckBox.IsCheckedChanged += OnGroupCheckChanged;
+            _groupCheckBoxes.Add((groupCheckBox, extension));
+
             var groupNode = new TreeViewItem
             {
-                Header = $"{GetFileTypeLabel(extension)} (.{extension}) \u2014 {files.Count} file{(files.Count != 1 ? "s" : "")}, {totalMatches} match{(totalMatches != 1 ? "es" : "")}",
+                Header = groupCheckBox,
                 IsExpanded = true
             };
 
             foreach (var fileResult in files.OrderBy(f => f.FileName))
             {
-                var fileNode = new TreeViewItem
+                // File-row checkbox: drives the scope model; default checked.
+                _scopeSelection.AddFile(extension, fileResult.FilePath, isChecked: true);
+
+                var fileCheckBox = new CheckBox
                 {
-                    Header = fileResult.HadParseError
+                    Content = fileResult.HadParseError
                         ? $"{fileResult.FileName} \u2014 \u26a0 {fileResult.ParseError}"
                         : $"{fileResult.FileName} \u2014 {fileResult.MatchCount} match{(fileResult.MatchCount != 1 ? "es" : "")}",
+                    IsChecked = true,
+                    Tag = fileResult
+                };
+                fileCheckBox.IsCheckedChanged += OnFileCheckChanged;
+                _fileCheckBoxes.Add((fileCheckBox, fileResult.FilePath, extension));
+
+                var fileNode = new TreeViewItem
+                {
+                    Header = fileCheckBox,
                     Tag = fileResult,
                     IsExpanded = true
                 };
@@ -319,6 +353,73 @@ public partial class MarlinspikePanel : UserControl
         }
 
         ResultsTree.ItemsSource = treeItems;
+    }
+
+    private void ResetScopeSelection()
+    {
+        foreach (var (box, _) in _groupCheckBoxes)
+            box.IsCheckedChanged -= OnGroupCheckChanged;
+        foreach (var (box, _, _) in _fileCheckBoxes)
+            box.IsCheckedChanged -= OnFileCheckChanged;
+        _groupCheckBoxes.Clear();
+        _fileCheckBoxes.Clear();
+        _scopeSelection.Clear();
+    }
+
+    // File-row checkbox toggled → update model, then re-derive the parent group's
+    // tri-state so the group checkbox reflects partial/all/none (#2179).
+    private void OnFileCheckChanged(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not CheckBox box || box.Tag is not FileSearchResult fileResult)
+            return;
+
+        _scopeSelection.SetFileChecked(fileResult.FilePath, box.IsChecked == true);
+
+        var entry = _fileCheckBoxes.FirstOrDefault(f => ReferenceEquals(f.Box, box));
+        if (entry.GroupKey != null)
+            SyncGroupCheckBox(entry.GroupKey);
+    }
+
+    // Group-row checkbox toggled by the user → cascade to every child file row.
+    // Tri-state (null) is a display-only state the user can't set directly: a click
+    // moves null→checked, so treat anything non-false as "check all".
+    private void OnGroupCheckChanged(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not CheckBox box || box.Tag is not string groupKey)
+            return;
+
+        // Ignore programmatic tri-state updates we push from SyncGroupCheckBox.
+        if (box.IsChecked == null) return;
+
+        var check = box.IsChecked == true;
+        _scopeSelection.SetGroupChecked(groupKey, check);
+
+        foreach (var (childBox, _, childGroup) in _fileCheckBoxes)
+        {
+            if (childGroup != groupKey) continue;
+            childBox.IsCheckedChanged -= OnFileCheckChanged;
+            childBox.IsChecked = check;
+            childBox.IsCheckedChanged += OnFileCheckChanged;
+        }
+    }
+
+    // Push the model's derived tri-state onto the group checkbox without retriggering
+    // the cascade handler.
+    private void SyncGroupCheckBox(string groupKey)
+    {
+        var entry = _groupCheckBoxes.FirstOrDefault(g => g.GroupKey == groupKey);
+        if (entry.Box == null) return;
+
+        bool? state = _scopeSelection.GetGroupState(groupKey) switch
+        {
+            GroupCheckState.All => true,
+            GroupCheckState.None => false,
+            _ => null
+        };
+
+        entry.Box.IsCheckedChanged -= OnGroupCheckChanged;
+        entry.Box.IsChecked = state;
+        entry.Box.IsCheckedChanged += OnGroupCheckChanged;
     }
 
     private void OnResultDoubleTapped(object? sender, TappedEventArgs e)
@@ -431,7 +532,7 @@ public partial class MarlinspikePanel : UserControl
         {
             if (_viewModel != null)
                 _viewModel.StatusText =
-                    "Select a row first (click a file, match, or group), then click Replace Selected. Or use Replace All.";
+                    "Check at least one file (or a group) in the results, then click Replace Selected. Or use Replace All.";
             return;
         }
 
@@ -439,45 +540,13 @@ public partial class MarlinspikePanel : UserControl
     }
 
     /// <summary>
-    /// Get file paths for the user's tree selection. The tree is populated
-    /// programmatically with raw TreeViewItem instances that carry their row
-    /// data in the .Tag property (FileSearchResult, MatchInfo, or null for
-    /// group nodes). Inherited DataContext is the panel VM, so we read .Tag
-    /// directly — same pattern OnResultDoubleTapped uses.
-    ///
-    /// Selecting a file row → that file.
-    /// Selecting a match row → its parent file.
-    /// Selecting a group row → every file under that group.
+    /// File paths the user checked for "Replace Selected" (#2179). The checked set
+    /// is authoritative — tree highlight drives navigation (double-click to open),
+    /// not rename scope. Group-row checkboxes cascade to their files via the scope
+    /// model, so checking a group is equivalent to checking each of its files.
     /// </summary>
-    private HashSet<string> GetSelectedFilePaths()
-    {
-        var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        if (ResultsTree.SelectedItem is not Avalonia.Controls.TreeViewItem item)
-            return paths;
-
-        switch (item.Tag)
-        {
-            case MatchInfo matchInfo:
-                paths.Add(matchInfo.FilePath);
-                break;
-            case FileSearchResult fileResult:
-                paths.Add(fileResult.FilePath);
-                break;
-            default:
-                // Group node (no Tag) — walk its child file-result items.
-                foreach (var child in item.Items)
-                {
-                    if (child is Avalonia.Controls.TreeViewItem childItem
-                        && childItem.Tag is FileSearchResult childFile)
-                    {
-                        paths.Add(childFile.FilePath);
-                    }
-                }
-                break;
-        }
-        return paths;
-    }
+    private HashSet<string> GetSelectedFilePaths() =>
+        _scopeSelection.SelectedFilePaths.ToHashSet(StringComparer.OrdinalIgnoreCase);
 
     private async Task OpenReplacePreviewAsync(IReadOnlySet<string>? selectionFilter)
     {
@@ -540,11 +609,16 @@ public partial class MarlinspikePanel : UserControl
         }
 
         var validator = new ResRefValidator();
-        var plans = RenameDispatchHelpers.BuildRenamePlansFromPreview(preview, moduleDir, validator);
+        var rejected = new List<string>();
+        var plans = RenameDispatchHelpers.BuildRenamePlansFromPreview(preview, moduleDir, validator, rejected);
 
         if (plans.Count == 0)
         {
-            _viewModel.StatusText = "Rename skipped — no valid filename targets (validator rejected all proposed names).";
+            // Surface the specific validator reason (suggested truncation / named bad
+            // chars) in the warning color so it's visible (#2182).
+            _viewModel.SetWarningStatus(rejected.Count > 0
+                ? $"Rename skipped — {rejected[0]}"
+                : "Rename skipped — no valid filename targets.");
             return;
         }
 
@@ -688,6 +762,7 @@ public partial class MarlinspikePanel : UserControl
         {
             _viewModel.StatusText = $"Replaced {result.ReplacementsMade} matches in {result.FilesModified} files. Backup created.";
             _viewModel.ClearResults();
+            ResetScopeSelection();
             ResultsTree.ItemsSource = null;
         }
         else
@@ -706,6 +781,7 @@ public partial class MarlinspikePanel : UserControl
         _indexedModuleDirMtime = null;
         _indexedModuleDirPath = null;
         _viewModel?.ClearResults();
+        ResetScopeSelection();
         ResultsTree.ItemsSource = null;
         DurationText.Text = "";
         ModulePathText.Text = "";

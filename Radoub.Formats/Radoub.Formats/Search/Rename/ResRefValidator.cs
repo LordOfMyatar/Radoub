@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace Radoub.Formats.Search.Rename;
 
 /// <summary>
@@ -37,11 +39,19 @@ public class ResRefValidator
 
         if (normalized.Length > MaxLength)
             return ResRefValidationResult.Fail(
-                $"ResRef '{normalized}' is {normalized.Length} characters ({MaxLength} max)");
+                $"ResRef '{normalized}' is {normalized.Length} characters ({MaxLength} max). " +
+                $"Try '{normalized[..MaxLength]}'.");
 
         if (!System.Text.RegularExpressions.Regex.IsMatch(normalized, @"^[a-z0-9_]+$"))
+        {
+            var badChars = normalized
+                .Where(c => !((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_'))
+                .Distinct()
+                .Select(c => c == ' ' ? "space" : $"'{c}'");
             return ResRefValidationResult.Fail(
-                "ResRef can only contain lowercase letters, digits, and underscores");
+                $"ResRef can only contain lowercase letters, digits, and underscores. " +
+                $"Remove: {string.Join(", ", badChars)}");
+        }
 
         string? warning = null;
         if (char.IsDigit(normalized[0]))

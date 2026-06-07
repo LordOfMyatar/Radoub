@@ -77,9 +77,12 @@ public partial class ReplacePreviewWindow : Window
                 var oldText = change.Match.FullFieldValue.Length > 50
                     ? change.Match.FullFieldValue[..50] + "..."
                     : change.Match.FullFieldValue;
-                var newText = change.ReplacementText.Length > 50
-                    ? change.ReplacementText[..50] + "..."
-                    : change.ReplacementText;
+                // Show the computed post-replace field value (substring substitution),
+                // not the bare replacement term (#2224).
+                var computed = change.ComputedNewFieldValue;
+                var newText = computed.Length > 50
+                    ? computed[..50] + "..."
+                    : computed;
 
                 var location = change.Match.Location?.ToString() ?? change.Match.Field.Name;
 

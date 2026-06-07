@@ -8,6 +8,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.Formats 0.2.65-alpha] - 2026-06-06
+**Branch**: `trebuchet/sprint/data-loss-marlinspike` | **PR**: #2387
+
+### ResRefValidator: clearer rejection messages (#2182)
+
+- Length error now suggests a 16-char truncation; the invalid-character error names the offending characters instead of only restating the rule.
+
+---
+
+## [Radoub.UI 0.2.2-alpha] - 2026-06-06
+**Branch**: `trebuchet/sprint/data-loss-marlinspike` | **PR**: #2387
+
+### Batch-replace preview value (#2224) + warning-color converter (#2182)
+
+- `PendingChange.ComputedNewFieldValue` exposes the post-replace field value (literal substring substitution, no case folding) so replace previews can show the real result instead of the bare replacement term.
+- New `BoolToWarningBrushConverter` — binds status text to the theme warning color so validator rejections are visible.
+
+---
+
 ## [Radoub.UI 0.2.1-alpha] - 2026-06-06
 **Branch**: `reliquary/sprint/epic-2289-followups` | **PR**: #2377
 

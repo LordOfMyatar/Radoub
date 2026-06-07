@@ -36,8 +36,14 @@ public static class RenameDispatchHelpers
     /// Skips entries whose validator result is invalid. Caller is responsible
     /// for surfacing skipped entries to the user (e.g., via status bar).
     /// </summary>
+    /// <param name="rejectedReasons">
+    /// Optional sink: each skipped entry appends a user-facing reason ("name" — error)
+    /// so the caller can show the specific validator message instead of a generic
+    /// "all rejected" line (#2182).
+    /// </param>
     public static IReadOnlyList<ResRefRenamePlan> BuildRenamePlansFromPreview(
-        BatchReplacePreview preview, string moduleDir, ResRefValidator validator)
+        BatchReplacePreview preview, string moduleDir, ResRefValidator validator,
+        ICollection<string>? rejectedReasons = null)
     {
         if (preview == null) return Array.Empty<ResRefRenamePlan>();
         if (string.IsNullOrEmpty(moduleDir)) return Array.Empty<ResRefRenamePlan>();
@@ -73,7 +79,8 @@ public static class RenameDispatchHelpers
             if (!validation.IsValid)
             {
                 // Skip invalid entries — caller may inspect plans count vs preview filename count
-                // to surface a status message.
+                // to surface a status message. Capture the specific reason for #2182.
+                rejectedReasons?.Add($"\"{proposedNewName}\" — {validation.Error}");
                 continue;
             }
 
