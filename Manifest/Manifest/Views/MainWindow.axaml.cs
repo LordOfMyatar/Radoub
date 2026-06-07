@@ -393,9 +393,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                         e.Handled = true;
                     }
                     break;
-                case Key.S:
-                    // Save As - future feature
-                    break;
             }
         }
         else if (e.KeyModifiers == KeyModifiers.None)

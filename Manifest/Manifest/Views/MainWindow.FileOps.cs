@@ -203,12 +203,20 @@ public partial class MainWindow
             return;
         }
 
+        // Write to a temp file beside the destination (same volume = atomic move),
+        // then swap it into place with the shared cross-OS atomic helper. The helper
+        // backs up the previous file to .bak and performs a single File.Move
+        // (overwrite:true) so the original is never missing mid-save (#2253, #2256).
+        var jrl = _currentJrl;
+        var path = _currentFilePath!;
+        var tempPath = path + ".tmp";
         try
         {
             // #2254 — actually-async write so multi-MB journals don't block the UI thread.
-            var jrl = _currentJrl;
-            var path = _currentFilePath!;
-            await Task.Run(() => JrlWriter.Write(jrl, path));
+            await Task.Run(() => JrlWriter.Write(jrl, tempPath));
+
+            Radoub.Formats.Common.AtomicFile.Replace(tempPath, path, path + ".bak");
+
             _documentState.ClearDirty();
             UpdateTitle();
             UpdateStatus($"Saved: {Path.GetFileName(_currentFilePath)}");
@@ -220,6 +228,15 @@ public partial class MainWindow
             UnifiedLogger.LogJournal(LogLevel.ERROR, $"Failed to save journal: {ex.Message}");
             UpdateStatus($"Error saving file: {ex.Message}");
             ShowErrorDialog("Save Error", $"Failed to save journal file:\n{ex.Message}");
+        }
+        finally
+        {
+            // Clean up temp file if it still exists (write failed before the move)
+            if (File.Exists(tempPath))
+            {
+                try { File.Delete(tempPath); }
+                catch { /* temp cleanup is best-effort */ }
+            }
         }
     }
 

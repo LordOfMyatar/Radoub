@@ -3,6 +3,7 @@ using Avalonia.Interactivity;
 using Manifest.Services;
 using Radoub.Formats.Common;
 using Radoub.Formats.Gff;
+using Radoub.Formats.Jrl;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Tokens;
 using System.Collections.Generic;
@@ -266,18 +267,47 @@ public partial class MainWindow
         }
     }
 
+    /// <summary>
+    /// True if <paramref name="proposedId"/> collides with another entry in the same
+    /// category (#2253). The entry being edited never counts as a collision with itself.
+    /// NWN's journal system treats two entries sharing an ID within one category as
+    /// ambiguous, so duplicates must be rejected.
+    /// </summary>
+    internal static bool IsEntryIdDuplicate(JournalCategory? category, JournalEntry editing, uint proposedId)
+    {
+        if (category == null) return false;
+        foreach (var entry in category.Entries)
+        {
+            if (!ReferenceEquals(entry, editing) && entry.ID == proposedId)
+                return true;
+        }
+        return false;
+    }
+
     private void OnEntryIdChanged(object? sender, NumericUpDownValueChangedEventArgs e)
     {
         if (_isUpdatingPanel || _selectedItem is not EntryTreeItem entItem) return;
 
         var newId = (uint)(EntryIdBox.Value ?? 0);
-        if (entItem.Entry.ID != newId)
+        if (entItem.Entry.ID == newId) return;
+
+        // Reject duplicate IDs within the same category — revert the box to the
+        // current ID and warn, rather than persisting an ambiguous journal (#2253).
+        if (IsEntryIdDuplicate(entItem.ParentCategory, entItem.Entry, newId))
         {
-            entItem.Entry.ID = newId;
-            MarkDirty();
-            UpdateTreeItemHeader(entItem);
-            UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Entry ID changed to: {newId}");
+            UnifiedLogger.LogJournal(LogLevel.WARN,
+                $"Rejected duplicate entry ID {newId} in category '{entItem.ParentCategory?.Tag}'");
+            UpdateStatus($"Entry ID {newId} already exists in this category.");
+            _isUpdatingPanel = true;
+            try { EntryIdBox.Value = entItem.Entry.ID; }
+            finally { _isUpdatingPanel = false; }
+            return;
         }
+
+        entItem.Entry.ID = newId;
+        MarkDirty();
+        UpdateTreeItemHeader(entItem);
+        UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Entry ID changed to: {newId}");
     }
 
     private void OnEntryEndChanged(object? sender, RoutedEventArgs e)
