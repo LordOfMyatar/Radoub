@@ -12,6 +12,7 @@ All notable changes to Parley. One-line highlights per version; full details in 
 - Unify TreeView/FlowView drag-drop validation (#2109)
 - Replace reflection-based DeleteNodeRecursive trampoline (#2324)
 - Migrate ExternalEditorPath/ManifestPath onto RadoubSettings (#2357)
+- Fix drag-drop onto expanded TreeView threads (header-height drop zone)
 
 ---
 
