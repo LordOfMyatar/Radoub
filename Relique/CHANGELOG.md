@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.24-alpha] - 2026-06-07
+**Branch**: `relique/issue-2385` | **PR**: #TBD
+
+### Sprint: Cost, UX & SafeMode (#2385)
+
+- SafeMode support (`--safemode` flag) for bootstrap parity (#2011)
+- Rationalize Add vs Add Checked buttons (#2234)
+- Compute base Cost from properties + base AC, replacing static stored value (#2235)
+- Mannequin idle pose — relaxed stance for armor preview (#2232)
+
+---
+
 ## [0.10.23-alpha] - 2026-06-06
 **Branch**: `relique/issue-2258` | **PR**: #2379
 
