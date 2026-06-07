@@ -7,7 +7,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 ---
 
 ## [0.8.0-alpha] - 2026-06-07
-**Branch**: `reliquary/sprint/inventory-and-defaults` | **PR**: #TBD
+**Branch**: `reliquary/sprint/inventory-and-defaults` | **PR**: #2420
 
 ### Sprint: Inventory Palette Parity & Safe Defaults
 
