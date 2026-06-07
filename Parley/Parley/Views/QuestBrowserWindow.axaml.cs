@@ -362,21 +362,15 @@ namespace DialogEditor.Views
         /// </summary>
         private string? FindManifestPath()
         {
-            // First: Check shared Radoub settings (set by Manifest when it runs)
-            var sharedPath = Radoub.Formats.Settings.RadoubSettings.Instance.ManifestPath;
+            // First: Check shared Radoub settings (set by Manifest when it runs).
+            // #2357: _settings.ManifestPath is now a passthrough to this same value.
+            var sharedPath = _settings.ManifestPath;
             if (!string.IsNullOrEmpty(sharedPath) && File.Exists(sharedPath))
             {
                 return sharedPath;
             }
 
-            // Second: Check Parley-specific settings (legacy or manual override)
-            var settingsPath = _settings.ManifestPath;
-            if (!string.IsNullOrEmpty(settingsPath) && File.Exists(settingsPath))
-            {
-                return settingsPath;
-            }
-
-            // Third: Auto-detect common locations
+            // Second: Auto-detect common locations
             var parleyDir = AppDomain.CurrentDomain.BaseDirectory;
             var manifestPaths = new[]
             {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Settings;
 
 namespace DialogEditor.Services
 {
@@ -31,11 +32,11 @@ namespace DialogEditor.Services
         private bool _simulatorShowWarnings = true;
 
         // Script editor settings
-        private string _externalEditorPath = "";
+        // #2357: ExternalEditorPath migrated to shared RadoubSettings.CodeEditorPath (no local field)
         private List<string> _scriptSearchPaths = new List<string>();
 
         // Radoub tool integration
-        private string _manifestPath = "";
+        // #2357: ManifestPath migrated to shared RadoubSettings.ManifestPath (no local field)
 
         // Parameter cache settings
         private bool _enableParameterCache = true;
@@ -85,10 +86,14 @@ namespace DialogEditor.Services
             _showDeleteConfirmation = showDeleteConfirmation;
             _simulatorShowWarnings = simulatorShowWarnings;
 
-            _externalEditorPath = externalEditorPath ?? "";
-            _scriptSearchPaths = scriptSearchPaths ?? new List<string>();
+            // #2357: One-time migration of legacy Parley path values onto shared RadoubSettings.
+            // Adopt the legacy value only if the shared value is still empty (mirrors #2295).
+            RadoubSettings.Instance.CodeEditorPath =
+                SettingsPathMigration.AdoptLegacyIfSharedEmpty(externalEditorPath, RadoubSettings.Instance.CodeEditorPath);
+            RadoubSettings.Instance.ManifestPath =
+                SettingsPathMigration.AdoptLegacyIfSharedEmpty(manifestPath, RadoubSettings.Instance.ManifestPath);
 
-            _manifestPath = manifestPath ?? "";
+            _scriptSearchPaths = scriptSearchPaths ?? new List<string>();
 
             _enableParameterCache = enableParameterCache;
             _maxCachedValuesPerParameter = Math.Max(5, Math.Min(50, maxCachedValuesPerParameter));
@@ -198,10 +203,17 @@ namespace DialogEditor.Services
         }
 
         // Script Editor Settings
+        // #2357: Passthrough to shared RadoubSettings.CodeEditorPath (single source of truth).
         public string ExternalEditorPath
         {
-            get => _externalEditorPath;
-            set { if (SetProperty(ref _externalEditorPath, value ?? "")) SettingsChanged?.Invoke(); }
+            get => RadoubSettings.Instance.CodeEditorPath;
+            set
+            {
+                if (RadoubSettings.Instance.CodeEditorPath == (value ?? "")) return;
+                RadoubSettings.Instance.CodeEditorPath = value ?? "";
+                OnPropertyChanged();
+                SettingsChanged?.Invoke();
+            }
         }
 
         public List<string> ScriptSearchPaths
@@ -221,10 +233,17 @@ namespace DialogEditor.Services
         internal List<string> ScriptSearchPathsInternal => _scriptSearchPaths;
 
         // Radoub Tool Integration
+        // #2357: Passthrough to shared RadoubSettings.ManifestPath (single source of truth).
         public string ManifestPath
         {
-            get => _manifestPath;
-            set { if (SetProperty(ref _manifestPath, value ?? "")) SettingsChanged?.Invoke(); }
+            get => RadoubSettings.Instance.ManifestPath;
+            set
+            {
+                if (RadoubSettings.Instance.ManifestPath == (value ?? "")) return;
+                RadoubSettings.Instance.ManifestPath = value ?? "";
+                OnPropertyChanged();
+                SettingsChanged?.Invoke();
+            }
         }
 
         // Parameter Cache Settings

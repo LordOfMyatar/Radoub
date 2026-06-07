@@ -693,8 +693,10 @@ namespace DialogEditor.Services
                     SoundBrowserIncludeBifFiles = SoundBrowserIncludeBifFiles,
                     SoundBrowserMonoOnly = SoundBrowserMonoOnly,
                     SpellCheckEnabled = SpellCheckEnabled,
-                    ManifestPath = SharedPathHelper.ContractPath(ManifestPath),
-                    ExternalEditorPath = SharedPathHelper.ContractPath(ExternalEditorPath),
+                    // #2357: ManifestPath/ExternalEditorPath now persist via shared RadoubSettings;
+                    // no longer written to Parley's local settings (cleared on first save after migration).
+                    ManifestPath = "",
+                    ExternalEditorPath = "",
                     ScriptSearchPaths = SharedPathHelper.ContractPaths(_editorPreferences.ScriptSearchPathsInternal),
                     RecentCreatureTags = _recentCreatureTags.ToList()
                 };
