@@ -10,6 +10,7 @@ using DirtyCheckResult = Radoub.UI.Services.DirtyCheckResult;
 using FileOperationsHelper = Radoub.UI.Services.FileOperationsHelper;
 using FileSessionLockService = Radoub.UI.Services.FileSessionLockService;
 using LockResult = Radoub.UI.Services.LockResult;
+using BackupService = Radoub.UI.Services.Search.BackupService;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -204,18 +205,36 @@ public partial class MainWindow
         }
 
         // Write to a temp file beside the destination (same volume = atomic move),
-        // then swap it into place with the shared cross-OS atomic helper. The helper
-        // backs up the previous file to .bak and performs a single File.Move
-        // (overwrite:true) so the original is never missing mid-save (#2253, #2256).
+        // then swap it into place with the shared cross-OS atomic helper. A single
+        // File.Move(overwrite:true) means the original is never missing mid-save
+        // (#2253, #2256). The pre-save backup goes to the shared ~/Radoub/Backups/
+        // folder (under retention) rather than a .bak in the module dir — modules hold
+        // exactly one .jrl and must not accumulate backup clutter (#2253).
         var jrl = _currentJrl;
         var path = _currentFilePath!;
         var tempPath = path + ".tmp";
         try
         {
+            // Snapshot the existing journal to the shared Backups folder before replacing.
+            if (File.Exists(path))
+            {
+                var moduleName = Path.GetFileName(Path.GetDirectoryName(path)) ?? "Manifest";
+                try
+                {
+                    await new BackupService().BackupFilesAsync(new[] { path }, moduleName);
+                }
+                catch (Exception bex)
+                {
+                    // Backup is best-effort; a failed snapshot must not block the save.
+                    UnifiedLogger.LogJournal(LogLevel.WARN, $"Pre-save backup failed: {bex.Message}");
+                }
+            }
+
             // #2254 — actually-async write so multi-MB journals don't block the UI thread.
             await Task.Run(() => JrlWriter.Write(jrl, tempPath));
 
-            Radoub.Formats.Common.AtomicFile.Replace(tempPath, path, path + ".bak");
+            // backupPath null: the in-module .bak is intentionally not created (see above).
+            Radoub.Formats.Common.AtomicFile.Replace(tempPath, path, backupPath: null);
 
             _documentState.ClearDirty();
             UpdateTitle();

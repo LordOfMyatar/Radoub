@@ -100,4 +100,45 @@ public class PropertyPanelTests
     }
 
     #endregion
+
+    #region NextFreeEntryId (#2253)
+
+    [Fact]
+    public void NextFreeEntryId_UniqueId_ReturnsUnchanged()
+    {
+        var cat = CategoryWithIds(100, 200, 300);
+        var moving = cat.Entries[0]; // ID 100
+
+        Assert.Equal(150u, MainWindow.NextFreeEntryId(cat, moving, 150));
+    }
+
+    [Fact]
+    public void NextFreeEntryId_Collision_BumpsByOne()
+    {
+        var cat = CategoryWithIds(100, 200, 300);
+        var moving = cat.Entries[0]; // ID 100 — editing it to collide with 200
+
+        Assert.Equal(201u, MainWindow.NextFreeEntryId(cat, moving, 200));
+    }
+
+    [Fact]
+    public void NextFreeEntryId_ConsecutiveCollisions_BumpsToFirstFree()
+    {
+        var cat = CategoryWithIds(100, 200, 201, 202);
+        var moving = cat.Entries[0]; // ID 100
+
+        // 200, 201, 202 all taken → first free is 203
+        Assert.Equal(203u, MainWindow.NextFreeEntryId(cat, moving, 200));
+    }
+
+    [Fact]
+    public void NextFreeEntryId_SameAsOwnCurrentId_ReturnsUnchanged()
+    {
+        var cat = CategoryWithIds(100, 200, 300);
+        var moving = cat.Entries[1]; // ID 200
+
+        Assert.Equal(200u, MainWindow.NextFreeEntryId(cat, moving, 200));
+    }
+
+    #endregion
 }
