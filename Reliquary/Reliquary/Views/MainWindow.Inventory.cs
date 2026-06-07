@@ -101,7 +101,9 @@ public partial class MainWindow
             // BIF UTIs often carry an empty TemplateResRef (the ResRef lives in the BIF index, not
             // the file). Stamp it so the VM's ResRef — and the model InventoryRes — is correct.
             if (string.IsNullOrEmpty(uti.TemplateResRef)) uti.TemplateResRef = resRef;
-            return _itemFactory.Create(uti, source);
+            var vm = _itemFactory.Create(uti, source);
+            vm.IconBitmap = _itemIconService?.GetItemIcon(uti); // #2411 detail icons
+            return vm;
         }
 
         // Unresolved UTI — show a placeholder so the row is still visible/removable.
@@ -121,7 +123,9 @@ public partial class MainWindow
         var (uti, source) = ResolveUtiFile(cacheItem.ResRef);
         if (uti == null || _itemFactory == null) return cacheItem;
         if (string.IsNullOrEmpty(uti.TemplateResRef)) uti.TemplateResRef = cacheItem.ResRef;
-        return _itemFactory.Create(uti, source);
+        var vm = _itemFactory.Create(uti, source);
+        vm.IconBitmap = _itemIconService?.GetItemIcon(uti); // #2411 detail icons
+        return vm;
     }
 
     /// <summary>UTI resolution cascade: module directory → Override → HAK → BIF.</summary>
@@ -184,22 +188,29 @@ public partial class MainWindow
             await BuildItemCacheAsync();
 
             var cache = _itemCache.GetAggregatedCache() ?? new List<SharedPaletteCacheItem>();
-            var vms = cache.Select(c => new ItemViewModel
-            {
-                ResRef = c.ResRef,
-                Name = c.DisplayName,
-                BaseItemName = c.BaseItemTypeName,
-                BaseItem = c.BaseItemType,
-                Value = c.BaseValue,
-                Tag = string.IsNullOrEmpty(c.Tag) ? c.ResRef : c.Tag,
-                PropertiesDisplay = c.PropertiesDisplay,
-                Source = c.IsStandard ? GameResourceSource.Bif : GameResourceSource.Override
-            }).ToList();
+            var vms = cache
+                // Hide creature natural weapons + the invalid marker — they are not authorable
+                // blueprints (Fence/QM parity, #2411). Shared list keeps the tools in sync.
+                .Where(c => !Radoub.UI.Utils.ItemPaletteExclusions.IsExcluded(c.BaseItemType))
+                .Select(c => new ItemViewModel
+                {
+                    ResRef = c.ResRef,
+                    Name = c.DisplayName,
+                    BaseItemName = c.BaseItemTypeName,
+                    BaseItem = c.BaseItemType,
+                    Value = c.BaseValue,
+                    Tag = string.IsNullOrEmpty(c.Tag) ? c.ResRef : c.Tag,
+                    PropertiesDisplay = c.PropertiesDisplay,
+                    Source = c.IsStandard ? GameResourceSource.Bif : GameResourceSource.Override,
+                    // Item detail images (#2411): reuse Reliquary's ItemIconService (already used for
+                    // placeable portraits) for inventory palette/details icons, matching Fence.
+                    IconBitmap = _itemIconService?.GetItemIcon(c.BaseItemType)
+                }).ToList();
 
             // Add loose module-directory UTIs (not in BIF/Override/HAK) so module items show too.
             var moduleResRefs = new HashSet<string>(vms.Select(v => v.ResRef), StringComparer.OrdinalIgnoreCase);
             foreach (var moduleVm in LoadModuleItemViewModels())
-                if (moduleResRefs.Add(moduleVm.ResRef))
+                if (!Radoub.UI.Utils.ItemPaletteExclusions.IsExcluded(moduleVm.BaseItem) && moduleResRefs.Add(moduleVm.ResRef))
                     vms.Add(moduleVm);
 
             inv.SetPaletteItems(vms);
@@ -266,6 +277,8 @@ public partial class MainWindow
                 var bytes = _gameData.FindResource(res.ResRef, ResourceTypes.Uti);
                 if (bytes == null) continue;
                 var uti = UtiReader.Read(bytes);
+                // Keep the shared cache clean of non-authorable items (Fence parity, #2411).
+                if (Radoub.UI.Utils.ItemPaletteExclusions.IsExcluded(uti.BaseItem)) continue;
                 items.Add(new SharedPaletteCacheItem
                 {
                     ResRef = res.ResRef,
@@ -305,7 +318,12 @@ public partial class MainWindow
 
         foreach (var file in Directory.GetFiles(dir, "*.uti", SearchOption.TopDirectoryOnly))
         {
-            try { vms.Add(_itemFactory.Create(UtiReader.Read(file), GameResourceSource.Module)); }
+            try
+            {
+                var vm = _itemFactory.Create(UtiReader.Read(file), GameResourceSource.Module);
+                vm.IconBitmap = _itemIconService?.GetItemIcon(vm.BaseItem); // #2411 detail icons
+                vms.Add(vm);
+            }
             catch (Exception ex) when (ex is IOException or InvalidDataException)
             {
                 UnifiedLogger.LogApplication(LogLevel.DEBUG,
