@@ -20,9 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Radoub.UI 0.2.2-alpha] - 2026-06-06
 **Branch**: `trebuchet/sprint/data-loss-marlinspike` | **PR**: #2387
 
-### Batch-replace preview value (#2224)
+### Batch-replace preview value (#2224) + warning-color converter (#2182)
 
 - `PendingChange.ComputedNewFieldValue` exposes the post-replace field value (literal substring substitution, no case folding) so replace previews can show the real result instead of the bare replacement term.
+- New `BoolToWarningBrushConverter` — binds status text to the theme warning color so validator rejections are visible.
 
 ---
 

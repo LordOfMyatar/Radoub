@@ -212,7 +212,7 @@ public partial class MarlinspikePanel : UserControl
         var validationError = criteria.Validate();
         if (validationError != null)
         {
-            _viewModel.StatusText = $"Invalid pattern: {validationError}";
+            _viewModel.SetWarningStatus($"Invalid pattern: {validationError}");
             return;
         }
 
@@ -615,10 +615,10 @@ public partial class MarlinspikePanel : UserControl
         if (plans.Count == 0)
         {
             // Surface the specific validator reason (suggested truncation / named bad
-            // chars) instead of a generic "all rejected" line (#2182).
-            _viewModel.StatusText = rejected.Count > 0
+            // chars) in the warning color so it's visible (#2182).
+            _viewModel.SetWarningStatus(rejected.Count > 0
                 ? $"Rename skipped — {rejected[0]}"
-                : "Rename skipped — no valid filename targets.";
+                : "Rename skipped — no valid filename targets.");
             return;
         }
 

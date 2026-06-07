@@ -56,6 +56,33 @@ public partial class MarlinspikePanelViewModel : ObservableObject
     [ObservableProperty]
     private string _statusText = "Ready";
 
+    /// <summary>
+    /// True when StatusText is a warning the user must notice (e.g. a validator
+    /// rejection). The view binds the status foreground to the theme warning color
+    /// when set (#2182). Auto-cleared whenever StatusText is set by any other path.
+    /// </summary>
+    [ObservableProperty]
+    private bool _statusIsWarning;
+
+    // Guards the auto-clear so SetWarningStatus can set the text then the flag
+    // without OnStatusTextChanged immediately resetting it.
+    private bool _settingWarningStatus;
+
+    partial void OnStatusTextChanged(string value)
+    {
+        if (!_settingWarningStatus)
+            StatusIsWarning = false;
+    }
+
+    /// <summary>Set a warning-colored status message (#2182).</summary>
+    public void SetWarningStatus(string text)
+    {
+        _settingWarningStatus = true;
+        StatusText = text;
+        _settingWarningStatus = false;
+        StatusIsWarning = true;
+    }
+
     [ObservableProperty]
     private string _progressText = "";
 

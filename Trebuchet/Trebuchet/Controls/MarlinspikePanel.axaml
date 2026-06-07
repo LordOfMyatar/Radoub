@@ -1,8 +1,13 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:RadoubLauncher.ViewModels"
+             xmlns:conv="using:Radoub.UI.Converters"
              x:Class="RadoubLauncher.Controls.MarlinspikePanel"
              x:DataType="vm:MarlinspikePanelViewModel">
+
+    <UserControl.Resources>
+        <conv:BoolToWarningBrushConverter x:Key="WarningBrushConverter"/>
+    </UserControl.Resources>
 
     <Grid RowDefinitions="Auto,Auto,*,Auto">
 
@@ -114,7 +119,7 @@
                              IsVisible="{Binding ShowProgress}"/>
                 <TextBlock Text="{Binding StatusText}"
                            VerticalAlignment="Center"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                           Foreground="{Binding StatusIsWarning, Converter={StaticResource WarningBrushConverter}}"/>
             </DockPanel>
         </Border>
 
