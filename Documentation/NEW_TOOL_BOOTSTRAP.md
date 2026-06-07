@@ -254,7 +254,10 @@ The `[Edit → OtherTool]` launch pattern (one tool opening a resource in anothe
 | Forking `VariableViewModel` per tool | Use shared `Radoub.UI.Controls.VariablesPanel` |
 | Tool-local placeables.2da reader | Use `Radoub.Formats.Services.PlaceableAppearanceService` |
 | Browser shows ResRef-only sort/search | Override `IndexMetadataAsync` + `ReadSourceMetadataAsync` on the panel (see [File Browser Adoption](#file-browser-adoption-filebrowserpanelbase)) |
-| Save flow doesn't refresh browser row | Call `BrowserSaveNotifier.NotifyAsync(panel, filePath)` after a successful save |
+| Save flow doesn't refresh browser row | Call `BrowserSaveNotifier.NotifyOrAddAsync(panel, filePath)` after a successful save (`NotifyAsync` only refreshes an existing row — it silently no-ops on Save As of a brand-new file, #2413) |
+| Item palette shows creature weapons / junk | Filter base item types through `Radoub.UI.Utils.ItemPaletteExclusions.IsExcluded` (#2411) |
+| Per-tool palette-category combo glue | Use `Radoub.UI.Utils.PaletteCategoryComboBinder` (+ `ComboBoxHelper`) with `GetPaletteCategories(resourceType)` (#2416) |
+| New blueprint saves with zero/default required fields | Seed game-safe defaults in your `New*()` factory (verify against a real toolset file) + clamp on save; e.g. a placeable with HP 0 divides-by-zero in Aurora (#2417) |
 | Synchronous GFF parse inside `LoadFilesFromModuleAsync` | Defer Name/Tag extraction to the background `IndexMetadataAsync` pass |
 
 ### File Browser Adoption (FileBrowserPanelBase)
@@ -363,9 +366,10 @@ public class ItemBrowserPanel : FileBrowserPanelBase, IBrowserRowRefresher
 // Lifecycle: wire the (optional) shared palette cache on the panel.
 ItemBrowserPanel.PaletteCache = new SharedPaletteCacheService(/* see cache rules below */);
 
-// FileOps: notify the browser after every successful save so the row's
-// Tag/Name reflect the new values without a full reindex.
-_ = Radoub.UI.Controls.BrowserSaveNotifier.NotifyAsync(ItemBrowserPanel, _currentFilePath);
+// FileOps: notify the browser after every successful save. NotifyOrAddAsync does the cheap
+// in-place Tag/Name refresh for an existing row, AND reloads + selects a new row when the
+// saved path isn't listed yet (Save As of a New file) — NotifyAsync alone no-ops there (#2413).
+_ = Radoub.UI.Controls.BrowserSaveNotifier.NotifyOrAddAsync(ItemBrowserPanel, _currentFilePath);
 ```
 
 Live references: [MainWindow.Lifecycle.cs:168](../Relique/Relique/Views/MainWindow.Lifecycle.cs#L168) (cache wiring), [MainWindow.FileOps.cs:135](../Relique/Relique/Views/MainWindow.FileOps.cs#L135) (post-save notify), [Fence MainWindow.axaml.cs:79](../Fence/Fence/Views/MainWindow.axaml.cs#L79) (per-resource cache instantiation).
@@ -392,7 +396,7 @@ private readonly ISharedPaletteCacheService _palette =
 
 A `PaletteCache` is optional — wire it only when HAK/BIF extraction is expensive enough that the cache pays for itself. Module-folder files are read directly on every indexing pass (cheap enough). When wired, populate the cache during the same archive scan that lists entries (see [StoreBrowserPanel.cs:568](../Radoub.UI/Radoub.UI/Controls/StoreBrowserPanel.cs#L568) for Fence's populate-during-scan flow).
 
-**Host-side save plumbing**: `BrowserSaveNotifier.NotifyAsync` is null-safe on both the refresher and the path, so the call is safe to drop in early returns or on failed saves. The static helper exists so the post-save wire-up is unit-testable without a `MainWindow` — see [BrowserSaveNotifierTests.cs](../Radoub.UI/Radoub.UI.Tests/BrowserSaveNotifierTests.cs).
+**Host-side save plumbing**: prefer `BrowserSaveNotifier.NotifyOrAddAsync(panel, path)` — it refreshes an existing row in place and reloads + selects a new row on Save As of a not-yet-listed file (#2413). Use the narrower `NotifyAsync(refresher, path)` only when you specifically want the in-place refresh and never the add. Both are null-safe on panel/refresher and path, so they are safe to drop in early returns or on failed saves, and the static helpers keep the post-save wire-up unit-testable without a `MainWindow` — see [BrowserSaveNotifierTests.cs](../Radoub.UI/Radoub.UI.Tests/BrowserSaveNotifierTests.cs).
 
 **Host-side browser collapse (REQUIRED)**: `FileBrowserPanelBase` only flips its own ◀/▶ button and raises `CollapsedChanged` — it does **not** hide itself. The host owns the actual collapse: subscribe to `CollapsedChanged` and zero the browser column's width (or the panel's `Width`) plus hide the splitter. Forgetting this is a silent bug — the toggle button (and any F4 shortcut) flips the arrow but nothing disappears. QM/Relique resize `OuterContentGrid.ColumnDefinitions[0]`; the minimal form is `browser.Width = collapsed ? 0 : <default>; splitter.IsVisible = !collapsed;`.
 

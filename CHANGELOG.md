@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.7-alpha] - 2026-06-07
+**Branch**: `reliquary/sprint/inventory-and-defaults` | **PR**: #2420
+
+### Shared palette-category combo binder + item-palette helpers
+
+- `PaletteCategoryComboBinder` and `ComboBoxHelper` moved into `Radoub.UI` so item/placeable editors share one palette-category combo implementation; per-tool migrations tracked by #2421 (QM), #2422 (Fence), #2423 (Relique) (#2416).
+- `ItemPaletteExclusions` extracted from Fence's per-tool list so item palettes hide creature natural weapons + the invalid marker consistently (#2411).
+- `BrowserSaveNotifier.NotifyOrAddAsync` reloads + selects a new row on Save As of a not-yet-listed file, keeping the cheap in-place refresh for existing rows (#2413).
+
+---
+
 ## [Radoub.Formats 0.2.65-alpha] - 2026-06-06
 **Branch**: `trebuchet/sprint/data-loss-marlinspike` | **PR**: #2387
 
