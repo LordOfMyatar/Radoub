@@ -5,6 +5,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.117-alpha] - 2026-06-06
+**Branch**: `quartermaster/issue-2381` | **PR**: #TBD
+
+### Sprint: Rendering Bug Cleanup (#2381)
+
+- Fire beetle, fey/pixy, dire rat, giant spider model rendering fixes (#1755, #1758, #1762, #1760)
+- Robe armor rendering gaps / missing lower body parts (#1989)
+- Snake preview floating fangs + flat pose (#2126)
+- Level-by-level stats history tracking in comments (#875)
+
+---
+
 ## [0.2.116-alpha] - 2026-06-05
 **Branch**: `radoub/issue-2350` | **PR**: #2351
 
