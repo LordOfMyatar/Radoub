@@ -177,6 +177,7 @@ userDict.AddWord("Waterdeep");
 - [ ] **Wire Undo/Redo via shared `UndoRedoManager`** — register Ctrl+Z / Ctrl+Y and route every user-initiated mutation through `IUndoableCommand` so the standard Undo/Redo menu items work from day one (#2231). Do **not** ship disabled Undo/Redo menu stubs — either wire them correctly or omit them.
 - [ ] **Ship a New-resource flow** (`File → New`, Ctrl+N) — the tool must let the user create a blank resource from scratch, not only edit existing files. A `SaveFilePicker`/`Save As`-into-module path that *copies* a base-game blueprint is **not** a substitute: it can't make a resource that isn't already in the game data. Match the lightest pattern that fits the format — Relique's New Item Wizard (base-item-type branching), Fence's simpler new-store, or a plain blank-document `File → New`. A tool that can only edit pre-existing files is incomplete. (Reliquary shipped without this — #2367 — because Save-As-copy masked the gap.)
 - [ ] **Wire Recent Files / MRU on BOTH ends** — see [Trebuchet Integration](#trebuchet-integration). Easy to get for free via `BaseToolSettingsService` + a `ToolRecentFilesService` case; easy to forget entirely (#2247, #2368).
+- [ ] **Wire a Find feature (`Ctrl+F`)** — every tool must let the user locate things inside the open resource via a standard `Ctrl+F` shortcut (#2401). What "find" searches is format-specific: dialog text/nodes in Parley, item/property rows in Relique, inventory/stat fields in Quartermaster, store entries in Fence, placeable fields in Reliquary. Register the `Ctrl+F` `KeyGesture` and an `Edit → Find` menu item that opens (or focuses) the tool's find affordance — a search box that filters/highlights the relevant list or jumps to matches. This is a baseline expectation, not optional: a tool with no in-editor Find is incomplete. Do **not** ship a disabled "Find" menu stub — wire it or omit the menu entry until it is wired.
 
 ### Trebuchet Integration
 
@@ -227,6 +228,7 @@ The `[Edit → OtherTool]` launch pattern (one tool opening a resource in anothe
 | **Token Picker** | Right-click "All Tokens..." must open `Radoub.UI.Views.TokenSelectorWindow` (4 tabs: Standard / Highlight / Custom Tokens / Custom Colors). Route through `TokenInsertionHelper.OpenTokenWindow` — do NOT instantiate the older `TokenInsertionWindow` directly; it lacks the Custom Tokens tab (#2075). | Manifest.PropertyPanel, Relique post-#2075 |
 | **Variables Grid** | Use shared `Radoub.UI.Controls.VariablesPanel` *(Sprint 3)* — do NOT fork `VariableViewModel`. | (shared control) |
 | **Undo/Redo** | Wire shared `UndoRedoManager` + Ctrl+Z / Ctrl+Y; route mutating actions through `IUndoableCommand`. No disabled "Not yet implemented" menu stubs (#2231). | (TBD — pending epic #2231 reference impl) |
+| **Find** | Wire `Ctrl+F` + `Edit → Find` to locate things in the open resource (format-specific: nodes, rows, fields). Baseline expectation; no disabled stubs (#2401). | (TBD — first tool to ship Find sets the pattern) |
 
 **Resource Browsers** (use shared implementations from Radoub.UI):
 
