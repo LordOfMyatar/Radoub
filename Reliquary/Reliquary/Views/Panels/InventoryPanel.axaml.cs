@@ -86,6 +86,15 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
         {
             _paletteList.Items = _filteredPaletteItems;
             _paletteList.SelectionChanged += OnPaletteSelectionChanged;
+            // #2415: double-click + context "Add to Backpack" both add via the existing add path.
+            _paletteList.ItemOpenRequested += OnPaletteItemActivated;
+            _paletteList.AddToBackpackRequested += OnPaletteItemActivated;
+        }
+        if (_backpackList != null)
+        {
+            // #2415 symmetry: double-click / context "Delete" remove from the backpack.
+            _backpackList.ItemOpenRequested += OnBackpackItemActivated;
+            _backpackList.DeleteRequested += OnBackpackItemActivated;
         }
         UpdateContentsCount();
     }
@@ -168,6 +177,14 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
         var selected = _backpackList?.SelectedItems.FirstOrDefault();
         if (selected != null) RemoveItemRequested?.Invoke(this, selected);
     }
+
+    /// <summary>Palette double-click / context "Add to Backpack" → add the activated item (#2415).</summary>
+    private void OnPaletteItemActivated(object? sender, ItemViewModel item)
+        => AddItemRequested?.Invoke(this, item);
+
+    /// <summary>Backpack double-click / context "Delete" → remove the activated item (#2415).</summary>
+    private void OnBackpackItemActivated(object? sender, ItemViewModel item)
+        => RemoveItemRequested?.Invoke(this, item);
 
     private void UpdateContentsCount()
     {

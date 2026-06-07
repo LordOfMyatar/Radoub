@@ -47,7 +47,7 @@
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                         </StackPanel>
                         <controls:ItemListView x:Name="BackpackList"
-                                               ContextKey="ReliquaryBackpack"
+                                               ContextKey="Backpack"
                                                AutomationProperties.AutomationId="Reliquary_BackpackList"/>
                     </DockPanel>
                 </Border>
@@ -75,7 +75,7 @@
                                     AutomationProperties.AutomationId="Reliquary_Button_AddItem"/>
                         </StackPanel>
                         <controls:ItemListView x:Name="PaletteList"
-                                               ContextKey="ReliquaryPalette"
+                                               ContextKey="Palette"
                                                AutomationProperties.AutomationId="Reliquary_PaletteList"/>
                     </DockPanel>
                 </Border>
