@@ -4,6 +4,7 @@ using System.Linq;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Mdl;
+using Radoub.Formats.Resolver;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
 using Radoub.Formats.Uti;
@@ -21,7 +22,17 @@ public class ModelService
     private readonly IGameDataService _gameDataService;
     private readonly MdlReader _mdlReader = new();
     private readonly Dictionary<string, MdlModel?> _modelCache = new();
+    private readonly Dictionary<string, ResourceSource> _modelSourceCache = new();
     private readonly MdlPartComposer _composer;
+
+    /// <summary>
+    /// Source of the most recent model resolved by <see cref="LoadModel"/>. Drives the
+    /// preview's texture-source policy (#1758): a HAK/Module creature should use its own
+    /// pack's textures, a base/Override creature keeps the #1867 BIF-prefer behavior.
+    /// Defaults to <see cref="ResourceSource.Bif"/> so part-based player bodies (composed
+    /// from base parts) keep BIF-preferred textures.
+    /// </summary>
+    public ResourceSource LastLoadedModelSource { get; private set; } = ResourceSource.Bif;
 
     public ModelService(IGameDataService gameDataService)
     {
@@ -76,7 +87,11 @@ public class ModelService
                         $"LoadCreatureModel: No armor overrides (naked creature or no chest armor)");
                 }
 
-                return LoadPartBasedCreatureModel(creature, armorOverrides);
+                var partModel = LoadPartBasedCreatureModel(creature, armorOverrides);
+                // Part-based player/creature bodies are composed from base-game parts;
+                // keep BIF-preferred textures (#1867) regardless of which part loaded last.
+                LastLoadedModelSource = ResourceSource.Bif;
+                return partModel;
             }
 
             return LoadModelForAppearance(appearanceId, gender, phenotype);
@@ -305,6 +320,8 @@ public class ModelService
         if (_modelCache.TryGetValue(resRef, out var cached))
         {
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"LoadModel: '{resRef}' from cache, hasModel={cached != null}");
+            if (_modelSourceCache.TryGetValue(resRef, out var cachedSource))
+                LastLoadedModelSource = cachedSource;
             return cached;
         }
 
@@ -316,6 +333,8 @@ public class ModelService
             return null;
         }
 
+        LastLoadedModelSource = resourceResult.Source;
+        _modelSourceCache[resRef] = resourceResult.Source;
         var modelData = resourceResult.Data;
         var sourceFile = System.IO.Path.GetFileName(resourceResult.SourcePath);
         UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadModel: '{resRef}' from {resourceResult.Source} ({sourceFile}), {modelData.Length} bytes");

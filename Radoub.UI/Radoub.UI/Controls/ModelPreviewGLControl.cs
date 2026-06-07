@@ -129,6 +129,13 @@ public class ModelPreviewGLControl : OpenGlControlBase
     public event EventHandler<ModelMeshInfo>? MeshInfoChanged;
 
     /// <summary>
+    /// Raised on the UI thread after textures load. The bool is true when a non-base
+    /// model (HAK/Module) had at least one texture fall back to a base-game (BIF) stub,
+    /// so the preview skin may not match the intended asset (#1758).
+    /// </summary>
+    public event EventHandler<bool>? TextureSourceChanged;
+
+    /// <summary>
     /// The model to render.
     /// </summary>
     public MdlModel? Model
@@ -1396,6 +1403,10 @@ public class ModelPreviewGLControl : OpenGlControlBase
             $"metal1={_colorIndices.Metal1}, metal2={_colorIndices.Metal2}, cloth1={_colorIndices.Cloth1}, cloth2={_colorIndices.Cloth2}");
 
         var failedTextures = new List<string>();
+        // #1758: for a non-base model (PreferBifTextures=false), note when a texture
+        // resolves from base-game BIF instead of the model's own pack — the preview skin
+        // may then not match the intended asset.
+        bool usedBaseFallback = false;
         foreach (var texName in textureNames)
         {
             if (_textureCache.ContainsKey(texName))
@@ -1419,6 +1430,8 @@ public class ModelPreviewGLControl : OpenGlControlBase
                 {
                     _textureCache[texName] = texId;
                     if (isPlt) _pltTextureNames.Add(texName);
+                    if (!_preferBifTextures && _textureService.ResolvesFromBase(texName))
+                        usedBaseFallback = true;
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Loaded texture '{texName}' ({width}x{height}) -> texId={texId}, isPlt={isPlt}");
                 }
             }
@@ -1448,6 +1461,8 @@ public class ModelPreviewGLControl : OpenGlControlBase
                     {
                         _textureCache[modelTexture] = fallbackId;
                         if (isPlt) _pltTextureNames.Add(modelTexture);
+                        if (!_preferBifTextures && _textureService.ResolvesFromBase(modelTexture))
+                            usedBaseFallback = true;
                         UnifiedLogger.LogApplication(LogLevel.DEBUG,
                             $"  Loaded model fallback texture '{modelTexture}' ({w}x{h}) -> texId={fallbackId}, isPlt={isPlt}");
                     }
@@ -1465,6 +1480,13 @@ public class ModelPreviewGLControl : OpenGlControlBase
                 }
             }
         }
+
+        // #1758: notify the host so it can warn that a CEP creature is showing
+        // base-game textures (preview may not match the intended asset).
+        if (Dispatcher.UIThread.CheckAccess())
+            TextureSourceChanged?.Invoke(this, usedBaseFallback);
+        else
+            Dispatcher.UIThread.Post(() => TextureSourceChanged?.Invoke(this, usedBaseFallback));
     }
 
     private uint UploadTexture(int width, int height, byte[] rgba)

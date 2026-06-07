@@ -538,6 +538,34 @@ public class TextureService
     /// a PLT (color-index-dependent) source. Callers can use this to cache non-PLT
     /// textures across color changes.
     /// </summary>
+    /// <summary>
+    /// Reports whether the texture <paramref name="resRef"/> resolves from base-game
+    /// BIF rather than a HAK/Module/Override. Used by the preview to warn when a CEP
+    /// creature's texture fell back to a base-game stub (#1758) — its own pack did not
+    /// supply the texture, so the rendered skin may not match the intended asset.
+    /// Considers the same candidate names the loader tries (bare + PBR <name>_d).
+    /// </summary>
+    public bool ResolvesFromBase(string resRef)
+    {
+        if (string.IsNullOrEmpty(resRef))
+            return false;
+
+        var name = resRef.ToLowerInvariant();
+        var candidates = new List<string> { name };
+        var pbr = PbrDiffuseFallbackName(name);
+        if (pbr != null) candidates.Add(pbr);
+
+        ushort[] types = { ResourceTypes.Plt, ResourceTypes.Tga, ResourceTypes.Dds };
+        foreach (var cand in candidates)
+            foreach (var t in types)
+            {
+                var res = _gameDataService.FindResourceWithSource(cand, t);
+                if (res != null && res.Data.Length > 0)
+                    return res.Source == Radoub.Formats.Resolver.ResourceSource.Bif;
+            }
+        return false;
+    }
+
     public (int width, int height, byte[] pixels, bool isPlt)? LoadTextureWithKind(
         string resRef,
         PltColorIndices? colorIndices = null)

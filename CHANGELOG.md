@@ -17,6 +17,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.5-alpha] - 2026-06-07
+**Branch**: `quartermaster/issue-2381` | **PR**: #2394
+
+### Model preview: textures follow the model's source tier (#1758)
+
+- A creature model loaded from a HAK/Module now resolves its textures from the normal HAK-first chain instead of being forced to base-game BIF, so CEP-only skins (e.g. the green pixie `c_fairy`) render correctly instead of a stale 32×32 base stub. Base-game/Override models keep the BIF-preferred behavior (#1867 bat-wing fix). When a HAK creature's texture still falls back to a base-game stub, the preview now warns that it may be inaccurate. See follow-up refactor #2397.
+
+---
+
 ## [Radoub.UI 0.2.4-alpha] - 2026-06-06
 **Branch**: `quartermaster/issue-2381` | **PR**: #2394
 

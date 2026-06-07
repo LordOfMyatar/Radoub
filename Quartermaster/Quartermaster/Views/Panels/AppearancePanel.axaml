@@ -328,11 +328,18 @@
                         </Grid>
                     </Border>
 
-                    <!-- Model Info Status Line (#1873) -->
-                    <TextBlock Grid.Row="2" x:Name="ModelInfoStatusText"
-                               FontSize="{DynamicResource FontSizeSmall}" Padding="10,4"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                               IsVisible="False"/>
+                    <!-- Model Info Status Lines (#1873 mesh info, #1758 texture-source warning) -->
+                    <StackPanel Grid.Row="2" Orientation="Vertical">
+                        <TextBlock x:Name="ModelInfoStatusText"
+                                   FontSize="{DynamicResource FontSizeSmall}" Padding="10,4"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   TextWrapping="Wrap"
+                                   IsVisible="False"/>
+                        <TextBlock x:Name="TextureSourceStatusText"
+                                   FontSize="{DynamicResource FontSizeSmall}" Padding="10,0,10,4"
+                                   TextWrapping="Wrap"
+                                   IsVisible="False"/>
+                    </StackPanel>
 
                     <!-- Preview Controls -->
                     <Border Grid.Row="3" Padding="10"
