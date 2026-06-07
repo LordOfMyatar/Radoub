@@ -18,7 +18,11 @@
 
             <!-- Backpack LEFT | UTI palette MIDDLE | details RIGHT (design §5.4, 3 splitters).
                  Adventurer-backpack model: flat list, no body slots. -->
-            <Grid x:Name="InventoryGrid" MinHeight="320">
+            <!-- MaxHeight caps the inventory area inside the host ScrollViewer so each pane's
+                 ItemListView (DataGrid) scrolls internally instead of growing the whole column and
+                 pushing the docked Add/Remove buttons off-screen with long CEP lists (#2414). The
+                 cap is generous and the lists scroll within it, so large-font layouts still work. -->
+            <Grid x:Name="InventoryGrid" MinHeight="320" MaxHeight="520">
                 <!-- All three content columns are proportional (star) so the two GridSplitters
                      redistribute space cleanly without leaving empty gaps; MinWidth floors keep
                      each pane usable at large fonts (#2363). -->
