@@ -28,11 +28,16 @@ public sealed class PlaceableViewModel : INotifyPropertyChanged
     /// <summary>
     /// Create a blank placeable for File → New (#2367). Defaults to a useable, non-inventory,
     /// non-static placeable — the most common starting point — with empty Name/Tag/ResRef the
-    /// user fills in. UtpFile's own defaults (FileType "UTP ", FileVersion "V3.2") make it
-    /// round-trip immediately, so Save produces a valid file with no further setup.
+    /// user fills in. Combat/physical fields are seeded with toolset-matching, game-safe values
+    /// via <see cref="Services.PlaceableDefaults.Seed"/> so a bare New → Save round-trips into
+    /// Aurora without a divide-by-zero (#2417).
     /// </summary>
     public static PlaceableViewModel NewPlaceable()
-        => new(new UtpFile { Useable = true });
+    {
+        var utp = new UtpFile { Useable = true };
+        Services.PlaceableDefaults.Seed(utp);
+        return new(utp);
+    }
 
     /// <summary>The wrapped model. Returned by reference for preview/resolution callers.</summary>
     public UtpFile Utp => _utp;
@@ -142,14 +147,25 @@ public sealed class PlaceableViewModel : INotifyPropertyChanged
         {
             if (_utp.Static == value) return;
             _utp.Static = value;
+            // Static and Useable are mutually exclusive (#2412): a static placeable is baked into
+            // the area geometry and cannot be interacted with. Force Useable off when going static.
+            if (value && _utp.Useable)
+            {
+                _utp.Useable = false;
+                OnPropertyChanged(nameof(Useable));
+            }
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsCombatEnabled));
             OnPropertyChanged(nameof(IsDamageEnabled));
+            OnPropertyChanged(nameof(IsUseableEnabled));
         }
     }
 
     /// <summary>HP/Hardness/saves are editable only on a non-static placeable (design §5.1).</summary>
     public bool IsCombatEnabled => !_utp.Static;
+
+    /// <summary>Useable is editable only on a non-static placeable (#2412); they are mutually exclusive.</summary>
+    public bool IsUseableEnabled => !_utp.Static;
 
     /// <summary>Damage-related fields are editable only when neither Static nor Plot (design §5.1).</summary>
     public bool IsDamageEnabled => !_utp.Static && !_utp.Plot;
@@ -160,6 +176,13 @@ public sealed class PlaceableViewModel : INotifyPropertyChanged
     {
         get => _utp.Faction;
         set { if (_utp.Faction == value) return; _utp.Faction = value; OnPropertyChanged(); }
+    }
+
+    /// <summary>Palette category (placeablepal.itp). Drives which toolset folder the blueprint lands in (#2416).</summary>
+    public byte PaletteID
+    {
+        get => _utp.PaletteID;
+        set { if (_utp.PaletteID == value) return; _utp.PaletteID = value; OnPropertyChanged(); }
     }
 
     public string Conversation

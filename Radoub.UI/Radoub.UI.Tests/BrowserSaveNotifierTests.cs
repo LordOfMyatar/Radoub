@@ -61,6 +61,22 @@ public class BrowserSaveNotifierTests
 
         Assert.Empty(refresher.Calls);
     }
+
+    // #2413: NotifyOrAddAsync handles a new file (reload+select) vs existing (in-place refresh).
+    // The full reload/select path needs a real FileBrowserPanelBase (FlaUI); here we lock the
+    // null/empty guards so a refactor can't make the helper throw on the unconfigured-panel path.
+
+    [Fact]
+    public async Task NotifyOrAddAsync_NullPanel_NoThrow()
+    {
+        await BrowserSaveNotifier.NotifyOrAddAsync(null, @"C:\mod\crate.utp");
+    }
+
+    [Fact]
+    public async Task NotifyOrAddAsync_NullPath_NoThrow()
+    {
+        await BrowserSaveNotifier.NotifyOrAddAsync(null, null);
+    }
 }
 
 /// <summary>

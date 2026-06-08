@@ -54,6 +54,14 @@ public partial class ItemFilterPanel : UserControl
         AvaloniaProperty.Register<ItemFilterPanel, bool>(nameof(ShowCustom), defaultValue: false);
 
     /// <summary>
+    /// Show creature natural weapons + internal/marker items (base types 69-73, 255). Default false:
+    /// these are not normally authorable, but a builder editing a custom monster may need them, so
+    /// they stay reachable via this toggle instead of being hard-excluded.
+    /// </summary>
+    public static readonly StyledProperty<bool> ShowCreatureItemsProperty =
+        AvaloniaProperty.Register<ItemFilterPanel, bool>(nameof(ShowCreatureItems), defaultValue: false);
+
+    /// <summary>
     /// Available item types for filtering.
     /// </summary>
     public static readonly StyledProperty<ObservableCollection<ItemTypeInfo>> ItemTypesProperty =
@@ -182,6 +190,12 @@ public partial class ItemFilterPanel : UserControl
     {
         get => GetValue(ShowCustomProperty);
         set => SetValue(ShowCustomProperty, value);
+    }
+
+    public bool ShowCreatureItems
+    {
+        get => GetValue(ShowCreatureItemsProperty);
+        set => SetValue(ShowCreatureItemsProperty, value);
     }
 
     /// <summary>
@@ -314,6 +328,7 @@ public partial class ItemFilterPanel : UserControl
         }
         else if (change.Property == ShowStandardProperty ||
                  change.Property == ShowCustomProperty ||
+                 change.Property == ShowCreatureItemsProperty ||
                  change.Property == SelectedItemTypeProperty ||
                  change.Property == SelectedSlotFilterProperty)
         {
@@ -435,13 +450,14 @@ public partial class ItemFilterPanel : UserControl
         var slotFilter = SelectedSlotFilter;
         var showStandard = ShowStandard;
         var showCustom = ShowCustom;
+        var showCreature = ShowCreatureItems;
 
         int totalCount = Items.Count;
         int matchCount = 0;
 
         foreach (var item in Items)
         {
-            if (MatchesFilter(item, searchLower, propertySearchLower, typeFilter, slotFilter, showStandard, showCustom))
+            if (MatchesFilter(item, searchLower, propertySearchLower, typeFilter, slotFilter, showStandard, showCustom, showCreature))
             {
                 FilteredItems.Add(item);
                 matchCount++;
@@ -464,9 +480,10 @@ public partial class ItemFilterPanel : UserControl
         ItemTypeInfo? typeFilter,
         SlotFilterInfo? slotFilter,
         bool showStandard,
-        bool showCustom)
+        bool showCustom,
+        bool showCreatureItems)
         => ItemFilterPredicate.Matches(
-            item, searchLower, propertySearchLower, typeFilter, slotFilter, showStandard, showCustom);
+            item, searchLower, propertySearchLower, typeFilter, slotFilter, showStandard, showCustom, showCreatureItems);
 
     private void UpdateResultCount(int matchCount, int totalCount)
     {

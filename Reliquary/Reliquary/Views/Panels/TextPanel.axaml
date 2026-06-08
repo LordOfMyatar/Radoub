@@ -27,7 +27,7 @@
                                     TextWrapping="Wrap"
                                     MinHeight="120"
                                     VerticalContentAlignment="Top"
-                                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                    ScrollViewer.VerticalScrollBarVisibility="Visible"
                                     AutomationProperties.AutomationId="Reliquary_Text_Description"/>
 
             <!-- Comments: plain string, builder-only, never shown to the player. -->
@@ -42,7 +42,7 @@
                                     TextWrapping="Wrap"
                                     MinHeight="80"
                                     VerticalContentAlignment="Top"
-                                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                    ScrollViewer.VerticalScrollBarVisibility="Visible"
                                     AutomationProperties.AutomationId="Reliquary_Text_Comment"/>
         </Grid>
     </Border>

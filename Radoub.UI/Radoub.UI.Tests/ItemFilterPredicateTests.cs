@@ -40,8 +40,28 @@ public class ItemFilterPredicateTests
         ItemTypeInfo? type = null,
         SlotFilterInfo? slot = null,
         bool showStandard = true,
-        bool showCustom = true)
-        => ItemFilterPredicate.Matches(item, search, propertySearch, type, slot, showStandard, showCustom);
+        bool showCustom = true,
+        bool showCreatureItems = true)
+        => ItemFilterPredicate.Matches(item, search, propertySearch, type, slot, showStandard, showCustom, showCreatureItems);
+
+    // ---- Creature/internal item filter (#2411 follow-up) ----
+
+    [Theory]
+    [InlineData(69)]  // Creature Bite
+    [InlineData(73)]  // Creature Piercing/Bludgeoning
+    [InlineData(255)] // Invalid marker
+    public void CreatureItem_Hidden_WhenToggleOff(int baseItem)
+        => Assert.False(Matches(Item(baseItem: baseItem), showCreatureItems: false));
+
+    [Theory]
+    [InlineData(69)]
+    [InlineData(255)]
+    public void CreatureItem_Shown_WhenToggleOn(int baseItem)
+        => Assert.True(Matches(Item(baseItem: baseItem), showCreatureItems: true));
+
+    [Fact]
+    public void NormalItem_Unaffected_ByCreatureToggle()
+        => Assert.True(Matches(Item(baseItem: 5), showCreatureItems: false));
 
     // ---- No filters ----
 

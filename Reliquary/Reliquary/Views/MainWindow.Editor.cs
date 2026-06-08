@@ -65,19 +65,49 @@ public partial class MainWindow
     private async void OnNewClick(object? sender, RoutedEventArgs e)
     {
         if (!await ConfirmDiscardAsync()) return;
+
+        // Prompt for a name up front and save the file immediately, so a brand-new placeable is
+        // backed by a real .utp from the start — edits can no longer be lost before a first manual
+        // Save, and ResRef is locked to the on-disk identity right away (#2426).
+        var name = await PromptNewPlaceableNameAsync();
+        if (name is null) return; // user cancelled
+
         try
         {
             _isLoading = true; // suppress dirty marking while panels rebind to the new VM
-            _currentFilePath = null;          // unsaved — first Save routes through Save As
+            _currentFilePath = null;
             _documentState.IsReadOnly = false;
-            BindPlaceable(PlaceableViewModel.NewPlaceable());
-            UpdateTitle(); // BindPlaceable's ClearDirty is a no-op when already clean, so refresh the title
-            UpdateStatus("New placeable — fill in name/tag, then Save.");
+            var vm = PlaceableViewModel.NewPlaceable();
+            vm.Name = name;
+            vm.Tag = PlaceableNamingService.GenerateTag(name);
+            vm.TemplateResRef = PlaceableNamingService.GenerateResRef(name);
+            BindPlaceable(vm);
+            UpdateTitle();
         }
         finally
         {
-            _isLoading = false;
+            ScheduleLoadingReset();
         }
+
+        // Save immediately so the file exists; if the user cancels the save dialog, fall back to the
+        // unsaved-buffer behavior (they can still Save later).
+        if (await SaveAsPlaceableAsync())
+        {
+            // Re-open the saved file so the editor + F4 browser both reflect/select the new placeable
+            // (otherwise the browser keeps the previous selection and looks out of sync).
+            var saved = _currentFilePath;
+            if (!string.IsNullOrEmpty(saved))
+            {
+                LoadPlaceable(saved);
+                this.FindControl<PlaceableBrowserPanel>("PlaceableBrowserPanel")?.SelectEntryByFilePath(saved);
+            }
+            UpdateStatus($"Created {_placeable?.TemplateResRef}.utp — now fill in the rest.");
+        }
+        else
+        {
+            UpdateStatus("New placeable not yet saved — use Save to write it to disk.");
+        }
+        return;
     }
 
     /// <summary>Load a UTP file into the editor, wrap it in a VM, and bind the panels.</summary>
@@ -99,11 +129,11 @@ public partial class MainWindow
             UnifiedLogger.LogApplication(LogLevel.WARN,
                 $"Reliquary: failed to load {UnifiedLogger.SanitizePath(filePath)}: {ex.Message}");
             UpdateStatus($"Could not load {Path.GetFileName(filePath)}: {ex.Message}");
+            _isLoading = false; // error path: reset immediately, no deferred combo events to drain
+            return;
         }
-        finally
-        {
-            _isLoading = false;
-        }
+        // Defer the guard reset so deferred combo SelectionChanged events don't mark dirty (#2416 follow-up).
+        ScheduleLoadingReset();
     }
 
     /// <summary>
@@ -126,11 +156,10 @@ public partial class MainWindow
         {
             UnifiedLogger.LogApplication(LogLevel.WARN, $"Reliquary: failed to load archive {name}: {ex.Message}");
             UpdateStatus($"Could not load {name}: {ex.Message}");
+            _isLoading = false; // error path: reset immediately
+            return;
         }
-        finally
-        {
-            _isLoading = false;
-        }
+        ScheduleLoadingReset(); // defer so deferred combo events don't mark dirty (#2416 follow-up)
     }
 
     /// <summary>Bind a freshly-loaded placeable VM to all panels + reset undo/dirty. Caller sets _isLoading.</summary>
@@ -141,7 +170,14 @@ public partial class MainWindow
         var identity = this.FindControl<IdentityCombatPanel>("IdentityCombatPanel");
         var behavior = this.FindControl<BehaviorPanel>("BehaviorPanel");
         var text = this.FindControl<TextPanel>("TextPanel");
-        if (identity != null) identity.DataContext = _placeable;
+        if (identity != null)
+        {
+            identity.DataContext = _placeable;
+            // ResRef is read-only for an already-saved file (editing it desyncs the F4 row from
+            // disk; rename a saved file via the browser instead). Editable only for a new, unsaved
+            // placeable so the first Save names it. Tracked-rename flow is a separate follow-up.
+            identity.SetResRefLocked(!string.IsNullOrEmpty(_currentFilePath));
+        }
         if (text != null) text.DataContext = _placeable;
         if (behavior != null)
         {
@@ -152,6 +188,7 @@ public partial class MainWindow
 
         PopulateAppearanceAndPreview(); // appearance combo + 3D model (when game data configured)
         PopulateFactionCombo();         // faction combo from the module's repute.fac (#2354)
+        PopulatePaletteCategoryCombo(); // category combo from placeablepal.itp (#2416)
         RefreshInventory();             // backpack + palette (visible only when Has Inventory)
 
         TrackPlaceableEdits(_placeable); // any field/variable/inventory edit marks the document dirty
@@ -217,6 +254,8 @@ public partial class MainWindow
         // The saved copy is now the editable document.
         _currentFilePath = path;
         _documentState.IsReadOnly = false;
+        // Now backed by a file → lock ResRef (rename goes through the browser, #2424).
+        this.FindControl<IdentityCombatPanel>("IdentityCombatPanel")?.SetResRefLocked(true);
         UpdateTitle();
         return true;
     }
@@ -227,13 +266,21 @@ public partial class MainWindow
         if (_placeable is null) return false;
         try
         {
-            UtpWriter.Write(_placeable.WriteToUtp(), path);
+            var utp = _placeable.WriteToUtp();
+            // Backstop: never write a damageable placeable with HP 0 (Aurora divide-by-zero, #2417).
+            if (PlaceableEditor.Services.PlaceableDefaults.EnsureGameSafe(utp))
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    "Reliquary: backfilled HP on save (damageable placeable had HP 0) (#2417)");
+            }
+            UtpWriter.Write(utp, path);
             _documentState.ClearDirty();
             AddRecentFile(path);
 
-            // Refresh the browser row's Tag/Name without a full reindex (design §5.5).
+            // Refresh the browser row's Tag/Name in place, or add+select the row if the saved file
+            // is new to the list (Save As of a New placeable). One shared helper handles both (#2413).
             var browser = this.FindControl<PlaceableBrowserPanel>("PlaceableBrowserPanel");
-            _ = Radoub.UI.Controls.BrowserSaveNotifier.NotifyAsync(browser, path);
+            _ = Radoub.UI.Controls.BrowserSaveNotifier.NotifyOrAddAsync(browser, path);
 
             UpdateStatus($"Saved {Path.GetFileName(path)}");
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Reliquary: saved {UnifiedLogger.SanitizePath(path)}");

@@ -37,6 +37,12 @@
                   Margin="16,0,0,0"
                   IsChecked="{Binding ShowCustom, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
                   ToolTip.Tip="Show module/HAK items"/>
+        <CheckBox x:Name="CreatureItemsCheck"
+                  Grid.Column="4"
+                  HorizontalAlignment="Left"
+                  Content="Creature/internal"
+                  IsChecked="{Binding ShowCreatureItems, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
+                  ToolTip.Tip="Show creature natural weapons + internal items (e.g. a custom monster's claws). Hidden by default."/>
 
         <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="16,0,0,0">
           <TextBlock Text="Type:" VerticalAlignment="Center" Margin="0,0,8,0"/>

@@ -68,6 +68,14 @@
                                   HorizontalAlignment="Stretch"
                                   SelectionChanged="OnAppearanceChanged"
                                   AutomationProperties.AutomationId="Reliquary_Combo_Appearance"/>
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Category" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Row="4" Grid.Column="1"
+                                  x:Name="PaletteCategoryCombo"
+                                  HorizontalAlignment="Stretch"
+                                  SelectionChanged="OnPaletteCategoryChanged"
+                                  ToolTip.Tip="Toolset palette folder this blueprint is filed under (placeablepal.itp)."
+                                  AutomationProperties.AutomationId="Reliquary_Combo_Category"/>
                     </Grid>
 
                     <!-- Combat stats. Auto columns + MinWidth floors so large fonts grow the
@@ -125,6 +133,7 @@
                         <CheckBox Content="Plot" IsChecked="{Binding Plot, Mode=TwoWay}"
                                   AutomationProperties.AutomationId="Reliquary_Check_Plot"/>
                         <CheckBox Content="Useable" IsChecked="{Binding Useable, Mode=TwoWay}"
+                                  IsEnabled="{Binding IsUseableEnabled}"
                                   AutomationProperties.AutomationId="Reliquary_Check_Useable"/>
                         <CheckBox Content="Has Inventory" IsChecked="{Binding HasInventory, Mode=TwoWay}"
                                   AutomationProperties.AutomationId="Reliquary_Check_HasInventory"/>

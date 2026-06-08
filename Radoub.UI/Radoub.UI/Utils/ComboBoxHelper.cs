@@ -1,11 +1,12 @@
 using Avalonia.Controls;
 using System;
 
-namespace Quartermaster.Views.Panels;
+namespace Radoub.UI.Utils;
 
 /// <summary>
 /// Helper methods for ComboBox operations with typed Tag values.
-/// Eliminates repetitive selection code across panels.
+/// Eliminates repetitive selection code across panels and tools.
+/// Moved from Quartermaster to Radoub.UI for reuse (#2416).
 /// </summary>
 public static class ComboBoxHelper
 {

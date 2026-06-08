@@ -870,6 +870,17 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
         => FindEntryByFilePath(_allEntries, filePath);
 
     /// <summary>
+    /// Select the grid row whose FilePath matches <paramref name="filePath"/>, if present.
+    /// Used after a new-file save reloads the list so the new row is highlighted (#2413).
+    /// No-op when no matching row exists.
+    /// </summary>
+    public void SelectEntryByFilePath(string filePath)
+    {
+        var entry = FindEntryByFilePath(filePath);
+        if (entry != null) FileGrid.SelectedItem = entry;
+    }
+
+    /// <summary>
     /// Pure-logic overload for testing. Same semantics as the instance method
     /// but operates on a caller-supplied entry list.
     /// </summary>

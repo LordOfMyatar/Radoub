@@ -6,6 +6,21 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 
 ---
 
+## [0.8.0-alpha] - 2026-06-07
+**Branch**: `reliquary/sprint/inventory-and-defaults` | **PR**: #2420
+
+### Sprint: Inventory Palette Parity & Safe Defaults
+
+- UTI palette brought to Fence/QM parity: resource coverage, base-item filtering, sorting, and detail icons (#2411).
+- Static and Useable are now mutually exclusive — checking Static forces Useable off (#2412).
+- F4 file browser shows a newly created placeable immediately after Save As (#2413).
+- UTI palette height capped so the Add button stays visible with long CEP lists (#2414).
+- Inventory items can be added via double-click or right-click context menu (#2415).
+- Placeable palette category (PaletteID) is now a configurable combo, sourced from `placeablepal.itp` (#2416).
+- New placeables seed game-safe defaults (HP/Appearance/Hardness/saves) to prevent Aurora divide-by-zero (#2417).
+
+---
+
 ## [0.7.0-alpha] - 2026-06-06
 **Branch**: `reliquary/sprint/epic-2289-followups` | **PR**: #2377
 

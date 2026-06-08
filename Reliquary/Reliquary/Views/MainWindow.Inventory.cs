@@ -10,6 +10,7 @@ using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
 using Radoub.Formats.Uti;
 using Radoub.UI.Services;
+using Radoub.UI.Services.Search;
 using Radoub.UI.ViewModels;
 using PlaceableEditor.Commands;
 using PlaceableEditor.Views.Panels;
@@ -42,6 +43,7 @@ public partial class MainWindow
 
         inv.AddItemRequested += OnInventoryAddRequested;
         inv.RemoveItemRequested += OnInventoryRemoveRequested;
+        inv.EditItemRequested += OnInventoryEditRequested;
         inv.ItemResolver = ResolveForDetails;
     }
 
@@ -101,7 +103,9 @@ public partial class MainWindow
             // BIF UTIs often carry an empty TemplateResRef (the ResRef lives in the BIF index, not
             // the file). Stamp it so the VM's ResRef — and the model InventoryRes — is correct.
             if (string.IsNullOrEmpty(uti.TemplateResRef)) uti.TemplateResRef = resRef;
-            return _itemFactory.Create(uti, source);
+            var vm = _itemFactory.Create(uti, source);
+            vm.IconBitmap = _itemIconService?.GetItemIcon(uti); // #2411 detail icons
+            return vm;
         }
 
         // Unresolved UTI — show a placeholder so the row is still visible/removable.
@@ -121,7 +125,9 @@ public partial class MainWindow
         var (uti, source) = ResolveUtiFile(cacheItem.ResRef);
         if (uti == null || _itemFactory == null) return cacheItem;
         if (string.IsNullOrEmpty(uti.TemplateResRef)) uti.TemplateResRef = cacheItem.ResRef;
-        return _itemFactory.Create(uti, source);
+        var vm = _itemFactory.Create(uti, source);
+        vm.IconBitmap = _itemIconService?.GetItemIcon(uti); // #2411 detail icons
+        return vm;
     }
 
     /// <summary>UTI resolution cascade: module directory → Override → HAK → BIF.</summary>
@@ -184,17 +190,28 @@ public partial class MainWindow
             await BuildItemCacheAsync();
 
             var cache = _itemCache.GetAggregatedCache() ?? new List<SharedPaletteCacheItem>();
-            var vms = cache.Select(c => new ItemViewModel
-            {
-                ResRef = c.ResRef,
-                Name = c.DisplayName,
-                BaseItemName = c.BaseItemTypeName,
-                BaseItem = c.BaseItemType,
-                Value = c.BaseValue,
-                Tag = string.IsNullOrEmpty(c.Tag) ? c.ResRef : c.Tag,
-                PropertiesDisplay = c.PropertiesDisplay,
-                Source = c.IsStandard ? GameResourceSource.Bif : GameResourceSource.Override
-            }).ToList();
+            // Keep creature/internal items in the list — the palette filter hides them by default but
+            // lets the user reveal them (e.g. a custom monster's poison claws), so they must not be
+            // dropped here (#2411 follow-up: was a hard exclude, now a filter toggle).
+            var vms = cache
+                .Select(c => new ItemViewModel
+                {
+                    ResRef = c.ResRef,
+                    Name = c.DisplayName,
+                    BaseItemName = c.BaseItemTypeName,
+                    BaseItem = c.BaseItemType,
+                    Value = c.BaseValue,
+                    Tag = string.IsNullOrEmpty(c.Tag) ? c.ResRef : c.Tag,
+                    PropertiesDisplay = c.PropertiesDisplay,
+                    // IsStandard is a bool, so a custom item is HAK or Override; SourceLocation carries
+                    // the real origin (hak filename vs "Override"). Use it to label HAK items as Hak
+                    // instead of lumping them under Override (#2411 follow-up).
+                    Source = SourceFromCache(c),
+                    SourceLocation = c.SourceLocation, // surface the hak filename (Fence parity)
+                    // Item detail images (#2411): reuse Reliquary's ItemIconService (already used for
+                    // placeable portraits) for inventory palette/details icons, matching Fence.
+                    IconBitmap = _itemIconService?.GetItemIcon(c.BaseItemType)
+                }).ToList();
 
             // Add loose module-directory UTIs (not in BIF/Override/HAK) so module items show too.
             var moduleResRefs = new HashSet<string>(vms.Select(v => v.ResRef), StringComparer.OrdinalIgnoreCase);
@@ -266,6 +283,8 @@ public partial class MainWindow
                 var bytes = _gameData.FindResource(res.ResRef, ResourceTypes.Uti);
                 if (bytes == null) continue;
                 var uti = UtiReader.Read(bytes);
+                // Cache every item (incl. creature/internal); the palette filter hides them by default
+                // but keeps them reachable for custom monsters (#2411 follow-up).
                 items.Add(new SharedPaletteCacheItem
                 {
                     ResRef = res.ResRef,
@@ -294,6 +313,20 @@ public partial class MainWindow
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Reliquary: built {cacheSource} item cache ({items.Count} items).");
     }
 
+    /// <summary>
+    /// Map a cached palette item to a source enum. BIF items are standard; custom items are HAK when
+    /// SourceLocation names a .hak file, otherwise Override. (SharedPaletteCacheItem.IsStandard is a
+    /// bool, so SourceLocation is the only signal that distinguishes HAK from Override — #2411 follow-up.)
+    /// </summary>
+    private static GameResourceSource SourceFromCache(SharedPaletteCacheItem c)
+    {
+        if (c.IsStandard) return GameResourceSource.Bif;
+        return !string.IsNullOrEmpty(c.SourceLocation)
+               && c.SourceLocation.EndsWith(".hak", StringComparison.OrdinalIgnoreCase)
+            ? GameResourceSource.Hak
+            : GameResourceSource.Override;
+    }
+
     /// <summary>Load loose .uti files from the open placeable's directory as palette items.</summary>
     private List<ItemViewModel> LoadModuleItemViewModels()
     {
@@ -305,7 +338,12 @@ public partial class MainWindow
 
         foreach (var file in Directory.GetFiles(dir, "*.uti", SearchOption.TopDirectoryOnly))
         {
-            try { vms.Add(_itemFactory.Create(UtiReader.Read(file), GameResourceSource.Module)); }
+            try
+            {
+                var vm = _itemFactory.Create(UtiReader.Read(file), GameResourceSource.Module);
+                vm.IconBitmap = _itemIconService?.GetItemIcon(vm.BaseItem); // #2411 detail icons
+                vms.Add(vm);
+            }
             catch (Exception ex) when (ex is IOException or InvalidDataException)
             {
                 UnifiedLogger.LogApplication(LogLevel.DEBUG,
@@ -333,5 +371,33 @@ public partial class MainWindow
 
         _undo.Execute(new RemoveInventoryItemCommand(_placeable.Utp.ItemList, inv.BackpackItems, backpackItem));
         inv.OnBackpackChanged();
+    }
+
+    /// <summary>
+    /// Context "Edit" on a palette/backpack item → resolve its .uti to a file and open it in Relique
+    /// via the shared ToolDispatchService (same pattern as Conversation → Parley). BIF/HAK items have
+    /// no editable file path, so only loose module/Override UTIs can be edited.
+    /// </summary>
+    private void OnInventoryEditRequested(object? sender, ItemViewModel item)
+    {
+        if (string.IsNullOrWhiteSpace(item.ResRef))
+        {
+            UpdateStatus("No item selected to edit.");
+            return;
+        }
+
+        var fileDir = string.IsNullOrEmpty(_currentFilePath) ? null : Path.GetDirectoryName(_currentFilePath);
+        var moduleDir = GetModuleWorkingDirectory();
+        var utiPath = ExternalEditorService.ResolveResourcePath(item.ResRef, ".uti", fileDir, moduleDir);
+        if (utiPath is null)
+        {
+            UpdateStatus($"Can't edit {item.ResRef}.uti in Relique — it lives in a HAK/BIF, not a module file.");
+            return;
+        }
+
+        if (!new ToolDispatchService().LaunchTool(ResourceTypes.Uti, utiPath))
+            UpdateStatus($"Could not launch Relique for {item.ResRef}.uti — Relique may not be installed alongside Reliquary.");
+        else
+            UpdateStatus($"Opening {item.ResRef}.uti in Relique…");
     }
 }

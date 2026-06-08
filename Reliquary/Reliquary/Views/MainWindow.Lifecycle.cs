@@ -55,6 +55,31 @@ public partial class MainWindow
         if (splitter != null) splitter.IsVisible = !collapsed;
     }
 
+    // --- Window size/position persistence (BaseToolSettingsService already stores the values). ---
+
+    private void RestoreWindowPosition()
+    {
+        var settings = PlaceableEditor.Services.SettingsService.Instance;
+        if (settings.WindowWidth > 0 && settings.WindowHeight > 0)
+        {
+            Width = settings.WindowWidth;
+            Height = settings.WindowHeight;
+        }
+        if (settings.WindowLeft >= 0 && settings.WindowTop >= 0)
+            Position = new Avalonia.PixelPoint((int)settings.WindowLeft, (int)settings.WindowTop);
+    }
+
+    private void SaveWindowPosition()
+    {
+        // Only persist a normal (non-maximized/minimized) window so we don't store maximized bounds.
+        if (WindowState != Avalonia.Controls.WindowState.Normal) return;
+        var settings = PlaceableEditor.Services.SettingsService.Instance;
+        settings.WindowWidth = Width;
+        settings.WindowHeight = Height;
+        settings.WindowLeft = Position.X;
+        settings.WindowTop = Position.Y;
+    }
+
     private async void OnBrowserFileSelected(object? sender, FileSelectedEventArgs e)
     {
         var browser = this.FindControl<PlaceableBrowserPanel>("PlaceableBrowserPanel");

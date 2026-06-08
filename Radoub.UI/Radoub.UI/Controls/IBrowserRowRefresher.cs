@@ -33,4 +33,28 @@ public static class BrowserSaveNotifier
         if (string.IsNullOrEmpty(filePath)) return Task.CompletedTask;
         return refresher.RefreshRowAsync(filePath);
     }
+
+    /// <summary>
+    /// Save-flow notify that handles a brand-new file as well as an existing one (#2413):
+    /// if <paramref name="filePath"/> already has a row, do the cheap in-place metadata refresh;
+    /// otherwise reload the list (so the new row appears) and select the new row. A new file has
+    /// no row yet, so the plain <see cref="NotifyAsync"/> would silently no-op and the user would
+    /// have to refresh manually. Folding the branch here means every single-resource editor
+    /// (Reliquary, Relique, Fence) gets correct Save As behavior from one place.
+    /// </summary>
+    public static async Task NotifyOrAddAsync(FileBrowserPanelBase? panel, string? filePath)
+    {
+        if (panel == null || string.IsNullOrEmpty(filePath)) return;
+
+        if (panel.FindEntryByFilePath(filePath) != null)
+        {
+            // Existing row → lightweight metadata refresh (keeps scroll/selection).
+            await NotifyAsync(panel as IBrowserRowRefresher, filePath);
+            return;
+        }
+
+        // New path → full reload so the row is created, then select it.
+        await panel.RefreshAsync();
+        panel.SelectEntryByFilePath(filePath);
+    }
 }

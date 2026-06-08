@@ -36,6 +36,32 @@ public partial class ItemListView : UserControl
         AvaloniaProperty.Register<ItemListView, string>(nameof(ContextKey), defaultValue: "Default");
 
     /// <summary>
+    /// Whether the row context menu includes the "Equip" item. Tools without equip slots
+    /// (e.g. Reliquary placeable inventory) set this false. Default true.
+    /// </summary>
+    public static readonly StyledProperty<bool> ShowEquipMenuItemProperty =
+        AvaloniaProperty.Register<ItemListView, bool>(nameof(ShowEquipMenuItem), defaultValue: true);
+
+    /// <summary>
+    /// Header text for the palette "add" context item. Defaults to "Add to Backpack"; tools with a
+    /// flat inventory (Reliquary) set "Add to Inventory".
+    /// </summary>
+    public static readonly StyledProperty<string> AddToBackpackHeaderProperty =
+        AvaloniaProperty.Register<ItemListView, string>(nameof(AddToBackpackHeader), defaultValue: "Add to Backpack");
+
+    public bool ShowEquipMenuItem
+    {
+        get => GetValue(ShowEquipMenuItemProperty);
+        set => SetValue(ShowEquipMenuItemProperty, value);
+    }
+
+    public string AddToBackpackHeader
+    {
+        get => GetValue(AddToBackpackHeaderProperty);
+        set => SetValue(AddToBackpackHeaderProperty, value);
+    }
+
+    /// <summary>
     /// Column settings provider for width persistence.
     /// </summary>
     public static readonly StyledProperty<IColumnSettings?> ColumnSettingsProperty =
@@ -105,6 +131,9 @@ public partial class ItemListView : UserControl
         ItemsGrid.PointerMoved += OnGridPointerMoved;
         ItemsGrid.PointerReleased += OnGridPointerReleased;
 
+        // Double-click a row raises ItemOpenRequested (used for double-click add/open).
+        ItemsGrid.DoubleTapped += OnGridDoubleTapped;
+
         // Enable drop support on the wrapping Grid (not DataGrid itself,
         // because DataGrid's internal column-reorder drag handling consumes drag events)
         DragDrop.SetAllowDrop(DropTargetGrid, true);
@@ -140,29 +169,32 @@ public partial class ItemListView : UserControl
 
         if (contextKey == "Backpack")
         {
-            // Insert "Equip" and "Delete" before the separator/copy items
-            var equipItem = new MenuItem { Header = "Equip" };
-            equipItem.Click += OnContextMenuEquip;
-
+            // Insert "Delete" (+ optional "Equip") before the separator/copy items.
+            int i = 2;
+            RowContextMenu.Items.Insert(i++, new Separator());
+            if (ShowEquipMenuItem)
+            {
+                var equipItem = new MenuItem { Header = "Equip" };
+                equipItem.Click += OnContextMenuEquip;
+                RowContextMenu.Items.Insert(i++, equipItem);
+            }
             var deleteItem = new MenuItem { Header = "Delete" };
             deleteItem.Click += OnContextMenuDelete;
-
-            // Insert at position 2 (after Open/Edit)
-            RowContextMenu.Items.Insert(2, new Separator());
-            RowContextMenu.Items.Insert(3, equipItem);
-            RowContextMenu.Items.Insert(4, deleteItem);
+            RowContextMenu.Items.Insert(i, deleteItem);
         }
         else if (contextKey == "Palette")
         {
-            var addToBackpackItem = new MenuItem { Header = "Add to Backpack" };
-            addToBackpackItem.Click += OnContextMenuAddToBackpack;
-
-            var equipItem = new MenuItem { Header = "Equip" };
-            equipItem.Click += OnContextMenuEquip;
-
-            RowContextMenu.Items.Insert(2, new Separator());
-            RowContextMenu.Items.Insert(3, addToBackpackItem);
-            RowContextMenu.Items.Insert(4, equipItem);
+            int i = 2;
+            RowContextMenu.Items.Insert(i++, new Separator());
+            var addItem = new MenuItem { Header = AddToBackpackHeader };
+            addItem.Click += OnContextMenuAddToBackpack;
+            RowContextMenu.Items.Insert(i++, addItem);
+            if (ShowEquipMenuItem)
+            {
+                var equipItem = new MenuItem { Header = "Equip" };
+                equipItem.Click += OnContextMenuEquip;
+                RowContextMenu.Items.Insert(i, equipItem);
+            }
         }
     }
 
@@ -319,6 +351,12 @@ public partial class ItemListView : UserControl
     #endregion
 
     #region Context Menu Handlers
+
+    private void OnGridDoubleTapped(object? sender, Avalonia.Input.TappedEventArgs e)
+    {
+        if (ItemsGrid.SelectedItem is ItemViewModel selected)
+            ItemOpenRequested?.Invoke(this, selected);
+    }
 
     private void OnContextMenuOpen(object? sender, RoutedEventArgs e)
     {
