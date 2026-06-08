@@ -92,9 +92,21 @@ public partial class MainWindow
         // Save immediately so the file exists; if the user cancels the save dialog, fall back to the
         // unsaved-buffer behavior (they can still Save later).
         if (await SaveAsPlaceableAsync())
+        {
+            // Re-open the saved file so the editor + F4 browser both reflect/select the new placeable
+            // (otherwise the browser keeps the previous selection and looks out of sync).
+            var saved = _currentFilePath;
+            if (!string.IsNullOrEmpty(saved))
+            {
+                LoadPlaceable(saved);
+                this.FindControl<PlaceableBrowserPanel>("PlaceableBrowserPanel")?.SelectEntryByFilePath(saved);
+            }
             UpdateStatus($"Created {_placeable?.TemplateResRef}.utp — now fill in the rest.");
+        }
         else
+        {
             UpdateStatus("New placeable not yet saved — use Save to write it to disk.");
+        }
         return;
     }
 
