@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.118-alpha] - 2026-06-08
-**Branch**: `quartermaster/issue-2395` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2395` | **PR**: #2432
 
 ### Feat: Render particle emitters in model preview (#2395)
 
