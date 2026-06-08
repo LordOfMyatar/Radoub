@@ -219,6 +219,7 @@ The `[Edit → OtherTool]` launch pattern (one tool opening a resource in anothe
 | **AboutWindow** | Use `AboutWindow.Create(AboutWindowConfig)` from Radoub.UI | Trebuchet |
 | **Version Display** | Use shared `VersionHelper` (not hardcoded strings) | Parley/Utils/VersionHelper.cs |
 | **Modal Dialogs** | Use `Show()` not `ShowDialog()` for info windows | CLAUDE.md UI/UX Guidelines |
+| **Status Bar** | Use shared `Radoub.UI.Controls.StatusBarControl` (not a bare `TextBlock`). Set `ModuleIndicator` to the active module name from `RadoubSettings.CurrentModulePath`, and update it when the module changes — so the user always sees which module they are editing (#2428). | Relique/Views/MainWindow.MenuHandlers.cs |
 | **Theme Brushes** | Use `BrushManager` for Success/Warning/Error colors | Radoub.UI/Services/BrushManager.cs |
 | **Deferred Loading** | Heavy I/O in `Loaded`/`Opened` events, not constructor | Fence/Views/MainWindow.axaml.cs |
 | **Progress Feedback** | Show status for operations >2 seconds | Fence palette loading pattern |
@@ -251,6 +252,7 @@ The `[Edit → OtherTool]` launch pattern (one tool opening a resource in anothe
 | Rebuild game data every launch | Cache to `~/Radoub/{Tool}/` |
 | Custom TLK loading | Use shared ITlkService |
 | Custom portrait browser | Use shared PortraitBrowserWindow |
+| Bare `TextBlock` status bar with no module indicator | Use `Radoub.UI.Controls.StatusBarControl` + set `ModuleIndicator` from `RadoubSettings.CurrentModulePath` (#2428) |
 | Forking `VariableViewModel` per tool | Use shared `Radoub.UI.Controls.VariablesPanel` |
 | Tool-local placeables.2da reader | Use `Radoub.Formats.Services.PlaceableAppearanceService` |
 | Browser shows ResRef-only sort/search | Override `IndexMetadataAsync` + `ReadSourceMetadataAsync` on the panel (see [File Browser Adoption](#file-browser-adoption-filebrowserpanelbase)) |
