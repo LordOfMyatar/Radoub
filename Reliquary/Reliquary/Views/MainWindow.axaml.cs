@@ -43,6 +43,8 @@ public partial class MainWindow : Window
         _documentState.DirtyStateChanged += () => Title = _documentState.GetTitle();
         Title = _documentState.GetTitle();
 
+        RestoreWindowPosition(); // restore last session's window size/position before first show
+
         WireBrowserPanel();
         WireEditor();
         WireServices();

@@ -65,19 +65,37 @@ public partial class MainWindow
     private async void OnNewClick(object? sender, RoutedEventArgs e)
     {
         if (!await ConfirmDiscardAsync()) return;
+
+        // Prompt for a name up front and save the file immediately, so a brand-new placeable is
+        // backed by a real .utp from the start — edits can no longer be lost before a first manual
+        // Save, and ResRef is locked to the on-disk identity right away (#2426).
+        var name = await PromptNewPlaceableNameAsync();
+        if (name is null) return; // user cancelled
+
         try
         {
             _isLoading = true; // suppress dirty marking while panels rebind to the new VM
-            _currentFilePath = null;          // unsaved — first Save routes through Save As
+            _currentFilePath = null;
             _documentState.IsReadOnly = false;
-            BindPlaceable(PlaceableViewModel.NewPlaceable());
-            UpdateTitle(); // BindPlaceable's ClearDirty is a no-op when already clean, so refresh the title
-            UpdateStatus("New placeable — fill in name/tag, then Save.");
+            var vm = PlaceableViewModel.NewPlaceable();
+            vm.Name = name;
+            vm.Tag = PlaceableNamingService.GenerateTag(name);
+            vm.TemplateResRef = PlaceableNamingService.GenerateResRef(name);
+            BindPlaceable(vm);
+            UpdateTitle();
         }
         finally
         {
-            _isLoading = false;
+            ScheduleLoadingReset();
         }
+
+        // Save immediately so the file exists; if the user cancels the save dialog, fall back to the
+        // unsaved-buffer behavior (they can still Save later).
+        if (await SaveAsPlaceableAsync())
+            UpdateStatus($"Created {_placeable?.TemplateResRef}.utp — now fill in the rest.");
+        else
+            UpdateStatus("New placeable not yet saved — use Save to write it to disk.");
+        return;
     }
 
     /// <summary>Load a UTP file into the editor, wrap it in a VM, and bind the panels.</summary>

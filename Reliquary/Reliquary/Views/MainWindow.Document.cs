@@ -47,6 +47,8 @@ public partial class MainWindow
 
     private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
     {
+        SaveWindowPosition(); // persist window size/position every close (#window-size)
+
         if (!_isDirty) return;
 
         // Cancel the close, prompt, then close programmatically on Save/Don't Save.
@@ -75,6 +77,55 @@ public partial class MainWindow
         if (result == SavePromptResult.Save)
             return await SavePlaceableAsync(); // false if the save failed/was cancelled
         return true; // Don't Save
+    }
+
+    /// <summary>
+    /// Prompt for a new placeable's name before creating it (#2426). Returns the trimmed name, or
+    /// null if the user cancels / leaves it blank. The caller derives Tag/ResRef and saves the file
+    /// immediately so the new placeable is backed by disk from the start (no pre-first-save data loss).
+    /// </summary>
+    private async Task<string?> PromptNewPlaceableNameAsync()
+    {
+        var dialog = new Window
+        {
+            Title = "New Placeable",
+            Width = 360,
+            Height = 150,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false,
+            Background = this.FindResource("ThemeBackground") as IBrush
+        };
+
+        var panel = new StackPanel { Margin = new Avalonia.Thickness(16), Spacing = 8 };
+        panel.Children.Add(new TextBlock { Text = "Name for the new placeable:", TextWrapping = TextWrapping.Wrap });
+        var nameBox = new TextBox { Watermark = "e.g. Iron Chest" };
+        panel.Children.Add(nameBox);
+
+        string? result = null;
+        var buttons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 8
+        };
+        var okBtn = new Button { Content = "Create", IsDefault = true };
+        okBtn.Click += (_, _) =>
+        {
+            var n = nameBox.Text?.Trim();
+            if (string.IsNullOrEmpty(n)) return; // require a name; keep dialog open
+            result = n;
+            dialog.Close();
+        };
+        var cancelBtn = new Button { Content = "Cancel", IsCancel = true };
+        cancelBtn.Click += (_, _) => { result = null; dialog.Close(); };
+        buttons.Children.Add(okBtn);
+        buttons.Children.Add(cancelBtn);
+        panel.Children.Add(buttons);
+        dialog.Content = panel;
+
+        nameBox.AttachedToVisualTree += (_, _) => nameBox.Focus();
+        await dialog.ShowDialog(this);
+        return result;
     }
 
     private async Task<SavePromptResult> PromptSaveChangesAsync()
