@@ -52,6 +52,7 @@
                         </StackPanel>
                         <controls:ItemListView x:Name="BackpackList"
                                                ContextKey="Backpack"
+                                               ShowEquipMenuItem="False"
                                                AutomationProperties.AutomationId="Reliquary_BackpackList"/>
                     </DockPanel>
                 </Border>
@@ -80,6 +81,8 @@
                         </StackPanel>
                         <controls:ItemListView x:Name="PaletteList"
                                                ContextKey="Palette"
+                                               ShowEquipMenuItem="False"
+                                               AddToBackpackHeader="Add to Inventory"
                                                AutomationProperties.AutomationId="Reliquary_PaletteList"/>
                     </DockPanel>
                 </Border>

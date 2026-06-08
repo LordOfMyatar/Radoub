@@ -43,6 +43,9 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
     /// <summary>Raised when "Remove" is clicked (carries the backpack item to remove).</summary>
     public event EventHandler<ItemViewModel>? RemoveItemRequested;
 
+    /// <summary>Raised when the row context "Edit" is chosen — host opens the UTI in Relique.</summary>
+    public event EventHandler<ItemViewModel>? EditItemRequested;
+
     /// <summary>Resolve a cache-loaded palette item into a fully-loaded item for the details pane.</summary>
     public Func<ItemViewModel, ItemViewModel?>? ItemResolver { get; set; }
 
@@ -86,15 +89,17 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
         {
             _paletteList.Items = _filteredPaletteItems;
             _paletteList.SelectionChanged += OnPaletteSelectionChanged;
-            // #2415: double-click + context "Add to Backpack" both add via the existing add path.
+            // #2415: double-click + context "Add to Inventory" both add via the existing add path.
             _paletteList.ItemOpenRequested += OnPaletteItemActivated;
             _paletteList.AddToBackpackRequested += OnPaletteItemActivated;
+            // Context "Edit" → open the UTI in Relique (host handles cross-tool dispatch).
+            _paletteList.ItemEditRequested += OnItemEditRequested;
         }
         if (_backpackList != null)
         {
-            // #2415 symmetry: double-click / context "Delete" remove from the backpack.
-            _backpackList.ItemOpenRequested += OnBackpackItemActivated;
+            // #2415 symmetry: double-click adds nothing on backpack; context "Delete" removes.
             _backpackList.DeleteRequested += OnBackpackItemActivated;
+            _backpackList.ItemEditRequested += OnItemEditRequested;
         }
         UpdateContentsCount();
     }
@@ -182,9 +187,13 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
     private void OnPaletteItemActivated(object? sender, ItemViewModel item)
         => AddItemRequested?.Invoke(this, item);
 
-    /// <summary>Backpack double-click / context "Delete" → remove the activated item (#2415).</summary>
+    /// <summary>Backpack context "Delete" → remove the activated item (#2415).</summary>
     private void OnBackpackItemActivated(object? sender, ItemViewModel item)
         => RemoveItemRequested?.Invoke(this, item);
+
+    /// <summary>Context "Edit" → host opens the item's UTI in Relique.</summary>
+    private void OnItemEditRequested(object? sender, ItemViewModel item)
+        => EditItemRequested?.Invoke(this, item);
 
     private void UpdateContentsCount()
     {

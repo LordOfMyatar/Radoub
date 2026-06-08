@@ -10,6 +10,7 @@ using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
 using Radoub.Formats.Uti;
 using Radoub.UI.Services;
+using Radoub.UI.Services.Search;
 using Radoub.UI.ViewModels;
 using PlaceableEditor.Commands;
 using PlaceableEditor.Views.Panels;
@@ -42,6 +43,7 @@ public partial class MainWindow
 
         inv.AddItemRequested += OnInventoryAddRequested;
         inv.RemoveItemRequested += OnInventoryRemoveRequested;
+        inv.EditItemRequested += OnInventoryEditRequested;
         inv.ItemResolver = ResolveForDetails;
     }
 
@@ -369,5 +371,33 @@ public partial class MainWindow
 
         _undo.Execute(new RemoveInventoryItemCommand(_placeable.Utp.ItemList, inv.BackpackItems, backpackItem));
         inv.OnBackpackChanged();
+    }
+
+    /// <summary>
+    /// Context "Edit" on a palette/backpack item → resolve its .uti to a file and open it in Relique
+    /// via the shared ToolDispatchService (same pattern as Conversation → Parley). BIF/HAK items have
+    /// no editable file path, so only loose module/Override UTIs can be edited.
+    /// </summary>
+    private void OnInventoryEditRequested(object? sender, ItemViewModel item)
+    {
+        if (string.IsNullOrWhiteSpace(item.ResRef))
+        {
+            UpdateStatus("No item selected to edit.");
+            return;
+        }
+
+        var fileDir = string.IsNullOrEmpty(_currentFilePath) ? null : Path.GetDirectoryName(_currentFilePath);
+        var moduleDir = GetModuleWorkingDirectory();
+        var utiPath = ExternalEditorService.ResolveResourcePath(item.ResRef, ".uti", fileDir, moduleDir);
+        if (utiPath is null)
+        {
+            UpdateStatus($"Can't edit {item.ResRef}.uti in Relique — it lives in a HAK/BIF, not a module file.");
+            return;
+        }
+
+        if (!new ToolDispatchService().LaunchTool(ResourceTypes.Uti, utiPath))
+            UpdateStatus($"Could not launch Relique for {item.ResRef}.uti — Relique may not be installed alongside Reliquary.");
+        else
+            UpdateStatus($"Opening {item.ResRef}.uti in Relique…");
     }
 }
