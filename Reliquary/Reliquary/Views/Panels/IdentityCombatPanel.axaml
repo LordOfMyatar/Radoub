@@ -150,14 +150,14 @@
                     <Grid RowDefinitions="Auto,Auto" Margin="0,2,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" MinWidth="100"/>
-                            <ColumnDefinition Width="*" MinWidth="160"/>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="16"/>
                             <ColumnDefinition Width="Auto" MinWidth="100"/>
                             <ColumnDefinition Width="Auto" MinWidth="120"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Faction" VerticalAlignment="Center"/>
                         <ComboBox Grid.Row="0" Grid.Column="1" x:Name="FactionCombo"
-                                  HorizontalAlignment="Stretch"
+                                  Width="220" HorizontalAlignment="Left"
                                   SelectionChanged="OnFactionChanged"
                                   AutomationProperties.AutomationId="Reliquary_Combo_Faction"/>
 
@@ -171,7 +171,7 @@
 
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Conversation" VerticalAlignment="Center"/>
                         <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Conversation, Mode=TwoWay}"
-                                 MaxLength="16"
+                                 MaxLength="16" Width="220" HorizontalAlignment="Left"
                                  AutomationProperties.AutomationId="Reliquary_Field_Conversation"/>
 
                         <TextBlock Grid.Row="1" Grid.Column="3" Text="Treasure Model" VerticalAlignment="Center"/>
