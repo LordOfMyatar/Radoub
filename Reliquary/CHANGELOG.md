@@ -7,7 +7,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 ---
 
 ## [0.9.0-alpha] - 2026-06-07
-**Branch**: `reliquary/sprint/browser-polish-ci` | **PR**: #TBD
+**Branch**: `reliquary/sprint/browser-polish-ci` | **PR**: #2427
 
 ### Sprint: Browser Polish & Release Wiring
 
