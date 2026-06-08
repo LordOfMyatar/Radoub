@@ -49,9 +49,9 @@
                           VerticalScrollBarVisibility="Visible">
                 <StackPanel Margin="8" Spacing="8">
                     <panels:IdentityCombatPanel x:Name="IdentityCombatPanel"/>
-                    <panels:BehaviorPanel x:Name="BehaviorPanel"/>
                     <panels:TextPanel x:Name="TextPanel"/>
                     <panels:InventoryPanel x:Name="InventoryPanel"/>
+                    <panels:BehaviorPanel x:Name="BehaviorPanel"/>
                 </StackPanel>
             </ScrollViewer>
         </Grid>

@@ -6,6 +6,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 
 ---
 
+## [0.9.0-alpha] - 2026-06-07
+**Branch**: `reliquary/sprint/browser-polish-ci` | **PR**: #2427
+
+### Sprint: Editor Layout, Open-File Rename & Release Wiring
+
+- Editor layout reorganized: Faction, Conversation, Initial State, and Treasure Model moved into the Identity & Combat panel; Scripts & Variables moved to the bottom (#2425).
+- Rename an open saved placeable via right-click in the F4 browser (lock-aware save-rename-reload); editor ResRef stays read-only (#2424).
+- Reliquary wired into the release pipeline so the alpha ships alongside the other tools.
+
+---
+
 ## [0.8.0-alpha] - 2026-06-07
 **Branch**: `reliquary/sprint/inventory-and-defaults` | **PR**: #2420
 

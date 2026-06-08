@@ -7,7 +7,7 @@ namespace Radoub.IntegrationTests.Reliquary;
 /// <summary>
 /// Deeper Reliquary interaction tests (#2304) — beyond the launch/close + single-toggle
 /// smoke set. Covers IdentityCombat field presence, a Tag edit that persists across a
-/// save→reload (re-launch) cycle, and the Behavior panel's Conversation field rendering.
+/// save→reload (re-launch) cycle, and the Conversation field rendering (moved to Identity, #2425).
 /// </summary>
 [Collection("ReliquarySequential")]
 public class ReliquaryFieldEditTests : ReliquaryTestBase
@@ -53,7 +53,7 @@ public class ReliquaryFieldEditTests : ReliquaryTestBase
 
     [Fact]
     [Trait("Category", "Behavior")]
-    public void Reliquary_BehaviorPanel_ConversationFieldRenders()
+    public void Reliquary_IdentityPanel_ConversationFieldRenders()
     {
         var tempFile = CopyFixtureToTemp("chest1.utp", "test_placeable.utp");
         try

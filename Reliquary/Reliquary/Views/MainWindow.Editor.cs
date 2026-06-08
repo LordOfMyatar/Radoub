@@ -46,6 +46,7 @@ public partial class MainWindow
         _undo.StateChanged += (_, _) => MarkDirty();
         RefreshUndoMenu();
 
+        // Scripts + Variables live in the Behavior panel (Faction/Conversation moved to Identity, #2425).
         var behavior = this.FindControl<BehaviorPanel>("BehaviorPanel");
         if (behavior != null)
         {
@@ -55,9 +56,6 @@ public partial class MainWindow
             behavior.ScriptEditRequested += OnScriptEditRequested;
             behavior.SaveScriptSetRequested += OnSaveScriptSetRequested;
             behavior.LoadScriptSetRequested += OnLoadScriptSetRequested;
-            behavior.EditConversationRequested += OnEditConversationRequested;
-            behavior.ConversationBrowseRequested += OnConversationBrowseRequested;
-            behavior.FactionChanged += OnFactionSelected;
         }
     }
 
@@ -140,6 +138,61 @@ public partial class MainWindow
     /// Load a UTP from raw bytes (HAK/BIF archive entry) as a read-only preview — no file path, so
     /// Save is a no-op until the user does Save As (future). Mirrors Relique's archive preview.
     /// </summary>
+    /// <summary>
+    /// Rename the currently-open placeable to a new ResRef in the same directory (#2424). The F4
+    /// browser already prompted + validated the destination; we save pending edits, release any
+    /// session lock, move the file, then reload from the new path so the editor + browser resync.
+    /// Sequencing + guards live in the unit-tested <see cref="OpenFileRenameCoordinator"/>.
+    /// </summary>
+    private async Task RenameOpenFileAsync(string oldPath, string newPath)
+    {
+        var result = await OpenFileRenameCoordinator.RenameAsync(
+            oldPath, newPath, _currentFilePath, _isDirty,
+            new OpenFileRenameCoordinator.Callbacks
+            {
+                SaveAsync = async () => await SavePlaceableAsync(),
+                ReleaseLock = () =>
+                {
+                    Radoub.UI.Services.FileSessionLockService.ReleaseLock(oldPath);
+                    _documentState.IsReadOnly = false;
+                },
+                Move = (from, to) =>
+                {
+                    try
+                    {
+                        File.Move(from, to);
+                        UnifiedLogger.LogApplication(LogLevel.INFO,
+                            $"Renamed open placeable: {UnifiedLogger.SanitizePath(from)} -> {UnifiedLogger.SanitizePath(to)}");
+                        return true;
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to rename open placeable: {ex.Message}");
+                        UpdateStatus($"Rename failed: {ex.Message}");
+                        return false;
+                    }
+                },
+                ReopenAsync = async to =>
+                {
+                    // Reopen from the new path: rebinds the editor and locks ResRef to the new identity.
+                    LoadPlaceable(to);
+                    var browser = this.FindControl<PlaceableBrowserPanel>("PlaceableBrowserPanel");
+                    if (browser != null)
+                    {
+                        browser.CurrentFilePath = to;
+                        browser.RemoveEntryByFilePath(oldPath);
+                        await browser.RefreshAsync();
+                        browser.SelectEntryByFilePath(to);
+                    }
+                    UpdateStatus($"Renamed to: {Path.GetFileName(to)}");
+                },
+            });
+
+        if (result == OpenFileRenameCoordinator.Result.NotCurrentFile)
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"Reliquary: rename ignored — open file changed (was {UnifiedLogger.SanitizePath(oldPath)})");
+    }
+
     private void LoadPlaceableFromBytes(byte[] bytes, string name)
     {
         try

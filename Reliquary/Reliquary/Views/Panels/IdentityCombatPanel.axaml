@@ -140,6 +140,56 @@
                         <CheckBox Content="Static" IsChecked="{Binding Static, Mode=TwoWay}"
                                   AutomationProperties.AutomationId="Reliquary_Check_Static"/>
                     </StackPanel>
+
+                    <Separator Margin="0,6"/>
+
+                    <!-- Faction / Conversation / Initial State / Treasure Model. Moved here from the
+                         Behavior panel (#2425): these identify the placeable's runtime behavior and are
+                         short, fixed-size fields, so they belong with Identity rather than below the
+                         scripts. Same two-column grid the Behavior panel used. -->
+                    <Grid RowDefinitions="Auto,Auto" Margin="0,2,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" MinWidth="100"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="Auto" MinWidth="100"/>
+                            <ColumnDefinition Width="Auto" MinWidth="120"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Faction" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Row="0" Grid.Column="1" x:Name="FactionCombo"
+                                  Width="220" HorizontalAlignment="Left"
+                                  SelectionChanged="OnFactionChanged"
+                                  AutomationProperties.AutomationId="Reliquary_Combo_Faction"/>
+
+                        <TextBlock Grid.Row="0" Grid.Column="3" Text="Initial State" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Row="0" Grid.Column="4" MinWidth="120"
+                                  ItemsSource="{Binding AnimationStates}"
+                                  SelectedValue="{Binding InitialState, Mode=TwoWay}"
+                                  SelectedValueBinding="{Binding Value}"
+                                  DisplayMemberBinding="{Binding Display}"
+                                  AutomationProperties.AutomationId="Reliquary_Combo_InitialState"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Conversation" VerticalAlignment="Center"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Conversation, Mode=TwoWay}"
+                                 MaxLength="16" Width="220" HorizontalAlignment="Left"
+                                 AutomationProperties.AutomationId="Reliquary_Field_Conversation"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="3" Text="Treasure Model" VerticalAlignment="Center"/>
+                        <NumericUpDown Grid.Row="1" Grid.Column="4" Minimum="0" Maximum="255" Increment="1"
+                                       FormatString="0" MinWidth="120"
+                                       Value="{Binding TreasureModel, Mode=TwoWay}"
+                                       AutomationProperties.AutomationId="Reliquary_Numeric_TreasureModel"/>
+                    </Grid>
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2,0,0">
+                        <Button Content="Browse…" Click="OnBrowseConversationClick"
+                                ToolTip.Tip="Browse module/HAK dialogs and set the Conversation ResRef."
+                                AutomationProperties.AutomationId="Reliquary_Button_BrowseConversation"/>
+                        <Button Content="Edit → Parley" Click="OnEditConversationClick"
+                                ToolTip.Tip="Open this conversation's .dlg in Parley."
+                                AutomationProperties.AutomationId="Reliquary_Button_EditConversation"/>
+                        <CheckBox Content="No Interrupt" IsChecked="{Binding NoInterrupt, Mode=TwoWay}"
+                                  AutomationProperties.AutomationId="Reliquary_Check_NoInterrupt"/>
+                    </StackPanel>
                 </StackPanel>
 
                 <GridSplitter Grid.Column="3" Width="4"

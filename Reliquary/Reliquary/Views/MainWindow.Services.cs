@@ -65,14 +65,19 @@ public partial class MainWindow
         var browser = this.FindControl<PlaceableBrowserPanel>("PlaceableBrowserPanel");
         if (browser != null) browser.GameDataService = _gameData;
 
-        // Hand the texture service to the 3D preview control.
+        // Wire the Identity & Combat panel events. Faction/Conversation moved here from Behavior
+        // (#2425), so subscribe them regardless of whether the texture service (3D preview) is ready.
         var identity = this.FindControl<IdentityCombatPanel>("IdentityCombatPanel");
-        if (identity != null && _textureService != null)
+        if (identity != null)
         {
-            identity.Preview.SetTextureService(_textureService);
+            if (_textureService != null)
+                identity.Preview.SetTextureService(_textureService);
             identity.AppearanceChanged += OnAppearanceChanged;
             identity.PortraitBrowseRequested += OnPortraitBrowseRequested;
             identity.PaletteCategoryChanged += OnPaletteCategorySelected;
+            identity.FactionChanged += OnFactionSelected;
+            identity.EditConversationRequested += OnEditConversationRequested;
+            identity.ConversationBrowseRequested += OnConversationBrowseRequested;
         }
 
         // Open the startup file from the command line (--file), now that services + the model
@@ -147,15 +152,15 @@ public partial class MainWindow
         UpdateModelPreview(appearanceId);
     }
 
-    /// <summary>Populate the Behavior panel's Faction combo from the module's repute.fac (#2354).</summary>
+    /// <summary>Populate the Identity panel's Faction combo from the module's repute.fac (#2354, moved #2425).</summary>
     private void PopulateFactionCombo()
     {
         if (_placeable is null) return;
-        var behavior = this.FindControl<PlaceableEditor.Views.Panels.BehaviorPanel>("BehaviorPanel");
-        if (behavior is null) return;
+        var identity = this.FindControl<IdentityCombatPanel>("IdentityCombatPanel");
+        if (identity is null) return;
 
         var factions = PlaceableEditor.Services.FactionService.Load(GetModuleWorkingDirectory());
-        behavior.PopulateFactions(factions, _placeable.Faction);
+        identity.PopulateFactions(factions, _placeable.Faction);
     }
 
     /// <summary>Route a faction pick through undo (host owns the repute.fac list + undo wrapping).</summary>

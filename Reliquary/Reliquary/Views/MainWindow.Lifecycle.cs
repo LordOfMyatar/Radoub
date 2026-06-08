@@ -23,6 +23,14 @@ public partial class MainWindow
         browser.FileSelected += OnBrowserFileSelected;
         browser.FileDeleted += OnBrowserFileDeleted;
 
+        // Rename feedback for non-open files (the base panel did the move + refresh itself).
+        browser.FileRenamed += (_, args) =>
+            UpdateStatus($"Renamed to: {Path.GetFileName(args.NewPath)}");
+        // Renaming the OPEN placeable: the base prompted + validated; we own the
+        // save → release-lock → move → reopen because we hold the model + lock (#2424).
+        browser.FileRenameRequested += async (_, args) =>
+            await RenameOpenFileAsync(args.OldPath, args.NewPath);
+
         // The base panel only flips its ◀/▶ button + raises CollapsedChanged; the host owns the
         // actual collapse by zeroing the browser's width and hiding the splitter (QM/Relique pattern).
         browser.CollapsedChanged += (_, collapsed) => SetBrowserCollapsed(collapsed);
