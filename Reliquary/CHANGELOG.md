@@ -11,7 +11,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 
 ### Sprint: Browser Polish & Release Wiring
 
-- F4 placeable browser filter checkboxes and search box reordered/restyled to match sibling tools (#2425).
+- Editor layout reorganized: Faction, Conversation, Initial State, and Treasure Model moved into the Identity & Combat panel; Scripts & Variables moved to the bottom (#2425).
 - Rename an open saved placeable via right-click in the F4 browser (lock-aware save-rename-reload); editor ResRef stays read-only (#2424).
 - Reliquary wired into the release pipeline so the alpha ships alongside the other tools.
 

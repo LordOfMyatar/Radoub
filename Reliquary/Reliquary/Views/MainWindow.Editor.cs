@@ -46,6 +46,7 @@ public partial class MainWindow
         _undo.StateChanged += (_, _) => MarkDirty();
         RefreshUndoMenu();
 
+        // Scripts + Variables live in the Behavior panel (Faction/Conversation moved to Identity, #2425).
         var behavior = this.FindControl<BehaviorPanel>("BehaviorPanel");
         if (behavior != null)
         {
@@ -55,9 +56,6 @@ public partial class MainWindow
             behavior.ScriptEditRequested += OnScriptEditRequested;
             behavior.SaveScriptSetRequested += OnSaveScriptSetRequested;
             behavior.LoadScriptSetRequested += OnLoadScriptSetRequested;
-            behavior.EditConversationRequested += OnEditConversationRequested;
-            behavior.ConversationBrowseRequested += OnConversationBrowseRequested;
-            behavior.FactionChanged += OnFactionSelected;
         }
     }
 
