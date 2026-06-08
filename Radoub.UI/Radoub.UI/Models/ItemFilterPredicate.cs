@@ -22,6 +22,11 @@ public static class ItemFilterPredicate
     /// <param name="slotFilter">Equipment-slot filter, or null / AllSlots for no slot filter.</param>
     /// <param name="showStandard">Include base-game (BIF) items.</param>
     /// <param name="showCustom">Include custom (Override/HAK/Module) items.</param>
+    /// <param name="showCreatureItems">
+    /// Include creature natural weapons + internal/marker base types (see
+    /// <see cref="Utils.ItemPaletteExclusions"/>). Default true (no filtering) so existing callers and
+    /// tests are unaffected; the palette passes the user's toggle (default off → hide them).
+    /// </param>
     public static bool Matches(
         ItemViewModel item,
         string searchLower,
@@ -29,11 +34,15 @@ public static class ItemFilterPredicate
         ItemTypeInfo? typeFilter,
         SlotFilterInfo? slotFilter,
         bool showStandard,
-        bool showCustom)
+        bool showCustom,
+        bool showCreatureItems = true)
     {
         // Source filter (Standard = BIF, Custom = Override/HAK/Module)
         if (item.IsStandard && !showStandard) return false;
         if (item.IsCustom && !showCustom) return false;
+
+        // Creature/internal items (natural weapons, marker) are hidden unless explicitly shown.
+        if (!showCreatureItems && Utils.ItemPaletteExclusions.IsExcluded(item.BaseItem)) return false;
 
         // Type filter
         if (typeFilter != null && !typeFilter.IsAllTypes)

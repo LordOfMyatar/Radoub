@@ -190,10 +190,10 @@ public partial class MainWindow
             await BuildItemCacheAsync();
 
             var cache = _itemCache.GetAggregatedCache() ?? new List<SharedPaletteCacheItem>();
+            // Keep creature/internal items in the list — the palette filter hides them by default but
+            // lets the user reveal them (e.g. a custom monster's poison claws), so they must not be
+            // dropped here (#2411 follow-up: was a hard exclude, now a filter toggle).
             var vms = cache
-                // Hide creature natural weapons + the invalid marker — they are not authorable
-                // blueprints (Fence/QM parity, #2411). Shared list keeps the tools in sync.
-                .Where(c => !Radoub.UI.Utils.ItemPaletteExclusions.IsExcluded(c.BaseItemType))
                 .Select(c => new ItemViewModel
                 {
                     ResRef = c.ResRef,
@@ -216,7 +216,7 @@ public partial class MainWindow
             // Add loose module-directory UTIs (not in BIF/Override/HAK) so module items show too.
             var moduleResRefs = new HashSet<string>(vms.Select(v => v.ResRef), StringComparer.OrdinalIgnoreCase);
             foreach (var moduleVm in LoadModuleItemViewModels())
-                if (!Radoub.UI.Utils.ItemPaletteExclusions.IsExcluded(moduleVm.BaseItem) && moduleResRefs.Add(moduleVm.ResRef))
+                if (moduleResRefs.Add(moduleVm.ResRef))
                     vms.Add(moduleVm);
 
             inv.SetPaletteItems(vms);
@@ -283,8 +283,8 @@ public partial class MainWindow
                 var bytes = _gameData.FindResource(res.ResRef, ResourceTypes.Uti);
                 if (bytes == null) continue;
                 var uti = UtiReader.Read(bytes);
-                // Keep the shared cache clean of non-authorable items (Fence parity, #2411).
-                if (Radoub.UI.Utils.ItemPaletteExclusions.IsExcluded(uti.BaseItem)) continue;
+                // Cache every item (incl. creature/internal); the palette filter hides them by default
+                // but keeps them reachable for custom monsters (#2411 follow-up).
                 items.Add(new SharedPaletteCacheItem
                 {
                     ResRef = res.ResRef,
