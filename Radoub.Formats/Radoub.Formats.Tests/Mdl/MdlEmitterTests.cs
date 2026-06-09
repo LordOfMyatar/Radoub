@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using Radoub.Formats.Mdl;
@@ -59,5 +61,30 @@ public class MdlEmitterTests
         Assert.Equal(2, emitter.YGrid);
         Assert.True(emitter.Loop);            // misaligned/garbage if texture read as 32 bytes
         Assert.Equal(3, emitter.RenderOrder); // misaligned under the old 32-byte bug
+    }
+
+    /// <summary>
+    /// Real-file parity: the ASCII reader must parse emitter string + numeric
+    /// controller props from a genuine NWN model (c_allip_d.mdl, OmenEmitter01/02).
+    /// </summary>
+    [Fact]
+    public void AsciiReader_ParsesAllipEmitterControllers()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "TestData", "Mdl", "c_allip_d.mdl");
+        Assert.True(File.Exists(path), $"Fixture not found: {path}");
+
+        var content = File.ReadAllText(path);
+        var model = new MdlAsciiReader().Parse(content);
+
+        var emitters = model.EnumerateAllNodes().OfType<MdlEmitterNode>().ToList();
+        Assert.NotEmpty(emitters);
+
+        // OmenEmitter01/02 use update "Fountain", blend "Lighten", birthrate 100.
+        var omen = emitters.FirstOrDefault(e =>
+            string.Equals(e.Update, "Fountain", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(e.Blend, "Lighten", StringComparison.OrdinalIgnoreCase));
+
+        Assert.NotNull(omen);
+        Assert.True(omen!.BirthRate > 0f, "BirthRate should parse from 'birthrate 100'");
     }
 }
