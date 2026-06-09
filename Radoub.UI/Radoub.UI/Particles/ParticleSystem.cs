@@ -106,7 +106,12 @@ public sealed class ParticleSystem
             float t = p.Lifetime > 0f ? Math.Clamp(p.Age / p.Lifetime, 0f, 1f) : 0f;
             p.SizeX = _emitter.OverLife.SizeX.Eval(t);
             p.SizeY = _emitter.OverLife.SizeY.Eval(t);
-            var color = _emitter.OverLife.Color.Eval(t);
+            // IsTinted (emitter flag 0x0008) gates the color controllers. When NOT tinted,
+            // particles take the texture's own colors (rgb stays white) — only alpha applies.
+            // Aurora's zodiac/glow orbs are untinted white; forcing colorStart tints them wrong.
+            var color = _emitter.Tinted
+                ? _emitter.OverLife.Color.Eval(t)
+                : new Vector4(1f, 1f, 1f, 1f);
             color.W = _emitter.OverLife.Alpha.Eval(t);
             p.Color = color;
 
@@ -137,17 +142,24 @@ public sealed class ParticleSystem
         float speed = _rng.NextRange(_emitter.Speed.Min, _emitter.Speed.Max);
         Vector3 dir = EmissionDirection();
 
+        // Initialize over-life attributes at t=0 so a freshly-spawned particle is visually
+        // correct on its first rendered frame (size/color/alpha + Tinted gating), not one frame late.
+        var color0 = _emitter.Tinted
+            ? _emitter.OverLife.Color.Eval(0f)
+            : new Vector4(1f, 1f, 1f, 1f);
+        color0.W = _emitter.OverLife.Alpha.Eval(0f);
+
         var p = new Particle
         {
             Position = emitterWorldPos,
             Velocity = dir * speed,
             Age = 0f,
             Lifetime = lifetime,
-            SizeX = _emitter.SizeX.Min,
-            SizeY = _emitter.SizeY.Min,
+            SizeX = _emitter.OverLife.SizeX.Eval(0f),
+            SizeY = _emitter.OverLife.SizeY.Eval(0f),
             Rotation = 0f,
             RotationRate = 0f,
-            Color = new Vector4(1f, 1f, 1f, 1f),
+            Color = color0,
             Frame = _emitter.FrameStart
         };
         _particles.Add(p);

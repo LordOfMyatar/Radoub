@@ -111,6 +111,52 @@ public class ParticleSystemTests
     }
 
     [Fact]
+    public void Update_NotTinted_KeepsParticleRgbWhite()
+    {
+        // No IsTinted flag (0x0008) -> particles take the texture's own color (rgb stays white),
+        // even though ColorStart is set. Regression for zodiac/glow orbs rendering purple (#2395).
+        var node = BaseNode();
+        node.BirthRate = 1f;
+        node.LifeExp = 10f;
+        node.EmitterFlags = 0; // not tinted
+        node.ColorStart = new System.Numerics.Vector3(0.5f, 0f, 1f); // purple — must be ignored
+        node.ColorEnd = new System.Numerics.Vector3(0.5f, 0f, 1f);
+        var sys = new ParticleSystem(Compile(node), seed: 11u);
+
+        for (int i = 0; i < 20 && sys.LiveCount == 0; i++)
+            sys.Update(0.1f);
+        Assert.True(sys.LiveCount >= 1);
+
+        var c = sys.FirstParticle.Color;
+        Assert.Equal(1f, c.X, 3);
+        Assert.Equal(1f, c.Y, 3);
+        Assert.Equal(1f, c.Z, 3);
+    }
+
+    [Fact]
+    public void Update_Tinted_AppliesColorStart()
+    {
+        // IsTinted (0x0008) set -> ColorStart applies. At t~0 color ~= ColorStart.
+        var node = BaseNode();
+        node.BirthRate = 1f;
+        node.LifeExp = 10f;
+        node.EmitterFlags = 0x0008; // tinted
+        // Constant purple across the whole life (start/mid/end) so the gradient is purple at any t.
+        node.ColorStart = new System.Numerics.Vector3(0.5f, 0f, 1f);
+        node.ColorMid = new System.Numerics.Vector3(0.5f, 0f, 1f);
+        node.ColorEnd = new System.Numerics.Vector3(0.5f, 0f, 1f);
+        var sys = new ParticleSystem(Compile(node), seed: 12u);
+
+        for (int i = 0; i < 20 && sys.LiveCount == 0; i++)
+            sys.Update(0.1f);
+        Assert.True(sys.LiveCount >= 1);
+
+        var c = sys.FirstParticle.Color;
+        Assert.True(System.Math.Abs(c.X - 0.5f) < 0.01f && System.Math.Abs(c.Y) < 0.01f && System.Math.Abs(c.Z - 1f) < 0.01f,
+            $"expected purple (0.5,0,1), got ({c.X},{c.Y},{c.Z},{c.W})");
+    }
+
+    [Fact]
     public void Update_ZeroDt_IsNoOp()
     {
         var node = BaseNode();
