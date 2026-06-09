@@ -1,6 +1,7 @@
 // MDL Binary Reader - Node parsing
 // Partial class for node creation and property routing
 
+using System;
 using System.Numerics;
 using System.Text;
 
@@ -373,8 +374,13 @@ public partial class MdlBinaryReader
             }
             else if (node is MdlEmitterNode em)
             {
+                // Reached only for non-Light nodes; types 8/20/36 (position/orient/scale)
+                // are handled by the ungated branches above, so they never enter this switch.
+                // The per-case `if (scalarOk/colorOk)` gating is the intentional equivalent of
+                // the `continue`-skip used by the Position/Light branches.
                 // Emitter controllers — read ROW-0 (bind) value only.
-                // TODO(#2395 follow-up): keyed emitter controllers (multi-row animation).
+                // TODO(#2395 follow-up): keyed emitter controllers (multi-row animation);
+                // also gate color cases on columns>=3 for defense-in-depth against malformed files.
                 float ReadScalar()
                 {
                     stream.Position = valuePos;
@@ -397,8 +403,8 @@ public partial class MdlBinaryReader
                     case 108: if (colorOk) em.ColorStart = ReadColor(); break;
                     case 124: if (scalarOk) em.Drag = ReadScalar(); break;
                     case 128: if (scalarOk) em.Fps = ReadScalar(); break;
-                    case 132: if (scalarOk) em.FrameEnd = (int)ReadScalar(); break;
-                    case 136: if (scalarOk) em.FrameStart = (int)ReadScalar(); break;
+                    case 132: if (scalarOk) em.FrameEnd = (int)MathF.Round(ReadScalar()); break;
+                    case 136: if (scalarOk) em.FrameStart = (int)MathF.Round(ReadScalar()); break;
                     case 140: if (scalarOk) em.Grav = ReadScalar(); break;
                     case 144: if (scalarOk) em.LifeExp = ReadScalar(); break;
                     case 148: if (scalarOk) em.Mass = ReadScalar(); break;
