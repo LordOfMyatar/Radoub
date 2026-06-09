@@ -577,15 +577,6 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             {
                 var compiled = Radoub.UI.Particles.EmitterCompiler.Compile(emitter);
 
-                // TEMP DIAGNOSTIC (#2395 UAT) — remove before merge.
-                UnifiedLogger.LogApplication(LogLevel.INFO,
-                    $"[EmitterDbg] '{emitter.Name}' tex='{emitter.Texture}' tinted={compiled.Tinted} blend={compiled.Blend} " +
-                    $"birth={emitter.BirthRate} life={emitter.LifeExp} colStart=({emitter.ColorStart.X:F2},{emitter.ColorStart.Y:F2},{emitter.ColorStart.Z:F2}) " +
-                    $"colEnd=({emitter.ColorEnd.X:F2},{emitter.ColorEnd.Y:F2},{emitter.ColorEnd.Z:F2}) " +
-                    $"aStart={emitter.AlphaStart:F2} aEnd={emitter.AlphaEnd:F2} sizeStart={emitter.SizeStart:F3} sizeEnd={emitter.SizeEnd:F3} " +
-                    $"vel={emitter.Velocity:F2} randvel={emitter.RandVel:F2} spread={emitter.Spread:F3} mass={emitter.Mass:F2} grav={emitter.Grav:F2} " +
-                    $"=> cSpeed=[{compiled.Speed.Min:F2},{compiled.Speed.Max:F2}] cSizeX=[{compiled.SizeX.Min:F3},{compiled.SizeX.Max:F3}] flags=0x{emitter.EmitterFlags:X}");
-
                 // The MVP renderer treats every emitter as a camera-facing billboard and the sim
                 // only does continuous Fountain emission. Anything else is rendered approximately
                 // (plain billboard) — log once per model so the limitation is visible (#2395).

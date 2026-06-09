@@ -5,7 +5,6 @@
 // mesh by subtracting _modelCenter from each particle's raw-model-space position.
 
 using System;
-using System.Collections.Generic;
 using System.Numerics;
 using Radoub.Formats.Logging;
 using Radoub.UI.Particles;
@@ -28,9 +27,6 @@ public partial class ModelPreviewGLControl
 
     // Scratch CPU buffer reused across frames to avoid per-frame allocation churn.
     private float[] _particleScratch = Array.Empty<float>();
-
-    // TEMP DIAGNOSTIC (#2395 UAT) — remove before merge.
-    private readonly HashSet<string> _dbgLoggedParticleTex = new();
 
     // Particle size scale = model radius × this factor. Calibrated so the fairy (radius ≈ 0.22)
     // renders wing/dust particles at ~the authored visual size; scales with the model so larger
@@ -379,15 +375,7 @@ void main()
         if (!_textureCache.ContainsKey(name) && _textureRemapping.TryGetValue(name, out var remapped))
             name = remapped;
         if (_textureCache.TryGetValue(name, out var texId) && texId != 0)
-        {
-            // TEMP DIAGNOSTIC (#2395 UAT) — remove before merge.
-            if (_dbgLoggedParticleTex.Add(name))
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"[ParticleTexDbg] '{name}' RESOLVED id={texId}");
             return texId;
-        }
-        // TEMP DIAGNOSTIC (#2395 UAT) — remove before merge.
-        if (_dbgLoggedParticleTex.Add(name))
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"[ParticleTexDbg] '{name}' NOT FOUND — rendering flat (no soft falloff)");
         return 0;
     }
 
