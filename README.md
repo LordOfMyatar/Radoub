@@ -311,6 +311,9 @@ See [LICENSE](LICENSE) for details.
 - Original Aurora Toolset developers
 - NWN community for 20+ years of modding and tooling excellence
 - [neverwinter.nim](https://github.com/niv/neverwinter.nim) (MIT) - Primary reference for Aurora file format parsing
+- [rollnw](https://github.com/jd28/rollnw) (MIT) - Reference for the Aurora MDL particle-emitter simulation and compile model; the model-preview emitter rendering is derived from it
+- [nwn_mdl_webviewer](https://github.com/dunahan/nwn_mdl_webviewer) (MIT) - Reference for Aurora emitter constants (gravity, drag, spread) and a model fixture used by the emitter renderer
+- [nwnexplorer](https://github.com/virusman/nwnexplorer) (BSD) - Reference for the binary MDL emitter node layout and controller IDs
 - [WeCantSpell.Hunspell](https://github.com/aarondandy/WeCantSpell.Hunspell) (MIT) - .NET Hunspell port for spell-checking
 - [Hunspell](https://hunspell.github.io/) - Spell-checking engine used by LibreOffice, Firefox, Chrome
 - [LibreOffice Dictionaries](https://cgit.freedesktop.org/libreoffice/dictionaries/) - English dictionary files (BSD/Public Domain)
