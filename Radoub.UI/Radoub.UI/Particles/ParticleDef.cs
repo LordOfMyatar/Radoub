@@ -44,6 +44,7 @@ public enum ParticleSpawnRegionType
 }
 
 /// <summary>Inclusive numeric range [Min, Max].</summary>
+// Mutable struct: construct-then-store only. Never mutate one already inside a List (`list[i].Field = x` silently no-ops).
 public struct RangeF
 {
     public float Min;
@@ -51,6 +52,7 @@ public struct RangeF
 }
 
 /// <summary>A single keyframe on a scalar curve.</summary>
+// Mutable struct: construct-then-store only. Never mutate one already inside a List (`list[i].Field = x` silently no-ops).
 public struct CurveKey
 {
     public float Time;
@@ -100,6 +102,7 @@ public class CurveF
 }
 
 /// <summary>A single keyframe on a color/vector gradient.</summary>
+// Mutable struct: construct-then-store only. Never mutate one already inside a List (`list[i].Field = x` silently no-ops).
 public struct GradientKey
 {
     public float Time;

@@ -17,6 +17,11 @@ public static class EmitterCompiler
     private const uint FlagIsTinted = 0x0008;
     private const uint FlagInheritVel = 0x0080;
 
+    /// <summary>
+    /// Assumes <paramref name="node"/> is already parsed. Sanitizes only LifeExp
+    /// (negative lifetime is clamped to 0) and the over-life percent times
+    /// (NaN is treated as 0); all other fields are passed through unchanged.
+    /// </summary>
     public static CompiledEmitter Compile(MdlEmitterNode node)
     {
         var result = new CompiledEmitter
@@ -40,7 +45,8 @@ public static class EmitterCompiler
             FrameEnd = node.FrameEnd
         };
 
-        result.Lifetime = new RangeF { Min = node.LifeExp, Max = node.LifeExp };
+        float life = node.LifeExp > 0f ? node.LifeExp : 0f;
+        result.Lifetime = new RangeF { Min = life, Max = life };
         result.Speed = new RangeF { Min = node.Velocity, Max = node.Velocity + Math.Max(0f, node.RandVel) };
 
         float sizeStartY = node.SizeStartY == 0f ? node.SizeStart : node.SizeStartY;
@@ -114,7 +120,7 @@ public static class EmitterCompiler
         return s.Trim().ToLowerInvariant().Replace(' ', '_').Replace('-', '_');
     }
 
-    private static float Clamp01(float v) => Math.Clamp(v, 0f, 1f);
+    private static float Clamp01(float v) => float.IsNaN(v) ? 0f : Math.Clamp(v, 0f, 1f);
 
     private static CurveF ThreeKeyCurve(float t0, float t1, float t2, float v0, float v1, float v2)
     {

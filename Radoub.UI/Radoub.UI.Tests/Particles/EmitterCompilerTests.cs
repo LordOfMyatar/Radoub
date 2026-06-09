@@ -69,4 +69,69 @@ public class EmitterCompilerTests
         Assert.Equal(100f, result.BirthRate, 5);
         Assert.Equal(0.3f, result.Spread, 5);
     }
+
+    [Fact]
+    public void Compile_EqualPercentTimes_ProducesEvaluableCurve()
+    {
+        var node = SampleNode();
+        node.PercentStart = 0f;
+        node.PercentMid = 0f;
+        var compiled = EmitterCompiler.Compile(node);
+        var v = compiled.OverLife.SizeX.Eval(0f);
+        Assert.False(float.IsNaN(v));
+    }
+
+    [Fact]
+    public void Compile_NegativeLifeExp_ClampsToZero()
+    {
+        var node = SampleNode();
+        node.LifeExp = -5f;
+        var compiled = EmitterCompiler.Compile(node);
+        Assert.Equal(0f, compiled.Lifetime.Min);
+    }
+
+    [Fact]
+    public void Compile_BlendPunchThrough_MapsCutout()
+    {
+        var node = SampleNode();
+        node.Blend = "Punch-Through";
+        Assert.Equal(ParticleBlendMode.Cutout, EmitterCompiler.Compile(node).Blend);
+
+        node.Blend = "punchthrough";
+        Assert.Equal(ParticleBlendMode.Cutout, EmitterCompiler.Compile(node).Blend);
+    }
+
+    [Fact]
+    public void Compile_InheritVelFlag_SetsVelocityInheritance()
+    {
+        var node = SampleNode();
+        node.EmitterFlags = 0x0080;
+        Assert.Equal(1f, EmitterCompiler.Compile(node).VelocityInheritance);
+
+        node.EmitterFlags = 0;
+        Assert.Equal(0f, EmitterCompiler.Compile(node).VelocityInheritance);
+    }
+
+    [Fact]
+    public void Compile_SizeYZero_FallsBackToSizeX()
+    {
+        var node = SampleNode();
+        node.SizeStart = 0.4f;
+        node.SizeStartY = 0f;
+        Assert.Equal(0.4f, EmitterCompiler.Compile(node).SizeY.Min, 5);
+    }
+
+    [Fact]
+    public void Compile_SpeedMax_AddsRandVel()
+    {
+        var node = SampleNode();
+        node.Velocity = 2f;
+        node.RandVel = 3f;
+        var compiled = EmitterCompiler.Compile(node);
+        Assert.Equal(5f, compiled.Speed.Max, 5);
+        Assert.Equal(2f, compiled.Speed.Min, 5);
+
+        node.RandVel = -1f;
+        Assert.Equal(2f, EmitterCompiler.Compile(node).Speed.Max, 5);
+    }
 }
