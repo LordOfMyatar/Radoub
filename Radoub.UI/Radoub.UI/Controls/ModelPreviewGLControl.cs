@@ -101,6 +101,14 @@ public class ModelPreviewGLControl : OpenGlControlBase
     private Dictionary<string, ModelViewController.NodePose>? _cachedPose;
     private Avalonia.Threading.DispatcherTimer? _animTimer;
 
+    // Particle simulation lifecycle (#2395). One ParticleSystem per emitter node in the
+    // model. Driven by the same 30fps clock as animation (OnAnimTick), but runs even when
+    // no skeletal animation is selected/playing — emitters animate at idle. NO rendering
+    // here yet; this task spawns/updates particles in memory and proves it via logs.
+    private readonly List<(MdlEmitterNode node, Radoub.UI.Particles.ParticleSystem system)> _particleSystems = new();
+    private DateTime _particleLastTick = DateTime.UtcNow;
+    private DateTime _lastParticleLogTime = DateTime.MinValue;
+
     // Pointer drag state (#2124).
     private enum DragMode { None, Rotate, Pan }
     private DragMode _dragMode = DragMode.None;
@@ -148,6 +156,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
             _needsTextureUpdate = true;  // New model needs textures loaded
             _logOncePerModel = true;
             _viewController.CenterCamera();
+            RebuildParticleSystems(value);
             if (value == null)
             {
                 SetPreviewState(PreviewState.None);
@@ -495,6 +504,23 @@ public class ModelPreviewGLControl : OpenGlControlBase
 
     private void OnAnimTick(object? sender, EventArgs e)
     {
+        // Particle simulation runs BEFORE the skeletal-animation early-return (#2395)
+        // so emitters animate even when no animation is selected/playing (the common
+        // case for a static blueprint preview). Never let a sim exception escape into
+        // the timer/render loop (CLAUDE.md) — log WARN and continue.
+        if (_particleSystems.Count > 0)
+        {
+            try
+            {
+                UpdateParticleSystems();
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"[Particle] tick update failed (non-fatal): {ex.GetType().Name}: {ex.Message}");
+            }
+        }
+
         if (!_animPlaying || _activeAnimation == null) return;
 
         var now = DateTime.UtcNow;
@@ -516,6 +542,94 @@ public class ModelPreviewGLControl : OpenGlControlBase
         _cachedPose = null;
         _needsMeshUpdate = true;
         RequestNextFrameRendering();
+    }
+
+    /// <summary>
+    /// (Re)build the per-emitter <see cref="Radoub.UI.Particles.ParticleSystem"/> list for a
+    /// newly-assigned model (#2395). Clears any existing systems, then compiles one system per
+    /// <see cref="MdlEmitterNode"/>. Each system gets a stable, distinct seed (index+1) so
+    /// identical emitters don't move in lockstep. If any emitter exists, resets the particle
+    /// clock and ensures the animation timer runs so the sim advances even with no skeletal
+    /// animation selected.
+    /// </summary>
+    private void RebuildParticleSystems(MdlModel? model)
+    {
+        _particleSystems.Clear();
+
+        if (model == null || !model.HasEmitterNodes())
+            return;
+
+        int index = 0;
+        foreach (var node in model.EnumerateAllNodes())
+        {
+            if (node is not MdlEmitterNode emitter) continue;
+            try
+            {
+                var compiled = Radoub.UI.Particles.EmitterCompiler.Compile(emitter);
+                var system = new Radoub.UI.Particles.ParticleSystem(compiled, (uint)(index + 1));
+                _particleSystems.Add((emitter, system));
+                index++;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"[Particle] failed to compile emitter '{emitter.Name}' (skipped): {ex.GetType().Name}: {ex.Message}");
+            }
+        }
+
+        if (_particleSystems.Count > 0)
+        {
+            _particleLastTick = DateTime.UtcNow;
+            EnsureAnimTimer();
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"[Particle] built {_particleSystems.Count} particle system(s) for model '{model.Name}'");
+        }
+    }
+
+    /// <summary>
+    /// Advance every particle system by the wall-clock delta since the last particle tick (#2395).
+    /// ParticleSystem already guards/clamps dt internally, so no extra clamp here. Throttled
+    /// DEBUG log (~1s) reports system count + total live particles for the UAT log-smoke check.
+    /// </summary>
+    private void UpdateParticleSystems()
+    {
+        var now = DateTime.UtcNow;
+        float pdt = (float)(now - _particleLastTick).TotalSeconds;
+        _particleLastTick = now;
+
+        foreach (var (node, system) in _particleSystems)
+        {
+            var worldPos = GetEmitterWorldPosition(node);
+            system.Update(pdt, worldPos);
+        }
+
+        RequestNextFrameRendering();
+
+        // Throttled diagnostic (~1s) so UAT can confirm particles are alive without log spam.
+        if ((now - _lastParticleLogTime).TotalSeconds >= 1.0)
+        {
+            _lastParticleLogTime = now;
+            int liveTotal = 0;
+            foreach (var (_, system) in _particleSystems)
+                liveTotal += system.LiveCount;
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"[Particle] systems={_particleSystems.Count} liveTotal={liveTotal}");
+        }
+    }
+
+    /// <summary>
+    /// World-space spawn origin for an emitter node (#2395). Reuses the same node-hierarchy
+    /// world-transform plumbing the mesh path uses (<see cref="ModelViewController.GetWorldTransform(MdlNode?)"/>,
+    /// which composes Position/Orientation/Scale up the Parent chain), transforming the local
+    /// origin to world space. NOTE: the mesh buffer additionally pre-centers vertices by the
+    /// model's geometric center (UpdateMeshBuffersCore Pass 2); particle positions are NOT yet
+    /// centered to match, so the sim runs in raw model space. This is fine for sim-only wiring —
+    /// the next (render) task will reconcile particle coords with the centered mesh frame.
+    /// </summary>
+    private static Vector3 GetEmitterWorldPosition(MdlEmitterNode node)
+    {
+        var world = ModelViewController.GetWorldTransform(node);
+        return ModelViewController.TransformPosition(Vector3.Zero, world);
     }
 
     /// <summary>
