@@ -8,6 +8,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.8-alpha] - 2026-06-08
+**Branch**: `quartermaster/issue-2395` | **PR**: #2432
+
+### Model preview: render particle emitters (#2395)
+
+- Emitter nodes (glow orbs, sparkle trails, ghost wisps) now simulate and render as textured billboards in the shared model preview, animating at idle. Aurora particle math ported from rollnw + nwn_mdl_webviewer (MIT) — see README acknowledgments. Unsupported emitter modes fall back to a camera-facing billboard.
+
+---
+
+## [Radoub.Formats 0.2.66-alpha] - 2026-06-08
+**Branch**: `quartermaster/issue-2395` | **PR**: #2432
+
+### MDL emitter controllers + texture-width fix (#2395)
+
+- Binary and ASCII MDL readers now parse emitter controller params (birthrate, lifeExp, velocity, size/color/alpha curves, spread, etc.) into typed fields. Fixed a pre-existing emitter texture-field width bug (32→64 bytes) that misaligned the fields after the texture name.
+
+---
+
 ## [Radoub.UI 0.2.7-alpha] - 2026-06-07
 **Branch**: `reliquary/sprint/inventory-and-defaults` | **PR**: #2420
 
