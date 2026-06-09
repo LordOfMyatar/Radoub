@@ -416,12 +416,12 @@ public partial class MdlBinaryReader
                     case 180: if (scalarOk) em.SizeEndY = ReadScalar(); break;
                     case 184: if (scalarOk) em.Spread = ReadScalar(); break;
                     case 192: if (scalarOk) em.Velocity = ReadScalar(); break;
-                    case 464: if (scalarOk) em.AlphaMid = ReadScalar(); break;
-                    case 468: if (colorOk) em.ColorMid = ReadColor(); break;
+                    case 464: if (scalarOk) { em.AlphaMid = ReadScalar(); em.HasAlphaMid = true; } break;
+                    case 468: if (colorOk) { em.ColorMid = ReadColor(); em.HasColorMid = true; } break;
                     case 480: if (scalarOk) em.PercentStart = ReadScalar(); break;
                     case 481: if (scalarOk) em.PercentMid = ReadScalar(); break;
                     case 482: if (scalarOk) em.PercentEnd = ReadScalar(); break;
-                    case 484: if (scalarOk) em.SizeMid = ReadScalar(); break;
+                    case 484: if (scalarOk) { em.SizeMid = ReadScalar(); em.HasSizeMid = true; } break;
                     case 488: if (scalarOk) em.SizeMidY = ReadScalar(); break;
                 }
             }

@@ -230,7 +230,7 @@ public partial class MdlAsciiReader
                 break;
 
             case "sizemid":
-                if (tokens.Length >= 2) emitter.SizeMid = ParseFloat(tokens[1]);
+                if (tokens.Length >= 2) { emitter.SizeMid = ParseFloat(tokens[1]); emitter.HasSizeMid = true; }
                 break;
 
             case "sizemid_y":
@@ -251,8 +251,11 @@ public partial class MdlAsciiReader
 
             case "colormid":
                 if (tokens.Length >= 4)
+                {
                     emitter.ColorMid = new Vector3(
                         ParseFloat(tokens[1]), ParseFloat(tokens[2]), ParseFloat(tokens[3]));
+                    emitter.HasColorMid = true;
+                }
                 break;
 
             case "alphastart":
@@ -264,7 +267,7 @@ public partial class MdlAsciiReader
                 break;
 
             case "alphamid":
-                if (tokens.Length >= 2) emitter.AlphaMid = ParseFloat(tokens[1]);
+                if (tokens.Length >= 2) { emitter.AlphaMid = ParseFloat(tokens[1]); emitter.HasAlphaMid = true; }
                 break;
 
             case "percentstart":

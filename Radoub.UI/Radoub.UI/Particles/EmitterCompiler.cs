@@ -66,20 +66,27 @@ public static class EmitterCompiler
         float pMid = Math.Max(pStart, Clamp01(node.PercentMid));
         float pEnd = Math.Max(pMid, Clamp01(node.PercentEnd));
 
+        // When a mid controller was not authored, default the mid value to the
+        // start/end midpoint instead of the field default (white / 1.0). Mirrors
+        // rollnw mdl_particle_import.cpp vec3_or(..., mix(start, end, 0.5)) (#2395).
+        float alphaMid = node.HasAlphaMid ? node.AlphaMid : (node.AlphaStart + node.AlphaEnd) * 0.5f;
+        float sizeMid = node.HasSizeMid ? node.SizeMid : (node.SizeStart + node.SizeEnd) * 0.5f;
+        var colorMid = node.HasColorMid ? node.ColorMid : (node.ColorStart + node.ColorEnd) * 0.5f;
+
         result.OverLife.Alpha = ThreeKeyCurve(pStart, pMid, pEnd,
-            node.AlphaStart, node.AlphaMid, node.AlphaEnd);
+            node.AlphaStart, alphaMid, node.AlphaEnd);
 
         // SizeY falls back to the X value when the corresponding _Y field is 0.
-        float sizeMidY = node.SizeMidY == 0f ? node.SizeMid : node.SizeMidY;
+        float sizeMidY = node.SizeMidY == 0f ? sizeMid : node.SizeMidY;
         float sizeEndY = node.SizeEndY == 0f ? node.SizeEnd : node.SizeEndY;
 
         result.OverLife.SizeX = ThreeKeyCurve(pStart, pMid, pEnd,
-            node.SizeStart, node.SizeMid, node.SizeEnd);
+            node.SizeStart, sizeMid, node.SizeEnd);
         result.OverLife.SizeY = ThreeKeyCurve(pStart, pMid, pEnd,
             sizeStartY, sizeMidY, sizeEndY);
 
         result.OverLife.Color = ThreeKeyGradient(pStart, pMid, pEnd,
-            node.ColorStart, node.ColorMid, node.ColorEnd);
+            node.ColorStart, colorMid, node.ColorEnd);
 
         return result;
     }

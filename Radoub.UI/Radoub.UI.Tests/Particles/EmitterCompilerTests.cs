@@ -17,9 +17,11 @@ public class EmitterCompilerTests
         Spread = 0.3f,
         SizeStart = 0.4f,
         SizeMid = 0.6f,
+        HasSizeMid = true,
         SizeEnd = 0.1f,
         AlphaStart = 1f,
         AlphaMid = 1f,
+        HasAlphaMid = true,
         AlphaEnd = 0f,
         PercentStart = 0f,
         PercentMid = 0.5f,
@@ -119,6 +121,47 @@ public class EmitterCompilerTests
         node.SizeStart = 0.4f;
         node.SizeStartY = 0f;
         Assert.Equal(0.4f, EmitterCompiler.Compile(node).SizeY.Min, 5);
+    }
+
+    [Fact]
+    public void Compile_NoColorMid_UsesStartEndMidpoint()
+    {
+        // zodrat-style: ColorStart == ColorEnd == yellow, no authored ColorMid.
+        // Unauthored mid must default to the start/end midpoint (yellow), not white.
+        var node = SampleNode();
+        node.ColorStart = new Vector3(1f, 0.96f, 0f);
+        node.ColorEnd = new Vector3(1f, 0.96f, 0f);
+        node.HasColorMid = false; // ColorMid left at default (white)
+        node.PercentStart = 0f;
+        node.PercentMid = 0.5f;
+        node.PercentEnd = 1f;
+
+        var compiled = EmitterCompiler.Compile(node);
+        var mid = compiled.OverLife.Color.Eval(0.5f);
+
+        Assert.Equal(1f, mid.X, 3);
+        Assert.Equal(0.96f, mid.Y, 3);
+        Assert.Equal(0f, mid.Z, 3);
+    }
+
+    [Fact]
+    public void Compile_WithColorMid_UsesAuthoredMid()
+    {
+        var node = SampleNode();
+        node.ColorStart = new Vector3(1f, 0f, 0f);
+        node.ColorEnd = new Vector3(0f, 0f, 1f);
+        node.ColorMid = new Vector3(0f, 1f, 0f);
+        node.HasColorMid = true;
+        node.PercentStart = 0f;
+        node.PercentMid = 0.5f;
+        node.PercentEnd = 1f;
+
+        var compiled = EmitterCompiler.Compile(node);
+        var mid = compiled.OverLife.Color.Eval(0.5f);
+
+        Assert.Equal(0f, mid.X, 3);
+        Assert.Equal(1f, mid.Y, 3);
+        Assert.Equal(0f, mid.Z, 3);
     }
 
     [Fact]

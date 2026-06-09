@@ -63,6 +63,34 @@ public class MdlEmitterTests
         Assert.Equal(3, emitter.RenderOrder); // misaligned under the old 32-byte bug
     }
 
+    [Fact]
+    public void EmitterNode_ColorMidController_SetsHasColorMidTrue()
+    {
+        var bytes = EmitterMdlFixture.BuildSingleEmitter(
+            colorStart: new Vector3(1f, 0.96f, 0f),
+            colorMid: new Vector3(0.5f, 0.5f, 0.5f),
+            colorEnd: new Vector3(1f, 0.96f, 0f));
+
+        var model = new MdlBinaryReader().Parse(bytes);
+        var emitter = model.EnumerateAllNodes().OfType<MdlEmitterNode>().Single();
+
+        Assert.True(emitter.HasColorMid);
+        Assert.Equal(new Vector3(0.5f, 0.5f, 0.5f), emitter.ColorMid);
+    }
+
+    [Fact]
+    public void EmitterNode_NoColorMidController_LeavesHasColorMidFalse()
+    {
+        var bytes = EmitterMdlFixture.BuildSingleEmitter(
+            colorStart: new Vector3(1f, 0.96f, 0f),
+            colorEnd: new Vector3(1f, 0.96f, 0f));
+
+        var model = new MdlBinaryReader().Parse(bytes);
+        var emitter = model.EnumerateAllNodes().OfType<MdlEmitterNode>().Single();
+
+        Assert.False(emitter.HasColorMid);
+    }
+
     /// <summary>
     /// Real-file parity: the ASCII reader must parse emitter string + numeric
     /// controller props from a genuine NWN model (c_allip_d.mdl, OmenEmitter01/02).

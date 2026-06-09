@@ -482,6 +482,16 @@ public class MdlEmitterNode : MdlNode
 
     /// <summary>Emitter flags bitfield (node header field 0x144).</summary>
     public uint EmitterFlags { get; set; }        // 0x144
+
+    /// <summary>True when a ColorMid (468) controller was authored. When false, the
+    /// compiler defaults the mid color to the start/end midpoint instead of white (#2395).</summary>
+    public bool HasColorMid { get; set; }
+
+    /// <summary>True when an AlphaMid (464) controller was authored (#2395).</summary>
+    public bool HasAlphaMid { get; set; }
+
+    /// <summary>True when a SizeMid (484) controller was authored (#2395).</summary>
+    public bool HasSizeMid { get; set; }
 }
 
 /// <summary>
