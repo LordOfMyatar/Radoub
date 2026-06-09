@@ -67,9 +67,9 @@ public class ParticleSystemTests
         node.Grav = 1f;
         var sys = new ParticleSystem(Compile(node), seed: 3u);
 
-        // Small update spawns one particle (birthRate 1 * dt accumulates over time;
-        // use a dt that crosses 1 spawn threshold).
-        sys.Update(1f);
+        // birthRate 1 * dt accumulates; step in clamped-size frames until one spawns.
+        for (int i = 0; i < 20 && sys.LiveCount == 0; i++)
+            sys.Update(0.1f);
         Assert.True(sys.LiveCount >= 1, "expected at least one particle spawned");
         float z0 = sys.FirstParticle.Position.Z;
 
@@ -97,7 +97,9 @@ public class ParticleSystemTests
         node.PercentEnd = 1f;
         var sys = new ParticleSystem(Compile(node), seed: 4u);
 
-        sys.Update(1f); // spawn one (age becomes ~ the dt past spawn)
+        // birthRate 1 * dt accumulates; step in clamped-size frames until one spawns.
+        for (int i = 0; i < 20 && sys.LiveCount == 0; i++)
+            sys.Update(0.1f);
         Assert.True(sys.LiveCount >= 1, "expected at least one particle spawned");
 
         // Advance until first particle age ~= 0.5.
@@ -106,5 +108,73 @@ public class ParticleSystemTests
             sys.Update(0.01f);
 
         Assert.InRange(sys.FirstParticle.SizeX, 0.4f, 0.6f);
+    }
+
+    [Fact]
+    public void Update_ZeroDt_IsNoOp()
+    {
+        var node = BaseNode();
+        node.BirthRate = 100f;
+        node.LifeExp = 10f;
+        var sys = new ParticleSystem(Compile(node), seed: 5u);
+
+        for (int i = 0; i < 30; i++)
+            sys.Update(1f / 30f);
+        int before = sys.LiveCount;
+        Assert.True(before > 0, "expected particles spawned before the zero-dt call");
+
+        sys.Update(0f);
+
+        Assert.Equal(before, sys.LiveCount);
+    }
+
+    [Fact]
+    public void Update_NegativeDt_IsNoOp()
+    {
+        var node = BaseNode();
+        node.BirthRate = 100f;
+        node.LifeExp = 10f;
+        var sys = new ParticleSystem(Compile(node), seed: 6u);
+
+        for (int i = 0; i < 30; i++)
+            sys.Update(1f / 30f);
+        int before = sys.LiveCount;
+        Assert.True(before > 0, "expected particles spawned before the negative-dt call");
+
+        sys.Update(-1f);
+
+        Assert.Equal(before, sys.LiveCount);
+    }
+
+    [Fact]
+    public void Update_HugeDt_DoesNotSpawnUnbounded()
+    {
+        var node = BaseNode();
+        node.BirthRate = 100f;
+        node.LifeExp = 10f;
+        var sys = new ParticleSystem(Compile(node), seed: 7u);
+
+        // Huge dt is clamped (MaxFrameDt) and spawns are capped (MaxSpawnPerFrame).
+        sys.Update(1000f, System.Numerics.Vector3.Zero);
+
+        Assert.True(sys.LiveCount <= 4096,
+            $"expected spawn cap to bound LiveCount, got {sys.LiveCount}");
+    }
+
+    [Fact]
+    public void Update_ZeroLifetime_DoesNotThrow()
+    {
+        var node = BaseNode();
+        node.BirthRate = 100f;
+        node.LifeExp = 0f; // compiler clamps to 0; particles die immediately
+        var sys = new ParticleSystem(Compile(node), seed: 8u);
+
+        var ex = Record.Exception(() =>
+        {
+            for (int i = 0; i < 3; i++)
+                sys.Update(1f / 30f);
+        });
+
+        Assert.Null(ex);
     }
 }

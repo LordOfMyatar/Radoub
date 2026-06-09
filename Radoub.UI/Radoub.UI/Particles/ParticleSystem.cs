@@ -33,6 +33,12 @@ public sealed class ParticleSystem
 {
     private const float GravityConstant = 9.81f;
 
+    /// <summary>Clamp ceiling for a single frame's dt (100ms) so a frame hitch can't fast-forward the sim.</summary>
+    private const float MaxFrameDt = 0.1f;
+
+    /// <summary>Hard cap on particles spawned in one Update call so a pathological BirthRate can't spike allocations.</summary>
+    private const int MaxSpawnPerFrame = 4096;
+
     private readonly CompiledEmitter _emitter;
     private readonly ParticleRng _rng;
     private readonly List<Particle> _particles = new();
@@ -49,6 +55,8 @@ public sealed class ParticleSystem
     public IReadOnlyList<Particle> Particles => _particles;
 
     /// <summary>First live particle (test/inspection convenience).</summary>
+    /// <remarks>Intended for tests/inspection only; check <see cref="LiveCount"/> first.</remarks>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when no particles are live.</exception>
     public Particle FirstParticle => _particles[0];
 
     /// <summary>Advance the simulation, spawning at the origin.</summary>
@@ -61,6 +69,10 @@ public sealed class ParticleSystem
     /// </summary>
     public void Update(float dt, Vector3 emitterWorldPos)
     {
+        if (!float.IsFinite(dt) || dt <= 0f)
+            return;                          // NaN/negative/zero frame: nothing to advance
+        dt = MathF.Min(dt, MaxFrameDt);      // clamp frame hitch
+
         IntegrateAndCull(dt);
         SpawnForFrame(dt, emitterWorldPos);
     }
@@ -71,6 +83,7 @@ public sealed class ParticleSystem
         // drag multiplies velocity by (1-drag)^dt each step. NWN world up is +Z, so
         // gravity pulls -Z; negative mass makes a particle rise.
         float dragFactor = MathF.Pow(MathF.Max(1f - _emitter.Drag, 0f), dt);
+        // Aurora gravity = 9.81 * mass (locked rollnw constant); CompiledEmitter.Grav is the separate point-attractor field, intentionally unused in MVP. See #2395.
         var gravity = new Vector3(0f, 0f, -1f) * (GravityConstant * _emitter.Mass);
 
         for (int i = _particles.Count - 1; i >= 0; i--)
@@ -104,10 +117,17 @@ public sealed class ParticleSystem
     private void SpawnForFrame(float dt, Vector3 emitterWorldPos)
     {
         _spawnAcc += _emitter.BirthRate * dt;
+        int spawned = 0;
         while (_spawnAcc >= 1f)
         {
+            if (spawned >= MaxSpawnPerFrame)
+            {
+                _spawnAcc = 0f;   // drain carry so the cap doesn't run away into the next frame
+                break;
+            }
             Spawn(emitterWorldPos);
             _spawnAcc -= 1f;
+            spawned++;
         }
     }
 

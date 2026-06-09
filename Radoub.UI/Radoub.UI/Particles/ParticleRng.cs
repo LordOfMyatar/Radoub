@@ -20,7 +20,8 @@ public sealed class ParticleRng
     /// <summary>Next unit float in [0, 1).</summary>
     public float NextUnit()
     {
-        // rollnw advance_rng: LCG step, then take top 16 bits as a fraction.
+        // rollnw advance_rng: LCG step, then take top 24 bits as a fraction.
+        // Matches rollnw random_unit_f32: (advance_rng(state) >> 8) * (1/16777216).
         _state = _state * 1664525u + 1013904223u;
         return (_state >> 8) * (1f / 16777216f);
     }
