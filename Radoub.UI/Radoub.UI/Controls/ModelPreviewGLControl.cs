@@ -37,7 +37,7 @@ public enum PreviewState
 /// GPU-accelerated control for rendering 3D model previews using OpenGL.
 /// Provides proper depth buffer, perspective-correct texture mapping, and lighting.
 /// </summary>
-public class ModelPreviewGLControl : OpenGlControlBase
+public partial class ModelPreviewGLControl : OpenGlControlBase
 {
     static ModelPreviewGLControl()
     {
@@ -52,6 +52,16 @@ public class ModelPreviewGLControl : OpenGlControlBase
     private uint _vbo;
     private uint _ebo;
     private int _indexCount;
+
+    // OpenGL ES vs desktop GL — detected in OnOpenGlInit, reused for the particle
+    // shader version preamble so particles match the mesh shader's profile (#2395).
+    private bool _isOpenGLES;
+
+    // Geometric center the mesh path subtracts from every vertex so the model sits at
+    // origin (UpdateMeshBuffersCore Pass 2). Particle sim runs in RAW (un-centered) model
+    // space, so the render path subtracts this same center to align particles with the
+    // mesh (#2395). Stays Vector3.Zero until a mesh is built.
+    private Vector3 _modelCenter;
     private readonly Dictionary<string, uint> _textureCache = new();
     // Names of textures in _textureCache that came from PLT sources and depend on
     // the current color indices. Color-index changes invalidate only these — not
@@ -105,7 +115,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
     // model. Driven by the same 30fps clock as animation (OnAnimTick), but runs even when
     // no skeletal animation is selected/playing — emitters animate at idle. NO rendering
     // here yet; this task spawns/updates particles in memory and proves it via logs.
-    private readonly List<(MdlEmitterNode node, Radoub.UI.Particles.ParticleSystem system)> _particleSystems = new();
+    private readonly List<(MdlEmitterNode node, Radoub.UI.Particles.CompiledEmitter emitter, Radoub.UI.Particles.ParticleSystem system)> _particleSystems = new();
     private DateTime _particleLastTick = DateTime.UtcNow;
     private DateTime _lastParticleLogTime = DateTime.MinValue;
 
@@ -567,7 +577,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
             {
                 var compiled = Radoub.UI.Particles.EmitterCompiler.Compile(emitter);
                 var system = new Radoub.UI.Particles.ParticleSystem(compiled, (uint)(index + 1));
-                _particleSystems.Add((emitter, system));
+                _particleSystems.Add((emitter, compiled, system));
                 index++;
             }
             catch (Exception ex)
@@ -597,7 +607,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
         float pdt = (float)(now - _particleLastTick).TotalSeconds;
         _particleLastTick = now;
 
-        foreach (var (node, system) in _particleSystems)
+        foreach (var (node, _, system) in _particleSystems)
         {
             var worldPos = GetEmitterWorldPosition(node);
             system.Update(pdt, worldPos);
@@ -610,7 +620,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
         {
             _lastParticleLogTime = now;
             int liveTotal = 0;
-            foreach (var (_, system) in _particleSystems)
+            foreach (var (_, _, system) in _particleSystems)
                 liveTotal += system.LiveCount;
             UnifiedLogger.LogApplication(LogLevel.DEBUG,
                 $"[Particle] systems={_particleSystems.Count} liveTotal={liveTotal}");
@@ -849,6 +859,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
             // or desktop OpenGL (GLX on Linux) — shaders need different version preambles.
             var versionString = _gl.GetStringS(StringName.Version) ?? "";
             var isOpenGLES = versionString.Contains("OpenGL ES", StringComparison.OrdinalIgnoreCase);
+            _isOpenGLES = isOpenGLES;  // reused by the particle shader preamble (#2395)
             var renderer = _gl.GetStringS(StringName.Renderer) ?? "unknown";
             UnifiedLogger.LogApplication(LogLevel.INFO,
                 $"GL context: {versionString} | Renderer: {renderer} | ES={isOpenGLES}");
@@ -890,6 +901,10 @@ public class ModelPreviewGLControl : OpenGlControlBase
                 _gl.DeleteVertexArray(_vao);
                 _shaderManager?.Cleanup();
                 _shaderManager = null;
+
+                // Particle GL resources (#2395)
+                CleanupParticleGl();
+
                 _gl = null;
             }
         }
@@ -1086,6 +1101,23 @@ public class ModelPreviewGLControl : OpenGlControlBase
         }
 
         _gl.BindVertexArray(0);
+
+        // Particle billboards draw AFTER the opaque mesh, sharing the same model rotation
+        // so they spin with the model. Uses its own program/VAO/VBO and restores all GL
+        // state it touches. Wrapped so a particle GL failure can never break the mesh
+        // render (CLAUDE.md: never throw into the render loop) (#2395).
+        if (_particleSystems.Count > 0)
+        {
+            try
+            {
+                RenderParticles(modelMatrix, view, projection);
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"[Particle] render failed (non-fatal): {ex.GetType().Name}: {ex.Message}");
+            }
+        }
     }
 
     private void UpdateMeshBuffers()
@@ -1115,6 +1147,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
         if (_gl == null || _model == null) return;
 
         _meshDrawCalls.Clear();
+        _modelCenter = Vector3.Zero;  // reset; set below if a valid geometric center is computed (#2395)
 
         // Two-pass vertex collection:
         // Pass 1: Collect world-space vertices and compute geometric center
@@ -1397,6 +1430,10 @@ public class ModelPreviewGLControl : OpenGlControlBase
                 (minX + maxX) * 0.5f,
                 (minY + maxY) * 0.5f,
                 (minZ + maxZ) * 0.5f);
+
+            // Store for the particle render path: particles sim in raw model space and
+            // must subtract this same center to align with the centered mesh (#2395).
+            _modelCenter = center;
 
             // Subtract center from all vertex positions (every 8 floats, first 3 are XYZ)
             for (int i = 0; i < vertices.Count; i += 8)
