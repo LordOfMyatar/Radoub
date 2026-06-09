@@ -1545,6 +1545,15 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                 textureNames.Add(mesh.Bitmap.ToLowerInvariant());
         }
 
+        // #2395: include emitter particle textures so they load into _textureCache
+        // (the particle render path looks them up by Material.Texture).
+        foreach (var (_, emitter, _) in _particleSystems)
+        {
+            var t = emitter.Material.Texture;
+            if (!string.IsNullOrEmpty(t) && !t.Equals("null", StringComparison.OrdinalIgnoreCase))
+                textureNames.Add(t.ToLowerInvariant());
+        }
+
         // Delete old textures that are no longer needed
         var toRemove = new List<string>();
         foreach (var kvp in _textureCache)
