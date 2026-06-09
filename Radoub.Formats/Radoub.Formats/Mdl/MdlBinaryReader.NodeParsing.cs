@@ -1,6 +1,7 @@
 // MDL Binary Reader - Node parsing
 // Partial class for node creation and property routing
 
+using System;
 using System.Numerics;
 using System.Text;
 
@@ -370,6 +371,59 @@ public partial class MdlBinaryReader
                 if (valuePos + 4 > _modelData.Length) continue;
                 stream.Position = valuePos;
                 light2.Radius = reader.ReadSingle();
+            }
+            else if (node is MdlEmitterNode em)
+            {
+                // Reached only for non-Light nodes; types 8/20/36 (position/orient/scale)
+                // are handled by the ungated branches above, so they never enter this switch.
+                // The per-case `if (scalarOk/colorOk)` gating is the intentional equivalent of
+                // the `continue`-skip used by the Position/Light branches.
+                // Emitter controllers — read ROW-0 (bind) value only.
+                // TODO(#2395 follow-up): keyed emitter controllers (multi-row animation);
+                // also gate color cases on columns>=3 for defense-in-depth against malformed files.
+                float ReadScalar()
+                {
+                    stream.Position = valuePos;
+                    return reader.ReadSingle();
+                }
+                Vector3 ReadColor()
+                {
+                    stream.Position = valuePos;
+                    return ReadVector3(reader);
+                }
+                bool scalarOk = valuePos + 4 <= _modelData.Length;
+                bool colorOk = valuePos + 12 <= _modelData.Length;
+
+                switch (type)
+                {
+                    case 80: if (scalarOk) em.AlphaEnd = ReadScalar(); break;
+                    case 84: if (scalarOk) em.AlphaStart = ReadScalar(); break;
+                    case 88: if (scalarOk) em.BirthRate = ReadScalar(); break;
+                    case 96: if (colorOk) em.ColorEnd = ReadColor(); break;
+                    case 108: if (colorOk) em.ColorStart = ReadColor(); break;
+                    case 124: if (scalarOk) em.Drag = ReadScalar(); break;
+                    case 128: if (scalarOk) em.Fps = ReadScalar(); break;
+                    case 132: if (scalarOk) em.FrameEnd = (int)MathF.Round(ReadScalar()); break;
+                    case 136: if (scalarOk) em.FrameStart = (int)MathF.Round(ReadScalar()); break;
+                    case 140: if (scalarOk) em.Grav = ReadScalar(); break;
+                    case 144: if (scalarOk) em.LifeExp = ReadScalar(); break;
+                    case 148: if (scalarOk) em.Mass = ReadScalar(); break;
+                    case 160: if (scalarOk) em.ParticleRot = ReadScalar(); break;
+                    case 164: if (scalarOk) em.RandVel = ReadScalar(); break;
+                    case 168: if (scalarOk) em.SizeStart = ReadScalar(); break;
+                    case 172: if (scalarOk) em.SizeEnd = ReadScalar(); break;
+                    case 176: if (scalarOk) em.SizeStartY = ReadScalar(); break;
+                    case 180: if (scalarOk) em.SizeEndY = ReadScalar(); break;
+                    case 184: if (scalarOk) em.Spread = ReadScalar(); break;
+                    case 192: if (scalarOk) em.Velocity = ReadScalar(); break;
+                    case 464: if (scalarOk) { em.AlphaMid = ReadScalar(); em.HasAlphaMid = true; } break;
+                    case 468: if (colorOk) { em.ColorMid = ReadColor(); em.HasColorMid = true; } break;
+                    case 480: if (scalarOk) em.PercentStart = ReadScalar(); break;
+                    case 481: if (scalarOk) em.PercentMid = ReadScalar(); break;
+                    case 482: if (scalarOk) em.PercentEnd = ReadScalar(); break;
+                    case 484: if (scalarOk) { em.SizeMid = ReadScalar(); em.HasSizeMid = true; } break;
+                    case 488: if (scalarOk) em.SizeMidY = ReadScalar(); break;
+                }
             }
         }
     }

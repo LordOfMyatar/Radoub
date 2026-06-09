@@ -25,25 +25,23 @@ public partial class MdlBinaryReader
 
     private void ParseEmitterNode(MdlEmitterNode emitter, BinaryReader reader)
     {
-        // Skip dead space, blast radius/length
-        reader.BaseStream.Position += 12;
-
-        emitter.XGrid = reader.ReadInt32();
-        emitter.YGrid = reader.ReadInt32();
-
-        // Skip spawn type uint
-        reader.ReadUInt32();
-
-        emitter.Update = ReadFixedString(reader, 32);
-        emitter.RenderMethod = ReadFixedString(reader, 32);
-        emitter.Blend = ReadFixedString(reader, 32);
-        emitter.Texture = ReadFixedString(reader, 32);
-        // Skip chunk name
-        ReadFixedString(reader, 16);
-
-        // Skip to flags
-        reader.BaseStream.Position += 8;
-        // Read flags as needed
+        // Reader is positioned at node+0x70 (end of node header) on entry.
+        reader.ReadSingle();                 // 0x70 deadSpace
+        reader.ReadSingle();                 // 0x74 blastRadius
+        reader.ReadSingle();                 // 0x78 blastLength
+        emitter.XGrid = reader.ReadInt32();  // 0x7C
+        emitter.YGrid = reader.ReadInt32();  // 0x80
+        reader.ReadUInt32();                 // 0x84 spawnType
+        emitter.Update = ReadFixedString(reader, 32);       // 0x88
+        emitter.RenderMethod = ReadFixedString(reader, 32); // 0xA8
+        emitter.Blend = ReadFixedString(reader, 32);        // 0xC8
+        emitter.Texture = ReadFixedString(reader, 64);      // 0xE8 (64, not 32 — the bug)
+        ReadFixedString(reader, 16);         // 0x128 chunkName (unused)
+        reader.ReadUInt32();                 // 0x138 twoSidedTex
+        emitter.Loop = reader.ReadUInt32() != 0;            // 0x13C
+        emitter.RenderOrder = reader.ReadUInt16();          // 0x140
+        reader.ReadUInt16();                 // 0x142 pad
+        emitter.EmitterFlags = reader.ReadUInt32();         // 0x144
     }
 
     private void ParseReferenceNode(MdlReferenceNode reference, BinaryReader reader)

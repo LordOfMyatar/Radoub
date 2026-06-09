@@ -395,6 +395,103 @@ public class MdlEmitterNode : MdlNode
 
     /// <summary>P2P uses Bezier curves.</summary>
     public bool P2PBezier { get; set; }
+
+    // ---- Controller-backed numeric fields (#2395) ----
+    // NWN emitter controller IDs are noted in each comment.
+
+    /// <summary>Particles spawned per second.</summary>
+    public float BirthRate { get; set; }          // 88
+
+    /// <summary>Particle lifespan in seconds.</summary>
+    public float LifeExp { get; set; }            // 144
+
+    /// <summary>Initial particle velocity.</summary>
+    public float Velocity { get; set; }           // 192
+
+    /// <summary>Random velocity component.</summary>
+    public float RandVel { get; set; }            // 164
+
+    /// <summary>Emission spread (radians, half-angle).</summary>
+    public float Spread { get; set; }             // 184
+
+    /// <summary>Particle mass (for gravity/drag).</summary>
+    public float Mass { get; set; }               // 148
+
+    /// <summary>Gravity applied to particles.</summary>
+    public float Grav { get; set; }               // 140
+
+    /// <summary>Drag applied to particles.</summary>
+    public float Drag { get; set; }               // 124
+
+    /// <summary>Particle rotation.</summary>
+    public float ParticleRot { get; set; }        // 160
+
+    /// <summary>Texture animation frames per second.</summary>
+    public float Fps { get; set; }                // 128
+
+    /// <summary>First texture animation frame.</summary>
+    public int FrameStart { get; set; }           // 136
+
+    /// <summary>Last texture animation frame.</summary>
+    public int FrameEnd { get; set; }             // 132
+
+    /// <summary>Particle size at birth.</summary>
+    public float SizeStart { get; set; }          // 168
+
+    /// <summary>Particle size at death.</summary>
+    public float SizeEnd { get; set; }            // 172
+
+    /// <summary>Particle Y size at birth.</summary>
+    public float SizeStartY { get; set; }         // 176
+
+    /// <summary>Particle Y size at death.</summary>
+    public float SizeEndY { get; set; }           // 180
+
+    /// <summary>Particle size at midpoint.</summary>
+    public float SizeMid { get; set; }            // 484
+
+    /// <summary>Particle Y size at midpoint.</summary>
+    public float SizeMidY { get; set; }           // 488
+
+    /// <summary>Particle color at birth (RGB).</summary>
+    public Vector3 ColorStart { get; set; } = Vector3.One;  // 108
+
+    /// <summary>Particle color at death (RGB).</summary>
+    public Vector3 ColorEnd { get; set; } = Vector3.One;    // 96
+
+    /// <summary>Particle color at midpoint (RGB).</summary>
+    public Vector3 ColorMid { get; set; } = Vector3.One;    // 468
+
+    /// <summary>Particle alpha at birth.</summary>
+    public float AlphaStart { get; set; } = 1f;   // 84
+
+    /// <summary>Particle alpha at death.</summary>
+    public float AlphaEnd { get; set; }           // 80
+
+    /// <summary>Particle alpha at midpoint.</summary>
+    public float AlphaMid { get; set; } = 1f;     // 464
+
+    /// <summary>Lifetime fraction where the start segment ends.</summary>
+    public float PercentStart { get; set; }       // 480
+
+    /// <summary>Lifetime fraction of the midpoint.</summary>
+    public float PercentMid { get; set; } = 0.5f; // 481
+
+    /// <summary>Lifetime fraction where the end segment begins.</summary>
+    public float PercentEnd { get; set; } = 1f;   // 482
+
+    /// <summary>Emitter flags bitfield (node header field 0x144).</summary>
+    public uint EmitterFlags { get; set; }        // 0x144
+
+    /// <summary>True when a ColorMid (468) controller was authored. When false, the
+    /// compiler defaults the mid color to the start/end midpoint instead of white (#2395).</summary>
+    public bool HasColorMid { get; set; }
+
+    /// <summary>True when an AlphaMid (464) controller was authored (#2395).</summary>
+    public bool HasAlphaMid { get; set; }
+
+    /// <summary>True when a SizeMid (484) controller was authored (#2395).</summary>
+    public bool HasSizeMid { get; set; }
 }
 
 /// <summary>

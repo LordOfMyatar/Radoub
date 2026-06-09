@@ -37,7 +37,7 @@ public enum PreviewState
 /// GPU-accelerated control for rendering 3D model previews using OpenGL.
 /// Provides proper depth buffer, perspective-correct texture mapping, and lighting.
 /// </summary>
-public class ModelPreviewGLControl : OpenGlControlBase
+public partial class ModelPreviewGLControl : OpenGlControlBase
 {
     static ModelPreviewGLControl()
     {
@@ -52,6 +52,16 @@ public class ModelPreviewGLControl : OpenGlControlBase
     private uint _vbo;
     private uint _ebo;
     private int _indexCount;
+
+    // OpenGL ES vs desktop GL — detected in OnOpenGlInit, reused for the particle
+    // shader version preamble so particles match the mesh shader's profile (#2395).
+    private bool _isOpenGLES;
+
+    // Geometric center the mesh path subtracts from every vertex so the model sits at
+    // origin (UpdateMeshBuffersCore Pass 2). Particle sim runs in RAW (un-centered) model
+    // space, so the render path subtracts this same center to align particles with the
+    // mesh (#2395). Stays Vector3.Zero until a mesh is built.
+    private Vector3 _modelCenter;
     private readonly Dictionary<string, uint> _textureCache = new();
     // Names of textures in _textureCache that came from PLT sources and depend on
     // the current color indices. Color-index changes invalidate only these — not
@@ -101,6 +111,14 @@ public class ModelPreviewGLControl : OpenGlControlBase
     private Dictionary<string, ModelViewController.NodePose>? _cachedPose;
     private Avalonia.Threading.DispatcherTimer? _animTimer;
 
+    // Particle simulation lifecycle (#2395). One ParticleSystem per emitter node in the
+    // model. Driven by the same 30fps clock as animation (OnAnimTick), but runs even when
+    // no skeletal animation is selected/playing — emitters animate at idle. NO rendering
+    // here yet; this task spawns/updates particles in memory and proves it via logs.
+    private readonly List<(MdlEmitterNode node, Radoub.UI.Particles.CompiledEmitter emitter, Radoub.UI.Particles.ParticleSystem system)> _particleSystems = new();
+    private DateTime _particleLastTick = DateTime.UtcNow;
+    private DateTime _lastParticleLogTime = DateTime.MinValue;
+
     // Pointer drag state (#2124).
     private enum DragMode { None, Rotate, Pan }
     private DragMode _dragMode = DragMode.None;
@@ -148,6 +166,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
             _needsTextureUpdate = true;  // New model needs textures loaded
             _logOncePerModel = true;
             _viewController.CenterCamera();
+            RebuildParticleSystems(value);
             if (value == null)
             {
                 SetPreviewState(PreviewState.None);
@@ -495,6 +514,23 @@ public class ModelPreviewGLControl : OpenGlControlBase
 
     private void OnAnimTick(object? sender, EventArgs e)
     {
+        // Particle simulation runs BEFORE the skeletal-animation early-return (#2395)
+        // so emitters animate even when no animation is selected/playing (the common
+        // case for a static blueprint preview). Never let a sim exception escape into
+        // the timer/render loop (CLAUDE.md) — log WARN and continue.
+        if (_particleSystems.Count > 0)
+        {
+            try
+            {
+                UpdateParticleSystems();
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"[Particle] tick update failed (non-fatal): {ex.GetType().Name}: {ex.Message}");
+            }
+        }
+
         if (!_animPlaying || _activeAnimation == null) return;
 
         var now = DateTime.UtcNow;
@@ -516,6 +552,125 @@ public class ModelPreviewGLControl : OpenGlControlBase
         _cachedPose = null;
         _needsMeshUpdate = true;
         RequestNextFrameRendering();
+    }
+
+    /// <summary>
+    /// (Re)build the per-emitter <see cref="Radoub.UI.Particles.ParticleSystem"/> list for a
+    /// newly-assigned model (#2395). Clears any existing systems, then compiles one system per
+    /// <see cref="MdlEmitterNode"/>. Each system gets a stable, distinct seed (index+1) so
+    /// identical emitters don't move in lockstep. If any emitter exists, resets the particle
+    /// clock and ensures the animation timer runs so the sim advances even with no skeletal
+    /// animation selected.
+    /// </summary>
+    private void RebuildParticleSystems(MdlModel? model)
+    {
+        _particleSystems.Clear();
+
+        if (model == null || !model.HasEmitterNodes())
+            return;
+
+        int index = 0;
+        foreach (var node in model.EnumerateAllNodes())
+        {
+            if (node is not MdlEmitterNode emitter) continue;
+            try
+            {
+                var compiled = Radoub.UI.Particles.EmitterCompiler.Compile(emitter);
+
+                // The MVP renderer treats every emitter as a camera-facing billboard and the sim
+                // only does continuous Fountain emission. Anything else is rendered approximately
+                // (plain billboard) — log once per model so the limitation is visible (#2395).
+                bool unsupportedEmission = compiled.EmissionMode != Radoub.UI.Particles.ParticleEmissionMode.Continuous;
+                bool unsupportedRender = compiled.RenderMode != Radoub.UI.Particles.ParticleRenderMode.Billboard
+                    && compiled.RenderMode != Radoub.UI.Particles.ParticleRenderMode.BillboardWorldZ;
+                if (unsupportedEmission || unsupportedRender)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"[Particle] Emitter '{emitter.Name}' uses mode {compiled.EmissionMode}/{compiled.RenderMode} — rendered as a camera-facing billboard (approximate). (#2395)");
+                }
+
+                var system = new Radoub.UI.Particles.ParticleSystem(compiled, (uint)(index + 1));
+                // Pre-warm to steady-state so the emitter looks already-running on first frame
+                // (Aurora pre-warms; otherwise particles fill in slowly from empty). (#2395)
+                system.PreWarm(GetEmitterWorldPosition(emitter), GetEmitterWorldRotation(emitter));
+                _particleSystems.Add((emitter, compiled, system));
+                index++;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"[Particle] failed to compile emitter '{emitter.Name}' (skipped): {ex.GetType().Name}: {ex.Message}");
+            }
+        }
+
+        if (_particleSystems.Count > 0)
+        {
+            _particleLastTick = DateTime.UtcNow;
+            EnsureAnimTimer();
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"[Particle] built {_particleSystems.Count} particle system(s) for model '{model.Name}'");
+        }
+    }
+
+    /// <summary>
+    /// Advance every particle system by the wall-clock delta since the last particle tick (#2395).
+    /// ParticleSystem already guards/clamps dt internally, so no extra clamp here. Throttled
+    /// DEBUG log (~1s) reports system count + total live particles for the UAT log-smoke check.
+    /// </summary>
+    private void UpdateParticleSystems()
+    {
+        var now = DateTime.UtcNow;
+        float pdt = (float)(now - _particleLastTick).TotalSeconds;
+        _particleLastTick = now;
+
+        foreach (var (node, _, system) in _particleSystems)
+        {
+            var worldPos = GetEmitterWorldPosition(node);
+            var worldRot = GetEmitterWorldRotation(node);
+            system.Update(pdt, worldPos, worldRot);
+        }
+
+        RequestNextFrameRendering();
+
+        // Throttled diagnostic (~1s) so UAT can confirm particles are alive without log spam.
+        if ((now - _lastParticleLogTime).TotalSeconds >= 1.0)
+        {
+            _lastParticleLogTime = now;
+            int liveTotal = 0;
+            foreach (var (_, _, system) in _particleSystems)
+                liveTotal += system.LiveCount;
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"[Particle] systems={_particleSystems.Count} liveTotal={liveTotal}");
+        }
+    }
+
+    /// <summary>
+    /// World-space spawn origin for an emitter node (#2395). Reuses the same node-hierarchy
+    /// world-transform plumbing the mesh path uses (<see cref="ModelViewController.GetWorldTransform(MdlNode?)"/>,
+    /// which composes Position/Orientation/Scale up the Parent chain), transforming the local
+    /// origin to world space. NOTE: the mesh buffer additionally pre-centers vertices by the
+    /// model's geometric center (UpdateMeshBuffersCore Pass 2); particle positions are NOT yet
+    /// centered to match, so the sim runs in raw model space. This is fine for sim-only wiring —
+    /// the next (render) task will reconcile particle coords with the centered mesh frame.
+    /// </summary>
+    private static Vector3 GetEmitterWorldPosition(MdlEmitterNode node)
+    {
+        var world = ModelViewController.GetWorldTransform(node);
+        return ModelViewController.TransformPosition(Vector3.Zero, world);
+    }
+
+    /// <summary>
+    /// World-space rotation for an emitter node (#2395). Mirrors <see cref="GetEmitterWorldPosition"/>:
+    /// composes the node's world transform up the Parent chain, then extracts the rotation as a
+    /// Quaternion. Decomposes (not raw <c>CreateFromRotationMatrix</c>) so any scale in the
+    /// transform doesn't corrupt the rotation; falls back to identity if decomposition fails.
+    /// </summary>
+    private static Quaternion GetEmitterWorldRotation(MdlEmitterNode node)
+    {
+        var world = ModelViewController.GetWorldTransform(node);
+        return Matrix4x4.Decompose(world, out _, out var rotation, out _)
+            ? rotation
+            : Quaternion.Identity;
     }
 
     /// <summary>
@@ -735,6 +890,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
             // or desktop OpenGL (GLX on Linux) — shaders need different version preambles.
             var versionString = _gl.GetStringS(StringName.Version) ?? "";
             var isOpenGLES = versionString.Contains("OpenGL ES", StringComparison.OrdinalIgnoreCase);
+            _isOpenGLES = isOpenGLES;  // reused by the particle shader preamble (#2395)
             var renderer = _gl.GetStringS(StringName.Renderer) ?? "unknown";
             UnifiedLogger.LogApplication(LogLevel.INFO,
                 $"GL context: {versionString} | Renderer: {renderer} | ES={isOpenGLES}");
@@ -776,6 +932,10 @@ public class ModelPreviewGLControl : OpenGlControlBase
                 _gl.DeleteVertexArray(_vao);
                 _shaderManager?.Cleanup();
                 _shaderManager = null;
+
+                // Particle GL resources (#2395)
+                CleanupParticleGl();
+
                 _gl = null;
             }
         }
@@ -972,6 +1132,23 @@ public class ModelPreviewGLControl : OpenGlControlBase
         }
 
         _gl.BindVertexArray(0);
+
+        // Particle billboards draw AFTER the opaque mesh, sharing the same model rotation
+        // so they spin with the model. Uses its own program/VAO/VBO and restores all GL
+        // state it touches. Wrapped so a particle GL failure can never break the mesh
+        // render (CLAUDE.md: never throw into the render loop) (#2395).
+        if (_particleSystems.Count > 0)
+        {
+            try
+            {
+                RenderParticles(modelMatrix, view, projection);
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"[Particle] render failed (non-fatal): {ex.GetType().Name}: {ex.Message}");
+            }
+        }
     }
 
     private void UpdateMeshBuffers()
@@ -1001,6 +1178,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
         if (_gl == null || _model == null) return;
 
         _meshDrawCalls.Clear();
+        _modelCenter = Vector3.Zero;  // reset; set below if a valid geometric center is computed (#2395)
 
         // Two-pass vertex collection:
         // Pass 1: Collect world-space vertices and compute geometric center
@@ -1284,6 +1462,10 @@ public class ModelPreviewGLControl : OpenGlControlBase
                 (minY + maxY) * 0.5f,
                 (minZ + maxZ) * 0.5f);
 
+            // Store for the particle render path: particles sim in raw model space and
+            // must subtract this same center to align with the centered mesh (#2395).
+            _modelCenter = center;
+
             // Subtract center from all vertex positions (every 8 floats, first 3 are XYZ)
             for (int i = 0; i < vertices.Count; i += 8)
             {
@@ -1298,6 +1480,9 @@ public class ModelPreviewGLControl : OpenGlControlBase
             float sizeZ = maxZ - minZ;
             var computedRadius = Math.Max(Math.Max(sizeX, sizeY), sizeZ) * 0.5f;
             _viewController.UpdateBounds(computedRadius, true);
+            // Particle sizes are authored in game-meters; scale into raw-MDL-unit space by the model
+            // radius so they stay proportional across models (#2395).
+            _particleSizeScale = MathF.Max(computedRadius, 0.001f) * ParticleSizeRadiusFactor;
 
             UnifiedLogger.LogApplication(LogLevel.INFO,
                 $"Vertex bounds: X=[{minX:F2},{maxX:F2}] Y=[{minY:F2},{maxY:F2}] Z=[{minZ:F2},{maxZ:F2}], " +
@@ -1379,6 +1564,15 @@ public class ModelPreviewGLControl : OpenGlControlBase
         {
             if (!string.IsNullOrEmpty(mesh.Bitmap))
                 textureNames.Add(mesh.Bitmap.ToLowerInvariant());
+        }
+
+        // #2395: include emitter particle textures so they load into _textureCache
+        // (the particle render path looks them up by Material.Texture).
+        foreach (var (_, emitter, _) in _particleSystems)
+        {
+            var t = emitter.Material.Texture;
+            if (!string.IsNullOrEmpty(t) && !t.Equals("null", StringComparison.OrdinalIgnoreCase))
+                textureNames.Add(t.ToLowerInvariant());
         }
 
         // Delete old textures that are no longer needed

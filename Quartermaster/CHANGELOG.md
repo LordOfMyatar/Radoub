@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.118-alpha] - 2026-06-08
+**Branch**: `quartermaster/issue-2395` | **PR**: #2432
+
+### Feat: Render particle emitters in model preview (#2395)
+
+- Shared `Radoub.UI` model preview now draws MDL emitter nodes (particle systems) so emitter-driven creatures look closer to Aurora (see root CHANGELOG).
+
+---
+
 ## [0.2.117-alpha] - 2026-06-06
 **Branch**: `quartermaster/issue-2381` | **PR**: #2394
 
