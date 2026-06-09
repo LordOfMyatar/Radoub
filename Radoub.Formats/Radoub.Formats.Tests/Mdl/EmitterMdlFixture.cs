@@ -97,7 +97,10 @@ public static class EmitterMdlFixture
         string blend = "Normal",
         string texture = "fx_tex",
         int xgrid = 1,
-        int ygrid = 1)
+        int ygrid = 1,
+        // post-texture fields (guard against texture-width misalignment)
+        bool loop = false,
+        int renderOrder = 0)
     {
         var controllers = new List<ControllerRecord>();
 
@@ -192,8 +195,8 @@ public static class EmitterMdlFixture
         WriteFixedString(modelData, n + 0xE8, texture, 64);    // texture[64]  (AUTHORITATIVE width)
         WriteFixedString(modelData, n + 0x128, string.Empty, 16); // chunkName[16]
         WriteUInt32(modelData, n + 0x138, 0);                  // twoSidedTex
-        WriteUInt32(modelData, n + 0x13C, 0);                  // loop
-        WriteUInt16(modelData, n + 0x140, 0);                  // renderOrder
+        WriteUInt32(modelData, n + 0x13C, loop ? 1u : 0u);     // loop
+        WriteUInt16(modelData, n + 0x140, (ushort)renderOrder);// renderOrder
         WriteUInt16(modelData, n + 0x142, 0);                  // pad
         WriteUInt32(modelData, n + 0x144, 0);                  // emitterFlags
         // ends at n + 0x148

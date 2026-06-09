@@ -44,7 +44,9 @@ public class MdlEmitterTests
             blend: "Lighten",
             texture: "fxpa_glow",
             xgrid: 2,
-            ygrid: 2);
+            ygrid: 2,
+            loop: true,
+            renderOrder: 3);
 
         var model = new MdlBinaryReader().Parse(bytes);
 
@@ -55,5 +57,7 @@ public class MdlEmitterTests
         Assert.Equal("fxpa_glow", emitter.Texture);
         Assert.Equal(2, emitter.XGrid);
         Assert.Equal(2, emitter.YGrid);
+        Assert.True(emitter.Loop);            // misaligned/garbage if texture read as 32 bytes
+        Assert.Equal(3, emitter.RenderOrder); // misaligned under the old 32-byte bug
     }
 }
