@@ -111,49 +111,57 @@ public class ParticleSystemTests
     }
 
     [Fact]
-    public void Update_NotTinted_KeepsParticleRgbWhite()
+    public void Update_AlwaysAppliesColorStart_RegardlessOfTintFlag()
     {
-        // No IsTinted flag (0x0008) -> particles take the texture's own color (rgb stays white),
-        // even though ColorStart is set. Regression for zodiac/glow orbs rendering purple (#2395).
-        var node = BaseNode();
-        node.BirthRate = 1f;
-        node.LifeExp = 10f;
-        node.EmitterFlags = 0; // not tinted
-        node.ColorStart = new System.Numerics.Vector3(0.5f, 0f, 1f); // purple — must be ignored
-        node.ColorEnd = new System.Numerics.Vector3(0.5f, 0f, 1f);
-        var sys = new ParticleSystem(Compile(node), seed: 11u);
+        // Aurora applies emitter color controllers unconditionally — IsTinted (0x0008) is NOT a
+        // color gate (it means "tint by scene ambient", per rollnw). zodrat's yellow colorStart
+        // must show through even with the flag clear. Regression for the orbs rendering wrong (#2395).
+        var color = new System.Numerics.Vector3(1f, 0.96f, 0f); // zodrat yellow
+        foreach (uint flags in new uint[] { 0u, 0x0008u })
+        {
+            var node = BaseNode();
+            node.BirthRate = 1f;
+            node.LifeExp = 10f;
+            node.EmitterFlags = flags;
+            node.ColorStart = color;
+            node.ColorMid = color;
+            node.ColorEnd = color;
+            var sys = new ParticleSystem(Compile(node), seed: 11u);
 
-        for (int i = 0; i < 20 && sys.LiveCount == 0; i++)
-            sys.Update(0.1f);
-        Assert.True(sys.LiveCount >= 1);
+            for (int i = 0; i < 20 && sys.LiveCount == 0; i++)
+                sys.Update(0.1f);
+            Assert.True(sys.LiveCount >= 1);
 
-        var c = sys.FirstParticle.Color;
-        Assert.Equal(1f, c.X, 3);
-        Assert.Equal(1f, c.Y, 3);
-        Assert.Equal(1f, c.Z, 3);
+            var c = sys.FirstParticle.Color;
+            Assert.True(System.Math.Abs(c.X - 1f) < 0.01f && System.Math.Abs(c.Y - 0.96f) < 0.01f && System.Math.Abs(c.Z) < 0.01f,
+                $"flags=0x{flags:X}: expected yellow (1,0.96,0), got ({c.X},{c.Y},{c.Z})");
+        }
     }
 
     [Fact]
-    public void Update_Tinted_AppliesColorStart()
+    public void Update_RotatesEmissionByEmitterRotation()
     {
-        // IsTinted (0x0008) set -> ColorStart applies. At t~0 color ~= ColorStart.
+        // Emitter emits along local +Z with no spread. A 180° rotation about X maps local +Z
+        // to world -Z, so the spawned particle's velocity should point down (-Z). (#2395)
         var node = BaseNode();
         node.BirthRate = 1f;
         node.LifeExp = 10f;
-        node.EmitterFlags = 0x0008; // tinted
-        // Constant purple across the whole life (start/mid/end) so the gradient is purple at any t.
-        node.ColorStart = new System.Numerics.Vector3(0.5f, 0f, 1f);
-        node.ColorMid = new System.Numerics.Vector3(0.5f, 0f, 1f);
-        node.ColorEnd = new System.Numerics.Vector3(0.5f, 0f, 1f);
-        var sys = new ParticleSystem(Compile(node), seed: 12u);
+        node.Velocity = 1f; // unit speed so velocity magnitude ~= 1
+        node.Spread = 0f;
+        var sys = new ParticleSystem(Compile(node), seed: 9u);
+
+        var rot = System.Numerics.Quaternion.CreateFromAxisAngle(
+            System.Numerics.Vector3.UnitX, System.MathF.PI);
 
         for (int i = 0; i < 20 && sys.LiveCount == 0; i++)
-            sys.Update(0.1f);
-        Assert.True(sys.LiveCount >= 1);
+            sys.Update(0.1f, System.Numerics.Vector3.Zero, rot);
+        Assert.True(sys.LiveCount >= 1, "expected at least one particle spawned");
 
-        var c = sys.FirstParticle.Color;
-        Assert.True(System.Math.Abs(c.X - 0.5f) < 0.01f && System.Math.Abs(c.Y) < 0.01f && System.Math.Abs(c.Z - 1f) < 0.01f,
-            $"expected purple (0.5,0,1), got ({c.X},{c.Y},{c.Z},{c.W})");
+        var v = sys.FirstParticle.Velocity;
+        Assert.True(v.Z < 0f, $"expected velocity Z negative after 180° X rotation, got {v.Z}");
+        Assert.InRange(v.Z, -1.01f, -0.99f);
+        Assert.True(System.Math.Abs(v.X) < 0.01f, $"expected X ~= 0, got {v.X}");
+        Assert.True(System.Math.Abs(v.Y) < 0.01f, $"expected Y ~= 0, got {v.Y}");
     }
 
     [Fact]

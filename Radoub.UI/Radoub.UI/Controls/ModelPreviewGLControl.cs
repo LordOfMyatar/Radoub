@@ -577,6 +577,15 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             {
                 var compiled = Radoub.UI.Particles.EmitterCompiler.Compile(emitter);
 
+                // TEMP DIAGNOSTIC (#2395 UAT) — remove before merge.
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"[EmitterDbg] '{emitter.Name}' tex='{emitter.Texture}' tinted={compiled.Tinted} blend={compiled.Blend} " +
+                    $"birth={emitter.BirthRate} life={emitter.LifeExp} colStart=({emitter.ColorStart.X:F2},{emitter.ColorStart.Y:F2},{emitter.ColorStart.Z:F2}) " +
+                    $"colEnd=({emitter.ColorEnd.X:F2},{emitter.ColorEnd.Y:F2},{emitter.ColorEnd.Z:F2}) " +
+                    $"aStart={emitter.AlphaStart:F2} aEnd={emitter.AlphaEnd:F2} sizeStart={emitter.SizeStart:F3} sizeEnd={emitter.SizeEnd:F3} " +
+                    $"vel={emitter.Velocity:F2} randvel={emitter.RandVel:F2} spread={emitter.Spread:F3} mass={emitter.Mass:F2} grav={emitter.Grav:F2} " +
+                    $"=> cSpeed=[{compiled.Speed.Min:F2},{compiled.Speed.Max:F2}] cSizeX=[{compiled.SizeX.Min:F3},{compiled.SizeX.Max:F3}] flags=0x{emitter.EmitterFlags:X}");
+
                 // The MVP renderer treats every emitter as a camera-facing billboard and the sim
                 // only does continuous Fountain emission. Anything else is rendered approximately
                 // (plain billboard) — log once per model so the limitation is visible (#2395).
@@ -590,6 +599,9 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                 }
 
                 var system = new Radoub.UI.Particles.ParticleSystem(compiled, (uint)(index + 1));
+                // Pre-warm to steady-state so the emitter looks already-running on first frame
+                // (Aurora pre-warms; otherwise particles fill in slowly from empty). (#2395)
+                system.PreWarm(GetEmitterWorldPosition(emitter), GetEmitterWorldRotation(emitter));
                 _particleSystems.Add((emitter, compiled, system));
                 index++;
             }
@@ -623,7 +635,8 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
         foreach (var (node, _, system) in _particleSystems)
         {
             var worldPos = GetEmitterWorldPosition(node);
-            system.Update(pdt, worldPos);
+            var worldRot = GetEmitterWorldRotation(node);
+            system.Update(pdt, worldPos, worldRot);
         }
 
         RequestNextFrameRendering();
@@ -653,6 +666,20 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
     {
         var world = ModelViewController.GetWorldTransform(node);
         return ModelViewController.TransformPosition(Vector3.Zero, world);
+    }
+
+    /// <summary>
+    /// World-space rotation for an emitter node (#2395). Mirrors <see cref="GetEmitterWorldPosition"/>:
+    /// composes the node's world transform up the Parent chain, then extracts the rotation as a
+    /// Quaternion. Decomposes (not raw <c>CreateFromRotationMatrix</c>) so any scale in the
+    /// transform doesn't corrupt the rotation; falls back to identity if decomposition fails.
+    /// </summary>
+    private static Quaternion GetEmitterWorldRotation(MdlEmitterNode node)
+    {
+        var world = ModelViewController.GetWorldTransform(node);
+        return Matrix4x4.Decompose(world, out _, out var rotation, out _)
+            ? rotation
+            : Quaternion.Identity;
     }
 
     /// <summary>
@@ -1462,6 +1489,9 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             float sizeZ = maxZ - minZ;
             var computedRadius = Math.Max(Math.Max(sizeX, sizeY), sizeZ) * 0.5f;
             _viewController.UpdateBounds(computedRadius, true);
+            // Particle sizes are authored in game-meters; scale into raw-MDL-unit space by the model
+            // radius so they stay proportional across models (#2395).
+            _particleSizeScale = MathF.Max(computedRadius, 0.001f) * ParticleSizeRadiusFactor;
 
             UnifiedLogger.LogApplication(LogLevel.INFO,
                 $"Vertex bounds: X=[{minX:F2},{maxX:F2}] Y=[{minY:F2},{maxY:F2}] Z=[{minZ:F2},{maxZ:F2}], " +
