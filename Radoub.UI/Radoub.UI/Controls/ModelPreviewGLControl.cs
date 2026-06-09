@@ -576,6 +576,19 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             try
             {
                 var compiled = Radoub.UI.Particles.EmitterCompiler.Compile(emitter);
+
+                // The MVP renderer treats every emitter as a camera-facing billboard and the sim
+                // only does continuous Fountain emission. Anything else is rendered approximately
+                // (plain billboard) — log once per model so the limitation is visible (#2395).
+                bool unsupportedEmission = compiled.EmissionMode != Radoub.UI.Particles.ParticleEmissionMode.Continuous;
+                bool unsupportedRender = compiled.RenderMode != Radoub.UI.Particles.ParticleRenderMode.Billboard
+                    && compiled.RenderMode != Radoub.UI.Particles.ParticleRenderMode.BillboardWorldZ;
+                if (unsupportedEmission || unsupportedRender)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"[Particle] Emitter '{emitter.Name}' uses mode {compiled.EmissionMode}/{compiled.RenderMode} — rendered as a camera-facing billboard (approximate). (#2395)");
+                }
+
                 var system = new Radoub.UI.Particles.ParticleSystem(compiled, (uint)(index + 1));
                 _particleSystems.Add((emitter, compiled, system));
                 index++;
