@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.119-alpha] - 2026-06-09
-**Branch**: `quartermaster/issue-2434` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2434` | **PR**: #2449
 
 ### Feat: Fairy/pixie emitter particles fall straighter (#2434)
 
