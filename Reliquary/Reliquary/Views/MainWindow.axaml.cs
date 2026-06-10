@@ -1,10 +1,13 @@
 using System;
+using System.ComponentModel;
+using System.IO;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 using PlaceableEditor.Views.Panels;
 
@@ -51,6 +54,10 @@ public partial class MainWindow : Window
         WireInventory();
         PopulateRecentFiles(); // show persisted MRU at launch (#2368)
 
+        // Shared status bar: show the active module and react when Trebuchet switches it (#2428).
+        UpdateModuleIndicator();
+        RadoubSettings.Instance.PropertyChanged += OnRadoubSettingsChanged;
+
         // Tunnel so F4 reaches us before a focused child (ComboBox etc.) can consume it.
         AddHandler(KeyDownEvent, OnWindowKeyDownTunnel, Avalonia.Interactivity.RoutingStrategies.Tunnel);
 
@@ -62,11 +69,60 @@ public partial class MainWindow : Window
         AvaloniaXamlLoader.Load(this);
     }
 
+    /// <summary>
+    /// The shared status bar, resolved by name. This window has a hand-written InitializeComponent
+    /// (it only calls AvaloniaXamlLoader.Load), so the name-generator's x:Name field is declared but
+    /// never assigned — accessing it directly NREs. FindControl resolves it from the loaded tree
+    /// (#2428 launch fix). Named StatusBarCtrl to avoid colliding with the generated StatusBar field.
+    /// </summary>
+    private Radoub.UI.Controls.StatusBarControl? StatusBarCtrl =>
+        this.FindControl<Radoub.UI.Controls.StatusBarControl>("StatusBar");
+
     private void UpdateStatus(string message)
     {
-        var status = this.FindControl<TextBlock>("StatusBar");
-        if (status != null)
-            status.Text = message;
+        var bar = StatusBarCtrl;
+        if (bar != null) bar.PrimaryText = message;
+    }
+
+    /// <summary>
+    /// Refresh the module indicator from <see cref="RadoubSettings.CurrentModulePath"/> (#2428).
+    /// Mirrors Relique's status bar: module name in the info color, or "No module" in warning.
+    /// </summary>
+    private void UpdateModuleIndicator()
+    {
+        var bar = StatusBarCtrl;
+        if (bar == null) return;
+
+        var modulePath = RadoubSettings.Instance.CurrentModulePath;
+        if (!string.IsNullOrEmpty(modulePath))
+        {
+            var name = Path.GetFileNameWithoutExtension(modulePath);
+            bar.ModuleIndicator = $"Module: {name}";
+            bar.ModuleIndicatorForeground = BrushManager.GetInfoBrush(this);
+        }
+        else
+        {
+            bar.ModuleIndicator = "No module";
+            bar.ModuleIndicatorForeground = BrushManager.GetWarningBrush(this);
+        }
+    }
+
+    /// <summary>
+    /// React to Trebuchet switching the active module: refresh the indicator and re-point the
+    /// browser at the new module directory (#2428, mirrors Relique).
+    /// </summary>
+    private void OnRadoubSettingsChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(RadoubSettings.CurrentModulePath)) return;
+
+        UpdateModuleIndicator();
+        var moduleDir = GetModuleWorkingDirectory();
+        if (!string.IsNullOrEmpty(moduleDir))
+        {
+            var browser = this.FindControl<PlaceableBrowserPanel>("PlaceableBrowserPanel");
+            if (browser != null) browser.ModulePath = moduleDir;
+            UnifiedLogger.LogUI(LogLevel.INFO, "Reliquary: module path updated from Trebuchet");
+        }
     }
 
     private void OnExitClick(object? sender, RoutedEventArgs e) => Close();

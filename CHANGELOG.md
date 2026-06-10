@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.9-alpha] - 2026-06-09
+**Branch**: `reliquary/sprint/preview-and-statusbar` | **PR**: #2438
+
+### Shared model-preview camera panel (#2430)
+
+- New `ModelPreviewPanel` wraps `ModelPreviewGLControl` with a transparent input surface and a rotate/zoom/pan/reset camera bar (left-drag rotate, middle/Shift+left pan, wheel zoom, arrows/WASD, Home reset) plus an optional state selector. Camera input logic extracted from Quartermaster's AppearancePanel; adopted by Reliquary (QM/Relique migration to follow).
+
+---
+
 ## [Radoub.UI 0.2.8-alpha] - 2026-06-08
 **Branch**: `quartermaster/issue-2395` | **PR**: #2432
 

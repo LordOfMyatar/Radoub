@@ -6,6 +6,7 @@ using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
+using Radoub.UI.Controls;
 using Radoub.UI.Services;
 using PlaceableEditor.Services;
 using PlaceableEditor.Views.Panels;
@@ -72,6 +73,7 @@ public partial class MainWindow
         {
             if (_textureService != null)
                 identity.Preview.SetTextureService(_textureService);
+            identity.PreviewPanel.StateSelected += OnPreviewStateSelected; // #2431
             identity.AppearanceChanged += OnAppearanceChanged;
             identity.PortraitBrowseRequested += OnPortraitBrowseRequested;
             identity.PaletteCategoryChanged += OnPaletteCategorySelected;
@@ -134,11 +136,46 @@ public partial class MainWindow
         RefreshPortraitPreview();
     }
 
+    /// <summary>The model currently shown in the preview, kept so the state selector can re-pose it (#2431).</summary>
+    private Radoub.Formats.Mdl.MdlModel? _previewModel;
+
     private void UpdateModelPreview(uint appearanceId)
     {
         var identity = this.FindControl<IdentityCombatPanel>("IdentityCombatPanel");
         if (identity is null) return;
-        identity.Preview.Model = _modelLoader?.Load(appearanceId);
+
+        _previewModel = _modelLoader?.Load(appearanceId);
+        identity.Preview.Model = _previewModel;
+
+        // Offer only the states this model actually provides; default to the placeable's Initial
+        // State, falling back to Default when that state has no animation (#2431).
+        var available = PlaceableStateResolver.AvailableStates(_previewModel);
+        var initial = _placeable?.InitialState ?? 0;
+        if (available.All(s => s.Value != initial)) initial = 0;
+
+        var items = available
+            .Select(s => new ModelPreviewPanel.PreviewState(s.Value, s.Display))
+            .ToList();
+        identity.PreviewPanel.ShowStateSelector(items, initial);
+
+        PosePreviewState(initial);
+    }
+
+    /// <summary>
+    /// Pose the preview at a placeable animation state (#2431). Default (0) clears the animation and
+    /// shows the base mesh; other states select their animation and hold it at the final frame (the
+    /// state's resting pose). Resolution is model-driven via <see cref="PlaceableStateResolver"/>.
+    /// </summary>
+    private void PosePreviewState(byte state)
+    {
+        var identity = this.FindControl<IdentityCombatPanel>("IdentityCombatPanel");
+        if (identity is null) return;
+        var gl = identity.Preview;
+
+        var anim = PlaceableStateResolver.FindAnimation(_previewModel, state);
+        gl.SetActiveAnimation(anim);
+        if (anim != null)
+            gl.AnimationTime = anim.Length; // hold the end pose = the state's resting look
     }
 
     private void OnAppearanceChanged(object? sender, uint appearanceId)
@@ -151,6 +188,12 @@ public partial class MainWindow
             () => _placeable.Appearance, v => _placeable.Appearance = v, appearanceId, "change appearance"));
         UpdateModelPreview(appearanceId);
     }
+
+    /// <summary>
+    /// User picked a preview state (#2431) — pose the model. This is preview-only and does not touch
+    /// the placeable's stored InitialState (that is edited via the Initial State combo + undo).
+    /// </summary>
+    private void OnPreviewStateSelected(object? sender, byte state) => PosePreviewState(state);
 
     /// <summary>Populate the Identity panel's Faction combo from the module's repute.fac (#2354, moved #2425).</summary>
     private void PopulateFactionCombo()

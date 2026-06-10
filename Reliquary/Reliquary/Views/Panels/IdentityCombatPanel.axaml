@@ -195,20 +195,14 @@
                 <GridSplitter Grid.Column="3" Width="4"
                               Background="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
 
-                <!-- 3D preview. Square (260x260) so the model fits at a 1:1 aspect; the panel root is
-                     a StackPanel, so an explicit Height (not just MinHeight) is required to give the GL
-                     control real bounds to render/camera-fit into (#2375). The control stretches to
-                     fill the Border, matching Quartermaster's AppearancePanel preview. -->
-                <Border Grid.Column="4" VerticalAlignment="Top"
-                        Height="260"
-                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                        BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                        BorderThickness="1">
-                    <ctrl:ModelPreviewGLControl x:Name="ModelPreview"
-                                                HorizontalAlignment="Stretch"
-                                                VerticalAlignment="Stretch"
-                                                AutomationProperties.AutomationId="Reliquary_ModelPreview"/>
-                </Border>
+                <!-- 3D preview with shared camera controls (#2430). The shared ModelPreviewPanel owns
+                     the GL control + transparent input surface + rotate/zoom/reset bar. An explicit
+                     Height (not just MinHeight) gives the GL control real bounds to camera-fit into
+                     (#2375); the +34 over the old 260 leaves room for the camera button row. -->
+                <ctrl:ModelPreviewPanel Grid.Column="4" x:Name="ModelPreview"
+                                        VerticalAlignment="Top"
+                                        Height="294"
+                                        AutomationProperties.AutomationId="Reliquary_ModelPreview"/>
             </Grid>
         </StackPanel>
     </Border>
