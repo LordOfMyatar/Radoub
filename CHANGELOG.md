@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Build 2026-06-10] - 2026-06-10
+**Branch**: `radoub/deps-test-sdk-2332` | **PR**: #2332
+
+### Dependencies
+
+- Bumped Microsoft.NET.Test.Sdk 18.5.1 → 18.6.0 (test tooling only; all 5,589 unit tests pass). Dependabot #2332.
+
+---
+
 ## [Radoub.UI 0.2.10-alpha] - 2026-06-09
 **Branch**: `quartermaster/issue-2434` | **PR**: #2449
 
