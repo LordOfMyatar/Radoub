@@ -3,6 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:panels="clr-namespace:PlaceableEditor.Views.Panels"
+        xmlns:controls="clr-namespace:Radoub.UI.Controls;assembly=Radoub.UI"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
         x:Class="PlaceableEditor.Views.MainWindow"
         Title="Reliquary"
@@ -31,13 +32,8 @@
             </MenuItem>
         </Menu>
 
-        <Border DockPanel.Dock="Bottom"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                BorderThickness="0,1,0,0"
-                Padding="8,4">
-            <TextBlock x:Name="StatusBar" Text="Ready"
-                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-        </Border>
+        <controls:StatusBarControl x:Name="StatusBar" DockPanel.Dock="Bottom"
+                                   PrimaryText="Ready"/>
 
         <Grid x:Name="OuterContentGrid" ColumnDefinitions="260,4,*">
             <panels:PlaceableBrowserPanel x:Name="PlaceableBrowserPanel"

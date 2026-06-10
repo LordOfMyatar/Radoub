@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Radoub.Formats.Settings;
 
 namespace PlaceableEditor.Views;
 
@@ -48,6 +49,7 @@ public partial class MainWindow
     private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
     {
         SaveWindowPosition(); // persist window size/position every close (#window-size)
+        RadoubSettings.Instance.PropertyChanged -= OnRadoubSettingsChanged; // stop reacting once closing (#2428)
 
         if (!_isDirty) return;
 
