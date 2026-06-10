@@ -6,6 +6,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 
 ---
 
+## [0.10.0-alpha] - 2026-06-09
+**Branch**: `reliquary/sprint/preview-and-statusbar` | **PR**: #TBD
+
+### Sprint: 3D Preview Upgrades & Shared Status Bar
+
+- Adopt the shared `StatusBarControl` with a live module indicator (#2428).
+- 3D placeable preview gains rotate/zoom/pan/reset + fit-on-load camera controls and a backward-render fix, with the camera logic extracted into a shared Radoub.UI component (#2430).
+- Preview shows a state selector (open/closed/destroyed/activated) limited to states the loaded model provides (#2431).
+
+---
+
 ## [0.9.0-alpha] - 2026-06-07
 **Branch**: `reliquary/sprint/browser-polish-ci` | **PR**: #2427
 
