@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -28,6 +31,13 @@ public partial class ModelPreviewPanel : UserControl
 
     private PreviewDragMode _dragMode = PreviewDragMode.None;
     private Point _lastPointer;
+    private bool _suppressStateEvent;
+
+    /// <summary>
+    /// Raised when the user picks a state from the optional state selector (#2431), carrying the
+    /// selected state's byte value. Only fires for user selections, never while the host populates.
+    /// </summary>
+    public event EventHandler<byte>? StateSelected;
 
     public ModelPreviewPanel()
     {
@@ -44,6 +54,63 @@ public partial class ModelPreviewPanel : UserControl
 
     /// <summary>The hosted GL control. Hosts load models and set the texture service through this.</summary>
     public ModelPreviewGLControl Preview => ModelPreviewGL;
+
+    // ----- Optional state selector (#2431) -----
+
+    /// <summary>One selectable preview state: a byte value (matching the model/engine state) + a label.</summary>
+    public readonly record struct PreviewState(byte Value, string Label)
+    {
+        public override string ToString() => Label;
+    }
+
+    /// <summary>
+    /// Show the state selector populated with the given states, preselecting <paramref name="selected"/>.
+    /// Passing one or zero states hides the row (nothing to choose). Selecting a state raises
+    /// <see cref="StateSelected"/>; the host owns posing the model. Populating never raises the event.
+    /// </summary>
+    public void ShowStateSelector(IReadOnlyList<PreviewState> states, byte selected)
+    {
+        if (states == null || states.Count <= 1)
+        {
+            HideStateSelector();
+            return;
+        }
+
+        _suppressStateEvent = true;
+        try
+        {
+            StateCombo.ItemsSource = states;
+            var match = states.FirstOrDefault(s => s.Value == selected);
+            StateCombo.SelectedItem = states.Contains(match) ? match : states[0];
+            StateSelectorRow.IsVisible = true;
+        }
+        finally
+        {
+            _suppressStateEvent = false;
+        }
+    }
+
+    /// <summary>Hide and clear the state selector (e.g. when no model is loaded).</summary>
+    public void HideStateSelector()
+    {
+        _suppressStateEvent = true;
+        try
+        {
+            StateSelectorRow.IsVisible = false;
+            StateCombo.ItemsSource = null;
+        }
+        finally
+        {
+            _suppressStateEvent = false;
+        }
+    }
+
+    private void OnStateSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressStateEvent) return;
+        if (StateCombo.SelectedItem is PreviewState state)
+            StateSelected?.Invoke(this, state.Value);
+    }
 
     // ----- Pointer / wheel / key forwarding (extracted from QM AppearancePanel #2124/#2430) -----
 

@@ -10,7 +10,7 @@
        (OpenGlControlBase has no Background, so pointer/wheel must hit a sibling) + a camera
        button bar. Hosts load models via the Preview property; camera math lives in the GL
        control / ModelViewController. -->
-  <Grid RowDefinitions="*,Auto">
+  <Grid RowDefinitions="*,Auto,Auto">
 
     <Border Grid.Row="0"
             Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
@@ -28,8 +28,19 @@
       </Grid>
     </Border>
 
+    <!-- Optional state selector (#2431). Hidden until a host populates it via ShowStateSelector;
+         used by Reliquary to switch the placeable preview between open/closed/destroyed/etc. -->
+    <Border Grid.Row="1" Padding="0,6,0,0" x:Name="StateSelectorRow" IsVisible="False">
+      <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+        <TextBlock Text="State" VerticalAlignment="Center"/>
+        <ComboBox x:Name="StateCombo" MinWidth="130"
+                  SelectionChanged="OnStateSelectionChanged"
+                  AutomationProperties.AutomationId="ModelPreview_StateCombo"/>
+      </StackPanel>
+    </Border>
+
     <!-- Camera controls. Mirrors Quartermaster's AppearancePanel preview bar. -->
-    <Border Grid.Row="1" Padding="0,6,0,0">
+    <Border Grid.Row="2" Padding="0,6,0,0">
       <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
         <Button x:Name="RotateLeftButton" Content="↺" Width="30" Height="30"
                 Click="OnRotateLeftClicked" ToolTip.Tip="Rotate Left"
