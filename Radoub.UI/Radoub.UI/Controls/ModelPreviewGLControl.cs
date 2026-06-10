@@ -577,12 +577,12 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             {
                 var compiled = Radoub.UI.Particles.EmitterCompiler.Compile(emitter);
 
-                // The MVP renderer treats every emitter as a camera-facing billboard and the sim
-                // only does continuous Fountain emission. Anything else is rendered approximately
-                // (plain billboard) — log once per model so the limitation is visible (#2395).
+                // Supported: continuous Fountain emission + camera-facing (Normal) and local-frame
+                // (Billboard_to_Local_Z, e.g. fairy wings) quads. Other render modes fall back to a
+                // camera-facing billboard — log once per model so the limitation is visible. (#2395, #2434)
                 bool unsupportedEmission = compiled.EmissionMode != Radoub.UI.Particles.ParticleEmissionMode.Continuous;
                 bool unsupportedRender = compiled.RenderMode != Radoub.UI.Particles.ParticleRenderMode.Billboard
-                    && compiled.RenderMode != Radoub.UI.Particles.ParticleRenderMode.BillboardWorldZ;
+                    && compiled.RenderMode != Radoub.UI.Particles.ParticleRenderMode.BillboardLocalZ;
                 if (unsupportedEmission || unsupportedRender)
                 {
                     UnifiedLogger.LogApplication(LogLevel.INFO,
@@ -613,6 +613,46 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
     }
 
     /// <summary>
+    /// True if the active model has any emitter node that is animated by some animation (i.e. an
+    /// ancestor or the emitter itself has position/orientation keyframes). Tools use this to decide
+    /// whether to default the preview to a playing idle animation so animated emitters (e.g. the
+    /// fairy's flapping wing Dummies) sweep correctly instead of rendering as a static orb. (#2434)
+    /// </summary>
+    public bool HasAnimatedEmitters()
+    {
+        if (_model == null || _model.Animations.Count == 0) return false;
+        if (!_model.HasEmitterNodes()) return false;
+
+        // Collect the geometry-tree ancestor names of every emitter.
+        var emitterChainNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var node in _model.EnumerateAllNodes())
+        {
+            if (node is not MdlEmitterNode) continue;
+            for (var cur = (MdlNode?)node; cur != null; cur = cur.Parent)
+                if (!string.IsNullOrEmpty(cur.Name)) emitterChainNames.Add(cur.Name);
+        }
+
+        // An emitter is animated if any animation keyframes a node in its chain.
+        foreach (var anim in _model.Animations)
+        {
+            if (anim.GeometryRoot == null) continue;
+            if (AnimTreeKeyframesAny(anim.GeometryRoot, emitterChainNames)) return true;
+        }
+        return false;
+    }
+
+    private static bool AnimTreeKeyframesAny(MdlNode animNode, HashSet<string> names)
+    {
+        bool keyed = animNode.PositionTimes.Length > 1 || animNode.OrientationTimes.Length > 1
+            || animNode.ScaleTimes.Length > 1;
+        if (keyed && !string.IsNullOrEmpty(animNode.Name) && names.Contains(animNode.Name))
+            return true;
+        foreach (var child in animNode.Children)
+            if (AnimTreeKeyframesAny(child, names)) return true;
+        return false;
+    }
+
+    /// <summary>
     /// Advance every particle system by the wall-clock delta since the last particle tick (#2395).
     /// ParticleSystem already guards/clamps dt internally, so no extra clamp here. Throttled
     /// DEBUG log (~1s) reports system count + total live particles for the UAT log-smoke check.
@@ -623,10 +663,15 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
         float pdt = (float)(now - _particleLastTick).TotalSeconds;
         _particleLastTick = now;
 
+        // Sample the active animation's pose so emitter nodes follow animated parents (e.g. the
+        // fairy's wing Dummies flap during idle — without this the wing emitter sits at its static
+        // bind pose and its particles stack into an orb instead of sweeping into a wing blade). Null
+        // pose (no animation playing) falls back to the static bind transform. (#2434)
+        var pose = GetCurrentPose();
         foreach (var (node, _, system) in _particleSystems)
         {
-            var worldPos = GetEmitterWorldPosition(node);
-            var worldRot = GetEmitterWorldRotation(node);
+            var worldPos = GetEmitterWorldPosition(node, pose);
+            var worldRot = GetEmitterWorldRotation(node, pose);
             system.Update(pdt, worldPos, worldRot);
         }
 
@@ -653,9 +698,10 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
     /// centered to match, so the sim runs in raw model space. This is fine for sim-only wiring —
     /// the next (render) task will reconcile particle coords with the centered mesh frame.
     /// </summary>
-    private static Vector3 GetEmitterWorldPosition(MdlEmitterNode node)
+    private static Vector3 GetEmitterWorldPosition(MdlEmitterNode node,
+        IReadOnlyDictionary<string, ModelViewController.NodePose>? pose = null)
     {
-        var world = ModelViewController.GetWorldTransform(node);
+        var world = ModelViewController.GetWorldTransform(node, pose);
         return ModelViewController.TransformPosition(Vector3.Zero, world);
     }
 
@@ -665,9 +711,10 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
     /// Quaternion. Decomposes (not raw <c>CreateFromRotationMatrix</c>) so any scale in the
     /// transform doesn't corrupt the rotation; falls back to identity if decomposition fails.
     /// </summary>
-    private static Quaternion GetEmitterWorldRotation(MdlEmitterNode node)
+    private static Quaternion GetEmitterWorldRotation(MdlEmitterNode node,
+        IReadOnlyDictionary<string, ModelViewController.NodePose>? pose = null)
     {
-        var world = ModelViewController.GetWorldTransform(node);
+        var world = ModelViewController.GetWorldTransform(node, pose);
         return Matrix4x4.Decompose(world, out _, out var rotation, out _)
             ? rotation
             : Quaternion.Identity;
@@ -1480,9 +1527,6 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             float sizeZ = maxZ - minZ;
             var computedRadius = Math.Max(Math.Max(sizeX, sizeY), sizeZ) * 0.5f;
             _viewController.UpdateBounds(computedRadius, true);
-            // Particle sizes are authored in game-meters; scale into raw-MDL-unit space by the model
-            // radius so they stay proportional across models (#2395).
-            _particleSizeScale = MathF.Max(computedRadius, 0.001f) * ParticleSizeRadiusFactor;
 
             UnifiedLogger.LogApplication(LogLevel.INFO,
                 $"Vertex bounds: X=[{minX:F2},{maxX:F2}] Y=[{minY:F2},{maxY:F2}] Z=[{minZ:F2},{maxZ:F2}], " +

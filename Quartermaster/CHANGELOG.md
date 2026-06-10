@@ -8,9 +8,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ## [0.2.119-alpha] - 2026-06-09
 **Branch**: `quartermaster/issue-2434` | **PR**: #2449
 
-### Feat: Fairy/pixie emitter particles fall straighter (#2434)
+### Feat: Fairy/pixie emitter preview fidelity (#2434)
 
-- Fairy/pixie dust in the model preview now falls in a tighter column (less cone fan-out). Shared `Radoub.UI` 0.2.10-alpha — see root CHANGELOG. Follow-up to #2395.
+- Fairy/pixie dust now renders at the correct authored size (matches Aurora), animated emitters follow the idle animation, and oversized wing-glow emitters no longer swallow the model. Shared `Radoub.UI` 0.2.10-alpha — see root CHANGELOG. Follow-up to #2395.
 
 ---
 

@@ -165,66 +165,6 @@ public class ParticleSystemTests
     }
 
     [Fact]
-    public void SampleConeTheta_BiasesTowardAxis()
-    {
-        // Uniform sampling puts theta = spread * u, so u=0.5 -> spread/2 (mean angle).
-        // Axis-biased sampling (bias > 1) must pull the same midpoint draw closer to the
-        // emission axis (theta = 0), so the fairy dust falls in a tighter column. (#2434)
-        float spread = 1.05f; // fairyDust spread (~60deg half-angle)
-        float midUniform = spread * 0.5f;
-
-        float biased = ParticleSystem.SampleConeTheta(spread, 0.5f, ParticleSystem.EmissionAxisBias);
-
-        Assert.True(ParticleSystem.EmissionAxisBias > 1f,
-            "axis bias exponent must be > 1 to concentrate particles near the axis");
-        Assert.True(biased < midUniform,
-            $"expected biased theta {biased} < uniform midpoint {midUniform}");
-    }
-
-    [Fact]
-    public void SampleConeTheta_PreservesEndpoints()
-    {
-        // The bias reshapes the interior of the cone but must not exceed the spread
-        // half-angle (u=1) or emit behind the axis (u=0). (#2434)
-        float spread = 1.05f;
-        Assert.Equal(0f, ParticleSystem.SampleConeTheta(spread, 0f, ParticleSystem.EmissionAxisBias), 5);
-        Assert.Equal(spread, ParticleSystem.SampleConeTheta(spread, 1f, ParticleSystem.EmissionAxisBias), 5);
-    }
-
-    [Fact]
-    public void EmissionDirection_ConcentratesNearAxis()
-    {
-        // Over many spawns with a wide cone, the mean polar angle from the emission axis
-        // (local +Z) must be smaller than the uniform expectation (spread/2), confirming
-        // the fan-out is tightened toward a column. (#2434)
-        var node = BaseNode();
-        node.BirthRate = 500f;
-        node.LifeExp = 100f; // long life so nothing dies during sampling
-        node.Velocity = 1f;
-        node.Spread = 1.05f;
-        node.Mass = 0f; // no gravity: velocity stays at the emission direction we want to measure
-        var sys = new ParticleSystem(Compile(node), seed: 42u);
-
-        for (int i = 0; i < 30; i++)
-            sys.Update(1f / 30f);
-
-        Assert.True(sys.LiveCount > 200, $"expected a large sample, got {sys.LiveCount}");
-
-        double sumTheta = 0;
-        foreach (var p in sys.Particles)
-        {
-            var v = System.Numerics.Vector3.Normalize(p.Velocity);
-            // Polar angle from +Z axis. Clamp for float drift before Acos.
-            float cosTheta = System.Math.Clamp(v.Z, -1f, 1f);
-            sumTheta += System.MathF.Acos(cosTheta);
-        }
-        double meanTheta = sumTheta / sys.LiveCount;
-
-        Assert.True(meanTheta < node.Spread * 0.5f,
-            $"expected mean cone angle {meanTheta:F3} < uniform midpoint {node.Spread * 0.5f:F3}");
-    }
-
-    [Fact]
     public void Update_ZeroDt_IsNoOp()
     {
         var node = BaseNode();

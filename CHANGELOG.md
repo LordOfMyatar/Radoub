@@ -11,9 +11,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Radoub.UI 0.2.10-alpha] - 2026-06-09
 **Branch**: `quartermaster/issue-2434` | **PR**: #2449
 
-### Model preview: tighter emitter cone fan-out (#2434)
+### Model preview: emitter fidelity for the fairy/pixie (#2434)
 
-- Cone-emission particles now bias toward the emission axis instead of spreading uniformly across the half-angle, so fairy/pixie dust falls in a tighter column closer to Aurora. Follow-up to #2395.
+- Particle sizes now render at their authored MDL scale (the old model-radius multiply crushed small creatures' particles to specks); fairy/pixie dust matches Aurora.
+- Emitter nodes follow the active animation pose, and `Billboard_to_Local_Z` quads orient to the emitter's local frame instead of always facing the camera.
+- Oversized emitters are clamped to a fraction of the model radius so a stationary glow emitter (the fairy's wings) reads as a faint glow rather than a body-swallowing orb. Aurora's exact wing-blade render is undocumented — follow-up tracked separately. Follow-up to #2395.
 
 ---
 
