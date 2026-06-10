@@ -365,13 +365,30 @@ public partial class AppearancePanel : UserControl
         }
 
         _animationComboBox.ItemsSource = items;
-        _animationComboBox.SelectedIndex = 0;
-        if (_modelPreviewGL != null)
-            _modelPreviewGL.SetActiveAnimation(null);
-        if (_animTimeSlider != null)
+
+        // Models with animated emitters (e.g. the fairy's flapping wing Dummies) need an idle
+        // animation playing or their emitters render as a static orb instead of sweeping into the
+        // intended shape. Default the dropdown to the creature idle "cpause1" and start playback so
+        // the dropdown truthfully reflects what is animating. Other models default to "(none)". (#2434)
+        int idleItemIndex = -1;
+        if (_modelPreviewGL?.HasAnimatedEmitters() == true)
+            idleItemIndex = items.FindIndex(n => string.Equals(n, "cpause1", StringComparison.OrdinalIgnoreCase));
+
+        if (idleItemIndex > 0)
         {
-            _animTimeSlider.Value = 0;
-            _animTimeSlider.Maximum = 1;
+            _animationComboBox.SelectedIndex = idleItemIndex; // fires OnAnimationSelectionChanged -> SetActiveAnimation
+            _modelPreviewGL?.PlayAnimation();
+            if (_animPlayButton != null) _animPlayButton.Content = "⏸";
+        }
+        else
+        {
+            _animationComboBox.SelectedIndex = 0;
+            _modelPreviewGL?.SetActiveAnimation(null);
+            if (_animTimeSlider != null)
+            {
+                _animTimeSlider.Value = 0;
+                _animTimeSlider.Maximum = 1;
+            }
         }
     }
 

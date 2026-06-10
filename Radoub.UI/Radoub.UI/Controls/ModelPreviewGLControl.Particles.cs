@@ -28,11 +28,10 @@ public partial class ModelPreviewGLControl
     // Scratch CPU buffer reused across frames to avoid per-frame allocation churn.
     private float[] _particleScratch = Array.Empty<float>();
 
-    // Particle size scale = model radius × this factor. Calibrated so the fairy (radius ≈ 0.22)
-    // renders wing/dust particles at ~the authored visual size; scales with the model so larger
-    // creatures keep proportional particles. (#2395)
-    private const float ParticleSizeRadiusFactor = 1.1f;
-    private float _particleSizeScale = 1f;
+    // A particle is clamped to this fraction of the model radius so no single emitter dominates the
+    // preview (e.g. the fairy's oversized wing-glow emitters). Tuned against c_fairy: 0.6 keeps the
+    // wing glow subtle while leaving normal small particles (dust) far below the cap. (#2434)
+    private const float ParticleSizeCapRadiusFactor = 0.6f;
 
     // Corner offsets for the two triangles of a quad, in (corner, uv) pairs.
     // Corner is the half-extent offset in camera right/up space; uv spans 0..1.
@@ -221,8 +220,18 @@ void main()
         SetParticleMatrix("uModel", modelMatrix);
         SetParticleMatrix("uView", view);
         SetParticleMatrix("uProj", projection);
-        SetParticleVec3("uCamRight", camRight);
-        SetParticleVec3("uCamUp", camUp);
+        // uCamRight/uCamUp are the generic quad-expansion axes; they're set per-emitter below
+        // because render modes differ (camera-facing vs locked to the emitter's local frame). (#2434)
+
+        // Model rotation, applied to local-frame quad axes so locked billboards spin with the mesh
+        // (the shader applies uModel to the particle center but not to the quad basis). (#2434)
+        var modelRotation = Matrix4x4.Decompose(modelMatrix, out _, out var modelQuat, out _)
+            ? modelQuat
+            : Quaternion.Identity;
+
+        // Animation pose so locked-frame quads (Billboard_to_Local_Z) follow animated emitter nodes
+        // (the flapping wing Dummies); null when no animation is playing. (#2434)
+        var particlePose = GetCurrentPose();
 
         _gl.BindVertexArray(_particleVao);
         _gl.ActiveTexture(TextureUnit.Texture0);
@@ -232,10 +241,19 @@ void main()
         _gl.Enable(EnableCap.Blend);
 
         // TODO(#2395): back-to-front sort for Alpha blend (additive is order-independent).
-        foreach (var (_, emitter, system) in _particleSystems)
+        foreach (var (node, emitter, system) in _particleSystems)
         {
             int count = system.LiveCount;
             if (count == 0) continue;
+
+            // Quad orientation per render mode. Camera-facing modes use the screen axes; modes
+            // locked to the emitter's local frame (e.g. Billboard_to_Local_Z, the fairy wings) use
+            // the node's local axes, composed with the model rotation so they spin with the mesh. (#2434)
+            var emitterRot = Quaternion.Concatenate(GetEmitterWorldRotation(node, particlePose), modelRotation);
+            var (quadRight, quadUp) = ParticleBillboard.QuadBasis(
+                emitter.RenderMode, camRight, camUp, emitterRot);
+            SetParticleVec3("uCamRight", quadRight);
+            SetParticleVec3("uCamUp", quadUp);
 
             // Per-blend state.
             bool cutout = emitter.Blend == ParticleBlendMode.Cutout;
@@ -332,11 +350,18 @@ void main()
                 vMin = 1f - (row + 1) / (float)rows;
             }
 
-            // NWN authors particle sizes in game-world meters, but the preview renders raw MDL
-            // units (a creature's MDL radius is ~0.2–0.6, scaled up ~9× to ~2m in game). Scaling
-            // particle size by the model radius brings authored sizes into the preview's space and
-            // keeps them proportional across models (fairy r≈0.22 and a larger rat both look right).
-            float size = part.SizeX * _particleSizeScale; // MVP: square billboard sized by SizeX
+            // Particle sizes are authored in raw MDL units — the same space as the mesh vertices
+            // (node.Scale is 1.0; NWN creature MDLs are modeled at their true size, e.g. the fairy
+            // is a 0.44-unit-tall Tinkerbell). Render the authored size directly. (#2434)
+            //
+            // Cap at a fraction of the model radius so a single emitter can't dominate the preview:
+            // the fairy's Billboard_to_Local_Z wing emitters author 0.5-0.6 (≈3x her 0.22 radius) and
+            // are meant to read as a faint wing glow in Aurora, not a body-swallowing orb. Aurora's
+            // exact wing-blade render is undocumented (no public tool reproduces Billboard_to_Local_Z),
+            // so clamping oversized particles to a glow is the faithful-as-possible approximation. The
+            // cap is generous enough that normal particles (dust 0.07 << cap) are untouched. (#2434)
+            float sizeCap = MathF.Max(_viewController.ModelRadius, 0.001f) * ParticleSizeCapRadiusFactor;
+            float size = MathF.Min(part.SizeX, sizeCap); // square billboard sized by authored SizeX, capped
             Vector4 color = part.Color;
 
             for (int c = 0; c < ParticleVertsPerQuad; c++)
