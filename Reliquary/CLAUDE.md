@@ -90,6 +90,22 @@ UTP files are GFF-based placeable blueprints. Parser/writer is in `Radoub.Format
 - `Conversation` — attached DLG resref
 - `ItemList` — inventory contents (PlaceableItem, when HasInventory)
 
+### Preview Animation States (#2431)
+
+The 3D preview state selector poses the model at the end frame of the state's MDL animation
+(`open`/`close`/`on`/`off`; BioWare Door/Placeable spec Table 4.1.2). A state is only offered when
+the model actually contains that animation.
+
+**Destroyed (state 3) is intentionally excluded from the selector.** Stock BioWare placeable MDLs
+carry these state animations as ~33 ms single-keyframe stubs with no geometry/scale transforms
+(verified on the standard chest, `PLC_A08`: `dead` is one frame, same 8 meshes / 208 verts as
+default). The model has no distinct destroyed/debris geometry — real runtime destruction (debris
+swap, removal) is **engine/script-driven**, not baked into the blueprint MDL, and the Aurora toolset
+shows the base model too. A Destroyed preview would look identical to Default, so it is filtered out
+in `PlaceableStateResolver.SelectorExcludedStates`. The other state stubs are kept (some models do
+provide visible open/close geometry). The `dead` mapping itself remains in the resolver — only the
+selector hides it.
+
 ---
 
 ## Development

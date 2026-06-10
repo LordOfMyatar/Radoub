@@ -35,9 +35,15 @@ public static class PlaceableStateResolver
     public static string? AnimationNameForState(byte state)
         => StateAnimationNames.TryGetValue(state, out var name) ? name : null;
 
+    // States never offered in the preview selector even when the model declares the animation.
+    // Destroyed (3): stock MDLs ship a trivial single-frame `dead` stub with no debris geometry, so
+    // the preview is indistinguishable from Default. Real destruction is engine/script-driven at
+    // runtime, not baked into the blueprint MDL — showing it only misleads (user request).
+    private static readonly HashSet<byte> SelectorExcludedStates = new() { 3 };
+
     /// <summary>
-    /// The states selectable for this model: Default (always) plus every non-default state whose
-    /// required animation is present in the model. Returned in value order (0..5).
+    /// The states selectable for this model: Default (always) plus every non-default, non-excluded
+    /// state whose required animation is present in the model. Returned in value order.
     /// </summary>
     public static IReadOnlyList<PlaceableAnimationState> AvailableStates(MdlModel? model)
     {
@@ -49,6 +55,7 @@ public static class PlaceableStateResolver
                 result.Add(state);
                 continue;
             }
+            if (SelectorExcludedStates.Contains(state.Value)) continue;
             if (model != null && FindAnimation(model, state.Value) != null)
                 result.Add(state);
         }

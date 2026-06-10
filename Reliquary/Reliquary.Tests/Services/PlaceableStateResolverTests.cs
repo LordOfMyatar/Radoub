@@ -44,17 +44,28 @@ public class PlaceableStateResolverTests
     }
 
     [Fact]
-    public void AllStateAnimations_AllSixStates()
+    public void AllStateAnimations_AllExceptDestroyed()
     {
+        // Destroyed (3) is excluded from the selector even when the model has a `dead` animation,
+        // because stock placeable `dead` stubs show no visible change (runtime/engine-driven).
         var states = PlaceableStateResolver.AvailableStates(ModelWith("open", "close", "dead", "on", "off"));
-        Assert.Equal(new byte[] { 0, 1, 2, 3, 4, 5 }, states.Select(s => s.Value).ToArray());
+        Assert.Equal(new byte[] { 0, 1, 2, 4, 5 }, states.Select(s => s.Value).ToArray());
+    }
+
+    [Fact]
+    public void DestroyedState_NeverOffered_EvenWithDeadAnimation()
+    {
+        var states = PlaceableStateResolver.AvailableStates(ModelWith("dead"));
+        Assert.DoesNotContain(states, s => s.Value == 3);
+        Assert.Equal(new byte[] { 0 }, states.Select(s => s.Value).ToArray());
     }
 
     [Fact]
     public void AnimationMatchIsCaseInsensitive()
     {
-        var states = PlaceableStateResolver.AvailableStates(ModelWith("DEAD"));
-        Assert.Contains(states, s => s.Value == 3); // Destroyed
+        // close (2) is offered; case-insensitive name match.
+        var states = PlaceableStateResolver.AvailableStates(ModelWith("CLOSE"));
+        Assert.Contains(states, s => s.Value == 2); // Closed
     }
 
     [Fact]
