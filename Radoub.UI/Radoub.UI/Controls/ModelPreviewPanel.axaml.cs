@@ -33,6 +33,13 @@ public partial class ModelPreviewPanel : UserControl
     private Point _lastPointer;
     private bool _suppressStateEvent;
 
+    // Radoub.UI controls do not get generated x:Name backing fields, so the named children are
+    // resolved via FindControl after the XAML loads and cached here (matches the repo pattern).
+    private readonly ModelPreviewGLControl _gl;
+    private readonly Border _inputSurface;
+    private readonly Border _stateSelectorRow;
+    private readonly ComboBox _stateCombo;
+
     /// <summary>
     /// Raised when the user picks a state from the optional state selector (#2431), carrying the
     /// selected state's byte value. Only fires for user selections, never while the host populates.
@@ -43,17 +50,22 @@ public partial class ModelPreviewPanel : UserControl
     {
         InitializeComponent();
 
-        InputSurface.PointerPressed += OnPointerPressed;
-        InputSurface.PointerMoved += OnPointerMoved;
-        InputSurface.PointerReleased += OnPointerReleased;
-        InputSurface.PointerWheelChanged += OnPointerWheel;
-        InputSurface.KeyDown += OnKeyDown;
+        _gl = this.FindControl<ModelPreviewGLControl>("ModelPreviewGL")!;
+        _inputSurface = this.FindControl<Border>("InputSurface")!;
+        _stateSelectorRow = this.FindControl<Border>("StateSelectorRow")!;
+        _stateCombo = this.FindControl<ComboBox>("StateCombo")!;
+
+        _inputSurface.PointerPressed += OnPointerPressed;
+        _inputSurface.PointerMoved += OnPointerMoved;
+        _inputSurface.PointerReleased += OnPointerReleased;
+        _inputSurface.PointerWheelChanged += OnPointerWheel;
+        _inputSurface.KeyDown += OnKeyDown;
     }
 
     private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 
     /// <summary>The hosted GL control. Hosts load models and set the texture service through this.</summary>
-    public ModelPreviewGLControl Preview => ModelPreviewGL;
+    public ModelPreviewGLControl Preview => _gl;
 
     // ----- Optional state selector (#2431) -----
 
@@ -79,10 +91,10 @@ public partial class ModelPreviewPanel : UserControl
         _suppressStateEvent = true;
         try
         {
-            StateCombo.ItemsSource = states;
+            _stateCombo.ItemsSource = states;
             var match = states.FirstOrDefault(s => s.Value == selected);
-            StateCombo.SelectedItem = states.Contains(match) ? match : states[0];
-            StateSelectorRow.IsVisible = true;
+            _stateCombo.SelectedItem = states.Contains(match) ? match : states[0];
+            _stateSelectorRow.IsVisible = true;
         }
         finally
         {
@@ -96,8 +108,8 @@ public partial class ModelPreviewPanel : UserControl
         _suppressStateEvent = true;
         try
         {
-            StateSelectorRow.IsVisible = false;
-            StateCombo.ItemsSource = null;
+            _stateSelectorRow.IsVisible = false;
+            _stateCombo.ItemsSource = null;
         }
         finally
         {
@@ -108,7 +120,7 @@ public partial class ModelPreviewPanel : UserControl
     private void OnStateSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (_suppressStateEvent) return;
-        if (StateCombo.SelectedItem is PreviewState state)
+        if (_stateCombo.SelectedItem is PreviewState state)
             StateSelected?.Invoke(this, state.Value);
     }
 
@@ -116,7 +128,7 @@ public partial class ModelPreviewPanel : UserControl
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        var props = e.GetCurrentPoint(InputSurface).Properties;
+        var props = e.GetCurrentPoint(_inputSurface).Properties;
         bool shift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
 
         _dragMode = PreviewDragModeDecider.Decide(
@@ -126,9 +138,9 @@ public partial class ModelPreviewPanel : UserControl
 
         if (_dragMode == PreviewDragMode.None) return;
 
-        _lastPointer = e.GetPosition(InputSurface);
-        InputSurface.Focus();
-        e.Pointer.Capture(InputSurface);
+        _lastPointer = e.GetPosition(_inputSurface);
+        _inputSurface.Focus();
+        e.Pointer.Capture(_inputSurface);
         e.Handled = true;
     }
 
@@ -136,15 +148,15 @@ public partial class ModelPreviewPanel : UserControl
     {
         if (_dragMode == PreviewDragMode.None) return;
 
-        var pos = e.GetPosition(InputSurface);
+        var pos = e.GetPosition(_inputSurface);
         double dx = pos.X - _lastPointer.X;
         double dy = pos.Y - _lastPointer.Y;
         _lastPointer = pos;
 
         if (_dragMode == PreviewDragMode.Rotate)
-            ModelPreviewGL.RotateByPixels(dx, dy);
+            _gl.RotateByPixels(dx, dy);
         else if (_dragMode == PreviewDragMode.Pan)
-            ModelPreviewGL.PanByPixels(dx, dy);
+            _gl.PanByPixels(dx, dy);
     }
 
     private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
@@ -157,8 +169,8 @@ public partial class ModelPreviewPanel : UserControl
 
     private void OnPointerWheel(object? sender, PointerWheelEventArgs e)
     {
-        var pos = e.GetPosition(ModelPreviewGL); // unproject uses GL viewport coords
-        ModelPreviewGL.ZoomAtCursorPixels(pos, e.Delta.Y);
+        var pos = e.GetPosition(_gl); // unproject uses GL viewport coords
+        _gl.ZoomAtCursorPixels(pos, e.Delta.Y);
         e.Handled = true;
     }
 
@@ -168,22 +180,22 @@ public partial class ModelPreviewPanel : UserControl
         {
             case Key.Left:
             case Key.A:
-                ModelPreviewGL.Rotate(-RotateStep, 0);
+                _gl.Rotate(-RotateStep, 0);
                 break;
             case Key.Right:
             case Key.D:
-                ModelPreviewGL.Rotate(RotateStep, 0);
+                _gl.Rotate(RotateStep, 0);
                 break;
             case Key.Up:
             case Key.W:
-                ModelPreviewGL.Rotate(0, -RotateStep);
+                _gl.Rotate(0, -RotateStep);
                 break;
             case Key.Down:
             case Key.S:
-                ModelPreviewGL.Rotate(0, RotateStep);
+                _gl.Rotate(0, RotateStep);
                 break;
             case Key.Home:
-                ModelPreviewGL.ResetView();
+                _gl.ResetView();
                 break;
             default:
                 return;
@@ -193,9 +205,9 @@ public partial class ModelPreviewPanel : UserControl
 
     // ----- Camera button handlers -----
 
-    private void OnRotateLeftClicked(object? sender, RoutedEventArgs e) => ModelPreviewGL.Rotate(-ButtonRotate);
-    private void OnRotateRightClicked(object? sender, RoutedEventArgs e) => ModelPreviewGL.Rotate(ButtonRotate);
-    private void OnResetViewClicked(object? sender, RoutedEventArgs e) => ModelPreviewGL.ResetView();
-    private void OnZoomInClicked(object? sender, RoutedEventArgs e) => ModelPreviewGL.Zoom *= ZoomFactor;
-    private void OnZoomOutClicked(object? sender, RoutedEventArgs e) => ModelPreviewGL.Zoom /= ZoomFactor;
+    private void OnRotateLeftClicked(object? sender, RoutedEventArgs e) => _gl.Rotate(-ButtonRotate);
+    private void OnRotateRightClicked(object? sender, RoutedEventArgs e) => _gl.Rotate(ButtonRotate);
+    private void OnResetViewClicked(object? sender, RoutedEventArgs e) => _gl.ResetView();
+    private void OnZoomInClicked(object? sender, RoutedEventArgs e) => _gl.Zoom *= ZoomFactor;
+    private void OnZoomOutClicked(object? sender, RoutedEventArgs e) => _gl.Zoom /= ZoomFactor;
 }

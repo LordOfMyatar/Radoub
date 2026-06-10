@@ -69,9 +69,19 @@ public partial class MainWindow : Window
         AvaloniaXamlLoader.Load(this);
     }
 
+    /// <summary>
+    /// The shared status bar, resolved by name. This window has a hand-written InitializeComponent
+    /// (it only calls AvaloniaXamlLoader.Load), so the name-generator's x:Name field is declared but
+    /// never assigned — accessing it directly NREs. FindControl resolves it from the loaded tree
+    /// (#2428 launch fix). Named StatusBarCtrl to avoid colliding with the generated StatusBar field.
+    /// </summary>
+    private Radoub.UI.Controls.StatusBarControl? StatusBarCtrl =>
+        this.FindControl<Radoub.UI.Controls.StatusBarControl>("StatusBar");
+
     private void UpdateStatus(string message)
     {
-        StatusBar.PrimaryText = message;
+        var bar = StatusBarCtrl;
+        if (bar != null) bar.PrimaryText = message;
     }
 
     /// <summary>
@@ -80,17 +90,20 @@ public partial class MainWindow : Window
     /// </summary>
     private void UpdateModuleIndicator()
     {
+        var bar = StatusBarCtrl;
+        if (bar == null) return;
+
         var modulePath = RadoubSettings.Instance.CurrentModulePath;
         if (!string.IsNullOrEmpty(modulePath))
         {
             var name = Path.GetFileNameWithoutExtension(modulePath);
-            StatusBar.ModuleIndicator = $"Module: {name}";
-            StatusBar.ModuleIndicatorForeground = BrushManager.GetInfoBrush(this);
+            bar.ModuleIndicator = $"Module: {name}";
+            bar.ModuleIndicatorForeground = BrushManager.GetInfoBrush(this);
         }
         else
         {
-            StatusBar.ModuleIndicator = "No module";
-            StatusBar.ModuleIndicatorForeground = BrushManager.GetWarningBrush(this);
+            bar.ModuleIndicator = "No module";
+            bar.ModuleIndicatorForeground = BrushManager.GetWarningBrush(this);
         }
     }
 
