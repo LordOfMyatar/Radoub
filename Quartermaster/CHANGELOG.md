@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.119-alpha] - 2026-06-09
+**Branch**: `quartermaster/issue-2434` | **PR**: #TBD
+
+### Feat: Fairy/pixie emitter particles fall straighter (#2434)
+
+- Refines fairy dust emission so particles fall in a tighter column closer to Aurora (less cone fan-out). Follow-up to #2395.
+
+---
+
 ## [0.2.118-alpha] - 2026-06-08
 **Branch**: `quartermaster/issue-2395` | **PR**: #2432
 
