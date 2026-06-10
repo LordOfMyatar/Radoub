@@ -13,7 +13,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 
 - Adopt the shared `StatusBarControl` with a live module indicator (#2428).
 - 3D placeable preview gains rotate/zoom/pan/reset + fit-on-load camera controls and a backward-render fix, with the camera logic extracted into a shared Radoub.UI component (#2430).
-- Preview shows a state selector (open/closed/destroyed/activated) limited to states the loaded model provides (#2431).
+- Preview shows a state selector (open/closed/activated/deactivated) limited to states the loaded model provides; Destroyed is omitted since stock models render it identically to default (#2431).
 
 ---
 
