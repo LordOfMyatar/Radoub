@@ -7,7 +7,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 ---
 
 ## [0.10.0-alpha] - 2026-06-09
-**Branch**: `reliquary/sprint/preview-and-statusbar` | **PR**: #TBD
+**Branch**: `reliquary/sprint/preview-and-statusbar` | **PR**: #2438
 
 ### Sprint: 3D Preview Upgrades & Shared Status Bar
 
