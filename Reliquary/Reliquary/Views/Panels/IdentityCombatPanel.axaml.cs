@@ -111,8 +111,12 @@ public partial class IdentityCombatPanel : UserControl
         AvaloniaXamlLoader.Load(this);
     }
 
-    /// <summary>The hosted 3D preview control (host loads the placeable MDL into it).</summary>
-    public ModelPreviewGLControl Preview => this.FindControl<ModelPreviewGLControl>("ModelPreview")!;
+    /// <summary>
+    /// The hosted 3D preview's GL control (host loads the placeable MDL into it). The panel now wraps
+    /// the GL control in the shared <see cref="ModelPreviewPanel"/> (camera controls, #2430), so this
+    /// reaches through to the inner control to keep the host's load/texture wiring unchanged.
+    /// </summary>
+    public ModelPreviewGLControl Preview => this.FindControl<ModelPreviewPanel>("ModelPreview")!.Preview;
 
     /// <summary>Fill the appearance combo from the shared placeable appearance service.</summary>
     public void PopulateAppearances(IPlaceableAppearanceService appearances, uint selectedId)

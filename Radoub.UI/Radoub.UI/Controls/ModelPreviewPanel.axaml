@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="clr-namespace:Radoub.UI.Controls"
+             mc:Ignorable="d" d:DesignWidth="260" d:DesignHeight="300"
+             x:Class="Radoub.UI.Controls.ModelPreviewPanel">
+
+  <!-- Shared model-preview surface (#2430): the GL control + a transparent input overlay
+       (OpenGlControlBase has no Background, so pointer/wheel must hit a sibling) + a camera
+       button bar. Hosts load models via the Preview property; camera math lives in the GL
+       control / ModelViewController. -->
+  <Grid RowDefinitions="*,Auto">
+
+    <Border Grid.Row="0"
+            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+            BorderThickness="1"
+            CornerRadius="4">
+      <Grid>
+        <controls:ModelPreviewGLControl x:Name="ModelPreviewGL"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch"/>
+        <!-- Transparent surface so pointer/wheel/key events always hit-test. -->
+        <Border x:Name="InputSurface"
+                Background="Transparent"
+                Focusable="True"/>
+      </Grid>
+    </Border>
+
+    <!-- Camera controls. Mirrors Quartermaster's AppearancePanel preview bar. -->
+    <Border Grid.Row="1" Padding="0,6,0,0">
+      <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+        <Button x:Name="RotateLeftButton" Content="↺" Width="30" Height="30"
+                Click="OnRotateLeftClicked" ToolTip.Tip="Rotate Left"
+                AutomationProperties.AutomationId="ModelPreview_RotateLeft"/>
+        <Button x:Name="ResetViewButton" Content="⟲" Width="30" Height="30"
+                Click="OnResetViewClicked" ToolTip.Tip="Reset View (Home)"
+                AutomationProperties.AutomationId="ModelPreview_ResetView"/>
+        <Button x:Name="RotateRightButton" Content="↻" Width="30" Height="30"
+                Click="OnRotateRightClicked" ToolTip.Tip="Rotate Right"
+                AutomationProperties.AutomationId="ModelPreview_RotateRight"/>
+        <Button x:Name="ZoomInButton" Content="+" Width="30" Height="30" Margin="14,0,0,0"
+                Click="OnZoomInClicked" ToolTip.Tip="Zoom In"
+                AutomationProperties.AutomationId="ModelPreview_ZoomIn"/>
+        <Button x:Name="ZoomOutButton" Content="–" Width="30" Height="30"
+                Click="OnZoomOutClicked" ToolTip.Tip="Zoom Out"
+                AutomationProperties.AutomationId="ModelPreview_ZoomOut"/>
+      </StackPanel>
+    </Border>
+  </Grid>
+</UserControl>
