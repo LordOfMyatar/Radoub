@@ -10,7 +10,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ### Feat: Fairy/pixie emitter particles fall straighter (#2434)
 
-- Refines fairy dust emission so particles fall in a tighter column closer to Aurora (less cone fan-out). Follow-up to #2395.
+- Fairy/pixie dust in the model preview now falls in a tighter column (less cone fan-out). Shared `Radoub.UI` 0.2.10-alpha — see root CHANGELOG. Follow-up to #2395.
 
 ---
 

@@ -33,6 +33,16 @@ public sealed class ParticleSystem
 {
     private const float GravityConstant = 9.81f;
 
+    /// <summary>
+    /// Cone-emission axis bias exponent. rollnw samples the polar angle uniformly
+    /// (theta = spread * u), which spreads particles evenly across the half-angle and fans
+    /// them toward the cone rim — wider than Aurora, whose dust falls in a tighter column.
+    /// Raising the exponent above 1 pulls each draw toward the emission axis (theta = 0),
+    /// concentrating particles near-straight-down while still reaching the full spread at u=1.
+    /// 2.0 = quadratic bias, tuned against Aurora's c_fairy (appearance 55) dust. (#2434)
+    /// </summary>
+    public const float EmissionAxisBias = 2.0f;
+
     /// <summary>Clamp ceiling for a single frame's dt (100ms) so a frame hitch can't fast-forward the sim.</summary>
     private const float MaxFrameDt = 0.1f;
 
@@ -211,12 +221,28 @@ public sealed class ParticleSystem
             return new Vector3(0f, 0f, 1f);
 
         float azimuth = _rng.NextRange(0f, MathF.PI * 2f);
-        float theta = _rng.NextRange(0f, _emitter.Spread);
+        float theta = SampleConeTheta(_emitter.Spread, _rng.NextUnit(), EmissionAxisBias);
         float sinTheta = MathF.Sin(theta);
         var dir = new Vector3(
             MathF.Cos(azimuth) * sinTheta,
             MathF.Sin(azimuth) * sinTheta,
             MathF.Cos(theta));
         return Vector3.Normalize(dir);
+    }
+
+    /// <summary>
+    /// Map a uniform draw <paramref name="u"/> in [0,1] to a cone polar angle in
+    /// [0, <paramref name="spread"/>], biased toward the emission axis by <paramref name="bias"/>.
+    /// bias = 1 reproduces rollnw's uniform sampling; bias &gt; 1 concentrates particles near
+    /// the axis (theta = 0) for a tighter column. Endpoints are preserved: u=0 -&gt; 0,
+    /// u=1 -&gt; spread. Pure/static so the distribution is unit-testable without RNG. (#2434)
+    /// </summary>
+    public static float SampleConeTheta(float spread, float u, float bias)
+    {
+        if (spread <= 0f)
+            return 0f;
+        u = Math.Clamp(u, 0f, 1f);
+        float shaped = bias == 1f ? u : MathF.Pow(u, bias);
+        return spread * shaped;
     }
 }
