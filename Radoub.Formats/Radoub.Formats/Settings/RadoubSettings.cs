@@ -89,6 +89,12 @@ public partial class RadoubSettings : INotifyPropertyChanged
     // Backup settings (shared across all tools)
     private int _backupRetentionDays = 30;
 
+    // First-run wizard: gap keys the user has already been shown (#1020). Lets the
+    // welcome-back wizard surface only newly-introduced no-default settings, and
+    // never re-nag about gaps the user saw and chose to leave unset.
+    private List<string> _acknowledgedWizardGaps = new();
+    private bool _wizardHasRun = false;
+
     // Garbage label filters (shared across all tools)
     private List<string> _garbageFilters = GetDefaultGarbageFilters();
 
@@ -554,6 +560,33 @@ public partial class RadoubSettings : INotifyPropertyChanged
     /// Check if game paths are configured.
     /// </summary>
     public bool HasGamePaths => !string.IsNullOrEmpty(_baseGameInstallPath) || !string.IsNullOrEmpty(_neverwinterNightsPath);
+
+    /// <summary>
+    /// True once the first-run wizard has completed at least once (#1020).
+    /// Distinguishes a genuine first run from a configured user who hit a new gap.
+    /// </summary>
+    public bool WizardHasRun => _wizardHasRun;
+
+    /// <summary>
+    /// Gap keys the wizard has already shown the user (#1020). A copy — mutate via
+    /// <see cref="AcknowledgeWizardGaps"/>.
+    /// </summary>
+    public IReadOnlyList<string> AcknowledgedWizardGaps => _acknowledgedWizardGaps.AsReadOnly();
+
+    /// <summary>
+    /// Record that the wizard ran and the given gap keys were shown. Merges with
+    /// any previously-acknowledged keys so older acknowledgements are preserved.
+    /// </summary>
+    public void AcknowledgeWizardGaps(IEnumerable<string> gapKeys)
+    {
+        var merged = new HashSet<string>(_acknowledgedWizardGaps);
+        foreach (var key in gapKeys)
+            merged.Add(key);
+
+        _acknowledgedWizardGaps = merged.ToList();
+        _wizardHasRun = true;
+        SaveSettings();
+    }
 
     /// <summary>
     /// Check if CurrentModulePath points to a valid module (not just the modules parent directory).

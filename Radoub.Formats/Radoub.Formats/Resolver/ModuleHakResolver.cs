@@ -72,6 +72,38 @@ public static class ModuleHakResolver
     }
 
     /// <summary>
+    /// Resolve a list of HAK names (in priority order) to file paths, without
+    /// reading module.ifo. Use this when the caller already has the HAK list in
+    /// memory (e.g. an editor's working copy with unsaved reorders). Names may
+    /// include a trailing ".hak" extension, which is stripped. Returns resolved
+    /// paths in input order plus the names that could not be found.
+    /// </summary>
+    public static HakNameResolution ResolveHakNames(IEnumerable<string> hakNames, IEnumerable<string> hakSearchPaths)
+    {
+        var searchDirs = hakSearchPaths.Where(Directory.Exists).ToList();
+        var resolved = new List<string>();
+        var unresolved = new List<string>();
+
+        foreach (var rawName in hakNames)
+        {
+            if (string.IsNullOrWhiteSpace(rawName))
+                continue;
+
+            var name = rawName.Trim();
+            if (name.EndsWith(".hak", StringComparison.OrdinalIgnoreCase))
+                name = name[..^4];
+
+            var path = searchDirs.Count > 0 ? FindHakFile(name, searchDirs) : null;
+            if (path != null)
+                resolved.Add(path);
+            else
+                unresolved.Add(name);
+        }
+
+        return new HakNameResolution(resolved, unresolved);
+    }
+
+    /// <summary>
     /// Find a HAK file by name (without extension) in the search directories.
     /// Case-insensitive search for cross-platform compatibility.
     /// </summary>
@@ -105,3 +137,9 @@ public static class ModuleHakResolver
         return null;
     }
 }
+
+/// <summary>
+/// Result of resolving HAK names to file paths: the resolved paths (in input
+/// order) and the names that could not be found in any search directory.
+/// </summary>
+public sealed record HakNameResolution(IReadOnlyList<string> Resolved, IReadOnlyList<string> Unresolved);

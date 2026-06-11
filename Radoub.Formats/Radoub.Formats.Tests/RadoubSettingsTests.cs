@@ -116,6 +116,45 @@ public class RadoubSettingsTests
     }
 
     [Fact]
+    public void WizardState_DefaultsToNotRunWithNoAcknowledgedGaps()
+    {
+        var settings = RadoubSettings.Instance;
+
+        Assert.False(settings.WizardHasRun);
+        Assert.Empty(settings.AcknowledgedWizardGaps);
+    }
+
+    [Fact]
+    public void AcknowledgeWizardGaps_PersistsAndSurvivesReload()
+    {
+        var settings = RadoubSettings.Instance;
+        settings.AcknowledgeWizardGaps(new[] { "gamePath", "theme" });
+
+        Assert.True(settings.WizardHasRun);
+        Assert.Contains("gamePath", settings.AcknowledgedWizardGaps);
+        Assert.Contains("theme", settings.AcknowledgedWizardGaps);
+
+        // Simulate a fresh process: reset singleton, reload from disk.
+        ResetAndConfigure();
+        var reloaded = RadoubSettings.Instance;
+
+        Assert.True(reloaded.WizardHasRun);
+        Assert.Contains("gamePath", reloaded.AcknowledgedWizardGaps);
+        Assert.Contains("theme", reloaded.AcknowledgedWizardGaps);
+    }
+
+    [Fact]
+    public void AcknowledgeWizardGaps_MergesWithPreviousAcknowledgements()
+    {
+        var settings = RadoubSettings.Instance;
+        settings.AcknowledgeWizardGaps(new[] { "gamePath" });
+        settings.AcknowledgeWizardGaps(new[] { "newGap" });
+
+        Assert.Contains("gamePath", settings.AcknowledgedWizardGaps);
+        Assert.Contains("newGap", settings.AcknowledgedWizardGaps);
+    }
+
+    [Fact]
     public void Settings_SurviveNewInstance()
     {
         // First instance writes settings

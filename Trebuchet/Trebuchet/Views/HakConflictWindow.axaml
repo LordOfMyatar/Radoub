@@ -1,0 +1,65 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:RadoubLauncher.ViewModels"
+        x:Class="RadoubLauncher.Views.HakConflictWindow"
+        x:DataType="vm:HakConflictViewModel"
+        Title="HAK Conflicts"
+        Width="720" Height="500"
+        MinWidth="520" MinHeight="360"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+
+    <DockPanel Margin="12">
+
+        <!-- Header -->
+        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
+            <TextBlock Text="{Binding StatusText}"
+                       FontWeight="SemiBold"/>
+            <TextBlock Text="Resources that appear in more than one HAK. The winning HAK is first in priority order (earlier HAKs override later ones)."
+                       TextWrapping="Wrap"
+                       Opacity="0.75"/>
+            <TextBlock Text="{Binding UnresolvedWarning}"
+                       IsVisible="{Binding HasUnresolved}"
+                       Foreground="{DynamicResource WarningBrush}"
+                       TextWrapping="Wrap"
+                       Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <!-- Bottom: Close -->
+        <StackPanel DockPanel.Dock="Bottom"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,8,0,0">
+            <Button Content="Close"
+                    Click="OnCloseClick"
+                    IsCancel="True"
+                    Padding="16,6"/>
+        </StackPanel>
+
+        <!-- Conflict List -->
+        <DataGrid ItemsSource="{Binding Conflicts}"
+                  AutoGenerateColumns="False"
+                  CanUserSortColumns="True"
+                  CanUserReorderColumns="False"
+                  CanUserResizeColumns="True"
+                  IsReadOnly="True"
+                  GridLinesVisibility="Horizontal"
+                  SelectionMode="Extended">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Resource"
+                                    Binding="{Binding Resource}"
+                                    Width="220"/>
+                <DataGridTextColumn Header="Winner"
+                                    Binding="{Binding Winner}"
+                                    Width="160"/>
+                <DataGridTextColumn Header="In HAKs (priority order)"
+                                    Binding="{Binding Haks}"
+                                    Width="*"/>
+                <DataGridTextColumn Header="Count"
+                                    Binding="{Binding HakCount}"
+                                    Width="70"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+    </DockPanel>
+</Window>
