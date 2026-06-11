@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using Avalonia.Markup.Xaml;
 using RadoubLauncher.Services;
+using RadoubLauncher.ViewModels;
 using Radoub.Formats.Logging;
 using RadoubLauncher.Views;
 using Radoub.UI.Services;
@@ -103,7 +104,17 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             DisableAvaloniaDataAnnotationValidation();
-            desktop.MainWindow = new MainWindow();
+            var mainWindow = new MainWindow();
+            desktop.MainWindow = mainWindow;
+
+            // First-run / welcome-back configuration wizard (#1020). Shown over the
+            // main window (non-blocking) once it is up, only when a required setting
+            // with no good default is unfilled and unacknowledged. Skipped in SafeMode.
+            var safeMode = Program.SafeMode?.SafeModeActive ?? false;
+            if (!safeMode)
+            {
+                mainWindow.Opened += OnMainWindowOpenedShowWizardIfNeeded;
+            }
 
             // Unsubscribe from singleton events and dispose services on app exit (#1282, #1292)
             desktop.Exit += (_, _) =>
@@ -114,6 +125,40 @@ public partial class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>
+    /// On main-window open, decide whether the first-run / welcome-back wizard
+    /// should appear and show it non-modally over the main window (#1020). Fires
+    /// once — the handler unsubscribes itself.
+    /// </summary>
+    private void OnMainWindowOpenedShowWizardIfNeeded(object? sender, EventArgs e)
+    {
+        if (sender is not Avalonia.Controls.Window mainWindow)
+            return;
+
+        mainWindow.Opened -= OnMainWindowOpenedShowWizardIfNeeded;
+
+        var settings = Radoub.Formats.Settings.RadoubSettings.Instance;
+
+        // Gap registry. Today the only required no-default setting is the game path.
+        // Theme/font/logging/backup always have good defaults — shown for review,
+        // never forcing the wizard open.
+        var gaps = new[]
+        {
+            new WizardGap(FirstRunWizardViewModel.GapGamePath, settings.HasGamePaths, HasGoodDefault: false),
+            new WizardGap(FirstRunWizardViewModel.GapAppearance, true, HasGoodDefault: true),
+            new WizardGap(FirstRunWizardViewModel.GapLogging, true, HasGoodDefault: true),
+            new WizardGap(FirstRunWizardViewModel.GapBackup, true, HasGoodDefault: true),
+        };
+
+        var decision = WizardGapService.Decide(gaps, settings.AcknowledgedWizardGaps, settings.WizardHasRun);
+        if (!decision.ShouldShow)
+            return;
+
+        var wizard = new FirstRunWizardWindow();
+        wizard.Initialize(decision.Mode);
+        wizard.Show(mainWindow);
     }
 
     private void OnSharedSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
