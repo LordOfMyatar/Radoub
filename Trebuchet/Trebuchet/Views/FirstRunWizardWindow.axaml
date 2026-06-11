@@ -13,7 +13,7 @@
 
         <!-- Header -->
         <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
-            <TextBlock Text="{Binding WelcomeHeading}" FontSize="20" FontWeight="SemiBold"/>
+            <TextBlock Text="{Binding WelcomeHeading}" FontSize="{DynamicResource FontSizeLarge}" FontWeight="SemiBold"/>
             <TextBlock Text="{Binding WelcomeBlurb}" TextWrapping="Wrap" Opacity="0.8"/>
             <TextBlock Text="{Binding CurrentStepTitle}" FontWeight="SemiBold" Margin="0,8,0,0"/>
         </StackPanel>
