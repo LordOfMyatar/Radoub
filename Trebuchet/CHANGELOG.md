@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.37.0-alpha] - 2026-06-10
+**Branch**: `trebuchet/issue-1985` | **PR**: #TBD
+
+### Sprint: Utility & Polish
+
+- HAK conflict checker in the Module Editor HAK Files tab — lists ResRefs that appear in multiple HAKs and the winning (first-priority) HAK (#1162).
+- First-run / welcome-back configuration wizard that fills required settings with no good default, then lands on an editable summary (#1020).
+- Desktop shortcut creation offered from the wizard (Windows/Linux), replacing the standalone-scripts approach (#1437).
+
+---
+
 ## [1.36.9-alpha] - 2026-06-06
 **Branch**: `trebuchet/sprint/data-loss-marlinspike` | **PR**: #2387
 
