@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Runtime.Versioning;
 using System.Text;
 
 namespace RadoubLauncher.Services;
@@ -73,6 +74,7 @@ public static class DesktopShortcutService
         }
     }
 
+    [SupportedOSPlatform("linux")]
     private static ShortcutResult CreateLinuxShortcut(string exePath, string? iconPath)
     {
         var appsDir = GetXdgDataApplications();
@@ -89,6 +91,7 @@ public static class DesktopShortcutService
         return ShortcutResult.Ok(path);
     }
 
+    [SupportedOSPlatform("windows")]
     private static ShortcutResult CreateWindowsShortcut(string exePath, string? iconPath)
     {
         var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
