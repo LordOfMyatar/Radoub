@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.37.0-alpha] - 2026-06-10
-**Branch**: `trebuchet/issue-1985` | **PR**: #TBD
+**Branch**: `trebuchet/issue-1985` | **PR**: #2452
 
 ### Sprint: Utility & Polish
 
