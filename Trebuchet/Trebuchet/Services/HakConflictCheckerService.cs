@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Radoub.Formats.Common;
 using Radoub.Formats.Erf;
+using Radoub.Formats.Resolver;
 
 namespace RadoubLauncher.Services;
 
@@ -22,10 +23,24 @@ namespace RadoubLauncher.Services;
 public static class HakConflictCheckerService
 {
     /// <summary>
+    /// Resolve a module's in-editor HAK list (names, in priority order) to file
+    /// paths and check for conflicts. Names that cannot be found in the search
+    /// paths are reported in <see cref="HakConflictReport.UnresolvedHaks"/> so the
+    /// UI can warn that the check was incomplete.
+    /// </summary>
+    public static HakConflictReport CheckHakNames(
+        IEnumerable<string> hakNamesInPriorityOrder, IEnumerable<string> hakSearchPaths)
+    {
+        var resolution = ModuleHakResolver.ResolveHakNames(hakNamesInPriorityOrder, hakSearchPaths);
+        var conflicts = CheckHakPaths(resolution.Resolved);
+        return new HakConflictReport(conflicts, resolution.Unresolved);
+    }
+
+    /// <summary>
     /// Read each HAK's resource list (metadata only — large HAKs are not loaded
     /// into memory) and detect cross-HAK conflicts. HAK paths must be supplied in
     /// priority order (first = highest priority), as returned by
-    /// <see cref="Radoub.Formats.Resolver.ModuleHakResolver"/>.
+    /// <see cref="ModuleHakResolver"/>.
     /// </summary>
     public static IReadOnlyList<HakConflict> CheckHakPaths(IEnumerable<string> hakPathsInPriorityOrder)
     {
@@ -113,6 +128,15 @@ public static class HakConflictCheckerService
 
 /// <summary>A HAK's resource list, identified by name (filename without extension).</summary>
 public sealed record HakContents(string Name, IReadOnlyList<ErfResourceEntry> Resources);
+
+/// <summary>
+/// Result of a conflict check over a module's HAK list: the detected conflicts
+/// plus any HAK names that could not be resolved to files (so the check was
+/// incomplete for those).
+/// </summary>
+public sealed record HakConflictReport(
+    IReadOnlyList<HakConflict> Conflicts,
+    IReadOnlyList<string> UnresolvedHaks);
 
 /// <summary>
 /// A single cross-HAK conflict: one resource present in multiple HAKs.

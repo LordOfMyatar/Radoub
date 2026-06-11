@@ -203,6 +203,58 @@ public class ModuleHakResolverTests : IDisposable
 
     #endregion
 
+    #region ResolveHakNames (direct, no module.ifo)
+
+    [Fact]
+    public void ResolveHakNames_ResolvesNamesInOrder()
+    {
+        var hakDir = CreateHakDir("first.hak", "second.hak");
+
+        var result = ModuleHakResolver.ResolveHakNames(new[] { "first", "second" }, new[] { hakDir });
+
+        Assert.Equal(2, result.Resolved.Count);
+        Assert.EndsWith("first.hak", result.Resolved[0]);
+        Assert.EndsWith("second.hak", result.Resolved[1]);
+        Assert.Empty(result.Unresolved);
+    }
+
+    [Fact]
+    public void ResolveHakNames_ReportsUnresolvedNames()
+    {
+        var hakDir = CreateHakDir("present.hak");
+
+        var result = ModuleHakResolver.ResolveHakNames(new[] { "present", "absent" }, new[] { hakDir });
+
+        Assert.Single(result.Resolved);
+        Assert.EndsWith("present.hak", result.Resolved[0]);
+        Assert.Equal(new[] { "absent" }, result.Unresolved);
+    }
+
+    [Fact]
+    public void ResolveHakNames_StripsHakExtensionFromName()
+    {
+        var hakDir = CreateHakDir("withext.hak");
+
+        var result = ModuleHakResolver.ResolveHakNames(new[] { "withext.hak" }, new[] { hakDir });
+
+        Assert.Single(result.Resolved);
+        Assert.EndsWith("withext.hak", result.Resolved[0]);
+        Assert.Empty(result.Unresolved);
+    }
+
+    [Fact]
+    public void ResolveHakNames_EmptyNames_ReturnsEmpty()
+    {
+        var hakDir = CreateHakDir("a.hak");
+
+        var result = ModuleHakResolver.ResolveHakNames(Array.Empty<string>(), new[] { hakDir });
+
+        Assert.Empty(result.Resolved);
+        Assert.Empty(result.Unresolved);
+    }
+
+    #endregion
+
     #region Edge Cases
 
     [Fact]

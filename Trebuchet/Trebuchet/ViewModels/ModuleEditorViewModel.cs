@@ -429,5 +429,23 @@ public partial class ModuleEditorViewModel : ObservableObject
     {
         // Initialize GameDataService for script browser (built-in scripts from game BIFs)
         _ = InitializeGameDataServiceAsync();
+
+        HookHakListChanges(HakList);
+    }
+
+    /// <summary>True when the module has 2+ HAKs — i.e. a conflict check is meaningful (#1162).</summary>
+    public bool HasMultipleHaks => HakList.Count > 1;
+
+    // Keep HasMultipleHaks in sync with both whole-list replacement (load) and
+    // incremental add/remove/reorder.
+    partial void OnHakListChanged(ObservableCollection<string> value)
+    {
+        HookHakListChanges(value);
+        OnPropertyChanged(nameof(HasMultipleHaks));
+    }
+
+    private void HookHakListChanges(ObservableCollection<string> list)
+    {
+        list.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasMultipleHaks));
     }
 }

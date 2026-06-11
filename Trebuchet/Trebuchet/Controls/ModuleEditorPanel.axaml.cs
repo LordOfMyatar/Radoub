@@ -1,7 +1,12 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Radoub.Formats.Settings;
 using Radoub.UI.Controls;
 using RadoubLauncher.ViewModels;
+using RadoubLauncher.Views;
 
 namespace RadoubLauncher.Controls;
 
@@ -62,4 +67,26 @@ public partial class ModuleEditorPanel : UserControl
         if (_viewModel != null)
             _viewModel.HasUnsavedChanges = true;
     }
+
+    /// <summary>
+    /// Open the HAK conflict checker for the current (in-editor) HAK list (#1162).
+    /// Uses the working-copy HAK list so unsaved reorders are reflected.
+    /// </summary>
+    private async void OnCheckHakConflictsClick(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel == null) return;
+
+        var hakNames = _viewModel.HakList.ToList();
+        var searchPaths = RadoubSettings.Instance.GetAllHakSearchPaths().ToList();
+
+        var window = new HakConflictWindow();
+        var owner = GetParentWindow();
+        if (owner != null)
+            window.Show(owner);
+        else
+            window.Show();
+        await window.RunCheckAsync(hakNames, searchPaths);
+    }
+
+    private Window? GetParentWindow() => TopLevel.GetTopLevel(this) as Window;
 }
