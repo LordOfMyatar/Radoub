@@ -112,7 +112,7 @@
                     </DockPanel>
                     <TextBlock Text="How long module backups are kept before cleanup."
                                TextWrapping="Wrap" Opacity="0.7"/>
-                    <Slider Minimum="1" Maximum="90" Value="{Binding BackupRetentionDays}"
+                    <Slider Minimum="1" Maximum="90" Value="{Binding BackupRetentionSlider}"
                             TickFrequency="1" IsSnapToTickEnabled="True"/>
                 </StackPanel>
             </TabItem>
@@ -129,8 +129,7 @@
                                     <TextBlock Grid.Column="0" Text="{Binding Label}" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                     <TextBlock Grid.Column="1" Text="{Binding Value}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
                                     <Button Grid.Column="2" Content="Edit" Padding="10,3"
-                                            Command="{Binding $parent[ItemsControl].((vm:FirstRunWizardViewModel)DataContext).GoToStepCommand}"
-                                            CommandParameter="{Binding StepIndex}"/>
+                                            Command="{Binding Jump}"/>
                                 </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>

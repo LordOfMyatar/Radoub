@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -35,20 +36,35 @@ public partial class FirstRunWizardViewModel : ObservableObject
     private static readonly string[] StepTitles =
         { "Game Path", "Appearance", "Logging", "Backup", "Summary" };
 
-    private readonly Window _window;
+    private readonly Window? _window;
+    private readonly bool _headless;
 
     public FirstRunWizardViewModel(Window window, WizardMode mode)
+        : this(window, mode, headless: false) { }
+
+    private FirstRunWizardViewModel(Window? window, WizardMode mode, bool headless)
     {
         _window = window;
+        _headless = headless;
         Mode = mode;
 
         foreach (var level in new[] { "TRACE", "DEBUG", "INFO", "WARN", "ERROR" })
             AvailableLogLevels.Add(level);
-        foreach (var theme in ThemeManager.Instance.AvailableThemes)
-            AvailableThemes.Add(theme.Plugin.Name);
+
+        // ThemeManager is only available once a tool has initialized it. In headless
+        // tests it isn't, so guard the theme list population.
+        if (!headless)
+        {
+            foreach (var theme in ThemeManager.Instance.AvailableThemes)
+                AvailableThemes.Add(theme.Plugin.Name);
+        }
 
         LoadFromSettings();
     }
+
+    /// <summary>Headless factory for unit tests (no Window, no ThemeManager).</summary>
+    public static FirstRunWizardViewModel CreateForTest(WizardMode mode) =>
+        new(window: null, mode, headless: true);
 
     public WizardMode Mode { get; }
 
@@ -77,7 +93,13 @@ public partial class FirstRunWizardViewModel : ObservableObject
         OnPropertyChanged(nameof(CanGoBack));
         OnPropertyChanged(nameof(IsLastStep));
         OnPropertyChanged(nameof(IsSummary));
-        RefreshSummary();
+
+        // Rebuild the summary only when the summary step is shown. Doing it on every
+        // value change (slider drags fire continuously) thrashed the bound
+        // collection and crashed the render loop when the summary's item bindings
+        // re-materialized mid-drag.
+        if (IsSummary)
+            RefreshSummary();
     }
 
     [RelayCommand]
@@ -117,12 +139,13 @@ public partial class FirstRunWizardViewModel : ObservableObject
         var result = ResourcePathDetector.ValidateBaseGamePathWithMessage(value);
         GamePathValidation = result.Message;
         OnPropertyChanged(nameof(HasGamePathValidation));
-        RefreshSummary();
     }
 
     [RelayCommand]
     private async Task BrowseGamePath()
     {
+        if (_window == null) return; // headless (test) — no picker
+
         var folder = await _window.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
         {
             Title = "Select NWN Base Game Installation (contains data\\ folder)",
@@ -156,11 +179,9 @@ public partial class FirstRunWizardViewModel : ObservableObject
 
     public string FontSizePointsText => $"{(int)FontSizePoints}pt";
 
-    partial void OnSelectedThemeChanged(string value) => RefreshSummary();
     partial void OnFontSizePointsChanged(double value)
     {
         OnPropertyChanged(nameof(FontSizePointsText));
-        RefreshSummary();
     }
 
     // Logging
@@ -170,19 +191,26 @@ public partial class FirstRunWizardViewModel : ObservableObject
     [ObservableProperty]
     private string _selectedLogLevel = "INFO";
 
-    partial void OnSelectedLogLevelChanged(string value) => RefreshSummary();
-
     // Backup
 
+    // Slider binds to BackupRetentionSlider (a double) to avoid a fragile
+    // double→int two-way binding; the int property below is derived from it and is
+    // what gets persisted/clamped.
     [ObservableProperty]
-    private int _backupRetentionDays = 30;
+    private double _backupRetentionSlider = 30.0;
+
+    public int BackupRetentionDays
+    {
+        get => (int)Math.Round(BackupRetentionSlider);
+        set => BackupRetentionSlider = Math.Max(1, Math.Min(90, value));
+    }
 
     public string BackupRetentionText => $"{BackupRetentionDays} day{(BackupRetentionDays == 1 ? "" : "s")}";
 
-    partial void OnBackupRetentionDaysChanged(int value)
+    partial void OnBackupRetentionSliderChanged(double value)
     {
+        OnPropertyChanged(nameof(BackupRetentionDays));
         OnPropertyChanged(nameof(BackupRetentionText));
-        RefreshSummary();
     }
 
     // Shortcut offer
@@ -195,20 +223,25 @@ public partial class FirstRunWizardViewModel : ObservableObject
 
     public bool HasShortcutResult => !string.IsNullOrEmpty(ShortcutResultMessage);
 
-    // Summary (rebuilt whenever a value changes)
+    // Summary — built only when the summary step is shown (see OnStepIndexChanged).
 
     public ObservableCollection<WizardSummaryRow> SummaryRows { get; } = new();
 
     private void RefreshSummary()
     {
         SummaryRows.Clear();
-        SummaryRows.Add(new WizardSummaryRow("Game path",
+        SummaryRows.Add(MakeRow("Game path",
             string.IsNullOrEmpty(GameInstallPath) ? "(not set)" : GameInstallPath, 0));
-        SummaryRows.Add(new WizardSummaryRow("Theme", SelectedTheme, 1));
-        SummaryRows.Add(new WizardSummaryRow("Font size", FontSizePointsText, 1));
-        SummaryRows.Add(new WizardSummaryRow("Log level", SelectedLogLevel, 2));
-        SummaryRows.Add(new WizardSummaryRow("Backup retention", BackupRetentionText, 3));
+        SummaryRows.Add(MakeRow("Theme", SelectedTheme, 1));
+        SummaryRows.Add(MakeRow("Font size", FontSizePointsText, 1));
+        SummaryRows.Add(MakeRow("Log level", SelectedLogLevel, 2));
+        SummaryRows.Add(MakeRow("Backup retention", BackupRetentionText, 3));
     }
+
+    // Each row carries its own jump command so the summary's Edit button binds to
+    // the row, not to a fragile $parent[ItemsControl]-cast back to this view model.
+    private WizardSummaryRow MakeRow(string label, string value, int stepIndex) =>
+        new(label, value, stepIndex, new RelayCommand(() => GoToStep(stepIndex)));
 
     private void LoadFromSettings()
     {
@@ -218,10 +251,13 @@ public partial class FirstRunWizardViewModel : ObservableObject
         BackupRetentionDays = shared.BackupRetentionDays;
         SelectedLogLevel = shared.SharedLogLevel.ToString();
 
-        var current = ThemeManager.Instance.CurrentTheme;
-        SelectedTheme = current != null && AvailableThemes.Contains(current.Plugin.Name)
-            ? current.Plugin.Name
-            : AvailableThemes.FirstOrDefault() ?? "";
+        if (!_headless)
+        {
+            var current = ThemeManager.Instance.CurrentTheme;
+            SelectedTheme = current != null && AvailableThemes.Contains(current.Plugin.Name)
+                ? current.Plugin.Name
+                : AvailableThemes.FirstOrDefault() ?? "";
+        }
 
         RefreshSummary();
     }
@@ -287,5 +323,9 @@ public partial class FirstRunWizardViewModel : ObservableObject
         new[] { GapGamePath, GapAppearance, GapLogging, GapBackup };
 }
 
-/// <summary>One row on the summary page: label, current value, and the step to edit it.</summary>
-public sealed record WizardSummaryRow(string Label, string Value, int StepIndex);
+/// <summary>
+/// One row on the summary page: label, current value, the step it edits, and a
+/// self-contained Jump command that navigates to that step (so the Edit button
+/// binds to the row, not via a fragile $parent-cast back to the view model).
+/// </summary>
+public sealed record WizardSummaryRow(string Label, string Value, int StepIndex, ICommand Jump);
