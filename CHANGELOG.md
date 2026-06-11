@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.Formats 0.2.67-alpha] - 2026-06-10
+**Branch**: `trebuchet/issue-1985` | **PR**: #2452
+
+### ModuleHakResolver: resolve HAK names directly (#1162)
+
+- New `ResolveHakNames(names, searchPaths)` resolves an in-memory HAK list (no module.ifo read) to file paths in priority order and reports names it could not find. Used by Trebuchet's HAK conflict checker.
+
+---
+
 ## [Radoub.UI 0.2.10-alpha] - 2026-06-09
 **Branch**: `quartermaster/issue-2434` | **PR**: #2449
 
