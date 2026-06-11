@@ -62,18 +62,23 @@ public class DesktopShortcutServiceTests
     [Fact]
     public void GetLinuxDesktopFilePath_SanitizesNameToLowercaseDashed()
     {
-        var path = DesktopShortcutService.GetLinuxDesktopFilePath("/home/u/.local/share/applications", "Trebuchet");
+        // Neutral root (not /home/<user> or /Users/<user>) so the privacy scanner
+        // doesn't flag a hardcoded user path. Path.Combine keeps it separator-agnostic.
+        var appsDir = Path.Combine("apps");
+        var path = DesktopShortcutService.GetLinuxDesktopFilePath(appsDir, "Trebuchet");
 
-        Assert.Equal(
-            Path.Combine("/home/u/.local/share/applications", "trebuchet.desktop"),
-            path);
+        Assert.Equal(Path.Combine(appsDir, "trebuchet.desktop"), path);
     }
 
     [Fact]
     public void GetWindowsShortcutPath_EndsWithLnkOnDesktop()
     {
-        var path = DesktopShortcutService.GetWindowsShortcutPath(@"C:\Users\u\Desktop", "Trebuchet");
+        // Neutral root (not C:\Users\<user>) for the privacy scanner; Path.Combine
+        // matches the host separator, and the production code uses Path.Combine too,
+        // so this passes on both Windows and the Linux CI runner.
+        var desktop = Path.Combine("desktop");
+        var path = DesktopShortcutService.GetWindowsShortcutPath(desktop, "Trebuchet");
 
-        Assert.Equal(@"C:\Users\u\Desktop\Trebuchet.lnk", path);
+        Assert.Equal(Path.Combine(desktop, "Trebuchet.lnk"), path);
     }
 }
