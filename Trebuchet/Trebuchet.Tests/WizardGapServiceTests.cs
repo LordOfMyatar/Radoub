@@ -17,8 +17,10 @@ public class WizardGapServiceTests
         new(key, satisfied, hasGoodDefault);
 
     [Fact]
-    public void Decide_FirstRun_UnsetRequiredGap_ShowsWelcome()
+    public void Decide_FirstRun_AlwaysShowsWelcome_SurfacingAllSteps()
     {
+        // First run always reviews everything once — even an auto-detected game path
+        // gets shown for confirmation. GapStepKeys is every registered key.
         var gaps = new[] { Gap("gamePath", satisfied: false) };
 
         var decision = WizardGapService.Decide(gaps, acknowledgedKeys: Array.Empty<string>(), hasRunBefore: false);
@@ -29,25 +31,39 @@ public class WizardGapServiceTests
     }
 
     [Fact]
-    public void Decide_AllSatisfied_FirstRun_DoesNotShow()
+    public void Decide_FirstRun_EvenWhenAllSatisfied_StillShowsWelcome()
     {
+        // The original bug (#1985 follow-up): auto-detect fills the game path, so a
+        // "show only when something is unset" rule never fired on a configured
+        // machine. First run is a one-time review, so it must show regardless.
         var gaps = new[] { Gap("gamePath", satisfied: true) };
 
         var decision = WizardGapService.Decide(gaps, acknowledgedKeys: Array.Empty<string>(), hasRunBefore: false);
 
-        Assert.False(decision.ShouldShow);
-        Assert.Equal(WizardMode.None, decision.Mode);
+        Assert.True(decision.ShouldShow);
+        Assert.Equal(WizardMode.Welcome, decision.Mode);
     }
 
     [Fact]
-    public void Decide_GapWithGoodDefault_NotForced_DoesNotShow()
+    public void Decide_FirstRun_WithOnlyGoodDefaultGaps_StillShowsForReview()
     {
-        // A setting with a good default is never a forced gap even when "unset".
-        var gaps = new[] { Gap("theme", satisfied: false, hasGoodDefault: true) };
+        // Logging/backup have good defaults but are part of the one-time review.
+        var gaps = new[] { Gap("logging", satisfied: true, hasGoodDefault: true) };
 
         var decision = WizardGapService.Decide(gaps, acknowledgedKeys: Array.Empty<string>(), hasRunBefore: false);
 
+        Assert.True(decision.ShouldShow);
+        Assert.Equal(WizardMode.Welcome, decision.Mode);
+    }
+
+    [Fact]
+    public void Decide_FirstRun_NoGapsRegistered_DoesNotShow()
+    {
+        var decision = WizardGapService.Decide(
+            Array.Empty<WizardGap>(), acknowledgedKeys: Array.Empty<string>(), hasRunBefore: false);
+
         Assert.False(decision.ShouldShow);
+        Assert.Equal(WizardMode.None, decision.Mode);
     }
 
     [Fact]
@@ -99,20 +115,22 @@ public class WizardGapServiceTests
     }
 
     [Fact]
-    public void Decide_FirstRun_MultipleGaps_SurfacesAllUnsatisfied()
+    public void Decide_FirstRun_MultipleGaps_SurfacesAllStepsForReview()
     {
+        // First run surfaces every registered step (all reviewable), regardless of
+        // satisfaction or whether a step has a good default.
         var gaps = new[]
         {
             Gap("gamePath", satisfied: false),
             Gap("anotherRequired", satisfied: false),
-            Gap("theme", satisfied: false, hasGoodDefault: true), // not forced
+            Gap("theme", satisfied: true, hasGoodDefault: true),
         };
 
         var decision = WizardGapService.Decide(gaps, acknowledgedKeys: Array.Empty<string>(), hasRunBefore: false);
 
         Assert.True(decision.ShouldShow);
         Assert.Equal(WizardMode.Welcome, decision.Mode);
-        Assert.Equal(new[] { "gamePath", "anotherRequired" }, decision.GapStepKeys);
+        Assert.Equal(new[] { "gamePath", "anotherRequired", "theme" }, decision.GapStepKeys);
     }
 
     [Fact]

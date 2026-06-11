@@ -141,9 +141,12 @@ public partial class App : Application
 
         var settings = Radoub.Formats.Settings.RadoubSettings.Instance;
 
-        // Gap registry. Today the only required no-default setting is the game path.
-        // Theme/font/logging/backup always have good defaults — shown for review,
-        // never forcing the wizard open.
+        // Gap registry. On first run every step is reviewed once (the wizard fires
+        // regardless of these flags). The IsSatisfied / HasGoodDefault flags only
+        // govern the welcome-back path: a future required no-default setting that is
+        // unsatisfied and unacknowledged re-opens the wizard. Today the game path is
+        // the only no-default setting; appearance/logging/backup have good defaults
+        // and are part of the one-time first-run review only.
         var gaps = new[]
         {
             new WizardGap(FirstRunWizardViewModel.GapGamePath, settings.HasGamePaths, HasGoodDefault: false),
