@@ -23,7 +23,7 @@ public class PendingChangeComputedValueTests
         };
 
     private static PendingChange Change(string fullValue, int offset, int length, string replacement,
-        SearchFieldType type = SearchFieldType.Text) =>
+        SearchFieldType type = SearchFieldType.Text, bool preserveCase = false) =>
         new()
         {
             Match = new SearchMatch
@@ -35,7 +35,8 @@ public class PendingChangeComputedValueTests
                 MatchLength = length
             },
             ReplacementText = replacement,
-            FilePath = "x.utc"
+            FilePath = "x.utc",
+            PreserveCase = preserveCase
         };
 
     [Fact]
@@ -83,5 +84,41 @@ public class PendingChangeComputedValueTests
     {
         var change = Change("Louis Romain", 0, 6, "");
         Assert.Equal("Romain", change.ComputedNewFieldValue);
+    }
+
+    // --- #2180: case-preservation in the preview ---
+
+    [Theory]
+    [InlineData("louis", "lewie")]
+    [InlineData("Louis", "Lewie")]
+    [InlineData("LOUIS", "LEWIE")]
+    public void PreserveCaseOn_RestylesMatchedSpan(string matched, string expected)
+    {
+        // Whole-field match, replacement "lewie", preserve case on.
+        var change = Change(matched, 0, matched.Length, "lewie", preserveCase: true);
+        Assert.Equal(expected, change.ComputedNewFieldValue);
+    }
+
+    [Fact]
+    public void PreserveCaseOn_PreservesRemainder()
+    {
+        // "Louisromain", match "Louis" -> "Lewieromain" (remainder verbatim).
+        var change = Change("Louisromain", 0, 5, "lewie", preserveCase: true);
+        Assert.Equal("Lewieromain", change.ComputedNewFieldValue);
+    }
+
+    [Fact]
+    public void PreserveCaseOn_ResRefField_StaysLowercase()
+    {
+        // ResRef-typed field ignores the flag.
+        var change = Change("LOUIS", 0, 5, "lewie", type: SearchFieldType.ResRef, preserveCase: true);
+        Assert.Equal("lewie", change.ComputedNewFieldValue);
+    }
+
+    [Fact]
+    public void PreserveCaseOff_InsertsVerbatim()
+    {
+        var change = Change("Louis", 0, 5, "lewie", preserveCase: false);
+        Assert.Equal("lewie", change.ComputedNewFieldValue);
     }
 }
