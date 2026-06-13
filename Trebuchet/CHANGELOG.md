@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.38.0-alpha] - 2026-06-13
+**Branch**: `trebuchet/issue-2442` | **PR**: #TBD
+
+### Sprint: Marlinspike Polish + Launcher Fix
+
+- Marlinspike rename conflicts now surface in one consolidated dialog with clearer auto-suffix wording, replacing the per-collision dialog sequence (#2179, #2182).
+- Marlinspike replace preserves each match's case by default — louis/Louis/LOUIS → lewie/Lewie/LEWIE (#2180; shared-lib entry in root CHANGELOG).
+- Documented the intentional Trebuchet recent-files exclusion (#2389); verified the replace-preview substituted-value fix already shipped (#2224).
+
+---
+
 ## [1.37.0-alpha] - 2026-06-10
 **Branch**: `trebuchet/issue-1985` | **PR**: #2452
 
