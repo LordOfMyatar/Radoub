@@ -338,6 +338,36 @@ public class RenameDispatchHelpersTests : IDisposable
     }
 
     [Fact]
+    public void BuildResidualPreview_PreservesPreserveCaseFlag()
+    {
+        // #2180: residual content replaces during a filename-rename action must
+        // keep the PreserveCase flag, or case preservation is silently lost.
+        var nameField = new FieldDefinition
+        {
+            Name = "Name", GffPath = "NAME",
+            FieldType = SearchFieldType.Text,
+            Category = SearchFieldCategory.Content
+        };
+        var contentChange = new PendingChange
+        {
+            Match = MakeMatchOn(nameField),  // non-filename content match
+            ReplacementText = "lewie",
+            FilePath = "/m/palette.itp",
+            PreserveCase = true
+        };
+
+        var preview = new BatchReplacePreview { AllowResRefReplace = true, PreserveCase = true };
+        preview.Changes.Add(contentChange);
+
+        var residual = RenameDispatchHelpers.BuildResidualPreview(
+            preview, renameMap: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
+
+        Assert.True(residual.PreserveCase);
+        Assert.NotEmpty(residual.Changes);
+        Assert.All(residual.Changes, c => Assert.True(c.PreserveCase));
+    }
+
+    [Fact]
     public void BuildResidualPreview_RemapsFilePathsForRenamedFiles()
     {
         // A non-filename change on a file that's about to be renamed must

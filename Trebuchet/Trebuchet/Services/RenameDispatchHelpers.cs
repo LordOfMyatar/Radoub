@@ -249,7 +249,8 @@ public static class RenameDispatchHelpers
     {
         var residual = new BatchReplacePreview
         {
-            AllowResRefReplace = preview?.AllowResRefReplace ?? false
+            AllowResRefReplace = preview?.AllowResRefReplace ?? false,
+            PreserveCase = preview?.PreserveCase ?? false
         };
         if (preview == null) return residual;
 
@@ -267,7 +268,8 @@ public static class RenameDispatchHelpers
                 Match = change.Match,
                 ReplacementText = change.ReplacementText,
                 FilePath = newPath,
-                IsSelected = change.IsSelected
+                IsSelected = change.IsSelected,
+                PreserveCase = change.PreserveCase
             });
         }
         return residual;
