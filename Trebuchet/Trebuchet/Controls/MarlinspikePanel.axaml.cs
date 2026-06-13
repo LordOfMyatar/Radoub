@@ -570,7 +570,8 @@ public partial class MarlinspikePanel : UserControl
         var preview = _batchReplaceService!.PreviewReplace(
             filesWithMatches,
             replaceText,
-            allowResRefReplace: _viewModel.SearchFilenameResRef);
+            allowResRefReplace: _viewModel.SearchFilenameResRef,
+            preserveCase: _viewModel.PreserveCase);
 
         // Dispatch to ResRef rename orchestrator when filename matches present.
         // Pass the user's selection set down so reference updates are surgical —

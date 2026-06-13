@@ -47,6 +47,15 @@ public class MarlinspikePanelViewModelTests
         Assert.False(vm.StatusIsWarning);
     }
 
+    // #2180 — case-preservation ships default ON (inverts the old verbatim default).
+    [Fact]
+    public void PreserveCase_DefaultsOn()
+    {
+        var vm = new MarlinspikePanelViewModel();
+
+        Assert.True(vm.PreserveCase);
+    }
+
     // #2182 — validator-rejection status must render in the warning color so it's
     // visible. SetWarningStatus flags it; any later plain StatusText set clears it.
     [Fact]
