@@ -94,10 +94,76 @@ public class SearchProviderBaseReplaceTests
         Assert.Null(warning);
     }
 
+    // --- Case preservation (#2180) ---
+
+    [Theory]
+    [InlineData("louis", "lewie")]
+    [InlineData("Louis", "Lewie")]
+    [InlineData("LOUIS", "LEWIE")]
+    public void ReplaceInString_PreserveCaseOn_RestylesReplacement(string matched, string expected)
+    {
+        var op = MakeOp(matched, 0, matched.Length, "lewie", preserveCase: true);
+
+        var result = TestableProvider.CallReplaceInString(matched, op);
+
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void ReplaceInString_PreserveCaseOff_InsertsVerbatim()
+    {
+        var op = MakeOp("Louis", 0, 5, "lewie", preserveCase: false);
+
+        var result = TestableProvider.CallReplaceInString("Louis", op);
+
+        Assert.Equal("lewie", result);
+    }
+
+    [Fact]
+    public void ReplaceInString_ResRefField_IgnoresPreserveCase()
+    {
+        // ResRef-typed field must stay lowercase even with PreserveCase on.
+        var op = MakeOp("LOUIS", 0, 5, "lewie", preserveCase: true, fieldType: SearchFieldType.ResRef);
+
+        var result = TestableProvider.CallReplaceInString("LOUIS", op);
+
+        Assert.Equal("lewie", result);
+    }
+
+    [Fact]
+    public void ReplaceInString_PreserveCaseOn_PreservesRemainder()
+    {
+        // Match "Louis" inside "Louisromain" → "Lewieromain" (remainder verbatim).
+        var op = MakeOp("Louis", 0, 5, "lewie", preserveCase: true);
+
+        var result = TestableProvider.CallReplaceInString("Louisromain", op);
+
+        Assert.Equal("Lewieromain", result);
+    }
+
+    [Fact]
+    public void ReplaceInString_MatchesComputedValueTransform()
+    {
+        // Cross-path parity: ReplaceInString output == the CaseStyle transform
+        // PendingChange.ComputedNewFieldValue applies (#2180). Both route through
+        // CaseStyle so the preview never lies about the write.
+        const string matched = "Louis";
+        const string repl = "lewie";
+        var op = MakeOp(matched, 0, matched.Length, repl, preserveCase: true);
+
+        var write = TestableProvider.CallReplaceInString(matched, op);
+        var previewSpan = CaseStyle.Apply(CaseStyle.Detect(matched), repl);
+
+        Assert.Equal("Lewie", write);
+        Assert.Equal(previewSpan, write);
+    }
+
     // --- Helpers ---
 
     private static ReplaceOperation MakeOp(
-        string matchedText, int offset, int length, string replacement, bool isRegex = false)
+        string matchedText, int offset, int length, string replacement,
+        bool isRegex = false, bool preserveCase = false,
+        SearchFieldType fieldType = SearchFieldType.Text)
     {
         return new ReplaceOperation
         {
@@ -106,7 +172,7 @@ public class SearchProviderBaseReplaceTests
                 Field = new FieldDefinition
                 {
                     Name = "Test", GffPath = "Test",
-                    FieldType = SearchFieldType.Text,
+                    FieldType = fieldType,
                     Category = SearchFieldCategory.Content
                 },
                 MatchedText = matchedText,
@@ -115,7 +181,8 @@ public class SearchProviderBaseReplaceTests
                 MatchLength = length
             },
             ReplacementText = replacement,
-            IsRegex = isRegex
+            IsRegex = isRegex,
+            PreserveCase = preserveCase
         };
     }
 }

@@ -20,4 +20,13 @@ public class ReplaceOperation
     /// reference updates as part of a rename operation.
     /// </summary>
     public bool AllowResRefReplace { get; init; }
+
+    /// <summary>
+    /// When true, the replacement adopts the matched span's case style (#2180):
+    /// louis/Louis/LOUIS → lewie/Lewie/LEWIE. Default false (verbatim insert).
+    /// Ignored for ResRef-typed fields (and the filename virtual field, also
+    /// ResRef-typed), which stay lowercase. Set true by Marlinspike; other
+    /// consumers leave it false to preserve verbatim behavior.
+    /// </summary>
+    public bool PreserveCase { get; init; }
 }
