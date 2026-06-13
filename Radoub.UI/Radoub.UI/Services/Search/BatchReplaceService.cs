@@ -34,9 +34,14 @@ public class BatchReplaceService
     public BatchReplacePreview PreviewReplace(
         IReadOnlyList<FileSearchResult> fileResults,
         string replacementText,
-        bool allowResRefReplace = false)
+        bool allowResRefReplace = false,
+        bool preserveCase = false)
     {
-        var preview = new BatchReplacePreview { AllowResRefReplace = allowResRefReplace };
+        var preview = new BatchReplacePreview
+        {
+            AllowResRefReplace = allowResRefReplace,
+            PreserveCase = preserveCase
+        };
 
         foreach (var fileResult in fileResults)
         {
@@ -68,7 +73,8 @@ public class BatchReplaceService
                 {
                     Match = match,
                     ReplacementText = replacementText,
-                    FilePath = fileResult.FilePath
+                    FilePath = fileResult.FilePath,
+                    PreserveCase = preserveCase
                 };
 
                 preview.Changes.Add(change);
@@ -138,7 +144,8 @@ public class BatchReplaceService
                 {
                     Match = c.Match,
                     ReplacementText = c.ReplacementText,
-                    AllowResRefReplace = preview.AllowResRefReplace
+                    AllowResRefReplace = preview.AllowResRefReplace,
+                    PreserveCase = preview.PreserveCase
                 }).ToList();
 
                 var results = provider.Replace(gffFile, operations);

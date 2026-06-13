@@ -92,6 +92,13 @@ public class BatchReplacePreview
     public bool AllowResRefReplace { get; init; }
 
     /// <summary>
+    /// True when this preview was built with preserveCase=true (#2180).
+    /// ExecuteReplaceAsync propagates this to each ReplaceOperation so the write
+    /// path applies the same case transform the preview showed.
+    /// </summary>
+    public bool PreserveCase { get; init; }
+
+    /// <summary>
     /// Count of .nss script-source content matches that were found by search but
     /// dropped from the preview because Marlinspike does not edit plain-text script
     /// content (#2341). The UI surfaces this so the user knows the matches exist but
