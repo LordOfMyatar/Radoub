@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.Formats 0.2.68-alpha] - 2026-06-13
+**Branch**: `trebuchet/issue-2442` | **PR**: #2454
+
+### Case-preserving content replace (#2180)
+
+- New `CaseStyle` helper and a `PreserveCase` option on the replace path (`ReplaceOperation`/`BatchReplaceService`/preview): replace now matches each occurrence's case — louis/Louis/LOUIS → lewie/Lewie/LEWIE. ResRefs and filenames stay lowercase. On by default in Marlinspike; verbatim for any consumer that doesn't set the flag.
+
+---
+
 ## [Radoub.Formats 0.2.67-alpha] - 2026-06-10
 **Branch**: `trebuchet/issue-1985` | **PR**: #2452
 
