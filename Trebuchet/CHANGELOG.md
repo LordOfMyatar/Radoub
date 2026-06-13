@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.38.0-alpha] - 2026-06-13
-**Branch**: `trebuchet/issue-2442` | **PR**: #TBD
+**Branch**: `trebuchet/issue-2442` | **PR**: #2454
 
 ### Sprint: Marlinspike Polish + Launcher Fix
 
