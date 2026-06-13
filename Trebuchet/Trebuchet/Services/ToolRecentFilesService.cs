@@ -155,6 +155,8 @@ public class ToolRecentFilesService
             "Fence" => "FenceSettings.json",
             "Relique" => "ReliqueSettings.json",
             "Reliquary" => "ReliquarySettings.json",
+            // Trebuchet intentionally absent: it stores RecentModules (directories),
+            // not RecentFiles, and is the launcher, not a launchable tool (#2389).
             _ => null
         };
 

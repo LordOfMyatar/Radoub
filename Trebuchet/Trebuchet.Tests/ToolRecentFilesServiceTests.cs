@@ -54,4 +54,17 @@ public class ToolRecentFilesServiceTests
 
         Assert.Null(path);
     }
+
+    [Fact]
+    public void GetSettingsPath_Trebuchet_ReturnsNull_ByDesign()
+    {
+        // #2389: Trebuchet is intentionally excluded. It stores RecentModules
+        // (directories), not RecentFiles, and is the launcher itself (not a
+        // launchable tool), so there is no recent-files surface to populate.
+        // This pins the deliberate behavior — a future "add Trebuchet" change
+        // must consciously update this test.
+        var path = ToolRecentFilesService.GetSettingsPathFor(FakeRadoubDir, "Trebuchet");
+
+        Assert.Null(path);
+    }
 }
