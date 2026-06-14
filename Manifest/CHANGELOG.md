@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.15.11-alpha] - 2026-06-14
-**Branch**: `manifest/sprint/undo-redo-focus-fix` | **PR**: #TBD
+**Branch**: `manifest/sprint/undo-redo-focus-fix` | **PR**: #2469
 
 ### Sprint 3: Undo/Redo + focused-edit revert (#2231, #2461, #2253)
 
