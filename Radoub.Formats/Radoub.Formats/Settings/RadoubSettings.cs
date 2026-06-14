@@ -94,6 +94,9 @@ public partial class RadoubSettings : INotifyPropertyChanged
     // never re-nag about gaps the user saw and chose to leave unset.
     private List<string> _acknowledgedWizardGaps = new();
     private bool _wizardHasRun = false;
+    // Version (NBGV informational) the setup screen was last completed against (#2419).
+    // Lets the launcher re-prompt when a newer build adds settings worth reviewing.
+    private string _lastSetupVersion = "";
 
     // Garbage label filters (shared across all tools)
     private List<string> _garbageFilters = GetDefaultGarbageFilters();
@@ -574,10 +577,19 @@ public partial class RadoubSettings : INotifyPropertyChanged
     public IReadOnlyList<string> AcknowledgedWizardGaps => _acknowledgedWizardGaps.AsReadOnly();
 
     /// <summary>
+    /// Version (NBGV informational string) the setup screen was last completed against
+    /// (#2419). Empty until the user first completes setup. The launcher re-prompts when
+    /// this is older than the build's setup-review version.
+    /// </summary>
+    public string LastSetupVersion => _lastSetupVersion;
+
+    /// <summary>
     /// Record that the wizard ran and the given gap keys were shown. Merges with
     /// any previously-acknowledged keys so older acknowledgements are preserved.
+    /// When <paramref name="setupVersion"/> is non-null, also stamps
+    /// <see cref="LastSetupVersion"/> (in the same persisted write).
     /// </summary>
-    public void AcknowledgeWizardGaps(IEnumerable<string> gapKeys)
+    public void AcknowledgeWizardGaps(IEnumerable<string> gapKeys, string? setupVersion = null)
     {
         var merged = new HashSet<string>(_acknowledgedWizardGaps);
         foreach (var key in gapKeys)
@@ -585,6 +597,8 @@ public partial class RadoubSettings : INotifyPropertyChanged
 
         _acknowledgedWizardGaps = merged.ToList();
         _wizardHasRun = true;
+        if (!string.IsNullOrEmpty(setupVersion))
+            _lastSetupVersion = setupVersion;
         SaveSettings();
     }
 

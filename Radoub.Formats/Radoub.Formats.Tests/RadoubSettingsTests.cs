@@ -155,6 +155,40 @@ public class RadoubSettingsTests
     }
 
     [Fact]
+    public void LastSetupVersion_DefaultsToEmpty()
+    {
+        var settings = RadoubSettings.Instance;
+
+        Assert.True(string.IsNullOrEmpty(settings.LastSetupVersion));
+    }
+
+    [Fact]
+    public void AcknowledgeWizardGaps_WithVersion_StampsAndPersistsLastSetupVersion()
+    {
+        var settings = RadoubSettings.Instance;
+        settings.AcknowledgeWizardGaps(new[] { "gamePath" }, "1.40.0");
+
+        Assert.Equal("1.40.0", settings.LastSetupVersion);
+        Assert.True(settings.WizardHasRun);
+
+        // Simulate a fresh process: reset singleton, reload from disk.
+        ResetAndConfigure();
+        var reloaded = RadoubSettings.Instance;
+
+        Assert.Equal("1.40.0", reloaded.LastSetupVersion);
+    }
+
+    [Fact]
+    public void AcknowledgeWizardGaps_WithoutVersion_LeavesLastSetupVersionUnchanged()
+    {
+        var settings = RadoubSettings.Instance;
+        settings.AcknowledgeWizardGaps(new[] { "gamePath" }, "1.40.0");
+        settings.AcknowledgeWizardGaps(new[] { "newGap" }); // no version overload
+
+        Assert.Equal("1.40.0", settings.LastSetupVersion);
+    }
+
+    [Fact]
     public void Settings_SurviveNewInstance()
     {
         // First instance writes settings
