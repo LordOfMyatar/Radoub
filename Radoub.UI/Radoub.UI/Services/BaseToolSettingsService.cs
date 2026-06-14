@@ -47,6 +47,9 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
     private List<string> _recentFiles = new();
     private int _maxRecentFiles = DefaultMaxRecentFiles;
 
+    // Spell-check (shared across tools that use Radoub.Dictionary; #2390)
+    private bool _spellCheckEnabled = true;
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     /// <summary>
@@ -291,6 +294,20 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
 
     #endregion
 
+    #region Spell-Check
+
+    /// <summary>
+    /// Whether spell-check is enabled for this tool's text fields. Backed by
+    /// shared Radoub.Dictionary. Default true. (#2390)
+    /// </summary>
+    public bool SpellCheckEnabled
+    {
+        get => _spellCheckEnabled;
+        set { if (SetProperty(ref _spellCheckEnabled, value)) SaveSettings(); }
+    }
+
+    #endregion
+
     #region Load/Save Infrastructure
 
     private void LoadSettings()
@@ -339,6 +356,8 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
                         ? settings.MaxRecentFiles
                         : DefaultMaxRecentFiles;
 
+                    _spellCheckEnabled = settings.SpellCheckEnabled;
+
                     ValidateRecentFilesOnLoad();
 
                     // Load tool-specific properties
@@ -381,6 +400,7 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
             settings.LogLevel = _loggingSettings.LogLevel;
             settings.RecentFiles = PathHelper.ContractPaths(_recentFiles).ToList();
             settings.MaxRecentFiles = MaxRecentFiles;
+            settings.SpellCheckEnabled = SpellCheckEnabled;
 
             // Save tool-specific properties
             SaveToolSettings(settings);
@@ -464,6 +484,8 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
 
         public List<string> RecentFiles { get; set; } = new();
         public int MaxRecentFiles { get; set; } = 10;
+
+        public bool SpellCheckEnabled { get; set; } = true;
     }
 
     #endregion
