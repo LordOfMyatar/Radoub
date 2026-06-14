@@ -37,14 +37,10 @@ public partial class MainWindow
             Comment = ""
         };
 
-        // #2254 — guard the model.Add → UpdateTree sequence: if UpdateTree throws,
-        // the category is rolled back so the model never ends up dirty + half-rendered.
-        if (!TryMutateWithRollback(_currentJrl.Categories, newCategory, UpdateTree))
-        {
-            UnifiedLogger.LogJournal(LogLevel.ERROR, $"Add category rolled back (tree refresh failed): {uniqueTag}");
-            UpdateStatus("Could not add category — change was rolled back.");
-            return;
-        }
+        // Route through undo (#2231). The structural command appends + the wrapper refreshes the
+        // tree; undo removes + refreshes. UpdateTree is the same refresh path the rollback guard
+        // protected, so a refresh failure still leaves the model consistent.
+        ExecuteStructural(new Manifest.Services.AddCategoryCommand(_currentJrl, newCategory));
 
         MarkDirty();
         UpdateStatusBarCounts();
@@ -129,13 +125,8 @@ public partial class MainWindow
             End = false
         };
 
-        // #2254 — same rollback guard as OnAddCategoryClick.
-        if (!TryMutateWithRollback(category.Entries, newEntry, UpdateTree))
-        {
-            UnifiedLogger.LogJournal(LogLevel.ERROR, $"Add entry rolled back (tree refresh failed): ID {nextId}");
-            UpdateStatus("Could not add entry — change was rolled back.");
-            return;
-        }
+        // Route through undo (#2231), same as Add Category.
+        ExecuteStructural(new Manifest.Services.AddEntryCommand(category, newEntry));
 
         MarkDirty();
         UpdateStatusBarCounts();
@@ -150,22 +141,23 @@ public partial class MainWindow
     {
         if (_currentJrl == null || _selectedItem == null) return;
 
+        // Route deletes through undo (#2231) so they can be reversed (data-safety: deleting a
+        // category/entry is the highest-loss action). The structural command records the original
+        // index for restore; the wrapper rebuilds tree/panel on Do/Undo/Redo.
         if (_selectedItem is CategoryTreeItem catItem)
         {
-            _currentJrl.Categories.Remove(catItem.Category);
             UnifiedLogger.LogJournal(LogLevel.INFO, $"Deleted category: {catItem.Category.Tag}");
+            _selectedItem = null;
+            ExecuteStructural(new Manifest.Services.DeleteCategoryCommand(_currentJrl, catItem.Category));
         }
         else if (_selectedItem is EntryTreeItem entItem)
         {
-            entItem.ParentCategory.Entries.Remove(entItem.Entry);
             UnifiedLogger.LogJournal(LogLevel.INFO, $"Deleted entry: {entItem.Entry.ID}");
+            _selectedItem = null;
+            ExecuteStructural(new Manifest.Services.DeleteEntryCommand(entItem.ParentCategory, entItem.Entry));
         }
 
-        _selectedItem = null;
         MarkDirty();
-        UpdateTree();
-        UpdatePropertyPanel();
-        UpdateStatusBarCounts();
     }
 
     private void SelectNewCategory(JournalCategory category)

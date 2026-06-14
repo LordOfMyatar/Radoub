@@ -148,6 +148,7 @@ public partial class MainWindow
             _currentJrl = await Task.Run(() => JrlReader.Read(filePath));
             _documentState.CurrentFilePath = filePath;
             _documentState.ClearDirty();
+            ClearUndo(); // per-document history (#2231)
 
             // Clear selection and update UI
             _selectedItem = null;
@@ -201,6 +202,11 @@ public partial class MainWindow
     private async Task SaveFile()
     {
         if (_currentJrl == null || string.IsNullOrEmpty(_currentFilePath)) return;
+
+        // #2461 — commit any in-progress edit from a focused text box into the model BEFORE
+        // writing. Text fields otherwise commit only on LostFocus, so saving while a box still
+        // has focus would persist the stale model value and the visible edit would revert.
+        CommitFocusedEdit();
 
         if (_documentState.IsReadOnly)
         {
@@ -258,11 +264,14 @@ public partial class MainWindow
         }
         finally
         {
-            // Clean up temp file if it still exists (write failed before the move)
+            // Clean up temp file if it still exists (write failed before the move).
+            // Best-effort: catch only the IO/access errors a delete can raise; never
+            // swallow everything (CLAUDE.md — no bare catch).
             if (File.Exists(tempPath))
             {
                 try { File.Delete(tempPath); }
-                catch { /* temp cleanup is best-effort */ }
+                catch (IOException ex) { UnifiedLogger.LogJournal(LogLevel.WARN, $"Temp cleanup failed: {ex.Message}"); }
+                catch (UnauthorizedAccessException ex) { UnifiedLogger.LogJournal(LogLevel.WARN, $"Temp cleanup denied: {ex.Message}"); }
             }
         }
     }
@@ -315,6 +324,7 @@ public partial class MainWindow
             _currentJrl = newJrl;
             _currentFilePath = filePath;
             _documentState.ClearDirty();
+            ClearUndo(); // per-document history (#2231)
 
             UpdateTree();
             UpdateTitle();

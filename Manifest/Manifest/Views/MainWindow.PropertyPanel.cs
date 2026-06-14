@@ -167,6 +167,9 @@ public partial class MainWindow
         CategoryPriorityBox.SelectionChanged -= OnCategoryPriorityChanged;
         CategoryXPBox.ValueChanged -= OnCategoryXPChanged;
         CategoryCommentBox.LostFocus -= OnCategoryCommentChanged;
+        CategoryNameBox.TextChanged -= OnTextEditedMarkDirty;
+        CategoryTagBox.TextChanged -= OnTextEditedMarkDirty;
+        CategoryCommentBox.TextChanged -= OnTextEditedMarkDirty;
 
         // Add handlers
         CategoryNameBox.LostFocus += OnCategoryNameChanged;
@@ -174,6 +177,11 @@ public partial class MainWindow
         CategoryPriorityBox.SelectionChanged += OnCategoryPriorityChanged;
         CategoryXPBox.ValueChanged += OnCategoryXPChanged;
         CategoryCommentBox.LostFocus += OnCategoryCommentChanged;
+        // #2461 — mark dirty while typing so the close guard sees unsaved edits even
+        // before focus leaves the box. Model commit still happens on LostFocus/save.
+        CategoryNameBox.TextChanged += OnTextEditedMarkDirty;
+        CategoryTagBox.TextChanged += OnTextEditedMarkDirty;
+        CategoryCommentBox.TextChanged += OnTextEditedMarkDirty;
     }
 
     private void WireEntryHandlers()
@@ -195,34 +203,43 @@ public partial class MainWindow
     {
         // Update the token preview as the user types
         UpdateTokenPreview();
+
+        // #2461 — mark dirty while typing so the close guard sees unsaved edits even
+        // before focus leaves the box. Model commit still happens on LostFocus/save.
+        if (!_isUpdatingPanel) MarkDirty();
+    }
+
+    /// <summary>
+    /// Mark the document dirty as the user types in a journal text box (#2461). The
+    /// actual model commit happens on LostFocus / save; this only ensures the dirty
+    /// flag (and the close guard) reflect unsaved edits during typing. Suppressed while
+    /// the panel is being repopulated so bind-time TextChanged events do not mark dirty.
+    /// </summary>
+    private void OnTextEditedMarkDirty(object? sender, TextChangedEventArgs e)
+    {
+        if (!_isUpdatingPanel) MarkDirty();
     }
 
     private void OnCategoryNameChanged(object? sender, RoutedEventArgs e)
     {
         if (_isUpdatingPanel || _selectedItem is not CategoryTreeItem catItem) return;
 
-        var newName = CategoryNameBox.Text ?? "";
-        if (catItem.Category.Name.GetDefault() != newName)
-        {
-            catItem.Category.Name.SetString(0, newName);
-            MarkDirty();
-            UpdateTreeItemHeader(catItem);
-            UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Category name changed to: {newName}");
-        }
+        var cat = catItem.Category;
+        CommitTextField(CategoryNameBox,
+            v => JournalFieldEditor.ApplyCategoryName(cat, v),
+            () => { UpdateTreeItemHeader(catItem); },
+            "edit category name");
     }
 
     private void OnCategoryTagChanged(object? sender, RoutedEventArgs e)
     {
         if (_isUpdatingPanel || _selectedItem is not CategoryTreeItem catItem) return;
 
-        var newTag = CategoryTagBox.Text ?? "";
-        if (catItem.Category.Tag != newTag)
-        {
-            catItem.Category.Tag = newTag;
-            MarkDirty();
-            UpdateTreeItemHeader(catItem);
-            UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Category tag changed to: {newTag}");
-        }
+        var cat = catItem.Category;
+        CommitTextField(CategoryTagBox,
+            v => JournalFieldEditor.ApplyCategoryTag(cat, v),
+            () => { UpdateTreeItemHeader(catItem); },
+            "edit category tag");
     }
 
     private void OnCategoryPriorityChanged(object? sender, SelectionChangedEventArgs e)
@@ -232,10 +249,15 @@ public partial class MainWindow
         if (CategoryPriorityBox.SelectedItem is ComboBoxItem item &&
             item.Tag is string tagStr && uint.TryParse(tagStr, out var newPriority))
         {
-            if (catItem.Category.Priority != newPriority)
+            var oldPriority = catItem.Category.Priority;
+            if (oldPriority != newPriority)
             {
-                catItem.Category.Priority = newPriority;
+                var cat = catItem.Category;
+                cat.Priority = newPriority;
                 MarkDirty();
+                // Whole-field undo (#2231): mutate the model; the panel repaint after undo/redo
+                // re-selects the combo from the model.
+                RecordFieldEdit(oldPriority, newPriority, v => cat.Priority = v, "change priority");
                 UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Category priority changed to: {newPriority}");
             }
         }
@@ -246,10 +268,13 @@ public partial class MainWindow
         if (_isUpdatingPanel || _selectedItem is not CategoryTreeItem catItem) return;
 
         var newXP = (uint)(CategoryXPBox.Value ?? 0);
-        if (catItem.Category.XP != newXP)
+        var oldXP = catItem.Category.XP;
+        if (oldXP != newXP)
         {
-            catItem.Category.XP = newXP;
+            var cat = catItem.Category;
+            cat.XP = newXP;
             MarkDirty();
+            RecordFieldEdit(oldXP, newXP, v => cat.XP = v, "change XP");
             UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Category XP changed to: {newXP}");
         }
     }
@@ -258,13 +283,11 @@ public partial class MainWindow
     {
         if (_isUpdatingPanel || _selectedItem is not CategoryTreeItem catItem) return;
 
-        var newComment = CategoryCommentBox.Text ?? "";
-        if (catItem.Category.Comment != newComment)
-        {
-            catItem.Category.Comment = newComment;
-            MarkDirty();
-            UnifiedLogger.LogJournal(LogLevel.DEBUG, "Category comment changed");
-        }
+        var cat = catItem.Category;
+        CommitTextField(CategoryCommentBox,
+            v => JournalFieldEditor.ApplyCategoryComment(cat, v),
+            null,
+            "edit category comment");
     }
 
     /// <summary>
@@ -320,9 +343,15 @@ public partial class MainWindow
             finally { _isUpdatingPanel = false; }
         }
 
-        entItem.Entry.ID = resolvedId;
+        var oldId = entItem.Entry.ID;
+        var ent = entItem.Entry;
+        ent.ID = resolvedId;
         MarkDirty();
         UpdateTreeItemHeader(entItem);
+        // Whole-field undo (#2231): restore the original ID on undo, reapply resolved on redo.
+        // Setter mutates the model + tree header; the panel repaint after undo/redo restores the
+        // NumericUpDown from the model.
+        RecordFieldEdit(oldId, resolvedId, v => { ent.ID = v; UpdateTreeItemHeader(entItem); }, "change entry ID");
         UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Entry ID changed to: {resolvedId}");
     }
 
@@ -331,11 +360,14 @@ public partial class MainWindow
         if (_isUpdatingPanel || _selectedItem is not EntryTreeItem entItem) return;
 
         var newEnd = EntryEndBox.IsChecked ?? false;
-        if (entItem.Entry.End != newEnd)
+        var oldEnd = entItem.Entry.End;
+        if (oldEnd != newEnd)
         {
-            entItem.Entry.End = newEnd;
+            var ent = entItem.Entry;
+            ent.End = newEnd;
             MarkDirty();
             UpdateTreeItemHeader(entItem);
+            RecordFieldEdit(oldEnd, newEnd, v => { ent.End = v; UpdateTreeItemHeader(entItem); }, "toggle End");
             UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Entry End changed to: {newEnd}");
         }
     }
@@ -344,14 +376,85 @@ public partial class MainWindow
     {
         if (_isUpdatingPanel || _selectedItem is not EntryTreeItem entItem) return;
 
-        var newText = EntryTextBox.Text ?? "";
-        var oldText = entItem.Entry.Text.GetDefault();
-        if (oldText != newText)
+        var ent = entItem.Entry;
+        CommitTextField(EntryTextBox,
+            v => JournalFieldEditor.ApplyEntryText(ent, v),
+            () => { UpdateTreeItemHeader(entItem); },
+            "edit entry text");
+    }
+
+    /// <summary>
+    /// Commit a prose/text box into the model and record it as one whole-field undo step
+    /// (#2231 / #2461). The baseline (value when the box gained focus) is the undo target;
+    /// <paramref name="applyToModel"/> writes the box's current text into the model and returns
+    /// whether it changed; <paramref name="afterApply"/> refreshes dependent UI. Re-arms the
+    /// baseline so a later edit in the same focus session records from here. No-op when nothing
+    /// changed. The undo setter restores the whole previous value (never char-by-char).
+    /// </summary>
+    private void CommitTextField(TextBox box, System.Func<string?, bool> applyToModel,
+        System.Action? afterApply, string description)
+    {
+        var current = box.Text ?? string.Empty;
+        var baseline = ReferenceEquals(_activeFieldBox, box) ? _activeFieldBaseline : null;
+
+        if (!applyToModel(current))
         {
-            entItem.Entry.Text.SetString(0, newText);
-            MarkDirty();
-            UpdateTreeItemHeader(entItem);
-            UnifiedLogger.LogJournal(LogLevel.DEBUG, "Entry text changed");
+            // No model change (e.g. focus lost without editing). Keep baseline aligned.
+            if (ReferenceEquals(_activeFieldBox, box)) _activeFieldBaseline = current;
+            return;
+        }
+
+        MarkDirty();
+        afterApply?.Invoke();
+
+        // Record whole-field undo from the focus-session baseline to the new value. The setter
+        // only mutates the model; OnUndoClick/OnRedoClick repaint the panel from the model after,
+        // so we never drive the TextBox here (avoids fighting the repopulate).
+        if (baseline != null && baseline != current)
+        {
+            RecordFieldEdit(baseline, current, v =>
+            {
+                applyToModel(v);
+                afterApply?.Invoke();
+            }, description);
+        }
+
+        // Re-arm baseline for further edits in the same focus session.
+        if (ReferenceEquals(_activeFieldBox, box)) _activeFieldBaseline = current;
+    }
+
+    /// <summary>
+    /// Push the value of whichever journal text box currently has focus into the model
+    /// (#2461). Text fields otherwise commit only on LostFocus, so a Save issued while a
+    /// text box still holds focus would persist the pre-edit model value and the visible
+    /// edit would silently revert. Save and the close-guard save call this first so the
+    /// visible value is always the saved value. No-op when the focused control is not a
+    /// journal text box or nothing changed.
+    /// </summary>
+    private void CommitFocusedEdit()
+    {
+        if (_isUpdatingPanel) return;
+
+        // Route through CommitTextField so the commit also records a whole-field undo step
+        // (consistent with the LostFocus path) and re-arms the focus-session baseline.
+        if (_selectedItem is CategoryTreeItem catItem)
+        {
+            var cat = catItem.Category;
+            if (CategoryNameBox.IsFocused)
+                CommitTextField(CategoryNameBox, v => JournalFieldEditor.ApplyCategoryName(cat, v),
+                    () => UpdateTreeItemHeader(catItem), "edit category name");
+            else if (CategoryTagBox.IsFocused)
+                CommitTextField(CategoryTagBox, v => JournalFieldEditor.ApplyCategoryTag(cat, v),
+                    () => UpdateTreeItemHeader(catItem), "edit category tag");
+            else if (CategoryCommentBox.IsFocused)
+                CommitTextField(CategoryCommentBox, v => JournalFieldEditor.ApplyCategoryComment(cat, v),
+                    null, "edit category comment");
+        }
+        else if (_selectedItem is EntryTreeItem entItem && EntryTextBox.IsFocused)
+        {
+            var ent = entItem.Entry;
+            CommitTextField(EntryTextBox, v => JournalFieldEditor.ApplyEntryText(ent, v),
+                () => UpdateTreeItemHeader(entItem), "edit entry text");
         }
     }
 

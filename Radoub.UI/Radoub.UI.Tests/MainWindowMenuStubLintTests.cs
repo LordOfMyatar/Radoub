@@ -26,7 +26,7 @@ public class MainWindowMenuStubLintTests
     /// </summary>
     private static readonly Dictionary<string, string[]> KnownStubs = new()
     {
-        ["Manifest"] = new[] { "_Undo", "_Redo" },
+        // Manifest Undo/Redo wired in #2231 Sprint 3 (#2253) — stubs removed.
         ["Fence"] = new[] { "_Undo", "_Redo" },
     };
 

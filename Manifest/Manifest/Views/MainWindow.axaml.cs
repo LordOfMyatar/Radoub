@@ -69,8 +69,23 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Wire up shared document state for title bar updates
         _documentState.DirtyStateChanged += () => Title = _documentState.GetTitle();
 
+        // Undo/redo (#2231 Sprint 3): connect manager → menu, and snapshot prose fields on
+        // focus-in so a whole-field edit can be recorded on focus-out / save-commit.
+        WireUndo();
+        WireTextFieldUndo(CategoryNameBox);
+        WireTextFieldUndo(CategoryTagBox);
+        WireTextFieldUndo(CategoryCommentBox);
+        WireTextFieldUndo(EntryTextBox);
+
         // Restore window position
         RestoreWindowPosition();
+
+        // Keyboard shortcuts via TUNNEL so Undo/Redo (and other accelerators) reach the window
+        // even when a focused control would otherwise consume the key. ComboBox/NumericUpDown
+        // handle Ctrl+Z on the bubbling route, so a plain KeyDown="..." on the Window never saw
+        // it — Priority/XP/ID undo silently did nothing (#2253 UAT). handledEventsToo:true also
+        // lets us see keys a control already marked handled.
+        AddHandler(KeyDownEvent, OnWindowKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
 
         // Handle window closing
         Closing += OnWindowClosing;
@@ -350,6 +365,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                         _ = SaveFile();
                         e.Handled = true;
                     }
+                    break;
+                case Key.Z:
+                    // Document/whole-field undo (#2231). Manifest records one undo step per field
+                    // focus session (like Parley), so Ctrl+Z is document-level even with a text
+                    // box focused; OnUndoClick commits the in-progress edit first.
+                    OnUndoClick(sender, e);
+                    e.Handled = true;
+                    break;
+                case Key.Y:
+                    OnRedoClick(sender, e);
+                    e.Handled = true;
                     break;
                 case Key.E:
                     if (CanAddEntry)
