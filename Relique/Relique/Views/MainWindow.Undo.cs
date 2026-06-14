@@ -131,26 +131,44 @@ public partial class MainWindow
     private bool _suppressFlagUndo;
 
     /// <summary>
-    /// Wire a TwoWay-bound flag CheckBox for undo. The binding mutates the VM on click, so we record
-    /// the already-applied toggle via RecordedFieldEditCommand on IsCheckedChanged. Skipped while
-    /// loading or while undo/redo is driving the setter (re-entrancy guard).
+    /// Wire a flag CheckBox for undo. We track the checkbox's own last-known state as the undo
+    /// baseline (the bound VM may not be updated yet when IsCheckedChanged fires, so we never read it
+    /// here) and drive <c>IsChecked</c> directly on undo/redo so the binding propagates to the VM —
+    /// keeping UI and model in sync regardless of binding timing. <paramref name="getterForInit"/>
+    /// seeds the baseline from the current value when wiring.
     /// </summary>
-    private void WireFlagUndo(CheckBox? box, Func<bool> getter, Action<bool> setter, string label)
+    private void WireFlagUndo(CheckBox? box, Func<bool> getterForInit, Action<bool> setter, string label)
     {
         if (box == null) return;
 
+        // Seed and keep a per-box baseline. Updated on every change — including suppressed ones from
+        // document load / undo-redo — so the next user toggle records the correct old value. (The
+        // bound VM may not be updated yet at IsCheckedChanged time, so we never read it here.)
+        bool baseline = getterForInit();
+
         box.IsCheckedChanged += (_, _) =>
         {
-            if (_isLoading || _suppressFlagUndo || _itemViewModel == null) return;
+            bool current = box.IsChecked == true;
 
-            bool newValue = box.IsChecked == true;
-            bool oldValue = !newValue; // two-state checkbox: old is the opposite of the new state
-            if (getter() != newValue) return; // binding hasn't applied yet / no real change
+            if (_isLoading || _suppressFlagUndo)
+            {
+                baseline = current; // keep baseline aligned with programmatic/load-time changes
+                return;
+            }
+            if (current == baseline) return; // no real change
 
-            _undo.Execute(new RecordedFieldEditCommand<bool>(oldValue, newValue, v =>
+            var oldValue = baseline;
+            baseline = current;
+
+            _undo.Execute(new RecordedFieldEditCommand<bool>(oldValue, current, v =>
             {
                 _suppressFlagUndo = true;
-                try { setter(v); }
+                try
+                {
+                    box.IsChecked = v;        // drive the control; binding propagates to the VM
+                    setter(v);                // belt-and-suspenders: ensure the VM matches
+                    baseline = v;             // keep baseline in step with undo/redo
+                }
                 finally { _suppressFlagUndo = false; }
             }, label));
         };
