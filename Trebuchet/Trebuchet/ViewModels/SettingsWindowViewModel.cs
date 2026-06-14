@@ -497,8 +497,15 @@ public partial class SettingsWindowViewModel : ObservableObject
         }
     }
 
+    // Stable gap keys (persisted in RadoubSettings.AcknowledgedWizardGaps). Shared with
+    // the launch-time decider in App so first-run completion acknowledges every step.
+    public const string GapGamePath = "gamePath";
+    public const string GapAppearance = "appearance";
+    public const string GapLogging = "logging";
+    public const string GapBackup = "backup";
+
     /// <summary>Gap keys acknowledged on setup completion — mirrors the registry in App.</summary>
-    private static readonly string[] SetupGapKeys = { "gamePath", "appearance", "logging", "backup" };
+    private static readonly string[] SetupGapKeys = { GapGamePath, GapAppearance, GapLogging, GapBackup };
 
     private static string? ResolveIconPath()
     {
