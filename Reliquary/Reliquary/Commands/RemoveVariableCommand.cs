@@ -30,10 +30,10 @@ public sealed class RemoveVariableCommand : IUndoableCommand
 
     public string Description => string.IsNullOrEmpty(_vm.Name) ? "remove variable" : $"remove variable {_vm.Name}";
 
-    public void Do()
+    public bool Do()
     {
         _index = _ui.IndexOf(_vm);
-        if (_index < 0) return; // not present; nothing to do
+        if (_index < 0) return false; // not present; nothing removed → don't record
 
         // Model is index-aligned with the UI collection.
         if (_index < _model.Count)
@@ -42,6 +42,7 @@ public sealed class RemoveVariableCommand : IUndoableCommand
             _model.RemoveAt(_index);
         }
         _ui.RemoveAt(_index);
+        return true;
     }
 
     public void Undo()

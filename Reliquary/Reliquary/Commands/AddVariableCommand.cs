@@ -29,11 +29,12 @@ public sealed class AddVariableCommand : IUndoableCommand
 
     public string Description => string.IsNullOrEmpty(_vm.Name) ? "add variable" : $"add variable {_vm.Name}";
 
-    public void Do()
+    public bool Do()
     {
         _modelEntry = _vm.ToVariable();
         _model.Add(_modelEntry);
         _ui.Add(_vm);
+        return true;
     }
 
     public void Undo()
