@@ -1,0 +1,43 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="RadoubLauncher.Views.UnsavedChangesDialog"
+        Title="Unsaved Changes"
+        Width="420" Height="190"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False">
+
+    <Border Padding="16">
+        <DockPanel>
+            <!-- Buttons -->
+            <StackPanel DockPanel.Dock="Bottom"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Spacing="8"
+                        Margin="0,12,0,0">
+                <Button Content="Save"
+                        Click="OnSaveClick"
+                        IsDefault="True"
+                        Padding="24,6"/>
+                <Button Content="Discard"
+                        Click="OnDiscardClick"
+                        Padding="24,6"/>
+                <Button Content="Cancel"
+                        Click="OnCancelClick"
+                        IsCancel="True"
+                        Padding="24,6"/>
+            </StackPanel>
+
+            <!-- Message -->
+            <StackPanel Spacing="8" VerticalAlignment="Center">
+                <TextBlock x:Name="TitleText"
+                           FontSize="{DynamicResource FontSizeMedium}"
+                           FontWeight="SemiBold"
+                           Text="You have unsaved changes"/>
+                <TextBlock x:Name="MessageText"
+                           TextWrapping="Wrap"
+                           Opacity="0.8"/>
+            </StackPanel>
+        </DockPanel>
+    </Border>
+</Window>

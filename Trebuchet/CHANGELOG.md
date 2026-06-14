@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.39.0-alpha] - 2026-06-14
+**Branch**: `trebuchet/sprint/issue-2453-2455` | **PR**: #2456
+
+### Sprint: Save-on-Exit Guard + FlaUI Test Fix
+
+- Save prompt when the Module/Faction editor has unsaved IFO changes and you close the window or switch modules (Open / recent list) — fixes silent data loss (#2453).
+- Fix the `LaunchTab_HasBuildStatusSection` FlaUI test failing on main (#2455).
+
+---
+
 ## [1.38.0-alpha] - 2026-06-13
 **Branch**: `trebuchet/issue-2442` | **PR**: #2454
 

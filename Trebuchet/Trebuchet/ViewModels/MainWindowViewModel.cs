@@ -486,6 +486,55 @@ public partial class MainWindowViewModel : ObservableObject
     public bool HasUnsavedFactionEditorChanges => _factionEditorViewModel?.HasUnsavedChanges == true;
 
     /// <summary>
+    /// True when any embedded editor has unsaved changes — used by the save-on-exit
+    /// guard to decide whether to prompt before closing (#2453).
+    /// </summary>
+    public bool HasAnyUnsavedEditorChanges => HasUnsavedModuleEditorChanges || HasUnsavedFactionEditorChanges;
+
+    /// <summary>
+    /// Persist all dirty embedded editors (module IFO and factions) on the save-on-exit
+    /// path (#2453). Returns true if every dirty editor saved cleanly, false if any
+    /// still reports unsaved changes afterward (so the caller can abort the close).
+    /// </summary>
+    public async Task<bool> SaveDirtyEditorsAsync()
+    {
+        if (_moduleEditorViewModel?.HasUnsavedChanges == true)
+            await _moduleEditorViewModel.SaveCommand.ExecuteAsync(null);
+
+        if (_factionEditorViewModel?.HasUnsavedChanges == true)
+            _factionEditorViewModel.SaveCommand.Execute(null);
+
+        return !HasAnyUnsavedEditorChanges;
+    }
+
+    /// <summary>
+    /// Guard a destructive editor transition (switching modules, etc.) against unsaved
+    /// edits (#2453). If editors are clean, returns true immediately. Otherwise prompts
+    /// Save / Discard / Cancel: Save persists then proceeds (false if the save fails),
+    /// Discard proceeds, Cancel returns false. Mirrors the window-close guard so every
+    /// path that abandons the current module gets the same protection.
+    /// </summary>
+    public async Task<bool> ConfirmDiscardOrSaveAsync()
+    {
+        if (!HasAnyUnsavedEditorChanges || _parentWindow == null)
+            return true;
+
+        var message = string.IsNullOrEmpty(BuildWarningText)
+            ? "You have unsaved changes. Save before switching modules?"
+            : BuildWarningText + ". Save before switching modules?";
+
+        var dialog = new UnsavedChangesDialog(message);
+        await dialog.ShowDialog(_parentWindow);
+
+        return CloseGuard.Resolve(dialog.Result) switch
+        {
+            CloseAction.SaveThenProceed => await SaveDirtyEditorsAsync(),
+            CloseAction.Proceed => true,
+            _ => false // Abort
+        };
+    }
+
+    /// <summary>
     /// Unsubscribe from singleton events to prevent memory leaks (#1282).
     /// Called from MainWindow.OnWindowClosing.
     /// </summary>

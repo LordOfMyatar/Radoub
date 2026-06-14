@@ -20,6 +20,10 @@ public partial class MainWindow : Window
     private TabControl? _workspaceTabs;
     private ModuleEditorViewModel? _moduleEditorVm;
 
+    // Save-on-exit guard (#2453): once the user has chosen Save/Discard in the
+    // unsaved-changes prompt, the re-issued Close() must not prompt again.
+    private bool _closeConfirmed;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -122,8 +126,18 @@ public partial class MainWindow : Window
         Radoub.UI.Services.WindowPositionHelper.Restore(this, SettingsService.Instance, validateBounds: true);
     }
 
-    private void OnWindowClosing(object? sender, WindowClosingEventArgs e)
+    private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
     {
+        // Save-on-exit guard (#2453): prompt before discarding unsaved editor edits.
+        // Avalonia's Closing handler can't await, so cancel the close now, run the
+        // dialog, then re-issue Close() with a confirmed guard.
+        if (!_closeConfirmed && _viewModel?.HasAnyUnsavedEditorChanges == true)
+        {
+            e.Cancel = true;
+            await HandleUnsavedChangesOnCloseAsync();
+            return;
+        }
+
         SaveWindowState();
 
         // Unsubscribe window-level event handlers (#2034 round 3)
@@ -146,6 +160,43 @@ public partial class MainWindow : Window
         _appShutdownCts?.Dispose();
 
         (_viewModel)?.Cleanup();
+    }
+
+    /// <summary>
+    /// Run the Save / Discard / Cancel prompt and act on the choice (#2453).
+    /// On Save → persist dirty editors then close; on Discard → close; on Cancel
+    /// → leave the window open. The actual close is re-issued via <see cref="Window.Close()"/>
+    /// with <see cref="_closeConfirmed"/> set so the guard does not re-prompt.
+    /// </summary>
+    private async System.Threading.Tasks.Task HandleUnsavedChangesOnCloseAsync()
+    {
+        if (_viewModel == null) return;
+
+        var message = string.IsNullOrEmpty(_viewModel.BuildWarningText)
+            ? "You have unsaved changes. Save before closing?"
+            : _viewModel.BuildWarningText + ". Save before closing?";
+
+        var dialog = new UnsavedChangesDialog(message);
+        await dialog.ShowDialog(this);
+
+        var action = CloseGuard.Resolve(dialog.Result);
+        switch (action)
+        {
+            case CloseAction.Abort:
+                return; // Cancel — keep the window open.
+
+            case CloseAction.SaveThenProceed:
+                var saved = await _viewModel.SaveDirtyEditorsAsync();
+                if (!saved)
+                    return; // A save failed/left the editor dirty — abort the close.
+                break;
+
+            case CloseAction.Proceed:
+                break; // Discard — fall through and close.
+        }
+
+        _closeConfirmed = true;
+        Close();
     }
 
     private void OnGameDataServiceInitialized(object? sender, System.EventArgs e)

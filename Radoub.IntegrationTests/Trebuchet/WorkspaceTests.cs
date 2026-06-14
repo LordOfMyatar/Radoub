@@ -180,13 +180,10 @@ public class WorkspaceTests : TrebuchetTestBase
         Thread.Sleep(1000); // Allow tab content to render fully
 
         // The Build Status section may be below the fold in the ScrollViewer.
-        // Scroll down to ensure off-screen elements are realized in the automation tree.
-        EnsureFocused();
-        SendKeyboardShortcut(VirtualKeyShort.NEXT); // Page Down
-        Thread.Sleep(300);
-
-        // Should find "Build Status" heading (explicit AutomationProperties.Name set in AXAML)
-        var buildHeading = FindTextBlockContaining("Build Status");
+        // A single Page Down + fixed sleep proved flaky (#2455): the off-screen
+        // heading is not always realized in the automation tree in time. Scroll
+        // and re-find on each attempt so realization gets multiple passes.
+        var buildHeading = ScrollDownAndFindText("Build Status");
         Assert.NotNull(buildHeading);
 
         // Should find compile scripts checkbox
@@ -336,6 +333,34 @@ public class WorkspaceTests : TrebuchetTestBase
                         return textBlock;
                 }
             }
+            Thread.Sleep(300);
+            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Find a Text element whose name contains <paramref name="text"/>, sending a
+    /// Page Down before each attempt so a below-the-fold element gets realized in
+    /// the automation tree. Replaces the flaky single-scroll + fixed-sleep pattern (#2455).
+    /// </summary>
+    private AutomationElement? ScrollDownAndFindText(string text, int maxAttempts = 6)
+    {
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            var textBlocks = MainWindow?.FindAllDescendants(cf => cf.ByControlType(ControlType.Text));
+            if (textBlocks != null)
+            {
+                foreach (var textBlock in textBlocks)
+                {
+                    if (textBlock.Name?.Contains(text, StringComparison.OrdinalIgnoreCase) == true)
+                        return textBlock;
+                }
+            }
+
+            // Not realized yet — scroll further and let the compositor catch up.
+            EnsureFocused();
+            SendKeyboardShortcut(VirtualKeyShort.NEXT); // Page Down
             Thread.Sleep(300);
             MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
         }

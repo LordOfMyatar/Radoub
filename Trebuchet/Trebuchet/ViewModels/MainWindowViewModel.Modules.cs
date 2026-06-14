@@ -17,6 +17,9 @@ public partial class MainWindowViewModel
     {
         if (_parentWindow == null) return;
 
+        // Guard against discarding unsaved editor edits when switching modules (#2453).
+        if (!await ConfirmDiscardOrSaveAsync()) return;
+
         UnifiedLogger.LogApplication(LogLevel.INFO, "Open module dialog requested");
 
         // Use the custom module browser
@@ -33,7 +36,7 @@ public partial class MainWindowViewModel
     }
 
     [RelayCommand]
-    private void OpenRecentModule(string modulePath)
+    private async Task OpenRecentModule(string modulePath)
     {
         if (string.IsNullOrEmpty(modulePath)) return;
 
@@ -43,6 +46,9 @@ public partial class MainWindowViewModel
             SettingsService.Instance.RemoveRecentModule(modulePath);
             return;
         }
+
+        // Guard against discarding unsaved editor edits when switching modules (#2453).
+        if (!await ConfirmDiscardOrSaveAsync()) return;
 
         RadoubSettings.Instance.CurrentModulePath = modulePath;
         SettingsService.Instance.AddRecentModule(modulePath);
