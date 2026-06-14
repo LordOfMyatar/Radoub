@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.39.0-alpha] - 2026-06-14
-**Branch**: `trebuchet/sprint/issue-2453-2455` | **PR**: #TBD
+**Branch**: `trebuchet/sprint/issue-2453-2455` | **PR**: #2456
 
 ### Sprint: Save-on-Exit Guard + FlaUI Test Fix
 
