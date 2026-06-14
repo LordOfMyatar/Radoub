@@ -72,13 +72,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Undo/redo (#2231 Sprint 3): connect manager → menu, and snapshot prose fields on
         // focus-in so a whole-field edit can be recorded on focus-out / save-commit.
         WireUndo();
-        WireTextFieldUndo(CategoryNameBox, () => (_selectedItem as CategoryTreeItem)?.Category.Name.GetDefault() ?? string.Empty);
-        WireTextFieldUndo(CategoryTagBox, () => (_selectedItem as CategoryTreeItem)?.Category.Tag ?? string.Empty);
-        WireTextFieldUndo(CategoryCommentBox, () => (_selectedItem as CategoryTreeItem)?.Category.Comment ?? string.Empty);
-        WireTextFieldUndo(EntryTextBox, () => (_selectedItem as EntryTreeItem)?.Entry.Text.GetDefault() ?? string.Empty);
+        WireTextFieldUndo(CategoryNameBox);
+        WireTextFieldUndo(CategoryTagBox);
+        WireTextFieldUndo(CategoryCommentBox);
+        WireTextFieldUndo(EntryTextBox);
 
         // Restore window position
         RestoreWindowPosition();
+
+        // Keyboard shortcuts via TUNNEL so Undo/Redo (and other accelerators) reach the window
+        // even when a focused control would otherwise consume the key. ComboBox/NumericUpDown
+        // handle Ctrl+Z on the bubbling route, so a plain KeyDown="..." on the Window never saw
+        // it — Priority/XP/ID undo silently did nothing (#2253 UAT). handledEventsToo:true also
+        // lets us see keys a control already marked handled.
+        AddHandler(KeyDownEvent, OnWindowKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
 
         // Handle window closing
         Closing += OnWindowClosing;

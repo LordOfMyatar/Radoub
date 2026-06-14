@@ -47,31 +47,19 @@ public partial class MainWindow
     {
         // Commit any in-progress text edit so it lands on the stack before we undo it.
         CommitFocusedEdit();
+        // Each command refreshes its own UI (field commands repaint the panel and keep selection;
+        // structural commands rebuild the tree). We do NOT blanket-rebuild the tree here — doing so
+        // cleared the TreeView selection and blanked the property panel on a field undo (#2253 UAT).
         _undo.Undo();
-        // The model changed underneath the UI; rebuild tree + panel to reflect it.
-        RefreshAfterUndoRedo();
+        MarkDirty();
     }
 
     private void OnRedoClick(object? sender, RoutedEventArgs e)
     {
         _undo.Redo();
-        RefreshAfterUndoRedo();
+        MarkDirty();
     }
 
-    /// <summary>Rebuild the tree and property panel after an undo/redo mutated the model.
-    /// Suppressed-flag keeps the repopulation from re-recording via field change handlers.</summary>
-    private void RefreshAfterUndoRedo()
-    {
-        _suppressUndo = true;
-        try
-        {
-            UpdateTree();
-            UpdatePropertyPanel();
-            UpdateStatusBarCounts();
-            MarkDirty();
-        }
-        finally { _suppressUndo = false; }
-    }
 
     /// <summary>
     /// Record an already-applied whole-field edit through the undo manager (#2231). The caller has
@@ -84,10 +72,20 @@ public partial class MainWindow
         if (_suppressUndo || _isUpdatingPanel) return;
         if (Equals(oldValue, newValue)) return;
 
+        // The model is already at newValue (the handler set it before recording). On the initial
+        // Execute we must NOT repaint the panel — the user is mid-edit and a repaint would reset
+        // the caret/selection. On undo/redo we DO repaint so the reverted/redone value shows, while
+        // keeping the tree selection (no tree rebuild — that blanked the panel, #2253 UAT).
+        var firstDo = true;
         _undo.Execute(new RecordedFieldEditCommand<T>(oldValue, newValue, v =>
         {
             _suppressUndo = true;
-            try { apply(v); }
+            try
+            {
+                apply(v);
+                if (!firstDo) UpdatePropertyPanel();
+                firstDo = false;
+            }
             finally { _suppressUndo = false; }
         }, description));
     }
@@ -107,17 +105,20 @@ public partial class MainWindow
         _undo.Execute(wrapped);
     }
 
-    /// <summary>Wire whole-field text undo on a prose/text box: snapshot the committed model value
-    /// on focus-in via <paramref name="getter"/>; recording happens in the existing LostFocus
-    /// change handler / CommitFocusedEdit through <see cref="RecordFieldEdit{T}"/>.</summary>
-    private void WireTextFieldUndo(TextBox? box, Func<string> getter)
+    /// <summary>Wire whole-field text undo on a prose/text box: snapshot the box's CURRENTLY
+    /// DISPLAYED text on focus-in as the undo baseline. We read the box (not a model getter)
+    /// because the displayed value can differ from the model's slot-0 default — e.g. a category
+    /// name resolved from a TLK StrRef shows resolved text while GetDefault() is empty. Capturing
+    /// the model would make undo revert to that empty/wrong value (the #2253 UAT bug; same class
+    /// of issue hit in Relique). Recording happens in the LostFocus handler / CommitFocusedEdit.</summary>
+    private void WireTextFieldUndo(TextBox? box)
     {
         if (box == null) return;
         box.GotFocus += (_, _) =>
         {
             if (_isUpdatingPanel) return;
             _activeFieldBox = box;
-            _activeFieldBaseline = getter();
+            _activeFieldBaseline = box.Text ?? string.Empty;
         };
     }
 
