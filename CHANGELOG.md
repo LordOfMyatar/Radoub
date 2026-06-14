@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Build 2026-06-14] - 2026-06-14
+**Branch**: `radoub/issue-2362` | **PR**: #TBD
+
+### Test: Menu/Keyboard-Shortcut Coverage + Dead-Stub Lint (#2362)
+
+- Added a lint guarding against re-introduced disabled "Not yet implemented" menu stubs (#2231 guard).
+- Added per-tool menu/keyboard-shortcut FlaUI smoke tests, closing the last gap in the UI-wiring validation epic (#2359).
+
+---
+
 ## [Radoub.Formats] - 2026-06-14
 **Branch**: `trebuchet/issue-2419` | **PR**: #2463
 
