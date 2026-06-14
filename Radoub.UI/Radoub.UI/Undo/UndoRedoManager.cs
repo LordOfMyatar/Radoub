@@ -28,11 +28,17 @@ public sealed class UndoRedoManager
     /// <summary>Description of the command Redo would reapply, or null if none.</summary>
     public string? RedoDescription => _redo.Count > 0 ? _redo.Peek().Description : null;
 
-    /// <summary>Run the command, push it onto the undo stack, and clear the redo stack.</summary>
+    /// <summary>
+    /// Run the command, and only if its <see cref="IUndoableCommand.Do"/> reports success
+    /// (returns <c>true</c>) push it onto the undo stack and clear the redo stack. A command that
+    /// self-rolls-back (returns <c>false</c>) leaves the history untouched — no push, no redo
+    /// clear, no <see cref="StateChanged"/> — so a later Undo can't revert a change that the
+    /// command already reverted itself (#2231).
+    /// </summary>
     public void Execute(IUndoableCommand command)
     {
         if (command is null) throw new ArgumentNullException(nameof(command));
-        command.Do();
+        if (!command.Do()) return;
         _undo.Push(command);
         _redo.Clear();
         StateChanged?.Invoke(this, EventArgs.Empty);
@@ -48,12 +54,22 @@ public sealed class UndoRedoManager
         StateChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <summary>Reapply the most recently undone command. No-op when the redo stack is empty.</summary>
+    /// <summary>
+    /// Reapply the most recently undone command. No-op when the redo stack is empty. If the
+    /// reapplied <see cref="IUndoableCommand.Do"/> self-rolls-back (returns <c>false</c>) the
+    /// command is dropped — it is not re-pushed onto the undo stack, mirroring
+    /// <see cref="Execute"/>'s refuse-to-push contract (#2231).
+    /// </summary>
     public void Redo()
     {
         if (_redo.Count == 0) return;
         var command = _redo.Pop();
-        command.Do();
+        if (!command.Do())
+        {
+            // Do() reverted itself on reapply; drop the command rather than re-push a stale entry.
+            StateChanged?.Invoke(this, EventArgs.Empty);
+            return;
+        }
         _undo.Push(command);
         StateChanged?.Invoke(this, EventArgs.Empty);
     }

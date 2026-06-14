@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.25-alpha] - 2026-06-14
+**Branch**: `relique/issue-2231` | **PR**: #2466
+
+### Sprint 1: Undo/Redo adoption (#2231)
+
+- Ctrl+Z / Ctrl+Y undo/redo for property add/remove/clear and every scalar field: name, tag, descriptions, comment, flags (Plot/Cursed/Stolen/Identified/Droppable), additional cost, stack size, charges, category, icon, model parts, and appearance colors.
+- Document/whole-field undo — Ctrl+Z reverts the whole previous value, never char-by-char or to a blank.
+- Local variables remain outside undo for now (full variable undo tracked in #2467).
+- Shared `UndoRedoManager` refuse-to-push fix + `RecordedFieldEditCommand` — see root [CHANGELOG](../CHANGELOG.md).
+
+---
+
 ## [0.10.24-alpha] - 2026-06-07
 **Branch**: `relique/issue-2385` | **PR**: #2402
 

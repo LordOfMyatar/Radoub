@@ -31,10 +31,10 @@ public sealed class RemoveInventoryItemCommand : IUndoableCommand
     public string Description =>
         string.IsNullOrEmpty(_vm.ResRef) ? "remove item" : $"remove item {_vm.ResRef}";
 
-    public void Do()
+    public bool Do()
     {
         _index = _ui.IndexOf(_vm);
-        if (_index < 0) return; // not present; nothing to do
+        if (_index < 0) return false; // not present; nothing removed → don't record
 
         if (_index < _model.Count)
         {
@@ -42,6 +42,7 @@ public sealed class RemoveInventoryItemCommand : IUndoableCommand
             _model.RemoveAt(_index);
         }
         _ui.RemoveAt(_index);
+        return true;
     }
 
     public void Undo()

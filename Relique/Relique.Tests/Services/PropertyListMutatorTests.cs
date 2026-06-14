@@ -133,4 +133,56 @@ public class PropertyListMutatorTests
         Assert.False(refreshCalled);
         Assert.Empty(list);
     }
+
+    // --- InsertAt (inverse of RemoveAt; used by undo of remove/clear, #2231) ---
+
+    [Fact]
+    public void InsertAt_RefreshSucceeds_RestoresAtOriginalPositions()
+    {
+        var list = List(1, 3); // 2 and 4 were removed from [1,2,3,4]
+        var entries = new[] { (Index: 1, Value: Prop(2)), (Index: 3, Value: Prop(4)) };
+
+        var ok = PropertyListMutator.InsertAt(list, entries, () => { });
+
+        Assert.True(ok);
+        Assert.Equal(new ushort[] { 1, 2, 3, 4 }, list.Select(p => p.PropertyName));
+    }
+
+    [Fact]
+    public void InsertAt_UnorderedEntries_StillLandAtCorrectIndices()
+    {
+        var list = List(2, 4); // 1 and 3 removed from [1,2,3,4]
+        var entries = new[] { (Index: 2, Value: Prop(3)), (Index: 0, Value: Prop(1)) };
+
+        var ok = PropertyListMutator.InsertAt(list, entries, () => { });
+
+        Assert.True(ok);
+        Assert.Equal(new ushort[] { 1, 2, 3, 4 }, list.Select(p => p.PropertyName));
+    }
+
+    [Fact]
+    public void InsertAt_RefreshThrows_RemovesReinsertedEntries()
+    {
+        var list = List(1, 3);
+        var entries = new[] { (Index: 1, Value: Prop(2)) };
+
+        var ok = PropertyListMutator.InsertAt(list, entries, () => throw new InvalidOperationException("boom"));
+
+        Assert.False(ok);
+        Assert.Equal(new ushort[] { 1, 3 }, list.Select(p => p.PropertyName)); // rolled back
+    }
+
+    [Fact]
+    public void InsertAt_EmptyEntries_NoRefreshNoChange()
+    {
+        var list = List(1, 2);
+        var refreshCalled = false;
+
+        var ok = PropertyListMutator.InsertAt(
+            list, Array.Empty<(int, ItemProperty)>(), () => refreshCalled = true);
+
+        Assert.False(ok);
+        Assert.False(refreshCalled);
+        Assert.Equal(new ushort[] { 1, 2 }, list.Select(p => p.PropertyName));
+    }
 }

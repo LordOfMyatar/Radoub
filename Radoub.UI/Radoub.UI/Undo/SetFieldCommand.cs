@@ -25,10 +25,11 @@ public sealed class SetFieldCommand<T> : IUndoableCommand
 
     public string Description { get; }
 
-    public void Do()
+    public bool Do()
     {
         _oldValue = _getter();
         _setter(_newValue);
+        return true;
     }
 
     public void Undo() => _setter(_oldValue);

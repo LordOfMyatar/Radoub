@@ -21,6 +21,26 @@ public partial class MainWindow
 
     private void PopulateEditor()
     {
+        // Guard the whole populate so binding-driven ValueChanged/IsChecked/Selection events fired
+        // while the editor binds to the new document are NOT recorded as undo commands (#2231).
+        var wasLoading = _isLoading;
+        _isLoading = true;
+        try
+        {
+            PopulateEditorCore();
+        }
+        finally
+        {
+            _isLoading = wasLoading;
+        }
+
+        // Fresh undo history per document (open/new/archive-load/close). Cleared AFTER populate so
+        // any stray binding edits during bind don't survive on the stack (#2231).
+        _undo.Clear();
+    }
+
+    private void PopulateEditorCore()
+    {
         if (_currentItem == null)
         {
             EmptyStatePanel.IsVisible = true;
@@ -197,8 +217,25 @@ public partial class MainWindow
         if (_isLoading || _itemViewModel == null) return;
         if (PaletteCategoryComboBox.SelectedItem is ComboBoxItem item && item.Tag is byte id)
         {
-            _itemViewModel.PaletteID = id;
+            if (_itemViewModel.PaletteID == id) return;
+
+            // Route the category change through undo (#2231). The setter restores both the model
+            // and the combo selection (suppressed) so undo/redo keeps the UI in sync — the combo is
+            // not bound to PaletteID, it is set imperatively.
+            _undo.Execute(new Radoub.UI.Undo.SetFieldCommand<byte>(
+                () => _itemViewModel!.PaletteID,
+                v => ApplyPaletteId(v),
+                id, "change category"));
         }
+    }
+
+    /// <summary>Apply a palette category id to the model and reflect it in the combo without
+    /// re-triggering the selection handler (used by undo/redo of a category change, #2231).</summary>
+    private void ApplyPaletteId(byte id)
+    {
+        if (_itemViewModel == null) return;
+        _itemViewModel.PaletteID = id;
+        SelectPaletteCategoryInComboBox(id); // sets SelectedIndex under the _isLoading guard
     }
 
     // --- Conditional Fields ---
@@ -374,15 +411,20 @@ public partial class MainWindow
         string? itemClass = _gameDataService?.Get2DAValue("baseitems", baseItemIndex, "ItemClass");
         if (string.IsNullOrEmpty(itemClass) || itemClass == "****") itemClass = null;
 
+        // Setters route through undo (#2231). The combo is not bound to the VM, so getter() still
+        // holds the pre-change value when the handler fires — capture it as the undo baseline.
         WireModelPartCombo(ModelPart1Combo, partIndex: 1, _itemViewModel.ModelPart1,
-            v => _itemViewModel.ModelPart1 = v, isComposite, itemClass);
+            v => RecordModelPartChange(() => _itemViewModel!.ModelPart1, x => _itemViewModel!.ModelPart1 = x, v, "change model part 1"),
+            isComposite, itemClass);
 
         if (isComposite)
         {
             WireModelPartCombo(ModelPart2Combo, partIndex: 2, _itemViewModel.ModelPart2,
-                v => _itemViewModel.ModelPart2 = v, isComposite: true, itemClass);
+                v => RecordModelPartChange(() => _itemViewModel!.ModelPart2, x => _itemViewModel!.ModelPart2 = x, v, "change model part 2"),
+                isComposite: true, itemClass);
             WireModelPartCombo(ModelPart3Combo, partIndex: 3, _itemViewModel.ModelPart3,
-                v => _itemViewModel.ModelPart3 = v, isComposite: true, itemClass);
+                v => RecordModelPartChange(() => _itemViewModel!.ModelPart3, x => _itemViewModel!.ModelPart3 = x, v, "change model part 3"),
+                isComposite: true, itemClass);
         }
     }
 
@@ -580,11 +622,24 @@ public partial class MainWindow
             _itemViewModel.ModelPart1, baseItemName, invW, invH);
 
         var result = await picker.ShowDialog<byte?>(this);
-        if (result.HasValue)
+        if (result.HasValue && result.Value != _itemViewModel.ModelPart1)
         {
-            _itemViewModel.ModelPart1 = result.Value;
-            UpdateIconPreview(baseItemIndex);
+            // Route the icon (ModelPart1) change through undo (#2231). The setter applies the model
+            // value and refreshes the icon preview, so undo/redo keeps the preview in sync.
+            _undo.Execute(new Radoub.UI.Undo.SetFieldCommand<byte>(
+                () => _itemViewModel!.ModelPart1,
+                v => ApplyIconModelPart(v, baseItemIndex),
+                result.Value, "change icon"));
         }
+    }
+
+    /// <summary>Apply an icon (ModelPart1) value and refresh the icon preview (used by undo/redo of
+    /// an icon change, #2231).</summary>
+    private void ApplyIconModelPart(byte modelPart1, int baseItemIndex)
+    {
+        if (_itemViewModel == null) return;
+        _itemViewModel.ModelPart1 = modelPart1;
+        UpdateIconPreview(baseItemIndex);
     }
 
     // --- Local Variables (shared Radoub.UI VariablesPanel, #2293) ---
@@ -687,6 +742,12 @@ public partial class MainWindow
         MarkDirty();
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed {e.Variables.Count} variable(s)");
     }
+
+    // NOTE: Local variables are deliberately NOT routed through the undo manager (#2231). Per-field
+    // variable edits (name/type/value) live inside the shared VariablesPanel and are not yet
+    // undo-aware, so routing only add/delete would give a misleading half-undo (delete the row but
+    // not restore typed values). Full variable undo via the shared panel is tracked in #2467;
+    // until then variables stay outside undo entirely ("whole thing or not at all").
 
     // --- Identified Visual Cue (#1810) ---
 

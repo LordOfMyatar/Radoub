@@ -156,4 +156,108 @@ public class UndoRedoManagerTests
         Assert.Throws<ArgumentNullException>(() => new RelayUndoableCommand(null!, () => { }, "x"));
         Assert.Throws<ArgumentNullException>(() => new RelayUndoableCommand(() => { }, null!, "x"));
     }
+
+    // --- Refuse-to-push: a command whose Do() self-rolls-back (returns false) must not be
+    // recorded, otherwise its Undo() would later revert a change that never happened (#2231). ---
+
+    /// <summary>Test command with a controllable Do() result and call counters.</summary>
+    private sealed class FakeCommand : IUndoableCommand
+    {
+        private readonly bool _doResult;
+        public FakeCommand(bool doResult, string description = "fake") { _doResult = doResult; Description = description; }
+        public int DoCount { get; private set; }
+        public int UndoCount { get; private set; }
+        public string Description { get; }
+        public bool Do() { DoCount++; return _doResult; }
+        public void Undo() => UndoCount++;
+    }
+
+    [Fact]
+    public void Execute_WhenDoReturnsFalse_DoesNotPush()
+    {
+        var mgr = new UndoRedoManager();
+        var cmd = new FakeCommand(doResult: false);
+
+        mgr.Execute(cmd);
+
+        Assert.Equal(1, cmd.DoCount); // Do() still ran
+        Assert.False(mgr.CanUndo);    // but nothing was recorded
+    }
+
+    [Fact]
+    public void Execute_WhenDoReturnsFalse_DoesNotClearRedo()
+    {
+        var mgr = new UndoRedoManager();
+        mgr.Execute(new FakeCommand(doResult: true, "a"));
+        mgr.Undo();
+        Assert.True(mgr.CanRedo);
+
+        mgr.Execute(new FakeCommand(doResult: false, "b"));
+
+        Assert.True(mgr.CanRedo); // a failed command must not invalidate the redo branch
+    }
+
+    [Fact]
+    public void Execute_WhenDoReturnsFalse_FiresNoStateChanged()
+    {
+        var mgr = new UndoRedoManager();
+        int fired = 0;
+        mgr.StateChanged += (_, _) => fired++;
+
+        mgr.Execute(new FakeCommand(doResult: false));
+
+        Assert.Equal(0, fired);
+    }
+
+    [Fact]
+    public void Execute_WhenDoReturnsTrue_PushesAndClearsRedo()
+    {
+        var mgr = new UndoRedoManager();
+        mgr.Execute(new FakeCommand(doResult: true, "a"));
+        mgr.Undo();
+        Assert.True(mgr.CanRedo);
+
+        mgr.Execute(new FakeCommand(doResult: true, "b"));
+
+        Assert.True(mgr.CanUndo);
+        Assert.False(mgr.CanRedo);
+    }
+
+    [Fact]
+    public void Redo_WhenDoReturnsFalse_DoesNotPushToUndo()
+    {
+        var mgr = new UndoRedoManager();
+        // Execute a command that succeeds, then undo it so it's on the redo stack.
+        var cmd = new RefusingOnRedoCommand();
+        mgr.Execute(cmd);   // Do() #1 returns true → pushed to undo
+        mgr.Undo();         // moved to redo
+
+        mgr.Redo();         // Do() #2 returns false → must NOT re-push to undo
+
+        Assert.False(mgr.CanUndo);
+    }
+
+    [Fact]
+    public void Redo_WhenDoReturnsTrue_MovesToUndo()
+    {
+        var mgr = new UndoRedoManager();
+        var cmd = new FakeCommand(doResult: true);
+        mgr.Execute(cmd);
+        mgr.Undo();
+        Assert.True(mgr.CanRedo);
+
+        mgr.Redo();
+
+        Assert.True(mgr.CanUndo);
+        Assert.False(mgr.CanRedo);
+    }
+
+    /// <summary>Returns true on first Do() (Execute) and false on the second (Redo).</summary>
+    private sealed class RefusingOnRedoCommand : IUndoableCommand
+    {
+        private int _doCalls;
+        public string Description => "refusing-on-redo";
+        public bool Do() => ++_doCalls == 1;
+        public void Undo() { }
+    }
 }

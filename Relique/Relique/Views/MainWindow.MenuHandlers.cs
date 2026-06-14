@@ -293,6 +293,20 @@ public partial class MainWindow
         {
             switch (e.Key)
             {
+                case Key.Z:
+                    // Document/whole-field undo (#2231): Relique is a blueprint editor, so Ctrl+Z
+                    // always undoes at the document level — even with a text field focused. Text
+                    // edits are recorded as whole-field commands on focus-loss (see WireFieldUndo),
+                    // so we deliberately do NOT defer to the TextBox's native per-character undo.
+                    // Commit any pending text edit first so it lands on the stack before we undo it.
+                    CommitFocusedFieldEdit();
+                    OnUndoClick(sender, e);
+                    e.Handled = true;
+                    break;
+                case Key.Y:
+                    OnRedoClick(sender, e);
+                    e.Handled = true;
+                    break;
                 case Key.O:
                     OnOpenClick(sender, e);
                     e.Handled = true;

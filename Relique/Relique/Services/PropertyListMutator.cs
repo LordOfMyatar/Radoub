@@ -92,6 +92,49 @@ public static class PropertyListMutator
     }
 
     /// <summary>
+    /// Re-insert <paramref name="entries"/> (each an index + value) into <paramref name="properties"/>,
+    /// then refresh. The inverse of <see cref="RemoveAt"/>: entries are inserted in ascending index
+    /// order so each lands at its original position. On refresh failure, removes exactly the
+    /// re-inserted entries so the model returns to its pre-call state.
+    ///
+    /// Used by undo of a remove/clear so the restore runs through the same rollback-on-refresh-failure
+    /// seam as the forward mutation (#2231 / #2258).
+    /// </summary>
+    public static bool InsertAt(
+        List<ItemProperty> properties,
+        IReadOnlyList<(int Index, ItemProperty Value)> entries,
+        Action refresh)
+    {
+        if (properties == null) throw new ArgumentNullException(nameof(properties));
+        if (entries == null) throw new ArgumentNullException(nameof(entries));
+        if (refresh == null) throw new ArgumentNullException(nameof(refresh));
+        if (entries.Count == 0) return false;
+
+        // Insert ascending so earlier indices are filled before later ones shift into place.
+        var ordered = entries.OrderBy(e => e.Index).ToList();
+        var inserted = new List<int>();
+        foreach (var (index, value) in ordered)
+        {
+            int at = Math.Min(index, properties.Count);
+            properties.Insert(at, value);
+            inserted.Add(at);
+        }
+
+        try
+        {
+            refresh();
+            return true;
+        }
+        catch
+        {
+            // Roll back: remove the just-inserted entries (descending so indices stay valid).
+            foreach (var at in inserted.OrderByDescending(i => i))
+                if (at < properties.Count) properties.RemoveAt(at);
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Clear <paramref name="properties"/>, then refresh.
     /// On refresh failure, restores the original list contents in order.
     /// </summary>

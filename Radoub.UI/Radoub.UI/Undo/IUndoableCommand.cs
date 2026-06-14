@@ -7,8 +7,14 @@ namespace Radoub.UI.Undo;
 /// </summary>
 public interface IUndoableCommand
 {
-    /// <summary>Apply the change. Called once on Execute and again on each Redo.</summary>
-    void Do();
+    /// <summary>
+    /// Apply the change. Called once on Execute and again on each Redo.
+    /// Returns <c>true</c> when the change was applied and should be recorded on the undo stack;
+    /// <c>false</c> when the command self-rolled-back (e.g. a UI refresh threw and the model was
+    /// reverted) and must NOT be recorded — recording it would let a later Undo revert a change
+    /// that never happened. See <see cref="UndoRedoManager.Execute"/> / <see cref="UndoRedoManager.Redo"/>.
+    /// </summary>
+    bool Do();
 
     /// <summary>Revert the change applied by <see cref="Do"/>.</summary>
     void Undo();

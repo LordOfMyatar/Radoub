@@ -31,11 +31,12 @@ public sealed class AddInventoryItemCommand : IUndoableCommand
     public string Description =>
         string.IsNullOrEmpty(_vm.ResRef) ? "add item" : $"add item {_vm.ResRef}";
 
-    public void Do()
+    public bool Do()
     {
         _modelEntry = new PlaceableItem { InventoryRes = _vm.ResRef };
         _model.Add(_modelEntry);
         _ui.Add(_vm);
+        return true;
     }
 
     public void Undo()
