@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Build 2026-06-14] - 2026-06-14
-**Branch**: `radoub/issue-2362` | **PR**: #TBD
+**Branch**: `radoub/issue-2362` | **PR**: #2465
 
 ### Test: Menu/Keyboard-Shortcut Coverage + Dead-Stub Lint (#2362)
 
