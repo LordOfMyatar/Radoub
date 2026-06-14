@@ -18,6 +18,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI] - 2026-06-14
+**Branch**: `relique/issue-2231` | **PR**: #TBD
+
+### Undo: refuse-to-push on self-rolled-back command (#2231)
+
+- `IUndoableCommand.Do()` now returns `bool`; `UndoRedoManager` skips recording (in both Execute and Redo) when `Do()` self-rolls-back on a refresh failure, preventing undo-stack desync. Supports Relique Sprint 1 adoption.
+
+---
+
 ## [Radoub.Formats] - 2026-06-14
 **Branch**: `trebuchet/issue-2419` | **PR**: #2463
 

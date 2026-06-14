@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.25-alpha] - 2026-06-14
+**Branch**: `relique/issue-2231` | **PR**: #TBD
+
+### Sprint 1: Undo/Redo adoption (#2231)
+
+- Ctrl+Z / Ctrl+Y undo/redo for property add/remove/clear, scalar, script, and variable edits.
+- Shared `UndoRedoManager` refuse-to-push fix — see root [CHANGELOG](../CHANGELOG.md).
+
+---
+
 ## [0.10.24-alpha] - 2026-06-07
 **Branch**: `relique/issue-2385` | **PR**: #2402
 
