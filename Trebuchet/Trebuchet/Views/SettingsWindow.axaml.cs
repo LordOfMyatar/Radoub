@@ -5,9 +5,11 @@ namespace RadoubLauncher.Views;
 
 public partial class SettingsWindow : Window
 {
-    public SettingsWindow()
+    public SettingsWindow() : this(SettingsSetupMode.Normal) { }
+
+    public SettingsWindow(SettingsSetupMode setupMode)
     {
         InitializeComponent();
-        DataContext = new SettingsWindowViewModel(this);
+        DataContext = new SettingsWindowViewModel(this, setupMode);
     }
 }
