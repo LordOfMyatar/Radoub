@@ -142,6 +142,55 @@ public static class PathHelper
     }
 
     /// <summary>
+    /// Find the unpacked working directory for a module path, checking fallback
+    /// candidates. For a .mod file, checks (in priority order) a sibling directory
+    /// named after the module, then "temp0", then "temp1". For an existing directory
+    /// path, returns it directly. Returns null when nothing matches. (#2355)
+    /// </summary>
+    /// <param name="modulePath">A .mod file path or a directory path.</param>
+    /// <param name="requireModuleIfo">
+    /// When true, a candidate directory only matches if it contains a module.ifo
+    /// (case-insensitive). Parley uses this stricter check; other tools do not.
+    /// </param>
+    /// <returns>The working directory path, or null if none found.</returns>
+    public static string? FindWorkingDirectoryWithFallbacks(string? modulePath, bool requireModuleIfo = false)
+    {
+        if (string.IsNullOrEmpty(modulePath))
+            return null;
+
+        if (modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase) && File.Exists(modulePath))
+        {
+            var moduleName = Path.GetFileNameWithoutExtension(modulePath);
+            var moduleDir = Path.GetDirectoryName(modulePath);
+            if (string.IsNullOrEmpty(moduleDir))
+                return null;
+
+            var candidates = new[]
+            {
+                Path.Combine(moduleDir, moduleName),
+                Path.Combine(moduleDir, "temp0"),
+                Path.Combine(moduleDir, "temp1")
+            };
+
+            foreach (var candidate in candidates)
+            {
+                if (!Directory.Exists(candidate))
+                    continue;
+                if (requireModuleIfo && !FileExistsInDirectory(candidate, "module.ifo"))
+                    continue;
+                return candidate;
+            }
+
+            return null;
+        }
+
+        if (Directory.Exists(modulePath))
+            return modulePath;
+
+        return null;
+    }
+
+    /// <summary>
     /// Contracts a list of paths for storage.
     /// </summary>
     /// <param name="paths">List of paths to contract.</param>

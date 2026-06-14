@@ -40,31 +40,13 @@ public class ReliquaryScriptBrowserContext : IScriptBrowserContext
                 if (Directory.Exists(modulePath))
                     return modulePath;
 
+                // #2355: shared helper
                 if (File.Exists(modulePath) && modulePath.EndsWith(".mod", System.StringComparison.OrdinalIgnoreCase))
-                    return FindWorkingDirectory(modulePath);
+                    return PathHelper.FindWorkingDirectoryWithFallbacks(modulePath);
             }
 
             return null;
         }
-    }
-
-    private static string? FindWorkingDirectory(string modFilePath)
-    {
-        var moduleName = Path.GetFileNameWithoutExtension(modFilePath);
-        var moduleDir = Path.GetDirectoryName(modFilePath);
-        if (string.IsNullOrEmpty(moduleDir)) return null;
-
-        var candidates = new[]
-        {
-            Path.Combine(moduleDir, moduleName),
-            Path.Combine(moduleDir, "temp0"),
-            Path.Combine(moduleDir, "temp1")
-        };
-
-        foreach (var candidate in candidates)
-            if (Directory.Exists(candidate)) return candidate;
-
-        return null;
     }
 
     public string? NeverwinterNightsPath => RadoubSettings.Instance.NeverwinterNightsPath;

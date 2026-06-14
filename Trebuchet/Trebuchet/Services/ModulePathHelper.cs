@@ -85,38 +85,8 @@ public static class ModulePathHelper
     /// <summary>
     /// Find the working directory for a .mod file, checking additional candidates (temp0, temp1).
     /// Used by FactionEditor and ScriptBrowser which need broader search.
+    /// Delegates to the shared <see cref="PathHelper.FindWorkingDirectoryWithFallbacks"/> (#2355).
     /// </summary>
     public static string? FindWorkingDirectoryWithFallbacks(string? modulePath)
-    {
-        if (string.IsNullOrEmpty(modulePath))
-            return null;
-
-        if (modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase) && File.Exists(modulePath))
-        {
-            var moduleName = Path.GetFileNameWithoutExtension(modulePath);
-            var moduleDir = Path.GetDirectoryName(modulePath);
-            if (string.IsNullOrEmpty(moduleDir))
-                return null;
-
-            var candidates = new[]
-            {
-                Path.Combine(moduleDir, moduleName),
-                Path.Combine(moduleDir, "temp0"),
-                Path.Combine(moduleDir, "temp1")
-            };
-
-            foreach (var candidate in candidates)
-            {
-                if (Directory.Exists(candidate))
-                    return candidate;
-            }
-
-            return null;
-        }
-
-        if (Directory.Exists(modulePath))
-            return modulePath;
-
-        return null;
-    }
+        => PathHelper.FindWorkingDirectoryWithFallbacks(modulePath);
 }
