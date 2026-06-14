@@ -21,6 +21,8 @@ public partial class MainWindow
 
     private void PopulateEditor()
     {
+        _undo.Clear(); // fresh undo history per document (open/new/archive-load/close) (#2231)
+
         if (_currentItem == null)
         {
             EmptyStatePanel.IsVisible = true;
@@ -670,21 +672,19 @@ public partial class MainWindow
             Name = VariableViewModel.NextDefaultName(_variables.Select(v => v.Name)),
             Type = VariableType.Int
         };
-        _variables.Add(newVar); // panel auto-validates via CollectionChanged
+        // Route through the undo manager (#2231); the panel auto-validates via CollectionChanged
+        // and MarkDirty flows from the manager's StateChanged.
+        _undo.Execute(new Commands.AddVariableCommand(_variables, newVar));
         VariablesPanelControl.SelectedVariable = newVar;
         VariablesPanelControl.FocusSelectedName(); // land in the name field, ready to overtype
-
-        MarkDirty();
     }
 
     private void OnVariableDeleteRequested(object? sender, VariableDeleteRequestedEventArgs e)
     {
         if (e.Variables.Count == 0) return;
 
-        foreach (var item in e.Variables)
-            _variables.Remove(item);
-
-        MarkDirty();
+        // Remove as a single undo step (#2231).
+        _undo.Execute(new Commands.RemoveVariablesCommand(_variables, e.Variables.ToList()));
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed {e.Variables.Count} variable(s)");
     }
 

@@ -49,6 +49,9 @@
                 <MenuItem Header="E_xit" Click="OnExitClick" InputGesture="Alt+F4"/>
             </MenuItem>
             <MenuItem Header="_Edit">
+                <MenuItem x:Name="UndoMenuItem" Header="_Undo" Click="OnUndoClick" InputGesture="Ctrl+Z"/>
+                <MenuItem x:Name="RedoMenuItem" Header="_Redo" Click="OnRedoClick" InputGesture="Ctrl+Y"/>
+                <Separator/>
                 <MenuItem Header="_Find..." Click="OnFindClick" InputGesture="Ctrl+F" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
                 <MenuItem Header="_Replace..." Click="OnFindReplaceClick" InputGesture="Ctrl+H" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
             </MenuItem>

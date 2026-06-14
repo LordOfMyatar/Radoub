@@ -293,6 +293,21 @@ public partial class MainWindow
         {
             switch (e.Key)
             {
+                case Key.Z:
+                    // When a TextBox has focus, leave Ctrl+Z to its native undo — text edits flow
+                    // through binding, not the document UndoRedoManager, so intercepting here would
+                    // run an unrelated document undo and desync the field (#2231).
+                    if (TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is TextBox)
+                        break;
+                    OnUndoClick(sender, e);
+                    e.Handled = true;
+                    break;
+                case Key.Y:
+                    if (TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is TextBox)
+                        break;
+                    OnRedoClick(sender, e);
+                    e.Handled = true;
+                    break;
                 case Key.O:
                     OnOpenClick(sender, e);
                     e.Handled = true;

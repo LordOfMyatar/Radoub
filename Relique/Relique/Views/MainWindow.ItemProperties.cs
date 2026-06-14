@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using ItemEditor.Commands;
 using ItemEditor.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Uti;
@@ -502,13 +503,19 @@ public partial class MainWindow
             }
         }
 
-        // Batch-add with rollback: if the UI refresh throws, every added entry is removed (#2258).
+        // Batch-add as a single undo step. BatchAddPropertiesCommand wraps PropertyListMutator so
+        // the #2258 rollback-on-refresh-failure seam runs; the manager refuses to record it (#2231)
+        // if the refresh throws and the model self-rolls-back.
         if (toAdd.Count > 0)
         {
-            if (PropertyListMutator.BatchAdd(_currentItem.Properties, toAdd, RefreshAssignedProperties))
+            var cmd = new BatchAddPropertiesCommand(
+                _currentItem.Properties, toAdd, RefreshAssignedProperties,
+                $"add {toAdd.Count} properties");
+            _undo.Execute(cmd);
+
+            if (cmd.WasApplied)
             {
                 added = toAdd.Count;
-                MarkDirty();
             }
             else
             {
@@ -547,19 +554,25 @@ public partial class MainWindow
         if (selectedIndices.Count == 0)
             return;
 
-        // Remove with rollback: re-inserts removed entries if the UI refresh throws (#2258).
-        if (!PropertyListMutator.RemoveAt(_currentItem.Properties, selectedIndices, RefreshAssignedProperties))
+        var count = selectedIndices.Count;
+
+        // Remove as a single undo step. RemovePropertyCommand wraps PropertyListMutator (re-inserts
+        // removed entries if the refresh throws, #2258) and reports false so the manager refuses to
+        // record it (#2231) when nothing was removed or the refresh rolled back.
+        var cmd = new RemovePropertyCommand(
+            _currentItem.Properties, selectedIndices, RefreshAssignedProperties,
+            count == 1 ? "remove property" : $"remove {count} properties");
+        _undo.Execute(cmd);
+
+        if (!cmd.WasApplied)
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR,
-                $"Refresh failed after removing {selectedIndices.Count} properties; rolled back");
+                $"Refresh failed after removing {count} properties; rolled back");
             UpdateStatus("Could not remove properties (UI refresh failed)");
             try { RefreshAssignedProperties(); } catch { /* best-effort */ }
             return;
         }
 
-        MarkDirty();
-
-        var count = selectedIndices.Count;
         UpdateStatus(count == 1 ? "Property removed" : $"{count} properties removed");
     }
 
@@ -571,8 +584,14 @@ public partial class MainWindow
 
         var count = _currentItem.Properties.Count;
 
-        // Clear with rollback: restores the snapshot if the UI refresh throws (#2258).
-        if (!PropertyListMutator.ClearAll(_currentItem.Properties, RefreshAssignedProperties))
+        // Clear as a single undo step. ClearPropertiesCommand wraps PropertyListMutator (restores the
+        // snapshot if the refresh throws, #2258) and reports false so the manager refuses to record
+        // it (#2231) when the list was empty or the refresh rolled back.
+        var cmd = new ClearPropertiesCommand(
+            _currentItem.Properties, RefreshAssignedProperties, $"clear {count} properties");
+        _undo.Execute(cmd);
+
+        if (!cmd.WasApplied)
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR,
                 $"Refresh failed after clearing {count} properties; rolled back");
@@ -581,7 +600,6 @@ public partial class MainWindow
             return;
         }
 
-        MarkDirty();
         UpdateStatus($"Cleared {count} properties");
     }
 
@@ -753,23 +771,24 @@ public partial class MainWindow
                 costValueIndex,
                 paramValueIndex);
 
-            _currentItem.Properties.Add(property);
+            // Route through the undo manager. AddPropertyCommand wraps PropertyListMutator, so the
+            // #2258 rollback-on-refresh-failure seam still runs; the manager refuses to record the
+            // command (and so it never lands on the undo stack) if Do() self-rolled-back (#2231).
+            var cmd = new AddPropertyCommand(
+                _currentItem.Properties, property, RefreshAssignedProperties,
+                $"add {propertyType.DisplayName}");
+            _undo.Execute(cmd);
 
-            try
+            if (cmd.WasApplied)
             {
-                RefreshAssignedProperties();
-                MarkDirty();
                 UpdateStatus($"Added property: {propertyType.DisplayName}");
             }
-            catch (Exception refreshEx)
+            else
             {
-                // UI refresh blew up — roll back the model change so the file stays consistent.
-                _currentItem.Properties.RemoveAt(_currentItem.Properties.Count - 1);
                 UnifiedLogger.LogApplication(LogLevel.ERROR,
-                    $"Refresh failed after adding {propertyType.DisplayName}: {refreshEx.GetType().Name}: {refreshEx.Message}");
-                UpdateStatus($"Cannot add {propertyType.DisplayName}: {refreshEx.Message}");
-                // Best-effort attempt to leave the assigned list usable.
-                try { RefreshAssignedProperties(); } catch { /* ignored */ }
+                    $"Refresh failed after adding {propertyType.DisplayName}; rolled back");
+                UpdateStatus($"Cannot add {propertyType.DisplayName} (UI refresh failed)");
+                try { RefreshAssignedProperties(); } catch { /* best-effort */ }
             }
         }
         catch (Exception ex)

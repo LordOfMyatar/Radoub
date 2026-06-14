@@ -27,6 +27,9 @@ public sealed class ClearPropertiesCommand : Radoub.UI.Undo.IUndoableCommand
 
     public string Description { get; }
 
+    /// <summary>True after a successful <see cref="Do"/> (the list was non-empty and the refresh succeeded).</summary>
+    public bool WasApplied => _snapshot.Count > 0;
+
     public bool Do()
     {
         // Snapshot (index, value) for every entry before clearing so Undo restores order.

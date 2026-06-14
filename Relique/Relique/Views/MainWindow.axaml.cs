@@ -102,6 +102,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         Closing += OnWindowClosing;
         Opened += OnWindowOpened;
 
+        WireEditor(); // undo/redo menu + dirty wiring (#2231)
+
         UnifiedLogger.LogApplication(LogLevel.INFO, "Relique MainWindow initialized");
     }
 

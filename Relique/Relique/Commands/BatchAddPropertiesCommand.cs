@@ -29,6 +29,9 @@ public sealed class BatchAddPropertiesCommand : Radoub.UI.Undo.IUndoableCommand
 
     public string Description { get; }
 
+    /// <summary>True after a successful <see cref="Do"/> (the range was appended and the refresh succeeded).</summary>
+    public bool WasApplied => _firstIndex >= 0;
+
     public bool Do()
     {
         // BatchAdd appends the range to the end; capture the appended range for Undo. Safe because

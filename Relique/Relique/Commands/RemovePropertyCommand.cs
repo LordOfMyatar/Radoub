@@ -34,6 +34,9 @@ public sealed class RemovePropertyCommand : Radoub.UI.Undo.IUndoableCommand
 
     public string Description { get; }
 
+    /// <summary>True after a successful <see cref="Do"/> (at least one entry was removed and the refresh succeeded).</summary>
+    public bool WasApplied => _removed.Count > 0;
+
     public bool Do()
     {
         // Capture (index, value) for the valid targets before removal so Undo can restore them.

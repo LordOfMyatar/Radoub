@@ -32,6 +32,9 @@ public sealed class AddPropertyCommand : Radoub.UI.Undo.IUndoableCommand
 
     public string Description { get; }
 
+    /// <summary>True after a successful <see cref="Do"/> (the add applied and the refresh succeeded).</summary>
+    public bool WasApplied => _addedIndex >= 0;
+
     public bool Do()
     {
         // BatchAdd appends to the end; capture the resulting index for Undo. Safe because history
