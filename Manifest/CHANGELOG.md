@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.15.11-alpha] - 2026-06-14
+**Branch**: `manifest/sprint/undo-redo-focus-fix` | **PR**: #TBD
+
+### Sprint 3: Undo/Redo + focused-edit revert (#2231, #2461, #2253)
+
+- Fix focused-text-box edit reverting on focus change, and the missing dirty flag on edit (#2461).
+- Wire Ctrl+Z / Ctrl+Y undo/redo: non-text edits use document/whole-field undo (Relique pattern); prose/quest-body text keeps native per-character undo (#2253 undo portion, #2231 Sprint 3).
+- Re-audit the atomic save + duplicate-ID handling that landed in #2410.
+
+---
+
 ## [0.15.10-alpha] - 2026-06-07
 **Branch**: `fence/issue-2383` | **PR**: #2410
 
