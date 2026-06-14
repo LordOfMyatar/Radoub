@@ -486,6 +486,28 @@ public partial class MainWindowViewModel : ObservableObject
     public bool HasUnsavedFactionEditorChanges => _factionEditorViewModel?.HasUnsavedChanges == true;
 
     /// <summary>
+    /// True when any embedded editor has unsaved changes — used by the save-on-exit
+    /// guard to decide whether to prompt before closing (#2453).
+    /// </summary>
+    public bool HasAnyUnsavedEditorChanges => HasUnsavedModuleEditorChanges || HasUnsavedFactionEditorChanges;
+
+    /// <summary>
+    /// Persist all dirty embedded editors (module IFO and factions) on the save-on-exit
+    /// path (#2453). Returns true if every dirty editor saved cleanly, false if any
+    /// still reports unsaved changes afterward (so the caller can abort the close).
+    /// </summary>
+    public async Task<bool> SaveDirtyEditorsAsync()
+    {
+        if (_moduleEditorViewModel?.HasUnsavedChanges == true)
+            await _moduleEditorViewModel.SaveCommand.ExecuteAsync(null);
+
+        if (_factionEditorViewModel?.HasUnsavedChanges == true)
+            _factionEditorViewModel.SaveCommand.Execute(null);
+
+        return !HasAnyUnsavedEditorChanges;
+    }
+
+    /// <summary>
     /// Unsubscribe from singleton events to prevent memory leaks (#1282).
     /// Called from MainWindow.OnWindowClosing.
     /// </summary>
