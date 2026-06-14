@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
@@ -10,6 +11,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
+using Radoub.UI.Models;
 using Radoub.UI.Services;
 using Radoub.UI.Views;
 using RadoubLauncher.Services;
@@ -38,6 +40,7 @@ public partial class SettingsWindowViewModel : ObservableObject
     private readonly bool _headless;
     private readonly string _appVersion;
     private readonly string? _originalThemeId;
+    private string _originalThemeName = "";
     private readonly double _originalFontSizePoints;
     private string? _chosenModulePath;
     private static IBrush SuccessBrush => BrushManager.GetSuccessBrush();
@@ -64,6 +67,38 @@ public partial class SettingsWindowViewModel : ObservableObject
 
     /// <summary>Tabs: 0 Game/Home, 1 Logging, 2 Backups, 3 Appearance, 4 Review.</summary>
     public int LastTabIndex => 4;
+    private const int ReviewTabIndex = 4;
+
+    /// <summary>
+    /// Read-only summary of current values, shown on the Review tab. Rebuilt when the
+    /// Review tab is entered (values may have changed on other tabs).
+    /// </summary>
+    public ObservableCollection<SettingsSummaryRow> SummaryRows { get; } = new();
+
+    partial void OnSelectedTabIndexChanged(int value)
+    {
+        if (value == ReviewTabIndex)
+            RefreshSummary();
+    }
+
+    private void RefreshSummary()
+    {
+        SummaryRows.Clear();
+        SummaryRows.Add(MakeRow("Base game path",
+            string.IsNullOrEmpty(GameInstallPath) ? "(not set)" : GameInstallPath, 0));
+        SummaryRows.Add(MakeRow("NWN documents",
+            string.IsNullOrEmpty(NwnDocumentsPath) ? "(not set)" : NwnDocumentsPath, 0));
+        SummaryRows.Add(MakeRow("Log level", SelectedLogLevel, 1));
+        SummaryRows.Add(MakeRow("Session retention", LogRetentionText, 1));
+        SummaryRows.Add(MakeRow("Backup retention", BackupRetentionText, 2));
+        SummaryRows.Add(MakeRow("Theme", string.IsNullOrEmpty(SelectedTheme) ? "(default)" : SelectedTheme, 3));
+        SummaryRows.Add(MakeRow("Font size", FontSizePointsText, 3));
+    }
+
+    // Each row carries its own jump command so the Edit button binds to the row, not via
+    // a fragile $parent-cast back to this view model.
+    private SettingsSummaryRow MakeRow(string label, string value, int tabIndex) =>
+        new(label, value, tabIndex, new RelayCommand(() => SelectedTabIndex = tabIndex));
 
     /// <summary>Display name of the module chosen on the Review tab (first run), or empty.</summary>
     [ObservableProperty]
@@ -168,15 +203,38 @@ public partial class SettingsWindowViewModel : ObservableObject
             ? new ObservableCollection<ToolInfo>()
             : new ObservableCollection<ToolInfo>(ToolLauncherService.Instance.Tools);
 
-        // Set current theme
+        // Seed the theme picker from the actual current theme. Resolve by ID first
+        // (the stable key in SharedThemeId), falling back to the live CurrentTheme,
+        // so the picker reflects the user's real theme rather than the "Light" default.
         if (!headless)
         {
-            var currentTheme = ThemeManager.Instance.CurrentTheme;
-            if (currentTheme != null && AvailableThemes.Contains(currentTheme.Plugin.Name))
-            {
-                SelectedTheme = currentTheme.Plugin.Name;
-            }
+            var current = ResolveCurrentTheme();
+            if (current != null)
+                SelectedTheme = current.Plugin.Name;
+
+            // Remember what we started on so Save only writes the theme on an actual change.
+            _originalThemeName = SelectedTheme;
         }
+    }
+
+    /// <summary>
+    /// The theme to pre-select: the one whose ID matches the saved SharedThemeId, else
+    /// the live CurrentTheme, else null. Matching by ID avoids the display-name round-trip
+    /// that could fall through to a default (#2419 follow-up).
+    /// </summary>
+    private static ThemeManifest? ResolveCurrentTheme()
+    {
+        var themes = ThemeManager.Instance.AvailableThemes;
+        var savedId = RadoubSettings.Instance.SharedThemeId;
+        if (!string.IsNullOrEmpty(savedId))
+        {
+            var byId = themes.FirstOrDefault(t => t.Plugin.Id == savedId);
+            if (byId != null)
+                return byId;
+        }
+
+        var current = ThemeManager.Instance.CurrentTheme;
+        return current != null && themes.Any(t => t.Plugin.Id == current.Plugin.Id) ? current : null;
     }
 
     /// <summary>Headless factory for unit tests (no Window, no ThemeManager) (#2419).</summary>
@@ -412,8 +470,12 @@ public partial class SettingsWindowViewModel : ObservableObject
         // Backup settings
         sharedSettings.BackupRetentionDays = BackupRetentionDays;
 
-        // Save and apply selected theme (skipped headless — no ThemeManager)
-        if (!_headless)
+        // Save and apply selected theme (skipped headless — no ThemeManager).
+        // Only write the theme when the user actually changed it: otherwise a setup
+        // window that auto-opened (and a SelectedTheme that fell back to a default
+        // because the current theme name didn't round-trip) would clobber the user's
+        // real theme — e.g. forcing Light over a Dark theme (#2419 follow-up).
+        if (!_headless && SelectedTheme != _originalThemeName)
         {
             var selectedThemeInfo = ThemeManager.Instance.AvailableThemes
                 .FirstOrDefault(t => t.Plugin.Name == SelectedTheme);
@@ -662,3 +724,9 @@ public partial class SettingsWindowViewModel : ObservableObject
         }
     }
 }
+
+/// <summary>
+/// One row on the Review tab: label, current value, the tab it edits, and a self-contained
+/// Jump command that navigates to that tab (#2419).
+/// </summary>
+public sealed record SettingsSummaryRow(string Label, string Value, int TabIndex, ICommand Jump);

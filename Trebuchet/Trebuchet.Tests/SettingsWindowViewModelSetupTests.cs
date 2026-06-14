@@ -148,6 +148,44 @@ public class SettingsWindowViewModelSetupTests : IDisposable
     }
 
     [Fact]
+    public void EnteringReviewTab_PopulatesSummaryRows()
+    {
+        var vm = Setup(SettingsSetupMode.Welcome);
+        Assert.Empty(vm.SummaryRows);
+
+        vm.SelectedTabIndex = vm.LastTabIndex; // Review tab
+
+        Assert.NotEmpty(vm.SummaryRows);
+        Assert.Contains(vm.SummaryRows, r => r.Label == "Log level");
+        Assert.Contains(vm.SummaryRows, r => r.Label == "Theme");
+    }
+
+    [Fact]
+    public void SummaryRow_JumpCommand_NavigatesToItsTab()
+    {
+        var vm = Setup(SettingsSetupMode.Welcome);
+        vm.SelectedTabIndex = vm.LastTabIndex;
+
+        var logRow = vm.SummaryRows.Single(r => r.Label == "Log level");
+        logRow.Jump.Execute(null);
+
+        Assert.Equal(logRow.TabIndex, vm.SelectedTabIndex);
+    }
+
+    [Fact]
+    public void Save_WithoutThemeChange_DoesNotChangeSharedThemeId()
+    {
+        // Honor the user's existing theme: an auto-opened setup window the user never
+        // touched must not rewrite SharedThemeId (the Light-over-Dark clobber, #2419).
+        var before = RadoubSettings.Instance.SharedThemeId;
+        var vm = Setup(SettingsSetupMode.Welcome);
+
+        vm.SaveCommand.Execute(null);
+
+        Assert.Equal(before, RadoubSettings.Instance.SharedThemeId);
+    }
+
+    [Fact]
     public void Save_InWelcome_NoModuleChosen_DoesNotChangeCurrentModulePath()
     {
         // RadoubSettings may auto-detect a module path on first construction, so we

@@ -278,6 +278,37 @@
                               Padding="0,8,12,0">
                     <StackPanel Spacing="16">
 
+                        <!-- Settings summary (read-only review of all tabs) -->
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Review Settings"
+                                       FontSize="{DynamicResource FontSizeLarge}"
+                                       FontWeight="SemiBold"/>
+                            <TextBlock Text="Confirm your settings below. Click Edit to change anything."
+                                       Opacity="0.7"
+                                       FontSize="{DynamicResource FontSizeSmall}"
+                                       TextWrapping="Wrap"/>
+                            <ItemsControl ItemsSource="{Binding SummaryRows}" Margin="0,4,0,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:SettingsSummaryRow">
+                                        <Grid ColumnDefinitions="150,*,Auto" Margin="0,3">
+                                            <TextBlock Grid.Column="0"
+                                                       Text="{Binding Label}"
+                                                       FontWeight="SemiBold"
+                                                       VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding Value}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       VerticalAlignment="Center"/>
+                                            <Button Grid.Column="2"
+                                                    Content="Edit"
+                                                    Padding="10,3"
+                                                    Command="{Binding Jump}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+
                         <!-- First-run only: choose a module to open -->
                         <StackPanel Spacing="8" IsVisible="{Binding ShowModulePicker}">
                             <TextBlock Text="Open a Module"
