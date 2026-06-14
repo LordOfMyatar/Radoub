@@ -294,17 +294,16 @@ public partial class MainWindow
             switch (e.Key)
             {
                 case Key.Z:
-                    // When a TextBox has focus, leave Ctrl+Z to its native undo — text edits flow
-                    // through binding, not the document UndoRedoManager, so intercepting here would
-                    // run an unrelated document undo and desync the field (#2231).
-                    if (TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is TextBox)
-                        break;
+                    // Document/whole-field undo (#2231): Relique is a blueprint editor, so Ctrl+Z
+                    // always undoes at the document level — even with a text field focused. Text
+                    // edits are recorded as whole-field commands on focus-loss (see WireFieldUndo),
+                    // so we deliberately do NOT defer to the TextBox's native per-character undo.
+                    // Commit any pending text edit first so it lands on the stack before we undo it.
+                    CommitFocusedFieldEdit();
                     OnUndoClick(sender, e);
                     e.Handled = true;
                     break;
                 case Key.Y:
-                    if (TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is TextBox)
-                        break;
                     OnRedoClick(sender, e);
                     e.Handled = true;
                     break;

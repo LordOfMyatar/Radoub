@@ -21,9 +21,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Radoub.UI] - 2026-06-14
 **Branch**: `relique/issue-2231` | **PR**: #2466
 
-### Undo: refuse-to-push on self-rolled-back command (#2231)
+### Undo: refuse-to-push + whole-field edit command (#2231)
 
-- `IUndoableCommand.Do()` now returns `bool`; `UndoRedoManager` skips recording (in both Execute and Redo) when `Do()` self-rolls-back on a refresh failure, preventing undo-stack desync. Supports Relique Sprint 1 adoption.
+- `IUndoableCommand.Do()` now returns `bool`; `UndoRedoManager` skips recording (in both Execute and Redo) when `Do()` self-rolls-back on a refresh failure, preventing undo-stack desync.
+- Added `RecordedFieldEditCommand<T>` for document/whole-field undo of TwoWay-bound fields (records an already-applied edit; reverts the whole previous value). Supports Relique Sprint 1 adoption.
 
 ---
 

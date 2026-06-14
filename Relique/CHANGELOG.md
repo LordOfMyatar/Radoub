@@ -11,8 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint 1: Undo/Redo adoption (#2231)
 
-- Ctrl+Z / Ctrl+Y undo/redo for property add/remove/clear, scalar, script, and variable edits.
-- Shared `UndoRedoManager` refuse-to-push fix — see root [CHANGELOG](../CHANGELOG.md).
+- Ctrl+Z / Ctrl+Y undo/redo for property add/remove/clear, variable add/delete, and category changes.
+- Document/whole-field undo for text fields (name, tag, descriptions, comment) — Ctrl+Z reverts the whole previous value, never char-by-char or to a blank.
+- Shared `UndoRedoManager` refuse-to-push fix + `RecordedFieldEditCommand` — see root [CHANGELOG](../CHANGELOG.md).
 
 ---
 

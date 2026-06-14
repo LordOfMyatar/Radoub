@@ -199,8 +199,25 @@ public partial class MainWindow
         if (_isLoading || _itemViewModel == null) return;
         if (PaletteCategoryComboBox.SelectedItem is ComboBoxItem item && item.Tag is byte id)
         {
-            _itemViewModel.PaletteID = id;
+            if (_itemViewModel.PaletteID == id) return;
+
+            // Route the category change through undo (#2231). The setter restores both the model
+            // and the combo selection (suppressed) so undo/redo keeps the UI in sync — the combo is
+            // not bound to PaletteID, it is set imperatively.
+            _undo.Execute(new Radoub.UI.Undo.SetFieldCommand<byte>(
+                () => _itemViewModel!.PaletteID,
+                v => ApplyPaletteId(v),
+                id, "change category"));
         }
+    }
+
+    /// <summary>Apply a palette category id to the model and reflect it in the combo without
+    /// re-triggering the selection handler (used by undo/redo of a category change, #2231).</summary>
+    private void ApplyPaletteId(byte id)
+    {
+        if (_itemViewModel == null) return;
+        _itemViewModel.PaletteID = id;
+        SelectPaletteCategoryInComboBox(id); // sets SelectedIndex under the _isLoading guard
     }
 
     // --- Conditional Fields ---
