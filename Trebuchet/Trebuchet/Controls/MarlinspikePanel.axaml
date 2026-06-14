@@ -59,6 +59,9 @@
                     <CheckBox Content="Include filename/ResRef" Margin="0,0,12,0"
                               IsChecked="{Binding SearchFilenameResRef}"
                               ToolTip.Tip="When checked, search includes filename matches AND ResRef field matches become replaceable. See Marlinspike documentation for details."/>
+                    <CheckBox Content="Preserve case" Margin="0,0,12,0"
+                              IsChecked="{Binding PreserveCase}"
+                              ToolTip.Tip="Match each occurrence's case when replacing: louis/Louis/LOUIS → lewie/Lewie/LEWIE. ResRefs and filenames stay lowercase. On by default."/>
                     <TextBlock Text="Fields:" VerticalAlignment="Center" Margin="8,0,4,0"/>
                     <ComboBox x:Name="CategoryCombo" MinWidth="120"
                               ItemsSource="{Binding Categories}"

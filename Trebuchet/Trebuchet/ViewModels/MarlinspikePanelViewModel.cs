@@ -43,6 +43,14 @@ public partial class MarlinspikePanelViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(CanSearch))]
     private bool _searchFilenameResRef;
 
+    /// <summary>
+    /// When on, replace preserves each match's case style (#2180):
+    /// louis/Louis/LOUIS → lewie/Lewie/LEWIE. Default ON. ResRefs/filenames
+    /// stay lowercase regardless.
+    /// </summary>
+    [ObservableProperty]
+    private bool _preserveCase = true;
+
     [ObservableProperty]
     private string _selectedCategory = "All Fields";
 

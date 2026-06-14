@@ -20,12 +20,21 @@ public class PendingChange
     public bool IsSelected { get; set; } = true;
 
     /// <summary>
+    /// When true, the preview restyles the replacement to the matched span's case
+    /// (#2180), mirroring the write path. Default false (verbatim). Ignored for
+    /// ResRef-typed fields. Must equal the ReplaceOperation.PreserveCase used at
+    /// write time so the preview never lies.
+    /// </summary>
+    public bool PreserveCase { get; init; }
+
+    /// <summary>
     /// The full field value after the replacement is applied — the same literal
     /// substring substitution the write path performs
     /// (SearchProviderBase.ReplaceInString): splice ReplacementText in at the match
     /// offset, leaving the rest of the field intact. Used by the Replace Preview so
     /// it shows the real post-replace value, not the bare replacement term (#2224).
-    /// No case folding: the write path does not lowercase, so neither does the preview.
+    /// When PreserveCase is on, the replacement adopts the matched span's case
+    /// style via the same CaseStyle transform the write path uses (#2180).
     /// </summary>
     public string ComputedNewFieldValue
     {
@@ -37,7 +46,13 @@ public class PendingChange
             // Defensive: a malformed match offset/length must not throw in the UI.
             if (start < 0 || end > full.Length || start > end)
                 return ReplacementText;
-            return full[..start] + ReplacementText + full[end..];
+
+            // Mirror the write path's case transform exactly (#2180) — same gate.
+            var replacement = ReplacementText;
+            if (PreserveCase && Match.Field.FieldType != SearchFieldType.ResRef)
+                replacement = CaseStyle.Apply(CaseStyle.Detect(Match.MatchedText), replacement);
+
+            return full[..start] + replacement + full[end..];
         }
     }
 }
@@ -75,6 +90,13 @@ public class BatchReplacePreview
     /// instances passed into provider.Replace.
     /// </summary>
     public bool AllowResRefReplace { get; init; }
+
+    /// <summary>
+    /// True when this preview was built with preserveCase=true (#2180).
+    /// ExecuteReplaceAsync propagates this to each ReplaceOperation so the write
+    /// path applies the same case transform the preview showed.
+    /// </summary>
+    public bool PreserveCase { get; init; }
 
     /// <summary>
     /// Count of .nss script-source content matches that were found by search but
