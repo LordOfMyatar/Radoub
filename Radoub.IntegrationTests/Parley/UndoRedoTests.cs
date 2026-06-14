@@ -54,37 +54,6 @@ public class UndoRedoTests : ParleyTestBase
         Assert.NotNull(redoItem);
     }
 
-    /// <summary>
-    /// Searches the desktop for a menu item by name with retries.
-    /// Avalonia renders dropdown menus as separate popup windows outside MainWindow's
-    /// automation tree, so MainWindow.FindFirstDescendant() won't find them reliably.
-    /// Falls back to MainWindow search if desktop search fails.
-    /// </summary>
-    private FlaUI.Core.AutomationElements.AutomationElement? FindMenuItemOnDesktop(string itemName)
-    {
-        const int maxRetries = 5;
-        const int retryDelayMs = 300;
-
-        for (int attempt = 0; attempt < maxRetries; attempt++)
-        {
-            // Search desktop first (where Avalonia popup menus live)
-            var desktop = Automation?.GetDesktop();
-            if (desktop != null)
-            {
-                var item = desktop.FindFirstDescendant(cf => cf.ByName(itemName));
-                if (item != null) return item;
-            }
-
-            // Fallback to MainWindow
-            var fallback = MainWindow?.FindFirstDescendant(cf => cf.ByName(itemName));
-            if (fallback != null) return fallback;
-
-            Thread.Sleep(retryDelayMs);
-        }
-
-        return null;
-    }
-
     [Fact]
     [Trait("Category", "UndoRedo")]
     public void Undo_AfterModification_RestoresDialogState()

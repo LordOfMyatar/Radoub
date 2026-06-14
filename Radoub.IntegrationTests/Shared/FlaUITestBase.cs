@@ -461,6 +461,40 @@ public abstract class FlaUITestBase : IDisposable
     #region Element Finding Helpers
 
     /// <summary>
+    /// Searches the desktop for a menu item by name with retries.
+    /// Avalonia renders dropdown menus as separate popup windows outside MainWindow's
+    /// automation tree, so MainWindow.FindFirstDescendant() won't find them reliably.
+    /// Falls back to a MainWindow search if the desktop search fails.
+    /// Open the parent menu (e.g. via <see cref="ClickMenu"/>) before calling this.
+    /// </summary>
+    /// <param name="itemName">The menu item Name (the Header text) to find.</param>
+    /// <param name="maxRetries">Maximum retry attempts (default 5).</param>
+    /// <returns>The menu item element if found, null otherwise.</returns>
+    protected AutomationElement? FindMenuItemOnDesktop(string itemName, int maxRetries = 5)
+    {
+        const int retryDelayMs = 300;
+
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            // Search desktop first (where Avalonia popup menus live).
+            var desktop = Automation?.GetDesktop();
+            if (desktop != null)
+            {
+                var item = desktop.FindFirstDescendant(cf => cf.ByName(itemName));
+                if (item != null) return item;
+            }
+
+            // Fallback to MainWindow.
+            var fallback = MainWindow?.FindFirstDescendant(cf => cf.ByName(itemName));
+            if (fallback != null) return fallback;
+
+            Thread.Sleep(retryDelayMs);
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Finds an element by automation ID with retries.
     /// </summary>
     /// <param name="automationId">The automation ID to search for</param>
