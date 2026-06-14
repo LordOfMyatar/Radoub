@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.40.0-alpha] - 2026-06-14
-**Branch**: `trebuchet/issue-2419` | **PR**: #TBD
+**Branch**: `trebuchet/issue-2419` | **PR**: #2463
 
 ### Feature: First-run setup (tabbed Settings)
 
