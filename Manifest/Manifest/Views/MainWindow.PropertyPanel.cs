@@ -224,24 +224,22 @@ public partial class MainWindow
     {
         if (_isUpdatingPanel || _selectedItem is not CategoryTreeItem catItem) return;
 
-        if (JournalFieldEditor.ApplyCategoryName(catItem.Category, CategoryNameBox.Text))
-        {
-            MarkDirty();
-            UpdateTreeItemHeader(catItem);
-            UnifiedLogger.LogJournal(LogLevel.DEBUG, "Category name changed");
-        }
+        var cat = catItem.Category;
+        CommitTextField(CategoryNameBox,
+            v => JournalFieldEditor.ApplyCategoryName(cat, v),
+            () => { UpdateTreeItemHeader(catItem); },
+            "edit category name");
     }
 
     private void OnCategoryTagChanged(object? sender, RoutedEventArgs e)
     {
         if (_isUpdatingPanel || _selectedItem is not CategoryTreeItem catItem) return;
 
-        if (JournalFieldEditor.ApplyCategoryTag(catItem.Category, CategoryTagBox.Text))
-        {
-            MarkDirty();
-            UpdateTreeItemHeader(catItem);
-            UnifiedLogger.LogJournal(LogLevel.DEBUG, "Category tag changed");
-        }
+        var cat = catItem.Category;
+        CommitTextField(CategoryTagBox,
+            v => JournalFieldEditor.ApplyCategoryTag(cat, v),
+            () => { UpdateTreeItemHeader(catItem); },
+            "edit category tag");
     }
 
     private void OnCategoryPriorityChanged(object? sender, SelectionChangedEventArgs e)
@@ -251,10 +249,15 @@ public partial class MainWindow
         if (CategoryPriorityBox.SelectedItem is ComboBoxItem item &&
             item.Tag is string tagStr && uint.TryParse(tagStr, out var newPriority))
         {
-            if (catItem.Category.Priority != newPriority)
+            var oldPriority = catItem.Category.Priority;
+            if (oldPriority != newPriority)
             {
-                catItem.Category.Priority = newPriority;
+                var cat = catItem.Category;
+                cat.Priority = newPriority;
                 MarkDirty();
+                // Whole-field undo (#2231): mutate the model; the panel repaint after undo/redo
+                // re-selects the combo from the model.
+                RecordFieldEdit(oldPriority, newPriority, v => cat.Priority = v, "change priority");
                 UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Category priority changed to: {newPriority}");
             }
         }
@@ -265,10 +268,13 @@ public partial class MainWindow
         if (_isUpdatingPanel || _selectedItem is not CategoryTreeItem catItem) return;
 
         var newXP = (uint)(CategoryXPBox.Value ?? 0);
-        if (catItem.Category.XP != newXP)
+        var oldXP = catItem.Category.XP;
+        if (oldXP != newXP)
         {
-            catItem.Category.XP = newXP;
+            var cat = catItem.Category;
+            cat.XP = newXP;
             MarkDirty();
+            RecordFieldEdit(oldXP, newXP, v => cat.XP = v, "change XP");
             UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Category XP changed to: {newXP}");
         }
     }
@@ -277,11 +283,11 @@ public partial class MainWindow
     {
         if (_isUpdatingPanel || _selectedItem is not CategoryTreeItem catItem) return;
 
-        if (JournalFieldEditor.ApplyCategoryComment(catItem.Category, CategoryCommentBox.Text))
-        {
-            MarkDirty();
-            UnifiedLogger.LogJournal(LogLevel.DEBUG, "Category comment changed");
-        }
+        var cat = catItem.Category;
+        CommitTextField(CategoryCommentBox,
+            v => JournalFieldEditor.ApplyCategoryComment(cat, v),
+            null,
+            "edit category comment");
     }
 
     /// <summary>
@@ -337,9 +343,15 @@ public partial class MainWindow
             finally { _isUpdatingPanel = false; }
         }
 
-        entItem.Entry.ID = resolvedId;
+        var oldId = entItem.Entry.ID;
+        var ent = entItem.Entry;
+        ent.ID = resolvedId;
         MarkDirty();
         UpdateTreeItemHeader(entItem);
+        // Whole-field undo (#2231): restore the original ID on undo, reapply resolved on redo.
+        // Setter mutates the model + tree header; the panel repaint after undo/redo restores the
+        // NumericUpDown from the model.
+        RecordFieldEdit(oldId, resolvedId, v => { ent.ID = v; UpdateTreeItemHeader(entItem); }, "change entry ID");
         UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Entry ID changed to: {resolvedId}");
     }
 
@@ -348,11 +360,14 @@ public partial class MainWindow
         if (_isUpdatingPanel || _selectedItem is not EntryTreeItem entItem) return;
 
         var newEnd = EntryEndBox.IsChecked ?? false;
-        if (entItem.Entry.End != newEnd)
+        var oldEnd = entItem.Entry.End;
+        if (oldEnd != newEnd)
         {
-            entItem.Entry.End = newEnd;
+            var ent = entItem.Entry;
+            ent.End = newEnd;
             MarkDirty();
             UpdateTreeItemHeader(entItem);
+            RecordFieldEdit(oldEnd, newEnd, v => { ent.End = v; UpdateTreeItemHeader(entItem); }, "toggle End");
             UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Entry End changed to: {newEnd}");
         }
     }
@@ -361,12 +376,51 @@ public partial class MainWindow
     {
         if (_isUpdatingPanel || _selectedItem is not EntryTreeItem entItem) return;
 
-        if (JournalFieldEditor.ApplyEntryText(entItem.Entry, EntryTextBox.Text))
+        var ent = entItem.Entry;
+        CommitTextField(EntryTextBox,
+            v => JournalFieldEditor.ApplyEntryText(ent, v),
+            () => { UpdateTreeItemHeader(entItem); },
+            "edit entry text");
+    }
+
+    /// <summary>
+    /// Commit a prose/text box into the model and record it as one whole-field undo step
+    /// (#2231 / #2461). The baseline (value when the box gained focus) is the undo target;
+    /// <paramref name="applyToModel"/> writes the box's current text into the model and returns
+    /// whether it changed; <paramref name="afterApply"/> refreshes dependent UI. Re-arms the
+    /// baseline so a later edit in the same focus session records from here. No-op when nothing
+    /// changed. The undo setter restores the whole previous value (never char-by-char).
+    /// </summary>
+    private void CommitTextField(TextBox box, System.Func<string?, bool> applyToModel,
+        System.Action? afterApply, string description)
+    {
+        var current = box.Text ?? string.Empty;
+        var baseline = ReferenceEquals(_activeFieldBox, box) ? _activeFieldBaseline : null;
+
+        if (!applyToModel(current))
         {
-            MarkDirty();
-            UpdateTreeItemHeader(entItem);
-            UnifiedLogger.LogJournal(LogLevel.DEBUG, "Entry text changed");
+            // No model change (e.g. focus lost without editing). Keep baseline aligned.
+            if (ReferenceEquals(_activeFieldBox, box)) _activeFieldBaseline = current;
+            return;
         }
+
+        MarkDirty();
+        afterApply?.Invoke();
+
+        // Record whole-field undo from the focus-session baseline to the new value. The setter
+        // only mutates the model; OnUndoClick/OnRedoClick repaint the panel from the model after,
+        // so we never drive the TextBox here (avoids fighting the repopulate).
+        if (baseline != null && baseline != current)
+        {
+            RecordFieldEdit(baseline, current, v =>
+            {
+                applyToModel(v);
+                afterApply?.Invoke();
+            }, description);
+        }
+
+        // Re-arm baseline for further edits in the same focus session.
+        if (ReferenceEquals(_activeFieldBox, box)) _activeFieldBaseline = current;
     }
 
     /// <summary>
@@ -381,31 +435,26 @@ public partial class MainWindow
     {
         if (_isUpdatingPanel) return;
 
+        // Route through CommitTextField so the commit also records a whole-field undo step
+        // (consistent with the LostFocus path) and re-arms the focus-session baseline.
         if (_selectedItem is CategoryTreeItem catItem)
         {
-            var changed = false;
+            var cat = catItem.Category;
             if (CategoryNameBox.IsFocused)
-                changed = JournalFieldEditor.ApplyCategoryName(catItem.Category, CategoryNameBox.Text);
+                CommitTextField(CategoryNameBox, v => JournalFieldEditor.ApplyCategoryName(cat, v),
+                    () => UpdateTreeItemHeader(catItem), "edit category name");
             else if (CategoryTagBox.IsFocused)
-                changed = JournalFieldEditor.ApplyCategoryTag(catItem.Category, CategoryTagBox.Text);
+                CommitTextField(CategoryTagBox, v => JournalFieldEditor.ApplyCategoryTag(cat, v),
+                    () => UpdateTreeItemHeader(catItem), "edit category tag");
             else if (CategoryCommentBox.IsFocused)
-                changed = JournalFieldEditor.ApplyCategoryComment(catItem.Category, CategoryCommentBox.Text);
-
-            if (changed)
-            {
-                MarkDirty();
-                UpdateTreeItemHeader(catItem);
-                UnifiedLogger.LogJournal(LogLevel.DEBUG, "Committed focused category edit before save");
-            }
+                CommitTextField(CategoryCommentBox, v => JournalFieldEditor.ApplyCategoryComment(cat, v),
+                    null, "edit category comment");
         }
-        else if (_selectedItem is EntryTreeItem entItem)
+        else if (_selectedItem is EntryTreeItem entItem && EntryTextBox.IsFocused)
         {
-            if (EntryTextBox.IsFocused && JournalFieldEditor.ApplyEntryText(entItem.Entry, EntryTextBox.Text))
-            {
-                MarkDirty();
-                UpdateTreeItemHeader(entItem);
-                UnifiedLogger.LogJournal(LogLevel.DEBUG, "Committed focused entry edit before save");
-            }
+            var ent = entItem.Entry;
+            CommitTextField(EntryTextBox, v => JournalFieldEditor.ApplyEntryText(ent, v),
+                () => UpdateTreeItemHeader(entItem), "edit entry text");
         }
     }
 

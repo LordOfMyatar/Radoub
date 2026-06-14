@@ -49,8 +49,8 @@
                 <MenuItem Header="E_xit" Click="OnExitClick" InputGesture="Alt+F4"/>
             </MenuItem>
             <MenuItem Header="_Edit">
-                <MenuItem Header="_Undo" InputGesture="Ctrl+Z" IsEnabled="False"/>
-                <MenuItem Header="_Redo" InputGesture="Ctrl+Y" IsEnabled="False"/>
+                <MenuItem x:Name="UndoMenuItem" Header="_Undo" InputGesture="Ctrl+Z" Click="OnUndoClick"/>
+                <MenuItem x:Name="RedoMenuItem" Header="_Redo" InputGesture="Ctrl+Y" Click="OnRedoClick"/>
                 <Separator/>
                 <MenuItem Header="Add _Category" Click="OnAddCategoryClick" IsEnabled="{Binding HasFile}"/>
                 <MenuItem Header="Add _Entry" Click="OnAddEntryClick" IsEnabled="{Binding CanAddEntry}"/>

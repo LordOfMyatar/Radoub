@@ -148,6 +148,7 @@ public partial class MainWindow
             _currentJrl = await Task.Run(() => JrlReader.Read(filePath));
             _documentState.CurrentFilePath = filePath;
             _documentState.ClearDirty();
+            ClearUndo(); // per-document history (#2231)
 
             // Clear selection and update UI
             _selectedItem = null;
@@ -320,6 +321,7 @@ public partial class MainWindow
             _currentJrl = newJrl;
             _currentFilePath = filePath;
             _documentState.ClearDirty();
+            ClearUndo(); // per-document history (#2231)
 
             UpdateTree();
             UpdateTitle();

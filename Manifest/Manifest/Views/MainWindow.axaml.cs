@@ -69,6 +69,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Wire up shared document state for title bar updates
         _documentState.DirtyStateChanged += () => Title = _documentState.GetTitle();
 
+        // Undo/redo (#2231 Sprint 3): connect manager → menu, and snapshot prose fields on
+        // focus-in so a whole-field edit can be recorded on focus-out / save-commit.
+        WireUndo();
+        WireTextFieldUndo(CategoryNameBox, () => (_selectedItem as CategoryTreeItem)?.Category.Name.GetDefault() ?? string.Empty);
+        WireTextFieldUndo(CategoryTagBox, () => (_selectedItem as CategoryTreeItem)?.Category.Tag ?? string.Empty);
+        WireTextFieldUndo(CategoryCommentBox, () => (_selectedItem as CategoryTreeItem)?.Category.Comment ?? string.Empty);
+        WireTextFieldUndo(EntryTextBox, () => (_selectedItem as EntryTreeItem)?.Entry.Text.GetDefault() ?? string.Empty);
+
         // Restore window position
         RestoreWindowPosition();
 
@@ -350,6 +358,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                         _ = SaveFile();
                         e.Handled = true;
                     }
+                    break;
+                case Key.Z:
+                    // Document/whole-field undo (#2231). Manifest records one undo step per field
+                    // focus session (like Parley), so Ctrl+Z is document-level even with a text
+                    // box focused; OnUndoClick commits the in-progress edit first.
+                    OnUndoClick(sender, e);
+                    e.Handled = true;
+                    break;
+                case Key.Y:
+                    OnRedoClick(sender, e);
+                    e.Handled = true;
                     break;
                 case Key.E:
                     if (CanAddEntry)
