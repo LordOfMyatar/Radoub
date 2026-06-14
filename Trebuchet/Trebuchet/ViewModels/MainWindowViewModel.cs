@@ -508,6 +508,33 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Guard a destructive editor transition (switching modules, etc.) against unsaved
+    /// edits (#2453). If editors are clean, returns true immediately. Otherwise prompts
+    /// Save / Discard / Cancel: Save persists then proceeds (false if the save fails),
+    /// Discard proceeds, Cancel returns false. Mirrors the window-close guard so every
+    /// path that abandons the current module gets the same protection.
+    /// </summary>
+    public async Task<bool> ConfirmDiscardOrSaveAsync()
+    {
+        if (!HasAnyUnsavedEditorChanges || _parentWindow == null)
+            return true;
+
+        var message = string.IsNullOrEmpty(BuildWarningText)
+            ? "You have unsaved changes. Save before switching modules?"
+            : BuildWarningText + ". Save before switching modules?";
+
+        var dialog = new UnsavedChangesDialog(message);
+        await dialog.ShowDialog(_parentWindow);
+
+        return CloseGuard.Resolve(dialog.Result) switch
+        {
+            CloseAction.SaveThenProceed => await SaveDirtyEditorsAsync(),
+            CloseAction.Proceed => true,
+            _ => false // Abort
+        };
+    }
+
+    /// <summary>
     /// Unsubscribe from singleton events to prevent memory leaks (#1282).
     /// Called from MainWindow.OnWindowClosing.
     /// </summary>

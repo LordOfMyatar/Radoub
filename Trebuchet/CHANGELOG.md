@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Save-on-Exit Guard + FlaUI Test Fix
 
-- Save prompt on exit when the Module/Faction editor has unsaved IFO changes — fixes silent data loss on close (#2453).
+- Save prompt when the Module/Faction editor has unsaved IFO changes and you close the window or switch modules (Open / recent list) — fixes silent data loss (#2453).
 - Fix the `LaunchTab_HasBuildStatusSection` FlaUI test failing on main (#2455).
 
 ---
