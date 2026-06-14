@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.Formats] - 2026-06-14
+**Branch**: `trebuchet/issue-2419` | **PR**: #2463
+
+- Added `RadoubSettings.LastSetupVersion` so tools can re-prompt first-run setup when a newer build adds settings worth reviewing (consumed by Trebuchet, #2419).
+
+---
+
 ## [Build 2026-06-14] - 2026-06-14
 **Branch**: `radoub/sprint/base-class-consolidation` | **PR**: #2457
 
