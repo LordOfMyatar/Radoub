@@ -47,6 +47,71 @@ public partial class MainWindow
         WireFieldUndo(this.FindControl<TextBox>("CommentTextBox"),
             () => _itemViewModel?.Comment ?? string.Empty,
             v => { if (_itemViewModel != null) _itemViewModel.Comment = v; }, "edit comment");
+
+        // Flag checkboxes (#2231).
+        WireFlagUndo(this.FindControl<CheckBox>("PlotCheckBox"),
+            () => _itemViewModel?.Plot ?? false,
+            v => { if (_itemViewModel != null) _itemViewModel.Plot = v; }, "toggle Plot");
+        WireFlagUndo(this.FindControl<CheckBox>("CursedCheckBox"),
+            () => _itemViewModel?.Cursed ?? false,
+            v => { if (_itemViewModel != null) _itemViewModel.Cursed = v; }, "toggle Cursed");
+        WireFlagUndo(this.FindControl<CheckBox>("StolenCheckBox"),
+            () => _itemViewModel?.Stolen ?? false,
+            v => { if (_itemViewModel != null) _itemViewModel.Stolen = v; }, "toggle Stolen");
+        WireFlagUndo(this.FindControl<CheckBox>("IdentifiedCheckBox"),
+            () => _itemViewModel?.Identified ?? false,
+            v => { if (_itemViewModel != null) _itemViewModel.Identified = v; }, "toggle Identified");
+        WireFlagUndo(this.FindControl<CheckBox>("DropableCheckBox"),
+            () => _itemViewModel?.Dropable ?? false,
+            v => { if (_itemViewModel != null) _itemViewModel.Dropable = v; }, "toggle Droppable");
+
+        // Numeric fields (#2231).
+        WireNumericUndo(this.FindControl<NumericUpDown>("AddCostUpDown"), "change additional cost");
+        WireNumericUndo(this.FindControl<NumericUpDown>("StackSizeUpDown"), "change stack size");
+        WireNumericUndo(this.FindControl<NumericUpDown>("ChargesUpDown"), "change charges");
+
+        // Appearance color fields (#2231).
+        WireNumericUndo(this.FindControl<NumericUpDown>("Cloth1ColorInput"), "change cloth 1 color");
+        WireNumericUndo(this.FindControl<NumericUpDown>("Cloth2ColorInput"), "change cloth 2 color");
+        WireNumericUndo(this.FindControl<NumericUpDown>("Leather1ColorInput"), "change leather 1 color");
+        WireNumericUndo(this.FindControl<NumericUpDown>("Leather2ColorInput"), "change leather 2 color");
+        WireNumericUndo(this.FindControl<NumericUpDown>("Metal1ColorInput"), "change metal 1 color");
+        WireNumericUndo(this.FindControl<NumericUpDown>("Metal2ColorInput"), "change metal 2 color");
+    }
+
+    /// <summary>True while undo/redo drives a model-part change (re-entrancy guard, #2231).</summary>
+    private bool _suppressModelPartUndo;
+
+    /// <summary>
+    /// Record a model-part change through undo (#2231). The combo is not bound to the VM, so when the
+    /// selection handler fires <paramref name="getter"/> still returns the pre-change value — captured
+    /// as the undo baseline. The change is applied (and reverted) via <paramref name="setter"/>, then
+    /// the editor refreshes its model-part combos + icon preview so undo/redo keeps the UI in sync.
+    /// </summary>
+    private void RecordModelPartChange(System.Func<byte> getter, System.Action<byte> setter, byte newValue, string label)
+    {
+        if (_suppressModelPartUndo || _itemViewModel == null) return;
+        if (getter() == newValue) return;
+
+        var oldValue = getter();
+        _undo.Execute(new RecordedFieldEditCommand<byte>(oldValue, newValue, v =>
+        {
+            _suppressModelPartUndo = true;
+            try
+            {
+                setter(v);
+                // Re-sync the combos + icon preview to the model (undo/redo path). _isLoading guards
+                // the repopulate from re-recording via its own handlers.
+                if (_currentItem != null)
+                {
+                    var wasLoading = _isLoading;
+                    _isLoading = true;
+                    try { UpdateConditionalFields(_currentItem.BaseItem); }
+                    finally { _isLoading = wasLoading; }
+                }
+            }
+            finally { _suppressModelPartUndo = false; }
+        }, label));
     }
 
     private void OnUndoClick(object? sender, RoutedEventArgs e) => _undo.Undo();
@@ -60,6 +125,64 @@ public partial class MainWindow
     // LostFocus record a RecordedFieldEditCommand reverting the whole value if it changed. We read
     // the TextBox's live Text (not the VM getter) as the new value, so the binding's UpdateSource
     // timing can't cause us to miss or misread an edit.
+
+    /// <summary>True while undo/redo drives a flag setter, so the resulting IsCheckedChanged is not
+    /// re-recorded as a new command (#2231).</summary>
+    private bool _suppressFlagUndo;
+
+    /// <summary>
+    /// Wire a TwoWay-bound flag CheckBox for undo. The binding mutates the VM on click, so we record
+    /// the already-applied toggle via RecordedFieldEditCommand on IsCheckedChanged. Skipped while
+    /// loading or while undo/redo is driving the setter (re-entrancy guard).
+    /// </summary>
+    private void WireFlagUndo(CheckBox? box, Func<bool> getter, Action<bool> setter, string label)
+    {
+        if (box == null) return;
+
+        box.IsCheckedChanged += (_, _) =>
+        {
+            if (_isLoading || _suppressFlagUndo || _itemViewModel == null) return;
+
+            bool newValue = box.IsChecked == true;
+            bool oldValue = !newValue; // two-state checkbox: old is the opposite of the new state
+            if (getter() != newValue) return; // binding hasn't applied yet / no real change
+
+            _undo.Execute(new RecordedFieldEditCommand<bool>(oldValue, newValue, v =>
+            {
+                _suppressFlagUndo = true;
+                try { setter(v); }
+                finally { _suppressFlagUndo = false; }
+            }, label));
+        };
+    }
+
+    /// <summary>True while undo/redo drives a NumericUpDown setter (re-entrancy guard, #2231).</summary>
+    private bool _suppressNumericUndo;
+
+    /// <summary>
+    /// Wire a TwoWay-bound NumericUpDown for undo. ValueChanged carries old + new directly, so each
+    /// edit becomes one whole-value undo step. Undo drives the control's Value (updating UI + the
+    /// bound VM); the guard stops that from re-recording.
+    /// </summary>
+    private void WireNumericUndo(NumericUpDown? box, string label)
+    {
+        if (box == null) return;
+
+        box.ValueChanged += (_, e) =>
+        {
+            if (_isLoading || _suppressNumericUndo || _itemViewModel == null) return;
+            if (e.OldValue == e.NewValue) return;
+
+            var oldValue = e.OldValue;
+            var newValue = e.NewValue;
+            _undo.Execute(new RecordedFieldEditCommand<decimal?>(oldValue, newValue, v =>
+            {
+                _suppressNumericUndo = true;
+                try { box.Value = v; }
+                finally { _suppressNumericUndo = false; }
+            }, label));
+        };
+    }
 
     /// <summary>The field whose edit is currently in progress (focused), or null.</summary>
     private TextBox? _activeFieldEdit;

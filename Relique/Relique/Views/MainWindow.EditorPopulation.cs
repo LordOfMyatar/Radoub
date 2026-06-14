@@ -21,8 +21,26 @@ public partial class MainWindow
 
     private void PopulateEditor()
     {
-        _undo.Clear(); // fresh undo history per document (open/new/archive-load/close) (#2231)
+        // Guard the whole populate so binding-driven ValueChanged/IsChecked/Selection events fired
+        // while the editor binds to the new document are NOT recorded as undo commands (#2231).
+        var wasLoading = _isLoading;
+        _isLoading = true;
+        try
+        {
+            PopulateEditorCore();
+        }
+        finally
+        {
+            _isLoading = wasLoading;
+        }
 
+        // Fresh undo history per document (open/new/archive-load/close). Cleared AFTER populate so
+        // any stray binding edits during bind don't survive on the stack (#2231).
+        _undo.Clear();
+    }
+
+    private void PopulateEditorCore()
+    {
         if (_currentItem == null)
         {
             EmptyStatePanel.IsVisible = true;
@@ -393,15 +411,20 @@ public partial class MainWindow
         string? itemClass = _gameDataService?.Get2DAValue("baseitems", baseItemIndex, "ItemClass");
         if (string.IsNullOrEmpty(itemClass) || itemClass == "****") itemClass = null;
 
+        // Setters route through undo (#2231). The combo is not bound to the VM, so getter() still
+        // holds the pre-change value when the handler fires — capture it as the undo baseline.
         WireModelPartCombo(ModelPart1Combo, partIndex: 1, _itemViewModel.ModelPart1,
-            v => _itemViewModel.ModelPart1 = v, isComposite, itemClass);
+            v => RecordModelPartChange(() => _itemViewModel!.ModelPart1, x => _itemViewModel!.ModelPart1 = x, v, "change model part 1"),
+            isComposite, itemClass);
 
         if (isComposite)
         {
             WireModelPartCombo(ModelPart2Combo, partIndex: 2, _itemViewModel.ModelPart2,
-                v => _itemViewModel.ModelPart2 = v, isComposite: true, itemClass);
+                v => RecordModelPartChange(() => _itemViewModel!.ModelPart2, x => _itemViewModel!.ModelPart2 = x, v, "change model part 2"),
+                isComposite: true, itemClass);
             WireModelPartCombo(ModelPart3Combo, partIndex: 3, _itemViewModel.ModelPart3,
-                v => _itemViewModel.ModelPart3 = v, isComposite: true, itemClass);
+                v => RecordModelPartChange(() => _itemViewModel!.ModelPart3, x => _itemViewModel!.ModelPart3 = x, v, "change model part 3"),
+                isComposite: true, itemClass);
         }
     }
 
