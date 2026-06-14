@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.20.0-alpha] - 2026-06-14
+**Branch**: `trebuchet/issue-2419` | **PR**: #2463
+
+### Feature: First-run setup (tabbed Settings)
+
+- Settings window reworked into tabbed setup (Game/Home, Logging, Backups, Appearance, Review) that doubles as a guided first-run flow; standalone wizard retired. Version-gated re-prompt encourages reviewing newly added settings (#2419).
+
+---
+
 ## [1.39.0-alpha] - 2026-06-14
 **Branch**: `trebuchet/sprint/issue-2453-2455` | **PR**: #2456
 

@@ -90,6 +90,7 @@ public partial class RadoubSettings
                     // before" only once the wizard records itself.
                     _acknowledgedWizardGaps = data.AcknowledgedWizardGaps ?? new List<string>();
                     _wizardHasRun = data.WizardHasRun;
+                    _lastSetupVersion = data.LastSetupVersion ?? "";
 
                     // Garbage filters
                     if (data.GarbageFilters != null && data.GarbageFilters.Count > 0)
@@ -177,6 +178,7 @@ public partial class RadoubSettings
                 // First-run wizard state
                 AcknowledgedWizardGaps = _acknowledgedWizardGaps,
                 WizardHasRun = _wizardHasRun,
+                LastSetupVersion = _lastSetupVersion,
 
                 // Garbage filters
                 GarbageFilters = _garbageFilters,
@@ -231,6 +233,8 @@ public partial class RadoubSettings
         // First-run wizard state (#1020) — optional; absent in older JSON.
         public List<string>? AcknowledgedWizardGaps { get; set; }
         public bool WizardHasRun { get; set; }
+        // Version setup was last completed against (#2419) — absent in older JSON.
+        public string? LastSetupVersion { get; set; }
 
         // Garbage label filters (shared across all tools)
         public List<string>? GarbageFilters { get; set; }

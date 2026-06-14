@@ -71,10 +71,11 @@ public partial class App : Application
             var mainWindow = new MainWindow();
             desktop.MainWindow = mainWindow;
 
-            // First-run / welcome-back configuration wizard (#1020). Shown over the
-            // main window (non-blocking) once it is up, only when a required setting
-            // with no good default is unfilled and unacknowledged.
-            mainWindow.Opened += OnMainWindowOpenedShowWizardIfNeeded;
+            // First-run / version-gate setup (#1020, #2419). The tabbed Settings window
+            // doubles as setup; shown over the main window (non-blocking) once it is up,
+            // when this is a first run, a newer build added settings, or a required
+            // no-default setting is unfilled and unacknowledged.
+            mainWindow.Opened += OnMainWindowOpenedShowSetupIfNeeded;
 
             // Unsubscribe from singleton events and dispose services on app exit (#1282, #1292)
             desktop.Exit += (_, _) =>
@@ -88,40 +89,46 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// On main-window open, decide whether the first-run / welcome-back wizard
-    /// should appear and show it non-modally over the main window (#1020). Fires
-    /// once — the handler unsubscribes itself.
+    /// On main-window open, decide whether the first-run / version-gate setup should
+    /// appear and show the tabbed Settings window in setup mode non-modally over the
+    /// main window (#1020, #2419). Fires once — the handler unsubscribes itself.
     /// </summary>
-    private void OnMainWindowOpenedShowWizardIfNeeded(object? sender, EventArgs e)
+    private void OnMainWindowOpenedShowSetupIfNeeded(object? sender, EventArgs e)
     {
         if (sender is not Avalonia.Controls.Window mainWindow)
             return;
 
-        mainWindow.Opened -= OnMainWindowOpenedShowWizardIfNeeded;
+        mainWindow.Opened -= OnMainWindowOpenedShowSetupIfNeeded;
 
         var settings = Radoub.Formats.Settings.RadoubSettings.Instance;
 
-        // Gap registry. On first run every step is reviewed once (the wizard fires
-        // regardless of these flags). The IsSatisfied / HasGoodDefault flags only
-        // govern the welcome-back path: a future required no-default setting that is
-        // unsatisfied and unacknowledged re-opens the wizard. Today the game path is
-        // the only no-default setting; appearance/logging/backup have good defaults
-        // and are part of the one-time first-run review only.
+        // Gap registry. On first run every step is reviewed once (setup fires regardless
+        // of these flags). The IsSatisfied / HasGoodDefault flags govern the welcome-back
+        // path: a required no-default setting that is unsatisfied and unacknowledged
+        // re-opens setup. Today the game path is the only no-default setting;
+        // appearance/logging/backup have good defaults and are first-run review only.
         var gaps = new[]
         {
-            new WizardGap(FirstRunWizardViewModel.GapGamePath, settings.HasGamePaths, HasGoodDefault: false),
-            new WizardGap(FirstRunWizardViewModel.GapAppearance, true, HasGoodDefault: true),
-            new WizardGap(FirstRunWizardViewModel.GapLogging, true, HasGoodDefault: true),
-            new WizardGap(FirstRunWizardViewModel.GapBackup, true, HasGoodDefault: true),
+            new WizardGap(SettingsWindowViewModel.GapGamePath, settings.HasGamePaths, HasGoodDefault: false),
+            new WizardGap(SettingsWindowViewModel.GapAppearance, true, HasGoodDefault: true),
+            new WizardGap(SettingsWindowViewModel.GapLogging, true, HasGoodDefault: true),
+            new WizardGap(SettingsWindowViewModel.GapBackup, true, HasGoodDefault: true),
         };
 
-        var decision = WizardGapService.Decide(gaps, settings.AcknowledgedWizardGaps, settings.WizardHasRun);
+        // Version gate (#2419): re-prompt once when a newer build raised the setup
+        // review version above what the user last completed setup against.
+        var decision = WizardGapService.Decide(
+            gaps, settings.AcknowledgedWizardGaps, settings.WizardHasRun,
+            settings.LastSetupVersion, WizardGapService.SetupReviewVersion);
         if (!decision.ShouldShow)
             return;
 
-        var wizard = new FirstRunWizardWindow();
-        wizard.Initialize(decision.Mode);
-        wizard.Show(mainWindow);
+        var mode = decision.Mode == WizardMode.Welcome
+            ? SettingsSetupMode.Welcome
+            : SettingsSetupMode.WelcomeBack;
+
+        var setupWindow = new SettingsWindow(mode);
+        setupWindow.Show(mainWindow);
     }
 
     private void OnSharedSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
