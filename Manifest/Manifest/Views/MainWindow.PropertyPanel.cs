@@ -167,6 +167,9 @@ public partial class MainWindow
         CategoryPriorityBox.SelectionChanged -= OnCategoryPriorityChanged;
         CategoryXPBox.ValueChanged -= OnCategoryXPChanged;
         CategoryCommentBox.LostFocus -= OnCategoryCommentChanged;
+        CategoryNameBox.TextChanged -= OnTextEditedMarkDirty;
+        CategoryTagBox.TextChanged -= OnTextEditedMarkDirty;
+        CategoryCommentBox.TextChanged -= OnTextEditedMarkDirty;
 
         // Add handlers
         CategoryNameBox.LostFocus += OnCategoryNameChanged;
@@ -174,6 +177,11 @@ public partial class MainWindow
         CategoryPriorityBox.SelectionChanged += OnCategoryPriorityChanged;
         CategoryXPBox.ValueChanged += OnCategoryXPChanged;
         CategoryCommentBox.LostFocus += OnCategoryCommentChanged;
+        // #2461 — mark dirty while typing so the close guard sees unsaved edits even
+        // before focus leaves the box. Model commit still happens on LostFocus/save.
+        CategoryNameBox.TextChanged += OnTextEditedMarkDirty;
+        CategoryTagBox.TextChanged += OnTextEditedMarkDirty;
+        CategoryCommentBox.TextChanged += OnTextEditedMarkDirty;
     }
 
     private void WireEntryHandlers()
@@ -195,19 +203,32 @@ public partial class MainWindow
     {
         // Update the token preview as the user types
         UpdateTokenPreview();
+
+        // #2461 — mark dirty while typing so the close guard sees unsaved edits even
+        // before focus leaves the box. Model commit still happens on LostFocus/save.
+        if (!_isUpdatingPanel) MarkDirty();
+    }
+
+    /// <summary>
+    /// Mark the document dirty as the user types in a journal text box (#2461). The
+    /// actual model commit happens on LostFocus / save; this only ensures the dirty
+    /// flag (and the close guard) reflect unsaved edits during typing. Suppressed while
+    /// the panel is being repopulated so bind-time TextChanged events do not mark dirty.
+    /// </summary>
+    private void OnTextEditedMarkDirty(object? sender, TextChangedEventArgs e)
+    {
+        if (!_isUpdatingPanel) MarkDirty();
     }
 
     private void OnCategoryNameChanged(object? sender, RoutedEventArgs e)
     {
         if (_isUpdatingPanel || _selectedItem is not CategoryTreeItem catItem) return;
 
-        var newName = CategoryNameBox.Text ?? "";
-        if (catItem.Category.Name.GetDefault() != newName)
+        if (JournalFieldEditor.ApplyCategoryName(catItem.Category, CategoryNameBox.Text))
         {
-            catItem.Category.Name.SetString(0, newName);
             MarkDirty();
             UpdateTreeItemHeader(catItem);
-            UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Category name changed to: {newName}");
+            UnifiedLogger.LogJournal(LogLevel.DEBUG, "Category name changed");
         }
     }
 
@@ -215,13 +236,11 @@ public partial class MainWindow
     {
         if (_isUpdatingPanel || _selectedItem is not CategoryTreeItem catItem) return;
 
-        var newTag = CategoryTagBox.Text ?? "";
-        if (catItem.Category.Tag != newTag)
+        if (JournalFieldEditor.ApplyCategoryTag(catItem.Category, CategoryTagBox.Text))
         {
-            catItem.Category.Tag = newTag;
             MarkDirty();
             UpdateTreeItemHeader(catItem);
-            UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Category tag changed to: {newTag}");
+            UnifiedLogger.LogJournal(LogLevel.DEBUG, "Category tag changed");
         }
     }
 
@@ -258,10 +277,8 @@ public partial class MainWindow
     {
         if (_isUpdatingPanel || _selectedItem is not CategoryTreeItem catItem) return;
 
-        var newComment = CategoryCommentBox.Text ?? "";
-        if (catItem.Category.Comment != newComment)
+        if (JournalFieldEditor.ApplyCategoryComment(catItem.Category, CategoryCommentBox.Text))
         {
-            catItem.Category.Comment = newComment;
             MarkDirty();
             UnifiedLogger.LogJournal(LogLevel.DEBUG, "Category comment changed");
         }
@@ -344,14 +361,51 @@ public partial class MainWindow
     {
         if (_isUpdatingPanel || _selectedItem is not EntryTreeItem entItem) return;
 
-        var newText = EntryTextBox.Text ?? "";
-        var oldText = entItem.Entry.Text.GetDefault();
-        if (oldText != newText)
+        if (JournalFieldEditor.ApplyEntryText(entItem.Entry, EntryTextBox.Text))
         {
-            entItem.Entry.Text.SetString(0, newText);
             MarkDirty();
             UpdateTreeItemHeader(entItem);
             UnifiedLogger.LogJournal(LogLevel.DEBUG, "Entry text changed");
+        }
+    }
+
+    /// <summary>
+    /// Push the value of whichever journal text box currently has focus into the model
+    /// (#2461). Text fields otherwise commit only on LostFocus, so a Save issued while a
+    /// text box still holds focus would persist the pre-edit model value and the visible
+    /// edit would silently revert. Save and the close-guard save call this first so the
+    /// visible value is always the saved value. No-op when the focused control is not a
+    /// journal text box or nothing changed.
+    /// </summary>
+    private void CommitFocusedEdit()
+    {
+        if (_isUpdatingPanel) return;
+
+        if (_selectedItem is CategoryTreeItem catItem)
+        {
+            var changed = false;
+            if (CategoryNameBox.IsFocused)
+                changed = JournalFieldEditor.ApplyCategoryName(catItem.Category, CategoryNameBox.Text);
+            else if (CategoryTagBox.IsFocused)
+                changed = JournalFieldEditor.ApplyCategoryTag(catItem.Category, CategoryTagBox.Text);
+            else if (CategoryCommentBox.IsFocused)
+                changed = JournalFieldEditor.ApplyCategoryComment(catItem.Category, CategoryCommentBox.Text);
+
+            if (changed)
+            {
+                MarkDirty();
+                UpdateTreeItemHeader(catItem);
+                UnifiedLogger.LogJournal(LogLevel.DEBUG, "Committed focused category edit before save");
+            }
+        }
+        else if (_selectedItem is EntryTreeItem entItem)
+        {
+            if (EntryTextBox.IsFocused && JournalFieldEditor.ApplyEntryText(entItem.Entry, EntryTextBox.Text))
+            {
+                MarkDirty();
+                UpdateTreeItemHeader(entItem);
+                UnifiedLogger.LogJournal(LogLevel.DEBUG, "Committed focused entry edit before save");
+            }
         }
     }
 

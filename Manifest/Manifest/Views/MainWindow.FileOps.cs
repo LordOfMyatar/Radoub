@@ -202,6 +202,11 @@ public partial class MainWindow
     {
         if (_currentJrl == null || string.IsNullOrEmpty(_currentFilePath)) return;
 
+        // #2461 — commit any in-progress edit from a focused text box into the model BEFORE
+        // writing. Text fields otherwise commit only on LostFocus, so saving while a box still
+        // has focus would persist the stale model value and the visible edit would revert.
+        CommitFocusedEdit();
+
         if (_documentState.IsReadOnly)
         {
             UnifiedLogger.LogApplication(LogLevel.WARN, $"Save blocked: file is read-only (locked by another tool): {UnifiedLogger.SanitizePath(_currentFilePath)}");
