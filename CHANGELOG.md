@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Build 2026-06-14] - 2026-06-14
-**Branch**: `radoub/sprint/base-class-consolidation` | **PR**: #TBD
+**Branch**: `radoub/sprint/base-class-consolidation` | **PR**: #2457
 
 ### Sprint: Shared Base-Class Refactor Consolidation (#2441)
 
