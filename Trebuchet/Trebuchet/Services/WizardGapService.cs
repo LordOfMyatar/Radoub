@@ -31,9 +31,11 @@ public static class WizardGapService
     /// <summary>
     /// Build version the setup screen last meaningfully changed at (#2419). Bump this
     /// deliberately when adding a setting worth re-surfacing; users whose
-    /// <c>LastSetupVersion</c> is older are re-prompted once to review.
+    /// <c>LastSetupVersion</c> is older are re-prompted once to review. Must stay at or
+    /// below the current app version, or every launch re-prompts. Trebuchet ships this
+    /// under the 1.19.x line (see version.json), so the baseline is "1.19".
     /// </summary>
-    public const string SetupReviewVersion = "1.40";
+    public const string SetupReviewVersion = "1.19";
 
     public static WizardDecision Decide(
         IEnumerable<WizardGap> gaps, IEnumerable<string> acknowledgedKeys, bool hasRunBefore,

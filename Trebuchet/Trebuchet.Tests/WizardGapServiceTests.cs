@@ -242,6 +242,30 @@ public class WizardGapServiceTests
     }
 
     [Fact]
+    public void SetupReviewVersion_IsNotAheadOfShippingVersion_NoPerpetualReprompt()
+    {
+        // Guard against the regression where SetupReviewVersion was set ahead of the
+        // real app version (1.19.x), so a user who completed setup at the current build
+        // was re-prompted on every launch (#2419). A setup completed at the current
+        // version must NOT be considered older than the review threshold.
+        const string shippingVersion = "1.19.69-alpha";
+
+        Assert.False(WizardGapService.VersionLess(shippingVersion, WizardGapService.SetupReviewVersion));
+    }
+
+    [Fact]
+    public void Decide_CompletedAtCurrentVersion_DoesNotReshow()
+    {
+        var gaps = new[] { Gap("gamePath", satisfied: true) };
+
+        var decision = WizardGapService.Decide(
+            gaps, acknowledgedKeys: new[] { "gamePath" }, hasRunBefore: true,
+            lastSetupVersion: "1.19.69-alpha", setupReviewVersion: WizardGapService.SetupReviewVersion);
+
+        Assert.False(decision.ShouldShow);
+    }
+
+    [Fact]
     public void AllKeys_ReturnsEveryRegisteredKey_ForAcknowledgement()
     {
         // When the wizard completes it acknowledges ALL registered gap keys, so a
