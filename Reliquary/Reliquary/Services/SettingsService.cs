@@ -1,4 +1,3 @@
-using System;
 using Radoub.UI.Services;
 
 namespace PlaceableEditor.Services;
@@ -32,32 +31,18 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
     protected override string SettingsEnvironmentVariable => "RELIQUARY_SETTINGS_DIR";
     protected override string SettingsFileName => "ReliquarySettings.json";
 
-    // Panel settings
-    private double _browserPanelWidth = 250;
-
     private SettingsService()
     {
         Initialize();
     }
 
-    public double BrowserPanelWidth
-    {
-        get => _browserPanelWidth;
-        set { if (SetProperty(ref _browserPanelWidth, Math.Max(150, Math.Min(500, value)))) SaveSettings(); }
-    }
+    // BrowserPanelWidth is provided by BaseToolSettingsService (#2356),
+    // reading/writing the same "BrowserPanelWidth" JSON key for compatibility.
+    // Reliquary has no other tool-specific settings.
 
-    protected override void LoadToolSettings(SettingsData settings)
-    {
-        _browserPanelWidth = Math.Max(150, Math.Min(500, settings.BrowserPanelWidth));
-    }
+    protected override void LoadToolSettings(SettingsData settings) { }
 
-    protected override void SaveToolSettings(SettingsData settings)
-    {
-        settings.BrowserPanelWidth = BrowserPanelWidth;
-    }
+    protected override void SaveToolSettings(SettingsData settings) { }
 
-    public class SettingsData : BaseSettingsData
-    {
-        public double BrowserPanelWidth { get; set; } = 250;
-    }
+    public class SettingsData : BaseSettingsData { }
 }
