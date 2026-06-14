@@ -1,0 +1,50 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!--
+    Shared Spacing Styles for Radoub Tools (#788)
+
+    Theme-driven spacing resources. ThemeManager.ApplySpacing overrides these at
+    runtime when the active theme defines a "spacing" block; the defaults below
+    guarantee the resources always resolve (so {DynamicResource ...} never fails
+    before a theme loads, or when a theme omits spacing).
+
+    Resource keys (all double):
+      ControlPadding    - inner padding for controls          (default 8)
+      ControlMargin     - margin between controls              (default 4)
+      PanelSpacing      - StackPanel/grid gap between sections (default 8)
+      MinControlHeight  - minimum height for interactive rows  (default 28)
+
+    Include in App.axaml with:
+      <StyleInclude Source="avares://Radoub.UI/Styles/SpacingStyles.axaml"/>
+
+    Adoption is incremental (#788): use the resources / opt-in classes below in
+    new and touched AXAML. The catalogue of remaining hardcoded values lives in
+    NonPublic/Radoub/spacing-consolidation-followup.md.
+
+    Usage:
+      <StackPanel Spacing="{DynamicResource PanelSpacing}"/>
+      <Border Padding="{DynamicResource ControlPadding}"/>
+      <StackPanel Classes="panel"/>          - applies PanelSpacing
+      <Border Classes="control-group"/>      - applies ControlPadding
+    -->
+
+    <Styles.Resources>
+        <sys:Double x:Key="ControlPadding">8</sys:Double>
+        <sys:Double x:Key="ControlMargin">4</sys:Double>
+        <sys:Double x:Key="PanelSpacing">8</sys:Double>
+        <sys:Double x:Key="MinControlHeight">28</sys:Double>
+    </Styles.Resources>
+
+    <!-- Opt-in: vertical/horizontal section panel with standard gap. -->
+    <Style Selector="StackPanel.panel">
+        <Setter Property="Spacing" Value="{DynamicResource PanelSpacing}"/>
+    </Style>
+
+    <!-- Opt-in: a grouping container with standard inner padding. -->
+    <Style Selector="Border.control-group">
+        <Setter Property="Padding" Value="{DynamicResource ControlPadding}"/>
+    </Style>
+
+</Styles>
