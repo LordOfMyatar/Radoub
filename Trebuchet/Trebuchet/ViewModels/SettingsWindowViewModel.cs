@@ -11,18 +11,71 @@ using CommunityToolkit.Mvvm.Input;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
 using Radoub.UI.Services;
+using Radoub.UI.Views;
 using RadoubLauncher.Services;
 using RadoubLauncher.Views;
+using Radoub.UI.Utils;
 
 namespace RadoubLauncher.ViewModels;
 
+/// <summary>
+/// How the Settings window is being shown (#2419). The same tabbed window serves
+/// normal settings and the first-run / version-gate setup flow.
+/// </summary>
+public enum SettingsSetupMode
+{
+    /// <summary>Opened from the toolbar — plain settings, no banner or module picker.</summary>
+    Normal,
+    /// <summary>True first run — welcome banner + Review-tab module picker + shortcut offer.</summary>
+    Welcome,
+    /// <summary>A newer build added settings, or a required setting is missing — review banner only.</summary>
+    WelcomeBack,
+}
+
 public partial class SettingsWindowViewModel : ObservableObject
 {
-    private readonly Window _window;
+    private readonly Window? _window;
+    private readonly bool _headless;
+    private readonly string _appVersion;
     private readonly string? _originalThemeId;
     private readonly double _originalFontSizePoints;
+    private string? _chosenModulePath;
     private static IBrush SuccessBrush => BrushManager.GetSuccessBrush();
     private static IBrush ErrorBrush => BrushManager.GetErrorBrush();
+
+    /// <summary>How this window is being shown (#2419).</summary>
+    public SettingsSetupMode SetupMode { get; }
+
+    public bool IsSetupMode => SetupMode != SettingsSetupMode.Normal;
+    public bool IsWelcome => SetupMode == SettingsSetupMode.Welcome;
+
+    /// <summary>Module picker (Review tab) is offered only on a true first run.</summary>
+    public bool ShowModulePicker => IsWelcome;
+
+    public string BannerText => SetupMode switch
+    {
+        SettingsSetupMode.Welcome => "Welcome to the Radoub toolset — confirm your setup below. You can change any of these later in Settings.",
+        SettingsSetupMode.WelcomeBack => "New settings were added — please review the values below. You can change any of these later in Settings.",
+        _ => "",
+    };
+
+    [ObservableProperty]
+    private int _selectedTabIndex;
+
+    /// <summary>Tabs: 0 Game/Home, 1 Logging, 2 Backups, 3 Appearance, 4 Review.</summary>
+    public int LastTabIndex => 4;
+
+    /// <summary>Display name of the module chosen on the Review tab (first run), or empty.</summary>
+    [ObservableProperty]
+    private string _chosenModuleDisplay = "";
+
+    [ObservableProperty]
+    private bool _createDesktopShortcut;
+
+    [ObservableProperty]
+    private string _shortcutResultMessage = "";
+
+    public bool HasShortcutResult => !string.IsNullOrEmpty(ShortcutResultMessage);
 
     [ObservableProperty]
     private string _gameInstallPath = "";
@@ -81,31 +134,60 @@ public partial class SettingsWindowViewModel : ObservableObject
     public ObservableCollection<ToolInfo> DetectedTools { get; }
 
     public SettingsWindowViewModel(Window window)
+        : this(window, SettingsSetupMode.Normal) { }
+
+    public SettingsWindowViewModel(Window window, SettingsSetupMode setupMode)
+        : this(window, setupMode, headless: false, appVersion: VersionHelper.GetVersion()) { }
+
+    private SettingsWindowViewModel(Window? window, SettingsSetupMode setupMode, bool headless, string appVersion)
     {
         _window = window;
+        _headless = headless;
+        _appVersion = appVersion;
+        SetupMode = setupMode;
 
         // Store originals for cancel revert
-        _originalThemeId = ThemeManager.Instance.CurrentTheme?.Plugin.Id;
         _originalFontSizePoints = RadoubSettings.Instance.SharedFontSize;
+
+        if (!headless)
+        {
+            _originalThemeId = ThemeManager.Instance.CurrentTheme?.Plugin.Id;
+
+            // Load available themes
+            foreach (var theme in ThemeManager.Instance.AvailableThemes)
+            {
+                AvailableThemes.Add(theme.Plugin.Name);
+            }
+        }
 
         // Load current settings
         LoadSettings();
 
-        // Get detected tools
-        DetectedTools = new ObservableCollection<ToolInfo>(ToolLauncherService.Instance.Tools);
-
-        // Load available themes
-        foreach (var theme in ThemeManager.Instance.AvailableThemes)
-        {
-            AvailableThemes.Add(theme.Plugin.Name);
-        }
+        // Get detected tools (ToolLauncherService is reachable headless; tolerate failure)
+        DetectedTools = headless
+            ? new ObservableCollection<ToolInfo>()
+            : new ObservableCollection<ToolInfo>(ToolLauncherService.Instance.Tools);
 
         // Set current theme
-        var currentTheme = ThemeManager.Instance.CurrentTheme;
-        if (currentTheme != null && AvailableThemes.Contains(currentTheme.Plugin.Name))
+        if (!headless)
         {
-            SelectedTheme = currentTheme.Plugin.Name;
+            var currentTheme = ThemeManager.Instance.CurrentTheme;
+            if (currentTheme != null && AvailableThemes.Contains(currentTheme.Plugin.Name))
+            {
+                SelectedTheme = currentTheme.Plugin.Name;
+            }
         }
+    }
+
+    /// <summary>Headless factory for unit tests (no Window, no ThemeManager) (#2419).</summary>
+    public static SettingsWindowViewModel CreateForTest(SettingsSetupMode mode, string appVersion) =>
+        new(window: null, mode, headless: true, appVersion);
+
+    /// <summary>Test hook: simulate the user choosing a module on the Review tab.</summary>
+    internal void SetChosenModuleForTest(string modulePath)
+    {
+        _chosenModulePath = modulePath;
+        ChosenModuleDisplay = System.IO.Path.GetFileName(modulePath);
     }
 
     private void LoadSettings()
@@ -277,6 +359,39 @@ public partial class SettingsWindowViewModel : ObservableObject
         }
     }
 
+    /// <summary>Advance to the next tab (convenience in setup mode); clamps at the last tab.</summary>
+    [RelayCommand]
+    private void Next()
+    {
+        if (SelectedTabIndex < LastTabIndex)
+            SelectedTabIndex++;
+    }
+
+    /// <summary>
+    /// Review-tab module picker (first run only): reuse the known-working module browser
+    /// (#2419). Stores the selection; it is applied on Save. Skipping leaves it unset.
+    /// </summary>
+    [RelayCommand]
+    private async Task ChooseModule()
+    {
+        if (_window == null) return; // headless
+
+        try
+        {
+            var browser = new ModuleBrowserWindow(RadoubSettings.Instance.NeverwinterNightsPath);
+            var result = await browser.ShowDialog<string?>(_window);
+            if (!string.IsNullOrEmpty(result))
+            {
+                _chosenModulePath = result;
+                ChosenModuleDisplay = System.IO.Path.GetFileName(result);
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Module picker failed: {ex.Message}");
+        }
+    }
+
     [RelayCommand]
     private void Save()
     {
@@ -297,28 +412,34 @@ public partial class SettingsWindowViewModel : ObservableObject
         // Backup settings
         sharedSettings.BackupRetentionDays = BackupRetentionDays;
 
-        // Save and apply selected theme
-        var selectedThemeInfo = ThemeManager.Instance.AvailableThemes
-            .FirstOrDefault(t => t.Plugin.Name == SelectedTheme);
-        if (selectedThemeInfo != null)
+        // Save and apply selected theme (skipped headless — no ThemeManager)
+        if (!_headless)
         {
-            var themeId = selectedThemeInfo.Plugin.Id;
+            var selectedThemeInfo = ThemeManager.Instance.AvailableThemes
+                .FirstOrDefault(t => t.Plugin.Name == SelectedTheme);
+            if (selectedThemeInfo != null)
+            {
+                var themeId = selectedThemeInfo.Plugin.Id;
 
-            // Save theme to shared settings (centralized theme management)
-            sharedSettings.SharedThemeId = themeId;
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Set shared theme: {themeId}");
+                // Save theme to shared settings (centralized theme management)
+                sharedSettings.SharedThemeId = themeId;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Set shared theme: {themeId}");
 
-            ThemeManager.Instance.ApplyTheme(themeId);
+                ThemeManager.Instance.ApplyTheme(themeId);
+            }
         }
 
-        _window.Close();
+        if (IsSetupMode)
+            CompleteSetup(openModule: IsWelcome, createShortcut: IsWelcome && CreateDesktopShortcut);
+
+        _window?.Close();
     }
 
     [RelayCommand]
     private void Cancel()
     {
         // Revert theme if changed
-        if (_originalThemeId != null)
+        if (!_headless && _originalThemeId != null)
         {
             ThemeManager.Instance.ApplyTheme(_originalThemeId);
         }
@@ -326,7 +447,64 @@ public partial class SettingsWindowViewModel : ObservableObject
         // Revert font size if changed
         RadoubSettings.Instance.SharedFontSize = _originalFontSizePoints;
 
-        _window.Close();
+        // B1 (#2419): dismissing setup still marks first-run complete for this version
+        // so we do not re-nag every launch. No module open, no shortcut on cancel.
+        if (IsSetupMode)
+            CompleteSetup(openModule: false, createShortcut: false);
+
+        _window?.Close();
+    }
+
+    /// <summary>
+    /// Persist first-run/version-gate completion (#2419): stamp WizardHasRun +
+    /// LastSetupVersion + acknowledge all gaps. Optionally open the chosen module and
+    /// create a desktop shortcut (Welcome/Save only). Never throws out to the caller.
+    /// </summary>
+    private void CompleteSetup(bool openModule, bool createShortcut)
+    {
+        RadoubSettings.Instance.AcknowledgeWizardGaps(SetupGapKeys, _appVersion);
+
+        if (openModule && !string.IsNullOrEmpty(_chosenModulePath))
+        {
+            try
+            {
+                RadoubSettings.Instance.CurrentModulePath = _chosenModulePath;
+                SettingsService.Instance.AddRecentModule(_chosenModulePath);
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Setup opened module: {UnifiedLogger.SanitizePath(_chosenModulePath)}");
+            }
+            catch (Exception ex)
+            {
+                // A failed module open must not block setup completing.
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Setup could not open module: {ex.Message}");
+            }
+        }
+
+        if (createShortcut && !_headless)
+        {
+            try
+            {
+                var result = DesktopShortcutService.CreateForCurrentApp(ResolveIconPath());
+                ShortcutResultMessage = result.Success
+                    ? $"Shortcut created: {result.Path}"
+                    : $"Shortcut failed: {result.Error}";
+                OnPropertyChanged(nameof(HasShortcutResult));
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Desktop shortcut failed: {ex.Message}");
+            }
+        }
+    }
+
+    /// <summary>Gap keys acknowledged on setup completion — mirrors the registry in App.</summary>
+    private static readonly string[] SetupGapKeys = { "gamePath", "appearance", "logging", "backup" };
+
+    private static string? ResolveIconPath()
+    {
+        var baseDir = AppContext.BaseDirectory;
+        var ico = System.IO.Path.Combine(baseDir, "Assets", "Trebuchet.ico");
+        return System.IO.File.Exists(ico) ? ico : null;
     }
 
     [RelayCommand]
