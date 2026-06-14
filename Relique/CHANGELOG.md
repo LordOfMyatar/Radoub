@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.10.25-alpha] - 2026-06-14
-**Branch**: `relique/issue-2231` | **PR**: #TBD
+**Branch**: `relique/issue-2231` | **PR**: #2466
 
 ### Sprint 1: Undo/Redo adoption (#2231)
 

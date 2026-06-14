@@ -19,7 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Radoub.UI] - 2026-06-14
-**Branch**: `relique/issue-2231` | **PR**: #TBD
+**Branch**: `relique/issue-2231` | **PR**: #2466
 
 ### Undo: refuse-to-push on self-rolled-back command (#2231)
 
