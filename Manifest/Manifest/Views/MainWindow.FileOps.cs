@@ -264,11 +264,14 @@ public partial class MainWindow
         }
         finally
         {
-            // Clean up temp file if it still exists (write failed before the move)
+            // Clean up temp file if it still exists (write failed before the move).
+            // Best-effort: catch only the IO/access errors a delete can raise; never
+            // swallow everything (CLAUDE.md — no bare catch).
             if (File.Exists(tempPath))
             {
                 try { File.Delete(tempPath); }
-                catch { /* temp cleanup is best-effort */ }
+                catch (IOException ex) { UnifiedLogger.LogJournal(LogLevel.WARN, $"Temp cleanup failed: {ex.Message}"); }
+                catch (UnauthorizedAccessException ex) { UnifiedLogger.LogJournal(LogLevel.WARN, $"Temp cleanup denied: {ex.Message}"); }
             }
         }
     }
