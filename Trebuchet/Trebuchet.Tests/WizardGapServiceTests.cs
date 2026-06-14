@@ -133,6 +133,114 @@ public class WizardGapServiceTests
         Assert.Equal(new[] { "gamePath", "anotherRequired", "theme" }, decision.GapStepKeys);
     }
 
+    // --- Version-gated re-prompt (#2419) ---
+
+    [Fact]
+    public void Decide_HasRunBefore_OlderSetupVersion_ShowsWelcomeBack_AllSteps()
+    {
+        // User completed setup against an older build; a newer build's review version
+        // is higher → re-prompt to review (all steps surfaced, not just forced gaps).
+        var gaps = new[]
+        {
+            Gap("gamePath", satisfied: true),
+            Gap("logging", satisfied: true, hasGoodDefault: true),
+        };
+
+        var decision = WizardGapService.Decide(
+            gaps, acknowledgedKeys: new[] { "gamePath", "logging" }, hasRunBefore: true,
+            lastSetupVersion: "1.39", setupReviewVersion: "1.40");
+
+        Assert.True(decision.ShouldShow);
+        Assert.Equal(WizardMode.WelcomeBack, decision.Mode);
+        Assert.Equal(new[] { "gamePath", "logging" }, decision.GapStepKeys);
+    }
+
+    [Fact]
+    public void Decide_HasRunBefore_SameSetupVersion_DoesNotShow()
+    {
+        var gaps = new[] { Gap("gamePath", satisfied: true) };
+
+        var decision = WizardGapService.Decide(
+            gaps, acknowledgedKeys: new[] { "gamePath" }, hasRunBefore: true,
+            lastSetupVersion: "1.40", setupReviewVersion: "1.40");
+
+        Assert.False(decision.ShouldShow);
+        Assert.Equal(WizardMode.None, decision.Mode);
+    }
+
+    [Fact]
+    public void Decide_HasRunBefore_NewerSetupVersion_DoesNotShow()
+    {
+        // Defensive: a user on a newer build than the review threshold isn't re-prompted.
+        var gaps = new[] { Gap("gamePath", satisfied: true) };
+
+        var decision = WizardGapService.Decide(
+            gaps, acknowledgedKeys: new[] { "gamePath" }, hasRunBefore: true,
+            lastSetupVersion: "1.41", setupReviewVersion: "1.40");
+
+        Assert.False(decision.ShouldShow);
+    }
+
+    [Fact]
+    public void Decide_HasRunBefore_EmptyLastSetupVersion_TreatedAsOlder_ShowsWelcomeBack()
+    {
+        // A user who ran the pre-version-gate wizard has no LastSetupVersion. Treat
+        // empty as older than any real review version so they get the new review once.
+        var gaps = new[] { Gap("gamePath", satisfied: true) };
+
+        var decision = WizardGapService.Decide(
+            gaps, acknowledgedKeys: new[] { "gamePath" }, hasRunBefore: true,
+            lastSetupVersion: "", setupReviewVersion: "1.40");
+
+        Assert.True(decision.ShouldShow);
+        Assert.Equal(WizardMode.WelcomeBack, decision.Mode);
+    }
+
+    [Fact]
+    public void Decide_HasRunBefore_MalformedLastSetupVersion_TreatedAsOlder()
+    {
+        // Unparseable persisted version → re-prompt (safe) rather than silently suppress.
+        var gaps = new[] { Gap("gamePath", satisfied: true) };
+
+        var decision = WizardGapService.Decide(
+            gaps, acknowledgedKeys: new[] { "gamePath" }, hasRunBefore: true,
+            lastSetupVersion: "garbage", setupReviewVersion: "1.40");
+
+        Assert.True(decision.ShouldShow);
+    }
+
+    [Fact]
+    public void Decide_HasRunBefore_VersionSuffixStripped_ParsesAlpha()
+    {
+        // NBGV versions carry suffixes like "1.40.0-alpha". Equal core versions are
+        // NOT less, so no re-prompt.
+        var gaps = new[] { Gap("gamePath", satisfied: true) };
+
+        var decision = WizardGapService.Decide(
+            gaps, acknowledgedKeys: new[] { "gamePath" }, hasRunBefore: true,
+            lastSetupVersion: "1.40.0-alpha", setupReviewVersion: "1.40");
+
+        Assert.False(decision.ShouldShow);
+    }
+
+    [Fact]
+    public void Decide_NoVersionArgs_PreservesLegacyForcedGapBehavior()
+    {
+        // Calling without version args (defaults null) keeps the original #1020 logic.
+        var gaps = new[]
+        {
+            Gap("gamePath", satisfied: true),
+            Gap("newThing", satisfied: false),
+        };
+
+        var decision = WizardGapService.Decide(
+            gaps, acknowledgedKeys: new[] { "gamePath" }, hasRunBefore: true);
+
+        Assert.True(decision.ShouldShow);
+        Assert.Equal(WizardMode.WelcomeBack, decision.Mode);
+        Assert.Equal(new[] { "newThing" }, decision.GapStepKeys);
+    }
+
     [Fact]
     public void AllKeys_ReturnsEveryRegisteredKey_ForAcknowledgement()
     {
