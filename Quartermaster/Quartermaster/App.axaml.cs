@@ -25,14 +25,6 @@ public partial class App : Application
         // Register this tool's path in shared Radoub settings
         RegisterToolPath();
 
-        // Check for SafeMode
-        var isSafeMode = Program.SafeMode?.SafeModeActive ?? false;
-
-        if (isSafeMode)
-        {
-            UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode enabled - using light theme and default fonts");
-        }
-
         // Record tool launch for easter egg tracking
         EasterEggService.Instance.RecordToolLaunch("Quartermaster");
 
@@ -41,16 +33,10 @@ public partial class App : Application
         ThemeManager.Instance.DiscoverThemes();
 
         // Apply theme
-        if (isSafeMode)
-            ThemeManager.Instance.ApplyTheme("org.radoub.theme.light");
-        else
-            ThemeManager.Instance.ApplySharedTheme();
+        ThemeManager.Instance.ApplySharedTheme();
 
         // Apply font settings
-        if (isSafeMode)
-            ApplySafeModeFontSettings();
-        else
-            ApplyFontSettings();
+        ApplyFontSettings();
 
         // Clean up old log sessions
         UnifiedLogger.CleanupOldSessions(SettingsService.Instance.LogRetentionSessions);
@@ -62,34 +48,6 @@ public partial class App : Application
         // Initialize spell-checking (async, non-blocking)
         // No cancellation needed - singleton service that should complete during app lifetime
         _ = InitializeSpellCheckAsync();
-    }
-
-    /// <summary>
-    /// Apply SafeMode font settings (system defaults).
-    /// </summary>
-    private void ApplySafeModeFontSettings()
-    {
-        if (Resources != null)
-        {
-            var baseSize = SafeModeService.DefaultFontSize;
-
-            Resources["GlobalFontSize"] = baseSize;
-            Resources["FontSizeXSmall"] = Math.Max(10, baseSize - 2);
-            Resources["FontSizeSmall"] = Math.Max(11, baseSize - 1);
-            Resources["FontSizeNormal"] = baseSize;
-            Resources["FontSizeMedium"] = baseSize + 2;
-            Resources["FontSizeLarge"] = baseSize + 4;
-            Resources["FontSizeXLarge"] = baseSize + 6;
-            Resources["FontSizeTitle"] = baseSize + 10;
-            Resources["GlobalFontFamily"] = FontFamily.Default;
-
-            // Update portrait dimensions based on font scale (base: 64x100 @ font 14)
-            var scale = baseSize / 14.0;
-            Resources["PortraitWidth"] = 64.0 * scale;
-            Resources["PortraitHeight"] = 100.0 * scale;
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Applied SafeMode font settings");
-        }
     }
 
     public override void OnFrameworkInitializationCompleted()

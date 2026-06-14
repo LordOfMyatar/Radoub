@@ -34,9 +34,6 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
     protected override string SettingsEnvironmentVariable => "RELIQUE_SETTINGS_DIR";
     protected override string SettingsFileName => "ReliqueSettings.json";
 
-    // Panel settings
-    private double _browserPanelWidth = 250;
-
     // Wizard settings
     private bool _openInEditorAfterCreate = true;
 
@@ -79,11 +76,8 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
         }
     }
 
-    public double BrowserPanelWidth
-    {
-        get => _browserPanelWidth;
-        set { if (SetProperty(ref _browserPanelWidth, Math.Max(150, Math.Min(500, value)))) SaveSettings(); }
-    }
+    // BrowserPanelWidth is provided by BaseToolSettingsService (#2356),
+    // reading/writing the same "BrowserPanelWidth" JSON key for compatibility.
 
     public bool OpenInEditorAfterCreate
     {
@@ -93,19 +87,16 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
 
     protected override void LoadToolSettings(SettingsData settings)
     {
-        _browserPanelWidth = Math.Max(150, Math.Min(500, settings.BrowserPanelWidth));
         _openInEditorAfterCreate = settings.OpenInEditorAfterCreate;
     }
 
     protected override void SaveToolSettings(SettingsData settings)
     {
-        settings.BrowserPanelWidth = BrowserPanelWidth;
         settings.OpenInEditorAfterCreate = OpenInEditorAfterCreate;
     }
 
     public class SettingsData : BaseSettingsData
     {
-        public double BrowserPanelWidth { get; set; } = 250;
         public bool OpenInEditorAfterCreate { get; set; } = true;
     }
 }

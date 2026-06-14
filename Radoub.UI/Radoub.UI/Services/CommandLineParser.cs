@@ -11,14 +11,13 @@ namespace Radoub.UI.Services;
 public class CommandLineOptions
 {
     public bool ShowHelp { get; set; }
-    public bool SafeMode { get; set; }
     public string? FilePath { get; set; }
     public string? ModuleName { get; set; }
 }
 
 /// <summary>
 /// Shared command line argument parser for all Radoub tools.
-/// Handles --help, --safemode, --file, and bare file path arguments.
+/// Handles --help, --file, and bare file path arguments.
 /// Tools with additional flags should use the customHandler callback.
 /// </summary>
 public static class CommandLineParser
@@ -31,7 +30,7 @@ public static class CommandLineParser
 
     /// <summary>
     /// Parse command line arguments into the specified options type.
-    /// Handles common flags (--help, --safemode, --file) and delegates
+    /// Handles common flags (--help, --file) and delegates
     /// unknown flags to the customHandler if provided.
     /// </summary>
     /// <param name="args">Command line arguments</param>
@@ -53,12 +52,6 @@ public static class CommandLineParser
                 case "-?":
                 case "/?":
                     options.ShowHelp = true;
-                    break;
-
-                case "--safemode":
-                case "--safe-mode":
-                case "-s":
-                    options.SafeMode = true;
                     break;
 
                 case "--file":

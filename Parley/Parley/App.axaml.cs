@@ -37,16 +37,6 @@ public partial class App : Application
         // Clean up any leftover temp files from previous sessions (fire-and-forget)
         _ = System.Threading.Tasks.Task.Run(CleanupSoundBrowserTempFiles);
 
-        // Check for safe mode (command line)
-        var isSafeMode = Program.SafeMode?.SafeModeActive ?? false;
-
-        if (isSafeMode)
-        {
-            // SafeMode: Reset visual settings to safe defaults
-            ApplySafeModeDefaults();
-            UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode enabled - visual settings reset to defaults");
-        }
-
         // Initialize spell-checking (async, non-blocking)
         _ = SpellCheckService.Instance.InitializeAsync();
 
@@ -56,43 +46,18 @@ public partial class App : Application
         // Initialize and discover themes
         ThemeManager.Initialize("Parley");
         ThemeManager.Instance.DiscoverThemes();
+        ThemeManager.Instance.ApplySharedTheme();
 
-        if (isSafeMode)
-            ThemeManager.Instance.ApplyTheme("org.radoub.theme.light");
-        else
-            ThemeManager.Instance.ApplySharedTheme();
-
-        // Apply font size and family from shared settings (or defaults if SafeMode)
+        // Apply font size and family from shared settings
         var sharedSettings = Radoub.Formats.Settings.RadoubSettings.Instance;
-        if (isSafeMode)
-        {
-            ApplyFontSize(SafeModeService.DefaultFontSize);
-            ApplyFontFamily(SafeModeService.DefaultFontFamily);
-        }
-        else
-        {
-            ApplyFontSize(sharedSettings.SharedFontSize);
-            ApplyFontFamily(sharedSettings.SharedFontFamily);
-        }
+        ApplyFontSize(sharedSettings.SharedFontSize);
+        ApplyFontFamily(sharedSettings.SharedFontFamily);
 
         // Apply scrollbar auto-hide preference (Issue #63)
         ApplyScrollbarAutoHide(_settings.AllowScrollbarAutoHide);
 
         // Subscribe to settings changes
         _settings.PropertyChanged += OnSettingsPropertyChanged;
-    }
-
-    /// <summary>
-    /// Apply SafeMode defaults to settings - disables FlowView.
-    /// Theme and font overrides are applied directly (not written to settings).
-    /// </summary>
-    private void ApplySafeModeDefaults()
-    {
-        // Disable FlowView (can cause issues)
-        _settings.FlowchartVisible = false;
-        _settings.FlowchartWindowOpen = false;
-
-        UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode: FlowView disabled");
     }
 
     public override void OnFrameworkInitializationCompleted()
@@ -110,31 +75,6 @@ public partial class App : Application
 
             // Re-read shared settings when window regains focus (picks up Trebuchet changes)
             mainWindow.Activated += OnMainWindowActivated;
-
-            // Check if SafeMode is active - show dialog after main window is set
-            var isSafeMode = Program.SafeMode?.SafeModeActive ?? false;
-            if (isSafeMode)
-            {
-                // Show SafeMode dialog once the window is loaded
-                mainWindow.Opened += async (_, _) =>
-                {
-                    var dialog = new SafeModeDialog();
-                    await dialog.ShowDialog<object?>(mainWindow);
-
-                    if (!dialog.ShouldContinue)
-                    {
-                        // User chose to exit
-                        desktop.Shutdown();
-                        return;
-                    }
-
-                    // Apply optional cleanup choices
-                    if (dialog.ClearScrap && Program.SafeMode != null)
-                    {
-                        Program.SafeMode.ClearScrapData();
-                    }
-                };
-            }
         }
 
         base.OnFrameworkInitializationCompleted();

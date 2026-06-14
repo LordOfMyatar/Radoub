@@ -25,14 +25,6 @@ public partial class App : Application
         // Register this tool's path in shared Radoub settings for cross-tool discovery
         RegisterToolPath();
 
-        // Check for SafeMode
-        var isSafeMode = Program.SafeMode?.SafeModeActive ?? false;
-
-        if (isSafeMode)
-        {
-            UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode enabled - using light theme and default fonts");
-        }
-
         // Record tool launch for easter egg tracking
         EasterEggService.Instance.RecordToolLaunch("Manifest");
 
@@ -41,24 +33,10 @@ public partial class App : Application
         ThemeManager.Instance.DiscoverThemes();
 
         // Apply theme
-        if (isSafeMode)
-        {
-            ThemeManager.Instance.ApplyTheme("org.radoub.theme.light");
-        }
-        else
-        {
-            ThemeManager.Instance.ApplySharedTheme();
-        }
+        ThemeManager.Instance.ApplySharedTheme();
 
         // Apply font settings
-        if (isSafeMode)
-        {
-            ApplySafeModeFontSettings();
-        }
-        else
-        {
-            ApplyFontSettings();
-        }
+        ApplyFontSettings();
 
         // Clean up old log sessions
         UnifiedLogger.CleanupOldSessions(SettingsService.Instance.LogRetentionSessions);
@@ -69,19 +47,6 @@ public partial class App : Application
 
         // Initialize spell-checking (async, non-blocking)
         _ = SpellCheckService.Instance.InitializeAsync();
-    }
-
-    /// <summary>
-    /// Apply SafeMode font settings (system defaults).
-    /// </summary>
-    private void ApplySafeModeFontSettings()
-    {
-        if (Resources != null)
-        {
-            Resources["GlobalFontSize"] = SafeModeService.DefaultFontSize;
-            Resources["GlobalFontFamily"] = FontFamily.Default;
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Applied SafeMode font settings");
-        }
     }
 
     public override void OnFrameworkInitializationCompleted()

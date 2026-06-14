@@ -8,6 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Build 2026-06-14] - 2026-06-14
+**Branch**: `radoub/sprint/base-class-consolidation` | **PR**: #2457
+
+### Sprint: Shared Base-Class Refactor Consolidation (#2441)
+
+- Removed the obsolete SafeMode feature (`--safemode`) from all tools and Radoub.UI (#2403, supersedes #2011).
+- Hoisted `SpellCheckEnabled` into base settings; migrated Manifest (#2390).
+- Unified `FindWorkingDirectoryWithFallbacks` into `Radoub.Formats.Common.PathHelper`; Parley's `module.ifo` strictness preserved via an opt-in parameter (#2355).
+- Hoisted `BrowserPanelWidth`/`Visible` into `BaseToolSettingsService`; migrated Relique + Reliquary (#2356).
+- Wired existing theme spacing resources into a shared `SpacingStyles.axaml` (#788).
+
+---
+
 ## [Build 2026-06-10] - 2026-06-10
 **Branch**: `radoub/deps-test-sdk-2332` | **PR**: #2332
 

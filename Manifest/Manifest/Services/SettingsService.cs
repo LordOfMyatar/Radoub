@@ -1,5 +1,4 @@
 using System;
-using Radoub.Formats.Logging;
 using Radoub.UI.Services;
 
 namespace Manifest.Services
@@ -40,9 +39,6 @@ namespace Manifest.Services
         // Panel settings
         private double _treePanelWidth = 300;
 
-        // Spell-check settings
-        private bool _spellCheckEnabled = true;
-
         private SettingsService()
         {
             Initialize();
@@ -55,36 +51,22 @@ namespace Manifest.Services
             set { if (SetProperty(ref _treePanelWidth, Math.Max(150, Math.Min(600, value)))) SaveSettings(); }
         }
 
-        // Spell-check Settings
-        public bool SpellCheckEnabled
-        {
-            get => _spellCheckEnabled;
-            set
-            {
-                if (SetProperty(ref _spellCheckEnabled, value))
-                {
-                    SaveSettings();
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Spell-check {(value ? "enabled" : "disabled")}");
-                }
-            }
-        }
+        // SpellCheckEnabled is provided by BaseToolSettingsService (#2390),
+        // reading/writing the same "SpellCheckEnabled" JSON key for compatibility.
 
         protected override void LoadToolSettings(SettingsData settings)
         {
             _treePanelWidth = Math.Max(150, Math.Min(600, settings.TreePanelWidth));
-            _spellCheckEnabled = settings.SpellCheckEnabled;
         }
 
         protected override void SaveToolSettings(SettingsData settings)
         {
             settings.TreePanelWidth = TreePanelWidth;
-            settings.SpellCheckEnabled = SpellCheckEnabled;
         }
 
         public class SettingsData : BaseSettingsData
         {
             public double TreePanelWidth { get; set; } = 300;
-            public bool SpellCheckEnabled { get; set; } = true;
         }
     }
 }

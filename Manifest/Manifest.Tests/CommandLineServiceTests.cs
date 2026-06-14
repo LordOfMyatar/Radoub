@@ -24,7 +24,6 @@ public class CommandLineServiceTests
         Assert.Null(options.FilePath);
         Assert.Null(options.QuestTag);
         Assert.Null(options.EntryId);
-        Assert.False(options.SafeMode);
         Assert.False(options.ShowHelp);
     }
 
@@ -42,22 +41,6 @@ public class CommandLineServiceTests
 
         // Assert
         Assert.True(options.ShowHelp);
-    }
-
-    [Theory]
-    [InlineData("--safemode")]
-    [InlineData("-s")]
-    [InlineData("--safe-mode")]
-    public void Parse_SafeModeFlag_SetsSafeMode(string flag)
-    {
-        // Arrange
-        var args = new[] { flag };
-
-        // Act
-        var options = CommandLineService.Parse(args);
-
-        // Assert
-        Assert.True(options.SafeMode);
     }
 
     [Theory]
@@ -204,13 +187,12 @@ public class CommandLineServiceTests
     public void Parse_CombinedArgs_ParsesAllCorrectly()
     {
         // Arrange
-        var args = new[] { "--safe-mode", "journal.jrl", "-q", "test_quest" };
+        var args = new[] { "journal.jrl", "-q", "test_quest" };
 
         // Act
         var options = CommandLineService.Parse(args);
 
         // Assert
-        Assert.True(options.SafeMode);
         Assert.Equal("journal.jrl", options.FilePath);
         Assert.Equal("test_quest", options.QuestTag);
     }
@@ -227,14 +209,13 @@ public class CommandLineServiceTests
     public void Options_StaticProperty_ReturnsParsedOptions()
     {
         // Arrange
-        var args = new[] { "--safe-mode", "-q", "test_quest" };
+        var args = new[] { "-q", "test_quest" };
         CommandLineService.Parse(args);
 
         // Act
         var options = CommandLineService.Options;
 
         // Assert
-        Assert.True(options.SafeMode);
         Assert.Equal("test_quest", options.QuestTag);
     }
 }

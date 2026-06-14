@@ -10,7 +10,6 @@ public class CommandLineServiceTests
         var options = CommandLineService.Parse(Array.Empty<string>());
 
         Assert.False(options.ShowHelp);
-        Assert.False(options.SafeMode);
         Assert.Null(options.FilePath);
     }
 
@@ -26,13 +25,6 @@ public class CommandLineServiceTests
     {
         var options = CommandLineService.Parse(new[] { "-h" });
         Assert.True(options.ShowHelp);
-    }
-
-    [Fact]
-    public void Parse_SafeModeFlag_SetsSafeMode()
-    {
-        var options = CommandLineService.Parse(new[] { "--safemode" });
-        Assert.True(options.SafeMode);
     }
 
     [Fact]

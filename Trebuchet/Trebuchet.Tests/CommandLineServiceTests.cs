@@ -16,7 +16,6 @@ public class CommandLineServiceTests
 
         Assert.NotNull(options);
         Assert.False(options.ShowHelp);
-        Assert.False(options.SafeMode);
         Assert.Null(options.ModulePath);
     }
 
@@ -30,18 +29,6 @@ public class CommandLineServiceTests
         var options = CommandLineService.Parse(args);
 
         Assert.True(options.ShowHelp);
-    }
-
-    [Theory]
-    [InlineData("--safemode")]
-    [InlineData("--safe-mode")]
-    public void Parse_SafeModeFlag_SetsSafeMode(string safeArg)
-    {
-        var args = new[] { safeArg };
-
-        var options = CommandLineService.Parse(args);
-
-        Assert.True(options.SafeMode);
     }
 
     [Fact]
@@ -68,12 +55,11 @@ public class CommandLineServiceTests
     [Fact]
     public void Parse_MultipleArgs_ParsesAll()
     {
-        var args = new[] { "--help", "--safemode", "--module", "test.mod" };
+        var args = new[] { "--help", "--module", "test.mod" };
 
         var options = CommandLineService.Parse(args);
 
         Assert.True(options.ShowHelp);
-        Assert.True(options.SafeMode);
         Assert.Equal("test.mod", options.ModulePath);
     }
 

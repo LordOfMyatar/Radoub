@@ -47,6 +47,13 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
     private List<string> _recentFiles = new();
     private int _maxRecentFiles = DefaultMaxRecentFiles;
 
+    // Spell-check (shared across tools that use Radoub.Dictionary; #2390)
+    private bool _spellCheckEnabled = true;
+
+    // Resizable browser/side-panel (the in-window F4 list; #2356)
+    private double _browserPanelWidth;
+    private bool _browserPanelVisible = true;
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     /// <summary>
@@ -83,6 +90,21 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
     /// Minimum window height constraint.
     /// </summary>
     protected virtual double MinWindowHeight => 400;
+
+    /// <summary>
+    /// Default width of the resizable browser/side-panel (#2356).
+    /// </summary>
+    protected virtual double DefaultBrowserPanelWidth => 250;
+
+    /// <summary>
+    /// Minimum browser-panel width constraint (#2356).
+    /// </summary>
+    protected virtual double MinBrowserPanelWidth => 150;
+
+    /// <summary>
+    /// Maximum browser-panel width constraint (#2356).
+    /// </summary>
+    protected virtual double MaxBrowserPanelWidth => 500;
 
     /// <summary>
     /// Shared settings for game paths and TLK configuration.
@@ -122,6 +144,7 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
     {
         _windowWidth = DefaultWindowWidth;
         _windowHeight = DefaultWindowHeight;
+        _browserPanelWidth = DefaultBrowserPanelWidth;
     }
 
     /// <summary>
@@ -291,6 +314,47 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
 
     #endregion
 
+    #region Spell-Check
+
+    /// <summary>
+    /// Whether spell-check is enabled for this tool's text fields. Backed by
+    /// shared Radoub.Dictionary. Default true. (#2390)
+    /// </summary>
+    public bool SpellCheckEnabled
+    {
+        get => _spellCheckEnabled;
+        set { if (SetProperty(ref _spellCheckEnabled, value)) SaveSettings(); }
+    }
+
+    #endregion
+
+    #region Browser Panel
+
+    /// <summary>
+    /// Width (px) of the resizable in-window browser/side-panel (the F4 list).
+    /// Clamped to [MinBrowserPanelWidth, MaxBrowserPanelWidth]. (#2356)
+    /// </summary>
+    public double BrowserPanelWidth
+    {
+        get => _browserPanelWidth;
+        set
+        {
+            var clamped = Math.Max(MinBrowserPanelWidth, Math.Min(MaxBrowserPanelWidth, value));
+            if (SetProperty(ref _browserPanelWidth, clamped)) SaveSettings();
+        }
+    }
+
+    /// <summary>
+    /// Whether the browser/side-panel is visible. Default true. (#2356)
+    /// </summary>
+    public bool BrowserPanelVisible
+    {
+        get => _browserPanelVisible;
+        set { if (SetProperty(ref _browserPanelVisible, value)) SaveSettings(); }
+    }
+
+    #endregion
+
     #region Load/Save Infrastructure
 
     private void LoadSettings()
@@ -339,6 +403,12 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
                         ? settings.MaxRecentFiles
                         : DefaultMaxRecentFiles;
 
+                    _spellCheckEnabled = settings.SpellCheckEnabled;
+
+                    _browserPanelWidth = Math.Max(MinBrowserPanelWidth,
+                        Math.Min(MaxBrowserPanelWidth, settings.BrowserPanelWidth));
+                    _browserPanelVisible = settings.BrowserPanelVisible;
+
                     ValidateRecentFilesOnLoad();
 
                     // Load tool-specific properties
@@ -381,6 +451,9 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
             settings.LogLevel = _loggingSettings.LogLevel;
             settings.RecentFiles = PathHelper.ContractPaths(_recentFiles).ToList();
             settings.MaxRecentFiles = MaxRecentFiles;
+            settings.SpellCheckEnabled = SpellCheckEnabled;
+            settings.BrowserPanelWidth = BrowserPanelWidth;
+            settings.BrowserPanelVisible = BrowserPanelVisible;
 
             // Save tool-specific properties
             SaveToolSettings(settings);
@@ -464,6 +537,11 @@ public abstract class BaseToolSettingsService<TSettings> : INotifyPropertyChange
 
         public List<string> RecentFiles { get; set; } = new();
         public int MaxRecentFiles { get; set; } = 10;
+
+        public bool SpellCheckEnabled { get; set; } = true;
+
+        public double BrowserPanelWidth { get; set; } = 250;
+        public bool BrowserPanelVisible { get; set; } = true;
     }
 
     #endregion

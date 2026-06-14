@@ -27,7 +27,6 @@ public static class CommandLineService
         Console.WriteLine("Options:");
         Console.WriteLine("  --file, -f <path>      Open the specified UTM file");
         Console.WriteLine("  --mod, -m <name>       Set module context (resolves relative --file paths)");
-        Console.WriteLine("  --safemode, -s         Start in SafeMode (reset theme and fonts to defaults)");
         Console.WriteLine("  --help, -h             Show this help message");
         Console.WriteLine();
         Console.WriteLine("Examples:");
@@ -35,6 +34,5 @@ public static class CommandLineService
         Console.WriteLine("  Fence merchant.utm                 Open merchant.utm");
         Console.WriteLine("  Fence --file store.utm             Open store.utm");
         Console.WriteLine("  Fence -m LNS --file store.utm      Open LNS/store.utm");
-        Console.WriteLine("  Fence --safemode                   Start with default visual settings");
     }
 }

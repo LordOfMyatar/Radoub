@@ -9,7 +9,7 @@ Relique creates and edits `.uti` (Item Blueprint) files for Neverwinter Nights. 
 ## Features (Sprint 1 - Bootstrap)
 
 - Open, save, and save-as for `.uti` files
-- Command line support (`--file`, `--safemode`, `--help`)
+- Command line support (`--file`, `--help`)
 - Item browser panel with search
 - Theme support (light, dark, custom)
 - Recent files menu
@@ -24,9 +24,6 @@ Relique
 # Open a specific item
 Relique sword.uti
 Relique --file armor.uti
-
-# Start in safe mode (reset theme/fonts)
-Relique --safemode
 ```
 
 ## Building

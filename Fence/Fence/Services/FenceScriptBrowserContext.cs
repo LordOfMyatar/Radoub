@@ -42,10 +42,10 @@ public class FenceScriptBrowserContext : IScriptBrowserContext
                 if (Directory.Exists(modulePath))
                     return modulePath;
 
-                // If it's a .mod file, find the working directory
+                // If it's a .mod file, find the working directory (#2355: shared helper)
                 if (File.Exists(modulePath) && modulePath.EndsWith(".mod", System.StringComparison.OrdinalIgnoreCase))
                 {
-                    var workingDir = FindWorkingDirectory(modulePath);
+                    var workingDir = PathHelper.FindWorkingDirectoryWithFallbacks(modulePath);
                     if (workingDir != null)
                         return workingDir;
                 }
@@ -53,35 +53,6 @@ public class FenceScriptBrowserContext : IScriptBrowserContext
 
             return null;
         }
-    }
-
-    /// <summary>
-    /// Find the unpacked working directory for a .mod file.
-    /// Checks for module name folder, temp0, or temp1.
-    /// </summary>
-    private static string? FindWorkingDirectory(string modFilePath)
-    {
-        var moduleName = Path.GetFileNameWithoutExtension(modFilePath);
-        var moduleDir = Path.GetDirectoryName(modFilePath);
-
-        if (string.IsNullOrEmpty(moduleDir))
-            return null;
-
-        // Check in priority order (same as Trebuchet)
-        var candidates = new[]
-        {
-            Path.Combine(moduleDir, moduleName),
-            Path.Combine(moduleDir, "temp0"),
-            Path.Combine(moduleDir, "temp1")
-        };
-
-        foreach (var candidate in candidates)
-        {
-            if (Directory.Exists(candidate))
-                return candidate;
-        }
-
-        return null;
     }
 
     public string? NeverwinterNightsPath => RadoubSettings.Instance.NeverwinterNightsPath;
