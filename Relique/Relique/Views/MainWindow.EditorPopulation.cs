@@ -599,11 +599,24 @@ public partial class MainWindow
             _itemViewModel.ModelPart1, baseItemName, invW, invH);
 
         var result = await picker.ShowDialog<byte?>(this);
-        if (result.HasValue)
+        if (result.HasValue && result.Value != _itemViewModel.ModelPart1)
         {
-            _itemViewModel.ModelPart1 = result.Value;
-            UpdateIconPreview(baseItemIndex);
+            // Route the icon (ModelPart1) change through undo (#2231). The setter applies the model
+            // value and refreshes the icon preview, so undo/redo keeps the preview in sync.
+            _undo.Execute(new Radoub.UI.Undo.SetFieldCommand<byte>(
+                () => _itemViewModel!.ModelPart1,
+                v => ApplyIconModelPart(v, baseItemIndex),
+                result.Value, "change icon"));
         }
+    }
+
+    /// <summary>Apply an icon (ModelPart1) value and refresh the icon preview (used by undo/redo of
+    /// an icon change, #2231).</summary>
+    private void ApplyIconModelPart(byte modelPart1, int baseItemIndex)
+    {
+        if (_itemViewModel == null) return;
+        _itemViewModel.ModelPart1 = modelPart1;
+        UpdateIconPreview(baseItemIndex);
     }
 
     // --- Local Variables (shared Radoub.UI VariablesPanel, #2293) ---
@@ -689,21 +702,29 @@ public partial class MainWindow
             Name = VariableViewModel.NextDefaultName(_variables.Select(v => v.Name)),
             Type = VariableType.Int
         };
-        // Route through the undo manager (#2231); the panel auto-validates via CollectionChanged
-        // and MarkDirty flows from the manager's StateChanged.
-        _undo.Execute(new Commands.AddVariableCommand(_variables, newVar));
+        _variables.Add(newVar); // panel auto-validates via CollectionChanged
         VariablesPanelControl.SelectedVariable = newVar;
         VariablesPanelControl.FocusSelectedName(); // land in the name field, ready to overtype
+
+        MarkDirty();
     }
 
     private void OnVariableDeleteRequested(object? sender, VariableDeleteRequestedEventArgs e)
     {
         if (e.Variables.Count == 0) return;
 
-        // Remove as a single undo step (#2231).
-        _undo.Execute(new Commands.RemoveVariablesCommand(_variables, e.Variables.ToList()));
+        foreach (var item in e.Variables)
+            _variables.Remove(item);
+
+        MarkDirty();
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed {e.Variables.Count} variable(s)");
     }
+
+    // NOTE: Local variables are deliberately NOT routed through the undo manager (#2231). Per-field
+    // variable edits (name/type/value) live inside the shared VariablesPanel and are not yet
+    // undo-aware, so routing only add/delete would give a misleading half-undo (delete the row but
+    // not restore typed values). Full variable undo via the shared panel is tracked in #2467;
+    // until then variables stay outside undo entirely ("whole thing or not at all").
 
     // --- Identified Visual Cue (#1810) ---
 
