@@ -10,11 +10,6 @@ namespace ItemEditor;
 
 sealed class Program
 {
-    /// <summary>
-    /// SafeMode service instance - available to App.axaml.cs for applying resets
-    /// </summary>
-    public static SafeModeService? SafeMode { get; private set; }
-
     [STAThread]
     public static int Main(string[] args)
     {
@@ -26,13 +21,6 @@ sealed class Program
         {
             CommandLineService.PrintHelp();
             return 0;
-        }
-
-        // SafeMode: Reset visual settings to defaults (theme, fonts)
-        if (options.SafeMode)
-        {
-            SafeMode = new SafeModeService("Relique");
-            SafeMode.ActivateSafeMode(clearParameterCache: false, clearPluginData: false);
         }
 
         // Set app name early so any pre-configuration logging goes to correct directory

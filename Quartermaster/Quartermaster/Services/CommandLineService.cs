@@ -27,7 +27,6 @@ public static class CommandLineService
         Console.WriteLine("Options:");
         Console.WriteLine("  --file, -f <path>      Open the specified UTC/BIC file");
         Console.WriteLine("  --mod, -m <name>       Set module context (resolves relative --file paths)");
-        Console.WriteLine("  --safemode, -s         Start in SafeMode (reset theme and fonts to defaults)");
         Console.WriteLine("  --help, -h             Show this help message");
         Console.WriteLine();
         Console.WriteLine("Examples:");
@@ -35,6 +34,5 @@ public static class CommandLineService
         Console.WriteLine("  Quartermaster creature.utc                 Open creature.utc");
         Console.WriteLine("  Quartermaster --file player.bic            Open player.bic");
         Console.WriteLine("  Quartermaster -m LNS --file goblin.utc    Open LNS/goblin.utc");
-        Console.WriteLine("  Quartermaster --safemode                   Start with default visual settings");
     }
 }

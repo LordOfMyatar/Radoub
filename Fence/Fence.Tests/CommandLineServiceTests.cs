@@ -15,7 +15,6 @@ public class CommandLineServiceTests
         var options = CommandLineService.Parse(args);
 
         Assert.Null(options.FilePath);
-        Assert.False(options.SafeMode);
         Assert.False(options.ShowHelp);
     }
 
@@ -28,17 +27,6 @@ public class CommandLineServiceTests
         var options = CommandLineService.Parse(new[] { flag });
 
         Assert.True(options.ShowHelp);
-    }
-
-    [Theory]
-    [InlineData("--safemode")]
-    [InlineData("-s")]
-    [InlineData("--safe-mode")]
-    public void Parse_SafeModeFlag_SetsSafeMode(string flag)
-    {
-        var options = CommandLineService.Parse(new[] { flag });
-
-        Assert.True(options.SafeMode);
     }
 
     [Theory]
@@ -81,18 +69,17 @@ public class CommandLineServiceTests
     [Fact]
     public void Parse_CombinedArgs_ParsesAll()
     {
-        var options = CommandLineService.Parse(new[] { "--safemode", "--file", "test.utm" });
+        var options = CommandLineService.Parse(new[] { "--file", "test.utm" });
 
-        Assert.True(options.SafeMode);
         Assert.Equal("test.utm", options.FilePath);
     }
 
     [Fact]
     public void Options_StaticProperty_ReturnsParsedOptions()
     {
-        CommandLineService.Parse(new[] { "--safemode" });
+        CommandLineService.Parse(new[] { "--help" });
 
-        Assert.True(CommandLineService.Options.SafeMode);
+        Assert.True(CommandLineService.Options.ShowHelp);
     }
 
     [Fact]

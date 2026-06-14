@@ -53,7 +53,6 @@ public static class CommandLineService
         Console.WriteLine("  --file, -f <path>      Open the specified UTI file");
         Console.WriteLine("  --mod, -m <name>       Set module context (resolves relative --file paths)");
         Console.WriteLine("  --new, -n              Open the New Item wizard on startup");
-        Console.WriteLine("  --safemode, -s         Start in SafeMode (reset theme and fonts to defaults)");
         Console.WriteLine("  --help, -h             Show this help message");
         Console.WriteLine();
         Console.WriteLine("Examples:");
@@ -62,6 +61,5 @@ public static class CommandLineService
         Console.WriteLine("  ItemEditor --file armor.uti            Open armor.uti");
         Console.WriteLine("  ItemEditor -m LNS --file sword.uti     Open LNS/sword.uti");
         Console.WriteLine("  ItemEditor --new                       Open the New Item wizard");
-        Console.WriteLine("  ItemEditor --safemode                  Start with default visual settings");
     }
 }

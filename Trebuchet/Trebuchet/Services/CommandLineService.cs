@@ -25,14 +25,12 @@ public static class CommandLineService
     public class Options
     {
         public bool ShowHelp { get; set; }
-        public bool SafeMode { get; set; }
         public string? ModulePath { get; set; }
         public bool OpenSettings { get; set; }
 
         internal static Options FromParsed(TrebuchetOptions parsed) => new()
         {
             ShowHelp = parsed.ShowHelp,
-            SafeMode = parsed.SafeMode,
             ModulePath = parsed.ModulePath,
             OpenSettings = parsed.OpenSettings
         };
@@ -83,7 +81,6 @@ public static class CommandLineService
         Console.WriteLine();
         Console.WriteLine("Options:");
         Console.WriteLine("  -h, --help             Show this help message");
-        Console.WriteLine("  --safemode             Start with default theme and font settings");
         Console.WriteLine("  --settings             Open settings window on startup");
         Console.WriteLine("  -m, --module <path>    Path to module file to open");
         Console.WriteLine("  --mod <name>             Open module by name (resolves from modules directory)");
@@ -92,6 +89,5 @@ public static class CommandLineService
         Console.WriteLine("  Trebuchet");
         Console.WriteLine("  Trebuchet --module \"~/modules/my_module.mod\"");
         Console.WriteLine("  Trebuchet --mod LNS");
-        Console.WriteLine("  Trebuchet --safemode");
     }
 }

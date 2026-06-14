@@ -10,11 +10,6 @@ namespace Manifest;
 
 sealed class Program
 {
-    /// <summary>
-    /// SafeMode service instance - available to App.axaml.cs for applying resets
-    /// </summary>
-    public static SafeModeService? SafeMode { get; private set; }
-
     // Initialization code. Don't use any Avalonia, third-party APIs or any
     // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
     // yet and stuff might break.
@@ -29,13 +24,6 @@ sealed class Program
         {
             CommandLineService.PrintHelp();
             return 0;
-        }
-
-        // SafeMode: Reset visual settings to defaults (theme, fonts)
-        if (options.SafeMode)
-        {
-            SafeMode = new SafeModeService("Manifest");
-            SafeMode.ActivateSafeMode(clearParameterCache: false, clearPluginData: false);
         }
 
         // Set app name early so any pre-configuration logging goes to correct directory

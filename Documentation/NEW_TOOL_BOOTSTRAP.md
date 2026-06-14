@@ -47,7 +47,7 @@ Before writing code, verify you understand these patterns by reading the referen
 | Component | Reference File | Purpose |
 |-----------|---------------|---------|
 | Program.cs startup | `Quartermaster/Quartermaster/Program.cs` | Logging init, command line, Avalonia setup |
-| CommandLineService | `Quartermaster/Quartermaster/Services/CommandLineService.cs` | `--file`, `--safemode`, `--help` pattern |
+| CommandLineService | `Quartermaster/Quartermaster/Services/CommandLineService.cs` | `--file`, `--mod`, `--help` pattern |
 | SettingsService | `Quartermaster/Quartermaster/Services/SettingsService.cs` | JSON settings, theme, font persistence |
 | MainWindow structure | `Quartermaster/Quartermaster/Views/MainWindow.axaml` | Menu bar, status bar, panel layout |
 | Panel controls | `Quartermaster/Quartermaster/Controls/` | BasePanelControl inheritance |
@@ -62,7 +62,7 @@ ToolName/
 │   ├── Program.cs                    # Copy from Quartermaster, update namespace
 │   ├── App.axaml + App.axaml.cs      # Avalonia app setup
 │   ├── Services/
-│   │   ├── CommandLineService.cs     # --file, --safemode, --help
+│   │   ├── CommandLineService.cs     # --file, --mod, --help
 │   │   └── SettingsService.cs        # Tool-specific settings + theme
 │   ├── Views/
 │   │   ├── MainWindow.axaml          # Standard menu structure (incl. File → New)
@@ -479,7 +479,6 @@ dotnet nbgv get-version --project [ToolDir]
 | Custom theme implementation | Use Radoub.UI ThemeManager |
 | Modal dialogs for messages | Use non-modal or toast notifications |
 | Settings in app folder | Store in `~/Radoub/ToolName/settings.json` |
-| Missing SafeMode support | Always implement `--safemode` flag |
 | Skipping unit tests | Create ToolName.Tests from day 1 |
 | Hardcoding version in .csproj | Use NBGV `version.json` — no version properties in .csproj |
 | `<AssemblyName>` differs from tool name (built exe is `Foo.exe` for tool "Bar") | Set `<AssemblyName>ToolName</AssemblyName>` to match the folder/tool name. Sibling discovery, release workflow, cross-tool launchers, and `ToolDispatchService` all assume `Radoub/ToolName.exe` — divergence requires a settings-path migration to fix (#2080). |

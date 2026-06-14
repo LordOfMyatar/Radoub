@@ -93,7 +93,6 @@ Usage: Manifest [options] [file.jrl]
 
 Options:
   -h, --help              Show this help message
-  -s, --safemode          Start in SafeMode (reset theme and fonts to defaults)
   -f, --file <path>       Path to JRL file to open
   -m, --mod <name>        Set module context (resolves relative --file paths)
   -q, --quest <tag>       Quest tag to navigate to after opening
@@ -103,7 +102,6 @@ Examples:
   Manifest module.jrl                    Open journal file
   Manifest --file module.jrl             Same as above
   Manifest -m LNS --file module.jrl      Open LNS/module.jrl
-  Manifest --safemode                    Start with default visual settings
   Manifest module.jrl --quest my_quest   Open and navigate to quest
   Manifest module.jrl -q my_quest -e 100 Open, navigate to quest, select entry 100
 ");

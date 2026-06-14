@@ -18,7 +18,6 @@ namespace DialogEditor.Tests
 
             // Assert
             Assert.Null(options.FilePath);
-            Assert.False(options.SafeMode);
             Assert.False(options.ExportScreenplay);
             Assert.False(options.ShowHelp);
             Assert.Null(options.OutputFile);
@@ -38,21 +37,6 @@ namespace DialogEditor.Tests
 
             // Assert
             Assert.True(options.ShowHelp);
-        }
-
-        [Theory]
-        [InlineData("--safe-mode")]
-        [InlineData("-s")]
-        public void Parse_SafeModeFlag_SetsSafeMode(string flag)
-        {
-            // Arrange
-            var args = new[] { flag };
-
-            // Act
-            var options = CommandLineService.Parse(args);
-
-            // Assert
-            Assert.True(options.SafeMode);
         }
 
         [Fact]
@@ -100,13 +84,12 @@ namespace DialogEditor.Tests
         public void Parse_CombinedArgs_ParsesAllCorrectly()
         {
             // Arrange
-            var args = new[] { "--safe-mode", "--screenplay", "-o", "out.txt", "dialog.dlg" };
+            var args = new[] { "--screenplay", "-o", "out.txt", "dialog.dlg" };
 
             // Act
             var options = CommandLineService.Parse(args);
 
             // Assert
-            Assert.True(options.SafeMode);
             Assert.True(options.ExportScreenplay);
             Assert.Equal("out.txt", options.OutputFile);
             Assert.Equal("dialog.dlg", options.FilePath);
@@ -144,7 +127,6 @@ namespace DialogEditor.Tests
 
             // Assert - unknown flags are ignored, valid ones parsed
             Assert.Equal("test.dlg", options.FilePath);
-            Assert.False(options.SafeMode);
             Assert.False(options.ShowHelp);
         }
 
@@ -173,14 +155,14 @@ namespace DialogEditor.Tests
         public void Options_StaticProperty_ReturnsParsedOptions()
         {
             // Arrange
-            var args = new[] { "--safe-mode" };
+            var args = new[] { "--help" };
             CommandLineService.Parse(args);
 
             // Act
             var options = CommandLineService.Options;
 
             // Assert
-            Assert.True(options.SafeMode);
+            Assert.True(options.ShowHelp);
         }
     }
 }

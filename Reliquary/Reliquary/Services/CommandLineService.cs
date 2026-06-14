@@ -37,7 +37,6 @@ public static class CommandLineService
         Console.WriteLine("Options:");
         Console.WriteLine("  --file, -f <path>      Open the specified UTP file");
         Console.WriteLine("  --mod, -m <name>       Set module context (resolves relative --file paths)");
-        Console.WriteLine("  --safemode, -s         Start in SafeMode (reset theme and fonts to defaults)");
         Console.WriteLine("  --help, -h             Show this help message");
         Console.WriteLine();
         Console.WriteLine("Examples:");
@@ -45,6 +44,5 @@ public static class CommandLineService
         Console.WriteLine("  Reliquary boulder001.utp               Open boulder001.utp");
         Console.WriteLine("  Reliquary --file chest.utp             Open chest.utp");
         Console.WriteLine("  Reliquary -m LNS --file door.utp       Open LNS/door.utp");
-        Console.WriteLine("  Reliquary --safemode                   Start with default visual settings");
     }
 }

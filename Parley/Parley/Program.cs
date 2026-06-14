@@ -46,11 +46,6 @@ sealed class Program
     private const uint OPEN_EXISTING = 3;
 
     /// <summary>
-    /// SafeMode service instance - available to App.axaml.cs for applying resets
-    /// </summary>
-    public static SafeModeService? SafeMode { get; private set; }
-
-    /// <summary>
     /// DI service provider - available to App and MainWindow for resolving services.
     /// #1231: Sprint 3.2 - Dependency injection container.
     /// </summary>
@@ -118,14 +113,6 @@ sealed class Program
                 return 1;
             }
             return CommandLineService.ExportScreenplayAsync(options.FilePath, options.OutputFile).GetAwaiter().GetResult();
-        }
-
-        // SafeMode: Reset visual settings to defaults (theme, fonts, flowview)
-        // and clear caches/plugin data. This must happen BEFORE SettingsService is initialized.
-        if (options.SafeMode)
-        {
-            SafeMode = new SafeModeService("Parley");
-            SafeMode.ActivateSafeMode(clearParameterCache: true, clearPluginData: true);
         }
 
         // Set app name early so any pre-configuration logging goes to correct directory

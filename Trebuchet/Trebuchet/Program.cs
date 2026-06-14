@@ -11,11 +11,6 @@ namespace RadoubLauncher;
 sealed class Program
 {
     /// <summary>
-    /// SafeMode service instance - available to App.axaml.cs for applying resets
-    /// </summary>
-    public static SafeModeService? SafeMode { get; private set; }
-
-    /// <summary>
     /// When true, auto-open the settings window after the main window loads.
     /// </summary>
     public static bool OpenSettingsOnStartup { get; private set; }
@@ -31,13 +26,6 @@ sealed class Program
         {
             CommandLineService.PrintHelp();
             return 0;
-        }
-
-        // SafeMode: Reset visual settings to defaults (theme, fonts)
-        if (options.SafeMode)
-        {
-            SafeMode = new SafeModeService("Trebuchet");
-            SafeMode.ActivateSafeMode(clearParameterCache: false, clearPluginData: false);
         }
 
         // --settings: Auto-open settings window after main window loads

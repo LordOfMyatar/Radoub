@@ -39,7 +39,7 @@ Trebuchet/
 │   ├── Services/
 │   │   ├── AreaScanService.cs              # Module area indexing
 │   │   ├── BuildLogService.cs              # Build/compile log buffer
-│   │   ├── CommandLineService.cs           # CLI args (--help, --safemode, --module)
+│   │   ├── CommandLineService.cs           # CLI args (--help, --module, --settings)
 │   │   ├── ErfImportService.cs             # ERF import with collision detect
 │   │   ├── GameLauncherService.cs          # Launch NWN:EE with module
 │   │   ├── ModuleFileLockService.cs        # Per-file lock during pack
@@ -192,7 +192,6 @@ dotnet run --project Trebuchet/Trebuchet/Trebuchet.csproj
 
 ```bash
 Trebuchet --help           # Show help
-Trebuchet --safemode       # Reset theme/fonts to defaults
 Trebuchet --module "path"  # Open with specific module
 ```
 

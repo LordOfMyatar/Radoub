@@ -26,16 +26,6 @@ public partial class App : Application
         // Register this tool's path in shared Radoub settings
         RegisterToolPath();
 
-        // Check for SafeMode
-        var isSafeMode = Program.SafeMode?.SafeModeActive ?? false;
-
-        if (isSafeMode)
-        {
-            // SafeMode: Reset visual settings to safe defaults
-            ApplySafeModeDefaults();
-            UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode enabled - visual settings reset to defaults");
-        }
-
         // Record tool launch for easter egg tracking
         EasterEggService.Instance.RecordToolLaunch("Trebuchet");
 
@@ -46,15 +36,7 @@ public partial class App : Application
         ThemeManager.Initialize("Trebuchet");
         ThemeManager.Instance.DiscoverThemes();
 
-        if (isSafeMode)
-        {
-            // SafeMode forces light theme directly without writing to settings
-            if (!ThemeManager.Instance.ApplyTheme("org.radoub.theme.light"))
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, "SafeMode light theme failed - UI may render with default Avalonia theme");
-            }
-        }
-        else if (!ThemeManager.Instance.ApplySharedTheme())
+        if (!ThemeManager.Instance.ApplySharedTheme())
         {
             UnifiedLogger.LogApplication(LogLevel.WARN, "Shared theme failed to apply, falling back to light theme");
             if (!ThemeManager.Instance.ApplyTheme("org.radoub.theme.light"))
@@ -64,14 +46,7 @@ public partial class App : Application
         }
 
         // Apply font overrides from settings
-        if (isSafeMode)
-        {
-            ApplySafeModeFontSettings();
-        }
-        else
-        {
-            ApplyFontSettings();
-        }
+        ApplyFontSettings();
 
         // Subscribe to shared settings changes (font size is the global SharedFontSize, #2152)
         Radoub.Formats.Settings.RadoubSettings.Instance.PropertyChanged += OnSharedSettingsPropertyChanged;
@@ -88,17 +63,6 @@ public partial class App : Application
             Radoub.Formats.Settings.RadoubSettings.Instance.BackupRetentionDays);
     }
 
-    /// <summary>
-    /// Note SafeMode is active. Theme and fonts are applied directly without writing to settings.
-    /// </summary>
-    private void ApplySafeModeDefaults()
-    {
-        UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode active - using default theme and fonts without persisting");
-    }
-
-    // ApplySafeModeDefaults() already resets settings values, so just apply from settings
-    private void ApplySafeModeFontSettings() => ApplyFontSettings();
-
     public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
@@ -109,12 +73,8 @@ public partial class App : Application
 
             // First-run / welcome-back configuration wizard (#1020). Shown over the
             // main window (non-blocking) once it is up, only when a required setting
-            // with no good default is unfilled and unacknowledged. Skipped in SafeMode.
-            var safeMode = Program.SafeMode?.SafeModeActive ?? false;
-            if (!safeMode)
-            {
-                mainWindow.Opened += OnMainWindowOpenedShowWizardIfNeeded;
-            }
+            // with no good default is unfilled and unacknowledged.
+            mainWindow.Opened += OnMainWindowOpenedShowWizardIfNeeded;
 
             // Unsubscribe from singleton events and dispose services on app exit (#1282, #1292)
             desktop.Exit += (_, _) =>

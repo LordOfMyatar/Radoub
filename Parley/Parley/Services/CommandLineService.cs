@@ -84,7 +84,6 @@ Usage: Parley [options] [file.dlg]
 
 Options:
   -h, --help              Show this help message
-  -s, --safemode          Start in SafeMode (reset theme/fonts, clear caches)
   -m, --mod <name>        Set module context (resolves relative --file paths)
   --screenplay            Export dialog as screenplay text and exit
   -o, --output FILE       Output file for screenplay (default: stdout)
@@ -92,7 +91,6 @@ Options:
 Examples:
   Parley dialog.dlg                        Open dialog.dlg in editor
   Parley -m LNS --file conv_smith.dlg      Open LNS/conv_smith.dlg
-  Parley --safemode                        Start in SafeMode with default settings
   Parley --screenplay test.dlg             Export dialog as screenplay
   Parley --screenplay -o out.txt dialog.dlg   Export to file
 ");

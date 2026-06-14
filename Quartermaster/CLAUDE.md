@@ -243,7 +243,7 @@ To add a new panel:
 | CharacterCreationService | Character creation logic (extracted from wizard) |
 | CharacterSheetService | Character sheet calculations |
 | ClassService | NWN class data, levels, abilities |
-| CommandLineService | CLI argument parsing (--file, --safemode) |
+| CommandLineService | CLI argument parsing (--file, --mod) |
 | CreatureDisplayService | Creature display state + combat stats (2 partials) |
 | DomainService | Domain info from domains.2da |
 | FeatCacheService | Feat data caching |

@@ -58,7 +58,7 @@ Reliquary/
 │   ├── App.axaml(.cs)                 (first-run ReliquaryPath registration)
 │   ├── app.manifest
 │   ├── Services/
-│   │   ├── CommandLineService.cs      (--file, --safemode, --help)
+│   │   ├── CommandLineService.cs      (--file, --help)
 │   │   └── SettingsService.cs         (singleton, ~/Radoub/Reliquary/ReliquarySettings.json)
 │   └── Views/
 │       ├── MainWindow.axaml(.cs)      (+ MainWindow.Lifecycle.cs)

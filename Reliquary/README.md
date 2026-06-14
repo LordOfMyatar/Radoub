@@ -17,7 +17,6 @@ Reliquary                       # Start with empty editor
 Reliquary boulder001.utp        # Open a file
 Reliquary --file chest.utp      # Open via flag
 Reliquary -m LNS --file door.utp  # Resolve relative to a module
-Reliquary --safemode            # Reset theme/fonts to defaults
 Reliquary --help                # Show all options
 ```
 
