@@ -271,6 +271,45 @@ public class BatchReplaceServiceTests : IDisposable
     }
 
     [Fact]
+    public void PreviewReplace_PropagatesPreserveCase_ToPreviewAndChanges()
+    {
+        var match = MakeMatch(
+            new FieldDefinition
+            {
+                Name = "Tag", GffPath = "Tag",
+                FieldType = SearchFieldType.Tag,
+                Category = SearchFieldCategory.Identity
+            },
+            "Louis");
+        var fileResult = MakeFileResult(Path.Combine(_testDir, "test.utc"), new[] { match });
+
+        var preview = _service.PreviewReplace(new[] { fileResult }, "lewie", preserveCase: true);
+
+        Assert.True(preview.PreserveCase);
+        Assert.NotEmpty(preview.Changes);
+        Assert.All(preview.Changes, c => Assert.True(c.PreserveCase));
+    }
+
+    [Fact]
+    public void PreviewReplace_DefaultPreserveCase_IsFalse()
+    {
+        var match = MakeMatch(
+            new FieldDefinition
+            {
+                Name = "Tag", GffPath = "Tag",
+                FieldType = SearchFieldType.Tag,
+                Category = SearchFieldCategory.Identity
+            },
+            "Louis");
+        var fileResult = MakeFileResult(Path.Combine(_testDir, "test.utc"), new[] { match });
+
+        var preview = _service.PreviewReplace(new[] { fileResult }, "lewie");
+
+        Assert.False(preview.PreserveCase);
+        Assert.All(preview.Changes, c => Assert.False(c.PreserveCase));
+    }
+
+    [Fact]
     public async Task ExecuteReplace_WithAllowResRefReplace_RewritesResRefField()
     {
         // Write a real UTC with Conversation = "louis_conv" (a ResRef field)

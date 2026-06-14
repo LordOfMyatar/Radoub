@@ -145,15 +145,22 @@ public abstract class SearchProviderBase
         var offset = op.Match.MatchOffset;
         var length = op.Match.MatchLength;
 
+        // #2180: preserve the matched span's case style, EXCEPT for ResRef-typed
+        // fields (and the filename virtual field, also ResRef-typed) which stay
+        // lowercase. Single chokepoint — every ReplaceXField wrapper funnels here.
+        var replacement = op.ReplacementText;
+        if (op.PreserveCase && op.Match.Field.FieldType != SearchFieldType.ResRef)
+            replacement = CaseStyle.Apply(CaseStyle.Detect(op.Match.MatchedText), replacement);
+
         if (op.IsRegex)
         {
             // Use regex substitution on the matched portion to support capture groups
             var regex = new Regex(Regex.Escape(op.Match.MatchedText));
-            var replaced = regex.Replace(op.Match.MatchedText, op.ReplacementText, 1);
+            var replaced = regex.Replace(op.Match.MatchedText, replacement, 1);
             return string.Concat(value.AsSpan(0, offset), replaced, value.AsSpan(offset + length));
         }
 
-        return string.Concat(value.AsSpan(0, offset), op.ReplacementText, value.AsSpan(offset + length));
+        return string.Concat(value.AsSpan(0, offset), replacement, value.AsSpan(offset + length));
     }
 
     /// <summary>

@@ -1,0 +1,100 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="RadoubLauncher.Views.RenameConflictDialog"
+        Title="Review Rename Conflicts"
+        SizeToContent="Height"
+        Width="620"
+        MinWidth="520"
+        MaxHeight="640"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True"
+        ShowInTaskbar="False">
+
+    <Border Padding="16">
+        <DockPanel>
+            <!-- Header -->
+            <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,12">
+                <TextBlock FontSize="{DynamicResource FontSizeMedium}"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap"
+                           Text="Some renames need your attention"/>
+                <TextBlock TextWrapping="Wrap"
+                           Opacity="0.85"
+                           Text="Continue applies the clean and auto-suffixed renames. Skipped files are left untouched. A backup is saved first."/>
+            </StackPanel>
+
+            <!-- Buttons -->
+            <StackPanel DockPanel.Dock="Bottom"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Spacing="8"
+                        Margin="0,12,0,0">
+                <Button Content="Continue"
+                        Click="OnContinueClick"
+                        IsDefault="True"
+                        Padding="20,6"
+                        ToolTip.Tip="Apply the clean and auto-suffixed renames; skip the rest."/>
+                <Button Content="Cancel"
+                        Click="OnCancelClick"
+                        IsCancel="True"
+                        Padding="20,6"
+                        ToolTip.Tip="Abort — no files are renamed."/>
+            </StackPanel>
+
+            <!-- Sections -->
+            <ScrollViewer MaxHeight="460">
+                <StackPanel Spacing="12">
+
+                    <!-- Will rename -->
+                    <StackPanel x:Name="WillRenameSection" Spacing="4">
+                        <TextBlock Text="Will rename" FontWeight="SemiBold"/>
+                        <Border BorderThickness="1"
+                                BorderBrush="{DynamicResource ThemeBorderMidBrush}"
+                                CornerRadius="4">
+                            <ItemsControl x:Name="WillRenameList" Padding="8">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Margin="0,2" TextWrapping="Wrap" Text="{Binding}"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Auto-suffixed -->
+                    <StackPanel x:Name="AutoSuffixedSection" Spacing="4">
+                        <TextBlock Text="Auto-suffixed (name collision)" FontWeight="SemiBold"/>
+                        <Border BorderThickness="1"
+                                BorderBrush="{DynamicResource ThemeBorderMidBrush}"
+                                CornerRadius="4">
+                            <ItemsControl x:Name="AutoSuffixedList" Padding="8">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Margin="0,2" TextWrapping="Wrap" Text="{Binding}"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Skipped -->
+                    <StackPanel x:Name="SkippedSection" Spacing="4">
+                        <TextBlock Text="Skipped (invalid name)" FontWeight="SemiBold"/>
+                        <Border BorderThickness="1"
+                                BorderBrush="{DynamicResource ThemeBorderMidBrush}"
+                                CornerRadius="4">
+                            <ItemsControl x:Name="SkippedList" Padding="8">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Margin="0,2" TextWrapping="Wrap" Text="{Binding}"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Border>
+                    </StackPanel>
+
+                </StackPanel>
+            </ScrollViewer>
+        </DockPanel>
+    </Border>
+</Window>

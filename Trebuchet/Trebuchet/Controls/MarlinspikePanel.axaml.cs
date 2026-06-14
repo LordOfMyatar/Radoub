@@ -570,7 +570,8 @@ public partial class MarlinspikePanel : UserControl
         var preview = _batchReplaceService!.PreviewReplace(
             filesWithMatches,
             replaceText,
-            allowResRefReplace: _viewModel.SearchFilenameResRef);
+            allowResRefReplace: _viewModel.SearchFilenameResRef,
+            preserveCase: _viewModel.PreserveCase);
 
         // Dispatch to ResRef rename orchestrator when filename matches present.
         // Pass the user's selection set down so reference updates are surgical —
@@ -622,52 +623,37 @@ public partial class MarlinspikePanel : UserControl
             return;
         }
 
-        // Confirm the rename before touching any files (#2346). Filename rename used
-        // to run with no review step — a typo in the replacement text renamed files
-        // silently. Show the full old → new list and require explicit confirmation.
-        var confirmDialog = new RenameConfirmDialog(plans);
-        await confirmDialog.ShowDialog(_parentWindow);
-        if (!confirmDialog.Confirmed)
+        // Surface conflicts in one consolidated dialog before touching any files
+        // (#2179, #2346, #2182). When there are auto-suffixed collisions or
+        // validator-skipped names, show the conflict dialog with all of them and
+        // the "why" inline (replaces the old per-collision dialog sequence). When
+        // everything is clean, the lightweight confirm dialog is enough.
+        var summary = RenameConflictSummary.Build(plans, rejected);
+        if (summary.HasConflicts)
         {
-            _viewModel.StatusText = "Rename cancelled.";
-            return;
-        }
-
-        // Surface auto-suffix collision dialogs before proceeding.
-        // Each plan whose validation triggered an auto-suffix must be confirmed.
-        var confirmedPlans = new List<ResRefRenamePlan>();
-        foreach (var plan in plans)
-        {
-            if (!plan.Validation.AutoSuffixApplied)
+            var conflictDialog = new RenameConflictDialog(summary);
+            await conflictDialog.ShowDialog(_parentWindow);
+            if (!conflictDialog.Confirmed)
             {
-                confirmedPlans.Add(plan);
-                continue;
+                _viewModel.StatusText = "Rename cancelled.";
+                return;
             }
-
-            var originalProposed = ComputeOriginalProposedName(preview, plan);
-            var dialog = new AutoSuffixCollisionDialog(originalProposed, plan.NewName, plan.SourceFilePath);
-            await dialog.ShowDialog(_parentWindow);
-
-            switch (dialog.Result)
+        }
+        else
+        {
+            var confirmDialog = new RenameConfirmDialog(plans);
+            await confirmDialog.ShowDialog(_parentWindow);
+            if (!confirmDialog.Confirmed)
             {
-                case AutoSuffixDialogResult.Continue:
-                    confirmedPlans.Add(plan);
-                    break;
-                case AutoSuffixDialogResult.PickAnother:
-                    _viewModel.StatusText = "Rename cancelled — adjust the replacement text and click Replace again to choose a different name.";
-                    return;
-                case AutoSuffixDialogResult.Cancel:
-                default:
-                    _viewModel.StatusText = "Rename cancelled.";
-                    return;
+                _viewModel.StatusText = "Rename cancelled.";
+                return;
             }
         }
 
-        if (confirmedPlans.Count == 0)
-        {
-            _viewModel.StatusText = "Rename cancelled — no plans confirmed.";
-            return;
-        }
+        // All plans proceed: validator-rejected entries were already excluded from
+        // `plans` (skipped rows are advisory display only); auto-suffixed names are
+        // validated and confirmed via the conflict dialog above.
+        var confirmedPlans = plans.ToList();
 
         _viewModel.StatusText = selectionFilter != null
             ? $"Scanning {selectionFilter.Count} selected file(s) for references..."
@@ -734,24 +720,6 @@ public partial class MarlinspikePanel : UserControl
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"ResRef rename failed: {ex.Message}");
             _viewModel.StatusText = $"Rename error: {ex.Message}";
         }
-    }
-
-    /// <summary>
-    /// Recover the user's original proposed name (before validator auto-suffixing)
-    /// by re-running ApplyReplacement against the matching PendingChange. Used
-    /// to populate the auto-suffix collision dialog text.
-    /// </summary>
-    private static string ComputeOriginalProposedName(BatchReplacePreview preview, ResRefRenamePlan plan)
-    {
-        var change = preview.Changes.FirstOrDefault(c =>
-            string.Equals(c.FilePath, plan.SourceFilePath, StringComparison.OrdinalIgnoreCase) &&
-            c.Match.Field.GffPath == FilenameSearchProvider.FilenameField.GffPath);
-
-        if (change == null) return plan.NewName;
-
-        var oldName = Path.GetFileNameWithoutExtension(plan.SourceFilePath);
-        var raw = RenameDispatchHelpers.ApplyReplacement(oldName, change.Match, change.ReplacementText);
-        return raw.ToLowerInvariant();
     }
 
     private void OnReplacementComplete(object? sender, BatchReplaceResult result)

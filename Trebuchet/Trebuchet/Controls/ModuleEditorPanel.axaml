@@ -201,6 +201,9 @@
                         <Button Content="▼ Down"
                                 Command="{Binding MoveHakDownCommand}"
                                 IsEnabled="{Binding SelectedHak, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                        <Button Content="Check Conflicts"
+                                Click="OnCheckHakConflictsClick"
+                                IsEnabled="{Binding HasMultipleHaks}"/>
                     </StackPanel>
                 </Grid>
             </TabItem>

@@ -1,0 +1,148 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:RadoubLauncher.ViewModels"
+        x:Class="RadoubLauncher.Views.FirstRunWizardWindow"
+        x:DataType="vm:FirstRunWizardViewModel"
+        Title="Trebuchet Setup"
+        Width="640" Height="520"
+        MinWidth="520" MinHeight="420"
+        WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="True">
+
+    <DockPanel Margin="16">
+
+        <!-- Header -->
+        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
+            <TextBlock Text="{Binding WelcomeHeading}" FontSize="{DynamicResource FontSizeLarge}" FontWeight="SemiBold"/>
+            <TextBlock Text="{Binding WelcomeBlurb}" TextWrapping="Wrap" Opacity="0.8"/>
+            <TextBlock Text="{Binding CurrentStepTitle}" FontWeight="SemiBold" Margin="0,8,0,0"/>
+        </StackPanel>
+
+        <!-- Footer navigation -->
+        <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,*,Auto,Auto,Auto" Margin="0,12,0,0">
+            <Button Grid.Column="0"
+                    Content="Cancel"
+                    Command="{Binding CancelCommand}"
+                    Padding="14,6"/>
+            <Button Grid.Column="2"
+                    Content="◀ Back"
+                    Command="{Binding BackCommand}"
+                    IsEnabled="{Binding CanGoBack}"
+                    Padding="14,6"
+                    Margin="0,0,8,0"/>
+            <Button Grid.Column="3"
+                    Content="Next ▶"
+                    Command="{Binding NextCommand}"
+                    IsVisible="{Binding !IsLastStep}"
+                    Padding="14,6"/>
+            <Button Grid.Column="4"
+                    Content="Finish"
+                    Command="{Binding FinishCommand}"
+                    IsVisible="{Binding IsLastStep}"
+                    FontWeight="SemiBold"
+                    Padding="18,6"/>
+        </Grid>
+
+        <!-- Steps -->
+        <TabControl SelectedIndex="{Binding StepIndex}">
+            <!-- TabStrip hidden; navigation is via Back/Next/Edit -->
+            <TabControl.Styles>
+                <Style Selector="TabControl /template/ ItemsPresenter#PART_ItemsPresenter">
+                    <Setter Property="IsVisible" Value="False"/>
+                </Style>
+            </TabControl.Styles>
+
+            <!-- Step 0: Game Path -->
+            <TabItem>
+                <StackPanel Spacing="8" Margin="0,8">
+                    <TextBlock Text="Where is Neverwinter Nights installed?" TextWrapping="Wrap"/>
+                    <TextBlock Text="The base game folder containing the data\ directory. Required for the tools to read game resources."
+                               TextWrapping="Wrap" Opacity="0.7"/>
+                    <DockPanel Margin="0,4,0,0">
+                        <Button DockPanel.Dock="Right" Content="Browse..."
+                                Command="{Binding BrowseGamePathCommand}" Margin="8,0,0,0" Padding="12,6"/>
+                        <Button DockPanel.Dock="Right" Content="Auto-detect"
+                                Command="{Binding AutoDetectGamePathCommand}" Margin="8,0,0,0" Padding="12,6"/>
+                        <TextBox Text="{Binding GameInstallPath}" Watermark="NWN install folder" VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <TextBlock Text="{Binding GamePathValidation}"
+                               IsVisible="{Binding HasGamePathValidation}"
+                               TextWrapping="Wrap" Opacity="0.85" Margin="0,4,0,0"/>
+                </StackPanel>
+            </TabItem>
+
+            <!-- Step 1: Appearance -->
+            <TabItem>
+                <StackPanel Spacing="12" Margin="0,8">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Theme"/>
+                        <ComboBox ItemsSource="{Binding AvailableThemes}"
+                                  SelectedItem="{Binding SelectedTheme}"
+                                  HorizontalAlignment="Stretch"/>
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Left" Text="Font size"/>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding FontSizePointsText}"/>
+                        </DockPanel>
+                        <Slider Minimum="8" Maximum="32" Value="{Binding FontSizePoints}"
+                                TickFrequency="1" IsSnapToTickEnabled="True"/>
+                    </StackPanel>
+                </StackPanel>
+            </TabItem>
+
+            <!-- Step 2: Logging -->
+            <TabItem>
+                <StackPanel Spacing="8" Margin="0,8">
+                    <TextBlock Text="Logging level"/>
+                    <TextBlock Text="Default INFO is fine for most users. Raise to DEBUG/TRACE only when diagnosing an issue."
+                               TextWrapping="Wrap" Opacity="0.7"/>
+                    <ComboBox ItemsSource="{Binding AvailableLogLevels}"
+                              SelectedItem="{Binding SelectedLogLevel}"
+                              HorizontalAlignment="Stretch"/>
+                </StackPanel>
+            </TabItem>
+
+            <!-- Step 3: Backup -->
+            <TabItem>
+                <StackPanel Spacing="8" Margin="0,8">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Left" Text="Backup retention"/>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding BackupRetentionText}"/>
+                    </DockPanel>
+                    <TextBlock Text="How long module backups are kept before cleanup."
+                               TextWrapping="Wrap" Opacity="0.7"/>
+                    <Slider Minimum="1" Maximum="90" Value="{Binding BackupRetentionSlider}"
+                            TickFrequency="1" IsSnapToTickEnabled="True"/>
+                </StackPanel>
+            </TabItem>
+
+            <!-- Step 4: Summary -->
+            <TabItem>
+                <StackPanel Spacing="10" Margin="0,8">
+                    <TextBlock Text="Review your settings. Click Edit to change anything — you can also change these later in Settings."
+                               TextWrapping="Wrap" Opacity="0.8"/>
+                    <ItemsControl ItemsSource="{Binding SummaryRows}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:WizardSummaryRow">
+                                <Grid ColumnDefinitions="160,*,Auto" Margin="0,3">
+                                    <TextBlock Grid.Column="0" Text="{Binding Label}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Value}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                    <Button Grid.Column="2" Content="Edit" Padding="10,3"
+                                            Command="{Binding Jump}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <CheckBox Content="Create a desktop shortcut for Trebuchet"
+                              IsChecked="{Binding CreateDesktopShortcut}"
+                              Margin="0,8,0,0"/>
+                    <TextBlock Text="{Binding ShortcutResultMessage}"
+                               IsVisible="{Binding HasShortcutResult}"
+                               TextWrapping="Wrap" Opacity="0.85"/>
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+
+    </DockPanel>
+</Window>

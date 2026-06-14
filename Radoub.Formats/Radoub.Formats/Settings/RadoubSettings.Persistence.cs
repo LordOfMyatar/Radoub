@@ -85,6 +85,12 @@ public partial class RadoubSettings
                     // Backup settings
                     _backupRetentionDays = Math.Max(1, Math.Min(90, data.BackupRetentionDays));
 
+                    // First-run wizard state (#1020). Missing in older JSON → defaults
+                    // (empty list, not run) so existing users are treated as "has run
+                    // before" only once the wizard records itself.
+                    _acknowledgedWizardGaps = data.AcknowledgedWizardGaps ?? new List<string>();
+                    _wizardHasRun = data.WizardHasRun;
+
                     // Garbage filters
                     if (data.GarbageFilters != null && data.GarbageFilters.Count > 0)
                         _garbageFilters = data.GarbageFilters.Where(f => !string.IsNullOrWhiteSpace(f)).ToList();
@@ -168,6 +174,10 @@ public partial class RadoubSettings
                 // Backup settings
                 BackupRetentionDays = _backupRetentionDays,
 
+                // First-run wizard state
+                AcknowledgedWizardGaps = _acknowledgedWizardGaps,
+                WizardHasRun = _wizardHasRun,
+
                 // Garbage filters
                 GarbageFilters = _garbageFilters,
             };
@@ -217,6 +227,10 @@ public partial class RadoubSettings
 
         // Backup settings (shared across all tools)
         public int BackupRetentionDays { get; set; } = 30;
+
+        // First-run wizard state (#1020) — optional; absent in older JSON.
+        public List<string>? AcknowledgedWizardGaps { get; set; }
+        public bool WizardHasRun { get; set; }
 
         // Garbage label filters (shared across all tools)
         public List<string>? GarbageFilters { get; set; }

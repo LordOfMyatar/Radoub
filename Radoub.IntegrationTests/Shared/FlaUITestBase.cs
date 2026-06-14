@@ -127,10 +127,16 @@ public abstract class FlaUITestBase : IDisposable
         // IMPORTANT: Set BaseGameInstallPath to a non-empty value to prevent AutoDetectPaths() from
         // finding user's actual Steam/GOG installation (which scans 80+ HAK files and slows startup)
         // We use TestGameRoot even though it doesn't have BIF files - that's OK for UI tests
+        //
+        // WizardHasRun=true suppresses Trebuchet's first-run configuration wizard (#1020),
+        // which otherwise auto-fires over the main window for a "fresh" settings dir (which is
+        // exactly what every isolated test dir looks like) and steals focus from the tests.
         var radoubSettings = $@"{{
   ""BaseGameInstallPath"": ""{TestPaths.TestGameRoot.Replace("\\", "\\\\")}"",
   ""NeverwinterNightsPath"": ""{TestPaths.TestGameRoot.Replace("\\", "\\\\")}"",
-  ""CurrentModulePath"": ""{TestPaths.TestModuleDirectory.Replace("\\", "\\\\")}""
+  ""CurrentModulePath"": ""{TestPaths.TestModuleDirectory.Replace("\\", "\\\\")}"",
+  ""WizardHasRun"": true,
+  ""AcknowledgedWizardGaps"": [ ""gamePath"", ""appearance"", ""logging"", ""backup"" ]
 }}";
         File.WriteAllText(Path.Combine(_isolatedSettingsDir, "RadoubSettings.json"), radoubSettings);
 
