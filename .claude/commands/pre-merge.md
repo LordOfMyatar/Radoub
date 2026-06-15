@@ -42,6 +42,32 @@ git log origin/$(git branch --show-current)..HEAD --oneline
 
 This prevents validating a PR that doesn't contain all local commits.
 
+### Step 0c: Verify init-item Was Not Skipped (mandatory gate)
+
+`/init-item` is the mandatory start-of-work step (sync main → convention branch → seed CHANGELOG → draft PR linking the issue → board for sprints/epics). Work sometimes starts without it (spec/plan-first sessions, hand-rolled branches). This gate catches a skipped init-item before merge. **Warn loudly; do not hard-block.**
+
+Check two signals:
+
+1. **Branch naming convention** — the branch should match `[tool]/issue-[N]`, `[tool]/feat/[name]`, `[tool]/fix/[name]`, or `[tool]/sprint/[name]`:
+   ```bash
+   git branch --show-current
+   ```
+
+2. **Linked issue** — the PR body should reference an issue (`Closes #N`, `Fixes #N`, `Relates to #N`, or an issue URL). Read the PR body (cache, or `gh pr view --json body -q '.body'`) and the branch name for any `#N` / `issue-N`.
+
+**Decision:**
+
+| Finding | Action |
+|---------|--------|
+| Branch follows convention AND PR links an issue | ✅ init-item satisfied — proceed silently. |
+| PR links an issue but branch name is off-convention | ⚠️ Warn (cosmetic — branch already exists, don't rename). Note in checklist, proceed. |
+| **No issue linked anywhere** (PR body + branch) | ⚠️ **Warn loudly: "init-item was skipped — no linked issue."** Then **create a tracking issue unless the user says this work is intentionally issueless.** Search the cache first to avoid duplicates (per the existing issue-dedup habit); if none exists, `gh issue create` with the right `[Tool]` + type labels, then add `Closes #N` to the PR body and backfill the CHANGELOG PR/issue reference. Only skip issue creation if the user explicitly says "no issue needed." |
+| Sprint/Epic PR not on the project board | ⚠️ Warn and offer to add it (init-item does this for sprints/epics only). |
+
+Report in the Step 6 checklist under a new **init-item** row (see Step 6).
+
+After any mutation here (issue created, PR body edited), the Step 7b cache refresh covers it.
+
 ### Step 1: Get PR Info (from cache)
 
 **Cache-first**: Refresh cache once here, then read from cache for all subsequent steps (tech debt dedup, stale unreleased check, etc.). Do NOT call the refresh script again during reads — only Step 7b refreshes again if mutations occurred.
@@ -322,6 +348,7 @@ Flag if >30 days old and code changed.
 ### Validation
 | Check | Status |
 |-------|--------|
+| init-item (linked issue + branch convention) | ✅ Satisfied / ⚠️ Skipped — issue #N created / ⚠️ Off-convention branch / ⚠️ No issue (user-confirmed) |
 | CHANGELOG | ✅/⚠️ |
 | [Unreleased] section | ✅ Empty / ⚠️ Has items (move to versioned section) |
 | Wiki | ✅ Current / ⚠️ Stale |

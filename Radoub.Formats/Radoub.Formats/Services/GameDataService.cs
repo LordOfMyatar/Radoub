@@ -553,7 +553,7 @@ public class GameDataService : IGameDataService
         "****", "---", "???"
     };
 
-    private void ExtractCategories(List<PaletteNode> nodes, List<PaletteCategory> categories, string? parentPath)
+    internal void ExtractCategories(List<PaletteNode> nodes, List<PaletteCategory> categories, string? parentPath)
     {
         foreach (var node in nodes)
         {
@@ -580,6 +580,15 @@ public class GameDataService : IGameDataService
                     Name = name,
                     ParentPath = parentPath
                 });
+
+                // Recurse into nested categories under this category (#2280)
+                if (category.Children.Count > 0)
+                {
+                    var childPath = string.IsNullOrEmpty(parentPath)
+                        ? name
+                        : $"{parentPath}/{name}";
+                    ExtractCategories(category.Children, categories, childPath);
+                }
             }
             else if (node is PaletteBranchNode branch)
             {

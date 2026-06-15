@@ -8,8 +8,11 @@
     <AssemblyName>Radoub.Formats</AssemblyName>
     <Description>Aurora Engine file format parsers for Neverwinter Nights modding tools</Description>
     <Authors>Lord of Midnight</Authors>
-    <InternalsVisibleTo>Radoub.Formats.Tests</InternalsVisibleTo>
   </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Radoub.Formats.Tests" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- Pfim for TGA/DDS decoding - pure managed, cross-platform -->

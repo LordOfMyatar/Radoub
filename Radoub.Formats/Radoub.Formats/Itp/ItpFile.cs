@@ -48,6 +48,10 @@ public class ItpFile
             if (node is PaletteCategoryNode category)
             {
                 yield return category;
+                foreach (var child in FlattenCategories(category.Children))
+                {
+                    yield return child;
+                }
             }
             else if (node is PaletteBranchNode branch)
             {
@@ -112,6 +116,17 @@ public class PaletteCategoryNode : PaletteNode
     /// Blueprint nodes under this category (in standard/custom palettes).
     /// </summary>
     public List<PaletteBlueprintNode> Blueprints { get; set; } = new();
+
+    /// <summary>
+    /// Nested category/branch nodes under this category (#2280).
+    /// </summary>
+    public List<PaletteNode> Children { get; set; } = new();
+
+    /// <summary>
+    /// Convenience: child nodes that are categories.
+    /// </summary>
+    public IEnumerable<PaletteCategoryNode> ChildCategories =>
+        Children.OfType<PaletteCategoryNode>();
 }
 
 /// <summary>
