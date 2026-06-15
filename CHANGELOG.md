@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI] - 2026-06-15
+**Branch**: `radoub/issue-2476` | **PR**: #TBD
+
+### Feature: ITP palette editor — Milestone 2: reorg core (dual-write) (#2476)
+
+- `PaletteReorgMutator` + `PaletteEditorViewModel` for category/blueprint reorganization, with atomic dual-write (`.itp` tree entry + blueprint `PaletteID`) and all-or-nothing N-file rollback.
+
+---
+
 ## [Build 2026-06-14] - 2026-06-14
 **Branch**: `radoub/issue-2362` | **PR**: #2465
 
