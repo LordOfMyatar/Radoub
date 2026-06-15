@@ -58,7 +58,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Radoub.Formats 0.2.69-alpha] - 2026-06-14
-**Branch**: `radoub/feat/itp-palette-editor`
+**Branch**: `radoub/feat/itp-palette-editor` | **PR**: #2474
 
 ### ITP palette: nested-category fix + writer (#2280, #2301)
 
