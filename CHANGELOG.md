@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Feature: ITP palette editor — Milestone 2: reorg core (dual-write) (#2476)
 
-- `PaletteReorgMutator` + `PaletteEditorViewModel` for category/blueprint reorganization, with atomic dual-write (`.itp` tree entry + blueprint `PaletteID`) and all-or-nothing N-file rollback.
+- Pure palette reorganization core (move/nest/reorder/add/rename/delete, drift classification) with atomic dual-write (`.itp` tree entry + blueprint `PaletteID`) and an all-or-nothing N-file save transaction.
 
 ---
 
