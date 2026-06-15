@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Radoub.Formats.Itp;
 using Radoub.UI.Services.Palette;
@@ -17,25 +18,27 @@ public class PaletteEditorHostViewModelTests
         public byte ReadPaletteIdFromBytes(byte[] bytes) => bytes[0];
     }
 
+    // A context with two categories (ids 1,2) and one pool blueprint (PaletteID 0 -> uncategorized).
     private static PaletteContext MakeContext(PaletteResourceType type)
     {
         var itp = new ItpFile();
-        var cat = new PaletteCategoryNode { Id = 1, Name = type + "Cat" };
-        itp.MainNodes.Add(cat);
-        var store = new LooseFileBlueprintStore(new FakeGateway(), Array.Empty<(string, string)>());
+        itp.MainNodes.Add(new PaletteCategoryNode { Id = 1, Name = type + "_A" });
+        itp.MainNodes.Add(new PaletteCategoryNode { Id = 2, Name = type + "_B" });
+        var store = new LooseFileBlueprintStore(new FakeGateway(), new[] { ("bp", "p/bp.uti") });
         return new PaletteContext(type, itp, store, $"p/{type}.itp");
     }
 
     private static PaletteEditorHostViewModel MakeHost(
-        Func<Task<DirtySwitchChoice>>? prompt = null,
         Func<IReadOnlyList<PaletteFileWrite>, PaletteSaveResult>? commit = null,
         Action<PaletteResourceType>? onLoad = null)
     {
         return new PaletteEditorHostViewModel(
             loadContext: t => { onLoad?.Invoke(t); return MakeContext(t); },
-            promptDirty: prompt ?? (() => Task.FromResult(DirtySwitchChoice.Discard)),
             commit: commit ?? (_ => new PaletteSaveResult(true, null)));
     }
+
+    private static PaletteCategoryNode Cat(PaletteEditorHostViewModel host, byte id)
+        => host.ActiveContext!.Palette.GetCategories().Single(c => c.Id == id);
 
     [Fact]
     public async Task LoadType_builds_context_and_forest()
@@ -48,67 +51,54 @@ public class PaletteEditorHostViewModelTests
     }
 
     [Fact]
-    public async Task SwitchType_when_clean_does_not_prompt_and_rebuilds()
+    public async Task SwitchType_reloads_fresh_context_per_type()
     {
-        int prompts = 0;
         var loaded = new List<PaletteResourceType>();
-        var host = MakeHost(
-            prompt: () => { prompts++; return Task.FromResult(DirtySwitchChoice.Discard); },
-            onLoad: loaded.Add);
+        var host = MakeHost(onLoad: loaded.Add);
         await host.SwitchResourceTypeAsync(PaletteResourceType.Item);
         await host.SwitchResourceTypeAsync(PaletteResourceType.Creature);
-        Assert.Equal(0, prompts); // clean -> no prompt
         Assert.Equal(new[] { PaletteResourceType.Item, PaletteResourceType.Creature }, loaded);
         Assert.Equal(PaletteResourceType.Creature, host.ActiveContext!.Type);
     }
 
     [Fact]
-    public async Task SwitchType_when_dirty_and_cancel_keeps_current_context()
-    {
-        var host = MakeHost(prompt: () => Task.FromResult(DirtySwitchChoice.Cancel));
-        await host.SwitchResourceTypeAsync(PaletteResourceType.Item);
-        host.ActiveContext!.ViewModel.IsDirty = true; // simulate an edit
-
-        await host.SwitchResourceTypeAsync(PaletteResourceType.Creature); // should be refused
-        Assert.Equal(PaletteResourceType.Item, host.ActiveContext!.Type); // unchanged
-    }
-
-    [Fact]
-    public async Task SwitchType_when_dirty_and_save_commits_then_switches()
+    public async Task MoveBlueprint_commits_immediately()
     {
         int commits = 0;
-        var host = MakeHost(
-            prompt: () => Task.FromResult(DirtySwitchChoice.Save),
-            commit: _ => { commits++; return new PaletteSaveResult(true, null); });
+        var host = MakeHost(commit: w => { commits++; return new PaletteSaveResult(true, null); });
         await host.SwitchResourceTypeAsync(PaletteResourceType.Item);
-        host.ActiveContext!.ViewModel.IsDirty = true;
 
-        await host.SwitchResourceTypeAsync(PaletteResourceType.Creature);
-        Assert.Equal(1, commits);
-        Assert.Equal(PaletteResourceType.Creature, host.ActiveContext!.Type);
-    }
-
-    [Fact]
-    public async Task Save_commits_write_set_and_clears_dirty_on_success()
-    {
-        var host = MakeHost(commit: _ => new PaletteSaveResult(true, null));
-        await host.SwitchResourceTypeAsync(PaletteResourceType.Item);
-        host.ActiveContext!.ViewModel.IsDirty = true;
-
-        bool ok = host.Save();
+        bool ok = host.MoveBlueprintToCategory("bp", Cat(host, 1));
         Assert.True(ok);
-        Assert.False(host.ActiveContext!.ViewModel.IsDirty);
+        Assert.Equal(1, commits);                               // saved on the move
+        Assert.Equal((byte)1, host.ActiveContext!.Store.GetPaletteId("bp")); // PaletteID set
     }
 
     [Fact]
-    public async Task Save_keeps_dirty_when_commit_fails()
+    public async Task MoveBlueprint_commit_failure_reloads_and_raises_SaveFailed()
     {
-        var host = MakeHost(commit: _ => new PaletteSaveResult(false, new Exception("boom")));
-        await host.SwitchResourceTypeAsync(PaletteResourceType.Item);
-        host.ActiveContext!.ViewModel.IsDirty = true;
+        string? reported = null;
+        int loads = 0;
+        var host = MakeHost(
+            commit: _ => new PaletteSaveResult(false, new Exception("disk locked")),
+            onLoad: _ => loads++);
+        host.SaveFailed += m => reported = m;
+        await host.SwitchResourceTypeAsync(PaletteResourceType.Item); // loads == 1
 
-        bool ok = host.Save();
+        bool ok = host.MoveBlueprintToCategory("bp", Cat(host, 1));
         Assert.False(ok);
-        Assert.True(host.ActiveContext!.ViewModel.IsDirty); // not cleared on failure
+        Assert.Equal(2, loads);                 // reloaded from disk to re-sync after failure
+        Assert.Contains("disk locked", reported);
+    }
+
+    [Fact]
+    public async Task ReloadActiveFromDisk_rebuilds_without_prompt()
+    {
+        int loads = 0;
+        var host = MakeHost(onLoad: _ => loads++);
+        await host.SwitchResourceTypeAsync(PaletteResourceType.Item); // loads == 1
+        host.ReloadActiveFromDisk();
+        Assert.Equal(2, loads);
+        Assert.NotNull(host.ActiveContext);
     }
 }

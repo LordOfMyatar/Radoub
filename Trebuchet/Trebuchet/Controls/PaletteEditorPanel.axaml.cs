@@ -35,7 +35,6 @@ public partial class PaletteEditorPanel : UserControl
         _parentWindow = parentWindow;
         _host = new PaletteEditorHostViewModel(
             loadContext: LoadContext,
-            promptDirty: PromptDirtyAsync,
             commit: writes => PaletteSaveTransaction.Commit(writes));
 
         // Standard palette categories store their name as a TLK StrRef; resolve it to text.
@@ -63,24 +62,7 @@ public partial class PaletteEditorPanel : UserControl
     private PaletteContext LoadContext(PaletteResourceType type)
     {
         string folder = ModuleFolderOrThrow();
-        var ctx = new PaletteEditorLoader().Load(folder, type);
-        // After a successful save the shared item-palette cache may be stale for this type; the
-        // editor owns the file while open, so invalidation happens on save (see CommitAndInvalidate).
-        return ctx;
-    }
-
-    private async Task<DirtySwitchChoice> PromptDirtyAsync()
-    {
-        if (_parentWindow is null) return DirtySwitchChoice.Discard;
-        var dialog = new UnsavedChangesDialog(
-            "This palette has unsaved changes. Save before switching resource type?");
-        await dialog.ShowDialog(_parentWindow);
-        return dialog.Result switch
-        {
-            ClosePromptResult.Save => DirtySwitchChoice.Save,
-            ClosePromptResult.Discard => DirtySwitchChoice.Discard,
-            _ => DirtySwitchChoice.Cancel,
-        };
+        return new PaletteEditorLoader().Load(folder, type);
     }
 
     // ---- module folder helpers ----------------------------------------------

@@ -54,6 +54,14 @@ public partial class PaletteEditorControl : UserControl
         _host = host ?? throw new ArgumentNullException(nameof(host));
         _ownerWindow = ownerWindow;
         DataContext = host;
+        host.SaveFailed += OnSaveFailed;
+        RefreshChrome();
+    }
+
+    private void OnSaveFailed(string message)
+    {
+        SaveError.Text = $"Save failed: {message}";
+        SaveError.IsVisible = true;
         RefreshChrome();
     }
 
@@ -72,16 +80,9 @@ public partial class PaletteEditorControl : UserControl
     private async void OnReloadClick(object? sender, RoutedEventArgs e)
     {
         if (_host is null || TypeSelector.SelectedItem is not PaletteResourceType type) return;
+        SaveError.IsVisible = false; // clear any prior error; Reload re-reads disk
         await _host.SwitchResourceTypeAsync(type);
         RefreshChrome();
-    }
-
-    private void OnSaveClick(object? sender, RoutedEventArgs e)
-    {
-        if (_host is null) return;
-        bool ok = _host.Save();
-        RefreshChrome();
-        if (!ok) NotifySaveFailed();
     }
 
     // ---- drag-drop (threshold-based; press records a candidate, move starts it) --------------
@@ -140,6 +141,7 @@ public partial class PaletteEditorControl : UserControl
         if (_host is null || _activeDrag is null) return;
         if ((e.Source as Control)?.DataContext is not PaletteNodeViewModel target) return;
 
+        SaveError.IsVisible = false; // a new action clears the prior error (re-shown if it fails again)
         var source = _activeDrag;
 
         // Resolve the destination category from the drop target:
@@ -179,26 +181,15 @@ public partial class PaletteEditorControl : UserControl
 
     private void RefreshChrome()
     {
-        var vm = _host?.ActiveContext?.ViewModel;
-        DirtyIndicator.IsVisible = vm?.IsDirty == true;
-
         if (_host?.ActiveContext is { } ctx)
         {
             int total = ctx.Store.ResRefs.Count;
-            int drifted = ctx.Store.ResRefs.Count(r => ctx.ViewModel.Classify(r).Kind == PalettePlacementKind.Drifted);
             int uncat = ctx.ViewModel.GetUncategorized().Count();
-            StatusText.Text = $"{total} blueprints, {drifted} drifted, {uncat} uncategorized";
+            StatusText.Text = $"{total} blueprints, {uncat} uncategorized";
         }
         else
         {
             StatusText.Text = string.Empty;
         }
-    }
-
-    // A failed save means nothing was written (the transaction is all-or-nothing). Surface it in the
-    // status line rather than silently leaving the editor "unsaved" with no explanation.
-    private void NotifySaveFailed()
-    {
-        StatusText.Text = "Save failed — no files were changed. See the log for details.";
     }
 }

@@ -16,9 +16,9 @@
                 <ComboBox x:Name="TypeSelector" MinWidth="140"
                           SelectionChanged="OnTypeSelectionChanged"/>
                 <Button x:Name="ReloadButton" Content="Reload" Click="OnReloadClick" Padding="12,4"/>
-                <Button x:Name="SaveButton" Content="Save" Click="OnSaveClick" Padding="16,4"/>
-                <TextBlock x:Name="DirtyIndicator" Text="● unsaved" VerticalAlignment="Center"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                <!-- Changes save automatically on each move; no Save button. -->
+                <TextBlock x:Name="SaveError" VerticalAlignment="Center"
+                           Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
                            IsVisible="False"/>
             </StackPanel>
         </Border>
@@ -31,7 +31,7 @@
             <TextBlock TextWrapping="Wrap"
                        FontSize="{DynamicResource FontSizeSmall}"
                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                       Text="Drag a blueprint onto a category to file or move it (including out of Uncategorized). Drag a category onto another to nest it. Blueprints appear under the category their own PaletteID points to — edits made in other tools (e.g. Quartermaster) show here after Reload. Save writes the palette and the changed blueprint files."/>
+                       Text="Drag a blueprint onto a category to file or move it (including out of Uncategorized). Drag a category onto another to nest it. Changes save automatically. Blueprints appear under the category their own PaletteID points to — edits made in other tools (e.g. Quartermaster) show here after Reload."/>
         </Border>
 
         <!-- Single tree: categories with blueprint leaves inline + virtual Uncategorized -->

@@ -9,21 +9,16 @@ using Radoub.UI.Undo;
 
 namespace Radoub.UI.ViewModels;
 
-/// <summary>The user's choice when switching resource type with unsaved changes.</summary>
-public enum DirtySwitchChoice { Save, Discard, Cancel }
-
 /// <summary>
 /// DataContext for the shared palette editor control (#2477, M3). Owns exactly one active
-/// <see cref="PaletteContext"/> at a time — each resource type is fully isolated. Switching type
-/// tears the old context down (after a Save/Discard/Cancel prompt when dirty) and loads the new one
-/// fresh from disk, so stale tree/undo/dirty state can never bleed across types. Disk load, the
-/// dirty prompt, and the save commit are injected delegates so the orchestration is unit-testable
-/// without a UI.
+/// <see cref="PaletteContext"/> at a time — each resource type is fully isolated. Edits persist
+/// immediately (save-on-move), so switching type just tears the old context down and loads the new
+/// one fresh from disk; stale tree/undo state can never bleed across types. Disk load and the save
+/// commit are injected delegates so the orchestration is unit-testable without a UI.
 /// </summary>
 public partial class PaletteEditorHostViewModel : ObservableObject
 {
     private readonly Func<PaletteResourceType, PaletteContext> _loadContext;
-    private readonly Func<Task<DirtySwitchChoice>> _promptDirty;
     private readonly Func<IReadOnlyList<PaletteFileWrite>, PaletteSaveResult> _commit;
 
     [ObservableProperty] private PaletteContext? _activeContext;
@@ -40,39 +35,22 @@ public partial class PaletteEditorHostViewModel : ObservableObject
 
     public PaletteEditorHostViewModel(
         Func<PaletteResourceType, PaletteContext> loadContext,
-        Func<Task<DirtySwitchChoice>> promptDirty,
         Func<IReadOnlyList<PaletteFileWrite>, PaletteSaveResult> commit)
     {
         _loadContext = loadContext ?? throw new ArgumentNullException(nameof(loadContext));
-        _promptDirty = promptDirty ?? throw new ArgumentNullException(nameof(promptDirty));
         _commit = commit ?? throw new ArgumentNullException(nameof(commit));
     }
 
     /// <summary>
-    /// Switch the edited resource type. If the current context is dirty, prompt: Save commits then
-    /// switches, Discard switches, Cancel aborts (current context kept). On switch the old context
-    /// is dropped entirely and the new one is loaded fresh, then the forest is rebuilt.
+    /// Switch the edited resource type. Edits persist immediately (save-on-move), so there are never
+    /// unsaved changes to protect — the old context is dropped, the new one loaded fresh from disk,
+    /// and the forest rebuilt. Reload re-reads the same way.
     /// </summary>
-    public async Task SwitchResourceTypeAsync(PaletteResourceType type)
+    public Task SwitchResourceTypeAsync(PaletteResourceType type)
     {
-        if (ActiveContext is { ViewModel.IsDirty: true })
-        {
-            switch (await _promptDirty())
-            {
-                case DirtySwitchChoice.Cancel:
-                    return;
-                case DirtySwitchChoice.Save:
-                    if (!Save()) return; // failed save aborts the switch (don't lose edits)
-                    break;
-                case DirtySwitchChoice.Discard:
-                    break;
-            }
-        }
-
-        // Full teardown: drop the old context before building the new one; RebuildForest clears
-        // and repopulates the bindable forest.
         ActiveContext = _loadContext(type);
         RebuildForest();
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -158,24 +136,46 @@ public partial class PaletteEditorHostViewModel : ObservableObject
         }
     }
 
-    /// <summary>Commit the active context's write-set. Clears dirty on success; leaves it set on
-    /// failure (all-or-nothing — nothing was written).</summary>
-    public bool Save()
+    /// <summary>
+    /// Raised when an immediate commit fails (the all-or-nothing transaction wrote nothing). The
+    /// host surfaces this; the active context has already been reloaded from disk so editor and disk
+    /// stay in sync. The argument is a short human-readable message.
+    /// </summary>
+    public event Action<string>? SaveFailed;
+
+    // ---- reorg ops: save-immediately ----------------------------------------
+    // The editor persists every move the moment it happens — there is no pending/dirty state and no
+    // Save button. Each reorg: run the M2 VM op (mutate-refresh-rollback) -> rebuild forest ->
+    // commit the whole palette to disk atomically. If the commit fails, the active context is
+    // reloaded from disk so the editor never diverges from the files (which is what produced the
+    // earlier save conflict), and SaveFailed is raised.
+    //
+    // Undo/redo: delete-with-reparent is reversible (PaletteDeleteCategoryCommand). Reversible undo
+    // for the other ops is tracked in #2484.
+
+    /// <summary>Commit the active palette to disk atomically (reconcile tree + write changed files).
+    /// On failure, reload from disk so the editor matches the files, and raise <see cref="SaveFailed"/>.
+    /// Returns true on success.</summary>
+    private bool CommitNow()
     {
         if (ActiveContext is null) return false;
         var result = _commit(ActiveContext.BuildWriteSet());
-        if (result.Success) ActiveContext.ViewModel.IsDirty = false;
-        return result.Success;
+        if (result.Success) return true;
+
+        // Nothing was written (all-or-nothing). Re-sync the editor to disk and report.
+        ReloadActiveFromDisk();
+        SaveFailed?.Invoke(result.Error?.Message ?? "Save failed — no files were changed.");
+        return false;
     }
 
-    // ---- reorg ops (route VM op -> rebuild forest -> mark dirty) -------------
-    // The M2 VM ops are already mutate-refresh-rollback wrapped (a failed refresh self-reverts and
-    // returns false). After a successful op the forest is rebuilt and the context marked dirty.
-    //
-    // Undo/redo: delete-with-reparent is fully reversible (PaletteDeleteCategoryCommand). Reversible
-    // undo for blueprint move/file and category add/rename/move is tracked as follow-up work — each
-    // needs a dedicated inverse command; wiring a no-op undo here would be worse than none.
-    // TODO (#2484): add inverse undo commands for move/file/add/rename/move-category.
+    /// <summary>Reload the active resource type fresh from disk, bypassing the dirty prompt (used to
+    /// re-sync after a failed commit; there are no edits worth protecting at that point).</summary>
+    public void ReloadActiveFromDisk()
+    {
+        if (ActiveContext is null) return;
+        ActiveContext = _loadContext(ActiveContext.Type);
+        RebuildForest();
+    }
 
     /// <summary>Place a blueprint into a category by setting its PaletteID (the authoritative write).
     /// Works the same whether the blueprint was uncategorized or under another category.</summary>
@@ -211,32 +211,28 @@ public partial class PaletteEditorHostViewModel : ObservableObject
         return true;
     }
 
-    /// <summary>Delete a category, reparenting its contents. Reversible via the undo manager.</summary>
+    /// <summary>Delete a category, reparenting its contents. Reversible via the undo manager; the
+    /// result is committed to disk immediately.</summary>
     public bool DeleteCategory(PaletteCategoryNode cat)
     {
         if (ActiveContext is null) return false;
-        // Run Do() directly so we know whether it applied; only record on the undo stack when it did
-        // (matches UndoRedoManager's refuse-to-push contract for self-rolled-back commands).
+        bool before = ActiveContext.UndoManager.CanUndo;
         var cmd = new PaletteDeleteCategoryCommand(
             ActiveContext.Palette, ActiveContext.Store, cat, onChanged: RebuildForest);
         ActiveContext.UndoManager.Execute(cmd);
-        // Execute invokes Do() once; if it returned false the stack is untouched. A successful delete
-        // leaves at least one undoable entry. We mark dirty whenever an undoable entry now exists.
-        bool applied = ActiveContext.UndoManager.CanUndo;
-        if (applied) ActiveContext.ViewModel.IsDirty = true;
-        return applied;
+        // Execute invokes Do() once; if it self-rolled-back the stack is untouched.
+        if (ActiveContext.UndoManager.CanUndo == before && before == false) return false; // no-op
+        return CommitNow();
     }
 
-    public void Undo() { ActiveContext?.UndoManager.Undo(); RebuildForest(); }
-    public void Redo() { ActiveContext?.UndoManager.Redo(); RebuildForest(); }
+    public void Undo() { ActiveContext?.UndoManager.Undo(); RebuildForest(); CommitNow(); }
+    public void Redo() { ActiveContext?.UndoManager.Redo(); RebuildForest(); CommitNow(); }
 
-    // After a VM reorg op: on success rebuild the forest and mark dirty. (The VM op already ran its
-    // own refresh callback; RebuildForest here is the host-owned forest the control binds to.)
+    // After a VM reorg op: on success rebuild the forest and commit to disk immediately.
     private bool AfterReorg(bool ok)
     {
         if (!ok || ActiveContext is null) return false;
         RebuildForest();
-        ActiveContext.ViewModel.IsDirty = true;
-        return true;
+        return CommitNow();
     }
 }
