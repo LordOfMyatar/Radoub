@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
+using Radoub.UI.Services;
 using Radoub.UI.Services.Palette;
 using Radoub.UI.ViewModels;
 using RadoubLauncher.Services;
@@ -21,6 +22,7 @@ public partial class PaletteEditorPanel : UserControl
 {
     private Window? _parentWindow;
     private PaletteEditorHostViewModel? _host;
+    private TlkService? _tlkService;
 
     public PaletteEditorPanel()
     {
@@ -35,6 +37,13 @@ public partial class PaletteEditorPanel : UserControl
             loadContext: LoadContext,
             promptDirty: PromptDirtyAsync,
             commit: writes => PaletteSaveTransaction.Commit(writes));
+
+        // Standard palette categories store their name as a TLK StrRef; resolve it to text.
+        // TlkService auto-loads from the configured game paths.
+        _tlkService = new TlkService();
+        if (_tlkService.IsAvailable)
+            _host.StrRefResolver = _tlkService.ResolveStrRef;
+
         Editor.Bind(_host, parentWindow);
         RefreshVisibility();
     }

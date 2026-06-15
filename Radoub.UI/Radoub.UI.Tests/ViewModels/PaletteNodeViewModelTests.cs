@@ -70,4 +70,31 @@ public class PaletteNodeViewModelTests
         Assert.True(rusty.IsDrifted);   // PaletteID 0 != tree cat 1
         Assert.False(acid.IsDrifted);   // PaletteID 1 == tree cat 1
     }
+
+    [Fact]
+    public void Category_with_strref_resolves_name_via_resolver()
+    {
+        // Standard categories carry their name as a TLK StrRef, not a literal Name.
+        var itp = new ItpFile();
+        itp.MainNodes.Add(new PaletteCategoryNode { Id = 1, StrRef = 5432 }); // no literal Name
+        var store = new LooseFileBlueprintStore(new FakeGateway(), System.Array.Empty<(string, string)>());
+        var vm = new PaletteEditorViewModel(itp, store);
+
+        var forest = PaletteNodeViewModel.BuildForest(vm, strRefResolver: s => s == 5432 ? "Armor" : null);
+
+        Assert.Contains(forest, n => n.Kind == PaletteNodeKind.Category && n.Name == "Armor");
+    }
+
+    [Fact]
+    public void Category_strref_falls_back_to_placeholder_when_unresolved()
+    {
+        var itp = new ItpFile();
+        itp.MainNodes.Add(new PaletteCategoryNode { Id = 1, StrRef = 99 });
+        var store = new LooseFileBlueprintStore(new FakeGateway(), System.Array.Empty<(string, string)>());
+        var vm = new PaletteEditorViewModel(itp, store);
+
+        // No resolver, or resolver returns null/empty -> placeholder showing the StrRef.
+        var forest = PaletteNodeViewModel.BuildForest(vm, strRefResolver: _ => null);
+        Assert.Contains(forest, n => n.Kind == PaletteNodeKind.Category && n.Name == "[StrRef 99]");
+    }
 }

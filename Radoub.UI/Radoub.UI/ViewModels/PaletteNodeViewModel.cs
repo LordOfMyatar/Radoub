@@ -1,3 +1,4 @@
+using System;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Radoub.Formats.Itp;
@@ -42,11 +43,17 @@ public partial class PaletteNodeViewModel : ObservableObject
     /// entry (categories with their blueprint leaves inline, recursively) followed by the virtual
     /// Uncategorized node listing <see cref="PaletteEditorViewModel.GetUncategorized"/>.
     /// </summary>
-    public static ObservableCollection<PaletteNodeViewModel> BuildForest(PaletteEditorViewModel vm)
+    /// <param name="strRefResolver">
+    /// Optional TLK lookup for category names stored as a StrRef (standard categories carry their
+    /// name as a TLK reference, not a literal). Returns null when unresolved; the display then falls
+    /// back to a <c>[StrRef N]</c> placeholder. Null disables resolution entirely.
+    /// </param>
+    public static ObservableCollection<PaletteNodeViewModel> BuildForest(
+        PaletteEditorViewModel vm, Func<uint, string?>? strRefResolver = null)
     {
         var forest = new ObservableCollection<PaletteNodeViewModel>();
         foreach (var node in vm.Palette.MainNodes)
-            forest.Add(BuildNode(node, vm));
+            forest.Add(BuildNode(node, vm, strRefResolver));
 
         var uncategorized = new PaletteNodeViewModel(PaletteNodeKind.Uncategorized, null, "Uncategorized");
         foreach (var resRef in vm.GetUncategorized())
@@ -55,13 +62,14 @@ public partial class PaletteNodeViewModel : ObservableObject
         return forest;
     }
 
-    private static PaletteNodeViewModel BuildNode(PaletteNode node, PaletteEditorViewModel vm)
+    private static PaletteNodeViewModel BuildNode(
+        PaletteNode node, PaletteEditorViewModel vm, Func<uint, string?>? strRefResolver)
     {
         switch (node)
         {
             case PaletteCategoryNode cat:
             {
-                var vmNode = new PaletteNodeViewModel(PaletteNodeKind.Category, cat, DisplayName(cat));
+                var vmNode = new PaletteNodeViewModel(PaletteNodeKind.Category, cat, DisplayName(cat, strRefResolver));
                 foreach (var bp in cat.Blueprints)
                 {
                     var leaf = new PaletteNodeViewModel(PaletteNodeKind.Blueprint, bp, bp.ResRef)
@@ -71,14 +79,14 @@ public partial class PaletteNodeViewModel : ObservableObject
                     vmNode.Children.Add(leaf);
                 }
                 foreach (var child in cat.Children)
-                    vmNode.Children.Add(BuildNode(child, vm));
+                    vmNode.Children.Add(BuildNode(child, vm, strRefResolver));
                 return vmNode;
             }
             case PaletteBranchNode br:
             {
-                var vmNode = new PaletteNodeViewModel(PaletteNodeKind.Branch, br, DisplayName(br));
+                var vmNode = new PaletteNodeViewModel(PaletteNodeKind.Branch, br, DisplayName(br, strRefResolver));
                 foreach (var child in br.Children)
-                    vmNode.Children.Add(BuildNode(child, vm));
+                    vmNode.Children.Add(BuildNode(child, vm, strRefResolver));
                 return vmNode;
             }
             default:
@@ -87,10 +95,17 @@ public partial class PaletteNodeViewModel : ObservableObject
         }
     }
 
-    // Category display: the literal Name if present, else a placeholder showing the StrRef. Full
-    // TLK resolution is a later refinement (the loose custom palette usually carries literal names).
-    private static string DisplayName(PaletteNode node)
-        => !string.IsNullOrEmpty(node.Name) ? node.Name!
-         : node.StrRef is uint s ? $"[StrRef {s}]"
-         : "(unnamed)";
+    // Category display: the literal Name if present, else the TLK-resolved StrRef text, else a
+    // [StrRef N] placeholder. Standard categories store their name as a StrRef, so the resolver is
+    // what turns the tree from "[StrRef 5432]" into "Armor".
+    private static string DisplayName(PaletteNode node, Func<uint, string?>? strRefResolver)
+    {
+        if (!string.IsNullOrEmpty(node.Name)) return node.Name!;
+        if (node.StrRef is uint s)
+        {
+            var resolved = strRefResolver?.Invoke(s);
+            return !string.IsNullOrEmpty(resolved) ? resolved! : $"[StrRef {s}]";
+        }
+        return "(unnamed)";
+    }
 }

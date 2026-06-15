@@ -31,6 +31,13 @@ public partial class PaletteEditorHostViewModel : ObservableObject
     /// <summary>The bindable tree forest for the active context (rebuilt on load + after reorg).</summary>
     public ObservableCollection<PaletteNodeViewModel> Forest { get; } = new();
 
+    /// <summary>
+    /// Optional TLK resolver for category names stored as a StrRef (standard categories). The host
+    /// (e.g. Trebuchet) sets this from its <c>TlkService</c>; null leaves StrRef categories showing
+    /// a <c>[StrRef N]</c> placeholder. Set before the first load / call <see cref="RebuildForest"/>.
+    /// </summary>
+    public Func<uint, string?>? StrRefResolver { get; set; }
+
     public PaletteEditorHostViewModel(
         Func<PaletteResourceType, PaletteContext> loadContext,
         Func<Task<DirtySwitchChoice>> promptDirty,
@@ -73,7 +80,7 @@ public partial class PaletteEditorHostViewModel : ObservableObject
     {
         Forest.Clear();
         if (ActiveContext is null) return;
-        foreach (var node in PaletteNodeViewModel.BuildForest(ActiveContext.ViewModel))
+        foreach (var node in PaletteNodeViewModel.BuildForest(ActiveContext.ViewModel, StrRefResolver))
             Forest.Add(node);
     }
 
