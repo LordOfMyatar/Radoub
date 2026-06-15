@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Feature: ITP palette editor — Milestone 3: UI + Trebuchet host (#2477, closes #2301)
 
-- `PaletteEditorControl` shared in `Radoub.UI`: one-window palette editing (resource-type selector, category tree, module blueprint pool) with drag-drop reorganization, virtual Uncategorized bucket, drift flagging + re-sync, and undo/redo wiring (#2231); hosted as a Trebuchet panel.
+- `PaletteEditorControl` shared in `Radoub.UI`: one-window palette editing (resource-type selector, single category tree with blueprint leaves inline) with drag-drop reorganization, virtual Uncategorized bucket, drift flagging + re-sync, and reversible category delete; hosted as a Trebuchet panel (Ctrl+5). Full undo/redo for blueprint move/file and category add/rename/move is follow-up work (#2484).
 
 ---
 

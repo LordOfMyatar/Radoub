@@ -94,7 +94,7 @@ public partial class PaletteEditorHostViewModel : ObservableObject
     // Undo/redo: delete-with-reparent is fully reversible (PaletteDeleteCategoryCommand). Reversible
     // undo for blueprint move/file and category add/rename/move is tracked as follow-up work — each
     // needs a dedicated inverse command; wiring a no-op undo here would be worse than none.
-    // TODO (#2477): add inverse undo commands for move/file/add/rename/move-category.
+    // TODO (#2484): add inverse undo commands for move/file/add/rename/move-category.
 
     /// <summary>Recategorize a listed blueprint, or file an uncategorized one, into a category.
     /// <paramref name="from"/> is the blueprint's current tree home (null when it is uncategorized).</summary>
