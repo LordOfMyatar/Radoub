@@ -151,6 +151,47 @@ Uncategorized bucket:
   usable placement. It is a view projection only — never written to the `.itp` as
   a real category. Dragging an item out files it; nothing forces filing.
 
+### Reorg operation semantics
+
+These rules are the contract for `PaletteReorgMutator` and must be enforced as
+preconditions/postconditions, each unit-tested:
+
+- Delete a non-empty category. Blocked by default: deleting a category that
+  contains blueprints or child categories prompts, and on confirm the contents
+  are **reparented to Uncategorized** (blueprints) or to the deleted category's
+  parent (child categories) — never cascade-deleted, never orphaned. Reparented
+  blueprints become drifted until refiled, which is the honest reflection of what
+  removing a category does.
+- Cycle guard. `MoveCategory(cat, newParent, index)` rejects any `newParent` that
+  is `cat` itself or a descendant of `cat` (ancestor-check precondition). A drag
+  that would create a cycle is refused, not silently dropped.
+- ID retirement. A deleted category's `Id` is **retired, never recycled**.
+  `NextUseableId` only ever advances. Reusing a freed `Id` while a stale blueprint
+  `PaletteID` still references it would silently mis-file that blueprint.
+- `NextUseableId` source for custom palettes. Custom (`*palcus`) files may lack
+  the `NextUseableId`/`ResType` fields (they are skeleton-palette fields). When
+  allocating a new category Id, source the starting value from the paired
+  `*palstd` skeleton (already loaded for name resolution); if neither file
+  provides it, fall back to `max(existing Id) + 1`. Always advance, never reuse.
+- Structural-only vs blueprint-touching ops. `AddCategory` / `RenameCategory` /
+  `MoveCategory` / `ReorderWithin` write only the `.itp` (they never change a
+  blueprint's `PaletteID`). Only `MoveBlueprint` (and delete-with-reparent, which
+  moves blueprints to Uncategorized) is a blueprint-touching op.
+
+### Classifying a blueprint (drift vs uncategorized)
+
+Evaluated against the loaded tree:
+
+- ResRef appears nowhere in the tree -> **Uncategorized**, regardless of whether
+  its `PaletteID` names a valid category. (Not listed = not filed.)
+- ResRef appears in the tree under category X, but its `PaletteID != X.Id` ->
+  **Drifted**. Displayed under X (palette tree wins), flagged.
+- ResRef appears in the tree under category X and `PaletteID == X.Id` -> in sync.
+
+Resolving drift is a deliberate user action: dragging the blueprint (even onto its
+current tree category) re-runs the dual write and re-syncs its `PaletteID` to the
+tree. The flag is paired with this action, not just a passive warning.
+
 Blueprint pool (right pane): blueprints physically present in the module folder
 (loose `.uti`/`.utc`/`.utp`/`.utm` of the selected type). These are the things a
 builder actually files.
@@ -166,11 +207,15 @@ produce a structurally identical tree for every real on-disk palette
 deep-nested fixture for #2280. Aurora tolerates field reordering but not lost
 placements; assert same categories, IDs, blueprint placements, and nesting.
 
-Save safety (extended to a file pair for dual write):
+Save safety (an N-file transaction, not just a pair):
 
-- Stage both writes (`.itp` and each touched blueprint) to temp files, validate
-  each re-reads, then atomically replace the originals. A failed write never
-  destroys the existing files. Both commit or both roll back.
+- A single recategorize touches `.itp` + one blueprint, but a category
+  move or delete-with-reparent can change the effective placement of many
+  blueprints at once. The save transaction is therefore `.itp` + *every touched
+  blueprint*. Stage all writes to temp files, validate each re-reads, then
+  atomically replace the originals. A failed write at any stage aborts the whole
+  commit — all-or-nothing across every file. This N-file path is the
+  highest-corruption-risk operation and gets dedicated rollback tests.
 - Aurora 16-char filename constraints still apply (standard palette names like
   `itempalcus` are already safe).
 
@@ -231,7 +276,8 @@ Out of scope for v1 (YAGNI):
    already exist and are reused.)
 2. Reorg core — `PaletteReorgMutator` + `PaletteEditorViewModel` operations and
    the dual-write transaction, pure unit tests (move/nest/reorder/add/rename/
-   delete, ID-preservation, drift detection, two-file rollback).
+   delete, ID-preservation, ID-retirement, cycle guard, delete-non-empty
+   reparenting, drift vs uncategorized classification, N-file rollback).
 3. UI — `PaletteEditorControl` (tree + pool + drag-drop + Uncategorized bucket +
    drift flagging), Trebuchet panel host, undo/redo wiring.
 4. Manual spot-check list for the drag-drop UX before pre-merge.
