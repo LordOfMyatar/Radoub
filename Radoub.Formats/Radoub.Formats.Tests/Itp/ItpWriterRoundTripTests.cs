@@ -22,6 +22,49 @@ public class ItpWriterRoundTripTests
         AssertTreesEqual(itpOriginal, itpReread!);
     }
 
+    [Fact]
+    public void Write_EmptyResRefBlueprint_Throws()
+    {
+        // ItpReader classifies a node as a blueprint only when RESREF is non-empty.
+        // Writing a blueprint with an empty ResRef would silently round-trip as a branch,
+        // so the writer must reject it at write time. (#2301)
+        var itp = new ItpFile { FileType = "ITP ", FileVersion = "V3.2" };
+        itp.MainNodes.Add(new PaletteBlueprintNode { Name = "Broken", ResRef = "" });
+
+        Assert.Throws<ArgumentException>(() => ItpWriter.Write(itp));
+    }
+
+    [Fact]
+    public void Write_Read_EmptyCategoryRoundTrips()
+    {
+        // A category with no blueprints/children must round-trip as a category (via its ID).
+        var itp = new ItpFile { FileType = "ITP ", FileVersion = "V3.2" };
+        itp.MainNodes.Add(new PaletteCategoryNode { Id = 42 });
+
+        var reread = ItpReader.Read(ItpWriter.Write(itp));
+
+        Assert.NotNull(reread);
+        AssertTreesEqual(itp, reread!);
+    }
+
+    [Fact]
+    public void Write_Stream_MatchesByteOverload()
+    {
+        // The Stream overload must produce the same bytes as the buffer overload,
+        // and those bytes must read back to a structurally identical tree.
+        var itp = BuildSampleItp();
+
+        using var ms = new MemoryStream();
+        ItpWriter.Write(itp, ms);
+        var streamBytes = ms.ToArray();
+
+        Assert.Equal(ItpWriter.Write(itp), streamBytes);
+
+        var reread = ItpReader.Read(streamBytes);
+        Assert.NotNull(reread);
+        AssertTreesEqual(itp, reread!);
+    }
+
     // MAIN -> [ branch (STRREF + NAME) -> (
     //   category id10 (TYPE + DELETE_ME) -> blueprint (STRREF + NAME + RESREF + CR + FACTION),
     //   category id20 -> nested category id21 -> blueprint (NAME + RESREF)   <- #2280 deep case

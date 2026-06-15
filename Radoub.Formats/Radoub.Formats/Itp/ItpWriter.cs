@@ -64,6 +64,13 @@ public static class ItpWriter
         switch (node)
         {
             case PaletteBlueprintNode bp:
+                // The reader classifies a node as a blueprint only when RESREF is non-empty
+                // (ItpReader.ParseNode). An empty ResRef would round-trip back as a branch,
+                // silently losing the node type plus CR/Faction. Fail fast instead.
+                if (string.IsNullOrEmpty(bp.ResRef))
+                    throw new ArgumentException(
+                        "Cannot write a blueprint node with an empty ResRef — it would be read back as a branch.",
+                        nameof(node));
                 AddCExoStringField(s, "RESREF", bp.ResRef);
                 if (bp.ChallengeRating is float cr) AddFloatField(s, "CR", cr);
                 if (!string.IsNullOrEmpty(bp.Faction)) AddCExoStringField(s, "FACTION", bp.Faction!);
@@ -86,6 +93,13 @@ public static class ItpWriter
                 foreach (var child in br.Children) branchList.Elements.Add(BuildNode(child));
                 AddListField(s, "LIST", branchList);
                 break;
+
+            default:
+                // An unhandled PaletteNode subtype would emit only common fields and read
+                // back as a branch — silent loss. Surface it instead of corrupting the file.
+                throw new NotSupportedException(
+                    $"Unsupported PaletteNode subtype '{node.GetType().Name}' — ItpWriter.BuildNode " +
+                    "must be updated to handle it explicitly.");
         }
 
         return s;
