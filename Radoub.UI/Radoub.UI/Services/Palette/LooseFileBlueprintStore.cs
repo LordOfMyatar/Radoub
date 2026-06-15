@@ -53,6 +53,11 @@ public sealed class LooseFileBlueprintStore : IBlueprintPaletteStore
     // Snapshot, not the live Keys view, so callers cannot observe internal dictionary state.
     public IReadOnlyCollection<string> ResRefs => _byResRef.Keys.ToList();
 
+    /// <summary>The on-disk path of a pooled blueprint, or null if not in the pool. Used by the
+    /// editor to check a cross-tool file lock before committing a move.</summary>
+    public string? GetFilePath(string resRef)
+        => _byResRef.TryGetValue(resRef, out var e) ? e.Path : null;
+
     /// <summary>
     /// One <see cref="PaletteFileWrite"/> per blueprint whose staged <c>PaletteID</c> differs from
     /// its original. <c>ProduceBytes</c> applies the staged id via the gateway; <c>Validate</c>

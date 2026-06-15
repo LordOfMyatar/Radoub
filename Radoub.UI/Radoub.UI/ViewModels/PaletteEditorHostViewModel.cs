@@ -33,12 +33,19 @@ public partial class PaletteEditorHostViewModel : ObservableObject
     /// </summary>
     public Func<uint, string?>? StrRefResolver { get; set; }
 
+    // Returns the name of the tool currently holding a cross-tool lock on the given file path, or
+    // null if it is free. Defaults to the shared FileSessionLockService (Relique/QM/Fence acquire
+    // these locks when they open a blueprint); injectable for headless tests.
+    private readonly Func<string, string?> _lockHolder;
+
     public PaletteEditorHostViewModel(
         Func<PaletteResourceType, PaletteContext> loadContext,
-        Func<IReadOnlyList<PaletteFileWrite>, PaletteSaveResult> commit)
+        Func<IReadOnlyList<PaletteFileWrite>, PaletteSaveResult> commit,
+        Func<string, string?>? lockHolder = null)
     {
         _loadContext = loadContext ?? throw new ArgumentNullException(nameof(loadContext));
         _commit = commit ?? throw new ArgumentNullException(nameof(commit));
+        _lockHolder = lockHolder ?? (path => Services.FileSessionLockService.CheckLock(path)?.ToolName);
     }
 
     /// <summary>
@@ -178,10 +185,22 @@ public partial class PaletteEditorHostViewModel : ObservableObject
     }
 
     /// <summary>Place a blueprint into a category by setting its PaletteID (the authoritative write).
-    /// Works the same whether the blueprint was uncategorized or under another category.</summary>
+    /// Works the same whether the blueprint was uncategorized or under another category. Refused
+    /// (with a SaveFailed warning) if the blueprint is currently open in another tool — moving it
+    /// would write the file underneath that tool and lose its edits on the next save.</summary>
     public bool MoveBlueprintToCategory(string resRef, PaletteCategoryNode to)
     {
         if (ActiveContext is null) return false;
+
+        // Cross-tool guard: the move rewrites the whole blueprint file (read-disk -> set PaletteID
+        // -> write). If another running tool (Relique/QM/Fence) holds the file open, abort and warn
+        // rather than clobber its in-flight edits.
+        if (ActiveContext.Store.GetFilePath(resRef) is { } path && _lockHolder(path) is { } holder)
+        {
+            SaveFailed?.Invoke($"'{resRef}' is open in {holder}. Close it there, then try again.");
+            return false;
+        }
+
         if (!AfterReorg(ActiveContext.ViewModel.SetBlueprintCategory(resRef, to))) return false;
         RevealCategory(to); // focus follows the drop: expand + select the destination
         return true;

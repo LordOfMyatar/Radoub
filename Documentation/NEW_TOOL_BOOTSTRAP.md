@@ -115,6 +115,35 @@ Rules:
 
 Reference: Relique item delete (#2347), `ModulePackService` (#2246), `ResRefRenameOrchestrator`.
 
+### File Session Locking (cross-tool, FileSessionLockService)
+
+The Radoub tools do **not** talk to each other (no IPC; only command-line args). To stop two tools
+from clobbering each other's edits to the same file, use the shared
+`Radoub.UI.Services.FileSessionLockService`. It writes a JSON sidecar lock (`{file}.radoub.lock`)
+recording the holder's PID + tool name, is cross-process/cross-tool by convention, and auto-cleans
+stale locks (dead PID, or PID reused by a different process name).
+
+Rules for a per-file editor (Relique/QM/Fence/Reliquary pattern):
+- On opening a file: `AcquireLock(path, "ToolName")`. If it returns `LockResult.LockedByOther`,
+  read `CheckLock(path)` to tell the user who holds it and refuse (or open read-only).
+- On closing a file or switching away: `ReleaseLock(oldPath)`.
+- On app exit: `ReleaseAllLocks()` (wire into the window-closing / lifecycle path).
+
+For a tool that **writes files it does not "open"** (e.g. the ITP palette editor rewrites whole
+blueprint files to change their `PaletteID`): do **not** acquire locks on every file you touch —
+instead **`CheckLock(path)` immediately before each write** and refuse + warn if another running
+tool holds it (`CheckLock(...)?.ToolName`). This catches the save-after-save clobber without
+holding locks the editor doesn't need. See `PaletteEditorHostViewModel.MoveBlueprintToCategory`
+(#2477).
+
+Caveat the lock does **not** cover: a tool that opens a file *read-only* without acquiring the lock
+leaves no sidecar, so a concurrent write won't be detected. The lock guards the common
+"editing in two tools" case, not every race. A blueprint write is read-disk → modify → write-whole-
+file, so it reflects the latest **saved** state but is blind to another tool's **unsaved** edits.
+
+Surface a blocked action with a theme-based warning (`{DynamicResource ThemeWarning}` /
+`BrushManager.GetWarningBrush()`), never a hardcoded color.
+
 ### Spell-Check Integration (Radoub.Dictionary)
 
 For tools with game-facing text (dialog, journal entries, descriptions), use `Radoub.Dictionary`:

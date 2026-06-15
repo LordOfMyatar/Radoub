@@ -30,11 +30,13 @@ public class PaletteEditorHostViewModelTests
 
     private static PaletteEditorHostViewModel MakeHost(
         Func<IReadOnlyList<PaletteFileWrite>, PaletteSaveResult>? commit = null,
-        Action<PaletteResourceType>? onLoad = null)
+        Action<PaletteResourceType>? onLoad = null,
+        Func<string, string?>? lockHolder = null)
     {
         return new PaletteEditorHostViewModel(
             loadContext: t => { onLoad?.Invoke(t); return MakeContext(t); },
-            commit: commit ?? (_ => new PaletteSaveResult(true, null)));
+            commit: commit ?? (_ => new PaletteSaveResult(true, null)),
+            lockHolder: lockHolder ?? (_ => null)); // no lock by default
     }
 
     private static PaletteCategoryNode Cat(PaletteEditorHostViewModel host, byte id)
@@ -89,6 +91,24 @@ public class PaletteEditorHostViewModelTests
         Assert.False(ok);
         Assert.Equal(2, loads);                 // reloaded from disk to re-sync after failure
         Assert.Contains("disk locked", reported);
+    }
+
+    [Fact]
+    public async Task MoveBlueprint_refused_when_open_in_another_tool()
+    {
+        int commits = 0;
+        string? reported = null;
+        var host = MakeHost(
+            commit: _ => { commits++; return new PaletteSaveResult(true, null); },
+            lockHolder: path => path.EndsWith("bp.uti") ? "Relique" : null);
+        host.SaveFailed += m => reported = m;
+        await host.SwitchResourceTypeAsync(PaletteResourceType.Item);
+
+        bool ok = host.MoveBlueprintToCategory("bp", Cat(host, 1));
+        Assert.False(ok);
+        Assert.Equal(0, commits);                      // nothing written
+        Assert.Contains("Relique", reported);          // names the holding tool
+        Assert.Equal((byte)0, host.ActiveContext!.Store.GetPaletteId("bp")); // PaletteID unchanged
     }
 
     [Fact]
