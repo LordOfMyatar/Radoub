@@ -27,6 +27,7 @@ public class PaletteReorgMutatorTests
             return true;
         }
         public bool Contains(string resRef) => _ids.ContainsKey(resRef);
+        public IReadOnlyCollection<string> ResRefs => _ids.Keys;
     }
 
     private static PaletteBlueprintNode Bp(string resRef) => new() { ResRef = resRef };

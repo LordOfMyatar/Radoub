@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Radoub.UI.Services.Palette;
 
 /// <summary>
@@ -33,4 +35,10 @@ public interface IBlueprintPaletteStore
     /// True if the pool contains a blueprint with this ResRef.
     /// </summary>
     bool Contains(string resRef);
+
+    /// <summary>
+    /// Every blueprint ResRef physically present in the pool (the loose module files of the
+    /// selected type). The editor's right pane and the Uncategorized projection are built from this.
+    /// </summary>
+    IReadOnlyCollection<string> ResRefs { get; }
 }
