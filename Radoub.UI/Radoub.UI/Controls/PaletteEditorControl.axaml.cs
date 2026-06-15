@@ -150,11 +150,9 @@ public partial class PaletteEditorControl : UserControl
         if (source.Kind == PaletteNodeKind.Blueprint)
         {
             if (destCategory is null) return; // can't file onto the Uncategorized bucket
-            string resRef = source.Name;
-            // The drag's `from` is the blueprint's current TREE home (null when uncategorized) —
-            // never its PaletteID-derived category.
-            var from = _host.ActiveContext?.ViewModel.Classify(resRef).Home;
-            _host.MoveOrFileBlueprint(resRef, from, destCategory);
+            // Placement is by PaletteID: set the blueprint's category directly (works whether it
+            // was uncategorized or under another category).
+            _host.MoveBlueprintToCategory(source.Name, destCategory);
         }
         else if (source.Kind is PaletteNodeKind.Category && source.Model is PaletteCategoryNode cat)
         {
@@ -166,19 +164,16 @@ public partial class PaletteEditorControl : UserControl
         RefreshChrome();
     }
 
-    // The category a drop lands in: a category target itself, or a blueprint leaf's parent category.
+    // The category a drop lands in: a category target itself, or a blueprint leaf's owning category
+    // (resolved by the leaf's PaletteID, since leaves no longer carry a backing model node).
     private PaletteCategoryNode? ResolveDropCategory(PaletteNodeViewModel target)
     {
         if (target.Kind == PaletteNodeKind.Category && target.Model is PaletteCategoryNode c)
             return c;
-        if (target.Kind == PaletteNodeKind.Blueprint && target.Model is PaletteBlueprintNode bp)
-            return FindOwningCategory(bp);
+        if (target.Kind == PaletteNodeKind.Blueprint)
+            return _host?.ActiveContext?.ViewModel.Classify(target.Name).Home;
         return null; // Uncategorized bucket or a branch
     }
-
-    private PaletteCategoryNode? FindOwningCategory(PaletteBlueprintNode bp)
-        => _host?.ActiveContext?.Palette.GetCategories()
-            .FirstOrDefault(c => c.Blueprints.Contains(bp));
 
     // ---- helpers ------------------------------------------------------------
 

@@ -46,6 +46,12 @@ public sealed class PaletteContext
     /// </summary>
     public IReadOnlyList<PaletteFileWrite> BuildWriteSet()
     {
+        // Reconcile the tree to the authoritative PaletteIDs before writing: a blueprint's own
+        // PaletteID determines its category, so each category's Blueprints list is rebuilt from the pool.
+        // This is what makes "PaletteID wins" durable — the written .itp matches the files, and
+        // edits made in other tools (which set only the PaletteID) are absorbed on save.
+        ReconcileTreeToPaletteIds();
+
         var writes = new List<PaletteFileWrite>
         {
             new PaletteFileWrite(
@@ -55,6 +61,42 @@ public sealed class PaletteContext
         };
         writes.AddRange(Store.BuildBlueprintWrites());
         return writes;
+    }
+
+    /// <summary>
+    /// Rebuild every category's <c>Blueprints</c> list from the pool so the tree matches each
+    /// blueprint's authoritative <c>PaletteID</c>. Existing blueprint nodes are reused (preserving
+    /// CR/Faction metadata) where the PaletteID still points at the same category; blueprints whose
+    /// PaletteID names no live category are dropped from the tree (they are Uncategorized — never
+    /// written as a real placement).
+    /// </summary>
+    private void ReconcileTreeToPaletteIds()
+    {
+        // Index existing blueprint nodes by ResRef so metadata survives a move.
+        var existing = new Dictionary<string, PaletteBlueprintNode>(StringComparer.OrdinalIgnoreCase);
+        foreach (var cat in Palette.GetCategories())
+            foreach (var bp in cat.Blueprints)
+                existing[bp.ResRef] = bp;
+
+        // Group pool ResRefs by the category their PaletteID points at.
+        var byCategoryId = new Dictionary<byte, List<string>>();
+        foreach (var resRef in Store.ResRefs)
+        {
+            if (Store.GetPaletteId(resRef) is not byte id) continue;
+            (byCategoryId.TryGetValue(id, out var list) ? list : byCategoryId[id] = new()).Add(resRef);
+        }
+
+        foreach (var cat in Palette.GetCategories())
+        {
+            cat.Blueprints.Clear();
+            if (!byCategoryId.TryGetValue(cat.Id, out var refs)) continue;
+            foreach (var resRef in refs)
+            {
+                cat.Blueprints.Add(existing.TryGetValue(resRef, out var node)
+                    ? node
+                    : new PaletteBlueprintNode { ResRef = resRef });
+            }
+        }
     }
 
     // Round-trip guard: the re-read tree must match the in-memory tree's categories, ids, nesting,

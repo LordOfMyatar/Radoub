@@ -177,15 +177,12 @@ public partial class PaletteEditorHostViewModel : ObservableObject
     // needs a dedicated inverse command; wiring a no-op undo here would be worse than none.
     // TODO (#2484): add inverse undo commands for move/file/add/rename/move-category.
 
-    /// <summary>Recategorize a listed blueprint, or file an uncategorized one, into a category.
-    /// <paramref name="from"/> is the blueprint's current tree home (null when it is uncategorized).</summary>
-    public bool MoveOrFileBlueprint(string resRef, PaletteCategoryNode? from, PaletteCategoryNode to)
+    /// <summary>Place a blueprint into a category by setting its PaletteID (the authoritative write).
+    /// Works the same whether the blueprint was uncategorized or under another category.</summary>
+    public bool MoveBlueprintToCategory(string resRef, PaletteCategoryNode to)
     {
         if (ActiveContext is null) return false;
-        var vm = ActiveContext.ViewModel;
-        // No source => uncategorized: file (add-only). Otherwise move (drop-onto-own-home re-syncs drift).
-        bool ok = from is null ? vm.FileBlueprint(resRef, to) : vm.MoveBlueprint(resRef, from, to);
-        if (!AfterReorg(ok)) return false;
+        if (!AfterReorg(ActiveContext.ViewModel.SetBlueprintCategory(resRef, to))) return false;
         RevealCategory(to); // focus follows the drop: expand + select the destination
         return true;
     }

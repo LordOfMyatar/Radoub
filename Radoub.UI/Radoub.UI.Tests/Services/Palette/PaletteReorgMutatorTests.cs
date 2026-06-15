@@ -252,37 +252,51 @@ public class PaletteReorgMutatorTests
         Assert.False(PaletteReorgMutator.ReorderWithin(itp, null, 0, 9));   // bad new
     }
 
-    // ---- Classify: drift vs uncategorized ------------------------------------
+    // ---- Classify: placement by PaletteID (the file's PaletteID is authoritative) ------------
 
     [Fact]
-    public void Classify_ResRefNowhereInTree_IsUncategorizedEvenWithValidPaletteId()
+    public void Classify_PaletteIdMatchesACategory_PlacesThereRegardlessOfTreeListing()
     {
-        var itp = TwoCategoryTree();                       // sword listed under cat 1
-        // pool has a blueprint with a valid-looking PaletteID, but it is not in the tree
-        var store = new FakeBlueprintStore(("orphan", 1));
-
-        Assert.Equal(PalettePlacementKind.Uncategorized,
-            PaletteReorgMutator.Classify(itp, store, "orphan").Kind);
-    }
-
-    [Fact]
-    public void Classify_ListedButPaletteIdDisagrees_IsDrifted()
-    {
-        var itp = TwoCategoryTree();                       // sword listed under cat 1
-        var store = new FakeBlueprintStore(("wpn_sword", 99)); // PaletteID says 99
+        // sword is listed under cat 1 in the tree, but its PaletteID says 2 -> placed under 2.
+        var itp = TwoCategoryTree();                       // Weapons(1){sword}, Armor(2)
+        var store = new FakeBlueprintStore(("wpn_sword", 2));
 
         var p = PaletteReorgMutator.Classify(itp, store, "wpn_sword");
-        Assert.Equal(PalettePlacementKind.Drifted, p.Kind);
-        Assert.Equal((byte)1, p.Home!.Id);                // displayed per tree (tree wins)
+        Assert.Equal(PalettePlacementKind.InSync, p.Kind);
+        Assert.Equal((byte)2, p.Home!.Id);                // PaletteID wins for placement
     }
 
     [Fact]
-    public void Classify_ListedAndPaletteIdAgrees_IsInSync()
+    public void Classify_PaletteIdMatchesListedCategory_PlacesThere()
     {
         var itp = TwoCategoryTree();
         var store = new FakeBlueprintStore(("wpn_sword", 1));
 
-        Assert.Equal(PalettePlacementKind.InSync,
+        var p = PaletteReorgMutator.Classify(itp, store, "wpn_sword");
+        Assert.Equal(PalettePlacementKind.InSync, p.Kind);
+        Assert.Equal((byte)1, p.Home!.Id);
+    }
+
+    [Fact]
+    public void Classify_PaletteIdMatchesNoCategory_IsUncategorized()
+    {
+        // PaletteID 99 points at no live category -> uncategorized, even though sword is
+        // (stale-ly) listed under cat 1 in the tree.
+        var itp = TwoCategoryTree();
+        var store = new FakeBlueprintStore(("wpn_sword", 99));
+
+        Assert.Equal(PalettePlacementKind.Uncategorized,
             PaletteReorgMutator.Classify(itp, store, "wpn_sword").Kind);
+    }
+
+    [Fact]
+    public void Classify_PaletteIdZero_IsUncategorized()
+    {
+        // Convention: a category Id of 0 is not a real placement; treat PaletteID 0 as unfiled.
+        var itp = TwoCategoryTree();
+        var store = new FakeBlueprintStore(("loose", 0));
+
+        Assert.Equal(PalettePlacementKind.Uncategorized,
+            PaletteReorgMutator.Classify(itp, store, "loose").Kind);
     }
 }

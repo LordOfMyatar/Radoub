@@ -17,26 +17,28 @@ public class PaletteNodeViewModelTests
 
     // Build a VM with a tree: Weapons(1) { acid_dagger(in-sync), rusty(drifted) }, plus an
     // uncategorized blueprint not listed anywhere.
+    // Tree = category structure only (Weapons id 1, Armor id 2). Placement comes from each
+    // blueprint's PaletteID, not the tree's Blueprints lists.
     private static PaletteEditorViewModel BuildVm()
     {
         var itp = new ItpFile();
-        var weapons = new PaletteCategoryNode { Id = 1, Name = "Weapons" };
-        weapons.Blueprints.Add(new PaletteBlueprintNode { ResRef = "acid_dagger" });
-        weapons.Blueprints.Add(new PaletteBlueprintNode { ResRef = "rusty" });
-        itp.MainNodes.Add(weapons);
+        itp.MainNodes.Add(new PaletteCategoryNode { Id = 1, Name = "Weapons" });
+        itp.MainNodes.Add(new PaletteCategoryNode { Id = 2, Name = "Armor" });
 
         var store = new LooseFileBlueprintStore(new FakeGateway(), new[]
         {
-            ("acid_dagger", "p/acid_dagger.uti"), // PaletteID 0 from fake -> set to 1 (in sync)
-            ("rusty", "p/rusty.uti"),             // leave at 0 -> drifted (tree says cat 1)
-            ("loose", "p/loose.uti"),             // not in tree -> uncategorized
+            ("acid_dagger", "p/acid_dagger.uti"),
+            ("rusty", "p/rusty.uti"),
+            ("loose", "p/loose.uti"),
         });
-        store.SetPaletteId("acid_dagger", 1);
+        store.SetPaletteId("acid_dagger", 1); // -> Weapons
+        store.SetPaletteId("rusty", 1);        // -> Weapons
+        // "loose" stays at PaletteID 0 (no category 0) -> Uncategorized
         return new PaletteEditorViewModel(itp, store);
     }
 
     [Fact]
-    public void BuildForest_includes_categories_with_blueprint_leaves_inline()
+    public void BuildForest_places_blueprint_leaves_under_their_PaletteId_category()
     {
         var vm = BuildVm();
         var forest = PaletteNodeViewModel.BuildForest(vm);
@@ -44,6 +46,10 @@ public class PaletteNodeViewModelTests
         var weapons = forest.Single(n => n.Kind == PaletteNodeKind.Category && n.Name == "Weapons");
         Assert.Equal(2, weapons.Children.Count(c => c.Kind == PaletteNodeKind.Blueprint));
         Assert.Contains(weapons.Children, c => c.Name == "acid_dagger");
+        Assert.Contains(weapons.Children, c => c.Name == "rusty");
+
+        var armor = forest.Single(n => n.Name == "Armor");
+        Assert.Empty(armor.Children); // nothing points at id 2
     }
 
     [Fact]
@@ -53,22 +59,29 @@ public class PaletteNodeViewModelTests
         var forest = PaletteNodeViewModel.BuildForest(vm);
 
         var unc = forest.Single(n => n.Kind == PaletteNodeKind.Uncategorized);
-        Assert.Contains(unc.Children, c => c.Name == "loose");
+        Assert.Contains(unc.Children, c => c.Name == "loose"); // PaletteID 0 -> no category
         // virtual node has no backing model node
         Assert.Null(unc.Model);
     }
 
     [Fact]
-    public void Drifted_blueprint_leaf_is_flagged()
+    public void BuildForest_reflects_PaletteId_change_not_stale_tree_listing()
     {
-        var vm = BuildVm();
-        var forest = PaletteNodeViewModel.BuildForest(vm);
-        var weapons = forest.Single(n => n.Name == "Weapons");
+        // Stale tree lists sword under Weapons(1), but its PaletteID says Armor(2): it must appear
+        // under Armor (the file's PaletteID wins).
+        var itp = new ItpFile();
+        var weapons = new PaletteCategoryNode { Id = 1, Name = "Weapons" };
+        weapons.Blueprints.Add(new PaletteBlueprintNode { ResRef = "sword" }); // stale listing
+        itp.MainNodes.Add(weapons);
+        itp.MainNodes.Add(new PaletteCategoryNode { Id = 2, Name = "Armor" });
 
-        var rusty = weapons.Children.Single(c => c.Name == "rusty");
-        var acid = weapons.Children.Single(c => c.Name == "acid_dagger");
-        Assert.True(rusty.IsDrifted);   // PaletteID 0 != tree cat 1
-        Assert.False(acid.IsDrifted);   // PaletteID 1 == tree cat 1
+        var store = new LooseFileBlueprintStore(new FakeGateway(), new[] { ("sword", "p/sword.uti") });
+        store.SetPaletteId("sword", 2); // file says Armor
+
+        var forest = PaletteNodeViewModel.BuildForest(new PaletteEditorViewModel(itp, store));
+
+        Assert.Empty(forest.Single(n => n.Name == "Weapons").Children);
+        Assert.Contains(forest.Single(n => n.Name == "Armor").Children, c => c.Name == "sword");
     }
 
     [Fact]

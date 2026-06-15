@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Radoub.Formats.Itp;
 using Radoub.UI.Services.Palette;
@@ -27,7 +29,6 @@ public partial class PaletteNodeViewModel : ObservableObject
     public ObservableCollection<PaletteNodeViewModel> Children { get; } = new();
 
     [ObservableProperty] private string _name = string.Empty;
-    [ObservableProperty] private bool _isDrifted;
     [ObservableProperty] private bool _isExpanded;
     [ObservableProperty] private bool _isSelected;
 
@@ -51,42 +52,51 @@ public partial class PaletteNodeViewModel : ObservableObject
     public static ObservableCollection<PaletteNodeViewModel> BuildForest(
         PaletteEditorViewModel vm, Func<uint, string?>? strRefResolver = null)
     {
+        // Placement is by the blueprint's own PaletteID (authoritative), not the tree's stale
+        // Blueprints lists: group every pool blueprint under the category it currently points at.
+        var byCategoryId = new Dictionary<byte, List<string>>();
+        var uncategorizedRefs = new List<string>();
+        foreach (var resRef in vm.Pool.ResRefs)
+        {
+            var placement = vm.Classify(resRef);
+            if (placement.Home is { } home)
+                (byCategoryId.TryGetValue(home.Id, out var list) ? list : byCategoryId[home.Id] = new()).Add(resRef);
+            else
+                uncategorizedRefs.Add(resRef);
+        }
+
         var forest = new ObservableCollection<PaletteNodeViewModel>();
         foreach (var node in vm.Palette.MainNodes)
-            forest.Add(BuildNode(node, vm, strRefResolver));
+            forest.Add(BuildNode(node, byCategoryId, strRefResolver));
 
         var uncategorized = new PaletteNodeViewModel(PaletteNodeKind.Uncategorized, null, "Uncategorized");
-        foreach (var resRef in vm.GetUncategorized())
+        foreach (var resRef in uncategorizedRefs.OrderBy(r => r, StringComparer.OrdinalIgnoreCase))
             uncategorized.Children.Add(new PaletteNodeViewModel(PaletteNodeKind.Blueprint, null, resRef));
         forest.Add(uncategorized);
         return forest;
     }
 
     private static PaletteNodeViewModel BuildNode(
-        PaletteNode node, PaletteEditorViewModel vm, Func<uint, string?>? strRefResolver)
+        PaletteNode node, Dictionary<byte, List<string>> byCategoryId, Func<uint, string?>? strRefResolver)
     {
         switch (node)
         {
             case PaletteCategoryNode cat:
             {
                 var vmNode = new PaletteNodeViewModel(PaletteNodeKind.Category, cat, DisplayName(cat, strRefResolver));
-                foreach (var bp in cat.Blueprints)
-                {
-                    var leaf = new PaletteNodeViewModel(PaletteNodeKind.Blueprint, bp, bp.ResRef)
-                    {
-                        IsDrifted = vm.Classify(bp.ResRef).Kind == PalettePlacementKind.Drifted,
-                    };
-                    vmNode.Children.Add(leaf);
-                }
+                // Blueprint leaves come from the pool grouped by PaletteID, not cat.Blueprints.
+                if (byCategoryId.TryGetValue(cat.Id, out var refs))
+                    foreach (var resRef in refs.OrderBy(r => r, StringComparer.OrdinalIgnoreCase))
+                        vmNode.Children.Add(new PaletteNodeViewModel(PaletteNodeKind.Blueprint, null, resRef));
                 foreach (var child in cat.Children)
-                    vmNode.Children.Add(BuildNode(child, vm, strRefResolver));
+                    vmNode.Children.Add(BuildNode(child, byCategoryId, strRefResolver));
                 return vmNode;
             }
             case PaletteBranchNode br:
             {
                 var vmNode = new PaletteNodeViewModel(PaletteNodeKind.Branch, br, DisplayName(br, strRefResolver));
                 foreach (var child in br.Children)
-                    vmNode.Children.Add(BuildNode(child, vm, strRefResolver));
+                    vmNode.Children.Add(BuildNode(child, byCategoryId, strRefResolver));
                 return vmNode;
             }
             default:

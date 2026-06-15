@@ -118,13 +118,16 @@ public class PaletteEditorViewModelTests
     }
 
     [Fact]
-    public void DriftedBlueprint_IsClassifiedDrifted()
+    public void Classify_PlacesByPaletteId_IgnoringStaleTreeListing()
     {
+        // sword is (stale-ly) listed under cat 1 in the tree, but its own PaletteID is 99 — which
+        // names no live category — so it classifies Uncategorized. The file's PaletteID is
+        // authoritative for placement; the tree listing is ignored.
         var itp = new ItpFile();
         itp.MainNodes.Add(Cat(1, "Weapons", Bp("wpn_sword")));
-        var store = new FakeStore(("wpn_sword", 99)); // PaletteID disagrees with tree
+        var store = new FakeStore(("wpn_sword", 99));
         var vm = new PaletteEditorViewModel(itp, store);
 
-        Assert.Equal(PalettePlacementKind.Drifted, vm.Classify("wpn_sword").Kind);
+        Assert.Equal(PalettePlacementKind.Uncategorized, vm.Classify("wpn_sword").Kind);
     }
 }

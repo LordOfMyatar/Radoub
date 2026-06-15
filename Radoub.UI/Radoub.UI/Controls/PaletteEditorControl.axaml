@@ -31,7 +31,7 @@
             <TextBlock TextWrapping="Wrap"
                        FontSize="{DynamicResource FontSizeSmall}"
                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                       Text="Drag a blueprint onto a category to file or move it (including out of ⚠ Uncategorized). Drag a category onto another to nest it. ⚠ drifted marks a blueprint whose own PaletteID disagrees with the palette tree — drag it onto its category to re-sync. Save writes the palette and the changed blueprint files."/>
+                       Text="Drag a blueprint onto a category to file or move it (including out of Uncategorized). Drag a category onto another to nest it. Blueprints appear under the category their own PaletteID points to — edits made in other tools (e.g. Quartermaster) show here after Reload. Save writes the palette and the changed blueprint files."/>
         </Border>
 
         <!-- Single tree: categories with blueprint leaves inline + virtual Uncategorized -->
@@ -48,14 +48,7 @@
             </TreeView.ItemContainerTheme>
             <TreeView.ItemTemplate>
                 <TreeDataTemplate ItemsSource="{Binding Children}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <TextBlock Text="{Binding Name}"/>
-                        <TextBlock Text="⚠ drifted"
-                                   IsVisible="{Binding IsDrifted}"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                   FontSize="{DynamicResource FontSizeSmall}"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
+                    <TextBlock Text="{Binding Name}"/>
                 </TreeDataTemplate>
             </TreeView.ItemTemplate>
         </TreeView>

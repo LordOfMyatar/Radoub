@@ -104,6 +104,29 @@ public partial class PaletteEditorViewModel : ObservableObject
         });
     }
 
+    /// <summary>
+    /// Set a blueprint's category by staging its <c>PaletteID</c> to <paramref name="to"/>'s Id —
+    /// the single authoritative write for placement. The <c>.itp</c> tree entry is reconciled from
+    /// PaletteIDs at save (<see cref="Services.Palette.PaletteContext"/>), so this op does not touch
+    /// the tree directly; display re-derives placement from the new PaletteID on refresh. No-op
+    /// (false) if the blueprint is not in the pool or already points at <paramref name="to"/>.
+    /// Rolls back the staged id if the refresh throws.
+    /// </summary>
+    public bool SetBlueprintCategory(string resRef, PaletteCategoryNode to)
+    {
+        if (to == null) throw new ArgumentNullException(nameof(to));
+        if (string.IsNullOrEmpty(resRef) || !_store.Contains(resRef)) return false;
+
+        byte? originalId = _store.GetPaletteId(resRef);
+        if (originalId == to.Id) return false; // already there
+        if (!_store.SetPaletteId(resRef, to.Id)) return false;
+
+        return CommitOrRollback(() =>
+        {
+            if (originalId is byte id) _store.SetPaletteId(resRef, id);
+        });
+    }
+
     /// <summary>Move/nest a category. See <see cref="PaletteReorgMutator.MoveCategory"/>.</summary>
     public bool MoveCategory(PaletteCategoryNode cat, PaletteNode? newParent, int index)
     {

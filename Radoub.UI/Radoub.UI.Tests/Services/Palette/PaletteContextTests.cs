@@ -37,6 +37,48 @@ public class PaletteContextTests
     }
 
     [Fact]
+    public void BuildWriteSet_reconciles_tree_to_palette_ids()
+    {
+        // sword's tree listing is stale (under Weapons 1) but its PaletteID says Armor 2.
+        // BuildWriteSet must reconcile the in-memory tree so the .itp it writes lists sword under
+        // Armor and not under Weapons.
+        var itp = new ItpFile();
+        var weapons = new PaletteCategoryNode { Id = 1, Name = "Weapons" };
+        weapons.Blueprints.Add(new PaletteBlueprintNode { ResRef = "sword" });
+        itp.MainNodes.Add(weapons);
+        var armor = new PaletteCategoryNode { Id = 2, Name = "Armor" };
+        itp.MainNodes.Add(armor);
+
+        var store = new LooseFileBlueprintStore(new FakeGateway(), new[] { ("sword", "p/sword.uti") });
+        store.SetPaletteId("sword", 2); // file says Armor
+
+        var ctx = new PaletteContext(PaletteResourceType.Item, itp, store, "p/itempalcus.itp");
+        ctx.BuildWriteSet(); // triggers reconciliation
+
+        Assert.DoesNotContain(weapons.Blueprints, b => b.ResRef == "sword");
+        Assert.Contains(armor.Blueprints, b => b.ResRef == "sword");
+    }
+
+    [Fact]
+    public void BuildWriteSet_drops_tree_entry_when_palette_id_names_no_category()
+    {
+        // sword listed under Weapons(1) but PaletteID 99 names no live category -> reconcile drops
+        // it from the tree entirely (it is Uncategorized; never written as a real placement).
+        var itp = new ItpFile();
+        var weapons = new PaletteCategoryNode { Id = 1, Name = "Weapons" };
+        weapons.Blueprints.Add(new PaletteBlueprintNode { ResRef = "sword" });
+        itp.MainNodes.Add(weapons);
+
+        var store = new LooseFileBlueprintStore(new FakeGateway(), new[] { ("sword", "p/sword.uti") });
+        store.SetPaletteId("sword", 99);
+
+        var ctx = new PaletteContext(PaletteResourceType.Item, itp, store, "p/itempalcus.itp");
+        ctx.BuildWriteSet();
+
+        Assert.Empty(weapons.Blueprints);
+    }
+
+    [Fact]
     public void Context_exposes_viewmodel_and_undo_manager()
     {
         var itp = new ItpFile();
