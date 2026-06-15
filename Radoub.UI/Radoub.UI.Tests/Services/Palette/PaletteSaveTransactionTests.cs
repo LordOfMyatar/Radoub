@@ -110,20 +110,20 @@ public sealed class PaletteSaveTransactionTests : IDisposable
     [Fact]
     public void Commit_FailureDuringReplaceStage_RestoresAlreadyReplacedOriginals()
     {
-        // Two pre-existing originals. The second's destination is made un-replaceable by holding
-        // an open handle, forcing File.Delete/Move to throw in stage 2 *after* the first original
-        // has already been replaced — exercising the per-file backup restore path.
+        // First a normal pre-existing original. The second "destination" is a DIRECTORY, not a file:
+        // File.Delete on a directory path throws on both Windows and Linux, forcing the replace to
+        // fail in stage 2 *after* the first original has already been replaced — portably exercising
+        // the per-file backup restore path. (A held file handle is NOT portable: POSIX unlink lets
+        // Delete/Move succeed despite an open reader, so it never triggers the failure on Linux.)
         var firstPath = Path_("itempalcus.itp");
-        var lockedPath = Path_("locked.uti");
+        var dirAsTarget = Path_("blocked.uti");
         File.WriteAllBytes(firstPath, new byte[] { 9, 9 });
-        File.WriteAllBytes(lockedPath, new byte[] { 8, 8 });
-
-        using var hold = new FileStream(lockedPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        Directory.CreateDirectory(dirAsTarget); // replacing this will throw in stage 2
 
         var writes = new[]
         {
             Write(firstPath, new byte[] { 1, 2, 3 }),
-            Write(lockedPath, new byte[] { 4, 5, 6 }),
+            Write(dirAsTarget, new byte[] { 4, 5, 6 }),
         };
 
         var result = PaletteSaveTransaction.Commit(writes);
