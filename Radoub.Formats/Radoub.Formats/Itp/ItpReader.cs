@@ -154,7 +154,8 @@ public static class ItpReader
 
         ParseCommonFields(nodeStruct, node);
 
-        // Parse child blueprints if present
+        // Parse child blueprints and nested categories/branches if present.
+        // Blueprints go to Blueprints; nested categories/branches go to Children (#2280).
         if (listField?.Value is GffList list)
         {
             foreach (var childStruct in list.Elements)
@@ -163,6 +164,10 @@ public static class ItpReader
                 if (childNode is PaletteBlueprintNode blueprint)
                 {
                     node.Blueprints.Add(blueprint);
+                }
+                else if (childNode != null)
+                {
+                    node.Children.Add(childNode);
                 }
             }
         }
