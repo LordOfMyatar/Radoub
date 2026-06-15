@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI] - 2026-06-14
+**Branch**: `trebuchet/issue-2477` | **PR**: #TBD
+
+### Feature: ITP palette editor — Milestone 3: UI + Trebuchet host (#2477, closes #2301)
+
+- `PaletteEditorControl` shared in `Radoub.UI`: one-window palette editing (resource-type selector, category tree, module blueprint pool) with drag-drop reorganization, virtual Uncategorized bucket, drift flagging + re-sync, and undo/redo wiring (#2231); hosted as a Trebuchet panel.
+
+---
+
 ## [Radoub.UI] - 2026-06-15
 **Branch**: `radoub/issue-2476` | **PR**: #2478
 
