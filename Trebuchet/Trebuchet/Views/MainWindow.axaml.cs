@@ -70,6 +70,10 @@ public partial class MainWindow : Window
             marlinspikePanel.Initialize(marlinspikeVm, _viewModel, this);
         }
 
+        // Initialize the ITP palette editor panel (#2477)
+        var palettePanel = this.FindControl<Controls.PaletteEditorPanel>("PaletteEditorPanel");
+        palettePanel?.Initialize(this);
+
         // Restore window position from settings
         RestoreWindowState();
 
@@ -240,6 +244,10 @@ public partial class MainWindow : Window
             // Clear Marlinspike results when module changes
             var marlinspikePanel = this.FindControl<Controls.MarlinspikePanel>("MarlinspikePanel");
             marlinspikePanel?.OnModuleChanged();
+
+            // Reload the palette editor against the new module (#2477)
+            var palettePanel = this.FindControl<Controls.PaletteEditorPanel>("PaletteEditorPanel");
+            palettePanel?.OnModuleChanged();
         }
 
         if (e.PropertyName == nameof(MainWindowViewModel.HasModule))
@@ -317,6 +325,7 @@ public partial class MainWindow : Window
                 Key.D2 => 1, // Factions
                 Key.D3 => 2, // Build & Test
                 Key.D4 => 3, // Marlinspike
+                Key.D5 => 4, // Palette
                 _ => null
             };
 

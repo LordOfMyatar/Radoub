@@ -1,0 +1,14 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:rui="using:Radoub.UI.Controls"
+             x:Class="RadoubLauncher.Controls.PaletteEditorPanel">
+    <Grid>
+        <!-- Empty state when no module is loaded -->
+        <TextBlock x:Name="NoModuleText"
+                   Text="Open a module to edit its palettes."
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+        <!-- The shared palette editor control -->
+        <rui:PaletteEditorControl x:Name="Editor" IsVisible="False"/>
+    </Grid>
+</UserControl>
