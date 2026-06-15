@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Radoub.UI] - 2026-06-15
-**Branch**: `radoub/issue-2476` | **PR**: #TBD
+**Branch**: `radoub/issue-2476` | **PR**: #2478
 
 ### Feature: ITP palette editor — Milestone 2: reorg core (dual-write) (#2476)
 
