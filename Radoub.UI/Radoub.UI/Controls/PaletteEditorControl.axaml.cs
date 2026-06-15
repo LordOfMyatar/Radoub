@@ -1,0 +1,197 @@
+using System;
+using System.Linq;
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Radoub.Formats.Itp;
+using Radoub.UI.Services.Palette;
+using Radoub.UI.ViewModels;
+using Radoub.UI.Views;
+
+namespace Radoub.UI.Controls;
+
+/// <summary>
+/// The shared ITP palette editor view (#2477, M3): a resource-type selector, a single tree of
+/// categories with blueprint leaves inline (plus the virtual Uncategorized bucket), category
+/// add/rename/delete, drag-drop reorganization, and save. The control is host-agnostic — Trebuchet
+/// (or a future per-tool host) supplies the <see cref="PaletteEditorHostViewModel"/> via
+/// <see cref="Bind"/>.
+/// </summary>
+public partial class PaletteEditorControl : UserControl
+{
+    private PaletteEditorHostViewModel? _host;
+    private Window? _ownerWindow;
+
+    // Drag state: the node being dragged (blueprint leaf or category).
+    private PaletteNodeViewModel? _dragSource;
+
+    public PaletteEditorControl()
+    {
+        InitializeComponent();
+
+        // Populate the resource-type selector from the enum.
+        TypeSelector.ItemsSource = Enum.GetValues<PaletteResourceType>();
+        TypeSelector.SelectedIndex = 0;
+
+        DragDrop.SetAllowDrop(PaletteTree, true);
+        PaletteTree.AddHandler(DragDrop.DropEvent, OnDrop);
+        PaletteTree.AddHandler(DragDrop.DragOverEvent, OnDragOver);
+        PaletteTree.AddHandler(PointerPressedEvent, OnTreePointerPressed, RoutingStrategies.Tunnel);
+    }
+
+    /// <summary>Bind the control to its host view-model and owning window (for modal prompts).</summary>
+    public void Bind(PaletteEditorHostViewModel host, Window ownerWindow)
+    {
+        _host = host ?? throw new ArgumentNullException(nameof(host));
+        _ownerWindow = ownerWindow;
+        DataContext = host;
+        RefreshChrome();
+    }
+
+    // ---- type selector + load -----------------------------------------------
+
+    private async void OnTypeSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_host is null || TypeSelector.SelectedItem is not PaletteResourceType type) return;
+        // If the switch is refused (dirty + cancel), snap the selector back to the active type.
+        await _host.SwitchResourceTypeAsync(type);
+        if (_host.ActiveContext is { } ctx && !Equals(TypeSelector.SelectedItem, ctx.Type))
+            TypeSelector.SelectedItem = ctx.Type;
+        RefreshChrome();
+    }
+
+    private async void OnReloadClick(object? sender, RoutedEventArgs e)
+    {
+        if (_host is null || TypeSelector.SelectedItem is not PaletteResourceType type) return;
+        await _host.SwitchResourceTypeAsync(type);
+        RefreshChrome();
+    }
+
+    private void OnSaveClick(object? sender, RoutedEventArgs e)
+    {
+        _host?.Save();
+        RefreshChrome();
+    }
+
+    // ---- category actions ---------------------------------------------------
+
+    private async void OnAddCategoryClick(object? sender, RoutedEventArgs e)
+    {
+        if (_host is null || _ownerWindow is null) return;
+        var parent = SelectedCategory(); // add under the selected category, or root when none
+        var name = await TextPromptDialog.ShowAsync(_ownerWindow, "Add Category", "New category name:");
+        if (string.IsNullOrWhiteSpace(name)) return;
+        _host.AddCategory(parent, name);
+        RefreshChrome();
+    }
+
+    private async void OnRenameCategoryClick(object? sender, RoutedEventArgs e)
+    {
+        if (_host is null || _ownerWindow is null) return;
+        if (SelectedCategory() is not { } cat) return;
+        var name = await TextPromptDialog.ShowAsync(
+            _ownerWindow, "Rename Category", "Category name:", cat.Name ?? string.Empty);
+        if (string.IsNullOrWhiteSpace(name)) return;
+        _host.RenameCategory(cat, name);
+        RefreshChrome();
+    }
+
+    private void OnDeleteCategoryClick(object? sender, RoutedEventArgs e)
+    {
+        if (_host is null || SelectedCategory() is not { } cat) return;
+        _host.DeleteCategory(cat);
+        RefreshChrome();
+    }
+
+    // ---- drag-drop ----------------------------------------------------------
+
+    private async void OnTreePointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        // Begin a drag from the pressed tree node (blueprint leaf or category).
+        if (_host is null) return;
+        if ((e.Source as Control)?.DataContext is not PaletteNodeViewModel node) return;
+        if (node.Kind == PaletteNodeKind.Uncategorized) return; // the bucket itself isn't draggable
+
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+        _dragSource = node;
+#pragma warning disable CS0618 // DataObject matches the ItemListView/EquipmentSlots drag pattern
+        var data = new DataObject();
+        await DragDrop.DoDragDrop(e, data, DragDropEffects.Move);
+#pragma warning restore CS0618
+        _dragSource = null;
+    }
+
+    private void OnDragOver(object? sender, DragEventArgs e)
+    {
+        e.DragEffects = _dragSource is null ? DragDropEffects.None : DragDropEffects.Move;
+    }
+
+    private void OnDrop(object? sender, DragEventArgs e)
+    {
+        if (_host is null || _dragSource is null) return;
+        if ((e.Source as Control)?.DataContext is not PaletteNodeViewModel target) return;
+
+        var source = _dragSource;
+        _dragSource = null;
+
+        // Resolve the destination category from the drop target:
+        //  - onto a category => that category
+        //  - onto a blueprint leaf => that leaf's parent category
+        var destCategory = ResolveDropCategory(target);
+
+        if (source.Kind == PaletteNodeKind.Blueprint)
+        {
+            if (destCategory is null) return; // can't file onto the Uncategorized bucket
+            string resRef = source.Name;
+            // The drag's `from` is the blueprint's current TREE home (null when uncategorized) —
+            // never its PaletteID-derived category.
+            var from = _host.ActiveContext?.ViewModel.Classify(resRef).Home;
+            _host.MoveOrFileBlueprint(resRef, from, destCategory);
+        }
+        else if (source.Kind is PaletteNodeKind.Category && source.Model is PaletteCategoryNode cat)
+        {
+            // Nest under the destination category (cycle guard in the VM refuses invalid drops).
+            if (destCategory is null || ReferenceEquals(destCategory, cat)) return;
+            _host.MoveCategory(cat, destCategory, destCategory.Children.Count);
+        }
+
+        RefreshChrome();
+    }
+
+    // The category a drop lands in: a category target itself, or a blueprint leaf's parent category.
+    private PaletteCategoryNode? ResolveDropCategory(PaletteNodeViewModel target)
+    {
+        if (target.Kind == PaletteNodeKind.Category && target.Model is PaletteCategoryNode c)
+            return c;
+        if (target.Kind == PaletteNodeKind.Blueprint && target.Model is PaletteBlueprintNode bp)
+            return FindOwningCategory(bp);
+        return null; // Uncategorized bucket or a branch
+    }
+
+    private PaletteCategoryNode? FindOwningCategory(PaletteBlueprintNode bp)
+        => _host?.ActiveContext?.Palette.GetCategories()
+            .FirstOrDefault(c => c.Blueprints.Contains(bp));
+
+    // ---- helpers ------------------------------------------------------------
+
+    private PaletteCategoryNode? SelectedCategory()
+        => (PaletteTree.SelectedItem as PaletteNodeViewModel)?.Model as PaletteCategoryNode;
+
+    private void RefreshChrome()
+    {
+        var vm = _host?.ActiveContext?.ViewModel;
+        DirtyIndicator.IsVisible = vm?.IsDirty == true;
+
+        if (_host?.ActiveContext is { } ctx)
+        {
+            int total = ctx.Store.ResRefs.Count;
+            int drifted = ctx.Store.ResRefs.Count(r => ctx.ViewModel.Classify(r).Kind == PalettePlacementKind.Drifted);
+            int uncat = ctx.ViewModel.GetUncategorized().Count();
+            StatusText.Text = $"{total} blueprints, {drifted} drifted, {uncat} uncategorized";
+        }
+        else
+        {
+            StatusText.Text = string.Empty;
+        }
+    }
+}

@@ -1,0 +1,57 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Radoub.UI.ViewModels"
+             x:Class="Radoub.UI.Controls.PaletteEditorControl"
+             x:DataType="vm:PaletteEditorHostViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- Toolbar: resource-type selector, reload, save -->
+        <Border Grid.Row="0" Padding="10,8"
+                Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <TextBlock Text="Type:" VerticalAlignment="Center"/>
+                <ComboBox x:Name="TypeSelector" MinWidth="140"
+                          SelectionChanged="OnTypeSelectionChanged"/>
+                <Button x:Name="ReloadButton" Content="Reload" Click="OnReloadClick" Padding="12,4"/>
+                <Button x:Name="SaveButton" Content="Save" Click="OnSaveClick" Padding="16,4"/>
+                <TextBlock x:Name="DirtyIndicator" Text="● unsaved" VerticalAlignment="Center"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           IsVisible="False"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Single tree: categories with blueprint leaves inline + virtual Uncategorized -->
+        <TreeView Grid.Row="1" x:Name="PaletteTree"
+                  ItemsSource="{Binding Forest}"
+                  Margin="4">
+            <TreeView.ItemTemplate>
+                <TreeDataTemplate ItemsSource="{Binding Children}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="{Binding Name}"/>
+                        <TextBlock Text="⚠ drifted"
+                                   IsVisible="{Binding IsDrifted}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TreeDataTemplate>
+            </TreeView.ItemTemplate>
+        </TreeView>
+
+        <!-- Category actions + status -->
+        <Grid Grid.Row="2" ColumnDefinitions="Auto,*" Margin="10,6"
+              Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6">
+                <Button x:Name="AddButton" Content="+ Add" Click="OnAddCategoryClick" Padding="10,3"/>
+                <Button x:Name="RenameButton" Content="Rename" Click="OnRenameCategoryClick" Padding="10,3"/>
+                <Button x:Name="DeleteButton" Content="Delete" Click="OnDeleteCategoryClick" Padding="10,3"/>
+            </StackPanel>
+            <TextBlock x:Name="StatusText" Grid.Column="1" HorizontalAlignment="Right"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+        </Grid>
+    </Grid>
+</UserControl>
