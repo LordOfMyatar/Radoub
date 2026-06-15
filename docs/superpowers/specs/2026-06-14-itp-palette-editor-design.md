@@ -97,7 +97,7 @@ Module folder -> blueprint reader -> blueprint PaletteID      ->
                                                                    | user reorg
                                                                    v
                           mutated ItpFile + mutated blueprint PaletteID(s)
-                                                                   | Save (atomic, both files)
+                                                                   | Save (atomic, all touched files)
                           ItpWriter  -> *palcus.itp
                           blueprint writer -> *.uti/.utc/.utp/.utm
 ```
@@ -239,7 +239,7 @@ fatal (matches existing `ExtractCategories` behavior). A partially malformed
 palette still opens.
 
 Testing: round-trip tests in `Radoub.Formats.Tests`; pure `PaletteReorgMutator`
-tests for every reorg op including ID-preservation, drift detection, and two-file
+tests for every reorg op including ID-preservation, drift detection, and N-file
 rollback; FlaUI smoke only on explicit request per repo policy.
 
 ## Scope
@@ -253,8 +253,8 @@ In scope for v1:
   (right).
 - Reorganize: drag blueprints between categories, drag categories to
   nest/reorder, add/rename/delete categories.
-- Atomic dual write (`.itp` entry + blueprint `PaletteID`) with two-file
-  transaction and rollback.
+- Atomic dual write (`.itp` entry + blueprint `PaletteID`) with an N-file
+  transaction (all touched files commit or none do) and rollback.
 - Virtual read-only Uncategorized bucket; drift flagging.
 - Atomic backup-on-save; category-ID preservation; undo/redo.
 
