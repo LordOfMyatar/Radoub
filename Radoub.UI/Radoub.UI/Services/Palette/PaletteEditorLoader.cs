@@ -52,7 +52,32 @@ public sealed class PaletteEditorLoader
         }
 
         var store = new LooseFileBlueprintStore(gateway, pool);
-        return new PaletteContext(type, itp, store, customPath);
+        var context = new PaletteContext(type, itp, store, customPath);
+        LogClassificationSummary(context, d);
+        return context;
+    }
+
+    // Diagnostic for "more uncategorized than expected": report how many pooled blueprints are
+    // uncategorized (not listed in the .itp tree) and, of those, how many still carry a non-zero
+    // PaletteID. A high non-zero count means a source tool set the blueprint's PaletteID byte but
+    // never wrote the matching .itp tree entry — i.e. the palette tree is the incomplete half.
+    private static void LogClassificationSummary(PaletteContext ctx, PaletteResourceDescriptor d)
+    {
+        int total = ctx.Store.ResRefs.Count;
+        int uncategorized = 0, uncategorizedWithPaletteId = 0, drifted = 0;
+        foreach (var resRef in ctx.Store.ResRefs)
+        {
+            var kind = ctx.ViewModel.Classify(resRef).Kind;
+            if (kind == PalettePlacementKind.Uncategorized)
+            {
+                uncategorized++;
+                if (ctx.Store.GetPaletteId(resRef) is byte id && id != 0) uncategorizedWithPaletteId++;
+            }
+            else if (kind == PalettePlacementKind.Drifted) drifted++;
+        }
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"[PaletteEditor] {d.CustomPaletteFile}: {total} blueprints, {uncategorized} uncategorized " +
+            $"({uncategorizedWithPaletteId} of those have a non-zero PaletteID but no tree entry), {drifted} drifted.");
     }
 
     private static ItpFile ReadItpOrEmpty(string path)

@@ -4,7 +4,7 @@
              x:Class="Radoub.UI.Controls.PaletteEditorControl"
              x:DataType="vm:PaletteEditorHostViewModel">
 
-    <Grid RowDefinitions="Auto,*,Auto">
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
 
         <!-- Toolbar: resource-type selector, reload, save -->
         <Border Grid.Row="0" Padding="10,8"
@@ -23,8 +23,19 @@
             </StackPanel>
         </Border>
 
+        <!-- Instructions banner -->
+        <Border Grid.Row="1" Padding="10,6"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                BorderThickness="0,0,0,1">
+            <TextBlock TextWrapping="Wrap"
+                       FontSize="{DynamicResource FontSizeSmall}"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                       Text="Drag a blueprint onto a category to file or move it (including out of ⚠ Uncategorized). Drag a category onto another to nest it. ⚠ drifted marks a blueprint whose own PaletteID disagrees with the palette tree — drag it onto its category to re-sync. Save writes the palette and the changed blueprint files."/>
+        </Border>
+
         <!-- Single tree: categories with blueprint leaves inline + virtual Uncategorized -->
-        <TreeView Grid.Row="1" x:Name="PaletteTree"
+        <TreeView Grid.Row="2" x:Name="PaletteTree"
                   ItemsSource="{Binding Forest}"
                   Margin="4">
             <TreeView.ItemTemplate>
@@ -41,15 +52,11 @@
             </TreeView.ItemTemplate>
         </TreeView>
 
-        <!-- Category actions + status -->
-        <Grid Grid.Row="2" ColumnDefinitions="Auto,*" Margin="10,6"
+        <!-- Status bar. Category add/rename/delete is deferred (#2486 — needs a TLK-name decision);
+             v1 is reorganize-only. -->
+        <Grid Grid.Row="3" ColumnDefinitions="*" Margin="10,6"
               Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
-            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6">
-                <Button x:Name="AddButton" Content="+ Add" Click="OnAddCategoryClick" Padding="10,3"/>
-                <Button x:Name="RenameButton" Content="Rename" Click="OnRenameCategoryClick" Padding="10,3"/>
-                <Button x:Name="DeleteButton" Content="Delete" Click="OnDeleteCategoryClick" Padding="10,3"/>
-            </StackPanel>
-            <TextBlock x:Name="StatusText" Grid.Column="1" HorizontalAlignment="Right"
+            <TextBlock x:Name="StatusText" HorizontalAlignment="Right"
                        VerticalAlignment="Center"
                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
         </Grid>

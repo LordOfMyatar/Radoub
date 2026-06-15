@@ -12,18 +12,23 @@ namespace Radoub.UI.Controls;
 
 /// <summary>
 /// The shared ITP palette editor view (#2477, M3): a resource-type selector, a single tree of
-/// categories with blueprint leaves inline (plus the virtual Uncategorized bucket), category
-/// add/rename/delete, drag-drop reorganization, and save. The control is host-agnostic — Trebuchet
-/// (or a future per-tool host) supplies the <see cref="PaletteEditorHostViewModel"/> via
-/// <see cref="Bind"/>.
+/// categories with blueprint leaves inline (plus the virtual Uncategorized bucket), drag-drop
+/// reorganization, and save. The control is host-agnostic — Trebuchet (or a future per-tool host)
+/// supplies the <see cref="PaletteEditorHostViewModel"/> via <see cref="Bind"/>. Category
+/// add/rename/delete is deferred (needs a TLK-name decision, #2486); v1 is reorganize-only.
 /// </summary>
 public partial class PaletteEditorControl : UserControl
 {
+    private const double DragThreshold = 4.0;
+
     private PaletteEditorHostViewModel? _host;
     private Window? _ownerWindow;
 
-    // Drag state: the node being dragged (blueprint leaf or category).
-    private PaletteNodeViewModel? _dragSource;
+    // Drag state: a press records a potential drag; a move past the threshold starts it. Starting
+    // the drag on raw press fights the TreeView's own selection/expansion (the "can't click" bug).
+    private PaletteNodeViewModel? _pendingDragNode;
+    private Avalonia.Point _pressPoint;
+    private bool _dragging;
 
     public PaletteEditorControl()
     {
@@ -36,7 +41,11 @@ public partial class PaletteEditorControl : UserControl
         DragDrop.SetAllowDrop(PaletteTree, true);
         PaletteTree.AddHandler(DragDrop.DropEvent, OnDrop);
         PaletteTree.AddHandler(DragDrop.DragOverEvent, OnDragOver);
+        // Tunnel so we see the press before the TreeView consumes it, but we DON'T start the drag
+        // here — we only record a candidate, letting normal click/select/expand proceed.
         PaletteTree.AddHandler(PointerPressedEvent, OnTreePointerPressed, RoutingStrategies.Tunnel);
+        PaletteTree.AddHandler(PointerMovedEvent, OnTreePointerMoved, RoutingStrategies.Tunnel);
+        PaletteTree.AddHandler(PointerReleasedEvent, OnTreePointerReleased, RoutingStrategies.Tunnel);
     }
 
     /// <summary>Bind the control to its host view-model and owning window (for modal prompts).</summary>
@@ -69,70 +78,69 @@ public partial class PaletteEditorControl : UserControl
 
     private void OnSaveClick(object? sender, RoutedEventArgs e)
     {
-        _host?.Save();
+        if (_host is null) return;
+        bool ok = _host.Save();
         RefreshChrome();
+        if (!ok) NotifySaveFailed();
     }
 
-    // ---- category actions ---------------------------------------------------
+    // ---- drag-drop (threshold-based; press records a candidate, move starts it) --------------
 
-    private async void OnAddCategoryClick(object? sender, RoutedEventArgs e)
+    private PaletteNodeViewModel? _activeDrag;
+
+    private void OnTreePointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (_host is null || _ownerWindow is null) return;
-        var parent = SelectedCategory(); // add under the selected category, or root when none
-        var name = await TextPromptDialog.ShowAsync(_ownerWindow, "Add Category", "New category name:");
-        if (string.IsNullOrWhiteSpace(name)) return;
-        _host.AddCategory(parent, name);
-        RefreshChrome();
-    }
-
-    private async void OnRenameCategoryClick(object? sender, RoutedEventArgs e)
-    {
-        if (_host is null || _ownerWindow is null) return;
-        if (SelectedCategory() is not { } cat) return;
-        var name = await TextPromptDialog.ShowAsync(
-            _ownerWindow, "Rename Category", "Category name:", cat.Name ?? string.Empty);
-        if (string.IsNullOrWhiteSpace(name)) return;
-        _host.RenameCategory(cat, name);
-        RefreshChrome();
-    }
-
-    private void OnDeleteCategoryClick(object? sender, RoutedEventArgs e)
-    {
-        if (_host is null || SelectedCategory() is not { } cat) return;
-        _host.DeleteCategory(cat);
-        RefreshChrome();
-    }
-
-    // ---- drag-drop ----------------------------------------------------------
-
-    private async void OnTreePointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        // Begin a drag from the pressed tree node (blueprint leaf or category).
+        _pendingDragNode = null;
         if (_host is null) return;
         if ((e.Source as Control)?.DataContext is not PaletteNodeViewModel node) return;
-        if (node.Kind == PaletteNodeKind.Uncategorized) return; // the bucket itself isn't draggable
-
+        if (node.Kind is PaletteNodeKind.Uncategorized or PaletteNodeKind.Branch) return; // not draggable
         if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
-        _dragSource = node;
+
+        // Record a candidate only; let the TreeView handle selection/expansion on this press.
+        _pendingDragNode = node;
+        _pressPoint = e.GetPosition(this);
+    }
+
+    private async void OnTreePointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (_pendingDragNode is null || _dragging) return;
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) { _pendingDragNode = null; return; }
+
+        var delta = e.GetPosition(this) - _pressPoint;
+        if (Math.Abs(delta.X) < DragThreshold && Math.Abs(delta.Y) < DragThreshold) return;
+
+        _activeDrag = _pendingDragNode;
+        _pendingDragNode = null;
+        _dragging = true;
+        try
+        {
 #pragma warning disable CS0618 // DataObject matches the ItemListView/EquipmentSlots drag pattern
-        var data = new DataObject();
-        await DragDrop.DoDragDrop(e, data, DragDropEffects.Move);
+            await DragDrop.DoDragDrop(e, new DataObject(), DragDropEffects.Move);
 #pragma warning restore CS0618
-        _dragSource = null;
+        }
+        finally
+        {
+            _dragging = false;
+            _activeDrag = null;
+        }
+    }
+
+    private void OnTreePointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        _pendingDragNode = null; // a plain click/release without crossing the threshold: no drag
     }
 
     private void OnDragOver(object? sender, DragEventArgs e)
     {
-        e.DragEffects = _dragSource is null ? DragDropEffects.None : DragDropEffects.Move;
+        e.DragEffects = _activeDrag is null ? DragDropEffects.None : DragDropEffects.Move;
     }
 
     private void OnDrop(object? sender, DragEventArgs e)
     {
-        if (_host is null || _dragSource is null) return;
+        if (_host is null || _activeDrag is null) return;
         if ((e.Source as Control)?.DataContext is not PaletteNodeViewModel target) return;
 
-        var source = _dragSource;
-        _dragSource = null;
+        var source = _activeDrag;
 
         // Resolve the destination category from the drop target:
         //  - onto a category => that category
@@ -174,9 +182,6 @@ public partial class PaletteEditorControl : UserControl
 
     // ---- helpers ------------------------------------------------------------
 
-    private PaletteCategoryNode? SelectedCategory()
-        => (PaletteTree.SelectedItem as PaletteNodeViewModel)?.Model as PaletteCategoryNode;
-
     private void RefreshChrome()
     {
         var vm = _host?.ActiveContext?.ViewModel;
@@ -193,5 +198,12 @@ public partial class PaletteEditorControl : UserControl
         {
             StatusText.Text = string.Empty;
         }
+    }
+
+    // A failed save means nothing was written (the transaction is all-or-nothing). Surface it in the
+    // status line rather than silently leaving the editor "unsaved" with no explanation.
+    private void NotifySaveFailed()
+    {
+        StatusText.Text = "Save failed — no files were changed. See the log for details.";
     }
 }
