@@ -4,7 +4,7 @@
              x:Class="Radoub.UI.Controls.PaletteEditorControl"
              x:DataType="vm:PaletteEditorHostViewModel">
 
-    <Grid RowDefinitions="Auto,Auto,*,Auto">
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
 
         <!-- Toolbar: resource-type selector, reload, save -->
         <Border Grid.Row="0" Padding="10,8"
@@ -17,9 +17,6 @@
                           SelectionChanged="OnTypeSelectionChanged"/>
                 <Button x:Name="ReloadButton" Content="Reload" Click="OnReloadClick" Padding="12,4"/>
                 <!-- Changes save automatically on each move; no Save button. -->
-                <TextBlock x:Name="SaveError" VerticalAlignment="Center"
-                           Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
-                           IsVisible="False"/>
             </StackPanel>
         </Border>
 
@@ -34,8 +31,21 @@
                        Text="Drag a blueprint onto a category to file or move it (including out of Uncategorized). Drag a category onto another to nest it. Changes save automatically. Blueprints appear under the category their own PaletteID points to — edits made in other tools (e.g. Quartermaster) show here after Reload."/>
         </Border>
 
+        <!-- Save-conflict warning banner (theme-colored; shown only after a failed commit, e.g. a
+             blueprint file was locked/changed by another open tool). -->
+        <Border Grid.Row="2" x:Name="WarningBanner" IsVisible="False"
+                Padding="10,6" Margin="4,4,4,0"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                BorderBrush="{DynamicResource ThemeWarning}" BorderThickness="1">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Reload" Click="OnReloadClick" Padding="12,3"/>
+                <TextBlock x:Name="WarningText" VerticalAlignment="Center" TextWrapping="Wrap"
+                           Foreground="{DynamicResource ThemeWarning}"/>
+            </DockPanel>
+        </Border>
+
         <!-- Single tree: categories with blueprint leaves inline + virtual Uncategorized -->
-        <TreeView Grid.Row="2" x:Name="PaletteTree"
+        <TreeView Grid.Row="3" x:Name="PaletteTree"
                   ItemsSource="{Binding Forest}"
                   Margin="4">
             <!-- Bind container expansion/selection to the adapter VM so a reorg rebuild can
@@ -55,7 +65,7 @@
 
         <!-- Status bar. Category add/rename/delete is deferred (#2486 — needs a TLK-name decision);
              v1 is reorganize-only. -->
-        <Grid Grid.Row="3" ColumnDefinitions="*" Margin="10,6"
+        <Grid Grid.Row="4" ColumnDefinitions="*" Margin="10,6"
               Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
             <TextBlock x:Name="StatusText" HorizontalAlignment="Right"
                        VerticalAlignment="Center"

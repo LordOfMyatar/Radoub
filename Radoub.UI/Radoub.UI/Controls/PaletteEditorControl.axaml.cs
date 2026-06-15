@@ -60,8 +60,11 @@ public partial class PaletteEditorControl : UserControl
 
     private void OnSaveFailed(string message)
     {
-        SaveError.Text = $"Save failed: {message}";
-        SaveError.IsVisible = true;
+        // Most likely cause: the blueprint or palette file was locked/changed by another open tool
+        // (e.g. the item is open in Relique/Quartermaster). Nothing was written; Reload re-syncs.
+        WarningText.Text =
+            $"⚠ Couldn't save — the file may be open in another tool. Nothing was changed. ({message}) Reload to see the latest.";
+        WarningBanner.IsVisible = true;
         RefreshChrome();
     }
 
@@ -80,7 +83,7 @@ public partial class PaletteEditorControl : UserControl
     private async void OnReloadClick(object? sender, RoutedEventArgs e)
     {
         if (_host is null || TypeSelector.SelectedItem is not PaletteResourceType type) return;
-        SaveError.IsVisible = false; // clear any prior error; Reload re-reads disk
+        WarningBanner.IsVisible = false; // clear any prior warning; Reload re-reads disk
         await _host.SwitchResourceTypeAsync(type);
         RefreshChrome();
     }
@@ -141,7 +144,7 @@ public partial class PaletteEditorControl : UserControl
         if (_host is null || _activeDrag is null) return;
         if ((e.Source as Control)?.DataContext is not PaletteNodeViewModel target) return;
 
-        SaveError.IsVisible = false; // a new action clears the prior error (re-shown if it fails again)
+        WarningBanner.IsVisible = false; // a new action clears the prior warning (re-shown if it fails again)
         var source = _activeDrag;
 
         // Resolve the destination category from the drop target:
