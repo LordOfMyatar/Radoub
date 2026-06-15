@@ -38,6 +38,14 @@
         <TreeView Grid.Row="2" x:Name="PaletteTree"
                   ItemsSource="{Binding Forest}"
                   Margin="4">
+            <!-- Bind container expansion/selection to the adapter VM so a reorg rebuild can
+                 restore expansion and focus can follow a drop (IsExpanded/IsSelected two-way). -->
+            <TreeView.ItemContainerTheme>
+                <ControlTheme TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}">
+                    <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                    <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+                </ControlTheme>
+            </TreeView.ItemContainerTheme>
             <TreeView.ItemTemplate>
                 <TreeDataTemplate ItemsSource="{Binding Children}">
                     <StackPanel Orientation="Horizontal" Spacing="6">

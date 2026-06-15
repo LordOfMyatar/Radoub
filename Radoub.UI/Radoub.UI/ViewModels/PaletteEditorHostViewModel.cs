@@ -75,13 +75,87 @@ public partial class PaletteEditorHostViewModel : ObservableObject
         RebuildForest();
     }
 
-    /// <summary>Rebuild the bindable forest from the active context's tree + Uncategorized bucket.</summary>
+    /// <summary>
+    /// Rebuild the bindable forest from the active context's tree + Uncategorized bucket, preserving
+    /// which categories were expanded across the rebuild. Categories keep their model identity through
+    /// a reorg (only blueprints move between them), so expansion is restored by matching on the backing
+    /// <see cref="PaletteNodeViewModel.Model"/>. Without this every drop collapses the whole tree.
+    /// </summary>
     public void RebuildForest()
     {
+        // Snapshot expansion (and the Uncategorized bucket's expansion, which has no model) before clearing.
+        var expandedModels = new HashSet<PaletteNode>(ReferenceEqualityComparer.Instance);
+        bool uncategorizedExpanded = false;
+        foreach (var node in EnumerateForest(Forest))
+        {
+            if (!node.IsExpanded) continue;
+            if (node.Model is { } m) expandedModels.Add(m);
+            else if (node.Kind == PaletteNodeKind.Uncategorized) uncategorizedExpanded = true;
+        }
+
         Forest.Clear();
         if (ActiveContext is null) return;
         foreach (var node in PaletteNodeViewModel.BuildForest(ActiveContext.ViewModel, StrRefResolver))
             Forest.Add(node);
+
+        // Restore expansion on the rebuilt nodes.
+        foreach (var node in EnumerateForest(Forest))
+        {
+            if (node.Model is { } m && expandedModels.Contains(m)) node.IsExpanded = true;
+            else if (node.Kind == PaletteNodeKind.Uncategorized && uncategorizedExpanded) node.IsExpanded = true;
+        }
+    }
+
+    /// <summary>Expand and select the category a drop landed in, so focus follows the drop.</summary>
+    public void RevealCategory(PaletteCategoryNode category)
+    {
+        foreach (var node in EnumerateForest(Forest))
+        {
+            if (ReferenceEquals(node.Model, category))
+            {
+                ExpandAncestorsAndSelect(node);
+                return;
+            }
+        }
+    }
+
+    private void ExpandAncestorsAndSelect(PaletteNodeViewModel target)
+    {
+        // Expand the target and every ancestor on the path to it; select the target.
+        foreach (var (node, path) in EnumerateForestWithPath(Forest))
+        {
+            if (!ReferenceEquals(node, target)) continue;
+            foreach (var ancestor in path) ancestor.IsExpanded = true;
+            target.IsExpanded = true;
+            target.IsSelected = true;
+            return;
+        }
+    }
+
+    private static System.Collections.Generic.IEnumerable<PaletteNodeViewModel> EnumerateForest(
+        System.Collections.Generic.IEnumerable<PaletteNodeViewModel> nodes)
+    {
+        foreach (var node in nodes)
+        {
+            yield return node;
+            foreach (var child in EnumerateForest(node.Children))
+                yield return child;
+        }
+    }
+
+    private static System.Collections.Generic.IEnumerable<(PaletteNodeViewModel Node, System.Collections.Generic.List<PaletteNodeViewModel> Path)>
+        EnumerateForestWithPath(System.Collections.Generic.IEnumerable<PaletteNodeViewModel> nodes,
+            System.Collections.Generic.List<PaletteNodeViewModel>? path = null)
+    {
+        path ??= new System.Collections.Generic.List<PaletteNodeViewModel>();
+        foreach (var node in nodes)
+        {
+            yield return (node, path);
+            path.Add(node);
+            foreach (var item in EnumerateForestWithPath(node.Children, path))
+                yield return item;
+            path.RemoveAt(path.Count - 1);
+        }
     }
 
     /// <summary>Commit the active context's write-set. Clears dirty on success; leaves it set on
@@ -111,7 +185,9 @@ public partial class PaletteEditorHostViewModel : ObservableObject
         var vm = ActiveContext.ViewModel;
         // No source => uncategorized: file (add-only). Otherwise move (drop-onto-own-home re-syncs drift).
         bool ok = from is null ? vm.FileBlueprint(resRef, to) : vm.MoveBlueprint(resRef, from, to);
-        return AfterReorg(ok);
+        if (!AfterReorg(ok)) return false;
+        RevealCategory(to); // focus follows the drop: expand + select the destination
+        return true;
     }
 
     /// <summary>Add a new empty category under <paramref name="parent"/> (or root when null).</summary>
@@ -132,7 +208,10 @@ public partial class PaletteEditorHostViewModel : ObservableObject
     public bool MoveCategory(PaletteCategoryNode cat, PaletteNode? newParent, int index)
     {
         if (ActiveContext is null) return false;
-        return AfterReorg(ActiveContext.ViewModel.MoveCategory(cat, newParent, index));
+        if (!AfterReorg(ActiveContext.ViewModel.MoveCategory(cat, newParent, index))) return false;
+        if (newParent is PaletteCategoryNode parentCat) RevealCategory(parentCat);
+        RevealCategory(cat); // select the moved category itself
+        return true;
     }
 
     /// <summary>Delete a category, reparenting its contents. Reversible via the undo manager.</summary>
