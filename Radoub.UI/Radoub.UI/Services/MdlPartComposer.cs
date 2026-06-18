@@ -90,9 +90,10 @@ public sealed class MdlPartComposer
     public MdlModel? Compose(
         string skeletonResRef,
         IReadOnlyList<(string PartType, string ResRef)> parts,
-        bool adjustSeams = true)
+        bool adjustSeams = true,
+        IReadOnlyList<(string Tag, string ResRef, float Scale)>? supermodels = null)
     {
-        if (parts.Count == 0)
+        if (parts.Count == 0 && (supermodels == null || supermodels.Count == 0))
             return null;
 
         var skeletonModel = _modelLoader(skeletonResRef, /* withSupermodelAnims */ true);
@@ -125,6 +126,16 @@ public sealed class MdlPartComposer
         foreach (var (partType, resRef) in parts)
         {
             TryAddBodyPart(compositeModel, partType, resRef, meshPartTypes);
+        }
+
+        // Wings/tail (#1485): standalone supermodels with their own bone hierarchy + meshes AND
+        // their own animation set named to match the body (cwalkf, ...). Grafted at the composite
+        // root (like a robe), scaled by WING_TAIL_SCALE, with their animations merged BY NAME into
+        // the matching body animation so one active animation drives body + wings together.
+        if (supermodels != null)
+        {
+            foreach (var (tag, resRef, scale) in supermodels)
+                GraftSupermodel(compositeModel, resRef, tag, scale, meshPartTypes);
         }
 
         if (adjustSeams)
@@ -335,6 +346,113 @@ public sealed class MdlPartComposer
         }
         foreach (var child in node.Children)
             ApplyPartBitmap(child, partResRef, partType, meshPartTypes);
+    }
+
+    /// <summary>
+    /// Graft a wing/tail supermodel (#1485) under the composite root, preserving its internal bone
+    /// hierarchy + meshes, scaled by <paramref name="scale"/> (the appearance's WING_TAIL_SCALE).
+    /// The supermodel's own animations (named to match the body — cwalkf, cidle, ...) are merged
+    /// BY NAME into the composite so one active animation drives the body and the wing/tail bones
+    /// together. The model is loaded WITH supermodel animations so inheritors (e.g. c_tail_brs →
+    /// c_tail_sil, which ships 0 own animations) still flap.
+    /// </summary>
+    public void GraftSupermodel(
+        MdlModel compositeModel,
+        string resRef,
+        string tag,
+        float scale,
+        Dictionary<string, string> meshPartTypes)
+    {
+        try
+        {
+            var partModel = _modelLoader(resRef, /* withSupermodelAnims */ true);
+            if (partModel?.GeometryRoot == null)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"MdlPartComposer.GraftSupermodel: '{tag}' model '{resRef}' not loadable — skipped");
+                return;
+            }
+
+            EnsureCompositeRoot(compositeModel);
+            var root = compositeModel.GeometryRoot!;
+
+            // Graft the supermodel root's CHILDREN (skip its own root dummy, whose translation
+            // duplicates the skeleton root's), cloning each subtree with hierarchy intact — same
+            // mechanism as the robe graft (#1989). Apply WING_TAIL_SCALE to each grafted child's
+            // root so the whole wing/tail subtree scales as a unit.
+            int grafted = 0;
+            foreach (var child in partModel.GeometryRoot.Children)
+            {
+                var clone = CloneNode(child, root);
+                if (scale > 0f && scale != 1.0f)
+                    clone.Scale *= scale;
+                ApplyPartBitmap(clone, resRef, tag, meshPartTypes);
+                root.Children.Add(clone);
+                grafted++;
+            }
+
+            MergeSupermodelAnimationsByName(compositeModel, partModel);
+
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"MdlPartComposer.GraftSupermodel: '{tag}' ({resRef}) scale={scale:F2} — {grafted} subtree(s), {partModel.Animations.Count} anim(s)");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"MdlPartComposer.GraftSupermodel: failed to graft '{tag}' from '{resRef}': {ex.GetType().Name}: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Merge a wing/tail model's animations into the composite (#1485). The renderer plays ONE
+    /// active animation and builds a node-name → pose dictionary from its GeometryRoot, so the
+    /// wing's keyframed bones must live in the SAME animation tree as the body's. For each source
+    /// animation: if the composite already has an animation of that name, graft the source's
+    /// GeometryRoot children into the existing animation's tree (so cwalkf drives body + wing bones
+    /// from one playhead). Names the body lacks are appended as new selectable entries.
+    ///
+    /// This is deliberately different from the dedup-by-name supermodel merge used for skeletons,
+    /// which would DROP the wing's cwalkf because the body already owns that name.
+    /// </summary>
+    private static void MergeSupermodelAnimationsByName(MdlModel compositeModel, MdlModel partModel)
+    {
+        if (partModel.Animations.Count == 0)
+            return;
+
+        var byName = new Dictionary<string, MdlAnimation>(StringComparer.OrdinalIgnoreCase);
+        foreach (var anim in compositeModel.Animations)
+            byName[anim.Name] = anim;
+
+        foreach (var src in partModel.Animations)
+        {
+            if (src.GeometryRoot == null)
+                continue;
+
+            if (byName.TryGetValue(src.Name, out var existing) && existing.GeometryRoot != null)
+            {
+                // Graft the wing's keyed node subtrees into the body animation's tree so a single
+                // pose lookup covers both. Clone so the cached part model is never mutated (#1735).
+                foreach (var child in src.GeometryRoot.Children)
+                {
+                    var clone = CloneNode(child, existing.GeometryRoot);
+                    existing.GeometryRoot.Children.Add(clone);
+                }
+            }
+            else
+            {
+                // Wing-only animation (body lacks the name) — append so it stays selectable.
+                var copy = new MdlAnimation
+                {
+                    Name = src.Name,
+                    Length = src.Length,
+                    TransitionTime = src.TransitionTime,
+                    AnimRoot = src.AnimRoot,
+                    GeometryRoot = CloneNode(src.GeometryRoot, null),
+                };
+                compositeModel.Animations.Add(copy);
+                byName[copy.Name] = copy;
+            }
+        }
     }
 
     /// <summary>
