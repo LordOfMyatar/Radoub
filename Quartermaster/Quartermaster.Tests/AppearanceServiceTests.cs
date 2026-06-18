@@ -600,6 +600,51 @@ public class AppearanceServiceTests
         Assert.Equal("Tail 50", _service.GetTailName(50));
     }
 
+    [Fact]
+    public void GetWingModel_Zero_ReturnsNull()
+    {
+        Assert.Null(_service.GetWingModel(0));
+    }
+
+    [Fact]
+    public void GetWingModel_ValidId_ReturnsModelResRef()
+    {
+        Assert.Equal("c_wingsan", _service.GetWingModel(1));
+        Assert.Equal("c_wingsdm", _service.GetWingModel(2));
+    }
+
+    [Fact]
+    public void GetWingModel_StarModel_ReturnsNull()
+    {
+        // Butterfly (row 3) has a LABEL but MODEL is **** — no renderable model.
+        Assert.Null(_service.GetWingModel(3));
+    }
+
+    [Fact]
+    public void GetWingModel_MissingRow_ReturnsNull()
+    {
+        Assert.Null(_service.GetWingModel(250));
+    }
+
+    [Fact]
+    public void GetTailModel_Zero_ReturnsNull()
+    {
+        Assert.Null(_service.GetTailModel(0));
+    }
+
+    [Fact]
+    public void GetTailModel_ValidId_ReturnsModelResRef()
+    {
+        Assert.Equal("c_tailliz", _service.GetTailModel(1));
+        Assert.Equal("c_tailbone", _service.GetTailModel(2));
+    }
+
+    [Fact]
+    public void GetTailModel_MissingRow_ReturnsNull()
+    {
+        Assert.Null(_service.GetTailModel(250));
+    }
+
     #endregion
 
     #region Sound Sets

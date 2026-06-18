@@ -446,6 +446,40 @@ public class AppearanceService
     }
 
     /// <summary>
+    /// Gets the MDL ResRef for a wing type from wingmodel.2da (MODEL column).
+    /// Returns null for "None" (0), an empty/"****" model, or a missing row — callers skip
+    /// attachment when null.
+    /// </summary>
+    public string? GetWingModel(byte wingId)
+    {
+        if (wingId == 0)
+            return null;
+
+        var model = _gameDataService.Get2DAValue("wingmodel", wingId, "MODEL");
+        if (string.IsNullOrEmpty(model) || model == "****")
+            return null;
+
+        return model;
+    }
+
+    /// <summary>
+    /// Gets the MDL ResRef for a tail type from tailmodel.2da (MODEL column).
+    /// Returns null for "None" (0), an empty/"****" model, or a missing row — callers skip
+    /// attachment when null.
+    /// </summary>
+    public string? GetTailModel(byte tailId)
+    {
+        if (tailId == 0)
+            return null;
+
+        var model = _gameDataService.Get2DAValue("tailmodel", tailId, "MODEL");
+        if (string.IsNullOrEmpty(model) || model == "****")
+            return null;
+
+        return model;
+    }
+
+    /// <summary>
     /// Gets all wing types from wingmodel.2da.
     /// </summary>
     public List<(byte Id, string Name)> GetAllWings()
