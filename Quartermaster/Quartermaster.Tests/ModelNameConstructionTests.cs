@@ -46,4 +46,32 @@ public class ModelNameConstructionTests
         var result = ModelService.BuildModelPrefix(1, "h", 0);
         Assert.StartsWith("pf", result);
     }
+
+    [Fact]
+    public void GetWingTailScale_ReadsColumnValue()
+    {
+        var mock = new Radoub.TestUtilities.Mocks.MockGameDataService(includeSampleData: false);
+        mock.Set2DAValue("appearance", 5, "WING_TAIL_SCALE", "0.5");
+
+        Assert.Equal(0.5f, ModelService.GetWingTailScale(mock, 5), 3);
+    }
+
+    [Fact]
+    public void GetWingTailScale_MissingOrStar_DefaultsToOne()
+    {
+        var mock = new Radoub.TestUtilities.Mocks.MockGameDataService(includeSampleData: false);
+        mock.Set2DAValue("appearance", 6, "WING_TAIL_SCALE", "****");
+
+        Assert.Equal(1.0f, ModelService.GetWingTailScale(mock, 6), 3); // **** -> default
+        Assert.Equal(1.0f, ModelService.GetWingTailScale(mock, 99), 3); // missing -> default
+    }
+
+    [Fact]
+    public void GetWingTailScale_Unparseable_DefaultsToOne()
+    {
+        var mock = new Radoub.TestUtilities.Mocks.MockGameDataService(includeSampleData: false);
+        mock.Set2DAValue("appearance", 7, "WING_TAIL_SCALE", "abc");
+
+        Assert.Equal(1.0f, ModelService.GetWingTailScale(mock, 7), 3);
+    }
 }
