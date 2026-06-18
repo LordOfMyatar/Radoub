@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.122-alpha] - 2026-06-18
-**Branch**: `quartermaster/issue-2497` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2497` | **PR**: #2500
 
 ### Fix: Resolve mesh diffuse from MTR texture0 (#2497)
 
