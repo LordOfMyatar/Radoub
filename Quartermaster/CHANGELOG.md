@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.120-alpha] - 2026-06-18
-**Branch**: `quartermaster/issue-2487` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2487` | **PR**: #2494
 
 ### Sprint: Aurora Data Sourcing (#2487)
 
