@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.11-alpha] - 2026-06-18
+**Branch**: `quartermaster/issue-2497` | **PR**: #2500
+
+### Feat: MTR-driven diffuse resolution + diagnostics (#2497)
+
+- `TextureService` now resolves a mesh's diffuse from its MTR `texture0` (via the mesh `materialname`) ahead of the bare-name/`_d` chain, with the #1755 fallback preserved when no MTR applies. Forward-looking support: the common CEP/PRC HAKs ship no `.mtr` and the original beetle white-model was already fixed in #1200, so this no-ops on current content. Added `[MTR]` diagnostic logging so the first genuinely MTR-driven model is captured in logs. Consumed by the Quartermaster model preview.
+
+---
+
 ## [Radoub.Formats 0.2.70-alpha] - 2026-06-18
 **Branch**: `quartermaster/issue-2496` | **PR**: #2499
 

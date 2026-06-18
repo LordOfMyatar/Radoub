@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.122-alpha] - 2026-06-18
+**Branch**: `quartermaster/issue-2497` | **PR**: #2500
+
+### Feat: MTR-driven diffuse resolution + diagnostics (#2497)
+
+- Model preview now resolves a mesh's diffuse from its `.mtr` material (`texture0`, via the mesh `materialname`) ahead of the existing bare-name/`_d` chain. Forward-looking MTR support — current CEP/PRC packs ship no `.mtr`, so this no-ops on today's content; added `[MTR]` diagnostic logging to capture the first genuinely MTR-driven model.
+
+---
+
 ## [0.2.121-alpha] - 2026-06-18
 **Branch**: `quartermaster/issue-2496` | **PR**: #2499
 
