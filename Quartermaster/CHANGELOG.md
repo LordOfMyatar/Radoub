@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.123-alpha] - 2026-06-18
-**Branch**: `quartermaster/issue-1485` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1485` | **PR**: #2502
 
 ### Feat: Wings & Tail in 3D appearance render (#1485)
 
