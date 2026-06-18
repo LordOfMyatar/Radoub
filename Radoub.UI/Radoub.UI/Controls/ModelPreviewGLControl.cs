@@ -1602,12 +1602,19 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
 
         _textureRemapping.Clear();
 
-        // Collect unique texture names from meshes
+        // Collect unique texture names from meshes, remembering the mesh's MTR material
+        // name (#2497) so the loader can resolve diffuse from the .mtr texture0 when the
+        // bare bitmap misses (the white-model case).
         var textureNames = new HashSet<string>();
+        var materialByTexture = new Dictionary<string, string>();
         foreach (var mesh in _model.GetMeshNodes())
         {
-            if (!string.IsNullOrEmpty(mesh.Bitmap))
-                textureNames.Add(mesh.Bitmap.ToLowerInvariant());
+            if (string.IsNullOrEmpty(mesh.Bitmap))
+                continue;
+            var bitmap = mesh.Bitmap.ToLowerInvariant();
+            textureNames.Add(bitmap);
+            if (!string.IsNullOrEmpty(mesh.MaterialName) && !materialByTexture.ContainsKey(bitmap))
+                materialByTexture[bitmap] = mesh.MaterialName.ToLowerInvariant();
         }
 
         // #2395: include emitter particle textures so they load into _textureCache
@@ -1652,9 +1659,10 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
 
             try
             {
+                materialByTexture.TryGetValue(texName, out var materialName);
                 var textureData = _preferBifTextures
                     ? _textureService.LoadTexturePreferBIFWithKind(texName, _colorIndices)
-                    : _textureService.LoadTextureWithKind(texName, _colorIndices);
+                    : _textureService.LoadTextureWithKind(texName, materialName, _colorIndices);
                 if (textureData == null)
                 {
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Texture '{texName}' returned null");

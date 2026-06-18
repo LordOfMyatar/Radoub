@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.11-alpha] - 2026-06-18
+**Branch**: `quartermaster/issue-2497` | **PR**: #2500
+
+### Fix: Resolve mesh diffuse from MTR texture0 (#2497)
+
+- `TextureService` now resolves a mesh's diffuse from its MTR `texture0` (via the mesh `materialname`) before the bare-name `_d` guess — the remaining half of the #1755 white-model fix for CEP3 creatures whose diffuse differs from the mesh bitmap. The #1755 bare/`_d` fallback is preserved when no MTR applies. Consumed by the Quartermaster model preview.
+
+---
+
 ## [Radoub.Formats 0.2.70-alpha] - 2026-06-18
 **Branch**: `quartermaster/issue-2496` | **PR**: #2499
 

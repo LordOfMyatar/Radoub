@@ -4,6 +4,7 @@ using System.IO;
 using Pfim;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Mtr;
 using Radoub.Formats.Plt;
 using Radoub.Formats.Services;
 using Radoub.Formats.Tga;
@@ -566,6 +567,60 @@ public class TextureService
         return false;
     }
 
+    /// <summary>
+    /// #2497: material-aware texture load. When <paramref name="materialName"/> names an MTR
+    /// (resource type 3007) with a <c>texture0</c> diffuse, that named diffuse is tried first —
+    /// the white-model fix for CEP3 creatures whose diffuse differs from the mesh bitmap. Falls
+    /// back to the bare-name / <c>_d</c> chain (#1755) when the MTR is absent, declares no usable
+    /// texture0, or its texture0 itself misses on disk.
+    /// </summary>
+    public (int width, int height, byte[] pixels, bool isPlt)? LoadTextureWithKind(
+        string resRef,
+        string? materialName,
+        PltColorIndices? colorIndices = null)
+    {
+        colorIndices ??= new PltColorIndices();
+
+        var mtr = LoadMtr(materialName);
+        var mtrDiffuse = mtr?.DiffuseTexture;
+        // Only worth a separate attempt when the MTR points somewhere the bare-name chain
+        // would not already reach (the divergent texture0 != bitmap case).
+        if (!string.IsNullOrEmpty(mtrDiffuse)
+            && !mtrDiffuse.Equals(resRef, StringComparison.OrdinalIgnoreCase))
+        {
+            var mtrResult = LoadTextureWithKind(mtrDiffuse, colorIndices);
+            if (mtrResult.HasValue)
+                return mtrResult;
+        }
+
+        return LoadTextureWithKind(resRef, colorIndices);
+    }
+
+    /// <summary>
+    /// Resolve and parse the MTR material file (resource type 3007) named by a mesh's
+    /// <c>materialname</c>. Returns null when there is no material name or no such resource.
+    /// </summary>
+    private MtrFile? LoadMtr(string? materialName)
+    {
+        if (string.IsNullOrEmpty(materialName))
+            return null;
+
+        var data = _gameDataService.FindResource(materialName.ToLowerInvariant(), ResourceTypes.Mtr);
+        if (data == null || data.Length == 0)
+            return null;
+
+        try
+        {
+            return MtrReader.Read(data);
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"TextureService.LoadMtr: MTR '{materialName}' parse failed ({data.Length} bytes): {ex.Message}");
+            return null;
+        }
+    }
+
     public (int width, int height, byte[] pixels, bool isPlt)? LoadTextureWithKind(
         string resRef,
         PltColorIndices? colorIndices = null)
@@ -704,6 +759,39 @@ public class TextureService
             return null;
 
         return baseName + "_d";
+    }
+
+    /// <summary>
+    /// #2497: build the ordered list of diffuse texture resrefs to try for a mesh, given
+    /// its bare bitmap name and the parsed MTR material (or null when it has none). When
+    /// the MTR declares a <c>texture0</c>, that named diffuse leads — this is the white-model
+    /// fix for CEP3 creatures whose diffuse differs from the mesh bitmap (<c>texture0 != bitmap</c>).
+    /// The bare name and its <c>_d</c> variant always follow as fallback so the #1755 behavior is
+    /// preserved when the MTR is absent or its texture0 itself misses on disk. Candidates are
+    /// de-duplicated (case-insensitive) preserving order.
+    /// </summary>
+    internal static IReadOnlyList<string> ResolveDiffuseCandidates(string? bitmap, MtrFile? mtr)
+    {
+        var ordered = new List<string>();
+
+        void Add(string? name)
+        {
+            if (string.IsNullOrEmpty(name))
+                return;
+            foreach (var existing in ordered)
+                if (existing.Equals(name, StringComparison.OrdinalIgnoreCase))
+                    return;
+            ordered.Add(name);
+        }
+
+        // MTR texture0 leads when present (the actual white-model trigger).
+        Add(mtr?.DiffuseTexture);
+
+        // Existing #1755 chain: bare name, then the _d diffuse variant.
+        Add(bitmap);
+        Add(PbrDiffuseFallbackName(bitmap));
+
+        return ordered;
     }
 
     /// <summary>
