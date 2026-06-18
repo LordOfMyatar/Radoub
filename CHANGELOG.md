@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Radoub.Formats 0.2.70-alpha] - 2026-06-18
-**Branch**: `quartermaster/issue-2496` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2496` | **PR**: #2499
 
 ### Feat: MTR (3007) reader + MDL materialname parsing (#2496)
 

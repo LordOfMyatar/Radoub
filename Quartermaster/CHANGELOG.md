@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.121-alpha] - 2026-06-18
-**Branch**: `quartermaster/issue-2496` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2496` | **PR**: #2499
 
 ### Feat: MTR reader + MDL materialname (#2496)
 
