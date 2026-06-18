@@ -15,6 +15,7 @@ public class ResourceTypesTests
     [InlineData(ResourceTypes.Are, ".are")]
     [InlineData(ResourceTypes.Git, ".git")]
     [InlineData(ResourceTypes.Ifo, ".ifo")]
+    [InlineData(ResourceTypes.Mtr, ".mtr")]
     public void GetExtension_ReturnsCorrectExtension(ushort resourceType, string expectedExtension)
     {
         var result = ResourceTypes.GetExtension(resourceType);
@@ -27,6 +28,8 @@ public class ResourceTypesTests
     [InlineData(".nss", ResourceTypes.Nss)]
     [InlineData(".NCS", ResourceTypes.Ncs)]
     [InlineData(".2da", ResourceTypes.TwoDA)]
+    [InlineData(".mtr", ResourceTypes.Mtr)]
+    [InlineData("MTR", ResourceTypes.Mtr)]
     public void FromExtension_ReturnsCorrectType(string extension, ushort expectedType)
     {
         var result = ResourceTypes.FromExtension(extension);
@@ -53,5 +56,6 @@ public class ResourceTypesTests
         Assert.Equal((ushort)2017, ResourceTypes.TwoDA);
         Assert.Equal((ushort)2027, ResourceTypes.Utc);
         Assert.Equal((ushort)2025, ResourceTypes.Uti);
+        Assert.Equal((ushort)3007, ResourceTypes.Mtr);  // NWN:EE material file (restype.nim)
     }
 }
