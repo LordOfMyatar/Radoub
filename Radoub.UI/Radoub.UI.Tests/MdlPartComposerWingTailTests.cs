@@ -73,6 +73,7 @@ public class MdlPartComposerWingTailTests
         var wings = Bone("wings01", Vector3.Zero);
         var bone1 = Bone("Bone1", new Vector3(0.1f, 0, 0.2f));
         var lwing = Mesh("LWing", Vector3.Zero, 50);
+        lwing.Bitmap = "c_dmsucubus"; // the wing's own authored texture — must be preserved
         bone1.Children.Add(lwing); lwing.Parent = bone1;
         wings.Children.Add(bone1); bone1.Parent = wings;
         root.Children.Add(wings); wings.Parent = root;
@@ -166,6 +167,23 @@ public class MdlPartComposerWingTailTests
         Assert.True(Matrix4x4.Decompose(world, out _, out _, out var t));
         Assert.True(t.Z > 1.0f, $"wing mesh world Z={t.Z:F3} — expected back height (>1.0), got feet height");
         Assert.Equal(1.65f, t.Z, 2); // 1.2 + 0 + 0.25 + 0.2
+    }
+
+    [Fact]
+    public void GraftSupermodel_PreservesAuthoredMeshBitmap()
+    {
+        // #1485 regression: wing/tail meshes carry their OWN texture name (e.g. c_dmsucubus).
+        // Unlike body parts (whose Bitmap is overridden with the part resref), the supermodel
+        // graft must NOT overwrite it — doing so points the renderer at the model resref (no
+        // such texture) and the wings render untextured/grey.
+        var composer = MakeComposer(BuildSkeleton(), BuildWing());
+
+        var composite = composer.Compose("pmh0", System.Array.Empty<(string, string)>(),
+            adjustSeams: false, supermodels: new[] { ("wings", "c_wingsdm", 1.0f) });
+
+        var lwing = MdlPartComposer.FindBoneByName(composite!.GeometryRoot!, "LWing") as MdlTrimeshNode;
+        Assert.NotNull(lwing);
+        Assert.Equal("c_dmsucubus", lwing!.Bitmap); // authored texture preserved, not "c_wingsdm"
     }
 
     [Fact]

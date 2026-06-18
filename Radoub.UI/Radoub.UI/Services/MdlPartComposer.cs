@@ -349,6 +349,19 @@ public sealed class MdlPartComposer
     }
 
     /// <summary>
+    /// Record the part type on every mesh in a grafted subtree WITHOUT touching its Bitmap (#1485).
+    /// Wing/tail meshes carry correct authored texture names — unlike body parts, they must not be
+    /// overridden with the part resref.
+    /// </summary>
+    private static void TagSubtreeMeshes(MdlNode node, string partType, Dictionary<string, string> meshPartTypes)
+    {
+        if (node is MdlTrimeshNode mesh && mesh.Vertices.Length > 0)
+            meshPartTypes[mesh.Name] = partType;
+        foreach (var child in node.Children)
+            TagSubtreeMeshes(child, partType, meshPartTypes);
+    }
+
+    /// <summary>
     /// Graft a wing/tail supermodel (#1485) under the composite root, preserving its internal bone
     /// hierarchy + meshes, scaled by <paramref name="scale"/> (the appearance's WING_TAIL_SCALE).
     /// The supermodel's own animations (named to match the body — cwalkf, cidle, ...) are merged
@@ -398,7 +411,11 @@ public sealed class MdlPartComposer
                 var clone = CloneNode(child, attachParent);
                 if (scale > 0f && scale != 1.0f)
                     clone.Scale *= scale;
-                ApplyPartBitmap(clone, resRef, tag, meshPartTypes);
+                // Record the part type for seam handling but PRESERVE each mesh's authored Bitmap
+                // (#1485). Unlike body parts (whose Bitmap is stale and gets the part-resref override),
+                // wing/tail meshes carry their own correct texture (e.g. c_dmsucubus); overwriting it
+                // with the model resref points the renderer at a non-existent texture → grey wings.
+                TagSubtreeMeshes(clone, tag, meshPartTypes);
                 attachParent.Children.Add(clone);
                 grafted++;
             }
