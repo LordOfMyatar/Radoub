@@ -583,6 +583,28 @@ public class TextureService
 
         var mtr = LoadMtr(materialName);
         var mtrDiffuse = mtr?.DiffuseTexture;
+
+        // #2497 diagnostics: MTR-driven creatures are rare in the wild (no MTR exists in the
+        // common CEP/PRC HAKs as of this writing), so the first real one is worth a loud trail.
+        // Whenever a mesh actually carries a materialname, log the full resolution decision so a
+        // white-model report can be diagnosed from logs alone. Tag: [MTR].
+        if (!string.IsNullOrEmpty(materialName))
+        {
+            if (mtr == null)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"[MTR] mesh '{resRef}' names material '{materialName}' but no .mtr (3007) resolved — using bare/_d chain.");
+            }
+            else
+            {
+                var diverges = !string.IsNullOrEmpty(mtrDiffuse)
+                    && !mtrDiffuse.Equals(resRef, StringComparison.OrdinalIgnoreCase);
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"[MTR] mesh '{resRef}' material '{materialName}': texture0='{mtrDiffuse ?? "(none)"}', " +
+                    $"diverges={diverges}, companions=[{string.Join(",", DescribeMtrTextures(mtr))}].");
+            }
+        }
+
         // Only worth a separate attempt when the MTR points somewhere the bare-name chain
         // would not already reach (the divergent texture0 != bitmap case).
         if (!string.IsNullOrEmpty(mtrDiffuse)
@@ -590,10 +612,31 @@ public class TextureService
         {
             var mtrResult = LoadTextureWithKind(mtrDiffuse, colorIndices);
             if (mtrResult.HasValue)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"[MTR] mesh '{resRef}' diffuse resolved from MTR texture0 '{mtrDiffuse}' " +
+                    $"({mtrResult.Value.width}x{mtrResult.Value.height}).");
                 return mtrResult;
+            }
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"[MTR] mesh '{resRef}' material '{materialName}' texture0 '{mtrDiffuse}' did not load — " +
+                $"falling back to bare/_d chain (possible white model).");
         }
 
         return LoadTextureWithKind(resRef, colorIndices);
+    }
+
+    /// <summary>
+    /// Diagnostic helper: list the non-empty MTR sampler slots as <c>texN=name</c> for logging.
+    /// </summary>
+    private static IEnumerable<string> DescribeMtrTextures(MtrFile mtr)
+    {
+        for (int i = 0; i < mtr.Textures.Length; i++)
+        {
+            var t = mtr.Textures[i];
+            if (!string.IsNullOrEmpty(t))
+                yield return $"tex{i}={t}";
+        }
     }
 
     /// <summary>
@@ -611,12 +654,16 @@ public class TextureService
 
         try
         {
-            return MtrReader.Read(data);
+            var mtr = MtrReader.Read(data);
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"[MTR] loaded material '{materialName}' ({data.Length} bytes): texture0='{mtr.DiffuseTexture ?? "(none)"}', " +
+                $"renderhint='{mtr.RenderHint ?? "(none)"}'.");
+            return mtr;
         }
         catch (Exception ex)
         {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                $"TextureService.LoadMtr: MTR '{materialName}' parse failed ({data.Length} bytes): {ex.Message}");
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"[MTR] material '{materialName}' parse failed ({data.Length} bytes): {ex.Message}");
             return null;
         }
     }
