@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.Formats 0.2.70-alpha] - 2026-06-18
+**Branch**: `quartermaster/issue-2496` | **PR**: #2499
+
+### Feat: MTR (3007) reader + MDL materialname parsing (#2496)
+
+- Added the NWN:EE MTR material format (resource type 3007) reader and parsed the MDL `materialname` field in both binary and ASCII readers, so meshes can resolve their material/diffuse from model data instead of a `_d`-suffix guess. Format layer only; consumed by the #2482 model-preview white-model fix.
+
+---
+
 ## [Radoub.UI] - 2026-06-14
 **Branch**: `trebuchet/issue-2477` | **PR**: #2483
 

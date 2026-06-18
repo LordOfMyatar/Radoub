@@ -55,7 +55,9 @@ public partial class MdlBinaryReader
             $"[MDL] Mesh texture0 at 0x{textureOffset:X4} (relative 0x{textureOffset - meshHeaderStart:X4}): '{mesh.Bitmap}'");
         mesh.Bitmap2 = ReadFixedString(reader, 64);  // Texture1
         ReadFixedString(reader, 64);                  // Texture2
-        ReadFixedString(reader, 64);                  // Texture3
+        // Texture3 is the NWN:EE material name (names the .mtr) — #2496.
+        // Confirmed by rollnw (MdlBinaryParser.hpp: "This is material name in NWN:EE").
+        mesh.MaterialName = ReadFixedString(reader, 64);
 
         // 0x178: Tilefade (4 bytes)
         mesh.Tilefade = reader.ReadInt32();

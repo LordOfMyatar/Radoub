@@ -113,6 +113,7 @@ public static class ResourceTypes
     public const ushort Trx = 2093;
 
     // NWN:EE specific (3000+)
+    public const ushort Mtr = 3007;  // Material file (PBR shader/texture bindings)
     public const ushort Mdb = 4000;
     public const ushort Mda = 4001;
     public const ushort Spt = 4002;
@@ -188,6 +189,7 @@ public static class ResourceTypes
             Bif => ".bif",
             Key => ".key",
             Jpg => ".jpg",
+            Mtr => ".mtr",
             _ => $".{resourceType}"
         };
     }
@@ -253,6 +255,7 @@ public static class ResourceTypes
             "bif" => Bif,
             "key" => Key,
             "jpg" => Jpg,
+            "mtr" => Mtr,
             _ => Invalid
         };
     }
