@@ -88,15 +88,14 @@ public partial class CreatureDisplayService
     {
         var races = new List<(byte Id, string Name)>();
 
-        for (int i = 0; i < 256; i++)
+        // Iterate the real row count (CEP racialtypes.2da has 150 rows with races
+        // past index 50); cap at byte range since race IDs are stored as bytes.
+        int rowCount = System.Math.Min(_gameDataService.Get2DA("racialtypes")?.RowCount ?? 0, 256);
+        for (int i = 0; i < rowCount; i++)
         {
             var label = _gameDataService.Get2DAValue("racialtypes", i, "Label");
             if (string.IsNullOrEmpty(label) || label == "****")
-            {
-                if (races.Count > 10 && i > 50)
-                    break;
                 continue;
-            }
 
             var name = GetRaceName((byte)i);
             races.Add(((byte)i, name));
@@ -113,15 +112,12 @@ public partial class CreatureDisplayService
     {
         var races = new List<(byte Id, string Name)>();
 
-        for (int i = 0; i < 256; i++)
+        int rowCount = System.Math.Min(_gameDataService.Get2DA("racialtypes")?.RowCount ?? 0, 256);
+        for (int i = 0; i < rowCount; i++)
         {
             var label = _gameDataService.Get2DAValue("racialtypes", i, "Label");
             if (string.IsNullOrEmpty(label) || label == "****")
-            {
-                if (races.Count > 10 && i > 50)
-                    break;
                 continue;
-            }
 
             var playerRace = _gameDataService.Get2DAValue("racialtypes", i, "PlayerRace");
             if (playerRace != "1")
@@ -157,6 +153,16 @@ public partial class CreatureDisplayService
             var sizeStr = _gameDataService.Get2DAValue("appearance", appId, "SIZECATEGORY");
             if (!string.IsNullOrEmpty(sizeStr) && sizeStr != "****" && int.TryParse(sizeStr, out int size))
             {
+                // SIZECATEGORY is the row index into creaturesize.2da; read its LABEL
+                // so custom/CEP sizes (e.g. Gargantuan/Colossal at rows 22/23) display.
+                var label = _gameDataService.Get2DAValue("creaturesize", size, "LABEL");
+                if (!string.IsNullOrEmpty(label) && label != "****")
+                    return TitleCase(label);
+
+                // Fallback to the stock name table when creaturesize.2da is unavailable.
+                GameDataWarnOnce.Warn(
+                    $"size_name_{size}",
+                    $"CreatureDisplayService.GetRaceSizeCategory: creaturesize.2da LABEL lookup failed for size {size} — using hardcoded fallback");
                 return size switch
                 {
                     1 => "Tiny",
@@ -169,6 +175,16 @@ public partial class CreatureDisplayService
             }
         }
         return "Medium"; // Default fallback
+    }
+
+    /// <summary>
+    /// Converts an all-caps 2DA label (e.g. "GARGANTUAN") to display title case.
+    /// </summary>
+    private static string TitleCase(string value)
+    {
+        if (value.Length == 0)
+            return value;
+        return char.ToUpperInvariant(value[0]) + value.Substring(1).ToLowerInvariant();
     }
 
     /// <summary>
@@ -414,16 +430,14 @@ public partial class CreatureDisplayService
     {
         var classes = new List<ClassInfo>();
 
-        for (int i = 0; i < 256; i++)
+        // Iterate the real row count so PRC/CEP prestige classes past index 50
+        // are not silently dropped.
+        int rowCount = _gameDataService.Get2DA("classes")?.RowCount ?? 0;
+        for (int i = 0; i < rowCount; i++)
         {
             var label = _gameDataService.Get2DAValue("classes", i, "Label");
             if (string.IsNullOrEmpty(label) || label == "****")
-            {
-                // Stop after a reasonable gap if we've found enough classes
-                if (classes.Count > 20 && i > 50)
-                    break;
                 continue;
-            }
 
             var name = GetClassName(i);
             var playerClass = _gameDataService.Get2DAValue("classes", i, "PlayerClass");

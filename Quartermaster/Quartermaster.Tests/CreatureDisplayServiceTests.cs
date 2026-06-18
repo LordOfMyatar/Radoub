@@ -616,4 +616,74 @@ public class CreatureDisplayServiceTests
     }
 
     #endregion
+
+    #region GetRaceSizeCategory
+
+    [Fact]
+    public void GetRaceSizeCategory_ReadsLabel_FromCreatureSize2da()
+    {
+        // CEP creaturesize.2da: Gargantuan at row 22. SIZECATEGORY is the row index.
+        _mockGameData.Set2DAValue("racialtypes", 100, "Label", "CepGiant");
+        _mockGameData.Set2DAValue("racialtypes", 100, "Appearance", "200");
+        _mockGameData.Set2DAValue("appearance", 200, "SIZECATEGORY", "22");
+        _mockGameData.Set2DAValue("creaturesize", 22, "LABEL", "GARGANTUAN");
+
+        Assert.Equal("Gargantuan", _displayService.GetRaceSizeCategory(100));
+    }
+
+    [Fact]
+    public void GetRaceSizeCategory_NoCreatureSize2da_FallsBackToStockName()
+    {
+        // No creaturesize.2da → stock name table for indices 1-5.
+        _mockGameData.Set2DAValue("racialtypes", 101, "Appearance", "201");
+        _mockGameData.Set2DAValue("appearance", 201, "SIZECATEGORY", "4");
+
+        Assert.Equal("Large", _displayService.GetRaceSizeCategory(101));
+    }
+
+    [Fact]
+    public void GetRaceSizeCategory_NoAppearance_ReturnsMediumDefault()
+    {
+        Assert.Equal("Medium", _displayService.GetRaceSizeCategory(150));
+    }
+
+    #endregion
+
+    #region Enumeration covers high 2DA rows (CEP)
+
+    [Fact]
+    public void GetAllRaces_IncludesRaceDefinedPastIndex50()
+    {
+        // CEP racialtypes.2da defines races well past index 50 with gaps.
+        _mockGameData.Set2DAValue("racialtypes", 100, "Label", "CepCustomRace");
+
+        var races = _displayService.GetAllRaces();
+
+        Assert.Contains(races, r => r.Id == 100);
+    }
+
+    [Fact]
+    public void GetPlayerRaces_IncludesPlayerRacePastIndex50()
+    {
+        _mockGameData.Set2DAValue("racialtypes", 110, "Label", "CepPlayerRace");
+        _mockGameData.Set2DAValue("racialtypes", 110, "PlayerRace", "1");
+
+        var races = _displayService.GetPlayerRaces();
+
+        Assert.Contains(races, r => r.Id == 110);
+    }
+
+    [Fact]
+    public void GetAllClasses_IncludesPrestigeClassPastIndex50()
+    {
+        // PRC prestige classes live at high row indices.
+        _mockGameData.Set2DAValue("classes", 80, "Label", "PrcPrestige");
+        _mockGameData.Set2DAValue("classes", 80, "PlayerClass", "1");
+
+        var classes = _displayService.GetAllClasses();
+
+        Assert.Contains(classes, c => c.Id == 80);
+    }
+
+    #endregion
 }

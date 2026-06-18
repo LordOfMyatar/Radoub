@@ -5,6 +5,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.120-alpha] - 2026-06-18
+**Branch**: `quartermaster/issue-2487` | **PR**: #2494
+
+### Sprint: Aurora Data Sourcing (#2487)
+
+- Spell caster-class levels and creature-size AC/name now read from 2DA by label/row instead of hardcoded class IDs and size tables — fixes Quartermaster with CEP/PRC reordered 2DAs (#2480, #2479).
+- Race/class/appearance enumeration covers all populated 2DA rows (drops the early-break heuristic that silently dropped CEP rows past index 50) (#2479).
+
+---
+
 ## [0.2.119-alpha] - 2026-06-09
 **Branch**: `quartermaster/issue-2434` | **PR**: #2449
 
