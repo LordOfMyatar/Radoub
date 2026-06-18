@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Radoub.Formats.Itp;
 using Radoub.Formats.Logging;
 
@@ -42,7 +43,12 @@ public sealed class PaletteEditorLoader
         var pool = new List<(string ResRef, string Path)>();
         if (Directory.Exists(moduleFolder))
         {
-            foreach (var path in Directory.EnumerateFiles(moduleFolder, "*." + d.BlueprintExtension))
+            // Match the extension case-insensitively ourselves rather than via the glob: a glob like
+            // "*.uti" is case-insensitive on Windows but case-SENSITIVE on Linux, so an `ACID.UTI`
+            // file would be missed on Linux (NWN runs on Linux servers; module filenames vary in case).
+            string ext = "." + d.BlueprintExtension;
+            foreach (var path in Directory.EnumerateFiles(moduleFolder)
+                         .Where(p => Path.GetExtension(p).Equals(ext, StringComparison.OrdinalIgnoreCase)))
             {
                 // Normalize to lowercase: Aurora ResRefs are case-insensitive, and this keeps the
                 // pool key aligned with the lowercase ResRef text stored in the .itp tree.
