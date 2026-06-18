@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.121-alpha] - 2026-06-18
+**Branch**: `quartermaster/issue-2496` | **PR**: #TBD
+
+### Feat: MTR reader + MDL materialname (#2496)
+
+- Format-layer foundation for the model-preview white-model fix (#2482): MTR (3007) reader and MDL `materialname` parsing land in `Radoub.Formats` — see root CHANGELOG.
+
+---
+
 ## [0.2.120-alpha] - 2026-06-18
 **Branch**: `quartermaster/issue-2487` | **PR**: #2494
 
