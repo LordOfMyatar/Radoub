@@ -376,6 +376,18 @@ public sealed class MdlPartComposer
             EnsureCompositeRoot(compositeModel);
             var root = compositeModel.GeometryRoot!;
 
+            // Wings/tail are authored at local origin and attach to a NAMED bone on the body
+            // skeleton ('wings' on the upper back, 'tail' on the pelvis) that carries the correct
+            // world transform — exactly like body parts attach to torso_g/head_g (#1485). Parent
+            // the grafted subtree under that bone so it sits at back/rear height; fall back to the
+            // composite root only if the skeleton lacks the bone (grafting at root would otherwise
+            // place the wings at the model origin — i.e. the creature's feet).
+            var attachBone = FindBoneByName(root, tag);
+            var attachParent = attachBone ?? root;
+            if (attachBone == null)
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"MdlPartComposer.GraftSupermodel: no '{tag}' attach bone on skeleton — grafting at root (may mis-place)");
+
             // Graft the supermodel root's CHILDREN (skip its own root dummy, whose translation
             // duplicates the skeleton root's), cloning each subtree with hierarchy intact — same
             // mechanism as the robe graft (#1989). Apply WING_TAIL_SCALE to each grafted child's
@@ -383,11 +395,11 @@ public sealed class MdlPartComposer
             int grafted = 0;
             foreach (var child in partModel.GeometryRoot.Children)
             {
-                var clone = CloneNode(child, root);
+                var clone = CloneNode(child, attachParent);
                 if (scale > 0f && scale != 1.0f)
                     clone.Scale *= scale;
                 ApplyPartBitmap(clone, resRef, tag, meshPartTypes);
-                root.Children.Add(clone);
+                attachParent.Children.Add(clone);
                 grafted++;
             }
 

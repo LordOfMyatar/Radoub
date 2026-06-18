@@ -42,11 +42,17 @@ public class MdlPartComposerWingTailTests
             PositionValues = new[] { Vector3.Zero, new Vector3(0, 0, 0.1f) },
         };
 
-    /// <summary>Skeleton: rootdummy → torso_g, with a 'cwalkf' animation keying torso_g.</summary>
+    /// <summary>
+    /// Skeleton: rootdummy(z=1.2) → torso_g → wings (the back attach bone, z=0.25), plus a
+    /// 'cwalkf' animation keying torso_g. Mirrors real pmh0, which carries a 'wings' bone on the
+    /// upper back and a 'tail' bone on the pelvis that the wing/tail MDLs attach to (#1485).
+    /// </summary>
     private static MdlModel BuildSkeleton()
     {
         var root = Bone("rootdummy", new Vector3(0, 0, 1.2f));
         var torso = Bone("torso_g", Vector3.Zero);
+        var wingsBone = Bone("wings", new Vector3(0, -0.12f, 0.25f)); // upper back
+        torso.Children.Add(wingsBone); wingsBone.Parent = torso;
         root.Children.Add(torso); torso.Parent = root;
 
         var animRoot = AnimNode("rootdummy");
@@ -57,13 +63,14 @@ public class MdlPartComposerWingTailTests
     }
 
     /// <summary>
-    /// Wing MDL: rootdummy → wings → Bone1 (mesh 'LWing' under Bone1). Carries a 'cwalkf' animation
+    /// Wing MDL: c_wingsdm → wings01 → Bone1 (mesh 'LWing' under Bone1), all near local origin —
+    /// authored to be parented under the body's 'wings' attach bone. Carries a 'cwalkf' animation
     /// keying Bone1, plus a 'wflap' animation the body lacks.
     /// </summary>
     private static MdlModel BuildWing()
     {
         var root = Bone("c_wingsdm", new Vector3(0, 0, 0));
-        var wings = Bone("wings", Vector3.Zero);
+        var wings = Bone("wings01", Vector3.Zero);
         var bone1 = Bone("Bone1", new Vector3(0.1f, 0, 0.2f));
         var lwing = Mesh("LWing", Vector3.Zero, 50);
         bone1.Children.Add(lwing); lwing.Parent = bone1;
@@ -136,10 +143,42 @@ public class MdlPartComposerWingTailTests
         var composite = composer.Compose("pmh0", System.Array.Empty<(string, string)>(),
             adjustSeams: false, supermodels: new[] { ("wings", "c_wingsdm", 2.5f) });
 
-        // The grafted wing subtree root ('wings') carries the WING_TAIL_SCALE factor.
-        var wings = MdlPartComposer.FindBoneByName(composite!.GeometryRoot!, "wings");
+        // The grafted wing subtree root ('wings01') carries the WING_TAIL_SCALE factor.
+        var wings = MdlPartComposer.FindBoneByName(composite!.GeometryRoot!, "wings01");
         Assert.NotNull(wings);
         Assert.Equal(2.5f, wings!.Scale, 3);
+    }
+
+    [Fact]
+    public void GraftSupermodel_AttachesUnderNamedBone_NotRoot()
+    {
+        // #1485 regression: wings must hang off the body's 'wings' attach bone (upper back),
+        // not the composite root (feet). The wing's LWing mesh world Z must reflect the bone's
+        // back-height chain (root 1.2 + torso 0 + wings 0.25 + Bone1 0.2 = 1.65), not ~0.
+        var composer = MakeComposer(BuildSkeleton(), BuildWing());
+
+        var composite = composer.Compose("pmh0", System.Array.Empty<(string, string)>(),
+            adjustSeams: false, supermodels: new[] { ("wings", "c_wingsdm", 1.0f) });
+
+        var lwing = MdlPartComposer.FindBoneByName(composite!.GeometryRoot!, "LWing");
+        Assert.NotNull(lwing);
+        var world = MdlPartComposer.GetMeshWorldTransform(lwing!);
+        Assert.True(Matrix4x4.Decompose(world, out _, out _, out var t));
+        Assert.True(t.Z > 1.0f, $"wing mesh world Z={t.Z:F3} — expected back height (>1.0), got feet height");
+        Assert.Equal(1.65f, t.Z, 2); // 1.2 + 0 + 0.25 + 0.2
+    }
+
+    [Fact]
+    public void GraftSupermodel_NoAttachBone_FallsBackToRoot()
+    {
+        // A skeleton without a 'tail' bone still gets the tail grafted (at root) rather than dropped.
+        var composer = MakeComposer(BuildSkeleton(), BuildWing());
+
+        var composite = composer.Compose("pmh0", System.Array.Empty<(string, string)>(),
+            adjustSeams: false, supermodels: new[] { ("tail", "c_wingsdm", 1.0f) }); // no 'tail' bone in skeleton
+
+        // Still attached (fallback to root), not dropped.
+        Assert.NotNull(MdlPartComposer.FindBoneByName(composite!.GeometryRoot!, "LWing"));
     }
 
     [Fact]
