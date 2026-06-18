@@ -16,6 +16,12 @@ public partial class MdlAsciiReader
                     mesh.Bitmap = tokens[1];
                 break;
 
+            case "materialname":
+                // NWN:EE PBR material reference; names the .mtr that supplies the diffuse (#2496).
+                if (tokens.Length >= 2)
+                    mesh.MaterialName = tokens[1];
+                break;
+
             case "texture0":
             case "texture1":
                 if (tokens.Length >= 2 && string.IsNullOrEmpty(mesh.Bitmap))

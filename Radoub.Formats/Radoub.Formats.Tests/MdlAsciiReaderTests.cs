@@ -482,4 +482,52 @@ donemodel bounds
         Assert.Equal(new Vector3(1, 1, 1), model.BoundingMax);
         Assert.True(model.Radius > 0);
     }
+
+    [Fact]
+    public void Parse_TrimeshMaterialName_IsCaptured()
+    {
+        // NWN:EE PBR meshes name their .mtr via materialname; #2496 captures it so the
+        // renderer can resolve the diffuse from the MTR instead of the _d-suffix guess.
+        var mdlContent = @"
+newmodel mat
+beginmodelgeom mat
+node trimesh mat_mesh
+  parent NULL
+  bitmap c_zod_boar
+  materialname c_zod_boar
+  verts 1
+    0 0 0
+endnode
+endmodelgeom mat
+donemodel mat
+";
+        var reader = new MdlAsciiReader();
+        var model = reader.Parse(mdlContent);
+
+        var mesh = model.GetMeshNodes().Single();
+        Assert.Equal("c_zod_boar", mesh.MaterialName);
+        Assert.Equal("c_zod_boar", mesh.Bitmap);
+    }
+
+    [Fact]
+    public void Parse_TrimeshWithoutMaterialName_LeavesItEmpty()
+    {
+        var mdlContent = @"
+newmodel nomat
+beginmodelgeom nomat
+node trimesh nomat_mesh
+  parent NULL
+  bitmap sometex
+  verts 1
+    0 0 0
+endnode
+endmodelgeom nomat
+donemodel nomat
+";
+        var reader = new MdlAsciiReader();
+        var model = reader.Parse(mdlContent);
+
+        var mesh = model.GetMeshNodes().Single();
+        Assert.Equal(string.Empty, mesh.MaterialName);
+    }
 }
