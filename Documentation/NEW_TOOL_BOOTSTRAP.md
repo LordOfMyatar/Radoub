@@ -12,6 +12,7 @@ This guide holds the full checklist and detailed patterns for adding a new tool 
   - [Required Components (Every Tool)](#required-components-every-tool)
   - [Shared Library References](#shared-library-references)
   - [Backups Before Destructive File Operations](#backups-before-destructive-file-operations)
+  - [File Session Locking (cross-tool, FileSessionLockService)](#file-session-locking-cross-tool-filesessionlockservice)
   - [Spell-Check Integration (Radoub.Dictionary)](#spell-check-integration-radoubdictionary)
   - [Implementation Checklist](#implementation-checklist)
   - [Trebuchet Integration](#trebuchet-integration)
@@ -115,6 +116,35 @@ Rules:
 
 Reference: Relique item delete (#2347), `ModulePackService` (#2246), `ResRefRenameOrchestrator`.
 
+### File Session Locking (cross-tool, FileSessionLockService)
+
+The Radoub tools do **not** talk to each other (no IPC; only command-line args). To stop two tools
+from clobbering each other's edits to the same file, use the shared
+`Radoub.UI.Services.FileSessionLockService`. It writes a JSON sidecar lock (`{file}.radoub.lock`)
+recording the holder's PID + tool name, is cross-process/cross-tool by convention, and auto-cleans
+stale locks (dead PID, or PID reused by a different process name).
+
+Rules for a per-file editor (Relique/QM/Fence/Reliquary pattern):
+- On opening a file: `AcquireLock(path, "ToolName")`. If it returns `LockResult.LockedByOther`,
+  read `CheckLock(path)` to tell the user who holds it and refuse (or open read-only).
+- On closing a file or switching away: `ReleaseLock(oldPath)`.
+- On app exit: `ReleaseAllLocks()` (wire into the window-closing / lifecycle path).
+
+For a tool that **writes files it does not "open"** (e.g. the ITP palette editor rewrites whole
+blueprint files to change their `PaletteID`): do **not** acquire locks on every file you touch —
+instead **`CheckLock(path)` immediately before each write** and refuse + warn if another running
+tool holds it (`CheckLock(...)?.ToolName`). This catches the save-after-save clobber without
+holding locks the editor doesn't need. See `PaletteEditorHostViewModel.MoveBlueprintToCategory`
+(#2477).
+
+Caveat the lock does **not** cover: a tool that opens a file *read-only* without acquiring the lock
+leaves no sidecar, so a concurrent write won't be detected. The lock guards the common
+"editing in two tools" case, not every race. A blueprint write is read-disk → modify → write-whole-
+file, so it reflects the latest **saved** state but is blind to another tool's **unsaved** edits.
+
+Surface a blocked action with a theme-based warning (`{DynamicResource ThemeWarning}` /
+`BrushManager.GetWarningBrush()`), never a hardcoded color.
+
 ### Spell-Check Integration (Radoub.Dictionary)
 
 For tools with game-facing text (dialog, journal entries, descriptions), use `Radoub.Dictionary`:
@@ -173,6 +203,7 @@ userDict.AddWord("Waterdeep");
 - [ ] **Add dictionary support** if tool has text editing fields
 - [ ] **Variables editing**: use the shared `Radoub.UI.Controls.VariablesPanel` *(Sprint 3)* — do NOT fork `VariableViewModel`. The shared panel covers all GFF VarTable types (int/float/string/object/location) with validation; host supplies the `UndoRedoManager`.
 - [ ] **`AssemblyName` matches the tool name** in the `.csproj` (e.g. `<AssemblyName>Relique</AssemblyName>` for the Relique tool). `RootNamespace` can differ if a legacy internal name is preferred, but the built binary must ship as `ToolName.exe` / `ToolName` — Trebuchet's sibling discovery (`ToolLauncherService.RefreshPathsFromSiblingDirectory`) walks `ToolInfo.Name`, and the release workflow / cross-tool launchers all assume `Radoub/ToolName.exe`. Mismatch causes silent launch failures + a forced rename later with a settings-path migration (#2080).
+- [ ] **Acquire a file-session lock on open** via `Radoub.UI.Services.FileSessionLockService` — `AcquireLock(path, "ToolName")` when a file opens, `ReleaseLock(oldPath)` on close/switch, `ReleaseAllLocks()` on app exit, and open read-only (with a theme warning) on `LockResult.LockedByOther`. This is what stops two tools (or the palette editor) from clobbering each other's edits to the same file; a tool that skips it is invisible to every other tool's conflict check. See [File Session Locking](#file-session-locking-cross-tool-filesessionlockservice). (Reliquary shipped without this — #2493.)
 - [ ] **Override `IndexMetadataAsync` + `ReadSourceMetadataAsync`** on the file browser panel if the format has Name and/or Tag fields — see [File Browser Adoption](#file-browser-adoption-filebrowserpanelbase)
 - [ ] **Wire Undo/Redo via shared `UndoRedoManager`** — register Ctrl+Z / Ctrl+Y and route every user-initiated mutation through `IUndoableCommand` so the standard Undo/Redo menu items work from day one (#2231). Do **not** ship disabled Undo/Redo menu stubs — either wire them correctly or omit them.
 - [ ] **Ship a New-resource flow** (`File → New`, Ctrl+N) — the tool must let the user create a blank resource from scratch, not only edit existing files. A `SaveFilePicker`/`Save As`-into-module path that *copies* a base-game blueprint is **not** a substitute: it can't make a resource that isn't already in the game data. Match the lightest pattern that fits the format — Relique's New Item Wizard (base-item-type branching), Fence's simpler new-store, or a plain blank-document `File → New`. A tool that can only edit pre-existing files is incomplete. (Reliquary shipped without this — #2367 — because Save-As-copy masked the gap.)
@@ -483,6 +514,7 @@ dotnet nbgv get-version --project [ToolDir]
 | Hardcoding version in .csproj | Use NBGV `version.json` — no version properties in .csproj |
 | `<AssemblyName>` differs from tool name (built exe is `Foo.exe` for tool "Bar") | Set `<AssemblyName>ToolName</AssemblyName>` to match the folder/tool name. Sibling discovery, release workflow, cross-tool launchers, and `ToolDispatchService` all assume `Radoub/ToolName.exe` — divergence requires a settings-path migration to fix (#2080). |
 | Destructive file op with no backup (delete / overwrite / rename) | Back up via `Radoub.UI.Services.Search.BackupService` first. A bare `File.Delete` / `File.WriteAllBytes` over a user file is unrecoverable (#2347). See **Backups Before Destructive File Operations**. |
+| Opening files without a file-session lock | `FileSessionLockService.AcquireLock` on open / `ReleaseLock` on close / `ReleaseAllLocks` on exit. Without it, two tools clobber the same file and the tool is invisible to other tools' conflict checks (#2493). See **File Session Locking**. |
 
 [↑ TOC](#table-of-contents)
 

@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.21.0-alpha] - 2026-06-14
+**Branch**: `trebuchet/issue-2477` | **PR**: #2483
+
+### Feature: ITP palette editor panel (#2477)
+
+- Hosts the shared `Radoub.UI` palette editor as a Trebuchet panel (drag-drop blueprint/category reorganization; shared-lib entry in root CHANGELOG).
+
+---
+
 ## [1.20.0-alpha] - 2026-06-14
 **Branch**: `trebuchet/issue-2419` | **PR**: #2463
 

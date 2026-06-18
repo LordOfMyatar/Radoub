@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI] - 2026-06-14
+**Branch**: `trebuchet/issue-2477` | **PR**: #2483
+
+### Feature: ITP palette editor — Milestone 3: UI + Trebuchet host (#2477, closes #2301)
+
+- `PaletteEditorControl` shared in `Radoub.UI`: one-window palette editing (resource-type selector, single category tree with blueprint leaves inline) with drag-drop reorganization, a virtual Uncategorized bucket, and TLK-resolved category names; hosted as a Trebuchet panel (Ctrl+5). Placement is authoritative by blueprint `PaletteID` (edits from other tools appear on Reload); every move saves immediately and checks the cross-tool file lock to avoid clobbering a blueprint open elsewhere. v1 is reorganize-only — category add/rename/delete (#2486) and full reorg undo (#2484) are follow-ups.
+
+---
+
 ## [Radoub.UI] - 2026-06-15
 **Branch**: `radoub/issue-2476` | **PR**: #2478
 

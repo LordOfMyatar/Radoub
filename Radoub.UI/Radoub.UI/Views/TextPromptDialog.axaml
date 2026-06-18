@@ -1,0 +1,16 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Radoub.UI.Views.TextPromptDialog"
+        Title="Enter Name"
+        Width="380" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    <StackPanel Margin="16" Spacing="12">
+        <TextBlock x:Name="PromptLabel" Text="Name:" TextWrapping="Wrap"/>
+        <TextBox x:Name="InputBox" KeyDown="OnInputKeyDown"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button x:Name="OkButton" Content="OK" Click="OnOkClick" Padding="16,4" IsDefault="True"/>
+            <Button Content="Cancel" Click="OnCancelClick" Padding="16,4" IsCancel="True"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

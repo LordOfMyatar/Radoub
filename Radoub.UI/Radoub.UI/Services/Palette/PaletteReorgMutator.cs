@@ -188,27 +188,24 @@ public static class PaletteReorgMutator
     }
 
     /// <summary>
-    /// Classify a blueprint against the loaded tree (display rule: the tree wins).
+    /// Classify a blueprint by its own <c>PaletteID</c> (the file is authoritative for placement;
+    /// the <c>.itp</c> tree only supplies category structure and names). The blueprint is placed
+    /// under the category whose <c>Id</c> equals its <c>PaletteID</c>; if no live category matches
+    /// (including a stale id from another tool, or an unfiled default), it is Uncategorized. Stale
+    /// tree <c>Blueprints</c> entries are ignored — saving reconciles the tree to the PaletteIDs.
     /// </summary>
     public static PalettePlacement Classify(ItpFile itp, IBlueprintPaletteStore store, string resRef)
     {
         if (itp == null) throw new ArgumentNullException(nameof(itp));
         if (store == null) throw new ArgumentNullException(nameof(store));
 
-        var home = itp.GetCategories()
-            .FirstOrDefault(c => c.Blueprints.Any(b =>
-                string.Equals(b.ResRef, resRef, StringComparison.OrdinalIgnoreCase)));
-
-        // Not listed anywhere = not filed, regardless of what its PaletteID claims.
-        if (home == null)
+        if (store.GetPaletteId(resRef) is not byte id)
             return new PalettePlacement(PalettePlacementKind.Uncategorized, null);
 
-        var id = store.GetPaletteId(resRef);
-        // Listed under a category, but the blueprint's own PaletteID disagrees -> drifted.
-        if (id != home.Id)
-            return new PalettePlacement(PalettePlacementKind.Drifted, home);
-
-        return new PalettePlacement(PalettePlacementKind.InSync, home);
+        var home = itp.GetCategories().FirstOrDefault(c => c.Id == id);
+        return home == null
+            ? new PalettePlacement(PalettePlacementKind.Uncategorized, null)
+            : new PalettePlacement(PalettePlacementKind.InSync, home);
     }
 
     // ---- helpers -------------------------------------------------------------

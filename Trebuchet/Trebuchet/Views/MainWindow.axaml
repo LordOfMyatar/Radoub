@@ -312,6 +312,11 @@
                     <TabItem Header="Marlinspike">
                         <ctrl:MarlinspikePanel x:Name="MarlinspikePanel"/>
                     </TabItem>
+
+                    <!-- Palette Tab -->
+                    <TabItem Header="Palette">
+                        <ctrl:PaletteEditorPanel x:Name="PaletteEditorPanel"/>
+                    </TabItem>
                 </TabControl>
             </Grid>
         </Grid>

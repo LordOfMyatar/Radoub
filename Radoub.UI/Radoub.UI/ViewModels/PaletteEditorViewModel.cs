@@ -71,6 +71,62 @@ public partial class PaletteEditorViewModel : ObservableObject
         });
     }
 
+    /// <summary>
+    /// File an uncategorized blueprint into <paramref name="to"/>: add a tree entry and stage the
+    /// blueprint's <c>PaletteID</c> to <paramref name="to"/>'s Id (add-only dual write). Unlike
+    /// <see cref="MoveBlueprint"/> there is no source category. No-op (false) if the blueprint is
+    /// not in the pool or is already listed somewhere in the tree (use <see cref="MoveBlueprint"/>
+    /// to recategorize a listed one). Rolls back the tree entry and the staged id if the refresh throws.
+    /// </summary>
+    public bool FileBlueprint(string resRef, PaletteCategoryNode to)
+    {
+        if (to == null) throw new ArgumentNullException(nameof(to));
+        if (string.IsNullOrEmpty(resRef) || !_store.Contains(resRef)) return false;
+
+        // Add-only: refuse if the blueprint is already listed in the tree. Adding a second tree
+        // entry would silently corrupt the palette.
+        if (PaletteReorgMutator.Classify(_itp, _store, resRef).Kind != PalettePlacementKind.Uncategorized)
+            return false;
+
+        byte? originalId = _store.GetPaletteId(resRef);
+        var entry = new PaletteBlueprintNode { ResRef = resRef };
+        to.Blueprints.Add(entry);
+        if (!_store.SetPaletteId(resRef, to.Id))
+        {
+            to.Blueprints.Remove(entry);
+            return false;
+        }
+
+        return CommitOrRollback(() =>
+        {
+            to.Blueprints.Remove(entry);
+            if (originalId is byte id) _store.SetPaletteId(resRef, id);
+        });
+    }
+
+    /// <summary>
+    /// Set a blueprint's category by staging its <c>PaletteID</c> to <paramref name="to"/>'s Id —
+    /// the single authoritative write for placement. The <c>.itp</c> tree entry is reconciled from
+    /// PaletteIDs at save (<see cref="Services.Palette.PaletteContext"/>), so this op does not touch
+    /// the tree directly; display re-derives placement from the new PaletteID on refresh. No-op
+    /// (false) if the blueprint is not in the pool or already points at <paramref name="to"/>.
+    /// Rolls back the staged id if the refresh throws.
+    /// </summary>
+    public bool SetBlueprintCategory(string resRef, PaletteCategoryNode to)
+    {
+        if (to == null) throw new ArgumentNullException(nameof(to));
+        if (string.IsNullOrEmpty(resRef) || !_store.Contains(resRef)) return false;
+
+        byte? originalId = _store.GetPaletteId(resRef);
+        if (originalId == to.Id) return false; // already there
+        if (!_store.SetPaletteId(resRef, to.Id)) return false;
+
+        return CommitOrRollback(() =>
+        {
+            if (originalId is byte id) _store.SetPaletteId(resRef, id);
+        });
+    }
+
     /// <summary>Move/nest a category. See <see cref="PaletteReorgMutator.MoveCategory"/>.</summary>
     public bool MoveCategory(PaletteCategoryNode cat, PaletteNode? newParent, int index)
     {
