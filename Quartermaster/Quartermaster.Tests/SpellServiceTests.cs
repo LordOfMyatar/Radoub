@@ -725,6 +725,36 @@ public class SpellServiceTests
         Assert.Equal(-1, info.GetLevelForClass(10));   // Old row 10 — no longer valid
     }
 
+    [Theory]
+    [InlineData("Cleric", 2)]   // stock id 2 — hardcode would land here
+    [InlineData("Druid", 3)]    // stock id 3
+    [InlineData("Paladin", 6)]  // stock id 6
+    [InlineData("Ranger", 7)]   // stock id 7
+    public void GetSpellInfo_CustomContent_DivineCasterMapsToResolvedClassId(string label, int stockId)
+    {
+        // Custom content: divine caster at a non-stock row. Hardcoded IDs 2/3/6/7
+        // would mis-map; label resolution must place the level at the real row.
+        const int customRow = 55;
+        var mockData = new MockGameDataService(includeSampleData: false);
+
+        mockData.Set2DAValue("classes", customRow, "Label", label);
+        mockData.Set2DAValue("classes", customRow, "SpellGainTable", "cls_spgn_test");
+
+        // Spell with this caster's column populated
+        mockData.Set2DAValue("spells", 0, "Label", "Test_Spell");
+        mockData.Set2DAValue("spells", 0, "Name", "500");
+        mockData.Set2DAValue("spells", 0, "Innate", "1");
+        mockData.Set2DAValue("spells", 0, label, "1");
+        mockData.SetTlkString(500, "Test Spell");
+
+        var service = new SpellService(mockData);
+        var info = service.GetSpellInfo(0);
+
+        Assert.NotNull(info);
+        Assert.Equal(1, info!.GetLevelForClass(customRow)); // resolved at row 55
+        Assert.Equal(-1, info.GetLevelForClass(stockId));   // not at the old hardcoded id
+    }
+
     #endregion
 
     #region SpellInfo Edge Cases

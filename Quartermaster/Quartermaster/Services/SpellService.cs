@@ -216,19 +216,31 @@ public class SpellService
 
         var clericLevel = _gameDataService.Get2DAValue("spells", spellId, "Cleric");
         if (!string.IsNullOrEmpty(clericLevel) && clericLevel != "****" && int.TryParse(clericLevel, out int cleric))
-            info.ClassLevels[2] = cleric;
+        {
+            var clericId = ResolveClassIdByLabel("Cleric");
+            if (clericId.HasValue) info.ClassLevels[clericId.Value] = cleric;
+        }
 
         var druidLevel = _gameDataService.Get2DAValue("spells", spellId, "Druid");
         if (!string.IsNullOrEmpty(druidLevel) && druidLevel != "****" && int.TryParse(druidLevel, out int druid))
-            info.ClassLevels[3] = druid;
+        {
+            var druidId = ResolveClassIdByLabel("Druid");
+            if (druidId.HasValue) info.ClassLevels[druidId.Value] = druid;
+        }
 
         var paladinLevel = _gameDataService.Get2DAValue("spells", spellId, "Paladin");
         if (!string.IsNullOrEmpty(paladinLevel) && paladinLevel != "****" && int.TryParse(paladinLevel, out int paladin))
-            info.ClassLevels[6] = paladin;
+        {
+            var paladinId = ResolveClassIdByLabel("Paladin");
+            if (paladinId.HasValue) info.ClassLevels[paladinId.Value] = paladin;
+        }
 
         var rangerLevel = _gameDataService.Get2DAValue("spells", spellId, "Ranger");
         if (!string.IsNullOrEmpty(rangerLevel) && rangerLevel != "****" && int.TryParse(rangerLevel, out int ranger))
-            info.ClassLevels[7] = ranger;
+        {
+            var rangerId = ResolveClassIdByLabel("Ranger");
+            if (rangerId.HasValue) info.ClassLevels[rangerId.Value] = ranger;
+        }
 
         var wizSorcLevel = _gameDataService.Get2DAValue("spells", spellId, "Wiz_Sorc");
         if (!string.IsNullOrEmpty(wizSorcLevel) && wizSorcLevel != "****" && int.TryParse(wizSorcLevel, out int wizsorc))
