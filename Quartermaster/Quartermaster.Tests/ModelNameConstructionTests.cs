@@ -74,4 +74,33 @@ public class ModelNameConstructionTests
 
         Assert.Equal(1.0f, ModelService.GetWingTailScale(mock, 7), 3);
     }
+
+    [Fact]
+    public void HasConnectorNode_TrueWhenTopLevelNodeMatches()
+    {
+        // A real tail MDL: root → 'tail' connector. A horse MDL has no 'tail' child.
+        var tail = new Radoub.Formats.Mdl.MdlModel
+        {
+            GeometryRoot = new Radoub.Formats.Mdl.MdlNode { Name = "c_tailliz" }
+        };
+        tail.GeometryRoot.Children.Add(new Radoub.Formats.Mdl.MdlNode { Name = "tail" });
+
+        var horse = new Radoub.Formats.Mdl.MdlModel
+        {
+            GeometryRoot = new Radoub.Formats.Mdl.MdlNode { Name = "c_horse1" }
+        };
+        horse.GeometryRoot.Children.Add(new Radoub.Formats.Mdl.MdlNode { Name = "HorseBody" });
+        horse.GeometryRoot.Children.Add(new Radoub.Formats.Mdl.MdlNode { Name = "HorseTail" });
+
+        Assert.True(ModelService.HasConnectorNode(tail, "tail"));
+        Assert.False(ModelService.HasConnectorNode(horse, "tail")); // 'HorseTail' != 'tail'
+    }
+
+    [Fact]
+    public void HasConnectorNode_FalseForNullOrEmpty()
+    {
+        Assert.False(ModelService.HasConnectorNode(null, "tail"));
+        Assert.False(ModelService.HasConnectorNode(
+            new Radoub.Formats.Mdl.MdlModel { GeometryRoot = null }, "tail"));
+    }
 }

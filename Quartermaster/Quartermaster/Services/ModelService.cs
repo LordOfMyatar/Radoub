@@ -22,8 +22,10 @@ public class ModelService
     private readonly IGameDataService _gameDataService;
     private readonly AppearanceService _appearanceService;
     private readonly MdlReader _mdlReader = new();
-    private readonly Dictionary<string, MdlModel?> _modelCache = new();
-    private readonly Dictionary<string, ResourceSource> _modelSourceCache = new();
+    // ConcurrentDictionary so the background attachment-list filter (#1485) can call LoadModel
+    // while the UI thread renders without corrupting a plain Dictionary.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, MdlModel?> _modelCache = new();
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ResourceSource> _modelSourceCache = new();
     private readonly MdlPartComposer _composer;
 
     /// <summary>
@@ -293,6 +295,53 @@ public class ModelService
             return scale;
         }
         return 1.0f;
+    }
+
+    /// <summary>
+    /// True if <paramref name="model"/> has a top-level geometry node named
+    /// <paramref name="connectorNode"/> (case-insensitive). Wing/tail MDLs carry a 'wings'/'tail'
+    /// connector node that the engine attaches to the body's matching bone; mounts (horses) reused
+    /// in tailmodel.2da do not. Used to filter real wings/tails from the attachment lists (#1485).
+    /// </summary>
+    internal static bool HasConnectorNode(MdlModel? model, string connectorNode)
+    {
+        if (model?.GeometryRoot == null)
+            return false;
+
+        foreach (var child in model.GeometryRoot.Children)
+        {
+            if (string.Equals(child.Name, connectorNode, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Predicate for AppearanceService.GetAllWings/GetAllTails (#1485): true if the MODEL resref
+    /// loads and is a real attachment (has the named connector node). Loads through the model cache,
+    /// so repeated calls during list population are cheap. Tolerates load failures (returns false).
+    /// </summary>
+    public bool IsRealAttachment(string modelResRef, string connectorNode)
+    {
+        if (string.IsNullOrEmpty(modelResRef))
+            return false;
+        // Preserve the render texture-source policy: this list-filter probe must not let its
+        // LoadModel calls clobber LastLoadedModelSource for the next real creature render (#1485).
+        var savedSource = LastLoadedModelSource;
+        try
+        {
+            return HasConnectorNode(LoadModel(modelResRef), connectorNode);
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"IsRealAttachment: '{modelResRef}' check failed: {ex.GetType().Name}: {ex.Message}");
+            return false;
+        }
+        finally
+        {
+            LastLoadedModelSource = savedSource;
+        }
     }
 
     /// <summary>

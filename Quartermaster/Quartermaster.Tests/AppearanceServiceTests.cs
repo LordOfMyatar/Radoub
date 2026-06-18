@@ -645,6 +645,48 @@ public class AppearanceServiceTests
         Assert.Null(_service.GetTailModel(250));
     }
 
+    [Fact]
+    public void GetAllTails_WithModelFilter_ExcludesNonTails()
+    {
+        // tailmodel.2da reuses the slot for mounts (horses); only models with a 'tail' connector
+        // node are real tails. The filter predicate receives the MODEL resref. Mock: Lizard/Bone
+        // are tails; add a 'horse' row the predicate rejects.
+        _mockGameData.Set2DAValue("tailmodel", 5, "LABEL", "Horse, Walnut");
+        _mockGameData.Set2DAValue("tailmodel", 5, "MODEL", "c_horse1");
+
+        bool IsTail(string model) => model.StartsWith("c_tail"); // stand-in for the MDL connector check
+
+        var tails = _service.GetAllTails(IsTail);
+
+        Assert.Contains(tails, t => t.Name == "Lizard");
+        Assert.Contains(tails, t => t.Name == "Bone");
+        Assert.DoesNotContain(tails, t => t.Name == "Horse, Walnut");
+        Assert.Equal((byte)0, tails[0].Id); // None always first
+    }
+
+    [Fact]
+    public void GetAllTails_NullFilter_KeepsAllRows()
+    {
+        // No predicate (back-compat) → original behavior, every labeled row included.
+        _mockGameData.Set2DAValue("tailmodel", 5, "LABEL", "Horse, Walnut");
+        _mockGameData.Set2DAValue("tailmodel", 5, "MODEL", "c_horse1");
+
+        var tails = _service.GetAllTails();
+
+        Assert.Contains(tails, t => t.Name == "Horse, Walnut");
+    }
+
+    [Fact]
+    public void GetAllWings_WithModelFilter_ExcludesRejected()
+    {
+        bool KeepAngelOnly(string model) => model == "c_wingsan";
+
+        var wings = _service.GetAllWings(KeepAngelOnly);
+
+        Assert.Contains(wings, w => w.Name == "Angel");   // c_wingsan kept
+        Assert.DoesNotContain(wings, w => w.Name == "Demon"); // c_wingsdm rejected
+    }
+
     #endregion
 
     #region Sound Sets

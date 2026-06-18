@@ -208,11 +208,18 @@ public partial class AppearancePanel : UserControl
     {
         try
         {
+            // Filter wing/tail lists to real attachments (#1485): tailmodel.2da reuses the slot for
+            // mounts (horses), wingmodel for non-wings; keep only models with the matching connector
+            // node. Runs on the background thread; loads are model-cached so the cost is bounded.
+            var modelSvc = _modelService;
+            System.Func<string, bool>? tailFilter = modelSvc != null ? m => modelSvc.IsRealAttachment(m, "tail") : null;
+            System.Func<string, bool>? wingFilter = modelSvc != null ? m => modelSvc.IsRealAttachment(m, "wings") : null;
+
             var (appearances, phenotypes, tails, wings) = await System.Threading.Tasks.Task.Run(() =>
                 (displayService.GetAllAppearances(),
                  displayService.GetAllPhenotypes(),
-                 displayService.GetAllTails(),
-                 displayService.GetAllWings()));
+                 displayService.GetAllTails(tailFilter),
+                 displayService.GetAllWings(wingFilter)));
 
             await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
