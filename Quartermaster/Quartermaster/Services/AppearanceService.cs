@@ -84,7 +84,17 @@ public class AppearanceService
         if (!int.TryParse(sizeCategoryStr, out int sizeCategory))
             return 0;
 
-        // NWN creaturesize.2da indices
+        // SIZECATEGORY is the row index into creaturesize.2da; read its ACATTACKMOD
+        // column so custom/CEP sizes (e.g. Gargantuan at row 22) resolve correctly.
+        var acMod = _gameDataService.Get2DAValue("creaturesize", sizeCategory, "ACATTACKMOD");
+        if (!string.IsNullOrEmpty(acMod) && acMod != "****" && int.TryParse(acMod, out int parsed))
+            return parsed;
+
+        // Fallback to the stock D&D 3e table when creaturesize.2da is missing the
+        // column/row (corrupt or stripped 2DA). Stock values for indices 1-7.
+        GameDataWarnOnce.Warn(
+            $"size_ac_{sizeCategory}",
+            $"AppearanceService.GetSizeAcModifier: creaturesize.2da ACATTACKMOD lookup failed for size {sizeCategory} — using hardcoded fallback");
         return sizeCategory switch
         {
             1 => 2,   // Tiny

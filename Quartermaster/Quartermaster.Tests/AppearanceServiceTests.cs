@@ -189,6 +189,31 @@ public class AppearanceServiceTests
         Assert.Equal(0, _service.GetSizeAcModifier(26));
     }
 
+    [Fact]
+    public void GetSizeAcModifier_ReadsAcAttackModColumn_FromCreatureSize2da()
+    {
+        // CEP creaturesize.2da: Gargantuan at row 22 with ACATTACKMOD=-4.
+        // SIZECATEGORY is the row index into creaturesize.2da.
+        _mockGameData.Set2DAValue("appearance", 30, "SIZECATEGORY", "22");
+        _mockGameData.Set2DAValue("appearance", 30, "LABEL", "CepGargantuan");
+        _mockGameData.Set2DAValue("creaturesize", 22, "LABEL", "GARGANTUAN");
+        _mockGameData.Set2DAValue("creaturesize", 22, "ACATTACKMOD", "-4");
+
+        Assert.Equal(-4, _service.GetSizeAcModifier(30));
+    }
+
+    [Fact]
+    public void GetSizeAcModifier_2daValueOverridesHardcode()
+    {
+        // A module that re-tuned size 4's AC mod in creaturesize.2da must win
+        // over the hardcoded -1.
+        _mockGameData.Set2DAValue("appearance", 31, "SIZECATEGORY", "4");
+        _mockGameData.Set2DAValue("appearance", 31, "LABEL", "RetunedLarge");
+        _mockGameData.Set2DAValue("creaturesize", 4, "ACATTACKMOD", "-3");
+
+        Assert.Equal(-3, _service.GetSizeAcModifier(31));
+    }
+
     #endregion
 
     #region GetAllAppearances
