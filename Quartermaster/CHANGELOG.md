@@ -8,9 +8,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ## [0.2.122-alpha] - 2026-06-18
 **Branch**: `quartermaster/issue-2497` | **PR**: #2500
 
-### Fix: Resolve mesh diffuse from MTR texture0 (#2497)
+### Feat: MTR-driven diffuse resolution + diagnostics (#2497)
 
-- Model preview now resolves a mesh's diffuse texture from its `.mtr` material (`texture0`) instead of guessing the `_d` suffix — the remaining half of the #1755 white-model fix. Bare-name/`_d` fallback preserved.
+- Model preview now resolves a mesh's diffuse from its `.mtr` material (`texture0`, via the mesh `materialname`) ahead of the existing bare-name/`_d` chain. Forward-looking MTR support — current CEP/PRC packs ship no `.mtr`, so this no-ops on today's content; added `[MTR]` diagnostic logging to capture the first genuinely MTR-driven model.
 
 ---
 

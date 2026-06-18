@@ -11,9 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Radoub.UI 0.2.11-alpha] - 2026-06-18
 **Branch**: `quartermaster/issue-2497` | **PR**: #2500
 
-### Fix: Resolve mesh diffuse from MTR texture0 (#2497)
+### Feat: MTR-driven diffuse resolution + diagnostics (#2497)
 
-- `TextureService` now resolves a mesh's diffuse from its MTR `texture0` (via the mesh `materialname`) before the bare-name `_d` guess — the remaining half of the #1755 white-model fix for CEP3 creatures whose diffuse differs from the mesh bitmap. The #1755 bare/`_d` fallback is preserved when no MTR applies. Consumed by the Quartermaster model preview.
+- `TextureService` now resolves a mesh's diffuse from its MTR `texture0` (via the mesh `materialname`) ahead of the bare-name/`_d` chain, with the #1755 fallback preserved when no MTR applies. Forward-looking support: the common CEP/PRC HAKs ship no `.mtr` and the original beetle white-model was already fixed in #1200, so this no-ops on current content. Added `[MTR]` diagnostic logging so the first genuinely MTR-driven model is captured in logs. Consumed by the Quartermaster model preview.
 
 ---
 
