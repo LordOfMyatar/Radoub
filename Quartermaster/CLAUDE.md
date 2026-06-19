@@ -349,6 +349,15 @@ or the WindowsApps `pwsh` stub):
 
 Open the generated `aN.utc` in QM → Appearance panel to verify rendering.
 
+### Read-Only Model Investigations
+
+For one-off, **read-only** MDL/texture investigations (e.g. replaying `MeshSkipHeuristic`
+across all creature models), use the shared scratch slots
+`.claude/scripts/Scratch-Investigate-1.ps1` / `-2.ps1` — edit one in place rather than
+creating a new script. They are investigation-only and must never mutate files; see the root
+CLAUDE.md "Scratch Investigation Scripts" section. `Dump-MdlMeshes.ps1 -Model <resref>` is the
+single-model version.
+
 ---
 
 ## Shared Dependencies
