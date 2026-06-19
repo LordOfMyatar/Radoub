@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.124-alpha] - 2026-06-18
+**Branch**: `quartermaster/issue-2029` | **PR**: #TBD
+
+### Fix: Skin mesh rendering strategy refinement (#2029)
+
+- Refine the model-preview mesh-visibility and texture-resolution strategy so CEP creatures render correctly (dire tiger holes, umber hulk exploded geometry, grey-instead-of-textured models, over-aggressive trimesh hiding).
+
+---
+
 ## [0.2.123-alpha] - 2026-06-18
 **Branch**: `quartermaster/issue-1485` | **PR**: #2502
 
