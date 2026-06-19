@@ -8,9 +8,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ## [0.2.125-alpha] - 2026-06-19
 **Branch**: `quartermaster/issue-2498` | **PR**: #2509
 
-### Refactor: Gate mesh visibility on MDL Render flag (#2482 D)
+### Fix: Intermittent exploded/garbage model preview (#2510)
 
-- Makes the MDL `Render` flag the primary mesh-visibility gate in the appearance preview; the 30-vertex tiny-trimesh heuristic is removed or demoted to a logged fallback (decision documented after re-validation across creatures).
+- Fixed a data race where a background model load (#1485) could corrupt the main render's MDL parse, intermittently dropping geometry (e.g. dire tiger rendering as exploded "wings"). Root cause and fix are a shared-library `MdlReader` thread-safety change — see the root CHANGELOG (`Radoub.Formats 0.2.72-alpha`).
+
+### Investigation: MDL Render-flag vs 30-vertex mesh-skip heuristic (#2482 D)
+
+- Re-validated the heuristic across all creature models: it hides ~2857 `Render=true` bone-visualization meshes the Render flag does not catch, so it is load-bearing and was not removed. Reference engines (nwnexplorer, borealis) honor the Render flag with no such heuristic; whether it over-hides cosmetic parts is a visual question deferred to UAT.
 
 ---
 

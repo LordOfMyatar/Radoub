@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.Formats 0.2.72-alpha] - 2026-06-19
+**Branch**: `quartermaster/issue-2498` | **PR**: #2509
+
+### Fix: MdlReader is now thread-safe (#2510)
+
+- `MdlReader.Parse` constructs a fresh per-parse reader instead of reusing instance state, so concurrent parses no longer corrupt each other. Fixes intermittent garbage/exploded geometry in the model preview when a background model load (#1485) raced the main render's parse.
+
+---
+
 ## [Radoub.Formats 0.2.71-alpha] - 2026-06-18
 **Branch**: `quartermaster/issue-2029` | **PR**: #2506
 
