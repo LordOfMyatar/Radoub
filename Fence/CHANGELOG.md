@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.40-alpha] - 2026-06-18
-**Branch**: `fence/sprint/2383-undo-data-integrity` | **PR**: #TBD
+**Branch**: `fence/sprint/2383-undo-data-integrity` | **PR**: #2504
 
 ### Sprint: Critical Save/Undo + Cross-Tool Data Integrity (#2383)
 
