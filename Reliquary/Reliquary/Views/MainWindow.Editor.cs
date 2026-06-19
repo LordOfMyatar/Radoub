@@ -64,11 +64,14 @@ public partial class MainWindow
     {
         if (!await ConfirmDiscardAsync()) return;
 
-        // Prompt for a name up front and save the file immediately, so a brand-new placeable is
-        // backed by a real .utp from the start — edits can no longer be lost before a first manual
-        // Save, and ResRef is locked to the on-disk identity right away (#2426).
-        var name = await PromptNewPlaceableNameAsync();
-        if (name is null) return; // user cancelled
+        // Prompt for Name/Tag/ResRef up front (sync-all-three dialog, mirrors Fence #2418) and save
+        // the file immediately, so a brand-new placeable is backed by a real .utp from the start —
+        // edits can no longer be lost before a first manual Save, and ResRef is locked to the
+        // on-disk identity right away (#2426). The dialog lets the user override Tag and ResRef
+        // instead of forcing both to be derived from the Name.
+        var dialog = new NewPlaceableWindow();
+        await dialog.ShowDialog(this);
+        if (dialog.Result is not { } result) return; // user cancelled
 
         try
         {
@@ -76,9 +79,9 @@ public partial class MainWindow
             _currentFilePath = null;
             _documentState.IsReadOnly = false;
             var vm = PlaceableViewModel.NewPlaceable();
-            vm.Name = name;
-            vm.Tag = BlueprintNamingService.GenerateTag(name);
-            vm.TemplateResRef = BlueprintNamingService.GenerateResRef(name);
+            vm.Name = result.Name;
+            vm.Tag = result.Tag;
+            vm.TemplateResRef = result.ResRef;
             BindPlaceable(vm);
             UpdateTitle();
         }

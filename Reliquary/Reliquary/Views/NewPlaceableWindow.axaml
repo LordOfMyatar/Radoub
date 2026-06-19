@@ -1,0 +1,70 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="420" d:DesignHeight="280"
+        x:Class="PlaceableEditor.Views.NewPlaceableWindow"
+        Title="New Placeable - Reliquary"
+        SizeToContent="Height"
+        MinWidth="420" Width="420"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+
+    <Grid Margin="16" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0" Text="Create a new placeable"
+                   FontSize="{DynamicResource FontSizeLarge}" FontWeight="Bold"
+                   Margin="0,0,0,12"/>
+
+        <!-- Sync checkbox -->
+        <CheckBox Grid.Row="1" x:Name="SyncCheckBox"
+                  Content="Set Tag and ResRef from the Name"
+                  IsChecked="True"
+                  Margin="0,0,0,12"/>
+
+        <!-- Name -->
+        <Grid Grid.Row="2" ColumnDefinitions="Auto,*" Margin="0,0,0,8">
+            <TextBlock Grid.Column="0" Text="Name" VerticalAlignment="Center"
+                       MinWidth="60" Margin="0,0,8,0"/>
+            <TextBox Grid.Column="1" x:Name="NameBox" Watermark="e.g. Iron Chest"/>
+        </Grid>
+
+        <!-- Tag -->
+        <Grid Grid.Row="3" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,8">
+            <TextBlock Grid.Column="0" Text="Tag" VerticalAlignment="Center"
+                       MinWidth="60" Margin="0,0,8,0"/>
+            <TextBox Grid.Column="1" x:Name="TagBox"/>
+            <TextBlock Grid.Column="2" x:Name="TagCharCount" Text="0/32"
+                       VerticalAlignment="Center" Margin="8,0,0,0"
+                       FontSize="{DynamicResource FontSizeSmall}"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+        </Grid>
+
+        <!-- ResRef -->
+        <Grid Grid.Row="4" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,8">
+            <TextBlock Grid.Column="0" Text="ResRef" VerticalAlignment="Center"
+                       MinWidth="60" Margin="0,0,8,0"/>
+            <TextBox Grid.Column="1" x:Name="ResRefBox"/>
+            <TextBlock Grid.Column="2" x:Name="ResRefCharCount" Text="0/16"
+                       VerticalAlignment="Center" Margin="8,0,0,0"
+                       FontSize="{DynamicResource FontSizeSmall}"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+        </Grid>
+
+        <!-- Validation -->
+        <TextBlock Grid.Row="5" x:Name="ValidationText"
+                   Foreground="{DynamicResource ThemeError}"
+                   FontSize="{DynamicResource FontSizeSmall}"
+                   TextWrapping="Wrap" Margin="0,4,0,8"/>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="6" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
+            <Button x:Name="CreateButton" Content="Create" IsDefault="True"
+                    Click="OnCreateClick" Padding="20,6"/>
+            <Button x:Name="CancelButton" Content="Cancel" IsCancel="True"
+                    Click="OnCancelClick" Padding="20,6"/>
+        </StackPanel>
+    </Grid>
+</Window>
