@@ -5,7 +5,7 @@ All notable changes to Parley. One-line highlights per version; full details in 
 ---
 
 ## [0.1.176-alpha] - 2026-06-19
-**Branch**: `parley/sprint/2445-ui-ux` | **PR**: #TBD
+**Branch**: `parley/sprint/2445-ui-ux` | **PR**: #2519
 
 ### Sprint: UI/UX Enhancements (#2445)
 
