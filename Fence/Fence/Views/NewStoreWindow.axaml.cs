@@ -31,7 +31,13 @@ public partial class NewStoreWindow : Window
         NameBox.Text = "New Store";
         ApplySync();
 
-        NameBox.AttachedToVisualTree += (_, _) => NameBox.Focus();
+        // Focus and SELECT ALL so the user's first keystroke replaces the default rather than
+        // prepending to it (caret-at-0 would give "mynameNew Store").
+        NameBox.AttachedToVisualTree += (_, _) =>
+        {
+            NameBox.Focus();
+            NameBox.SelectAll();
+        };
     }
 
     private bool IsSyncOn => SyncCheckBox.IsChecked == true;

@@ -32,7 +32,13 @@ public partial class NewPlaceableWindow : Window
         NameBox.Text = "New Placeable";
         ApplySync();
 
-        NameBox.AttachedToVisualTree += (_, _) => NameBox.Focus();
+        // Focus and SELECT ALL so the user's first keystroke replaces the default rather than
+        // prepending to it (caret-at-0 would give "mynameNew Placeable").
+        NameBox.AttachedToVisualTree += (_, _) =>
+        {
+            NameBox.Focus();
+            NameBox.SelectAll();
+        };
     }
 
     private bool IsSyncOn => SyncCheckBox.IsChecked == true;
