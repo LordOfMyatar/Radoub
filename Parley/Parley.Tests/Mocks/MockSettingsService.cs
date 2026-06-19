@@ -109,6 +109,12 @@ namespace Parley.Tests.Mocks
         // Conversation Simulator
         public bool SimulatorShowWarnings { get; set; } = true;
 
+        // Conversation Simulator TTS (#1570)
+        public bool SimulatorTtsEnabled { get; set; } = true;
+        public double SimulatorTtsRate { get; set; } = 1.0;
+        public bool SimulatorAutoSpeak { get; set; } = false;
+        public bool SimulatorAutoAdvance { get; set; } = true;
+
         // Script editor settings
         public string ExternalEditorPath { get; set; } = "";
         public List<string> ScriptSearchPaths { get; set; } = new();

@@ -107,6 +107,30 @@ namespace DialogEditor.Tests
         [Fact] public void SimulatorShowWarnings_RoundTrips()
             => AssertRoundTrip(s => s.SimulatorShowWarnings = false, s => s.SimulatorShowWarnings, expected: false);
 
+        // Conversation Simulator TTS toggles (#1570)
+        [Fact] public void SimulatorTtsEnabled_RoundTrips()
+            => AssertRoundTrip(s => s.SimulatorTtsEnabled = false, s => s.SimulatorTtsEnabled, expected: false);
+
+        [Fact] public void SimulatorAutoSpeak_RoundTrips()
+            => AssertRoundTrip(s => s.SimulatorAutoSpeak = true, s => s.SimulatorAutoSpeak, expected: true);
+
+        [Fact] public void SimulatorAutoAdvance_RoundTrips()
+            => AssertRoundTrip(s => s.SimulatorAutoAdvance = false, s => s.SimulatorAutoAdvance, expected: false);
+
+        /// <summary>
+        /// TtsRate is a double, so it can't use the bool AssertRoundTrip helper (#1570).
+        /// Flip to a non-default value, persist, reload, assert it survived.
+        /// </summary>
+        [Fact]
+        public void SimulatorTtsRate_RoundTrips()
+        {
+            var writer = NewService();
+            writer.SimulatorTtsRate = 1.75;
+
+            var reader = NewService();
+            Assert.Equal(1.75, reader.SimulatorTtsRate);
+        }
+
         [Fact] public void SoundBrowserIncludeGameResources_RoundTrips()
             => AssertRoundTrip(s => s.SoundBrowserIncludeGameResources = false, s => s.SoundBrowserIncludeGameResources, expected: false);
 

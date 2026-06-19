@@ -146,7 +146,7 @@ namespace DialogEditor.ViewModels
                         _isSpeakingPcReply = true;
                         _pendingReplyToAdvance = reply;
                         var pcVoice = GetVoiceForSpeaker("(PC)");
-                        _ttsService.Speak(pcText, pcVoice, TtsRate);
+                        _ttsService.Speak(_ttsTextParser.GetSpeechText(pcText), pcVoice, TtsRate);
                         return; // Don't advance yet - wait for speech to complete
                     }
                 }

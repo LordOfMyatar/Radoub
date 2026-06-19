@@ -86,6 +86,12 @@ namespace DialogEditor.Services
         // Conversation Simulator
         bool SimulatorShowWarnings { get; set; }
 
+        // Conversation Simulator TTS (#1570)
+        bool SimulatorTtsEnabled { get; set; }
+        double SimulatorTtsRate { get; set; }
+        bool SimulatorAutoSpeak { get; set; }
+        bool SimulatorAutoAdvance { get; set; }
+
         // Script editor settings
         string ExternalEditorPath { get; set; }
         List<string> ScriptSearchPaths { get; set; }

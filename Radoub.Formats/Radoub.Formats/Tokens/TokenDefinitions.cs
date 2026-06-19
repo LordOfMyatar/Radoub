@@ -124,6 +124,33 @@ public static class TokenDefinitions
         new(StandardTokens, StringComparer.Ordinal);
 
     /// <summary>
+    /// Spoken-text placeholders for standard tokens, used by TTS in the Conversation Simulator
+    /// where there is no real game character to resolve tokens against (#1570).
+    /// This is presentation data for a preview feature, NOT 2DA game data.
+    /// Name tokens speak as "Adventurer"; gender pronoun tokens speak as neutral forms.
+    /// Tokens not in this map fall back to their literal token name.
+    /// Keys are case-exact (StandardTokenSet uses ordinal comparison).
+    /// </summary>
+    public static readonly Dictionary<string, string> SpeechPlaceholders = new(StringComparer.Ordinal)
+    {
+        // Name tokens
+        ["FirstName"] = "Adventurer",
+        ["LastName"] = "Adventurer",
+        ["FullName"] = "Adventurer",
+        ["PlayerName"] = "Adventurer",
+
+        // Pronoun tokens -> neutral spoken forms (both case variants)
+        ["He/She"] = "they",
+        ["he/she"] = "they",
+        ["Him/Her"] = "them",
+        ["him/her"] = "them",
+        ["His/Her"] = "their",
+        ["his/her"] = "their",
+        ["His/Hers"] = "their",
+        ["his/hers"] = "their"
+    };
+
+    /// <summary>
     /// Check if a token name is a standard Aurora token.
     /// </summary>
     public static bool IsStandardToken(string tokenName)

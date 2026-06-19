@@ -456,6 +456,31 @@ namespace DialogEditor.Services
             set => _editorPreferences.SimulatorShowWarnings = value;
         }
 
+        // Conversation Simulator TTS (#1570)
+        public bool SimulatorTtsEnabled
+        {
+            get => _editorPreferences.SimulatorTtsEnabled;
+            set => _editorPreferences.SimulatorTtsEnabled = value;
+        }
+
+        public double SimulatorTtsRate
+        {
+            get => _editorPreferences.SimulatorTtsRate;
+            set => _editorPreferences.SimulatorTtsRate = value;
+        }
+
+        public bool SimulatorAutoSpeak
+        {
+            get => _editorPreferences.SimulatorAutoSpeak;
+            set => _editorPreferences.SimulatorAutoSpeak = value;
+        }
+
+        public bool SimulatorAutoAdvance
+        {
+            get => _editorPreferences.SimulatorAutoAdvance;
+            set => _editorPreferences.SimulatorAutoAdvance = value;
+        }
+
         public string ExternalEditorPath
         {
             get => _editorPreferences.ExternalEditorPath;
@@ -603,6 +628,10 @@ namespace DialogEditor.Services
                             settings.EnableNpcTagColoring,
                             settings.ShowDeleteConfirmation,
                             settings.SimulatorShowWarnings,
+                            settings.SimulatorTtsEnabled,
+                            settings.SimulatorTtsRate,
+                            settings.SimulatorAutoSpeak,
+                            settings.SimulatorAutoAdvance,
                             SharedPathHelper.ExpandPath(settings.ExternalEditorPath ?? ""),
                             SharedPathHelper.ExpandPaths(settings.ScriptSearchPaths?.ToList() ?? new List<string>()),
                             SharedPathHelper.ExpandPath(settings.ManifestPath ?? ""),
@@ -671,6 +700,10 @@ namespace DialogEditor.Services
                     EnableNpcTagColoring = EnableNpcTagColoring,
                     ShowDeleteConfirmation = ShowDeleteConfirmation,
                     SimulatorShowWarnings = SimulatorShowWarnings,
+                    SimulatorTtsEnabled = SimulatorTtsEnabled,
+                    SimulatorTtsRate = SimulatorTtsRate,
+                    SimulatorAutoSpeak = SimulatorAutoSpeak,
+                    SimulatorAutoAdvance = SimulatorAutoAdvance,
                     // Issue #412: Game paths now stored in shared RadoubSettings
                     NeverwinterNightsPath = "",
                     BaseGameInstallPath = "",
@@ -798,6 +831,11 @@ namespace DialogEditor.Services
 
             // Conversation Simulator settings
             public bool SimulatorShowWarnings { get; set; } = true;
+            // Conversation Simulator TTS (#1570) - defaults mirror the simulator VM
+            public bool SimulatorTtsEnabled { get; set; } = true;
+            public double SimulatorTtsRate { get; set; } = 1.0;
+            public bool SimulatorAutoSpeak { get; set; } = false;
+            public bool SimulatorAutoAdvance { get; set; } = true;
 
             // Radoub tool integration settings
             public string ManifestPath { get; set; } = "";
