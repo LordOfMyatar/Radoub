@@ -19,6 +19,7 @@ namespace DialogEditor.Services
         private readonly Func<string, Control?> _findControl;
         private readonly Action _saveCurrentNodeProperties;
         private readonly Action _triggerAutoSave;
+        private readonly Action? _repopulateSelectedNodePanel; // #2521: re-sync panel to the new node
 
         // Debouncing state (Issue #76)
         private DateTime _lastAddNodeTime = DateTime.MinValue;
@@ -29,12 +30,14 @@ namespace DialogEditor.Services
             MainViewModel viewModel,
             Func<string, Control?> findControl,
             Action saveCurrentNodeProperties,
-            Action triggerAutoSave)
+            Action triggerAutoSave,
+            Action? repopulateSelectedNodePanel = null)
         {
             _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
             _findControl = findControl ?? throw new ArgumentNullException(nameof(findControl));
             _saveCurrentNodeProperties = saveCurrentNodeProperties ?? throw new ArgumentNullException(nameof(saveCurrentNodeProperties));
             _triggerAutoSave = triggerAutoSave ?? throw new ArgumentNullException(nameof(triggerAutoSave));
+            _repopulateSelectedNodePanel = repopulateSelectedNodePanel; // #2521
         }
 
         /// <summary>
@@ -81,6 +84,13 @@ namespace DialogEditor.Services
                 // Delay allows tree view selection and properties panel population to complete
                 UnifiedLogger.LogApplication(LogLevel.INFO, "CreateSmartNodeAsync: Waiting for properties panel...");
                 await Task.Delay(200);
+
+                // #2521: The selection-changed handler skips the panel repopulate while the tree
+                // refresh coordinator is busy, so the shared TextBox can still show the PREVIOUS
+                // node's text. Explicitly repopulate the now-selected (empty) new node so the box
+                // is cleared before we focus it — otherwise the stale text is visible (and, absent
+                // the autosave flush guard, would be captured into the new node).
+                _repopulateSelectedNodePanel?.Invoke();
 
                 var textTextBox = _findControl("TextTextBox") as TextBox;
                 if (textTextBox != null)

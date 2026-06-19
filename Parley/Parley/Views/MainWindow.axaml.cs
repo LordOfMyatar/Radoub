@@ -142,7 +142,8 @@ namespace DialogEditor.Views
                 loadScriptPreview: (script, isCondition) => _ = LoadScriptPreviewAsync(script, isCondition),
                 clearScriptPreview: ClearScriptPreview,
                 triggerDebouncedAutoSave: TriggerDebouncedAutoSave,
-                refreshSiblingValidation: RefreshSiblingValidation); // Issue #609
+                refreshSiblingValidation: RefreshSiblingValidation, // Issue #609
+                getLastPopulatedNode: () => _lastPopulatedNode); // #2521: cross-node flush guard
             _services.ParameterUI = new ScriptParameterUIManager(
                 findControl: this.FindControl<Control>,
                 setStatusMessage: msg => _viewModel.StatusMessage = msg,
@@ -155,7 +156,14 @@ namespace DialogEditor.Views
                 viewModel: _viewModel,
                 findControl: this.FindControl<Control>,
                 saveCurrentNodeProperties: SaveCurrentNodeProperties,
-                triggerAutoSave: TriggerDebouncedAutoSave);
+                triggerAutoSave: TriggerDebouncedAutoSave,
+                // #2521: re-sync the panel to the newly-created node after the refresh, since the
+                // selection-changed populate is skipped while the refresh coordinator is busy.
+                repopulateSelectedNodePanel: () =>
+                {
+                    if (_selectedNode != null && _selectedNode is not TreeViewRootNode)
+                        PopulatePropertiesPanel(_selectedNode);
+                });
             // #1791: GameData not yet initialized — wired in ConnectGameDataServices() after deferred init
             _services.ResourceBrowser = new ResourceBrowserManager(
                 audioService: _services.Audio,

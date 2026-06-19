@@ -11,6 +11,7 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 - Conversation Simulator: show per-start-entry direct-child coverage alongside subtree coverage (#482)
 - Text-to-Speech: persist simulator toggles and strip markup tags from spoken text (#1570)
+- Fix: Ctrl+D no longer captures the previous node's text into the new node (#2521)
 
 ---
 

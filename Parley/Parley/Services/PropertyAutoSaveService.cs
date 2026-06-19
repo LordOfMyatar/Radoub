@@ -21,6 +21,7 @@ namespace DialogEditor.Services
         private readonly Action<bool> _clearScriptPreview;
         private readonly Action _triggerDebouncedAutoSave;
         private readonly Action<TreeViewSafeNode>? _refreshSiblingValidation; // Issue #609
+        private readonly Func<DialogNode?>? _getLastPopulatedNode; // #2521: panel-source for flush guard
 
         /// <summary>
         /// Property save handlers - maps control names to save actions
@@ -33,7 +34,8 @@ namespace DialogEditor.Services
             Action<string, bool> loadScriptPreview,
             Action<bool> clearScriptPreview,
             Action triggerDebouncedAutoSave,
-            Action<TreeViewSafeNode>? refreshSiblingValidation = null)
+            Action<TreeViewSafeNode>? refreshSiblingValidation = null,
+            Func<DialogNode?>? getLastPopulatedNode = null)
         {
             _findControl = findControl ?? throw new ArgumentNullException(nameof(findControl));
             _treeRefreshCoordinator = treeRefreshCoordinator ?? throw new ArgumentNullException(nameof(treeRefreshCoordinator));
@@ -41,6 +43,7 @@ namespace DialogEditor.Services
             _clearScriptPreview = clearScriptPreview ?? throw new ArgumentNullException(nameof(clearScriptPreview));
             _triggerDebouncedAutoSave = triggerDebouncedAutoSave ?? throw new ArgumentNullException(nameof(triggerDebouncedAutoSave));
             _refreshSiblingValidation = refreshSiblingValidation; // Issue #609: Optional callback for validation refresh
+            _getLastPopulatedNode = getLastPopulatedNode; // #2521: optional panel-source for cross-node flush guard
 
             _propertyHandlers = InitializeHandlers();
         }
@@ -52,6 +55,17 @@ namespace DialogEditor.Services
         {
             if (selectedNode == null)
                 return AutoSaveResult.NotSaved("No node selected");
+
+            // #2521: Refuse to flush when the panel is out of sync with the selection.
+            // Mirrors the #2382 guard on SaveCurrentNodeProperties. In the Ctrl+D path the new
+            // node is selected during a tree refresh that skips the panel repopulate, so the
+            // shared TextBox still holds the previous node's text — flushing here would write
+            // that stale text onto the new node. Only guard when a panel-source is provided.
+            if (_getLastPopulatedNode != null &&
+                !PropertyFlushGuard.ShouldFlush(selectedNode.OriginalNode, _getLastPopulatedNode()))
+            {
+                return AutoSaveResult.NotSaved("Panel out of sync with selection — skipped");
+            }
 
             if (!_propertyHandlers.TryGetValue(propertyName, out var handler))
                 return AutoSaveResult.NotSaved($"Unknown property: {propertyName}");
