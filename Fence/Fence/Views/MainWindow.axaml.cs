@@ -87,10 +87,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     // Shared filter panel for item palette
     private ItemFilterPanel? _paletteFilter;
 
-    // Store palette categories loaded from storepal.itp
-    // Maps dropdown index to category ID for CEP/custom content support
-    private readonly List<PaletteCategory> _storeCategories = new();
-
     public ObservableCollection<StoreItemViewModel> StoreItems { get; } = new();
     public ObservableCollection<ItemViewModel> PaletteItems { get; } = new();
     private readonly ObservableCollection<ItemViewModel> _filteredPaletteItems = new();
@@ -413,49 +409,23 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     #region Service Initialization
 
     /// <summary>
-    /// Populate the store category dropdown from pre-loaded categories.
-    /// Categories are loaded on background thread to avoid UI blocking.
+    /// Populate the store category dropdown from pre-loaded categories via the shared
+    /// <see cref="PaletteCategoryComboBinder"/> (#2422). Categories come from
+    /// <c>storepal.itp</c> via <see cref="IGameDataService.GetPaletteCategories"/> — never
+    /// hardcoded. The binder stores each category Id as the item's Tag and falls back to its
+    /// default list when game data is unavailable.
     /// </summary>
     private void PopulateCategoryDropdownFromList(List<PaletteCategory> categories)
     {
-        StoreCategoryBox.Items.Clear();
-        _storeCategories.Clear();
-
+        // Sort by ID for consistent ordering (binder preserves list order).
         if (categories.Count > 0)
-        {
-            // Sort by ID for consistent ordering
             categories.Sort((a, b) => a.Id.CompareTo(b.Id));
 
-            foreach (var category in categories)
-            {
-                _storeCategories.Add(category);
-                StoreCategoryBox.Items.Add(category.Name);
-            }
-
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Populated {categories.Count} store palette categories");
-            StoreCategoryBox.SelectedIndex = 0;
-            return;
-        }
-
-        // Fallback to hardcoded defaults when game data unavailable
-        UnifiedLogger.LogApplication(LogLevel.DEBUG, "Using fallback store categories (game data unavailable)");
-        var fallbackCategories = new (byte Id, string Name)[]
-        {
-            (0, "Merchants"),
-            (1, "Custom 1"),
-            (2, "Custom 2"),
-            (3, "Custom 3"),
-            (4, "Custom 4"),
-            (5, "Custom 5")
-        };
-
-        foreach (var (id, name) in fallbackCategories)
-        {
-            _storeCategories.Add(new PaletteCategory { Id = id, Name = name });
-            StoreCategoryBox.Items.Add(name);
-        }
-
+        PaletteCategoryComboBinder.Populate(StoreCategoryBox, categories);
         StoreCategoryBox.SelectedIndex = 0;
+
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"Populated {StoreCategoryBox.Items.Count} store palette categories");
     }
 
     private async Task LoadBaseItemTypesAsync(CancellationToken token = default)
@@ -524,9 +494,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         LimitedGoldCheck.IsChecked = _currentStore.StoreGold >= 0;
         StoreGoldBox.Text = Math.Max(0, _currentStore.StoreGold).ToString();
 
-        // Set category (PaletteID) - find matching category by ID, not index
-        var categoryIndex = _storeCategories.FindIndex(c => c.Id == _currentStore.PaletteID);
-        StoreCategoryBox.SelectedIndex = categoryIndex >= 0 ? categoryIndex : 0;
+        // Set category (PaletteID) via the shared binder - selects by ID, not index (#2422)
+        PaletteCategoryComboBinder.SelectById(StoreCategoryBox, _currentStore.PaletteID);
 
         // Scripts and comment
         OnOpenStoreBox.Text = _currentStore.OnOpenStore;

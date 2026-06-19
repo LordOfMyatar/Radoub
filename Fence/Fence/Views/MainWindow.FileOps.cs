@@ -9,6 +9,7 @@ using Radoub.Formats.Settings;
 using Radoub.Formats.Utm;
 using Radoub.UI.Controls;
 using Radoub.UI.Services;
+using Radoub.UI.Utils;
 using Radoub.UI.Views;
 using System;
 using System.IO;
@@ -432,11 +433,8 @@ public partial class MainWindow
         _currentStore.MaxBuyPrice = (MaxBuyPriceCheck.IsChecked ?? false) && int.TryParse(MaxBuyPriceBox.Text, out var maxBuy) ? maxBuy : -1;
         _currentStore.StoreGold = (LimitedGoldCheck.IsChecked ?? false) && int.TryParse(StoreGoldBox.Text, out var storeGold) ? storeGold : -1;
 
-        // Update category (PaletteID) - use category ID from mapping, not dropdown index
-        var selectedCategoryIndex = Math.Max(0, StoreCategoryBox.SelectedIndex);
-        _currentStore.PaletteID = selectedCategoryIndex < _storeCategories.Count
-            ? _storeCategories[selectedCategoryIndex].Id
-            : (byte)0;
+        // Update category (PaletteID) - read selected ID from the binder, not dropdown index (#2422)
+        _currentStore.PaletteID = PaletteCategoryComboBinder.GetSelectedId(StoreCategoryBox) ?? 0;
 
         // Update scripts and comment
         _currentStore.OnOpenStore = OnOpenStoreBox.Text ?? "";
