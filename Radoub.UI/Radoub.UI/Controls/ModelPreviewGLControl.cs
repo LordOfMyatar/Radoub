@@ -1239,27 +1239,11 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
 
         int meshIndex = 0;
         int skippedMeshes = 0;
-        int skippedTrimeshes = 0;
+        // #2498: the 30-vertex shared-bitmap heuristic (#1676/#2057) was removed — it hid real
+        // geometry that reuses the body texture (hands, necks, hair, dragon spikes, tongues).
+        // Visibility now matches the Aurora engine: honor the MDL Render flag + drop empty meshes.
+        const int skippedTrimeshes = 0;
         var allMeshes = _model.GetMeshNodes().ToList();
-
-        // #1676/#2057: CEP models often have both skin meshes and trimeshes. Tiny trimeshes
-        // (<30 verts) that share a skin's bitmap are bone visualizations causing artifacts.
-        // Trimeshes with unique bitmaps are real geometry (tails, manes, fangs) — keep them.
-        bool hasSkins = allMeshes.Any(m => m is Radoub.Formats.Mdl.MdlSkinNode && m.Render && m.Vertices.Length > 0);
-        var skinBitmaps = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (hasSkins)
-        {
-            foreach (var m in allMeshes)
-            {
-                if (m is Radoub.Formats.Mdl.MdlSkinNode && m.Render && m.Vertices.Length > 0)
-                {
-                    if (!string.IsNullOrEmpty(m.Bitmap) && !m.Bitmap.Equals("null", StringComparison.OrdinalIgnoreCase))
-                        skinBitmaps.Add(m.Bitmap);
-                }
-            }
-            UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"  Model '{_model.Name}': Has skin meshes — will filter tiny trimeshes sharing skin textures ({string.Join(", ", skinBitmaps)})");
-        }
 
         UnifiedLogger.LogApplication(LogLevel.INFO, $"  Model '{_model.Name}': {allMeshes.Count} mesh nodes: {string.Join(", ", allMeshes.Select(m => m.Name))}");
         foreach (var mesh in allMeshes)
@@ -1267,34 +1251,16 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             meshIndex++;
 
             // Honor the MDL Render flag — meshes with Render=false are invisible
-            // (e.g., animation-only geometry, hidden internal meshes, stale body parts)
-            if (!mesh.Render)
+            // (e.g., animation-only geometry, hidden internal meshes, stale body parts).
+            if (!MeshVisibility.ShouldRender(mesh.Render, mesh.Vertices.Length, mesh.Faces.Length))
             {
                 skippedMeshes++;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Skipping mesh {meshIndex} '{mesh.Name}': Render=false");
-                continue;
-            }
-
-            if (mesh.Vertices.Length == 0 || mesh.Faces.Length == 0)
-            {
-                skippedMeshes++;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Skipping mesh {meshIndex}: verts={mesh.Vertices.Length}, faces={mesh.Faces.Length}");
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"  Skipping mesh {meshIndex} '{mesh.Name}': Render={mesh.Render}, verts={mesh.Vertices.Length}, faces={mesh.Faces.Length}");
                 continue;
             }
 
             bool isSkinMesh = mesh is Radoub.Formats.Mdl.MdlSkinNode;
-
-            // #1676/#2057: In models with skins, skip tiny trimeshes (<30 verts) that share
-            // a skin bitmap (bone visualizations). Keep trimeshes with unique bitmaps — they're
-            // real geometry (tails, manes, fangs, accessories).
-            if (MeshSkipHeuristic.ShouldSkipTrimesh(hasSkins, isSkinMesh, mesh.Vertices.Length, mesh.Bitmap, skinBitmaps))
-            {
-                skippedMeshes++;
-                skippedTrimeshes++;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"  Skipping tiny trimesh '{mesh.Name}' ({mesh.Vertices.Length} verts, bitmap='{mesh.Bitmap}'): shares skin texture in skin model");
-                continue;
-            }
 
             // All meshes: apply full hierarchy world transform.
             // Skin mesh vertices (m_pavVerts) are in bind-pose space — same treatment as trimesh.

@@ -12,9 +12,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 - Fixed a data race where a background model load (#1485) could corrupt the main render's MDL parse, intermittently dropping geometry (e.g. dire tiger rendering as exploded "wings"). Root cause and fix are a shared-library `MdlReader` thread-safety change — see the root CHANGELOG (`Radoub.Formats 0.2.72-alpha`).
 
-### Investigation: MDL Render-flag vs 30-vertex mesh-skip heuristic (#2482 D)
+### Fix: Model preview hid real geometry (hands, hair, dragon spikes, tongues) (#2498 / #2482 D)
 
-- Re-validated the heuristic across all creature models: it hides ~2857 `Render=true` bone-visualization meshes the Render flag does not catch, so it is load-bearing and was not removed. Reference engines (nwnexplorer, borealis) honor the Render flag with no such heuristic; whether it over-hides cosmetic parts is a visual question deferred to UAT.
+- Removed the 30-vertex mesh-skip heuristic that hid small body parts sharing the body texture (Antoine's hands/neck/hair, dragon spikes/fins, snake tongue). Mesh visibility now matches the Aurora engine (nwnexplorer/borealis): honor the MDL `Render` flag and drop empty meshes — no vertex-count or shared-bitmap guess. Shared `Radoub.UI` change.
 
 ---
 

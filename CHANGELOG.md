@@ -26,6 +26,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.15-alpha] - 2026-06-19
+**Branch**: `quartermaster/issue-2498` | **PR**: #2509
+
+### Fix: Model preview hid real geometry (#2498)
+
+- Removed the 30-vertex `MeshSkipHeuristic` (#1676/#2057). It assumed any tiny trimesh sharing the body texture was a bone-visualization overlay, but that hid real parts that reuse the body texture — hands, necks, hair, dragon spikes/fins, tongues. Mesh visibility now matches the Aurora engine (nwnexplorer/borealis): render iff the MDL `Render` flag is set and the mesh has geometry.
+
+---
+
 ## [Radoub.UI 0.2.14-alpha] - 2026-06-19
 **Branch**: `quartermaster/issue-2029` | **PR**: #2506
 
