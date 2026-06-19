@@ -12,7 +12,7 @@ namespace Radoub.UI.Services;
 /// </summary>
 public class SharedPaletteCacheService : ISharedPaletteCacheService, IDisposable
 {
-    private const int CacheVersion = 3; // v3: Added SourceLocation
+    private const int CacheVersion = 4; // v4: Source enum replaces bool IsStandard (#1995); v3: Added SourceLocation
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -132,6 +132,15 @@ public class SharedPaletteCacheService : ISharedPaletteCacheService, IDisposable
             var cache = JsonSerializer.Deserialize<SourcePaletteCacheWrapper>(json, JsonOptions);
             if (cache?.Items != null)
             {
+                // Refuse a stale-schema cache: returning v3 items would silently default the new
+                // Source field to Bif and mislabel every custom item (#1995).
+                if (cache.Version != CacheVersion)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"Shared palette {source} cache version mismatch on load - rebuild required");
+                    return null;
+                }
+
                 UnifiedLogger.LogApplication(LogLevel.DEBUG,
                     $"Loaded {cache.Items.Count} items from shared palette {source} cache");
                 return cache.Items;

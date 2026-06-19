@@ -1,4 +1,5 @@
 using Xunit;
+using Radoub.Formats.Services;
 using Radoub.UI.Services;
 
 namespace Radoub.UI.Tests;
@@ -43,7 +44,7 @@ public class SharedPaletteCacheServiceTests : IDisposable
                 BaseItemTypeName = "Sword",
                 BaseItemType = 1,
                 BaseValue = (uint)(100 * (i + 1)),
-                IsStandard = true
+                Source = GameResourceSource.Bif
             });
         }
         return items;
@@ -80,6 +81,44 @@ public class SharedPaletteCacheServiceTests : IDisposable
         Assert.Equal(1, loaded[0].BaseItemType);
         Assert.Equal(100u, loaded[0].BaseValue);
         Assert.True(loaded[0].IsStandard);
+    }
+
+    [Fact]
+    public async Task LoadSourceCache_PreservesGameResourceSource()
+    {
+        // #1995 — the real four-way source must survive the cache round-trip (not flatten to a bool).
+        var items = new List<SharedPaletteCacheItem>
+        {
+            new() { ResRef = "bif_item", Source = GameResourceSource.Bif },
+            new() { ResRef = "ovr_item", Source = GameResourceSource.Override },
+            new() { ResRef = "hak_item", Source = GameResourceSource.Hak },
+            new() { ResRef = "mod_item", Source = GameResourceSource.Module },
+        };
+        await _service.SaveSourceCacheAsync("override", items, validationPath: "/nwn/path");
+
+        var loaded = _service.LoadSourceCache("override");
+
+        Assert.NotNull(loaded);
+        Assert.Equal(GameResourceSource.Bif, loaded[0].Source);
+        Assert.Equal(GameResourceSource.Override, loaded[1].Source);
+        Assert.Equal(GameResourceSource.Hak, loaded[2].Source);
+        Assert.Equal(GameResourceSource.Module, loaded[3].Source);
+    }
+
+    [Fact]
+    public async Task LoadSourceCache_RejectsPriorCacheVersion()
+    {
+        // #1995 — bumping CacheVersion (3 -> 4) must invalidate v3 caches on disk so the
+        // new Source field is rebuilt rather than read as a default. v3 had no Source field.
+        await _service.SaveSourceCacheAsync("bif", CreateTestItems(), validationPath: "/game");
+        var cacheFile = Path.Combine(_testCacheDir, "bif.json");
+        var json = File.ReadAllText(cacheFile);
+        // Rewrite the on-disk version to the prior version (3).
+        json = System.Text.RegularExpressions.Regex.Replace(json, "\"Version\":\\d+", "\"Version\":3");
+        File.WriteAllText(cacheFile, json);
+
+        Assert.False(_service.HasValidSourceCache("bif"));
+        Assert.Null(_service.LoadSourceCache("bif"));
     }
 
     [Fact]
@@ -157,7 +196,7 @@ public class SharedPaletteCacheServiceTests : IDisposable
         await _service.SaveSourceCacheAsync("bif", CreateTestItems(), validationPath: "/path");
         var cacheFile = Path.Combine(_testCacheDir, "bif.json");
         var json = File.ReadAllText(cacheFile);
-        json = json.Replace("\"Version\":3", "\"Version\":999");
+        json = System.Text.RegularExpressions.Regex.Replace(json, "\"Version\":\\d+", "\"Version\":999");
         File.WriteAllText(cacheFile, json);
 
         Assert.False(_service.HasValidSourceCache("bif"));

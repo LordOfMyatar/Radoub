@@ -203,10 +203,8 @@ public partial class MainWindow
                     Value = c.BaseValue,
                     Tag = string.IsNullOrEmpty(c.Tag) ? c.ResRef : c.Tag,
                     PropertiesDisplay = c.PropertiesDisplay,
-                    // IsStandard is a bool, so a custom item is HAK or Override; SourceLocation carries
-                    // the real origin (hak filename vs "Override"). Use it to label HAK items as Hak
-                    // instead of lumping them under Override (#2411 follow-up).
-                    Source = SourceFromCache(c),
+                    // The cache now carries the real four-way source (#1995); no filename sniffing.
+                    Source = c.Source,
                     SourceLocation = c.SourceLocation, // surface the hak filename (Fence parity)
                     // Item detail images (#2411): reuse Reliquary's ItemIconService (already used for
                     // placeable portraits) for inventory palette/details icons, matching Fence.
@@ -294,7 +292,7 @@ public partial class MainWindow
                     PropertiesDisplay = _itemFactory.GetPropertiesDisplay(uti.Properties),
                     BaseItemType = uti.BaseItem,
                     BaseValue = uti.Cost,
-                    IsStandard = gameSource == GameResourceSource.Bif,
+                    Source = gameSource,
                     SourceLocation = string.IsNullOrEmpty(res.SourcePath)
                         ? res.Source.ToString() : Path.GetFileName(res.SourcePath)
                 });
@@ -311,20 +309,6 @@ public partial class MainWindow
             : RadoubSettings.Instance.NeverwinterNightsPath;
         _itemCache.SaveSourceCacheAsync(cacheSource, items, validationPath).GetAwaiter().GetResult();
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Reliquary: built {cacheSource} item cache ({items.Count} items).");
-    }
-
-    /// <summary>
-    /// Map a cached palette item to a source enum. BIF items are standard; custom items are HAK when
-    /// SourceLocation names a .hak file, otherwise Override. (SharedPaletteCacheItem.IsStandard is a
-    /// bool, so SourceLocation is the only signal that distinguishes HAK from Override — #2411 follow-up.)
-    /// </summary>
-    private static GameResourceSource SourceFromCache(SharedPaletteCacheItem c)
-    {
-        if (c.IsStandard) return GameResourceSource.Bif;
-        return !string.IsNullOrEmpty(c.SourceLocation)
-               && c.SourceLocation.EndsWith(".hak", StringComparison.OrdinalIgnoreCase)
-            ? GameResourceSource.Hak
-            : GameResourceSource.Override;
     }
 
     /// <summary>Load loose .uti files from the open placeable's directory as palette items.</summary>

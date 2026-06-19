@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.13-alpha] - 2026-06-18
+**Branch**: `radoub/issue-1995` | **PR**: #2503
+
+### Feat: Per-source palette filter — Override/HAK/Module (#1995)
+
+- The item palette source filter splits the old binary Standard/Custom toggle into four independent checkboxes (Standard, Override, HAK, Module). The real `GameResourceSource` is now plumbed through `SharedPaletteCacheItem` (cache rebuilt under a new version) so Fence, Quartermaster, and Reliquary all distinguish all four sources. Note: module/HAK content now shows by default; Override is hidden by default.
+
+---
+
 ## [Radoub.UI 0.2.12-alpha] - 2026-06-18
 **Branch**: `quartermaster/issue-1485` | **PR**: #2502
 

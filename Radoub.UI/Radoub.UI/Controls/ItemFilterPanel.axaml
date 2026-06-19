@@ -25,26 +25,34 @@
       </Grid>
 
       <!-- Row 2: Source checkboxes, Type filter, and Slot filter -->
-      <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto">
-        <CheckBox x:Name="StandardCheck"
-                  Grid.Column="0"
-                  Content="Standard"
-                  IsChecked="{Binding ShowStandard, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
-                  ToolTip.Tip="Show base game items"/>
-        <CheckBox x:Name="CustomCheck"
-                  Grid.Column="1"
-                  Content="Custom"
-                  Margin="16,0,0,0"
-                  IsChecked="{Binding ShowCustom, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
-                  ToolTip.Tip="Show module/HAK items"/>
+      <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto">
+        <!-- Four independent source toggles (#1995). -->
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="16">
+          <CheckBox x:Name="StandardCheck"
+                    Content="Standard"
+                    IsChecked="{Binding ShowStandard, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
+                    ToolTip.Tip="Show base game items (BIF)"/>
+          <CheckBox x:Name="OverrideCheck"
+                    Content="Override"
+                    IsChecked="{Binding ShowOverride, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
+                    ToolTip.Tip="Show items from the user's Override folder"/>
+          <CheckBox x:Name="HakCheck"
+                    Content="HAK"
+                    IsChecked="{Binding ShowHak, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
+                    ToolTip.Tip="Show items from module-referenced HAK packs"/>
+          <CheckBox x:Name="ModuleCheck"
+                    Content="Module"
+                    IsChecked="{Binding ShowModule, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
+                    ToolTip.Tip="Show loose UTI files in the module directory"/>
+        </StackPanel>
         <CheckBox x:Name="CreatureItemsCheck"
-                  Grid.Column="4"
+                  Grid.Column="3"
                   HorizontalAlignment="Left"
                   Content="Creature/internal"
                   IsChecked="{Binding ShowCreatureItems, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
                   ToolTip.Tip="Show creature natural weapons + internal items (e.g. a custom monster's claws). Hidden by default."/>
 
-        <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="16,0,0,0">
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="16,0,0,0">
           <TextBlock Text="Type:" VerticalAlignment="Center" Margin="0,0,8,0"/>
           <ComboBox x:Name="TypeCombo"
                     MinWidth="150"
@@ -58,7 +66,7 @@
           </ComboBox>
         </StackPanel>
 
-        <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="16,0,0,0">
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="16,0,0,0">
           <TextBlock Text="Slot:" VerticalAlignment="Center" Margin="0,0,8,0"/>
           <ComboBox x:Name="SlotCombo"
                     MinWidth="130"
@@ -74,7 +82,7 @@
         </StackPanel>
 
         <TextBlock x:Name="ResultCount"
-                   Grid.Column="5"
+                   Grid.Column="4"
                    VerticalAlignment="Center"
                    Margin="16,0,0,0"
                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>

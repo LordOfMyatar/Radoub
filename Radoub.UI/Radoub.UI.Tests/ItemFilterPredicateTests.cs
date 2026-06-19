@@ -40,9 +40,12 @@ public class ItemFilterPredicateTests
         ItemTypeInfo? type = null,
         SlotFilterInfo? slot = null,
         bool showStandard = true,
-        bool showCustom = true,
+        bool showOverride = true,
+        bool showHak = true,
+        bool showModule = true,
         bool showCreatureItems = true)
-        => ItemFilterPredicate.Matches(item, search, propertySearch, type, slot, showStandard, showCustom, showCreatureItems);
+        => ItemFilterPredicate.Matches(item, search, propertySearch, type, slot,
+            showStandard, showOverride, showHak, showModule, showCreatureItems);
 
     // ---- Creature/internal item filter (#2411 follow-up) ----
 
@@ -69,23 +72,48 @@ public class ItemFilterPredicateTests
     public void NoCriteria_MatchesEverything()
         => Assert.True(Matches(Item()));
 
-    // ---- Source filter ----
+    // ---- Source filter (#1995: four independent sources) ----
 
     [Fact]
     public void Standard_Hidden_WhenShowStandardFalse()
         => Assert.False(Matches(Item(source: GameResourceSource.Bif), showStandard: false));
 
     [Fact]
-    public void Custom_Hidden_WhenShowCustomFalse()
-        => Assert.False(Matches(Item(source: GameResourceSource.Hak), showCustom: false));
-
-    [Fact]
-    public void Custom_Shown_WhenShowCustomTrue()
-        => Assert.True(Matches(Item(source: GameResourceSource.Override), showCustom: true, showStandard: false));
-
-    [Fact]
     public void Standard_Shown_WhenShowStandardTrue()
-        => Assert.True(Matches(Item(source: GameResourceSource.Bif), showStandard: true, showCustom: false));
+        => Assert.True(Matches(Item(source: GameResourceSource.Bif), showStandard: true));
+
+    [Fact]
+    public void Override_Hidden_WhenShowOverrideFalse()
+        => Assert.False(Matches(Item(source: GameResourceSource.Override), showOverride: false));
+
+    [Fact]
+    public void Override_Shown_WhenShowOverrideTrue()
+        => Assert.True(Matches(Item(source: GameResourceSource.Override), showOverride: true));
+
+    [Fact]
+    public void Hak_Hidden_WhenShowHakFalse()
+        => Assert.False(Matches(Item(source: GameResourceSource.Hak), showHak: false));
+
+    [Fact]
+    public void Hak_Shown_WhenShowHakTrue()
+        => Assert.True(Matches(Item(source: GameResourceSource.Hak), showHak: true));
+
+    [Fact]
+    public void Module_Hidden_WhenShowModuleFalse()
+        => Assert.False(Matches(Item(source: GameResourceSource.Module), showModule: false));
+
+    [Fact]
+    public void Module_Shown_WhenShowModuleTrue()
+        => Assert.True(Matches(Item(source: GameResourceSource.Module), showModule: true));
+
+    [Fact]
+    public void Override_Hidden_DoesNotHideHakOrModule()
+    {
+        // The granularity the old binary could not express: hide Override but keep HAK + Module.
+        Assert.False(Matches(Item(source: GameResourceSource.Override), showOverride: false));
+        Assert.True(Matches(Item(source: GameResourceSource.Hak), showOverride: false));
+        Assert.True(Matches(Item(source: GameResourceSource.Module), showOverride: false));
+    }
 
     // ---- Type filter ----
 
@@ -164,7 +192,7 @@ public class ItemFilterPredicateTests
             type: new ItemTypeInfo(5, "Longsword", "longsword"),
             slot: new SlotFilterInfo(0x08, "Right Hand"),
             showStandard: false,
-            showCustom: true));
+            showHak: true));
     }
 
     [Fact]
@@ -177,6 +205,6 @@ public class ItemFilterPredicateTests
             search: "holy",
             type: new ItemTypeInfo(99, "Wrong", "wrong"),
             slot: new SlotFilterInfo(0x08, "Right Hand"),
-            showCustom: true));
+            showHak: true));
     }
 }
