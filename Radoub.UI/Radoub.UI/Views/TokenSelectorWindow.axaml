@@ -89,6 +89,7 @@
                                  Margin="0,5"
                                  Checked="OnHighlightTypeChanged">
                         <StackPanel Orientation="Horizontal">
+                            <!-- theme-ok: NWN engine renders action highlights green regardless of theme -->
                             <TextBlock Text="Action" FontWeight="Bold" Foreground="#00FF00" Width="80"/>
                             <TextBlock Text="[Character actions]" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                         </StackPanel>
@@ -106,6 +107,7 @@
                                  Margin="0,5"
                                  Checked="OnHighlightTypeChanged">
                         <StackPanel Orientation="Horizontal">
+                            <!-- theme-ok: NWN engine renders highlight tokens blue regardless of theme -->
                             <TextBlock Text="Highlight" FontWeight="Bold" Foreground="#0080FF" Width="80"/>
                             <TextBlock Text="[Important text]" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                         </StackPanel>
@@ -117,6 +119,7 @@
                                  Margin="0,5"
                                  Checked="OnHighlightTypeChanged">
                         <StackPanel Orientation="Horizontal">
+                            <!-- theme-ok: NWN engine renders skill-check tokens red regardless of theme -->
                             <TextBlock Text="Skill Check" FontWeight="Bold" Foreground="#FF0000" Width="80"/>
                             <ComboBox x:Name="SkillCheckComboBox" MinWidth="150" Margin="10,0,0,0"
                                       SelectionChanged="OnSkillCheckChanged">
@@ -161,6 +164,7 @@
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        FontFamily="Consolas"
                                        FontSize="{DynamicResource FontSizeSmall}"/>
+                            <!-- theme-ok: green is the NWN action-highlight color, fixed regardless of theme -->
                             <TextBlock x:Name="HighlightPreviewFormatted"
                                        Text="[Chef waves]"
                                        TextWrapping="Wrap"
