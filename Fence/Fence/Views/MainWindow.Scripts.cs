@@ -17,32 +17,24 @@ public partial class MainWindow
     {
         var script = await BrowseForScript();
         if (script != null)
-        {
-            OnOpenStoreBox.Text = script;
-            _documentState.MarkDirty();
-        }
+            RecordProgrammaticFieldEdit(OnOpenStoreBox, script, "set OnOpenStore");
     }
 
     private void OnClearOpenScript(object? sender, RoutedEventArgs e)
     {
-        OnOpenStoreBox.Text = "";
-        _documentState.MarkDirty();
+        RecordProgrammaticFieldEdit(OnOpenStoreBox, "", "clear OnOpenStore");
     }
 
     private async void OnBrowseClosedScript(object? sender, RoutedEventArgs e)
     {
         var script = await BrowseForScript();
         if (script != null)
-        {
-            OnStoreClosedBox.Text = script;
-            _documentState.MarkDirty();
-        }
+            RecordProgrammaticFieldEdit(OnStoreClosedBox, script, "set OnStoreClosed");
     }
 
     private void OnClearClosedScript(object? sender, RoutedEventArgs e)
     {
-        OnStoreClosedBox.Text = "";
-        _documentState.MarkDirty();
+        RecordProgrammaticFieldEdit(OnStoreClosedBox, "", "clear OnStoreClosed");
     }
 
     private async System.Threading.Tasks.Task<string?> BrowseForScript()

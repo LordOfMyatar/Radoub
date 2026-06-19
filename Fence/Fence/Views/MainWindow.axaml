@@ -57,8 +57,8 @@
                 <MenuItem Header="E_xit" Click="OnExitClick" InputGesture="Alt+F4"/>
             </MenuItem>
             <MenuItem Header="_Edit">
-                <MenuItem Header="_Undo" InputGesture="Ctrl+Z" IsEnabled="False" ToolTip.Tip="Not yet implemented"/>
-                <MenuItem Header="_Redo" InputGesture="Ctrl+Y" IsEnabled="False" ToolTip.Tip="Not yet implemented"/>
+                <MenuItem x:Name="UndoMenuItem" Header="_Undo" InputGesture="Ctrl+Z" IsEnabled="False" Click="OnUndoClick"/>
+                <MenuItem x:Name="RedoMenuItem" Header="_Redo" InputGesture="Ctrl+Y" IsEnabled="False" Click="OnRedoClick"/>
                 <Separator/>
                 <MenuItem Header="_Delete Selected" Click="OnDeleteClick" InputGesture="Delete" IsEnabled="{Binding HasSelection, ElementName=MainWindowInstance}"/>
                 <Separator/>
@@ -364,6 +364,8 @@
                                   SelectionMode="Extended"
                                   GridLinesVisibility="Horizontal"
                                   SelectionChanged="OnStoreInventorySelectionChanged"
+                                  PreparingCellForEdit="OnStoreCellPreparingForEdit"
+                                  CellEditEnding="OnStoreCellEditEnding"
                                   AutomationProperties.AutomationId="StoreInventoryGrid">
                             <DataGrid.ContextMenu>
                                 <ContextMenu>

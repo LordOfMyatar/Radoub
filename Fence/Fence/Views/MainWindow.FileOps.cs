@@ -65,6 +65,9 @@ public partial class MainWindow
 
         OnPropertyChanged(nameof(HasFile));
 
+        // Fresh undo history per document (#2255).
+        _undo.Clear();
+
         // End loading state, then mark dirty — new files are always unsaved
         _documentState.IsLoading = false;
         _documentState.ForceDirty();
@@ -187,6 +190,8 @@ public partial class MainWindow
         {
             await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
+                // Fresh undo history per document (#2255).
+                _undo.Clear();
                 _documentState.IsLoading = false;
                 _documentState.ClearDirty();
                 UpdateTitle();
@@ -475,6 +480,9 @@ public partial class MainWindow
         Variables.Clear();
         VariablesPanelControl.CanAdd = false; // no store loaded
         ClearStoreProperties();
+
+        // Clear undo history when closing the document (#2255).
+        _undo.Clear();
 
         _documentState.IsLoading = false;
         _documentState.ClearDirty();
