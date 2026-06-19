@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 
 ---
 
+## [0.10.1-alpha] - 2026-06-19
+**Branch**: `fence/sprint/2422-2418-shared-ui` | **PR**: #2512
+
+### Refactor (#2418)
+
+- Migrated naming logic onto the shared `BlueprintNamingService` (see root CHANGELOG); local `PlaceableNamingService` retired. Multi-space names now yield one underscore per space (was collapsed) — edge case only.
+
+---
+
 ## [0.10.0-alpha] - 2026-06-09
 **Branch**: `reliquary/sprint/preview-and-statusbar` | **PR**: #2438
 

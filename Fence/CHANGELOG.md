@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Shared UI Adoption — New Store Prompt + Palette Binder
 
-- New Store now prompts for Name/Tag/ResRef with a sync-all-three checkbox (#2418).
+- New Store now prompts for Name/Tag/ResRef with a sync-all-three checkbox, then drops to the saved file and selects it in the F4 browser (#2418).
 - Palette-category combo migrated onto the shared Radoub.UI binder (#2422).
 
 ---

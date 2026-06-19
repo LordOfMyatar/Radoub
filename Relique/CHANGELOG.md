@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.26-alpha] - 2026-06-19
+**Branch**: `fence/sprint/2422-2418-shared-ui` | **PR**: #2512
+
+### Refactor + Fix (#2418)
+
+- Migrated naming logic onto the shared `BlueprintNamingService` (see root CHANGELOG); local `ItemNamingService` retired.
+- New Item now drops to the file and refreshes/selects its row in the F4 browser instead of requiring a manual refresh.
+
+---
+
 ## [0.10.25-alpha] - 2026-06-14
 **Branch**: `relique/issue-2231` | **PR**: #2466
 
