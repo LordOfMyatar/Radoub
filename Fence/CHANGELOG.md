@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.41-alpha] - 2026-06-19
-**Branch**: `fence/sprint/2422-2418-shared-ui` | **PR**: #TBD
+**Branch**: `fence/sprint/2422-2418-shared-ui` | **PR**: #2512
 
 ### Sprint: Shared UI Adoption — New Store Prompt + Palette Binder
 
