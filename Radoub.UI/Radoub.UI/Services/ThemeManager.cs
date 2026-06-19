@@ -24,6 +24,7 @@ public partial class ThemeManager
     private readonly Dictionary<string, ThemeManifest> _themes = new();
     private ThemeManifest? _currentTheme;
     private readonly string _toolName;
+    private readonly string? _cachePathOverride;
     private const string DefaultThemeId = "org.radoub.theme.light";
 
     /// <summary>
@@ -97,6 +98,30 @@ public partial class ThemeManager
     }
 
     /// <summary>
+    /// Test-only constructor: uses the supplied theme directories verbatim
+    /// instead of the real official/shared/user locations, so tests never
+    /// touch the developer's real theme folders.
+    /// </summary>
+    internal ThemeManager(string toolName, IEnumerable<string> themeDirectories, string? cachePathOverride = null)
+    {
+        _toolName = toolName;
+        _themeDirectories.AddRange(themeDirectories);
+        _cachePathOverride = cachePathOverride;
+    }
+
+    /// <summary>
+    /// Test-only accessor: returns the currently cached manifest for an id,
+    /// or null if not discovered.
+    /// </summary>
+    internal ThemeManifest? GetCachedManifest(string themeId)
+    {
+        lock (_lock)
+        {
+            return _themes.TryGetValue(themeId, out var m) ? m : null;
+        }
+    }
+
+    /// <summary>
     /// Initialize theme search directories.
     /// Order of precedence (last wins for same theme ID):
     /// 1. Official themes (shipped with app)
@@ -144,7 +169,9 @@ public partial class ThemeManager
     /// <param name="forceRescan">If true, bypass cache and rescan directories. Use for theme editing.</param>
     public void DiscoverThemes(bool forceRescan = false)
     {
-        var cache = ThemeCatalogCache.ForTool(_toolName);
+        var cache = _cachePathOverride != null
+            ? new ThemeCatalogCache(_cachePathOverride)
+            : ThemeCatalogCache.ForTool(_toolName);
 
         // Try loading from cache (unless forced rescan)
         if (!forceRescan && cache.IsValid(_themeDirectories))
@@ -416,7 +443,21 @@ public partial class ThemeManager
     /// <returns>True if a theme was applied successfully</returns>
     public bool ApplySharedTheme()
     {
+        RefreshThemeCatalog();
         var effectiveThemeId = GetEffectiveThemeId();
         return ApplyTheme(effectiveThemeId);
+    }
+
+    /// <summary>
+    /// Re-discover themes so that edits made to an existing theme JSON by
+    /// Trebuchet are picked up by a tool that has been running since before
+    /// the edit (#2300). DiscoverThemes honors the catalog cache's mtime
+    /// check, so this is a cheap no-op when nothing changed.
+    /// </summary>
+    internal void RefreshThemeCatalog()
+    {
+        // forceRescan: false — the catalog cache's mtime check rescans only
+        // when a theme directory (and thus a theme file) actually changed.
+        DiscoverThemes();
     }
 }
