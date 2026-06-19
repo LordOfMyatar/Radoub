@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Radoub.UI 0.2.17-alpha] - 2026-06-19
-**Branch**: `radoub/sprint/2443-shared-ui-bugs` | **PR**: #TBD
+**Branch**: `radoub/sprint/2443-shared-ui-bugs` | **PR**: #2518
 
 ### Sprint: Shared UI Bug Fix (#2443)
 
