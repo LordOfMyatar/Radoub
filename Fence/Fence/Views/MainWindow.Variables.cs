@@ -1,3 +1,4 @@
+using MerchantEditor.Commands;
 using MerchantEditor.ViewModels;
 using Radoub.Formats.Logging;
 using Radoub.UI.Controls;
@@ -107,11 +108,10 @@ public partial class MainWindow
             Name = VariableViewModel.NextDefaultName(Variables.Select(v => v.Name)),
             Type = Radoub.Formats.Gff.VariableType.Int
         };
-        Variables.Add(newVar); // panel auto-validates via CollectionChanged
+        // Route through undo so the add is reversible as one step (#2255).
+        _undo.Execute(new AddVariableCommand(Variables, newVar)); // panel auto-validates via CollectionChanged
         VariablesPanelControl.SelectedVariable = newVar;
         VariablesPanelControl.FocusSelectedName(); // land in the name field
-
-        _documentState.MarkDirty();
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "Added new variable (awaiting name)");
     }
@@ -120,10 +120,8 @@ public partial class MainWindow
     {
         if (e.Variables.Count == 0) return;
 
-        foreach (var item in e.Variables)
-            Variables.Remove(item);
-
-        _documentState.MarkDirty();
+        // Route through undo so the removal is reversible as one step (#2255).
+        _undo.Execute(new RemoveVariablesCommand(Variables, e.Variables));
 
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed {e.Variables.Count} variable(s)");
     }

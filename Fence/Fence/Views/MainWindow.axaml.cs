@@ -135,6 +135,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Wire up store property change tracking for dirty flag (#1536)
         WireUpStorePropertyTracking();
 
+        // Wire up undo/redo (#2255 / epic #2231) — must follow property tracking so the field
+        // handlers (GotFocus/LostFocus) sit alongside the existing TextChanged dirty handlers.
+        WireUndo();
+
         // Track property changes on store items for dirty state and validation
         StoreItems.CollectionChanged += OnStoreItemsCollectionChanged;
 
@@ -575,6 +579,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             // No restrictions
             BuyAllRadio.IsChecked = true;
         }
+
+        // Reset the undo baseline so the first user change records against this loaded state (#2255).
+        ResetBuyRestrictionsBaseline();
     }
 
     #endregion
@@ -949,6 +956,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             switch (e.Key)
             {
+                case Key.Z:
+                    // Document/whole-field undo (#2231): Fence is a blueprint editor, so Ctrl+Z
+                    // always undoes at the document level — even with a text field focused. Text
+                    // edits are recorded as whole-field commands on focus-loss (see WireFieldUndo),
+                    // so we deliberately do NOT defer to the TextBox's native per-character undo.
+                    // Commit any pending text edit first so it lands on the stack before we undo it.
+                    CommitFocusedFieldEdit();
+                    OnUndoClick(null, e);
+                    e.Handled = true;
+                    return;
+                case Key.Y:
+                    OnRedoClick(null, e);
+                    e.Handled = true;
+                    return;
                 case Key.N:
                     OnNewClick(null, e);
                     e.Handled = true;

@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.40-alpha] - 2026-06-18
+**Branch**: `fence/sprint/2383-undo-data-integrity` | **PR**: #2504
+
+### Sprint: Critical Save/Undo + Cross-Tool Data Integrity (#2383)
+
+- Undo/Redo wired in Fence per Epic #2231 — document/whole-field undo across all editable fields; disabled menu stubs replaced (#2255).
+
+This closes out the remaining item in Sprint #2383 (save race, cache leak, file-panel refresh, and ItemDetails refactor already shipped in 0.1.39-alpha).
+
+---
+
 ## [0.1.39-alpha] - 2026-06-07
 **Branch**: `fence/issue-2383` | **PR**: #2410
 

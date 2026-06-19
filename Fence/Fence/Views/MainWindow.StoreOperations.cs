@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using MerchantEditor.Commands;
 using MerchantEditor.ViewModels;
 using Radoub.Formats.Utm;
 using Radoub.UI.Services;
@@ -41,12 +42,9 @@ public partial class MainWindow
         if (selectedItems == null || selectedItems.Count == 0)
             return;
 
-        foreach (var item in selectedItems)
-        {
-            StoreItems.Remove(item);
-        }
+        // Route through undo so the removal is reversible as one step (#2255).
+        _undo.Execute(new RemoveStoreItemsCommand(StoreItems, selectedItems));
 
-        _documentState.MarkDirty();
         UpdateItemCount();
 
         // Refresh grid view (re-apply filter if active)
@@ -68,12 +66,8 @@ public partial class MainWindow
         if (StoreItems.Count == 0)
             return;
 
-        foreach (var item in StoreItems)
-        {
-            item.Infinite = true;
-        }
-
-        _documentState.MarkDirty();
+        // Route through undo so the bulk flag change is reversible as one step (#2255).
+        _undo.Execute(new SetInfiniteCommand(StoreItems, true));
     }
 
     private void SetInfiniteFlag(bool value)
@@ -82,12 +76,8 @@ public partial class MainWindow
         if (selectedItems == null || selectedItems.Count == 0)
             return;
 
-        foreach (var item in selectedItems)
-        {
-            item.Infinite = value;
-        }
-
-        _documentState.MarkDirty();
+        // Route through undo so the flag change is reversible as one step (#2255).
+        _undo.Execute(new SetInfiniteCommand(selectedItems, value));
     }
 
     private void OnInfiniteCellClicked(object? sender, Avalonia.Input.PointerPressedEventArgs e)
@@ -95,8 +85,8 @@ public partial class MainWindow
         // Get the data context (StoreItemViewModel) from the clicked element
         if (sender is Avalonia.Controls.Border border && border.DataContext is StoreItemViewModel item)
         {
-            item.Infinite = !item.Infinite;
-            _documentState.MarkDirty();
+            // Route the per-cell toggle through undo (#2255).
+            _undo.Execute(new SetInfiniteCommand(new[] { item }, !item.Infinite));
         }
     }
 
@@ -115,6 +105,7 @@ public partial class MainWindow
         var markUp = int.TryParse(SellMarkupBox.Text, out var mu) ? mu : 100;
         var markDown = int.TryParse(BuyMarkdownBox.Text, out var md) ? md : 50;
 
+        var newStoreItems = new List<StoreItemViewModel>();
         foreach (var item in selectedItems)
         {
             var sellPrice = (int)Math.Ceiling((int)item.Value * markUp / 100.0);
@@ -126,7 +117,7 @@ public partial class MainWindow
                 Radoub.Formats.Logging.LogLevel.DEBUG,
                 $"Adding item: {item.ResRef} | Type: {item.BaseItemName} | Panel: {panelId} ({StorePanels.GetPanelName(panelId)})");
 
-            StoreItems.Add(new StoreItemViewModel
+            newStoreItems.Add(new StoreItemViewModel
             {
                 ResRef = item.ResRef,
                 DisplayName = item.Name,
@@ -142,7 +133,8 @@ public partial class MainWindow
             });
         }
 
-        _documentState.MarkDirty();
+        // Route through undo so the whole batch add is reversible as one step (#2255).
+        _undo.Execute(new AddStoreItemsCommand(StoreItems, newStoreItems));
         UpdateItemCount();
 
         // Refresh grid view (re-apply filter if active)
@@ -156,12 +148,9 @@ public partial class MainWindow
         if (selectedItems == null || selectedItems.Count == 0)
             return;
 
-        foreach (var item in selectedItems)
-        {
-            StoreItems.Remove(item);
-        }
+        // Route through undo so the removal is reversible as one step (#2255).
+        _undo.Execute(new RemoveStoreItemsCommand(StoreItems, selectedItems));
 
-        _documentState.MarkDirty();
         UpdateItemCount();
 
         // Refresh grid view (re-apply filter if active)
@@ -214,43 +203,55 @@ public partial class MainWindow
 
     private void OnBuyModeChanged(object? sender, RoutedEventArgs e)
     {
-        // When mode changes to "Buy All", clear selections
-        if (BuyAllRadio.IsChecked == true)
+        // Suppress per-checkbox recording while the "Buy All" auto-clear runs; record the whole
+        // mode+selection change as one undo step afterward (#2255).
+        _suppressBuyRestrictionsUndo = true;
+        try
         {
-            foreach (var item in SelectableBaseItemTypes)
+            // When mode changes to "Buy All", clear selections
+            if (BuyAllRadio.IsChecked == true)
             {
-                item.IsSelected = false;
+                foreach (var item in SelectableBaseItemTypes)
+                {
+                    item.IsSelected = false;
+                }
             }
         }
+        finally { _suppressBuyRestrictionsUndo = false; }
 
-        if (!_documentState.IsLoading)
-            _documentState.MarkDirty();
+        RecordBuyRestrictionsChange();
     }
 
     private void OnSelectAllTypes(object? sender, RoutedEventArgs e)
     {
-        foreach (var item in SelectableBaseItemTypes)
+        // Suppress per-checkbox recording during the bulk set; record once as a single undo step.
+        _suppressBuyRestrictionsUndo = true;
+        try
         {
-            item.IsSelected = true;
+            foreach (var item in SelectableBaseItemTypes)
+                item.IsSelected = true;
         }
+        finally { _suppressBuyRestrictionsUndo = false; }
 
-        _documentState.MarkDirty();
+        RecordBuyRestrictionsChange();
     }
 
     private void OnClearAllTypes(object? sender, RoutedEventArgs e)
     {
-        foreach (var item in SelectableBaseItemTypes)
+        _suppressBuyRestrictionsUndo = true;
+        try
         {
-            item.IsSelected = false;
+            foreach (var item in SelectableBaseItemTypes)
+                item.IsSelected = false;
         }
+        finally { _suppressBuyRestrictionsUndo = false; }
 
-        _documentState.MarkDirty();
+        RecordBuyRestrictionsChange();
     }
 
     private void OnItemTypeCheckChanged(object? sender, RoutedEventArgs e)
     {
-        if (!_documentState.IsLoading)
-            _documentState.MarkDirty();
+        RecordBuyRestrictionsChange();
     }
 
     private void UpdateBuyRestrictions()
