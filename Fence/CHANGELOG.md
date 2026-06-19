@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.41-alpha] - 2026-06-19
+**Branch**: `fence/sprint/2422-2418-shared-ui` | **PR**: #TBD
+
+### Sprint: Shared UI Adoption — New Store Prompt + Palette Binder
+
+- New Store now prompts for Name/Tag/ResRef with a sync-all-three checkbox (#2418).
+- Palette-category combo migrated onto the shared Radoub.UI binder (#2422).
+
+---
+
 ## [0.1.40-alpha] - 2026-06-18
 **Branch**: `fence/sprint/2383-undo-data-integrity` | **PR**: #2504
 
