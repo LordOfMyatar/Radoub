@@ -124,6 +124,12 @@ public partial class MainWindow
                 ItemBrowserPanel.ModulePath = moduleDir;
             }
 
+            // Surface + select the row in the F4 browser (#2418). For a brand-new file (e.g. just
+            // created by the New Item wizard) the row does not exist yet, so NotifyOrAddAsync (#2413)
+            // reloads the list and selects it; for an already-listed file it is a cheap no-op refresh.
+            // Setting CurrentFilePath alone only highlights an existing row — it does not add one.
+            await Radoub.UI.Controls.BrowserSaveNotifier.NotifyOrAddAsync(ItemBrowserPanel, filePath);
+
             // Update search bar file path
             this.FindControl<SearchBar>("FileSearchBar")?.UpdateFilePath(filePath);
 
