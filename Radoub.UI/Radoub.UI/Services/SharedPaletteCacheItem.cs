@@ -1,3 +1,6 @@
+using System.Text.Json.Serialization;
+using Radoub.Formats.Services;
+
 namespace Radoub.UI.Services;
 
 /// <summary>
@@ -13,9 +16,22 @@ public class SharedPaletteCacheItem
     public string BaseItemTypeName { get; set; } = string.Empty;
     public int BaseItemType { get; set; }
     public uint BaseValue { get; set; }
-    public bool IsStandard { get; set; }
+
+    /// <summary>
+    /// Which game resource bucket this item came from (Bif/Override/Hak/Module). Persisted so the
+    /// palette filter can distinguish all four sources (#1995). Replaces the former bool IsStandard.
+    /// </summary>
+    public GameResourceSource Source { get; set; } = GameResourceSource.Bif;
+
     public string PropertiesDisplay { get; set; } = string.Empty;
     public string SourceLocation { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Convenience: true when this item is base-game (BIF). Not serialized — derived from Source.
+    /// Retained so existing call sites and tests that only need the standard-vs-custom split keep working.
+    /// </summary>
+    [JsonIgnore]
+    public bool IsStandard => Source == GameResourceSource.Bif;
 }
 
 /// <summary>

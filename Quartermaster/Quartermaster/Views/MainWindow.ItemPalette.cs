@@ -254,7 +254,7 @@ public partial class MainWindow
                         PropertiesDisplay = propertiesDisplay,
                         BaseItemType = item.BaseItem,
                         BaseValue = item.Cost,
-                        IsStandard = gameSource == GameResourceSource.Bif,
+                        Source = gameSource,
                         SourceLocation = !string.IsNullOrEmpty(resourceInfo.SourcePath)
                             ? Path.GetFileName(resourceInfo.SourcePath)
                             : resourceInfo.Source.ToString()
@@ -339,7 +339,7 @@ public partial class MainWindow
                         Value = cached.BaseValue,
                         Tag = !string.IsNullOrEmpty(cached.Tag) ? cached.Tag : cached.ResRef,
                         PropertiesDisplay = cached.PropertiesDisplay,
-                        Source = cached.IsStandard ? GameResourceSource.Bif : GameResourceSource.Override
+                        Source = cached.Source
                     };
                     ItemFactory.PopulateEquipableSlots(vm, cached.BaseItemType);
                     vms.Add(vm);

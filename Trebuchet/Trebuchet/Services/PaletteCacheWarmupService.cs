@@ -91,7 +91,7 @@ public class PaletteCacheWarmupService
                             BaseItemType = uti.BaseItem,
                             BaseItemTypeName = baseItemName,
                             BaseValue = uti.Cost,
-                            IsStandard = true,
+                            Source = Radoub.Formats.Services.GameResourceSource.Bif,
                             PropertiesDisplay = propertiesDisplay,
                             SourceLocation = "bif"
                         });

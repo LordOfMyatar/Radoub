@@ -203,7 +203,7 @@ public partial class MainWindow
                                 BaseItemType = item.BaseItem,
                                 BaseValue = item.Cost,
                                 Tag = item.Tag ?? string.Empty,
-                                IsStandard = resourceInfo.Source == GameResourceSource.Bif,
+                                Source = resourceInfo.Source,
                                 PropertiesDisplay = propertiesDisplay,
                                 SourceLocation = !string.IsNullOrEmpty(resourceInfo.SourcePath)
                                     ? Path.GetFileName(resourceInfo.SourcePath)
@@ -268,7 +268,7 @@ public partial class MainWindow
                     Value = cached.BaseValue,
                     Tag = !string.IsNullOrEmpty(cached.Tag) ? cached.Tag : cached.ResRef,
                     PropertiesDisplay = cached.PropertiesDisplay,
-                    Source = cached.IsStandard ? GameResourceSource.Bif : GameResourceSource.Override,
+                    Source = cached.Source,
                     SourceLocation = cached.SourceLocation,
                     IconBitmap = _itemIconService?.GetItemIcon(cached.BaseItemType)
                 };
@@ -292,8 +292,8 @@ public partial class MainWindow
             {
                 _paletteFilter.Items = PaletteItems;
                 _paletteFilter.GameDataService = _gameDataService;
-                // Show all sources by default (including module/custom items)
-                _paletteFilter.ShowCustom = true;
+                // Source visibility defaults come from FilterState (#1995): Standard/HAK/Module on,
+                // Override off. No per-source force here.
                 _paletteFilter.ApplyFilter();
             }
 

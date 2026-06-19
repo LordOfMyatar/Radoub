@@ -2,6 +2,7 @@ using Radoub.Formats.Common;
 using Radoub.Formats.Erf;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Resolver;
+using Radoub.Formats.Services;
 using Radoub.Formats.Uti;
 
 namespace Radoub.UI.Services;
@@ -83,7 +84,7 @@ public class HakPaletteScannerService
                             BaseItemTypeName = string.Empty, // Set by consumer with 2DA lookup
                             BaseItemType = uti.BaseItem,
                             BaseValue = uti.Cost,
-                            IsStandard = false, // HAK items are custom content
+                            Source = GameResourceSource.Hak,
                             SourceLocation = Path.GetFileName(hakPath)
                         });
                         seenResRefs.Add(entry.ResRef);

@@ -3,6 +3,7 @@ using Radoub.Formats.Common;
 using Radoub.Formats.Erf;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Ifo;
+using Radoub.Formats.Services;
 using Radoub.Formats.Uti;
 using Radoub.UI.Services;
 
@@ -268,7 +269,8 @@ public class HakPaletteScannerServiceTests : IDisposable
         Assert.Equal("CHAINMAIL", item.Tag);
         Assert.Equal(16, item.BaseItemType);
         Assert.Equal(500u, item.BaseValue);
-        Assert.False(item.IsStandard); // HAK items are not standard/base game
+        Assert.Equal(GameResourceSource.Hak, item.Source); // #1995: real source recorded, not just a bool
+        Assert.False(item.IsStandard); // convenience getter still reflects non-BIF
     }
 
     [Fact]

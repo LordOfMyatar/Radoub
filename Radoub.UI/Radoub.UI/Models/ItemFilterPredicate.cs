@@ -1,3 +1,4 @@
+using Radoub.Formats.Services;
 using Radoub.UI.ViewModels;
 
 namespace Radoub.UI.Models;
@@ -21,7 +22,9 @@ public static class ItemFilterPredicate
     /// <param name="typeFilter">Base-item-type filter, or null / AllTypes for no type filter.</param>
     /// <param name="slotFilter">Equipment-slot filter, or null / AllSlots for no slot filter.</param>
     /// <param name="showStandard">Include base-game (BIF) items.</param>
-    /// <param name="showCustom">Include custom (Override/HAK/Module) items.</param>
+    /// <param name="showOverride">Include items from the user's Override folder.</param>
+    /// <param name="showHak">Include items from module-referenced HAK packs.</param>
+    /// <param name="showModule">Include loose UTI files from the module directory.</param>
     /// <param name="showCreatureItems">
     /// Include creature natural weapons + internal/marker base types (see
     /// <see cref="Utils.ItemPaletteExclusions"/>). Default true (no filtering) so existing callers and
@@ -34,12 +37,21 @@ public static class ItemFilterPredicate
         ItemTypeInfo? typeFilter,
         SlotFilterInfo? slotFilter,
         bool showStandard,
-        bool showCustom,
+        bool showOverride,
+        bool showHak,
+        bool showModule,
         bool showCreatureItems = true)
     {
-        // Source filter (Standard = BIF, Custom = Override/HAK/Module)
-        if (item.IsStandard && !showStandard) return false;
-        if (item.IsCustom && !showCustom) return false;
+        // Source filter (#1995: each of the four game-resource sources toggles independently).
+        var sourceVisible = item.Source switch
+        {
+            GameResourceSource.Bif => showStandard,
+            GameResourceSource.Override => showOverride,
+            GameResourceSource.Hak => showHak,
+            GameResourceSource.Module => showModule,
+            _ => true
+        };
+        if (!sourceVisible) return false;
 
         // Creature/internal items (natural weapons, marker) are hidden unless explicitly shown.
         if (!showCreatureItems && Utils.ItemPaletteExclusions.IsExcluded(item.BaseItem)) return false;

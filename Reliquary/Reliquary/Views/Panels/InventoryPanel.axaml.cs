@@ -81,9 +81,8 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
             _paletteFilter.Items = _paletteItems;
             // Filter writes its results into the same collection the list shows (QM pattern).
             _paletteFilter.FilteredItems = _filteredPaletteItems;
-            // Show module/Override/HAK items by default (ShowCustom defaults false) — otherwise the
-            // palette would list only base-game BIF items and hide the module's loose UTIs.
-            _paletteFilter.ShowCustom = true;
+            // Source visibility defaults come from FilterState (#1995): Standard/HAK/Module on,
+            // Override off. No per-source force here.
         }
         if (_paletteList != null)
         {

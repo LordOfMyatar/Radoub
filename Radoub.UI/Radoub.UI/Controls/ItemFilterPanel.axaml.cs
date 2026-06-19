@@ -47,11 +47,23 @@ public partial class ItemFilterPanel : UserControl
         AvaloniaProperty.Register<ItemFilterPanel, bool>(nameof(ShowStandard), defaultValue: true);
 
     /// <summary>
-    /// Show items from module/HAK (Custom).
-    /// Default false - custom items can be numerous (CEP adds thousands).
+    /// Show items from the user's Override folder. Default false (#1995): overrides shadow base
+    /// content and are not usually wanted in the palette.
     /// </summary>
-    public static readonly StyledProperty<bool> ShowCustomProperty =
-        AvaloniaProperty.Register<ItemFilterPanel, bool>(nameof(ShowCustom), defaultValue: false);
+    public static readonly StyledProperty<bool> ShowOverrideProperty =
+        AvaloniaProperty.Register<ItemFilterPanel, bool>(nameof(ShowOverride), defaultValue: false);
+
+    /// <summary>
+    /// Show items from module-referenced HAK packs. Default true.
+    /// </summary>
+    public static readonly StyledProperty<bool> ShowHakProperty =
+        AvaloniaProperty.Register<ItemFilterPanel, bool>(nameof(ShowHak), defaultValue: true);
+
+    /// <summary>
+    /// Show loose UTI files from the module directory. Default true.
+    /// </summary>
+    public static readonly StyledProperty<bool> ShowModuleProperty =
+        AvaloniaProperty.Register<ItemFilterPanel, bool>(nameof(ShowModule), defaultValue: true);
 
     /// <summary>
     /// Show creature natural weapons + internal/marker items (base types 69-73, 255). Default false:
@@ -184,12 +196,30 @@ public partial class ItemFilterPanel : UserControl
     }
 
     /// <summary>
-    /// Show module/HAK items.
+    /// Show Override-folder items.
     /// </summary>
-    public bool ShowCustom
+    public bool ShowOverride
     {
-        get => GetValue(ShowCustomProperty);
-        set => SetValue(ShowCustomProperty, value);
+        get => GetValue(ShowOverrideProperty);
+        set => SetValue(ShowOverrideProperty, value);
+    }
+
+    /// <summary>
+    /// Show module-referenced HAK items.
+    /// </summary>
+    public bool ShowHak
+    {
+        get => GetValue(ShowHakProperty);
+        set => SetValue(ShowHakProperty, value);
+    }
+
+    /// <summary>
+    /// Show loose module-directory items.
+    /// </summary>
+    public bool ShowModule
+    {
+        get => GetValue(ShowModuleProperty);
+        set => SetValue(ShowModuleProperty, value);
     }
 
     public bool ShowCreatureItems
@@ -327,7 +357,9 @@ public partial class ItemFilterPanel : UserControl
             _debounceTimer.Start();
         }
         else if (change.Property == ShowStandardProperty ||
-                 change.Property == ShowCustomProperty ||
+                 change.Property == ShowOverrideProperty ||
+                 change.Property == ShowHakProperty ||
+                 change.Property == ShowModuleProperty ||
                  change.Property == ShowCreatureItemsProperty ||
                  change.Property == SelectedItemTypeProperty ||
                  change.Property == SelectedSlotFilterProperty)
@@ -449,7 +481,9 @@ public partial class ItemFilterPanel : UserControl
         var typeFilter = SelectedItemType;
         var slotFilter = SelectedSlotFilter;
         var showStandard = ShowStandard;
-        var showCustom = ShowCustom;
+        var showOverride = ShowOverride;
+        var showHak = ShowHak;
+        var showModule = ShowModule;
         var showCreature = ShowCreatureItems;
 
         int totalCount = Items.Count;
@@ -457,7 +491,8 @@ public partial class ItemFilterPanel : UserControl
 
         foreach (var item in Items)
         {
-            if (MatchesFilter(item, searchLower, propertySearchLower, typeFilter, slotFilter, showStandard, showCustom, showCreature))
+            if (MatchesFilter(item, searchLower, propertySearchLower, typeFilter, slotFilter,
+                              showStandard, showOverride, showHak, showModule, showCreature))
             {
                 FilteredItems.Add(item);
                 matchCount++;
@@ -480,10 +515,13 @@ public partial class ItemFilterPanel : UserControl
         ItemTypeInfo? typeFilter,
         SlotFilterInfo? slotFilter,
         bool showStandard,
-        bool showCustom,
+        bool showOverride,
+        bool showHak,
+        bool showModule,
         bool showCreatureItems)
         => ItemFilterPredicate.Matches(
-            item, searchLower, propertySearchLower, typeFilter, slotFilter, showStandard, showCustom, showCreatureItems);
+            item, searchLower, propertySearchLower, typeFilter, slotFilter,
+            showStandard, showOverride, showHak, showModule, showCreatureItems);
 
     private void UpdateResultCount(int matchCount, int totalCount)
     {
@@ -503,8 +541,11 @@ public partial class ItemFilterPanel : UserControl
         var state = FilterSettings.GetFilterState(ContextKey);
         if (state == null) return;
 
+        state.MigrateLegacy(); // #1995: old binary ShowCustom → per-source toggles
         ShowStandard = state.ShowStandard;
-        ShowCustom = state.ShowCustom;
+        ShowOverride = state.ShowOverride;
+        ShowHak = state.ShowHak;
+        ShowModule = state.ShowModule;
         SearchText = state.SearchText ?? string.Empty;
         PropertySearchText = state.PropertySearchText ?? string.Empty;
 
@@ -538,7 +579,9 @@ public partial class ItemFilterPanel : UserControl
         var state = new FilterState
         {
             ShowStandard = ShowStandard,
-            ShowCustom = ShowCustom,
+            ShowOverride = ShowOverride,
+            ShowHak = ShowHak,
+            ShowModule = ShowModule,
             SearchText = string.IsNullOrEmpty(SearchText) ? null : SearchText,
             SelectedBaseItemIndex = SelectedItemType?.IsAllTypes == true ? null : SelectedItemType?.BaseItemIndex,
             PropertySearchText = string.IsNullOrEmpty(PropertySearchText) ? null : PropertySearchText,
