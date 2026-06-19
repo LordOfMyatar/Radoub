@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.16-alpha] - 2026-06-19
+**Branch**: `fence/sprint/2422-2418-shared-ui` | **PR**: #2512
+
+### Feat: Shared BlueprintNamingService (#2418)
+
+- Added `BlueprintNamingService` (NWN Tag/ResRef generation, validation, conflict resolution) so Fence, Relique, and Reliquary share one implementation; Relique's `ItemNamingService` and Reliquary's `PlaceableNamingService` were retired onto it.
+
+---
+
 ## [Radoub.Formats 0.2.72-alpha] - 2026-06-19
 **Branch**: `quartermaster/issue-2498` | **PR**: #2509
 

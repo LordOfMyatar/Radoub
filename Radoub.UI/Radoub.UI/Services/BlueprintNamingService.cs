@@ -1,14 +1,18 @@
 using System;
 using System.Text.RegularExpressions;
 
-namespace ItemEditor.Services;
+namespace Radoub.UI.Services;
 
 /// <summary>
-/// Pure logic service for NWN item Tag and ResRef generation, validation, and conflict resolution.
+/// Shared pure logic for NWN blueprint Tag and ResRef generation, validation, and conflict
+/// resolution. Extracted from the per-tool copies in Relique (<c>ItemNamingService</c>) and
+/// Reliquary (<c>PlaceableNamingService</c>) so Fence and future tools consume one implementation
+/// instead of re-deriving it (#2418).
+///
 /// ResRef: filename-like (16 char max, lowercase, [a-z0-9_]).
 /// Tag: script identifier (32 char max, typically UPPERCASE, [a-zA-Z0-9_]).
 /// </summary>
-public static partial class ItemNamingService
+public static partial class BlueprintNamingService
 {
     private const int MaxResRefLength = 16;
     private const int MaxTagLength = 32;

@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 
 ---
 
+## [0.10.1-alpha] - 2026-06-19
+**Branch**: `fence/sprint/2422-2418-shared-ui` | **PR**: #2512
+
+### Feat + Refactor (#2418)
+
+- New Placeable now prompts for Name/Tag/ResRef with a sync-all-three checkbox (mirrors Fence), so Tag and ResRef can be overridden instead of only entering a Name.
+- Migrated naming logic onto the shared `BlueprintNamingService` (see root CHANGELOG); local `PlaceableNamingService` retired. Multi-space names now yield one underscore per space (was collapsed) — edge case only.
+
+---
+
 ## [0.10.0-alpha] - 2026-06-09
 **Branch**: `reliquary/sprint/preview-and-statusbar` | **PR**: #2438
 

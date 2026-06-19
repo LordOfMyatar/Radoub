@@ -9,6 +9,7 @@ using Radoub.Formats.Settings;
 using Radoub.Formats.Utm;
 using Radoub.UI.Controls;
 using Radoub.UI.Services;
+using Radoub.UI.Utils;
 using Radoub.UI.Views;
 using System;
 using System.IO;
@@ -24,18 +25,25 @@ public partial class MainWindow
 {
     #region File Operations
 
-    private void OnNewClick(object? sender, RoutedEventArgs e)
+    private async void OnNewClick(object? sender, RoutedEventArgs e)
     {
+        // Prompt for Name/Tag/ResRef up front (#2418). Cancel leaves the current document
+        // untouched — return before mutating any state.
+        var dialog = new NewStoreWindow();
+        await dialog.ShowDialog(this);
+        if (dialog.Result is not { } result)
+            return;
+
         // Release lock on previous file
         if (!string.IsNullOrEmpty(_currentFilePath))
             FileSessionLockService.ReleaseLock(_currentFilePath);
         _documentState.IsReadOnly = false;
 
-        // Create a new empty store
+        // Create the new store from the dialog values
         _currentStore = new UtmFile
         {
-            ResRef = "new_store",
-            Tag = "new_store",
+            ResRef = result.ResRef,
+            Tag = result.Tag,
             MarkUp = 100,
             MarkDown = 50,
             IdentifyPrice = 100,
@@ -44,7 +52,7 @@ public partial class MainWindow
             BlackMarket = false,
             BM_MarkDown = 25
         };
-        _currentStore.LocName.SetString(0, "New Store");
+        _currentStore.LocName.SetString(0, result.Name);
 
         _currentFilePath = null;
         _documentState.IsLoading = true;
@@ -73,6 +81,12 @@ public partial class MainWindow
         _documentState.ForceDirty();
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "Created new store");
+
+        // Save immediately so the file exists on disk, then drop to it as the open file and
+        // surface + select it in the F4 browser (#2418). SaveFile sets _currentFilePath and
+        // fires the browser refresh/select via NotifyOrAddAsync. If the user cancels the save
+        // picker, fall back to the unsaved in-memory buffer (they can Save later).
+        await SaveAsAsync();
     }
 
     private async void OnOpenClick(object? sender, RoutedEventArgs e)
@@ -396,10 +410,12 @@ public partial class MainWindow
             SettingsService.Instance.AddRecentFile(filePath);
             UpdateRecentFilesMenu();
 
-            // Refresh browser row Tag/Name without full reindex (#2200).
+            // Refresh the browser after save (#2200). NotifyOrAddAsync (#2413) refreshes an
+            // existing row in place, OR — for a brand-new file with no row yet (New Store, Save As
+            // to a new name) — reloads the list so the new row appears and selects it (#2418).
             // Fire-and-forget — save flow does not block on UI refresh.
             var storeBrowserPanel = this.FindControl<StoreBrowserPanel>("StoreBrowserPanel");
-            _ = Radoub.UI.Controls.BrowserSaveNotifier.NotifyAsync(storeBrowserPanel, filePath);
+            _ = Radoub.UI.Controls.BrowserSaveNotifier.NotifyOrAddAsync(storeBrowserPanel, filePath);
 
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Saved store: {UnifiedLogger.SanitizePath(filePath)}");
         }
@@ -432,11 +448,8 @@ public partial class MainWindow
         _currentStore.MaxBuyPrice = (MaxBuyPriceCheck.IsChecked ?? false) && int.TryParse(MaxBuyPriceBox.Text, out var maxBuy) ? maxBuy : -1;
         _currentStore.StoreGold = (LimitedGoldCheck.IsChecked ?? false) && int.TryParse(StoreGoldBox.Text, out var storeGold) ? storeGold : -1;
 
-        // Update category (PaletteID) - use category ID from mapping, not dropdown index
-        var selectedCategoryIndex = Math.Max(0, StoreCategoryBox.SelectedIndex);
-        _currentStore.PaletteID = selectedCategoryIndex < _storeCategories.Count
-            ? _storeCategories[selectedCategoryIndex].Id
-            : (byte)0;
+        // Update category (PaletteID) - read selected ID from the binder, not dropdown index (#2422)
+        _currentStore.PaletteID = PaletteCategoryComboBinder.GetSelectedId(StoreCategoryBox) ?? 0;
 
         // Update scripts and comment
         _currentStore.OnOpenStore = OnOpenStoreBox.Text ?? "";

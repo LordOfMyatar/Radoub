@@ -1,8 +1,15 @@
-using ItemEditor.Services;
+using System.Collections.Generic;
+using Radoub.UI.Services;
+using Xunit;
 
-namespace ItemEditor.Tests.Services;
+namespace Radoub.UI.Tests.Services;
 
-public class ItemNamingServiceTests
+/// <summary>
+/// Contract tests for the shared BlueprintNamingService (#2418). Ported from Relique's
+/// ItemNamingServiceTests so the extracted shared service preserves the exact behavior the
+/// per-tool copies had before migration.
+/// </summary>
+public class BlueprintNamingServiceTests
 {
     // --- GenerateTag ---
 
@@ -15,40 +22,34 @@ public class ItemNamingServiceTests
     [InlineData("already_VALID", "ALREADYVALID")]
     public void GenerateTag_StandardInput_ReturnsExpected(string input, string expected)
     {
-        var result = ItemNamingService.GenerateTag(input);
-        Assert.Equal(expected, result);
+        Assert.Equal(expected, BlueprintNamingService.GenerateTag(input));
     }
 
     [Fact]
     public void GenerateTag_EmptyString_ReturnsEmpty()
     {
-        Assert.Equal(string.Empty, ItemNamingService.GenerateTag(string.Empty));
+        Assert.Equal(string.Empty, BlueprintNamingService.GenerateTag(string.Empty));
     }
 
     [Fact]
     public void GenerateTag_AllSymbols_ReturnsEmpty()
     {
-        Assert.Equal(string.Empty, ItemNamingService.GenerateTag("!@#$%^&*()"));
+        Assert.Equal(string.Empty, BlueprintNamingService.GenerateTag("!@#$%^&*()"));
     }
 
     [Fact]
     public void GenerateTag_LongName_TruncatesAt32()
     {
-        // 35 chars of 'A' separated by spaces -> "AAAA...AAAA" all caps, truncated at 32
         var input = "abcdefghijklmnopqrstuvwxyz1234567890";
-        var result = ItemNamingService.GenerateTag(input);
+        var result = BlueprintNamingService.GenerateTag(input);
         Assert.True(result.Length <= 32, $"Expected <= 32 chars but got {result.Length}: '{result}'");
     }
 
     [Fact]
     public void GenerateTag_TruncationTrimsTrailingUnderscore()
     {
-        // input: 31 a's + " b" (33 chars total)
-        // after sanitize + uppercase: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA_B" (33 chars)
-        // truncate at 32: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA_"
-        // trim trailing '_': "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" (31 chars)
         var input = new string('a', 31) + " b";
-        var result = ItemNamingService.GenerateTag(input);
+        var result = BlueprintNamingService.GenerateTag(input);
         Assert.Equal(31, result.Length);
         Assert.DoesNotContain("_", result.AsSpan(result.Length - 1, 1).ToString());
     }
@@ -56,7 +57,7 @@ public class ItemNamingServiceTests
     [Fact]
     public void GenerateTag_WhitespaceOnly_ReturnsEmpty()
     {
-        Assert.Equal(string.Empty, ItemNamingService.GenerateTag("   "));
+        Assert.Equal(string.Empty, BlueprintNamingService.GenerateTag("   "));
     }
 
     // --- GenerateResRef ---
@@ -69,27 +70,26 @@ public class ItemNamingServiceTests
     [InlineData("hello world", "hello_world")]
     public void GenerateResRef_StandardInput_ReturnsExpected(string input, string expected)
     {
-        var result = ItemNamingService.GenerateResRef(input);
-        Assert.Equal(expected, result);
+        Assert.Equal(expected, BlueprintNamingService.GenerateResRef(input));
     }
 
     [Fact]
     public void GenerateResRef_EmptyString_ReturnsEmpty()
     {
-        Assert.Equal(string.Empty, ItemNamingService.GenerateResRef(string.Empty));
+        Assert.Equal(string.Empty, BlueprintNamingService.GenerateResRef(string.Empty));
     }
 
     [Fact]
     public void GenerateResRef_AllSymbols_ReturnsEmpty()
     {
-        Assert.Equal(string.Empty, ItemNamingService.GenerateResRef("!@#$%^&*()"));
+        Assert.Equal(string.Empty, BlueprintNamingService.GenerateResRef("!@#$%^&*()"));
     }
 
     [Fact]
     public void GenerateResRef_LongName_TruncatesAt16()
     {
         var input = "abcdefghijklmnopqrstuvwxyz";
-        var result = ItemNamingService.GenerateResRef(input);
+        var result = BlueprintNamingService.GenerateResRef(input);
         Assert.True(result.Length <= 16, $"Expected <= 16 chars but got {result.Length}: '{result}'");
         Assert.Equal("abcdefghijklmnop", result);
     }
@@ -97,9 +97,8 @@ public class ItemNamingServiceTests
     [Fact]
     public void GenerateResRef_TruncationTrimsTrailingUnderscore()
     {
-        // 15 a's + space + b = "aaaaaaaaaaaaaaa_b", truncate at 16 = "aaaaaaaaaaaaaaa_", trim = "aaaaaaaaaaaaaaa"
         var input = new string('a', 15) + " b";
-        var result = ItemNamingService.GenerateResRef(input);
+        var result = BlueprintNamingService.GenerateResRef(input);
         Assert.True(result.Length <= 16);
         Assert.DoesNotContain("_", result.AsSpan(result.Length - 1, 1).ToString());
     }
@@ -107,7 +106,7 @@ public class ItemNamingServiceTests
     [Fact]
     public void GenerateResRef_ResultIsLowercase()
     {
-        var result = ItemNamingService.GenerateResRef("Mixed Case Name");
+        var result = BlueprintNamingService.GenerateResRef("Mixed Case Name");
         Assert.Equal(result, result.ToLower());
     }
 
@@ -123,21 +122,19 @@ public class ItemNamingServiceTests
     [InlineData("", false)]
     public void IsValidResRef_ReturnsExpected(string input, bool expected)
     {
-        Assert.Equal(expected, ItemNamingService.IsValidResRef(input));
+        Assert.Equal(expected, BlueprintNamingService.IsValidResRef(input));
     }
 
     [Fact]
     public void IsValidResRef_ExactlyMaxLength_ReturnsTrue()
     {
-        var resref = new string('a', 16);
-        Assert.True(ItemNamingService.IsValidResRef(resref));
+        Assert.True(BlueprintNamingService.IsValidResRef(new string('a', 16)));
     }
 
     [Fact]
     public void IsValidResRef_Over16Chars_ReturnsFalse()
     {
-        var resref = new string('a', 17);
-        Assert.False(ItemNamingService.IsValidResRef(resref));
+        Assert.False(BlueprintNamingService.IsValidResRef(new string('a', 17)));
     }
 
     // --- IsValidTag ---
@@ -151,21 +148,19 @@ public class ItemNamingServiceTests
     [InlineData("has-hyphen", false)]
     public void IsValidTag_ReturnsExpected(string input, bool expected)
     {
-        Assert.Equal(expected, ItemNamingService.IsValidTag(input));
+        Assert.Equal(expected, BlueprintNamingService.IsValidTag(input));
     }
 
     [Fact]
     public void IsValidTag_ExactlyMaxLength_ReturnsTrue()
     {
-        var tag = new string('A', 32);
-        Assert.True(ItemNamingService.IsValidTag(tag));
+        Assert.True(BlueprintNamingService.IsValidTag(new string('A', 32)));
     }
 
     [Fact]
     public void IsValidTag_Over32Chars_ReturnsFalse()
     {
-        var tag = new string('A', 33);
-        Assert.False(ItemNamingService.IsValidTag(tag));
+        Assert.False(BlueprintNamingService.IsValidTag(new string('A', 33)));
     }
 
     // --- ResolveResRefConflict ---
@@ -173,34 +168,29 @@ public class ItemNamingServiceTests
     [Fact]
     public void ResolveResRefConflict_NoConflict_ReturnsSameResRef()
     {
-        var result = ItemNamingService.ResolveResRefConflict("sword", _ => false);
-        Assert.Equal("sword", result);
+        Assert.Equal("sword", BlueprintNamingService.ResolveResRefConflict("sword", _ => false));
     }
 
     [Fact]
     public void ResolveResRefConflict_FirstConflict_Appends001()
     {
-        // "sword" exists → chop last 3 chars of "sword" = "sw", append "001" → "sw001"
         var existing = new HashSet<string> { "sword" };
-        var result = ItemNamingService.ResolveResRefConflict("sword", s => existing.Contains(s));
-        Assert.Equal("sw001", result);
+        Assert.Equal("sw001", BlueprintNamingService.ResolveResRefConflict("sword", s => existing.Contains(s)));
     }
 
     [Fact]
     public void ResolveResRefConflict_MultipleConflicts_Increments()
     {
         var existing = new HashSet<string> { "sword", "sw001", "sw002" };
-        var result = ItemNamingService.ResolveResRefConflict("sword", s => existing.Contains(s));
-        Assert.Equal("sw003", result);
+        Assert.Equal("sw003", BlueprintNamingService.ResolveResRefConflict("sword", s => existing.Contains(s)));
     }
 
     [Fact]
     public void ResolveResRefConflict_Exactly16Chars_StaysWithin16()
     {
-        // "abcdefghijklmnop" (16 chars) exists → chop last 3 = "abcdefghijklm" (13 chars), append "001" → "abcdefghijklm001" (16 chars)
         var base16 = "abcdefghijklmnop";
         var existing = new HashSet<string> { base16 };
-        var result = ItemNamingService.ResolveResRefConflict(base16, s => existing.Contains(s));
+        var result = BlueprintNamingService.ResolveResRefConflict(base16, s => existing.Contains(s));
         Assert.True(result.Length <= 16, $"Result '{result}' exceeds 16 chars");
         Assert.Equal("abcdefghijklm001", result);
     }
@@ -208,16 +198,13 @@ public class ItemNamingServiceTests
     [Fact]
     public void ResolveResRefConflict_ShortResRef3Chars_UsesFirstChar()
     {
-        // "abc" (< 4 chars) → base = first char = "a", append "001" → "a001"
         var existing = new HashSet<string> { "abc" };
-        var result = ItemNamingService.ResolveResRefConflict("abc", s => existing.Contains(s));
-        Assert.Equal("a001", result);
+        Assert.Equal("a001", BlueprintNamingService.ResolveResRefConflict("abc", s => existing.Contains(s)));
     }
 
     [Fact]
     public void ResolveResRefConflict_ShortResRefNoConflict_ReturnsSame()
     {
-        var result = ItemNamingService.ResolveResRefConflict("ab", _ => false);
-        Assert.Equal("ab", result);
+        Assert.Equal("ab", BlueprintNamingService.ResolveResRefConflict("ab", _ => false));
     }
 }
