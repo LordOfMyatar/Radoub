@@ -98,7 +98,9 @@ public partial class NewPlaceableWindow : Window
         string? error = null;
         if (string.IsNullOrEmpty(name))
             error = "Name is required.";
-        else if (!string.IsNullOrEmpty(tag) && !BlueprintNamingService.IsValidTag(tag))
+        else if (!BlueprintNamingService.IsValidTag(tag))
+            // Tag is required and must be valid; empty Tag is an error (was previously skipped,
+            // which left Create enabled while OnCreateClick silently rejected the click).
             error = "Tag must be 1-32 characters (A-Z, 0-9, underscore).";
         else if (string.IsNullOrEmpty(resRef))
             error = "ResRef is required.";

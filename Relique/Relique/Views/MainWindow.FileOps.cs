@@ -126,7 +126,8 @@ public partial class MainWindow
 
             // Surface + select the row in the F4 browser (#2418). For a brand-new file (e.g. just
             // created by the New Item wizard) the row does not exist yet, so NotifyOrAddAsync (#2413)
-            // reloads the list and selects it; for an already-listed file it is a cheap no-op refresh.
+            // reloads the list and selects it; for an already-listed file it does a single-row
+            // metadata re-read (re-parses Tag/DisplayLabel from disk — cheap, but not free).
             // Setting CurrentFilePath alone only highlights an existing row — it does not add one.
             await Radoub.UI.Controls.BrowserSaveNotifier.NotifyOrAddAsync(ItemBrowserPanel, filePath);
 
