@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.Formats 0.2.71-alpha] - 2026-06-18
+**Branch**: `quartermaster/issue-2029` | **PR**: #2506
+
+### Fix: Truncate ResRefs to 16 chars at resource lookup (#2029)
+
+- `GameResourceResolver` now caps lookup ResRefs at Aurora's 16-char limit, matching the engine. Resources referenced by a >16-char name (e.g. CEP dire tiger's `N_Tiger_LaoHu02_D` texture, stored truncated as `N_Tiger_LaoHu02_`) now resolve instead of falling back to a wrong texture. Fixes the dire-tiger "holes" in the Quartermaster model preview.
+
+---
+
 ## [Radoub.UI 0.2.13-alpha] - 2026-06-18
 **Branch**: `radoub/issue-1995` | **PR**: #2503
 
