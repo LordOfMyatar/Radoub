@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.125-alpha] - 2026-06-19
+**Branch**: `quartermaster/issue-2498` | **PR**: #TBD
+
+### Refactor: Gate mesh visibility on MDL Render flag (#2482 D)
+
+- Makes the MDL `Render` flag the primary mesh-visibility gate in the appearance preview; the 30-vertex tiny-trimesh heuristic is removed or demoted to a logged fallback (decision documented after re-validation across creatures).
+
+---
+
 ## [0.2.124-alpha] - 2026-06-18
 **Branch**: `quartermaster/issue-2029` | **PR**: #2506
 
