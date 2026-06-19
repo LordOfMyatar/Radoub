@@ -430,11 +430,11 @@ public partial class NewItemWizardWindow : Window
 
         if (AutoTagCheckBox.IsChecked == true)
         {
-            TagTextBox.Text = ItemNamingService.GenerateTag(name);
+            TagTextBox.Text = BlueprintNamingService.GenerateTag(name);
         }
         if (AutoResRefCheckBox.IsChecked == true)
         {
-            ResRefTextBox.Text = ItemNamingService.GenerateResRef(name);
+            ResRefTextBox.Text = BlueprintNamingService.GenerateResRef(name);
         }
 
         UpdateStep2Validation();
@@ -459,7 +459,7 @@ public partial class NewItemWizardWindow : Window
     {
         if (AutoTagCheckBox.IsChecked == true)
         {
-            TagTextBox.Text = ItemNamingService.GenerateTag(NameTextBox.Text ?? string.Empty);
+            TagTextBox.Text = BlueprintNamingService.GenerateTag(NameTextBox.Text ?? string.Empty);
             TagTextBox.IsReadOnly = true;
         }
         else
@@ -472,7 +472,7 @@ public partial class NewItemWizardWindow : Window
     {
         if (AutoResRefCheckBox.IsChecked == true)
         {
-            ResRefTextBox.Text = ItemNamingService.GenerateResRef(NameTextBox.Text ?? string.Empty);
+            ResRefTextBox.Text = BlueprintNamingService.GenerateResRef(NameTextBox.Text ?? string.Empty);
             ResRefTextBox.IsReadOnly = true;
         }
         else
@@ -491,11 +491,11 @@ public partial class NewItemWizardWindow : Window
 
         if (string.IsNullOrEmpty(name))
             error = "Name is required.";
-        else if (!string.IsNullOrEmpty(tag) && !ItemNamingService.IsValidTag(tag))
+        else if (!string.IsNullOrEmpty(tag) && !BlueprintNamingService.IsValidTag(tag))
             error = "Tag contains invalid characters (use A-Z, 0-9, underscore).";
         else if (string.IsNullOrEmpty(resRef))
             error = "ResRef is required.";
-        else if (!ItemNamingService.IsValidResRef(resRef))
+        else if (!BlueprintNamingService.IsValidResRef(resRef))
             error = "ResRef must be 1-16 lowercase alphanumeric/underscore characters.";
 
         ValidationText.Text = error ?? string.Empty;
@@ -568,7 +568,7 @@ public partial class NewItemWizardWindow : Window
         try
         {
             // Resolve ResRef conflicts
-            var finalResRef = ItemNamingService.ResolveResRefConflict(
+            var finalResRef = BlueprintNamingService.ResolveResRefConflict(
                 resRef, r => File.Exists(Path.Combine(saveDir, r + ".uti")));
 
             // Get palette category

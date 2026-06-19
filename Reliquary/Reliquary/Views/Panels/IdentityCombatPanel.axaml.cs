@@ -6,8 +6,8 @@ using Avalonia.Media.Imaging;
 using System.Collections.Generic;
 using Radoub.Formats.Services;
 using Radoub.UI.Controls;
+using Radoub.UI.Services;
 using Radoub.UI.Utils;
-using PlaceableEditor.Services;
 
 namespace PlaceableEditor.Views.Panels;
 
@@ -99,9 +99,9 @@ public partial class IdentityCombatPanel : UserControl
     private void ApplyNameSync()
     {
         if (this.FindControl<CheckBox>("SyncNameCheck")?.IsChecked != true) return;
-        this.FindControl<TextBox>("TagTextBox")!.Text = PlaceableNamingService.GenerateTag(CurrentName);
+        this.FindControl<TextBox>("TagTextBox")!.Text = BlueprintNamingService.GenerateTag(CurrentName);
         if (!_resRefLocked)
-            this.FindControl<TextBox>("ResRefTextBox")!.Text = PlaceableNamingService.GenerateResRef(CurrentName);
+            this.FindControl<TextBox>("ResRefTextBox")!.Text = BlueprintNamingService.GenerateResRef(CurrentName);
     }
 
     private string CurrentName => this.FindControl<TextBox>("NameTextBox")?.Text ?? string.Empty;

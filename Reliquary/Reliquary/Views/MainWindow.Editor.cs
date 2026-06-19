@@ -77,8 +77,8 @@ public partial class MainWindow
             _documentState.IsReadOnly = false;
             var vm = PlaceableViewModel.NewPlaceable();
             vm.Name = name;
-            vm.Tag = PlaceableNamingService.GenerateTag(name);
-            vm.TemplateResRef = PlaceableNamingService.GenerateResRef(name);
+            vm.Tag = BlueprintNamingService.GenerateTag(name);
+            vm.TemplateResRef = BlueprintNamingService.GenerateResRef(name);
             BindPlaceable(vm);
             UpdateTitle();
         }
