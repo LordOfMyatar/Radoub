@@ -55,7 +55,8 @@ namespace DialogEditor.ViewModels
         // Coverage
         private int _totalReplies;
         private List<int> _rootEntryIndices = new();
-        private Dictionary<int, HashSet<int>> _repliesPerRootEntry = new(); // entryIndex -> set of reply indices under that root
+        private Dictionary<int, HashSet<int>> _repliesPerRootEntry = new(); // entryIndex -> set of reply indices under that root (full subtree)
+        private Dictionary<int, HashSet<int>> _directRepliesPerRootEntry = new(); // #482: entryIndex -> set of DIRECT child reply indices
 
         // TTS (Issue #479)
         // #1570: TtsEnabled/TtsRate/AutoSpeak/AutoAdvance are now backed by SettingsService for persistence.
@@ -251,7 +252,7 @@ namespace DialogEditor.ViewModels
             private set => SetProperty(ref _showLoopWarning, value);
         }
 
-        public CoverageStats Coverage => _coverageTracker.GetCoverageStats(_filePath, _totalReplies, _rootEntryIndices, _repliesPerRootEntry);
+        public CoverageStats Coverage => _coverageTracker.GetCoverageStats(_filePath, _totalReplies, _rootEntryIndices, _repliesPerRootEntry, _directRepliesPerRootEntry);
 
         public string CoverageDisplay => Coverage.DisplayText;
 

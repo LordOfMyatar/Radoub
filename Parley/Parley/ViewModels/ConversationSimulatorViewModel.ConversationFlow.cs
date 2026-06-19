@@ -84,10 +84,11 @@ namespace DialogEditor.ViewModels
                 var nodeKey = $"E{entryIndex}";
                 var wasVisited = _coverageTracker.IsNodeVisited(_filePath, nodeKey);
 
-                // Show per-entry coverage (e.g., "2/3")
-                var entryCoverage = coverage.GetEntryCoverageText(entryIndex);
+                // #482: Show dual per-entry coverage: direct children + full subtree
+                var directCoverage = coverage.GetEntryDirectCoverageText(entryIndex);
+                var subtreeCoverage = coverage.GetEntryCoverageText(entryIndex);
                 var isEntryComplete = coverage.IsEntryComplete(entryIndex);
-                var coverageIndicator = isEntryComplete ? $" ({entryCoverage})" : $" ({entryCoverage})";
+                var coverageIndicator = $" ({directCoverage} direct, {subtreeCoverage} all)";
 
                 Replies.Add(new ReplyOption
                 {

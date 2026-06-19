@@ -32,6 +32,7 @@ namespace DialogEditor.ViewModels
             // Collect root entry indices and map replies per root entry
             _rootEntryIndices.Clear();
             _repliesPerRootEntry.Clear();
+            _directRepliesPerRootEntry.Clear();
 
             foreach (var start in _dialog.Starts)
             {
@@ -42,10 +43,13 @@ namespace DialogEditor.ViewModels
                     {
                         _rootEntryIndices.Add(entryIndex);
 
-                        // Collect all reply indices reachable from this root entry
+                        // Collect all reply indices reachable from this root entry (full subtree)
                         var replyIndices = new HashSet<int>();
                         CollectRepliesUnderNode(start.Node, replyIndices, new HashSet<DialogNode>());
                         _repliesPerRootEntry[entryIndex] = replyIndices;
+
+                        // #482: collect only the entry's DIRECT child reply indices (no recursion)
+                        _directRepliesPerRootEntry[entryIndex] = CollectDirectReplies(start.Node);
                     }
                 }
             }
@@ -61,6 +65,26 @@ namespace DialogEditor.ViewModels
                 $"ConversationSimulator: Analyzed dialog - " +
                 $"totalReplies={_totalReplies}, rootEntries={_rootEntryIndices.Count}, " +
                 $"hasConditionals={hasConditionals}, unreachableSiblings={ShowUnreachableSiblingsWarning}");
+        }
+
+        /// <summary>
+        /// #482: Collect only the immediate child reply indices of an entry node (no recursion).
+        /// </summary>
+        private HashSet<int> CollectDirectReplies(DialogNode entryNode)
+        {
+            var directIndices = new HashSet<int>();
+            foreach (var ptr in entryNode.Pointers)
+            {
+                if (ptr.Node != null && ptr.Type == DialogNodeType.Reply)
+                {
+                    var replyIndex = _dialog.GetNodeIndex(ptr.Node, DialogNodeType.Reply);
+                    if (replyIndex >= 0)
+                    {
+                        directIndices.Add(replyIndex);
+                    }
+                }
+            }
+            return directIndices;
         }
 
         /// <summary>
