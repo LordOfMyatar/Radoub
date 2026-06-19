@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.17-alpha] - 2026-06-19
+**Branch**: `radoub/sprint/2443-shared-ui-bugs` | **PR**: #2518
+
+### Sprint: Shared UI Bug Fix (#2443)
+
+- Theme edits made in Trebuchet now reach running tools on window focus, not just on restart (#2300).
+- Custom Tokens tab text in the shared TokenSelectorWindow is now readable across themes (#2310).
+
+---
+
 ## [Radoub.UI 0.2.16-alpha] - 2026-06-19
 **Branch**: `fence/sprint/2422-2418-shared-ui` | **PR**: #2512
 

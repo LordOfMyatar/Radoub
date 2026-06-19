@@ -89,8 +89,9 @@
                                  Margin="0,5"
                                  Checked="OnHighlightTypeChanged">
                         <StackPanel Orientation="Horizontal">
+                            <!-- theme-ok: NWN engine renders action highlights green regardless of theme -->
                             <TextBlock Text="Action" FontWeight="Bold" Foreground="#00FF00" Width="80"/>
-                            <TextBlock Text="[Character actions]" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                            <TextBlock Text="[Character actions]" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                         </StackPanel>
                     </RadioButton>
 
@@ -106,8 +107,9 @@
                                  Margin="0,5"
                                  Checked="OnHighlightTypeChanged">
                         <StackPanel Orientation="Horizontal">
+                            <!-- theme-ok: NWN engine renders highlight tokens blue regardless of theme -->
                             <TextBlock Text="Highlight" FontWeight="Bold" Foreground="#0080FF" Width="80"/>
-                            <TextBlock Text="[Important text]" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                            <TextBlock Text="[Important text]" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                         </StackPanel>
                     </RadioButton>
 
@@ -117,6 +119,7 @@
                                  Margin="0,5"
                                  Checked="OnHighlightTypeChanged">
                         <StackPanel Orientation="Horizontal">
+                            <!-- theme-ok: NWN engine renders skill-check tokens red regardless of theme -->
                             <TextBlock Text="Skill Check" FontWeight="Bold" Foreground="#FF0000" Width="80"/>
                             <ComboBox x:Name="SkillCheckComboBox" MinWidth="150" Margin="10,0,0,0"
                                       SelectionChanged="OnSkillCheckChanged">
@@ -158,9 +161,10 @@
                             <TextBlock x:Name="HighlightPreviewRaw"
                                        Text="&lt;StartAction&gt;[Chef waves]&lt;/Start&gt;"
                                        TextWrapping="Wrap"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        FontFamily="Consolas"
                                        FontSize="{DynamicResource FontSizeSmall}"/>
+                            <!-- theme-ok: green is the NWN action-highlight color, fixed regardless of theme -->
                             <TextBlock x:Name="HighlightPreviewFormatted"
                                        Text="[Chef waves]"
                                        TextWrapping="Wrap"
@@ -183,7 +187,7 @@
 
                     <!-- Info Text -->
                     <TextBlock Grid.Row="0" TextWrapping="Wrap" Margin="0,0,0,10"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" FontSize="{DynamicResource FontSizeSmall}">
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" FontSize="{DynamicResource FontSizeSmall}">
                         User-defined custom tokens. Configure in ~/Radoub/custom-tokens.json
                     </TextBlock>
 
@@ -207,9 +211,9 @@
                                     <!-- Tag preview -->
                                     <TextBlock Grid.Column="1"
                                                Text="{Binding TagPreview}"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                FontFamily="Consolas"
-                                               FontSize="{DynamicResource FontSizeXSmall}"
+                                               FontSize="{DynamicResource FontSizeSmall}"
                                                VerticalAlignment="Center"/>
                                 </Grid>
                             </DataTemplate>
@@ -221,7 +225,7 @@
                                Text="No custom tokens defined. Add tokens to ~/Radoub/custom-tokens.json"
                                TextWrapping="Wrap"
                                HorizontalAlignment="Center" VerticalAlignment="Center"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                IsVisible="True"/>
 
                     <!-- Preview -->
@@ -233,7 +237,7 @@
                             <TextBlock x:Name="CustomTokenPreviewText"
                                        Text="Select a token"
                                        TextWrapping="Wrap"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        FontFamily="Consolas"
                                        FontSize="{DynamicResource FontSizeSmall}"/>
                         </StackPanel>
@@ -252,7 +256,7 @@
 
                     <!-- Info Text -->
                     <TextBlock Grid.Row="0" TextWrapping="Wrap" Margin="0,0,0,10"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" FontSize="{DynamicResource FontSizeSmall}">
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" FontSize="{DynamicResource FontSizeSmall}">
                         Custom color tokens require matching SetCustomToken() calls in your module scripts.
                         Configure colors in ~/Radoub/token-colors.json
                     </TextBlock>
@@ -286,9 +290,9 @@
                                     <!-- Token preview -->
                                     <TextBlock Grid.Column="2"
                                                Text="{Binding OpenToken}"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                FontFamily="Consolas"
-                                               FontSize="{DynamicResource FontSizeXSmall}"
+                                               FontSize="{DynamicResource FontSizeSmall}"
                                                VerticalAlignment="Center"/>
                                 </Grid>
                             </DataTemplate>
@@ -304,7 +308,7 @@
                             <TextBlock x:Name="ColorPreviewRaw"
                                        Text="Select a color"
                                        TextWrapping="Wrap"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        FontFamily="Consolas"
                                        FontSize="{DynamicResource FontSizeSmall}"/>
                             <TextBlock x:Name="ColorPreviewSample"
