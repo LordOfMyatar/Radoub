@@ -1667,8 +1667,7 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                     : _textureService.LoadTextureWithKind(texName, materialName, _colorIndices);
                 if (textureData == null)
                 {
-                    UnifiedLogger.LogApplication(LogLevel.INFO,
-                        $"[TexResolve] '{texName}' (len={texName.Length}) -> NULL (will try model fallback) #2029");
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Texture '{texName}' returned null");
                     failedTextures.Add(texName);
                     continue;
                 }
@@ -1679,8 +1678,6 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                 {
                     _textureCache[texName] = texId;
                     if (isPlt) _pltTextureNames.Add(texName);
-                    UnifiedLogger.LogApplication(LogLevel.INFO,
-                        $"[TexResolve] '{texName}' (len={texName.Length}) -> RESOLVED {width}x{height} #2029");
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Loaded texture '{texName}' ({width}x{height}) -> texId={texId}, isPlt={isPlt}");
                 }
             }
