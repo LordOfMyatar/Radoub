@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Radoub.UI 0.2.13-alpha] - 2026-06-18
-**Branch**: `radoub/issue-1995` | **PR**: #TBD
+**Branch**: `radoub/issue-1995` | **PR**: #2503
 
 ### Feat: Per-source palette filter — Override/HAK/Module (#1995)
 
