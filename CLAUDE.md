@@ -874,6 +874,12 @@ npx -y skills add https://github.com/obra/superpowers --skill <name> --yes
   - Developer guides
 - **BioWare Original PDFs**: `Documentation/BioWare_Original_PDFs/`
 - **neverwinter.nim Reference**: https://github.com/niv/neverwinter.nim
+- **MDL render/rendering references** (consult these for model-preview/MDL/MTR/mesh-visibility questions):
+  - `nwnexplorer` — `d:\LOM\workspace\nwnexplorer` (BSD) — authoritative Aurora-engine mesh-draw gating (`MdlRtNode.cpp`); honors the Render flag, no vertex-count heuristic
+  - `rollnw` — `d:\LOM\workspace\rollnw` (MIT) — authoritative binary MDL layout, emitter compile model
+  - `borealis_nwn_mdl` — `d:\LOM\workspace\borealis_nwn_mdl` (GPL-3.0) — MDL/material parsing + `docs/RendererIntegration.dox`. **Understanding only — never copy GPL code into this MIT repo**
+  - `nwn_mdl_webviewer` — `d:\LOM\workspace\nwn_mdl_webviewer` (MIT) — JS/Three.js viewer; per-node/type visibility toggles, no skip heuristic
+  - `mdlops` (ndixUR/mdlops on GitHub) — Perl, skin-mesh reference
 - **Project History**: `About/CLAUDE_DEVELOPMENT_TIMELINE.md`
 - **AI Collaboration Story**: `About/ON_USING_CLAUDE.md`
 - **Tool-Specific Guidance**: `ToolName/CLAUDE.md`
