@@ -5,6 +5,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.125-alpha] - 2026-06-19
+**Branch**: `quartermaster/issue-2498` | **PR**: #2509
+
+### Fix: Intermittent exploded/garbage model preview (#2510)
+
+- Fixed a data race where a background model load (#1485) could corrupt the main render's MDL parse, intermittently dropping geometry (e.g. dire tiger rendering as exploded "wings"). Root cause and fix are a shared-library `MdlReader` thread-safety change — see the root CHANGELOG (`Radoub.Formats 0.2.72-alpha`).
+
+### Fix: Model preview hid real geometry (hands, hair, dragon spikes, tongues) (#2498 / #2482 D)
+
+- Removed the 30-vertex mesh-skip heuristic that hid small body parts sharing the body texture (Antoine's hands/neck/hair, dragon spikes/fins, snake tongue). Mesh visibility now matches the Aurora engine (nwnexplorer/borealis): honor the MDL `Render` flag and drop empty meshes — no vertex-count or shared-bitmap guess. Shared `Radoub.UI` change.
+
+---
+
 ## [0.2.124-alpha] - 2026-06-18
 **Branch**: `quartermaster/issue-2029` | **PR**: #2506
 

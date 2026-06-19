@@ -7,8 +7,10 @@ namespace Radoub.Formats.Mdl;
 /// </summary>
 public class MdlReader
 {
-    private readonly MdlAsciiReader _asciiReader = new();
-    private readonly MdlBinaryReader _binaryReader = new();
+    // MdlBinaryReader / MdlAsciiReader hold per-parse mutable state (BinaryReader, pointer base,
+    // raw-data buffers). Reusing one instance across threads corrupts that state — #1485's
+    // background model loader raced the main render's parse, truncating the node tree (#2510).
+    // Construct a fresh reader per Parse so each call has its own state and Parse is thread-safe.
 
     /// <summary>
     /// Parse an MDL file from a stream, auto-detecting format.
@@ -17,11 +19,11 @@ public class MdlReader
     {
         if (MdlBinaryReader.IsBinaryMdl(stream))
         {
-            return _binaryReader.Parse(stream);
+            return new MdlBinaryReader().Parse(stream);
         }
         else
         {
-            return _asciiReader.Parse(stream);
+            return new MdlAsciiReader().Parse(stream);
         }
     }
 
@@ -37,12 +39,12 @@ public class MdlReader
 
         if (isBinary)
         {
-            return _binaryReader.Parse(data);
+            return new MdlBinaryReader().Parse(data);
         }
         else
         {
             using var stream = new MemoryStream(data);
-            return _asciiReader.Parse(stream);
+            return new MdlAsciiReader().Parse(stream);
         }
     }
 

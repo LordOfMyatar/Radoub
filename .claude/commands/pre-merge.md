@@ -226,6 +226,19 @@ For files in the **800-1000 line** warning range, just report them in the checkl
 
 **Rule**: Always search the cache first. A tech debt warning is only "new" if no GitHub issue (open or closed) tracks it. Never create duplicates of existing issues.
 
+### Step 3c: Code Review (mandatory after green build/tests)
+
+Once the build and tests pass (Step 3), run the **`code-review`** skill over the branch diff before generating the checklist. This catches correctness bugs and reuse/simplification issues a passing build won't.
+
+- Invoke the `/code-review` skill (default effort) on the current branch's diff vs. `main`.
+- Triage findings:
+  - **Correctness bugs** → fix on this branch now (TDD if the fix needs a test), re-run Step 3.
+  - **Reuse/simplification/efficiency** → apply if low-risk and in-scope; otherwise file a tech-debt issue and note it.
+  - **Out-of-scope or false positives** → note and skip with a one-line reason.
+- Report a one-line summary in the Step 6 checklist (see the **Code review** row).
+
+Skip only when `--skip-tests` is set or the diff is docs/CHANGELOG-only (no code change). For a deep multi-agent cloud review, the human can run `/code-review ultra` separately — pre-merge uses the fast local review.
+
 ### Step 4: CHANGELOG Validation
 
 Read CHANGELOG and verify:
@@ -349,6 +362,7 @@ Flag if >30 days old and code changed.
 | Check | Status |
 |-------|--------|
 | init-item (linked issue + branch convention) | ✅ Satisfied / ⚠️ Skipped — issue #N created / ⚠️ Off-convention branch / ⚠️ No issue (user-confirmed) |
+| Code review (Step 3c) | ✅ Clean / ⚠️ [N] fixed / ⚠️ [N] deferred to issue #M / ➖ Skipped (docs-only) |
 | CHANGELOG | ✅/⚠️ |
 | [Unreleased] section | ✅ Empty / ⚠️ Has items (move to versioned section) |
 | Wiki | ✅ Current / ⚠️ Stale |

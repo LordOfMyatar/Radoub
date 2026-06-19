@@ -312,8 +312,9 @@ See [LICENSE](LICENSE) for details.
 - NWN community for 20+ years of modding and tooling excellence
 - [neverwinter.nim](https://github.com/niv/neverwinter.nim) (MIT) - Primary reference for Aurora file format parsing
 - [rollnw](https://github.com/jd28/rollnw) (MIT) - Reference for the Aurora MDL particle-emitter simulation and compile model; the model-preview emitter rendering is derived from it
-- [nwn_mdl_webviewer](https://github.com/dunahan/nwn_mdl_webviewer) (MIT) - Reference for Aurora emitter constants (gravity, drag, spread) and a model fixture used by the emitter renderer
-- [nwnexplorer](https://github.com/virusman/nwnexplorer) (BSD) - Reference for the binary MDL emitter node layout and controller IDs
+- [nwn_mdl_webviewer](https://github.com/dunahan/nwn_mdl_webviewer) (MIT) - Reference for Aurora emitter constants (gravity, drag, spread), a model fixture used by the emitter renderer, and MDL mesh-visibility behavior (per-node/type toggles, no skip heuristic)
+- [borealis_nwn_mdl](https://github.com/varenx/borealis_nwn_mdl) (GPL-3.0) - Reference for MDL parsing, material parsing, and renderer-integration behavior (render-flag handling, mesh/skin/dangly node draw model). Used for understanding only — GPL code is not copied into this MIT project
+- [nwnexplorer](https://github.com/virusman/nwnexplorer) (BSD) - Reference for the binary MDL emitter node layout, controller IDs, and authoritative mesh-draw gating (honors the Render flag; no vertex-count heuristic)
 - [WeCantSpell.Hunspell](https://github.com/aarondandy/WeCantSpell.Hunspell) (MIT) - .NET Hunspell port for spell-checking
 - [Hunspell](https://hunspell.github.io/) - Spell-checking engine used by LibreOffice, Firefox, Chrome
 - [LibreOffice Dictionaries](https://cgit.freedesktop.org/libreoffice/dictionaries/) - English dictionary files (BSD/Public Domain)

@@ -8,12 +8,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.Formats 0.2.72-alpha] - 2026-06-19
+**Branch**: `quartermaster/issue-2498` | **PR**: #2509
+
+### Fix: MdlReader is now thread-safe (#2510)
+
+- `MdlReader.Parse` constructs a fresh per-parse reader instead of reusing instance state, so concurrent parses no longer corrupt each other. Fixes intermittent garbage/exploded geometry in the model preview when a background model load (#1485) raced the main render's parse.
+
+---
+
 ## [Radoub.Formats 0.2.71-alpha] - 2026-06-18
 **Branch**: `quartermaster/issue-2029` | **PR**: #2506
 
 ### Fix: Truncate ResRefs to 16 chars at resource lookup (#2029)
 
 - `GameResourceResolver` now caps lookup ResRefs at Aurora's 16-char limit, matching the engine. Resources referenced by a >16-char name (e.g. CEP dire tiger's `N_Tiger_LaoHu02_D` texture, stored truncated as `N_Tiger_LaoHu02_`) now resolve instead of falling back to a wrong texture. Fixes the dire-tiger "holes" in the Quartermaster model preview.
+
+---
+
+## [Radoub.UI 0.2.15-alpha] - 2026-06-19
+**Branch**: `quartermaster/issue-2498` | **PR**: #2509
+
+### Fix: Model preview hid real geometry (#2498)
+
+- Removed the 30-vertex `MeshSkipHeuristic` (#1676/#2057). It assumed any tiny trimesh sharing the body texture was a bone-visualization overlay, but that hid real parts that reuse the body texture — hands, necks, hair, dragon spikes/fins, tongues. Mesh visibility now matches the Aurora engine (nwnexplorer/borealis): render iff the MDL `Render` flag is set and the mesh has geometry.
 
 ---
 
