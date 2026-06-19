@@ -630,8 +630,8 @@ public partial class CreatureDisplayService
     public ushort? FindPortraitIdByResRef(string? resRef) => Appearances.FindPortraitIdByResRef(resRef);
     public string GetWingName(byte wingId) => Appearances.GetWingName(wingId);
     public string GetTailName(byte tailId) => Appearances.GetTailName(tailId);
-    public List<(byte Id, string Name)> GetAllWings() => Appearances.GetAllWings();
-    public List<(byte Id, string Name)> GetAllTails() => Appearances.GetAllTails();
+    public List<(byte Id, string Name)> GetAllWings(Func<string, bool>? modelFilter = null) => Appearances.GetAllWings(modelFilter);
+    public List<(byte Id, string Name)> GetAllTails(Func<string, bool>? modelFilter = null) => Appearances.GetAllTails(modelFilter);
     public string GetSoundSetName(ushort soundSetId) => Appearances.GetSoundSetName(soundSetId);
     public List<(ushort Id, string Name)> GetAllSoundSets() => Appearances.GetAllSoundSets();
     public List<(ushort Id, string Name)> GetAllFactions(string? moduleDirectory = null) => Appearances.GetAllFactions(moduleDirectory);

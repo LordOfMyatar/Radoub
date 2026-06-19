@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.12-alpha] - 2026-06-18
+**Branch**: `quartermaster/issue-1485` | **PR**: #2502
+
+### Feat: MdlPartComposer wing/tail supermodel graft (#1485)
+
+- `MdlPartComposer.Compose` gained an optional supermodel-attachment path: wing/tail MDLs graft under the body's named `wings`/`tail` bone, scaled by `WING_TAIL_SCALE`, with their authored textures preserved and their animations merged by name into the body's so they flap in sync. Consumed by the Quartermaster appearance preview (see Quartermaster CHANGELOG).
+
+---
+
 ## [Radoub.UI 0.2.11-alpha] - 2026-06-18
 **Branch**: `quartermaster/issue-2497` | **PR**: #2500
 

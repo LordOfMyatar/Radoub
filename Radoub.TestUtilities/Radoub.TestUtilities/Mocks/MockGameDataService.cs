@@ -357,21 +357,21 @@ public class MockGameDataService : IGameDataService
         AddRow(portraits, "3", "el_m_01_", "0");
         _2daFiles["portraits"] = portraits;
 
-        // wingmodel.2da - wing types
+        // wingmodel.2da - wing types (MODEL = ResRef of the wing MDL)
         var wingmodel = new TwoDAFile();
-        wingmodel.Columns.AddRange(new[] { "LABEL" });
-        AddRow(wingmodel, "0", "****");
-        AddRow(wingmodel, "1", "Angel");
-        AddRow(wingmodel, "2", "Demon");
-        AddRow(wingmodel, "3", "Butterfly");
+        wingmodel.Columns.AddRange(new[] { "LABEL", "MODEL" });
+        AddRow(wingmodel, "0", "****", "****");
+        AddRow(wingmodel, "1", "Angel", "c_wingsan");
+        AddRow(wingmodel, "2", "Demon", "c_wingsdm");
+        AddRow(wingmodel, "3", "Butterfly", "****");  // label set, no model
         _2daFiles["wingmodel"] = wingmodel;
 
-        // tailmodel.2da - tail types
+        // tailmodel.2da - tail types (MODEL = ResRef of the tail MDL)
         var tailmodel = new TwoDAFile();
-        tailmodel.Columns.AddRange(new[] { "LABEL" });
-        AddRow(tailmodel, "0", "****");
-        AddRow(tailmodel, "1", "Lizard");
-        AddRow(tailmodel, "2", "Bone");
+        tailmodel.Columns.AddRange(new[] { "LABEL", "MODEL" });
+        AddRow(tailmodel, "0", "****", "****");
+        AddRow(tailmodel, "1", "Lizard", "c_tailliz");
+        AddRow(tailmodel, "2", "Bone", "c_tailbone");
         _2daFiles["tailmodel"] = tailmodel;
 
         // soundset.2da - sound sets

@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.123-alpha] - 2026-06-18
+**Branch**: `quartermaster/issue-1485` | **PR**: #2502
+
+### Feat: Wings & Tail in 3D appearance render (#1485)
+
+- Part-based creature previews now render wings (`wingmodel.2da`) and tail (`tailmodel.2da`) with `WING_TAIL_SCALE` applied, flapping in sync with the body animation.
+
+---
+
 ## [0.2.122-alpha] - 2026-06-18
 **Branch**: `quartermaster/issue-2497` | **PR**: #2500
 

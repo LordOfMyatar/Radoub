@@ -201,11 +201,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         SpellsPanelContent.SetIconService(IconService);
         SpellsPanelContent.SpellsChanged += (s, e) => MarkDirty();
 
-        // Initialize appearance panel with display service, palette colors, model service, and texture service
-        AppearancePanelContent.SetDisplayService(DisplayService);
+        // Initialize appearance panel. ModelService MUST be set before SetDisplayService, because
+        // SetDisplayService kicks off the background wing/tail list population, which uses the model
+        // service to filter the lists to real attachments (#1485). Order matters here.
         AppearancePanelContent.SetPaletteColorService(new PaletteColorService(GameData));
         AppearancePanelContent.SetModelService(new ModelService(GameData));
         AppearancePanelContent.SetTextureService(new TextureService(GameData));
+        AppearancePanelContent.SetDisplayService(DisplayService);
         AppearancePanelContent.AppearanceChanged += (s, e) => MarkDirty();
 
         // Initialize advanced panel with display service

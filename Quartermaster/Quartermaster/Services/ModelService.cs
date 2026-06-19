@@ -20,9 +20,12 @@ namespace Quartermaster.Services;
 public class ModelService
 {
     private readonly IGameDataService _gameDataService;
+    private readonly AppearanceService _appearanceService;
     private readonly MdlReader _mdlReader = new();
-    private readonly Dictionary<string, MdlModel?> _modelCache = new();
-    private readonly Dictionary<string, ResourceSource> _modelSourceCache = new();
+    // ConcurrentDictionary so the background attachment-list filter (#1485) can call LoadModel
+    // while the UI thread renders without corrupting a plain Dictionary.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, MdlModel?> _modelCache = new();
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ResourceSource> _modelSourceCache = new();
     private readonly MdlPartComposer _composer;
 
     /// <summary>
@@ -37,6 +40,7 @@ public class ModelService
     public ModelService(IGameDataService gameDataService)
     {
         _gameDataService = gameDataService;
+        _appearanceService = new AppearanceService(gameDataService);
         _composer = new MdlPartComposer(_gameDataService, (resRef, _) => LoadModel(resRef));
     }
 
@@ -253,7 +257,91 @@ public class ModelService
         AddPart("footl", GetPartNumber("LFoot", creature.BodyPart_LFoot));
         AddPart("footr", GetPartNumber("RFoot", creature.BodyPart_RFoot));
 
-        return _composer.Compose(basePrefix, parts);
+        // Wings/tail (#1485): standalone supermodels (wingmodel/tailmodel.2da MODEL column),
+        // scaled by the appearance's WING_TAIL_SCALE. Only meaningful for part-based (P) bodies —
+        // full-body creatures bake wings into their single MDL and never reach this method.
+        var supermodels = new List<(string Tag, string ResRef, float Scale)>();
+        var wingTailScale = GetWingTailScale(_gameDataService, appearanceId);
+        var wingRes = _appearanceService.GetWingModel(creature.Wings);
+        if (!string.IsNullOrEmpty(wingRes))
+        {
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"[WingTail] wings={creature.Wings} -> '{wingRes}' scale={wingTailScale:F2}");
+            supermodels.Add(("wings", wingRes!, wingTailScale));
+        }
+        var tailRes = _appearanceService.GetTailModel(creature.Tail);
+        if (!string.IsNullOrEmpty(tailRes))
+        {
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"[WingTail] tail={creature.Tail} -> '{tailRes}' scale={wingTailScale:F2}");
+            supermodels.Add(("tail", tailRes!, wingTailScale));
+        }
+
+        return _composer.Compose(basePrefix, parts, adjustSeams: true,
+            supermodels: supermodels.Count > 0 ? supermodels : null);
+    }
+
+    /// <summary>
+    /// Read appearance.2da WING_TAIL_SCALE for this appearance (the size factor for attached
+    /// wings/tail). Defaults to 1.0 when the column is missing, "****", or unparseable.
+    /// </summary>
+    internal static float GetWingTailScale(IGameDataService gameDataService, ushort appearanceId)
+    {
+        var raw = gameDataService.Get2DAValue("appearance", appearanceId, "WING_TAIL_SCALE");
+        if (!string.IsNullOrEmpty(raw) && raw != "****" &&
+            float.TryParse(raw, System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var scale) && scale > 0f)
+        {
+            return scale;
+        }
+        return 1.0f;
+    }
+
+    /// <summary>
+    /// True if <paramref name="model"/> has a top-level geometry node named
+    /// <paramref name="connectorNode"/> (case-insensitive). Wing/tail MDLs carry a 'wings'/'tail'
+    /// connector node that the engine attaches to the body's matching bone; mounts (horses) reused
+    /// in tailmodel.2da do not. Used to filter real wings/tails from the attachment lists (#1485).
+    /// </summary>
+    internal static bool HasConnectorNode(MdlModel? model, string connectorNode)
+    {
+        if (model?.GeometryRoot == null)
+            return false;
+
+        foreach (var child in model.GeometryRoot.Children)
+        {
+            if (string.Equals(child.Name, connectorNode, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Predicate for AppearanceService.GetAllWings/GetAllTails (#1485): true if the MODEL resref
+    /// loads and is a real attachment (has the named connector node). Loads through the model cache,
+    /// so repeated calls during list population are cheap. Tolerates load failures (returns false).
+    /// </summary>
+    public bool IsRealAttachment(string modelResRef, string connectorNode)
+    {
+        if (string.IsNullOrEmpty(modelResRef))
+            return false;
+        // Preserve the render texture-source policy: this list-filter probe must not let its
+        // LoadModel calls clobber LastLoadedModelSource for the next real creature render (#1485).
+        var savedSource = LastLoadedModelSource;
+        try
+        {
+            return HasConnectorNode(LoadModel(modelResRef), connectorNode);
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"IsRealAttachment: '{modelResRef}' check failed: {ex.GetType().Name}: {ex.Message}");
+            return false;
+        }
+        finally
+        {
+            LastLoadedModelSource = savedSource;
+        }
     }
 
     /// <summary>

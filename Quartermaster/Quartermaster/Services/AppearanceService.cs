@@ -446,43 +446,73 @@ public class AppearanceService
     }
 
     /// <summary>
+    /// Gets the MDL ResRef for a wing type from wingmodel.2da (MODEL column).
+    /// Returns null for "None" (0), an empty/"****" model, or a missing row — callers skip
+    /// attachment when null.
+    /// </summary>
+    public string? GetWingModel(byte wingId)
+    {
+        if (wingId == 0)
+            return null;
+
+        var model = _gameDataService.Get2DAValue("wingmodel", wingId, "MODEL");
+        if (string.IsNullOrEmpty(model) || model == "****")
+            return null;
+
+        return model;
+    }
+
+    /// <summary>
+    /// Gets the MDL ResRef for a tail type from tailmodel.2da (MODEL column).
+    /// Returns null for "None" (0), an empty/"****" model, or a missing row — callers skip
+    /// attachment when null.
+    /// </summary>
+    public string? GetTailModel(byte tailId)
+    {
+        if (tailId == 0)
+            return null;
+
+        var model = _gameDataService.Get2DAValue("tailmodel", tailId, "MODEL");
+        if (string.IsNullOrEmpty(model) || model == "****")
+            return null;
+
+        return model;
+    }
+
+    /// <summary>
     /// Gets all wing types from wingmodel.2da.
     /// </summary>
-    public List<(byte Id, string Name)> GetAllWings()
-    {
-        var wings = new List<(byte Id, string Name)> { (0, "None") };
-        int consecutiveEmpty = 0;
-
-        for (int i = 1; i < 255; i++)
-        {
-            var label = _gameDataService.Get2DAValue("wingmodel", i, "LABEL");
-            if (string.IsNullOrEmpty(label) || label == "****")
-            {
-                consecutiveEmpty++;
-                // Stop after 10 consecutive empty rows (likely end of valid data)
-                if (consecutiveEmpty > 10)
-                    break;
-                continue;
-            }
-
-            consecutiveEmpty = 0;
-            wings.Add(((byte)i, label));
-        }
-
-        return wings;
-    }
+    /// <param name="modelFilter">
+    /// Optional predicate receiving each row's MODEL resref; when supplied, only rows whose model
+    /// passes are included. Used to drop rows whose MDL is not a real wing (#1485).
+    /// </param>
+    public List<(byte Id, string Name)> GetAllWings(Func<string, bool>? modelFilter = null)
+        => GetAllAttachments("wingmodel", modelFilter);
 
     /// <summary>
     /// Gets all tail types from tailmodel.2da.
     /// </summary>
-    public List<(byte Id, string Name)> GetAllTails()
+    /// <param name="modelFilter">
+    /// Optional predicate receiving each row's MODEL resref; when supplied, only rows whose model
+    /// passes are included. tailmodel.2da reuses the slot for mounted horses and other body
+    /// attachments — the filter keeps only real tails (#1485).
+    /// </param>
+    public List<(byte Id, string Name)> GetAllTails(Func<string, bool>? modelFilter = null)
+        => GetAllAttachments("tailmodel", modelFilter);
+
+    /// <summary>
+    /// Enumerate a wing/tail attachment 2DA's labeled rows (row 0 is always "None"). When a
+    /// <paramref name="modelFilter"/> is supplied, a row is included only if its MODEL resref is
+    /// non-empty and passes the predicate. No hardcoded model lists — the filter is data-driven.
+    /// </summary>
+    private List<(byte Id, string Name)> GetAllAttachments(string twoDAName, Func<string, bool>? modelFilter)
     {
-        var tails = new List<(byte Id, string Name)> { (0, "None") };
+        var result = new List<(byte Id, string Name)> { (0, "None") };
         int consecutiveEmpty = 0;
 
         for (int i = 1; i < 255; i++)
         {
-            var label = _gameDataService.Get2DAValue("tailmodel", i, "LABEL");
+            var label = _gameDataService.Get2DAValue(twoDAName, i, "LABEL");
             if (string.IsNullOrEmpty(label) || label == "****")
             {
                 consecutiveEmpty++;
@@ -493,10 +523,18 @@ public class AppearanceService
             }
 
             consecutiveEmpty = 0;
-            tails.Add(((byte)i, label));
+
+            if (modelFilter != null)
+            {
+                var model = _gameDataService.Get2DAValue(twoDAName, i, "MODEL");
+                if (string.IsNullOrEmpty(model) || model == "****" || !modelFilter(model))
+                    continue;
+            }
+
+            result.Add(((byte)i, label));
         }
 
-        return tails;
+        return result;
     }
 
     #endregion
