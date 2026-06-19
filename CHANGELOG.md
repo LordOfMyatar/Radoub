@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.Formats 0.2.73-alpha] - 2026-06-19
+**Branch**: `parley/sprint/2445-ui-ux` | **PR**: #2519
+
+### Feat: TokenParser.GetSpeechText for text-to-speech (#1570)
+
+- New `GetSpeechText` strips markup, keeps highlight/color content, maps name tokens and pronouns to spoken placeholders, and drops custom tokens. Reusable across tools.
+
+---
+
 ## [Radoub.UI 0.2.17-alpha] - 2026-06-19
 **Branch**: `radoub/sprint/2443-shared-ui-bugs` | **PR**: #2518
 
