@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.124-alpha] - 2026-06-18
-**Branch**: `quartermaster/issue-2029` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2029` | **PR**: #2506
 
 ### Fix: Skin mesh rendering strategy refinement (#2029)
 
