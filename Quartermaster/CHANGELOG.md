@@ -5,6 +5,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.124-alpha] - 2026-06-18
+**Branch**: `quartermaster/issue-2029` | **PR**: #2506
+
+### Fix: Dire tiger model-preview holes (#2029)
+
+- The dire tiger (and other CEP creatures with >16-char texture references) now render textured correctly in the appearance preview. Root cause and fix are a shared-library ResRef-truncation change — see the root CHANGELOG (`Radoub.Formats 0.2.71-alpha`).
+- Appearance preview no longer shows the misleading "N of M meshes hidden (Render=false)" status — those are the model author's intentional bone/internal meshes, normal for nearly every creature.
+
+---
+
 ## [0.2.123-alpha] - 2026-06-18
 **Branch**: `quartermaster/issue-1485` | **PR**: #2502
 

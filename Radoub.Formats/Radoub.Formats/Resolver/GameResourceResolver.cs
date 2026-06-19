@@ -73,6 +73,8 @@ public class GameResourceResolver : IDisposable
     /// </summary>
     public byte[]? FindBaseResource(string resRef, ushort resourceType)
     {
+        resRef = NormalizeResRef(resRef);
+
         // 1. Check override folder
         var overrideResult = FindInOverride(resRef, resourceType);
         if (overrideResult != null)
@@ -89,6 +91,8 @@ public class GameResourceResolver : IDisposable
     /// </summary>
     public ResourceResult? FindResourceWithSource(string resRef, ushort resourceType)
     {
+        resRef = NormalizeResRef(resRef);
+
         // 1. Check module directory (highest priority for module-local resources)
         var moduleResult = FindInModule(resRef, resourceType);
         if (moduleResult != null)
@@ -188,6 +192,22 @@ public class GameResourceResolver : IDisposable
     }
 
     #region Module Resolution
+
+    /// <summary>
+    /// Aurora caps ResRefs at 16 characters and truncates both stored names and
+    /// references to that length. A model can therefore reference a >16-char texture
+    /// (e.g. CEP "N_Tiger_LaoHu02_D") whose stored resource is the 16-char-truncated
+    /// "N_Tiger_LaoHu02_". Truncating the lookup key here matches the engine so such
+    /// references resolve instead of falling back to a wrong texture. (#2029)
+    /// </summary>
+    private const int MaxResRefLength = 16;
+
+    private static string NormalizeResRef(string resRef)
+    {
+        if (string.IsNullOrEmpty(resRef) || resRef.Length <= MaxResRefLength)
+            return resRef;
+        return resRef.Substring(0, MaxResRefLength);
+    }
 
     private ResourceResult? FindInModule(string resRef, ushort resourceType)
     {

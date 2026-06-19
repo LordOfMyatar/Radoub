@@ -677,11 +677,14 @@ public partial class AppearancePanel
             return;
         }
 
+        // Only surface conditions caused by OUR preview heuristics. Meshes flagged
+        // Render=false in the MDL are bone-visualization/internal geometry the model
+        // author intentionally hid — that is the normal Aurora convention for nearly
+        // every creature, so reporting it as a status line reads as a false alarm
+        // (e.g. boar/dire tiger "19 of 24 hidden" when nothing is wrong). (#2029)
         var parts = new List<string>();
         if (info.SkippedTrimeshCount > 0)
             parts.Add($"{info.SkippedTrimeshCount} tiny trimeshes filtered");
-        if (info.HiddenMeshCount > 0)
-            parts.Add($"{info.HiddenMeshCount} of {info.TotalMeshes} meshes hidden (Render=false)");
 
         if (parts.Count > 0)
         {

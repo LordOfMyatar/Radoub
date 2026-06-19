@@ -1609,6 +1609,12 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
         var materialByTexture = new Dictionary<string, string>();
         foreach (var mesh in _model.GetMeshNodes())
         {
+            // Only consider meshes that are actually drawn. Render=false bone/internal
+            // meshes carry bitmaps (often the model name, e.g. boar's hidden legs use
+            // 'c_boar') that resolve to a base-game stub no visible surface uses —
+            // loading them wasted work and falsely tripped the base-texture warning. (#2029)
+            if (!mesh.Render || mesh.Vertices.Length == 0 || mesh.Faces.Length == 0)
+                continue;
             if (string.IsNullOrEmpty(mesh.Bitmap))
                 continue;
             var bitmap = mesh.Bitmap.ToLowerInvariant();
@@ -1648,10 +1654,6 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             $"metal1={_colorIndices.Metal1}, metal2={_colorIndices.Metal2}, cloth1={_colorIndices.Cloth1}, cloth2={_colorIndices.Cloth2}");
 
         var failedTextures = new List<string>();
-        // #1758: for a non-base model (PreferBifTextures=false), note when a texture
-        // resolves from base-game BIF instead of the model's own pack — the preview skin
-        // may then not match the intended asset.
-        bool usedBaseFallback = false;
         foreach (var texName in textureNames)
         {
             if (_textureCache.ContainsKey(texName))
@@ -1676,8 +1678,6 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                 {
                     _textureCache[texName] = texId;
                     if (isPlt) _pltTextureNames.Add(texName);
-                    if (!_preferBifTextures && _textureService.ResolvesFromBase(texName))
-                        usedBaseFallback = true;
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Loaded texture '{texName}' ({width}x{height}) -> texId={texId}, isPlt={isPlt}");
                 }
             }
@@ -1707,8 +1707,6 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                     {
                         _textureCache[modelTexture] = fallbackId;
                         if (isPlt) _pltTextureNames.Add(modelTexture);
-                        if (!_preferBifTextures && _textureService.ResolvesFromBase(modelTexture))
-                            usedBaseFallback = true;
                         UnifiedLogger.LogApplication(LogLevel.DEBUG,
                             $"  Loaded model fallback texture '{modelTexture}' ({w}x{h}) -> texId={fallbackId}, isPlt={isPlt}");
                     }
@@ -1727,8 +1725,14 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             }
         }
 
-        // #1758: notify the host so it can warn that a CEP creature is showing
-        // base-game textures (preview may not match the intended asset).
+        // #1758: warn only when a non-base model's actually-rendered texture resolves from
+        // base-game BIF instead of its own pack. Computed here over the final rendered
+        // texture set — NOT inside the load loop — so the result is deterministic regardless
+        // of which textures were already cached from a previous model. The old in-loop check
+        // skipped cached textures, making the warning flicker on/off across reloads. (#2029)
+        bool usedBaseFallback = !_preferBifTextures
+            && textureNames.Any(t => _textureService.ResolvesFromBase(t));
+
         if (Dispatcher.UIThread.CheckAccess())
             TextureSourceChanged?.Invoke(this, usedBaseFallback);
         else

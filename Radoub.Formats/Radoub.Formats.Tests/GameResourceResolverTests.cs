@@ -389,6 +389,47 @@ public class GameResourceResolverTests : IDisposable
 
     #endregion
 
+    #region ResRef Truncation Tests (#2029)
+
+    [Fact]
+    public void FindResource_ResRefLongerThan16Chars_ResolvesToTruncatedResource()
+    {
+        // Aurora caps ResRefs at 16 chars. A model can reference a 17-char texture
+        // (e.g. CEP dire tiger's "N_Tiger_LaoHu02_D"), but the stored resource is the
+        // 16-char-truncated "N_Tiger_LaoHu02_". Aurora truncates the lookup too, so it
+        // matches. The resolver must do the same. (#2029)
+        var testContent = new byte[] { 0xAA, 0xBB, 0xCC };
+        // Stored file uses the 16-char truncated name (what Aurora actually writes).
+        File.WriteAllBytes(Path.Combine(_overrideDir, "n_tiger_laohu02_.tga"), testContent);
+
+        var config = new GameResourceConfig { OverridePath = _overrideDir };
+        using var resolver = new GameResourceResolver(config);
+
+        // Look up with the full 17-char reference the MDL carries.
+        var result = resolver.FindResource("n_tiger_laohu02_d", ResourceTypes.Tga);
+
+        Assert.NotNull(result);
+        Assert.Equal(testContent, result);
+    }
+
+    [Fact]
+    public void FindResource_ResRefExactly16Chars_StillResolves()
+    {
+        // Guard: the truncation must not break normal <=16-char lookups.
+        var testContent = new byte[] { 0x11, 0x22 };
+        File.WriteAllBytes(Path.Combine(_overrideDir, "sixteen_char_nam.tga"), testContent);
+
+        var config = new GameResourceConfig { OverridePath = _overrideDir };
+        using var resolver = new GameResourceResolver(config);
+
+        var result = resolver.FindResource("sixteen_char_nam", ResourceTypes.Tga);
+
+        Assert.NotNull(result);
+        Assert.Equal(testContent, result);
+    }
+
+    #endregion
+
     #region Deduplication Tests
 
     [Fact]
