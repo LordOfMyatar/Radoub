@@ -411,10 +411,53 @@ public class TokenParserTests
     [InlineData("Class")]
     [InlineData("Race")]
     [InlineData("Level")]
-    [InlineData("Boy/Girl")]
-    public void GetSpeechText_UnmappedStandardToken_FallsBackToTokenName(string token)
+    [InlineData("Deity")]
+    [InlineData("GameMonth")]
+    [InlineData("Alignment")]
+    public void GetSpeechText_DescriptiveStandardToken_FallsBackToTokenName(string token)
     {
+        // Descriptive (non-gendered) tokens are intentionally unmapped -> literal.
         Assert.Equal(token, _parser.GetSpeechText($"<{token}>"));
+    }
+
+    [Theory]
+    [InlineData("Boy/Girl", "child")]
+    [InlineData("boy/girl", "child")]
+    [InlineData("Brother/Sister", "sibling")]
+    [InlineData("Lad/Lass", "youth")]
+    [InlineData("Lord/Lady", "noble")]
+    [InlineData("lord/lady", "noble")]
+    [InlineData("Man/Woman", "person")]
+    [InlineData("Male/Female", "person")]
+    [InlineData("Master/Mistress", "master")]
+    [InlineData("Mister/Missus", "mister")]
+    [InlineData("Sir/Madam", "friend")]
+    [InlineData("bitch/bastard", "wretch")]
+    public void GetSpeechText_GenderedNounTokens_MapToNeutralNoun(string token, string spoken)
+    {
+        Assert.Equal($"Well met, {spoken}.", _parser.GetSpeechText($"Well met, <{token}>."));
+    }
+
+    [Fact]
+    public void GetSpeechText_AllGenderedStandardTokens_AreMapped()
+    {
+        // Guard: every gendered name/pronoun/noun token resolves to something OTHER than its
+        // literal token name, so none accidentally falls through to being read aloud verbatim.
+        string[] gendered =
+        {
+            "FirstName", "LastName", "FullName", "PlayerName",
+            "He/She", "he/she", "Him/Her", "him/her", "His/Her", "his/her", "His/Hers", "his/hers",
+            "Boy/Girl", "boy/girl", "Brother/Sister", "brother/sister", "Lad/Lass", "lad/lass",
+            "Lord/Lady", "lord/lady", "Man/Woman", "man/woman", "Male/Female", "male/female",
+            "Master/Mistress", "master/mistress", "Mister/Missus", "mister/missus",
+            "Sir/Madam", "sir/madam", "bitch/bastard"
+        };
+        foreach (var token in gendered)
+        {
+            var spoken = _parser.GetSpeechText($"<{token}>");
+            Assert.NotEqual(token, spoken);
+            Assert.False(string.IsNullOrWhiteSpace(spoken), $"{token} produced empty speech");
+        }
     }
 
     [Fact]
