@@ -682,20 +682,7 @@ public partial class AppearancePanel
         // author intentionally hid — that is the normal Aurora convention for nearly
         // every creature, so reporting it as a status line reads as a false alarm
         // (e.g. boar/dire tiger "19 of 24 hidden" when nothing is wrong). (#2029)
-        var parts = new List<string>();
-        if (info.SkippedTrimeshCount > 0)
-            parts.Add($"{info.SkippedTrimeshCount} tiny trimeshes filtered");
-
-        if (parts.Count > 0)
-        {
-            _modelInfoStatusText.Text = $"\u2139 {string.Join(", ", parts)}";
-            _modelInfoStatusText.Foreground = BrushManager.GetInfoBrush(this);
-            _modelInfoStatusText.IsVisible = true;
-        }
-        else
-        {
-            _modelInfoStatusText.IsVisible = false;
-        }
+        _modelInfoStatusText.IsVisible = false;
     }
 
     /// <summary>

@@ -293,8 +293,13 @@ Items are resolved in this order:
 ## Model Preview & Textures
 
 The 3D appearance preview lives in shared `Radoub.UI` (`ModelPreviewGLControl`,
-`TextureService`, `MeshSkipHeuristic` — all in `Radoub.UI/Controls` + `Radoub.UI/Services`),
+`TextureService`, `MeshVisibility` — all in `Radoub.UI/Controls` + `Radoub.UI/Services`),
 not in Quartermaster. Edit there for rendering bugs.
+
+**Mesh visibility (#2498)**: the preview gates on the MDL `Render` flag + non-empty geometry
+only (`MeshVisibility.ShouldRender`), matching the Aurora engine (nwnexplorer/borealis). The old
+30-vertex `MeshSkipHeuristic` (#1676/#2057) was removed — it hid real parts that reuse the body
+texture (hands, hair, dragon spikes, tongues). Do not reintroduce a vertex-count/bitmap skip.
 
 **PBR texture resolution (#1755, #1760)**: NWN:EE creature skins resolve textures two
 ways — (1) an `.mtr` material file named by the mesh's `materialname`, or (2) a fixed
