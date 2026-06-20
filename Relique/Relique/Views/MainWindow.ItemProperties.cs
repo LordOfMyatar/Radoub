@@ -65,7 +65,7 @@ public partial class MainWindow
         var expansionSnapshot = CaptureAvailablePropertiesExpansion();
 
         AvailablePropertiesTree.Items.Clear();
-        _checkedPropertyIndices.Clear();
+        _checkedProperties.Clear();
         UpdateAddButtonState();
 
         if (_itemPropertyService == null)
@@ -99,29 +99,45 @@ public partial class MainWindow
 
         foreach (var type in types)
         {
-            var checkBox = new CheckBox
-            {
-                Content = type.DisplayName,
-                Tag = type,
-                Margin = new Thickness(0)
-            };
+            // #2405: a property WITH subtypes is an expander-only parent (no checkbox) so the user
+            // must tick the exact subtype — eliminating the silent "first child" add. A property
+            // WITHOUT subtypes keeps a parent checkbox carrying the NoSubtype sentinel.
             var capturedType = type;
-            checkBox.IsCheckedChanged += (_, _) =>
-            {
-                if (checkBox.IsChecked == true)
-                    _checkedPropertyIndices.Add(capturedType.PropertyIndex);
-                else
-                    _checkedPropertyIndices.Remove(capturedType.PropertyIndex);
-                UpdateAddButtonState();
-            };
+            TreeViewItem node;
 
-            var node = new TreeViewItem
+            if (type.HasSubtypes)
             {
-                Header = checkBox,
-                Tag = type
-            };
+                node = new TreeViewItem
+                {
+                    Header = type.DisplayName,
+                    Tag = type
+                };
+            }
+            else
+            {
+                var checkBox = new CheckBox
+                {
+                    Content = type.DisplayName,
+                    Tag = type,
+                    Margin = new Thickness(0)
+                };
+                checkBox.IsCheckedChanged += (_, _) =>
+                {
+                    var pair = new CheckedProperty(capturedType.PropertyIndex, CheckedProperty.NoSubtype);
+                    if (checkBox.IsChecked == true)
+                        _checkedProperties.Add(pair);
+                    else
+                        _checkedProperties.Remove(pair);
+                    UpdateAddButtonState();
+                };
+                node = new TreeViewItem
+                {
+                    Header = checkBox,
+                    Tag = type
+                };
+            }
 
-            // Add subtypes as children if this property has them — only available ones
+            // Add subtypes as checkable children if this property has them — only available ones
             var hasMatchingSubtype = false;
             if (type.HasSubtypes)
             {
@@ -131,9 +147,26 @@ public partial class MainWindow
 
                 foreach (var subtype in availableSubtypes)
                 {
+                    var capturedSubtype = subtype;
+                    var subtypeCheck = new CheckBox
+                    {
+                        Content = subtype.DisplayName,
+                        Tag = subtype,
+                        Margin = new Thickness(0)
+                    };
+                    subtypeCheck.IsCheckedChanged += (_, _) =>
+                    {
+                        var pair = new CheckedProperty(capturedType.PropertyIndex, capturedSubtype.Index);
+                        if (subtypeCheck.IsChecked == true)
+                            _checkedProperties.Add(pair);
+                        else
+                            _checkedProperties.Remove(pair);
+                        UpdateAddButtonState();
+                    };
+
                     var subtypeNode = new TreeViewItem
                     {
-                        Header = subtype.DisplayName,
+                        Header = subtypeCheck,
                         Tag = subtype
                     };
 
@@ -142,7 +175,7 @@ public partial class MainWindow
                         subtype.DisplayName.Contains(searchFilter, StringComparison.OrdinalIgnoreCase))
                     {
                         hasMatchingSubtype = true;
-                        subtypeNode.FontWeight = Avalonia.Media.FontWeight.Bold;
+                        subtypeCheck.FontWeight = Avalonia.Media.FontWeight.Bold;
                     }
 
                     node.Items.Add(subtypeNode);
@@ -185,7 +218,7 @@ public partial class MainWindow
     {
         AddPropertyButton.IsEnabled = _currentItem != null
             && !_documentState.IsReadOnly
-            && (_checkedPropertyIndices.Count > 0 || _selectedPropertyType != null);
+            && (_checkedProperties.Count > 0 || _selectedPropertyType != null);
     }
 
     /// <summary>
@@ -209,7 +242,7 @@ public partial class MainWindow
         }
 
         // Disable the available-property tree so checkbox ticks (which feed AddChecked)
-        // can't accumulate _checkedPropertyIndices entries while previewing.
+        // can't accumulate _checkedProperties entries while previewing.
         AvailablePropertiesTree.IsEnabled = !ro;
     }
 
@@ -425,7 +458,7 @@ public partial class MainWindow
         if (_currentItem == null || _itemPropertyService == null) return;
         if (_documentState.IsReadOnly) return;
 
-        if (_checkedPropertyIndices.Count > 0)
+        if (_checkedProperties.Count > 0)
             AddCheckedProperties();
         else
             AddConfiguredProperty();
@@ -454,54 +487,17 @@ public partial class MainWindow
 
     private void AddCheckedProperties()
     {
-        if (_currentItem == null || _itemPropertyService == null || _checkedPropertyIndices.Count == 0)
+        if (_currentItem == null || _itemPropertyService == null || _checkedProperties.Count == 0)
             return;
         if (_documentState.IsReadOnly) return;
 
-        var types = _itemPropertyService.GetAvailablePropertyTypes();
+        // #2405: each ticked (property, subtype) pair resolves to one property at its exact subtype
+        // (no "first child" default). CheckedPropertyResolver is the pure, unit-tested mapping.
+        var resolved = CheckedPropertyResolver.Resolve(
+            _checkedProperties, _itemPropertyService, _currentItem.BaseItem, _currentItem.Properties);
         int added = 0;
-        var skipped = new List<string>();
-        var toAdd = new List<ItemProperty>();
-
-        foreach (var propIndex in _checkedPropertyIndices)
-        {
-            var type = types.FirstOrDefault(t => t.PropertyIndex == propIndex);
-            if (type == null) continue;
-
-            // Defensive: skip combos that the validation table marks invalid (#2166).
-            if (!_itemPropertyService.IsPropertyValidForBaseItem(propIndex, _currentItem.BaseItem))
-            {
-                skipped.Add(type.DisplayName);
-                UnifiedLogger.LogApplication(LogLevel.WARN,
-                    $"Skipped invalid property {type.DisplayName} for base item {_currentItem.BaseItem}");
-                continue;
-            }
-
-            // Use first available subtype (move semantics)
-            int subtypeIndex = 0;
-            if (type.HasSubtypes)
-            {
-                var allSubtypes = _itemPropertyService.GetSubtypes(propIndex);
-                var available = _itemPropertyService.GetAvailableSubtypes(
-                    propIndex, allSubtypes, _currentItem.Properties);
-                if (available.Count > 0)
-                    subtypeIndex = available[0].Index;
-                else
-                    continue; // All subtypes assigned, skip
-            }
-
-            try
-            {
-                var property = _itemPropertyService.CreateItemProperty(propIndex, subtypeIndex, 0, null);
-                toAdd.Add(property);
-            }
-            catch (Exception ex)
-            {
-                skipped.Add(type.DisplayName);
-                UnifiedLogger.LogApplication(LogLevel.ERROR,
-                    $"Failed to add {type.DisplayName}: {ex.GetType().Name}: {ex.Message}");
-            }
-        }
+        var skipped = resolved.Skipped;
+        var toAdd = resolved.ToAdd;
 
         // Batch-add as a single undo step. BatchAddPropertiesCommand wraps PropertyListMutator so
         // the #2258 rollback-on-refresh-failure seam runs; the manager refuses to record it (#2231)
@@ -532,12 +528,31 @@ public partial class MainWindow
         else if (added > 0)
             UpdateStatus($"Added {added} properties");
 
-        // Uncheck all after adding
+        // Uncheck all after adding. A successful batch refreshes (rebuilds) the tree and clears
+        // _checkedProperties; this also covers the all-skipped path where no refresh ran. Checkboxes
+        // now live on subtype children too (#2405), so walk parents and children.
+        UncheckAllAvailableProperties();
+    }
+
+    /// <summary>
+    /// Clear every checkbox in the Available Properties tree (parent no-subtype checkboxes and
+    /// subtype-child checkboxes, #2405) and the backing pair set.
+    /// </summary>
+    private void UncheckAllAvailableProperties()
+    {
         foreach (var item in AvailablePropertiesTree.Items)
         {
-            if (item is TreeViewItem node && node.Header is CheckBox cb)
-                cb.IsChecked = false;
+            if (item is not TreeViewItem node) continue;
+            if (node.Header is CheckBox parentCb)
+                parentCb.IsChecked = false;
+            foreach (var child in node.Items)
+            {
+                if (child is TreeViewItem childNode && childNode.Header is CheckBox childCb)
+                    childCb.IsChecked = false;
+            }
         }
+        _checkedProperties.Clear();
+        UpdateAddButtonState();
     }
 
     private void OnRemovePropertyClick(object? sender, RoutedEventArgs e)

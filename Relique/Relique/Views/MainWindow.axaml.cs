@@ -33,7 +33,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private PropertyTypeInfo? _selectedPropertyType;
     private int _editingPropertyIndex = -1; // -1 = add mode, >= 0 = editing that index
     private bool _suppressAutoApply; // true while combos are being repopulated programmatically (#2226)
-    private readonly HashSet<int> _checkedPropertyIndices = new();
+    private readonly HashSet<CheckedProperty> _checkedProperties = new(); // #2405: (propIndex, subtypeIndex) pairs
     private readonly ObservableCollection<VariableViewModel> _variables = new();
     private ItemIconService? _itemIconService;
     private ArmorPartCatalogService? _armorPartCatalog; // #2164
