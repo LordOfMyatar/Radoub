@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Avalonia.Markup.Xaml;
 using ItemEditor.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Uti;
@@ -179,6 +178,4 @@ public partial class PropertyEditWindow : Window
         MessageText.Text = text;
         MessageText.IsVisible = true;
     }
-
-    private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 }

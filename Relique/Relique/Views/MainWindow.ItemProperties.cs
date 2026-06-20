@@ -350,14 +350,25 @@ public partial class MainWindow
             return;
         if (_documentState.IsReadOnly) return;
 
-        var popup = new PropertyEditWindow(
-            _itemPropertyService, _selectedPropertyType, _currentItem.Properties,
-            editingProperty: null, editingIndex: -1, preselectSubtype: _selectedSubtypeIndex);
+        var type = _selectedPropertyType;
+        try
+        {
+            var popup = new PropertyEditWindow(
+                _itemPropertyService, type, _currentItem.Properties,
+                editingProperty: null, editingIndex: -1, preselectSubtype: _selectedSubtypeIndex);
 
-        var result = await popup.ShowDialog<ItemProperty?>(this);
-        if (result == null) return;
+            var result = await popup.ShowDialog<ItemProperty?>(this);
+            if (result == null) return;
 
-        TryAddConfiguredProperty(_selectedPropertyType, result);
+            TryAddConfiguredProperty(type, result);
+        }
+        catch (Exception ex)
+        {
+            // async-void: keep an exception from crashing the app (see OpenEditPopup).
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"Configure popup failed for {type.DisplayName}: {ex.GetType().Name}: {ex.Message}");
+            UpdateStatus($"Cannot configure {type.DisplayName}: {ex.Message}");
+        }
     }
 
     private void AddCheckedProperties()
@@ -531,14 +542,25 @@ public partial class MainWindow
             return;
         }
 
-        var popup = new PropertyEditWindow(
-            _itemPropertyService, type, _currentItem.Properties,
-            editingProperty: prop, editingIndex: index);
+        try
+        {
+            var popup = new PropertyEditWindow(
+                _itemPropertyService, type, _currentItem.Properties,
+                editingProperty: prop, editingIndex: index);
 
-        var result = await popup.ShowDialog<ItemProperty?>(this);
-        if (result == null) return; // Cancel discards — model untouched.
+            var result = await popup.ShowDialog<ItemProperty?>(this);
+            if (result == null) return; // Cancel discards — model untouched.
 
-        ApplyEdit(index, type, result);
+            ApplyEdit(index, type, result);
+        }
+        catch (Exception ex)
+        {
+            // An async-void UI handler that opens a window must not let an exception escape to the
+            // Avalonia sync context (that crashes the app). Surface it as a status message instead.
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"Edit popup failed for {type.DisplayName}: {ex.GetType().Name}: {ex.Message}");
+            UpdateStatus($"Cannot edit {type.DisplayName}: {ex.Message}");
+        }
     }
 
     /// <summary>
