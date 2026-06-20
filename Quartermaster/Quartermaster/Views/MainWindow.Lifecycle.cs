@@ -202,14 +202,16 @@ public partial class MainWindow
             Radoub.UI.Services.ThemeManager.Instance.ThemeApplied -= OnThemeApplied;
             Radoub.UI.Services.FileSessionLockService.ReleaseAllLocks();
 
-            // Cancel all async operations
+            // Cancel all async operations. Cancel the palette cache build FIRST and
+            // explicitly (#2299) so closing mid-build signals the in-flight scan to
+            // stop rather than waiting on its synchronous tail (the UI freeze).
+            _paletteCacheCts.CancelAndDispose();
             _windowCts?.Cancel();
             _windowCts?.Dispose();
 
             SaveWindowPosition();
             _audioService?.Dispose();
             _gameDataService?.Dispose();
-            _paletteCacheCts?.Dispose();
             (_sharedCacheService as IDisposable)?.Dispose();
             (_creaturePaletteCache as IDisposable)?.Dispose();
 
