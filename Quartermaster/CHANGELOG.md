@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.126-alpha] - 2026-06-19
-**Branch**: `quartermaster/issue-2440` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2440` | **PR**: #2525
 
 ### Sprint: Character Data + UI Bug Fix (#2440)
 
