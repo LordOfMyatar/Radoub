@@ -55,17 +55,31 @@ public partial class PortraitBrowserWindow : Window
 
     /// <summary>
     /// Remove duplicate portraits by ResRef, keeping the first occurrence and
-    /// preserving order. ResRefs are case-insensitive in Aurora. Defensive guard so
-    /// no context can reintroduce the duplicate-portrait bug (#2329).
+    /// preserving order. ResRefs are case-insensitive in Aurora. When duplicates
+    /// disagree on Race/Sex, the kept entry is widened to "all" (-1) on that axis so a
+    /// race/sex filter can't hide a portrait a later row marks valid. Defensive guard
+    /// so no context can reintroduce the duplicate-portrait bug (#2329).
     /// </summary>
     public static IEnumerable<PortraitEntry> DedupeByResRef(IEnumerable<PortraitEntry> portraits)
     {
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var byResRef = new Dictionary<string, PortraitEntry>(StringComparer.OrdinalIgnoreCase);
+        var ordered = new List<PortraitEntry>();
         foreach (var portrait in portraits)
         {
-            if (seen.Add(portrait.ResRef))
-                yield return portrait;
+            if (byResRef.TryGetValue(portrait.ResRef, out var existing))
+            {
+                if (existing.Race != portrait.Race)
+                    existing.Race = -1;
+                if (existing.Sex != portrait.Sex)
+                    existing.Sex = -1;
+                continue;
+            }
+
+            byResRef[portrait.ResRef] = portrait;
+            ordered.Add(portrait);
         }
+
+        return ordered;
     }
 
     /// <summary>

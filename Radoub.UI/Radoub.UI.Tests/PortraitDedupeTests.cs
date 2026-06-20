@@ -55,4 +55,36 @@ public class PortraitDedupeTests
         var result = PortraitBrowserWindow.DedupeByResRef(new List<PortraitEntry>()).ToList();
         Assert.Empty(result);
     }
+
+    [Fact]
+    public void DedupeByResRef_DuplicateWithDifferingRaceOrSex_CollapsesToAll()
+    {
+        // A repeated ResRef whose rows disagree on Race/Sex must not be pinned to the
+        // first row's values, or a race/sex pre-filter would hide it (#2329).
+        var input = new List<PortraitEntry>
+        {
+            P(0, "po_shared_", race: 1, sex: 0),
+            P(1, "po_shared_", race: 4, sex: 1),
+        };
+
+        var result = PortraitBrowserWindow.DedupeByResRef(input).ToList();
+
+        var entry = Assert.Single(result);
+        Assert.Equal(-1, entry.Race);
+        Assert.Equal(-1, entry.Sex);
+    }
+
+    [Fact]
+    public void DedupeByResRef_DuplicateWithMatchingRaceSex_KeepsValues()
+    {
+        var input = new List<PortraitEntry>
+        {
+            P(0, "po_shared_", race: 1, sex: 0),
+            P(1, "po_shared_", race: 1, sex: 0),
+        };
+
+        var entry = Assert.Single(PortraitBrowserWindow.DedupeByResRef(input).ToList());
+        Assert.Equal(1, entry.Race);
+        Assert.Equal(0, entry.Sex);
+    }
 }

@@ -35,6 +35,22 @@ public class PortraitBrowserContextTests
     }
 
     [Fact]
+    public void ListPortraits_DuplicateWithDifferingRace_CollapsesToAllRaces()
+    {
+        // Duplicate ResRef rows that disagree on Race must collapse to -1 so a
+        // race pre-filter can't hide a portrait a later row marks valid (#2329).
+        var mock = new MockGameDataService(includeSampleData: false);
+        var twoDA = new TwoDAFile { Columns = new() { "BaseResRef", "Race", "Sex" } };
+        twoDA.Rows.Add(new TwoDARow { Values = new() { "po_shared_", "1", "0" } });
+        twoDA.Rows.Add(new TwoDARow { Values = new() { "po_shared_", "4", "0" } });
+        mock.With2DA("portraits", twoDA);
+
+        var entry = Assert.Single(BuildContext(mock).ListPortraits().ToList());
+
+        Assert.Equal(-1, entry.Race);
+    }
+
+    [Fact]
     public void ListPortraits_DedupesCaseInsensitively()
     {
         var mock = new MockGameDataService(includeSampleData: false);

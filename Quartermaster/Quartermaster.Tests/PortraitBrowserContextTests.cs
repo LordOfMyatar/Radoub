@@ -76,6 +76,24 @@ public class PortraitBrowserContextTests
     }
 
     [Fact]
+    public void ListPortraits_DuplicateWithDifferingRace_StaysVisibleToAllRaces()
+    {
+        // A repeated BaseResRef whose rows disagree on Race must not be pinned to the
+        // first row's race — otherwise pre-filtering by a creature's race hides a
+        // portrait that other rows mark as valid for that race (#2329 regression guard).
+        var mock = new MockGameDataService(includeSampleData: false);
+        var twoDA = new TwoDAFile { Columns = new() { "BaseResRef", "Race", "Sex" } };
+        twoDA.Rows.Add(new TwoDARow { Values = new() { "po_shared_", "1", "0" } }); // first row: Elf
+        twoDA.Rows.Add(new TwoDARow { Values = new() { "po_shared_", "4", "0" } }); // dup: Half-Elf
+        mock.With2DA("portraits", twoDA);
+
+        var entry = Assert.Single(BuildContext(mock).ListPortraits().ToList());
+
+        // Collapsed to "all races" (-1) so neither race-filter excludes it.
+        Assert.Equal(-1, entry.Race);
+    }
+
+    [Fact]
     public void ListPortraits_KeepsFirstOccurrenceOrder()
     {
         // Dedupe keeps the first row seen and preserves 2DA order.
