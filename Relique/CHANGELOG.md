@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.27-alpha] - 2026-06-20
+**Branch**: `relique/issue-2447` | **PR**: #TBD
+
+### Sprint: Property Editor UX (#2447)
+
+- Property tree: tick the exact subtype you want — parents with subtypes are expander-only, no more silent "first child" add (#2405).
+- Property configuration moved into a focused popup with searchable Subtype/Value/Param and a live preview; the disconnected bottom panel is gone (#2406).
+- Fault-injection seam + FlaUI rollback tests covering batch-add/remove/clear/edit and close-reentry (#2380).
+
+---
+
 ## [0.10.26-alpha] - 2026-06-19
 **Branch**: `fence/sprint/2422-2418-shared-ui` | **PR**: #2512
 
