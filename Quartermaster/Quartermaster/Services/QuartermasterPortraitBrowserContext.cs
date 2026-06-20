@@ -34,6 +34,10 @@ public class QuartermasterPortraitBrowserContext : IPortraitBrowserContext
     {
         var portraits = new List<PortraitEntry>();
 
+        // portraits.2da repeats the same BaseResRef across race/sex variant rows;
+        // list each portrait once (#2329). ResRefs are case-insensitive in Aurora.
+        var seen = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+
         int rowCount = _gameDataService.Get2DA("portraits")?.RowCount ?? 500;
         for (int i = 0; i < rowCount; i++)
         {
@@ -41,6 +45,9 @@ public class QuartermasterPortraitBrowserContext : IPortraitBrowserContext
             if (IsEmptyCell(baseResRef))
                 continue;
             baseResRef = baseResRef!.Trim();
+
+            if (!seen.Add(baseResRef))
+                continue;
 
             var raceStr = _gameDataService.Get2DAValue("portraits", i, "Race");
             var sexStr = _gameDataService.Get2DAValue("portraits", i, "Sex");

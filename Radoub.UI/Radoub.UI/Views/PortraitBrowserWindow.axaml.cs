@@ -54,6 +54,21 @@ public partial class PortraitBrowserWindow : Window
     public int PortraitCount => _allPortraits.Count;
 
     /// <summary>
+    /// Remove duplicate portraits by ResRef, keeping the first occurrence and
+    /// preserving order. ResRefs are case-insensitive in Aurora. Defensive guard so
+    /// no context can reintroduce the duplicate-portrait bug (#2329).
+    /// </summary>
+    public static IEnumerable<PortraitEntry> DedupeByResRef(IEnumerable<PortraitEntry> portraits)
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var portrait in portraits)
+        {
+            if (seen.Add(portrait.ResRef))
+                yield return portrait;
+        }
+    }
+
+    /// <summary>
     /// Parameterless constructor for XAML designer.
     /// </summary>
     public PortraitBrowserWindow()
@@ -152,7 +167,9 @@ public partial class PortraitBrowserWindow : Window
         }
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "PortraitBrowser: Loading portraits from context");
-        _allPortraits = _context.ListPortraits().ToList();
+        // Defensive dedupe (#2329): contexts should already list each portrait once,
+        // but guard here so no context can reintroduce duplicate ResRefs into the list.
+        _allPortraits = DedupeByResRef(_context.ListPortraits()).ToList();
 
         var races = new HashSet<int>();
         foreach (var portrait in _allPortraits)
