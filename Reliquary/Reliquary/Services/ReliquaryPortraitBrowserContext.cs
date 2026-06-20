@@ -35,6 +35,12 @@ public class ReliquaryPortraitBrowserContext : IPortraitBrowserContext
     {
         var portraits = new List<PortraitEntry>();
 
+        // portraits.2da repeats the same BaseResRef across race/sex variant rows;
+        // list each portrait once (#2329). ResRefs are case-insensitive in Aurora.
+        // When duplicate rows disagree on Race/Sex, collapse to "all" (-1) so a
+        // race/sex pre-filter can't hide a portrait a later row marks valid (#2329).
+        var indexByResRef = new Dictionary<string, int>(System.StringComparer.OrdinalIgnoreCase);
+
         int rowCount = _gameDataService.Get2DA("portraits")?.RowCount ?? 500;
         for (int i = 0; i < rowCount; i++)
         {
@@ -55,6 +61,17 @@ public class ReliquaryPortraitBrowserContext : IPortraitBrowserContext
             if (!string.IsNullOrEmpty(sexStr) && sexStr != "****")
                 int.TryParse(sexStr, out sex);
 
+            if (indexByResRef.TryGetValue(baseResRef, out var existingIdx))
+            {
+                var existing = portraits[existingIdx];
+                if (existing.Race != race)
+                    existing.Race = -1;
+                if (existing.Sex != sex)
+                    existing.Sex = -1;
+                continue;
+            }
+
+            indexByResRef[baseResRef] = portraits.Count;
             portraits.Add(new PortraitEntry
             {
                 Id = (ushort)i,

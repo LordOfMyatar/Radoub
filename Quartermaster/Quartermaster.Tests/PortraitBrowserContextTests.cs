@@ -38,4 +38,76 @@ public class PortraitBrowserContextTests
         Assert.Contains(result, p => p.ResRef == "hu_m_01_");
         Assert.Contains(result, p => p.ResRef == "el_f_02_");
     }
+
+    [Fact]
+    public void ListPortraits_DedupesRepeatedBaseResRef()
+    {
+        // portraits.2da carries the same BaseResRef across multiple rows for
+        // race/sex variants. The browser must list each portrait once (#2329).
+        var mock = new MockGameDataService(includeSampleData: false);
+        var twoDA = new TwoDAFile { Columns = new() { "BaseResRef", "Race", "Sex" } };
+        twoDA.Rows.Add(new TwoDARow { Values = new() { "hu_m_01_", "6", "0" } });
+        twoDA.Rows.Add(new TwoDARow { Values = new() { "hu_m_01_", "4", "0" } }); // dup (half-elf male)
+        twoDA.Rows.Add(new TwoDARow { Values = new() { "hu_m_01_", "5", "0" } }); // dup (half-orc male)
+        twoDA.Rows.Add(new TwoDARow { Values = new() { "el_f_02_", "1", "1" } });
+        mock.With2DA("portraits", twoDA);
+
+        var result = BuildContext(mock).ListPortraits().ToList();
+
+        Assert.Equal(2, result.Count);
+        Assert.Single(result, p => p.ResRef == "hu_m_01_");
+        Assert.Single(result, p => p.ResRef == "el_f_02_");
+    }
+
+    [Fact]
+    public void ListPortraits_DedupesCaseInsensitively()
+    {
+        // ResRefs are case-insensitive in Aurora; variants differing only in case
+        // must not slip past the dedupe (#2329).
+        var mock = new MockGameDataService(includeSampleData: false);
+        var twoDA = new TwoDAFile { Columns = new() { "BaseResRef", "Race", "Sex" } };
+        twoDA.Rows.Add(new TwoDARow { Values = new() { "hu_m_01_", "6", "0" } });
+        twoDA.Rows.Add(new TwoDARow { Values = new() { "Hu_M_01_", "6", "1" } }); // same ResRef, different case
+        mock.With2DA("portraits", twoDA);
+
+        var result = BuildContext(mock).ListPortraits().ToList();
+
+        Assert.Single(result);
+    }
+
+    [Fact]
+    public void ListPortraits_DuplicateWithDifferingRace_StaysVisibleToAllRaces()
+    {
+        // A repeated BaseResRef whose rows disagree on Race must not be pinned to the
+        // first row's race — otherwise pre-filtering by a creature's race hides a
+        // portrait that other rows mark as valid for that race (#2329 regression guard).
+        var mock = new MockGameDataService(includeSampleData: false);
+        var twoDA = new TwoDAFile { Columns = new() { "BaseResRef", "Race", "Sex" } };
+        twoDA.Rows.Add(new TwoDARow { Values = new() { "po_shared_", "1", "0" } }); // first row: Elf
+        twoDA.Rows.Add(new TwoDARow { Values = new() { "po_shared_", "4", "0" } }); // dup: Half-Elf
+        mock.With2DA("portraits", twoDA);
+
+        var entry = Assert.Single(BuildContext(mock).ListPortraits().ToList());
+
+        // Collapsed to "all races" (-1) so neither race-filter excludes it.
+        Assert.Equal(-1, entry.Race);
+    }
+
+    [Fact]
+    public void ListPortraits_KeepsFirstOccurrenceOrder()
+    {
+        // Dedupe keeps the first row seen and preserves 2DA order.
+        var mock = new MockGameDataService(includeSampleData: false);
+        var twoDA = new TwoDAFile { Columns = new() { "BaseResRef", "Race", "Sex" } };
+        twoDA.Rows.Add(new TwoDARow { Values = new() { "el_f_02_", "1", "1" } });
+        twoDA.Rows.Add(new TwoDARow { Values = new() { "hu_m_01_", "6", "0" } });
+        twoDA.Rows.Add(new TwoDARow { Values = new() { "el_f_02_", "4", "1" } }); // dup of row 0
+        mock.With2DA("portraits", twoDA);
+
+        var result = BuildContext(mock).ListPortraits().ToList();
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal("el_f_02_", result[0].ResRef);
+        Assert.Equal("hu_m_01_", result[1].ResRef);
+    }
 }

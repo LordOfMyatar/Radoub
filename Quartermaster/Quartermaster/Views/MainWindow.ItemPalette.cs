@@ -28,8 +28,10 @@ public partial class MainWindow
     // HAK scanner for loading items from module-referenced HAK files
     private readonly HakPaletteScannerService _hakScanner = new();
 
-    // Cancellation token for background cache building
-    private CancellationTokenSource? _paletteCacheCts;
+    // Cancellation lifecycle for background cache building (#2299).
+    // Enforces Cancel -> Dispose -> null so a window close mid-build cancels the
+    // in-flight scan instead of waiting on it (the freeze this fixed).
+    private readonly Quartermaster.Services.LinkedCtsHolder _paletteCacheCts = new();
 
     // Track loaded state
     private bool _cachePreWarmed;
@@ -53,12 +55,11 @@ public partial class MainWindow
             return;
         }
 
-        // Link to window cancellation token
-        _paletteCacheCts?.Cancel();
-        _paletteCacheCts = CancellationTokenSource.CreateLinkedTokenSource(windowToken);
+        // Link to window cancellation token (cancels + disposes any prior source)
+        var token = _paletteCacheCts.Restart(windowToken);
 
         // Pre-warm cache in background (non-blocking)
-        _ = PreWarmCacheAsync(_paletteCacheCts.Token);
+        _ = PreWarmCacheAsync(token);
     }
 
     /// <summary>
@@ -488,12 +489,9 @@ public partial class MainWindow
     /// </summary>
     public async Task ClearAndReloadPaletteCacheAsync()
     {
-        // Create new CTS for this operation (links to window CTS if available)
-        _paletteCacheCts?.Cancel();
-        _paletteCacheCts = _windowCts != null
-            ? CancellationTokenSource.CreateLinkedTokenSource(_windowCts.Token)
-            : new CancellationTokenSource();
-        var token = _paletteCacheCts.Token;
+        // Create new CTS for this operation (links to window CTS if available).
+        // Restart cancels + disposes the prior source so it isn't orphaned.
+        var token = _paletteCacheCts.Restart(_windowCts?.Token);
 
         _sharedCacheService.ClearAllCaches();
         _cachePreWarmed = false;

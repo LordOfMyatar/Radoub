@@ -122,13 +122,14 @@
                         BorderThickness="1,1,1,0"
                         CornerRadius="4,4,0,0"
                         Padding="10,8,25,8">
-                    <Grid ColumnDefinitions="32,35,*,120,100">
+                    <Grid ColumnDefinitions="32,44,16,*,120,100">
                         <TextBlock Grid.Column="0" Text="" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}"/>
                         <TextBlock Grid.Column="1" Text="Has" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
                                    ToolTip.Tip="Feat is chosen for creature"/>
-                        <TextBlock Grid.Column="2" Text="Feat Name" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}"/>
-                        <TextBlock Grid.Column="3" Text="Category" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
-                        <TextBlock Grid.Column="4" Text="Status" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
+                        <!-- Column 2: spacer between the Has checkbox and the feat name -->
+                        <TextBlock Grid.Column="3" Text="Feat Name" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}"/>
+                        <TextBlock Grid.Column="4" Text="Category" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
+                        <TextBlock Grid.Column="5" Text="" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
                     </Grid>
                 </Border>
 
@@ -153,7 +154,7 @@
                                     BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                                     BorderThickness="0,0,0,1"
                                     ToolTip.Tip="{Binding Description}">
-                                <Grid ColumnDefinitions="32,35,*,120,100">
+                                <Grid ColumnDefinitions="32,44,16,*,120,100">
                                     <!-- Icon -->
                                     <Image Grid.Column="0"
                                            Source="{Binding IconBitmap}"
@@ -172,23 +173,31 @@
                                               ToolTip.Tip="{Binding AssignedTooltip}"
                                               AutomationProperties.AutomationId="FeatAssignedCheckbox"/>
 
+                                    <!-- Separator between the Has checkbox and the feat name (#2286) -->
+                                    <Border Grid.Column="2"
+                                            Width="1"
+                                            Background="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Stretch"
+                                            Margin="0,3"/>
+
                                     <!-- Feat Name -->
-                                    <TextBlock Grid.Column="2"
+                                    <TextBlock Grid.Column="3"
                                                Text="{Binding FeatName}"
                                                VerticalAlignment="Center"
                                                FontSize="{DynamicResource FontSizeNormal}"
                                                Opacity="{Binding TextOpacity}"/>
 
                                     <!-- Category -->
-                                    <TextBlock Grid.Column="3"
+                                    <TextBlock Grid.Column="4"
                                                Text="{Binding CategoryName}"
                                                FontSize="{DynamicResource FontSizeSmall}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"/>
 
-                                    <!-- Status -->
-                                    <TextBlock Grid.Column="4"
+                                    <!-- Status (column header label dropped; colored text alone conveys state, #2286) -->
+                                    <TextBlock Grid.Column="5"
                                                Text="{Binding StatusText}"
                                                FontSize="{DynamicResource FontSizeSmall}"
                                                Foreground="{Binding StatusColor}"

@@ -54,6 +54,35 @@ public partial class PortraitBrowserWindow : Window
     public int PortraitCount => _allPortraits.Count;
 
     /// <summary>
+    /// Remove duplicate portraits by ResRef, keeping the first occurrence and
+    /// preserving order. ResRefs are case-insensitive in Aurora. When duplicates
+    /// disagree on Race/Sex, the kept entry is widened to "all" (-1) on that axis so a
+    /// race/sex filter can't hide a portrait a later row marks valid. Defensive guard
+    /// so no context can reintroduce the duplicate-portrait bug (#2329).
+    /// </summary>
+    public static IEnumerable<PortraitEntry> DedupeByResRef(IEnumerable<PortraitEntry> portraits)
+    {
+        var byResRef = new Dictionary<string, PortraitEntry>(StringComparer.OrdinalIgnoreCase);
+        var ordered = new List<PortraitEntry>();
+        foreach (var portrait in portraits)
+        {
+            if (byResRef.TryGetValue(portrait.ResRef, out var existing))
+            {
+                if (existing.Race != portrait.Race)
+                    existing.Race = -1;
+                if (existing.Sex != portrait.Sex)
+                    existing.Sex = -1;
+                continue;
+            }
+
+            byResRef[portrait.ResRef] = portrait;
+            ordered.Add(portrait);
+        }
+
+        return ordered;
+    }
+
+    /// <summary>
     /// Parameterless constructor for XAML designer.
     /// </summary>
     public PortraitBrowserWindow()
@@ -152,7 +181,9 @@ public partial class PortraitBrowserWindow : Window
         }
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "PortraitBrowser: Loading portraits from context");
-        _allPortraits = _context.ListPortraits().ToList();
+        // Defensive dedupe (#2329): contexts should already list each portrait once,
+        // but guard here so no context can reintroduce duplicate ResRefs into the list.
+        _allPortraits = DedupeByResRef(_context.ListPortraits()).ToList();
 
         var races = new HashSet<int>();
         foreach (var portrait in _allPortraits)
@@ -264,10 +295,11 @@ public partial class PortraitBrowserWindow : Window
 
     private ListBoxItem CreatePortraitItem(PortraitEntry portrait, out Image image)
     {
-        // Create mini icon (roughly 50% size = ~32x40 for typical NWN portraits).
+        // Thumbnail size for the wrap-grid (#2329): 32x40 was too small to make out
+        // the portrait; 64x80 keeps NWN's ~4:5 portrait aspect and stays compact.
         // Source is left null here and filled in by LoadThumbnailsAsync.
-        const int thumbnailWidth = 32;
-        const int thumbnailHeight = 40;
+        const int thumbnailWidth = 64;
+        const int thumbnailHeight = 80;
 
         image = new Image
         {

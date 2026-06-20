@@ -49,6 +49,10 @@ public partial class CharacterPanel
             var context = new QuartermasterPortraitBrowserContext(_gameDataService, _itemIconService);
             var browser = PortraitBrowserWindow.Create(context);
 
+            // Pre-filter by the creature's race/gender so the list isn't All/All.
+            if (_currentCreature != null)
+                browser.SetInitialFilters(_currentCreature.Race, _currentCreature.Gender);
+
             var topLevel = TopLevel.GetTopLevel(this);
             if (topLevel is Window parentWindow)
             {

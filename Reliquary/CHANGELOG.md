@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 
 ---
 
+## [0.10.2-alpha] - 2026-06-20
+**Branch**: `quartermaster/issue-2440` | **PR**: #2525
+
+### Fix: Portrait browser duplicates (#2329)
+
+- The portrait browser now lists each portrait once; race/sex variant rows in `portraits.2da` that share a base ResRef no longer appear as duplicates. Shared dedupe guard added in `Radoub.UI` (see root CHANGELOG).
+
+---
+
 ## [0.10.1-alpha] - 2026-06-19
 **Branch**: `fence/sprint/2422-2418-shared-ui` | **PR**: #2512
 
