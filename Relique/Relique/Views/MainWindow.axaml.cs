@@ -31,8 +31,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private ItemStatisticsService? _itemStatisticsService;
     private ItemCostCalculator? _itemCostCalculator;
     private PropertyTypeInfo? _selectedPropertyType;
-    private int _editingPropertyIndex = -1; // -1 = add mode, >= 0 = editing that index
-    private bool _suppressAutoApply; // true while combos are being repopulated programmatically (#2226)
+    private int? _selectedSubtypeIndex; // #2406: subtype of the tree-selected node, for the Configure popup
     private readonly HashSet<CheckedProperty> _checkedProperties = new(); // #2405: (propIndex, subtypeIndex) pairs
     private readonly ObservableCollection<VariableViewModel> _variables = new();
     private ItemIconService? _itemIconService;

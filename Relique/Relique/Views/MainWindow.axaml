@@ -643,7 +643,15 @@
                                             HorizontalContentAlignment="Center"
                                             Margin="0,0,0,8"
                                             IsEnabled="False"
-                                            ToolTip.Tip="Add checked properties (defaults), or the selected property with configured values if none are checked"/>
+                                            ToolTip.Tip="Add checked properties with default values"/>
+                                    <Button x:Name="ConfigurePropertyButton"
+                                            Content="Configure…"
+                                            Click="OnConfigurePropertyClick"
+                                            Width="80"
+                                            HorizontalContentAlignment="Center"
+                                            Margin="0,0,0,8"
+                                            IsEnabled="False"
+                                            ToolTip.Tip="Add the selected property with a chosen subtype/value/parameter"/>
                                     <Button x:Name="EditPropertyButton"
                                             Content="Edit"
                                             Click="OnEditPropertyClick"
@@ -679,59 +687,13 @@
                                         Padding="8">
                                     <ListBox x:Name="AssignedPropertiesList"
                                              SelectionMode="Multiple,Toggle"
-                                             SelectionChanged="OnAssignedPropertySelectionChanged"/>
+                                             SelectionChanged="OnAssignedPropertySelectionChanged"
+                                             DoubleTapped="OnAssignedPropertyDoubleTapped"/>
                                 </Border>
                             </Grid>
 
-                            <!-- Cascading Dropdowns for property configuration -->
-                            <Border x:Name="PropertyConfigPanel" IsVisible="False"
-                                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="4"
-                                    Padding="8"
-                                    Margin="0,0,0,8">
-                                <Grid ColumnDefinitions="100,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
-                                    <Grid.Styles>
-                                        <Style Selector="TextBlock.config-label">
-                                            <Setter Property="VerticalAlignment" Value="Center"/>
-                                            <Setter Property="Margin" Value="0,0,8,8"/>
-                                        </Style>
-                                    </Grid.Styles>
-
-                                    <!-- Selected property type name -->
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Property" Classes="config-label"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="1" x:Name="SelectedPropertyName"
-                                               FontWeight="SemiBold"
-                                               VerticalAlignment="Center" Margin="0,0,0,8"/>
-
-                                    <!-- Subtype dropdown -->
-                                    <TextBlock Grid.Row="1" Grid.Column="0" x:Name="SubtypeLabel"
-                                               Text="Subtype" Classes="config-label"/>
-                                    <ComboBox Grid.Row="1" Grid.Column="1" x:Name="SubtypeComboBox"
-                                              HorizontalAlignment="Stretch" Margin="0,0,0,8"/>
-
-                                    <!-- Cost Value dropdown -->
-                                    <TextBlock Grid.Row="2" Grid.Column="0" x:Name="CostValueLabel"
-                                               Text="Value" Classes="config-label"/>
-                                    <ComboBox Grid.Row="2" Grid.Column="1" x:Name="CostValueComboBox"
-                                              HorizontalAlignment="Stretch" Margin="0,0,0,8"/>
-
-                                    <!-- Param Value dropdown -->
-                                    <TextBlock Grid.Row="3" Grid.Column="0" x:Name="ParamValueLabel"
-                                               Text="Parameter" Classes="config-label"/>
-                                    <ComboBox Grid.Row="3" Grid.Column="1" x:Name="ParamValueComboBox"
-                                              HorizontalAlignment="Stretch" Margin="0,0,0,8"/>
-
-                                    <!-- Apply Edit button (only visible in edit mode) -->
-                                    <Button Grid.Row="4" Grid.Column="1"
-                                            x:Name="ApplyEditButton"
-                                            Content="Apply Changes"
-                                            Click="OnApplyEditClick"
-                                            HorizontalAlignment="Left"
-                                            IsVisible="False"
-                                            Margin="0,0,0,4"/>
-                                </Grid>
-                            </Border>
+                            <!-- Property configuration moved into the modal PropertyEditWindow (#2406);
+                                 the old inline cascading-dropdown panel was removed. -->
 
                             <!-- Local Variables (shared Radoub.UI control, #2293) -->
                             <Expander Header="Local Variables" IsExpanded="False" Margin="0,0,0,8">

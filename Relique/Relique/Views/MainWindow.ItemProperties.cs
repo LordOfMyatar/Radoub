@@ -21,24 +21,6 @@ public partial class MainWindow
     {
         PropertySearchBox.TextChanged += OnPropertySearchTextChanged;
         InitializeCategoryFilter();
-
-        // Auto-apply on combo change during edit mode (#2226). Suppressed when
-        // _suppressAutoApply is true (programmatic repopulation / pre-select).
-        SubtypeComboBox.SelectionChanged += OnEditComboSelectionChanged;
-        CostValueComboBox.SelectionChanged += OnEditComboSelectionChanged;
-        ParamValueComboBox.SelectionChanged += OnEditComboSelectionChanged;
-
-        // Apply button is no longer needed in auto-apply mode (#2226). Hidden permanently
-        // — kept in AXAML to avoid breaking the Click wireup, but never shown.
-        ApplyEditButton.IsVisible = false;
-    }
-
-    private void OnEditComboSelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (!EditAutoApplyDecider.ShouldAutoApply(_editingPropertyIndex, _suppressAutoApply))
-            return;
-
-        ApplyEditCore(teardownOnSuccess: false);
     }
 
     private void InitializeCategoryFilter()
@@ -236,6 +218,7 @@ public partial class MainWindow
         if (ro)
         {
             AddPropertyButton.IsEnabled = false;
+            ConfigurePropertyButton.IsEnabled = false;
             EditPropertyButton.IsEnabled = false;
             RemovePropertyButton.IsEnabled = false;
             ClearAllPropertiesButton.IsEnabled = false;
@@ -312,146 +295,40 @@ public partial class MainWindow
 
     private void OnAvailablePropertySelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        // Selecting from Available tree exits edit mode
-        _editingPropertyIndex = -1;
-        ApplyEditButton.IsVisible = false;
+        // Track the selected property type for the Configure button + right-click default-add.
+        // The subtype (if a child node was selected) is captured for the Configure popup pre-select.
+        _selectedPropertyType = null;
+        _selectedSubtypeIndex = null;
 
         if (AvailablePropertiesTree.SelectedItem is TreeViewItem selectedNode)
         {
-            PropertyTypeInfo? propertyType = null;
-
             if (selectedNode.Tag is PropertyTypeInfo type)
             {
-                propertyType = type;
+                _selectedPropertyType = type;
             }
-            else if (selectedNode.Tag is TwoDAEntry && selectedNode.Parent is TreeViewItem parentNode && parentNode.Tag is PropertyTypeInfo parentType)
+            else if (selectedNode.Tag is TwoDAEntry subtypeEntry &&
+                     selectedNode.Parent is TreeViewItem parentNode &&
+                     parentNode.Tag is PropertyTypeInfo parentType)
             {
-                propertyType = parentType;
-            }
-
-            if (propertyType != null)
-            {
-                _selectedPropertyType = propertyType;
-                UpdatePropertyConfigPanel(propertyType);
-                UpdateAddButtonState();
-
-                // If a subtype child node was selected, pre-select it in the dropdown
-                if (selectedNode.Tag is TwoDAEntry subtypeEntry && SubtypeComboBox.IsVisible)
-                {
-                    for (int i = 0; i < SubtypeComboBox.Items.Count; i++)
-                    {
-                        if (SubtypeComboBox.Items[i] is ComboBoxItem item && item.Tag is int idx && idx == subtypeEntry.Index)
-                        {
-                            SubtypeComboBox.SelectedIndex = i;
-                            break;
-                        }
-                    }
-                }
+                _selectedPropertyType = parentType;
+                _selectedSubtypeIndex = subtypeEntry.Index;
             }
         }
-        else
-        {
-            _selectedPropertyType = null;
-            PropertyConfigPanel.IsVisible = false;
-            UpdateAddButtonState();
-        }
+
+        UpdateAddButtonState();
+        UpdateConfigureButtonState();
     }
 
-    private void UpdatePropertyConfigPanel(PropertyTypeInfo propertyType)
+    private void UpdateConfigureButtonState()
     {
-        // Suppress auto-apply while combos are being cleared/repopulated (#2226).
-        // Each SelectedIndex assignment below fires SelectionChanged; without
-        // suppression, opening an edit would auto-apply a half-built state.
-        _suppressAutoApply = true;
-        try
-        {
-        PropertyConfigPanel.IsVisible = true;
-        SelectedPropertyName.Text = propertyType.DisplayName;
-
-        // Subtypes — only show available (unassigned) subtypes (#1809)
-        // When editing, exclude the property being edited so its subtype stays selectable
-        bool hasSubtypes = propertyType.HasSubtypes;
-        SubtypeLabel.IsVisible = hasSubtypes;
-        SubtypeComboBox.IsVisible = hasSubtypes;
-        SubtypeComboBox.Items.Clear();
-        if (hasSubtypes && _itemPropertyService != null)
-        {
-            var allSubtypes = _itemPropertyService.GetSubtypes(propertyType.PropertyIndex);
-            var assignedProperties = _currentItem?.Properties ?? new List<ItemProperty>();
-
-            // When editing, exclude the property at _editingPropertyIndex from the filter
-            if (_editingPropertyIndex >= 0 && _editingPropertyIndex < assignedProperties.Count)
-            {
-                var filtered = new List<ItemProperty>(assignedProperties);
-                filtered.RemoveAt(_editingPropertyIndex);
-                assignedProperties = filtered;
-            }
-
-            var availableSubtypes = _itemPropertyService.GetAvailableSubtypes(
-                propertyType.PropertyIndex, allSubtypes, assignedProperties);
-
-            foreach (var sub in availableSubtypes)
-            {
-                SubtypeComboBox.Items.Add(new ComboBoxItem
-                {
-                    Content = sub.DisplayName,
-                    Tag = sub.Index
-                });
-            }
-            if (SubtypeComboBox.Items.Count > 0)
-                SubtypeComboBox.SelectedIndex = 0;
-        }
-
-        // Cost values
-        bool hasCost = propertyType.HasCostTable;
-        CostValueLabel.IsVisible = hasCost;
-        CostValueComboBox.IsVisible = hasCost;
-        CostValueComboBox.Items.Clear();
-        if (hasCost && _itemPropertyService != null)
-        {
-            var costValues = _itemPropertyService.GetCostValues(propertyType.PropertyIndex);
-            foreach (var cost in costValues)
-            {
-                CostValueComboBox.Items.Add(new ComboBoxItem
-                {
-                    Content = cost.DisplayName,
-                    Tag = cost.Index
-                });
-            }
-            if (CostValueComboBox.Items.Count > 0)
-                CostValueComboBox.SelectedIndex = 0;
-        }
-
-        // Param values
-        bool hasParam = propertyType.HasParamTable;
-        ParamValueLabel.IsVisible = hasParam;
-        ParamValueComboBox.IsVisible = hasParam;
-        ParamValueComboBox.Items.Clear();
-        if (hasParam && _itemPropertyService != null)
-        {
-            var paramValues = _itemPropertyService.GetParamValues(propertyType.PropertyIndex);
-            foreach (var param in paramValues)
-            {
-                ParamValueComboBox.Items.Add(new ComboBoxItem
-                {
-                    Content = param.DisplayName,
-                    Tag = param.Index
-                });
-            }
-            if (ParamValueComboBox.Items.Count > 0)
-                ParamValueComboBox.SelectedIndex = 0;
-        }
-        }
-        finally
-        {
-            _suppressAutoApply = false;
-        }
+        ConfigurePropertyButton.IsEnabled = _currentItem != null
+            && !_documentState.IsReadOnly
+            && _selectedPropertyType != null;
     }
 
     /// <summary>
-    /// Single Add button (#2234). If any properties are checked in the tree, bulk-add
-    /// them with default values; otherwise add the selected property using the configured
-    /// values from the PropertyConfigPanel. One button, behavior follows the active state.
+    /// The Add button (#2234) bulk-adds the checked properties with default values (#2405). Precise
+    /// single-add with a chosen subtype/value/param is the Configure… button + popup (#2406).
     /// </summary>
     private void OnAddPropertyClick(object? sender, RoutedEventArgs e)
     {
@@ -460,29 +337,27 @@ public partial class MainWindow
 
         if (_checkedProperties.Count > 0)
             AddCheckedProperties();
-        else
-            AddConfiguredProperty();
     }
 
-    private void AddConfiguredProperty()
+    /// <summary>
+    /// Configure… button (#2406): open the modal popup to add the tree-selected property with a
+    /// chosen subtype/value/param. Routes the result through TryAddProperty so the #2166 validation
+    /// + rollback path still runs.
+    /// </summary>
+    private async void OnConfigurePropertyClick(object? sender, RoutedEventArgs e)
     {
         if (_currentItem == null || _itemPropertyService == null || _selectedPropertyType == null)
             return;
         if (_documentState.IsReadOnly) return;
 
-        int subtypeIndex = 0;
-        if (SubtypeComboBox.IsVisible && SubtypeComboBox.SelectedItem is ComboBoxItem subItem && subItem.Tag is int subIdx)
-            subtypeIndex = subIdx;
+        var popup = new PropertyEditWindow(
+            _itemPropertyService, _selectedPropertyType, _currentItem.Properties,
+            editingProperty: null, editingIndex: -1, preselectSubtype: _selectedSubtypeIndex);
 
-        int costValueIndex = 0;
-        if (CostValueComboBox.IsVisible && CostValueComboBox.SelectedItem is ComboBoxItem costItem && costItem.Tag is int costIdx)
-            costValueIndex = costIdx;
+        var result = await popup.ShowDialog<ItemProperty?>(this);
+        if (result == null) return;
 
-        int? paramValueIndex = null;
-        if (ParamValueComboBox.IsVisible && ParamValueComboBox.SelectedItem is ComboBoxItem paramItem && paramItem.Tag is int paramIdx)
-            paramValueIndex = paramIdx;
-
-        TryAddProperty(_selectedPropertyType, subtypeIndex, costValueIndex, paramValueIndex);
+        TryAddConfiguredProperty(_selectedPropertyType, result);
     }
 
     private void AddCheckedProperties()
@@ -627,7 +502,17 @@ public partial class MainWindow
         EditPropertyButton.IsEnabled = selectedCount == 1 && !ro;
     }
 
-    private void OnEditPropertyClick(object? sender, RoutedEventArgs e)
+    private void OnEditPropertyClick(object? sender, RoutedEventArgs e) => OpenEditPopup();
+
+    private void OnAssignedPropertyDoubleTapped(object? sender, Avalonia.Input.TappedEventArgs e)
+        => OpenEditPopup();
+
+    /// <summary>
+    /// Open the modal PropertyEditWindow to edit the selected assigned property (#2406). The popup
+    /// pre-selects the property's current values and returns the edited ItemProperty; ApplyEdit
+    /// commits it through the #2166 rollback path.
+    /// </summary>
+    private async void OpenEditPopup()
     {
         if (_currentItem == null || _itemPropertyService == null || AssignedPropertiesList.SelectedIndex < 0)
             return;
@@ -638,8 +523,6 @@ public partial class MainWindow
             return;
 
         var prop = _currentItem.Properties[index];
-        _editingPropertyIndex = index;
-
         var types = _itemPropertyService.GetAvailablePropertyTypes();
         var type = types.FirstOrDefault(t => t.PropertyIndex == prop.PropertyName);
         if (type == null)
@@ -648,103 +531,40 @@ public partial class MainWindow
             return;
         }
 
-        _selectedPropertyType = type;
-        UpdatePropertyConfigPanel(type);
+        var popup = new PropertyEditWindow(
+            _itemPropertyService, type, _currentItem.Properties,
+            editingProperty: prop, editingIndex: index);
 
-        // Pre-select current values without firing auto-apply (#2226).
-        _suppressAutoApply = true;
-        try
-        {
-            SelectComboBoxByTag(SubtypeComboBox, prop.Subtype);
-            SelectComboBoxByTag(CostValueComboBox, prop.CostValue);
-            if (prop.Param1 != 0xFF)
-                SelectComboBoxByTag(ParamValueComboBox, prop.Param1Value);
-        }
-        finally
-        {
-            _suppressAutoApply = false;
-        }
+        var result = await popup.ShowDialog<ItemProperty?>(this);
+        if (result == null) return; // Cancel discards — model untouched.
 
-        // ApplyEditButton stays hidden under auto-apply mode (#2226).
-        AddPropertyButton.IsEnabled = false;
-
-        UpdateStatus($"Editing: {type.DisplayName} (auto-applies on change)");
-    }
-
-    private void OnApplyEditClick(object? sender, RoutedEventArgs e)
-    {
-        // Apply button hidden under auto-apply (#2226). Handler kept for AXAML wireup safety.
-        ApplyEditCore(teardownOnSuccess: true);
+        ApplyEdit(index, type, result);
     }
 
     /// <summary>
-    /// Apply current PropertyConfigPanel ComboBox values to the property at _editingPropertyIndex (#2226).
-    /// teardownOnSuccess=true mirrors the old explicit-Apply flow (closes the edit panel, exits edit mode);
-    /// teardownOnSuccess=false is auto-apply mode (keeps panel open so user can keep tweaking).
-    /// Rollback to oldProperty on failure preserves item state for bad combos (#2166 pattern).
+    /// Replace the property at <paramref name="index"/> with the popup's result, routing through
+    /// PropertyListMutator.ReplaceAt so the refresh-failure rollback seam runs (#2258 / #2166).
     /// </summary>
-    private void ApplyEditCore(bool teardownOnSuccess)
+    private void ApplyEdit(int index, PropertyTypeInfo type, ItemProperty replacement)
     {
-        if (_currentItem == null || _itemPropertyService == null || _selectedPropertyType == null)
-            return;
+        if (_currentItem == null) return;
 
-        if (_editingPropertyIndex < 0 || _editingPropertyIndex >= _currentItem.Properties.Count)
-            return;
+        bool applied = PropertyListMutator.ReplaceAt(
+            _currentItem.Properties, index, replacement, RefreshAssignedProperties);
 
-        int subtypeIndex = 0;
-        if (SubtypeComboBox.IsVisible && SubtypeComboBox.SelectedItem is ComboBoxItem subItem && subItem.Tag is int subIdx)
-            subtypeIndex = subIdx;
-
-        int costValueIndex = 0;
-        if (CostValueComboBox.IsVisible && CostValueComboBox.SelectedItem is ComboBoxItem costItem && costItem.Tag is int costIdx)
-            costValueIndex = costIdx;
-
-        int? paramValueIndex = null;
-        if (ParamValueComboBox.IsVisible && ParamValueComboBox.SelectedItem is ComboBoxItem paramItem && paramItem.Tag is int paramIdx)
-            paramValueIndex = paramIdx;
-
-        var oldProperty = _currentItem.Properties[_editingPropertyIndex];
-        var editingIndex = _editingPropertyIndex;
-
-        try
+        if (applied)
         {
-            var property = _itemPropertyService.CreateItemProperty(
-                _selectedPropertyType.PropertyIndex,
-                subtypeIndex,
-                costValueIndex,
-                paramValueIndex);
-
-            _currentItem.Properties[editingIndex] = property;
-
-            // RefreshAssignedProperties calls PopulateAvailableProperties which clears
-            // the assigned list selection. In auto-apply mode we re-select the same
-            // row + restore the edit state so the user can keep tweaking.
-            RefreshAssignedProperties();
             MarkDirty();
-
-            if (teardownOnSuccess)
-            {
-                _editingPropertyIndex = -1;
-                ApplyEditButton.IsVisible = false;
-                PropertyConfigPanel.IsVisible = false;
-                UpdateStatus($"Updated property: {_selectedPropertyType.DisplayName}");
-            }
-            else
-            {
-                // Auto-apply: keep edit state intact, re-select the edited row.
-                if (editingIndex < AssignedPropertiesList.Items.Count)
-                    AssignedPropertiesList.SelectedIndex = editingIndex;
-                _editingPropertyIndex = editingIndex;
-                UpdateStatus($"Auto-applied: {_selectedPropertyType.DisplayName}");
-            }
+            if (index < AssignedPropertiesList.Items.Count)
+                AssignedPropertiesList.SelectedIndex = index;
+            UpdateStatus($"Updated property: {type.DisplayName}");
         }
-        catch (Exception ex)
+        else
         {
-            // Roll back to previous value and report — preserves item state on bad combos (#2166).
-            _currentItem.Properties[editingIndex] = oldProperty;
             UnifiedLogger.LogApplication(LogLevel.ERROR,
-                $"Failed to update {_selectedPropertyType.DisplayName}: {ex.GetType().Name}: {ex.Message}");
-            UpdateStatus($"Cannot update {_selectedPropertyType.DisplayName}: {ex.Message}");
+                $"Refresh failed after editing {type.DisplayName}; rolled back");
+            UpdateStatus($"Cannot update {type.DisplayName} (UI refresh failed)");
+            try { RefreshAssignedProperties(); } catch { /* best-effort */ }
         }
     }
 
@@ -778,51 +598,78 @@ public partial class MainWindow
             return;
         }
 
+        ItemProperty property;
         try
         {
-            var property = _itemPropertyService.CreateItemProperty(
+            property = _itemPropertyService.CreateItemProperty(
                 propertyType.PropertyIndex,
                 subtypeIndex,
                 costValueIndex,
                 paramValueIndex);
-
-            // Route through the undo manager. AddPropertyCommand wraps PropertyListMutator, so the
-            // #2258 rollback-on-refresh-failure seam still runs; the manager refuses to record the
-            // command (and so it never lands on the undo stack) if Do() self-rolled-back (#2231).
-            var cmd = new AddPropertyCommand(
-                _currentItem.Properties, property, RefreshAssignedProperties,
-                $"add {propertyType.DisplayName}");
-            _undo.Execute(cmd);
-
-            if (cmd.WasApplied)
-            {
-                UpdateStatus($"Added property: {propertyType.DisplayName}");
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR,
-                    $"Refresh failed after adding {propertyType.DisplayName}; rolled back");
-                UpdateStatus($"Cannot add {propertyType.DisplayName} (UI refresh failed)");
-                try { RefreshAssignedProperties(); } catch { /* best-effort */ }
-            }
         }
         catch (Exception ex)
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR,
                 $"Failed to add {propertyType.DisplayName}: {ex.GetType().Name}: {ex.Message}");
             UpdateStatus($"Cannot add {propertyType.DisplayName}: {ex.Message}");
+            return;
         }
+
+        ExecuteAdd(propertyType, property);
     }
 
-    private static void SelectComboBoxByTag(ComboBox comboBox, int tagValue)
+    /// <summary>
+    /// Add a pre-built property (from the Configure… popup, #2406) with the same base-item +
+    /// move-semantics validation and undo/rollback path as <see cref="TryAddProperty"/>.
+    /// </summary>
+    private void TryAddConfiguredProperty(PropertyTypeInfo propertyType, ItemProperty property)
     {
-        for (int i = 0; i < comboBox.Items.Count; i++)
+        if (_currentItem == null || _itemPropertyService == null)
+            return;
+
+        if (!_itemPropertyService.IsPropertyValidForBaseItem(propertyType.PropertyIndex, _currentItem.BaseItem))
         {
-            if (comboBox.Items[i] is ComboBoxItem item && item.Tag is int idx && idx == tagValue)
-            {
-                comboBox.SelectedIndex = i;
-                return;
-            }
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"Refused {propertyType.DisplayName} on base item {_currentItem.BaseItem} (validation table)");
+            UpdateStatus($"Cannot add {propertyType.DisplayName} to this item type");
+            return;
+        }
+
+        if (!_itemPropertyService.IsPropertyAvailable(propertyType.PropertyIndex, property.Subtype, _currentItem.Properties))
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"Refused duplicate {propertyType.DisplayName} (subtype {property.Subtype})");
+            UpdateStatus($"{propertyType.DisplayName} already assigned with that subtype");
+            return;
+        }
+
+        ExecuteAdd(propertyType, property);
+    }
+
+    /// <summary>
+    /// Route a validated property through the undo manager. AddPropertyCommand wraps
+    /// PropertyListMutator, so the #2258 rollback-on-refresh-failure seam runs; the manager refuses
+    /// to record the command if Do() self-rolled-back (#2231).
+    /// </summary>
+    private void ExecuteAdd(PropertyTypeInfo propertyType, ItemProperty property)
+    {
+        if (_currentItem == null) return;
+
+        var cmd = new AddPropertyCommand(
+            _currentItem.Properties, property, RefreshAssignedProperties,
+            $"add {propertyType.DisplayName}");
+        _undo.Execute(cmd);
+
+        if (cmd.WasApplied)
+        {
+            UpdateStatus($"Added property: {propertyType.DisplayName}");
+        }
+        else
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR,
+                $"Refresh failed after adding {propertyType.DisplayName}; rolled back");
+            UpdateStatus($"Cannot add {propertyType.DisplayName} (UI refresh failed)");
+            try { RefreshAssignedProperties(); } catch { /* best-effort */ }
         }
     }
 

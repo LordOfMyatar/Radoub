@@ -51,11 +51,11 @@ public partial class MainWindow
             ArmorPartsPanel.IsVisible = false;
             IconChooserPanel.IsVisible = false;
             SelectedIconPreview.Source = null;
-            PropertyConfigPanel.IsVisible = false;
             AssignedPropertiesList.Items.Clear();
             _selectedPropertyType = null;
-            _editingPropertyIndex = -1;
+            _selectedSubtypeIndex = null;
             AddPropertyButton.IsEnabled = false;
+            ConfigurePropertyButton.IsEnabled = false;
             EditPropertyButton.IsEnabled = false;
             RemovePropertyButton.IsEnabled = false;
             ClearAllPropertiesButton.IsEnabled = false;

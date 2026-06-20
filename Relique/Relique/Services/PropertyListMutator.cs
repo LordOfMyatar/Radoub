@@ -135,6 +135,38 @@ public static class PropertyListMutator
     }
 
     /// <summary>
+    /// Replace the entry at <paramref name="index"/> with <paramref name="replacement"/>, then refresh.
+    /// On refresh failure, restores the original entry. Used by the #2406 edit-apply path so an edit
+    /// runs through the same rollback-on-refresh-failure seam as add/remove/clear (#2258 / #2166).
+    /// Returns <c>false</c> (no change, no refresh) when the index is out of range.
+    /// </summary>
+    public static bool ReplaceAt(
+        List<ItemProperty> properties,
+        int index,
+        ItemProperty replacement,
+        Action refresh)
+    {
+        if (properties == null) throw new ArgumentNullException(nameof(properties));
+        if (replacement == null) throw new ArgumentNullException(nameof(replacement));
+        if (refresh == null) throw new ArgumentNullException(nameof(refresh));
+        if (index < 0 || index >= properties.Count) return false;
+
+        var original = properties[index];
+        properties[index] = replacement;
+
+        try
+        {
+            refresh();
+            return true;
+        }
+        catch
+        {
+            properties[index] = original;
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Clear <paramref name="properties"/>, then refresh.
     /// On refresh failure, restores the original list contents in order.
     /// </summary>

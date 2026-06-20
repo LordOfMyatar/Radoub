@@ -1,0 +1,71 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ItemEditor.Views.PropertyEditWindow"
+        Title="Configure Property"
+        Width="460" Height="360"
+        MinWidth="380" MinHeight="300"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid Margin="15" RowDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto,Auto">
+
+        <!-- Property name (fixed) -->
+        <Grid Grid.Row="0" ColumnDefinitions="110,*" Margin="0,0,0,10">
+            <TextBlock Grid.Column="0" Text="Property" VerticalAlignment="Center"
+                       FontWeight="SemiBold"/>
+            <TextBlock Grid.Column="1" x:Name="PropertyNameText"
+                       VerticalAlignment="Center" FontWeight="SemiBold"/>
+        </Grid>
+
+        <!-- Subtype (searchable via AutoCompleteBox) -->
+        <Grid Grid.Row="1" ColumnDefinitions="110,*" Margin="0,0,0,8" x:Name="SubtypeRow">
+            <TextBlock Grid.Column="0" Text="Subtype" VerticalAlignment="Center"/>
+            <AutoCompleteBox Grid.Column="1" x:Name="SubtypeBox"
+                             Watermark="Type to search..."
+                             MinimumPrefixLength="0"
+                             HorizontalAlignment="Stretch"/>
+        </Grid>
+
+        <!-- Cost value -->
+        <Grid Grid.Row="2" ColumnDefinitions="110,*" Margin="0,0,0,8" x:Name="CostRow">
+            <TextBlock Grid.Column="0" Text="Value" VerticalAlignment="Center"/>
+            <AutoCompleteBox Grid.Column="1" x:Name="CostBox"
+                             Watermark="Type to search..."
+                             MinimumPrefixLength="0"
+                             HorizontalAlignment="Stretch"/>
+        </Grid>
+
+        <!-- Param value -->
+        <Grid Grid.Row="3" ColumnDefinitions="110,*" Margin="0,0,0,8" x:Name="ParamRow">
+            <TextBlock Grid.Column="0" Text="Parameter" VerticalAlignment="Center"/>
+            <AutoCompleteBox Grid.Column="1" x:Name="ParamBox"
+                             Watermark="Type to search..."
+                             MinimumPrefixLength="0"
+                             HorizontalAlignment="Stretch"/>
+        </Grid>
+
+        <!-- Live preview line (#2406): updates on every selection change; model untouched until OK -->
+        <Border Grid.Row="4" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
+                CornerRadius="4" Padding="8" Margin="0,8,0,0">
+            <StackPanel>
+                <TextBlock Text="Preview"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                <TextBlock x:Name="PreviewText" TextWrapping="Wrap" Margin="0,2,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Spacer row 5 absorbs extra height -->
+
+        <!-- Validation / error message -->
+        <TextBlock Grid.Row="6" x:Name="MessageText"
+                   Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
+                   TextWrapping="Wrap" Margin="0,4,0,0" IsVisible="False"/>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Right"
+                    Spacing="10" Margin="0,12,0,0">
+            <Button x:Name="OkButton" Content="OK" Width="80" Click="OnOkClick"/>
+            <Button x:Name="CancelButton" Content="Cancel" Width="80" Click="OnCancelClick"/>
+        </StackPanel>
+    </Grid>
+</Window>
