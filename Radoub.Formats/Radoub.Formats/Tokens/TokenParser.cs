@@ -88,6 +88,48 @@ public class TokenParser
         return string.Concat(segments.Select(s => s.DisplayText));
     }
 
+    /// <summary>
+    /// Parse text and return a clean string suitable for text-to-speech (#1570).
+    /// Markup tags are stripped, the inner content of highlight/color tokens is kept,
+    /// standard tokens are replaced with spoken placeholders (e.g. FirstName -> "Adventurer",
+    /// pronouns -> they/them/their) or their literal name when unmapped, and custom tokens
+    /// are dropped. Stray/unmatched tag fragments are left as plain text and spoken as-is.
+    /// </summary>
+    /// <remarks>
+    /// UserColorToken segments are only produced when this parser was constructed with a
+    /// UserColorConfig. On a default parser, custom-color pairs become dropped CustomTokens
+    /// with their inner text as plain text — the words are still spoken, only color markup is lost.
+    /// </remarks>
+    /// <param name="text">Text to convert to speech</param>
+    /// <returns>Clean speech text</returns>
+    public string GetSpeechText(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return string.Empty;
+
+        var sb = new System.Text.StringBuilder();
+        foreach (var segment in Parse(text))
+        {
+            switch (segment)
+            {
+                case StandardToken std:
+                    sb.Append(TokenDefinitions.SpeechPlaceholders.TryGetValue(std.TokenName, out var spoken)
+                        ? spoken
+                        : std.TokenName);
+                    break;
+                case CustomToken:
+                    // No spoken value; drop.
+                    break;
+                default:
+                    // PlainText, Highlight, Color, UserColor -> inner/display content.
+                    sb.Append(segment.DisplayText);
+                    break;
+            }
+        }
+
+        return sb.ToString();
+    }
+
     private void ProcessHighlightTokens(string text, List<TokenSegment> segments, bool[] processed)
     {
         foreach (Match match in HighlightTokenRegex.Matches(text))

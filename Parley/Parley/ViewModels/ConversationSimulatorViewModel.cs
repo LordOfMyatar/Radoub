@@ -55,14 +55,15 @@ namespace DialogEditor.ViewModels
         // Coverage
         private int _totalReplies;
         private List<int> _rootEntryIndices = new();
-        private Dictionary<int, HashSet<int>> _repliesPerRootEntry = new(); // entryIndex -> set of reply indices under that root
+        private Dictionary<int, HashSet<int>> _repliesPerRootEntry = new(); // entryIndex -> set of reply indices under that root (full subtree)
+        private Dictionary<int, HashSet<int>> _directRepliesPerRootEntry = new(); // #482: entryIndex -> set of DIRECT child reply indices
 
         // TTS (Issue #479)
+        // #1570: TtsEnabled/TtsRate/AutoSpeak/AutoAdvance are now backed by SettingsService for persistence.
         private readonly ITtsService _ttsService;
-        private bool _ttsEnabled = true;
-        private bool _autoSpeak = false;
-        private bool _autoAdvance = true;
-        private double _ttsRate = 1.0;
+        // #1570: strips markup/resolves tokens to clean speech text. Default parser (no user-color
+        // config) matches the on-screen TokenTextBlock, which is also unconfigured here.
+        private readonly Radoub.Formats.Tokens.TokenParser _ttsTextParser = new();
         private Dictionary<string, string> _speakerVoiceAssignments = new();
         private string _pcVoice = "";
         private string _defaultNpcVoice = "";
@@ -251,7 +252,7 @@ namespace DialogEditor.ViewModels
             private set => SetProperty(ref _showLoopWarning, value);
         }
 
-        public CoverageStats Coverage => _coverageTracker.GetCoverageStats(_filePath, _totalReplies, _rootEntryIndices, _repliesPerRootEntry);
+        public CoverageStats Coverage => _coverageTracker.GetCoverageStats(_filePath, _totalReplies, _rootEntryIndices, _repliesPerRootEntry, _directRepliesPerRootEntry);
 
         public string CoverageDisplay => Coverage.DisplayText;
 
@@ -265,28 +266,58 @@ namespace DialogEditor.ViewModels
         public ObservableCollection<string> VoiceNames { get; }
         public ObservableCollection<SpeakerVoiceMapping> SpeakerVoiceAssignments { get; }
 
+        // TTS toggles bound to SettingsService for persistence across sessions (#1570)
         public bool TtsEnabled
         {
-            get => _ttsEnabled;
-            set => SetProperty(ref _ttsEnabled, value);
+            get => _settings.SimulatorTtsEnabled;
+            set
+            {
+                if (_settings.SimulatorTtsEnabled != value)
+                {
+                    _settings.SimulatorTtsEnabled = value;
+                    OnPropertyChanged(nameof(TtsEnabled));
+                }
+            }
         }
 
         public double TtsRate
         {
-            get => _ttsRate;
-            set => SetProperty(ref _ttsRate, Math.Clamp(value, 0.5, 2.0));
+            get => _settings.SimulatorTtsRate;
+            set
+            {
+                var clamped = Math.Clamp(value, 0.5, 2.0);
+                if (_settings.SimulatorTtsRate != clamped)
+                {
+                    _settings.SimulatorTtsRate = clamped;
+                    OnPropertyChanged(nameof(TtsRate));
+                }
+            }
         }
 
         public bool AutoSpeak
         {
-            get => _autoSpeak;
-            set => SetProperty(ref _autoSpeak, value);
+            get => _settings.SimulatorAutoSpeak;
+            set
+            {
+                if (_settings.SimulatorAutoSpeak != value)
+                {
+                    _settings.SimulatorAutoSpeak = value;
+                    OnPropertyChanged(nameof(AutoSpeak));
+                }
+            }
         }
 
         public bool AutoAdvance
         {
-            get => _autoAdvance;
-            set => SetProperty(ref _autoAdvance, value);
+            get => _settings.SimulatorAutoAdvance;
+            set
+            {
+                if (_settings.SimulatorAutoAdvance != value)
+                {
+                    _settings.SimulatorAutoAdvance = value;
+                    OnPropertyChanged(nameof(AutoAdvance));
+                }
+            }
         }
 
         /// <summary>
@@ -320,7 +351,7 @@ namespace DialogEditor.ViewModels
 
             // Get the voice for the current speaker
             var voiceName = GetVoiceForSpeaker(NpcSpeaker);
-            _ttsService.Speak(NpcText, voiceName, TtsRate);
+            _ttsService.Speak(_ttsTextParser.GetSpeechText(NpcText), voiceName, TtsRate);
             OnPropertyChanged(nameof(TtsSpeaking));
         }
 
@@ -436,7 +467,7 @@ namespace DialogEditor.ViewModels
             if (AutoSpeak && TtsAvailable && TtsEnabled && !string.IsNullOrWhiteSpace(NpcText))
             {
                 var npcVoice = GetVoiceForSpeaker(NpcSpeaker);
-                _ttsService.Speak(NpcText, npcVoice, TtsRate);
+                _ttsService.Speak(_ttsTextParser.GetSpeechText(NpcText), npcVoice, TtsRate);
                 // Auto-advance will be triggered by OnTtsSpeakCompleted when speech finishes
             }
             else if (AutoAdvance && Replies.Count == 1 && !_isSelectingRootEntry)

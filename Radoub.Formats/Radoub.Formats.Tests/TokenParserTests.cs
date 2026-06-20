@@ -341,6 +341,148 @@ public class TokenParserTests
 
     #endregion
 
+    #region GetSpeechText Tests (#1570)
+
+    [Fact]
+    public void GetSpeechText_PlainText_ReturnsUnchanged()
+    {
+        Assert.Equal("Hello, world!", _parser.GetSpeechText("Hello, world!"));
+    }
+
+    [Fact]
+    public void GetSpeechText_NullOrEmpty_ReturnsEmpty()
+    {
+        Assert.Equal("", _parser.GetSpeechText(""));
+        Assert.Equal("", _parser.GetSpeechText(null!));
+    }
+
+    [Fact]
+    public void GetSpeechText_HighlightToken_KeepsInnerContentDropsTags()
+    {
+        // Decided: read inner content, strip markup tags
+        Assert.Equal("[Chef waves] Welcome!",
+            _parser.GetSpeechText("<StartAction>[Chef waves]</Start> Welcome!"));
+    }
+
+    [Fact]
+    public void GetSpeechText_ColorToken_KeepsInnerContentDropsTags()
+    {
+        var text = "<c\xFF\x00\x00>red text</c> here";
+        Assert.Equal("red text here", _parser.GetSpeechText(text));
+    }
+
+    [Fact]
+    public void GetSpeechText_UserColorToken_KeepsInnerContent()
+    {
+        var config = new UserColorConfig
+        {
+            CloseToken = "<CUSTOM1000>",
+            Colors = new Dictionary<string, string> { ["Red"] = "<CUSTOM1001>" },
+            ColorHexValues = new Dictionary<string, string> { ["Red"] = "#FF0000" }
+        };
+        var parser = new TokenParser(config);
+        Assert.Equal("alert", parser.GetSpeechText("<CUSTOM1001>alert<CUSTOM1000>"));
+    }
+
+    [Fact]
+    public void GetSpeechText_NameTokens_MapToAdventurer()
+    {
+        Assert.Equal("Hello Adventurer!", _parser.GetSpeechText("Hello <FirstName>!"));
+        Assert.Equal("Adventurer", _parser.GetSpeechText("<LastName>"));
+        Assert.Equal("Adventurer", _parser.GetSpeechText("<FullName>"));
+        Assert.Equal("Adventurer", _parser.GetSpeechText("<PlayerName>"));
+    }
+
+    [Theory]
+    [InlineData("He/She", "they")]
+    [InlineData("he/she", "they")]
+    [InlineData("Him/Her", "them")]
+    [InlineData("him/her", "them")]
+    [InlineData("His/Her", "their")]
+    [InlineData("his/her", "their")]
+    [InlineData("His/Hers", "their")]
+    [InlineData("his/hers", "their")]
+    public void GetSpeechText_PronounTokens_MapToNeutral(string token, string spoken)
+    {
+        Assert.Equal($"and {spoken} said", _parser.GetSpeechText($"and <{token}> said"));
+    }
+
+    [Theory]
+    [InlineData("Class")]
+    [InlineData("Race")]
+    [InlineData("Level")]
+    [InlineData("Deity")]
+    [InlineData("GameMonth")]
+    [InlineData("Alignment")]
+    public void GetSpeechText_DescriptiveStandardToken_FallsBackToTokenName(string token)
+    {
+        // Descriptive (non-gendered) tokens are intentionally unmapped -> literal.
+        Assert.Equal(token, _parser.GetSpeechText($"<{token}>"));
+    }
+
+    [Theory]
+    [InlineData("Boy/Girl", "child")]
+    [InlineData("boy/girl", "child")]
+    [InlineData("Brother/Sister", "sibling")]
+    [InlineData("Lad/Lass", "youth")]
+    [InlineData("Lord/Lady", "noble")]
+    [InlineData("lord/lady", "noble")]
+    [InlineData("Man/Woman", "person")]
+    [InlineData("Male/Female", "person")]
+    [InlineData("Master/Mistress", "master")]
+    [InlineData("Mister/Missus", "mister")]
+    [InlineData("Sir/Madam", "friend")]
+    [InlineData("bitch/bastard", "wretch")]
+    public void GetSpeechText_GenderedNounTokens_MapToNeutralNoun(string token, string spoken)
+    {
+        Assert.Equal($"Well met, {spoken}.", _parser.GetSpeechText($"Well met, <{token}>."));
+    }
+
+    [Fact]
+    public void GetSpeechText_AllGenderedStandardTokens_AreMapped()
+    {
+        // Guard: every gendered name/pronoun/noun token resolves to something OTHER than its
+        // literal token name, so none accidentally falls through to being read aloud verbatim.
+        string[] gendered =
+        {
+            "FirstName", "LastName", "FullName", "PlayerName",
+            "He/She", "he/she", "Him/Her", "him/her", "His/Her", "his/her", "His/Hers", "his/hers",
+            "Boy/Girl", "boy/girl", "Brother/Sister", "brother/sister", "Lad/Lass", "lad/lass",
+            "Lord/Lady", "lord/lady", "Man/Woman", "man/woman", "Male/Female", "male/female",
+            "Master/Mistress", "master/mistress", "Mister/Missus", "mister/missus",
+            "Sir/Madam", "sir/madam", "bitch/bastard"
+        };
+        foreach (var token in gendered)
+        {
+            var spoken = _parser.GetSpeechText($"<{token}>");
+            Assert.NotEqual(token, spoken);
+            Assert.False(string.IsNullOrWhiteSpace(spoken), $"{token} produced empty speech");
+        }
+    }
+
+    [Fact]
+    public void GetSpeechText_CustomToken_IsDropped()
+    {
+        Assert.Equal("a b", _parser.GetSpeechText("a <CUSTOM5>b"));
+    }
+
+    [Fact]
+    public void GetSpeechText_StrayEndFragment_SpokenAsPlainText()
+    {
+        // Parse() leaves unmatched tags as plain text; GetSpeechText speaks them as-is.
+        // This test pins the chosen behavior so it is intentional.
+        Assert.Equal("hello <End> there", _parser.GetSpeechText("hello <End> there"));
+    }
+
+    [Fact]
+    public void GetSpeechText_MixedContent_ResolvesEachSegment()
+    {
+        var text = "Hello <FirstName>! <StartAction>[waves]</Start> good <he/she>.";
+        Assert.Equal("Hello Adventurer! [waves] good they.", _parser.GetSpeechText(text));
+    }
+
+    #endregion
+
     #region Token Definitions Tests
 
     [Fact]

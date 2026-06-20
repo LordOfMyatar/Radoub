@@ -78,47 +78,59 @@ namespace DialogEditor.Services
         /// <param name="totalReplies">Total number of reply nodes in the dialog</param>
         /// <param name="rootEntryIndices">Entry indices that are root entries (conversation starters)</param>
         /// <param name="repliesPerRootEntry">Mapping of root entry index to set of reply indices under that entry</param>
+        /// <param name="directRepliesPerRootEntry">#482: mapping of root entry index to the set of
+        /// its DIRECT child reply indices (not the full subtree). Used for the dual coverage display.</param>
         public CoverageStats GetCoverageStats(
             string filePath,
             int totalReplies = 0,
             IReadOnlyList<int>? rootEntryIndices = null,
-            IReadOnlyDictionary<int, HashSet<int>>? repliesPerRootEntry = null)
+            IReadOnlyDictionary<int, HashSet<int>>? repliesPerRootEntry = null,
+            IReadOnlyDictionary<int, HashSet<int>>? directRepliesPerRootEntry = null)
         {
             var sanitizedPath = SanitizePath(filePath);
 
-            if (!_coverageData.Files.TryGetValue(sanitizedPath, out var fileData))
-            {
-                return new CoverageStats(0, 0, totalReplies, 0, rootEntryIndices?.Count ?? 0, new Dictionary<int, (int visited, int total)>());
-            }
+            // A file with no recorded coverage still reports per-entry totals (all visited=0),
+            // so a never-visited start-entry menu shows "0/N direct, 0/M all" rather than "0/0".
+            var visitedNodeSet = _coverageData.Files.TryGetValue(sanitizedPath, out var fileData)
+                ? fileData.VisitedNodes
+                : new HashSet<string>();
 
             // Count visited replies (keys starting with "R")
-            var visitedReplies = fileData.VisitedNodes.Count(k => k.StartsWith("R"));
+            var visitedReplies = visitedNodeSet.Count(k => k.StartsWith("R"));
 
             // Count visited root entries and per-entry coverage
             var visitedRootEntries = 0;
             var totalRootEntries = rootEntryIndices?.Count ?? 0;
             var perEntryCoverage = new Dictionary<int, (int visited, int total)>();
+            var perEntryDirectCoverage = new Dictionary<int, (int visited, int total)>();
 
             if (rootEntryIndices != null)
             {
                 foreach (var entryIndex in rootEntryIndices)
                 {
                     var key = $"E{entryIndex}";
-                    if (fileData.VisitedNodes.Contains(key))
+                    if (visitedNodeSet.Contains(key))
                     {
                         visitedRootEntries++;
                     }
 
-                    // Calculate per-entry reply coverage
+                    // Calculate per-entry subtree reply coverage
                     if (repliesPerRootEntry != null && repliesPerRootEntry.TryGetValue(entryIndex, out var replyIndices))
                     {
-                        var visitedCount = replyIndices.Count(ri => fileData.VisitedNodes.Contains($"R{ri}"));
+                        var visitedCount = replyIndices.Count(ri => visitedNodeSet.Contains($"R{ri}"));
                         perEntryCoverage[entryIndex] = (visitedCount, replyIndices.Count);
+                    }
+
+                    // #482: per-entry direct-child reply coverage
+                    if (directRepliesPerRootEntry != null && directRepliesPerRootEntry.TryGetValue(entryIndex, out var directIndices))
+                    {
+                        var visitedDirect = directIndices.Count(ri => visitedNodeSet.Contains($"R{ri}"));
+                        perEntryDirectCoverage[entryIndex] = (visitedDirect, directIndices.Count);
                     }
                 }
             }
 
-            return new CoverageStats(fileData.VisitedNodes.Count, visitedReplies, totalReplies, visitedRootEntries, totalRootEntries, perEntryCoverage);
+            return new CoverageStats(visitedNodeSet.Count, visitedReplies, totalReplies, visitedRootEntries, totalRootEntries, perEntryCoverage, perEntryDirectCoverage);
         }
 
         /// <summary>
@@ -284,9 +296,16 @@ namespace DialogEditor.Services
         public int TotalRootEntries { get; }
 
         /// <summary>
-        /// Per-entry coverage: entryIndex -> (visited replies, total replies under that entry)
+        /// Per-entry subtree coverage: entryIndex -> (visited replies, total replies in the
+        /// full subtree reachable from that entry).
         /// </summary>
         public IReadOnlyDictionary<int, (int visited, int total)> PerEntryCoverage { get; }
+
+        /// <summary>
+        /// Per-entry direct-child coverage (#482): entryIndex -> (visited, total) counting only
+        /// the entry's immediate PC reply children, not the full subtree.
+        /// </summary>
+        public IReadOnlyDictionary<int, (int visited, int total)> PerEntryDirectCoverage { get; }
 
         public CoverageStats(
             int visitedNodes,
@@ -294,7 +313,8 @@ namespace DialogEditor.Services
             int totalReplies,
             int visitedRootEntries,
             int totalRootEntries,
-            IReadOnlyDictionary<int, (int visited, int total)> perEntryCoverage)
+            IReadOnlyDictionary<int, (int visited, int total)> perEntryCoverage,
+            IReadOnlyDictionary<int, (int visited, int total)>? perEntryDirectCoverage = null)
         {
             VisitedNodes = visitedNodes;
             VisitedReplies = visitedReplies;
@@ -302,6 +322,8 @@ namespace DialogEditor.Services
             VisitedRootEntries = visitedRootEntries;
             TotalRootEntries = totalRootEntries;
             PerEntryCoverage = perEntryCoverage;
+            PerEntryDirectCoverage = perEntryDirectCoverage
+                ?? new Dictionary<int, (int visited, int total)>();
         }
 
         public bool IsComplete => TotalReplies > 0 && VisitedReplies >= TotalReplies;
@@ -325,6 +347,18 @@ namespace DialogEditor.Services
         public string GetEntryCoverageText(int entryIndex)
         {
             if (PerEntryCoverage.TryGetValue(entryIndex, out var coverage))
+            {
+                return $"{coverage.visited}/{coverage.total}";
+            }
+            return "0/0";
+        }
+
+        /// <summary>
+        /// Get direct-child coverage text for a specific entry (#482), e.g. "2/3".
+        /// </summary>
+        public string GetEntryDirectCoverageText(int entryIndex)
+        {
+            if (PerEntryDirectCoverage.TryGetValue(entryIndex, out var coverage))
             {
                 return $"{coverage.visited}/{coverage.total}";
             }

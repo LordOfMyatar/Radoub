@@ -4,6 +4,17 @@ All notable changes to Parley. One-line highlights per version; full details in 
 
 ---
 
+## [0.1.176-alpha] - 2026-06-19
+**Branch**: `parley/sprint/2445-ui-ux` | **PR**: #2519
+
+### Sprint: UI/UX Enhancements (#2445)
+
+- Conversation Simulator: show per-start-entry direct-child coverage alongside subtree coverage (#482)
+- Text-to-Speech: persist simulator toggles and strip markup tags from spoken text (#1570)
+- Fix: Ctrl+D no longer captures the previous node's text into the new node (#2521)
+
+---
+
 ## [0.1.175-alpha] - 2026-06-06
 **Branch**: `parley/issue-2392` | **PR**: #2393
 

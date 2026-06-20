@@ -31,6 +31,12 @@ namespace DialogEditor.Services
         // Conversation Simulator
         private bool _simulatorShowWarnings = true;
 
+        // Conversation Simulator TTS (#1570) - defaults mirror the simulator VM
+        private bool _simulatorTtsEnabled = true;
+        private double _simulatorTtsRate = 1.0;
+        private bool _simulatorAutoSpeak = false;
+        private bool _simulatorAutoAdvance = true;
+
         // Script editor settings
         // #2357: ExternalEditorPath migrated to shared RadoubSettings.CodeEditorPath (no local field)
         private List<string> _scriptSearchPaths = new List<string>();
@@ -71,6 +77,7 @@ namespace DialogEditor.Services
         public void Initialize(
             bool autoSaveEnabled, int autoSaveDelayMs, int autoSaveIntervalMinutes,
             bool enableNpcTagColoring, bool showDeleteConfirmation, bool simulatorShowWarnings,
+            bool simulatorTtsEnabled, double simulatorTtsRate, bool simulatorAutoSpeak, bool simulatorAutoAdvance,
             string externalEditorPath, List<string> scriptSearchPaths,
             string manifestPath,
             bool enableParameterCache, int maxCachedValuesPerParameter, int maxCachedScripts,
@@ -85,6 +92,10 @@ namespace DialogEditor.Services
             _enableNpcTagColoring = enableNpcTagColoring;
             _showDeleteConfirmation = showDeleteConfirmation;
             _simulatorShowWarnings = simulatorShowWarnings;
+            _simulatorTtsEnabled = simulatorTtsEnabled;
+            _simulatorTtsRate = Math.Clamp(simulatorTtsRate, 0.5, 2.0);
+            _simulatorAutoSpeak = simulatorAutoSpeak;
+            _simulatorAutoAdvance = simulatorAutoAdvance;
 
             // #2357: One-time migration of legacy Parley path values onto shared RadoubSettings.
             // Adopt the legacy value only if the shared value is still empty (mirrors #2295).
@@ -196,6 +207,55 @@ namespace DialogEditor.Services
             set
             {
                 if (SetProperty(ref _simulatorShowWarnings, value))
+                {
+                    SettingsChanged?.Invoke();
+                }
+            }
+        }
+
+        // Conversation Simulator TTS (#1570)
+        public bool SimulatorTtsEnabled
+        {
+            get => _simulatorTtsEnabled;
+            set
+            {
+                if (SetProperty(ref _simulatorTtsEnabled, value))
+                {
+                    SettingsChanged?.Invoke();
+                }
+            }
+        }
+
+        public double SimulatorTtsRate
+        {
+            get => _simulatorTtsRate;
+            set
+            {
+                if (SetProperty(ref _simulatorTtsRate, Math.Clamp(value, 0.5, 2.0)))
+                {
+                    SettingsChanged?.Invoke();
+                }
+            }
+        }
+
+        public bool SimulatorAutoSpeak
+        {
+            get => _simulatorAutoSpeak;
+            set
+            {
+                if (SetProperty(ref _simulatorAutoSpeak, value))
+                {
+                    SettingsChanged?.Invoke();
+                }
+            }
+        }
+
+        public bool SimulatorAutoAdvance
+        {
+            get => _simulatorAutoAdvance;
+            set
+            {
+                if (SetProperty(ref _simulatorAutoAdvance, value))
                 {
                     SettingsChanged?.Invoke();
                 }

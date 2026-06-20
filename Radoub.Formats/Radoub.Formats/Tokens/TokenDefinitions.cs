@@ -124,6 +124,55 @@ public static class TokenDefinitions
         new(StandardTokens, StringComparer.Ordinal);
 
     /// <summary>
+    /// Spoken-text placeholders for standard tokens, used by TTS in the Conversation Simulator
+    /// where there is no real game character to resolve tokens against (#1570).
+    /// This is presentation data for a preview feature, NOT 2DA game data.
+    /// Name tokens speak as "Adventurer"; gender pronoun/noun tokens speak as neutral forms.
+    /// Descriptive tokens (Class, Race, Level, time, alignment, etc.) are intentionally NOT
+    /// mapped here and fall back to their literal token name.
+    /// Keys are case-exact (StandardTokenSet uses ordinal comparison).
+    /// </summary>
+    public static readonly Dictionary<string, string> SpeechPlaceholders = new(StringComparer.Ordinal)
+    {
+        // Name tokens
+        ["FirstName"] = "Adventurer",
+        ["LastName"] = "Adventurer",
+        ["FullName"] = "Adventurer",
+        ["PlayerName"] = "Adventurer",
+
+        // Pronoun tokens -> neutral spoken forms (both case variants)
+        ["He/She"] = "they",
+        ["he/she"] = "they",
+        ["Him/Her"] = "them",
+        ["him/her"] = "them",
+        ["His/Her"] = "their",
+        ["his/her"] = "their",
+        ["His/Hers"] = "their",
+        ["his/hers"] = "their",
+
+        // Gendered noun pairs -> generic neutral nouns (both case variants)
+        ["Boy/Girl"] = "child",
+        ["boy/girl"] = "child",
+        ["Brother/Sister"] = "sibling",
+        ["brother/sister"] = "sibling",
+        ["Lad/Lass"] = "youth",
+        ["lad/lass"] = "youth",
+        ["Lord/Lady"] = "noble",
+        ["lord/lady"] = "noble",
+        ["Man/Woman"] = "person",
+        ["man/woman"] = "person",
+        ["Male/Female"] = "person",
+        ["male/female"] = "person",
+        ["Master/Mistress"] = "master",
+        ["master/mistress"] = "master",
+        ["Mister/Missus"] = "mister",
+        ["mister/missus"] = "mister",
+        ["Sir/Madam"] = "friend",
+        ["sir/madam"] = "friend",
+        ["bitch/bastard"] = "wretch"
+    };
+
+    /// <summary>
     /// Check if a token name is a standard Aurora token.
     /// </summary>
     public static bool IsStandardToken(string tokenName)
