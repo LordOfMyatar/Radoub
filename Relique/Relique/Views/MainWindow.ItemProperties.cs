@@ -673,7 +673,11 @@ public partial class MainWindow
         }
     }
 
-    private void RefreshAssignedProperties()
+    /// <summary>
+    /// Real refresh of the assigned-properties list + available tree + statistics. Reached through
+    /// the <c>RefreshAssignedProperties</c> seam (#2380) so a test can force it to throw.
+    /// </summary>
+    private void RefreshAssignedPropertiesCore()
     {
         AssignedPropertiesList.Items.Clear();
 

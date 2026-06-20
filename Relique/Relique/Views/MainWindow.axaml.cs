@@ -64,6 +64,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         InitializeComponent();
 
+        // Test-only fault-injection seam (#2380); no-op unless --test-fault-inject was passed.
+        InitializeFaultInjectionSeam(CommandLineService.Options.TestFaultInject);
+
         // Wire up shared document state for title bar updates
         _documentState.DirtyStateChanged += () => Title = _documentState.GetTitle();
 

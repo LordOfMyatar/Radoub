@@ -672,6 +672,14 @@
                                             Width="80"
                                             HorizontalContentAlignment="Center"
                                             IsEnabled="False"/>
+                                    <!-- Test-only fault-injection arm (#2380); hidden unless the test flag is set. -->
+                                    <Button x:Name="TestArmFaultButton"
+                                            Content="Arm Fault"
+                                            Width="80"
+                                            Margin="0,8,0,0"
+                                            HorizontalContentAlignment="Center"
+                                            IsVisible="False"
+                                            AutomationProperties.AutomationId="Relique_TestArmFault"/>
                                 </StackPanel>
 
                                 <!-- Right: Assigned Properties header -->
