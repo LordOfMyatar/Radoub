@@ -16,7 +16,7 @@ Tool-specific guidance for Claude Code sessions working on Reliquary (PlaceableE
 - **Internal Namespace**: `PlaceableEditor`
 - **Assembly**: `Reliquary`
 - **Current Version**: See `CHANGELOG.md` for latest version
-- **Design Spec**: `NonPublic/PlaceableEditor/2026-05-28-reliquary-design.md`
+- **Design Spec**: `NonPublic/Reliquary/2026-05-28-reliquary-design.md`
 - **Epic**: [#2289](https://github.com/LordOfMyatar/Radoub/issues/2289)
 
 ---
@@ -148,7 +148,7 @@ Use `[Reliquary]` prefix. Changes go in `Reliquary/CHANGELOG.md`.
 
 - [Reliquary CHANGELOG](CHANGELOG.md)
 - [UTP Parser](../Radoub.Formats/Radoub.Formats/Utp/)
-- Design + plans: `NonPublic/PlaceableEditor/` (NOT in tool directory)
+- Design + plans: `NonPublic/Reliquary/` (NOT in tool directory)
 - [Epic #2289](https://github.com/LordOfMyatar/Radoub/issues/2289)
 
 ---

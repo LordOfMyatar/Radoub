@@ -141,13 +141,8 @@ When working on a specific tool (e.g., Parley):
 - Never edit ON_USING_CLAUDE.md; only Lord makes changes to that.
 
 **NonPublic Docs**
-- **All NonPublic docs go in the root `NonPublic/` directory**, organized by tool:
-  - `NonPublic/Relique/` — Relique specs, plans, follow-ups
-  - `NonPublic/Parley/` — Parley specs, research
-  - `NonPublic/Quartermaster/` — QM specs, research
-  - etc.
-- **NEVER create a `NonPublic/` folder inside a tool directory** (e.g., `Parley/NonPublic/` is WRONG)
-- The human will move approved docs to public after review
+- `NonPublic/` (repo root, gitignored) holds private specs, plans, and research. It is never committed.
+- The human will move approved docs to public after review.
 
 ### Cross-Tool Work
 
