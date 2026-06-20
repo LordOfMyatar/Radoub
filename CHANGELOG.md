@@ -20,9 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Radoub.UI 0.2.18-alpha] - 2026-06-20
 **Branch**: `quartermaster/issue-2440` | **PR**: #2525
 
-### Fix: Portrait browser duplicate guard (#2329)
+### Fix: Portrait browser duplicate guard + larger thumbnails (#2329)
 
 - `PortraitBrowserWindow` now de-duplicates portraits by ResRef (case-insensitive, first-occurrence) before display, so no tool's portrait context can surface the same portrait twice. Quartermaster and Reliquary contexts also dedupe at source.
+- Thumbnails enlarged from 32×40 to 64×80 so portraits are legible in the grid.
 
 ---
 

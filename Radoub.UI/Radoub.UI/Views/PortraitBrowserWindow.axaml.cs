@@ -281,10 +281,11 @@ public partial class PortraitBrowserWindow : Window
 
     private ListBoxItem CreatePortraitItem(PortraitEntry portrait, out Image image)
     {
-        // Create mini icon (roughly 50% size = ~32x40 for typical NWN portraits).
+        // Thumbnail size for the wrap-grid (#2329): 32x40 was too small to make out
+        // the portrait; 64x80 keeps NWN's ~4:5 portrait aspect and stays compact.
         // Source is left null here and filled in by LoadThumbnailsAsync.
-        const int thumbnailWidth = 32;
-        const int thumbnailHeight = 40;
+        const int thumbnailWidth = 64;
+        const int thumbnailHeight = 80;
 
         image = new Image
         {

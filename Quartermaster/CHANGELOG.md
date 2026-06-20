@@ -12,7 +12,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 - Closing the window mid-cache-build no longer freezes the UI — the in-flight palette/HAK scan is cancelled on close (#2299).
 - Feats panel: clearer separation between the row checkbox and the status column so the checkbox's column is unambiguous (#2286).
-- Portrait browser: duplicate portraits removed — the same base portrait used by multiple race/sex variants now lists once (#2329).
+- Portrait browser: duplicate portraits removed and thumbnails enlarged for legibility; the editor's Browse now pre-filters to the creature's race/sex instead of showing all (#2329).
 
 ---
 
