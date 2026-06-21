@@ -87,6 +87,10 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
         public int TransparencyHint;
     }
 
+    // Discard cutoff for Cutout meshes (#2540). 0.5 matches rollnw's default; mid-grey alpha
+    // splits cleanly into kept/discarded for a hard silhouette.
+    private const float CutoutAlphaThreshold = 0.5f;
+
     private MdlModel? _model;
     private TextureService? _textureService;
     private bool _preferBifTextures;
@@ -1176,6 +1180,12 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                     $"  [Transparency] '{resolvedTexture}' -> {mode} (alpha={drawCall.MeshAlpha:F2}, " +
                     $"hint={drawCall.TransparencyHint}, profile={profile})");
             }
+
+            // Per-mesh transparency uniforms (#2540). Sprint 3 wires the cutout discard;
+            // Sprint 4 adds the blend state for Transparent meshes.
+            _shaderManager!.SetUniformInt("meshMode", (int)mode);
+            _shaderManager!.SetUniformFloat("alphaThreshold", CutoutAlphaThreshold);
+            _shaderManager!.SetUniformFloat("meshAlpha", drawCall.MeshAlpha);
 
             if (hasTexture)
             {
