@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Radoub.UI 0.2.23-alpha] - 2026-06-21
-**Branch**: `radoub/issue-2544` | **PR**: #TBD
+**Branch**: `radoub/issue-2544` | **PR**: #2554
 
 ### Epic: Emitter rendering — model-led visibility/intensity gate (#2544)
 
@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Radoub.Formats 0.2.75-alpha] - 2026-06-21
-**Branch**: `radoub/issue-2544` | **PR**: #TBD
+**Branch**: `radoub/issue-2544` | **PR**: #2554
 
 ### Epic: Symmetric emitter-flag decoding on the binary MDL reader (#2544)
 
