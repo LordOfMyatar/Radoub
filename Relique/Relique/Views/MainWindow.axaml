@@ -562,6 +562,12 @@
                                         <Grid>
                                             <controls:ModelPreviewGLControl x:Name="ItemPreviewGL"
                                                                             IsVisible="False"/>
+                                            <!-- Transparent input surface so pointer/wheel events always hit-test
+                                                 (OpenGlControlBase has no Background). Mirrors QM (#2124). -->
+                                            <Border x:Name="ItemPreviewInputSurface"
+                                                    Background="Transparent"
+                                                    Focusable="True"
+                                                    IsVisible="False"/>
                                             <TextBlock x:Name="ItemPreviewPlaceholder"
                                                        Text="No 3D model for this item type"
                                                        HorizontalAlignment="Center"
@@ -572,13 +578,23 @@
                                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                         </Grid>
                                     </Border>
-                                    <UniformGrid x:Name="ItemPreviewControls" Columns="5" IsVisible="False">
-                                        <Button Content="F" ToolTip.Tip="Front view" Click="OnItemPreviewFrontClick" Padding="6,2"/>
-                                        <Button Content="B" ToolTip.Tip="Back view" Click="OnItemPreviewBackClick" Padding="6,2"/>
-                                        <Button Content="L" ToolTip.Tip="Left view" Click="OnItemPreviewLeftClick" Padding="6,2"/>
-                                        <Button Content="R" ToolTip.Tip="Right view" Click="OnItemPreviewRightClick" Padding="6,2"/>
-                                        <Button Content="↺" ToolTip.Tip="Reset view" Click="OnItemPreviewResetClick" Padding="6,2"/>
-                                    </UniformGrid>
+                                    <!-- Rotate/zoom + view presets (#2409). Drag-to-rotate, ↺/↻ rotate,
+                                         +/- zoom, wheel zoom, arrow/WASD keys — all match Quartermaster. -->
+                                    <StackPanel x:Name="ItemPreviewControls" IsVisible="False" Spacing="4">
+                                        <UniformGrid Columns="5">
+                                            <Button Content="↺" ToolTip.Tip="Rotate left" Click="OnItemPreviewRotateLeftClick" Padding="6,2"/>
+                                            <Button Content="↻" ToolTip.Tip="Rotate right" Click="OnItemPreviewRotateRightClick" Padding="6,2"/>
+                                            <Button Content="+" ToolTip.Tip="Zoom in" Click="OnItemPreviewZoomInClick" Padding="6,2"/>
+                                            <Button Content="−" ToolTip.Tip="Zoom out" Click="OnItemPreviewZoomOutClick" Padding="6,2"/>
+                                            <Button Content="⟲" ToolTip.Tip="Reset view" Click="OnItemPreviewResetClick" Padding="6,2"/>
+                                        </UniformGrid>
+                                        <UniformGrid Columns="4">
+                                            <Button Content="F" ToolTip.Tip="Front view" Click="OnItemPreviewFrontClick" Padding="6,2"/>
+                                            <Button Content="B" ToolTip.Tip="Back view" Click="OnItemPreviewBackClick" Padding="6,2"/>
+                                            <Button Content="L" ToolTip.Tip="Left view" Click="OnItemPreviewLeftClick" Padding="6,2"/>
+                                            <Button Content="R" ToolTip.Tip="Right view" Click="OnItemPreviewRightClick" Padding="6,2"/>
+                                        </UniformGrid>
+                                    </StackPanel>
                                 </StackPanel>
                                 </Grid>
                             </Expander>

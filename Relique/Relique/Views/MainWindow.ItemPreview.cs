@@ -46,8 +46,10 @@ public partial class MainWindow
 
         _previewResolver = new ItemModelResolver(baseItemSvc, _gameDataService);
 
-        _previewRendererAdapter = new RendererAdapter(ItemPreviewGL, ItemPreviewPlaceholder, ItemPreviewControls);
+        _previewRendererAdapter = new RendererAdapter(ItemPreviewGL, ItemPreviewPlaceholder, ItemPreviewControls, ItemPreviewInputSurface);
         ItemPreviewGL.SetTextureService(_previewTextureService);
+
+        WirePreviewInput();
 
         _previewController = new ItemPreviewController(
             _previewResolver,
@@ -105,6 +107,8 @@ public partial class MainWindow
         _previewDebounceTimer?.Stop();
         _previewDebounceTimer = null;
 
+        UnwirePreviewInput();
+
         _previewController?.Unbind();
         _previewController = null;
 
@@ -134,6 +138,121 @@ public partial class MainWindow
     private void OnItemPreviewResetClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         => ItemPreviewGL.ResetView();
 
+    // --- Rotate / zoom button handlers (#2409, match Quartermaster) ---
+
+    private void OnItemPreviewRotateLeftClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        => ItemPreviewGL.Rotate(-0.3f);
+
+    private void OnItemPreviewRotateRightClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        => ItemPreviewGL.Rotate(0.3f);
+
+    private void OnItemPreviewZoomInClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        => ItemPreviewGL.Zoom *= 1.2f;
+
+    private void OnItemPreviewZoomOutClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        => ItemPreviewGL.Zoom /= 1.2f;
+
+    // --- Pointer / wheel / key input forwarding (#2409, match Quartermaster #2124) ---
+    // Wired on the transparent input-surface Border overlaying the GL control.
+
+    private PreviewDragMode _previewDragMode = PreviewDragMode.None;
+    private Avalonia.Point _previewLastPointer;
+
+    private void WirePreviewInput()
+    {
+        ItemPreviewInputSurface.PointerPressed += OnPreviewPointerPressed;
+        ItemPreviewInputSurface.PointerMoved += OnPreviewPointerMoved;
+        ItemPreviewInputSurface.PointerReleased += OnPreviewPointerReleased;
+        ItemPreviewInputSurface.PointerWheelChanged += OnPreviewWheel;
+        ItemPreviewInputSurface.KeyDown += OnPreviewKeyDown;
+    }
+
+    private void UnwirePreviewInput()
+    {
+        ItemPreviewInputSurface.PointerPressed -= OnPreviewPointerPressed;
+        ItemPreviewInputSurface.PointerMoved -= OnPreviewPointerMoved;
+        ItemPreviewInputSurface.PointerReleased -= OnPreviewPointerReleased;
+        ItemPreviewInputSurface.PointerWheelChanged -= OnPreviewWheel;
+        ItemPreviewInputSurface.KeyDown -= OnPreviewKeyDown;
+    }
+
+    private void OnPreviewPointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    {
+        var props = e.GetCurrentPoint(ItemPreviewInputSurface).Properties;
+        bool shift = (e.KeyModifiers & Avalonia.Input.KeyModifiers.Shift) != 0;
+
+        _previewDragMode = PreviewDragModeDecider.Decide(
+            props.IsLeftButtonPressed, props.IsMiddleButtonPressed, shift);
+        if (_previewDragMode == PreviewDragMode.None) return;
+
+        _previewLastPointer = e.GetPosition(ItemPreviewInputSurface);
+        ItemPreviewInputSurface.Focus();
+        e.Pointer.Capture(ItemPreviewInputSurface);
+        e.Handled = true;
+    }
+
+    private void OnPreviewPointerMoved(object? sender, Avalonia.Input.PointerEventArgs e)
+    {
+        if (_previewDragMode == PreviewDragMode.None) return;
+
+        var pos = e.GetPosition(ItemPreviewInputSurface);
+        double dx = pos.X - _previewLastPointer.X;
+        double dy = pos.Y - _previewLastPointer.Y;
+        _previewLastPointer = pos;
+
+        if (_previewDragMode == PreviewDragMode.Rotate)
+            ItemPreviewGL.RotateByPixels(dx, dy);
+        else if (_previewDragMode == PreviewDragMode.Pan)
+            ItemPreviewGL.PanByPixels(dx, dy);
+    }
+
+    private void OnPreviewPointerReleased(object? sender, Avalonia.Input.PointerReleasedEventArgs e)
+    {
+        if (_previewDragMode != PreviewDragMode.None)
+        {
+            _previewDragMode = PreviewDragMode.None;
+            e.Pointer.Capture(null);
+            e.Handled = true;
+        }
+    }
+
+    private void OnPreviewWheel(object? sender, Avalonia.Input.PointerWheelEventArgs e)
+    {
+        var pos = e.GetPosition(ItemPreviewGL); // unproject uses GL viewport coords
+        ItemPreviewGL.ZoomAtCursorPixels(pos, e.Delta.Y);
+        e.Handled = true;
+    }
+
+    private void OnPreviewKeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
+    {
+        const float rotStep = 0.1f;
+        switch (e.Key)
+        {
+            case Avalonia.Input.Key.Left:
+            case Avalonia.Input.Key.A:
+                ItemPreviewGL.Rotate(-rotStep, 0);
+                break;
+            case Avalonia.Input.Key.Right:
+            case Avalonia.Input.Key.D:
+                ItemPreviewGL.Rotate(rotStep, 0);
+                break;
+            case Avalonia.Input.Key.Up:
+            case Avalonia.Input.Key.W:
+                ItemPreviewGL.Rotate(0, -rotStep);
+                break;
+            case Avalonia.Input.Key.Down:
+            case Avalonia.Input.Key.S:
+                ItemPreviewGL.Rotate(0, rotStep);
+                break;
+            case Avalonia.Input.Key.Home:
+                ItemPreviewGL.ResetView();
+                break;
+            default:
+                return;
+        }
+        e.Handled = true;
+    }
+
     /// <summary>
     /// Adapter that drives the live <see cref="ModelPreviewGLControl"/> from
     /// <see cref="IItemPreviewRenderer"/> calls. Toggles the placeholder and view-controls
@@ -144,18 +263,21 @@ public partial class MainWindow
         private readonly ModelPreviewGLControl _gl;
         private readonly Control _placeholder;
         private readonly Control _viewControls;
+        private readonly Control _inputSurface;
 
-        public RendererAdapter(ModelPreviewGLControl gl, Control placeholder, Control viewControls)
+        public RendererAdapter(ModelPreviewGLControl gl, Control placeholder, Control viewControls, Control inputSurface)
         {
             _gl = gl;
             _placeholder = placeholder;
             _viewControls = viewControls;
+            _inputSurface = inputSurface;
         }
 
         public void SetModel(MdlModel model)
         {
             _gl.Model = model;
             _gl.IsVisible = true;
+            _inputSurface.IsVisible = true;
             _placeholder.IsVisible = false;
             _viewControls.IsVisible = true;
         }
@@ -164,6 +286,7 @@ public partial class MainWindow
         {
             _gl.Model = null;
             _gl.IsVisible = false;
+            _inputSurface.IsVisible = false;
             _placeholder.IsVisible = true;
             _viewControls.IsVisible = false;
         }
