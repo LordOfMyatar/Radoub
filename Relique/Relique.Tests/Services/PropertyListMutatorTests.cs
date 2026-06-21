@@ -185,4 +185,44 @@ public class PropertyListMutatorTests
         Assert.False(refreshCalled);
         Assert.Equal(new ushort[] { 1, 2 }, list.Select(p => p.PropertyName));
     }
+
+    // --- ReplaceAt (#2406: edit-apply with rollback) ---
+
+    [Fact]
+    public void ReplaceAt_RefreshSucceeds_SwapsEntry()
+    {
+        var list = List(1, 2, 3);
+        var replacement = Prop(9);
+
+        var ok = PropertyListMutator.ReplaceAt(list, 1, replacement, () => { });
+
+        Assert.True(ok);
+        Assert.Equal(new ushort[] { 1, 9, 3 }, list.Select(p => p.PropertyName));
+    }
+
+    [Fact]
+    public void ReplaceAt_RefreshThrows_RestoresOriginalEntry()
+    {
+        var list = List(1, 2, 3);
+        var replacement = Prop(9);
+
+        var ok = PropertyListMutator.ReplaceAt(
+            list, 1, replacement, () => throw new InvalidOperationException("boom"));
+
+        Assert.False(ok);
+        Assert.Equal(new ushort[] { 1, 2, 3 }, list.Select(p => p.PropertyName));
+    }
+
+    [Fact]
+    public void ReplaceAt_IndexOutOfRange_NoRefreshNoChange()
+    {
+        var list = List(1, 2);
+        var refreshCalled = false;
+
+        var ok = PropertyListMutator.ReplaceAt(list, 5, Prop(9), () => refreshCalled = true);
+
+        Assert.False(ok);
+        Assert.False(refreshCalled);
+        Assert.Equal(new ushort[] { 1, 2 }, list.Select(p => p.PropertyName));
+    }
 }

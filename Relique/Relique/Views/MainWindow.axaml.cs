@@ -31,9 +31,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private ItemStatisticsService? _itemStatisticsService;
     private ItemCostCalculator? _itemCostCalculator;
     private PropertyTypeInfo? _selectedPropertyType;
-    private int _editingPropertyIndex = -1; // -1 = add mode, >= 0 = editing that index
-    private bool _suppressAutoApply; // true while combos are being repopulated programmatically (#2226)
-    private readonly HashSet<int> _checkedPropertyIndices = new();
+    private int? _selectedSubtypeIndex; // #2406: subtype of the tree-selected node, for the Configure popup
+    private readonly HashSet<CheckedProperty> _checkedProperties = new(); // #2405: (propIndex, subtypeIndex) pairs
     private readonly ObservableCollection<VariableViewModel> _variables = new();
     private ItemIconService? _itemIconService;
     private ArmorPartCatalogService? _armorPartCatalog; // #2164
@@ -64,6 +63,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public MainWindow()
     {
         InitializeComponent();
+
+        // Test-only fault-injection seam (#2380); no-op unless --test-fault-inject was passed.
+        InitializeFaultInjectionSeam(CommandLineService.Options.TestFaultInject);
 
         // Wire up shared document state for title bar updates
         _documentState.DirtyStateChanged += () => Title = _documentState.GetTitle();

@@ -12,6 +12,13 @@ public class ItemEditorOptions : CommandLineOptions
     /// When true, open the New Item wizard on startup (--new / -n).
     /// </summary>
     public bool NewItem { get; set; }
+
+    /// <summary>
+    /// Test-only seam (#2380): when true, expose a hidden "arm fault" control so FlaUI can force the
+    /// next assigned-properties refresh to throw and verify the rollback path. Off by default; no
+    /// effect on production runs that don't pass --test-fault-inject.
+    /// </summary>
+    public bool TestFaultInject { get; set; }
 }
 
 /// <summary>
@@ -34,6 +41,11 @@ public static class CommandLineService
                 if ((flag == "--new" || flag == "-n") && options is ItemEditorOptions itemOptions)
                 {
                     itemOptions.NewItem = true;
+                    return 0;
+                }
+                if (flag == "--test-fault-inject" && options is ItemEditorOptions faultOptions)
+                {
+                    faultOptions.TestFaultInject = true;
                     return 0;
                 }
                 return 0;
