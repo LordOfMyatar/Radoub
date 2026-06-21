@@ -462,6 +462,7 @@ public sealed class MdlPartComposer
             // mechanism as the robe graft (#1989). Apply WING_TAIL_SCALE to each grafted child's
             // root so the whole wing/tail subtree scales as a unit.
             int grafted = 0;
+            var graftedClones = new List<MdlNode>();
             foreach (var child in partModel.GeometryRoot.Children)
             {
                 var clone = CloneNode(child, attachParent);
@@ -473,8 +474,14 @@ public sealed class MdlPartComposer
                 // with the model resref points the renderer at a non-existent texture → grey wings.
                 TagSubtreeMeshes(clone, tag, meshPartTypes);
                 attachParent.Children.Add(clone);
+                graftedClones.Add(clone);
                 grafted++;
             }
+
+            // Bind any skin meshes in the wing/tail subtree to their OWN grafted bones (#2399), so a
+            // wing/tail skin whose bone name collides with a skeleton bone resolves correctly rather
+            // than to the same-named body bone at render time.
+            BindSkinBonesWithinSubtrees(graftedClones);
 
             MergeSupermodelAnimationsByName(compositeModel, partModel);
 

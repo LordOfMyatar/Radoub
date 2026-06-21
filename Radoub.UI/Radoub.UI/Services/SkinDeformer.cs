@@ -1,6 +1,7 @@
 // Pure linear-blend-skinning math for MDL skin meshes (#2399 / R1).
 // GL-free and dependency-light so the per-vertex blend and the skin-matrix build are unit-testable.
 
+using System;
 using System.Numerics;
 
 namespace Radoub.UI.Services;
@@ -47,17 +48,36 @@ public static class SkinDeformer
         => Matrix4x4.Multiply(inverseBind, boneAnimWorld);
 
     /// <summary>
+    /// True if at least one bone slot has a positive, non-NaN weight referencing a valid matrix
+    /// index. Lets the renderer route influence-less vertices to the rigid bind transform instead
+    /// of <see cref="BlendVertex"/> (which would return the un-worlded local vertex).
+    /// </summary>
+    public static bool HasInfluence(VertexWeights w, int skinMatrixCount)
+    {
+        bool Valid(int bone, float weight) =>
+            !float.IsNaN(weight) && weight > 0f && bone >= 0 && bone < skinMatrixCount;
+        return Valid(w.bone0, w.weight0) || Valid(w.bone1, w.weight1)
+            || Valid(w.bone2, w.weight2) || Valid(w.bone3, w.weight3);
+    }
+
+    /// <summary>
     /// Blend a local-space vertex by its bone weights against the per-slot skin matrices.
-    /// Bone indices &lt; 0, out of range, or with non-positive weight are skipped.
+    /// Bone indices &lt; 0, out of range, NaN, or with non-positive weight are skipped. The result is
+    /// normalized by the total contributing weight (so weights that don't sum to 1 still land at the
+    /// full bone position, matching nwn_mdl_webviewer). If no slot contributes, returns the input
+    /// vertex unchanged so the caller can place it via the rigid bind transform — never collapses to
+    /// the origin.
     /// </summary>
     public static Vector3 BlendVertex(Vector3 vertex, VertexWeights w, Matrix4x4[] skinMatrices)
     {
         var result = Vector3.Zero;
+        float totalWeight = 0f;
 
         void Accumulate(int bone, float weight)
         {
-            if (weight <= 0f || bone < 0 || bone >= skinMatrices.Length) return;
+            if (float.IsNaN(weight) || weight <= 0f || bone < 0 || bone >= skinMatrices.Length) return;
             result += weight * Vector3.Transform(vertex, skinMatrices[bone]);
+            totalWeight += weight;
         }
 
         Accumulate(w.bone0, w.weight0);
@@ -65,22 +85,30 @@ public static class SkinDeformer
         Accumulate(w.bone2, w.weight2);
         Accumulate(w.bone3, w.weight3);
 
+        if (totalWeight <= 1e-6f)
+            return vertex; // no influence — leave at bind (caller applies the rigid transform)
+        if (MathF.Abs(totalWeight - 1f) > 0.01f)
+            result /= totalWeight;
         return result;
     }
 
     /// <summary>
     /// Blend a local-space normal by its bone weights against the per-slot skin matrices, using
-    /// only the rotation/scale component (translation is ignored — normals are directions). The
-    /// result is NOT normalized; callers normalize after.
+    /// only the rotation/scale component (translation is ignored — normals are directions). Same
+    /// skip rules as <see cref="BlendVertex"/>. Returns the input normal unchanged if no slot
+    /// contributes (so the caller's Normalize never sees a zero vector → NaN). NOT normalized
+    /// otherwise; callers normalize after.
     /// </summary>
     public static Vector3 BlendNormal(Vector3 normal, VertexWeights w, Matrix4x4[] skinMatrices)
     {
         var result = Vector3.Zero;
+        float totalWeight = 0f;
 
         void Accumulate(int bone, float weight)
         {
-            if (weight <= 0f || bone < 0 || bone >= skinMatrices.Length) return;
+            if (float.IsNaN(weight) || weight <= 0f || bone < 0 || bone >= skinMatrices.Length) return;
             result += weight * Vector3.TransformNormal(normal, skinMatrices[bone]);
+            totalWeight += weight;
         }
 
         Accumulate(w.bone0, w.weight0);
@@ -88,6 +116,6 @@ public static class SkinDeformer
         Accumulate(w.bone2, w.weight2);
         Accumulate(w.bone3, w.weight3);
 
-        return result;
+        return totalWeight <= 1e-6f ? normal : result;
     }
 }

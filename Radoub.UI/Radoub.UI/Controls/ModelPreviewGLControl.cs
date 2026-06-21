@@ -1391,8 +1391,23 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                         var vw = new SkinDeformer.VertexWeights(
                             bw.Bone0, bw.Weight0, bw.Bone1, bw.Weight1,
                             bw.Bone2, bw.Weight2, bw.Bone3, bw.Weight3);
-                        worldPos = SkinDeformer.BlendVertex(localVertex, vw, skinMatrices);
-                        worldNormal = Vector3.Normalize(SkinDeformer.BlendNormal(localNormal, vw, skinMatrices));
+                        bool hasInfluence = SkinDeformer.HasInfluence(vw, skinMatrices.Length);
+                        if (hasInfluence)
+                        {
+                            worldPos = SkinDeformer.BlendVertex(localVertex, vw, skinMatrices);
+                            worldNormal = Vector3.Normalize(SkinDeformer.BlendNormal(localNormal, vw, skinMatrices));
+                        }
+                        else
+                        {
+                            // No valid bone influence — place at the rigid bind-world position (the
+                            // mesh's own transform) instead of letting it sit at the local origin.
+                            worldPos = hasWorldTransform
+                                ? ModelViewController.TransformPosition(localVertex, worldTransform)
+                                : localVertex;
+                            worldNormal = hasWorldTransform
+                                ? ModelViewController.TransformNormal(localNormal, worldTransform)
+                                : localNormal;
+                        }
                     }
                     else
                     {

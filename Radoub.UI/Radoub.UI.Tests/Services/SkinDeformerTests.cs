@@ -134,6 +134,62 @@ public class SkinDeformerTests
     }
 
     [Fact]
+    public void BlendVertex_WeightsSumLessThanOne_NormalizesToFullPosition()
+    {
+        // Weights summing to 0.5 must still place the vertex at the full bone position, not half
+        // way to the origin. Matches nwn_mdl_webviewer (divides by totalW when |sum-1|>0.01).
+        var skin = new[] { Matrix4x4.CreateTranslation(0, 0, 4) };
+        var w = new SkinDeformer.VertexWeights(0, 0.5f, -1, 0f, -1, 0f, -1, 0f); // sum = 0.5
+
+        var deformed = SkinDeformer.BlendVertex(new Vector3(0, 0, 0), w, skin);
+
+        Assert.Equal(0f, deformed.X, 4);
+        Assert.Equal(0f, deformed.Y, 4);
+        Assert.Equal(4f, deformed.Z, 4); // normalized: 0.5*4 / 0.5 = 4, not 2
+    }
+
+    [Fact]
+    public void BlendVertex_ZeroTotalWeight_ReturnsUntransformedVertex()
+    {
+        // No valid influence (all weights 0 / bones out of range) must NOT collapse the vertex to
+        // the world origin (the spike-to-origin artifact). Return the input vertex unchanged so the
+        // caller can place it via the rigid bind transform.
+        var skin = new[] { Matrix4x4.CreateTranslation(0, 0, 4) };
+        var w = new SkinDeformer.VertexWeights(-1, 0f, -1, 0f, -1, 0f, -1, 0f);
+
+        var deformed = SkinDeformer.BlendVertex(new Vector3(1, 2, 3), w, skin);
+
+        Assert.Equal(1f, deformed.X, 4);
+        Assert.Equal(2f, deformed.Y, 4);
+        Assert.Equal(3f, deformed.Z, 4);
+    }
+
+    [Fact]
+    public void BlendVertex_NaNWeight_IsSkipped()
+    {
+        // A NaN weight must be ignored, not propagate NaN into the result (weight <= 0 is false for
+        // NaN, so an explicit IsNaN guard is required).
+        var skin = new[] { Matrix4x4.CreateTranslation(0, 0, 4), Matrix4x4.CreateTranslation(0, 0, 8) };
+        var w = new SkinDeformer.VertexWeights(0, float.NaN, 1, 1f, -1, 0f, -1, 0f);
+
+        var deformed = SkinDeformer.BlendVertex(new Vector3(0, 0, 0), w, skin);
+
+        Assert.False(float.IsNaN(deformed.X) || float.IsNaN(deformed.Y) || float.IsNaN(deformed.Z));
+        Assert.Equal(8f, deformed.Z, 4); // only the valid weight-1 slot contributes
+    }
+
+    [Fact]
+    public void HasInfluence_DistinguishesWeightedFromUnweighted()
+    {
+        var skin = new[] { Matrix4x4.Identity, Matrix4x4.Identity };
+        Assert.True(SkinDeformer.HasInfluence(new SkinDeformer.VertexWeights(0, 1f, -1, 0f, -1, 0f, -1, 0f), skin.Length));
+        Assert.False(SkinDeformer.HasInfluence(new SkinDeformer.VertexWeights(-1, 0f, -1, 0f, -1, 0f, -1, 0f), skin.Length));
+        Assert.False(SkinDeformer.HasInfluence(new SkinDeformer.VertexWeights(0, float.NaN, -1, 0f, -1, 0f, -1, 0f), skin.Length));
+        // bone index out of range for the matrix array → no influence
+        Assert.False(SkinDeformer.HasInfluence(new SkinDeformer.VertexWeights(5, 1f, -1, 0f, -1, 0f, -1, 0f), skin.Length));
+    }
+
+    [Fact]
     public void BlendNormal_RotationOnlySkin_RotatesNormalIgnoringTranslation()
     {
         // A skin matrix with a 90° Z rotation AND a translation; the normal must rotate but NOT

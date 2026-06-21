@@ -8,10 +8,13 @@ using Radoub.Formats.Mdl;
 namespace Radoub.UI.Services;
 
 /// <summary>
-/// Resolves the per-slot skin matrices for a skin mesh:
-///   skin[slot] = boneAnimWorld · inverse(boneBindWorld) · meshBindWorld
-/// where the bone for each slot is found by name (<see cref="MdlSkinNode.BoneNodeNames"/>) in
-/// the composed hierarchy. Slots whose bone can't be resolved fall back to the mesh bind-world
+/// Resolves the per-slot skin matrices for a skin mesh. In System.Numerics row-vector order
+/// (a vertex transforms as v · skin[slot]):
+///   skin[slot] = meshBindWorld · inverse(boneBindWorld) · boneAnimWorld
+/// (built as <c>BuildSkinMatrix(boneAnimWorld, BuildInverseBind(boneBindWorld, meshBindWorld))</c>).
+/// Bones are resolved per slot — preferring the direct <see cref="MdlSkinNode.BoneNodes"/> reference
+/// set at composite time, falling back to name (<see cref="MdlSkinNode.BoneNodeNames"/>) in the
+/// composed hierarchy. Slots whose bone can't be resolved fall back to the mesh bind-world
 /// transform, leaving those vertices at their static bind-pose position rather than collapsing.
 /// </summary>
 public static class SkinMatrixBuilder
