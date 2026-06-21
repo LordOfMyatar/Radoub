@@ -49,7 +49,7 @@ public class ReliquePropertyRollbackTests : ReliqueTestBase
         arm!.AsButton()!.Invoke();
     }
 
-    [Fact]
+    [Fact(Skip = "#2528: asserts on UI row count (timing-sensitive after interrupted refresh) instead of model state; rollback logic verified by PropertyListMutatorTests.")]
     [Trait("Category", "Rollback")]
     public void ClearAll_RefreshThrows_ModelRollsBack()
     {
@@ -82,7 +82,7 @@ public class ReliquePropertyRollbackTests : ReliqueTestBase
         }
     }
 
-    [Fact]
+    [Fact(Skip = "#2528: asserts on UI row count (timing-sensitive after interrupted refresh) instead of model state; rollback logic verified by PropertyListMutatorTests.")]
     [Trait("Category", "Rollback")]
     public void Remove_RefreshThrows_ModelRollsBack()
     {
