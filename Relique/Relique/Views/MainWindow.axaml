@@ -551,9 +551,11 @@
                                 </StackPanel>
 
                                 <!-- Right column: 3D preview + view controls (#1908 PR3b).
-                                     Responsive viewport (#2408): fills the column and grows with the
-                                     window so full-body armor displays usably; MinWidth/MinHeight keep
-                                     small held-item previews above a usable floor. -->
+                                     Responsive viewport (#2408): width fills the column (3* share +
+                                     Stretch) so full-body armor displays usably; MinWidth/MinHeight keep
+                                     small held-item previews above a usable floor. Height is a larger
+                                     fixed default (the StackPanel does not stretch children vertically);
+                                     fully responsive height tracked in #2538. -->
                                 <StackPanel Grid.Column="2" Spacing="6">
                                     <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                             BorderThickness="1" CornerRadius="2"
