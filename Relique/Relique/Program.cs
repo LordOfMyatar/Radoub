@@ -35,9 +35,36 @@ sealed class Program
             RetainSessions = sharedSettings.SharedLogRetentionSessions
         });
 
+        // Build stamp: log the running assembly's version + build time so a session's log
+        // unambiguously identifies which binary produced it (build/profile confusion guard).
+        LogBuildStamp();
+
         // Start GUI application
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         return 0;
+    }
+
+    /// <summary>
+    /// Log the running assembly's informational version and last-write time of the DLL, so the
+    /// session log states exactly which build is active. Cheap, best-effort.
+    /// </summary>
+    private static void LogBuildStamp()
+    {
+        try
+        {
+            var asm = System.Reflection.Assembly.GetExecutingAssembly();
+            var version = asm.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+                is object[] attrs && attrs.Length > 0
+                ? ((System.Reflection.AssemblyInformationalVersionAttribute)attrs[0]).InformationalVersion
+                : asm.GetName().Version?.ToString() ?? "unknown";
+            var buildTime = System.IO.File.GetLastWriteTime(asm.Location).ToString("yyyy-MM-dd HH:mm:ss");
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"[BuildStamp] Relique version={version} builtAt={buildTime} dll={asm.Location}");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"[BuildStamp] failed: {ex.Message}");
+        }
     }
 
     // Avalonia configuration, don't remove; also used by visual designer.
