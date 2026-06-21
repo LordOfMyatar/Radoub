@@ -19,28 +19,25 @@
         <!-- Subtype (searchable via AutoCompleteBox) -->
         <Grid Grid.Row="1" ColumnDefinitions="110,*" Margin="0,0,0,8" x:Name="SubtypeRow">
             <TextBlock Grid.Column="0" Text="Subtype" VerticalAlignment="Center"/>
-            <AutoCompleteBox Grid.Column="1" x:Name="SubtypeBox"
-                             Watermark="Type to search..."
-                             MinimumPrefixLength="0"
-                             HorizontalAlignment="Stretch"/>
+            <ComboBox Grid.Column="1" x:Name="SubtypeBox"
+                      IsTextSearchEnabled="True"
+                      HorizontalAlignment="Stretch"/>
         </Grid>
 
         <!-- Cost value -->
         <Grid Grid.Row="2" ColumnDefinitions="110,*" Margin="0,0,0,8" x:Name="CostRow">
             <TextBlock Grid.Column="0" Text="Value" VerticalAlignment="Center"/>
-            <AutoCompleteBox Grid.Column="1" x:Name="CostBox"
-                             Watermark="Type to search..."
-                             MinimumPrefixLength="0"
-                             HorizontalAlignment="Stretch"/>
+            <ComboBox Grid.Column="1" x:Name="CostBox"
+                      IsTextSearchEnabled="True"
+                      HorizontalAlignment="Stretch"/>
         </Grid>
 
         <!-- Param value -->
         <Grid Grid.Row="3" ColumnDefinitions="110,*" Margin="0,0,0,8" x:Name="ParamRow">
             <TextBlock Grid.Column="0" Text="Parameter" VerticalAlignment="Center"/>
-            <AutoCompleteBox Grid.Column="1" x:Name="ParamBox"
-                             Watermark="Type to search..."
-                             MinimumPrefixLength="0"
-                             HorizontalAlignment="Stretch"/>
+            <ComboBox Grid.Column="1" x:Name="ParamBox"
+                      IsTextSearchEnabled="True"
+                      HorizontalAlignment="Stretch"/>
         </Grid>
 
         <!-- Live preview line (#2406): updates on every selection change; model untouched until OK -->

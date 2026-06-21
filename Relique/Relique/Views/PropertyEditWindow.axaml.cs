@@ -95,35 +95,29 @@ public partial class PropertyEditWindow : Window
         };
     }
 
-    private static void ConfigureBox(AutoCompleteBox box, Grid row, List<TwoDAEntry> items)
+    private static void ConfigureBox(ComboBox box, Grid row, List<TwoDAEntry> items)
     {
         if (items.Count == 0)
         {
             row.IsVisible = false;
             return;
         }
+        // Items are TwoDAEntry; ToString() is the DisplayName, so the ComboBox renders names and
+        // IsTextSearchEnabled lets the user type to jump to a match in long lists.
         box.ItemsSource = items;
-        // AutoCompleteBox filters/displays on the string; TwoDAEntry.ToString is its DisplayName.
-        box.ItemFilter = (search, item) =>
-            string.IsNullOrEmpty(search) ||
-            (item is TwoDAEntry e && e.DisplayName.Contains(search, StringComparison.OrdinalIgnoreCase));
     }
 
-    private static void PreSelect(AutoCompleteBox box, List<TwoDAEntry> items, int? index)
+    private static void PreSelect(ComboBox box, List<TwoDAEntry> items, int? index)
     {
         if (items.Count == 0) return;
         var match = index.HasValue ? items.FirstOrDefault(e => e.Index == index.Value) : null;
         box.SelectedItem = match ?? items[0];
-        box.Text = (match ?? items[0]).DisplayName;
     }
 
-    private static TwoDAEntry? Selected(AutoCompleteBox box, List<TwoDAEntry> items)
+    private static TwoDAEntry? Selected(ComboBox box, List<TwoDAEntry> items)
     {
         if (items.Count == 0) return null;
-        if (box.SelectedItem is TwoDAEntry e) return e;
-        // Fall back to a text match so a typed-but-not-clicked entry still resolves.
-        return items.FirstOrDefault(i =>
-            string.Equals(i.DisplayName, box.Text, StringComparison.OrdinalIgnoreCase));
+        return box.SelectedItem as TwoDAEntry;
     }
 
     private void UpdatePreview()

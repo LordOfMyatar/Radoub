@@ -78,9 +78,20 @@ public static class CheckedPropertyResolver
                 continue;
             }
 
+            // Default to the FIRST available cost value, not 0 — cost tables have no row 0, so a
+            // hardcoded 0 wrote a blank/invalid value (e.g. Cast Spell with no uses/day). Matches the
+            // right-click "default values" path. User picks a specific value via Configure… (#2406).
+            int costValueIndex = 0;
+            if (type != null && type.HasCostTable)
+            {
+                var costs = service.GetCostValues(entry.PropertyIndex);
+                if (costs.Count > 0)
+                    costValueIndex = costs[0].Index;
+            }
+
             try
             {
-                var property = service.CreateItemProperty(entry.PropertyIndex, subtypeIndex, 0, null);
+                var property = service.CreateItemProperty(entry.PropertyIndex, subtypeIndex, costValueIndex, null);
                 result.ToAdd.Add(property);
             }
             catch (System.Exception ex)

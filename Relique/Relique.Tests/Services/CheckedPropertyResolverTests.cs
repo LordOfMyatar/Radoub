@@ -42,6 +42,8 @@ public class CheckedPropertyResolverTests
         mock.Set2DAValue("iprp_bonuscost", 1, "Label", "+1");
         mock.Set2DAValue("iprp_chargecost", 1, "Name", "500");
         mock.Set2DAValue("iprp_chargecost", 1, "Label", "1_Use_Per_Day");
+        mock.Set2DAValue("iprp_chargecost", 2, "Name", "501");
+        mock.Set2DAValue("iprp_chargecost", 2, "Label", "5_Charges_Per_Use");
 
         mock.SetTlkString(100, "Ability Bonus");
         mock.SetTlkString(115, "Cast Spell");
@@ -50,6 +52,8 @@ public class CheckedPropertyResolverTests
         mock.SetTlkString(201, "Dexterity");
         mock.SetTlkString(303, "Acid Fog");
         mock.SetTlkString(305, "Aid");
+        mock.SetTlkString(500, "1 Use/Day");
+        mock.SetTlkString(501, "5 Charges/Use");
 
         return mock;
     }
@@ -81,6 +85,25 @@ public class CheckedPropertyResolverTests
         Assert.Equal(15, result.ToAdd[0].PropertyName);
         Assert.Equal(5, result.ToAdd[0].Subtype); // the exact ticked subtype, not 3
         Assert.Empty(result.Skipped);
+    }
+
+    [Fact]
+    public void Resolve_CostTableProperty_UsesFirstValidCostValue_NotZero()
+    {
+        // Regression: bulk-add used a hardcoded CostValue 0, but cost tables have no row 0 — that
+        // wrote a blank/invalid value (e.g. Cast Spell with no uses/day). Should pick the first
+        // available cost value (Index 1 here), matching the right-click "default values" path.
+        var mock = CreateMock();
+        var service = new ItemPropertyService(mock);
+
+        var checkd = new[] { new CheckedProperty(15, 5) }; // Cast Spell / Aid — has iprp_chargecost
+
+        var result = CheckedPropertyResolver.Resolve(checkd, service, baseItem: 0,
+            assignedProperties: new List<ItemProperty>());
+
+        Assert.Single(result.ToAdd);
+        Assert.NotEqual(0, result.ToAdd[0].CostValue);
+        Assert.Equal(1, result.ToAdd[0].CostValue); // first available cost row
     }
 
     [Fact]
