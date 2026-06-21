@@ -335,16 +335,61 @@ public sealed class MdlPartComposer
         // Graft the part root's CHILDREN (skip the part's own root dummy, whose translation
         // duplicates the skeleton root's). Each child subtree is cloned with hierarchy intact.
         int grafted = 0;
+        var graftedClones = new List<MdlNode>();
         foreach (var child in partModel.GeometryRoot.Children)
         {
             var clone = CloneNode(child, root);
             ApplyPartBitmap(clone, partResRef, partType, meshPartTypes);
             root.Children.Add(clone);
+            graftedClones.Add(clone);
             grafted++;
         }
 
+        // Bind each grafted skin's bones to the ROBE's grafted bone clones (#2399). The composite
+        // also contains the skeleton's same-named bones; a render-time name lookup would be
+        // ambiguous and pick the wrong bind, exploding the skin under animation. Resolve names only
+        // within this part's grafted subtrees.
+        BindSkinBonesWithinSubtrees(graftedClones);
+
         UnifiedLogger.LogApplication(LogLevel.INFO,
             $"MdlPartComposer: grafted full-body part '{partType}' ({partResRef}) — {grafted} subtree(s)");
+    }
+
+    /// <summary>
+    /// Resolve every skin mesh's BoneNodeNames to direct node references (<see
+    /// cref="MdlSkinNode.BoneNodes"/>) using only the nodes within <paramref name="graftedRoots"/>
+    /// (this part's grafted subtrees), so a skin binds to its own part's bones and not a
+    /// same-named skeleton bone elsewhere in the composite (#2399).
+    /// </summary>
+    private static void BindSkinBonesWithinSubtrees(IReadOnlyList<MdlNode> graftedRoots)
+    {
+        // Build a name → node index over just the grafted nodes (first match wins, depth-first).
+        var byName = new Dictionary<string, MdlNode>(StringComparer.OrdinalIgnoreCase);
+        var skins = new List<MdlSkinNode>();
+        void Walk(MdlNode n)
+        {
+            if (!byName.ContainsKey(n.Name))
+                byName[n.Name] = n;
+            if (n is MdlSkinNode skin)
+                skins.Add(skin);
+            foreach (var c in n.Children)
+                Walk(c);
+        }
+        foreach (var r in graftedRoots)
+            Walk(r);
+
+        foreach (var skin in skins)
+        {
+            if (skin.BoneNodeNames.Length == 0)
+                continue;
+            var bones = new MdlNode?[skin.BoneNodeNames.Length];
+            for (int slot = 0; slot < bones.Length; slot++)
+            {
+                var name = skin.BoneNodeNames[slot];
+                bones[slot] = !string.IsNullOrEmpty(name) && byName.TryGetValue(name, out var node) ? node : null;
+            }
+            skin.BoneNodes = bones;
+        }
     }
 
     /// <summary>Set the texture name + record the part type on every mesh in a grafted subtree.</summary>

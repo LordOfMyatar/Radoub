@@ -38,17 +38,25 @@ public static class SkinMatrixBuilder
 
         for (int slot = 0; slot < boneCount; slot++)
         {
-            var boneName = skin.BoneNodeNames[slot];
-            if (string.IsNullOrEmpty(boneName))
-            {
-                matrices[slot] = meshBindWorld;
-                continue;
-            }
+            // Prefer a direct bone reference (set at composite time) — a composite can hold two
+            // bones with the same name, so a name lookup is ambiguous and the wrong bind explodes
+            // the skin under animation (#2399). Fall back to name lookup for non-composited skins.
+            MdlNode? bone = slot < skin.BoneNodes.Length ? skin.BoneNodes[slot] : null;
 
-            if (!boneByName.TryGetValue(boneName, out var bone))
+            if (bone == null)
             {
-                bone = FindNode(root, boneName);
-                boneByName[boneName] = bone;
+                var boneName = skin.BoneNodeNames[slot];
+                if (string.IsNullOrEmpty(boneName))
+                {
+                    matrices[slot] = meshBindWorld;
+                    continue;
+                }
+
+                if (!boneByName.TryGetValue(boneName, out bone))
+                {
+                    bone = FindNode(root, boneName);
+                    boneByName[boneName] = bone;
+                }
             }
 
             if (bone == null)

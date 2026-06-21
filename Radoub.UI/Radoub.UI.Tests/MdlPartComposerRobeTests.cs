@@ -97,4 +97,43 @@ public class MdlPartComposerRobeTests
         Assert.NotNull(coat);
         Assert.IsType<MdlSkinNode>(coat); // clone preserves skin type (#1989)
     }
+
+    /// <summary>
+    /// After grafting, a robe skin's BoneNodes must point at the ROBE's grafted bone clones, not
+    /// the skeleton's same-named bones — otherwise skin deformation uses the wrong bind and the
+    /// robe explodes under animation (#2399). The robe and skeleton both have a "torso_g".
+    /// </summary>
+    [Fact]
+    public void Robe_BindsSkinBonesToGraftedClones_NotSkeletonBones()
+    {
+        var skeleton = BuildSkeleton();
+        var robe = BuildRobe();
+        // Give the coat skin a slot→name table referencing torso_g (a name the skeleton ALSO owns).
+        var coatSrc = (MdlSkinNode)FindChild(robe.GeometryRoot!, "coat")!;
+        coatSrc.BoneNodeNames = new[] { "torso_g" };
+        coatSrc.NodeToBoneMap = new short[] { -1, 0 }; // not used by composer, present for realism
+        coatSrc.BoneQuaternions = new System.Numerics.Quaternion[1];
+        coatSrc.BoneTranslations = new Vector3[1];
+
+        var composer = MakeComposer(skeleton, robe);
+        var composite = composer.Compose("pmh0", new[] { ("robe", "pmh0_robe186") }, adjustSeams: false);
+
+        var coat = (MdlSkinNode)MdlPartComposer.FindBoneByName(composite!.GeometryRoot!, "coat")!;
+        Assert.Single(coat.BoneNodes);
+        var boundTorso = coat.BoneNodes[0];
+        Assert.NotNull(boundTorso);
+
+        // The bound torso_g must be the robe's grafted clone (a mesh — robe authored torso_g as a
+        // mesh), NOT the skeleton's torso_g bone node. Decisive discriminator: type differs.
+        Assert.IsAssignableFrom<MdlTrimeshNode>(boundTorso);
+        Assert.False(boundTorso!.GetType() == typeof(MdlNode),
+            "skin bound to the skeleton's plain bone node instead of the robe's grafted torso_g");
+    }
+
+    private static MdlNode? FindChild(MdlNode node, string name)
+    {
+        if (node.Name == name) return node;
+        foreach (var c in node.Children) { var r = FindChild(c, name); if (r != null) return r; }
+        return null;
+    }
 }

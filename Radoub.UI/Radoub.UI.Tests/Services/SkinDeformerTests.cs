@@ -107,6 +107,33 @@ public class SkinDeformerTests
     }
 
     [Fact]
+    public void BlendVertex_AnimatedRotationWithOffsetBone_MatchesColumnVectorReference()
+    {
+        // Order-sensitive case (the #2399 distortion bug): a bone offset from origin, rotated by
+        // the animation, with a non-trivial mesh bind. The deformed vertex must equal the
+        // canonical skin transform world = boneAnimWorld · inverse(boneBindWorld) · meshBindWorld · v
+        // (column-vector form). A swapped multiply order passes bind-pose but fails here.
+        var boneBindWorld = Matrix4x4.CreateRotationZ(0.3f) * Matrix4x4.CreateTranslation(0, 0, 1);
+        var meshBindWorld = Matrix4x4.CreateTranslation(0.5f, 0, 0.2f);
+        var boneAnimWorld = Matrix4x4.CreateRotationX(0.6f) * Matrix4x4.CreateTranslation(0, 0, 1);
+        var localVertex = new Vector3(0.4f, 0.1f, -0.2f);
+
+        var inverseBind = SkinDeformer.BuildInverseBind(boneBindWorld, meshBindWorld);
+        var skin = new[] { SkinDeformer.BuildSkinMatrix(boneAnimWorld, inverseBind) };
+        var w = new SkinDeformer.VertexWeights(0, 1f, -1, 0f, -1, 0f, -1, 0f);
+        var deformed = SkinDeformer.BlendVertex(localVertex, w, skin);
+
+        // Reference: row-vector composition v · meshBindWorld · inverse(boneBindWorld) · boneAnimWorld.
+        Matrix4x4.Invert(boneBindWorld, out var boneBindInv);
+        var refMat = meshBindWorld * boneBindInv * boneAnimWorld;
+        var expected = Vector3.Transform(localVertex, refMat);
+
+        Assert.Equal(expected.X, deformed.X, 4);
+        Assert.Equal(expected.Y, deformed.Y, 4);
+        Assert.Equal(expected.Z, deformed.Z, 4);
+    }
+
+    [Fact]
     public void BlendNormal_RotationOnlySkin_RotatesNormalIgnoringTranslation()
     {
         // A skin matrix with a 90° Z rotation AND a translation; the normal must rotate but NOT

@@ -72,6 +72,44 @@ public class SkinMatrixBuilderTests
     }
 
     [Fact]
+    public void Build_DuplicateBoneNamesInComposite_UsesBoundBoneReference()
+    {
+        // Composite with TWO "torso_g" nodes at different positions (skeleton's + robe's grafted).
+        // The skin must deform against its OWN bound bone, not whichever name-match comes first.
+        var root = new MdlNode { Name = "composite_root", Scale = 1f, Orientation = Quaternion.Identity };
+
+        // Skeleton's torso_g — the WRONG one (different position). Comes first in depth-first order.
+        var skeletonTorso = new MdlNode { Name = "torso_g", Position = new Vector3(0, 0, 5), Scale = 1f, Orientation = Quaternion.Identity, Parent = root };
+        root.Children.Add(skeletonTorso);
+
+        // Robe's grafted torso_g — the RIGHT one.
+        var robeTorso = new MdlNode { Name = "torso_g", Position = new Vector3(0, 0, 1), Scale = 1f, Orientation = Quaternion.Identity, Parent = root };
+        root.Children.Add(robeTorso);
+
+        var skin = new MdlSkinNode
+        {
+            Name = "Robe", Position = Vector3.Zero, Scale = 1f, Orientation = Quaternion.Identity, Parent = root,
+            BoneNodeNames = new[] { "torso_g" },
+            BoneNodes = new MdlNode?[] { robeTorso }, // explicitly bound to the robe's bone
+        };
+        root.Children.Add(skin);
+
+        // Animate torso_g by +10Z (both name-matches share the pose; only the bind differs).
+        var pose = new Dictionary<string, ModelViewController.NodePose>
+        {
+            ["torso_g"] = new ModelViewController.NodePose(true, new Vector3(0, 0, 11), false, Quaternion.Identity, false, 1f),
+        };
+
+        var matrices = SkinMatrixBuilder.Build(skin, root, pose);
+
+        // Bound bone robeTorso: bind z=1, anim z=11 → delta +10. A torso-weighted vertex at origin
+        // must move +10, NOT +6 (which the skeleton's z=5 bone would give).
+        var w = new SkinDeformer.VertexWeights(0, 1f, -1, 0f, -1, 0f, -1, 0f);
+        var deformed = SkinDeformer.BlendVertex(Vector3.Zero, w, matrices);
+        Assert.Equal(10f, deformed.Z, 4);
+    }
+
+    [Fact]
     public void Build_MissingBone_SlotFallsBackToMeshBindWorld()
     {
         var (skin, root) = BuildRig(new Vector3(0, 0, 1), "torso_g", new Vector3(1, 1, 1));

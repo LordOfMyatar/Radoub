@@ -24,24 +24,27 @@ public static class SkinDeformer
         int bone3, float weight3);
 
     /// <summary>
-    /// inverseBind[slot] = inverse(boneBindWorld) · meshBindWorld.
-    /// Recomputed from the bind-pose hierarchy (the stored QBoneRefInv/TBoneRefInv are not
-    /// trusted). If <paramref name="boneBindWorld"/> is non-invertible, falls back to identity
-    /// so the slot contributes the raw mesh-bind transform rather than NaNs.
+    /// inverseBind[slot] = meshBindWorld · inverse(boneBindWorld) (System.Numerics row-vector
+    /// order). Maps a skin-local vertex into the bone's local frame: first to model bind space via
+    /// the mesh's bind transform, then into the bone's frame via the inverse bone bind. Recomputed
+    /// from the bind-pose hierarchy (the stored QBoneRefInv/TBoneRefInv are not trusted). If the
+    /// bone bind is non-invertible, falls back so the slot contributes meshBindWorld, not NaNs.
+    /// Verified against nwn_mdl_webviewer's CPU skinning (#2399).
     /// </summary>
     public static Matrix4x4 BuildInverseBind(Matrix4x4 boneBindWorld, Matrix4x4 meshBindWorld)
     {
         if (!Matrix4x4.Invert(boneBindWorld, out var boneBindInv))
             boneBindInv = Matrix4x4.Identity;
-        return Matrix4x4.Multiply(boneBindInv, meshBindWorld);
+        return Matrix4x4.Multiply(meshBindWorld, boneBindInv);
     }
 
     /// <summary>
-    /// skin[slot] = boneAnimWorld · inverseBind[slot]. At bind pose (boneAnimWorld ==
-    /// boneBindWorld) this collapses to meshBindWorld, leaving the vertex at its static position.
+    /// skin[slot] = inverseBind[slot] · boneAnimWorld (row-vector order, so a vertex transforms as
+    /// v · meshBind · inverse(boneBind) · boneAnim). At bind pose (boneAnimWorld == boneBindWorld)
+    /// this collapses to meshBindWorld, leaving an un-animated vertex at its static bind position.
     /// </summary>
     public static Matrix4x4 BuildSkinMatrix(Matrix4x4 boneAnimWorld, Matrix4x4 inverseBind)
-        => Matrix4x4.Multiply(boneAnimWorld, inverseBind);
+        => Matrix4x4.Multiply(inverseBind, boneAnimWorld);
 
     /// <summary>
     /// Blend a local-space vertex by its bone weights against the per-slot skin matrices.
