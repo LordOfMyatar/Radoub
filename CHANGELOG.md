@@ -8,6 +8,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.23-alpha] - 2026-06-21
+**Branch**: `radoub/issue-2544` | **PR**: #TBD
+
+### Epic: Emitter rendering — model-led visibility/intensity gate (#2544)
+
+- Particle emitters now honor the authored `Update` mode: continuous fountains stream as before, while fire-and-forget emitters (Explosion/Single/Lightning) burst and replay on a model-derived cycle instead of being drawn as a non-stop fountain. Fixes placeable over-rendering (#2439, e.g. chests emitting a constant smoke plume) while leaving creature emitters (#2395) unchanged. Also honors authored particle size (no blanket clamp, independent X/Y) and implements the remaining billboard orientation modes (#2450). Affects every tool's preview (Quartermaster, Relique, Reliquary).
+
+---
+
+## [Radoub.Formats 0.2.75-alpha] - 2026-06-21
+**Branch**: `radoub/issue-2544` | **PR**: #TBD
+
+### Epic: Symmetric emitter-flag decoding on the binary MDL reader (#2544)
+
+- The binary MDL reader now decodes the per-emitter flag bits and spawn type into the same discrete fields the ASCII reader populates, so an emitter yields identical node state on both parse paths — the prerequisite for any flag-driven render gating.
+
+---
+
 ## [Radoub.UI 0.2.22-alpha] - 2026-06-21
 **Branch**: `quartermaster/issue-2540` | **PR**: #2553
 
