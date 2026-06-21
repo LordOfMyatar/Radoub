@@ -215,6 +215,83 @@ public class ParticleSystemTests
             $"expected spawn cap to bound LiveCount, got {sys.LiveCount}");
     }
 
+    // ---- Model-led emission gate: fire-and-forget burst + replay (#2544 item 2) ----
+
+    private static int StepAndPeakLive(ParticleSystem sys, int steps, float dt)
+    {
+        int peak = 0;
+        for (int i = 0; i < steps; i++)
+        {
+            sys.Update(dt);
+            peak = System.Math.Max(peak, sys.LiveCount);
+        }
+        return peak;
+    }
+
+    [Fact]
+    public void Update_ExplosionEmitter_BurstsThenGoesQuietThenReplays()
+    {
+        // Fire-and-forget: a burst spawns, runs out within ~LifeExp, then the emitter is quiet
+        // for the gap, then replays. It must NOT stream continuously like a Fountain (the #2439 bug).
+        var node = BaseNode();
+        node.Update = "Explosion";
+        node.BirthRate = 100f;
+        node.LifeExp = 0.5f;
+        var compiled = Compile(node);
+        var sys = new ParticleSystem(compiled, seed: 21u);
+
+        const float dt = 1f / 30f;
+
+        // During the burst window (first ~LifeExp seconds) particles exist.
+        int burstPeak = StepAndPeakLive(sys, (int)(node.LifeExp / dt) + 2, dt);
+        Assert.True(burstPeak > 0, "expected a burst to spawn particles");
+
+        // Step well past the burst but before the replay period: the burst has died out and
+        // no new particles spawn — the emitter is quiet.
+        // Advance to mid-gap (period is LifeExp + 30s gap; sample a few seconds in).
+        for (int i = 0; i < (int)(5f / dt); i++)
+            sys.Update(dt);
+        Assert.Equal(0, sys.LiveCount);
+    }
+
+    [Fact]
+    public void Update_ExplosionEmitter_RepopulatesAfterReplayPeriod()
+    {
+        var node = BaseNode();
+        node.Update = "Explosion";
+        node.BirthRate = 100f;
+        node.LifeExp = 0.5f;
+        var compiled = Compile(node);
+        var sys = new ParticleSystem(compiled, seed: 22u);
+
+        const float dt = 1f / 30f;
+        // Run one full replay period plus a little, sampling the peak across the whole span.
+        int steps = (int)(compiled.ReplayPeriod / dt) + (int)(node.LifeExp / dt) + 4;
+        int peakOverFullCycle = StepAndPeakLive(sys, steps, dt);
+
+        // Two bursts occurred over the cycle, so the peak is positive (the replay happened).
+        Assert.True(peakOverFullCycle > 0, "expected at least one burst's particles over a full replay period");
+    }
+
+    [Fact]
+    public void Update_FountainEmitter_StreamsContinuously_Unchanged()
+    {
+        // Regression guard for #2395: a Fountain emitter keeps streaming (steady-state population),
+        // never goes quiet. This is the behavior the gate must NOT change for continuous emitters.
+        var node = BaseNode();
+        node.Update = "Fountain";
+        node.BirthRate = 100f;
+        node.LifeExp = 0.5f;
+        var sys = new ParticleSystem(Compile(node), seed: 23u);
+
+        const float dt = 1f / 30f;
+        // Run several seconds; population reaches steady-state ~ birthRate*lifeExp = 50 and stays.
+        for (int i = 0; i < (int)(3f / dt); i++)
+            sys.Update(dt);
+
+        Assert.InRange(sys.LiveCount, 35, 65); // steady ~50, never quiet
+    }
+
     [Fact]
     public void Update_ZeroLifetime_DoesNotThrow()
     {

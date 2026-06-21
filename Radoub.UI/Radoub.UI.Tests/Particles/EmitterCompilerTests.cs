@@ -39,6 +39,36 @@ public class EmitterCompilerTests
         Assert.Equal(ParticleBlendMode.Additive, result.Blend);
     }
 
+    // ---- Model-led emission gate (#2544 item 2) ----
+
+    [Fact]
+    public void Compile_FountainIsContinuous_ZeroReplayPeriod()
+    {
+        var node = SampleNode();
+        node.Update = "Fountain";
+        var result = EmitterCompiler.Compile(node);
+        Assert.Equal(ParticleEmissionMode.Continuous, result.EmissionMode);
+        Assert.Equal(0f, result.ReplayPeriod); // 0 = continuous, no replay cycle
+    }
+
+    [Theory]
+    [InlineData("Explosion")]
+    [InlineData("Single")]
+    [InlineData("Lightning")]
+    public void Compile_FireAndForgetModesBurstWithPositiveReplayPeriod(string update)
+    {
+        var node = SampleNode();
+        node.Update = update;
+        node.LifeExp = 2f;
+        var result = EmitterCompiler.Compile(node);
+
+        // Explosion/Single/Lightning are all fire-and-forget → burst, not continuous.
+        Assert.NotEqual(ParticleEmissionMode.Continuous, result.EmissionMode);
+        // ReplayPeriod = burst (≈LifeExp) + a quiet gap, so it exceeds LifeExp.
+        Assert.True(result.ReplayPeriod > node.LifeExp,
+            $"{update}: expected ReplayPeriod > LifeExp ({node.LifeExp}), got {result.ReplayPeriod}");
+    }
+
     [Fact]
     public void Compile_SizeXOverLifeHasThreeKeys()
     {

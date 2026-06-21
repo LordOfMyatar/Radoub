@@ -597,16 +597,28 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             {
                 var compiled = Radoub.UI.Particles.EmitterCompiler.Compile(emitter);
 
-                // Supported: continuous Fountain emission + camera-facing (Normal) and local-frame
-                // (Billboard_to_Local_Z, e.g. fairy wings) quads. Other render modes fall back to a
-                // camera-facing billboard — log once per model so the limitation is visible. (#2395, #2434)
-                bool unsupportedEmission = compiled.EmissionMode != Radoub.UI.Particles.ParticleEmissionMode.Continuous;
-                bool unsupportedRender = compiled.RenderMode != Radoub.UI.Particles.ParticleRenderMode.Billboard
-                    && compiled.RenderMode != Radoub.UI.Particles.ParticleRenderMode.BillboardLocalZ;
-                if (unsupportedEmission || unsupportedRender)
+                // Secondary, model-led cull: an emitter authored with no effective output (birthrate
+                // ≤ 0 or lifespan ≤ 0) produces nothing — skip building a system for it and log once.
+                // The primary visibility decision is the authored Update mode (handled in the
+                // compiler/sim); this is just a cheap guard for genuinely-empty emitters. (#2544)
+                if (emitter.BirthRate <= 0f || emitter.LifeExp <= 0f)
                 {
                     UnifiedLogger.LogApplication(LogLevel.INFO,
-                        $"[Particle] Emitter '{emitter.Name}' uses mode {compiled.EmissionMode}/{compiled.RenderMode} — rendered as a camera-facing billboard (approximate). (#2395)");
+                        $"[Particle] Emitter '{emitter.Name}' has no effective output (birthRate={emitter.BirthRate}, lifeExp={emitter.LifeExp}) — not rendered. (#2544)");
+                    continue;
+                }
+
+                // Emission modes are now honored: Fountain streams continuously; Explosion/Single/
+                // Lightning burst and replay on a model-derived cycle (#2544). Only render modes with
+                // no faithful implementation (Beam/Mesh/LinkedChain) still fall back to a camera-facing
+                // billboard — log once per model so the limitation stays visible.
+                bool unsupportedRender = compiled.RenderMode == Radoub.UI.Particles.ParticleRenderMode.Beam
+                    || compiled.RenderMode == Radoub.UI.Particles.ParticleRenderMode.Mesh
+                    || compiled.RenderMode == Radoub.UI.Particles.ParticleRenderMode.LinkedChain;
+                if (unsupportedRender)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"[Particle] Emitter '{emitter.Name}' render mode {compiled.RenderMode} not faithfully supported — rendered as a camera-facing billboard (approximate). (#2544)");
                 }
 
                 var system = new Radoub.UI.Particles.ParticleSystem(compiled, (uint)(index + 1));

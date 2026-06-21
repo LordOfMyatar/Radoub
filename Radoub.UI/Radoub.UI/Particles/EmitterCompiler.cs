@@ -18,6 +18,14 @@ public static class EmitterCompiler
     private const uint FlagInheritVel = 0x0080;
 
     /// <summary>
+    /// Quiet gap (seconds) inserted after a fire-and-forget burst fades, before it replays.
+    /// Model-led on the burst duration (LifeExp); the gap itself is a fixed pause so the preview
+    /// shows a periodic burst rather than a non-stop fountain. Tune here if the cadence reads
+    /// wrong against real models (#2544 / #2439).
+    /// </summary>
+    private const float FireAndForgetQuietGapSeconds = 30f;
+
+    /// <summary>
     /// Assumes <paramref name="node"/> is already parsed. Sanitizes only LifeExp
     /// (negative lifetime is clamped to 0) and the over-life percent times
     /// (NaN is treated as 0); all other fields are passed through unchanged.
@@ -47,6 +55,12 @@ public static class EmitterCompiler
 
         float life = node.LifeExp > 0f ? node.LifeExp : 0f;
         result.Lifetime = new RangeF { Min = life, Max = life };
+
+        // Replay cadence for fire-and-forget modes: burst runs ~life, then a quiet gap, then
+        // replay. Continuous (Fountain) has no cycle (period 0). (#2544)
+        result.ReplayPeriod = result.EmissionMode == ParticleEmissionMode.Continuous
+            ? 0f
+            : life + FireAndForgetQuietGapSeconds;
         result.Speed = new RangeF { Min = node.Velocity, Max = node.Velocity + Math.Max(0f, node.RandVel) };
 
         float sizeStartY = node.SizeStartY == 0f ? node.SizeStart : node.SizeStartY;
@@ -96,6 +110,9 @@ public static class EmitterCompiler
         "fountain" => ParticleEmissionMode.Continuous,
         "single" => ParticleEmissionMode.SingleShot,
         "explosion" => ParticleEmissionMode.EventBurst,
+        // Lightning is an event/beam mode with no faithful continuous render — fold it into the
+        // fire-and-forget burst path so it cycles instead of streaming as a fountain (#2544).
+        "lightning" => ParticleEmissionMode.EventBurst,
         _ => ParticleEmissionMode.Continuous
     };
 
