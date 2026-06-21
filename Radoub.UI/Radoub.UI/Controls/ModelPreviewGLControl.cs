@@ -63,6 +63,9 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
     // mesh (#2395). Stays Vector3.Zero until a mesh is built.
     private Vector3 _modelCenter;
     private readonly Dictionary<string, uint> _textureCache = new();
+    // Alpha profile (Opaque/Binary/Graded) per cached texture, classified once at upload from
+    // the RGBA bytes. Drives the per-mesh transparency mode (#2540). Keyed like _textureCache.
+    private readonly Dictionary<string, AlphaProfile> _textureAlphaProfile = new();
     // Names of textures in _textureCache that came from PLT sources and depend on
     // the current color indices. Color-index changes invalidate only these — not
     // flat TGA/DDS textures whose pixels are color-independent (#2058).
@@ -77,6 +80,11 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
         public int IndexOffset;
         public int IndexCount;
         public string? TextureName;
+        // Raw transparency inputs from the mesh node (#2540). The MaterialMode is resolved in the
+        // draw loop (not here): mesh buffers are built before textures upload, so the texture's
+        // AlphaProfile — which ClassifyMesh needs — isn't known at population time.
+        public float MeshAlpha;
+        public int TransparencyHint;
     }
 
     private MdlModel? _model;
@@ -88,6 +96,8 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
     private bool _needsTextureUpdate;
     private bool _needsMeshUpdate;
     private bool _logOncePerModel;
+    // One-shot per model: log resolved transparency modes for non-opaque meshes (#2540).
+    private bool _logTransparencyOncePerModel;
 
     // Shader debug visualisation (#2026 investigation):
     //   0 = normal rendering
@@ -165,6 +175,7 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             _needsMeshUpdate = true;
             _needsTextureUpdate = true;  // New model needs textures loaded
             _logOncePerModel = true;
+            _logTransparencyOncePerModel = true;
             _viewController.CenterCamera();
             RebuildParticleSystems(value);
             if (value == null)
@@ -311,6 +322,7 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                 if (_gl != null && texId != 0)
                     _gl.DeleteTexture(texId);
                 _textureCache.Remove(name);
+                _textureAlphaProfile.Remove(name);
             }
         }
         _pltTextureNames.Clear();
@@ -348,6 +360,7 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                 _gl.DeleteTexture(texId);
         }
         _textureCache.Clear();
+        _textureAlphaProfile.Clear();
         _pltTextureNames.Clear();
     }
 
@@ -971,6 +984,7 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                     _gl.DeleteTexture(texId);
                 }
                 _textureCache.Clear();
+                _textureAlphaProfile.Clear();
                 _pltTextureNames.Clear();
 
                 // Clean up buffers and program
@@ -1150,6 +1164,19 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             bool hasTexture = !string.IsNullOrEmpty(resolvedTexture) &&
                              _textureCache.TryGetValue(resolvedTexture, out var texId) && texId != 0;
 
+            // Resolve the per-mesh transparency mode now that the texture (and its alpha
+            // profile) is known (#2540). Sprints 3/4 act on this; here it is computed only.
+            var profile = hasTexture && _textureAlphaProfile.TryGetValue(resolvedTexture!, out var p)
+                ? p : AlphaProfile.Opaque;
+            var mode = MeshTransparency.ClassifyMesh(drawCall.MeshAlpha, drawCall.TransparencyHint, profile);
+
+            if (_logTransparencyOncePerModel && mode != MaterialMode.Opaque)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"  [Transparency] '{resolvedTexture}' -> {mode} (alpha={drawCall.MeshAlpha:F2}, " +
+                    $"hint={drawCall.TransparencyHint}, profile={profile})");
+            }
+
             if (hasTexture)
             {
                 _shaderManager!.SetUniformBool("hasTexture", true);
@@ -1170,6 +1197,7 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                     DrawElementsType.UnsignedInt, (void*)drawCall.IndexOffset);
             }
         }
+        _logTransparencyOncePerModel = false;
 
         // Check for errors after drawing
         var drawErr = _gl.GetError();
@@ -1318,7 +1346,9 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             var drawCall = new MeshDrawCall
             {
                 IndexOffset = indices.Count * sizeof(uint),
-                TextureName = rawBitmap
+                TextureName = rawBitmap,
+                MeshAlpha = mesh.Alpha,
+                TransparencyHint = mesh.TransparencyHint
             };
 
             // #2026: Pick normal source based on how the mesh encodes hard
@@ -1653,6 +1683,7 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
         foreach (var key in toRemove)
         {
             _textureCache.Remove(key);
+            _textureAlphaProfile.Remove(key);
             _pltTextureNames.Remove(key);
         }
 
@@ -1685,6 +1716,7 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                 if (texId != 0)
                 {
                     _textureCache[texName] = texId;
+                    _textureAlphaProfile[texName] = MeshTransparency.AnalyzeAlphaProfile(pixels, width, height);
                     if (isPlt) _pltTextureNames.Add(texName);
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Loaded texture '{texName}' ({width}x{height}) -> texId={texId}, isPlt={isPlt}");
                 }
@@ -1714,6 +1746,7 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                     if (fallbackId != 0)
                     {
                         _textureCache[modelTexture] = fallbackId;
+                        _textureAlphaProfile[modelTexture] = MeshTransparency.AnalyzeAlphaProfile(px, w, h);
                         if (isPlt) _pltTextureNames.Add(modelTexture);
                         UnifiedLogger.LogApplication(LogLevel.DEBUG,
                             $"  Loaded model fallback texture '{modelTexture}' ({w}x{h}) -> texId={fallbackId}, isPlt={isPlt}");
