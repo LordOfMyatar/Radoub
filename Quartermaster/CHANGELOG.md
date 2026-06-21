@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.127-alpha] - 2026-06-21
-**Branch**: `quartermaster/issue-2399` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2399` | **PR**: #2545
 
 ### Fix: Robe animations badly off — head detaches during run (#2399)
 
