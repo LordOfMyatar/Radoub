@@ -202,8 +202,16 @@ public class MdlSkinNode : MdlTrimeshNode
     /// <summary>Bone weight data per vertex (up to 4 bones per vertex).</summary>
     public MdlBoneWeight[] BoneWeights { get; set; } = Array.Empty<MdlBoneWeight>();
 
-    /// <summary>Bone node name references.</summary>
+    /// <summary>Bone node name references (slot → bone node name).</summary>
     public string[] BoneNodeNames { get; set; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Direct slot → bone node references, resolved when the mesh is composited (#2399). Takes
+    /// precedence over <see cref="BoneNodeNames"/> at render time because a composite can contain
+    /// multiple bones sharing a name (the skeleton's torso_g and a grafted robe's torso_g); a
+    /// name lookup is ambiguous, the reference is not. Null/empty entries fall back to name lookup.
+    /// </summary>
+    public MdlNode?[] BoneNodes { get; set; } = Array.Empty<MdlNode?>();
 
     /// <summary>Quaternion rotations for bones.</summary>
     public Quaternion[] BoneQuaternions { get; set; } = Array.Empty<Quaternion>();

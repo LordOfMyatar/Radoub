@@ -8,6 +8,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.21-alpha] - 2026-06-21
+**Branch**: `quartermaster/issue-2399` | **PR**: #2545
+
+### Fix: Skinned-mesh deformation in the 3D model preview (#2399)
+
+- Skin meshes (robe bodies, snake coils, etc.) now deform with the animated skeleton instead of staying frozen at bind pose — robe-wearing creatures no longer detach their head/body during animation. New `SkinDeformer` / `SkinMatrixBuilder` apply linear-blend skinning; static (un-animated) models render identically to before.
+
+---
+
+## [Radoub.Formats 0.2.74-alpha] - 2026-06-21
+**Branch**: `quartermaster/issue-2399` | **PR**: #2545
+
+### Fix: Populate skin-mesh bone names for runtime skinning (#2399)
+
+- The binary MDL reader now resolves each skin mesh's bone-slot → bone-node-name table (`BoneNodeNames`) via a post-parse NodeToBoneMap inversion, the bridge skin deformation needs to find its animated bones.
+
+---
+
 ## [Radoub.Formats 0.2.73-alpha] - 2026-06-19
 **Branch**: `parley/sprint/2445-ui-ux` | **PR**: #2519
 

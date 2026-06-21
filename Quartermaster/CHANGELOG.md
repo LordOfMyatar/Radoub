@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.127-alpha] - 2026-06-21
+**Branch**: `quartermaster/issue-2399` | **PR**: #2545
+
+### Fix: Robe animations badly off — head detaches during run (#2399)
+
+- Robe-wearing creatures (e.g. Dana) no longer distort during animation playback; the robe body now deforms with the animated skeleton. Shared-library fix — see root CHANGELOG (`Radoub.UI 0.2.21-alpha`, `Radoub.Formats 0.2.74-alpha`).
+
+---
+
 ## [0.2.126-alpha] - 2026-06-19
 **Branch**: `quartermaster/issue-2440` | **PR**: #2525
 

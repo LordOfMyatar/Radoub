@@ -1,0 +1,121 @@
+// Pure linear-blend-skinning math for MDL skin meshes (#2399 / R1).
+// GL-free and dependency-light so the per-vertex blend and the skin-matrix build are unit-testable.
+
+using System;
+using System.Numerics;
+
+namespace Radoub.UI.Services;
+
+/// <summary>
+/// Linear-blend-skinning helper. Deforms skin-mesh vertices by blending per-bone transforms,
+/// so a skin body follows its animated skeleton instead of staying frozen at bind pose.
+///
+/// Skinning identity:
+///   inverseBind[slot] = inverse(boneBindWorld) · meshBindWorld
+///   skin[slot]        = boneAnimWorld · inverseBind[slot]
+///   v_world           = Σ wᵢ · (skin[slotᵢ] · v_local)
+/// </summary>
+public static class SkinDeformer
+{
+    /// <summary>Up-to-4 bone-slot indices + weights for one vertex.</summary>
+    public readonly record struct VertexWeights(
+        int bone0, float weight0,
+        int bone1, float weight1,
+        int bone2, float weight2,
+        int bone3, float weight3);
+
+    /// <summary>
+    /// inverseBind[slot] = meshBindWorld · inverse(boneBindWorld) (System.Numerics row-vector
+    /// order). Maps a skin-local vertex into the bone's local frame: first to model bind space via
+    /// the mesh's bind transform, then into the bone's frame via the inverse bone bind. Recomputed
+    /// from the bind-pose hierarchy (the stored QBoneRefInv/TBoneRefInv are not trusted). If the
+    /// bone bind is non-invertible, falls back so the slot contributes meshBindWorld, not NaNs.
+    /// Verified against nwn_mdl_webviewer's CPU skinning (#2399).
+    /// </summary>
+    public static Matrix4x4 BuildInverseBind(Matrix4x4 boneBindWorld, Matrix4x4 meshBindWorld)
+    {
+        if (!Matrix4x4.Invert(boneBindWorld, out var boneBindInv))
+            boneBindInv = Matrix4x4.Identity;
+        return Matrix4x4.Multiply(meshBindWorld, boneBindInv);
+    }
+
+    /// <summary>
+    /// skin[slot] = inverseBind[slot] · boneAnimWorld (row-vector order, so a vertex transforms as
+    /// v · meshBind · inverse(boneBind) · boneAnim). At bind pose (boneAnimWorld == boneBindWorld)
+    /// this collapses to meshBindWorld, leaving an un-animated vertex at its static bind position.
+    /// </summary>
+    public static Matrix4x4 BuildSkinMatrix(Matrix4x4 boneAnimWorld, Matrix4x4 inverseBind)
+        => Matrix4x4.Multiply(inverseBind, boneAnimWorld);
+
+    /// <summary>
+    /// True if at least one bone slot has a positive, non-NaN weight referencing a valid matrix
+    /// index. Lets the renderer route influence-less vertices to the rigid bind transform instead
+    /// of <see cref="BlendVertex"/> (which would return the un-worlded local vertex).
+    /// </summary>
+    public static bool HasInfluence(VertexWeights w, int skinMatrixCount)
+    {
+        bool Valid(int bone, float weight) =>
+            !float.IsNaN(weight) && weight > 0f && bone >= 0 && bone < skinMatrixCount;
+        return Valid(w.bone0, w.weight0) || Valid(w.bone1, w.weight1)
+            || Valid(w.bone2, w.weight2) || Valid(w.bone3, w.weight3);
+    }
+
+    /// <summary>
+    /// Blend a local-space vertex by its bone weights against the per-slot skin matrices.
+    /// Bone indices &lt; 0, out of range, NaN, or with non-positive weight are skipped. The result is
+    /// normalized by the total contributing weight (so weights that don't sum to 1 still land at the
+    /// full bone position, matching nwn_mdl_webviewer). If no slot contributes, returns the input
+    /// vertex unchanged so the caller can place it via the rigid bind transform — never collapses to
+    /// the origin.
+    /// </summary>
+    public static Vector3 BlendVertex(Vector3 vertex, VertexWeights w, Matrix4x4[] skinMatrices)
+    {
+        var result = Vector3.Zero;
+        float totalWeight = 0f;
+
+        void Accumulate(int bone, float weight)
+        {
+            if (float.IsNaN(weight) || weight <= 0f || bone < 0 || bone >= skinMatrices.Length) return;
+            result += weight * Vector3.Transform(vertex, skinMatrices[bone]);
+            totalWeight += weight;
+        }
+
+        Accumulate(w.bone0, w.weight0);
+        Accumulate(w.bone1, w.weight1);
+        Accumulate(w.bone2, w.weight2);
+        Accumulate(w.bone3, w.weight3);
+
+        if (totalWeight <= 1e-6f)
+            return vertex; // no influence — leave at bind (caller applies the rigid transform)
+        if (MathF.Abs(totalWeight - 1f) > 0.01f)
+            result /= totalWeight;
+        return result;
+    }
+
+    /// <summary>
+    /// Blend a local-space normal by its bone weights against the per-slot skin matrices, using
+    /// only the rotation/scale component (translation is ignored — normals are directions). Same
+    /// skip rules as <see cref="BlendVertex"/>. Returns the input normal unchanged if no slot
+    /// contributes (so the caller's Normalize never sees a zero vector → NaN). NOT normalized
+    /// otherwise; callers normalize after.
+    /// </summary>
+    public static Vector3 BlendNormal(Vector3 normal, VertexWeights w, Matrix4x4[] skinMatrices)
+    {
+        var result = Vector3.Zero;
+        float totalWeight = 0f;
+
+        void Accumulate(int bone, float weight)
+        {
+            if (float.IsNaN(weight) || weight <= 0f || bone < 0 || bone >= skinMatrices.Length) return;
+            result += weight * Vector3.TransformNormal(normal, skinMatrices[bone]);
+            totalWeight += weight;
+        }
+
+        Accumulate(w.bone0, w.weight0);
+        Accumulate(w.bone1, w.weight1);
+        Accumulate(w.bone2, w.weight2);
+        Accumulate(w.bone3, w.weight3);
+
+        return totalWeight <= 1e-6f ? normal : result;
+    }
+}
