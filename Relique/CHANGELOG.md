@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.10.29-alpha] - 2026-06-20
-**Branch**: `relique/issue-2446` | **PR**: #TBD
+**Branch**: `relique/issue-2446` | **PR**: #2532
 
 ### Sprint: 3D Preview Rendering (#2446)
 
