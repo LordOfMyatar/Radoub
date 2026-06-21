@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.128-alpha] - 2026-06-21
+**Branch**: `quartermaster/issue-2540` | **PR**: #TBD
+
+### Epic: Mesh transparency pipeline — alpha blend + alpha-test + depth sort (#2540)
+
+- Model preview gains transparency support (ghost/glass blend, fur/foliage cutout) instead of rendering every mesh opaque. Shared `Radoub.UI` renderer change — see root CHANGELOG. Closes #2435, #2507 when complete.
+
+---
+
 ## [0.2.127-alpha] - 2026-06-21
 **Branch**: `quartermaster/issue-2399` | **PR**: #2545
 
