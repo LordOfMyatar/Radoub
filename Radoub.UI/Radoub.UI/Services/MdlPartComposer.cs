@@ -189,8 +189,18 @@ public sealed class MdlPartComposer
             // the offset and collapsed every part to the origin — the floating-blade bug (#2233).
             // We clone the part root itself (not just its children, as the robe graft does) because
             // here the root dummy IS the alignment offset, not a duplicate of a skeleton root.
-            var clone = CloneNode(partModel.GeometryRoot, compositeModel.GeometryRoot);
-            compositeModel.GeometryRoot!.Children.Add(clone);
+            // Per-part try/catch isolates a malformed part: a bad subtree skips that part and logs,
+            // rather than blanking the whole weapon (mirrors TryAddBodyPart's discipline).
+            try
+            {
+                var clone = CloneNode(partModel.GeometryRoot, compositeModel.GeometryRoot);
+                compositeModel.GeometryRoot!.Children.Add(clone);
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"MdlPartComposer.ComposeFlat: failed to graft '{resRef}': {ex.GetType().Name}: {ex.Message}");
+            }
         }
 
         UpdateCompositeBounds(compositeModel);
