@@ -46,16 +46,30 @@ public partial class MainWindow
 
         _previewResolver = new ItemModelResolver(baseItemSvc, _gameDataService);
 
-        _previewRendererAdapter = new RendererAdapter(ItemPreviewGL, ItemPreviewPlaceholder, ItemPreviewControls, ItemPreviewInputSurface);
+        _previewRendererAdapter = new RendererAdapter(ItemPreviewGL, ItemPreviewPlaceholder, ItemPreviewControls, ItemPreviewInputSurface, ItemPreviewGenderPanel);
         ItemPreviewGL.SetTextureService(_previewTextureService);
 
         WirePreviewInput();
+
+        // Restore the persisted preview gender so armor/clothing composes on the last-used
+        // mannequin body across sessions (#2407).
+        int persistedGender = SettingsService.Instance.PreviewGender;
+        string mannequinPrefix = MannequinPrefix.ForGender(persistedGender);
 
         _previewController = new ItemPreviewController(
             _previewResolver,
             _previewComposer,
             _previewRendererAdapter,
-            baseItemSvc);
+            baseItemSvc,
+            mannequinPrefix);
+
+        // Reflect the persisted gender in the toggle without firing the change handler.
+        _suppressGenderHandler = true;
+        if (persistedGender == 1)
+            ItemPreviewFemaleRadio.IsChecked = true;
+        else
+            ItemPreviewMaleRadio.IsChecked = true;
+        _suppressGenderHandler = false;
 
         _previewDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(PreviewDebounceMs) };
         _previewDebounceTimer.Tick += (_, _) =>
@@ -137,6 +151,19 @@ public partial class MainWindow
 
     private void OnItemPreviewResetClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         => ItemPreviewGL.ResetView();
+
+    // --- Gender toggle (#2407) ---
+
+    private bool _suppressGenderHandler;
+
+    private void OnItemPreviewGenderChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (_suppressGenderHandler || _previewController == null) return;
+
+        int gender = ItemPreviewFemaleRadio.IsChecked == true ? 1 : 0;
+        SettingsService.Instance.PreviewGender = gender;
+        _previewController.SetArmorMannequinPrefix(MannequinPrefix.ForGender(gender));
+    }
 
     // --- Rotate / zoom button handlers (#2409, match Quartermaster) ---
 
@@ -264,22 +291,25 @@ public partial class MainWindow
         private readonly Control _placeholder;
         private readonly Control _viewControls;
         private readonly Control _inputSurface;
+        private readonly Control _genderPanel;
 
-        public RendererAdapter(ModelPreviewGLControl gl, Control placeholder, Control viewControls, Control inputSurface)
+        public RendererAdapter(ModelPreviewGLControl gl, Control placeholder, Control viewControls, Control inputSurface, Control genderPanel)
         {
             _gl = gl;
             _placeholder = placeholder;
             _viewControls = viewControls;
             _inputSurface = inputSurface;
+            _genderPanel = genderPanel;
         }
 
-        public void SetModel(MdlModel model)
+        public void SetModel(MdlModel model, bool gendered)
         {
             _gl.Model = model;
             _gl.IsVisible = true;
             _inputSurface.IsVisible = true;
             _placeholder.IsVisible = false;
             _viewControls.IsVisible = true;
+            _genderPanel.IsVisible = gendered;
         }
 
         public void Clear()
@@ -289,6 +319,7 @@ public partial class MainWindow
             _inputSurface.IsVisible = false;
             _placeholder.IsVisible = true;
             _viewControls.IsVisible = false;
+            _genderPanel.IsVisible = false;
         }
 
         public void SetArmorColors(int metal1, int metal2, int cloth1, int cloth2, int leather1, int leather2)

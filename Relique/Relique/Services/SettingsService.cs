@@ -37,6 +37,9 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
     // Wizard settings
     private bool _openInEditorAfterCreate = true;
 
+    // 3D preview settings
+    private int _previewGender; // 0 = male (pmh0), 1 = female (pfh0)
+
     private SettingsService()
     {
         MigrateLegacySettings();
@@ -85,18 +88,31 @@ public class SettingsService : BaseToolSettingsService<SettingsService.SettingsD
         set { if (SetProperty(ref _openInEditorAfterCreate, value)) SaveSettings(); }
     }
 
+    /// <summary>
+    /// Last-chosen gender for the 3D armor/clothing preview mannequin.
+    /// 0 = male (pmh0), 1 = female (pfh0). Persists across sessions (#2407).
+    /// </summary>
+    public int PreviewGender
+    {
+        get => _previewGender;
+        set { if (SetProperty(ref _previewGender, value)) SaveSettings(); }
+    }
+
     protected override void LoadToolSettings(SettingsData settings)
     {
         _openInEditorAfterCreate = settings.OpenInEditorAfterCreate;
+        _previewGender = settings.PreviewGender;
     }
 
     protected override void SaveToolSettings(SettingsData settings)
     {
         settings.OpenInEditorAfterCreate = OpenInEditorAfterCreate;
+        settings.PreviewGender = PreviewGender;
     }
 
     public class SettingsData : BaseSettingsData
     {
         public bool OpenInEditorAfterCreate { get; set; } = true;
+        public int PreviewGender { get; set; } // 0 = male
     }
 }

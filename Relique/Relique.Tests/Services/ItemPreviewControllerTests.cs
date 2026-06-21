@@ -36,14 +36,16 @@ public class ItemPreviewControllerTests
         public bool PlaceholderVisible { get; private set; }
         public int LoadCount { get; private set; }
         public int ClearCount { get; private set; }
+        public bool LastGendered { get; private set; }
         public (int metal1, int metal2, int cloth1, int cloth2, int leather1, int leather2)? LastArmorColors { get; private set; }
         public int ArmorColorsCallCount { get; private set; }
         public Quaternion LastModelRootOrientation { get; private set; } = Quaternion.Identity;
 
-        public void SetModel(MdlModel model)
+        public void SetModel(MdlModel model, bool gendered)
         {
             CurrentModel = model;
             LastModelRootOrientation = model.GeometryRoot?.Orientation ?? Quaternion.Identity;
+            LastGendered = gendered;
             PlaceholderVisible = false;
             LoadCount++;
         }
@@ -121,6 +123,22 @@ public class ItemPreviewControllerTests
         // Test mode: pump debounce manually via FlushDebounce()
         var controller = new ItemPreviewController(resolver, composer, renderer, baseItemSvc, debounceManually: true);
         return (renderer, controller, game);
+    }
+
+    private static (FakePreviewRenderer renderer, ItemPreviewController controller, ItemModelResolver resolver, MockGameDataService game)
+        BuildControllerWithResolver(System.Action<MockGameDataService>? setupResources = null, string mannequinPrefix = "pmh0")
+    {
+        var game = BuildGameData();
+        setupResources?.Invoke(game);
+
+        var baseItemSvc = new BaseItemTypeService(game);
+        var resolver = new ItemModelResolver(baseItemSvc, game, mannequinPrefix);
+        var composer = new MdlPartComposer(game, (resRef, _) => MakePartModel(resRef));
+        var renderer = new FakePreviewRenderer();
+
+        var controller = new ItemPreviewController(
+            resolver, composer, renderer, baseItemSvc, mannequinPrefix, debounceManually: true);
+        return (renderer, controller, resolver, game);
     }
 
     // ----- Tests -----
@@ -238,6 +256,68 @@ public class ItemPreviewControllerTests
         Assert.Equal(2, renderer.LastArmorColors.Value.cloth2);
         Assert.Equal(3, renderer.LastArmorColors.Value.leather1);
         Assert.Equal(4, renderer.LastArmorColors.Value.leather2);
+    }
+
+    [Fact]
+    public void Bind_Armor_FemalePrefix_LoadsFemaleBodyParts()
+    {
+        var (renderer, controller, _, _) = BuildControllerWithResolver(g =>
+        {
+            g.SetResource("pfh0_chest005", ResourceTypes.Mdl, new byte[] { 1 });
+            g.SetResource("pfh0_pelvis002", ResourceTypes.Mdl, new byte[] { 1 });
+        }, mannequinPrefix: "pfh0");
+        var uti = new UtiFile { BaseItem = 3 };
+        uti.ArmorParts["Torso"] = 5;
+        uti.ArmorParts["Pelvis"] = 2;
+        var vm = new ItemViewModel(uti);
+
+        controller.BindViewModel(vm);
+        controller.FlushDebounce();
+
+        // Composer was asked for the female-prefixed parts; mesh names carry the resRef.
+        Assert.NotNull(renderer.CurrentModel);
+        Assert.True(renderer.LastGendered); // armor → gender toggle is meaningful
+        var meshNames = renderer.CurrentModel!.GetMeshNodes().Select(n => n.Name).ToList();
+        Assert.Contains(meshNames, n => n.Contains("pfh0_chest005"));
+    }
+
+    [Fact]
+    public void Bind_SimpleWeapon_IsNotGendered()
+    {
+        var (renderer, controller, _, _) = BuildControllerWithResolver(g =>
+            g.SetResource("w_swrd_005", ResourceTypes.Mdl, new byte[] { 1 }));
+        var vm = new ItemViewModel(new UtiFile { BaseItem = 0, ModelPart1 = 5 });
+
+        controller.BindViewModel(vm);
+        controller.FlushDebounce();
+
+        Assert.NotNull(renderer.CurrentModel);
+        Assert.False(renderer.LastGendered); // weapon → no gender toggle
+    }
+
+    [Fact]
+    public void SetArmorMannequinPrefix_SwapsGenderAndReloads()
+    {
+        var (renderer, controller, _, _) = BuildControllerWithResolver(g =>
+        {
+            g.SetResource("pmh0_chest005", ResourceTypes.Mdl, new byte[] { 1 });
+            g.SetResource("pfh0_chest005", ResourceTypes.Mdl, new byte[] { 1 });
+        }, mannequinPrefix: "pmh0");
+        var uti = new UtiFile { BaseItem = 3 };
+        uti.ArmorParts["Torso"] = 5;
+        var vm = new ItemViewModel(uti);
+
+        controller.BindViewModel(vm);
+        controller.FlushDebounce();
+        var maleNames = renderer.CurrentModel!.GetMeshNodes().Select(n => n.Name).ToList();
+        Assert.Contains(maleNames, n => n.Contains("pmh0_chest005"));
+
+        controller.SetArmorMannequinPrefix("pfh0");
+        Assert.True(controller.HasPendingUpdate);
+        controller.FlushDebounce();
+
+        var femaleNames = renderer.CurrentModel!.GetMeshNodes().Select(n => n.Name).ToList();
+        Assert.Contains(femaleNames, n => n.Contains("pfh0_chest005"));
     }
 
     [Fact]

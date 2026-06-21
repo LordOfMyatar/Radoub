@@ -29,7 +29,12 @@ public sealed class ItemModelResolver
 {
     private readonly BaseItemTypeService _baseItemTypeService;
     private readonly IGameDataService _gameDataService;
-    private readonly string _armorMannequinPrefix;
+
+    /// <summary>
+    /// Mannequin body prefix for armor part resolution (e.g. "pmh0" male / "pfh0" female).
+    /// Mutable so the editor can swap the preview gender at runtime (#2407).
+    /// </summary>
+    public string ArmorMannequinPrefix { get; set; }
 
     private static readonly Dictionary<string, string> ArmorPartKeyToMdlSuffix =
         new(StringComparer.OrdinalIgnoreCase)
@@ -62,7 +67,7 @@ public sealed class ItemModelResolver
     {
         _baseItemTypeService = baseItemTypeService;
         _gameDataService = gameDataService;
-        _armorMannequinPrefix = armorMannequinPrefix;
+        ArmorMannequinPrefix = armorMannequinPrefix;
     }
 
     public ItemModelResolution Resolve(UtiFile uti)
@@ -140,7 +145,7 @@ public sealed class ItemModelResolver
             if (!ArmorPartKeyToMdlSuffix.TryGetValue(key, out var suffix))
                 continue;
 
-            var resRef = $"{_armorMannequinPrefix}_{suffix}{partNumber:D3}".ToLowerInvariant();
+            var resRef = $"{ArmorMannequinPrefix}_{suffix}{partNumber:D3}".ToLowerInvariant();
             if (ResourceExists(resRef))
                 found.Add(resRef);
         }

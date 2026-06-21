@@ -10,8 +10,12 @@ namespace ItemEditor.Services;
 /// </summary>
 public interface IItemPreviewRenderer
 {
-    /// <summary>Hand the renderer a composed model to display.</summary>
-    void SetModel(MdlModel model);
+    /// <summary>
+    /// Hand the renderer a composed model to display. <paramref name="gendered"/> is true
+    /// for armor/clothing whose body parts vary by mannequin gender, so the renderer can
+    /// surface the male/female toggle only when it is meaningful (#2407).
+    /// </summary>
+    void SetModel(MdlModel model, bool gendered);
 
     /// <summary>Hide the model and show the "No 3D model" placeholder.</summary>
     void Clear();
