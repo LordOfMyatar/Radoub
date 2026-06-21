@@ -44,14 +44,6 @@ public sealed class ParticleSystem
     private readonly List<Particle> _particles = new();
     private float _spawnAcc;
 
-    /// <summary>
-    /// Elapsed time within the current burst→replay cycle, for fire-and-forget emitters
-    /// (ReplayPeriod &gt; 0). Spawning is gated to the burst window [0, Lifetime] of each cycle;
-    /// outside that window the emitter is quiet. Continuous emitters (ReplayPeriod == 0) ignore
-    /// this entirely and spawn every frame. (#2544)
-    /// </summary>
-    private float _cycleClock;
-
     /// <summary>Emitter node's world rotation for the in-progress Update; Spawn reads it to orient emission. (#2395)</summary>
     private Quaternion _currentEmitterRotation = Quaternion.Identity;
 
@@ -161,23 +153,6 @@ public sealed class ParticleSystem
 
     private void SpawnForFrame(float dt, Vector3 emitterWorldPos)
     {
-        // Fire-and-forget gate: for emitters with a replay cycle (Explosion/Single/Lightning),
-        // advance a per-cycle clock and only spawn during the burst window [0, Lifetime] of each
-        // ReplayPeriod. Outside the window the emitter is quiet (no continuous fountain). A
-        // continuous emitter (ReplayPeriod == 0) skips this and spawns every frame. (#2544)
-        if (_emitter.ReplayPeriod > 0f)
-        {
-            _cycleClock += dt;
-            if (_cycleClock >= _emitter.ReplayPeriod)
-                _cycleClock -= _emitter.ReplayPeriod; // start the next burst cycle
-            float burstWindow = MathF.Max(_emitter.Lifetime.Max, 0f);
-            if (_cycleClock > burstWindow)
-            {
-                _spawnAcc = 0f; // drain carry so the quiet phase emits nothing
-                return;
-            }
-        }
-
         _spawnAcc += _emitter.BirthRate * dt;
         int spawned = 0;
         while (_spawnAcc >= 1f)

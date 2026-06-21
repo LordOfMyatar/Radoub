@@ -597,10 +597,23 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             {
                 var compiled = Radoub.UI.Particles.EmitterCompiler.Compile(emitter);
 
+                // At-rest gate (the #2439 root): placeable destruction effects (wood debris, fire)
+                // are emitters keyed to a "die" animation — their birthrate is 0 in the default
+                // pose and they only fire when destroyed. The preview shows the placeable at rest,
+                // so those emitters must be silent. The model leads: the signal is the emitter's
+                // birthrate in the "default" animation, not the static header peak. Continuous
+                // emitters (brazier flame, creature dust) keep a non-zero default birthrate and
+                // render. Full animation-driven emission (firing during a played "die") is a
+                // follow-up. (#2544 / #2439)
+                if (!Radoub.UI.Particles.EmitterAnimationGate.ShouldRenderAtRest(model, emitter.Name))
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"[Particle] Emitter '{emitter.Name}' is gated to a non-default animation (silent at rest) — not rendered. (#2544)");
+                    continue;
+                }
+
                 // Secondary, model-led cull: an emitter authored with no effective output (birthrate
-                // ≤ 0 or lifespan ≤ 0) produces nothing — skip building a system for it and log once.
-                // The primary visibility decision is the authored Update mode (handled in the
-                // compiler/sim); this is just a cheap guard for genuinely-empty emitters. (#2544)
+                // ≤ 0 or lifespan ≤ 0) produces nothing — skip building a system for it. (#2544)
                 if (emitter.BirthRate <= 0f || emitter.LifeExp <= 0f)
                 {
                     UnifiedLogger.LogApplication(LogLevel.INFO,
@@ -608,10 +621,8 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                     continue;
                 }
 
-                // Emission modes are now honored: Fountain streams continuously; Explosion/Single/
-                // Lightning burst and replay on a model-derived cycle (#2544). Only render modes with
-                // no faithful implementation (Beam/Mesh/LinkedChain) still fall back to a camera-facing
-                // billboard — log once per model so the limitation stays visible.
+                // Render modes with no faithful implementation (Beam/Mesh/LinkedChain) still fall
+                // back to a camera-facing billboard — log once per model so the limitation stays visible.
                 bool unsupportedRender = compiled.RenderMode == Radoub.UI.Particles.ParticleRenderMode.Beam
                     || compiled.RenderMode == Radoub.UI.Particles.ParticleRenderMode.Mesh
                     || compiled.RenderMode == Radoub.UI.Particles.ParticleRenderMode.LinkedChain;

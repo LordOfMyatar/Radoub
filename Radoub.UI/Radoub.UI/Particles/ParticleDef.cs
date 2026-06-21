@@ -208,12 +208,4 @@ public class CompiledEmitter
     public float Fps { get; set; }
     public int FrameStart { get; set; }
     public int FrameEnd { get; set; }
-
-    /// <summary>
-    /// For fire-and-forget emission modes (Explosion/Single/Lightning), the full burst→replay
-    /// cycle length in seconds: the burst runs out over ~<see cref="Lifetime"/>, then the emitter
-    /// stays quiet until this period elapses, then bursts again. 0 means continuous (Fountain) —
-    /// no replay cycle (#2544).
-    /// </summary>
-    public float ReplayPeriod { get; set; }
 }

@@ -39,34 +39,28 @@ public class EmitterCompilerTests
         Assert.Equal(ParticleBlendMode.Additive, result.Blend);
     }
 
-    // ---- Model-led emission gate (#2544 item 2) ----
+    // ---- Emission-mode mapping (#2544) ----
 
     [Fact]
-    public void Compile_FountainIsContinuous_ZeroReplayPeriod()
+    public void Compile_FountainIsContinuous()
     {
         var node = SampleNode();
         node.Update = "Fountain";
-        var result = EmitterCompiler.Compile(node);
-        Assert.Equal(ParticleEmissionMode.Continuous, result.EmissionMode);
-        Assert.Equal(0f, result.ReplayPeriod); // 0 = continuous, no replay cycle
+        Assert.Equal(ParticleEmissionMode.Continuous, EmitterCompiler.Compile(node).EmissionMode);
     }
 
     [Theory]
     [InlineData("Explosion")]
     [InlineData("Single")]
     [InlineData("Lightning")]
-    public void Compile_FireAndForgetModesBurstWithPositiveReplayPeriod(string update)
+    public void Compile_FireAndForgetModesAreNotContinuous(string update)
     {
+        // Explosion/Single/Lightning map to a burst mode (not continuous). At-rest visibility is
+        // decided by EmitterAnimationGate, not the Update mode, but the mode mapping still records
+        // that these are not free-running fountains. (#2544)
         var node = SampleNode();
         node.Update = update;
-        node.LifeExp = 2f;
-        var result = EmitterCompiler.Compile(node);
-
-        // Explosion/Single/Lightning are all fire-and-forget → burst, not continuous.
-        Assert.NotEqual(ParticleEmissionMode.Continuous, result.EmissionMode);
-        // ReplayPeriod = burst (≈LifeExp) + a quiet gap, so it exceeds LifeExp.
-        Assert.True(result.ReplayPeriod > node.LifeExp,
-            $"{update}: expected ReplayPeriod > LifeExp ({node.LifeExp}), got {result.ReplayPeriod}");
+        Assert.NotEqual(ParticleEmissionMode.Continuous, EmitterCompiler.Compile(node).EmissionMode);
     }
 
     [Fact]

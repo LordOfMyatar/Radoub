@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Epic: Emitter rendering — model-led visibility/intensity gate (#2544)
 
-- Particle emitters now honor the authored `Update` mode: continuous fountains stream as before, while fire-and-forget emitters (Explosion/Single/Lightning) burst and replay on a model-derived cycle instead of being drawn as a non-stop fountain. Fixes placeable over-rendering (#2439, e.g. chests emitting a constant smoke plume) while leaving creature emitters (#2395) unchanged. Also honors authored particle size (no blanket clamp, independent X/Y) and implements the remaining billboard orientation modes (#2450). Affects every tool's preview (Quartermaster, Relique, Reliquary).
+- Particle emitters are now gated by the model's animation data: placeable destruction effects (wood debris, fire) keyed to a `die` animation are silent in the at-rest preview instead of spewing a constant fountain, while continuous emitters (brazier flame, creature dust) keep rendering. Fixes placeable over-rendering (#2439, e.g. a bookshelf emitting constant sparks/smoke) while leaving creature emitters (#2395) unchanged. Also honors authored particle size (no blanket clamp, independent X/Y) and implements the remaining billboard orientation modes including per-particle velocity alignment (#2450). Affects every tool's preview (Quartermaster, Relique, Reliquary).
 
 ---
 
