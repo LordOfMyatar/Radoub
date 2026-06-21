@@ -196,6 +196,7 @@ public partial class MdlBinaryReader
         if (rootNodeOffset != uint.MaxValue)
         {
             model.GeometryRoot = ParseNode(rootNodeOffset);
+            ResolveSkinBoneNames(model);
         }
 
         var animArrayBufferOffset = PointerToModelOffset(animArrayOffset);
@@ -205,5 +206,35 @@ public partial class MdlBinaryReader
         }
 
         return model;
+    }
+
+    /// <summary>
+    /// Post-parse pass (#2399): populate every skin mesh's <see cref="MdlSkinNode.BoneNodeNames"/>
+    /// (slot → bone node name) by inverting its NodeToBoneMap against the model's depth-first node
+    /// order. ParseNode assigns node indices depth-first (root first), matching the file's
+    /// NodeToBoneMap indexing. Without this the renderer has no slot→bone bridge for skinning.
+    /// </summary>
+    private static void ResolveSkinBoneNames(MdlModel model)
+    {
+        if (model.GeometryRoot == null) return;
+
+        var depthFirst = new List<MdlNode>();
+        CollectDepthFirst(model.GeometryRoot, depthFirst);
+
+        foreach (var node in depthFirst)
+        {
+            if (node is MdlSkinNode skin && skin.NodeToBoneMap.Length > 0 && skin.BoneQuaternions.Length > 0)
+            {
+                skin.BoneNodeNames = SkinBoneResolver.ResolveBoneNames(
+                    depthFirst, skin.NodeToBoneMap, skin.BoneQuaternions.Length);
+            }
+        }
+    }
+
+    private static void CollectDepthFirst(MdlNode node, List<MdlNode> acc)
+    {
+        acc.Add(node);
+        foreach (var child in node.Children)
+            CollectDepthFirst(child, acc);
     }
 }

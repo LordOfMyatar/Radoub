@@ -1263,11 +1263,23 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             bool isSkinMesh = mesh is Radoub.Formats.Mdl.MdlSkinNode;
 
             // All meshes: apply full hierarchy world transform.
-            // Skin mesh vertices (m_pavVerts) are in bind-pose space — same treatment as trimesh.
-            // m_aQBoneRefInv/m_aTBoneRefInv are inverse bind-pose matrices for runtime animation, not static display.
             var pose = GetCurrentPose();
             var worldTransform = ModelViewController.GetWorldTransform(mesh, pose);
             bool hasWorldTransform = worldTransform != Matrix4x4.Identity;
+
+            // Skin meshes (#2399 / R1): deform each vertex by its bone weights instead of applying
+            // the single node transform. Without this the skin body renders frozen at bind pose
+            // while bone-driven parts animate (robe head detaches, snakes stay flat). At bind pose
+            // every skin matrix collapses to the mesh bind-world transform, so static creatures are
+            // unaffected. Falls back to the rigid path if bone data is missing.
+            Matrix4x4[]? skinMatrices = null;
+            if (mesh is Radoub.Formats.Mdl.MdlSkinNode skinNode
+                && skinNode.BoneNodeNames.Length > 0
+                && skinNode.BoneWeights.Length == mesh.Vertices.Length
+                && _model?.GeometryRoot != null)
+            {
+                skinMatrices = SkinMatrixBuilder.Build(skinNode, _model.GeometryRoot, pose);
+            }
 
             // Count NaN vertices - we'll skip them during rendering
             var nanVertexIndices = new HashSet<int>();
@@ -1368,15 +1380,30 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                     }
 
                     var localVertex = mesh.Vertices[vs[c]];
-                    var worldPos = hasWorldTransform
-                        ? ModelViewController.TransformPosition(localVertex, worldTransform)
-                        : localVertex;
-                    cornerPositions[ci] = worldPos;
-
                     var localNormal = cornerNormals[ci];
-                    var worldNormal = hasWorldTransform
-                        ? ModelViewController.TransformNormal(localNormal, worldTransform)
-                        : localNormal;
+
+                    Vector3 worldPos, worldNormal;
+                    if (skinMatrices != null)
+                    {
+                        // Bone-weighted deformation: position blended through the skin matrices,
+                        // normal rotated by the same blend (matched to vs[c] for stored normals).
+                        var bw = ((Radoub.Formats.Mdl.MdlSkinNode)mesh).BoneWeights[vs[c]];
+                        var vw = new SkinDeformer.VertexWeights(
+                            bw.Bone0, bw.Weight0, bw.Bone1, bw.Weight1,
+                            bw.Bone2, bw.Weight2, bw.Bone3, bw.Weight3);
+                        worldPos = SkinDeformer.BlendVertex(localVertex, vw, skinMatrices);
+                        worldNormal = Vector3.Normalize(SkinDeformer.BlendNormal(localNormal, vw, skinMatrices));
+                    }
+                    else
+                    {
+                        worldPos = hasWorldTransform
+                            ? ModelViewController.TransformPosition(localVertex, worldTransform)
+                            : localVertex;
+                        worldNormal = hasWorldTransform
+                            ? ModelViewController.TransformNormal(localNormal, worldTransform)
+                            : localNormal;
+                    }
+                    cornerPositions[ci] = worldPos;
                     cornerNormalsWorld[ci] = worldNormal;
 
                     if (hasUVs)

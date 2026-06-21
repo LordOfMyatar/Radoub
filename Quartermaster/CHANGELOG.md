@@ -10,7 +10,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ### Fix: Robe animations badly off — head detaches during run (#2399)
 
-- Robe-wearing creatures (e.g. Dana) no longer distort during animation playback; grafted robe sub-bones now follow the skeleton's animation channels instead of drifting from the head/neck. Shared `Radoub.UI` renderer change.
+- Robe-wearing creatures (e.g. Dana) no longer distort during animation playback; the robe body now deforms with the animated skeleton. Shared-library fix — see root CHANGELOG (`Radoub.UI 0.2.21-alpha`, `Radoub.Formats 0.2.74-alpha`).
 
 ---
 
