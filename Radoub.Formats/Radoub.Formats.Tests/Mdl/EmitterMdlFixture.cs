@@ -100,7 +100,10 @@ public static class EmitterMdlFixture
         int ygrid = 1,
         // post-texture fields (guard against texture-width misalignment)
         bool loop = false,
-        int renderOrder = 0)
+        int renderOrder = 0,
+        // emitter flag bitfield (0x144) and spawn type uint (0x84)
+        uint emitterFlags = 0,
+        uint spawnType = 0)
     {
         var controllers = new List<ControllerRecord>();
 
@@ -188,7 +191,7 @@ public static class EmitterMdlFixture
         WriteSingle(modelData, n + 0x78, 0.0f);                // blastLength
         WriteUInt32(modelData, n + 0x7C, (uint)xgrid);         // xGrid
         WriteUInt32(modelData, n + 0x80, (uint)ygrid);         // yGrid
-        WriteUInt32(modelData, n + 0x84, 0);                   // spawnType
+        WriteUInt32(modelData, n + 0x84, spawnType);           // spawnType
         WriteFixedString(modelData, n + 0x88, update, 32);     // update[32]
         WriteFixedString(modelData, n + 0xA8, render, 32);     // render[32]
         WriteFixedString(modelData, n + 0xC8, blend, 32);      // blend[32]
@@ -198,7 +201,7 @@ public static class EmitterMdlFixture
         WriteUInt32(modelData, n + 0x13C, loop ? 1u : 0u);     // loop
         WriteUInt16(modelData, n + 0x140, (ushort)renderOrder);// renderOrder
         WriteUInt16(modelData, n + 0x142, 0);                  // pad
-        WriteUInt32(modelData, n + 0x144, 0);                  // emitterFlags
+        WriteUInt32(modelData, n + 0x144, emitterFlags);       // emitterFlags
         // ends at n + 0x148
 
         // ---- Controller key block ----

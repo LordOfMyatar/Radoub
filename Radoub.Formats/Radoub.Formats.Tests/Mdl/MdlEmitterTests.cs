@@ -115,4 +115,72 @@ public class MdlEmitterTests
         Assert.NotNull(omen);
         Assert.True(omen!.BirthRate > 0f, "BirthRate should parse from 'birthrate 100'");
     }
+
+    /// <summary>
+    /// Binary/ASCII emitter-flag symmetry (#2544 item 1). The binary reader stores the raw
+    /// <c>EmitterFlags</c> uint but historically never decoded the individual bools, while the
+    /// ASCII reader populates them from named properties. The same emitter must yield identical
+    /// node state on both parse paths, or any flag-driven render gating works for ASCII and
+    /// silently fails for binary (compiled) models. Bit constants are from rollnw
+    /// <c>EmitterFlag</c> (Mdl.hpp): P2P=0x0001, P2PSel=0x0002, AffectedByWind=0x0004,
+    /// Bounce=0x0010, Random=0x0020, Inherit=0x0040, InheritLocal=0x0100, Splat=0x0200,
+    /// InheritPart=0x0400.
+    /// </summary>
+    [Fact]
+    public void EmitterFlags_BinaryAndAscii_DecodeToSameBools()
+    {
+        // A known flag set: P2P + AffectedByWind + Bounce + Random + Inherit + InheritLocal
+        //                   + Splat + InheritPart + P2PSel(p2p_bezier).
+        const uint flags = 0x0001 | 0x0002 | 0x0004 | 0x0010 | 0x0020 | 0x0040 | 0x0100 | 0x0200 | 0x0400;
+        const uint spawn = 1;
+
+        var binBytes = EmitterMdlFixture.BuildSingleEmitter(emitterFlags: flags, spawnType: spawn);
+        var binEmitter = new MdlBinaryReader().Parse(binBytes)
+            .EnumerateAllNodes().OfType<MdlEmitterNode>().Single();
+
+        // Matched ASCII source: each named flag corresponds to the bit set above.
+        var ascii = @"
+newmodel asciitest
+beginmodelgeom asciitest
+node emitter emitter01
+  parent NULL
+  update Fountain
+  render Normal
+  blend Normal
+  texture fx_tex
+  spawntype 1
+  p2p 1
+  p2p_bezier 1
+  affectedbywind 1
+  bounce 1
+  random 1
+  inherit 1
+  inheritlocal 1
+  issplat 1
+  inheritpart 1
+endnode
+endmodelgeom asciitest
+donemodel asciitest
+";
+        var asciiEmitter = new MdlAsciiReader().Parse(ascii)
+            .EnumerateAllNodes().OfType<MdlEmitterNode>().Single();
+
+        Assert.Equal(asciiEmitter.P2P, binEmitter.P2P);
+        Assert.Equal(asciiEmitter.P2PBezier, binEmitter.P2PBezier);
+        Assert.Equal(asciiEmitter.AffectedByWind, binEmitter.AffectedByWind);
+        Assert.Equal(asciiEmitter.Bounce, binEmitter.Bounce);
+        Assert.Equal(asciiEmitter.Random, binEmitter.Random);
+        Assert.Equal(asciiEmitter.Inherit, binEmitter.Inherit);
+        Assert.Equal(asciiEmitter.InheritLocal, binEmitter.InheritLocal);
+        Assert.Equal(asciiEmitter.IsSplat, binEmitter.IsSplat);
+        Assert.Equal(asciiEmitter.InheritPart, binEmitter.InheritPart);
+        Assert.Equal(asciiEmitter.SpawnType, binEmitter.SpawnType);
+
+        // And the binary decode is actually populated (not just both-false).
+        Assert.True(binEmitter.P2P);
+        Assert.True(binEmitter.AffectedByWind);
+        Assert.True(binEmitter.IsSplat);
+        Assert.True(binEmitter.InheritPart);
+        Assert.Equal("1", binEmitter.SpawnType);
+    }
 }

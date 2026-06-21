@@ -23,6 +23,21 @@ public partial class MdlBinaryReader
         light.Fading = reader.ReadUInt32() != 0;
     }
 
+    // EmitterFlags bits (node header field 0x144). Authoritative values from rollnw
+    // EmitterFlag (lib/nw/model/Mdl.hpp). The ASCII reader populates these same bools from
+    // named properties; decoding them here keeps binary (compiled) models symmetric with
+    // ASCII so any flag-driven render gating behaves identically on both paths (#2544).
+    private const uint EmitterFlagP2P = 0x0001;
+    private const uint EmitterFlagP2PSel = 0x0002;
+    private const uint EmitterFlagAffectedByWind = 0x0004;
+    // 0x0008 IsTinted and 0x0080 InheritVel are consumed by the UI compiler, not the node bools.
+    private const uint EmitterFlagBounce = 0x0010;
+    private const uint EmitterFlagRandom = 0x0020;
+    private const uint EmitterFlagInherit = 0x0040;
+    private const uint EmitterFlagInheritLocal = 0x0100;
+    private const uint EmitterFlagSplat = 0x0200;
+    private const uint EmitterFlagInheritPart = 0x0400;
+
     private void ParseEmitterNode(MdlEmitterNode emitter, BinaryReader reader)
     {
         // Reader is positioned at node+0x70 (end of node header) on entry.
@@ -31,7 +46,9 @@ public partial class MdlBinaryReader
         reader.ReadSingle();                 // 0x78 blastLength
         emitter.XGrid = reader.ReadInt32();  // 0x7C
         emitter.YGrid = reader.ReadInt32();  // 0x80
-        reader.ReadUInt32();                 // 0x84 spawnType
+        // 0x84 spawnType: a uint here; the ASCII reader keeps the numeric token verbatim
+        // (real models author "spawntype 0"), so stringify for symmetry with that path.
+        emitter.SpawnType = reader.ReadUInt32().ToString();
         emitter.Update = ReadFixedString(reader, 32);       // 0x88
         emitter.RenderMethod = ReadFixedString(reader, 32); // 0xA8
         emitter.Blend = ReadFixedString(reader, 32);        // 0xC8
@@ -41,7 +58,19 @@ public partial class MdlBinaryReader
         emitter.Loop = reader.ReadUInt32() != 0;            // 0x13C
         emitter.RenderOrder = reader.ReadUInt16();          // 0x140
         reader.ReadUInt16();                 // 0x142 pad
-        emitter.EmitterFlags = reader.ReadUInt32();         // 0x144
+        uint flags = reader.ReadUInt32();                   // 0x144
+        emitter.EmitterFlags = flags;
+
+        // Decode the individual bools so binary models match ASCII (#2544).
+        emitter.P2P = (flags & EmitterFlagP2P) != 0;
+        emitter.P2PBezier = (flags & EmitterFlagP2PSel) != 0;
+        emitter.AffectedByWind = (flags & EmitterFlagAffectedByWind) != 0;
+        emitter.Bounce = (flags & EmitterFlagBounce) != 0;
+        emitter.Random = (flags & EmitterFlagRandom) != 0;
+        emitter.Inherit = (flags & EmitterFlagInherit) != 0;
+        emitter.InheritLocal = (flags & EmitterFlagInheritLocal) != 0;
+        emitter.IsSplat = (flags & EmitterFlagSplat) != 0;
+        emitter.InheritPart = (flags & EmitterFlagInheritPart) != 0;
     }
 
     private void ParseReferenceNode(MdlReferenceNode reference, BinaryReader reader)
