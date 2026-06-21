@@ -123,4 +123,33 @@ public class ParticleBillboardTests
         Assert.Equal(CamRight, right);
         Assert.Equal(CamUp, up);
     }
+
+    [Theory]
+    [InlineData(ParticleRenderMode.VelocityAligned, true)]
+    [InlineData(ParticleRenderMode.Stretched, true)]
+    [InlineData(ParticleRenderMode.Billboard, false)]
+    [InlineData(ParticleRenderMode.BillboardLocalZ, false)]
+    [InlineData(ParticleRenderMode.BillboardWorldZ, false)]
+    [InlineData(ParticleRenderMode.AlignedWorldZ, false)]
+    public void IsVelocityDependent_FlagsOnlyVelocityModes(ParticleRenderMode mode, bool expected)
+    {
+        // The render path resolves the quad basis per particle only for velocity-dependent modes;
+        // all others can resolve it once per emitter. (#2544)
+        Assert.Equal(expected, ParticleBillboard.IsVelocityDependent(mode));
+    }
+
+    [Fact]
+    public void VelocityAligned_DifferentVelocities_ProduceDifferentBases()
+    {
+        // Two particles from the same emitter moving in different directions must orient
+        // differently — proving the basis is genuinely per-particle, not per-emitter.
+        var (_, upUp) = ParticleBillboard.QuadBasis(
+            ParticleRenderMode.VelocityAligned, CamRight, CamUp, Quaternion.Identity, new Vector3(0, 0, 3));
+        var (_, upSide) = ParticleBillboard.QuadBasis(
+            ParticleRenderMode.VelocityAligned, CamRight, CamUp, Quaternion.Identity, new Vector3(3, 0, 0));
+
+        Assert.True(Vector3.Distance(upUp, Vector3.UnitZ) < 1e-5f);
+        Assert.True(Vector3.Distance(upSide, Vector3.UnitX) < 1e-5f);
+        Assert.True(Vector3.Distance(upUp, upSide) > 0.5f, "per-particle bases must differ");
+    }
 }

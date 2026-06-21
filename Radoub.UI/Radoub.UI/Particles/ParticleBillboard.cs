@@ -112,4 +112,11 @@ public static class ParticleBillboard
 
     private static Vector3 Normalize(Vector3 v, Vector3 fallback)
         => v.LengthSquared() < Epsilon ? fallback : Vector3.Normalize(v);
+
+    /// <summary>
+    /// True when <paramref name="mode"/>'s quad orientation depends on the individual particle's
+    /// velocity (so the basis must be resolved per particle, not once per emitter). (#2544)
+    /// </summary>
+    public static bool IsVelocityDependent(ParticleRenderMode mode) =>
+        mode is ParticleRenderMode.VelocityAligned or ParticleRenderMode.Stretched;
 }
