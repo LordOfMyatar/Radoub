@@ -62,4 +62,22 @@ public class SettingsServiceTests
     {
         Assert.True(SettingsService.Instance.OpenInEditorAfterCreate);
     }
+
+    [Fact]
+    public void PreviewGender_RoundTripsValue()
+    {
+        var settings = SettingsService.Instance;
+        var original = settings.PreviewGender;
+        try
+        {
+            settings.PreviewGender = 1;
+            Assert.Equal(1, settings.PreviewGender);
+            settings.PreviewGender = 0;
+            Assert.Equal(0, settings.PreviewGender);
+        }
+        finally
+        {
+            settings.PreviewGender = original;
+        }
+    }
 }

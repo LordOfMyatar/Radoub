@@ -348,7 +348,7 @@
 
                             <!-- Appearance (collapsible, conditional on base item type) -->
                             <Expander x:Name="AppearanceExpander" Header="Appearance" IsExpanded="True" IsVisible="False" Margin="0,0,0,8">
-                                <Grid ColumnDefinitions="*,16,Auto" Margin="0,4,0,0">
+                                <Grid ColumnDefinitions="2*,16,3*" Margin="0,4,0,0">
                                 <StackPanel Grid.Column="0" Spacing="8">
 
                                     <!-- Icon Preview + Browse Button -->
@@ -550,14 +550,26 @@
 
                                 </StackPanel>
 
-                                <!-- Right column: 3D preview + view controls (#1908 PR3b) -->
-                                <StackPanel Grid.Column="2" Width="280" Spacing="6">
+                                <!-- Right column: 3D preview + view controls (#1908 PR3b).
+                                     Responsive viewport (#2408): width fills the column (3* share +
+                                     Stretch) so full-body armor displays usably; MinWidth/MinHeight keep
+                                     small held-item previews above a usable floor. Height is a larger
+                                     fixed default (the StackPanel does not stretch children vertically);
+                                     fully responsive height tracked in #2538. -->
+                                <StackPanel Grid.Column="2" Spacing="6">
                                     <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                             BorderThickness="1" CornerRadius="2"
-                                            Width="280" Height="280">
+                                            HorizontalAlignment="Stretch"
+                                            MinWidth="280" MinHeight="280" Height="380">
                                         <Grid>
                                             <controls:ModelPreviewGLControl x:Name="ItemPreviewGL"
                                                                             IsVisible="False"/>
+                                            <!-- Transparent input surface so pointer/wheel events always hit-test
+                                                 (OpenGlControlBase has no Background). Mirrors QM (#2124). -->
+                                            <Border x:Name="ItemPreviewInputSurface"
+                                                    Background="Transparent"
+                                                    Focusable="True"
+                                                    IsVisible="False"/>
                                             <TextBlock x:Name="ItemPreviewPlaceholder"
                                                        Text="No 3D model for this item type"
                                                        HorizontalAlignment="Center"
@@ -568,13 +580,39 @@
                                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                         </Grid>
                                     </Border>
-                                    <UniformGrid x:Name="ItemPreviewControls" Columns="5" IsVisible="False">
-                                        <Button Content="F" ToolTip.Tip="Front view" Click="OnItemPreviewFrontClick" Padding="6,2"/>
-                                        <Button Content="B" ToolTip.Tip="Back view" Click="OnItemPreviewBackClick" Padding="6,2"/>
-                                        <Button Content="L" ToolTip.Tip="Left view" Click="OnItemPreviewLeftClick" Padding="6,2"/>
-                                        <Button Content="R" ToolTip.Tip="Right view" Click="OnItemPreviewRightClick" Padding="6,2"/>
-                                        <Button Content="↺" ToolTip.Tip="Reset view" Click="OnItemPreviewResetClick" Padding="6,2"/>
-                                    </UniformGrid>
+                                    <!-- Rotate/zoom + view presets (#2409). Drag-to-rotate, ↺/↻ rotate,
+                                         +/- zoom, wheel zoom, arrow/WASD keys — all match Quartermaster. -->
+                                    <StackPanel x:Name="ItemPreviewControls" IsVisible="False" Spacing="4">
+                                        <UniformGrid Columns="5">
+                                            <Button Content="↺" ToolTip.Tip="Rotate left" Click="OnItemPreviewRotateLeftClick" Padding="6,2"/>
+                                            <Button Content="↻" ToolTip.Tip="Rotate right" Click="OnItemPreviewRotateRightClick" Padding="6,2"/>
+                                            <Button Content="+" ToolTip.Tip="Zoom in" Click="OnItemPreviewZoomInClick" Padding="6,2"/>
+                                            <Button Content="−" ToolTip.Tip="Zoom out" Click="OnItemPreviewZoomOutClick" Padding="6,2"/>
+                                            <Button Content="⟲" ToolTip.Tip="Reset view" Click="OnItemPreviewResetClick" Padding="6,2"/>
+                                        </UniformGrid>
+                                        <UniformGrid Columns="4">
+                                            <Button Content="F" ToolTip.Tip="Front view" Click="OnItemPreviewFrontClick" Padding="6,2"/>
+                                            <Button Content="B" ToolTip.Tip="Back view" Click="OnItemPreviewBackClick" Padding="6,2"/>
+                                            <Button Content="L" ToolTip.Tip="Left view" Click="OnItemPreviewLeftClick" Padding="6,2"/>
+                                            <Button Content="R" ToolTip.Tip="Right view" Click="OnItemPreviewRightClick" Padding="6,2"/>
+                                        </UniformGrid>
+                                        <!-- Gender toggle for armor/clothing mannequin (#2407). Editor-only
+                                             (UTI has no gender field); persisted in settings. -->
+                                        <StackPanel x:Name="ItemPreviewGenderPanel"
+                                                    Orientation="Horizontal" Spacing="6"
+                                                    HorizontalAlignment="Center" IsVisible="False">
+                                            <TextBlock Text="Body:" VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                            <RadioButton x:Name="ItemPreviewMaleRadio" Content="Male"
+                                                         GroupName="PreviewGender" IsChecked="True"
+                                                         Click="OnItemPreviewGenderChanged"
+                                                         ToolTip.Tip="Preview armor/clothing on a male body"/>
+                                            <RadioButton x:Name="ItemPreviewFemaleRadio" Content="Female"
+                                                         GroupName="PreviewGender"
+                                                         Click="OnItemPreviewGenderChanged"
+                                                         ToolTip.Tip="Preview armor/clothing on a female body"/>
+                                        </StackPanel>
+                                    </StackPanel>
                                 </StackPanel>
                                 </Grid>
                             </Expander>

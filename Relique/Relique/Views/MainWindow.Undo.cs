@@ -2,6 +2,7 @@ using System;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using ItemEditor.Services;
 using Radoub.UI.Undo;
 
 namespace ItemEditor.Views;
@@ -82,6 +83,10 @@ public partial class MainWindow
     /// <summary>True while undo/redo drives a model-part change (re-entrancy guard, #2231).</summary>
     private bool _suppressModelPartUndo;
 
+    /// <summary>True while a live model-part ComboBox SelectionChanged is applying its change,
+    /// so the undo apply-action skips rebuilding the combo it is firing from (#2533).</summary>
+    private bool _modelPartSelectionInProgress;
+
     /// <summary>
     /// Record a model-part change through undo (#2231). The combo is not bound to the VM, so when the
     /// selection handler fires <paramref name="getter"/> still returns the pre-change value — captured
@@ -100,9 +105,13 @@ public partial class MainWindow
             try
             {
                 setter(v);
-                // Re-sync the combos + icon preview to the model (undo/redo path). _isLoading guards
-                // the repopulate from re-recording via its own handlers.
-                if (_currentItem != null)
+                // Re-sync the combos + icon preview to the model so undo/redo keeps the UI in
+                // sync. Skip this while a live combo SelectionChanged is in progress — rebuilding
+                // the combo's Items from inside its own event re-enters the active control and
+                // crashes the render loop for composite weapons (#2533). On the live path the
+                // combo already shows the chosen value, so no re-sync is needed.
+                if (_currentItem != null
+                    && ModelPartResyncDecider.ShouldResyncCombos(_modelPartSelectionInProgress))
                 {
                     var wasLoading = _isLoading;
                     _isLoading = true;

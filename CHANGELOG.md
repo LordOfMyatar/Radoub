@@ -17,6 +17,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.20-alpha] - 2026-06-20
+**Branch**: `relique/issue-2446` | **PR**: #2532
+
+### Feat: Gendered mannequin for item 3D preview (#2407)
+
+- New `MannequinPrefix.ForGender` helper and a settable `ItemModelResolver.ArmorMannequinPrefix` let blueprint editors swap the armor preview body between male (`pmh0`) and female (`pfh0`) at runtime.
+
+---
+
 ## [Radoub.UI 0.2.19-alpha] - 2026-06-20
 **Branch**: `relique/issue-2233` | **PR**: #2530
 

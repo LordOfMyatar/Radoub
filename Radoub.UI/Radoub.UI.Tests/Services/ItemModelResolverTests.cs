@@ -124,6 +124,49 @@ public class ItemModelResolverTests
     }
 
     [Fact]
+    public void Resolve_Armor_FemaleMannequinPrefix_ReturnsFemaleBodyPartResRefs()
+    {
+        var game = BuildGameData();
+        // Female mannequin prefix is pfh0 (playable female human, phenotype 0)
+        game.SetResource("pfh0_chest005", ResourceTypes.Mdl, new byte[] { 1 });
+        game.SetResource("pfh0_pelvis002", ResourceTypes.Mdl, new byte[] { 1 });
+
+        var resolver = new ItemModelResolver(BuildBaseItemService(game), game, "pfh0");
+        var uti = new UtiFile
+        {
+            BaseItem = 3,
+            ArmorParts = new()
+            {
+                ["Torso"] = 5,
+                ["Pelvis"] = 2,
+            },
+        };
+
+        var result = resolver.Resolve(uti);
+
+        Assert.True(result.HasModel);
+        Assert.Contains("pfh0_chest005", result.MdlResRefs);
+        Assert.Contains("pfh0_pelvis002", result.MdlResRefs);
+    }
+
+    [Fact]
+    public void ArmorMannequinPrefix_SetAtRuntime_AffectsNextResolve()
+    {
+        var game = BuildGameData();
+        game.SetResource("pmh0_chest005", ResourceTypes.Mdl, new byte[] { 1 });
+        game.SetResource("pfh0_chest005", ResourceTypes.Mdl, new byte[] { 1 });
+
+        var resolver = new ItemModelResolver(BuildBaseItemService(game), game);
+        var uti = new UtiFile { BaseItem = 3, ArmorParts = new() { ["Torso"] = 5 } };
+
+        Assert.Contains("pmh0_chest005", resolver.Resolve(uti).MdlResRefs);
+
+        resolver.ArmorMannequinPrefix = "pfh0";
+
+        Assert.Contains("pfh0_chest005", resolver.Resolve(uti).MdlResRefs);
+    }
+
+    [Fact]
     public void Resolve_Armor_PartialPartsExist_DropsMissingAndKeepsRest()
     {
         var game = BuildGameData();

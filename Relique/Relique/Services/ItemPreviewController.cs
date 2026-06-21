@@ -43,7 +43,7 @@ public sealed class ItemPreviewController
     private readonly MdlPartComposer _composer;
     private readonly IItemPreviewRenderer _renderer;
     private readonly BaseItemTypeService _baseItemTypeService;
-    private readonly string _armorMannequinPrefix;
+    private string _armorMannequinPrefix;
     private readonly bool _debounceManually;
 
     /// <summary>
@@ -70,10 +70,36 @@ public sealed class ItemPreviewController
         _renderer = renderer;
         _baseItemTypeService = baseItemTypeService;
         _armorMannequinPrefix = armorMannequinPrefix;
+        // Keep the resolver in sync with the controller's starting gender so the first
+        // armor resolve uses the persisted prefix, not the resolver's own default (#2407).
+        _resolver.ArmorMannequinPrefix = armorMannequinPrefix;
         _debounceManually = debounceManually;
     }
 
     public bool HasPendingUpdate => _pendingUpdate;
+
+    /// <summary>
+    /// Current mannequin body prefix used to compose armor/clothing previews
+    /// (e.g. "pmh0" male / "pfh0" female).
+    /// </summary>
+    public string ArmorMannequinPrefix => _armorMannequinPrefix;
+
+    /// <summary>
+    /// Swap the preview gender by changing the mannequin body prefix and re-triggering a
+    /// reload. No-op if the prefix is unchanged or no item is bound. (#2407)
+    /// </summary>
+    public void SetArmorMannequinPrefix(string prefix)
+    {
+        if (string.IsNullOrEmpty(prefix) || prefix == _armorMannequinPrefix)
+            return;
+
+        _armorMannequinPrefix = prefix;
+        _resolver.ArmorMannequinPrefix = prefix;
+
+        // Only a bound armor item needs a reload; flag it and let the debounce flush.
+        if (_viewModel != null)
+            _pendingUpdate = true;
+    }
 
     public void BindViewModel(ItemViewModel? vm)
     {
@@ -168,7 +194,9 @@ public sealed class ItemPreviewController
 
             ApplyTrophyRotationIfHeldWeapon(uti, composed);
 
-            _renderer.SetModel(composed);
+            // Only armor (ModelType 3) composes on the gendered mannequin body; the toggle
+            // is meaningless for weapons/layered clothing (#2407).
+            _renderer.SetModel(composed, gendered: resolution.HasArmorParts);
 
             if (resolution.HasColorFields)
             {
