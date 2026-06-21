@@ -107,4 +107,23 @@ public static class MeshTransparency
             _ => MaterialMode.Opaque,
         };
     }
+
+    /// <summary>
+    /// Order transparent meshes for correct back-to-front blending (#2540), mirroring rollnw:
+    /// <c>TransparencyHint</c> ascending first (an explicit author-set draw layer), then farthest
+    /// from the camera first as the tiebreak. <paramref name="items"/> carries each mesh's hint
+    /// and a view-space depth (larger = farther). Returns indices into <paramref name="items"/>
+    /// in the order they should be drawn. Stable for equal keys (preserves parse order).
+    /// </summary>
+    public static int[] SortBackToFront(IReadOnlyList<(int hint, float depth)> items)
+    {
+        var order = new int[items.Count];
+        for (int i = 0; i < order.Length; i++) order[i] = i;
+
+        // OrderBy is stable; compose hint (asc) then depth (desc = farthest first).
+        return order
+            .OrderBy(i => items[i].hint)
+            .ThenByDescending(i => items[i].depth)
+            .ToArray();
+    }
 }

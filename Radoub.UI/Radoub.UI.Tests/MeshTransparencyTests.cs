@@ -120,4 +120,41 @@ public class MeshTransparencyTests
         Assert.Equal(MaterialMode.Opaque,
             MeshTransparency.ClassifyMesh(1.0f, 0, AlphaProfile.Opaque));
     }
+
+    // ---- SortBackToFront ----
+
+    [Fact]
+    public void Sort_SameHint_FarthestFirst()
+    {
+        // depth: larger = farther from camera. Back-to-front => descending depth.
+        var items = new[]
+        {
+            (hint: 0, depth: 1.0f),  // index 0, near
+            (hint: 0, depth: 5.0f),  // index 1, far
+            (hint: 0, depth: 3.0f),  // index 2, mid
+        };
+        var order = MeshTransparency.SortBackToFront(items);
+        Assert.Equal(new[] { 1, 2, 0 }, order);
+    }
+
+    [Fact]
+    public void Sort_LowerHintDrawnFirst()
+    {
+        // rollnw: TransparencyHint orders first (ascending), distance is the tiebreak.
+        // A near low-hint mesh still draws before a far high-hint mesh.
+        var items = new[]
+        {
+            (hint: 5, depth: 9.0f),  // index 0: high hint, very far
+            (hint: 1, depth: 1.0f),  // index 1: low hint, near
+        };
+        var order = MeshTransparency.SortBackToFront(items);
+        Assert.Equal(new[] { 1, 0 }, order);
+    }
+
+    [Fact]
+    public void Sort_Empty_ReturnsEmpty()
+    {
+        var order = MeshTransparency.SortBackToFront(System.Array.Empty<(int, float)>());
+        Assert.Empty(order);
+    }
 }

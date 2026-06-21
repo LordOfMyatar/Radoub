@@ -85,6 +85,9 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
         // AlphaProfile — which ClassifyMesh needs — isn't known at population time.
         public float MeshAlpha;
         public int TransparencyHint;
+        // Geometric centroid in the same centered space as the GPU vertex buffer (#2540).
+        // Used to depth-sort Transparent meshes back-to-front.
+        public Vector3 Centroid;
     }
 
     // Discard cutoff for Cutout meshes (#2540). 0.5 matches rollnw's default; mid-grey alpha
@@ -1152,12 +1155,10 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
         // Bind VAO and draw
         _gl.BindVertexArray(_vao);
 
-        // Draw each mesh with its texture
-        foreach (var drawCall in _meshDrawCalls)
+        // Resolve a draw call's texture (direct or remapped), whether it has one, and its
+        // MaterialMode (#2540). Shared by the routing pass and the actual draw.
+        (string? texture, bool hasTexture, MaterialMode mode) ResolveDrawCall(in MeshDrawCall drawCall)
         {
-            if (drawCall.IndexCount == 0) continue;
-
-            // Check if we have a texture for this mesh (direct or remapped)
             var resolvedTexture = drawCall.TextureName;
             if (!string.IsNullOrEmpty(resolvedTexture) && !_textureCache.ContainsKey(resolvedTexture)
                 && _textureRemapping.TryGetValue(resolvedTexture, out var remapped))
@@ -1168,21 +1169,24 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             bool hasTexture = !string.IsNullOrEmpty(resolvedTexture) &&
                              _textureCache.TryGetValue(resolvedTexture, out var texId) && texId != 0;
 
-            // Resolve the per-mesh transparency mode now that the texture (and its alpha
-            // profile) is known (#2540). Sprints 3/4 act on this; here it is computed only.
             var profile = hasTexture && _textureAlphaProfile.TryGetValue(resolvedTexture!, out var p)
                 ? p : AlphaProfile.Opaque;
             var mode = MeshTransparency.ClassifyMesh(drawCall.MeshAlpha, drawCall.TransparencyHint, profile);
+            return (resolvedTexture, hasTexture, mode);
+        }
+
+        // Draws one mesh with its texture and transparency uniforms.
+        void DrawMesh(in MeshDrawCall drawCall)
+        {
+            var (resolvedTexture, hasTexture, mode) = ResolveDrawCall(drawCall);
 
             if (_logTransparencyOncePerModel && mode != MaterialMode.Opaque)
             {
                 UnifiedLogger.LogApplication(LogLevel.DEBUG,
                     $"  [Transparency] '{resolvedTexture}' -> {mode} (alpha={drawCall.MeshAlpha:F2}, " +
-                    $"hint={drawCall.TransparencyHint}, profile={profile})");
+                    $"hint={drawCall.TransparencyHint})");
             }
 
-            // Per-mesh transparency uniforms (#2540). Sprint 3 wires the cutout discard;
-            // Sprint 4 adds the blend state for Transparent meshes.
             _shaderManager!.SetUniformInt("meshMode", (int)mode);
             _shaderManager!.SetUniformFloat("alphaThreshold", CutoutAlphaThreshold);
             _shaderManager!.SetUniformFloat("meshAlpha", drawCall.MeshAlpha);
@@ -1200,12 +1204,53 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                 _shaderManager!.SetUniformVec3("flatColor", new Vector3(0.6f, 0.6f, 0.6f)); // Neutral gray for untextured meshes
             }
 
-            // Use unsafe pointer for DrawElements offset
             unsafe
             {
                 _gl.DrawElements(PrimitiveType.Triangles, (uint)drawCall.IndexCount,
                     DrawElementsType.UnsignedInt, (void*)drawCall.IndexOffset);
             }
+        }
+
+        // Pass 1: opaque + cutout meshes (depth write on, no blend). Defer Transparent meshes
+        // to a sorted blend pass so they composite correctly back-to-front (#2540).
+        var transparentCalls = new List<MeshDrawCall>();
+        foreach (var drawCall in _meshDrawCalls)
+        {
+            if (drawCall.IndexCount == 0) continue;
+
+            // Route Transparent meshes to pass 2 without drawing them here — pass 1 must not
+            // draw blended geometry (it would write depth and occlude other transparent layers).
+            if (ResolveDrawCall(drawCall).mode == MaterialMode.Transparent)
+            {
+                transparentCalls.Add(drawCall);
+                continue;
+            }
+            DrawMesh(drawCall);
+        }
+
+        // Pass 2: transparent meshes, sorted back-to-front, alpha-blended, depth writes off so
+        // overlapping translucent layers don't cull each other. Depth TEST stays on so opaque
+        // geometry still occludes them. State is restored after (matches the particle path).
+        if (transparentCalls.Count > 0)
+        {
+            var mv = m * view; // model-rotation then view: centroid -> view space
+            var keys = new (int hint, float depth)[transparentCalls.Count];
+            for (int i = 0; i < transparentCalls.Count; i++)
+            {
+                // OpenGL view space looks down -Z, so a more-negative Z is farther. Negate so a
+                // larger 'depth' means farther, matching SortBackToFront's descending order.
+                float viewZ = Vector3.Transform(transparentCalls[i].Centroid, mv).Z;
+                keys[i] = (transparentCalls[i].TransparencyHint, -viewZ);
+            }
+            var order = MeshTransparency.SortBackToFront(keys);
+
+            _gl.Enable(EnableCap.Blend);
+            _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            _gl.DepthMask(false);
+            foreach (var idx in order)
+                DrawMesh(transparentCalls[idx]);
+            _gl.DepthMask(true);
+            _gl.Disable(EnableCap.Blend);
         }
         _logTransparencyOncePerModel = false;
 
@@ -1475,7 +1520,11 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             int meshIndexStart = indices.Count;
 
             // Emit vertex buffer: one entry per unique (pos, normal, UV).
+            // Also accumulate this mesh's world-space centroid for the transparency depth
+            // sort (#2540). It is re-centered alongside the vertices in pass 2.
             var emitted = new bool[weld.OutputVertexCount];
+            var centroidSum = Vector3.Zero;
+            int centroidCount = 0;
             for (int ci = 0; ci < cornerCount; ci++)
             {
                 int local = weld.IndexRemap[ci];
@@ -1490,7 +1539,12 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                 vertices.Add(cornerNormalsWorld[ci].Z);
                 vertices.Add(cornerUVs[ci].X);
                 vertices.Add(cornerUVs[ci].Y);
+
+                centroidSum += cornerPositions[ci];
+                centroidCount++;
             }
+            if (centroidCount > 0)
+                drawCall.Centroid = centroidSum / centroidCount;
 
             // Emit indices: each face contributes 3 corner indices through the weld map.
             for (int f = 0; f < mesh.Faces.Length; f++)
@@ -1567,6 +1621,15 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                 vertices[i]     -= center.X;
                 vertices[i + 1] -= center.Y;
                 vertices[i + 2] -= center.Z;
+            }
+
+            // Re-center each mesh centroid by the same offset so the transparency depth sort
+            // (#2540) works in the centered space the GPU draws in. Struct in a List → rewrite.
+            for (int i = 0; i < _meshDrawCalls.Count; i++)
+            {
+                var dc = _meshDrawCalls[i];
+                dc.Centroid -= center;
+                _meshDrawCalls[i] = dc;
             }
 
             // Calculate radius from bounds
