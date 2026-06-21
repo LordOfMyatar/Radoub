@@ -61,6 +61,14 @@ uniform vec3 ambientColor;
 uniform bool hasTexture;
 uniform vec3 flatColor;
 
+// Per-mesh transparency mode (#2540), matching the C# MaterialMode enum:
+//   0 = Opaque      -> output alpha 1.0
+//   1 = Cutout      -> alpha-test: discard texels below alphaThreshold
+//   2 = Transparent -> output texel alpha (or meshAlpha) for blending
+uniform int meshMode;
+uniform float alphaThreshold;
+uniform float meshAlpha;
+
 // Debug visualisation modes (#2026 investigation):
 //   0 = normal rendering
 //   1 = world-space normal as RGB (xyz -> rgb remapped from [-1,1] to [0,1])
@@ -121,10 +129,21 @@ void main()
     vec3 ambient = ambientColor;
 
     vec3 baseColor;
+    float texAlpha;
     if (hasTexture) {
-        baseColor = texture(diffuseTexture, TexCoord).rgb;
+        vec4 texel = texture(diffuseTexture, TexCoord);
+        baseColor = texel.rgb;
+        texAlpha = texel.a;
     } else {
         baseColor = flatColor;
+        texAlpha = 1.0;
+    }
+
+    // Cutout (#2540): carve the silhouette by discarding texels below the threshold.
+    // Only ever reached when meshMode == 1, which the renderer sets solely for meshes whose
+    // TransparencyHint marks a real binary alpha mask — never for opaque _d/spec-alpha bodies.
+    if (meshMode == 1 && texAlpha < alphaThreshold) {
+        discard;
     }
 
     vec3 result = (ambient + diffuse) * baseColor;
@@ -134,7 +153,11 @@ void main()
     // PBR _d diffuse maps); 1/1.1 keeps only a slight lift without bleaching (#1762).
     result = pow(result, vec3(1.0 / 1.1));
 
-    FragColor = vec4(result, 1.0);
+    // Output alpha (#2540): opaque/cutout write 1.0 (cutout already discarded its holes);
+    // transparent (mode 2) writes the texel alpha scaled by the mesh Alpha controller so the
+    // blend pass (Sprint 4) gets the right coverage.
+    float outAlpha = (meshMode == 2) ? (texAlpha * meshAlpha) : 1.0;
+    FragColor = vec4(result, outAlpha);
 }
 ";
 

@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.128-alpha] - 2026-06-21
+**Branch**: `quartermaster/issue-2540` | **PR**: #2553
+
+### Epic: Mesh transparency pipeline — alpha blend + alpha-test + depth sort (#2540)
+
+- The appearance preview gains a transparency pipeline (opaque / cutout / alpha-blend + depth sort) instead of rendering every mesh opaque. Shared `Radoub.UI` renderer change — see root CHANGELOG (`Radoub.UI 0.2.22-alpha`). Infrastructure only: #2435 (zod rat) and #2507 (tiger mane) carry no per-mesh MDL signal and stay opaque until MTR `renderhint` support lands (#2482/#2497).
+
+---
+
 ## [0.2.127-alpha] - 2026-06-21
 **Branch**: `quartermaster/issue-2399` | **PR**: #2545
 

@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.22-alpha] - 2026-06-21
+**Branch**: `quartermaster/issue-2540` | **PR**: #2553
+
+### Feat: Mesh transparency pipeline in the 3D model preview (#2540)
+
+- The model preview can now render translucent and alpha-cutout meshes instead of drawing everything opaque. Each mesh is classified opaque / cutout / blended from its TransparencyHint and the texture's alpha profile; blended meshes draw in a sorted back-to-front pass with alpha blending. Opaque PBR (`_d`) bodies are untouched — their spec-overloaded alpha is never consulted. Affects every tool's preview (Quartermaster, Relique, Reliquary). Infrastructure only: the tracked CEP models (#2435 zod rat, #2507 tiger mane) carry no per-mesh MDL transparency signal, so they need MTR `renderhint` support (#2482/#2497) before they change visually.
+
+---
+
 ## [Radoub.UI 0.2.21-alpha] - 2026-06-21
 **Branch**: `quartermaster/issue-2399` | **PR**: #2545
 
