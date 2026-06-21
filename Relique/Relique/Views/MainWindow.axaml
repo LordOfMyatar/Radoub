@@ -348,7 +348,7 @@
 
                             <!-- Appearance (collapsible, conditional on base item type) -->
                             <Expander x:Name="AppearanceExpander" Header="Appearance" IsExpanded="True" IsVisible="False" Margin="0,0,0,8">
-                                <Grid ColumnDefinitions="*,16,Auto" Margin="0,4,0,0">
+                                <Grid ColumnDefinitions="2*,16,3*" Margin="0,4,0,0">
                                 <StackPanel Grid.Column="0" Spacing="8">
 
                                     <!-- Icon Preview + Browse Button -->
@@ -550,11 +550,15 @@
 
                                 </StackPanel>
 
-                                <!-- Right column: 3D preview + view controls (#1908 PR3b) -->
-                                <StackPanel Grid.Column="2" Width="280" Spacing="6">
+                                <!-- Right column: 3D preview + view controls (#1908 PR3b).
+                                     Responsive viewport (#2408): fills the column and grows with the
+                                     window so full-body armor displays usably; MinWidth/MinHeight keep
+                                     small held-item previews above a usable floor. -->
+                                <StackPanel Grid.Column="2" Spacing="6">
                                     <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                             BorderThickness="1" CornerRadius="2"
-                                            Width="280" Height="280">
+                                            HorizontalAlignment="Stretch"
+                                            MinWidth="280" MinHeight="280" Height="380">
                                         <Grid>
                                             <controls:ModelPreviewGLControl x:Name="ItemPreviewGL"
                                                                             IsVisible="False"/>
