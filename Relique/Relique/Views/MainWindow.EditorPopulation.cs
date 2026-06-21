@@ -484,7 +484,12 @@ public partial class MainWindow
             if (_isLoading || _itemViewModel == null) return;
             if (combo.SelectedItem is ComboBoxItem item && item.Tag is int rowIdx)
             {
-                setter((byte)System.Math.Clamp(rowIdx, 0, 255));
+                // Mark the change as live-selection-driven so the undo apply-action does NOT
+                // rebuild this combo's Items mid-SelectionChanged — that re-entrancy crashes
+                // the render loop for composite weapons (#2533).
+                _modelPartSelectionInProgress = true;
+                try { setter((byte)System.Math.Clamp(rowIdx, 0, 255)); }
+                finally { _modelPartSelectionInProgress = false; }
             }
         });
         var lostFocusHandler = new System.EventHandler<RoutedEventArgs>((_, _) =>

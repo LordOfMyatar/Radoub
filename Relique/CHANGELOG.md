@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Enlarge/responsive 3D preview viewport for full-body armor (#2408).
 - Drag-to-rotate, rotate/zoom buttons in 3D preview (#2409).
 - Gender-specific clothing/armor models in preview, persisted in settings (#2407).
+- Fix: changing a composite-weapon model part no longer crashes the preview (#2533).
 
 ---
 
