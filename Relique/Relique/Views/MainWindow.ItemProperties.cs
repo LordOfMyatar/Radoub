@@ -193,14 +193,15 @@ public partial class MainWindow
 
     /// <summary>
     /// The single Add button (#2234) is enabled when the document is editable and there
-    /// is something to add — either checked properties (bulk path) or a selected property
-    /// (configured path).
+    /// is something checked in the tree (bulk path). Single configured-add of a merely-selected
+    /// property is the Configure… button (#2406), not Add — so a selection alone must NOT enable
+    /// Add, or the click is a silent no-op.
     /// </summary>
     private void UpdateAddButtonState()
     {
         AddPropertyButton.IsEnabled = _currentItem != null
             && !_documentState.IsReadOnly
-            && (_checkedProperties.Count > 0 || _selectedPropertyType != null);
+            && _checkedProperties.Count > 0;
     }
 
     /// <summary>
@@ -341,8 +342,8 @@ public partial class MainWindow
 
     /// <summary>
     /// Configure… button (#2406): open the modal popup to add the tree-selected property with a
-    /// chosen subtype/value/param. Routes the result through TryAddProperty so the #2166 validation
-    /// + rollback path still runs.
+    /// chosen subtype/value/param. Routes the result through TryAddConfiguredProperty so the #2166
+    /// validation + rollback path still runs.
     /// </summary>
     private async void OnConfigurePropertyClick(object? sender, RoutedEventArgs e)
     {
@@ -569,7 +570,17 @@ public partial class MainWindow
     /// </summary>
     private void ApplyEdit(int index, PropertyTypeInfo type, ItemProperty replacement)
     {
-        if (_currentItem == null) return;
+        if (_currentItem == null || _itemPropertyService == null) return;
+
+        // Defense in depth (#2166): the popup filters subtypes, but re-check base-item validity at
+        // commit time so a stale popup state can't write an invalid combo. Mirrors the add paths.
+        if (!_itemPropertyService.IsPropertyValidForBaseItem(type.PropertyIndex, _currentItem.BaseItem))
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"Refused edit of {type.DisplayName} on base item {_currentItem.BaseItem} (validation table)");
+            UpdateStatus($"Cannot apply {type.DisplayName} to this item type");
+            return;
+        }
 
         bool applied = PropertyListMutator.ReplaceAt(
             _currentItem.Properties, index, replacement, RefreshAssignedProperties);
