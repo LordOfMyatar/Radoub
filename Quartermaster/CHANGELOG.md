@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.128-alpha] - 2026-06-21
-**Branch**: `quartermaster/issue-2540` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2540` | **PR**: #2553
 
 ### Epic: Mesh transparency pipeline — alpha blend + alpha-test + depth sort (#2540)
 
