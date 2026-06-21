@@ -21,17 +21,14 @@ public partial class ModelPreviewGLControl
     private uint _particleVbo;
     private bool _particleGlReady;
 
-    // Vertex layout (floats): center.xyz(3) + corner.xy(2) + uv.xy(2) + color.rgba(4) + size(1) = 12
-    private const int ParticleFloatsPerVertex = 12;
+    // Vertex layout (floats): center.xyz(3) + corner.xy(2) + uv.xy(2) + color.rgba(4) + size.xy(2) = 13
+    // Size is a vec2 (independent X/Y half-extents) so authored non-square particles aren't forced
+    // square (#2544).
+    private const int ParticleFloatsPerVertex = 13;
     private const int ParticleVertsPerQuad = 6; // two triangles, no index buffer (MVP)
 
     // Scratch CPU buffer reused across frames to avoid per-frame allocation churn.
     private float[] _particleScratch = Array.Empty<float>();
-
-    // A particle is clamped to this fraction of the model radius so no single emitter dominates the
-    // preview (e.g. the fairy's oversized wing-glow emitters). Tuned against c_fairy: 0.6 keeps the
-    // wing glow subtle while leaving normal small particles (dust) far below the cap. (#2434)
-    private const float ParticleSizeCapRadiusFactor = 0.6f;
 
     // Corner offsets for the two triangles of a quad, in (corner, uv) pairs.
     // Corner is the half-extent offset in camera right/up space; uv spans 0..1.
@@ -53,7 +50,7 @@ layout (location = 0) in vec3 aCenterWorld;
 layout (location = 1) in vec2 aCorner;
 layout (location = 2) in vec2 aUV;
 layout (location = 3) in vec4 aColor;
-layout (location = 4) in float aSize;
+layout (location = 4) in vec2 aSize;
 
 out vec2 vUV;
 out vec4 vColor;
@@ -67,7 +64,9 @@ uniform vec3 uCamUp;
 void main()
 {
     vec3 worldCenter = vec3(uModel * vec4(aCenterWorld, 1.0));
-    vec3 pos = worldCenter + (uCamRight * aCorner.x + uCamUp * aCorner.y) * aSize;
+    // Independent X/Y half-extents: corner.x scales the right axis by sizeX, corner.y the up axis
+    // by sizeY, so authored non-square particles render non-square. (#2544)
+    vec3 pos = worldCenter + uCamRight * (aCorner.x * aSize.x) + uCamUp * (aCorner.y * aSize.y);
     gl_Position = uProj * uView * vec4(pos, 1.0);
     vUV = aUV;
     vColor = aColor;
@@ -152,7 +151,7 @@ void main()
             _gl.EnableVertexAttribArray(2);
             _gl.VertexAttribPointer(3, 4, VertexAttribPointerType.Float, false, (uint)stride, (void*)(7 * sizeof(float)));
             _gl.EnableVertexAttribArray(3);
-            _gl.VertexAttribPointer(4, 1, VertexAttribPointerType.Float, false, (uint)stride, (void*)(11 * sizeof(float)));
+            _gl.VertexAttribPointer(4, 2, VertexAttribPointerType.Float, false, (uint)stride, (void*)(11 * sizeof(float)));
             _gl.EnableVertexAttribArray(4);
         }
         _gl.BindVertexArray(0);
@@ -352,16 +351,10 @@ void main()
 
             // Particle sizes are authored in raw MDL units — the same space as the mesh vertices
             // (node.Scale is 1.0; NWN creature MDLs are modeled at their true size, e.g. the fairy
-            // is a 0.44-unit-tall Tinkerbell). Render the authored size directly. (#2434)
-            //
-            // Cap at a fraction of the model radius so a single emitter can't dominate the preview:
-            // the fairy's Billboard_to_Local_Z wing emitters author 0.5-0.6 (≈3x her 0.22 radius) and
-            // are meant to read as a faint wing glow in Aurora, not a body-swallowing orb. Aurora's
-            // exact wing-blade render is undocumented (no public tool reproduces Billboard_to_Local_Z),
-            // so clamping oversized particles to a glow is the faithful-as-possible approximation. The
-            // cap is generous enough that normal particles (dust 0.07 << cap) are untouched. (#2434)
-            float sizeCap = MathF.Max(_viewController.ModelRadius, 0.001f) * ParticleSizeCapRadiusFactor;
-            float size = MathF.Min(part.SizeX, sizeCap); // square billboard sized by authored SizeX, capped
+            // is a 0.44-unit-tall Tinkerbell). Render the authored X/Y sizes directly — no blanket
+            // cap (the old 0.6×radius clamp shrank legitimately large puffs; the fairy-wing case it
+            // was tuned for is now handled by the Billboard_to_Local_Z orientation, #2544/#2450). (#2544)
+            var (sizeX, sizeY) = ParticleSizing.Resolve(part.SizeX, part.SizeY);
             Vector4 color = part.Color;
 
             for (int c = 0; c < ParticleVertsPerQuad; c++)
@@ -382,7 +375,8 @@ void main()
                 _particleScratch[o++] = color.Y;
                 _particleScratch[o++] = color.Z;
                 _particleScratch[o++] = color.W;
-                _particleScratch[o++] = size;
+                _particleScratch[o++] = sizeX;
+                _particleScratch[o++] = sizeY;
             }
         }
     }
