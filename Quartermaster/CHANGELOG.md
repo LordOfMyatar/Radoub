@@ -10,7 +10,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ### Epic: Mesh transparency pipeline — alpha blend + alpha-test + depth sort (#2540)
 
-- Model preview gains transparency support (ghost/glass blend, fur/foliage cutout) instead of rendering every mesh opaque. Shared `Radoub.UI` renderer change — see root CHANGELOG. Closes #2435, #2507 when complete.
+- The appearance preview now renders translucent and cutout creatures (ghost/glass bodies, fur/mane silhouettes) instead of everything opaque. Shared `Radoub.UI` renderer change — see root CHANGELOG (`Radoub.UI 0.2.22-alpha`). Closes #2435, #2507.
 
 ---
 
