@@ -17,6 +17,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.19-alpha] - 2026-06-20
+**Branch**: `relique/issue-2233` | **PR**: #2530
+
+### Fix: Composite weapon part assembly in 3D preview (#2233)
+
+- `MdlPartComposer.ComposeFlat` now grafts each part's whole subtree (preserving dummy-node assembly offsets) instead of flattening to bare trimeshes, so composite weapons assemble correctly. Same connector mechanism benefits Quartermaster's weapon attach.
+
+---
+
 ## [Radoub.UI 0.2.18-alpha] - 2026-06-20
 **Branch**: `quartermaster/issue-2440` | **PR**: #2525
 

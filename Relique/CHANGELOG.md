@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.28-alpha] - 2026-06-20
+**Branch**: `relique/issue-2233` | **PR**: #2530
+
+### Fix: Composite weapon parts render misaligned in 3D preview (#2233)
+
+- Composite weapons (double axes, two-bladed swords) now assemble correctly in the 3D preview — base/middle/top parts snap together instead of floating disjoint.
+
+---
+
 ## [0.10.27-alpha] - 2026-06-20
 **Branch**: `relique/issue-2447` | **PR**: #2526
 
