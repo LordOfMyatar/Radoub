@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.29-alpha] - 2026-06-20
+**Branch**: `relique/issue-2446` | **PR**: #TBD
+
+### Sprint: 3D Preview Rendering (#2446)
+
+- Enlarge/responsive 3D preview viewport for full-body armor (#2408).
+- Drag-to-rotate, rotate/zoom buttons in 3D preview (#2409).
+- Gender-specific clothing/armor models in preview, persisted in settings (#2407).
+
+---
+
 ## [0.10.28-alpha] - 2026-06-20
 **Branch**: `relique/issue-2233` | **PR**: #2530
 
