@@ -753,8 +753,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\.claude\scripts\Searc
 Two committed, reusable PowerShell slots exist so Claude can run one-off diagnostics
 **without prompting the user on every new-file creation**:
 
-- `.claude/scripts/Scratch-Investigate-1.ps1`
-- `.claude/scripts/Scratch-Investigate-2.ps1`
+- `Scripts/Scratch-Investigate-1.ps1`
+- `Scripts/Scratch-Investigate-2.ps1`
 
 **How to use them**:
 - For a throwaway investigation, **edit one of these in place** (the Edit tool does not
@@ -762,7 +762,7 @@ Two committed, reusable PowerShell slots exist so Claude can run one-off diagnos
 - Run via the absolute-path allowlist (PS7 when loading net9.0 DLLs):
   ```bash
   & "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass \
-      -File ".claude/scripts/Scratch-Investigate-1.ps1"
+      -File "Scripts/Scratch-Investigate-1.ps1"
   ```
 - The body is disposable — the next investigation overwrites it. Commit the rewritten body
   when it produced evidence worth reproducing; otherwise leave it for the next overwrite.
