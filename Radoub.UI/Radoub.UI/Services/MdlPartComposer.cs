@@ -176,20 +176,21 @@ public sealed class MdlPartComposer
         foreach (var resRef in partResRefs)
         {
             var partModel = _modelLoader(resRef, /* withSupermodelAnims */ false);
-            if (partModel == null)
+            if (partModel?.GeometryRoot == null)
             {
                 UnifiedLogger.LogApplication(LogLevel.WARN, $"MdlPartComposer.ComposeFlat: '{resRef}' not loadable");
                 continue;
             }
 
-            foreach (var node in partModel.EnumerateAllNodes())
-            {
-                if (node is MdlTrimeshNode trimesh)
-                {
-                    node.Parent = compositeModel.GeometryRoot;
-                    compositeModel.GeometryRoot!.Children.Add(node);
-                }
-            }
+            // Graft each part's WHOLE subtree (root dummy included) under the composite root,
+            // cloning the hierarchy so per-node transforms survive. Composite-weapon parts are
+            // authored as dummy root (assembly offset) → mesh at local origin; Aurora glues b/m/t
+            // along the weapon axis using those dummy offsets. Flattening to bare trimeshes dropped
+            // the offset and collapsed every part to the origin — the floating-blade bug (#2233).
+            // We clone the part root itself (not just its children, as the robe graft does) because
+            // here the root dummy IS the alignment offset, not a duplicate of a skeleton root.
+            var clone = CloneNode(partModel.GeometryRoot, compositeModel.GeometryRoot);
+            compositeModel.GeometryRoot!.Children.Add(clone);
         }
 
         UpdateCompositeBounds(compositeModel);

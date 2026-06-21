@@ -58,8 +58,23 @@ public class MdlPartComposerTests
     }
 
     private static MdlModel MakePartModel(string name, string meshName, Vector3 vertex)
+        => MakePartModel(name, meshName, vertex, rootOffset: Vector3.Zero);
+
+    /// <summary>
+    /// Build a part MDL shaped like a real composite-weapon part: a dummy root node whose
+    /// <paramref name="rootOffset"/> encodes the assembly position, with the mesh as a child at
+    /// local origin. Aurora glues b/m/t parts using these dummy offsets, so a correct composer
+    /// must preserve them.
+    /// </summary>
+    private static MdlModel MakePartModel(string name, string meshName, Vector3 vertex, Vector3 rootOffset)
     {
-        var root = new MdlNode { Name = $"{name}_root", Orientation = Quaternion.Identity, Scale = 1.0f };
+        var root = new MdlNode
+        {
+            Name = $"{name}_root",
+            Position = rootOffset,
+            Orientation = Quaternion.Identity,
+            Scale = 1.0f,
+        };
         var mesh = new MdlTrimeshNode
         {
             Name = meshName,
@@ -226,6 +241,46 @@ public class MdlPartComposerTests
         Assert.NotNull(result);
         Assert.Equal(3, result!.GetMeshNodes().Count());
         Assert.NotNull(result.GeometryRoot);
+    }
+
+    [Fact]
+    public void ComposeFlat_PreservesDummyParentOffsets()
+    {
+        // Real composite-weapon parts are authored as: dummy root (assembly offset) → mesh at
+        // local origin. Aurora glues b/m/t along the weapon axis using those dummy offsets. A
+        // flatten that reparents only the trimesh discards the offset and collapses every part
+        // to the composite origin (the floating-blade bug, #2233).
+        var bottom = MakePartModel("wdbsw_b_011", "wdbsw_b_mesh", Vector3.Zero, rootOffset: new Vector3(0, 0, -2));
+        var middle = MakePartModel("wdbsw_m_011", "wdbsw_m_mesh", Vector3.Zero, rootOffset: Vector3.Zero);
+        var top = MakePartModel("wdbsw_t_011", "wdbsw_t_mesh", Vector3.Zero, rootOffset: new Vector3(0, 0, 2));
+
+        var game = BuildGameDataWith(("wdbsw_b_011", bottom), ("wdbsw_m_011", middle), ("wdbsw_t_011", top));
+        var composer = new MdlPartComposer(game, (resRef, _) => resRef switch
+        {
+            "wdbsw_b_011" => bottom,
+            "wdbsw_m_011" => middle,
+            "wdbsw_t_011" => top,
+            _ => null,
+        });
+
+        var result = composer.ComposeFlat(new[] { "wdbsw_b_011", "wdbsw_m_011", "wdbsw_t_011" });
+
+        Assert.NotNull(result);
+        var meshes = result!.GetMeshNodes().ToList();
+        Assert.Equal(3, meshes.Count);
+
+        // Each mesh's effective world position must still reflect its part's dummy offset.
+        // The single vertex is at local origin, so its world Z == accumulated parent-chain Z.
+        float WorldZOf(string meshName)
+        {
+            var mesh = meshes.Single(m => m.Name == meshName);
+            var world = MdlPartComposer.GetMeshWorldTransform(mesh);
+            return Vector3.Transform(mesh.Vertices[0], world).Z;
+        }
+
+        Assert.Equal(-2f, WorldZOf("wdbsw_b_mesh"), precision: 3);
+        Assert.Equal(0f, WorldZOf("wdbsw_m_mesh"), precision: 3);
+        Assert.Equal(2f, WorldZOf("wdbsw_t_mesh"), precision: 3);
     }
 
     [Fact]
