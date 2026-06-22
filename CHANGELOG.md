@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Sprint: ITP E2 — Consumers (standardization & handling) (#2562)
 
 - Quartermaster and Relique palette-category combos migrate to the shared Radoub.UI binder, removing the last tool-local copies of populate/select/fallback logic (#2421, #2423).
-- Palette editor gains category add/rename/delete, full undo/redo for reorg gestures, double-click-to-launch a blueprint's editor, and duplicate/nested category-name disambiguation (#2486, #2484, #2485, #2488).
+- Palette editor gains full undo/redo for reorg gestures, double-click-to-launch a blueprint's editor, and duplicate/nested category-name disambiguation (#2484, #2485, #2488). Category authoring (#2486) deferred to #2565.
 
 ---
 
