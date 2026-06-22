@@ -18,6 +18,13 @@ public class SharedPaletteCacheItem
     public uint BaseValue { get; set; }
 
     /// <summary>
+    /// Leaf palette category id (PaletteID from the blueprint). Null when the
+    /// UTI parse failed or the cache predates v5. Category name/path are resolved
+    /// at read time from GameDataService, not stored here. (#987)
+    /// </summary>
+    public byte? PaletteId { get; set; }
+
+    /// <summary>
     /// Which game resource bucket this item came from (Bif/Override/Hak/Module). Persisted so the
     /// palette filter can distinguish all four sources (#1995). Replaces the former bool IsStandard.
     /// </summary>

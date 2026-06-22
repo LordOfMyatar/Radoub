@@ -50,6 +50,25 @@ public interface ISharedPaletteCacheService
     List<SharedPaletteCacheItem>? GetAggregatedCache(IEnumerable<string>? activeHakPaths);
 
     /// <summary>
+    /// Category-names-first: group the aggregated cache by PaletteId and join each
+    /// group to its category (name + parent path) from GameDataService. Returns one
+    /// descriptor per category that has cached items, plus an "Uncategorized" bucket
+    /// for items with no/unmapped PaletteId. No item payload. (#987)
+    /// </summary>
+    IReadOnlyList<PaletteCategoryInfo> GetCategoryNames(
+        Radoub.Formats.Services.IGameDataService gameData,
+        ushort resourceType,
+        IEnumerable<string>? activeHakPaths = null);
+
+    /// <summary>
+    /// Lazy per-category fetch: aggregated-cache items whose PaletteId == categoryId.
+    /// Pass PaletteCategoryInfo.UncategorizedId for the no-PaletteId bucket. (#987)
+    /// </summary>
+    IReadOnlyList<SharedPaletteCacheItem> GetCategoryBlueprints(
+        int categoryId,
+        IEnumerable<string>? activeHakPaths = null);
+
+    /// <summary>
     /// Clear the in-memory aggregated cache (forces reload from disk).
     /// </summary>
     void InvalidateAggregatedCache();

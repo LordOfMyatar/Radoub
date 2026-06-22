@@ -91,6 +91,8 @@ public class ItpSearchProvider : SearchProviderBase, IFileSearchProvider
         {
             SearchBlueprint(blueprint, criteria, regex, matches, pathParts);
         }
+        // Recurse into nested categories/branches (#2280 reader, #2475 search).
+        SearchNodes(category.Children, criteria, regex, matches, pathParts);
         pathParts.RemoveAt(pathParts.Count - 1);
     }
 

@@ -166,4 +166,92 @@ public class ItpSearchProviderTests
         var match = Assert.Single(matches, m => m.Field.Name == "ResRef");
         Assert.False(match.Field.IsReplaceable);
     }
+
+    /// <summary>
+    /// Build an ITP GFF with a category nested under another category (#2280 reader,
+    /// #2475 search). A nested category is a category struct (ID field) inside another
+    /// category's LIST:
+    ///   MAIN
+    ///     └─ Category ID=3, NAME="Weapons"
+    ///         └─ Category ID=4, NAME="Swords"   (nested)
+    ///              └─ Blueprint RESREF="longsword", NAME="Longsword"
+    /// </summary>
+    private static GffFile CreateNestedCategoryItpGff()
+    {
+        var blueprint = new GffStruct { Type = 0 };
+        blueprint.Fields = new List<GffField>
+        {
+            new GffField { Label = "RESREF", Type = GffField.CResRef, Value = "longsword" },
+            new GffField { Label = "NAME", Type = GffField.CExoString, Value = "Longsword" }
+        };
+
+        // Nested category "Swords" (ID=4) containing the blueprint
+        var nested = new GffStruct { Type = 0 };
+        nested.Fields = new List<GffField>
+        {
+            new GffField { Label = "ID", Type = GffField.BYTE, Value = (byte)4 },
+            new GffField { Label = "NAME", Type = GffField.CExoString, Value = "Swords" },
+            new GffField { Label = "LIST", Type = GffField.List, Value = new GffList { Elements = new List<GffStruct> { blueprint } } }
+        };
+
+        // Parent category "Weapons" (ID=3) containing the nested category
+        var parent = new GffStruct { Type = 0 };
+        parent.Fields = new List<GffField>
+        {
+            new GffField { Label = "ID", Type = GffField.BYTE, Value = (byte)3 },
+            new GffField { Label = "NAME", Type = GffField.CExoString, Value = "Weapons" },
+            new GffField { Label = "LIST", Type = GffField.List, Value = new GffList { Elements = new List<GffStruct> { nested } } }
+        };
+
+        var root = new GffStruct { Type = 0xFFFFFFFF };
+        root.Fields = new List<GffField>
+        {
+            new GffField { Label = "MAIN", Type = GffField.List, Value = new GffList { Elements = new List<GffStruct> { parent } } }
+        };
+
+        return new GffFile { FileType = "ITP ", FileVersion = "V3.2", RootStruct = root };
+    }
+
+    [Fact]
+    public void Search_FindsBlueprintNestedUnderSubCategory()
+    {
+        var provider = new ItpSearchProvider();
+        var gff = CreateNestedCategoryItpGff();
+        var criteria = new SearchCriteria { Pattern = "longsword" };
+
+        var matches = provider.Search(gff, criteria);
+
+        Assert.Contains(matches, m =>
+            m.Field.Name == "ResRef" &&
+            m.MatchedText == "longsword");
+    }
+
+    [Fact]
+    public void Search_FindsNestedSubCategoryName()
+    {
+        var provider = new ItpSearchProvider();
+        var gff = CreateNestedCategoryItpGff();
+        var criteria = new SearchCriteria { Pattern = "Swords" };
+
+        var matches = provider.Search(gff, criteria);
+
+        Assert.Contains(matches, m =>
+            m.Field.Name == "Category Name" &&
+            m.MatchedText == "Swords");
+    }
+
+    [Fact]
+    public void Search_NestedBlueprintDisplayPathShowsFullHierarchy()
+    {
+        var provider = new ItpSearchProvider();
+        var gff = CreateNestedCategoryItpGff();
+        var criteria = new SearchCriteria { Pattern = "longsword" };
+
+        var matches = provider.Search(gff, criteria);
+
+        var match = Assert.Single(matches, m => m.Field.Name == "ResRef");
+        var location = match.Location as ItpMatchLocation;
+        Assert.NotNull(location);
+        Assert.Equal("Weapons → Swords → Longsword", location.DisplayPath);
+    }
 }

@@ -12,7 +12,7 @@ namespace Radoub.UI.Services;
 /// </summary>
 public class SharedPaletteCacheService : ISharedPaletteCacheService, IDisposable
 {
-    private const int CacheVersion = 4; // v4: Source enum replaces bool IsStandard (#1995); v3: Added SourceLocation
+    private const int CacheVersion = 5; // v5: PaletteId per item for category grouping (#987); v4: Source enum (#1995); v3: SourceLocation
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -349,6 +349,69 @@ public class SharedPaletteCacheService : ISharedPaletteCacheService, IDisposable
         {
             _lock.ExitReadLock();
         }
+    }
+
+    public IReadOnlyList<PaletteCategoryInfo> GetCategoryNames(
+        Radoub.Formats.Services.IGameDataService gameData,
+        ushort resourceType,
+        IEnumerable<string>? activeHakPaths = null)
+    {
+        var items = GetAggregatedCache(activeHakPaths) ?? new List<SharedPaletteCacheItem>();
+        // First occurrence wins. The IGameDataService contract does not guarantee
+        // unique category ids, so don't let a non-deduping provider throw. (#987)
+        var categories = gameData.GetPaletteCategories(resourceType)
+            .GroupBy(c => c.Id)
+            .ToDictionary(g => g.Key, g => g.First());
+
+        var result = new List<PaletteCategoryInfo>();
+        int uncategorized = 0;
+
+        foreach (var group in items.GroupBy(i => i.PaletteId))
+        {
+            if (group.Key is byte id && categories.TryGetValue(id, out var cat))
+            {
+                result.Add(new PaletteCategoryInfo
+                {
+                    Id = id,
+                    Name = cat.Name,
+                    ParentPath = cat.ParentPath,
+                    ItemCount = group.Count()
+                });
+            }
+            else
+            {
+                uncategorized += group.Count();
+            }
+        }
+
+        if (uncategorized > 0)
+        {
+            result.Add(new PaletteCategoryInfo
+            {
+                Id = PaletteCategoryInfo.UncategorizedId,
+                Name = "Uncategorized",
+                ParentPath = null,
+                ItemCount = uncategorized
+            });
+        }
+
+        return result;
+    }
+
+    public IReadOnlyList<SharedPaletteCacheItem> GetCategoryBlueprints(
+        int categoryId,
+        IEnumerable<string>? activeHakPaths = null)
+    {
+        var items = GetAggregatedCache(activeHakPaths) ?? new List<SharedPaletteCacheItem>();
+
+        if (categoryId == PaletteCategoryInfo.UncategorizedId)
+            return items.Where(i => i.PaletteId == null).ToList();
+
+        if (categoryId < byte.MinValue || categoryId > byte.MaxValue)
+            return new List<SharedPaletteCacheItem>();
+
+        var target = (byte)categoryId;
+        return items.Where(i => i.PaletteId == target).ToList();
     }
 
     public void InvalidateAggregatedCache()

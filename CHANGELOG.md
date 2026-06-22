@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.Formats 0.2.76-alpha / Radoub.UI 0.2.24-alpha] - 2026-06-21
+**Branch**: `radoub/issue-2561` | **PR**: #2563
+
+### Sprint: ITP E1 — Provider (.itp format & search layer) (#2561)
+
+- ITP search now recurses nested palette categories so entries filed under a sub-category are found (#2475).
+- Palette cache now records each item's category id; the provider exposes names-first (`GetCategoryNames`) and per-category (`GetCategoryBlueprints`) methods. Data layer only — the folder-tree browser UI follows next sprint (#987).
+
+---
+
 ## [Radoub.UI 0.2.23-alpha] - 2026-06-21
 **Branch**: `radoub/issue-2544` | **PR**: #2554
 

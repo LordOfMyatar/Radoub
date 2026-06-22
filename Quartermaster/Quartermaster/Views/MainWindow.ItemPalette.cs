@@ -255,6 +255,7 @@ public partial class MainWindow
                         PropertiesDisplay = propertiesDisplay,
                         BaseItemType = item.BaseItem,
                         BaseValue = item.Cost,
+                        PaletteId = item.PaletteID,
                         Source = gameSource,
                         SourceLocation = !string.IsNullOrEmpty(resourceInfo.SourcePath)
                             ? Path.GetFileName(resourceInfo.SourcePath)

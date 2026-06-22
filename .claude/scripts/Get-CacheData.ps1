@@ -9,6 +9,9 @@
     - issue: Single issue with body (requires -Number)
     - search: Search issues by keyword (requires -Query)
     - comments: Show comments for a single issue (requires -Number)
+    - backlog: Planning view ΓÇö number, age (days since update), labels, title.
+               Filter with -Label (substring match on any label) and/or
+               -Query (regex match on title). Sorted oldest-first.
 
 .PARAMETER Number
     Issue number for single-issue view.
@@ -29,14 +32,16 @@
 
 param(
     [Parameter(Mandatory)]
-    [ValidateSet("status", "summary", "list", "issue", "search", "comments")]
+    [ValidateSet("status", "summary", "list", "issue", "search", "comments", "backlog")]
     [string]$View,
 
     [int]$Number,
 
     [string]$Tool,
 
-    [string]$Query
+    [string]$Query,
+
+    [string]$Label
 )
 
 $CacheFile = Join-Path $PSScriptRoot "..\cache\github-data.json"
@@ -191,6 +196,37 @@ switch ($View) {
             $labels = ($_.labels.nodes.name -join ", ")
             Write-Host "#$($_.number): $($_.title)"
             if ($labels) { Write-Host "  Labels: $labels" }
+        }
+    }
+
+    "backlog" {
+        $issues = $data.issues
+        if ($Tool) {
+            $issues = $issues | Where-Object { $_.labels.nodes.name -contains $Tool }
+        }
+        if ($Label) {
+            $issues = $issues | Where-Object { ($_.labels.nodes.name -join ",") -match $Label }
+        }
+        if ($Query) {
+            $issues = $issues | Where-Object { $_.title -match $Query }
+        }
+
+        $now = Get-Date
+        $rows = $issues | ForEach-Object {
+            $age = [math]::Round(($now - [datetime]$_.updatedAt).TotalDays)
+            [pscustomobject]@{
+                Age    = $age
+                Number = $_.number
+                Labels = ($_.labels.nodes.name -join ", ")
+                Title  = $_.title
+            }
+        } | Sort-Object -Property Age -Descending
+
+        Write-Host "Matched $($rows.Count) issues (oldest first):"
+        Write-Host ""
+        $rows | ForEach-Object {
+            "{0,-7} {1,4}d  {2}" -f "#$($_.Number)", $_.Age, $_.Title
+            "          [$($_.Labels)]"
         }
     }
 }
