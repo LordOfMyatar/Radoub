@@ -351,6 +351,65 @@ public class SharedPaletteCacheService : ISharedPaletteCacheService, IDisposable
         }
     }
 
+    public IReadOnlyList<PaletteCategoryInfo> GetCategoryNames(
+        Radoub.Formats.Services.IGameDataService gameData,
+        ushort resourceType,
+        IEnumerable<string>? activeHakPaths = null)
+    {
+        var items = GetAggregatedCache(activeHakPaths) ?? new List<SharedPaletteCacheItem>();
+        var categories = gameData.GetPaletteCategories(resourceType).ToDictionary(c => c.Id);
+
+        var result = new List<PaletteCategoryInfo>();
+        int uncategorized = 0;
+
+        foreach (var group in items.GroupBy(i => i.PaletteId))
+        {
+            if (group.Key is byte id && categories.TryGetValue(id, out var cat))
+            {
+                result.Add(new PaletteCategoryInfo
+                {
+                    Id = id,
+                    Name = cat.Name,
+                    ParentPath = cat.ParentPath,
+                    ItemCount = group.Count()
+                });
+            }
+            else
+            {
+                uncategorized += group.Count();
+            }
+        }
+
+        if (uncategorized > 0)
+        {
+            result.Add(new PaletteCategoryInfo
+            {
+                Id = PaletteCategoryInfo.UncategorizedId,
+                Name = "Uncategorized",
+                ParentPath = null,
+                ItemCount = uncategorized
+            });
+        }
+
+        return result;
+    }
+
+    public IReadOnlyList<SharedPaletteCacheItem> GetCategoryBlueprints(
+        int categoryId,
+        IEnumerable<string>? activeHakPaths = null)
+    {
+        var items = GetAggregatedCache(activeHakPaths) ?? new List<SharedPaletteCacheItem>();
+
+        if (categoryId == PaletteCategoryInfo.UncategorizedId)
+            return items.Where(i => i.PaletteId == null).ToList();
+
+        if (categoryId < byte.MinValue || categoryId > byte.MaxValue)
+            return new List<SharedPaletteCacheItem>();
+
+        var target = (byte)categoryId;
+        return items.Where(i => i.PaletteId == target).ToList();
+    }
+
     public void InvalidateAggregatedCache()
     {
         _lock.EnterWriteLock();

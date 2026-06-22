@@ -1,5 +1,7 @@
 using Xunit;
+using Radoub.Formats.Common;
 using Radoub.Formats.Services;
+using Radoub.TestUtilities.Mocks;
 using Radoub.UI.Services;
 
 namespace Radoub.UI.Tests;
@@ -917,6 +919,97 @@ public class SharedPaletteCacheServiceTests : IDisposable
         // Both .json and .building files should be gone
         Assert.Empty(Directory.GetFiles(_testCacheDir, "*.json"));
         Assert.Empty(Directory.GetFiles(_testCacheDir, "*.building"));
+    }
+
+    #endregion
+
+    #region Category-Aware Provider (#987)
+
+    private SharedPaletteCacheService ServiceWith(params SharedPaletteCacheItem[] items)
+    {
+        foreach (var f in Directory.GetFiles(_testCacheDir, "*.json")) File.Delete(f);
+        var wrapper = new SourcePaletteCacheWrapper { Version = 5, Source = "bif", Items = items.ToList() };
+        File.WriteAllText(Path.Combine(_testCacheDir, "bif.json"),
+            System.Text.Json.JsonSerializer.Serialize(wrapper));
+        return new SharedPaletteCacheService(_testCacheDir);
+    }
+
+    [Fact]
+    public void GetCategoryNames_OnePerCategoryWithCounts()
+    {
+        var svc = ServiceWith(
+            new SharedPaletteCacheItem { ResRef = "a", PaletteId = 1 },
+            new SharedPaletteCacheItem { ResRef = "b", PaletteId = 1 },
+            new SharedPaletteCacheItem { ResRef = "c", PaletteId = 2 });
+        var gd = new MockGameDataService().WithPaletteCategories(ResourceTypes.Uti,
+            new PaletteCategory { Id = 1, Name = "Medium", ParentPath = "Armor" },
+            new PaletteCategory { Id = 2, Name = "Heavy", ParentPath = "Armor" });
+
+        var result = svc.GetCategoryNames(gd, ResourceTypes.Uti);
+
+        Assert.Equal(2, result.Single(c => c.Id == 1).ItemCount);
+        Assert.Equal(1, result.Single(c => c.Id == 2).ItemCount);
+        Assert.Equal("Armor", result.Single(c => c.Id == 1).ParentPath);
+    }
+
+    [Fact]
+    public void GetCategoryNames_TwoSameNameDifferentParentsAreDistinct()
+    {
+        var svc = ServiceWith(
+            new SharedPaletteCacheItem { ResRef = "a", PaletteId = 10 },
+            new SharedPaletteCacheItem { ResRef = "b", PaletteId = 20 });
+        var gd = new MockGameDataService().WithPaletteCategories(ResourceTypes.Uti,
+            new PaletteCategory { Id = 10, Name = "Custom 1", ParentPath = "Armor" },
+            new PaletteCategory { Id = 20, Name = "Custom 1", ParentPath = "Weapons" });
+
+        var result = svc.GetCategoryNames(gd, ResourceTypes.Uti);
+
+        Assert.Equal(2, result.Count(c => c.Name == "Custom 1"));
+        Assert.Contains(result, c => c.Name == "Custom 1" && c.ParentPath == "Armor");
+        Assert.Contains(result, c => c.Name == "Custom 1" && c.ParentPath == "Weapons");
+    }
+
+    [Fact]
+    public void GetCategoryNames_UnmappedPaletteIdGroupsUncategorized()
+    {
+        var svc = ServiceWith(
+            new SharedPaletteCacheItem { ResRef = "a", PaletteId = null },
+            new SharedPaletteCacheItem { ResRef = "b", PaletteId = 99 }); // 99 not in gd
+        var gd = new MockGameDataService().WithPaletteCategories(ResourceTypes.Uti,
+            new PaletteCategory { Id = 1, Name = "Medium", ParentPath = "Armor" });
+
+        var result = svc.GetCategoryNames(gd, ResourceTypes.Uti);
+
+        var uncat = result.Single(c => c.IsUncategorized);
+        Assert.Equal(PaletteCategoryInfo.UncategorizedId, uncat.Id);
+        Assert.Equal(2, uncat.ItemCount);
+    }
+
+    [Fact]
+    public void GetCategoryBlueprints_ReturnsOnlyThatCategorysItems()
+    {
+        var svc = ServiceWith(
+            new SharedPaletteCacheItem { ResRef = "a", PaletteId = 1 },
+            new SharedPaletteCacheItem { ResRef = "b", PaletteId = 1 },
+            new SharedPaletteCacheItem { ResRef = "c", PaletteId = 2 });
+
+        var items = svc.GetCategoryBlueprints(1);
+
+        Assert.Equal(2, items.Count);
+        Assert.All(items, i => Assert.Equal((byte?)1, i.PaletteId));
+    }
+
+    [Fact]
+    public void GetCategoryBlueprints_UncategorizedReturnsNullPaletteIdItems()
+    {
+        var svc = ServiceWith(
+            new SharedPaletteCacheItem { ResRef = "a", PaletteId = null },
+            new SharedPaletteCacheItem { ResRef = "b", PaletteId = 1 });
+
+        var items = svc.GetCategoryBlueprints(PaletteCategoryInfo.UncategorizedId);
+
+        Assert.Single(items);
+        Assert.Equal("a", items[0].ResRef);
     }
 
     #endregion
