@@ -216,6 +216,25 @@ public class ParticleSystemTests
     }
 
     [Fact]
+    public void Update_FountainEmitter_StreamsContinuously_Unchanged()
+    {
+        // Regression guard for #2395: a Fountain emitter that passes the at-rest gate keeps
+        // streaming (steady-state population), never goes quiet.
+        var node = BaseNode();
+        node.Update = "Fountain";
+        node.BirthRate = 100f;
+        node.LifeExp = 0.5f;
+        var sys = new ParticleSystem(Compile(node), seed: 23u);
+
+        const float dt = 1f / 30f;
+        // Run several seconds; population reaches steady-state ~ birthRate*lifeExp = 50 and stays.
+        for (int i = 0; i < (int)(3f / dt); i++)
+            sys.Update(dt);
+
+        Assert.InRange(sys.LiveCount, 35, 65); // steady ~50, never quiet
+    }
+
+    [Fact]
     public void Update_ZeroLifetime_DoesNotThrow()
     {
         var node = BaseNode();

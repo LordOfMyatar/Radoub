@@ -21,17 +21,16 @@ public partial class ModelPreviewGLControl
     private uint _particleVbo;
     private bool _particleGlReady;
 
-    // Vertex layout (floats): center.xyz(3) + corner.xy(2) + uv.xy(2) + color.rgba(4) + size(1) = 12
-    private const int ParticleFloatsPerVertex = 12;
+    // Vertex layout (floats): center.xyz(3) + corner.xy(2) + uv.xy(2) + color.rgba(4) + size.xy(2)
+    //                       + right.xyz(3) + up.xyz(3) = 19
+    // The quad's expansion axes (right/up) are baked per-vertex rather than passed as a uniform, so
+    // velocity-dependent modes (VelocityAligned/Stretched) can orient each particle individually
+    // and all modes resolve through one path. (#2544)
+    private const int ParticleFloatsPerVertex = 19;
     private const int ParticleVertsPerQuad = 6; // two triangles, no index buffer (MVP)
 
     // Scratch CPU buffer reused across frames to avoid per-frame allocation churn.
     private float[] _particleScratch = Array.Empty<float>();
-
-    // A particle is clamped to this fraction of the model radius so no single emitter dominates the
-    // preview (e.g. the fairy's oversized wing-glow emitters). Tuned against c_fairy: 0.6 keeps the
-    // wing glow subtle while leaving normal small particles (dust) far below the cap. (#2434)
-    private const float ParticleSizeCapRadiusFactor = 0.6f;
 
     // Corner offsets for the two triangles of a quad, in (corner, uv) pairs.
     // Corner is the half-extent offset in camera right/up space; uv spans 0..1.
@@ -53,7 +52,9 @@ layout (location = 0) in vec3 aCenterWorld;
 layout (location = 1) in vec2 aCorner;
 layout (location = 2) in vec2 aUV;
 layout (location = 3) in vec4 aColor;
-layout (location = 4) in float aSize;
+layout (location = 4) in vec2 aSize;
+layout (location = 5) in vec3 aRight;
+layout (location = 6) in vec3 aUp;
 
 out vec2 vUV;
 out vec4 vColor;
@@ -61,13 +62,14 @@ out vec4 vColor;
 uniform mat4 uModel;
 uniform mat4 uView;
 uniform mat4 uProj;
-uniform vec3 uCamRight;
-uniform vec3 uCamUp;
 
 void main()
 {
     vec3 worldCenter = vec3(uModel * vec4(aCenterWorld, 1.0));
-    vec3 pos = worldCenter + (uCamRight * aCorner.x + uCamUp * aCorner.y) * aSize;
+    // Per-particle quad axes (baked in BuildParticleVertices) expand the corner. Independent X/Y
+    // half-extents: corner.x scales the right axis by sizeX, corner.y the up axis by sizeY, so
+    // authored non-square particles render non-square and velocity modes orient per particle. (#2544)
+    vec3 pos = worldCenter + aRight * (aCorner.x * aSize.x) + aUp * (aCorner.y * aSize.y);
     gl_Position = uProj * uView * vec4(pos, 1.0);
     vUV = aUV;
     vColor = aColor;
@@ -138,7 +140,7 @@ void main()
         _particleVbo = _gl.GenBuffer();
 
         // Configure attribute pointers once; the VBO is re-uploaded each frame but the
-        // layout never changes. Stride = 12 floats.
+        // layout never changes. Stride = ParticleFloatsPerVertex (19) floats.
         _gl.BindVertexArray(_particleVao);
         _gl.BindBuffer(BufferTargetARB.ArrayBuffer, _particleVbo);
         int stride = ParticleFloatsPerVertex * sizeof(float);
@@ -152,8 +154,12 @@ void main()
             _gl.EnableVertexAttribArray(2);
             _gl.VertexAttribPointer(3, 4, VertexAttribPointerType.Float, false, (uint)stride, (void*)(7 * sizeof(float)));
             _gl.EnableVertexAttribArray(3);
-            _gl.VertexAttribPointer(4, 1, VertexAttribPointerType.Float, false, (uint)stride, (void*)(11 * sizeof(float)));
+            _gl.VertexAttribPointer(4, 2, VertexAttribPointerType.Float, false, (uint)stride, (void*)(11 * sizeof(float)));
             _gl.EnableVertexAttribArray(4);
+            _gl.VertexAttribPointer(5, 3, VertexAttribPointerType.Float, false, (uint)stride, (void*)(13 * sizeof(float)));
+            _gl.EnableVertexAttribArray(5);
+            _gl.VertexAttribPointer(6, 3, VertexAttribPointerType.Float, false, (uint)stride, (void*)(16 * sizeof(float)));
+            _gl.EnableVertexAttribArray(6);
         }
         _gl.BindVertexArray(0);
         _gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
@@ -220,8 +226,8 @@ void main()
         SetParticleMatrix("uModel", modelMatrix);
         SetParticleMatrix("uView", view);
         SetParticleMatrix("uProj", projection);
-        // uCamRight/uCamUp are the generic quad-expansion axes; they're set per-emitter below
-        // because render modes differ (camera-facing vs locked to the emitter's local frame). (#2434)
+        // Quad-expansion axes (right/up) are baked per-vertex in BuildParticleVertices — not a
+        // uniform — so render modes that depend on per-particle velocity orient each particle. (#2544)
 
         // Model rotation, applied to local-frame quad axes so locked billboards spin with the mesh
         // (the shader applies uModel to the particle center but not to the quad basis). (#2434)
@@ -248,12 +254,9 @@ void main()
 
             // Quad orientation per render mode. Camera-facing modes use the screen axes; modes
             // locked to the emitter's local frame (e.g. Billboard_to_Local_Z, the fairy wings) use
-            // the node's local axes, composed with the model rotation so they spin with the mesh. (#2434)
+            // the node's local axes, composed with the model rotation so they spin with the mesh;
+            // velocity modes resolve per particle in BuildParticleVertices. (#2434, #2544)
             var emitterRot = Quaternion.Concatenate(GetEmitterWorldRotation(node, particlePose), modelRotation);
-            var (quadRight, quadUp) = ParticleBillboard.QuadBasis(
-                emitter.RenderMode, camRight, camUp, emitterRot);
-            SetParticleVec3("uCamRight", quadRight);
-            SetParticleVec3("uCamUp", quadUp);
 
             // Per-blend state.
             bool cutout = emitter.Blend == ParticleBlendMode.Cutout;
@@ -285,7 +288,7 @@ void main()
                 SetParticleInt("uTex", 0);
             }
 
-            BuildParticleVertices(emitter, system, count);
+            BuildParticleVertices(emitter, system, count, camRight, camUp, emitterRot, modelRotation);
 
             int vertCount = count * ParticleVertsPerQuad;
             int floatCount = vertCount * ParticleFloatsPerVertex;
@@ -313,10 +316,13 @@ void main()
     /// <summary>
     /// Fill <see cref="_particleScratch"/> with 6 vertices per live particle. Each vertex is
     /// (center - _modelCenter), a quad corner, a UV (full quad or sprite-sheet subrect),
-    /// the particle color, and its size. Center is in raw model space; the shader applies
-    /// uModel so particles rotate with the mesh (#2395).
+    /// the particle color, its size, and the quad's world-space right/up axes. Center is in raw
+    /// model space; the shader applies uModel so particles rotate with the mesh (#2395). The quad
+    /// axes are pre-composed into world space here (the shader does not apply uModel to them):
+    /// camera-/world-/local-frame modes resolve once per emitter, velocity modes per particle. (#2544)
     /// </summary>
-    private void BuildParticleVertices(CompiledEmitter emitter, ParticleSystem system, int count)
+    private void BuildParticleVertices(CompiledEmitter emitter, ParticleSystem system, int count,
+        Vector3 camRight, Vector3 camUp, Quaternion emitterRot, Quaternion modelRotation)
     {
         int needed = count * ParticleVertsPerQuad * ParticleFloatsPerVertex;
         if (_particleScratch.Length < needed)
@@ -327,12 +333,29 @@ void main()
         int rows = Math.Max(sheet.Rows, (ushort)1);
         bool useSheet = cols * rows > 1;
 
+        // Velocity-dependent modes (VelocityAligned/Stretched) resolve the quad basis per particle;
+        // all other modes share one basis for the whole emitter, computed once here. (#2544)
+        bool perParticleBasis = ParticleBillboard.IsVelocityDependent(emitter.RenderMode);
+        var (sharedRight, sharedUp) = perParticleBasis
+            ? (camRight, camUp) // overwritten per particle below
+            : ParticleBillboard.QuadBasis(emitter.RenderMode, camRight, camUp, emitterRot);
+
         var particles = system.Particles;
         int o = 0;
         for (int p = 0; p < count && p < particles.Count; p++)
         {
             var part = particles[p];
             Vector3 center = part.Position - _modelCenter;
+
+            Vector3 quadRight = sharedRight, quadUp = sharedUp;
+            if (perParticleBasis)
+            {
+                // Particle velocity is in raw model space; rotate by the model rotation into the
+                // same world frame the shared modes use, so the streak aligns with the visible motion.
+                Vector3 velWorld = Vector3.Transform(part.Velocity, modelRotation);
+                (quadRight, quadUp) = ParticleBillboard.QuadBasis(
+                    emitter.RenderMode, camRight, camUp, emitterRot, velWorld);
+            }
 
             // Sprite-sheet UV subrect for the particle's current frame, or full 0..1.
             float uMin = 0f, vMin = 0f, uMax = 1f, vMax = 1f;
@@ -352,16 +375,10 @@ void main()
 
             // Particle sizes are authored in raw MDL units — the same space as the mesh vertices
             // (node.Scale is 1.0; NWN creature MDLs are modeled at their true size, e.g. the fairy
-            // is a 0.44-unit-tall Tinkerbell). Render the authored size directly. (#2434)
-            //
-            // Cap at a fraction of the model radius so a single emitter can't dominate the preview:
-            // the fairy's Billboard_to_Local_Z wing emitters author 0.5-0.6 (≈3x her 0.22 radius) and
-            // are meant to read as a faint wing glow in Aurora, not a body-swallowing orb. Aurora's
-            // exact wing-blade render is undocumented (no public tool reproduces Billboard_to_Local_Z),
-            // so clamping oversized particles to a glow is the faithful-as-possible approximation. The
-            // cap is generous enough that normal particles (dust 0.07 << cap) are untouched. (#2434)
-            float sizeCap = MathF.Max(_viewController.ModelRadius, 0.001f) * ParticleSizeCapRadiusFactor;
-            float size = MathF.Min(part.SizeX, sizeCap); // square billboard sized by authored SizeX, capped
+            // is a 0.44-unit-tall Tinkerbell). Render the authored X/Y sizes directly — no blanket
+            // cap (the old 0.6×radius clamp shrank legitimately large puffs; the fairy-wing case it
+            // was tuned for is now handled by the Billboard_to_Local_Z orientation, #2544/#2450). (#2544)
+            var (sizeX, sizeY) = ParticleSizing.Resolve(part.SizeX, part.SizeY);
             Vector4 color = part.Color;
 
             for (int c = 0; c < ParticleVertsPerQuad; c++)
@@ -382,7 +399,14 @@ void main()
                 _particleScratch[o++] = color.Y;
                 _particleScratch[o++] = color.Z;
                 _particleScratch[o++] = color.W;
-                _particleScratch[o++] = size;
+                _particleScratch[o++] = sizeX;
+                _particleScratch[o++] = sizeY;
+                _particleScratch[o++] = quadRight.X;
+                _particleScratch[o++] = quadRight.Y;
+                _particleScratch[o++] = quadRight.Z;
+                _particleScratch[o++] = quadUp.X;
+                _particleScratch[o++] = quadUp.Y;
+                _particleScratch[o++] = quadUp.Z;
             }
         }
     }
@@ -419,13 +443,6 @@ void main()
             m.M41, m.M42, m.M43, m.M44
         };
         _gl.UniformMatrix4(loc, 1, false, values);
-    }
-
-    private void SetParticleVec3(string name, Vector3 v)
-    {
-        if (_gl == null) return;
-        int loc = _gl.GetUniformLocation(_particleProgram, name);
-        if (loc >= 0) _gl.Uniform3(loc, v.X, v.Y, v.Z);
     }
 
     private void SetParticleInt(string name, int value)

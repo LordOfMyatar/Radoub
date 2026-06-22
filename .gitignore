@@ -4,6 +4,10 @@
 # Superpowers brainstorming sessions
 .superpowers/
 
+# Scratch investigation scripts (disposable, edited in place per CLAUDE.md)
+Scripts/Scratch-Investigate-1.ps1
+Scripts/Scratch-Investigate-2.ps1
+
 # Build Output
 [Bb]in/
 [Oo]bj/

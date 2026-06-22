@@ -96,6 +96,9 @@ public static class EmitterCompiler
         "fountain" => ParticleEmissionMode.Continuous,
         "single" => ParticleEmissionMode.SingleShot,
         "explosion" => ParticleEmissionMode.EventBurst,
+        // Lightning is an event/beam mode with no faithful continuous render — fold it into the
+        // fire-and-forget burst path so it cycles instead of streaming as a fountain (#2544).
+        "lightning" => ParticleEmissionMode.EventBurst,
         _ => ParticleEmissionMode.Continuous
     };
 

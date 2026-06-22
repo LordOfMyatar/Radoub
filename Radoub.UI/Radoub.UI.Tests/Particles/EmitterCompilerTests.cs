@@ -39,6 +39,30 @@ public class EmitterCompilerTests
         Assert.Equal(ParticleBlendMode.Additive, result.Blend);
     }
 
+    // ---- Emission-mode mapping (#2544) ----
+
+    [Fact]
+    public void Compile_FountainIsContinuous()
+    {
+        var node = SampleNode();
+        node.Update = "Fountain";
+        Assert.Equal(ParticleEmissionMode.Continuous, EmitterCompiler.Compile(node).EmissionMode);
+    }
+
+    [Theory]
+    [InlineData("Explosion")]
+    [InlineData("Single")]
+    [InlineData("Lightning")]
+    public void Compile_FireAndForgetModesAreNotContinuous(string update)
+    {
+        // Explosion/Single/Lightning map to a burst mode (not continuous). At-rest visibility is
+        // decided by EmitterAnimationGate, not the Update mode, but the mode mapping still records
+        // that these are not free-running fountains. (#2544)
+        var node = SampleNode();
+        node.Update = update;
+        Assert.NotEqual(ParticleEmissionMode.Continuous, EmitterCompiler.Compile(node).EmissionMode);
+    }
+
     [Fact]
     public void Compile_SizeXOverLifeHasThreeKeys()
     {
