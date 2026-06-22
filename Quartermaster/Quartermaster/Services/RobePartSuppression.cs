@@ -18,12 +18,36 @@ namespace Quartermaster.Services;
 /// </summary>
 public static class RobePartSuppression
 {
+    // Parts the robe always replaces when active (torso + legs): the reference engines treat a
+    // robe as a near-total body, so loading these alongside it duplicates geometry.
     private static readonly HashSet<string> RobeCoveredParts = new(StringComparer.OrdinalIgnoreCase)
     {
         "chest", "pelvis", "legl", "legr", "shol", "shor", "bicepl", "bicepr",
         "forel", "forer", "handl", "handr", "shinl", "shinr",
     };
 
-    public static bool IsSuppressedByRobe(string partType, bool robeActive) =>
-        robeActive && !string.IsNullOrEmpty(partType) && RobeCoveredParts.Contains(partType);
+    // Arm-region parts (#2541 Phase 2): suppressed only when the robe supplies RENDERABLE arm
+    // geometry. Some robes (pfh0_robe005 / Dana) have Render=false arm trimeshes and an armless
+    // skin — suppressing these leaves the creature with no arms at all (#2398/#2116).
+    private static readonly HashSet<string> RobeArmParts = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "shol", "shor", "bicepl", "bicepr", "forel", "forer", "handl", "handr",
+    };
+
+    /// <summary>
+    /// Whether <paramref name="partType"/> is replaced by an active robe. When the part is an
+    /// arm-region part and <paramref name="robeHasRenderableArms"/> is false, it is NOT suppressed
+    /// (the creature keeps its own arms). Torso/leg parts are always suppressed when a robe is
+    /// active, regardless of the arm signal.
+    /// </summary>
+    public static bool IsSuppressedByRobe(string partType, bool robeActive, bool robeHasRenderableArms = true)
+    {
+        if (!robeActive || string.IsNullOrEmpty(partType) || !RobeCoveredParts.Contains(partType))
+            return false;
+
+        if (!robeHasRenderableArms && RobeArmParts.Contains(partType))
+            return false;
+
+        return true;
+    }
 }

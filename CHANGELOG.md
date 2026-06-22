@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.26-alpha] - 2026-06-22
+**Branch**: `quartermaster/issue-2541` | **PR**: #2569
+
+### Part composition: preserve authored mesh position + custom-skeleton bone resolution (#2541)
+
+- `MdlPartComposer` now preserves a body-part mesh's authored local position instead of zeroing it, fixing the head-too-high gap on part-based creature previews (#2161). Part-to-bone attachment best-matches custom-skeleton bones by exact name stem when the conventional `_g` bone is absent, rather than silently grafting at the composite root. Surfaced in Quartermaster (#2398/#2116).
+
+---
+
 ## [Radoub.UI 0.2.25-alpha] - 2026-06-21
 **Branch**: `radoub/issue-2562` | **PR**: #2564
 

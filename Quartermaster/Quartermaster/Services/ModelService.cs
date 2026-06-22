@@ -46,12 +46,15 @@ public class ModelService
 
     /// <summary>
     /// Build the base model prefix for a part-based creature.
-    /// Format: p{gender}{race}{phenotype} (e.g., "pfo0" = playable female, race O, phenotype 0)
+    /// Format: p{gender}{race}{phenotype} (e.g., "pfo0" = playable female, race O, phenotype 0).
+    /// Gender resolves via <see cref="CreatureModelResolver.ResolveGenderFlavors"/> — every value
+    /// other than 1 (Female) uses the male flavor, since NWN ships no other body-model flavors;
+    /// the cross-gender fallback in <see cref="AppendPart"/> covers single-variant content (#2541).
     /// </summary>
     internal static string BuildModelPrefix(int gender, string race, int phenotype)
     {
-        var genderChar = gender == 1 ? 'f' : 'm';
-        return $"p{genderChar}{race.ToLowerInvariant()}{phenotype}";
+        var flavor = CreatureModelResolver.ResolveGenderFlavors(gender)[0];
+        return CreatureModelResolver.BuildPrefix(flavor, race, phenotype);
     }
 
     /// <summary>
@@ -214,16 +217,30 @@ public class ModelService
         // legs AND have no robe to replace them — an empty render (the dana/pmo0 case).
         if (robePartNumber > 0)
             AppendPart(parts, basePrefix, "robe", robePartNumber);
-        bool robeActive = parts.Any(p => p.PartType.Equals("robe", System.StringComparison.OrdinalIgnoreCase));
+        var robeEntry = parts.FirstOrDefault(p => p.PartType.Equals("robe", System.StringComparison.OrdinalIgnoreCase));
+        bool robeActive = robeEntry.ResRef != null;
         if (robePartNumber > 0 && !robeActive)
             UnifiedLogger.LogApplication(LogLevel.WARN,
                 $"LoadPartBasedCreatureModel: robe #{robePartNumber} did not resolve — keeping body parts (no suppression)");
+
+        // #2541 Phase 2: only suppress the creature's arm parts if the robe supplies RENDERABLE
+        // arm geometry. Robes like pfh0_robe005 (Dana) have Render=false arm trimeshes and an
+        // armless torso+legs skin — suppressing the creature arms there leaves the creature with
+        // no arms (#2398/#2116). Torso/legs are always suppressed when a robe is active.
+        bool robeHasRenderableArms = true;
+        if (robeActive)
+        {
+            robeHasRenderableArms = RobeArmGeometry.HasRenderableArmGeometry(LoadModel(robeEntry.ResRef));
+            if (!robeHasRenderableArms)
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"LoadPartBasedCreatureModel: robe '{robeEntry.ResRef}' has no renderable arm geometry — keeping creature arms");
+        }
 
         // A robe is a near-complete posed body covering torso/pelvis/limbs; skip those individual
         // parts when a robe actually loaded — loading them additively causes z-fighting and gaps.
         void AddPart(string partType, byte partNumber)
         {
-            if (RobePartSuppression.IsSuppressedByRobe(partType, robeActive))
+            if (RobePartSuppression.IsSuppressedByRobe(partType, robeActive, robeHasRenderableArms))
             {
                 UnifiedLogger.LogApplication(LogLevel.INFO,
                     $"LoadPartBasedCreatureModel: skipping '{partType}' (covered by robe #{robePartNumber})");
@@ -345,9 +362,11 @@ public class ModelService
     }
 
     /// <summary>
-    /// Resolve a body part ResRef with race-specific lookup first, falling back to human
-    /// (pmh0/pfh0). Skips parts with partNumber=0 (none/invisible). Adds the resolved
-    /// (partType, resRef) tuple to the parts list if a model file exists.
+    /// Resolve a body part ResRef through the data-driven fallback chain (#2541):
+    /// race-specific → same-gender human → cross-gender race-specific → cross-gender human.
+    /// Skips parts with partNumber=0 (none/invisible). Adds the resolved (partType, resRef) tuple
+    /// to the parts list if any model file exists, logging which fallback path fired so custom
+    /// content authors can see when a part missed its own race/gender model.
     /// </summary>
     private void AppendPart(List<(string PartType, string ResRef)> parts, string basePrefix, string partType, byte partNumber)
     {
@@ -357,33 +376,25 @@ public class ModelService
             return;
         }
 
-        var raceResRef = MdlPartNaming.BuildBodyPartName(basePrefix, partType, partNumber);
-        if (LoadModel(raceResRef) != null)
+        var resolution = CreatureModelResolver.ResolvePart(
+            basePrefix, partType, partNumber, resRef => LoadModel(resRef) != null);
+
+        if (resolution == null)
         {
-            parts.Add((partType, raceResRef));
+            var attempted = MdlPartNaming.BuildBodyPartName(basePrefix, partType, partNumber);
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"AppendPart: '{attempted}' not found (no race/human/cross-gender fallback resolved)");
             return;
         }
 
-        // Human fallback (pmh0/pfh0). NWN shares many body part models across races
-        // using the human models as the default reference set.
-        if (basePrefix.Length >= 2)
+        if (resolution.Path != PartResolutionPath.RaceSpecific)
         {
-            var genderChar = basePrefix[1];
-            var humanPrefix = $"p{genderChar}h0";
-            if (humanPrefix != basePrefix)
-            {
-                var humanResRef = MdlPartNaming.BuildBodyPartName(humanPrefix, partType, partNumber);
-                if (LoadModel(humanResRef) != null)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.INFO,
-                        $"AppendPart: using human fallback '{humanResRef}' for '{raceResRef}'");
-                    parts.Add((partType, humanResRef));
-                    return;
-                }
-            }
+            var attempted = MdlPartNaming.BuildBodyPartName(basePrefix, partType, partNumber);
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"AppendPart: '{attempted}' missing — using {resolution.Path} fallback '{resolution.ResRef}'");
         }
 
-        UnifiedLogger.LogApplication(LogLevel.WARN, $"AppendPart: '{raceResRef}' not found (no human fallback either)");
+        parts.Add((partType, resolution.ResRef));
     }
 
     /// <summary>
