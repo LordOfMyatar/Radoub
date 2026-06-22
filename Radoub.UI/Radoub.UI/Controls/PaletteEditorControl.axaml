@@ -57,8 +57,10 @@
                 </ControlTheme>
             </TreeView.ItemContainerTheme>
             <TreeView.ItemTemplate>
+                <!-- ToolTip shows the full root-to-here path so repeated/nested names
+                     (CEP "Custom 1") are unambiguous on hover (#2488). -->
                 <TreeDataTemplate ItemsSource="{Binding Children}">
-                    <TextBlock Text="{Binding Name}"/>
+                    <TextBlock Text="{Binding Name}" ToolTip.Tip="{Binding FullPath}"/>
                 </TreeDataTemplate>
             </TreeView.ItemTemplate>
         </TreeView>

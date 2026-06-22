@@ -26,7 +26,27 @@ public partial class PaletteNodeViewModel : ObservableObject
     /// <summary>The backing model node, or null for the virtual Uncategorized bucket.</summary>
     public PaletteNode? Model { get; }
 
+    /// <summary>
+    /// Parent node in the tree, or null for a top-level node. Set during <see cref="BuildForest"/>;
+    /// used by <see cref="FullPath"/> to chain ancestor names for the disambiguation tooltip (#2488).
+    /// </summary>
+    public PaletteNodeViewModel? Parent { get; private set; }
+
+    /// <summary>
+    /// Root-to-here name chain, joined with " › " (e.g. "Weapons › Custom 1 › a_blade"). Shown as a
+    /// tooltip so repeated names (CEP "Custom 1") are unambiguous on hover (#2488). A top-level node's
+    /// full path is just its own name.
+    /// </summary>
+    public string FullPath => Parent is null ? Name : $"{Parent.FullPath} › {Name}";
+
     public ObservableCollection<PaletteNodeViewModel> Children { get; } = new();
+
+    /// <summary>Add a child and set its <see cref="Parent"/> back-reference.</summary>
+    private void AddChild(PaletteNodeViewModel child)
+    {
+        child.Parent = this;
+        Children.Add(child);
+    }
 
     [ObservableProperty] private string _name = string.Empty;
     [ObservableProperty] private bool _isExpanded;
@@ -71,7 +91,7 @@ public partial class PaletteNodeViewModel : ObservableObject
 
         var uncategorized = new PaletteNodeViewModel(PaletteNodeKind.Uncategorized, null, "Uncategorized");
         foreach (var resRef in uncategorizedRefs.OrderBy(r => r, StringComparer.OrdinalIgnoreCase))
-            uncategorized.Children.Add(new PaletteNodeViewModel(PaletteNodeKind.Blueprint, null, resRef));
+            uncategorized.AddChild(new PaletteNodeViewModel(PaletteNodeKind.Blueprint, null, resRef));
         forest.Add(uncategorized);
         return forest;
     }
@@ -87,16 +107,16 @@ public partial class PaletteNodeViewModel : ObservableObject
                 // Blueprint leaves come from the pool grouped by PaletteID, not cat.Blueprints.
                 if (byCategoryId.TryGetValue(cat.Id, out var refs))
                     foreach (var resRef in refs.OrderBy(r => r, StringComparer.OrdinalIgnoreCase))
-                        vmNode.Children.Add(new PaletteNodeViewModel(PaletteNodeKind.Blueprint, null, resRef));
+                        vmNode.AddChild(new PaletteNodeViewModel(PaletteNodeKind.Blueprint, null, resRef));
                 foreach (var child in cat.Children)
-                    vmNode.Children.Add(BuildNode(child, byCategoryId, strRefResolver));
+                    vmNode.AddChild(BuildNode(child, byCategoryId, strRefResolver));
                 return vmNode;
             }
             case PaletteBranchNode br:
             {
                 var vmNode = new PaletteNodeViewModel(PaletteNodeKind.Branch, br, DisplayName(br, strRefResolver));
                 foreach (var child in br.Children)
-                    vmNode.Children.Add(BuildNode(child, byCategoryId, strRefResolver));
+                    vmNode.AddChild(BuildNode(child, byCategoryId, strRefResolver));
                 return vmNode;
             }
             default:

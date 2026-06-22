@@ -77,4 +77,91 @@ public class PaletteCategoryComboBinderTests
 
         Assert.Null(PaletteCategoryComboBinder.GetSelectedId(combo));
     }
+
+    // --- Duplicate/nested name disambiguation (#2488) ---
+
+    [Fact]
+    public void BuildDisplayLabels_UniqueNames_ReturnsBareNames()
+    {
+        var cats = new List<PaletteCategory>
+        {
+            new() { Id = 0, Name = "Containers" },
+            new() { Id = 1, Name = "Doors" },
+        };
+
+        var labels = PaletteCategoryComboBinder.BuildDisplayLabels(cats);
+
+        Assert.Equal(new[] { "Containers", "Doors" }, labels);
+    }
+
+    [Fact]
+    public void BuildDisplayLabels_DuplicateName_WithParentPath_QualifiesByPath()
+    {
+        // CEP case: two "Custom 1" categories under different branches.
+        var cats = new List<PaletteCategory>
+        {
+            new() { Id = 10, Name = "Custom 1", ParentPath = "Weapons" },
+            new() { Id = 20, Name = "Custom 1", ParentPath = "Armor" },
+            new() { Id = 30, Name = "Doors" },
+        };
+
+        var labels = PaletteCategoryComboBinder.BuildDisplayLabels(cats);
+
+        Assert.Equal("Weapons › Custom 1", labels[0]);
+        Assert.Equal("Armor › Custom 1", labels[1]);
+        Assert.Equal("Doors", labels[2]); // unique name stays bare
+    }
+
+    [Fact]
+    public void BuildDisplayLabels_DuplicateName_NoParentPath_QualifiesById()
+    {
+        // Both duplicates are top-level (no ParentPath) — fall back to id suffix.
+        var cats = new List<PaletteCategory>
+        {
+            new() { Id = 41, Name = "Custom 1" },
+            new() { Id = 42, Name = "Custom 1" },
+        };
+
+        var labels = PaletteCategoryComboBinder.BuildDisplayLabels(cats);
+
+        Assert.Equal("Custom 1 (id 41)", labels[0]);
+        Assert.Equal("Custom 1 (id 42)", labels[1]);
+    }
+
+    [Fact]
+    public void BuildDisplayLabels_DuplicateNameAndDuplicatePath_FallsBackToId()
+    {
+        // Pathological: same name AND same parent path — path can't disambiguate, use id.
+        var cats = new List<PaletteCategory>
+        {
+            new() { Id = 7, Name = "Custom 1", ParentPath = "Weapons" },
+            new() { Id = 8, Name = "Custom 1", ParentPath = "Weapons" },
+        };
+
+        var labels = PaletteCategoryComboBinder.BuildDisplayLabels(cats);
+
+        Assert.Equal("Weapons › Custom 1 (id 7)", labels[0]);
+        Assert.Equal("Weapons › Custom 1 (id 8)", labels[1]);
+    }
+
+    [AvaloniaFact]
+    public void Populate_DuplicateNames_UsesDisambiguatedContent()
+    {
+        var combo = new ComboBox();
+        var cats = new List<PaletteCategory>
+        {
+            new() { Id = 10, Name = "Custom 1", ParentPath = "Weapons" },
+            new() { Id = 20, Name = "Custom 1", ParentPath = "Armor" },
+        };
+
+        PaletteCategoryComboBinder.Populate(combo, cats);
+
+        var first = Assert.IsType<ComboBoxItem>(combo.Items[0]);
+        var second = Assert.IsType<ComboBoxItem>(combo.Items[1]);
+        Assert.Equal("Weapons › Custom 1", first.Content);
+        Assert.Equal("Armor › Custom 1", second.Content);
+        // Tags remain the raw PaletteID — disambiguation is display-only (#2488).
+        Assert.Equal((byte)10, first.Tag);
+        Assert.Equal((byte)20, second.Tag);
+    }
 }

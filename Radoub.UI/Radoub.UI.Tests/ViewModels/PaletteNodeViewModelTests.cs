@@ -110,4 +110,40 @@ public class PaletteNodeViewModelTests
         var forest = PaletteNodeViewModel.BuildForest(vm, strRefResolver: _ => null);
         Assert.Contains(forest, n => n.Kind == PaletteNodeKind.Category && n.Name == "[StrRef 99]");
     }
+
+    // --- Full-path tooltip for duplicate/nested name disambiguation (#2488) ---
+
+    [Fact]
+    public void FullPath_TopLevelCategory_IsJustItsName()
+    {
+        var vm = BuildVm();
+        var forest = PaletteNodeViewModel.BuildForest(vm);
+
+        var weapons = forest.Single(n => n.Name == "Weapons");
+        Assert.Equal("Weapons", weapons.FullPath);
+    }
+
+    [Fact]
+    public void FullPath_NestedNode_ChainsAncestorNames()
+    {
+        // Weapons › Custom 1 › a_blade  — the tree nests, so the path makes a repeated
+        // "Custom 1" unambiguous on hover.
+        var itp = new ItpFile();
+        var weapons = new PaletteCategoryNode { Id = 1, Name = "Weapons" };
+        var custom = new PaletteCategoryNode { Id = 5, Name = "Custom 1" };
+        weapons.Children.Add(custom);
+        itp.MainNodes.Add(weapons);
+
+        var store = new LooseFileBlueprintStore(new FakeGateway(), new[] { ("a_blade", "p/a_blade.uti") });
+        store.SetPaletteId("a_blade", 5); // -> Custom 1
+
+        var forest = PaletteNodeViewModel.BuildForest(new PaletteEditorViewModel(itp, store));
+
+        var weaponsVm = forest.Single(n => n.Name == "Weapons");
+        var customVm = weaponsVm.Children.Single(c => c.Name == "Custom 1");
+        var bladeVm = customVm.Children.Single(c => c.Name == "a_blade");
+
+        Assert.Equal("Weapons › Custom 1", customVm.FullPath);
+        Assert.Equal("Weapons › Custom 1 › a_blade", bladeVm.FullPath);
+    }
 }

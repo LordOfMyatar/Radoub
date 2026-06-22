@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Avalonia.Controls;
 using Radoub.Formats.Services;
 
@@ -30,7 +31,8 @@ public static class PaletteCategoryComboBinder
 
     /// <summary>
     /// Clear and repopulate the combo from <paramref name="categories"/>. Each item's
-    /// <c>Content</c> is the category name and <c>Tag</c> is the byte <c>Id</c> (so
+    /// <c>Content</c> is the disambiguated display label (see <see cref="BuildDisplayLabels"/>)
+    /// and <c>Tag</c> is the byte <c>Id</c> (so
     /// <see cref="ComboBoxHelper.SelectByTag{T}"/> / <see cref="ComboBoxHelper.GetSelectedTag{T}"/>
     /// work). Falls back to <see cref="DefaultFallback"/> when the list is null/empty.
     /// Returns the list actually loaded (caller can cache it).
@@ -41,15 +43,63 @@ public static class PaletteCategoryComboBinder
 
         if (combo != null)
         {
+            var labels = BuildDisplayLabels(list);
             combo.Items.Clear();
-            foreach (var cat in list)
+            for (int i = 0; i < list.Count; i++)
             {
-                combo.Items.Add(new ComboBoxItem { Content = cat.Name, Tag = cat.Id });
+                combo.Items.Add(new ComboBoxItem { Content = labels[i], Tag = list[i].Id });
             }
         }
 
         return list;
     }
+
+    /// <summary>
+    /// Build one display label per category, disambiguating duplicate names (#2488). CEP and
+    /// custom content commonly repeat names like "Custom 1" across branches; a flat combo of
+    /// identical labels is unusable. Rules, applied per category:
+    /// <list type="bullet">
+    /// <item>Name unique in the list → bare <c>Name</c> (unchanged from the simple case).</item>
+    /// <item>Name duplicated, has a <c>ParentPath</c> → <c>"Parent › Name"</c>.</item>
+    /// <item>Name still ambiguous (no path, or same name+path) → append <c>" (id N)"</c>.</item>
+    /// </list>
+    /// Disambiguation is display-only — placement is by PaletteID (#2477), so the item Tag stays
+    /// the raw <c>Id</c>. The order of the returned labels matches <paramref name="categories"/>.
+    /// </summary>
+    public static IReadOnlyList<string> BuildDisplayLabels(IReadOnlyList<PaletteCategory> categories)
+    {
+        var nameCounts = categories
+            .GroupBy(c => c.Name)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        // After path-qualification, a "Parent › Name" string can still collide (same name AND
+        // same parent path). Detect those so we can add the id suffix only where it's needed.
+        var qualifiedCounts = new Dictionary<string, int>();
+        foreach (var cat in categories)
+        {
+            var key = PathQualified(cat);
+            qualifiedCounts[key] = qualifiedCounts.TryGetValue(key, out var n) ? n + 1 : 1;
+        }
+
+        var labels = new List<string>(categories.Count);
+        foreach (var cat in categories)
+        {
+            if (nameCounts[cat.Name] <= 1)
+            {
+                labels.Add(cat.Name); // unique — leave it bare
+                continue;
+            }
+
+            var qualified = PathQualified(cat);
+            // Path disambiguates only if the path-qualified form is itself unique.
+            labels.Add(qualifiedCounts[qualified] <= 1 ? qualified : $"{qualified} (id {cat.Id})");
+        }
+
+        return labels;
+    }
+
+    private static string PathQualified(PaletteCategory cat)
+        => string.IsNullOrEmpty(cat.ParentPath) ? cat.Name : $"{cat.ParentPath} › {cat.Name}";
 
     /// <summary>
     /// Select the item whose Tag matches <paramref name="paletteId"/>. If not present, selects the
