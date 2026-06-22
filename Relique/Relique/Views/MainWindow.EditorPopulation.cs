@@ -194,17 +194,9 @@ public partial class MainWindow
         try
         {
             _isLoading = true;
-            for (int i = 0; i < PaletteCategoryComboBox.Items.Count; i++)
-            {
-                if (PaletteCategoryComboBox.Items[i] is ComboBoxItem item && item.Tag is byte id && id == paletteId)
-                {
-                    PaletteCategoryComboBox.SelectedIndex = i;
-                    return;
-                }
-            }
-            // Not found — select first item if available
-            if (PaletteCategoryComboBox.Items.Count > 0)
-                PaletteCategoryComboBox.SelectedIndex = 0;
+            // Shared binder owns the select-by-id (#2423); the _isLoading wrapper stays so the
+            // imperative selection does not mark a freshly-loaded document dirty (#2385).
+            Radoub.UI.Utils.PaletteCategoryComboBinder.SelectById(PaletteCategoryComboBox, paletteId);
         }
         finally
         {
@@ -215,7 +207,7 @@ public partial class MainWindow
     private void OnPaletteCategorySelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (_isLoading || _itemViewModel == null) return;
-        if (PaletteCategoryComboBox.SelectedItem is ComboBoxItem item && item.Tag is byte id)
+        if (Radoub.UI.Utils.PaletteCategoryComboBinder.GetSelectedId(PaletteCategoryComboBox) is byte id)
         {
             if (_itemViewModel.PaletteID == id) return;
 

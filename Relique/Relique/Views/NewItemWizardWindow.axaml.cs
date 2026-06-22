@@ -90,15 +90,10 @@ public partial class NewItemWizardWindow : Window
 
     private void PopulatePaletteCategories()
     {
-        PaletteCategoryComboBox.Items.Clear();
-        foreach (var cat in _paletteCategories)
-        {
-            PaletteCategoryComboBox.Items.Add(new ComboBoxItem
-            {
-                Content = cat.Name,
-                Tag = cat.Id
-            });
-        }
+        // Shared binder owns populate (#2423); the wizard keeps its own data source + fallback
+        // (Standard/Custom 1-3) by passing the already-loaded list. Binder disambiguates
+        // duplicate names (#2488). Wizard default selection is the first item.
+        Radoub.UI.Utils.PaletteCategoryComboBinder.Populate(PaletteCategoryComboBox, _paletteCategories);
         if (PaletteCategoryComboBox.Items.Count > 0)
             PaletteCategoryComboBox.SelectedIndex = 0;
     }
@@ -571,10 +566,8 @@ public partial class NewItemWizardWindow : Window
             var finalResRef = BlueprintNamingService.ResolveResRefConflict(
                 resRef, r => File.Exists(Path.Combine(saveDir, r + ".uti")));
 
-            // Get palette category
-            byte paletteId = 0;
-            if (PaletteCategoryComboBox.SelectedItem is ComboBoxItem catItem && catItem.Tag is byte catId)
-                paletteId = catId;
+            // Get palette category (shared binder, #2423)
+            byte paletteId = Radoub.UI.Utils.PaletteCategoryComboBinder.GetSelectedId(PaletteCategoryComboBox) ?? 0;
 
             // Create UTI file
             var uti = new UtiFile

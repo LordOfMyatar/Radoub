@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.30-alpha] - 2026-06-21
+**Branch**: `radoub/issue-2562` | **PR**: #2564
+
+### Refactor: Palette-category combo → shared Radoub.UI binder (#2423)
+
+- The main editor and New Item wizard now use the shared `PaletteCategoryComboBinder` instead of Relique-local populate/select/fallback code; the `_isLoading` dirty guard (#2385) is preserved and duplicate/nested names are disambiguated centrally (#2488).
+
+---
+
 ## [0.10.29-alpha] - 2026-06-20
 **Branch**: `relique/issue-2446` | **PR**: #2532
 

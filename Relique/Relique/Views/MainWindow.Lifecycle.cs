@@ -132,38 +132,13 @@ public partial class MainWindow
 
     private void LoadPaletteCategories(System.Collections.Generic.List<PaletteCategory>? categories)
     {
-        _paletteCategories.Clear();
-        PaletteCategoryComboBox.Items.Clear();
-
-        if (categories != null && categories.Count > 0)
-        {
-            _paletteCategories = categories;
-        }
-        else
-        {
-            _paletteCategories = GetHardcodedPaletteCategories();
-        }
-
-        foreach (var cat in _paletteCategories)
-        {
-            PaletteCategoryComboBox.Items.Add(new Avalonia.Controls.ComboBoxItem
-            {
-                Content = cat.Name,
-                Tag = cat.Id
-            });
-        }
-    }
-
-    private static System.Collections.Generic.List<PaletteCategory> GetHardcodedPaletteCategories()
-    {
-        return new System.Collections.Generic.List<PaletteCategory>
-        {
-            new() { Id = 0, Name = "Miscellaneous" },
-            new() { Id = 1, Name = "Armor" },
-            new() { Id = 2, Name = "Weapons" },
-            new() { Id = 3, Name = "Potions" },
-            new() { Id = 4, Name = "Other" },
-        };
+        // Shared binder owns populate + fallback (#2423). Its DefaultFallback (Misc/Armor/Weapons/
+        // Potions/Other) matches Relique's old hardcoded list exactly, and it disambiguates
+        // duplicate/nested names (#2488). It returns the list actually loaded (real or fallback)
+        // so we cache the same source the combo shows.
+        _paletteCategories = Radoub.UI.Utils.PaletteCategoryComboBinder
+            .Populate(PaletteCategoryComboBox, categories)
+            .ToList();
     }
 
     // --- Item Browser Panel ---
