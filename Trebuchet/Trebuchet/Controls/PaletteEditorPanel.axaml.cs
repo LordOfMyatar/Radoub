@@ -44,7 +44,27 @@ public partial class PaletteEditorPanel : UserControl
             _host.StrRefResolver = _tlkService.ResolveStrRef;
 
         Editor.Bind(_host, parentWindow);
+        Editor.BlueprintActivated += OnBlueprintActivated; // double-click -> launch editor (#2485)
         RefreshVisibility();
+    }
+
+    // Double-click on a blueprint leaf: resolve its file path + owning tool and launch it on that
+    // file. Reuses ToolLauncherService (same path Marlinspike dispatch uses). The shared editor owns
+    // no launch logic — it only told us which ResRef was activated.
+    private void OnBlueprintActivated(string resRef)
+    {
+        if (_host?.ActiveContext is not { } ctx) return;
+        if (ctx.Store.GetFilePath(resRef) is not { } filePath || string.IsNullOrEmpty(filePath))
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Palette: no file path for '{resRef}', cannot launch.");
+            return;
+        }
+        if (PaletteToolDispatch.ToolNameFor(ctx.Type) is not { } tool)
+            return;
+
+        bool launched = ToolLauncherService.Instance.LaunchToolWithFile(tool, filePath);
+        if (!launched)
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Palette: could not launch {tool} for '{resRef}'.");
     }
 
     /// <summary>Called by the host when the working module changes. Reloads (or clears) the editor.</summary>

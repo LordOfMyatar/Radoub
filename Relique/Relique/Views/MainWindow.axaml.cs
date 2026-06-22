@@ -25,7 +25,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private readonly DocumentState _documentState = new("Relique");
     private IGameDataService? _gameDataService;
     private List<BaseItemTypeInfo>? _baseItemTypes;
-    private List<PaletteCategory> _paletteCategories = new();
     private ItemPropertyService? _itemPropertyService;
     private readonly PropertyCategoryService _categoryService = new();
     private ItemStatisticsService? _itemStatisticsService;

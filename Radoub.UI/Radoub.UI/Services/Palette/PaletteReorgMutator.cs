@@ -222,13 +222,39 @@ public static class PaletteReorgMutator
     }
 
     /// <summary>The mutable child list a node parents (category Children, branch Children),
-    /// or null for a leaf/blueprint (caller substitutes MAIN root).</summary>
-    private static List<PaletteNode>? ChildListOf(PaletteNode? parent) => parent switch
+    /// or null for a leaf/blueprint (caller substitutes MAIN root). Public so reorg undo commands
+    /// (#2484) can re-insert/remove a node in the same list the mutator uses.</summary>
+    public static List<PaletteNode>? ChildListOf(PaletteNode? parent) => parent switch
     {
         PaletteCategoryNode cat => cat.Children,
         PaletteBranchNode br => br.Children,
         _ => null,
     };
+
+    /// <summary>Locate <paramref name="target"/>'s current parent node (null = MAIN root) and its
+    /// index within that parent's child list, or index -1 if not in the tree. Used by the move-undo
+    /// command (#2484) to capture a category's original position for restore.</summary>
+    public static (PaletteNode? Parent, int Index) LocateChild(ItpFile itp, PaletteNode target)
+    {
+        if (itp == null) throw new ArgumentNullException(nameof(itp));
+        int rootIdx = itp.MainNodes.IndexOf(target);
+        if (rootIdx >= 0) return (null, rootIdx);
+        return LocateChildIn(itp.MainNodes, target);
+    }
+
+    private static (PaletteNode? Parent, int Index) LocateChildIn(List<PaletteNode> nodes, PaletteNode target)
+    {
+        foreach (var node in nodes)
+        {
+            var children = ChildListOf(node);
+            if (children == null) continue;
+            int idx = children.IndexOf(target);
+            if (idx >= 0) return (node, idx);
+            var found = LocateChildIn(children, target);
+            if (found.Index >= 0) return found;
+        }
+        return (null, -1);
+    }
 
     /// <summary>The list that currently holds <paramref name="target"/> (MAIN root or any node's
     /// Children), or null if it is not in the tree.</summary>

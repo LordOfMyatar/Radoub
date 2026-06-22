@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Quartermaster.Services;
 using Radoub.UI.Services;
+using Radoub.UI.Utils;
 
 namespace Quartermaster.Views.Dialogs;
 
@@ -196,8 +197,8 @@ public partial class NewCharacterWizardWindow
 
     private void OnFinishClick(object? sender, RoutedEventArgs e)
     {
-        // Read palette ID from UI before building input
-        _paletteId = (_identityPaletteIdComboBox.SelectedItem is ComboBoxItem item && item.Tag is byte id) ? id : (byte)1;
+        // Read palette ID from UI before building input (shared binder, #2421)
+        _paletteId = PaletteCategoryComboBinder.GetSelectedId(_identityPaletteIdComboBox) ?? 1;
 
         var input = new CharacterCreationService.CharacterCreationInput
         {

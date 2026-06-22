@@ -22,11 +22,23 @@ public sealed class UndoRedoManager
     public bool CanUndo => _undo.Count > 0;
     public bool CanRedo => _redo.Count > 0;
 
+    /// <summary>Number of commands on the undo stack. Lets a host detect whether an
+    /// <see cref="Execute"/> actually recorded (it pushes exactly one entry on success, none on a
+    /// self-rolled-back command) without an ambiguous <see cref="CanUndo"/> before/after check.</summary>
+    public int UndoCount => _undo.Count;
+
     /// <summary>Description of the command Undo would revert, or null if none.</summary>
     public string? UndoDescription => _undo.Count > 0 ? _undo.Peek().Description : null;
 
     /// <summary>Description of the command Redo would reapply, or null if none.</summary>
     public string? RedoDescription => _redo.Count > 0 ? _redo.Peek().Description : null;
+
+    /// <summary>The command Undo would revert next, or null if the stack is empty. Lets a host
+    /// inspect the pending command (e.g. to apply a cross-tool lock guard before reverting a write).</summary>
+    public IUndoableCommand? PeekUndo => _undo.Count > 0 ? _undo.Peek() : null;
+
+    /// <summary>The command Redo would reapply next, or null if the redo stack is empty.</summary>
+    public IUndoableCommand? PeekRedo => _redo.Count > 0 ? _redo.Peek() : null;
 
     /// <summary>
     /// Run the command, and only if its <see cref="IUndoableCommand.Do"/> reports success

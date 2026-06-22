@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Avalonia.Controls;
 using Radoub.Formats.Services;
 
@@ -30,7 +31,8 @@ public static class PaletteCategoryComboBinder
 
     /// <summary>
     /// Clear and repopulate the combo from <paramref name="categories"/>. Each item's
-    /// <c>Content</c> is the category name and <c>Tag</c> is the byte <c>Id</c> (so
+    /// <c>Content</c> is the disambiguated display label (see <see cref="BuildDisplayLabels"/>)
+    /// and <c>Tag</c> is the byte <c>Id</c> (so
     /// <see cref="ComboBoxHelper.SelectByTag{T}"/> / <see cref="ComboBoxHelper.GetSelectedTag{T}"/>
     /// work). Falls back to <see cref="DefaultFallback"/> when the list is null/empty.
     /// Returns the list actually loaded (caller can cache it).
@@ -41,15 +43,58 @@ public static class PaletteCategoryComboBinder
 
         if (combo != null)
         {
+            var labels = BuildDisplayLabels(list);
             combo.Items.Clear();
-            foreach (var cat in list)
+            for (int i = 0; i < list.Count; i++)
             {
-                combo.Items.Add(new ComboBoxItem { Content = cat.Name, Tag = cat.Id });
+                combo.Items.Add(new ComboBoxItem { Content = labels[i], Tag = list[i].Id });
             }
         }
 
         return list;
     }
+
+    /// <summary>
+    /// Build one display label per category so nesting is visible and duplicates are
+    /// distinguishable (#2488). Rules, applied per category:
+    /// <list type="bullet">
+    /// <item>Top-level (no <c>ParentPath</c>) → bare <c>Name</c>, so the common flat palette reads
+    /// cleanly.</item>
+    /// <item>Nested (has a <c>ParentPath</c>) → always <c>"Parent › Name"</c>, even when the name is
+    /// unique, so siblings under one parent read consistently (e.g. all of Armor's children show
+    /// "Armor › …", not just a duplicated one).</item>
+    /// <item>If the resulting label still collides (same name with no path, or identical
+    /// name+path) → append <c>" (id N)"</c>.</item>
+    /// </list>
+    /// Display-only — placement is by PaletteID (#2477), so the item Tag stays the raw <c>Id</c>.
+    /// The order of the returned labels matches <paramref name="categories"/>.
+    /// </summary>
+    public static IReadOnlyList<string> BuildDisplayLabels(IReadOnlyList<PaletteCategory> categories)
+    {
+        // Base label: bare for top-level, path-qualified for nested. Count collisions on this base
+        // so we only add an id suffix where the base label is genuinely ambiguous.
+        var baseLabels = new List<string>(categories.Count);
+        var baseCounts = new Dictionary<string, int>();
+        foreach (var cat in categories)
+        {
+            var label = BaseLabel(cat);
+            baseLabels.Add(label);
+            baseCounts[label] = baseCounts.TryGetValue(label, out var n) ? n + 1 : 1;
+        }
+
+        var labels = new List<string>(categories.Count);
+        for (int i = 0; i < categories.Count; i++)
+        {
+            var label = baseLabels[i];
+            labels.Add(baseCounts[label] <= 1 ? label : $"{label} (id {categories[i].Id})");
+        }
+
+        return labels;
+    }
+
+    // Bare name for a top-level category; "Parent › Name" for a nested one.
+    private static string BaseLabel(PaletteCategory cat)
+        => string.IsNullOrEmpty(cat.ParentPath) ? cat.Name : $"{cat.ParentPath} › {cat.Name}";
 
     /// <summary>
     /// Select the item whose Tag matches <paramref name="paletteId"/>. If not present, selects the

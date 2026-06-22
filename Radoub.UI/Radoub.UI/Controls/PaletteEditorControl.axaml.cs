@@ -14,8 +14,9 @@ namespace Radoub.UI.Controls;
 /// The shared ITP palette editor view (#2477, M3): a resource-type selector, a single tree of
 /// categories with blueprint leaves inline (plus the virtual Uncategorized bucket), drag-drop
 /// reorganization, and save. The control is host-agnostic — Trebuchet (or a future per-tool host)
-/// supplies the <see cref="PaletteEditorHostViewModel"/> via <see cref="Bind"/>. Category
-/// add/rename/delete is deferred (needs a TLK-name decision, #2486); v1 is reorganize-only.
+/// supplies the <see cref="PaletteEditorHostViewModel"/> via <see cref="Bind"/>. Every reorg
+/// gesture is undoable via Ctrl+Z/Y (#2484). Category add/rename buttons in the UI are deferred
+/// (needs a TLK-name decision, #2565); the host VM ops + their inverse commands already exist.
 /// </summary>
 public partial class PaletteEditorControl : UserControl
 {
@@ -41,12 +42,25 @@ public partial class PaletteEditorControl : UserControl
         DragDrop.SetAllowDrop(PaletteTree, true);
         PaletteTree.AddHandler(DragDrop.DropEvent, OnDrop);
         PaletteTree.AddHandler(DragDrop.DragOverEvent, OnDragOver);
+        // Ctrl+Z / Ctrl+Y (and Ctrl+Shift+Z) drive undo/redo across every reorg gesture (#2484).
+        // Tunnel so we get the chord before the TreeView swallows it.
+        AddHandler(KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel);
+        // Double-click a blueprint leaf -> raise BlueprintActivated for the host to launch its
+        // editor (#2485). Launch logic stays in the host (Trebuchet), not in Radoub.UI.
+        PaletteTree.AddHandler(DoubleTappedEvent, OnTreeDoubleTapped);
         // Tunnel so we see the press before the TreeView consumes it, but we DON'T start the drag
         // here — we only record a candidate, letting normal click/select/expand proceed.
         PaletteTree.AddHandler(PointerPressedEvent, OnTreePointerPressed, RoutingStrategies.Tunnel);
         PaletteTree.AddHandler(PointerMovedEvent, OnTreePointerMoved, RoutingStrategies.Tunnel);
         PaletteTree.AddHandler(PointerReleasedEvent, OnTreePointerReleased, RoutingStrategies.Tunnel);
     }
+
+    /// <summary>
+    /// Raised when a blueprint leaf is double-clicked (#2485). The argument is the blueprint ResRef;
+    /// the host (Trebuchet) resolves the file path + tool and launches it. Radoub.UI deliberately
+    /// owns no launch logic.
+    /// </summary>
+    public event Action<string>? BlueprintActivated;
 
     /// <summary>Bind the control to its host view-model and owning window (for modal prompts).</summary>
     public void Bind(PaletteEditorHostViewModel host, Window ownerWindow)
@@ -56,6 +70,21 @@ public partial class PaletteEditorControl : UserControl
         DataContext = host;
         host.SaveFailed += OnSaveFailed;
         RefreshChrome();
+    }
+
+    // Ctrl+Z = undo, Ctrl+Y / Ctrl+Shift+Z = redo. Every reorg gesture is reversible (#2484); the
+    // host re-derives the tree and re-commits to disk on undo/redo.
+    private void OnKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (_host is null) return;
+        // Require Ctrl WITHOUT Alt: on Windows the AltGr key reports as Ctrl+Alt, so a bare Ctrl
+        // check would fire undo/redo on AltGr+Z/Y chords used to type characters on many layouts.
+        if (!e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.KeyModifiers.HasFlag(KeyModifiers.Alt))
+            return;
+        bool shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+
+        if (e.Key == Key.Z && !shift) { _host.Undo(); e.Handled = true; }
+        else if (e.Key == Key.Y || (e.Key == Key.Z && shift)) { _host.Redo(); e.Handled = true; }
     }
 
     private void OnSaveFailed(string message)
@@ -132,6 +161,18 @@ public partial class PaletteEditorControl : UserControl
     private void OnTreePointerReleased(object? sender, PointerReleasedEventArgs e)
     {
         _pendingDragNode = null; // a plain click/release without crossing the threshold: no drag
+    }
+
+    // Double-click a blueprint leaf -> launch its editor (#2485). Categories/branches/Uncategorized
+    // ignore the gesture (they expand/collapse instead). The blueprint node's Name is its ResRef.
+    private void OnTreeDoubleTapped(object? sender, Avalonia.Input.TappedEventArgs e)
+    {
+        if ((e.Source as Control)?.DataContext is not PaletteNodeViewModel node) return;
+        if (node.Kind != PaletteNodeKind.Blueprint) return;
+        if (string.IsNullOrEmpty(node.Name)) return;
+
+        BlueprintActivated?.Invoke(node.Name);
+        e.Handled = true;
     }
 
     private void OnDragOver(object? sender, DragEventArgs e)

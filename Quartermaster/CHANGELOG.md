@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.129-alpha] - 2026-06-21
+**Branch**: `radoub/issue-2562` | **PR**: #2564
+
+### Refactor: Palette-category combo → shared Radoub.UI binder (#2421)
+
+- The Advanced panel and New Character wizard now use the shared `PaletteCategoryComboBinder` instead of QM-local populate/select glue; duplicate/nested category names are disambiguated centrally (#2488).
+
+---
+
 ## [0.2.128-alpha] - 2026-06-21
 **Branch**: `quartermaster/issue-2540` | **PR**: #2553
 

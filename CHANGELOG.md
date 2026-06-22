@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.25-alpha] - 2026-06-21
+**Branch**: `radoub/issue-2562` | **PR**: #2564
+
+### Sprint: ITP E2 — Consumers (standardization & handling) (#2562)
+
+- Quartermaster and Relique palette-category combos migrate to the shared Radoub.UI binder, removing the last tool-local copies of populate/select/fallback logic (#2421, #2423).
+- Palette editor gains full undo/redo for reorg gestures, double-click-to-launch a blueprint's editor, and duplicate/nested category-name disambiguation (#2484, #2485, #2488). Category authoring (#2486) deferred to #2565.
+
+---
+
 ## [Radoub.Formats 0.2.76-alpha / Radoub.UI 0.2.24-alpha] - 2026-06-21
 **Branch**: `radoub/issue-2561` | **PR**: #2563
 

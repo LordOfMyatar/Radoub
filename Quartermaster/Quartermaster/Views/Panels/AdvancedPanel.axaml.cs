@@ -170,7 +170,7 @@ public partial class AdvancedPanel : BasePanelControl
     {
         if (IsLoading || CurrentCreature == null) return;
 
-        var categoryId = ComboBoxHelper.GetSelectedTag<byte>(_paletteCategoryComboBox);
+        var categoryId = PaletteCategoryComboBinder.GetSelectedId(_paletteCategoryComboBox);
         if (categoryId.HasValue)
         {
             CurrentCreature.PaletteID = categoryId.Value;
@@ -325,7 +325,7 @@ public partial class AdvancedPanel : BasePanelControl
                 // If a creature was loaded before the combo populated, re-select its category.
                 if (CurrentCreature != null)
                 {
-                    ComboBoxHelper.SelectByTag(_paletteCategoryComboBox, CurrentCreature.PaletteID);
+                    PaletteCategoryComboBinder.SelectById(_paletteCategoryComboBox, CurrentCreature.PaletteID);
                 }
             });
         }
@@ -441,31 +441,25 @@ public partial class AdvancedPanel : BasePanelControl
         }
     }
 
+    // Creature-specific fallback when creaturepal.itp yields no categories (e.g. game data not
+    // configured). The shared DefaultFallback is item-oriented (Armor/Weapons/Potions); for
+    // creatures the only sane default is the Custom bucket (PaletteID 1).
+    private static readonly System.Collections.Generic.List<PaletteCategory> CreatureCategoryFallback = new()
+    {
+        new() { Id = 1, Name = "Custom" },
+    };
+
     private void PopulatePaletteCategoryCombo(System.Collections.Generic.List<PaletteCategory> categories)
     {
         if (_paletteCategoryComboBox == null) return;
 
-        _paletteCategoryComboBox.Items.Clear();
+        // Shared binder owns populate/select/read-back (#2421). It sorts nothing, so sort by Id
+        // here for stable ordering, and disambiguates duplicate names itself (#2488).
+        var sorted = categories.Count > 0
+            ? categories.OrderBy(c => c.Id).ToList()
+            : CreatureCategoryFallback;
 
-        if (categories.Count == 0)
-        {
-            // Fallback if no categories loaded (e.g., game data not configured)
-            _paletteCategoryComboBox.Items.Add(new ComboBoxItem { Content = "Custom (1)", Tag = (byte)1 });
-            return;
-        }
-
-        foreach (var category in categories.OrderBy(c => c.Id))
-        {
-            var displayName = !string.IsNullOrEmpty(category.ParentPath)
-                ? $"{category.ParentPath}/{category.Name} ({category.Id})"
-                : $"{category.Name} ({category.Id})";
-
-            _paletteCategoryComboBox.Items.Add(new ComboBoxItem
-            {
-                Content = displayName,
-                Tag = category.Id
-            });
-        }
+        PaletteCategoryComboBinder.Populate(_paletteCategoryComboBox, sorted);
     }
 
     public override void LoadCreature(UtcFile? creature)
@@ -485,7 +479,7 @@ public partial class AdvancedPanel : BasePanelControl
         SetTextBox(_templateResRefTextBox, creature.TemplateResRef ?? "");
         SetTextBox(_tagTextBox, creature.Tag ?? "");
         SetTextBox(_commentTextBox, creature.Comment ?? "");
-        ComboBoxHelper.SelectByTag(_paletteCategoryComboBox, creature.PaletteID);
+        PaletteCategoryComboBinder.SelectById(_paletteCategoryComboBox, creature.PaletteID);
 
         // Flags
         SetCheckBox(_plotCheckBox, creature.Plot);
@@ -532,8 +526,8 @@ public partial class AdvancedPanel : BasePanelControl
             _decayTimeComboBox.SelectedIndex = 2; // 5 seconds default
         if (_bodyBagComboBox != null)
             _bodyBagComboBox.SelectedIndex = 0;
-        // Select PaletteID 1 (typically Custom category) by tag, not index
-        ComboBoxHelper.SelectByTag(_paletteCategoryComboBox, (byte)1);
+        // Select PaletteID 1 (typically Custom category) by id, not index
+        PaletteCategoryComboBinder.SelectById(_paletteCategoryComboBox, 1);
 
         // Variables
         ClearVariables();
