@@ -46,12 +46,15 @@ public class ModelService
 
     /// <summary>
     /// Build the base model prefix for a part-based creature.
-    /// Format: p{gender}{race}{phenotype} (e.g., "pfo0" = playable female, race O, phenotype 0)
+    /// Format: p{gender}{race}{phenotype} (e.g., "pfo0" = playable female, race O, phenotype 0).
+    /// Gender resolves via <see cref="CreatureModelResolver.ResolveGenderFlavors"/> — every value
+    /// other than 1 (Female) uses the male flavor, since NWN ships no other body-model flavors;
+    /// the cross-gender fallback in <see cref="AppendPart"/> covers single-variant content (#2541).
     /// </summary>
     internal static string BuildModelPrefix(int gender, string race, int phenotype)
     {
-        var genderChar = gender == 1 ? 'f' : 'm';
-        return $"p{genderChar}{race.ToLowerInvariant()}{phenotype}";
+        var flavor = CreatureModelResolver.ResolveGenderFlavors(gender)[0];
+        return CreatureModelResolver.BuildPrefix(flavor, race, phenotype);
     }
 
     /// <summary>
@@ -345,9 +348,11 @@ public class ModelService
     }
 
     /// <summary>
-    /// Resolve a body part ResRef with race-specific lookup first, falling back to human
-    /// (pmh0/pfh0). Skips parts with partNumber=0 (none/invisible). Adds the resolved
-    /// (partType, resRef) tuple to the parts list if a model file exists.
+    /// Resolve a body part ResRef through the data-driven fallback chain (#2541):
+    /// race-specific → same-gender human → cross-gender race-specific → cross-gender human.
+    /// Skips parts with partNumber=0 (none/invisible). Adds the resolved (partType, resRef) tuple
+    /// to the parts list if any model file exists, logging which fallback path fired so custom
+    /// content authors can see when a part missed its own race/gender model.
     /// </summary>
     private void AppendPart(List<(string PartType, string ResRef)> parts, string basePrefix, string partType, byte partNumber)
     {
@@ -357,33 +362,25 @@ public class ModelService
             return;
         }
 
-        var raceResRef = MdlPartNaming.BuildBodyPartName(basePrefix, partType, partNumber);
-        if (LoadModel(raceResRef) != null)
+        var resolution = CreatureModelResolver.ResolvePart(
+            basePrefix, partType, partNumber, resRef => LoadModel(resRef) != null);
+
+        if (resolution == null)
         {
-            parts.Add((partType, raceResRef));
+            var attempted = MdlPartNaming.BuildBodyPartName(basePrefix, partType, partNumber);
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"AppendPart: '{attempted}' not found (no race/human/cross-gender fallback resolved)");
             return;
         }
 
-        // Human fallback (pmh0/pfh0). NWN shares many body part models across races
-        // using the human models as the default reference set.
-        if (basePrefix.Length >= 2)
+        if (resolution.Path != PartResolutionPath.RaceSpecific)
         {
-            var genderChar = basePrefix[1];
-            var humanPrefix = $"p{genderChar}h0";
-            if (humanPrefix != basePrefix)
-            {
-                var humanResRef = MdlPartNaming.BuildBodyPartName(humanPrefix, partType, partNumber);
-                if (LoadModel(humanResRef) != null)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.INFO,
-                        $"AppendPart: using human fallback '{humanResRef}' for '{raceResRef}'");
-                    parts.Add((partType, humanResRef));
-                    return;
-                }
-            }
+            var attempted = MdlPartNaming.BuildBodyPartName(basePrefix, partType, partNumber);
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"AppendPart: '{attempted}' missing — using {resolution.Path} fallback '{resolution.ResRef}'");
         }
 
-        UnifiedLogger.LogApplication(LogLevel.WARN, $"AppendPart: '{raceResRef}' not found (no human fallback either)");
+        parts.Add((partType, resolution.ResRef));
     }
 
     /// <summary>
