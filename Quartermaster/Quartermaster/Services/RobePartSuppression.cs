@@ -1,53 +1,77 @@
 using System;
 using System.Collections.Generic;
+using Radoub.Formats.Services;
 
 namespace Quartermaster.Services;
 
 /// <summary>
-/// Decides which body parts a robe model replaces (#1989). An NWN robe model is a near-total
-/// body: inspection of CEP Robe #186 (`pmh0_robe186`, supermodel `pmh0`) shows it supplies its
-/// own geometry for torso, pelvis, biceps, thighs, forearms, shins, and hands — everything
-/// except head, neck, and feet. Loading the individual body parts alongside it duplicates that
-/// geometry at slightly-off transforms (the floating forearms/hands seen in the bug) and leaves
-/// gaps where the robe expects to be the only mesh.
+/// Decides which creature body parts a robe hides, read from <c>parts_robe.2da</c> (#2582).
 ///
-/// So when a robe is equipped, suppress every covered part and keep only head, neck, and feet
-/// (the robe has no foot geometry). Belt is kept (a separately-cinched belt is common). Rare
-/// short-sleeve / half-robe variants would over-suppress under this fixed list; if one is found
-/// to regress it needs a data-driven signal (tracked separately) rather than a hardcoded set.
+/// The Aurora engine does NOT hide a fixed set of parts when a robe is worn — it reads the robe
+/// row's <c>HIDE*</c> columns from <c>parts_robe.2da</c> and hides each body part individually
+/// (rollnw <c>render/viewer/preview_scene.cpp</c> <c>robe_hides_body_part</c>; nwnexplorer honors
+/// the same per-part flags). A part is hidden iff <c>parts_robe.2da[robePart][HIDE{part}] != 0</c>.
+///
+/// This replaces the earlier hardcoded covered-part set + the <c>RobeArmGeometry</c> geometry
+/// heuristic. The 2DA is authoritative and per-robe-per-part, so it naturally handles:
+///  - cloak-only robes (e.g. <c>robe116</c> hides only the shoulders — the body must render);
+///  - short-sleeve robes (e.g. <c>robe5</c>/Dana hides torso+legs but NOT the arms, #2398);
+///  - full-body robes (e.g. <c>robe186</c> hides everything incl. arms).
+///
+/// Head/neck/feet have no <c>HIDE*</c> column in the table, so they are never suppressed.
 /// </summary>
 public static class RobePartSuppression
 {
-    // Parts the robe always replaces when active (torso + legs): the reference engines treat a
-    // robe as a near-total body, so loading these alongside it duplicates geometry.
-    private static readonly HashSet<string> RobeCoveredParts = new(StringComparer.OrdinalIgnoreCase)
+    /// <summary>
+    /// Maps a body-part token (as used by <c>ModelService.AddPart</c>) to its <c>parts_robe.2da</c>
+    /// hide column. Tokens with no entry (head, neck, feet, the robe itself) are never hidden.
+    /// Mirrors rollnw's <c>robe_hide_column</c>.
+    /// </summary>
+    private static readonly Dictionary<string, string> HideColumnByPart = new(StringComparer.OrdinalIgnoreCase)
     {
-        "chest", "pelvis", "legl", "legr", "shol", "shor", "bicepl", "bicepr",
-        "forel", "forer", "handl", "handr", "shinl", "shinr",
-    };
-
-    // Arm-region parts (#2541 Phase 2): suppressed only when the robe supplies RENDERABLE arm
-    // geometry. Some robes (pfh0_robe005 / Dana) have Render=false arm trimeshes and an armless
-    // skin — suppressing these leaves the creature with no arms at all (#2398/#2116).
-    private static readonly HashSet<string> RobeArmParts = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "shol", "shor", "bicepl", "bicepr", "forel", "forer", "handl", "handr",
+        ["chest"] = "HIDECHEST",
+        ["pelvis"] = "HIDEPELVIS",
+        ["belt"] = "HIDEBELT",
+        ["neck"] = "HIDENECK",
+        ["head"] = "HIDEHEAD",
+        ["shol"] = "HIDESHOL",
+        ["shor"] = "HIDESHOR",
+        ["bicepl"] = "HIDEBICEPL",
+        ["bicepr"] = "HIDEBICEPR",
+        ["forel"] = "HIDEFOREL",
+        ["forer"] = "HIDEFORER",
+        ["handl"] = "HIDEHANDL",
+        ["handr"] = "HIDEHANDR",
+        ["legl"] = "HIDELEGL",
+        ["legr"] = "HIDELEGR",
+        ["shinl"] = "HIDESHINL",
+        ["shinr"] = "HIDESHINR",
+        ["footl"] = "HIDEFOOTL",
+        ["footr"] = "HIDEFOOTR",
     };
 
     /// <summary>
-    /// Whether <paramref name="partType"/> is replaced by an active robe. When the part is an
-    /// arm-region part and <paramref name="robeHasRenderableArms"/> is false, it is NOT suppressed
-    /// (the creature keeps its own arms). Torso/leg parts are always suppressed when a robe is
-    /// active, regardless of the arm signal.
+    /// Whether <paramref name="partType"/> is hidden by robe number <paramref name="robePart"/>,
+    /// per <c>parts_robe.2da</c>. Returns false when no robe is active (<paramref name="robePart"/>
+    /// = 0), when the part has no hide column, or when the 2DA value is missing/0/"****".
     /// </summary>
-    public static bool IsSuppressedByRobe(string partType, bool robeActive, bool robeHasRenderableArms = true)
+    public static bool IsSuppressedByRobe(string partType, int robePart, IGameDataService gameData)
     {
-        if (!robeActive || string.IsNullOrEmpty(partType) || !RobeCoveredParts.Contains(partType))
+        if (robePart <= 0 || string.IsNullOrEmpty(partType) || gameData == null)
             return false;
 
-        if (!robeHasRenderableArms && RobeArmParts.Contains(partType))
+        if (!HideColumnByPart.TryGetValue(partType, out var column))
             return false;
 
-        return true;
+        var raw = gameData.Get2DAValue("parts_robe", robePart, column);
+        return IsHideFlagSet(raw);
+    }
+
+    private static bool IsHideFlagSet(string? raw)
+    {
+        if (string.IsNullOrEmpty(raw) || raw == "****")
+            return false;
+        // Hidden if the flag parses to a non-zero integer (the engine treats any non-zero as hide).
+        return int.TryParse(raw, out var v) && v != 0;
     }
 }
