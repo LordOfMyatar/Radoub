@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.131-alpha] - 2026-06-22
-**Branch**: `quartermaster/issue-2582` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2582` | **PR**: #2583
 
 ### Fix: Robe body-part suppression reads parts_robe.2da (#2582)
 
