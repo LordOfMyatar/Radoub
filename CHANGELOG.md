@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Sprint: ITP E1 — Provider (.itp format & search layer) (#2561)
 
 - ITP search now recurses nested palette categories so entries filed under a sub-category are found (#2475).
-- ITP Browser gains category-names-first, lazy per-category loading instead of loading thousands of entries upfront (#987).
+- Palette cache now records each item's category id; the provider exposes names-first (`GetCategoryNames`) and per-category (`GetCategoryBlueprints`) methods. Data layer only — the folder-tree browser UI follows next sprint (#987).
 
 ---
 
