@@ -152,17 +152,24 @@ public class MockGameDataService : IGameDataService
 
     #region Palette Access
 
-    public IEnumerable<PaletteCategory> GetPaletteCategories(ushort resourceType)
+    private readonly Dictionary<ushort, List<PaletteCategory>> _paletteCategories = new();
+
+    /// <summary>
+    /// Seed palette categories for a resource type (fluent, for tests). (#987)
+    /// </summary>
+    public MockGameDataService WithPaletteCategories(ushort resourceType, params PaletteCategory[] categories)
     {
-        // Return empty by default - tests can override if needed
-        return Enumerable.Empty<PaletteCategory>();
+        _paletteCategories[resourceType] = categories.ToList();
+        return this;
     }
 
+    public IEnumerable<PaletteCategory> GetPaletteCategories(ushort resourceType)
+        => _paletteCategories.TryGetValue(resourceType, out var cats)
+            ? cats
+            : Enumerable.Empty<PaletteCategory>();
+
     public string? GetPaletteCategoryName(ushort resourceType, byte categoryId)
-    {
-        // Return null by default - tests can override if needed
-        return null;
-    }
+        => GetPaletteCategories(resourceType).FirstOrDefault(c => c.Id == categoryId)?.Name;
 
     #endregion
 
