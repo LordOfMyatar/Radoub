@@ -12,7 +12,7 @@ namespace Radoub.UI.Services;
 /// </summary>
 public class SharedPaletteCacheService : ISharedPaletteCacheService, IDisposable
 {
-    private const int CacheVersion = 4; // v4: Source enum replaces bool IsStandard (#1995); v3: Added SourceLocation
+    private const int CacheVersion = 5; // v5: PaletteId per item for category grouping (#987); v4: Source enum (#1995); v3: SourceLocation
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

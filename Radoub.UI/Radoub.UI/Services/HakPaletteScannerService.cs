@@ -84,6 +84,7 @@ public class HakPaletteScannerService
                             BaseItemTypeName = string.Empty, // Set by consumer with 2DA lookup
                             BaseItemType = uti.BaseItem,
                             BaseValue = uti.Cost,
+                            PaletteId = uti.PaletteID,
                             Source = GameResourceSource.Hak,
                             SourceLocation = Path.GetFileName(hakPath)
                         });

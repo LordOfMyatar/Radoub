@@ -50,6 +50,26 @@ public class SharedPaletteCacheServiceTests : IDisposable
         return items;
     }
 
+    #region Version Guard
+
+    [Fact]
+    public void GetAggregatedCache_RejectsV4CacheFile()
+    {
+        var v4Wrapper = new SourcePaletteCacheWrapper
+        {
+            Version = 4,
+            Source = "bif",
+            Items = new List<SharedPaletteCacheItem> { new() { ResRef = "old" } }
+        };
+        File.WriteAllText(Path.Combine(_testCacheDir, "bif.json"),
+            System.Text.Json.JsonSerializer.Serialize(v4Wrapper));
+
+        Assert.Null(_service.GetAggregatedCache());          // no-filter path
+        Assert.False(_service.HasValidSourceCache("bif"));   // validation path
+    }
+
+    #endregion
+
     #region Save and Load
 
     [Fact]
