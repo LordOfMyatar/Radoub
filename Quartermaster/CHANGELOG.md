@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.131-alpha] - 2026-06-22
+**Branch**: `quartermaster/issue-2582` | **PR**: #TBD
+
+### Fix: Robe body-part suppression reads parts_robe.2da (#2582)
+
+- Which body parts a robe hides is now read from `parts_robe.2da` `HIDE*` columns (matching the engine) instead of a hardcoded part set + geometry heuristic — fixes cloak-only robes (e.g. `pfh0_robe116`) rendering with no body, and subsumes the #2398 Dana arm carve-out from the authoritative source.
+
+---
+
 ## [0.2.130-alpha] - 2026-06-22
 **Branch**: `quartermaster/issue-2541` | **PR**: #2569
 
