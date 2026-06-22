@@ -277,20 +277,26 @@ public sealed class MdlPartComposer
                 // across renders; we set Bitmap/Position/Parent on the CLONE only (#1735).
                 var trimesh = CloneTrimeshShallow(sourceTrimesh);
 
-                // Body part MDL files have geometry at local origin. Body part bitmap fields
-                // often contain stale data from reused file structures — derive the texture
-                // name from the part ResRef instead.
+                // Body part bitmap fields often contain stale data from reused file structures —
+                // derive the texture name from the part ResRef instead.
                 trimesh.Bitmap = partResRef;
 
                 if (bone != null)
                 {
-                    trimesh.Position = Vector3.Zero;
+                    // #2161/#2541 Phase 3: PRESERVE the mesh's authored local Position relative to
+                    // its part root (which aligns with the target bone). Real head parts author a
+                    // small offset here (e.g. pfh0_head001g = −34mm Z); the old unconditional
+                    // Position = Vector3.Zero discarded it, lifting the head into a gap above the
+                    // neck. The MDL is the authority — keep its offset. Parts authored at origin
+                    // (chest, neck) are unaffected since their offset is already zero.
                     trimesh.Parent = bone;
                     bone.Children.Add(trimesh);
                 }
                 else
                 {
-                    trimesh.Position = fallbackPosition;
+                    // No bone resolved: graft at the composite root, offset to where the bone would
+                    // have been so the part lands near its joint rather than at the model origin.
+                    trimesh.Position += fallbackPosition;
                     trimesh.Parent = compositeModel.GeometryRoot;
                     compositeModel.GeometryRoot!.Children.Add(trimesh);
                 }
