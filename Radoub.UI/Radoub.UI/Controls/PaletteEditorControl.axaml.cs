@@ -14,8 +14,9 @@ namespace Radoub.UI.Controls;
 /// The shared ITP palette editor view (#2477, M3): a resource-type selector, a single tree of
 /// categories with blueprint leaves inline (plus the virtual Uncategorized bucket), drag-drop
 /// reorganization, and save. The control is host-agnostic — Trebuchet (or a future per-tool host)
-/// supplies the <see cref="PaletteEditorHostViewModel"/> via <see cref="Bind"/>. Category
-/// add/rename/delete is deferred (needs a TLK-name decision, #2486); v1 is reorganize-only.
+/// supplies the <see cref="PaletteEditorHostViewModel"/> via <see cref="Bind"/>. Every reorg
+/// gesture is undoable via Ctrl+Z/Y (#2484). Category add/rename buttons in the UI are deferred
+/// (needs a TLK-name decision, #2565); the host VM ops + their inverse commands already exist.
 /// </summary>
 public partial class PaletteEditorControl : UserControl
 {
@@ -41,6 +42,9 @@ public partial class PaletteEditorControl : UserControl
         DragDrop.SetAllowDrop(PaletteTree, true);
         PaletteTree.AddHandler(DragDrop.DropEvent, OnDrop);
         PaletteTree.AddHandler(DragDrop.DragOverEvent, OnDragOver);
+        // Ctrl+Z / Ctrl+Y (and Ctrl+Shift+Z) drive undo/redo across every reorg gesture (#2484).
+        // Tunnel so we get the chord before the TreeView swallows it.
+        AddHandler(KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel);
         // Tunnel so we see the press before the TreeView consumes it, but we DON'T start the drag
         // here — we only record a candidate, letting normal click/select/expand proceed.
         PaletteTree.AddHandler(PointerPressedEvent, OnTreePointerPressed, RoutingStrategies.Tunnel);
@@ -56,6 +60,19 @@ public partial class PaletteEditorControl : UserControl
         DataContext = host;
         host.SaveFailed += OnSaveFailed;
         RefreshChrome();
+    }
+
+    // Ctrl+Z = undo, Ctrl+Y / Ctrl+Shift+Z = redo. Every reorg gesture is reversible (#2484); the
+    // host re-derives the tree and re-commits to disk on undo/redo.
+    private void OnKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (_host is null) return;
+        bool ctrl = e.KeyModifiers.HasFlag(KeyModifiers.Control);
+        if (!ctrl) return;
+        bool shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+
+        if (e.Key == Key.Z && !shift) { _host.Undo(); e.Handled = true; }
+        else if (e.Key == Key.Y || (e.Key == Key.Z && shift)) { _host.Redo(); e.Handled = true; }
     }
 
     private void OnSaveFailed(string message)

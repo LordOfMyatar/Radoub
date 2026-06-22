@@ -22,6 +22,11 @@ public sealed class UndoRedoManager
     public bool CanUndo => _undo.Count > 0;
     public bool CanRedo => _redo.Count > 0;
 
+    /// <summary>Number of commands on the undo stack. Lets a host detect whether an
+    /// <see cref="Execute"/> actually recorded (it pushes exactly one entry on success, none on a
+    /// self-rolled-back command) without an ambiguous <see cref="CanUndo"/> before/after check.</summary>
+    public int UndoCount => _undo.Count;
+
     /// <summary>Description of the command Undo would revert, or null if none.</summary>
     public string? UndoDescription => _undo.Count > 0 ? _undo.Peek().Description : null;
 

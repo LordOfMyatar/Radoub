@@ -157,8 +157,9 @@ public partial class PaletteEditorHostViewModel : ObservableObject
     // reloaded from disk so the editor never diverges from the files (which is what produced the
     // earlier save conflict), and SaveFailed is raised.
     //
-    // Undo/redo: delete-with-reparent is reversible (PaletteDeleteCategoryCommand). Reversible undo
-    // for the other ops is tracked in #2484.
+    // Undo/redo: every reorg gesture is reversible (#2484). Each op runs through ExecuteReorg, which
+    // pushes a dedicated inverse IUndoableCommand (blueprint move, category add/rename/move, delete-
+    // with-reparent) onto the active context's UndoManager, then commits to disk on success.
 
     /// <summary>Commit the active palette to disk atomically (reconcile tree + write changed files).
     /// On failure, reload from disk so the editor matches the files, and raise <see cref="SaveFailed"/>.
@@ -201,30 +202,37 @@ public partial class PaletteEditorHostViewModel : ObservableObject
             return false;
         }
 
-        if (!AfterReorg(ActiveContext.ViewModel.SetBlueprintCategory(resRef, to))) return false;
+        // Placement is by PaletteID; the command stages to.Id and undo restores the old id (#2484).
+        if (!ExecuteReorg(new PaletteMoveBlueprintCommand(
+                ActiveContext.Store, resRef, to.Id, onChanged: RebuildForest)))
+            return false;
         RevealCategory(to); // focus follows the drop: expand + select the destination
         return true;
     }
 
-    /// <summary>Add a new empty category under <paramref name="parent"/> (or root when null).</summary>
+    /// <summary>Add a new empty category under <paramref name="parent"/> (or root when null).
+    /// Reversible (#2484).</summary>
     public bool AddCategory(PaletteCategoryNode? parent, string name)
     {
         if (ActiveContext is null) return false;
-        return AfterReorg(ActiveContext.ViewModel.AddCategory(parent, name) != null);
+        return ExecuteReorg(new PaletteAddCategoryCommand(
+            ActiveContext.Palette, parent, name, onChanged: RebuildForest));
     }
 
-    /// <summary>Rename a category.</summary>
+    /// <summary>Rename a category. Reversible (#2484).</summary>
     public bool RenameCategory(PaletteCategoryNode cat, string newName)
     {
         if (ActiveContext is null) return false;
-        return AfterReorg(ActiveContext.ViewModel.RenameCategory(cat, newName));
+        return ExecuteReorg(new PaletteRenameCategoryCommand(cat, newName, onChanged: RebuildForest));
     }
 
-    /// <summary>Move/nest a category to a new parent and index.</summary>
+    /// <summary>Move/nest a category to a new parent and index. Reversible (#2484).</summary>
     public bool MoveCategory(PaletteCategoryNode cat, PaletteNode? newParent, int index)
     {
         if (ActiveContext is null) return false;
-        if (!AfterReorg(ActiveContext.ViewModel.MoveCategory(cat, newParent, index))) return false;
+        if (!ExecuteReorg(new PaletteMoveCategoryCommand(
+                ActiveContext.Palette, cat, newParent, index, onChanged: RebuildForest)))
+            return false;
         if (newParent is PaletteCategoryNode parentCat) RevealCategory(parentCat);
         RevealCategory(cat); // select the moved category itself
         return true;
@@ -235,23 +243,25 @@ public partial class PaletteEditorHostViewModel : ObservableObject
     public bool DeleteCategory(PaletteCategoryNode cat)
     {
         if (ActiveContext is null) return false;
-        bool before = ActiveContext.UndoManager.CanUndo;
-        var cmd = new PaletteDeleteCategoryCommand(
-            ActiveContext.Palette, ActiveContext.Store, cat, onChanged: RebuildForest);
-        ActiveContext.UndoManager.Execute(cmd);
-        // Execute invokes Do() once; if it self-rolled-back the stack is untouched.
-        if (ActiveContext.UndoManager.CanUndo == before && before == false) return false; // no-op
+        return ExecuteReorg(new PaletteDeleteCategoryCommand(
+            ActiveContext.Palette, ActiveContext.Store, cat, onChanged: RebuildForest));
+    }
+
+    /// <summary>
+    /// Run a reversible reorg command through the active undo manager and, if it was recorded (its
+    /// Do succeeded — a self-rolled-back command leaves the stack untouched), commit to disk. The
+    /// command's onChanged is RebuildForest, so the forest is already refreshed by the time we
+    /// commit. Returns true only when the command applied and committed.
+    /// </summary>
+    private bool ExecuteReorg(IUndoableCommand command)
+    {
+        if (ActiveContext is null) return false;
+        int before = ActiveContext.UndoManager.UndoCount;
+        ActiveContext.UndoManager.Execute(command);
+        if (ActiveContext.UndoManager.UndoCount == before) return false; // self-rolled-back / no-op
         return CommitNow();
     }
 
     public void Undo() { ActiveContext?.UndoManager.Undo(); RebuildForest(); CommitNow(); }
     public void Redo() { ActiveContext?.UndoManager.Redo(); RebuildForest(); CommitNow(); }
-
-    // After a VM reorg op: on success rebuild the forest and commit to disk immediately.
-    private bool AfterReorg(bool ok)
-    {
-        if (!ok || ActiveContext is null) return false;
-        RebuildForest();
-        return CommitNow();
-    }
 }
