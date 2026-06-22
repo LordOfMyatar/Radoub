@@ -140,7 +140,7 @@ void main()
         _particleVbo = _gl.GenBuffer();
 
         // Configure attribute pointers once; the VBO is re-uploaded each frame but the
-        // layout never changes. Stride = 12 floats.
+        // layout never changes. Stride = ParticleFloatsPerVertex (19) floats.
         _gl.BindVertexArray(_particleVao);
         _gl.BindBuffer(BufferTargetARB.ArrayBuffer, _particleVbo);
         int stride = ParticleFloatsPerVertex * sizeof(float);
