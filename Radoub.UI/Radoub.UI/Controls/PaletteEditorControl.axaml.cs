@@ -45,12 +45,22 @@ public partial class PaletteEditorControl : UserControl
         // Ctrl+Z / Ctrl+Y (and Ctrl+Shift+Z) drive undo/redo across every reorg gesture (#2484).
         // Tunnel so we get the chord before the TreeView swallows it.
         AddHandler(KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel);
+        // Double-click a blueprint leaf -> raise BlueprintActivated for the host to launch its
+        // editor (#2485). Launch logic stays in the host (Trebuchet), not in Radoub.UI.
+        PaletteTree.AddHandler(DoubleTappedEvent, OnTreeDoubleTapped);
         // Tunnel so we see the press before the TreeView consumes it, but we DON'T start the drag
         // here — we only record a candidate, letting normal click/select/expand proceed.
         PaletteTree.AddHandler(PointerPressedEvent, OnTreePointerPressed, RoutingStrategies.Tunnel);
         PaletteTree.AddHandler(PointerMovedEvent, OnTreePointerMoved, RoutingStrategies.Tunnel);
         PaletteTree.AddHandler(PointerReleasedEvent, OnTreePointerReleased, RoutingStrategies.Tunnel);
     }
+
+    /// <summary>
+    /// Raised when a blueprint leaf is double-clicked (#2485). The argument is the blueprint ResRef;
+    /// the host (Trebuchet) resolves the file path + tool and launches it. Radoub.UI deliberately
+    /// owns no launch logic.
+    /// </summary>
+    public event Action<string>? BlueprintActivated;
 
     /// <summary>Bind the control to its host view-model and owning window (for modal prompts).</summary>
     public void Bind(PaletteEditorHostViewModel host, Window ownerWindow)
@@ -149,6 +159,18 @@ public partial class PaletteEditorControl : UserControl
     private void OnTreePointerReleased(object? sender, PointerReleasedEventArgs e)
     {
         _pendingDragNode = null; // a plain click/release without crossing the threshold: no drag
+    }
+
+    // Double-click a blueprint leaf -> launch its editor (#2485). Categories/branches/Uncategorized
+    // ignore the gesture (they expand/collapse instead). The blueprint node's Name is its ResRef.
+    private void OnTreeDoubleTapped(object? sender, Avalonia.Input.TappedEventArgs e)
+    {
+        if ((e.Source as Control)?.DataContext is not PaletteNodeViewModel node) return;
+        if (node.Kind != PaletteNodeKind.Blueprint) return;
+        if (string.IsNullOrEmpty(node.Name)) return;
+
+        BlueprintActivated?.Invoke(node.Name);
+        e.Handled = true;
     }
 
     private void OnDragOver(object? sender, DragEventArgs e)
