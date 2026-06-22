@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.130-alpha] - 2026-06-22
-**Branch**: `quartermaster/issue-2541` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2541` | **PR**: #2569
 
 ### Fix: Part composition data-driven naming + authored MDL position + robe arms (#2541)
 
