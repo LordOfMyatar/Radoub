@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.Formats 0.2.76-alpha / Radoub.UI 0.2.24-alpha] - 2026-06-21
+**Branch**: `radoub/issue-2561` | **PR**: #TBD
+
+### Sprint: ITP E1 — Provider (.itp format & search layer) (#2561)
+
+- ITP search now recurses nested palette categories so entries filed under a sub-category are found (#2475).
+- ITP Browser gains category-names-first, lazy per-category loading instead of loading thousands of entries upfront (#987).
+
+---
+
 ## [Radoub.UI 0.2.23-alpha] - 2026-06-21
 **Branch**: `radoub/issue-2544` | **PR**: #2554
 
