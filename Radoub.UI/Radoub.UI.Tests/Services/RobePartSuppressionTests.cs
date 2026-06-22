@@ -1,8 +1,8 @@
-using Quartermaster.Services;
 using Radoub.TestUtilities.Mocks;
+using Radoub.UI.Services;
 using Xunit;
 
-namespace Quartermaster.Tests;
+namespace Radoub.UI.Tests.Services;
 
 /// <summary>
 /// Tests for data-driven robe body-part suppression (#2582). Which body parts a robe hides is

@@ -10,7 +10,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ### Fix: Robe body-part suppression reads parts_robe.2da (#2582)
 
-- Which body parts a robe hides is now read from `parts_robe.2da` `HIDE*` columns (matching the engine) instead of a hardcoded part set + geometry heuristic — fixes cloak-only robes (e.g. `pfh0_robe116`) rendering with no body, and subsumes the #2398 Dana arm carve-out from the authoritative source.
+- Which body parts a robe hides is now read from `parts_robe.2da` `HIDE*` columns (matching the engine) instead of a hardcoded part set + geometry heuristic — fixes cloak-only robes (e.g. `pfh0_robe116`) rendering with no body, and subsumes the #2398 Dana arm carve-out from the authoritative source. Shared-library change — see root CHANGELOG (`Radoub.UI 0.2.27-alpha`).
 
 ---
 

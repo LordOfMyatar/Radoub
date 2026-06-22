@@ -93,6 +93,67 @@ public class ItemModelResolverTests
     }
 
     [Fact]
+    public void Resolve_Armor_RobeHidesBodyParts_DropsSuppressedAndKeepsRobe()
+    {
+        // #2582: a robe item must not double-render the body parts it covers on the mannequin.
+        // parts_robe.2da row 186 hides chest + bicepl; the resolver must drop those but keep the
+        // robe itself and any part the robe does NOT hide (forer here).
+        var game = BuildGameData();
+        game.Set2DAValue("parts_robe", 186, "HIDECHEST", "1");
+        game.Set2DAValue("parts_robe", 186, "HIDEBICEPL", "1");
+        game.Set2DAValue("parts_robe", 186, "HIDEFORER", "0");
+        game.SetResource("pmh0_robe186", ResourceTypes.Mdl, new byte[] { 1 });
+        game.SetResource("pmh0_chest005", ResourceTypes.Mdl, new byte[] { 1 });
+        game.SetResource("pmh0_bicepl010", ResourceTypes.Mdl, new byte[] { 1 });
+        game.SetResource("pmh0_forer003", ResourceTypes.Mdl, new byte[] { 1 });
+
+        var resolver = new ItemModelResolver(BuildBaseItemService(game), game);
+        var uti = new UtiFile
+        {
+            BaseItem = 3,
+            ArmorParts = new()
+            {
+                ["Robe"] = 186,
+                ["Torso"] = 5,
+                ["LBicep"] = 10,
+                ["RFArm"] = 3,
+            },
+        };
+
+        var result = resolver.Resolve(uti);
+
+        Assert.Contains("pmh0_robe186", result.MdlResRefs);   // robe kept
+        Assert.Contains("pmh0_forer003", result.MdlResRefs);  // not hidden by this robe
+        Assert.DoesNotContain("pmh0_chest005", result.MdlResRefs);   // hidden (HIDECHEST)
+        Assert.DoesNotContain("pmh0_bicepl010", result.MdlResRefs);  // hidden (HIDEBICEPL)
+    }
+
+    [Fact]
+    public void Resolve_Armor_CloakOnlyRobe_KeepsBody()
+    {
+        // robe116 (cloak) hides only the shoulders — the mannequin body parts must all render.
+        var game = BuildGameData();
+        game.Set2DAValue("parts_robe", 116, "HIDESHOL", "1");
+        game.Set2DAValue("parts_robe", 116, "HIDECHEST", "0");
+        game.SetResource("pmh0_robe116", ResourceTypes.Mdl, new byte[] { 1 });
+        game.SetResource("pmh0_chest005", ResourceTypes.Mdl, new byte[] { 1 });
+        game.SetResource("pmh0_shol010", ResourceTypes.Mdl, new byte[] { 1 });
+
+        var resolver = new ItemModelResolver(BuildBaseItemService(game), game);
+        var uti = new UtiFile
+        {
+            BaseItem = 3,
+            ArmorParts = new() { ["Robe"] = 116, ["Torso"] = 5, ["LShoul"] = 10 },
+        };
+
+        var result = resolver.Resolve(uti);
+
+        Assert.Contains("pmh0_robe116", result.MdlResRefs);
+        Assert.Contains("pmh0_chest005", result.MdlResRefs);   // body kept
+        Assert.DoesNotContain("pmh0_shol010", result.MdlResRefs);  // shoulder hidden
+    }
+
+    [Fact]
     public void Resolve_Armor_ReturnsBodyPartResRefsWithMannequinPrefix()
     {
         var game = BuildGameData();

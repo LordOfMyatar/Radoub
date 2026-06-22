@@ -2,10 +2,13 @@ using System;
 using System.Collections.Generic;
 using Radoub.Formats.Services;
 
-namespace Quartermaster.Services;
+namespace Radoub.UI.Services;
 
 /// <summary>
-/// Decides which creature body parts a robe hides, read from <c>parts_robe.2da</c> (#2582).
+/// Decides which creature/mannequin body parts a robe hides, read from <c>parts_robe.2da</c>
+/// (#2582). Shared by every tool that composes a body + an equipped robe on
+/// <see cref="MdlPartComposer"/> — Quartermaster's creature preview and Relique's armor mannequin
+/// both need it (without it, a robe item double-renders the arms the robe already supplies).
 ///
 /// The Aurora engine does NOT hide a fixed set of parts when a robe is worn — it reads the robe
 /// row's <c>HIDE*</c> columns from <c>parts_robe.2da</c> and hides each body part individually
@@ -18,14 +21,16 @@ namespace Quartermaster.Services;
 ///  - short-sleeve robes (e.g. <c>robe5</c>/Dana hides torso+legs but NOT the arms, #2398);
 ///  - full-body robes (e.g. <c>robe186</c> hides everything incl. arms).
 ///
-/// Head/neck/feet have no <c>HIDE*</c> column in the table, so they are never suppressed.
+/// A robe whose row sets no <c>HIDE*</c> flag suppresses nothing — that is the engine's behavior
+/// (the robe mesh is authored to sit over the body), so we trust the table rather than re-adding a
+/// blanket fallback.
 /// </summary>
 public static class RobePartSuppression
 {
     /// <summary>
-    /// Maps a body-part token (as used by <c>ModelService.AddPart</c>) to its <c>parts_robe.2da</c>
-    /// hide column. Tokens with no entry (head, neck, feet, the robe itself) are never hidden.
-    /// Mirrors rollnw's <c>robe_hide_column</c>.
+    /// Maps a body-part token to its <c>parts_robe.2da</c> hide column. Every limb/torso part has
+    /// a column (head/neck/feet included — a robe CAN hide them if the row says so); only the robe
+    /// itself has no entry. Mirrors rollnw's <c>robe_hide_column</c>.
     /// </summary>
     private static readonly Dictionary<string, string> HideColumnByPart = new(StringComparer.OrdinalIgnoreCase)
     {
