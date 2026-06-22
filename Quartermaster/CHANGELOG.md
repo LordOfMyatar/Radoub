@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.130-alpha] - 2026-06-22
+**Branch**: `quartermaster/issue-2541` | **PR**: #TBD
+
+### Fix: Part composition data-driven naming + authored MDL position + robe arms (#2541)
+
+- Part/bone/gender naming becomes data-driven with cross-gender fallback (custom content), the authored part-mesh local position is preserved instead of zeroed (head-too-high #2161), and robe missing/duplicate arms (#2398, #2116) are diagnosed and fixed.
+
+---
+
 ## [0.2.129-alpha] - 2026-06-21
 **Branch**: `radoub/issue-2562` | **PR**: #2564
 
