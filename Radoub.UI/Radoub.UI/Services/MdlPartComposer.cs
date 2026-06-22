@@ -245,9 +245,21 @@ public sealed class MdlPartComposer
             // skeleton model. Attaching to / nudging the cached skeleton would corrupt it for the
             // next render (#1735).
             var boneName = _boneNameForPart(partType);
-            MdlNode? bone = compositeModel.GeometryRoot != null
-                ? FindBoneByName(compositeModel.GeometryRoot, boneName)
-                : null;
+            MdlNode? bone = null;
+            if (compositeModel.GeometryRoot != null)
+            {
+                // #2541 Phase 1b: exact _g convention first, then a conservative best-match for
+                // custom skeletons whose bones don't follow the convention — so the part attaches
+                // near the right joint instead of silently grafting at the composite root (feet).
+                var resolution = MdlBoneResolver.ResolveByBoneName(compositeModel.GeometryRoot, boneName);
+                bone = resolution.Bone;
+                if (resolution.UsedFallback && bone != null)
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"MdlPartComposer: part '{partType}' bone '{boneName}' not found — best-matched custom-skeleton bone '{bone.Name}'");
+                else if (bone == null)
+                    UnifiedLogger.LogApplication(LogLevel.WARN,
+                        $"MdlPartComposer: part '{partType}' bone '{boneName}' not found on skeleton — grafting at composite root");
+            }
 
             var fallbackPosition = Vector3.Zero;
             if (bone != null)
@@ -451,9 +463,16 @@ public sealed class MdlPartComposer
             // the grafted subtree under that bone so it sits at back/rear height; fall back to the
             // composite root only if the skeleton lacks the bone (grafting at root would otherwise
             // place the wings at the model origin — i.e. the creature's feet).
-            var attachBone = FindBoneByName(root, tag);
+            // #2541 Phase 1c: exact connector-bone match first, then a best-match for custom
+            // skeletons that name the attach bone differently (e.g. "WingBone") before falling
+            // back to the root.
+            var attachResolution = MdlBoneResolver.ResolveByBoneName(root, tag);
+            var attachBone = attachResolution.Bone;
             var attachParent = attachBone ?? root;
-            if (attachBone == null)
+            if (attachResolution.UsedFallback && attachBone != null)
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"MdlPartComposer.GraftSupermodel: '{tag}' bone not found — best-matched custom-skeleton bone '{attachBone.Name}'");
+            else if (attachBone == null)
                 UnifiedLogger.LogApplication(LogLevel.WARN,
                     $"MdlPartComposer.GraftSupermodel: no '{tag}' attach bone on skeleton — grafting at root (may mis-place)");
 
