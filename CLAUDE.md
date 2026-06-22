@@ -783,8 +783,11 @@ toolset, model preview vs in-game), Claude and the human split the loop:
 
 **Claude can:**
 1. **Generate fixture files** with known inputs (e.g. `.claude/scripts/New-CostTestUti.ps1`,
-   `New-AppearanceTestUtc.ps1`) written into a test module (`LNS_DLG`). These use the built
-   `Radoub.Formats.dll` via PS7 so the GFF round-trip matches the tool.
+   `New-AppearanceTestUtc.ps1` for appearance swaps, `New-RobeCloakTestUtc.ps1` to clone an armor
+   UTI with an overridden `Robe`/body part and equip it on a cloned creature) written into a test
+   module (`LNS_DLG`). These use the built `Radoub.Formats.dll` via PS7 so the GFF round-trip
+   matches the tool. The generated `aN.utc`/`robeNNNt.utc`+`.uti` files are throwaway (not
+   committed); the generator scripts are reusable and committed.
 2. **Launch the tool directed at a fixture** — `dotnet run --project <Tool>/<Tool>/<Tool>.csproj
    -- --mod <Module> --file <file>` (a GUI launch; run with `run_in_background`).
 3. **Read the tool's own logs** to capture computed values — add temporary `[Tag]` diagnostic

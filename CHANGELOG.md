@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.27-alpha] - 2026-06-22
+**Branch**: `quartermaster/issue-2582` | **PR**: #2583
+
+### Robe body-part suppression reads parts_robe.2da (shared) (#2582)
+
+- `RobePartSuppression` moves into `Radoub.UI` and reads which body parts a robe hides from `parts_robe.2da` `HIDE*` columns (matching the Aurora engine / rollnw `robe_hides_body_part`), replacing a Quartermaster-local hardcoded set + the `RobeArmGeometry` heuristic (now retired). Both the Quartermaster creature preview and Relique's armor mannequin (`ItemModelResolver`) apply it — fixes cloak-only robes rendering with no body (QM) and robe items double-rendering arms on the mannequin (Relique), and subsumes the #2398 Dana arm fix from the authoritative source.
+
+---
+
 ## [Radoub.UI 0.2.26-alpha] - 2026-06-22
 **Branch**: `quartermaster/issue-2541` | **PR**: #2569
 

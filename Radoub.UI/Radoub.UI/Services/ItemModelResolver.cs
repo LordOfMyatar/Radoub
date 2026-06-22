@@ -136,6 +136,12 @@ public sealed class ItemModelResolver
         if (armorParts.Count == 0)
             return Array.Empty<string>();
 
+        // #2582: when the item supplies a robe, that robe hides some of the mannequin body parts
+        // (per parts_robe.2da). Without this, the robe and the mannequin's own bicep/forearm/etc.
+        // parts both render — the double-arms seen on the armor mannequin. Shared with QM's
+        // creature preview via RobePartSuppression. The robe part itself is never suppressed.
+        int robePart = armorParts.TryGetValue("Robe", out var robeValue) ? robeValue : 0;
+
         var found = new List<string>();
         foreach (var (key, partNumber) in armorParts)
         {
@@ -143,6 +149,10 @@ public sealed class ItemModelResolver
                 continue;
 
             if (!ArmorPartKeyToMdlSuffix.TryGetValue(key, out var suffix))
+                continue;
+
+            if (!suffix.Equals("robe", StringComparison.OrdinalIgnoreCase)
+                && RobePartSuppression.IsSuppressedByRobe(suffix, robePart, _gameDataService))
                 continue;
 
             var resRef = $"{ArmorMannequinPrefix}_{suffix}{partNumber:D3}".ToLowerInvariant();

@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.31-alpha] - 2026-06-22
+**Branch**: `quartermaster/issue-2582` | **PR**: #2583
+
+### Fix: Robe items no longer double-render arms on the armor mannequin (#2582)
+
+- The armor preview now suppresses the mannequin body parts a robe covers (read from `parts_robe.2da`), so a robe item's own arms/torso no longer render alongside the mannequin's. Shared-library change — see root CHANGELOG (`Radoub.UI 0.2.27-alpha`).
+
+---
+
 ## [0.10.30-alpha] - 2026-06-21
 **Branch**: `radoub/issue-2562` | **PR**: #2564
 
