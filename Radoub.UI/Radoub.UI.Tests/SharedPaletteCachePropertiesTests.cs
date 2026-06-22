@@ -24,4 +24,22 @@ public class SharedPaletteCachePropertiesTests
         var item = new SharedPaletteCacheItem();
         Assert.Equal(string.Empty, item.PropertiesDisplay);
     }
+
+    [Fact]
+    public void PaletteId_RoundTripsThroughJson()
+    {
+        var item = new SharedPaletteCacheItem { ResRef = "longsword", PaletteId = 7 };
+        var json = System.Text.Json.JsonSerializer.Serialize(item);
+        var restored = System.Text.Json.JsonSerializer.Deserialize<SharedPaletteCacheItem>(json)!;
+        Assert.Equal((byte?)7, restored.PaletteId);
+    }
+
+    [Fact]
+    public void PaletteId_NullRoundTripsThroughJson()
+    {
+        var item = new SharedPaletteCacheItem { ResRef = "x", PaletteId = null };
+        var json = System.Text.Json.JsonSerializer.Serialize(item);
+        var restored = System.Text.Json.JsonSerializer.Deserialize<SharedPaletteCacheItem>(json)!;
+        Assert.Null(restored.PaletteId);
+    }
 }
