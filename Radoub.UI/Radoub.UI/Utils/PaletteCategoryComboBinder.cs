@@ -55,50 +55,45 @@ public static class PaletteCategoryComboBinder
     }
 
     /// <summary>
-    /// Build one display label per category, disambiguating duplicate names (#2488). CEP and
-    /// custom content commonly repeat names like "Custom 1" across branches; a flat combo of
-    /// identical labels is unusable. Rules, applied per category:
+    /// Build one display label per category so nesting is visible and duplicates are
+    /// distinguishable (#2488). Rules, applied per category:
     /// <list type="bullet">
-    /// <item>Name unique in the list → bare <c>Name</c> (unchanged from the simple case).</item>
-    /// <item>Name duplicated, has a <c>ParentPath</c> → <c>"Parent › Name"</c>.</item>
-    /// <item>Name still ambiguous (no path, or same name+path) → append <c>" (id N)"</c>.</item>
+    /// <item>Top-level (no <c>ParentPath</c>) → bare <c>Name</c>, so the common flat palette reads
+    /// cleanly.</item>
+    /// <item>Nested (has a <c>ParentPath</c>) → always <c>"Parent › Name"</c>, even when the name is
+    /// unique, so siblings under one parent read consistently (e.g. all of Armor's children show
+    /// "Armor › …", not just a duplicated one).</item>
+    /// <item>If the resulting label still collides (same name with no path, or identical
+    /// name+path) → append <c>" (id N)"</c>.</item>
     /// </list>
-    /// Disambiguation is display-only — placement is by PaletteID (#2477), so the item Tag stays
-    /// the raw <c>Id</c>. The order of the returned labels matches <paramref name="categories"/>.
+    /// Display-only — placement is by PaletteID (#2477), so the item Tag stays the raw <c>Id</c>.
+    /// The order of the returned labels matches <paramref name="categories"/>.
     /// </summary>
     public static IReadOnlyList<string> BuildDisplayLabels(IReadOnlyList<PaletteCategory> categories)
     {
-        var nameCounts = categories
-            .GroupBy(c => c.Name)
-            .ToDictionary(g => g.Key, g => g.Count());
-
-        // After path-qualification, a "Parent › Name" string can still collide (same name AND
-        // same parent path). Detect those so we can add the id suffix only where it's needed.
-        var qualifiedCounts = new Dictionary<string, int>();
+        // Base label: bare for top-level, path-qualified for nested. Count collisions on this base
+        // so we only add an id suffix where the base label is genuinely ambiguous.
+        var baseLabels = new List<string>(categories.Count);
+        var baseCounts = new Dictionary<string, int>();
         foreach (var cat in categories)
         {
-            var key = PathQualified(cat);
-            qualifiedCounts[key] = qualifiedCounts.TryGetValue(key, out var n) ? n + 1 : 1;
+            var label = BaseLabel(cat);
+            baseLabels.Add(label);
+            baseCounts[label] = baseCounts.TryGetValue(label, out var n) ? n + 1 : 1;
         }
 
         var labels = new List<string>(categories.Count);
-        foreach (var cat in categories)
+        for (int i = 0; i < categories.Count; i++)
         {
-            if (nameCounts[cat.Name] <= 1)
-            {
-                labels.Add(cat.Name); // unique — leave it bare
-                continue;
-            }
-
-            var qualified = PathQualified(cat);
-            // Path disambiguates only if the path-qualified form is itself unique.
-            labels.Add(qualifiedCounts[qualified] <= 1 ? qualified : $"{qualified} (id {cat.Id})");
+            var label = baseLabels[i];
+            labels.Add(baseCounts[label] <= 1 ? label : $"{label} (id {categories[i].Id})");
         }
 
         return labels;
     }
 
-    private static string PathQualified(PaletteCategory cat)
+    // Bare name for a top-level category; "Parent › Name" for a nested one.
+    private static string BaseLabel(PaletteCategory cat)
         => string.IsNullOrEmpty(cat.ParentPath) ? cat.Name : $"{cat.ParentPath} › {cat.Name}";
 
     /// <summary>

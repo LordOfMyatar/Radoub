@@ -78,10 +78,12 @@ public class PaletteCategoryComboBinderTests
         Assert.Null(PaletteCategoryComboBinder.GetSelectedId(combo));
     }
 
-    // --- Duplicate/nested name disambiguation (#2488) ---
+    // --- Nested/duplicate name display (#2488, #2562) ---
+    // Rule: top-level categories show bare Name; any nested category shows "Parent › Name" so
+    // siblings read consistently. Remaining duplicate *qualified* labels get an "(id N)" suffix.
 
     [Fact]
-    public void BuildDisplayLabels_UniqueNames_ReturnsBareNames()
+    public void BuildDisplayLabels_TopLevelUniqueNames_ReturnsBareNames()
     {
         var cats = new List<PaletteCategory>
         {
@@ -92,6 +94,26 @@ public class PaletteCategoryComboBinderTests
         var labels = PaletteCategoryComboBinder.BuildDisplayLabels(cats);
 
         Assert.Equal(new[] { "Containers", "Doors" }, labels);
+    }
+
+    [Fact]
+    public void BuildDisplayLabels_NestedNames_AlwaysShowParentPath_EvenWhenUnique()
+    {
+        // The reported case: all of Armor's children show the path, not just the duplicated one.
+        var cats = new List<PaletteCategory>
+        {
+            new() { Id = 1, Name = "Armor" },
+            new() { Id = 2, Name = "Clothing", ParentPath = "Armor" },
+            new() { Id = 3, Name = "Light", ParentPath = "Armor" },
+            new() { Id = 4, Name = "Heavy", ParentPath = "Armor" },
+        };
+
+        var labels = PaletteCategoryComboBinder.BuildDisplayLabels(cats);
+
+        Assert.Equal("Armor", labels[0]);            // top level stays bare
+        Assert.Equal("Armor › Clothing", labels[1]);
+        Assert.Equal("Armor › Light", labels[2]);
+        Assert.Equal("Armor › Heavy", labels[3]);
     }
 
     [Fact]
@@ -109,13 +131,13 @@ public class PaletteCategoryComboBinderTests
 
         Assert.Equal("Weapons › Custom 1", labels[0]);
         Assert.Equal("Armor › Custom 1", labels[1]);
-        Assert.Equal("Doors", labels[2]); // unique name stays bare
+        Assert.Equal("Doors", labels[2]); // unique top-level name stays bare
     }
 
     [Fact]
-    public void BuildDisplayLabels_DuplicateName_NoParentPath_QualifiesById()
+    public void BuildDisplayLabels_DuplicateTopLevelName_QualifiesById()
     {
-        // Both duplicates are top-level (no ParentPath) — fall back to id suffix.
+        // Both duplicates are top-level (no ParentPath) — no path to show, fall back to id suffix.
         var cats = new List<PaletteCategory>
         {
             new() { Id = 41, Name = "Custom 1" },
