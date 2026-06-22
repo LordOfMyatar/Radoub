@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Radoub.UI 0.2.25-alpha] - 2026-06-21
-**Branch**: `radoub/issue-2562` | **PR**: #TBD
+**Branch**: `radoub/issue-2562` | **PR**: #2564
 
 ### Sprint: ITP E2 — Consumers (standardization & handling) (#2562)
 
