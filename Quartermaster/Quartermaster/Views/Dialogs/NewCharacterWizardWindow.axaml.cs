@@ -12,6 +12,7 @@ using Quartermaster.Models;
 using Quartermaster.Services;
 using Quartermaster.Views;
 using Radoub.UI.Services;
+using Radoub.UI.Utils;
 using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
 using Radoub.Formats.Utc;
@@ -606,38 +607,23 @@ public partial class NewCharacterWizardWindow : Window
         AvaloniaXamlLoader.Load(this);
     }
 
+    // Creature fallback when creaturepal.itp yields nothing (the shared DefaultFallback is
+    // item-oriented; creatures default to the Custom bucket, PaletteID 1).
+    private static readonly List<PaletteCategory> CreatureCategoryFallback = new()
+    {
+        new() { Id = 1, Name = "Custom" },
+    };
+
     private void PopulatePaletteCategories()
     {
-        _identityPaletteIdComboBox.Items.Clear();
-
         var categories = _displayService.GetCreaturePaletteCategories().ToList();
+        var sorted = categories.Count > 0
+            ? categories.OrderBy(c => c.Id).ToList()
+            : CreatureCategoryFallback;
 
-        if (categories.Count == 0)
-        {
-            _identityPaletteIdComboBox.Items.Add(new ComboBoxItem { Content = "Custom (1)", Tag = (byte)1 });
-            _identityPaletteIdComboBox.SelectedIndex = 0;
-            return;
-        }
-
-        int defaultIndex = 0;
-        int index = 0;
-        foreach (var category in categories.OrderBy(c => c.Id))
-        {
-            var displayName = !string.IsNullOrEmpty(category.ParentPath)
-                ? $"{category.ParentPath}/{category.Name} ({category.Id})"
-                : $"{category.Name} ({category.Id})";
-
-            _identityPaletteIdComboBox.Items.Add(new ComboBoxItem
-            {
-                Content = displayName,
-                Tag = category.Id
-            });
-
-            if (category.Id == 1) defaultIndex = index;
-            index++;
-        }
-
-        _identityPaletteIdComboBox.SelectedIndex = defaultIndex;
+        // Shared binder owns populate + select (#2421); disambiguates duplicate names (#2488).
+        PaletteCategoryComboBinder.Populate(_identityPaletteIdComboBox, sorted);
+        PaletteCategoryComboBinder.SelectById(_identityPaletteIdComboBox, 1); // default to Custom
     }
 
     private void PopulateFactions()
