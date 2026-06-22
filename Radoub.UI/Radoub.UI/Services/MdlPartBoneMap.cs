@@ -87,8 +87,12 @@ public static class MdlBoneResolver
         if (exact != null)
             return new BoneResolution(exact, UsedFallback: false);
 
-        // Best-match: strip the "_g" suffix to get the part stem (e.g. "lbicep", "head"),
-        // normalize away separators/case, and look for a bone whose normalized name contains it.
+        // Best-match: strip the "_g" suffix to get the part stem (e.g. "lbicep", "head"), normalize
+        // away separators/case, and match a bone whose normalized name EQUALS that stem. Equality
+        // (not substring containment) so we never mis-attach to a compound bone whose name merely
+        // contains the stem — "head" must not grab "headband_g", "tail" must not grab "ponytail".
+        // Legitimate custom-skeleton renames ("Head"→head, "L_Bicep"→lbicep) normalize to the exact
+        // stem, so equality still resolves them; only accidental superstrings are excluded.
         var stem = Normalize(StripBoneSuffix(conventional));
         if (stem.Length == 0)
             return new BoneResolution(null, UsedFallback: false);
@@ -99,7 +103,7 @@ public static class MdlBoneResolver
 
     private static MdlNode? FindByNormalizedStem(MdlNode node, string stem)
     {
-        if (Normalize(node.Name).Contains(stem, StringComparison.Ordinal))
+        if (string.Equals(Normalize(node.Name), stem, StringComparison.Ordinal))
             return node;
 
         foreach (var child in node.Children)

@@ -82,4 +82,28 @@ public class MdlBoneResolverTests
 
         Assert.Null(result.Bone);
     }
+
+    [Fact]
+    public void Resolve_DoesNotSubstringMatchCompoundBone()
+    {
+        // A skeleton with a "headband_g" accessory bone but NO real head bone must NOT graft the
+        // head onto the headband (the substring trap). Exact-stem match is required first.
+        var root = Skeleton("Torso", "headband_g");
+        var result = MdlBoneResolver.Resolve(root, "head");
+
+        Assert.Null(result.Bone);
+    }
+
+    [Fact]
+    public void Resolve_ExactStemBeatsEarlierSubstringMatch()
+    {
+        // "headband" appears BEFORE the real "Head" in traversal order. The matcher must prefer the
+        // exact-stem bone ("Head" -> normalized "head") over the earlier substring hit ("headband").
+        var root = Skeleton("headband", "Head");
+        var result = MdlBoneResolver.Resolve(root, "head");
+
+        Assert.NotNull(result.Bone);
+        Assert.Equal("Head", result.Bone!.Name);
+        Assert.True(result.UsedFallback);
+    }
 }
