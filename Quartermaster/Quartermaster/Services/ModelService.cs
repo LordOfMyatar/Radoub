@@ -217,16 +217,30 @@ public class ModelService
         // legs AND have no robe to replace them — an empty render (the dana/pmo0 case).
         if (robePartNumber > 0)
             AppendPart(parts, basePrefix, "robe", robePartNumber);
-        bool robeActive = parts.Any(p => p.PartType.Equals("robe", System.StringComparison.OrdinalIgnoreCase));
+        var robeEntry = parts.FirstOrDefault(p => p.PartType.Equals("robe", System.StringComparison.OrdinalIgnoreCase));
+        bool robeActive = robeEntry.ResRef != null;
         if (robePartNumber > 0 && !robeActive)
             UnifiedLogger.LogApplication(LogLevel.WARN,
                 $"LoadPartBasedCreatureModel: robe #{robePartNumber} did not resolve — keeping body parts (no suppression)");
+
+        // #2541 Phase 2: only suppress the creature's arm parts if the robe supplies RENDERABLE
+        // arm geometry. Robes like pfh0_robe005 (Dana) have Render=false arm trimeshes and an
+        // armless torso+legs skin — suppressing the creature arms there leaves the creature with
+        // no arms (#2398/#2116). Torso/legs are always suppressed when a robe is active.
+        bool robeHasRenderableArms = true;
+        if (robeActive)
+        {
+            robeHasRenderableArms = RobeArmGeometry.HasRenderableArmGeometry(LoadModel(robeEntry.ResRef));
+            if (!robeHasRenderableArms)
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"LoadPartBasedCreatureModel: robe '{robeEntry.ResRef}' has no renderable arm geometry — keeping creature arms");
+        }
 
         // A robe is a near-complete posed body covering torso/pelvis/limbs; skip those individual
         // parts when a robe actually loaded — loading them additively causes z-fighting and gaps.
         void AddPart(string partType, byte partNumber)
         {
-            if (RobePartSuppression.IsSuppressedByRobe(partType, robeActive))
+            if (RobePartSuppression.IsSuppressedByRobe(partType, robeActive, robeHasRenderableArms))
             {
                 UnifiedLogger.LogApplication(LogLevel.INFO,
                     $"LoadPartBasedCreatureModel: skipping '{partType}' (covered by robe #{robePartNumber})");
