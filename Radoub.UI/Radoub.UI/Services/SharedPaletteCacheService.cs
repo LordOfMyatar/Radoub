@@ -357,7 +357,11 @@ public class SharedPaletteCacheService : ISharedPaletteCacheService, IDisposable
         IEnumerable<string>? activeHakPaths = null)
     {
         var items = GetAggregatedCache(activeHakPaths) ?? new List<SharedPaletteCacheItem>();
-        var categories = gameData.GetPaletteCategories(resourceType).ToDictionary(c => c.Id);
+        // First occurrence wins. The IGameDataService contract does not guarantee
+        // unique category ids, so don't let a non-deduping provider throw. (#987)
+        var categories = gameData.GetPaletteCategories(resourceType)
+            .GroupBy(c => c.Id)
+            .ToDictionary(g => g.Key, g => g.First());
 
         var result = new List<PaletteCategoryInfo>();
         int uncategorized = 0;

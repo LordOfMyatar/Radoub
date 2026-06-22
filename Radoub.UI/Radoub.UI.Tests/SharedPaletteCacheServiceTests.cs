@@ -986,6 +986,22 @@ public class SharedPaletteCacheServiceTests : IDisposable
     }
 
     [Fact]
+    public void GetCategoryNames_DuplicateCategoryIdsDoNotThrow()
+    {
+        // The IGameDataService contract does not guarantee unique category ids.
+        // A non-deduping provider must not crash GetCategoryNames. (#987 review)
+        var svc = ServiceWith(new SharedPaletteCacheItem { ResRef = "a", PaletteId = 5 });
+        var gd = new MockGameDataService().WithPaletteCategories(ResourceTypes.Uti,
+            new PaletteCategory { Id = 5, Name = "First", ParentPath = "Armor" },
+            new PaletteCategory { Id = 5, Name = "Dupe", ParentPath = "Weapons" });
+
+        var result = svc.GetCategoryNames(gd, ResourceTypes.Uti);
+
+        // First occurrence wins; no ArgumentException.
+        Assert.Equal("First", result.Single(c => c.Id == 5).Name);
+    }
+
+    [Fact]
     public void GetCategoryBlueprints_ReturnsOnlyThatCategorysItems()
     {
         var svc = ServiceWith(
