@@ -134,11 +134,8 @@ public partial class MainWindow
     {
         // Shared binder owns populate + fallback (#2423). Its DefaultFallback (Misc/Armor/Weapons/
         // Potions/Other) matches Relique's old hardcoded list exactly, and it disambiguates
-        // duplicate/nested names (#2488). It returns the list actually loaded (real or fallback)
-        // so we cache the same source the combo shows.
-        _paletteCategories = Radoub.UI.Utils.PaletteCategoryComboBinder
-            .Populate(PaletteCategoryComboBox, categories)
-            .ToList();
+        // duplicate/nested names (#2488).
+        Radoub.UI.Utils.PaletteCategoryComboBinder.Populate(PaletteCategoryComboBox, categories);
     }
 
     // --- Item Browser Panel ---

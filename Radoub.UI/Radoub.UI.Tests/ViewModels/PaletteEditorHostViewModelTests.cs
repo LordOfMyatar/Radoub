@@ -219,4 +219,60 @@ public class PaletteEditorHostViewModelTests
         host.Undo();
         Assert.DoesNotContain(host.ActiveContext!.Palette.GetCategories(), c => c.Name == "X");
     }
+
+    // --- #2484 review fixes: empty-stack no-op + cross-tool lock guard on undo/redo ---
+
+    [Fact]
+    public async Task Undo_or_redo_with_empty_history_does_not_commit()
+    {
+        int commits = 0;
+        var host = MakeHost(commit: _ => { commits++; return new PaletteSaveResult(true, null); });
+        await host.SwitchResourceTypeAsync(PaletteResourceType.Item);
+
+        host.Undo(); // nothing to undo
+        host.Redo(); // nothing to redo
+        Assert.Equal(0, commits); // no disk write on a no-op keystroke
+    }
+
+    [Fact]
+    public async Task Undo_of_blueprint_move_refused_when_blueprint_open_in_another_tool()
+    {
+        // The blueprint is free at move time but gets opened in another tool before the undo.
+        string? lockedBy = null;
+        string? reported = null;
+        int commits = 0;
+        var host = MakeHost(
+            commit: _ => { commits++; return new PaletteSaveResult(true, null); },
+            lockHolder: path => path.EndsWith("bp.uti") ? lockedBy : null);
+        host.SaveFailed += m => reported = m;
+        await host.SwitchResourceTypeAsync(PaletteResourceType.Item);
+
+        host.MoveBlueprintToCategory("bp", Cat(host, 1)); // free -> moves, commit #1
+        Assert.Equal((byte)1, host.ActiveContext!.Store.GetPaletteId("bp"));
+        int commitsAfterMove = commits;
+
+        lockedBy = "Relique"; // another tool opens the blueprint
+        host.Undo();          // must be refused — undo rewrites the file
+
+        Assert.Equal((byte)1, host.ActiveContext.Store.GetPaletteId("bp")); // NOT reverted
+        Assert.Equal(commitsAfterMove, commits);                            // no disk write
+        Assert.Contains("Relique", reported);                              // names the holder
+    }
+
+    [Fact]
+    public async Task Undo_of_blueprint_move_proceeds_once_the_other_tool_releases_the_lock()
+    {
+        string? lockedBy = "Relique";
+        var host = MakeHost(lockHolder: path => path.EndsWith("bp.uti") ? lockedBy : null);
+        await host.SwitchResourceTypeAsync(PaletteResourceType.Item);
+
+        // Move requires the lock free; release it for the move, re-acquire, then release again.
+        lockedBy = null;
+        host.MoveBlueprintToCategory("bp", Cat(host, 1));
+        Assert.Equal((byte)1, host.ActiveContext!.Store.GetPaletteId("bp"));
+
+        lockedBy = null; // tool closed it
+        host.Undo();
+        Assert.Equal((byte)0, host.ActiveContext.Store.GetPaletteId("bp")); // reverted
+    }
 }

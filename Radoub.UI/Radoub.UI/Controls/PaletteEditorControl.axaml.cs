@@ -77,8 +77,10 @@ public partial class PaletteEditorControl : UserControl
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
         if (_host is null) return;
-        bool ctrl = e.KeyModifiers.HasFlag(KeyModifiers.Control);
-        if (!ctrl) return;
+        // Require Ctrl WITHOUT Alt: on Windows the AltGr key reports as Ctrl+Alt, so a bare Ctrl
+        // check would fire undo/redo on AltGr+Z/Y chords used to type characters on many layouts.
+        if (!e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.KeyModifiers.HasFlag(KeyModifiers.Alt))
+            return;
         bool shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
 
         if (e.Key == Key.Z && !shift) { _host.Undo(); e.Handled = true; }

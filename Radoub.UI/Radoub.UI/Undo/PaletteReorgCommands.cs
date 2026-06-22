@@ -33,6 +33,10 @@ public sealed class PaletteMoveBlueprintCommand : IUndoableCommand
 
     public string Description => $"Move '{_resRef}'";
 
+    /// <summary>The blueprint this command moves. The host checks this against the cross-tool file
+    /// lock before undo/redo (the move rewrites the file, same as the forward op — #2484 review).</summary>
+    public string ResRef => _resRef;
+
     public bool Do()
     {
         if (string.IsNullOrEmpty(_resRef) || !_store.Contains(_resRef)) return false;

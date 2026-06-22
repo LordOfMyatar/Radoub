@@ -196,11 +196,7 @@ public partial class PaletteEditorHostViewModel : ObservableObject
         // Cross-tool guard: the move rewrites the whole blueprint file (read-disk -> set PaletteID
         // -> write). If another running tool (Relique/QM/Fence) holds the file open, abort and warn
         // rather than clobber its in-flight edits.
-        if (ActiveContext.Store.GetFilePath(resRef) is { } path && _lockHolder(path) is { } holder)
-        {
-            SaveFailed?.Invoke($"'{resRef}' is open in {holder}. Close it there, then try again.");
-            return false;
-        }
+        if (IsBlueprintLockedElsewhere(resRef)) return false;
 
         // Placement is by PaletteID; the command stages to.Id and undo restores the old id (#2484).
         if (!ExecuteReorg(new PaletteMoveBlueprintCommand(
@@ -208,6 +204,19 @@ public partial class PaletteEditorHostViewModel : ObservableObject
             return false;
         RevealCategory(to); // focus follows the drop: expand + select the destination
         return true;
+    }
+
+    // True (and raises SaveFailed) when the blueprint is currently open in another tool — moving or
+    // un-moving it would rewrite the file underneath that tool and lose its edits. Used by both the
+    // forward move and undo/redo of a move (#2484 review: undo also writes the file).
+    private bool IsBlueprintLockedElsewhere(string resRef)
+    {
+        if (ActiveContext?.Store.GetFilePath(resRef) is { } path && _lockHolder(path) is { } holder)
+        {
+            SaveFailed?.Invoke($"'{resRef}' is open in {holder}. Close it there, then try again.");
+            return true;
+        }
+        return false;
     }
 
     /// <summary>Add a new empty category under <paramref name="parent"/> (or root when null).
@@ -262,6 +271,32 @@ public partial class PaletteEditorHostViewModel : ObservableObject
         return CommitNow();
     }
 
-    public void Undo() { ActiveContext?.UndoManager.Undo(); RebuildForest(); CommitNow(); }
-    public void Redo() { ActiveContext?.UndoManager.Redo(); RebuildForest(); CommitNow(); }
+    /// <summary>Revert the last reorg and persist the result. No-op (no disk write) when the undo
+    /// stack is empty. Refused when the command would rewrite a blueprint that is open in another
+    /// tool (#2484 review) — the revert is a real file write, same as the forward move.</summary>
+    public void Undo()
+    {
+        if (ActiveContext is null || !ActiveContext.UndoManager.CanUndo) return;
+        if (ActiveContext.UndoManager.PeekUndo is PaletteMoveBlueprintCommand mv
+            && IsBlueprintLockedElsewhere(mv.ResRef))
+            return;
+
+        ActiveContext.UndoManager.Undo();
+        RebuildForest();
+        CommitNow();
+    }
+
+    /// <summary>Reapply the last undone reorg and persist. Same empty-stack and cross-tool-lock
+    /// guards as <see cref="Undo"/>.</summary>
+    public void Redo()
+    {
+        if (ActiveContext is null || !ActiveContext.UndoManager.CanRedo) return;
+        if (ActiveContext.UndoManager.PeekRedo is PaletteMoveBlueprintCommand mv
+            && IsBlueprintLockedElsewhere(mv.ResRef))
+            return;
+
+        ActiveContext.UndoManager.Redo();
+        RebuildForest();
+        CommitNow();
+    }
 }
