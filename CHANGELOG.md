@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.Formats 0.2.77-alpha / Radoub.UI 0.2.28-alpha] - 2026-06-22
+**Branch**: `radoub/issue-1765` | **PR**: #TBD
+
+### Fix: BioWare-DDS decode for high-res EE creature textures (#1765)
+
+- Model preview decodes NWN:EE's BioWare-format DDS (no `DDS ` magic; 16-byte header + DXT1/DXT5 blocks), so high-res creature textures load instead of falling back to the legacy low-res TGA — fixes blurry Drow Matron, Duergar Chief, and any creature whose EE asset is a BioWare DDS. Texture resolution now prefers the higher-resolution candidate when both TGA and DDS exist.
+
+---
+
 ## [Radoub.UI 0.2.27-alpha] - 2026-06-22
 **Branch**: `quartermaster/issue-2582` | **PR**: #2583
 
