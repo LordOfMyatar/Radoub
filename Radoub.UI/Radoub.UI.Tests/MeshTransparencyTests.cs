@@ -82,23 +82,12 @@ public class MeshTransparencyTests
     }
 
     [Fact]
-    public void HintZero_BinaryProfile_IsCutout()
+    public void HintZero_NeverCutoutOrTransparent()
     {
-        // #2540 hint-less fallthrough: CEP creatures (e.g. the dire-tiger mane, #2507) encode
-        // their cutout only in the texture alpha, never in the MDL. A genuinely BINARY profile
-        // is a real 0/255 cutout mask, so it carves even with no hint. This is safe because the
-        // #2507 trap — an opaque _d body with alpha overloaded as a spec value — classifies as
-        // Opaque or Graded by AnalyzeAlphaProfile, NOT Binary, so it never reaches this branch.
-        Assert.Equal(MaterialMode.Cutout,
+        // The #2507 trap: opaque _d body, alpha overloaded as spec. Hint == 0 => stay opaque
+        // even if the texture has a binary or graded alpha channel.
+        Assert.Equal(MaterialMode.Opaque,
             MeshTransparency.ClassifyMesh(1.0f, 0, AlphaProfile.Binary));
-    }
-
-    [Fact]
-    public void HintZero_GradedProfile_IsOpaque()
-    {
-        // Graded alpha with no hint stays opaque on the creature path (matches rollnw's
-        // character-class behavior). The zod rat (#2435) is graded but is gated on in-game UAT
-        // before any creature blend path lands, so it must NOT auto-blend here.
         Assert.Equal(MaterialMode.Opaque,
             MeshTransparency.ClassifyMesh(1.0f, 0, AlphaProfile.Graded));
     }

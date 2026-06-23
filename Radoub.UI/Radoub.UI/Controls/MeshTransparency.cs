@@ -35,12 +35,9 @@ public enum MaterialMode
 /// rollnw renderer (<c>classify_material</c>): <see cref="MaterialMode"/> is derived from the mesh
 /// <c>Alpha</c> controller, the MDL <c>TransparencyHint</c>, and the texture's <see cref="AlphaProfile"/>.
 ///
-/// <para>The decisive rule (the #2507 trap): a <c>TransparencyHint == 0</c> mesh is carved as a
-/// Cutout only when its texture is a genuine 0/255 <see cref="AlphaProfile.Binary"/> mask (the
-/// CEP dire-tiger mane convention, #2540). NWN:EE <c>_d</c> diffuse maps overload the alpha channel
-/// as a PBR/spec value, but those classify as <see cref="AlphaProfile.Opaque"/> or
-/// <see cref="AlphaProfile.Graded"/> — never Binary — so an opaque body is never holed. A hint-less
-/// Graded mesh stays Opaque (the zod-rat #2435 blend case is gated on in-game verification).</para>
+/// <para>The decisive rule (the #2507 trap): <c>TransparencyHint == 0</c> never yields Cutout or
+/// Transparent. NWN:EE <c>_d</c> diffuse maps overload the alpha channel as a PBR/spec value, so an
+/// opaque body's alpha must not be consulted — a blanket <c>discard</c> punches holes in it.</para>
 /// </summary>
 public static class MeshTransparency
 {
@@ -98,19 +95,9 @@ public static class MeshTransparency
         if (alpha < OpaqueAlphaCutoff)
             return MaterialMode.Transparent;
 
-        // No MDL hint: CEP creatures encode cutout/transparency only in the texture alpha, not
-        // the MDL (#2540) — e.g. the dire-tiger mane (#2507) has Hint=0 on every mesh. A genuinely
-        // BINARY profile is a real 0/255 cutout mask, so it carves even hint-less. This is safe
-        // because the #2507 trap (an opaque _d body whose alpha is overloaded as a spec value)
-        // classifies as Opaque or Graded by AnalyzeAlphaProfile, never Binary, so it cannot reach
-        // Cutout here. A Graded profile stays Opaque on the creature path (matches rollnw's
-        // character-class behavior); the zod rat (#2435) blend case is gated on in-game UAT.
+        // No hint => never consult the texture alpha (it may be an overloaded _d/spec channel).
         if (transparencyHint <= 0)
-        {
-            return profile == AlphaProfile.Binary
-                ? MaterialMode.Cutout
-                : MaterialMode.Opaque;
-        }
+            return MaterialMode.Opaque;
 
         // Hint set: the alpha channel is real; its profile decides cutout vs blend.
         return profile switch
