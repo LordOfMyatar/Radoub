@@ -82,14 +82,29 @@ public class MeshTransparencyTests
     }
 
     [Fact]
-    public void HintZero_NeverCutoutOrTransparent()
+    public void HintZero_AlphaBearingTexture_IsTransparent()
     {
-        // The #2507 trap: opaque _d body, alpha overloaded as spec. Hint == 0 => stay opaque
-        // even if the texture has a binary or graded alpha channel.
-        Assert.Equal(MaterialMode.Opaque,
+        // #2540: the real Aurora engine (xoreos modelnode.cpp:505) blends a hint-less mesh iff its
+        // texture has an alpha channel — isTransparent = hasAlpha. Our production decoder yields a
+        // non-Opaque profile (Binary/Graded) exactly when the texture format carries alpha (DXT5 /
+        // 32-bit TGA); a DXT1/24-bit body decodes to Opaque. So a hint-less mesh with a non-Opaque
+        // profile blends. This carves/blends the dire-tiger mane (#2507) and the zodiac creatures
+        // (#2435), matching Aurora. NOTE: blend, not discard — a near-opaque body (alpha~1) blends
+        // to ~itself (no holes), which is why this is safe where a cutout/discard was not.
+        Assert.Equal(MaterialMode.Transparent,
             MeshTransparency.ClassifyMesh(1.0f, 0, AlphaProfile.Binary));
-        Assert.Equal(MaterialMode.Opaque,
+        Assert.Equal(MaterialMode.Transparent,
             MeshTransparency.ClassifyMesh(1.0f, 0, AlphaProfile.Graded));
+    }
+
+    [Fact]
+    public void HintZero_OpaqueTexture_IsOpaque()
+    {
+        // DXT1 / 24-bit body has no alpha channel -> Opaque profile -> stays opaque (e.g. the dire
+        // tiger's own DXT1 body texture c_cat_dire). The #2507 "punch holes in _d bodies" trap does
+        // not arise: an overloaded _d spec body decodes Opaque here, so it never blends.
+        Assert.Equal(MaterialMode.Opaque,
+            MeshTransparency.ClassifyMesh(1.0f, 0, AlphaProfile.Opaque));
     }
 
     [Fact]

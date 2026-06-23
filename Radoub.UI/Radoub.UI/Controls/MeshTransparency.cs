@@ -35,9 +35,13 @@ public enum MaterialMode
 /// rollnw renderer (<c>classify_material</c>): <see cref="MaterialMode"/> is derived from the mesh
 /// <c>Alpha</c> controller, the MDL <c>TransparencyHint</c>, and the texture's <see cref="AlphaProfile"/>.
 ///
-/// <para>The decisive rule (the #2507 trap): <c>TransparencyHint == 0</c> never yields Cutout or
-/// Transparent. NWN:EE <c>_d</c> diffuse maps overload the alpha channel as a PBR/spec value, so an
-/// opaque body's alpha must not be consulted — a blanket <c>discard</c> punches holes in it.</para>
+/// <para>Hint-less meshes (#2540): the real Aurora engine blends a mesh with no TransparencyHint
+/// iff its texture has an alpha channel (xoreos <c>modelnode.cpp:505</c>, behavioral reference only
+/// — GPLv3, not copied). Our production decoder yields a non-Opaque <see cref="AlphaProfile"/>
+/// exactly when the texture FORMAT carries alpha (DXT5 / 32-bit TGA); DXT1 / 24-bit bodies decode
+/// fully opaque. So a hint-less non-Opaque mesh blends (mane #2507, zodiac creatures #2435) and a
+/// DXT1 body (incl. the #2507 overloaded-<c>_d</c> trap, which decodes Opaque) stays opaque. This
+/// is blend, not discard: a near-opaque body blends to ~itself, so no holes are punched.</para>
 /// </summary>
 public static class MeshTransparency
 {
@@ -95,9 +99,17 @@ public static class MeshTransparency
         if (alpha < OpaqueAlphaCutoff)
             return MaterialMode.Transparent;
 
-        // No hint => never consult the texture alpha (it may be an overloaded _d/spec channel).
+        // No MDL hint: follow the real Aurora engine (xoreos modelnode.cpp:505 — behavioral
+        // reference only, GPLv3, not copied), which blends a hint-less mesh iff its texture has an
+        // alpha channel: isTransparent = hasAlpha. Our production decoder (TextureService) yields a
+        // non-Opaque profile exactly when the texture FORMAT carries alpha (DXT5 / 32-bit TGA);
+        // a DXT1/24-bit body decodes fully opaque -> Opaque profile. So "profile != Opaque" is our
+        // hasAlpha. This blends the dire-tiger mane (#2507) and the zodiac/celestial creatures
+        // (#2435), matching Aurora, while DXT1 bodies (incl. the #2507 _d-spec trap) stay opaque.
+        // Blend (not discard): a near-opaque body (alpha~1) blends to ~itself, so the ~145 DXT5
+        // animal bodies that classify non-Opaque render visually opaque with no holes.
         if (transparencyHint <= 0)
-            return MaterialMode.Opaque;
+            return profile == AlphaProfile.Opaque ? MaterialMode.Opaque : MaterialMode.Transparent;
 
         // Hint set: the alpha channel is real; its profile decides cutout vs blend.
         return profile switch
