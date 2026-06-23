@@ -291,6 +291,13 @@ public class ImageService : IImageService
 
     private ImageData? DecodeDds(byte[] data)
     {
+        // NWN:EE creature textures use BioWare's DDS variant (no "DDS " magic). Pfim only
+        // decodes standard Microsoft DDS, so route BioWare DDS to the dedicated decoder —
+        // otherwise these high-res textures fail and the preview falls back to a low-res TGA
+        // (#1765). Standard Microsoft DDS still goes through Pfim.
+        if (Dds.BiowareDdsReader.IsBiowareDds(data))
+            return Dds.BiowareDdsReader.Read(data);
+
         return DecodePfim(data);
     }
 
