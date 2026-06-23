@@ -67,6 +67,24 @@ public class TextureServicePrecedenceTests
     }
 
     [Fact]
+    public void LoadTexturePreferBIFWithKind_TgaAndDdsBothInBase_PrefersHigherResolutionDds()
+    {
+        // This is the path the creature preview actually uses for base-game creatures
+        // (_preferBifTextures). It had the same TGA-before-DDS bug as LoadTextureWithKind,
+        // so Drow Matron / Duergar Chief stayed blurry even after the first fix (#1765).
+        var mock = new MockGameDataService(includeSampleData: false);
+        mock.SetResource("c_test", ResourceTypes.Tga, BuildTga(8, 8));
+        mock.SetResource("c_test", ResourceTypes.Dds, BuildBiowareDxt1(64, 64));
+        var tex = new TextureService(mock);
+
+        var result = tex.LoadTexturePreferBIFWithKind("c_test");
+
+        Assert.NotNull(result);
+        Assert.Equal(64, result!.Value.width);
+        Assert.Equal(64, result.Value.height);
+    }
+
+    [Fact]
     public void LoadTextureWithKind_TgaLargerThanDds_KeepsTga()
     {
         // Defensive: if the TGA is actually the higher-res asset, it must win.
