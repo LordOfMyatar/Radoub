@@ -104,6 +104,16 @@ public class BiowareDdsReaderTests
     }
 
     [Fact]
+    public void Read_AbsurdDimensions_ReturnsNullWithoutAllocating()
+    {
+        // Corrupt/hostile header claims an enormous size; must be rejected before allocation.
+        var data = Header(0x10000, 0x10000, 4); // 65536 x 65536
+        // no pixel data — the dimension cap must trip before the truncation check even matters
+
+        Assert.Null(BiowareDdsReader.Read(data));
+    }
+
+    [Fact]
     public void Read_TruncatedPixelData_ReturnsNull()
     {
         // Header claims 4x4 DXT1 (needs 8 bytes) but provides only 2.

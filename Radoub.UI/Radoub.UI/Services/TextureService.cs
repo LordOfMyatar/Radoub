@@ -421,7 +421,8 @@ public class TextureService
         {
             long tgaArea = (long)tgaResult.Value.width * tgaResult.Value.height;
             long ddsArea = (long)ddsResult.Value.width * ddsResult.Value.height;
-            var best = ddsArea >= tgaArea ? ddsResult.Value : tgaResult.Value;
+            // Strictly-greater (see BestOfTgaDds): keep the TGA on a size tie.
+            var best = ddsArea > tgaArea ? ddsResult.Value : tgaResult.Value;
             return (best.width, best.height, best.pixels, false);
         }
 
@@ -761,7 +762,10 @@ public class TextureService
         {
             long tgaArea = (long)tga.Value.width * tga.Value.height;
             long ddsArea = (long)dds.Value.width * dds.Value.height;
-            return ddsArea >= tgaArea ? dds : tga;
+            // Strictly-greater: only switch to the DDS when it is genuinely higher-res. On a tie,
+            // keep the TGA — that preserves the historical first-hit result (and its alpha channel /
+            // orientation) for same-size pairs where there is no sharpness benefit to switching.
+            return ddsArea > tgaArea ? dds : tga;
         }
 
         return tga ?? dds;

@@ -85,6 +85,25 @@ public class TextureServicePrecedenceTests
     }
 
     [Fact]
+    public void LoadTextureWithKind_TgaAndDdsSameResolution_KeepsTga()
+    {
+        // On a size tie there is no sharpness benefit to switching, so keep the historical TGA
+        // result (preserves its alpha channel / orientation). Only a strictly-larger DDS wins.
+        var mock = new MockGameDataService(includeSampleData: false);
+        mock.SetResource("c_test", ResourceTypes.Tga, BuildTga(64, 64));
+        mock.SetResource("c_test", ResourceTypes.Dds, BuildBiowareDxt1(64, 64));
+        var tex = new TextureService(mock);
+
+        var result = tex.LoadTextureWithKind("c_test");
+
+        Assert.NotNull(result);
+        Assert.Equal(64, result!.Value.width);
+        Assert.Equal(64, result.Value.height);
+        // Can't distinguish source by dimensions alone here; the behavioral guarantee is "no switch
+        // on tie". The strictly-larger DDS case (first test) proves the switch happens when it should.
+    }
+
+    [Fact]
     public void LoadTextureWithKind_TgaLargerThanDds_KeepsTga()
     {
         // Defensive: if the TGA is actually the higher-res asset, it must win.

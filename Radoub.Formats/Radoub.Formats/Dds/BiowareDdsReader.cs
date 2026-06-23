@@ -21,6 +21,9 @@ public static class BiowareDdsReader
 
     private const int HeaderSize = 20;
 
+    /// <summary>Largest texture dimension we will allocate for (guards corrupt/hostile headers).</summary>
+    private const uint MaxDimension = 4096;
+
     /// <summary>
     /// True if the buffer looks like a BioWare DDS (i.e. NOT a standard Microsoft DDS).
     /// Used to route between this decoder and Pfim.
@@ -51,6 +54,10 @@ public static class BiowareDdsReader
         if (colors != 3 && colors != 4)
             return null;
         if (width == 0 || height == 0)
+            return null;
+        // Reject absurd dimensions from a corrupt/hostile header before allocating, matching the
+        // 4096 cap on the parallel ConvertBiowareDdsToStandard path. NWN textures are <= 2048.
+        if (width > MaxDimension || height > MaxDimension)
             return null;
 
         int blockPitch = ((int)width + 3) >> 2;
