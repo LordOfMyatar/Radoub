@@ -410,50 +410,77 @@ public class TextureService
             }
         }
 
-        // Try TGA
-        var tgaData = _gameDataService.FindBaseResource(resRef, ResourceTypes.Tga);
-        if (tgaData != null && tgaData.Length > 0)
+        // #1765: like LoadTextureWithKind, prefer the higher-resolution of the base-game TGA vs
+        // DDS instead of returning TGA just because it is tried first. NWN:EE ships a high-res
+        // (BioWare) DDS alongside the legacy low-res TGA under the same resref; TGA-first made
+        // base-game creatures (Drow Matron, Duergar Chief) render blurry. PLT still wins above.
+        var tgaResult = DecodeBaseTga(resRef);
+        var ddsResult = DecodeBaseDds(resRef);
+
+        if (tgaResult.HasValue && ddsResult.HasValue)
         {
-            try
-            {
-                var tgaImage = TgaReader.Read(tgaData);
-                FlipVertically(tgaImage.Pixels, tgaImage.Width, tgaImage.Height);
-                return (tgaImage.Width, tgaImage.Height, tgaImage.Pixels, false);
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"TextureService.LoadTextureFromBase: TGA '{resRef}' decode failed: {ex.Message}");
-            }
+            long tgaArea = (long)tgaResult.Value.width * tgaResult.Value.height;
+            long ddsArea = (long)ddsResult.Value.width * ddsResult.Value.height;
+            // Strictly-greater (see BestOfTgaDds): keep the TGA on a size tie.
+            var best = ddsArea > tgaArea ? ddsResult.Value : tgaResult.Value;
+            return (best.width, best.height, best.pixels, false);
         }
 
-        // Try DDS
-        var ddsData = _gameDataService.FindBaseResource(resRef, ResourceTypes.Dds);
-        if (ddsData != null && ddsData.Length > 0)
-        {
-            bool isBiowareDds = ddsData.Length >= 20 &&
-                !(ddsData[0] == 0x44 && ddsData[1] == 0x44 && ddsData[2] == 0x53 && ddsData[3] == 0x20);
-            byte[]? decodableData = isBiowareDds ? ConvertBiowareDdsToStandard(ddsData) : ddsData;
-            if (decodableData != null)
-            {
-                try
-                {
-                    using var stream = new MemoryStream(decodableData);
-                    using var image = Pfimage.FromStream(stream);
-                    byte[] rgbaPixels = ConvertPfimToRgba(image);
-                    if (isBiowareDds)
-                        SwapRedBlue(rgbaPixels);
-                    return (image.Width, image.Height, rgbaPixels, false);
-                }
-                catch (Exception ex)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                        $"TextureService.LoadTextureFromBase: DDS '{resRef}' decode failed: {ex.Message}");
-                }
-            }
-        }
+        if (tgaResult.HasValue)
+            return (tgaResult.Value.width, tgaResult.Value.height, tgaResult.Value.pixels, false);
+        if (ddsResult.HasValue)
+            return (ddsResult.Value.width, ddsResult.Value.height, ddsResult.Value.pixels, false);
 
         return null;
+    }
+
+    /// <summary>Decode a base-game (Override→BIF) TGA to OpenGL-oriented RGBA, or null.</summary>
+    private (int width, int height, byte[] pixels)? DecodeBaseTga(string resRef)
+    {
+        var tgaData = _gameDataService.FindBaseResource(resRef, ResourceTypes.Tga);
+        if (tgaData == null || tgaData.Length == 0)
+            return null;
+        try
+        {
+            var tgaImage = TgaReader.Read(tgaData);
+            FlipVertically(tgaImage.Pixels, tgaImage.Width, tgaImage.Height);
+            return (tgaImage.Width, tgaImage.Height, tgaImage.Pixels);
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"TextureService.LoadTextureFromBase: TGA '{resRef}' decode failed: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>Decode a base-game (Override→BIF) DDS (standard or BioWare) to RGBA, or null.</summary>
+    private (int width, int height, byte[] pixels)? DecodeBaseDds(string resRef)
+    {
+        var ddsData = _gameDataService.FindBaseResource(resRef, ResourceTypes.Dds);
+        if (ddsData == null || ddsData.Length == 0)
+            return null;
+
+        bool isBiowareDds = ddsData.Length >= 20 &&
+            !(ddsData[0] == 0x44 && ddsData[1] == 0x44 && ddsData[2] == 0x53 && ddsData[3] == 0x20);
+        byte[]? decodableData = isBiowareDds ? ConvertBiowareDdsToStandard(ddsData) : ddsData;
+        if (decodableData == null)
+            return null;
+        try
+        {
+            using var stream = new MemoryStream(decodableData);
+            using var image = Pfimage.FromStream(stream);
+            byte[] rgbaPixels = ConvertPfimToRgba(image);
+            if (isBiowareDds)
+                SwapRedBlue(rgbaPixels);
+            return (image.Width, image.Height, rgbaPixels);
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"TextureService.LoadTextureFromBase: DDS '{resRef}' decode failed: {ex.Message}");
+            return null;
+        }
     }
 
     /// <summary>Set of PLT ResRefs whose layer histogram has already been logged.</summary>
@@ -677,18 +704,17 @@ public class TextureService
 
         colorIndices ??= new PltColorIndices();
 
-        // Try PLT first, then TGA, then DDS (matches Aurora Engine resolution order)
+        // PLT first (palette-colored creature skin — must win over any TGA/DDS of the same name).
         var pltResult = RenderPltTexture(resRef, colorIndices);
         if (pltResult.HasValue)
             return (pltResult.Value.width, pltResult.Value.height, pltResult.Value.pixels, true);
 
-        var tgaResult = LoadTgaTexture(resRef);
-        if (tgaResult.HasValue)
-            return (tgaResult.Value.width, tgaResult.Value.height, tgaResult.Value.pixels, false);
-
-        var ddsResult = LoadDdsTexture(resRef);
-        if (ddsResult.HasValue)
-            return (ddsResult.Value.width, ddsResult.Value.height, ddsResult.Value.pixels, false);
+        // #1765: NWN:EE ships a high-res (BioWare) DDS alongside the legacy low-res TGA under the
+        // same resref. The old TGA-first, return-on-first-hit order returned the low-res TGA and
+        // made creatures look blurry. Prefer whichever decodes to the higher resolution.
+        var best = BestOfTgaDds(resRef);
+        if (best.HasValue)
+            return (best.Value.width, best.Value.height, best.Value.pixels, false);
 
         // #1755: NWN:EE PBR materials store the diffuse map as <name>_d (with _n/_r/_i
         // companions). MDL meshes reference the bare <name>; when that misses, try the
@@ -696,13 +722,9 @@ public class TextureService
         var pbrName = PbrDiffuseFallbackName(resRef);
         if (pbrName != null)
         {
-            var pbrTga = LoadTgaTexture(pbrName);
-            if (pbrTga.HasValue)
-                return (pbrTga.Value.width, pbrTga.Value.height, pbrTga.Value.pixels, false);
-
-            var pbrDds = LoadDdsTexture(pbrName);
-            if (pbrDds.HasValue)
-                return (pbrDds.Value.width, pbrDds.Value.height, pbrDds.Value.pixels, false);
+            var pbrBest = BestOfTgaDds(pbrName);
+            if (pbrBest.HasValue)
+                return (pbrBest.Value.width, pbrBest.Value.height, pbrBest.Value.pixels, false);
         }
 
         // If race-specific texture not found, try human fallback
@@ -718,17 +740,35 @@ public class TextureService
                 if (pltResult.HasValue)
                     return (pltResult.Value.width, pltResult.Value.height, pltResult.Value.pixels, true);
 
-                tgaResult = LoadTgaTexture(humanResRef);
-                if (tgaResult.HasValue)
-                    return (tgaResult.Value.width, tgaResult.Value.height, tgaResult.Value.pixels, false);
-
-                ddsResult = LoadDdsTexture(humanResRef);
-                if (ddsResult.HasValue)
-                    return (ddsResult.Value.width, ddsResult.Value.height, ddsResult.Value.pixels, false);
+                var humanBest = BestOfTgaDds(humanResRef);
+                if (humanBest.HasValue)
+                    return (humanBest.Value.width, humanBest.Value.height, humanBest.Value.pixels, false);
             }
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Resolve a non-PLT texture, preferring the higher-resolution candidate when both a TGA and
+    /// a DDS exist for the same resref (#1765). Returns null if neither decodes.
+    /// </summary>
+    private (int width, int height, byte[] pixels)? BestOfTgaDds(string resRef)
+    {
+        var tga = LoadTgaTexture(resRef);
+        var dds = LoadDdsTexture(resRef);
+
+        if (tga.HasValue && dds.HasValue)
+        {
+            long tgaArea = (long)tga.Value.width * tga.Value.height;
+            long ddsArea = (long)dds.Value.width * dds.Value.height;
+            // Strictly-greater: only switch to the DDS when it is genuinely higher-res. On a tie,
+            // keep the TGA — that preserves the historical first-hit result (and its alpha channel /
+            // orientation) for same-size pairs where there is no sharpness benefit to switching.
+            return ddsArea > tgaArea ? dds : tga;
+        }
+
+        return tga ?? dds;
     }
 
     /// <summary>
