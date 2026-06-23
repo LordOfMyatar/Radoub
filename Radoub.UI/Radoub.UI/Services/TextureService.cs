@@ -677,18 +677,17 @@ public class TextureService
 
         colorIndices ??= new PltColorIndices();
 
-        // Try PLT first, then TGA, then DDS (matches Aurora Engine resolution order)
+        // PLT first (palette-colored creature skin — must win over any TGA/DDS of the same name).
         var pltResult = RenderPltTexture(resRef, colorIndices);
         if (pltResult.HasValue)
             return (pltResult.Value.width, pltResult.Value.height, pltResult.Value.pixels, true);
 
-        var tgaResult = LoadTgaTexture(resRef);
-        if (tgaResult.HasValue)
-            return (tgaResult.Value.width, tgaResult.Value.height, tgaResult.Value.pixels, false);
-
-        var ddsResult = LoadDdsTexture(resRef);
-        if (ddsResult.HasValue)
-            return (ddsResult.Value.width, ddsResult.Value.height, ddsResult.Value.pixels, false);
+        // #1765: NWN:EE ships a high-res (BioWare) DDS alongside the legacy low-res TGA under the
+        // same resref. The old TGA-first, return-on-first-hit order returned the low-res TGA and
+        // made creatures look blurry. Prefer whichever decodes to the higher resolution.
+        var best = BestOfTgaDds(resRef);
+        if (best.HasValue)
+            return (best.Value.width, best.Value.height, best.Value.pixels, false);
 
         // #1755: NWN:EE PBR materials store the diffuse map as <name>_d (with _n/_r/_i
         // companions). MDL meshes reference the bare <name>; when that misses, try the
@@ -696,13 +695,9 @@ public class TextureService
         var pbrName = PbrDiffuseFallbackName(resRef);
         if (pbrName != null)
         {
-            var pbrTga = LoadTgaTexture(pbrName);
-            if (pbrTga.HasValue)
-                return (pbrTga.Value.width, pbrTga.Value.height, pbrTga.Value.pixels, false);
-
-            var pbrDds = LoadDdsTexture(pbrName);
-            if (pbrDds.HasValue)
-                return (pbrDds.Value.width, pbrDds.Value.height, pbrDds.Value.pixels, false);
+            var pbrBest = BestOfTgaDds(pbrName);
+            if (pbrBest.HasValue)
+                return (pbrBest.Value.width, pbrBest.Value.height, pbrBest.Value.pixels, false);
         }
 
         // If race-specific texture not found, try human fallback
@@ -718,17 +713,32 @@ public class TextureService
                 if (pltResult.HasValue)
                     return (pltResult.Value.width, pltResult.Value.height, pltResult.Value.pixels, true);
 
-                tgaResult = LoadTgaTexture(humanResRef);
-                if (tgaResult.HasValue)
-                    return (tgaResult.Value.width, tgaResult.Value.height, tgaResult.Value.pixels, false);
-
-                ddsResult = LoadDdsTexture(humanResRef);
-                if (ddsResult.HasValue)
-                    return (ddsResult.Value.width, ddsResult.Value.height, ddsResult.Value.pixels, false);
+                var humanBest = BestOfTgaDds(humanResRef);
+                if (humanBest.HasValue)
+                    return (humanBest.Value.width, humanBest.Value.height, humanBest.Value.pixels, false);
             }
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Resolve a non-PLT texture, preferring the higher-resolution candidate when both a TGA and
+    /// a DDS exist for the same resref (#1765). Returns null if neither decodes.
+    /// </summary>
+    private (int width, int height, byte[] pixels)? BestOfTgaDds(string resRef)
+    {
+        var tga = LoadTgaTexture(resRef);
+        var dds = LoadDdsTexture(resRef);
+
+        if (tga.HasValue && dds.HasValue)
+        {
+            long tgaArea = (long)tga.Value.width * tga.Value.height;
+            long ddsArea = (long)dds.Value.width * dds.Value.height;
+            return ddsArea >= tgaArea ? dds : tga;
+        }
+
+        return tga ?? dds;
     }
 
     /// <summary>
