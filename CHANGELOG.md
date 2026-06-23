@@ -11,9 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Radoub.UI 0.2.29-alpha] - 2026-06-22
 **Branch**: `quartermaster/issue-2540-cutout` | **PR**: #2586
 
-### Epic: Mesh transparency — hint-less cutout for CEP creature meshes (#2540)
+### Epic: Mesh transparency — hint-less alpha for creature meshes (#2540)
 
-- Model-preview meshes with no MDL transparency hint now read their cutout silhouette from the texture's own alpha when it is a genuine 0/255 mask — carving alpha-cutout geometry like the CEP dire-tiger mane (#2507) instead of rendering it as an opaque shell. Opaque and graded bodies are untouched. Shared `Radoub.UI` change (Quartermaster, Relique, Reliquary previews).
+- Model-preview meshes with no MDL transparency hint now derive transparency from the texture itself, matching the Aurora engine: a hard 0/1 alpha mask (fur/mane) is alpha-tested as a cutout, a graded alpha (celestial/zodiac creatures, #2435) is alpha-blended, and a PLT skin is always opaque (its alpha is a palette-layer index, not transparency — keeps humanoid heads/bodies solid). Carves the CEP dire-tiger mane (#2507) and renders the zodiac creatures translucent. Shared `Radoub.UI` change (Quartermaster, Relique, Reliquary previews). Known remainder: a body skin that shares a cutout texture can show black patches (#2588).
 
 ---
 
