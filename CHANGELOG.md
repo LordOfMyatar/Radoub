@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Radoub.Formats 0.2.77-alpha / Radoub.UI 0.2.28-alpha] - 2026-06-22
-**Branch**: `radoub/issue-1765` | **PR**: #TBD
+**Branch**: `radoub/issue-1765` | **PR**: #2585
 
 ### Fix: BioWare-DDS decode for high-res EE creature textures (#1765)
 
