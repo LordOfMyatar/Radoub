@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.29-alpha] - 2026-06-22
+**Branch**: `quartermaster/issue-2540-cutout` | **PR**: #TBD
+
+### Epic: Mesh transparency — hint-less cutout for CEP creature meshes (#2540)
+
+- Model-preview meshes with no MDL transparency hint now read their cutout silhouette from the texture's own alpha when it is a genuine 0/255 mask — carving alpha-cutout geometry like the CEP dire-tiger mane (#2507) instead of rendering it as an opaque shell. Opaque and graded bodies are untouched. Shared `Radoub.UI` change (Quartermaster, Relique, Reliquary previews).
+
+---
+
 ## [Radoub.Formats 0.2.77-alpha / Radoub.UI 0.2.28-alpha] - 2026-06-22
 **Branch**: `radoub/issue-1765` | **PR**: #2585
 

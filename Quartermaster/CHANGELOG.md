@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.132-alpha] - 2026-06-22
+**Branch**: `quartermaster/issue-2540-cutout` | **PR**: #TBD
+
+### Epic: Mesh transparency — cutout for the dire-tiger mane (#2540)
+
+- Alpha-cutout meshes (e.g. the CEP dire-tiger mane, #2507) now carve their silhouette from the texture's 0/255 alpha mask instead of rendering as an opaque shell, even when the MDL carries no transparency hint. Shared-library change — see root CHANGELOG (`Radoub.UI 0.2.29-alpha`).
+
+---
+
 ## [0.2.131-alpha] - 2026-06-22
 **Branch**: `quartermaster/issue-2582` | **PR**: #2583
 
