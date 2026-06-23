@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.132-alpha] - 2026-06-22
-**Branch**: `quartermaster/issue-2540-cutout` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2540-cutout` | **PR**: #2586
 
 ### Epic: Mesh transparency — cutout for the dire-tiger mane (#2540)
 
