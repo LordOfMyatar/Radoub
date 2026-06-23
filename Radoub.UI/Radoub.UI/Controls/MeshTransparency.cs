@@ -109,7 +109,18 @@ public static class MeshTransparency
         // Blend (not discard): a near-opaque body (alpha~1) blends to ~itself, so the ~145 DXT5
         // animal bodies that classify non-Opaque render visually opaque with no holes.
         if (transparencyHint <= 0)
-            return profile == AlphaProfile.Opaque ? MaterialMode.Opaque : MaterialMode.Transparent;
+            return profile switch
+            {
+                // Binary 0/1 mask (fur/mane cards like the dire tiger's shared body+mane texture):
+                // alpha-TEST with depth write, NOT order-dependent blend. The engine's default for
+                // alpha-bearing meshes is alpha-test (xoreos keeps GL_ALPHA_TEST on); routing these
+                // through the depth-mask-off blend pass makes the many overlapping mane/body layers
+                // sort-fight into black triangular shards. Cutout is order-independent -> clean.
+                AlphaProfile.Binary => MaterialMode.Cutout,
+                // Genuinely graded alpha (the zodiac/celestial creatures, #2435): a real soft blend.
+                AlphaProfile.Graded => MaterialMode.Transparent,
+                _ => MaterialMode.Opaque,
+            };
 
         // Hint set: the alpha channel is real; its profile decides cutout vs blend.
         return profile switch

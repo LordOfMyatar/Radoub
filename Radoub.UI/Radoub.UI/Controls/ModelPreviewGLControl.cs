@@ -90,9 +90,19 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
         public Vector3 Centroid;
     }
 
-    // Discard cutoff for Cutout meshes (#2540). 0.5 matches rollnw's default; mid-grey alpha
-    // splits cleanly into kept/discarded for a hard silhouette.
-    private const float CutoutAlphaThreshold = 0.5f;
+    // Discard cutoff for Cutout meshes (#2540). The real engine alpha-tests at GL_GREATER 0.1
+    // (xoreos modelnode.cpp:440, behavioral ref only — GPLv3, not copied), keeping the soft fur
+    // tips of a mane/fur card instead of carving them away. 0.5 (rollnw's hard-silhouette default)
+    // discarded the wispy upper-mane fragments and left black triangular voids behind them; 0.1
+    // keeps the wisps, matching the in-game dire-tiger mane.
+    private const float CutoutAlphaThreshold = 0.1f;
+
+    // Alpha-test floor applied to Transparent meshes during the blend pass (#2540). The engine
+    // keeps GL_ALPHA_TEST on at GL_GREATER 0.1 while blending (xoreos modelnode.cpp:440/770,
+    // behavioral ref only — GPLv3, not copied), so near-zero-alpha fur/mane texels are discarded
+    // before they write colour or sort as ghost layers. This removes the zod-rat emitter
+    // show-through and the dire-tiger mane gaps while still blending the soft fur edges.
+    private const float TransparentAlphaFloor = 0.1f;
 
     private MdlModel? _model;
     private TextureService? _textureService;
@@ -1212,6 +1222,7 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
 
             _shaderManager!.SetUniformInt("meshMode", (int)mode);
             _shaderManager!.SetUniformFloat("alphaThreshold", CutoutAlphaThreshold);
+            _shaderManager!.SetUniformFloat("transparentAlphaFloor", TransparentAlphaFloor);
             _shaderManager!.SetUniformFloat("meshAlpha", drawCall.MeshAlpha);
 
             if (hasTexture)
@@ -1234,15 +1245,20 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             }
         }
 
-        // Pass 1: opaque + cutout meshes (depth write on, no blend). Defer Transparent meshes
-        // to a sorted blend pass so they composite correctly back-to-front (#2540).
+        // Pass 1: opaque + cutout meshes, depth write ON. Blend is enabled so cutout meshes
+        // (#2540) composite their kept soft fur tips by alpha instead of drawing them as opaque
+        // dark texels (the black mane spots) — depth write stays on so overlapping mane cards are
+        // order-independent and do not sort-fight into shards. Opaque meshes output alpha 1.0, so
+        // blending is a visual no-op for them. Transparent meshes defer to the sorted pass 2.
+        _gl.Enable(EnableCap.Blend);
+        _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
         var transparentCalls = new List<MeshDrawCall>();
         foreach (var drawCall in _meshDrawCalls)
         {
             if (drawCall.IndexCount == 0) continue;
 
             // Route Transparent meshes to pass 2 without drawing them here — pass 1 must not
-            // draw blended geometry (it would write depth and occlude other transparent layers).
+            // draw depth-mask-off blended geometry (it would occlude other transparent layers).
             if (ResolveDrawCall(drawCall).mode == MaterialMode.Transparent)
             {
                 transparentCalls.Add(drawCall);
@@ -1250,6 +1266,7 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             }
             DrawMesh(drawCall);
         }
+        _gl.Disable(EnableCap.Blend);
 
         // Pass 2: transparent meshes, sorted back-to-front, alpha-blended, depth writes off so
         // overlapping translucent layers don't cull each other. Depth TEST stays on so opaque
