@@ -68,6 +68,9 @@ uniform vec3 flatColor;
 uniform int meshMode;
 uniform float alphaThreshold;
 uniform float meshAlpha;
+// Alpha-test floor for Transparent meshes (#2540): fragments at/below this are discarded before
+// blending, matching the engine's GL_ALPHA_TEST staying on during the transparent pass.
+uniform float transparentAlphaFloor;
 
 // Debug visualisation modes (#2026 investigation):
 //   0 = normal rendering
@@ -146,6 +149,16 @@ void main()
         discard;
     }
 
+    // Transparent (#2540): the real engine renders blended meshes with GL_ALPHA_TEST still
+    // enabled (xoreos modelnode.cpp:770, glAlphaFunc GL_GREATER 0.1 — behavioral ref only,
+    // GPLv3, not copied). Discarding the near-zero-alpha fragments before the blend stops fully
+    // transparent fur/mane texels from writing colour, sorting as ghost layers, or letting
+    // geometry behind a translucent body bleed through (the zod-rat emitter show-through and the
+    // dire-tiger mane gaps). Soft edges (alpha above the floor) still blend.
+    if (meshMode == 2 && (texAlpha * meshAlpha) < transparentAlphaFloor) {
+        discard;
+    }
+
     vec3 result = (ambient + diffuse) * baseColor;
 
     // Gamma correction: NWN textures are sRGB; a mild midtone lift matches the
@@ -153,10 +166,13 @@ void main()
     // PBR _d diffuse maps); 1/1.1 keeps only a slight lift without bleaching (#1762).
     result = pow(result, vec3(1.0 / 1.1));
 
-    // Output alpha (#2540): opaque/cutout write 1.0 (cutout already discarded its holes);
-    // transparent (mode 2) writes the texel alpha scaled by the mesh Alpha controller so the
-    // blend pass (Sprint 4) gets the right coverage.
-    float outAlpha = (meshMode == 2) ? (texAlpha * meshAlpha) : 1.0;
+    // Output alpha (#2540): Opaque (mode 0) writes 1.0. Cutout (mode 1) and Transparent (mode 2)
+    // both write the texel alpha (× mesh Alpha controller). The cutout pass blends with depth-write
+    // ON: discarding below the floor removes the void, while letting the kept soft fur tips
+    // composite by their real alpha stops them rendering as opaque dark texels (the black mane
+    // spots). Depth-write on keeps it order-independent so overlapping mane cards do not sort-fight
+    // into shards — this is the engine's alpha-test + alpha-blend combination.
+    float outAlpha = (meshMode == 0) ? 1.0 : (texAlpha * meshAlpha);
     FragColor = vec4(result, outAlpha);
 }
 ";

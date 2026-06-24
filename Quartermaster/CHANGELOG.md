@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.132-alpha] - 2026-06-22
+**Branch**: `quartermaster/issue-2540-cutout` | **PR**: #2586
+
+### Epic: Mesh transparency — hint-less alpha for creature meshes (#2540)
+
+- Hint-less creature meshes derive transparency from the texture, matching the engine: fur/mane masks carve as cutouts (dire-tiger mane #2507), celestial/zodiac creatures blend (#2435), and PLT skin stays opaque (humanoid heads/bodies unaffected). Shared-library change — see root CHANGELOG (`Radoub.UI 0.2.29-alpha`). Known remainder: shared body+mane texture can patch the body (#2588).
+
+---
+
 ## [0.2.131-alpha] - 2026-06-22
 **Branch**: `quartermaster/issue-2582` | **PR**: #2583
 

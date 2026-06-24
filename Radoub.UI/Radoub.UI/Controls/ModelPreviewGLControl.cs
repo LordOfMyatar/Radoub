@@ -90,9 +90,19 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
         public Vector3 Centroid;
     }
 
-    // Discard cutoff for Cutout meshes (#2540). 0.5 matches rollnw's default; mid-grey alpha
-    // splits cleanly into kept/discarded for a hard silhouette.
-    private const float CutoutAlphaThreshold = 0.5f;
+    // Discard cutoff for Cutout meshes (#2540). The real engine alpha-tests at GL_GREATER 0.1
+    // (xoreos modelnode.cpp:440, behavioral ref only — GPLv3, not copied), keeping the soft fur
+    // tips of a mane/fur card instead of carving them away. 0.5 (rollnw's hard-silhouette default)
+    // discarded the wispy upper-mane fragments and left black triangular voids behind them; 0.1
+    // keeps the wisps, matching the in-game dire-tiger mane.
+    private const float CutoutAlphaThreshold = 0.1f;
+
+    // Alpha-test floor applied to Transparent meshes during the blend pass (#2540). The engine
+    // keeps GL_ALPHA_TEST on at GL_GREATER 0.1 while blending (xoreos modelnode.cpp:440/770,
+    // behavioral ref only — GPLv3, not copied), so near-zero-alpha fur/mane texels are discarded
+    // before they write colour or sort as ghost layers. This removes the zod-rat emitter
+    // show-through and the dire-tiger mane gaps while still blending the soft fur edges.
+    private const float TransparentAlphaFloor = 0.1f;
 
     private MdlModel? _model;
     private TextureService? _textureService;
@@ -1061,7 +1071,7 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
         _gl.ClearColor(0.2f, 0.2f, 0.3f, 1.0f);
         _gl.Clear((uint)(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit));
         _gl.Enable(EnableCap.DepthTest);
-        _gl.DepthFunc(DepthFunction.Less);  // Ensure proper depth comparison
+        _gl.DepthFunc(DepthFunction.Less);  // Opaque geometry: strict Less avoids coplanar z-fighting.
         _gl.Viewport(0, 0, (uint)width, (uint)height);
 
         // Check for any GL errors after basic setup
@@ -1212,6 +1222,7 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
 
             _shaderManager!.SetUniformInt("meshMode", (int)mode);
             _shaderManager!.SetUniformFloat("alphaThreshold", CutoutAlphaThreshold);
+            _shaderManager!.SetUniformFloat("transparentAlphaFloor", TransparentAlphaFloor);
             _shaderManager!.SetUniformFloat("meshAlpha", drawCall.MeshAlpha);
 
             if (hasTexture)
@@ -1234,21 +1245,35 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             }
         }
 
-        // Pass 1: opaque + cutout meshes (depth write on, no blend). Defer Transparent meshes
-        // to a sorted blend pass so they composite correctly back-to-front (#2540).
+        // Pass 1a: opaque meshes only, depth write ON, depth func Less (set above), no blend.
+        // Strict Less is required for normal opaque/part-composited geometry (e.g. armored
+        // humanoids) — LEQUAL there causes coplanar-face z-fighting. Cutout and Transparent meshes
+        // are deferred so they never run under the opaque depth-func.
+        var cutoutCalls = new List<MeshDrawCall>();
         var transparentCalls = new List<MeshDrawCall>();
         foreach (var drawCall in _meshDrawCalls)
         {
             if (drawCall.IndexCount == 0) continue;
-
-            // Route Transparent meshes to pass 2 without drawing them here — pass 1 must not
-            // draw blended geometry (it would write depth and occlude other transparent layers).
-            if (ResolveDrawCall(drawCall).mode == MaterialMode.Transparent)
-            {
-                transparentCalls.Add(drawCall);
-                continue;
-            }
+            var mode = ResolveDrawCall(drawCall).mode;
+            if (mode == MaterialMode.Transparent) { transparentCalls.Add(drawCall); continue; }
+            if (mode == MaterialMode.Cutout) { cutoutCalls.Add(drawCall); continue; }
             DrawMesh(drawCall);
+        }
+
+        // Pass 1b: cutout meshes (#2540), depth write ON + blend + depth func LEQUAL. LEQUAL is
+        // scoped to ONLY these fur/mane cards: it lets equal-depth fragments of overlapping cards
+        // both draw so the layered mane fills without dark gaps, while the kept soft tips composite
+        // by alpha (no black opaque texels). Depth write on keeps it order-independent (no shards).
+        // Restored to Less after so it cannot leak into the transparent pass or the next frame.
+        if (cutoutCalls.Count > 0)
+        {
+            _gl.DepthFunc(DepthFunction.Lequal);
+            _gl.Enable(EnableCap.Blend);
+            _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            foreach (var drawCall in cutoutCalls)
+                DrawMesh(drawCall);
+            _gl.Disable(EnableCap.Blend);
+            _gl.DepthFunc(DepthFunction.Less);
         }
 
         // Pass 2: transparent meshes, sorted back-to-front, alpha-blended, depth writes off so
@@ -1812,7 +1837,14 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                 if (texId != 0)
                 {
                     _textureCache[texName] = texId;
-                    _textureAlphaProfile[texName] = MeshTransparency.AnalyzeAlphaProfile(pixels, width, height);
+                    // PLT skin (player/part-based heads, bodies) is opaque by definition (#2540): a
+                    // PLT's "alpha" byte is a palette-LAYER index (skin/hair/tattoo selector), NOT
+                    // transparency. The engine never treats it as transparent — and scanning the
+                    // rendered RGBA would mis-read those palette-derived alphas as a cutout/blend,
+                    // wrongly carving solid humanoid heads (the gnome-head regression). Force Opaque.
+                    _textureAlphaProfile[texName] = isPlt
+                        ? AlphaProfile.Opaque
+                        : MeshTransparency.AnalyzeAlphaProfile(pixels, width, height);
                     if (isPlt) _pltTextureNames.Add(texName);
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Loaded texture '{texName}' ({width}x{height}) -> texId={texId}, isPlt={isPlt}");
                 }
@@ -1842,7 +1874,11 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                     if (fallbackId != 0)
                     {
                         _textureCache[modelTexture] = fallbackId;
-                        _textureAlphaProfile[modelTexture] = MeshTransparency.AnalyzeAlphaProfile(px, w, h);
+                        // PLT skin alpha is a palette-layer index, never transparency (#2540) — force
+                        // Opaque so a PLT body/head is never carved or blended (see primary site above).
+                        _textureAlphaProfile[modelTexture] = isPlt
+                            ? AlphaProfile.Opaque
+                            : MeshTransparency.AnalyzeAlphaProfile(px, w, h);
                         if (isPlt) _pltTextureNames.Add(modelTexture);
                         UnifiedLogger.LogApplication(LogLevel.DEBUG,
                             $"  Loaded model fallback texture '{modelTexture}' ({w}x{h}) -> texId={fallbackId}, isPlt={isPlt}");

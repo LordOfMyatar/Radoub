@@ -82,14 +82,35 @@ public class MeshTransparencyTests
     }
 
     [Fact]
-    public void HintZero_NeverCutoutOrTransparent()
+    public void HintZero_BinaryProfile_IsCutout()
     {
-        // The #2507 trap: opaque _d body, alpha overloaded as spec. Hint == 0 => stay opaque
-        // even if the texture has a binary or graded alpha channel.
-        Assert.Equal(MaterialMode.Opaque,
+        // #2540: a hint-less mesh with a hard 0/1 alpha mask (fur/mane cards — e.g. the dire-tiger
+        // texture shared by the mane AND the body skin, #2507) is alpha-TESTED with depth write,
+        // not order-dependent blended. The engine's default for alpha-bearing meshes is alpha-test
+        // (xoreos keeps GL_ALPHA_TEST on; behavioral ref only, GPLv3, not copied). Routing the many
+        // overlapping mane/body layers through the depth-mask-off blend pass made them sort-fight
+        // into black triangular shards; Cutout is order-independent and renders clean.
+        Assert.Equal(MaterialMode.Cutout,
             MeshTransparency.ClassifyMesh(1.0f, 0, AlphaProfile.Binary));
-        Assert.Equal(MaterialMode.Opaque,
+    }
+
+    [Fact]
+    public void HintZero_GradedProfile_IsTransparent()
+    {
+        // Genuinely graded alpha with no hint (the zodiac/celestial creatures, #2435 — a real soft
+        // see-through body) blends. Distinct from the binary fur mask above.
+        Assert.Equal(MaterialMode.Transparent,
             MeshTransparency.ClassifyMesh(1.0f, 0, AlphaProfile.Graded));
+    }
+
+    [Fact]
+    public void HintZero_OpaqueTexture_IsOpaque()
+    {
+        // DXT1 / 24-bit body has no alpha channel -> Opaque profile -> stays opaque (e.g. the dire
+        // tiger's own DXT1 body texture c_cat_dire). The #2507 "punch holes in _d bodies" trap does
+        // not arise: an overloaded _d spec body decodes Opaque here, so it never blends or carves.
+        Assert.Equal(MaterialMode.Opaque,
+            MeshTransparency.ClassifyMesh(1.0f, 0, AlphaProfile.Opaque));
     }
 
     [Fact]
