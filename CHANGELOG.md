@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Radoub.UI 0.2.30-alpha] - 2026-06-24
-**Branch**: `radoub/issue-2557` | **PR**: #TBD
+**Branch**: `radoub/issue-2557` | **PR**: #2593
 
 ### Sprint: Tech-Debt — Large-File Splits & Shared-Control Extraction (#2557)
 
