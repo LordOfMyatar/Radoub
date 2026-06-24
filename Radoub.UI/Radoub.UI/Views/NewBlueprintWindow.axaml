@@ -3,8 +3,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="420" d:DesignHeight="280"
-        x:Class="MerchantEditor.Views.NewStoreWindow"
-        Title="New Store - Fence"
+        x:Class="Radoub.UI.Views.NewBlueprintWindow"
+        Title="New Blueprint"
         SizeToContent="Height"
         MinWidth="420" Width="420"
         WindowStartupLocation="CenterOwner"
@@ -13,7 +13,7 @@
     <Grid Margin="16" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
 
         <!-- Header -->
-        <TextBlock Grid.Row="0" Text="Create a new store"
+        <TextBlock Grid.Row="0" x:Name="HeaderText" Text="Create a new blueprint"
                    FontSize="{DynamicResource FontSizeLarge}" FontWeight="Bold"
                    Margin="0,0,0,12"/>
 
@@ -27,7 +27,7 @@
         <Grid Grid.Row="2" ColumnDefinitions="Auto,*" Margin="0,0,0,8">
             <TextBlock Grid.Column="0" Text="Name" VerticalAlignment="Center"
                        MinWidth="60" Margin="0,0,8,0"/>
-            <TextBox Grid.Column="1" x:Name="NameBox" Watermark="e.g. General Store"/>
+            <TextBox Grid.Column="1" x:Name="NameBox"/>
         </Grid>
 
         <!-- Tag -->
