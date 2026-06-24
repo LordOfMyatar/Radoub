@@ -4,6 +4,7 @@
              xmlns:local="using:DialogEditor"
              xmlns:models="using:DialogEditor.Models"
              xmlns:controls="using:DialogEditor.Controls"
+             xmlns:radoubControls="using:Radoub.UI.Controls"
              RequestedThemeVariant="Light">
              <!-- Light theme by default. Users can switch via View menu. -->
 
@@ -40,7 +41,7 @@
         </Style>
 
         <!-- SpellCheckTextBox inherits TextBox styling -->
-        <Style Selector="controls|SpellCheckTextBox">
+        <Style Selector="radoubControls|SpellCheckTextBox">
             <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
             <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
         </Style>

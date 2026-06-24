@@ -2,7 +2,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:controls="clr-namespace:Manifest.Controls"
         xmlns:uicontrols="clr-namespace:Radoub.UI.Controls;assembly=Radoub.UI"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
         x:Class="Manifest.Views.MainWindow"
@@ -137,7 +136,7 @@
                                 <!-- Name first (most important) - uses available width -->
                                 <Grid ColumnDefinitions="70,*">
                                     <TextBlock Text="Name:" VerticalAlignment="Center"/>
-                                    <controls:SpellCheckTextBox x:Name="CategoryNameBox" Grid.Column="1" MaxWidth="300"/>
+                                    <uicontrols:SpellCheckTextBox x:Name="CategoryNameBox" Grid.Column="1" MaxWidth="300"/>
                                 </Grid>
 
                                 <!-- Tag second -->
@@ -179,7 +178,7 @@
 
                                 <StackPanel Spacing="5">
                                     <TextBlock Text="Comment:"/>
-                                    <controls:SpellCheckTextBox x:Name="CategoryCommentBox" Height="60" AcceptsReturn="True" TextWrapping="Wrap"/>
+                                    <uicontrols:SpellCheckTextBox x:Name="CategoryCommentBox" Height="60" AcceptsReturn="True" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </StackPanel>
 
@@ -194,7 +193,7 @@
                                         <Button Grid.Column="1" Content="Token..." Click="OnInsertTokenClick"
                                                 ToolTip.Tip="Insert NWN token (Ctrl+T)" Padding="8,2"/>
                                     </Grid>
-                                    <controls:SpellCheckTextBox x:Name="EntryTextBox" Height="200" AcceptsReturn="True" TextWrapping="Wrap"
+                                    <uicontrols:SpellCheckTextBox x:Name="EntryTextBox" Height="200" AcceptsReturn="True" TextWrapping="Wrap"
                                              ScrollViewer.VerticalScrollBarVisibility="Auto"/>
                                     <!-- Token Preview -->
                                     <Expander x:Name="TokenPreviewExpander" Header="Token Preview" IsExpanded="False" Padding="0">
