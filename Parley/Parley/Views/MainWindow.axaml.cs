@@ -47,7 +47,7 @@ namespace DialogEditor.Views
     {
         private readonly MainViewModel _viewModel;
         private readonly SafeControlFinder _controls;
-        private readonly WindowLifecycleManager _windows;
+        private readonly Radoub.UI.Services.WindowLifecycleManager _windows;
 
         // Service and controller containers (#526)
         private readonly MainWindowServices _services;
@@ -79,7 +79,7 @@ namespace DialogEditor.Views
             DataContext = _viewModel;
 
             _controls = new SafeControlFinder(this);
-            _windows = new WindowLifecycleManager();
+            _windows = new Radoub.UI.Services.WindowLifecycleManager();
             _services = new MainWindowServices(serviceProvider);
             _controllers = new MainWindowControllers();
 
