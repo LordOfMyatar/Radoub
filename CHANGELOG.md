@@ -8,6 +8,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.30-alpha] - 2026-06-24
+**Branch**: `radoub/issue-2557` | **PR**: #TBD
+
+### Sprint: Tech-Debt — Large-File Splits & Shared-Control Extraction (#2557)
+
+- Promote `WindowLifecycleManager` to `Radoub.UI` now that a second consumer exists (#2391).
+- Split `FileBrowserPanelBase.axaml.cs` (1199 lines) into focused partials (#2426).
+- Split `ModelPreviewGLControl.cs` (1347 lines) into focused partials (#2127).
+- Extract a shared New-blueprint dialog from the near-duplicate `NewStoreWindow`/`NewPlaceableWindow` (#2517).
+- Consolidate the triplicated `SpellCheckTextBox` into `Radoub.UI` (#2551).
+
+Refactor-only — no behavior change.
+
+---
+
 ## [Radoub.UI 0.2.29-alpha] - 2026-06-22
 **Branch**: `quartermaster/issue-2540-cutout` | **PR**: #2586
 
