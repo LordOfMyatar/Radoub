@@ -32,7 +32,9 @@ This prevents running pre-merge with local changes that aren't reflected in the 
 ### Step 0b: Check for Unpushed Commits
 
 ```bash
-git log origin/$(git branch --show-current)..HEAD --oneline
+# Range syntax (origin/<branch>..HEAD) trips the Bash sandbox path-traversal guard (#2468).
+# Use cherry, which takes two refs as separate args and emits one line per unpushed commit (prefixed '+').
+git cherry -v "origin/$(git branch --show-current)" HEAD
 ```
 
 **If output is not empty**:
@@ -90,7 +92,9 @@ If no PR exists, warn and stop.
 ### Step 2: Analyze Changes
 
 ```bash
-git diff main...HEAD --name-only
+# Triple-dot range (main...HEAD) trips the Bash sandbox path-traversal guard (#2468).
+# Equivalent: diff from the merge-base, computed as a separate two-arg diff.
+git diff --name-only "$(git merge-base main HEAD)" HEAD
 ```
 
 **Determine tool and test scope**:
@@ -109,7 +113,8 @@ git diff main...HEAD --name-only
 
 Check if ANY changed files match UI patterns:
 ```bash
-git diff main...HEAD --name-only | grep -E '\.(axaml|axaml\.cs)$|/Views/|/Controls/|/Dialogs/'
+# See #2468: avoid triple-dot range syntax; diff from the merge-base instead.
+git diff --name-only "$(git merge-base main HEAD)" HEAD | grep -E '\.(axaml|axaml\.cs)$|/Views/|/Controls/|/Dialogs/'
 ```
 
 **UI test auto-trigger rules**:
