@@ -1,4 +1,6 @@
 using Radoub.Formats.Gff;
+using Radoub.Formats.Logging;
+using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
 
 namespace Radoub.Formats.Bic;
@@ -25,8 +27,13 @@ public class BicFile : UtcFile
     /// Use this to convert a creature blueprint to a player character.
     /// </summary>
     /// <param name="utc">Source UtcFile to convert</param>
+    /// <param name="gameData">Optional game-data service. When supplied, NWN rules
+    /// (XP per level, per-class hit die, skill count, epic threshold) are sourced
+    /// from 2DA instead of stock-game constants — required for correct LvlStat data
+    /// with non-stock classes/content. When null, the stock defaults are used and a
+    /// warning is logged once.</param>
     /// <returns>New BicFile with copied properties</returns>
-    public static BicFile FromUtcFile(UtcFile utc)
+    public static BicFile FromUtcFile(UtcFile utc, IGameDataService? gameData = null)
     {
         if (utc is BicFile existingBic)
         {
@@ -49,14 +56,15 @@ public class BicFile : UtcFile
             bic.LastName.SubStringCount = 1;
         }
 
-        // Calculate Experience from total class levels
-        // NWN XP formula: level N requires (N-1)*N/2 * 1000 XP
-        // We need XP for the character's current total level
+        // Calculate Experience from total class levels.
+        // Sourced from exptable.2da via IGameDataService when available; otherwise
+        // the stock NWN formula (level N requires (N-1)*N/2 * 1000 XP) is used.
         int totalLevel = bic.ClassList.Sum(c => c.ClassLevel);
         if (totalLevel > 0)
         {
-            // XP required for current level (minimum XP to be this level)
-            bic.Experience = (uint)((totalLevel - 1) * totalLevel / 2 * 1000);
+            bic.Experience = gameData != null
+                ? gameData.GetXpForLevel(totalLevel)
+                : (uint)((long)(totalLevel - 1) * totalLevel / 2 * 1000);
         }
 
         // Initialize QuickBar with 36 empty slots (required for playable BIC)
@@ -85,7 +93,7 @@ public class BicFile : UtcFile
 
         // Generate LvlStatList (required for playable BIC in NWN:EE)
         // Creates one entry per character level with minimal data
-        bic.LvlStatList = GenerateLvlStatList(bic);
+        bic.LvlStatList = GenerateLvlStatList(bic, gameData);
 
         // ============================================================
         // PORTRAIT HANDLING (UTC → BIC)
@@ -105,32 +113,57 @@ public class BicFile : UtcFile
         return bic;
     }
 
+    private static bool _warnedNoGameData;
+
     /// <summary>
     /// Generates a minimal LvlStatList for the character based on class levels.
     /// Creates one entry per level with class info and empty skill/feat lists.
     /// The game accepts this for playable characters.
+    ///
+    /// When <paramref name="gameData"/> is supplied, the per-level hit die comes
+    /// from classes.2da (HitDie), the skill-list length from skills.2da, and the
+    /// epic flag from the game-data epic threshold — so non-stock classes/content
+    /// produce correct data. When null, stock-NWN constants are used (first-level
+    /// hit die 5, 28 skills, epic at level 21) and a warning is logged once.
     /// </summary>
-    private static List<LevelStatEntry> GenerateLvlStatList(BicFile bic)
+    private static List<LevelStatEntry> GenerateLvlStatList(BicFile bic, IGameDataService? gameData)
     {
+        if (gameData == null && !_warnedNoGameData)
+        {
+            _warnedNoGameData = true;
+            UnifiedLogger.LogParser(LogLevel.WARN,
+                "BicFile conversion ran without IGameDataService; using stock-NWN rule defaults " +
+                "(hit die, skill count, epic threshold). Pass a game-data service for non-stock content.");
+        }
+
+        // Skill-list length: skills.2da row count when available, else stock 28.
+        int skillCount = gameData?.GetSkillCount() ?? 28;
+        // Epic threshold (1-based level); stock NWN = 21.
+        int epicThreshold = gameData?.GetEpicLevelThreshold() ?? 21;
+
         var result = new List<LevelStatEntry>();
         int levelIndex = 0;
 
         // Create entries for each class level in order
         foreach (var classEntry in bic.ClassList)
         {
+            // Per-class hit die from classes.2da (d4–d12). Stock fallback keeps the
+            // historical behaviour of recording the die only on the first level.
+            int classHitDie = gameData?.GetClassHitDie(classEntry.Class) ?? 5;
+
             for (int i = 0; i < classEntry.ClassLevel; i++)
             {
                 var entry = new LevelStatEntry
                 {
                     LvlStatClass = (byte)classEntry.Class,
-                    // First level gets hit die 5, rest are 0
-                    LvlStatHitDie = (byte)(levelIndex == 0 ? 5 : 0),
-                    EpicLevel = (byte)(levelIndex >= 20 ? 1 : 0),
+                    // First level records the (maxed) hit die; later levels 0.
+                    LvlStatHitDie = (byte)(levelIndex == 0 ? classHitDie : 0),
+                    EpicLevel = (byte)(levelIndex + 1 >= epicThreshold ? 1 : 0),
                     SkillPoints = 0
                 };
 
-                // Initialize empty skill list (28 skills, all 0 ranks)
-                for (int s = 0; s < 28; s++)
+                // Initialize empty skill list (one entry per skill, all 0 ranks)
+                for (int s = 0; s < skillCount; s++)
                 {
                     entry.SkillList.Add(0);
                 }

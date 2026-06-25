@@ -249,7 +249,7 @@ public class CharacterCreationService
 
         if (input.IsBicFile)
         {
-            var bicFile = BicFile.FromUtcFile(creature);
+            var bicFile = BicFile.FromUtcFile(creature, _gameDataService);
             bicFile.Age = input.Age;
             return bicFile;
         }
