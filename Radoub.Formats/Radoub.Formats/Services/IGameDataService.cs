@@ -161,6 +161,78 @@ public interface IGameDataService : IDisposable
 
     #endregion
 
+    #region Game Rules
+
+    // These rules accessors source NWN game mechanics from 2DA so that BIC/UTC
+    // conversion and similar logic does not bake stock-game constants into the
+    // format layer (#2481). They are default-implemented in terms of the 2DA
+    // primitives above; an implementation may override them for caching or for
+    // rulesets the stock tables do not describe. When the backing table is
+    // missing they fall back to the stock NWN value so callers always get a
+    // usable answer.
+
+    /// <summary>
+    /// Minimum experience required to be a given total character level, read from
+    /// exptable.2da (row = level - 1, column "XP"). Falls back to the stock NWN
+    /// formula (N-1)*N/2*1000 when the table or cell is unavailable.
+    /// </summary>
+    /// <param name="level">Total character level (1-based).</param>
+    uint GetXpForLevel(int level)
+    {
+        if (level <= 1)
+            return Has2DA("exptable")
+                ? ParseUInt(Get2DAValue("exptable", 0, "XP")) ?? 0u
+                : 0u;
+
+        var cell = Get2DAValue("exptable", level - 1, "XP");
+        var parsed = ParseUInt(cell);
+        if (parsed.HasValue)
+            return parsed.Value;
+
+        // Stock NWN: level N requires (N-1)*N/2 * 1000 XP.
+        return (uint)((long)(level - 1) * level / 2 * 1000);
+    }
+
+    /// <summary>
+    /// Hit die size (e.g. 8 for d8) for a class, read from classes.2da column
+    /// "HitDie" at the class row. Returns 0 when the table or cell is unavailable
+    /// (the stock conversion path treats 0 as "average/unrolled").
+    /// </summary>
+    /// <param name="classId">Class index into classes.2da.</param>
+    int GetClassHitDie(int classId)
+    {
+        if (classId < 0)
+            return 0;
+        var cell = Get2DAValue("classes", classId, "HitDie");
+        return ParseInt(cell) ?? 0;
+    }
+
+    /// <summary>
+    /// Number of skills defined in skills.2da. Custom content (PRC, etc.) adds
+    /// rows past the stock 28. Falls back to 28 when the table is unavailable.
+    /// </summary>
+    int GetSkillCount()
+    {
+        var skills = Get2DA("skills");
+        return skills != null && skills.RowCount > 0 ? skills.RowCount : 28;
+    }
+
+    /// <summary>
+    /// Lowest character level considered epic. Fixed at 21 in stock NWN (epic =
+    /// level 21+); exposed as an accessor so custom rulesets can override it.
+    /// </summary>
+    int GetEpicLevelThreshold() => 21;
+
+    /// <summary>Parse a 2DA cell as an unsigned integer; null if empty/invalid.</summary>
+    private static uint? ParseUInt(string? cell)
+        => uint.TryParse(cell, out var v) ? v : (uint?)null;
+
+    /// <summary>Parse a 2DA cell as a signed integer; null if empty/invalid.</summary>
+    private static int? ParseInt(string? cell)
+        => int.TryParse(cell, out var v) ? v : (int?)null;
+
+    #endregion
+
     #region Configuration
 
     /// <summary>

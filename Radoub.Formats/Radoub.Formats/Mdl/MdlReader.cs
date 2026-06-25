@@ -15,16 +15,26 @@ public class MdlReader
     /// <summary>
     /// Parse an MDL file from a stream, auto-detecting format.
     /// </summary>
+    /// <remarks>
+    /// The stream is snapshotted into a private buffer and consumed exactly once
+    /// (no save/restore-position dance), so this overload works on non-seekable
+    /// streams and does not depend on the caller never reading the stream twice
+    /// (#2543, follow-up to #2510). The stream is read from its current position
+    /// to the end and is left positioned at end; callers retain ownership and are
+    /// responsible for disposing it. Concurrency contract: each parse must be
+    /// given its own stream instance — sharing one stream across concurrent parses
+    /// is a caller-side data race this method cannot defend against.
+    /// </remarks>
     public MdlModel Parse(Stream stream)
     {
-        if (MdlBinaryReader.IsBinaryMdl(stream))
-        {
-            return new MdlBinaryReader().Parse(stream);
-        }
-        else
-        {
-            return new MdlAsciiReader().Parse(stream);
-        }
+        ArgumentNullException.ThrowIfNull(stream);
+
+        // Snapshot to a private buffer so the rest of the parse owns its bytes and
+        // the stream is read only once. Delegating to the byte[] path also means
+        // the binary/ASCII detection and the actual read see identical data.
+        using var buffer = new MemoryStream();
+        stream.CopyTo(buffer);
+        return Parse(buffer.ToArray());
     }
 
     /// <summary>

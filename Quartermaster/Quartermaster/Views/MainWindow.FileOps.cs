@@ -250,7 +250,7 @@ public partial class MainWindow
             var savingAsBic = Path.GetExtension(_currentFilePath).Equals(".bic", StringComparison.OrdinalIgnoreCase);
             if (savingAsBic && _currentCreature is not BicFile)
             {
-                _currentCreature = BicFile.FromUtcFile(_currentCreature);
+                _currentCreature = BicFile.FromUtcFile(_currentCreature, GameData);
                 _isBicFile = true;
             }
 
@@ -522,7 +522,7 @@ public partial class MainWindow
             if (savingAsBic && !_isBicFile)
             {
                 // Converting UTC to BIC
-                _currentCreature = BicFile.FromUtcFile(_currentCreature);
+                _currentCreature = BicFile.FromUtcFile(_currentCreature, GameData);
                 _isBicFile = true;
                 wasConverted = true;
                 UnifiedLogger.LogCreature(LogLevel.INFO, "Converted UTC to BIC format");
@@ -659,7 +659,7 @@ public partial class MainWindow
             var savingAsBic = Path.GetExtension(_currentFilePath).Equals(".bic", StringComparison.OrdinalIgnoreCase);
             if (savingAsBic && _currentCreature is not BicFile)
             {
-                _currentCreature = BicFile.FromUtcFile(_currentCreature);
+                _currentCreature = BicFile.FromUtcFile(_currentCreature, GameData);
                 _isBicFile = true;
             }
 

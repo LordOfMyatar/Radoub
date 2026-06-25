@@ -320,7 +320,7 @@ public partial class MainWindow
             // get default values from FromUtcFile.
             if (savePath.EndsWith(".bic", StringComparison.OrdinalIgnoreCase) && copy is not BicFile)
             {
-                copy = BicFile.FromUtcFile(copy);
+                copy = BicFile.FromUtcFile(copy, GameData);
             }
 
             // Strip the copy to level 1

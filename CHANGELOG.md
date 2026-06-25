@@ -8,6 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.Formats 0.2.78-alpha] - 2026-06-24
+**Branch**: `radoub/issue-2558` | **PR**: #2600
+
+### Sprint: Tech-Debt — Round-Trip & Engine-Accuracy (#2558)
+
+- Add `SsfWriter` for `.ssf` round-trip support (#2270).
+- Add `TwoDAWriter` for 2DA persistence (#2271).
+- Close the `BicFile` hardcoded-game-rule seam via `IGameDataService` (#2481).
+- Remove dead `SkippedTrimeshCount` from `ModelMeshInfo` (#2511).
+- Enforce `MdlReader.Parse(Stream)` thread-safety precondition (#2543).
+
+---
+
 ## [Build Infrastructure] - 2026-06-24
 **Branch**: `radoub/issue-2589` | **PR**: #2589
 
