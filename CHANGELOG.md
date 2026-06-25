@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Workflow Tooling] - 2026-06-25
-**Branch**: `radoub/issue-2559` | **PR**: #TBD
+**Branch**: `radoub/issue-2559` | **PR**: #2604
 
 ### Sprint: Tech-Debt — Tooling, CI & Workflow Hygiene (#2559)
 
