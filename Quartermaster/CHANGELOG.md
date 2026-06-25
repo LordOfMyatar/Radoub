@@ -8,9 +8,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ## [0.2.133-alpha] - 2026-06-25
 **Branch**: `quartermaster/issue-1584` | **PR**: #2602
 
-### Feature: Tune gamma/contrast in 3D model preview (#1584)
+### Fix: Streaky shading on multi-smoothgroup meshes (#1584 investigation)
 
-- Dark armor/skin no longer washes out to flat gray in the preview — the texture's painted-in shading shows through with deeper blacks, closer to the Aurora toolset. Shared-library change (Radoub.UI shader) — affects all 3D-preview tools.
+- Hands and other multi-smoothgroup meshes that carry valid stored normals no longer render faceted/streaky — they now use their stored normals instead of being recomputed (heads, which lack stored normals, still recompute). Shared-library change (Radoub.UI). Investigation also re-scoped #1584's "gamma/contrast" complaint to a PLT metal-layer shading gap (#2603).
 
 ---
 
