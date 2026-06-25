@@ -147,9 +147,12 @@ public class BicFile : UtcFile
         // Create entries for each class level in order
         foreach (var classEntry in bic.ClassList)
         {
-            // Per-class hit die from classes.2da (d4–d12). Stock fallback keeps the
-            // historical behaviour of recording the die only on the first level.
-            int classHitDie = gameData?.GetClassHitDie(classEntry.Class) ?? 5;
+            // Per-class hit die from classes.2da (d4–d12). Fall back to the historical
+            // stock value of 5 both when there is no game-data service AND when the
+            // service can't resolve the class (e.g. a class id outside the loaded
+            // ruleset) — writing 0 there would be a regression from the old behaviour.
+            int resolvedHitDie = gameData?.GetClassHitDie(classEntry.Class) ?? 0;
+            int classHitDie = resolvedHitDie > 0 ? resolvedHitDie : 5;
 
             for (int i = 0; i < classEntry.ClassLevel; i++)
             {
@@ -157,7 +160,8 @@ public class BicFile : UtcFile
                 {
                     LvlStatClass = (byte)classEntry.Class,
                     // First level records the (maxed) hit die; later levels 0.
-                    LvlStatHitDie = (byte)(levelIndex == 0 ? classHitDie : 0),
+                    // Clamp to a byte so a malformed 2DA HitDie can't wrap.
+                    LvlStatHitDie = (byte)(levelIndex == 0 ? Math.Clamp(classHitDie, 0, 255) : 0),
                     EpicLevel = (byte)(levelIndex + 1 >= epicThreshold ? 1 : 0),
                     SkillPoints = 0
                 };

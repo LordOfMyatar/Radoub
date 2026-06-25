@@ -1,5 +1,6 @@
 using Radoub.Formats.Bic;
 using Radoub.Formats.Gff;
+using Radoub.TestUtilities.Mocks;
 using Xunit;
 
 namespace Radoub.Formats.Tests;
@@ -332,6 +333,9 @@ public class BicConversionTests
 
     #region IGameDataService Seam Tests (#2481)
 
+    // Use MockGameDataService (Radoub.TestUtilities) with includeSampleData:false so
+    // each test seeds exactly the rows it needs and proves the value came from 2DA.
+
     /// <summary>
     /// With a game-data service supplying a non-stock class (d10 hit die at a
     /// custom class id), the first LvlStat entry records the real hit die instead
@@ -344,7 +348,8 @@ public class BicConversionTests
         const int customClassId = 42;
         utc.ClassList[0] = new Utc.CreatureClass { Class = customClassId, ClassLevel = 1 };
 
-        var svc = BicRulesFake.WithClassHitDie(customClassId, 10); // d10
+        var svc = new MockGameDataService(includeSampleData: false);
+        svc.Set2DAValue("classes", customClassId, "HitDie", "10"); // d10
 
         var bic = BicFile.FromUtcFile(utc, svc);
 
@@ -363,11 +368,33 @@ public class BicConversionTests
         Assert.Equal((byte)5, bic.LvlStatList[0].LvlStatHitDie);
     }
 
+    /// <summary>
+    /// Regression: a game-data service is present but cannot resolve the class
+    /// (id outside the loaded ruleset / stripped classes.2da). The first-level hit
+    /// die must fall back to the stock 5 rather than the unresolved 0 — writing 0
+    /// would be a regression from the pre-#2481 behaviour.
+    /// </summary>
+    [Fact]
+    public void FromUtcFile_WithGameData_UnresolvedClass_FallsBackToStockHitDie()
+    {
+        var utc = CreateTestUtcFile();
+        utc.ClassList[0] = new Utc.CreatureClass { Class = 200, ClassLevel = 1 };
+
+        // Empty classes.2da → GetClassHitDie(200) returns 0.
+        var svc = new MockGameDataService(includeSampleData: false);
+
+        var bic = BicFile.FromUtcFile(utc, svc);
+
+        Assert.Equal((byte)5, bic.LvlStatList[0].LvlStatHitDie);
+    }
+
     [Fact]
     public void FromUtcFile_WithGameData_UsesSkillsTableRowCount()
     {
         var utc = CreateTestUtcFile();
-        var svc = BicRulesFake.WithSkillCount(40); // PRC-style custom content
+        var svc = new MockGameDataService(includeSampleData: false);
+        for (int i = 0; i < 40; i++)
+            svc.Set2DAValue("skills", i, "Label", $"Skill{i}"); // PRC-style custom content
 
         var bic = BicFile.FromUtcFile(utc, svc);
 
@@ -389,8 +416,11 @@ public class BicConversionTests
     {
         var utc = CreateTestUtcFile();
         utc.ClassList[0].ClassLevel = 3;
-        // Custom exptable: level 3 = 4242 XP (non-stock, proves table read).
-        var svc = BicRulesFake.WithExpTable(("0"), ("1500"), ("4242"));
+        // Custom exptable: level 3 (row 2) = 4242 XP (non-stock, proves table read).
+        var svc = new MockGameDataService(includeSampleData: false);
+        svc.Set2DAValue("exptable", 0, "XP", "0");
+        svc.Set2DAValue("exptable", 1, "XP", "1500");
+        svc.Set2DAValue("exptable", 2, "XP", "4242");
 
         var bic = BicFile.FromUtcFile(utc, svc);
 
@@ -403,7 +433,7 @@ public class BicConversionTests
         var utc = CreateTestUtcFile();
         utc.ClassList[0].ClassLevel = 22; // past stock epic threshold (21)
 
-        var bic = BicFile.FromUtcFile(utc, BicRulesFake.Empty());
+        var bic = BicFile.FromUtcFile(utc, new MockGameDataService(includeSampleData: false));
 
         // Stock threshold 21 → levels 21 and 22 (indices 20, 21) are epic.
         Assert.Equal(22, bic.LvlStatList.Count);
