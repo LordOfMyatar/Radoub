@@ -25,7 +25,7 @@ namespace Parley.Views.Helpers
     {
         private readonly Window _window;
         private readonly SafeControlFinder _controls;
-        private readonly WindowLifecycleManager _windows;
+        private readonly Radoub.UI.Services.WindowLifecycleManager _windows;
         private readonly Func<MainViewModel> _getViewModel;
         private readonly Func<TreeViewSafeNode?> _getSelectedNode;
         private readonly Action<TreeViewSafeNode> _setSelectedNode;
@@ -46,7 +46,7 @@ namespace Parley.Views.Helpers
         public FlowchartManager(
             Window window,
             SafeControlFinder controls,
-            WindowLifecycleManager windows,
+            Radoub.UI.Services.WindowLifecycleManager windows,
             ISettingsService settings,
             Func<MainViewModel> getViewModel,
             Func<TreeViewSafeNode?> getSelectedNode,

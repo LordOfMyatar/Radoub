@@ -4,7 +4,6 @@
         xmlns:views="using:DialogEditor.Views"
         xmlns:models="using:DialogEditor.Models"
         xmlns:services="using:DialogEditor.Services"
-        xmlns:controls="using:DialogEditor.Controls"
         xmlns:radoubControls="using:Radoub.UI.Controls"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -414,7 +413,7 @@
 
                     <!-- DRAGON: TextTextBox binding is critical - do not modify x:Name or LostFocus handler -->
                     <!-- Tab order: Ctrl+D lands here (1), then scripts, then back to speaker row -->
-                    <controls:SpellCheckTextBox x:Name="TextTextBox"
+                    <radoubControls:SpellCheckTextBox x:Name="TextTextBox"
                             AutomationProperties.AutomationId="TextTextBox"
                             AcceptsReturn="True"
                             TextWrapping="Wrap"
@@ -810,7 +809,7 @@
 
                             <!-- Comment -->
                             <TextBlock Text="Comment:"/>
-                            <controls:SpellCheckTextBox x:Name="CommentTextBox" AcceptsReturn="True" MinHeight="50"
+                            <radoubControls:SpellCheckTextBox x:Name="CommentTextBox" AcceptsReturn="True" MinHeight="50"
                                     TextWrapping="Wrap" Margin="0,0,0,5"
                                     GotFocus="OnFieldGotFocus"
                                     LostFocus="OnFieldLostFocus"/>

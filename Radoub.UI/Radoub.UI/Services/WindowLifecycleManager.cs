@@ -2,13 +2,17 @@ using System;
 using System.Collections.Generic;
 using Avalonia.Controls;
 
-namespace DialogEditor.Services
+namespace Radoub.UI.Services
 {
     /// <summary>
     /// Manages window lifecycle for singleton-style windows (one instance at a time).
-    /// Centralizes window tracking, creation, and cleanup patterns from MainWindow.
+    /// Centralizes window tracking, creation, and cleanup patterns from a tool's MainWindow.
     ///
-    /// Issue #343 - Reduces 6+ individual window field declarations to single manager.
+    /// Promoted to Radoub.UI from Parley (issue #2391) so multiple tools can share it.
+    /// Originally Parley issue #343 - reduces 6+ individual window field declarations to a single manager.
+    ///
+    /// Tool-specific window keys belong in the consuming tool (e.g. Parley's <c>WindowKeys</c>),
+    /// not here, since the set of well-known windows differs per tool.
     ///
     /// Usage:
     /// 1. GetOrCreate - Get existing window or create new one
@@ -168,18 +172,5 @@ namespace DialogEditor.Services
             }
             return false;
         }
-    }
-
-    /// <summary>
-    /// Well-known window keys for MainWindow's managed windows.
-    /// </summary>
-    public static class WindowKeys
-    {
-        public const string Settings = "Settings";
-        public const string Flowchart = "Flowchart";
-        public const string SoundBrowser = "SoundBrowser";
-        public const string ScriptBrowser = "ScriptBrowser";
-        public const string ParameterBrowser = "ParameterBrowser";
-        public const string ConversationSimulator = "ConversationSimulator";
     }
 }

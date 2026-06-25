@@ -29,7 +29,8 @@ public partial class MainWindow
     {
         // Prompt for Name/Tag/ResRef up front (#2418). Cancel leaves the current document
         // untouched — return before mutating any state.
-        var dialog = new NewStoreWindow();
+        var dialog = new NewBlueprintWindow("New Store - Fence", "Create a new store",
+            "e.g. General Store", "New Store");
         await dialog.ShowDialog(this);
         if (dialog.Result is not { } result)
             return;

@@ -2,37 +2,54 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Radoub.UI.Services;
 
-namespace MerchantEditor.Views;
+namespace Radoub.UI.Views;
 
 /// <summary>
-/// Modal New Store dialog (#2418). Prompts for Name/Tag/ResRef with a "sync all three from the
-/// Name" checkbox. While sync is on, Tag and ResRef are derived live from the Name (Aurora-
-/// sanitized via <see cref="BlueprintNamingService"/>) and are read-only; unchecking frees them
-/// for individual editing. Confirm exposes <see cref="Result"/>; cancel leaves it null.
+/// Shared modal New-blueprint dialog (#2517). Prompts for Name/Tag/ResRef with a "sync all three
+/// from the Name" checkbox. While sync is on, Tag and ResRef are derived live from the Name
+/// (Aurora-sanitized via <see cref="BlueprintNamingService"/>) and are read-only; unchecking frees
+/// them for individual editing. Confirm exposes <see cref="Result"/>; cancel leaves it null.
 ///
-/// Modal is the correct mode here per Fence UI rules (resource-pick-style modal carve-out): the
-/// New flow has no work to do until the user confirms or cancels.
+/// Consolidates Fence's NewStoreWindow and Reliquary's NewPlaceableWindow (near-duplicates) into a
+/// single control parameterized by title/header/watermark/default-name. Modal is correct here
+/// (resource-pick-style carve-out): the New flow has no work to do until the user confirms or cancels.
 /// </summary>
-public partial class NewStoreWindow : Window
+public partial class NewBlueprintWindow : Window
 {
     /// <summary>The confirmed values, or null if the user cancelled.</summary>
-    public NewStoreResult? Result { get; private set; }
+    public NewBlueprintResult? Result { get; private set; }
 
-    public NewStoreWindow()
+    /// <summary>Parameterless ctor for the XAML designer / InitializeComponent.</summary>
+    public NewBlueprintWindow() : this("New Blueprint", "Create a new blueprint", "e.g. New Blueprint", "New Blueprint")
+    {
+    }
+
+    /// <summary>
+    /// Create the dialog with tool-specific labels.
+    /// </summary>
+    /// <param name="title">Window title (e.g. "New Store - Fence").</param>
+    /// <param name="header">Header text (e.g. "Create a new store").</param>
+    /// <param name="nameWatermark">Watermark for the Name box (e.g. "e.g. General Store").</param>
+    /// <param name="defaultName">Default Name value so a bare Confirm still produces a valid blueprint.</param>
+    public NewBlueprintWindow(string title, string header, string nameWatermark, string defaultName)
     {
         InitializeComponent();
+
+        Title = title;
+        HeaderText.Text = header;
+        NameBox.Watermark = nameWatermark;
 
         NameBox.TextChanged += OnNameChanged;
         TagBox.TextChanged += OnTagChanged;
         ResRefBox.TextChanged += OnResRefChanged;
         SyncCheckBox.IsCheckedChanged += OnSyncChanged;
 
-        // Sensible defaults so a bare Confirm still produces a valid store.
-        NameBox.Text = "New Store";
+        // Sensible defaults so a bare Confirm still produces a valid blueprint.
+        NameBox.Text = defaultName;
         ApplySync();
 
         // Focus and SELECT ALL so the user's first keystroke replaces the default rather than
-        // prepending to it (caret-at-0 would give "mynameNew Store").
+        // prepending to it (caret-at-0 would give "mynameNew Blueprint").
         NameBox.AttachedToVisualTree += (_, _) =>
         {
             NameBox.Focus();
@@ -90,22 +107,7 @@ public partial class NewStoreWindow : Window
     /// <summary>Validate the current field values and enable/disable Create accordingly.</summary>
     private void UpdateValidation()
     {
-        var name = (NameBox.Text ?? string.Empty).Trim();
-        var tag = TagBox.Text ?? string.Empty;
-        var resRef = ResRefBox.Text ?? string.Empty;
-
-        string? error = null;
-        if (string.IsNullOrEmpty(name))
-            error = "Name is required.";
-        else if (!BlueprintNamingService.IsValidTag(tag))
-            // Tag is required and must be valid; empty Tag is an error (was previously skipped,
-            // which left Create enabled while OnCreateClick silently rejected the click).
-            error = "Tag must be 1-32 characters (A-Z, 0-9, underscore).";
-        else if (string.IsNullOrEmpty(resRef))
-            error = "ResRef is required.";
-        else if (!BlueprintNamingService.IsValidResRef(resRef))
-            error = "ResRef must be 1-16 lowercase alphanumeric/underscore characters.";
-
+        var error = NewBlueprintValidation.Validate(NameBox.Text, TagBox.Text, ResRefBox.Text);
         ValidationText.Text = error ?? string.Empty;
         CreateButton.IsEnabled = error is null;
     }
@@ -117,15 +119,13 @@ public partial class NewStoreWindow : Window
         var resRef = ResRefBox.Text ?? string.Empty;
 
         // Guard: Create may be triggered by Enter even if validation failed.
-        if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(resRef)
-            || !BlueprintNamingService.IsValidResRef(resRef)
-            || !BlueprintNamingService.IsValidTag(tag))
+        if (NewBlueprintValidation.Validate(name, tag, resRef) is not null)
         {
             UpdateValidation();
             return;
         }
 
-        Result = new NewStoreResult(name, tag, resRef);
+        Result = new NewBlueprintResult(name, tag, resRef);
         Close();
     }
 
@@ -136,5 +136,5 @@ public partial class NewStoreWindow : Window
     }
 }
 
-/// <summary>Confirmed values from the New Store dialog.</summary>
-public readonly record struct NewStoreResult(string Name, string Tag, string ResRef);
+/// <summary>Confirmed values from the shared New-blueprint dialog.</summary>
+public readonly record struct NewBlueprintResult(string Name, string Tag, string ResRef);

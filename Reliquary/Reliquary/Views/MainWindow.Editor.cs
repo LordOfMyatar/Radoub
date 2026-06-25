@@ -13,6 +13,7 @@ using Radoub.UI.Services;
 using Radoub.UI.Services.Search;
 using Radoub.UI.Undo;
 using Radoub.UI.ViewModels;
+using Radoub.UI.Views;
 using PlaceableEditor.Commands;
 using PlaceableEditor.Services;
 using PlaceableEditor.ViewModels;
@@ -69,7 +70,8 @@ public partial class MainWindow
         // edits can no longer be lost before a first manual Save, and ResRef is locked to the
         // on-disk identity right away (#2426). The dialog lets the user override Tag and ResRef
         // instead of forcing both to be derived from the Name.
-        var dialog = new NewPlaceableWindow();
+        var dialog = new NewBlueprintWindow("New Placeable - Reliquary", "Create a new placeable",
+            "e.g. Iron Chest", "New Placeable");
         await dialog.ShowDialog(this);
         if (dialog.Result is not { } result) return; // user cancelled
 
