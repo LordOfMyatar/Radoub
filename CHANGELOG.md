@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Radoub.Formats 0.2.78-alpha] - 2026-06-24
-**Branch**: `radoub/issue-2558` | **PR**: #TBD
+**Branch**: `radoub/issue-2558` | **PR**: #2600
 
 ### Sprint: Tech-Debt — Round-Trip & Engine-Accuracy (#2558)
 
