@@ -776,16 +776,14 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                 TransparencyHint = mesh.TransparencyHint
             };
 
-            // #2026: Pick normal source based on how the mesh encodes hard
-            // edges. Multi-smoothgroup meshes (heads) use SurfaceId bitmasks;
-            // stored per-vertex normals are unreliable BioWare-compiler
-            // output. Single-smoothgroup meshes (bodies) encode hard edges
-            // by duplicating vertices with different stored normals, so the
-            // stored data IS the source of truth.
-            var distinctSmoothgroups = new HashSet<int>();
-            foreach (var face in mesh.Faces) distinctSmoothgroups.Add(face.SurfaceId);
-            bool hasStoredNormals = mesh.Normals != null && mesh.Normals.Length == mesh.Vertices.Length;
-            bool useStoredNormals = distinctSmoothgroups.Count <= 1 && hasStoredNormals;
+            // #2026/#1584: Pick normal source by whether the mesh carries a usable stored normal
+            // set. Heads (pmh0_head*, pfh0_head*) ship with ZERO stored vertex normals — the 2002
+            // BioWare mirrored-half compiler omitted them — so they fall through to the smoothgroup
+            // recompute. Hands and bodies carry one valid normal per vertex and must use it, even
+            // when the mesh declares multiple smoothgroups (the old smoothgroup-count gate wrongly
+            // recomputed hands and rendered them faceted/streaky, #1584).
+            bool useStoredNormals = MeshNormalSource.UseStoredNormals(
+                mesh.Vertices.Length, mesh.Normals?.Length ?? 0);
 
             Vector3[] cornerNormals;
             if (useStoredNormals)
