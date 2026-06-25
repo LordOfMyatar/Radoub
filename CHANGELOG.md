@@ -8,6 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Workflow Tooling] - 2026-06-25
+**Branch**: `radoub/issue-2559` | **PR**: #TBD
+
+### Sprint: Tech-Debt — Tooling, CI & Workflow Hygiene (#2559)
+
+- Audit theme-scan baseline drift, 16 → 21 hardcoded values (#2278).
+- Consolidate duplicated/trivial unit tests across suites (#2464).
+- Fix sandbox denial of git range syntax in pre-merge/post-merge (#2468).
+- Evaluate selective GitHub auto-merge for low-UI-risk PRs (#2471).
+- Refresh stale tool-label list in Refresh-GitHubCache (relique/reliquary/marlinspike) (#2473).
+
+---
+
 ## [Radoub.Formats 0.2.78-alpha] - 2026-06-24
 **Branch**: `radoub/issue-2558` | **PR**: #2600
 
