@@ -51,6 +51,12 @@ public abstract class ToolSettingsServiceTestBase<TService> : IDisposable
     /// <summary>File extension a recent-file fixture should use (e.g. ".utc").</summary>
     protected virtual string RecentFileExtension => ".dat";
 
+    /// <summary>Minimum window width this tool clamps to (BaseToolSettingsService default is 600).</summary>
+    protected virtual double ExpectedMinWindowWidth => 600;
+
+    /// <summary>Minimum window height this tool clamps to (BaseToolSettingsService default is 400).</summary>
+    protected virtual double ExpectedMinWindowHeight => 400;
+
     protected ToolSettingsServiceTestBase()
     {
         TestSettingsDir = Path.Combine(Path.GetTempPath(), $"{ToolDirPrefix}_Tests_{Guid.NewGuid():N}");
@@ -89,7 +95,7 @@ public abstract class ToolSettingsServiceTestBase<TService> : IDisposable
     {
         var service = GetInstance();
         SetWindowWidth(service, 1);
-        Assert.True(GetWindowWidth(service) >= 600);
+        Assert.True(GetWindowWidth(service) >= ExpectedMinWindowWidth);
     }
 
     [Fact]
@@ -97,7 +103,7 @@ public abstract class ToolSettingsServiceTestBase<TService> : IDisposable
     {
         var service = GetInstance();
         SetWindowHeight(service, 1);
-        Assert.True(GetWindowHeight(service) >= 400);
+        Assert.True(GetWindowHeight(service) >= ExpectedMinWindowHeight);
     }
 
     [Fact]

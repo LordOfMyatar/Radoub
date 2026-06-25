@@ -1,77 +1,56 @@
-using System.ComponentModel;
 using Manifest.Services;
 using Radoub.Formats.Logging;
+using Radoub.TestUtilities.Bases;
 using Radoub.TestUtilities.Helpers;
 using Xunit;
 
 namespace Manifest.Tests;
 
 /// <summary>
-/// Tests for SettingsService.
-/// Uses isolated temp directory via MANIFEST_SETTINGS_DIR environment variable.
+/// Tests for Manifest's SettingsService. The shared singleton/window/recent-files/log-retention
+/// contract lives in <see cref="ToolSettingsServiceTestBase{TService}"/> (#2464); only
+/// Manifest-specific behavior (corrupt-JSON recovery, full round-trip, tree panel, MRU ordering,
+/// PropertyChanged) is below.
 /// </summary>
-public class SettingsServiceTests : IDisposable
+public class SettingsServiceTests : ToolSettingsServiceTestBase<SettingsService>
 {
-    private readonly string _testSettingsDir;
+    protected override string SettingsEnvironmentVariable => "MANIFEST_SETTINGS_DIR";
+    protected override string ToolDirPrefix => "Manifest";
+    protected override string RecentFileExtension => ".jrl";
+    protected override double ExpectedMinWindowWidth => 400;
+    protected override double ExpectedMinWindowHeight => 300;
 
-    public SettingsServiceTests()
-    {
-        // Create isolated temp directory for each test run
-        _testSettingsDir = Path.Combine(Path.GetTempPath(), $"Manifest_Tests_{Guid.NewGuid():N}");
-        Directory.CreateDirectory(_testSettingsDir);
+    protected override SettingsService GetInstance() => SettingsService.Instance;
+    protected override void ResetSingleton() => SingletonTestHelper.ResetSingleton<SettingsService>();
 
-        // Reset singleton and configure via environment variable
-        SingletonTestHelper.ResetSingleton<SettingsService>();
-        SingletonTestHelper.ConfigureSettingsDirectory("MANIFEST_SETTINGS_DIR", _testSettingsDir);
-    }
+    protected override double GetWindowWidth(SettingsService s) => s.WindowWidth;
+    protected override void SetWindowWidth(SettingsService s, double v) => s.WindowWidth = v;
+    protected override double GetWindowHeight(SettingsService s) => s.WindowHeight;
+    protected override void SetWindowHeight(SettingsService s, double v) => s.WindowHeight = v;
+    protected override IReadOnlyList<string> GetRecentFiles(SettingsService s) => s.RecentFiles;
+    protected override void AddRecentFile(SettingsService s, string path) => s.AddRecentFile(path);
+    protected override int GetMaxRecentFiles(SettingsService s) => s.MaxRecentFiles;
+    protected override void SetMaxRecentFiles(SettingsService s, int v) => s.MaxRecentFiles = v;
+    protected override int GetLogRetentionSessions(SettingsService s) => s.LogRetentionSessions;
+    protected override void SetLogRetentionSessions(SettingsService s, int v) => s.LogRetentionSessions = v;
 
-    public void Dispose()
-    {
-        // Reset singleton and clear env var
-        SingletonTestHelper.ResetSingleton<SettingsService>();
-        SingletonTestHelper.ConfigureSettingsDirectory("MANIFEST_SETTINGS_DIR", null);
-
-        // Clean up temp directory
-        try
-        {
-            if (Directory.Exists(_testSettingsDir))
-                Directory.Delete(_testSettingsDir, recursive: true);
-        }
-        catch
-        {
-            // Ignore cleanup failures
-        }
-    }
-
-    [Fact]
-    public void Instance_ReturnsSameInstance()
-    {
-        var instance1 = SettingsService.Instance;
-        var instance2 = SettingsService.Instance;
-
-        Assert.Same(instance1, instance2);
-    }
+    // ---- Manifest-specific ----
 
     [Fact]
     public void SharedSettings_ReturnsRadoubSettings()
     {
-        var sharedSettings = SettingsService.SharedSettings;
-
-        Assert.NotNull(sharedSettings);
+        Assert.NotNull(SettingsService.SharedSettings);
     }
 
     [Fact]
     public void LoadSettings_CorruptedJson_ReturnsDefaults()
     {
-        // Arrange - write corrupted JSON
-        var settingsFile = Path.Combine(_testSettingsDir, "ManifestSettings.json");
+        var settingsFile = Path.Combine(TestSettingsDir, "ManifestSettings.json");
         File.WriteAllText(settingsFile, "{ invalid json [[[");
 
-        // Act - reset and reload
-        SingletonTestHelper.ResetSingleton<SettingsService>();
-        var service = SettingsService.Instance;
+        ResetSingleton();
+        var service = GetInstance();
 
-        // Assert - should have default values
         Assert.Equal(1000, service.WindowWidth);
         Assert.Equal(700, service.WindowHeight);
     }
@@ -79,8 +58,7 @@ public class SettingsServiceTests : IDisposable
     [Fact]
     public void SaveSettings_RoundTrip_PreservesAllValues()
     {
-        // Arrange
-        var service = SettingsService.Instance;
+        var service = GetInstance();
         service.WindowWidth = 1200;
         service.WindowHeight = 800;
         service.WindowMaximized = true;
@@ -89,11 +67,9 @@ public class SettingsServiceTests : IDisposable
         service.CurrentLogLevel = LogLevel.DEBUG;
         service.SpellCheckEnabled = false;
 
-        // Act - reset and reload
-        SingletonTestHelper.ResetSingleton<SettingsService>();
-        var reloaded = SettingsService.Instance;
+        ResetSingleton();
+        var reloaded = GetInstance();
 
-        // Assert
         Assert.Equal(1200, reloaded.WindowWidth);
         Assert.Equal(800, reloaded.WindowHeight);
         Assert.True(reloaded.WindowMaximized);
@@ -104,29 +80,13 @@ public class SettingsServiceTests : IDisposable
     }
 
     [Fact]
-    public void WindowDimensions_Invalid_UseDefaults()
-    {
-        var service = SettingsService.Instance;
-
-        // WindowWidth minimum is 400
-        service.WindowWidth = 100;
-        Assert.True(service.WindowWidth >= 400);
-
-        // WindowHeight minimum is 300
-        service.WindowHeight = 100;
-        Assert.True(service.WindowHeight >= 300);
-    }
-
-    [Fact]
     public void TreePanelWidth_EnforcesRange()
     {
-        var service = SettingsService.Instance;
+        var service = GetInstance();
 
-        // Minimum is 150
         service.TreePanelWidth = 50;
         Assert.True(service.TreePanelWidth >= 150);
 
-        // Maximum is 600
         service.TreePanelWidth = 800;
         Assert.True(service.TreePanelWidth <= 600);
     }
@@ -134,47 +94,41 @@ public class SettingsServiceTests : IDisposable
     [Fact]
     public void RecentFiles_Cleanup_RemovesMissingFiles()
     {
-        // Arrange - create a temp file then delete it
-        var tempFile = Path.Combine(_testSettingsDir, "test.jrl");
+        var tempFile = Path.Combine(TestSettingsDir, "test.jrl");
         File.WriteAllText(tempFile, "test");
 
-        var service = SettingsService.Instance;
+        var service = GetInstance();
         service.AddRecentFile(tempFile);
         Assert.Contains(tempFile, service.RecentFiles);
 
-        // Delete the file
         File.Delete(tempFile);
 
-        // Act - reset and reload (cleanup happens on load)
-        SingletonTestHelper.ResetSingleton<SettingsService>();
-        var reloaded = SettingsService.Instance;
+        ResetSingleton();
+        var reloaded = GetInstance();
 
-        // Assert - missing file should be removed
         Assert.DoesNotContain(tempFile, reloaded.RecentFiles);
     }
 
     [Fact]
     public void RecentFiles_MaxCount_TrimsList()
     {
-        var service = SettingsService.Instance;
+        var service = GetInstance();
         service.MaxRecentFiles = 3;
 
-        // Create and add more files than max
         for (int i = 0; i < 5; i++)
         {
-            var tempFile = Path.Combine(_testSettingsDir, $"test{i}.jrl");
+            var tempFile = Path.Combine(TestSettingsDir, $"test{i}.jrl");
             File.WriteAllText(tempFile, "test");
             service.AddRecentFile(tempFile);
         }
 
-        // Assert - should only keep MaxRecentFiles
         Assert.True(service.RecentFiles.Count <= 3);
     }
 
     [Fact]
     public void PropertyChanged_Fires_OnValueChange()
     {
-        var service = SettingsService.Instance;
+        var service = GetInstance();
         var changedProperties = new List<string>();
 
         service.PropertyChanged += (sender, e) =>
@@ -183,63 +137,26 @@ public class SettingsServiceTests : IDisposable
                 changedProperties.Add(e.PropertyName);
         };
 
-        // Act
         service.WindowWidth = 1100;
 
-        // Assert
         Assert.Contains("WindowWidth", changedProperties);
-    }
-
-    [Fact]
-    public void LogRetentionSessions_EnforcesRange()
-    {
-        var service = SettingsService.Instance;
-
-        // Minimum is 1
-        service.LogRetentionSessions = 0;
-        Assert.True(service.LogRetentionSessions >= 1);
-
-        // Maximum is 10
-        service.LogRetentionSessions = 100;
-        Assert.True(service.LogRetentionSessions <= 10);
-    }
-
-    [Fact]
-    public void MaxRecentFiles_EnforcesRange()
-    {
-        var service = SettingsService.Instance;
-
-        // Minimum is 1
-        service.MaxRecentFiles = 0;
-        Assert.True(service.MaxRecentFiles >= 1);
-
-        // Maximum is 20
-        service.MaxRecentFiles = 100;
-        Assert.True(service.MaxRecentFiles <= 20);
     }
 
     [Fact]
     public void AddRecentFile_MovesExistingToFront()
     {
-        var service = SettingsService.Instance;
+        var service = GetInstance();
 
-        // Create test files
-        var file1 = Path.Combine(_testSettingsDir, "first.jrl");
-        var file2 = Path.Combine(_testSettingsDir, "second.jrl");
+        var file1 = Path.Combine(TestSettingsDir, "first.jrl");
+        var file2 = Path.Combine(TestSettingsDir, "second.jrl");
         File.WriteAllText(file1, "test");
         File.WriteAllText(file2, "test");
 
-        // Add files
         service.AddRecentFile(file1);
         service.AddRecentFile(file2);
-
-        // file2 should be first now
         Assert.Equal(file2, service.RecentFiles[0]);
 
-        // Re-add file1
         service.AddRecentFile(file1);
-
-        // file1 should now be first
         Assert.Equal(file1, service.RecentFiles[0]);
     }
 }

@@ -1,162 +1,53 @@
 using MerchantEditor.Services;
+using Radoub.TestUtilities.Bases;
 using Radoub.TestUtilities.Helpers;
 
 namespace Fence.Tests;
 
+/// <summary>
+/// Tests for Fence's SettingsService. The shared singleton/window/recent-files/log-retention
+/// contract lives in <see cref="ToolSettingsServiceTestBase{TService}"/> (#2464); only
+/// Fence-specific behavior (panel widths, visibility, async recent-file validation) is below.
+/// </summary>
 [Collection("SettingsService")]
-public class SettingsServiceTests : IDisposable
+public class SettingsServiceTests : ToolSettingsServiceTestBase<SettingsService>
 {
-    private readonly string _tempDir;
+    protected override string SettingsEnvironmentVariable => "FENCE_SETTINGS_DIR";
+    protected override string ToolDirPrefix => "Fence";
+    protected override string RecentFileExtension => ".utm";
 
-    public SettingsServiceTests()
-    {
-        // Create isolated temp directory for each test
-        _tempDir = Path.Combine(Path.GetTempPath(), "FenceTests", Guid.NewGuid().ToString());
-        Directory.CreateDirectory(_tempDir);
+    protected override SettingsService GetInstance() => SettingsService.Instance;
+    protected override void ResetSingleton() => SingletonTestHelper.ResetSingleton<SettingsService>();
 
-        // Reset singleton and configure via environment variable
-        SingletonTestHelper.ResetSingleton<SettingsService>();
-        SingletonTestHelper.ConfigureSettingsDirectory("FENCE_SETTINGS_DIR", _tempDir);
-    }
+    protected override double GetWindowWidth(SettingsService s) => s.WindowWidth;
+    protected override void SetWindowWidth(SettingsService s, double v) => s.WindowWidth = v;
+    protected override double GetWindowHeight(SettingsService s) => s.WindowHeight;
+    protected override void SetWindowHeight(SettingsService s, double v) => s.WindowHeight = v;
+    protected override IReadOnlyList<string> GetRecentFiles(SettingsService s) => s.RecentFiles;
+    protected override void AddRecentFile(SettingsService s, string path) => s.AddRecentFile(path);
+    protected override int GetMaxRecentFiles(SettingsService s) => s.MaxRecentFiles;
+    protected override void SetMaxRecentFiles(SettingsService s, int v) => s.MaxRecentFiles = v;
+    protected override int GetLogRetentionSessions(SettingsService s) => s.LogRetentionSessions;
+    protected override void SetLogRetentionSessions(SettingsService s, int v) => s.LogRetentionSessions = v;
 
-    public void Dispose()
-    {
-        SingletonTestHelper.ResetSingleton<SettingsService>();
-        SingletonTestHelper.ConfigureSettingsDirectory("FENCE_SETTINGS_DIR", null);
-        try
-        {
-            if (Directory.Exists(_tempDir))
-                Directory.Delete(_tempDir, recursive: true);
-        }
-        catch
-        {
-            // Ignore cleanup errors in tests
-        }
-    }
-
-    [Fact]
-    public void Instance_ReturnsNonNull()
-    {
-        // Act
-        var instance = SettingsService.Instance;
-
-        // Assert
-        Assert.NotNull(instance);
-    }
-
-    [Fact]
-    public void Instance_ReturnsSameInstance()
-    {
-        // Act
-        var instance1 = SettingsService.Instance;
-        var instance2 = SettingsService.Instance;
-
-        // Assert
-        Assert.Same(instance1, instance2);
-    }
-
-    [Fact]
-    public void WindowWidth_ClampedToMinimum()
-    {
-        // Arrange
-        var settings = SettingsService.Instance;
-
-        // Act
-        settings.WindowWidth = 100; // Below minimum
-
-        // Assert
-        Assert.Equal(600, settings.WindowWidth);
-    }
-
-    [Fact]
-    public void WindowHeight_ClampedToMinimum()
-    {
-        // Arrange
-        var settings = SettingsService.Instance;
-
-        // Act
-        settings.WindowHeight = 100; // Below minimum
-
-        // Assert
-        Assert.Equal(400, settings.WindowHeight);
-    }
+    // ---- Fence-specific ----
 
     [Fact]
     public void LeftPanelWidth_ClampedToRange()
     {
-        // Arrange
-        var settings = SettingsService.Instance;
+        var settings = GetInstance();
 
-        // Act & Assert - below minimum
         settings.LeftPanelWidth = 100;
         Assert.Equal(250, settings.LeftPanelWidth);
 
-        // Act & Assert - above maximum
         settings.LeftPanelWidth = 800;
         Assert.Equal(700, settings.LeftPanelWidth);
     }
 
     [Fact]
-    public void RecentFiles_InitiallyEmpty()
-    {
-        // Arrange
-        var settings = SettingsService.Instance;
-
-        // Assert
-        Assert.Empty(settings.RecentFiles);
-    }
-
-    [Fact]
-    public void ClearRecentFiles_EmptiesList()
-    {
-        // Arrange
-        var settings = SettingsService.Instance;
-        var testFile = Path.Combine(_tempDir, "test.utm");
-        File.WriteAllText(testFile, "");
-        settings.AddRecentFile(testFile);
-        Assert.NotEmpty(settings.RecentFiles);
-
-        // Act
-        settings.ClearRecentFiles();
-
-        // Assert
-        Assert.Empty(settings.RecentFiles);
-    }
-
-    [Fact]
-    public void MaxRecentFiles_ClampedToRange()
-    {
-        // Arrange
-        var settings = SettingsService.Instance;
-
-        // Act & Assert - below minimum
-        settings.MaxRecentFiles = 0;
-        Assert.Equal(1, settings.MaxRecentFiles);
-
-        // Act & Assert - above maximum
-        settings.MaxRecentFiles = 50;
-        Assert.Equal(20, settings.MaxRecentFiles);
-    }
-
-    [Fact]
-    public void LogRetentionSessions_ClampedToRange()
-    {
-        // Arrange
-        var settings = SettingsService.Instance;
-
-        // Act & Assert - below minimum
-        settings.LogRetentionSessions = 0;
-        Assert.Equal(1, settings.LogRetentionSessions);
-
-        // Act & Assert - above maximum
-        settings.LogRetentionSessions = 20;
-        Assert.Equal(10, settings.LogRetentionSessions);
-    }
-
-    [Fact]
     public void RightPanelWidth_ClampedToRange()
     {
-        var settings = SettingsService.Instance;
+        var settings = GetInstance();
 
         settings.RightPanelWidth = 100;
         Assert.Equal(250, settings.RightPanelWidth);
@@ -168,7 +59,7 @@ public class SettingsServiceTests : IDisposable
     [Fact]
     public void StoreBrowserPanelWidth_ClampedToRange()
     {
-        var settings = SettingsService.Instance;
+        var settings = GetInstance();
 
         settings.StoreBrowserPanelWidth = 50;
         Assert.Equal(150, settings.StoreBrowserPanelWidth);
@@ -180,7 +71,7 @@ public class SettingsServiceTests : IDisposable
     [Fact]
     public void ItemDetailsPanelWidth_ClampedToRange()
     {
-        var settings = SettingsService.Instance;
+        var settings = GetInstance();
 
         settings.ItemDetailsPanelWidth = 50;
         Assert.Equal(180, settings.ItemDetailsPanelWidth);
@@ -192,23 +83,19 @@ public class SettingsServiceTests : IDisposable
     [Fact]
     public void StoreBrowserPanelVisible_DefaultTrue()
     {
-        var settings = SettingsService.Instance;
-
-        Assert.True(settings.StoreBrowserPanelVisible);
+        Assert.True(GetInstance().StoreBrowserPanelVisible);
     }
 
     [Fact]
     public void ItemDetailsPanelVisible_DefaultTrue()
     {
-        var settings = SettingsService.Instance;
-
-        Assert.True(settings.ItemDetailsPanelVisible);
+        Assert.True(GetInstance().ItemDetailsPanelVisible);
     }
 
     [Fact]
     public void PanelVisible_SetToFalse_Persists()
     {
-        var settings = SettingsService.Instance;
+        var settings = GetInstance();
 
         settings.StoreBrowserPanelVisible = false;
         Assert.False(settings.StoreBrowserPanelVisible);
@@ -218,29 +105,42 @@ public class SettingsServiceTests : IDisposable
     }
 
     [Fact]
+    public void ClearRecentFiles_EmptiesList()
+    {
+        var settings = GetInstance();
+        var testFile = Path.Combine(TestSettingsDir, "test.utm");
+        File.WriteAllText(testFile, "");
+        settings.AddRecentFile(testFile);
+        Assert.NotEmpty(settings.RecentFiles);
+
+        settings.ClearRecentFiles();
+
+        Assert.Empty(settings.RecentFiles);
+    }
+
+    [Fact]
     public async Task ValidateRecentFilesAsync_RemovesMissingFiles()
     {
-        var settings = SettingsService.Instance;
+        var settings = GetInstance();
 
-        // Add a file that exists and one that doesn't
-        var existingFile = Path.Combine(_tempDir, "exists.utm");
+        var existingFile = Path.Combine(TestSettingsDir, "exists.utm");
         File.WriteAllText(existingFile, "");
         settings.AddRecentFile(existingFile);
-        settings.AddRecentFile(Path.Combine(_tempDir, "missing.utm"));
+        settings.AddRecentFile(Path.Combine(TestSettingsDir, "missing.utm"));
 
         await settings.ValidateRecentFilesAsync();
 
         var recent = settings.RecentFiles;
         Assert.Contains(existingFile, recent);
-        Assert.DoesNotContain(Path.Combine(_tempDir, "missing.utm"), recent);
+        Assert.DoesNotContain(Path.Combine(TestSettingsDir, "missing.utm"), recent);
     }
 
     [Fact]
     public async Task ValidateRecentFilesAsync_AllFilesExist_NoChange()
     {
-        var settings = SettingsService.Instance;
-        var file1 = Path.Combine(_tempDir, "file1.utm");
-        var file2 = Path.Combine(_tempDir, "file2.utm");
+        var settings = GetInstance();
+        var file1 = Path.Combine(TestSettingsDir, "file1.utm");
+        var file2 = Path.Combine(TestSettingsDir, "file2.utm");
         File.WriteAllText(file1, "");
         File.WriteAllText(file2, "");
         settings.AddRecentFile(file1);
@@ -254,7 +154,7 @@ public class SettingsServiceTests : IDisposable
     [Fact]
     public async Task ValidateRecentFilesAsync_EmptyList_DoesNotThrow()
     {
-        var settings = SettingsService.Instance;
+        var settings = GetInstance();
 
         var exception = await Record.ExceptionAsync(() => settings.ValidateRecentFilesAsync());
 
@@ -264,14 +164,13 @@ public class SettingsServiceTests : IDisposable
     [Fact]
     public void Settings_PersistAcrossReload()
     {
-        var settings = SettingsService.Instance;
+        var settings = GetInstance();
         settings.LeftPanelWidth = 500;
         settings.RightPanelWidth = 350;
         settings.StoreBrowserPanelVisible = false;
 
-        // Reset and reload
-        SingletonTestHelper.ResetSingleton<SettingsService>();
-        var reloaded = SettingsService.Instance;
+        ResetSingleton();
+        var reloaded = GetInstance();
 
         Assert.Equal(500, reloaded.LeftPanelWidth);
         Assert.Equal(350, reloaded.RightPanelWidth);
