@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Promote `WindowLifecycleManager` to `Radoub.UI` now that a second consumer exists (#2391).
 - Split `FileBrowserPanelBase.axaml.cs` (1199 lines) into focused partials (#2426).
-- Split `ModelPreviewGLControl.cs` (1347 lines) into focused partials (#2127).
+- Split `ModelPreviewGLControl.cs` (1987 lines) into focused partials (#2127).
 - Extract a shared New-blueprint dialog from the near-duplicate `NewStoreWindow`/`NewPlaceableWindow` (#2517).
 - Consolidate the triplicated `SpellCheckTextBox` into `Radoub.UI` (#2551).
 

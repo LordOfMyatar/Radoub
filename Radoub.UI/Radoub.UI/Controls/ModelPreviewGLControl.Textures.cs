@@ -306,33 +306,4 @@ public partial class ModelPreviewGLControl
 
         return texId;
     }
-
-    /// <summary>
-    /// Determines if a texture name represents a body/skin texture that should render behind armor.
-    /// NWN body part textures follow naming conventions like:
-    /// - pXX_bodyYYY (player body parts)
-    /// - pXX_headYYY (player heads)
-    /// - cXX_bodyYYY (creature body parts)
-    /// Armor textures don't contain these patterns.
-    /// </summary>
-    private static bool IsBodyTexture(string? textureName)
-    {
-        if (string.IsNullOrEmpty(textureName))
-            return false;
-
-        var name = textureName.ToLowerInvariant();
-
-        // Body part patterns for player/creature models
-        // These render BEHIND armor to prevent z-fighting
-        return name.Contains("_body") ||
-               name.Contains("_head") ||
-               name.Contains("_neck") ||
-               name.Contains("_hand") ||
-               name.Contains("_foot") ||
-               name.Contains("_shin") ||
-               name.Contains("_thigh") ||
-               name.Contains("_bicep") ||
-               name.Contains("_forearm") ||
-               name.Contains("_pelvis");
-    }
 }
