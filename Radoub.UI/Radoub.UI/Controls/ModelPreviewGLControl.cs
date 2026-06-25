@@ -166,7 +166,7 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
     /// <summary>
     /// Mesh composition info for the currently loaded model.
     /// </summary>
-    public record ModelMeshInfo(int TotalMeshes, int SkinMeshCount, int HiddenMeshCount, int SkippedTrimeshCount);
+    public record ModelMeshInfo(int TotalMeshes, int SkinMeshCount, int HiddenMeshCount);
 
     /// <summary>
     /// Raised on the UI thread after model mesh analysis completes.
@@ -198,7 +198,7 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             if (value == null)
             {
                 SetPreviewState(PreviewState.None);
-                MeshInfoChanged?.Invoke(this, new ModelMeshInfo(0, 0, 0, 0));
+                MeshInfoChanged?.Invoke(this, new ModelMeshInfo(0, 0, 0));
             }
             RequestNextFrameRendering();
         }
@@ -696,7 +696,6 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
         // #2498: the 30-vertex shared-bitmap heuristic (#1676/#2057) was removed — it hid real
         // geometry that reuses the body texture (hands, necks, hair, dragon spikes, tongues).
         // Visibility now matches the Aurora engine: honor the MDL Render flag + drop empty meshes.
-        const int skippedTrimeshes = 0;
         var allMeshes = _model.GetMeshNodes().ToList();
 
         UnifiedLogger.LogApplication(LogLevel.INFO, $"  Model '{_model.Name}': {allMeshes.Count} mesh nodes: {string.Join(", ", allMeshes.Select(m => m.Name))}");
@@ -1024,7 +1023,7 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
         UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateMeshBuffers: model={_model?.Name ?? "null"}, {_meshDrawCalls.Count} meshes ({skippedMeshes} skipped), {vertices.Count / 8} vertices, {_indexCount / 3} triangles");
 
         // Notify listeners of mesh composition
-        var meshInfo = new ModelMeshInfo(totalMeshCount, skinMeshCount, hiddenMeshCount, skippedTrimeshes);
+        var meshInfo = new ModelMeshInfo(totalMeshCount, skinMeshCount, hiddenMeshCount);
         if (Dispatcher.UIThread.CheckAccess())
             MeshInfoChanged?.Invoke(this, meshInfo);
         else
