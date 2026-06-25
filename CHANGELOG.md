@@ -8,6 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Build Infrastructure] - 2026-06-24
+**Branch**: `radoub/issue-2589` | **PR**: #2589
+
+### Sprint: Dependabot Dependency Updates (#2589)
+
+- Bump `actions/checkout` from v6 to v7 across all CI workflows (#2589).
+- Bump `Nerdbank.GitVersioning` and the `nbgv` CLI tool from 3.9.50 to 3.10.85 (#2590, #2591).
+
+Build-time/CI only — no runtime behavior change.
+
+---
+
 ## [Radoub.UI 0.2.30-alpha] - 2026-06-24
 **Branch**: `radoub/issue-2557` | **PR**: #2593
 
