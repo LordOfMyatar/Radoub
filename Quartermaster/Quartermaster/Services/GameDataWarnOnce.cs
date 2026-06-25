@@ -29,4 +29,9 @@ public static class GameDataWarnOnce
     /// Test seam — clears the set of already-seen keys.
     /// </summary>
     internal static void ResetForTests() => _seen.Clear();
+
+    /// <summary>
+    /// Test seam — true if <paramref name="key"/> has already fired (and would now be silent).
+    /// </summary>
+    internal static bool HasSeen(string key) => _seen.ContainsKey(key);
 }

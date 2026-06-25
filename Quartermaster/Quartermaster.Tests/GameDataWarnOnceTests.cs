@@ -11,39 +11,36 @@ public class GameDataWarnOnceTests
     }
 
     [Fact]
-    public void Warn_FirstCallEmits_SecondCallSilent()
+    public void Warn_FirstCallRecordsKey_SecondCallStaysRecorded()
     {
-        // Side-effect is to UnifiedLogger; we exercise the dedup logic via the
-        // public surface — repeated calls with the same key must not throw or
-        // re-add to the underlying set.
-        GameDataWarnOnce.Warn("skill_42", "First");
-        GameDataWarnOnce.Warn("skill_42", "Second"); // should be silent
+        Assert.False(GameDataWarnOnce.HasSeen("skill_42"));
 
-        // No exception thrown is the assertion; we just want to confirm the
-        // happy-path doesn't blow up on dup keys.
-        Assert.True(true);
+        GameDataWarnOnce.Warn("skill_42", "First");
+        Assert.True(GameDataWarnOnce.HasSeen("skill_42"));
+
+        // Second call with the same key is a silent no-op; the key remains recorded.
+        GameDataWarnOnce.Warn("skill_42", "Second");
+        Assert.True(GameDataWarnOnce.HasSeen("skill_42"));
     }
 
     [Fact]
-    public void Warn_DifferentKeysEachFire()
+    public void Warn_DistinctKeysAreTrackedIndependently()
     {
-        // Each distinct key gets its own first-fire — no cross-contamination.
         GameDataWarnOnce.Warn("a", "msg-a");
         GameDataWarnOnce.Warn("b", "msg-b");
-        GameDataWarnOnce.Warn("c", "msg-c");
 
-        // Re-warn should still be silent for a,b,c
-        GameDataWarnOnce.Warn("a", "msg-a-2");
-        Assert.True(true);
+        Assert.True(GameDataWarnOnce.HasSeen("a"));
+        Assert.True(GameDataWarnOnce.HasSeen("b"));
+        Assert.False(GameDataWarnOnce.HasSeen("c"));
     }
 
     [Fact]
     public void ResetForTests_ClearsSeenSet()
     {
         GameDataWarnOnce.Warn("reset_key", "first");
+        Assert.True(GameDataWarnOnce.HasSeen("reset_key"));
+
         GameDataWarnOnce.ResetForTests();
-        // After reset, the same key fires again — confirmed by absence of exceptions.
-        GameDataWarnOnce.Warn("reset_key", "first-again");
-        Assert.True(true);
+        Assert.False(GameDataWarnOnce.HasSeen("reset_key"));
     }
 }
