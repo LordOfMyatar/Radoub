@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.133-alpha] - 2026-06-25
-**Branch**: `quartermaster/issue-1584` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1584` | **PR**: #2602
 
 ### Feature: Tune gamma/contrast in 3D model preview (#1584)
 
