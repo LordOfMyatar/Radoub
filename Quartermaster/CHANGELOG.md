@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.133-alpha] - 2026-06-25
+**Branch**: `quartermaster/issue-1584` | **PR**: #TBD
+
+### Feature: Tune gamma/contrast in 3D model preview (#1584)
+
+- Dark armor/skin no longer washes out to flat gray in the preview — the texture's painted-in shading shows through with deeper blacks, closer to the Aurora toolset. Shared-library change (Radoub.UI shader) — affects all 3D-preview tools.
+
+---
+
 ## [0.2.132-alpha] - 2026-06-22
 **Branch**: `quartermaster/issue-2540-cutout` | **PR**: #2586
 
