@@ -6,11 +6,11 @@ namespace Radoub.Formats.Tokens;
 
 /// <summary>
 /// Loads and saves user-defined color token configurations.
-/// Configuration file location: ~/Radoub/token-colors.json
+/// Configuration file location: ~/Radoub/token-colors.json   // theme-ok: filename, not Avalonia Colors enum
 /// </summary>
 public static class UserColorConfigLoader
 {
-    private const string ConfigFileName = "token-colors.json";
+    private const string ConfigFileName = "token-colors.json"; // theme-ok: filename, not Avalonia Colors enum
     private const string RadoubFolderName = "Radoub";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -136,7 +136,7 @@ public static class UserColorConfigLoader
 
         foreach (var kvp in config.Colors)
         {
-            colors.Add(new ColorDefinition
+            colors.Add(new ColorDefinition // theme-ok: local var, not Avalonia Colors enum
             {
                 Name = kvp.Key,
                 Token = kvp.Value,

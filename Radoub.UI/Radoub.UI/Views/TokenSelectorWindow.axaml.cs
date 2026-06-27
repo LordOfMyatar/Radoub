@@ -64,7 +64,7 @@ namespace Radoub.UI.Views
             foreach (var kvp in _userColorConfig.Colors)
             {
                 var hexColor = _userColorConfig.ColorHexValues.GetValueOrDefault(kvp.Key, "#FFFFFF");
-                colors.Add(new ColorListItem
+                colors.Add(new ColorListItem // theme-ok: local var, not Avalonia Colors enum
                 {
                     Name = kvp.Key,
                     OpenToken = kvp.Value,
@@ -389,7 +389,7 @@ namespace Radoub.UI.Views
         public string Name { get; set; } = "";
         public string OpenToken { get; set; } = "";
         public string CloseToken { get; set; } = "";
-        public IBrush HexColor { get; set; } = Brushes.White;
+        public IBrush HexColor { get; set; } = Brushes.White; // theme-ok: placeholder default, overwritten with the literal user token color
     }
 
     /// <summary>

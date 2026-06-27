@@ -313,6 +313,7 @@
                             <Border x:Name="ModelPreviewInputSurface"
                                     Background="Transparent"
                                     Focusable="True"/>
+                            <!-- theme-ok: translucent black scrim must read over arbitrary 3D GL preview content, not theme-recolored -->
                             <Border x:Name="PreviewStateOverlay"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Top"
