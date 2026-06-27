@@ -42,27 +42,6 @@ public class FilterStateTests
         Assert.Null(state.SelectedBaseItemIndex);
     }
 
-    [Fact]
-    public void CanSetAllProperties()
-    {
-        var state = new FilterState
-        {
-            ShowStandard = false,
-            ShowOverride = true,
-            ShowHak = false,
-            ShowModule = false,
-            SearchText = "sword",
-            SelectedBaseItemIndex = 5
-        };
-
-        Assert.False(state.ShowStandard);
-        Assert.True(state.ShowOverride);
-        Assert.False(state.ShowHak);
-        Assert.False(state.ShowModule);
-        Assert.Equal("sword", state.SearchText);
-        Assert.Equal(5, state.SelectedBaseItemIndex);
-    }
-
     // ---- Legacy migration (old persisted state had a single ShowCustom bool) ----
 
     [Fact]

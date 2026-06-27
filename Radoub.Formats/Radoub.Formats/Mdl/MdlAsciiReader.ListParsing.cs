@@ -266,13 +266,13 @@ public partial class MdlAsciiReader
                 var g = (byte)(ParseFloat(parts[1]) * 255);
                 var b = (byte)(ParseFloat(parts[2]) * 255);
                 var a = parts.Length >= 4 ? (byte)(ParseFloat(parts[3]) * 255) : (byte)255;
-                colors.Add((uint)((a << 24) | (b << 16) | (g << 8) | r));
+                colors.Add((uint)((a << 24) | (b << 16) | (g << 8) | r)); // theme-ok: local var, not Avalonia Colors enum
             }
 
             _currentLine++;
         }
 
-        mesh.VertexColors = colors.ToArray();
+        mesh.VertexColors = colors.ToArray(); // theme-ok: local var, not Avalonia Colors enum
         _currentLine--; // Back up so main loop can advance
     }
 

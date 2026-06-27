@@ -110,40 +110,24 @@ public class DlgSearchProviderTests
             m.Location is DlgMatchLocation loc && loc.NodeType == DlgNodeType.Reply);
     }
 
-    [Fact]
-    public void Search_FindsSpeaker()
+    [Theory]
+    [InlineData("LOUIS_ROMAIN", "Speaker")]
+    [InlineData("gc_check_quest", "Action Script")]
+    [InlineData("q_main_plot", "Action Params")]
+    [InlineData("gc_end_conv", "End Conversation")]
+    [InlineData("gc_abort", "End Conversation Abort")]
+    [InlineData("vo_louis", "Sound")]
+    [InlineData("q_main_plot", "Quest")]
+    [InlineData("Opening line", "Comment")]
+    public void Search_FindsFieldByPattern(string pattern, string expectedFieldName)
     {
         var provider = new DlgSearchProvider();
         var gff = DlgToGff(CreateTestDlg());
-        var criteria = new SearchCriteria { Pattern = "LOUIS_ROMAIN" };
+        var criteria = new SearchCriteria { Pattern = pattern };
 
         var matches = provider.Search(gff, criteria);
 
-        Assert.Contains(matches, m => m.Field.Name == "Speaker");
-    }
-
-    [Fact]
-    public void Search_FindsActionScript()
-    {
-        var provider = new DlgSearchProvider();
-        var gff = DlgToGff(CreateTestDlg());
-        var criteria = new SearchCriteria { Pattern = "gc_check_quest" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Action Script");
-    }
-
-    [Fact]
-    public void Search_FindsActionParams()
-    {
-        var provider = new DlgSearchProvider();
-        var gff = DlgToGff(CreateTestDlg());
-        var criteria = new SearchCriteria { Pattern = "q_main_plot" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Action Params");
+        Assert.Contains(matches, m => m.Field.Name == expectedFieldName);
     }
 
     [Fact]
@@ -185,66 +169,6 @@ public class DlgSearchProviderTests
         Assert.Contains(matches, m =>
             m.Field.Name == "Condition Params" &&
             m.Location is DlgMatchLocation loc && loc.NodeType == DlgNodeType.StartingLink);
-    }
-
-    [Fact]
-    public void Search_FindsEndConversationScript()
-    {
-        var provider = new DlgSearchProvider();
-        var gff = DlgToGff(CreateTestDlg());
-        var criteria = new SearchCriteria { Pattern = "gc_end_conv" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "End Conversation");
-    }
-
-    [Fact]
-    public void Search_FindsEndConverAbortScript()
-    {
-        var provider = new DlgSearchProvider();
-        var gff = DlgToGff(CreateTestDlg());
-        var criteria = new SearchCriteria { Pattern = "gc_abort" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "End Conversation Abort");
-    }
-
-    [Fact]
-    public void Search_FindsSound()
-    {
-        var provider = new DlgSearchProvider();
-        var gff = DlgToGff(CreateTestDlg());
-        var criteria = new SearchCriteria { Pattern = "vo_louis" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Sound");
-    }
-
-    [Fact]
-    public void Search_FindsQuest()
-    {
-        var provider = new DlgSearchProvider();
-        var gff = DlgToGff(CreateTestDlg());
-        var criteria = new SearchCriteria { Pattern = "q_main_plot" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Quest");
-    }
-
-    [Fact]
-    public void Search_FindsComment()
-    {
-        var provider = new DlgSearchProvider();
-        var gff = DlgToGff(CreateTestDlg());
-        var criteria = new SearchCriteria { Pattern = "Opening line" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Comment");
     }
 
     [Fact]

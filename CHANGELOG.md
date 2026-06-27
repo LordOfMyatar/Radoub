@@ -8,6 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Workflow Tooling] - 2026-06-27
+**Branch**: `radoub/issue-2559` | **PR**: #2604
+
+### Sprint: Tech-Debt — Tooling, CI & Workflow Hygiene (#2559)
+
+- Triage theme-scan to a clean 0 baseline; every hit suppressed with a reasoned `theme-ok` (no real drift found) (#2278).
+- Consolidate unit tests: shared `ToolSettingsServiceTestBase` across 5 tools and ~45 search-provider facts collapsed into theories (#2464).
+- Fix sandbox denial of git range syntax in `/pre-merge` (merge-base/cherry equivalents) (#2468).
+- Refresh stale tool-label list in Refresh-GitHubCache (relique/reliquary/marlinspike) (#2473).
+- Evaluate selective GitHub auto-merge (#2471) — recommendation only; blocked on adding required status checks to the branch ruleset first.
+
+---
+
 ## [Radoub.Formats 0.2.78-alpha] - 2026-06-24
 **Branch**: `radoub/issue-2558` | **PR**: #2600
 

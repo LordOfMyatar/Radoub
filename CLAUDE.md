@@ -551,6 +551,12 @@ ls -la d:/LOM/workspace/Radoub/some/path/
 - Backslashes in paths (escaping issues)
 - `cmd /c` commands (quoting problems)
 - `grep` with regex alternation `\|` (use PowerShell search instead)
+- **Git range syntax** (`main...HEAD`, `origin/<branch>..HEAD`) — the dot-dot/triple-dot
+  patterns trip the Bash sandbox path-traversal guard and get denied (#2468). Use non-range
+  equivalents:
+  - `git diff main...HEAD` → `git diff "$(git merge-base main HEAD)" HEAD`
+  - `git log origin/<branch>..HEAD` (list unpushed commits) → `git cherry -v "origin/<branch>" HEAD`
+  - `git rev-list --count origin/<branch>..HEAD` → `git rev-list --count HEAD --not "origin/<branch>"`
 
 ### PowerShell Script Patterns
 

@@ -167,7 +167,7 @@ $prTotalCount = $prData.data.repository.pullRequests.totalCount
 
 # --- Calculate summary statistics ---
 $labelCounts = @{}
-$toolLabels = @("parley", "quartermaster", "manifest", "fence", "radoub", "Trebuchet")
+$toolLabels = @("parley", "quartermaster", "manifest", "fence", "radoub", "Trebuchet", "relique", "reliquary", "marlinspike")
 $typeLabels = @("bug", "enhancement", "epic", "sprint", "tech-debt", "documentation", "refactor", "testing", "research")
 
 foreach ($issue in $allIssues) {

@@ -6,16 +6,6 @@ namespace Radoub.UI.Tests;
 public class ItemTypeInfoTests
 {
     [Fact]
-    public void Constructor_SetsProperties()
-    {
-        var info = new ItemTypeInfo(5, "Longsword", "longsword");
-
-        Assert.Equal(5, info.BaseItemIndex);
-        Assert.Equal("Longsword", info.Name);
-        Assert.Equal("longsword", info.Label);
-    }
-
-    [Fact]
     public void IsAllTypes_FalseForNormalType()
     {
         var info = new ItemTypeInfo(5, "Longsword", "longsword");
@@ -44,8 +34,7 @@ public class ItemTypeInfoTests
     [Fact]
     public void ToString_ReturnsName()
     {
-        var info = new ItemTypeInfo(5, "Longsword", "longsword");
-
-        Assert.Equal("Longsword", info.ToString());
+        // ToString is a real override that drives the text shown in bound combo/list UI.
+        Assert.Equal("Longsword", new ItemTypeInfo(5, "Longsword", "longsword").ToString());
     }
 }

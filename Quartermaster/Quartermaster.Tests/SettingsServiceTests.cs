@@ -1,90 +1,47 @@
 using Quartermaster.Services;
+using Radoub.TestUtilities.Bases;
 using Radoub.TestUtilities.Helpers;
 
 namespace Quartermaster.Tests;
 
 /// <summary>
-/// Tests for SettingsService.
-/// Uses isolated temp directory to avoid corrupting user settings.
+/// Tests for Quartermaster's SettingsService. The shared singleton/window/recent-files/
+/// log-retention contract lives in <see cref="ToolSettingsServiceTestBase{TService}"/> (#2464);
+/// only Quartermaster-specific behavior (panel width, ValidationLevel) is below.
 /// </summary>
-public class SettingsServiceTests : IDisposable
+public class SettingsServiceTests : ToolSettingsServiceTestBase<SettingsService>
 {
-    private readonly string _testSettingsDir;
+    protected override string SettingsEnvironmentVariable => "QUARTERMASTER_SETTINGS_DIR";
+    protected override string ToolDirPrefix => "Quartermaster";
+    protected override string RecentFileExtension => ".utc";
 
-    public SettingsServiceTests()
-    {
-        // Create isolated temp directory for each test run
-        _testSettingsDir = Path.Combine(Path.GetTempPath(), $"Quartermaster_Tests_{Guid.NewGuid():N}");
-        Directory.CreateDirectory(_testSettingsDir);
+    protected override SettingsService GetInstance() => SettingsService.Instance;
+    protected override void ResetSingleton() => SingletonTestHelper.ResetSingleton<SettingsService>();
 
-        // Reset singleton and configure via environment variable
-        SingletonTestHelper.ResetSingleton<SettingsService>();
-        SingletonTestHelper.ConfigureSettingsDirectory("QUARTERMASTER_SETTINGS_DIR", _testSettingsDir);
-    }
+    protected override double GetWindowWidth(SettingsService s) => s.WindowWidth;
+    protected override void SetWindowWidth(SettingsService s, double v) => s.WindowWidth = v;
+    protected override double GetWindowHeight(SettingsService s) => s.WindowHeight;
+    protected override void SetWindowHeight(SettingsService s, double v) => s.WindowHeight = v;
+    protected override IReadOnlyList<string> GetRecentFiles(SettingsService s) => s.RecentFiles;
+    protected override void AddRecentFile(SettingsService s, string path) => s.AddRecentFile(path);
+    protected override int GetMaxRecentFiles(SettingsService s) => s.MaxRecentFiles;
+    protected override void SetMaxRecentFiles(SettingsService s, int v) => s.MaxRecentFiles = v;
+    protected override int GetLogRetentionSessions(SettingsService s) => s.LogRetentionSessions;
+    protected override void SetLogRetentionSessions(SettingsService s, int v) => s.LogRetentionSessions = v;
 
-    public void Dispose()
-    {
-        // Reset singleton and clear env var
-        SingletonTestHelper.ResetSingleton<SettingsService>();
-        SingletonTestHelper.ConfigureSettingsDirectory("QUARTERMASTER_SETTINGS_DIR", null);
-
-        // Clean up temp directory
-        try
-        {
-            if (Directory.Exists(_testSettingsDir))
-                Directory.Delete(_testSettingsDir, recursive: true);
-        }
-        catch
-        {
-            // Ignore cleanup failures
-        }
-    }
-
-    [Fact]
-    public void Instance_ReturnsSameInstance()
-    {
-        var instance1 = SettingsService.Instance;
-        var instance2 = SettingsService.Instance;
-
-        Assert.Same(instance1, instance2);
-    }
+    // ---- Quartermaster-specific ----
 
     [Fact]
     public void SharedSettings_ReturnsRadoubSettings()
     {
-        var sharedSettings = SettingsService.SharedSettings;
-
-        Assert.NotNull(sharedSettings);
-    }
-
-    [Fact]
-    public void WindowWidth_EnforcesMinimum()
-    {
-        var service = SettingsService.Instance;
-
-        // WindowWidth should not go below 600
-        service.WindowWidth = 100;
-
-        Assert.True(service.WindowWidth >= 600);
-    }
-
-    [Fact]
-    public void WindowHeight_EnforcesMinimum()
-    {
-        var service = SettingsService.Instance;
-
-        // WindowHeight should not go below 400
-        service.WindowHeight = 100;
-
-        Assert.True(service.WindowHeight >= 400);
+        Assert.NotNull(SettingsService.SharedSettings);
     }
 
     [Fact]
     public void LeftPanelWidth_EnforcesRange()
     {
-        var service = SettingsService.Instance;
+        var service = GetInstance();
 
-        // LeftPanelWidth should be between 200 and 600
         service.LeftPanelWidth = 100;
         Assert.True(service.LeftPanelWidth >= 200);
 
@@ -93,83 +50,16 @@ public class SettingsServiceTests : IDisposable
     }
 
     [Fact]
-    public void MaxRecentFiles_EnforcesRange()
-    {
-        var service = SettingsService.Instance;
-
-        // MaxRecentFiles should be between 1 and 20
-        service.MaxRecentFiles = 0;
-        Assert.True(service.MaxRecentFiles >= 1);
-
-        service.MaxRecentFiles = 100;
-        Assert.True(service.MaxRecentFiles <= 20);
-    }
-
-    [Fact]
-    public void RecentFiles_ReturnsListCopy()
-    {
-        var service = SettingsService.Instance;
-
-        var list1 = service.RecentFiles;
-        var list2 = service.RecentFiles;
-
-        // Each call should return a new list (defensive copy)
-        Assert.NotSame(list1, list2);
-    }
-
-    [Fact]
-    public void LogRetentionSessions_EnforcesRange()
-    {
-        var service = SettingsService.Instance;
-
-        // LogRetentionSessions should be between 1 and 10
-        service.LogRetentionSessions = 0;
-        Assert.True(service.LogRetentionSessions >= 1);
-
-        service.LogRetentionSessions = 100;
-        Assert.True(service.LogRetentionSessions <= 10);
-    }
-
-    [Fact]
-    public void AddRecentFile_AddsToList()
-    {
-        var service = SettingsService.Instance;
-
-        // Create a temp file that exists
-        var tempFile = Path.Combine(_testSettingsDir, "test.utc");
-        File.WriteAllText(tempFile, "test");
-
-        service.AddRecentFile(tempFile);
-
-        Assert.Contains(tempFile, service.RecentFiles);
-    }
-
-    [Fact]
-    public void Settings_PersistAcrossReload()
-    {
-        // Set some values
-        var service = SettingsService.Instance;
-        service.WindowWidth = 1000;
-
-        // Reset and reload
-        SingletonTestHelper.ResetSingleton<SettingsService>();
-
-        var reloaded = SettingsService.Instance;
-
-        Assert.Equal(1000, reloaded.WindowWidth);
-    }
-
-    [Fact]
     public void ValidationLevel_LegacyWarningValue_MigratesToNone()
     {
         // #1882: The old Warning=1 tier was removed. Persisted settings with
         // Warning (1) must migrate to None since TN allowed everything CE allows.
-        var settingsFile = Path.Combine(_testSettingsDir, "QuartermasterSettings.json");
+        var settingsFile = Path.Combine(TestSettingsDir, "QuartermasterSettings.json");
         File.WriteAllText(settingsFile,
             "{ \"ValidationLevel\": 1, \"WindowWidth\": 1024, \"WindowHeight\": 768 }");
 
-        SingletonTestHelper.ResetSingleton<SettingsService>();
-        var service = SettingsService.Instance;
+        ResetSingleton();
+        var service = GetInstance();
 
         Assert.Equal(ValidationLevel.None, service.ValidationLevel);
     }
@@ -178,8 +68,8 @@ public class SettingsServiceTests : IDisposable
     public void ValidationLevel_DefaultValue_IsNone()
     {
         // #1882: Default is now None (CE) — permissive, matches prior TN default intent
-        SingletonTestHelper.ResetSingleton<SettingsService>();
-        var service = SettingsService.Instance;
+        ResetSingleton();
+        var service = GetInstance();
 
         Assert.Equal(ValidationLevel.None, service.ValidationLevel);
     }
@@ -187,11 +77,11 @@ public class SettingsServiceTests : IDisposable
     [Fact]
     public void ValidationLevel_StrictValue_PreservedAcrossReload()
     {
-        var service = SettingsService.Instance;
+        var service = GetInstance();
         service.ValidationLevel = ValidationLevel.Strict;
 
-        SingletonTestHelper.ResetSingleton<SettingsService>();
-        var reloaded = SettingsService.Instance;
+        ResetSingleton();
+        var reloaded = GetInstance();
 
         Assert.Equal(ValidationLevel.Strict, reloaded.ValidationLevel);
     }

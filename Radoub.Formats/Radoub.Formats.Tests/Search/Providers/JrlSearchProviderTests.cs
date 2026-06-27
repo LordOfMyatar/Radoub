@@ -72,28 +72,19 @@ public class JrlSearchProviderTests
         return GffReader.Read(bytes);
     }
 
-    [Fact]
-    public void Search_FindsCategoryName()
+    [Theory]
+    [InlineData("Lost Amulet", "Category Name")]
+    [InlineData("q_main_plot", "Category Tag")]
+    [InlineData("Act I", "Comment")]
+    public void Search_FindsFieldByPattern(string pattern, string expectedFieldName)
     {
         var provider = new JrlSearchProvider();
         var gff = JrlToGff(CreateTestJrl());
-        var criteria = new SearchCriteria { Pattern = "Lost Amulet" };
+        var criteria = new SearchCriteria { Pattern = pattern };
 
         var matches = provider.Search(gff, criteria);
 
-        Assert.Contains(matches, m => m.Field.Name == "Category Name");
-    }
-
-    [Fact]
-    public void Search_FindsCategoryTag()
-    {
-        var provider = new JrlSearchProvider();
-        var gff = JrlToGff(CreateTestJrl());
-        var criteria = new SearchCriteria { Pattern = "q_main_plot" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Category Tag");
+        Assert.Contains(matches, m => m.Field.Name == expectedFieldName);
     }
 
     [Fact]
@@ -106,18 +97,6 @@ public class JrlSearchProviderTests
         var matches = provider.Search(gff, criteria);
 
         Assert.Contains(matches, m => m.Field.Name == "Entry Text" && m.MatchedText == "Louis Romain");
-    }
-
-    [Fact]
-    public void Search_FindsComment()
-    {
-        var provider = new JrlSearchProvider();
-        var gff = JrlToGff(CreateTestJrl());
-        var criteria = new SearchCriteria { Pattern = "Act I" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Comment");
     }
 
     [Fact]

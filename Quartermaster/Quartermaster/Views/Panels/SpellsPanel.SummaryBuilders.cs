@@ -770,7 +770,7 @@ public partial class SpellsPanel
                 Text = "No metamagic feats",
                 FontStyle = Avalonia.Media.FontStyle.Italic,
                 Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush
-                             ?? Brushes.Gray,
+                             ?? Brushes.Gray, // theme-ok: fallback when themed brush resource is unavailable
                 FontSize = this.FindResource("FontSizeNormal") as double? ?? 14
             };
             _metaMagicContentPanel.Children.Add(noFeatsText);

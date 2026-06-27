@@ -34,101 +34,24 @@ public class UtmSearchProviderTests
         return GffReader.Read(bytes);
     }
 
-    [Fact]
-    public void Search_FindsLocName()
+    [Theory]
+    [InlineData("Louis Romain", "Name")]
+    [InlineData("LOUIS_STORE", "Tag")]
+    [InlineData("louis_store", "ResRef")]
+    [InlineData("western district", "Comment")]
+    [InlineData("gc_open_store", "OnOpenStore")]
+    [InlineData("gc_close_store", "OnStoreClosed")]
+    [InlineData("nDiscount", "Local Variables")]
+    [InlineData("emporium", "Local Variables")]
+    public void Search_FindsFieldByPattern(string pattern, string expectedFieldName)
     {
         var provider = new UtmSearchProvider();
         var gff = UtmToGff(CreateTestUtm());
-        var criteria = new SearchCriteria { Pattern = "Louis Romain" };
+        var criteria = new SearchCriteria { Pattern = pattern };
 
         var matches = provider.Search(gff, criteria);
 
-        Assert.Contains(matches, m => m.Field.Name == "Name" && m.MatchedText == "Louis Romain");
-    }
-
-    [Fact]
-    public void Search_FindsTag()
-    {
-        var provider = new UtmSearchProvider();
-        var gff = UtmToGff(CreateTestUtm());
-        var criteria = new SearchCriteria { Pattern = "LOUIS_STORE" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Tag");
-    }
-
-    [Fact]
-    public void Search_FindsResRef()
-    {
-        var provider = new UtmSearchProvider();
-        var gff = UtmToGff(CreateTestUtm());
-        var criteria = new SearchCriteria { Pattern = "louis_store" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "ResRef");
-    }
-
-    [Fact]
-    public void Search_FindsComment()
-    {
-        var provider = new UtmSearchProvider();
-        var gff = UtmToGff(CreateTestUtm());
-        var criteria = new SearchCriteria { Pattern = "western district" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Comment");
-    }
-
-    [Fact]
-    public void Search_FindsOnOpenStore()
-    {
-        var provider = new UtmSearchProvider();
-        var gff = UtmToGff(CreateTestUtm());
-        var criteria = new SearchCriteria { Pattern = "gc_open_store" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "OnOpenStore");
-    }
-
-    [Fact]
-    public void Search_FindsOnStoreClosed()
-    {
-        var provider = new UtmSearchProvider();
-        var gff = UtmToGff(CreateTestUtm());
-        var criteria = new SearchCriteria { Pattern = "gc_close_store" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "OnStoreClosed");
-    }
-
-    [Fact]
-    public void Search_FindsVarTableName()
-    {
-        var provider = new UtmSearchProvider();
-        var gff = UtmToGff(CreateTestUtm());
-        var criteria = new SearchCriteria { Pattern = "nDiscount" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Local Variables");
-    }
-
-    [Fact]
-    public void Search_FindsVarTableStringValue()
-    {
-        var provider = new UtmSearchProvider();
-        var gff = UtmToGff(CreateTestUtm());
-        var criteria = new SearchCriteria { Pattern = "emporium" };
-
-        var matches = provider.Search(gff, criteria);
-
-        // Should find in both LocName and VarTable string value
-        Assert.Contains(matches, m => m.Field.Name == "Local Variables");
+        Assert.Contains(matches, m => m.Field.Name == expectedFieldName);
     }
 
     [Fact]

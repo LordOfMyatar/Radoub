@@ -58,7 +58,7 @@ public class PaletteColorService
     {
         var palette = GetPalette(paletteName);
         if (palette == null)
-            return Colors.Gray;
+            return Colors.Gray; // theme-ok: fallback for missing palette TGA — game-data color, not UI chrome
 
         var (r, g, b, a) = TgaReader.GetPixel(palette, 127, colorIndex);
         return Color.FromArgb(a, r, g, b);
@@ -89,8 +89,8 @@ public class PaletteColorService
 
         if (palette == null)
         {
-            stops.Add((0.0, Colors.DarkGray));
-            stops.Add((1.0, Colors.LightGray));
+            stops.Add((0.0, Colors.DarkGray)); // theme-ok: fallback gradient for missing palette TGA — game-data color, not UI chrome
+            stops.Add((1.0, Colors.LightGray)); // theme-ok: fallback gradient for missing palette TGA — game-data color, not UI chrome
             return stops;
         }
 

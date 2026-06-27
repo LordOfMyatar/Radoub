@@ -45,88 +45,23 @@ public class AreSearchProviderTests
         Assert.Contains(matches, m => m.Field.Name == "Name" && m.MatchedText == "Waterdeep");
     }
 
-    [Fact]
-    public void Search_FindsTag()
+    [Theory]
+    [InlineData("AR_MARKET", "Tag")]
+    [InlineData("ar_market", "ResRef")]
+    [InlineData("Chapter 2", "Comments")]
+    [InlineData("ar_enter_mrkt", "OnEnter")]
+    [InlineData("ar_exit_mrkt", "OnExit")]
+    [InlineData("ar_hb_mrkt", "OnHeartbeat")]
+    [InlineData("ar_ud_mrkt", "OnUserDefined")]
+    public void Search_FindsFieldByPattern(string pattern, string expectedFieldName)
     {
         var provider = new AreSearchProvider();
         var gff = AreToGff(CreateTestAre());
-        var criteria = new SearchCriteria { Pattern = "AR_MARKET" };
+        var criteria = new SearchCriteria { Pattern = pattern };
 
         var matches = provider.Search(gff, criteria);
 
-        Assert.Contains(matches, m => m.Field.Name == "Tag");
-    }
-
-    [Fact]
-    public void Search_FindsResRef()
-    {
-        var provider = new AreSearchProvider();
-        var gff = AreToGff(CreateTestAre());
-        var criteria = new SearchCriteria { Pattern = "ar_market" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "ResRef");
-    }
-
-    [Fact]
-    public void Search_FindsComments()
-    {
-        var provider = new AreSearchProvider();
-        var gff = AreToGff(CreateTestAre());
-        var criteria = new SearchCriteria { Pattern = "Chapter 2" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Comments");
-    }
-
-    [Fact]
-    public void Search_FindsOnEnter()
-    {
-        var provider = new AreSearchProvider();
-        var gff = AreToGff(CreateTestAre());
-        var criteria = new SearchCriteria { Pattern = "ar_enter_mrkt" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "OnEnter");
-    }
-
-    [Fact]
-    public void Search_FindsOnExit()
-    {
-        var provider = new AreSearchProvider();
-        var gff = AreToGff(CreateTestAre());
-        var criteria = new SearchCriteria { Pattern = "ar_exit_mrkt" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "OnExit");
-    }
-
-    [Fact]
-    public void Search_FindsOnHeartbeat()
-    {
-        var provider = new AreSearchProvider();
-        var gff = AreToGff(CreateTestAre());
-        var criteria = new SearchCriteria { Pattern = "ar_hb_mrkt" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "OnHeartbeat");
-    }
-
-    [Fact]
-    public void Search_FindsOnUserDefined()
-    {
-        var provider = new AreSearchProvider();
-        var gff = AreToGff(CreateTestAre());
-        var criteria = new SearchCriteria { Pattern = "ar_ud_mrkt" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "OnUserDefined");
+        Assert.Contains(matches, m => m.Field.Name == expectedFieldName);
     }
 
     [Fact]

@@ -144,6 +144,14 @@ function Invoke-TechDebtScan {
 }
 
 # Theme compatibility scan - check for hardcoded colors, fonts, brushes
+#
+# Baseline: 0 accepted violations (#2278). As of 2026-06-27 all previously-flagged
+# values were triaged and suppressed with `// theme-ok` (.cs) / `<!-- theme-ok -->`
+# (.axaml), each carrying a reason. They split between false positives (local vars /
+# properties / comment text matching the regex) and legitimate non-chrome colors
+# (NWN palette/token literal colors, missing-resource fallbacks, a 3D-preview scrim).
+# Any NEW unsuppressed hit is real drift — fix it (DynamicResource/BrushManager) or
+# suppress with a documented reason; do not let the count creep above 0.
 function Invoke-ThemeCompatScan {
     Write-Host "`n=== Theme Compatibility Scan ===" -ForegroundColor Magenta
     Write-Host "Checking for hardcoded colors, fonts, and brushes..." -ForegroundColor Yellow

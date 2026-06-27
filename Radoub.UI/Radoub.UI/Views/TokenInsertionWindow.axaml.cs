@@ -100,8 +100,8 @@ public partial class TokenInsertionWindow : Window
                     panel.Children.Add(new Border
                     {
                         Width = 16, Height = 16,
-                        Background = SolidColorBrush.Parse(hexColor),
-                        BorderBrush = Brushes.Gray,
+                        Background = SolidColorBrush.Parse(hexColor), // theme-ok: literal user token color, must render as-is regardless of theme
+                        BorderBrush = Brushes.Gray, // theme-ok: 1px hairline border on a color swatch
                         BorderThickness = new Thickness(1),
                         CornerRadius = new CornerRadius(2),
                         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
@@ -109,7 +109,7 @@ public partial class TokenInsertionWindow : Window
                 }
                 catch
                 {
-                    // Invalid hex color in token-colors.json — skip the swatch
+                    // Invalid hex color in token-colors.json — skip the swatch // theme-ok: filename in comment, not Avalonia Colors enum
                 }
             }
 

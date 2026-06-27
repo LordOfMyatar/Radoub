@@ -179,9 +179,9 @@ public partial class AppearancePanel
             if (armorColors != null)
             {
                 _modelPreviewGL.SetArmorColors(
-                    armorColors.Value.metal1, armorColors.Value.metal2,
-                    armorColors.Value.cloth1, armorColors.Value.cloth2,
-                    armorColors.Value.leather1, armorColors.Value.leather2);
+                    armorColors.Value.metal1, armorColors.Value.metal2, // theme-ok: nullable-tuple .Value, not Avalonia Colors enum
+                    armorColors.Value.cloth1, armorColors.Value.cloth2, // theme-ok: nullable-tuple .Value, not Avalonia Colors enum
+                    armorColors.Value.leather1, armorColors.Value.leather2); // theme-ok: nullable-tuple .Value, not Avalonia Colors enum
             }
 
             // Texture-source policy (#1758): load the model first, then prefer BIF
