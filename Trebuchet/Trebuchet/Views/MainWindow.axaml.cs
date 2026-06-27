@@ -425,4 +425,83 @@ public partial class MainWindow : Window
     }
 
     #endregion
+
+    #region Add to ERF
+
+    private async void OnAddToErfClick(object? sender, RoutedEventArgs e)
+    {
+        var storage = GetTopLevel(this)?.StorageProvider;
+        if (storage is null) return;
+
+        // 1. Pick the target ERF (must already exist).
+        var targets = await storage.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
+        {
+            Title = "Add to ERF Archive — choose target",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new Avalonia.Platform.Storage.FilePickerFileType("ERF/MOD/HAK Archives")
+                {
+                    Patterns = new[] { "*.erf", "*.mod", "*.hak" }
+                }
+            }
+        });
+        if (targets.Count == 0) return;
+        var erfPath = targets[0].Path.LocalPath;
+
+        // 2. Pick files to add. Default the picker to the current module's working folder so
+        //    palette assets (loose blueprints, compiled scripts) are right there to select.
+        var startFolder = await TryGetModuleFolderAsync(storage);
+        var files = await storage.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
+        {
+            Title = "Add to ERF — choose files",
+            AllowMultiple = true,
+            SuggestedStartLocation = startFolder,
+            FileTypeFilter = new[]
+            {
+                new Avalonia.Platform.Storage.FilePickerFileType("Aurora resources")
+                {
+                    Patterns = new[] { "*.ncs", "*.nss", "*.uti", "*.utc", "*.utp", "*.utd", "*.utm",
+                                       "*.utt", "*.uts", "*.ute", "*.utw", "*.dlg", "*.are", "*.git",
+                                       "*.gic", "*.2da", "*.fac", "*.jrl", "*.itp" }
+                },
+                new Avalonia.Platform.Storage.FilePickerFileType("All Files") { Patterns = new[] { "*" } }
+            }
+        });
+        if (files.Count == 0) return;
+
+        var paths = new System.Collections.Generic.List<string>();
+        foreach (var f in files)
+            paths.Add(f.Path.LocalPath);
+
+        try
+        {
+            var result = new ErfAssetService().AddFiles(erfPath, paths, overwriteExisting: false);
+            var message =
+                $"Added {result.AddedCount} resource(s) to {System.IO.Path.GetFileName(erfPath)}.\n" +
+                $"Skipped {result.SkippedCount} (already present).";
+            if (result.Errors.Count > 0)
+            {
+                message += $"\n\nRejected {result.Errors.Count}:";
+                foreach (var (name, reason) in result.Errors)
+                    message += $"\n  • {name}: {reason}";
+            }
+            new AlertDialog("Add to ERF", message).Show(this);
+        }
+        catch (Exception ex)
+        {
+            new AlertDialog("Add to ERF Failed", ex.Message).Show(this);
+        }
+    }
+
+    private static async System.Threading.Tasks.Task<Avalonia.Platform.Storage.IStorageFolder?>
+        TryGetModuleFolderAsync(Avalonia.Platform.Storage.IStorageProvider storage)
+    {
+        var folder = ModulePathHelper.GetWorkingDirectory(RadoubSettings.Instance.CurrentModulePath);
+        if (string.IsNullOrEmpty(folder) || !System.IO.Directory.Exists(folder))
+            return null;
+        return await storage.TryGetFolderFromPathAsync(new Uri(folder));
+    }
+
+    #endregion
 }
