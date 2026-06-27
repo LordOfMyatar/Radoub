@@ -33,6 +33,14 @@ public class SettingsServiceTests : ToolSettingsServiceTestBase<SettingsService>
     // ---- Fence-specific ----
 
     [Fact]
+    public void RecentFiles_InitiallyEmpty()
+    {
+        // A freshly-isolated SettingsService must start with no MRU entries
+        // (guards against default seeding or settings-dir isolation bleed).
+        Assert.Empty(GetInstance().RecentFiles);
+    }
+
+    [Fact]
     public void LeftPanelWidth_ClampedToRange()
     {
         var settings = GetInstance();

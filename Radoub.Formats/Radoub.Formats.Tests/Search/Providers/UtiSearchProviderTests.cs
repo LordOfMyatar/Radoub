@@ -61,6 +61,20 @@ public class UtiSearchProviderTests
     }
 
     [Fact]
+    public void Search_Name_ExtractsCorrectMatchedText()
+    {
+        // Field-name coverage lives in the theory above; this guards the localized-name
+        // MatchedText extraction specifically (the only provider without a MatchedText fact otherwise).
+        var provider = new UtiSearchProvider();
+        var gff = UtiToGff(CreateTestUti());
+        var criteria = new SearchCriteria { Pattern = "Louis Romain" };
+
+        var matches = provider.Search(gff, criteria);
+
+        Assert.Contains(matches, m => m.Field.Name == "Name" && m.MatchedText == "Louis Romain");
+    }
+
+    [Fact]
     public void Search_ContentCategoryFilter()
     {
         var provider = new UtiSearchProvider();

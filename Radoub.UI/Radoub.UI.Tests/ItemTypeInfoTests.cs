@@ -30,4 +30,11 @@ public class ItemTypeInfoTests
     {
         Assert.Equal("All Types", ItemTypeInfo.AllTypes.Name);
     }
+
+    [Fact]
+    public void ToString_ReturnsName()
+    {
+        // ToString is a real override that drives the text shown in bound combo/list UI.
+        Assert.Equal("Longsword", new ItemTypeInfo(5, "Longsword", "longsword").ToString());
+    }
 }
