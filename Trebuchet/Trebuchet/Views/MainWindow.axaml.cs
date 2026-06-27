@@ -380,4 +380,49 @@ public partial class MainWindow : Window
     }
 
     #endregion
+
+    #region New ERF
+
+    private async void OnNewErfClick(object? sender, RoutedEventArgs e)
+    {
+        var storage = GetTopLevel(this)?.StorageProvider;
+        if (storage is null) return;
+
+        var file = await storage.SaveFilePickerAsync(new Avalonia.Platform.Storage.FilePickerSaveOptions
+        {
+            Title = "New ERF Archive",
+            DefaultExtension = "erf",
+            SuggestedFileName = "newarchive.erf",
+            FileTypeChoices = new[]
+            {
+                new Avalonia.Platform.Storage.FilePickerFileType("ERF Archives") { Patterns = new[] { "*.erf" } }
+            }
+        });
+
+        if (file is null) return;
+
+        var path = file.Path.LocalPath;
+
+        // Validate the chosen filename against Aurora constraints before writing,
+        // so the user gets a clear message instead of an unusable in-game file (#2268).
+        var stem = System.IO.Path.GetFileNameWithoutExtension(path);
+        var validation = AuroraFilenameValidator.Validate(stem);
+        if (!validation.IsValid)
+        {
+            new AlertDialog("Invalid ERF Name", validation.GetErrorMessage()).Show(this);
+            return;
+        }
+
+        try
+        {
+            new ErfCreationService().CreateErf(path, overwrite: true);
+            new AlertDialog("ERF Created", $"Created empty ERF archive:\n{System.IO.Path.GetFileName(path)}").Show(this);
+        }
+        catch (Exception ex)
+        {
+            new AlertDialog("ERF Creation Failed", ex.Message).Show(this);
+        }
+    }
+
+    #endregion
 }
