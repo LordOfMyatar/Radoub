@@ -8,16 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Workflow Tooling] - 2026-06-25
+## [Workflow Tooling] - 2026-06-27
 **Branch**: `radoub/issue-2559` | **PR**: #2604
 
 ### Sprint: Tech-Debt — Tooling, CI & Workflow Hygiene (#2559)
 
-- Audit theme-scan baseline drift, 16 → 21 hardcoded values (#2278).
-- Consolidate duplicated/trivial unit tests across suites (#2464).
-- Fix sandbox denial of git range syntax in pre-merge/post-merge (#2468).
-- Evaluate selective GitHub auto-merge for low-UI-risk PRs (#2471).
+- Triage theme-scan to a clean 0 baseline; every hit suppressed with a reasoned `theme-ok` (no real drift found) (#2278).
+- Consolidate unit tests: shared `ToolSettingsServiceTestBase` across 5 tools and ~45 search-provider facts collapsed into theories (#2464).
+- Fix sandbox denial of git range syntax in `/pre-merge` (merge-base/cherry equivalents) (#2468).
 - Refresh stale tool-label list in Refresh-GitHubCache (relique/reliquary/marlinspike) (#2473).
+- Evaluate selective GitHub auto-merge (#2471) — recommendation only; blocked on adding required status checks to the branch ruleset first.
 
 ---
 
