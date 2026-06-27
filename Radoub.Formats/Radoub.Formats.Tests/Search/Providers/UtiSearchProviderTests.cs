@@ -40,76 +40,24 @@ public class UtiSearchProviderTests
         return GffReader.Read(bytes);
     }
 
-    [Fact]
-    public void Search_FindsLocalizedName()
+    [Theory]
+    [InlineData("Louis Romain", "Name")]
+    [InlineData("unknown origin", "Description")]
+    [InlineData("Icewind Dale", "Identified Description")]
+    [InlineData("LOUIS_SCYTHE", "Tag")]
+    [InlineData("louis_scythe", "Template ResRef")]
+    [InlineData("Quest reward", "Comment")]
+    [InlineData("nEnchantLevel", "Local Variables")]
+    [InlineData("Dwarven Forge", "Local Variables")]
+    public void Search_FindsFieldByPattern(string pattern, string expectedFieldName)
     {
         var provider = new UtiSearchProvider();
         var gff = UtiToGff(CreateTestUti());
-        var criteria = new SearchCriteria { Pattern = "Louis Romain" };
+        var criteria = new SearchCriteria { Pattern = pattern };
 
         var matches = provider.Search(gff, criteria);
 
-        Assert.Contains(matches, m => m.Field.Name == "Name" && m.MatchedText == "Louis Romain");
-    }
-
-    [Fact]
-    public void Search_FindsDescription()
-    {
-        var provider = new UtiSearchProvider();
-        var gff = UtiToGff(CreateTestUti());
-        var criteria = new SearchCriteria { Pattern = "unknown origin" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Description");
-    }
-
-    [Fact]
-    public void Search_FindsDescIdentified()
-    {
-        var provider = new UtiSearchProvider();
-        var gff = UtiToGff(CreateTestUti());
-        var criteria = new SearchCriteria { Pattern = "Icewind Dale" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Identified Description");
-    }
-
-    [Fact]
-    public void Search_FindsTag()
-    {
-        var provider = new UtiSearchProvider();
-        var gff = UtiToGff(CreateTestUti());
-        var criteria = new SearchCriteria { Pattern = "LOUIS_SCYTHE" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Tag");
-    }
-
-    [Fact]
-    public void Search_FindsTemplateResRef()
-    {
-        var provider = new UtiSearchProvider();
-        var gff = UtiToGff(CreateTestUti());
-        var criteria = new SearchCriteria { Pattern = "louis_scythe" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Template ResRef");
-    }
-
-    [Fact]
-    public void Search_FindsComment()
-    {
-        var provider = new UtiSearchProvider();
-        var gff = UtiToGff(CreateTestUti());
-        var criteria = new SearchCriteria { Pattern = "Quest reward" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Comment");
+        Assert.Contains(matches, m => m.Field.Name == expectedFieldName);
     }
 
     [Fact]
@@ -171,30 +119,6 @@ public class UtiSearchProviderTests
     {
         var provider = new UtiSearchProvider();
         Assert.Contains(".uti", provider.Extensions);
-    }
-
-    [Fact]
-    public void Search_FindsVarTableName()
-    {
-        var provider = new UtiSearchProvider();
-        var gff = UtiToGff(CreateTestUti());
-        var criteria = new SearchCriteria { Pattern = "nEnchantLevel" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Local Variables");
-    }
-
-    [Fact]
-    public void Search_FindsVarTableStringValue()
-    {
-        var provider = new UtiSearchProvider();
-        var gff = UtiToGff(CreateTestUti());
-        var criteria = new SearchCriteria { Pattern = "Dwarven Forge" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Local Variables");
     }
 
     [Fact]

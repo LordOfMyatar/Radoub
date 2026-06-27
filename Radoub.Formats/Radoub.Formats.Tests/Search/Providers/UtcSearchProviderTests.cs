@@ -68,112 +68,27 @@ public class UtcSearchProviderTests
         Assert.Contains(matches, m => m.Field.Name == "First Name" && m.MatchedText == "Louis Romain");
     }
 
-    [Fact]
-    public void Search_FindsLastName()
+    [Theory]
+    [InlineData("the Merchant", "Last Name")]
+    [InlineData("western coast", "Description")]
+    [InlineData("LOUIS_ROMAIN", "Tag")]
+    [InlineData("louis_romain", "Template ResRef")]
+    [InlineData("Main quest", "Comment")]
+    [InlineData("Illuskan", "Subrace")]
+    [InlineData("Waukeen", "Deity")]
+    [InlineData("louis_conv", "Conversation")]
+    [InlineData("nw_c2_default5", "ScriptAttacked")]
+    [InlineData("nBossState", "Local Variables")]
+    [InlineData("lost amulet", "Local Variables")]
+    public void Search_FindsFieldByPattern(string pattern, string expectedFieldName)
     {
         var provider = new UtcSearchProvider();
         var gff = UtcToGff(CreateTestUtc());
-        var criteria = new SearchCriteria { Pattern = "the Merchant" };
+        var criteria = new SearchCriteria { Pattern = pattern };
 
         var matches = provider.Search(gff, criteria);
 
-        Assert.Contains(matches, m => m.Field.Name == "Last Name");
-    }
-
-    [Fact]
-    public void Search_FindsDescription()
-    {
-        var provider = new UtcSearchProvider();
-        var gff = UtcToGff(CreateTestUtc());
-        var criteria = new SearchCriteria { Pattern = "western coast" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Description");
-    }
-
-    [Fact]
-    public void Search_FindsTag()
-    {
-        var provider = new UtcSearchProvider();
-        var gff = UtcToGff(CreateTestUtc());
-        var criteria = new SearchCriteria { Pattern = "LOUIS_ROMAIN" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Tag");
-    }
-
-    [Fact]
-    public void Search_FindsTemplateResRef()
-    {
-        var provider = new UtcSearchProvider();
-        var gff = UtcToGff(CreateTestUtc());
-        var criteria = new SearchCriteria { Pattern = "louis_romain" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Template ResRef");
-    }
-
-    [Fact]
-    public void Search_FindsComment()
-    {
-        var provider = new UtcSearchProvider();
-        var gff = UtcToGff(CreateTestUtc());
-        var criteria = new SearchCriteria { Pattern = "Main quest" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Comment");
-    }
-
-    [Fact]
-    public void Search_FindsSubrace()
-    {
-        var provider = new UtcSearchProvider();
-        var gff = UtcToGff(CreateTestUtc());
-        var criteria = new SearchCriteria { Pattern = "Illuskan" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Subrace");
-    }
-
-    [Fact]
-    public void Search_FindsDeity()
-    {
-        var provider = new UtcSearchProvider();
-        var gff = UtcToGff(CreateTestUtc());
-        var criteria = new SearchCriteria { Pattern = "Waukeen" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Deity");
-    }
-
-    [Fact]
-    public void Search_FindsConversation()
-    {
-        var provider = new UtcSearchProvider();
-        var gff = UtcToGff(CreateTestUtc());
-        var criteria = new SearchCriteria { Pattern = "louis_conv" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Conversation");
-    }
-
-    [Fact]
-    public void Search_FindsScriptFields()
-    {
-        var provider = new UtcSearchProvider();
-        var gff = UtcToGff(CreateTestUtc());
-        var criteria = new SearchCriteria { Pattern = "nw_c2_default5" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "ScriptAttacked");
+        Assert.Contains(matches, m => m.Field.Name == expectedFieldName);
     }
 
     [Fact]
@@ -191,30 +106,6 @@ public class UtcSearchProviderTests
 
         Assert.Equal(13, matches.Count);
         Assert.All(matches, m => Assert.Equal(SearchFieldType.Script, m.Field.FieldType));
-    }
-
-    [Fact]
-    public void Search_FindsVarTableName()
-    {
-        var provider = new UtcSearchProvider();
-        var gff = UtcToGff(CreateTestUtc());
-        var criteria = new SearchCriteria { Pattern = "nBossState" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Local Variables");
-    }
-
-    [Fact]
-    public void Search_FindsVarTableStringValue()
-    {
-        var provider = new UtcSearchProvider();
-        var gff = UtcToGff(CreateTestUtc());
-        var criteria = new SearchCriteria { Pattern = "lost amulet" };
-
-        var matches = provider.Search(gff, criteria);
-
-        Assert.Contains(matches, m => m.Field.Name == "Local Variables");
     }
 
     [Fact]
