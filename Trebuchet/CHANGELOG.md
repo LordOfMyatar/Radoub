@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.40.0-alpha] - 2026-06-27
-**Branch**: `trebuchet/issue-2268` | **PR**: #TBD
+**Branch**: `trebuchet/issue-2268` | **PR**: #2607
 
 ### Feature: Create new ERF/MOD from scratch (#2268)
 
