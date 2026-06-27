@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.40.0-alpha] - 2026-06-27
+**Branch**: `trebuchet/issue-2268` | **PR**: #TBD
+
+### Feature: Create new ERF/MOD from scratch (#2268)
+
+- New ERF creation: "New ERF..." produces an empty `.erf` archive ready for resources.
+- New module creation service (seeded from a blank-forest template) — backend + tests only, not yet wired into the UI pending area-creation support.
+
+---
+
 ## [1.21.0-alpha] - 2026-06-14
 **Branch**: `trebuchet/issue-2477` | **PR**: #2483
 
