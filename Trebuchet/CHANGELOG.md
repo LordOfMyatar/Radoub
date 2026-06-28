@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.40.0-alpha] - 2026-06-27
+**Branch**: `trebuchet/issue-2268` | **PR**: #2607
+
+### Feature: Create new ERF/MOD from scratch (#2268)
+
+- New ERF creation: "New ERF..." produces an empty `.erf` archive ready for resources.
+- Add to ERF: "Add to ERF..." adds files (scripts, blueprints, assets) into an existing archive, zip-style — picker defaults to the current module folder so palette assets are at hand.
+- New module creation service (seeded from a blank-forest template) — backend + tests only, not yet wired into the UI pending area-creation support.
+
+---
+
 ## [1.21.0-alpha] - 2026-06-14
 **Branch**: `trebuchet/issue-2477` | **PR**: #2483
 

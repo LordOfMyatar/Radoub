@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 using RadoubLauncher.Services;
@@ -377,6 +378,163 @@ public partial class MainWindow : Window
             panel?.InvalidateSearchIndex();
         };
         window.Show(this);
+    }
+
+    #endregion
+
+    #region New ERF
+
+    private async void OnNewErfClick(object? sender, RoutedEventArgs e)
+    {
+        var storage = GetTopLevel(this)?.StorageProvider;
+        if (storage is null) return;
+
+        var file = await storage.SaveFilePickerAsync(new Avalonia.Platform.Storage.FilePickerSaveOptions
+        {
+            Title = "New ERF Archive",
+            DefaultExtension = "erf",
+            SuggestedFileName = "newarchive.erf",
+            FileTypeChoices = new[]
+            {
+                new Avalonia.Platform.Storage.FilePickerFileType("ERF Archives") { Patterns = new[] { "*.erf" } }
+            }
+        });
+
+        if (file is null) return;
+
+        var path = file.Path.LocalPath;
+
+        // Validate the chosen filename against Aurora constraints before writing,
+        // so the user gets a clear message instead of an unusable in-game file (#2268).
+        var stem = System.IO.Path.GetFileNameWithoutExtension(path);
+        var validation = AuroraFilenameValidator.Validate(stem);
+        if (!validation.IsValid)
+        {
+            new AlertDialog("Invalid ERF Name", validation.GetErrorMessage()).Show(this);
+            return;
+        }
+
+        try
+        {
+            new ErfCreationService().CreateErf(path, overwrite: true);
+            new AlertDialog("ERF Created", $"Created empty ERF archive:\n{System.IO.Path.GetFileName(path)}").Show(this);
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"New ERF failed: {ex.Message}");
+            new AlertDialog("ERF Creation Failed", ex.Message).Show(this);
+        }
+    }
+
+    #endregion
+
+    #region Add to ERF
+
+    private async void OnAddToErfClick(object? sender, RoutedEventArgs e)
+    {
+        var storage = GetTopLevel(this)?.StorageProvider;
+        if (storage is null) return;
+
+        // 1. Pick the target ERF (must already exist).
+        var targets = await storage.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
+        {
+            Title = "Add to ERF Archive — choose target",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                // ERF only. Adding to a .mod is the module workflow (unpack -> edit -> Save Module),
+                // and .hak has its own "Add to HAK" flow (#2267); neither belongs here.
+                new Avalonia.Platform.Storage.FilePickerFileType("ERF Archives")
+                {
+                    Patterns = new[] { "*.erf" }
+                }
+            }
+        });
+        if (targets.Count == 0) return;
+        var erfPath = targets[0].Path.LocalPath;
+
+        // Defense-in-depth: the picker only offers .erf, but guard against the open module's own
+        // archive anyway — adding its working files back to itself is a confusing no-op (#2268).
+        if (ModulePathHelper.IsCurrentModuleArchive(erfPath, RadoubSettings.Instance.CurrentModulePath))
+        {
+            new AlertDialog("Add to ERF",
+                "That is the currently open module. To pack its working files into the module, " +
+                "use Save Module.\n\nAdd to ERF builds a separate ERF archive.").Show(this);
+            return;
+        }
+
+        // 2. Pick files to add. Default the picker to the current module's working folder so
+        //    palette assets (loose blueprints, compiled scripts) are right there to select.
+        var startFolder = await TryGetModuleFolderAsync(storage);
+        var files = await storage.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
+        {
+            Title = "Add to ERF — choose files",
+            AllowMultiple = true,
+            SuggestedStartLocation = startFolder,
+            FileTypeFilter = new[]
+            {
+                // Module user-generated content: blueprints, scripts, and dialog — the assets
+                // a user authors and would package into an ERF.
+                new Avalonia.Platform.Storage.FilePickerFileType("Module content (blueprints, scripts)")
+                {
+                    Patterns = new[] { "*.utc", "*.uti", "*.utp", "*.utd", "*.utt", "*.uts",
+                                       "*.ute", "*.utw", "*.utm", "*.nss", "*.ncs", "*.dlg" }
+                },
+                new Avalonia.Platform.Storage.FilePickerFileType("All Files") { Patterns = new[] { "*" } }
+            }
+        });
+        if (files.Count == 0) return;
+
+        var paths = new System.Collections.Generic.List<string>();
+        foreach (var f in files)
+            paths.Add(f.Path.LocalPath);
+
+        try
+        {
+            var result = new ErfAssetService().AddFiles(erfPath, paths, overwriteExisting: false);
+            var archiveName = System.IO.Path.GetFileName(erfPath);
+
+            string message;
+            if (result.AddedCount == 0 && result.SkippedCount > 0 && result.Errors.Count == 0)
+            {
+                // Everything the user picked was already in the archive — say so plainly rather
+                // than the confusing "Added 0, Skipped N" (#2268).
+                message = result.SkippedCount == 1
+                    ? $"Nothing added — that resource is already in {archiveName}."
+                    : $"Nothing added — all {result.SkippedCount} resources are already in {archiveName}.";
+            }
+            else
+            {
+                message =
+                    $"Added {result.AddedCount} resource(s) to {archiveName}.\n" +
+                    $"Skipped {result.SkippedCount} (already present).";
+            }
+
+            if (result.Errors.Count > 0)
+            {
+                message += $"\n\nRejected {result.Errors.Count}:";
+                foreach (var (name, reason) in result.Errors)
+                    message += $"\n  • {name}: {reason}";
+            }
+            new AlertDialog("Add to ERF", message).Show(this);
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Add to ERF failed: {ex.Message}");
+            new AlertDialog("Add to ERF Failed", ex.Message).Show(this);
+        }
+    }
+
+    private static async System.Threading.Tasks.Task<Avalonia.Platform.Storage.IStorageFolder?>
+        TryGetModuleFolderAsync(Avalonia.Platform.Storage.IStorageProvider storage)
+    {
+        // Trebuchet unpacks a module when you open it, so the working directory (where loose
+        // UGC files live) is the opened module's directory.
+        var folder = ModulePathHelper.GetWorkingDirectory(RadoubSettings.Instance.CurrentModulePath);
+        if (string.IsNullOrEmpty(folder) || !System.IO.Directory.Exists(folder))
+            return null;
+
+        return await storage.TryGetFolderFromPathAsync(new Uri(folder));
     }
 
     #endregion

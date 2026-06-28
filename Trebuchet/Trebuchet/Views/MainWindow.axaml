@@ -96,6 +96,14 @@
                             IsEnabled="{Binding CanBuildModule}"
                             Padding="8,4"
                             ToolTip.Tip="Save IFO changes and pack working directory into .mod file"/>
+                    <Button Content="New ERF..."
+                            Click="OnNewErfClick"
+                            Padding="8,4"
+                            ToolTip.Tip="Create a new empty ERF archive"/>
+                    <Button Content="Add to ERF..."
+                            Click="OnAddToErfClick"
+                            Padding="8,4"
+                            ToolTip.Tip="Add files (scripts, blueprints, assets) to an existing ERF archive"/>
                     <Button Content="Import ERF..."
                             Click="OnImportErfClick"
                             IsVisible="{Binding IsModuleUnpacked}"

@@ -89,4 +89,25 @@ public static class ModulePathHelper
     /// </summary>
     public static string? FindWorkingDirectoryWithFallbacks(string? modulePath)
         => PathHelper.FindWorkingDirectoryWithFallbacks(modulePath);
+
+    /// <summary>
+    /// Returns true when <paramref name="archivePath"/> is the currently-open module's own .mod
+    /// (#2268). Adding a module's contents back to itself via Add-to-ERF is a confusing no-op —
+    /// "Save Module" is what repacks the working files. <paramref name="currentModulePath"/> may
+    /// be either the .mod or its unpacked working directory.
+    /// </summary>
+    public static bool IsCurrentModuleArchive(string? archivePath, string? currentModulePath)
+    {
+        if (string.IsNullOrEmpty(archivePath) || string.IsNullOrEmpty(currentModulePath))
+            return false;
+
+        var currentMod = GetModFilePath(currentModulePath);
+        if (string.IsNullOrEmpty(currentMod))
+            return false;
+
+        return string.Equals(
+            Path.GetFullPath(archivePath),
+            Path.GetFullPath(currentMod),
+            StringComparison.OrdinalIgnoreCase);
+    }
 }
