@@ -58,6 +58,25 @@ public class ModelService
     }
 
     /// <summary>
+    /// Resolve the final body-part number, matching the Aurora engine (xoreos
+    /// <c>creature.cpp:533</c>): <c>idArmor &gt; 0 ? idArmor : id</c>. The equipped armor's
+    /// <c>ArmorPart_*</c> value wins whenever it is present and greater than 0 — even when the
+    /// creature's own <c>BodyPart_*</c> field is 0 (the common case for shoulders/belt, #2601).
+    /// The creature value is used only when armor does not supply this part (null) or supplies 0.
+    /// A final value of 0 means "no part" and is skipped downstream by <see cref="AppendPart"/>.
+    /// </summary>
+    /// <param name="creatureValue">The creature's own <c>BodyPart_*</c> value (0 = none).</param>
+    /// <param name="armorValue">The equipped armor's <c>ArmorPart_*</c> value, or null if the
+    /// armor does not define this part.</param>
+    internal static byte ResolvePartNumber(byte creatureValue, byte? armorValue)
+    {
+        if (armorValue is > 0)
+            return armorValue.Value;
+
+        return creatureValue;
+    }
+
+    /// <summary>
     /// Load the model for a creature based on its appearance settings.
     /// For part-based models, loads and combines body part models.
     /// Equipped armor can override certain body parts.
@@ -193,17 +212,12 @@ public class ModelService
         var basePrefix = BuildModelPrefix(creature.Gender, race, creature.Phenotype);
         UnifiedLogger.LogApplication(LogLevel.INFO, $"LoadPartBasedCreatureModel: basePrefix={basePrefix}");
 
-        // Helper: armor override beats creature value, but creature value of 0 (none/invisible)
-        // always wins regardless of armor.
+        // Resolve the final part number for an armor key, applying the engine rule (#2601).
         byte GetPartNumber(string armorKey, byte creatureValue)
         {
-            if (creatureValue == 0)
-                return 0;
-
-            if (armorOverrides != null && armorOverrides.TryGetValue(armorKey, out var armorValue) && armorValue > 0)
-                return armorValue;
-
-            return creatureValue;
+            byte? armorValue = (armorOverrides != null && armorOverrides.TryGetValue(armorKey, out var v))
+                ? v : (byte?)null;
+            return ResolvePartNumber(creatureValue, armorValue);
         }
 
         var parts = new List<(string PartType, string ResRef)>();

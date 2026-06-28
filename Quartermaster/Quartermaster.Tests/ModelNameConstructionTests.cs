@@ -103,4 +103,46 @@ public class ModelNameConstructionTests
         Assert.False(ModelService.HasConnectorNode(
             new Radoub.Formats.Mdl.MdlModel { GeometryRoot = null }, "tail"));
     }
+
+    // #2601: Part-number resolution must match the Aurora engine rule
+    // (xoreos creature.cpp:533): finalId = armorId > 0 ? armorId : creatureId.
+    // The armor part wins whenever it is present and > 0, REGARDLESS of the creature's
+    // own BodyPart_* value (which is commonly 0 for shoulders/belt). The earlier QM code
+    // short-circuited on creatureValue == 0 and dropped armor-driven shoulder/belt parts.
+
+    [Fact]
+    public void ResolvePartNumber_ArmorWins_WhenCreatureIsZero()
+    {
+        // Bucky case: BodyPart_LShoul=0, armor nw_maarcl071 supplies LShoul=15 → renders 15.
+        Assert.Equal((byte)15, ModelService.ResolvePartNumber(creatureValue: 0, armorValue: 15));
+    }
+
+    [Fact]
+    public void ResolvePartNumber_ArmorWins_OverNonZeroCreatureValue()
+    {
+        // Armor override beats a creature part value too (e.g. torso).
+        Assert.Equal((byte)7, ModelService.ResolvePartNumber(creatureValue: 3, armorValue: 7));
+    }
+
+    [Fact]
+    public void ResolvePartNumber_CreatureUsed_WhenArmorAbsent()
+    {
+        // No armor entry for this part → fall back to the creature's own value.
+        Assert.Equal((byte)4, ModelService.ResolvePartNumber(creatureValue: 4, armorValue: null));
+    }
+
+    [Fact]
+    public void ResolvePartNumber_CreatureUsed_WhenArmorIsZero()
+    {
+        // Armor present but 0 (kFieldIDInvalid-equivalent / explicit none) → creature value wins.
+        Assert.Equal((byte)4, ModelService.ResolvePartNumber(creatureValue: 4, armorValue: 0));
+    }
+
+    [Fact]
+    public void ResolvePartNumber_Zero_WhenBothZeroOrAbsent()
+    {
+        // Naked creature, no armor part → 0 (part skipped downstream).
+        Assert.Equal((byte)0, ModelService.ResolvePartNumber(creatureValue: 0, armorValue: null));
+        Assert.Equal((byte)0, ModelService.ResolvePartNumber(creatureValue: 0, armorValue: 0));
+    }
 }
