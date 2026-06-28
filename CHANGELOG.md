@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.32-alpha] - 2026-06-28
+**Branch**: `quartermaster/issue-2615` | **PR**: #2616
+
+### Model preview: spec-in-alpha meshes no longer render see-through (#2615)
+
+- The mesh transparency classifier now requires actual near-transparent texels before treating a hint-less mesh as transparent. Textures that pack a specular/gloss map in the alpha channel (NWN:EE `_d` skins) are kept opaque, so static creature heads/bodies write depth and occlude correctly instead of showing through. Genuinely transparent creatures are unaffected.
+
+---
+
 ## [Radoub.UI 0.2.31-alpha] - 2026-06-28
 **Branch**: `trebuchet/issue-2268` | **PR**: #2607
 

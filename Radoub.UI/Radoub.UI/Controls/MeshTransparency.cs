@@ -36,12 +36,14 @@ public enum MaterialMode
 /// <c>Alpha</c> controller, the MDL <c>TransparencyHint</c>, and the texture's <see cref="AlphaProfile"/>.
 ///
 /// <para>Hint-less meshes (#2540): the real Aurora engine blends a mesh with no TransparencyHint
-/// iff its texture has an alpha channel (xoreos <c>modelnode.cpp:505</c>, behavioral reference only
-/// — GPLv3, not copied). Our production decoder yields a non-Opaque <see cref="AlphaProfile"/>
-/// exactly when the texture FORMAT carries alpha (DXT5 / 32-bit TGA); DXT1 / 24-bit bodies decode
-/// fully opaque. So a hint-less non-Opaque mesh blends (mane #2507, zodiac creatures #2435) and a
-/// DXT1 body (incl. the #2507 overloaded-<c>_d</c> trap, which decodes Opaque) stays opaque. This
-/// is blend, not discard: a near-opaque body blends to ~itself, so no holes are punched.</para>
+/// iff its texture has a meaningful alpha channel (xoreos <c>modelnode.cpp:505</c>, gated by the
+/// <c>alphaMean != 1.0</c> check at <c>:473</c> — behavioral reference only, GPLv3, not copied).
+/// A texture FORMAT carrying alpha (DXT5 / 32-bit TGA) is necessary but not sufficient: NWN:EE
+/// <c>_d</c> skins pack a specular/gloss map in alpha that never goes transparent (#2615). So
+/// <see cref="AnalyzeAlphaProfile"/> requires actual near-zero texels before reporting a non-Opaque
+/// profile — a high gradient with no transparent texels (<c>boy_head</c>) stays Opaque and keeps
+/// depth writes, while genuinely transparent skins (zodiac creatures #2435, reaching alpha 0) and
+/// hard fur masks (mane #2507) classify Graded / Binary. DXT1 / 24-bit bodies decode fully opaque.</para>
 /// </summary>
 public static class MeshTransparency
 {
@@ -58,6 +60,20 @@ public static class MeshTransparency
     /// </summary>
     private const double GradedSoftFraction = 0.05;
 
+    /// <summary>Alpha at/below this counts as effectively transparent (a true see-through texel).</summary>
+    private const byte NearZeroAlpha = 16;
+
+    /// <summary>
+    /// Minimum count of near-zero texels for the alpha channel to be transparency at all (#2615).
+    /// NWN:EE <c>_d</c> skin textures pack a specular/gloss map in alpha — a high-valued gradient
+    /// that never approaches 0 (e.g. <c>boy_head</c>: minAlpha=42, zero near-zero texels). Such a
+    /// channel is a packed data channel, not transparency; without this gate it mis-read as Graded
+    /// and the head drew with depth-write off (see-through). A single transparent texel is enough
+    /// (a genuine cutout/blend always has a transparent region), so this is a count, not a fraction:
+    /// a fraction would wrongly gate out a small-but-real cutout hole in a large texture.
+    /// </summary>
+    private const int MinTransparentTexels = 1;
+
     /// <summary>
     /// Classify a texture's alpha channel from its RGBA bytes. <paramref name="rgba"/> is tightly
     /// packed (4 bytes/pixel, alpha last). Returns <see cref="AlphaProfile.Opaque"/> for empty/null
@@ -70,18 +86,24 @@ public static class MeshTransparency
 
         int pixels = rgba.Length / 4;
         int softCount = 0;
-        bool anyTransparent = false;
+        int nearZeroCount = 0;
 
         for (int i = 0; i < pixels; i++)
         {
             byte a = rgba[i * 4 + 3];
-            if (a < 255) anyTransparent = true;
+            if (a <= NearZeroAlpha) nearZeroCount++;
             if (a > SoftMin && a < SoftMax) softCount++;
         }
 
-        if (!anyTransparent)
+        // #2615: transparency requires texels that actually go (near) transparent. A channel with
+        // no near-zero texels is a packed spec/gloss map (NWN:EE _d skins), not a transparency
+        // mask — treat it as Opaque so the mesh keeps depth writes and occludes correctly. This
+        // mirrors xoreos's "alphaMean ~= 1.0 => not transparent" gate (modelnode.cpp:473), using
+        // the decoded pixels our production decoder yields.
+        if (nearZeroCount < MinTransparentTexels)
             return AlphaProfile.Opaque;
 
+        // Has real transparent texels: soft-band fraction decides hard mask (Binary) vs gradient.
         return (double)softCount / pixels >= GradedSoftFraction
             ? AlphaProfile.Graded
             : AlphaProfile.Binary;

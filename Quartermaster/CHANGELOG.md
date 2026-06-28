@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.135-alpha] - 2026-06-28
+**Branch**: `quartermaster/issue-2615` | **PR**: #2616
+
+### Fix: Static creature head renders see-through (no depth occlusion) (#2615)
+
+- Solid creature meshes whose texture packs a specular/gloss map in the alpha channel (NWN:EE `_d` skins, e.g. Child: Male 01) are no longer mistaken for transparent — they keep depth writes and occlude correctly. Genuinely transparent creatures (zodiac/celestial) are unaffected. Shared-library change (Radoub.UI).
+
+---
+
 ## [0.2.134-alpha] - 2026-06-28
 **Branch**: `quartermaster/issue-2601` | **PR**: #2614
 
