@@ -115,11 +115,32 @@ public static class MeshTransparency
     /// <param name="alpha">Mesh Alpha controller value (1.0 = fully opaque).</param>
     /// <param name="transparencyHint">MDL TransparencyHint (0 = no transparency interpretation).</param>
     /// <param name="profile">Alpha profile of the mesh's diffuse texture.</param>
-    public static MaterialMode ClassifyMesh(float alpha, int transparencyHint, AlphaProfile profile)
+    /// <param name="isSkin">
+    /// True when the mesh is a deformable body <c>SkinNode</c> (#2588). A SkinNode is never a cutout
+    /// card: it is the solid creature body. When it shares its DDS atlas with a cutout fur/mane mesh
+    /// (CEP dire tiger — body skin + mane both use <c>N_Tiger_LaoHu02_D</c>), the texture reads
+    /// Binary, but the body's UVs map to the SOLID skin region, not the mane's cutout silhouette.
+    /// Alpha-testing the body then discards fragments where its UVs land on the mane's low-alpha
+    /// region, carving black patches on the body/crown. So a Binary-profile skin classifies Opaque
+    /// (depth writes on, no discard) instead of Cutout; the separate mane/dangly trimeshes still
+    /// classify Cutout and carve correctly. A genuinely graded skin (none in the test set) still
+    /// blends. The never-cutout rule holds regardless of TransparencyHint.
+    /// </param>
+    public static MaterialMode ClassifyMesh(float alpha, int transparencyHint, AlphaProfile profile, bool isSkin = false)
     {
         // Controller-driven fade wins outright — a mesh told to be semi-transparent always blends.
         if (alpha < OpaqueAlphaCutoff)
             return MaterialMode.Transparent;
+
+        // #2588: a deformable body SkinNode is never a cutout card. Its Binary profile means the
+        // SHARED atlas carries a cutout mask in the mane region, but the body's own UVs map to solid
+        // skin — alpha-testing it would punch holes in the body. Route Binary->Opaque (keep depth
+        // writes, no discard); leave a genuinely graded skin to blend. Cutout stays for the separate
+        // fur/mane trimesh/dangly meshes (isSkin == false), which genuinely need it (#2507).
+        if (isSkin)
+            return profile == AlphaProfile.Graded
+                ? MaterialMode.Transparent
+                : MaterialMode.Opaque;
 
         // No MDL hint: follow the real Aurora engine (xoreos modelnode.cpp:505 — behavioral
         // reference only, GPLv3, not copied), which blends a hint-less mesh iff its texture has an

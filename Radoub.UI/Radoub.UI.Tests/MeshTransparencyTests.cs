@@ -157,6 +157,58 @@ public class MeshTransparencyTests
             MeshTransparency.ClassifyMesh(1.0f, 1, AlphaProfile.Binary));
     }
 
+    // ---- SkinNode never carves (#2588) ----
+
+    [Fact]
+    public void SkinNode_BinaryProfile_HintZero_IsOpaque_NotCutout()
+    {
+        // #2588: a deformable body SkinNode that SHARES its DDS atlas with a cutout fur/mane mesh
+        // (CEP dire tiger: dire_tiger SkinNode + Mane DanglyNode both use N_Tiger_LaoHu02_D) reads
+        // the shared texture as Binary. A single per-texture profile can't be right for both: the
+        // mane region is a cutout silhouette, the body region is solid skin. Alpha-testing the body
+        // discards fragments where its UVs land on the mane's low-alpha region -> black patches on
+        // body/crown. A SkinNode body is never a cutout card: classify Opaque, keep depth writes,
+        // no discard. The separate mane/dangly trimeshes still classify Cutout and carve correctly.
+        Assert.Equal(MaterialMode.Opaque,
+            MeshTransparency.ClassifyMesh(1.0f, 0, AlphaProfile.Binary, isSkin: true));
+    }
+
+    [Fact]
+    public void SkinNode_BinaryProfile_HintSet_IsOpaque_NotCutout()
+    {
+        // Even with an explicit TransparencyHint, a body SkinNode must not alpha-test itself into
+        // holes — the never-cutout rule for skins holds regardless of the hint.
+        Assert.Equal(MaterialMode.Opaque,
+            MeshTransparency.ClassifyMesh(1.0f, 1, AlphaProfile.Binary, isSkin: true));
+    }
+
+    [Fact]
+    public void SkinNode_GradedProfile_IsTransparent()
+    {
+        // A genuinely soft-gradient skinned body (none observed in the #2588 test set — zodiac
+        // creatures are Trimesh — but kept correct) still blends. The never-cutout rule only
+        // diverts the Binary case; Graded skins keep their real translucency.
+        Assert.Equal(MaterialMode.Transparent,
+            MeshTransparency.ClassifyMesh(1.0f, 0, AlphaProfile.Graded, isSkin: true));
+    }
+
+    [Fact]
+    public void SkinNode_MeshAlphaBelowOne_IsTransparent()
+    {
+        // Controller-driven fade still wins for skins — a body told to be semi-transparent blends.
+        Assert.Equal(MaterialMode.Transparent,
+            MeshTransparency.ClassifyMesh(0.5f, 0, AlphaProfile.Binary, isSkin: true));
+    }
+
+    [Fact]
+    public void TrimeshDangly_BinaryProfile_StillCutout_NotSkin()
+    {
+        // The mane/fur accessory (Dangly/Trimesh, NOT a SkinNode) keeps Cutout — the body-skin
+        // carve-out must not disarm cutout on the fur cards that genuinely need it (#2507).
+        Assert.Equal(MaterialMode.Cutout,
+            MeshTransparency.ClassifyMesh(1.0f, 0, AlphaProfile.Binary, isSkin: false));
+    }
+
     [Fact]
     public void HintSet_GradedProfile_IsTransparent()
     {

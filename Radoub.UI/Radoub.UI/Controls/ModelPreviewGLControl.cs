@@ -85,6 +85,10 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
         // AlphaProfile — which ClassifyMesh needs — isn't known at population time.
         public float MeshAlpha;
         public int TransparencyHint;
+        // True for deformable body SkinNodes (#2588). A SkinNode is never classified Cutout —
+        // see MeshTransparency.ClassifyMesh — so a body sharing a cutout fur/mane atlas (dire tiger)
+        // does not alpha-test itself into black patches.
+        public bool IsSkin;
         // Geometric centroid in the same centered space as the GPU vertex buffer (#2540).
         // Used to depth-sort Transparent meshes back-to-front.
         public Vector3 Centroid;
@@ -527,7 +531,7 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
 
             var profile = hasTexture && _textureAlphaProfile.TryGetValue(resolvedTexture!, out var p)
                 ? p : AlphaProfile.Opaque;
-            var mode = MeshTransparency.ClassifyMesh(drawCall.MeshAlpha, drawCall.TransparencyHint, profile);
+            var mode = MeshTransparency.ClassifyMesh(drawCall.MeshAlpha, drawCall.TransparencyHint, profile, drawCall.IsSkin);
             return (resolvedTexture, hasTexture, mode);
         }
 
@@ -773,7 +777,8 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                 IndexOffset = indices.Count * sizeof(uint),
                 TextureName = rawBitmap,
                 MeshAlpha = mesh.Alpha,
-                TransparencyHint = mesh.TransparencyHint
+                TransparencyHint = mesh.TransparencyHint,
+                IsSkin = isSkinMesh
             };
 
             // #2026/#1584: Pick normal source by whether the mesh carries a usable stored normal
