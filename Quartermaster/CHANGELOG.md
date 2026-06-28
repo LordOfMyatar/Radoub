@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.136-alpha] - 2026-06-28
-**Branch**: `quartermaster/issue-2588` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2588` | **PR**: #2618
 
 ### Fix: Shared body+mane texture carves black patches on body SkinNode (#2588)
 
