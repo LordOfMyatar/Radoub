@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.134-alpha] - 2026-06-28
+**Branch**: `quartermaster/issue-2601` | **PR**: #TBD
+
+### Fix: Equipped-armor shoulder/belt parts missing in 3D preview (#2601)
+
+- Shoulder (shol/shor) and belt parts driven by an equipped armor item's appearance now render in the preview, matching the Aurora toolset. Previously QM resolved these parts only from the creature's `BodyPart_*` fields and skipped them when armor supplied them.
+
+---
+
 ## [0.2.133-alpha] - 2026-06-25
 **Branch**: `quartermaster/issue-1584` | **PR**: #2602
 
