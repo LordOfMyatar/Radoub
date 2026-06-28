@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.134-alpha] - 2026-06-28
-**Branch**: `quartermaster/issue-2598` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2598` | **PR**: #2613
 
 ### Fix: Dynamic Armor Stand (CEP) preview broken (#2598)
 
