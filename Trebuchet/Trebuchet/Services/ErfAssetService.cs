@@ -4,6 +4,7 @@ using System.IO;
 using Radoub.Formats.Common;
 using Radoub.Formats.Erf;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 
 namespace RadoubLauncher.Services;
 
@@ -17,6 +18,17 @@ namespace RadoubLauncher.Services;
 /// </summary>
 public class ErfAssetService
 {
+    private readonly string _backupRoot;
+
+    /// <param name="backupRoot">Root backup directory (defaults to ~/Radoub/Backups). Archive
+    /// backups land in its <see cref="BackupCleanupService.ArchivesBucket"/> subfolder.</param>
+    public ErfAssetService(string? backupRoot = null)
+    {
+        _backupRoot = backupRoot ?? Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "Radoub", "Backups");
+    }
+
     /// <summary>
     /// Add the given files to <paramref name="erfPath"/>.
     /// </summary>
@@ -121,24 +133,14 @@ public class ErfAssetService
     }
 
     // Backup + atomic replace, mirroring ErfWriter.UpdateResource so a failure mid-swap never
-    // leaves the archive missing.
-    private static void WriteWithBackup(ErfFile erf, string erfPath,
+    // leaves the archive missing. The backup goes to the managed Archives bucket under
+    // ~/Radoub/Backups/ so it falls under the backup retention policy — ERFs/HAKs are large and
+    // should not pile up next to the working file (#2268).
+    private void WriteWithBackup(ErfFile erf, string erfPath,
         Dictionary<(string ResRef, ushort Type), byte[]> resourceData, bool createBackup)
     {
-        string? backupPath = null;
         if (createBackup)
-        {
-            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var directory = Path.GetDirectoryName(erfPath) ?? ".";
-            var fileName = Path.GetFileNameWithoutExtension(erfPath);
-            var extension = Path.GetExtension(erfPath);
-            backupPath = Path.Combine(directory, $"{fileName}_backup_{timestamp}{extension}");
-            // The HHmmss timestamp collides when two adds land in the same second; disambiguate
-            // so a rapid second add doesn't fail on File.Copy (overwrite: false).
-            for (int n = 2; File.Exists(backupPath); n++)
-                backupPath = Path.Combine(directory, $"{fileName}_backup_{timestamp}_{n}{extension}");
-            File.Copy(erfPath, backupPath, overwrite: false);
-        }
+            BackupToArchivesBucket(erfPath);
 
         var tempPath = erfPath + ".tmp";
         try
@@ -151,6 +153,32 @@ public class ErfAssetService
             if (File.Exists(tempPath))
                 File.Delete(tempPath);
         }
+    }
+
+    // Copy the archive to ~/Radoub/Backups/Archives/{name}_{yyyyMMdd_HHmmss}{ext}. The name keeps
+    // the timestamp as the trailing two underscore-segments so BackupCleanupService's flat-file
+    // retention parser recognizes it.
+    private void BackupToArchivesBucket(string erfPath)
+    {
+        var backupRoot = Path.Combine(_backupRoot, BackupCleanupService.ArchivesBucket);
+        Directory.CreateDirectory(backupRoot);
+
+        var name = Path.GetFileNameWithoutExtension(erfPath);
+        var ext = Path.GetExtension(erfPath);
+        var now = DateTime.Now;
+
+        var backupPath = Path.Combine(backupRoot, $"{name}_{now:yyyyMMdd_HHmmss}{ext}");
+
+        // Two adds in the same second collide; bump the seconds forward until the name is free so
+        // the timestamp stays the trailing segment (parser-compatible) and File.Copy won't clobber.
+        var candidate = now;
+        while (File.Exists(backupPath))
+        {
+            candidate = candidate.AddSeconds(1);
+            backupPath = Path.Combine(backupRoot, $"{name}_{candidate:yyyyMMdd_HHmmss}{ext}");
+        }
+
+        File.Copy(erfPath, backupPath, overwrite: false);
     }
 }
 

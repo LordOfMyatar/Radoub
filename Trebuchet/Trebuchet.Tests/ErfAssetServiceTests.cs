@@ -12,6 +12,7 @@ namespace Trebuchet.Tests;
 public class ErfAssetServiceTests : IDisposable
 {
     private readonly string _tempDir;
+    private readonly string _backupRoot;
     private readonly string _erfPath;
     private readonly ErfAssetService _service;
 
@@ -19,8 +20,10 @@ public class ErfAssetServiceTests : IDisposable
     {
         _tempDir = Path.Combine(Path.GetTempPath(), "ErfAssetTest_" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(_tempDir);
+        _backupRoot = Path.Combine(_tempDir, "Backups");
         _erfPath = Path.Combine(_tempDir, "archive.erf");
-        _service = new ErfAssetService();
+        // Isolate backups to the temp dir so the suite never touches the real ~/Radoub/Backups.
+        _service = new ErfAssetService(_backupRoot);
 
         // Start from an empty ERF (the create-from-scratch output).
         new ErfCreationService().CreateErf(_erfPath, overwrite: true);
@@ -166,5 +169,45 @@ public class ErfAssetServiceTests : IDisposable
 
         Assert.Equal(0, result.AddedCount);
         Assert.Single(result.Errors);
+    }
+
+    [Fact]
+    public void AddFiles_WritesBackupToArchivesBucket()
+    {
+        var src = WriteSourceFile("scr.ncs", new byte[] { 1 });
+
+        _service.AddFiles(_erfPath, new[] { src }, overwriteExisting: false);
+
+        var archivesDir = Path.Combine(_backupRoot, "Archives");
+        Assert.True(Directory.Exists(archivesDir));
+        var backups = Directory.GetFiles(archivesDir, "archive_*.erf");
+        Assert.Single(backups);
+        // Backup is not left next to the working archive.
+        Assert.Empty(Directory.GetFiles(_tempDir, "archive_backup_*.erf"));
+    }
+
+    [Fact]
+    public void AddFiles_NoBackupWhenDisabled()
+    {
+        var src = WriteSourceFile("scr.ncs", new byte[] { 1 });
+
+        _service.AddFiles(_erfPath, new[] { src }, overwriteExisting: false, createBackup: false);
+
+        var archivesDir = Path.Combine(_backupRoot, "Archives");
+        Assert.False(Directory.Exists(archivesDir));
+    }
+
+    [Fact]
+    public void AddFiles_RapidAddsProduceDistinctBackups()
+    {
+        var a = WriteSourceFile("a.ncs", new byte[] { 1 });
+        var b = WriteSourceFile("b.ncs", new byte[] { 2 });
+
+        // Two adds in the same second must not collide on the backup filename.
+        _service.AddFiles(_erfPath, new[] { a }, overwriteExisting: false);
+        _service.AddFiles(_erfPath, new[] { b }, overwriteExisting: false);
+
+        var backups = Directory.GetFiles(Path.Combine(_backupRoot, "Archives"), "archive_*.erf");
+        Assert.Equal(2, backups.Length);
     }
 }

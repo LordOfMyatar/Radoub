@@ -38,6 +38,43 @@ public class BackupCleanupServiceTests : IDisposable
         return path;
     }
 
+    private string CreateArchiveBackup(string fileName, DateTime timestamp)
+    {
+        var dir = Path.Combine(_tempRoot, "Archives");
+        Directory.CreateDirectory(dir);
+        var ext = Path.GetExtension(fileName);
+        var name = Path.GetFileNameWithoutExtension(fileName);
+        var path = Path.Combine(dir, $"{name}_{timestamp:yyyyMMdd_HHmmss}{ext}");
+        File.WriteAllText(path, "archive backup data");
+        return path;
+    }
+
+    [Fact]
+    public void CleanupExpiredBackups_DeletesOldArchiveBackups()
+    {
+        var now = DateTime.Now;
+        CreateArchiveBackup("myassets.erf", now.AddDays(-60));
+        CreateArchiveBackup("bigpack.hak", now.AddDays(-5));
+
+        BackupCleanupService.CleanupExpiredBackups(30, _tempRoot);
+
+        var remaining = Directory.GetFiles(Path.Combine(_tempRoot, "Archives"));
+        Assert.Single(remaining);
+        Assert.Contains("bigpack", remaining[0]);
+    }
+
+    [Fact]
+    public void CleanupExpiredBackups_KeepsRecentArchiveBackups()
+    {
+        var now = DateTime.Now;
+        CreateArchiveBackup("a.erf", now.AddDays(-1));
+        CreateArchiveBackup("b.erf", now.AddDays(-29));
+
+        BackupCleanupService.CleanupExpiredBackups(30, _tempRoot);
+
+        Assert.Equal(2, Directory.GetFiles(Path.Combine(_tempRoot, "Archives")).Length);
+    }
+
     [Fact]
     public void CleanupExpiredBackups_DeletesOldBatchBackups()
     {

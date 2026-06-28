@@ -6,13 +6,28 @@ namespace Radoub.UI.Services;
 /// <summary>
 /// Cleans up old backup files based on a retention policy (days).
 /// Handles both batch replace backups (~/Radoub/Backups/{Module}/{Timestamp}/)
-/// and single-file replace backups (~/Radoub/Backups/SearchReplace/{file}_{timestamp}.ext).
+/// and flat single-file backups (~/Radoub/Backups/{Bucket}/{file}_{timestamp}.ext),
+/// where {Bucket} is a known flat-file bucket such as SearchReplace or Archives.
 /// </summary>
 public static class BackupCleanupService
 {
     private static readonly string DefaultBackupRoot = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
         "Radoub", "Backups");
+
+    /// <summary>
+    /// Subfolder name under the backup root that holds ERF/HAK archive backups (#2268).
+    /// Archives are large, so these are managed flat-file backups under the same retention
+    /// as every other backup bucket.
+    /// </summary>
+    public const string ArchivesBucket = "Archives";
+
+    /// <summary>
+    /// Backup-root subfolders that use the flat single-file layout ({name}_{timestamp}.ext)
+    /// rather than the {Module}/{Timestamp}/ batch layout.
+    /// </summary>
+    private static readonly HashSet<string> FlatFileBuckets =
+        new(StringComparer.OrdinalIgnoreCase) { "SearchReplace", ArchivesBucket };
 
     /// <summary>
     /// Delete backup directories/files older than retentionDays.
@@ -32,9 +47,9 @@ public static class BackupCleanupService
             {
                 var moduleDirName = Path.GetFileName(moduleDir);
 
-                if (moduleDirName == "SearchReplace")
+                if (FlatFileBuckets.Contains(moduleDirName))
                 {
-                    deletedCount += CleanupSearchReplaceBackups(moduleDir, cutoff);
+                    deletedCount += CleanupFlatFileBackups(moduleDir, cutoff);
                 }
                 else
                 {
@@ -152,11 +167,11 @@ public static class BackupCleanupService
         return deleted;
     }
 
-    private static int CleanupSearchReplaceBackups(string searchReplaceDir, DateTime cutoff)
+    private static int CleanupFlatFileBackups(string bucketDir, DateTime cutoff)
     {
         int deleted = 0;
 
-        foreach (var file in Directory.GetFiles(searchReplaceDir))
+        foreach (var file in Directory.GetFiles(bucketDir))
         {
             var fileName = Path.GetFileNameWithoutExtension(file);
             if (TryParseFileTimestamp(fileName, out var timestamp) && timestamp < cutoff)
@@ -165,22 +180,22 @@ public static class BackupCleanupService
                 {
                     File.Delete(file);
                     deleted++;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Deleted expired search/replace backup: {file}");
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Deleted expired backup: {file}");
                 }
                 catch (Exception ex)
                 {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Failed to delete search/replace backup: {ex.Message}");
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Failed to delete backup: {ex.Message}");
                 }
             }
         }
 
-        // Remove empty SearchReplace directory
+        // Remove the bucket directory if it is now empty.
         try
         {
-            if (Directory.Exists(searchReplaceDir) &&
-                Directory.GetFiles(searchReplaceDir).Length == 0)
+            if (Directory.Exists(bucketDir) &&
+                Directory.GetFiles(bucketDir).Length == 0)
             {
-                Directory.Delete(searchReplaceDir);
+                Directory.Delete(bucketDir);
             }
         }
         catch { /* ignore */ }

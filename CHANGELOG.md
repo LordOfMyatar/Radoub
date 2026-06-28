@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.x-alpha] - 2026-06-28
+**Branch**: `trebuchet/issue-2268` | **PR**: #2607
+
+### BackupCleanupService: managed Archives bucket
+
+- `BackupCleanupService` now applies flat-file retention to an `Archives/` bucket (alongside `SearchReplace/`), so ERF/HAK archive backups under `~/Radoub/Backups/Archives/` fall under the existing backup retention policy (#2268).
+
+---
+
 ## [Workflow Tooling] - 2026-06-27
 **Branch**: `radoub/issue-2559` | **PR**: #2604
 
