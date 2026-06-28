@@ -5,6 +5,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.135-alpha] - 2026-06-28
+**Branch**: `quartermaster/issue-2615` | **PR**: #TBD
+
+### Fix: Static creature head renders see-through (no depth occlusion) (#2615)
+
+---
+
 ## [0.2.134-alpha] - 2026-06-28
 **Branch**: `quartermaster/issue-2601` | **PR**: #2614
 
