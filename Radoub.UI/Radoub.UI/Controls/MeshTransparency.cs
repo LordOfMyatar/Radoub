@@ -64,15 +64,15 @@ public static class MeshTransparency
     private const byte NearZeroAlpha = 16;
 
     /// <summary>
-    /// Minimum fraction of near-zero texels required for the alpha channel to be transparency
-    /// at all (#2615). NWN:EE <c>_d</c> skin textures pack a specular/gloss map in alpha — a
-    /// high-valued gradient that never approaches 0 (e.g. <c>boy_head</c>: minAlpha=42, zero
-    /// near-zero texels). Such a channel is a packed data channel, not transparency; without
-    /// this gate it mis-read as Graded and the head drew with depth-write off (see-through).
-    /// One texel is enough to count as real transparency (a genuine cutout/blend always has a
-    /// transparent region); the threshold only filters channels with literally none.
+    /// Minimum count of near-zero texels for the alpha channel to be transparency at all (#2615).
+    /// NWN:EE <c>_d</c> skin textures pack a specular/gloss map in alpha — a high-valued gradient
+    /// that never approaches 0 (e.g. <c>boy_head</c>: minAlpha=42, zero near-zero texels). Such a
+    /// channel is a packed data channel, not transparency; without this gate it mis-read as Graded
+    /// and the head drew with depth-write off (see-through). A single transparent texel is enough
+    /// (a genuine cutout/blend always has a transparent region), so this is a count, not a fraction:
+    /// a fraction would wrongly gate out a small-but-real cutout hole in a large texture.
     /// </summary>
-    private const double MinTransparentFraction = 0.0;
+    private const int MinTransparentTexels = 1;
 
     /// <summary>
     /// Classify a texture's alpha channel from its RGBA bytes. <paramref name="rgba"/> is tightly
@@ -100,7 +100,7 @@ public static class MeshTransparency
         // mask — treat it as Opaque so the mesh keeps depth writes and occludes correctly. This
         // mirrors xoreos's "alphaMean ~= 1.0 => not transparent" gate (modelnode.cpp:473), using
         // the decoded pixels our production decoder yields.
-        if ((double)nearZeroCount / pixels <= MinTransparentFraction)
+        if (nearZeroCount < MinTransparentTexels)
             return AlphaProfile.Opaque;
 
         // Has real transparent texels: soft-band fraction decides hard mask (Binary) vs gradient.
