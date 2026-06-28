@@ -459,11 +459,12 @@ public partial class MainWindow : Window
             SuggestedStartLocation = startFolder,
             FileTypeFilter = new[]
             {
-                new Avalonia.Platform.Storage.FilePickerFileType("Aurora resources")
+                // Module user-generated content: blueprints, scripts, and dialog — the assets
+                // a user authors and would package into an ERF/MOD/HAK.
+                new Avalonia.Platform.Storage.FilePickerFileType("Module content (blueprints, scripts)")
                 {
-                    Patterns = new[] { "*.ncs", "*.nss", "*.uti", "*.utc", "*.utp", "*.utd", "*.utm",
-                                       "*.utt", "*.uts", "*.ute", "*.utw", "*.dlg", "*.are", "*.git",
-                                       "*.gic", "*.2da", "*.fac", "*.jrl", "*.itp" }
+                    Patterns = new[] { "*.utc", "*.uti", "*.utp", "*.utd", "*.utt", "*.uts",
+                                       "*.ute", "*.utw", "*.utm", "*.nss", "*.ncs", "*.dlg" }
                 },
                 new Avalonia.Platform.Storage.FilePickerFileType("All Files") { Patterns = new[] { "*" } }
             }
@@ -497,9 +498,12 @@ public partial class MainWindow : Window
     private static async System.Threading.Tasks.Task<Avalonia.Platform.Storage.IStorageFolder?>
         TryGetModuleFolderAsync(Avalonia.Platform.Storage.IStorageProvider storage)
     {
+        // Trebuchet unpacks a module when you open it, so the working directory (where loose
+        // UGC files live) is the opened module's directory.
         var folder = ModulePathHelper.GetWorkingDirectory(RadoubSettings.Instance.CurrentModulePath);
         if (string.IsNullOrEmpty(folder) || !System.IO.Directory.Exists(folder))
             return null;
+
         return await storage.TryGetFolderFromPathAsync(new Uri(folder));
     }
 
