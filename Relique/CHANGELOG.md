@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.10.32-alpha] - 2026-06-28
-**Branch**: `relique/issue-2596` | **PR**: #TBD
+**Branch**: `relique/issue-2596` | **PR**: #2617
 
 ### Fix: Burnt rags — shins misaligned + arms suppressed but hands shown on mannequin (#2596)
 
