@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.32-alpha] - 2026-06-28
+**Branch**: `relique/issue-2596` | **PR**: #TBD
+
+### Fix: Burnt rags — shins misaligned + arms suppressed but hands shown on mannequin (#2596)
+
+- Robe armor on the Relique mannequin renders arms consistently with hands and seats shins correctly. Shared suppression/resolver fix (`RobePartSuppression` / `ItemModelResolver`) — propagates to Quartermaster.
+
+---
+
 ## [0.10.31-alpha] - 2026-06-22
 **Branch**: `quartermaster/issue-2582` | **PR**: #2583
 
