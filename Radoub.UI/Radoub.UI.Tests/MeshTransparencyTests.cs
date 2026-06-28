@@ -47,20 +47,23 @@ public class MeshTransparencyTests
     }
 
     [Fact]
-    public void MostlyOpaqueWithRareSoftPixel_IsBinary()
+    public void MostlyOpaqueWithRareSoftEdge_IsBinary()
     {
-        // 1 soft pixel out of 100 = 1% < 5% threshold -> binary, not graded.
+        // A hard cutout that reaches 0 with a thin anti-aliased edge: 1 soft pixel out of 100
+        // = 1% < 5% threshold -> binary mask, not graded. (#2615: requires near-zero texels to
+        // be transparency at all; here index 1 is a true-0 cutout texel.)
         var alphas = new byte[100];
-        for (int i = 0; i < 100; i++) alphas[i] = (byte)(i == 0 ? 128 : 255);
+        for (int i = 0; i < 100; i++) alphas[i] = (byte)(i == 0 ? 128 : (i == 1 ? 0 : 255));
         Assert.Equal(AlphaProfile.Binary, MeshTransparency.AnalyzeAlphaProfile(Rgba(alphas), 10, 10));
     }
 
     [Fact]
-    public void ManySoftPixels_IsGraded()
+    public void ManySoftPixelsReachingZero_IsGraded()
     {
-        // 50% of pixels in the soft band -> a real gradient (ghost, glass).
+        // 50% of pixels in the soft band AND the channel reaches 0 -> a real gradient (ghost,
+        // glass). (#2615: a soft gradient is only transparency if it actually goes transparent.)
         var alphas = new byte[100];
-        for (int i = 0; i < 100; i++) alphas[i] = (byte)(i < 50 ? 128 : 255);
+        for (int i = 0; i < 100; i++) alphas[i] = (byte)(i < 50 ? (i % 10 == 0 ? 0 : 128) : 255);
         Assert.Equal(AlphaProfile.Graded, MeshTransparency.AnalyzeAlphaProfile(Rgba(alphas), 10, 10));
     }
 
@@ -69,6 +72,40 @@ public class MeshTransparencyTests
     {
         Assert.Equal(AlphaProfile.Opaque, MeshTransparency.AnalyzeAlphaProfile(System.Array.Empty<byte>(), 0, 0));
         Assert.Equal(AlphaProfile.Opaque, MeshTransparency.AnalyzeAlphaProfile(null!, 0, 0));
+    }
+
+    [Fact]
+    public void HighGradientNeverNearZero_IsOpaque_SpecPackedInAlpha()
+    {
+        // #2615: NWN:EE _d skin textures pack a SPECULAR/gloss map in the alpha channel — a
+        // high-valued gradient that never approaches 0 (no actual transparency). c_ykid_m's
+        // 'boy_head' is exactly this: minA=42, ZERO texels at alpha 0, ~25% in the soft band.
+        // The old "any texel < 255 => transparent" gate mis-read this as Graded -> Transparent
+        // -> the head drew with depth-write off -> see-through face. A channel with no near-zero
+        // texels is a packed data channel, not transparency: classify Opaque (mirrors xoreos's
+        // alphaMean~=1 => not transparent gate, modelnode.cpp:473).
+        var alphas = new byte[100];
+        for (int i = 0; i < 100; i++) alphas[i] = (byte)(i < 25 ? 128 : 255); // 25% soft, min 128, none near 0
+        Assert.Equal(AlphaProfile.Opaque, MeshTransparency.AnalyzeAlphaProfile(Rgba(alphas), 10, 10));
+    }
+
+    [Fact]
+    public void GradientReachingZero_IsGraded_RealTransparency()
+    {
+        // #2615 must-not-regress: a genuinely transparent body (zodiac rat c_zod_rat, #2435) has
+        // texels at/near alpha 0 (real punch-through/blend). It must still classify non-Opaque.
+        var alphas = new byte[100];
+        for (int i = 0; i < 100; i++) alphas[i] = (byte)(i < 50 ? (i % 25 == 0 ? 0 : 128) : 255); // soft band + true-zero texels
+        Assert.Equal(AlphaProfile.Graded, MeshTransparency.AnalyzeAlphaProfile(Rgba(alphas), 10, 10));
+    }
+
+    [Fact]
+    public void HardCutoutReachingZero_IsBinary_FurMask()
+    {
+        // #2615 must-not-regress: a 0/255 fur/mane cutout card (dire-tiger mane, #2507) reaches 0
+        // and stays a hard mask -> Binary (alpha-test cutout), not Opaque.
+        var rgba = Rgba(0, 255, 0, 255, 255, 0, 255, 0);
+        Assert.Equal(AlphaProfile.Binary, MeshTransparency.AnalyzeAlphaProfile(rgba, 4, 2));
     }
 
     // ---- ClassifyMesh ----
