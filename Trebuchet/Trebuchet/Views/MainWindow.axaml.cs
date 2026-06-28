@@ -440,22 +440,24 @@ public partial class MainWindow : Window
             AllowMultiple = false,
             FileTypeFilter = new[]
             {
-                new Avalonia.Platform.Storage.FilePickerFileType("ERF/MOD/HAK Archives")
+                // ERF only. Adding to a .mod is the module workflow (unpack -> edit -> Save Module),
+                // and .hak has its own "Add to HAK" flow (#2267); neither belongs here.
+                new Avalonia.Platform.Storage.FilePickerFileType("ERF Archives")
                 {
-                    Patterns = new[] { "*.erf", "*.mod", "*.hak" }
+                    Patterns = new[] { "*.erf" }
                 }
             }
         });
         if (targets.Count == 0) return;
         var erfPath = targets[0].Path.LocalPath;
 
-        // Block the currently-open module's own .mod: adding its working files back to itself is a
-        // confusing no-op (everything reports "skipped"). "Save Module" is what repacks it (#2268).
+        // Defense-in-depth: the picker only offers .erf, but guard against the open module's own
+        // archive anyway — adding its working files back to itself is a confusing no-op (#2268).
         if (ModulePathHelper.IsCurrentModuleArchive(erfPath, RadoubSettings.Instance.CurrentModulePath))
         {
             new AlertDialog("Add to ERF",
                 "That is the currently open module. To pack its working files into the module, " +
-                "use Save Module.\n\nAdd to ERF is for building a separate ERF or HAK archive.").Show(this);
+                "use Save Module.\n\nAdd to ERF builds a separate ERF archive.").Show(this);
             return;
         }
 
@@ -470,7 +472,7 @@ public partial class MainWindow : Window
             FileTypeFilter = new[]
             {
                 // Module user-generated content: blueprints, scripts, and dialog — the assets
-                // a user authors and would package into an ERF/MOD/HAK.
+                // a user authors and would package into an ERF.
                 new Avalonia.Platform.Storage.FilePickerFileType("Module content (blueprints, scripts)")
                 {
                     Patterns = new[] { "*.utc", "*.uti", "*.utp", "*.utd", "*.utt", "*.uts",
