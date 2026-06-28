@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.32-alpha] - 2026-06-28
+**Branch**: `relique/issue-2596` | **PR**: #2617
+
+### Fix: Robe armor — hands/shins swung away from the coat on the mannequin (#2596)
+
+- The relaxed preview stance is now skipped when a robe is equipped. A robe coat is a rigid mesh that can't follow the per-bone pose, so relaxing the stance had swung the bone-attached hands/shins/feet out from under the frozen robe (looked like "arms gone, shins misaligned"). Relique-only; robe suppression/composition were correct.
+
+---
+
 ## [0.10.31-alpha] - 2026-06-22
 **Branch**: `quartermaster/issue-2582` | **PR**: #2583
 

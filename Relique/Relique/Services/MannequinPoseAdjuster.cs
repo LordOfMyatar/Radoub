@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using Radoub.Formats.Mdl;
@@ -64,6 +65,40 @@ public static class MannequinPoseAdjuster
         ("lshin_g", FlexionAxis, -KneeFlexionDegrees),
         ("rshin_g", FlexionAxis, -KneeFlexionDegrees),
     };
+
+    /// <summary>
+    /// Whether any resolved part resref is the robe part (#2596). A robe composes as a rigid,
+    /// non-bone-bound coat skin grafted under the composite root, so it cannot follow the
+    /// per-bone rotations of the relaxed pose. Relaxing the stance would swing the bone-attached
+    /// kept parts (hands, shins, feet) away from the frozen robe — the "arms gone / shins
+    /// misaligned" defect. The caller skips <see cref="ApplyRelaxedPose"/> when this is true.
+    ///
+    /// Detection keys on the part-type token of each resref (<c>{prefix}_robe{NNN}</c>), matching
+    /// <c>ItemModelResolver</c>'s "robe" suffix — NOT a substring match, so "pmh0_wardrobe001"
+    /// does not false-match.
+    /// </summary>
+    public static bool ContainsRobePart(IEnumerable<string>? resRefs)
+    {
+        if (resRefs == null)
+            return false;
+
+        foreach (var resRef in resRefs)
+        {
+            if (string.IsNullOrEmpty(resRef))
+                continue;
+
+            // Strip the body prefix ("pmh0_") then the trailing part number; compare the stem.
+            var underscore = resRef.IndexOf('_');
+            var stem = underscore >= 0 && underscore + 1 < resRef.Length
+                ? resRef.Substring(underscore + 1)
+                : resRef;
+            stem = stem.TrimEnd('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+            if (stem.Equals("robe", StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
+    }
 
     /// <summary>
     /// Apply the relaxed stance in place. No-op if the model has no skeleton root. Bones that

@@ -189,7 +189,14 @@ public sealed class ItemPreviewController
             // Relax the armor mannequin's stance so limb parts (hands, forearms, boots) are
             // visible from the default camera (#2232). Armor only — the skeleton composition
             // path is the mannequin; flat composites (weapons) have no skeleton.
-            if (resolution.HasArmorParts)
+            //
+            // EXCEPT when a robe is present (#2596): the robe coat is a rigid, non-bone-bound skin
+            // grafted under the composite root, so it cannot follow the per-bone rotations. Relaxing
+            // the stance would swing the bone-attached kept parts (hands, shins, feet) away from the
+            // frozen robe — the "arms gone / shins misaligned" defect. A robe already drapes the
+            // limbs, so the relaxed pose's purpose (exposing limb armor) is moot here.
+            if (resolution.HasArmorParts
+                && !MannequinPoseAdjuster.ContainsRobePart(resolution.MdlResRefs))
                 MannequinPoseAdjuster.ApplyRelaxedPose(composed);
 
             ApplyTrophyRotationIfHeldWeapon(uti, composed);
