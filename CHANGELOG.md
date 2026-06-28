@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Radoub.UI 0.x-alpha] - 2026-06-28
+## [Radoub.UI 0.2.31-alpha] - 2026-06-28
 **Branch**: `trebuchet/issue-2268` | **PR**: #2607
 
 ### BackupCleanupService: managed Archives bucket
