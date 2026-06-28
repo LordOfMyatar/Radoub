@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 using RadoubLauncher.Services;
@@ -420,6 +421,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"New ERF failed: {ex.Message}");
             new AlertDialog("ERF Creation Failed", ex.Message).Show(this);
         }
     }
@@ -518,6 +520,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Add to ERF failed: {ex.Message}");
             new AlertDialog("Add to ERF Failed", ex.Message).Show(this);
         }
     }

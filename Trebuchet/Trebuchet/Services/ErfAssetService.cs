@@ -47,13 +47,16 @@ public class ErfAssetService
 
         var result = new ErfAddResult();
 
-        var erf = ErfReader.Read(erfPath);
+        // Read the archive once into a buffer; extract existing resources from that buffer rather
+        // than re-opening the file per resource (a large archive has many resources).
+        var erfBuffer = File.ReadAllBytes(erfPath);
+        var erf = ErfReader.Read(erfBuffer);
 
         // Materialize the existing archive contents so the rewrite preserves them.
         var resourceData = new Dictionary<(string ResRef, ushort Type), byte[]>();
         foreach (var entry in erf.Resources)
             resourceData[(entry.ResRef.ToLowerInvariant(), entry.ResourceType)] =
-                ErfReader.ExtractResource(erfPath, entry);
+                ErfReader.ExtractResource(erfBuffer, entry);
 
         bool changed = false;
 
