@@ -118,6 +118,39 @@ public class MannequinPoseAdjusterTests
     }
 
     [Fact]
+    public void ContainsRobePart_TrueWhenAnyResRefIsRobe()
+    {
+        // #2596: a robe coat is grafted as a rigid 0-bone skin; it can't follow the relaxed
+        // pose's per-bone rotation, so the controller must NOT relax the pose when a robe is
+        // present (else the bone-attached hands/shins swing away from the frozen robe).
+        var withRobe = new[] { "pmh0_handl001", "pmh0_shinl008", "pmh0_robe247" };
+        Assert.True(MannequinPoseAdjuster.ContainsRobePart(withRobe));
+    }
+
+    [Fact]
+    public void ContainsRobePart_FalseForPlainArmorParts()
+    {
+        var noRobe = new[] { "pmh0_chest008", "pmh0_bicepl001", "pmh0_handl001" };
+        Assert.False(MannequinPoseAdjuster.ContainsRobePart(noRobe));
+    }
+
+    [Fact]
+    public void ContainsRobePart_FalseForNullOrEmpty()
+    {
+        Assert.False(MannequinPoseAdjuster.ContainsRobePart(null));
+        Assert.False(MannequinPoseAdjuster.ContainsRobePart(System.Array.Empty<string>()));
+    }
+
+    [Fact]
+    public void ContainsRobePart_DoesNotFalseMatchSubstring()
+    {
+        // A non-robe resref that merely contains the letters "robe" must not match.
+        // Detection keys on the part-type token (pmh0_robeNNN), not substring containment.
+        var tricky = new[] { "pmh0_wardrobe001", "pmh0_chest008" };
+        Assert.False(MannequinPoseAdjuster.ContainsRobePart(tricky));
+    }
+
+    [Fact]
     public void ApplyRelaxedPose_NullModel_DoesNotThrow()
     {
         MannequinPoseAdjuster.ApplyRelaxedPose(null);
