@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.134-alpha] - 2026-06-28
-**Branch**: `quartermaster/issue-2601` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2601` | **PR**: #2614
 
 ### Fix: Equipped-armor shoulder/belt parts missing in 3D preview (#2601)
 
