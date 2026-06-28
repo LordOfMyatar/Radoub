@@ -449,6 +449,16 @@ public partial class MainWindow : Window
         if (targets.Count == 0) return;
         var erfPath = targets[0].Path.LocalPath;
 
+        // Block the currently-open module's own .mod: adding its working files back to itself is a
+        // confusing no-op (everything reports "skipped"). "Save Module" is what repacks it (#2268).
+        if (ModulePathHelper.IsCurrentModuleArchive(erfPath, RadoubSettings.Instance.CurrentModulePath))
+        {
+            new AlertDialog("Add to ERF",
+                "That is the currently open module. To pack its working files into the module, " +
+                "use Save Module.\n\nAdd to ERF is for building a separate ERF or HAK archive.").Show(this);
+            return;
+        }
+
         // 2. Pick files to add. Default the picker to the current module's working folder so
         //    palette assets (loose blueprints, compiled scripts) are right there to select.
         var startFolder = await TryGetModuleFolderAsync(storage);
@@ -478,9 +488,24 @@ public partial class MainWindow : Window
         try
         {
             var result = new ErfAssetService().AddFiles(erfPath, paths, overwriteExisting: false);
-            var message =
-                $"Added {result.AddedCount} resource(s) to {System.IO.Path.GetFileName(erfPath)}.\n" +
-                $"Skipped {result.SkippedCount} (already present).";
+            var archiveName = System.IO.Path.GetFileName(erfPath);
+
+            string message;
+            if (result.AddedCount == 0 && result.SkippedCount > 0 && result.Errors.Count == 0)
+            {
+                // Everything the user picked was already in the archive — say so plainly rather
+                // than the confusing "Added 0, Skipped N" (#2268).
+                message = result.SkippedCount == 1
+                    ? $"Nothing added — that resource is already in {archiveName}."
+                    : $"Nothing added — all {result.SkippedCount} resources are already in {archiveName}.";
+            }
+            else
+            {
+                message =
+                    $"Added {result.AddedCount} resource(s) to {archiveName}.\n" +
+                    $"Skipped {result.SkippedCount} (already present).";
+            }
+
             if (result.Errors.Count > 0)
             {
                 message += $"\n\nRejected {result.Errors.Count}:";
