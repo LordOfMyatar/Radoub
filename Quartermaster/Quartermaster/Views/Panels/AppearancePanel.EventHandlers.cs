@@ -115,6 +115,8 @@ public partial class AppearancePanel
             _animTimeSlider.PropertyChanged += OnAnimSliderChanged;
         if (_animSpeedSlider != null)
             _animSpeedSlider.PropertyChanged += OnAnimSpeedChanged;
+        if (_loopAllAnimationsCheckBox != null)
+            _loopAllAnimationsCheckBox.IsCheckedChanged += OnLoopAllAnimationsChanged;
 
         // 3D Preview pointer/wheel/key input — wired on the transparent
         // input-surface Border that overlays the GL control (#2124).
@@ -421,6 +423,9 @@ public partial class AppearancePanel
             _animTimeSlider.PropertyChanged -= OnAnimSliderChanged;
         if (_animSpeedSlider != null)
             _animSpeedSlider.PropertyChanged -= OnAnimSpeedChanged;
+        if (_loopAllAnimationsCheckBox != null)
+            _loopAllAnimationsCheckBox.IsCheckedChanged -= OnLoopAllAnimationsChanged;
+        StopLoopAllAnimations();
 
         if (_modelPreviewInputSurface != null)
         {
@@ -862,5 +867,151 @@ public partial class AppearancePanel
         if (e.Property != Slider.ValueProperty) return;
         if (_modelPreviewGL == null || _animSpeedSlider == null) return;
         _modelPreviewGL.AnimationSpeed = (float)_animSpeedSlider.Value;
+    }
+
+    // ----- "Loop all animations" diagnostic (#2140) -----
+    //
+    // Sequencing (which animation, which cycle, when to stop) lives in the pure
+    // AnimationLoopController; this partial only drives the preview and the overlay. A
+    // DispatcherTimer scheduled per-animation for (length + pause) advances the controller — no
+    // completion event on the shared GL control is needed.
+
+    private const int AnimLoopPauseMs = 500;       // pause between animations (#2140 spec)
+    private const float AnimLoopMinSeconds = 0.5f;  // floor for zero-length / single-keyframe anims
+
+    private AnimationLoopController? _animLoop;
+    private Avalonia.Threading.DispatcherTimer? _animLoopTimer;
+
+    private void OnLoopAllAnimationsChanged(object? sender, RoutedEventArgs e)
+    {
+        if (_loopAllAnimationsCheckBox?.IsChecked == true)
+            StartLoopAllAnimations();
+        else
+            StopLoopAllAnimations();
+    }
+
+    private void StartLoopAllAnimations()
+    {
+        var animations = _modelPreviewGL?.Model?.Animations;
+        if (_modelPreviewGL == null || animations == null || animations.Count == 0)
+        {
+            // Nothing to cycle — untick so the UI doesn't claim a running loop.
+            if (_loopAllAnimationsCheckBox != null) _loopAllAnimationsCheckBox.IsChecked = false;
+            return;
+        }
+
+        _animLoop = new AnimationLoopController(animations.Count, maxCycles: 3);
+        if (!_animLoop.Start())
+        {
+            _animLoop = null;
+            if (_loopAllAnimationsCheckBox != null) _loopAllAnimationsCheckBox.IsChecked = false;
+            return;
+        }
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, "AnimationLoop: started (3 cycles)");
+        PlayLoopCurrent();
+    }
+
+    /// <summary>Set the active animation to the controller's current index, play it, log + show
+    /// its name, and schedule the advance for when this animation finishes its natural length.</summary>
+    private void PlayLoopCurrent()
+    {
+        if (_animLoop == null || !_animLoop.IsRunning || _modelPreviewGL?.Model == null) return;
+
+        var animations = _modelPreviewGL.Model.Animations;
+        int idx = _animLoop.CurrentIndex;
+        if (idx < 0 || idx >= animations.Count) { StopLoopAllAnimations(); return; }
+
+        var anim = animations[idx];
+        _modelPreviewGL.SetActiveAnimation(anim);
+        _modelPreviewGL.PlayAnimation();
+        if (_animPlayButton != null) _animPlayButton.Content = "⏸";
+
+        // Keep the combo in sync so the dropdown truthfully reflects what's playing
+        // (offset by 1 past the "(none)" item). Guarded by _isLoading-free direct set.
+        if (_animationComboBox != null) _animationComboBox.SelectedIndex = idx + 1;
+
+        string name = string.IsNullOrEmpty(anim.Name) ? $"#{idx}" : anim.Name;
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"AnimationLoop: playing '{name}' ({idx + 1}/{animations.Count}, cycle {_animLoop.CurrentCycle}/{_animLoop.MaxCycles})");
+        ShowLoopOverlay($"{name}  ({idx + 1}/{animations.Count}, cycle {_animLoop.CurrentCycle}/{_animLoop.MaxCycles})");
+
+        // Schedule advance: animation length (scaled by speed) + pause. Floor short/stub anims so
+        // single-keyframe states still get a visible beat instead of flashing past.
+        float speed = _modelPreviewGL.AnimationSpeed <= 0 ? 1f : _modelPreviewGL.AnimationSpeed;
+        float lengthSec = Math.Max(AnimLoopMinSeconds, anim.Length) / speed;
+        int totalMs = (int)(lengthSec * 1000) + AnimLoopPauseMs;
+        ScheduleLoopAdvance(totalMs);
+    }
+
+    private void ScheduleLoopAdvance(int delayMs)
+    {
+        StopLoopTimer();
+        _animLoopTimer = new Avalonia.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(Math.Max(50, delayMs)),
+        };
+        _animLoopTimer.Tick += OnLoopAdvanceTick;
+        _animLoopTimer.Start();
+    }
+
+    private void OnLoopAdvanceTick(object? sender, EventArgs e)
+    {
+        StopLoopTimer(); // one-shot
+        if (_animLoop == null || !_animLoop.IsRunning) { StopLoopAllAnimations(); return; }
+
+        if (_animLoop.Advance())
+            PlayLoopCurrent();
+        else
+            StopLoopAllAnimations(); // finished all cycles
+    }
+
+    private void StopLoopAllAnimations()
+    {
+        StopLoopTimer();
+        bool wasRunning = _animLoop?.IsRunning == true;
+        _animLoop?.Stop();
+        _animLoop = null;
+
+        if (wasRunning)
+            UnifiedLogger.LogApplication(LogLevel.INFO, "AnimationLoop: stopped");
+
+        HideLoopOverlay();
+
+        // Untick without re-entering the handler.
+        if (_loopAllAnimationsCheckBox != null && _loopAllAnimationsCheckBox.IsChecked == true)
+        {
+            _loopAllAnimationsCheckBox.IsCheckedChanged -= OnLoopAllAnimationsChanged;
+            _loopAllAnimationsCheckBox.IsChecked = false;
+            _loopAllAnimationsCheckBox.IsCheckedChanged += OnLoopAllAnimationsChanged;
+        }
+
+        // Return playback to whatever the combo selected (spec: revert on turn-off).
+        if (_modelPreviewGL != null)
+        {
+            _modelPreviewGL.PauseAnimation();
+            if (_animPlayButton != null) _animPlayButton.Content = "▶";
+        }
+    }
+
+    private void StopLoopTimer()
+    {
+        if (_animLoopTimer == null) return;
+        _animLoopTimer.Stop();
+        _animLoopTimer.Tick -= OnLoopAdvanceTick;
+        _animLoopTimer = null;
+    }
+
+    private void ShowLoopOverlay(string text)
+    {
+        if (_previewStateOverlay == null || _previewStateText == null) return;
+        _previewStateText.Text = text;
+        _previewStateText.Foreground = BrushManager.GetWarningBrush(this);
+        _previewStateOverlay.IsVisible = true;
+    }
+
+    private void HideLoopOverlay()
+    {
+        if (_previewStateOverlay != null) _previewStateOverlay.IsVisible = false;
     }
 }

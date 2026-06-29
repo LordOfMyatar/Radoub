@@ -91,6 +91,7 @@ public partial class AppearancePanel : UserControl
     private Button? _animPlayButton;
     private Slider? _animTimeSlider;
     private Slider? _animSpeedSlider;
+    private CheckBox? _loopAllAnimationsCheckBox;
 
     private CreatureDisplayService? _displayService;
     private PaletteColorService? _paletteColorService;
@@ -195,6 +196,7 @@ public partial class AppearancePanel : UserControl
         _animPlayButton = this.FindControl<Button>("AnimPlayButton");
         _animTimeSlider = this.FindControl<Slider>("AnimTimeSlider");
         _animSpeedSlider = this.FindControl<Slider>("AnimSpeedSlider");
+        _loopAllAnimationsCheckBox = this.FindControl<CheckBox>("LoopAllAnimationsCheckBox");
     }
 
     public void SetDisplayService(CreatureDisplayService displayService)
