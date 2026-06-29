@@ -10,6 +10,10 @@ namespace Radoub.UI.Services;
 /// draped because an idle animation poses their parent bones. We mirror that by auto-playing the
 /// idle when a dangly mesh's ancestor chain is actually keyframed by an animation. Pure (model-only)
 /// so it is unit-testable without the GL control. Companion to the emitter heuristic (#2434).
+///
+/// NOTE: this only poses the dangly mesh's parent bones; it does not simulate the dangly spring sag
+/// itself. True constraint-driven drape (a mane hanging over a back) needs a physics solver —
+/// deferred to #2626.
 /// </summary>
 public static class ModelIdlePoseHeuristic
 {
