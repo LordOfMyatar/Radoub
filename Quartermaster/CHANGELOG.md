@@ -8,9 +8,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ## [0.2.137-alpha] - 2026-06-28
 **Branch**: `quartermaster/issue-2587` | **PR**: #2621
 
-### Enhancement: Appearance list omits some CEP creatures (#2587)
+### Enhancement: Appearance list discoverability (#2587, #2027, #2028)
 
-- Investigate and fix why some valid CEP creature appearances are dropped from the Quartermaster appearance list (UI filter/cap/validity gate, not the resource resolver).
+- The appearance list is now a sortable Row# / Name / Maker / Model grid; the search box also matches a creature's 2DA row number, and the CEP author is parsed into its own Maker column. (Investigation confirmed no rows were being dropped — the gap was finding them in a 5,000+ row flat list.)
 
 ---
 
