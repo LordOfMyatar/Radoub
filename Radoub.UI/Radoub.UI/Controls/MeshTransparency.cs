@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace Radoub.UI.Controls;
 
 /// <summary>
@@ -115,42 +117,88 @@ public static class MeshTransparency
     /// <param name="alpha">Mesh Alpha controller value (1.0 = fully opaque).</param>
     /// <param name="transparencyHint">MDL TransparencyHint (0 = no transparency interpretation).</param>
     /// <param name="profile">Alpha profile of the mesh's diffuse texture.</param>
-    public static MaterialMode ClassifyMesh(float alpha, int transparencyHint, AlphaProfile profile)
+    /// <param name="isSkin">
+    /// True when the mesh is a deformable body <c>SkinNode</c> (#2588). A SkinNode is never a cutout
+    /// card: it is the solid creature body. When it shares its DDS atlas with a cutout fur/mane mesh
+    /// (CEP dire tiger — body skin + mane both use <c>N_Tiger_LaoHu02_D</c>), the texture reads
+    /// Binary, but the body's UVs map to the SOLID skin region, not the mane's cutout silhouette.
+    /// Alpha-testing the body then discards fragments where its UVs land on the mane's low-alpha
+    /// region, carving black patches on the body/crown. So a Binary-profile skin classifies Opaque
+    /// (depth writes on, no discard) instead of Cutout; the separate mane/dangly trimeshes still
+    /// classify Cutout and carve correctly. A genuinely graded skin (none in the test set) still
+    /// blends. The never-cutout rule holds regardless of TransparencyHint.
+    /// </param>
+    public static MaterialMode ClassifyMesh(float alpha, int transparencyHint, AlphaProfile profile,
+        bool isSkin = false, bool isMirrored = false)
     {
         // Controller-driven fade wins outright — a mesh told to be semi-transparent always blends.
         if (alpha < OpaqueAlphaCutoff)
             return MaterialMode.Transparent;
 
-        // No MDL hint: follow the real Aurora engine (xoreos modelnode.cpp:505 — behavioral
-        // reference only, GPLv3, not copied), which blends a hint-less mesh iff its texture has an
-        // alpha channel: isTransparent = hasAlpha. Our production decoder (TextureService) yields a
-        // non-Opaque profile exactly when the texture FORMAT carries alpha (DXT5 / 32-bit TGA);
-        // a DXT1/24-bit body decodes fully opaque -> Opaque profile. So "profile != Opaque" is our
-        // hasAlpha. This blends the dire-tiger mane (#2507) and the zodiac/celestial creatures
-        // (#2435), matching Aurora, while DXT1 bodies (incl. the #2507 _d-spec trap) stay opaque.
-        // Blend (not discard): a near-opaque body (alpha~1) blends to ~itself, so the ~145 DXT5
-        // animal bodies that classify non-Opaque render visually opaque with no holes.
-        if (transparencyHint <= 0)
-            return profile switch
-            {
-                // Binary 0/1 mask (fur/mane cards like the dire tiger's shared body+mane texture):
-                // alpha-TEST with depth write, NOT order-dependent blend. The engine's default for
-                // alpha-bearing meshes is alpha-test (xoreos keeps GL_ALPHA_TEST on); routing these
-                // through the depth-mask-off blend pass makes the many overlapping mane/body layers
-                // sort-fight into black triangular shards. Cutout is order-independent -> clean.
-                AlphaProfile.Binary => MaterialMode.Cutout,
-                // Genuinely graded alpha (the zodiac/celestial creatures, #2435): a real soft blend.
-                AlphaProfile.Graded => MaterialMode.Transparent,
-                _ => MaterialMode.Opaque,
-            };
+        // #2588: a deformable body SkinNode is never a cutout card. Its Binary profile means the
+        // SHARED atlas carries a cutout mask in the mane region, but the body's own UVs map to solid
+        // skin — alpha-testing it would punch holes in the body. Route Binary->Opaque (keep depth
+        // writes, no discard); leave a genuinely graded skin to blend.
+        if (isSkin)
+            return profile == AlphaProfile.Graded
+                ? MaterialMode.Transparent
+                : MaterialMode.Opaque;
 
-        // Hint set: the alpha channel is real; its profile decides cutout vs blend.
-        return profile switch
+        // No alpha channel -> opaque, regardless of hint. A DXT1/24-bit body decodes Opaque (incl.
+        // the #2507 _d-spec trap), so it never blends or carves.
+        if (profile == AlphaProfile.Opaque)
+            return MaterialMode.Opaque;
+
+        // Alpha-bearing mesh. The authoritative Aurora engine (xoreos modelnode.cpp:505/779-810 —
+        // behavioral reference only, GPLv3, not copied) has only TWO modes for NWN: Opaque and
+        // Transparent (blend). isTransparent = hasAlpha; renderGeometryNormal just alpha-blends,
+        // with no alpha-test for ordinary meshes. So the DEFAULT for any alpha mesh is Transparent.
+        //
+        // The one exception (#2588, from nwn_mdl_webviewer scene_build.js — MIT): handbuilt
+        // double-sided meshes (fences, foliage, fur/mane cards) duplicate every face with inverted
+        // normals to fake two-sidedness, so ~half their normals point the opposite way on some axis
+        // (HasMirroredNormals). Such a mesh cannot be depth-sorted as a unit in a blend pass — the
+        // back-face quads sort over the front-face quads and show the clear colour through. The
+        // viewer's fix: keep these in the OPAQUE queue and alpha-TEST (hard cutout, depth write on,
+        // order-independent) instead of blending. The discriminator is the GEOMETRY (mirrored
+        // normals) plus a hard 0/1 mask (Binary) — NOT the texture histogram alone. A genuinely
+        // graded alpha (zodiac/celestial #2435) is never a hard cutout: it always blends.
+        if (profile == AlphaProfile.Binary && isMirrored)
+            return MaterialMode.Cutout;
+
+        return MaterialMode.Transparent;
+    }
+
+    /// <summary>
+    /// True when a mesh is "handbuilt double-sided" (#2588): NWN modellers duplicate every face
+    /// with inverted normals/winding to fake two-sidedness, so roughly half the vertex normals
+    /// point the opposite way along at least one axis. Mirrors nwn_mdl_webviewer's
+    /// <c>hasMirroredNormals</c> (scene_build.js, MIT — behavioral reference). Used to decide that a
+    /// Binary-alpha mesh is a true hard cutout (fence/foliage/fur card) rather than ordinary alpha
+    /// geometry that should blend. A 40–60% positive/negative split on any well-used axis counts.
+    /// </summary>
+    public static bool HasMirroredNormals(Vector3[]? normals)
+    {
+        if (normals == null || normals.Length < 4)
+            return false;
+
+        int posX = 0, negX = 0, posY = 0, negY = 0, posZ = 0, negZ = 0;
+        foreach (var n in normals)
         {
-            AlphaProfile.Binary => MaterialMode.Cutout,
-            AlphaProfile.Graded => MaterialMode.Transparent,
-            _ => MaterialMode.Opaque,
-        };
+            if (n.X > 0.01f) posX++; else if (n.X < -0.01f) negX++;
+            if (n.Y > 0.01f) posY++; else if (n.Y < -0.01f) negY++;
+            if (n.Z > 0.01f) posZ++; else if (n.Z < -0.01f) negZ++;
+        }
+
+        int total = normals.Length;
+        bool Mirrored(int p, int q)
+        {
+            int used = p + q;
+            if (used < total * 0.5) return false;          // axis barely used -> skip
+            return (double)Math.Min(p, q) / used >= 0.40;  // 40-60% split -> mirrored
+        }
+
+        return Mirrored(posX, negX) || Mirrored(posY, negY) || Mirrored(posZ, negZ);
     }
 
     /// <summary>

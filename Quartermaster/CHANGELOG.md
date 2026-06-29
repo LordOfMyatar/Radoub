@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.136-alpha] - 2026-06-28
+**Branch**: `quartermaster/issue-2588` | **PR**: #2618
+
+### Fix: Shared body+mane texture transparency on the dire tiger (#2588)
+
+- A deformable body SkinNode that shares its DDS texture with a cutout fur/mane mesh (e.g. CEP dire tiger) no longer alpha-tests its solid body region into black patches. Cutout is now a true hard cutout (no blend, opaque queue) gated on mirrored-normal geometry, and zero-length stored normals no longer render fragments black (NaN-normal guard). Shared-library change (Radoub.UI).
+
+---
+
 ## [0.2.135-alpha] - 2026-06-28
 **Branch**: `quartermaster/issue-2615` | **PR**: #2616
 
