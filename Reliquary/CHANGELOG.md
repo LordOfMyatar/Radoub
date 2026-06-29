@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 
 ---
 
+## [0.10.3-alpha] - 2026-06-28
+**Branch**: `radoub/issue-2622` | **PR**: #TBD
+
+### Fix: Preview animation-state controls (#2595)
+
+- The 3D preview now surfaces the animation-state controls a placeable model actually contains, matching QM/Relique. Part of the cross-tool animation sprint (canonical entry in Quartermaster CHANGELOG, #2622).
+
+---
+
 ## [0.10.2-alpha] - 2026-06-20
 **Branch**: `quartermaster/issue-2440` | **PR**: #2525
 

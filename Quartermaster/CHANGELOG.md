@@ -5,6 +5,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.138-alpha] - 2026-06-28
+**Branch**: `radoub/issue-2622` | **PR**: #TBD
+
+### Sprint: Model Preview Animation Fixes (#2622)
+
+- Canine creatures (e.g. blinkdog) now animate in the preview instead of rendering static at bind pose (#2552).
+- Dire tiger mane and other DanglyNode meshes drape over the model rather than sitting flat in their rest pose (#2619).
+- New "Loop all animations" diagnostic in the appearance preview cycles every animation for coverage auditing (#2140).
+- Reliquary now surfaces the animation-state controls a placeable model actually contains (#2595; see Reliquary CHANGELOG).
+
+---
+
 ## [0.2.137-alpha] - 2026-06-28
 **Branch**: `quartermaster/issue-2587` | **PR**: #2621
 
