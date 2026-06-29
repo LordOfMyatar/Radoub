@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.137-alpha] - 2026-06-28
+**Branch**: `quartermaster/issue-2587` | **PR**: #TBD
+
+### Enhancement: Appearance list omits some CEP creatures (#2587)
+
+- Investigate and fix why some valid CEP creature appearances are dropped from the Quartermaster appearance list (UI filter/cap/validity gate, not the resource resolver).
+
+---
+
 ## [0.2.136-alpha] - 2026-06-28
 **Branch**: `quartermaster/issue-2588` | **PR**: #2618
 
