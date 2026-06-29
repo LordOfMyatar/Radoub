@@ -95,6 +95,57 @@ public class AppearanceFilterTests
 
     #endregion
 
+    #region Row-Number Search (#2027)
+
+    [Fact]
+    public void FilterAppearances_NumericSearch_MatchesExactRowNumber()
+    {
+        // Typing "100" should surface the row whose AppearanceId is 100.
+        var result = AppearanceFilterHelper.Filter(_testAppearances, "100", true, true, true);
+        Assert.Contains(result, a => a.AppearanceId == 100);
+    }
+
+    [Fact]
+    public void FilterAppearances_NumericSearch_AlsoMatchesNameContainingDigits()
+    {
+        // Forgiving: "10" matches exact row 10 (none here) OR any name/label/race containing "10".
+        // "Invisible_Dragon_10" (id 569) and "Invisible_Dwarf_Female_010" (id 589) contain "10".
+        var result = AppearanceFilterHelper.Filter(_testAppearances, "10", true, true, true);
+        Assert.Contains(result, a => a.AppearanceId == 569);
+        Assert.Contains(result, a => a.AppearanceId == 589);
+    }
+
+    [Fact]
+    public void FilterAppearances_NumericSearch_ExactRowWithNoTextMatch_StillFound()
+    {
+        // Row 200 ("Custom Dragon") has no "200" anywhere in its text — only the exact-id branch finds it.
+        var result = AppearanceFilterHelper.Filter(_testAppearances, "200", true, true, true);
+        Assert.Contains(result, a => a.AppearanceId == 200);
+    }
+
+    [Fact]
+    public void FilterAppearances_NonNumericSearch_UnaffectedByRowNumberLogic()
+    {
+        var result = AppearanceFilterHelper.Filter(_testAppearances, "badger", true, true, true);
+        Assert.Single(result);
+        Assert.Equal("Badger", result[0].Name);
+    }
+
+    #endregion
+
+    #region Regression: no silent drop (#2587 core)
+
+    [Fact]
+    public void FilterAppearances_DefaultSettings_ReturnsEveryLabeledRow()
+    {
+        // The #2587 investigation proved nothing is dropped at default settings (all sources on,
+        // no text, no exclude). Lock that in so a future filter change can't silently hide rows.
+        var result = AppearanceFilterHelper.Filter(_testAppearances, null, true, true, true, null);
+        Assert.Equal(_testAppearances.Count, result.Count);
+    }
+
+    #endregion
+
     #region Source Filters
 
     [Fact]
