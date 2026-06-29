@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Quartermaster.Services;
 
@@ -74,8 +75,9 @@ public static class AppearanceFilterHelper
         // Row-number search (#2027): an all-digit query also matches the exact AppearanceId,
         // so typing "175" surfaces row 175 even when "175" appears nowhere in its text. The
         // substring match still runs, so digit queries also catch names containing the digits.
+        // All-digits check (not just int.TryParse, which would accept "+5"/" 5"/"-5" as a row).
         var trimmed = searchText.Trim();
-        if (trimmed.Length > 0 && IsAllDigits(trimmed)
+        if (trimmed.Length > 0 && trimmed.All(char.IsDigit)
             && int.TryParse(trimmed, out int rowNumber)
             && app.AppearanceId == rowNumber)
         {
@@ -85,16 +87,6 @@ public static class AppearanceFilterHelper
         return app.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase)
             || app.Label.Contains(searchText, StringComparison.OrdinalIgnoreCase)
             || app.Race.Contains(searchText, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool IsAllDigits(string s)
-    {
-        foreach (var c in s)
-        {
-            if (c < '0' || c > '9')
-                return false;
-        }
-        return true;
     }
 
     /// <summary>

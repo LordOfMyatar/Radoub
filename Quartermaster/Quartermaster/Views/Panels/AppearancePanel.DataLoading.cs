@@ -61,14 +61,16 @@ public partial class AppearancePanel
             });
         }
 
-        // Restore selection if still present
+        // Restore selection if still present. Select by item reference, not SelectedIndex:
+        // the DataGrid is sortable, so the view order can differ from the backing collection
+        // order — an index would select the wrong row and silently change AppearanceType (#2587).
         if (selectedId.HasValue)
         {
-            for (int i = 0; i < _appearanceRows.Count; i++)
+            foreach (var row in _appearanceRows)
             {
-                if (_appearanceRows[i].AppearanceId == selectedId.Value)
+                if (row.AppearanceId == selectedId.Value)
                 {
-                    _appearanceListBox.SelectedIndex = i;
+                    _appearanceListBox.SelectedItem = row;
                     break;
                 }
             }
@@ -304,7 +306,7 @@ public partial class AppearancePanel
         // Still not found (e.g. excluded by a source/exclude filter, or an unknown id on a
         // loaded creature). Add a synthetic row so the current value is visible and selectable.
         // The shared ContextMenu on the DataGrid handles copy actions for all rows (#2058).
-        _appearanceRows.Add(new AppearanceRow
+        var synthetic = new AppearanceRow
         {
             AppearanceId = appearanceId,
             Name = $"Appearance {appearanceId}",
@@ -312,19 +314,22 @@ public partial class AppearancePanel
             Model = "",
             IsPartBased = false,
             Label = $"Appearance {appearanceId}"
-        });
-        _appearanceListBox.SelectedIndex = _appearanceRows.Count - 1;
+        };
+        _appearanceRows.Add(synthetic);
+        // Select by item reference (sort-agnostic), not by index — see RefreshFilteredAppearanceList.
+        _appearanceListBox.SelectedItem = synthetic;
     }
 
     private bool TrySelectAppearanceRow(ushort appearanceId)
     {
         if (_appearanceListBox == null) return false;
 
-        for (int i = 0; i < _appearanceRows.Count; i++)
+        foreach (var row in _appearanceRows)
         {
-            if (_appearanceRows[i].AppearanceId == appearanceId)
+            if (row.AppearanceId == appearanceId)
             {
-                _appearanceListBox.SelectedIndex = i;
+                // Select by item reference (sort-agnostic), not by index.
+                _appearanceListBox.SelectedItem = row;
                 return true;
             }
         }
@@ -390,4 +395,11 @@ public class AppearanceRow
     public string Model { get; set; } = "";
     public bool IsPartBased { get; set; }
     public string Label { get; set; } = "";
+
+    /// <summary>
+    /// Per-row hover tooltip preserving the Type (Part-Based/Static) and raw 2DA Label that the
+    /// pre-DataGrid ListBox surfaced (#2587 review).
+    /// </summary>
+    public string Tooltip =>
+        $"ID: {AppearanceId} | Model: {Model} | Type: {(IsPartBased ? "Part-Based" : "Static")} | Label: {Label}";
 }

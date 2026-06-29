@@ -339,6 +339,25 @@ public class AppearanceServiceTests
 
     #endregion
 
+    #region AppearanceRow tooltip (#2587 review)
+
+    [Fact]
+    public void AppearanceRow_Tooltip_IncludesTypeAndLabel()
+    {
+        var staticRow = new Quartermaster.Views.Panels.AppearanceRow
+        {
+            AppearanceId = 175, Model = "wlfdr01", IsPartBased = false, Label = "Dog_Wolf_Dire"
+        };
+        Assert.Contains("Type: Static", staticRow.Tooltip);
+        Assert.Contains("Dog_Wolf_Dire", staticRow.Tooltip);
+        Assert.Contains("175", staticRow.Tooltip);
+
+        var dynamicRow = new Quartermaster.Views.Panels.AppearanceRow { IsPartBased = true };
+        Assert.Contains("Type: Part-Based", dynamicRow.Tooltip);
+    }
+
+    #endregion
+
     #region Phenotype
 
     [Fact]
