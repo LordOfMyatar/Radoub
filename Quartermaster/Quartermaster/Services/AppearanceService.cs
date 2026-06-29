@@ -145,6 +145,12 @@ public class AppearanceService
                     $"name='{name}'");
             }
 
+            // Maker (#2028): parse the CEP author from the label's trailing parenthetical,
+            // skipping any group that is actually the model resref. Use the raw 2DA label so
+            // the synthetic "(Dynamic)" UI prefix (added later) is never present here.
+            var makerModelRef = !string.IsNullOrEmpty(race) ? race! : label;
+            var maker = AppearanceFilterHelper.ParseMaker(label, makerModelRef);
+
             appearances.Add(new AppearanceInfo
             {
                 AppearanceId = (ushort)i,
@@ -152,7 +158,8 @@ public class AppearanceService
                 Label = label,
                 IsPartBased = isPartBased,
                 Race = race ?? "",
-                ModelResRef = modelResRef ?? ""
+                ModelResRef = modelResRef ?? "",
+                Maker = maker
             });
         }
 
@@ -739,6 +746,7 @@ public class AppearanceInfo : SkillDisplayHelper.INamedItem
     public bool IsPartBased { get; set; }
     public string Race { get; set; } = "";
     public string ModelResRef { get; set; } = "";
+    public string Maker { get; set; } = "";
     public AppearanceSource Source { get; set; } = AppearanceSource.Unknown;
 }
 

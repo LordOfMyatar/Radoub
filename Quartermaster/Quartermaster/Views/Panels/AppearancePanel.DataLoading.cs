@@ -44,37 +44,33 @@ public partial class AppearancePanel
         var filtered = AppearanceFilterHelper.Filter(_appearances, searchText, showBif, showHak, showOverride, excludePatterns);
 
         // Remember current selection
-        ushort? selectedId = null;
-        if (_appearanceListBox.SelectedItem is ListBoxItem selectedItem && selectedItem.Tag is ushort id)
-            selectedId = id;
+        ushort? selectedId = (_appearanceListBox.SelectedItem as AppearanceRow)?.AppearanceId;
 
-        _appearanceListBox.Items.Clear();
+        _appearanceRows.Clear();
         foreach (var app in filtered)
         {
-            var baseName = app.IsPartBased && !app.Name.Contains("(Dynamic)")
-                ? $"(Dynamic) {app.Name}"
-                : app.Name;
             var modelRef = !string.IsNullOrEmpty(app.Race) ? app.Race : app.Label;
-            var displayText = $"[{app.AppearanceId}] {baseName} ({modelRef})";
-            var item = new ListBoxItem
+            _appearanceRows.Add(new AppearanceRow
             {
-                Content = displayText,
-                Tag = app.AppearanceId
-            };
-            // Context menu is attached once to the parent ListBox (see WireEvents),
-            // not per-item — #2058.
-            Avalonia.Controls.ToolTip.SetTip(item, $"ID: {app.AppearanceId} | Model: {modelRef} | Type: {(app.IsPartBased ? "Part-Based" : "Static")} | Label: {app.Label}");
-            _appearanceListBox.Items.Add(item);
+                AppearanceId = app.AppearanceId,
+                Name = app.IsPartBased ? $"(Dynamic) {app.Name}" : app.Name,
+                Maker = app.Maker,
+                Model = modelRef,
+                IsPartBased = app.IsPartBased,
+                Label = app.Label
+            });
         }
 
-        // Restore selection if still present
+        // Restore selection if still present. Select by item reference, not SelectedIndex:
+        // the DataGrid is sortable, so the view order can differ from the backing collection
+        // order — an index would select the wrong row and silently change AppearanceType (#2587).
         if (selectedId.HasValue)
         {
-            for (int i = 0; i < _appearanceListBox.Items.Count; i++)
+            foreach (var row in _appearanceRows)
             {
-                if (_appearanceListBox.Items[i] is ListBoxItem item && item.Tag is ushort itemId && itemId == selectedId.Value)
+                if (row.AppearanceId == selectedId.Value)
                 {
-                    _appearanceListBox.SelectedIndex = i;
+                    _appearanceListBox.SelectedItem = row;
                     break;
                 }
             }
@@ -295,41 +291,49 @@ public partial class AppearancePanel
     {
         if (_appearanceListBox == null || _appearances == null) return;
 
-        for (int i = 0; i < _appearanceListBox.Items.Count; i++)
-        {
-            if (_appearanceListBox.Items[i] is ListBoxItem item &&
-                item.Tag is ushort id && id == appearanceId)
-            {
-                _appearanceListBox.SelectedIndex = i;
-                return;
-            }
-        }
+        if (TrySelectAppearanceRow(appearanceId))
+            return;
 
         // If not found in filtered list, clear search and try again
         if (_appearanceSearchBox != null && !string.IsNullOrEmpty(_appearanceSearchBox.Text))
         {
             _appearanceSearchBox.Text = "";
             RefreshFilteredAppearanceList();
-            for (int i = 0; i < _appearanceListBox.Items.Count; i++)
-            {
-                if (_appearanceListBox.Items[i] is ListBoxItem item &&
-                    item.Tag is ushort id && id == appearanceId)
-                {
-                    _appearanceListBox.SelectedIndex = i;
-                    return;
-                }
-            }
+            if (TrySelectAppearanceRow(appearanceId))
+                return;
         }
 
-        // Still not found, add it with consistent format. Shared ContextMenu
-        // on the parent ListBox handles the copy actions for all rows (#2058).
-        var fallbackItem = new ListBoxItem
+        // Still not found (e.g. excluded by a source/exclude filter, or an unknown id on a
+        // loaded creature). Add a synthetic row so the current value is visible and selectable.
+        // The shared ContextMenu on the DataGrid handles copy actions for all rows (#2058).
+        var synthetic = new AppearanceRow
         {
-            Content = $"[{appearanceId}] Appearance {appearanceId}",
-            Tag = appearanceId
+            AppearanceId = appearanceId,
+            Name = $"Appearance {appearanceId}",
+            Maker = "",
+            Model = "",
+            IsPartBased = false,
+            Label = $"Appearance {appearanceId}"
         };
-        _appearanceListBox.Items.Add(fallbackItem);
-        _appearanceListBox.SelectedIndex = _appearanceListBox.Items.Count - 1;
+        _appearanceRows.Add(synthetic);
+        // Select by item reference (sort-agnostic), not by index — see RefreshFilteredAppearanceList.
+        _appearanceListBox.SelectedItem = synthetic;
+    }
+
+    private bool TrySelectAppearanceRow(ushort appearanceId)
+    {
+        if (_appearanceListBox == null) return false;
+
+        foreach (var row in _appearanceRows)
+        {
+            if (row.AppearanceId == appearanceId)
+            {
+                // Select by item reference (sort-agnostic), not by index.
+                _appearanceListBox.SelectedItem = row;
+                return true;
+            }
+        }
+        return false;
     }
 
     private void SelectGender(byte genderId)
@@ -378,4 +382,24 @@ public partial class AppearancePanel
         });
         _phenotypeComboBox.SelectedIndex = _phenotypeComboBox.Items.Count - 1;
     }
+}
+
+/// <summary>
+/// Row model bound to the appearance DataGrid (#2587): Row# / Name / Maker / Model columns.
+/// </summary>
+public class AppearanceRow
+{
+    public ushort AppearanceId { get; set; }
+    public string Name { get; set; } = "";
+    public string Maker { get; set; } = "";
+    public string Model { get; set; } = "";
+    public bool IsPartBased { get; set; }
+    public string Label { get; set; } = "";
+
+    /// <summary>
+    /// Per-row hover tooltip preserving the Type (Part-Based/Static) and raw 2DA Label that the
+    /// pre-DataGrid ListBox surfaced (#2587 review).
+    /// </summary>
+    public string Tooltip =>
+        $"ID: {AppearanceId} | Model: {Model} | Type: {(IsPartBased ? "Part-Based" : "Static")} | Label: {Label}";
 }

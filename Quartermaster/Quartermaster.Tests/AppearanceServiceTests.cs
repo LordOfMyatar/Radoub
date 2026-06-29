@@ -280,6 +280,82 @@ public class AppearanceServiceTests
         Assert.False(badger.IsPartBased);
     }
 
+    [Fact]
+    public void GetAllAppearances_PopulatesMakerFromLabelParentheses()
+    {
+        // CEP-style label with a trailing maker parenthetical.
+        _mockGameData.Set2DAValue("appearance", 40, "LABEL", "Bear: Black (Shemsu-Heru)");
+        _mockGameData.Set2DAValue("appearance", 40, "STRING_REF", "****");
+        _mockGameData.Set2DAValue("appearance", 40, "MODELTYPE", "F");
+        _mockGameData.Set2DAValue("appearance", 40, "RACE", "c_bearblck");
+
+        var appearances = _service.GetAllAppearances();
+        var bear = appearances.First(a => a.AppearanceId == 40);
+        Assert.Equal("Shemsu-Heru", bear.Maker);
+    }
+
+    [Fact]
+    public void GetAllAppearances_NoParentheses_MakerIsEmpty()
+    {
+        var appearances = _service.GetAllAppearances();
+        var badger = appearances.First(a => a.AppearanceId == 0); // "A_Badger" — no parens
+        Assert.Equal("", badger.Maker);
+    }
+
+    #endregion
+
+    #region ParseMaker (#2028)
+
+    [Theory]
+    // Simple trailing maker.
+    [InlineData("Bear: Black (Shemsu-Heru)", "c_bearblck", "Shemsu-Heru")]
+    // Last paren is the model resref → drop it, use the previous group (the Abishai case).
+    [InlineData("Devil: Abishai: Blue 1* (Darklight) (c_abishaibl)", "c_abishaibl", "Darklight")]
+    // Double paren where the first is a model hint and the last is the maker (Dragonrider case).
+    [InlineData("Dragonrider: Female: Green (cep2_drgrid_*)* (TheOneBlackRider)", "flygreen_fr_hood2", "TheOneBlackRider")]
+    // No parentheses at all.
+    [InlineData("Dog: Wolf, Dire", "wlfdr01", "")]
+    // The synthetic UI "(Dynamic)" prefix must not be treated as a maker.
+    [InlineData("(Dynamic) Human", "h", "")]
+    // Trailing whitespace after the maker group.
+    [InlineData("Cat: Leopard (Shemsu-Heru) ", "c_cat_lep", "Shemsu-Heru")]
+    public void ParseMaker_VariousLabels(string label, string modelRef, string expected)
+    {
+        Assert.Equal(expected, AppearanceFilterHelper.ParseMaker(label, modelRef));
+    }
+
+    [Fact]
+    public void ParseMaker_OnlyParenIsModel_ReturnsEmpty()
+    {
+        Assert.Equal("", AppearanceFilterHelper.ParseMaker("Creature (c_thing)", "c_thing"));
+    }
+
+    [Fact]
+    public void ParseMaker_NullOrEmptyLabel_ReturnsEmpty()
+    {
+        Assert.Equal("", AppearanceFilterHelper.ParseMaker(null!, "x"));
+        Assert.Equal("", AppearanceFilterHelper.ParseMaker("", "x"));
+    }
+
+    #endregion
+
+    #region AppearanceRow tooltip (#2587 review)
+
+    [Fact]
+    public void AppearanceRow_Tooltip_IncludesTypeAndLabel()
+    {
+        var staticRow = new Quartermaster.Views.Panels.AppearanceRow
+        {
+            AppearanceId = 175, Model = "wlfdr01", IsPartBased = false, Label = "Dog_Wolf_Dire"
+        };
+        Assert.Contains("Type: Static", staticRow.Tooltip);
+        Assert.Contains("Dog_Wolf_Dire", staticRow.Tooltip);
+        Assert.Contains("175", staticRow.Tooltip);
+
+        var dynamicRow = new Quartermaster.Views.Panels.AppearanceRow { IsPartBased = true };
+        Assert.Contains("Type: Part-Based", dynamicRow.Tooltip);
+    }
+
     #endregion
 
     #region Phenotype

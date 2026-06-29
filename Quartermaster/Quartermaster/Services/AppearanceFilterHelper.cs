@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Quartermaster.Services;
 
@@ -71,9 +72,59 @@ public static class AppearanceFilterHelper
 
     private static bool MatchesTextSearch(AppearanceInfo app, string searchText)
     {
+        // Row-number search (#2027): an all-digit query also matches the exact AppearanceId,
+        // so typing "175" surfaces row 175 even when "175" appears nowhere in its text. The
+        // substring match still runs, so digit queries also catch names containing the digits.
+        // All-digits check (not just int.TryParse, which would accept "+5"/" 5"/"-5" as a row).
+        var trimmed = searchText.Trim();
+        if (trimmed.Length > 0 && trimmed.All(char.IsDigit)
+            && int.TryParse(trimmed, out int rowNumber)
+            && app.AppearanceId == rowNumber)
+        {
+            return true;
+        }
+
         return app.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase)
             || app.Label.Contains(searchText, StringComparison.OrdinalIgnoreCase)
             || app.Race.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Parse the maker/author of a CEP appearance from its label's parentheses (#2028).
+    /// CEP labels append the author in a trailing group, e.g. "Bear: Black (Shemsu-Heru)".
+    /// Some labels also carry a model-resref group (e.g. "...(Darklight) (c_abishaibl)"); the
+    /// group equal to <paramref name="modelRef"/> is skipped so the real author is returned.
+    /// The synthetic "(Dynamic)" UI prefix is treated as not-a-maker.
+    /// Returns the empty string when no maker group is present.
+    /// </summary>
+    /// <param name="label">Raw appearance.2da LABEL (not the UI-decorated display name).</param>
+    /// <param name="modelRef">Known model resref to exclude from maker candidates.</param>
+    public static string ParseMaker(string label, string modelRef)
+    {
+        if (string.IsNullOrEmpty(label))
+            return "";
+
+        var matches = System.Text.RegularExpressions.Regex.Matches(label, @"\(([^()]*)\)");
+        if (matches.Count == 0)
+            return "";
+
+        var model = modelRef?.Trim() ?? "";
+
+        // Walk from the last parenthetical backward; skip groups that are the model resref or
+        // the synthetic "Dynamic" prefix. Return the first real author group found.
+        for (int i = matches.Count - 1; i >= 0; i--)
+        {
+            var group = matches[i].Groups[1].Value.Trim();
+            if (group.Length == 0)
+                continue;
+            if (model.Length > 0 && group.Equals(model, StringComparison.OrdinalIgnoreCase))
+                continue;
+            if (group.Equals("Dynamic", StringComparison.OrdinalIgnoreCase))
+                continue;
+            return group;
+        }
+
+        return "";
     }
 
     /// <summary>

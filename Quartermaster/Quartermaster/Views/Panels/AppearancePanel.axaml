@@ -7,8 +7,15 @@
              x:Class="Quartermaster.Views.Panels.AppearancePanel">
 
     <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
-        <!-- Main split: Left (body parts) / Right (3D preview) -->
-        <Grid ColumnDefinitions="350,*">
+        <!-- Main split: Left (body parts) | splitter | Right (3D preview). Proportional (star)
+             widths with MinWidth floors + a draggable GridSplitter so the panel resizes with the
+             window instead of pinning a fixed left width (#2587). -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" MinWidth="360"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="3*" MinWidth="280"/>
+            </Grid.ColumnDefinitions>
 
             <!-- LEFT PANEL: Body Parts Configuration -->
             <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
@@ -59,11 +66,32 @@
                                      AutomationProperties.AutomationId="ExcludePatternBox"
                                      ToolTip.Tip="Hide entries matching these patterns (e.g. Invisible;object). Matches Name and Label, case-insensitive."/>
 
-                            <!-- Appearance List (replaces ComboBox for searchability) -->
-                            <ListBox x:Name="AppearanceListBox"
-                                     MaxHeight="150"
-                                     FontSize="{DynamicResource FontSizeSmall}"
-                                     AutomationProperties.AutomationId="AppearanceListBox"/>
+                            <!-- Appearance list: Row#/Name/Model/Maker columns, sortable (#2587, #2027, #2028).
+                                 Kept compact; search (incl. row-number) does the heavy lifting, not scrolling. -->
+                            <DataGrid x:Name="AppearanceListBox"
+                                      MinHeight="150" MaxHeight="340"
+                                      FontSize="{DynamicResource FontSizeSmall}"
+                                      IsReadOnly="True"
+                                      SelectionMode="Single"
+                                      CanUserSortColumns="True"
+                                      CanUserResizeColumns="True"
+                                      CanUserReorderColumns="False"
+                                      GridLinesVisibility="Horizontal"
+                                      HeadersVisibility="Column"
+                                      AutomationProperties.AutomationId="AppearanceListBox">
+                                <DataGrid.Styles>
+                                    <!-- Per-row tooltip: Type (Part-Based/Static) + raw 2DA Label (#2587 review) -->
+                                    <Style Selector="DataGridRow">
+                                        <Setter Property="ToolTip.Tip" Value="{Binding Tooltip}"/>
+                                    </Style>
+                                </DataGrid.Styles>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Row#" Binding="{Binding AppearanceId}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
+                                    <DataGridTextColumn Header="Model" Binding="{Binding Model}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Maker" Binding="{Binding Maker}" Width="Auto"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
 
                             <Grid ColumnDefinitions="70,*" RowDefinitions="Auto,Auto" RowSpacing="6" ColumnSpacing="10">
                                 <!-- Gender -->
@@ -290,8 +318,13 @@
                 </StackPanel>
             </ScrollViewer>
 
+            <!-- Draggable divider between the editor column and the 3D preview -->
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
+                          Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                          ResizeDirection="Columns"/>
+
             <!-- RIGHT PANEL: 3D Model Preview -->
-            <Border Grid.Column="1"
+            <Border Grid.Column="2"
                     BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                     BorderThickness="1,0,0,0"
                     Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
