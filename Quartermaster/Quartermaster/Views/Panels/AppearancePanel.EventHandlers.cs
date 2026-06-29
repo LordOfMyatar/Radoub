@@ -21,9 +21,10 @@ public partial class AppearancePanel
     {
         if (_appearanceListBox != null)
         {
+            _appearanceListBox.ItemsSource = _appearanceRows;
             _appearanceListBox.SelectionChanged += OnAppearanceSelectionChanged;
-            // Attach the Copy context menu once to the ListBox rather than per-item.
-            // Per-item ContextMenu allocation was a hot path during load and filter
+            // Attach the Copy context menu once to the DataGrid rather than per-row.
+            // Per-row ContextMenu allocation was a hot path during load and filter
             // refresh with ~1000 rows (#2058).
             _appearanceListBox.ContextMenu = BuildSharedAppearanceCopyMenu();
         }
@@ -224,25 +225,23 @@ public partial class AppearancePanel
 
     private void OnAppearanceSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (_isLoading || _appearanceListBox?.SelectedItem is not ListBoxItem item) return;
+        if (_isLoading || _appearanceListBox?.SelectedItem is not AppearanceRow row) return;
 
         try
         {
-            if (item.Tag is ushort appearanceId)
+            var appearanceId = row.AppearanceId;
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"AppearancePanel: Appearance changed to {appearanceId}, name='{row.Name}'");
+            var isPartBased = _displayService?.IsPartBasedAppearance(appearanceId) ?? false;
+            UpdateBodyPartsEnabledState(isPartBased);
+
+            if (_currentCreature != null)
             {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"AppearancePanel: Appearance changed to {appearanceId}, displayText='{item.Content}'");
-                var isPartBased = _displayService?.IsPartBasedAppearance(appearanceId) ?? false;
-                UpdateBodyPartsEnabledState(isPartBased);
-
-                if (_currentCreature != null)
-                {
-                    _currentCreature.AppearanceType = appearanceId;
-                    UpdateModelPreview();
-                }
-
-                AppearanceChanged?.Invoke(this, EventArgs.Empty);
+                _currentCreature.AppearanceType = appearanceId;
+                UpdateModelPreview();
             }
+
+            AppearanceChanged?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception ex)
         {
@@ -736,27 +735,11 @@ public partial class AppearancePanel
         name = string.Empty;
         resref = string.Empty;
 
-        if (_appearanceListBox?.SelectedItem is not ListBoxItem selected) return false;
-        if (selected.Tag is not ushort selectedId) return false;
+        if (_appearanceListBox?.SelectedItem is not AppearanceRow selected) return false;
 
-        id = selectedId;
-
-        if (_appearances != null)
-        {
-            foreach (var app in _appearances)
-            {
-                if (app.AppearanceId != selectedId) continue;
-
-                name = app.IsPartBased && !app.Name.Contains("(Dynamic)")
-                    ? $"(Dynamic) {app.Name}"
-                    : app.Name;
-                resref = !string.IsNullOrEmpty(app.Race) ? app.Race : app.Label;
-                return true;
-            }
-        }
-
-        // Fallback: synthesize from ListBoxItem content (matches the "Appearance N" row format)
-        name = selected.Content?.ToString() ?? $"Appearance {selectedId}";
+        id = selected.AppearanceId;
+        name = selected.Name;
+        resref = selected.Model;
         return true;
     }
 

@@ -20,12 +20,15 @@ public partial class AppearancePanel : UserControl
 {
     // Appearance section
     private TextBox? _appearanceSearchBox;
-    private ListBox? _appearanceListBox;
+    private DataGrid? _appearanceListBox;
     private CheckBox? _showBifCheckBox;
     private CheckBox? _showHakCheckBox;
     private CheckBox? _showOverrideCheckBox;
     private TextBlock? _appearanceCountText;
     private TextBox? _excludePatternBox;
+
+    // Backing collection for the appearance DataGrid (#2587).
+    private readonly System.Collections.ObjectModel.ObservableCollection<AppearanceRow> _appearanceRows = new();
     private ComboBox? _genderComboBox;
     private ComboBox? _phenotypeComboBox;
 
@@ -125,7 +128,7 @@ public partial class AppearancePanel : UserControl
     {
         // Appearance section
         _appearanceSearchBox = this.FindControl<TextBox>("AppearanceSearchBox");
-        _appearanceListBox = this.FindControl<ListBox>("AppearanceListBox");
+        _appearanceListBox = this.FindControl<DataGrid>("AppearanceListBox");
         _showBifCheckBox = this.FindControl<CheckBox>("ShowBifCheckBox");
         _showHakCheckBox = this.FindControl<CheckBox>("ShowHakCheckBox");
         _showOverrideCheckBox = this.FindControl<CheckBox>("ShowOverrideCheckBox");

@@ -8,7 +8,8 @@
 
     <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
         <!-- Main split: Left (body parts) / Right (3D preview) -->
-        <Grid ColumnDefinitions="350,*">
+        <!-- Left column widened (350→430) to fit the Row#/Name/Maker/Model appearance grid (#2587). -->
+        <Grid ColumnDefinitions="430,*">
 
             <!-- LEFT PANEL: Body Parts Configuration -->
             <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
@@ -59,11 +60,26 @@
                                      AutomationProperties.AutomationId="ExcludePatternBox"
                                      ToolTip.Tip="Hide entries matching these patterns (e.g. Invisible;object). Matches Name and Label, case-insensitive."/>
 
-                            <!-- Appearance List (replaces ComboBox for searchability) -->
-                            <ListBox x:Name="AppearanceListBox"
-                                     MaxHeight="150"
-                                     FontSize="{DynamicResource FontSizeSmall}"
-                                     AutomationProperties.AutomationId="AppearanceListBox"/>
+                            <!-- Appearance list: Row#/Name/Maker/Model columns, sortable (#2587, #2027, #2028).
+                                 Kept compact; search (incl. row-number) does the heavy lifting, not scrolling. -->
+                            <DataGrid x:Name="AppearanceListBox"
+                                      MaxHeight="190"
+                                      FontSize="{DynamicResource FontSizeSmall}"
+                                      IsReadOnly="True"
+                                      SelectionMode="Single"
+                                      CanUserSortColumns="True"
+                                      CanUserResizeColumns="True"
+                                      CanUserReorderColumns="False"
+                                      GridLinesVisibility="Horizontal"
+                                      HeadersVisibility="Column"
+                                      AutomationProperties.AutomationId="AppearanceListBox">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Row#" Binding="{Binding AppearanceId}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
+                                    <DataGridTextColumn Header="Maker" Binding="{Binding Maker}" Width="Auto"/>
+                                    <DataGridTextColumn Header="Model" Binding="{Binding Model}" Width="Auto"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
 
                             <Grid ColumnDefinitions="70,*" RowDefinitions="Auto,Auto" RowSpacing="6" ColumnSpacing="10">
                                 <!-- Gender -->
