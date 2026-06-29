@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.137-alpha] - 2026-06-28
-**Branch**: `quartermaster/issue-2587` | **PR**: #TBD
+**Branch**: `quartermaster/issue-2587` | **PR**: #2621
 
 ### Enhancement: Appearance list omits some CEP creatures (#2587)
 
