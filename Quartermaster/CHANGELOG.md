@@ -13,7 +13,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 - Canine creatures (e.g. blinkdog) now animate in the preview instead of rendering static at bind pose (#2552).
 - Dire tiger mane and other DanglyNode meshes drape over the model rather than sitting flat in their rest pose (#2619).
 - New "Loop all animations" diagnostic in the appearance preview cycles every animation for coverage auditing (#2140).
-- Reliquary now surfaces the animation-state controls a placeable model actually contains (#2595; see Reliquary CHANGELOG).
+- Reliquary now surfaces placeable animation-state controls and gates emitters by state — the brazier flame turns off when Deactivated (#2595, #2556; see Reliquary CHANGELOG).
 
 ---
 
