@@ -89,17 +89,22 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
         // see MeshTransparency.ClassifyMesh — so a body sharing a cutout fur/mane atlas (dire tiger)
         // does not alpha-test itself into black patches.
         public bool IsSkin;
+        // True for handbuilt-doublesided meshes (#2588): duplicated inverted-normal faces (fences,
+        // foliage, fur/mane cards). Only these become a true hard Cutout; ordinary alpha meshes
+        // blend. See MeshTransparency.HasMirroredNormals / ClassifyMesh.
+        public bool IsMirrored;
         // Geometric centroid in the same centered space as the GPU vertex buffer (#2540).
         // Used to depth-sort Transparent meshes back-to-front.
         public Vector3 Centroid;
     }
 
     // Discard cutoff for Cutout meshes (#2540). The real engine alpha-tests at GL_GREATER 0.1
-    // (xoreos modelnode.cpp:440, behavioral ref only — GPLv3, not copied), keeping the soft fur
-    // tips of a mane/fur card instead of carving them away. 0.5 (rollnw's hard-silhouette default)
-    // discarded the wispy upper-mane fragments and left black triangular voids behind them; 0.1
-    // keeps the wisps, matching the in-game dire-tiger mane.
-    private const float CutoutAlphaThreshold = 0.1f;
+    // Cutout is now a TRUE hard cutout (#2588): no blend, opaque queue, depth write on. The
+    // discard threshold is 0.5 — nwn_mdl_webviewer's useAlphaTest value (scene_build.js, MIT,
+    // behavioral ref). The earlier 0.1 was a workaround for the blended-cutout hybrid that left
+    // black triangles; with blend removed, a discarded fragment shows the opaque geometry behind
+    // it (the body), not the background, so the high threshold no longer carves black voids.
+    private const float CutoutAlphaThreshold = 0.5f;
 
     // Alpha-test floor applied to Transparent meshes during the blend pass (#2540). The engine
     // keeps GL_ALPHA_TEST on at GL_GREATER 0.1 while blending (xoreos modelnode.cpp:440/770,
@@ -531,7 +536,7 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
 
             var profile = hasTexture && _textureAlphaProfile.TryGetValue(resolvedTexture!, out var p)
                 ? p : AlphaProfile.Opaque;
-            var mode = MeshTransparency.ClassifyMesh(drawCall.MeshAlpha, drawCall.TransparencyHint, profile, drawCall.IsSkin);
+            var mode = MeshTransparency.ClassifyMesh(drawCall.MeshAlpha, drawCall.TransparencyHint, profile, drawCall.IsSkin, drawCall.IsMirrored);
             return (resolvedTexture, hasTexture, mode);
         }
 
@@ -587,20 +592,19 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
             DrawMesh(drawCall);
         }
 
-        // Pass 1b: cutout meshes (#2540), depth write ON + blend + depth func LEQUAL. LEQUAL is
-        // scoped to ONLY these fur/mane cards: it lets equal-depth fragments of overlapping cards
-        // both draw so the layered mane fills without dark gaps, while the kept soft tips composite
-        // by alpha (no black opaque texels). Depth write on keeps it order-independent (no shards).
-        // Restored to Less after so it cannot leak into the transparent pass or the next frame.
+        // Pass 1b: cutout meshes (#2588) — TRUE hard cutout, NO blend. These are only the
+        // handbuilt-doublesided fur/mane/fence cards (mirrored normals + hard 0/1 mask). Following
+        // nwn_mdl_webviewer's useAlphaTest path (scene_build.js, MIT — behavioral ref): they stay in
+        // the OPAQUE queue (transparent=false, depthWrite on, alpha-test at 0.5) so the duplicated
+        // front/back quads don't sort-fight. The shader discards texels below the threshold and
+        // writes FULL-opaque colour for the rest — no SrcAlpha blend. The previous blended-cutout
+        // hybrid (blend ON + alphaTest 0.1 + LEQUAL) composited kept low-alpha edge fragments over
+        // the background, painting the dark/black triangles reported on the dire tiger. Plain opaque
+        // draw (depth func stays Less) removes that compositing entirely.
         if (cutoutCalls.Count > 0)
         {
-            _gl.DepthFunc(DepthFunction.Lequal);
-            _gl.Enable(EnableCap.Blend);
-            _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             foreach (var drawCall in cutoutCalls)
                 DrawMesh(drawCall);
-            _gl.Disable(EnableCap.Blend);
-            _gl.DepthFunc(DepthFunction.Less);
         }
 
         // Pass 2: transparent meshes, sorted back-to-front, alpha-blended, depth writes off so
@@ -778,7 +782,8 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
                 TextureName = rawBitmap,
                 MeshAlpha = mesh.Alpha,
                 TransparencyHint = mesh.TransparencyHint,
-                IsSkin = isSkinMesh
+                IsSkin = isSkinMesh,
+                IsMirrored = MeshTransparency.HasMirroredNormals(mesh.Normals)
             };
 
             // #2026/#1584: Pick normal source by whether the mesh carries a usable stored normal

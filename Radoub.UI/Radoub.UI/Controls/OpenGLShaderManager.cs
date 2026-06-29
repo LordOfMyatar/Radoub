@@ -82,7 +82,14 @@ uniform int debugMode;
 
 void main()
 {
-    vec3 norm = normalize(Normal);
+    // #2588: guard against degenerate (zero-length) stored normals. Some NWN meshes ship vertices
+    // with a zero normal (e.g. the dire-tiger Mane has 11/166) — the 2002 BioWare compiler left
+    // them unset. normalize(vec3(0)) is NaN in GLSL; abs(dot(NaN, lightDir)) propagates NaN through
+    // the lighting math and the fragment renders pure black. This was masked while the mane drew as
+    // a low-alpha blended cutout but became visible black triangles once it became a true opaque
+    // hard cutout. Fall back to a fixed up-normal so the fragment lights normally instead of NaN.
+    float normLen = length(Normal);
+    vec3 norm = normLen > 0.0001 ? Normal / normLen : vec3(0.0, 0.0, 1.0);
 
     if (debugMode == 1) {
         // Visualise the post-transform normal as colour. If the normal is
@@ -166,13 +173,12 @@ void main()
     // PBR _d diffuse maps); 1/1.1 keeps only a slight lift without bleaching (#1762).
     result = pow(result, vec3(1.0 / 1.1));
 
-    // Output alpha (#2540): Opaque (mode 0) writes 1.0. Cutout (mode 1) and Transparent (mode 2)
-    // both write the texel alpha (× mesh Alpha controller). The cutout pass blends with depth-write
-    // ON: discarding below the floor removes the void, while letting the kept soft fur tips
-    // composite by their real alpha stops them rendering as opaque dark texels (the black mane
-    // spots). Depth-write on keeps it order-independent so overlapping mane cards do not sort-fight
-    // into shards — this is the engine's alpha-test + alpha-blend combination.
-    float outAlpha = (meshMode == 0) ? 1.0 : (texAlpha * meshAlpha);
+    // Output alpha (#2588): Opaque (mode 0) and Cutout (mode 1) both write 1.0 — Cutout is a TRUE
+    // hard cutout in the opaque queue (no blend): a texel either passes the 0.5 alpha-test and draws
+    // fully opaque, or is discarded. Writing texAlpha here (the old blended-cutout hybrid) let kept
+    // low-alpha edge fragments composite over the background as dark/black triangles. Only the
+    // Transparent pass (mode 2) writes texel alpha (× mesh Alpha controller) for real blending.
+    float outAlpha = (meshMode == 2) ? (texAlpha * meshAlpha) : 1.0;
     FragColor = vec4(result, outAlpha);
 }
 ";

@@ -9,6 +9,7 @@
 // Transparent — opaque _d PBR bodies overload the alpha channel as a spec value, so their
 // alpha is never consulted.
 
+using System.Numerics;
 using Radoub.UI.Controls;
 
 namespace Radoub.UI.Tests;
@@ -119,25 +120,34 @@ public class MeshTransparencyTests
     }
 
     [Fact]
-    public void HintZero_BinaryProfile_IsCutout()
+    public void HintZero_BinaryProfile_Mirrored_IsCutout()
     {
-        // #2540: a hint-less mesh with a hard 0/1 alpha mask (fur/mane cards — e.g. the dire-tiger
-        // texture shared by the mane AND the body skin, #2507) is alpha-TESTED with depth write,
-        // not order-dependent blended. The engine's default for alpha-bearing meshes is alpha-test
-        // (xoreos keeps GL_ALPHA_TEST on; behavioral ref only, GPLv3, not copied). Routing the many
-        // overlapping mane/body layers through the depth-mask-off blend pass made them sort-fight
-        // into black triangular shards; Cutout is order-independent and renders clean.
+        // #2588 (systemic, xoreos + nwn_mdl_webviewer): a hard 0/1 alpha mask is a TRUE hard cutout
+        // ONLY when the mesh is handbuilt-doublesided (mirrored normals — fences, foliage, fur/mane
+        // cards with duplicated inverted-face quads). Such a mesh can't be depth-sorted as a unit in
+        // a blend pass, so it stays in the opaque queue and alpha-tests (punch-through). The
+        // discriminator is the geometry (mirrored normals), NOT the texture histogram alone.
         Assert.Equal(MaterialMode.Cutout,
-            MeshTransparency.ClassifyMesh(1.0f, 0, AlphaProfile.Binary));
+            MeshTransparency.ClassifyMesh(1.0f, 0, AlphaProfile.Binary, isSkin: false, isMirrored: true));
+    }
+
+    [Fact]
+    public void HintZero_BinaryProfile_NotMirrored_IsTransparent()
+    {
+        // A hard-mask alpha mesh that is NOT handbuilt-doublesided blends like any other alpha mesh
+        // (xoreos: NWN has only Opaque + Transparent; isTransparent = hasAlpha). No cutout mode for
+        // ordinary single-sided alpha geometry — it would otherwise hard-edge wisps into black.
+        Assert.Equal(MaterialMode.Transparent,
+            MeshTransparency.ClassifyMesh(1.0f, 0, AlphaProfile.Binary, isSkin: false, isMirrored: false));
     }
 
     [Fact]
     public void HintZero_GradedProfile_IsTransparent()
     {
-        // Genuinely graded alpha with no hint (the zodiac/celestial creatures, #2435 — a real soft
-        // see-through body) blends. Distinct from the binary fur mask above.
+        // Genuinely graded alpha (the zodiac/celestial creatures, #2435 — a real soft see-through
+        // body) blends regardless of mirrored normals — a gradient is never a hard cutout.
         Assert.Equal(MaterialMode.Transparent,
-            MeshTransparency.ClassifyMesh(1.0f, 0, AlphaProfile.Graded));
+            MeshTransparency.ClassifyMesh(1.0f, 0, AlphaProfile.Graded, isSkin: false, isMirrored: true));
     }
 
     [Fact]
@@ -151,10 +161,18 @@ public class MeshTransparencyTests
     }
 
     [Fact]
-    public void HintSet_BinaryProfile_IsCutout()
+    public void HintSet_BinaryProfile_Mirrored_IsCutout()
     {
         Assert.Equal(MaterialMode.Cutout,
-            MeshTransparency.ClassifyMesh(1.0f, 1, AlphaProfile.Binary));
+            MeshTransparency.ClassifyMesh(1.0f, 1, AlphaProfile.Binary, isSkin: false, isMirrored: true));
+    }
+
+    [Fact]
+    public void HintSet_BinaryProfile_NotMirrored_IsTransparent()
+    {
+        // Even with a hint, a non-doublesided Binary mesh blends rather than hard-cutout.
+        Assert.Equal(MaterialMode.Transparent,
+            MeshTransparency.ClassifyMesh(1.0f, 1, AlphaProfile.Binary, isSkin: false, isMirrored: false));
     }
 
     // ---- SkinNode never carves (#2588) ----
@@ -201,12 +219,47 @@ public class MeshTransparencyTests
     }
 
     [Fact]
-    public void TrimeshDangly_BinaryProfile_StillCutout_NotSkin()
+    public void TrimeshDangly_BinaryProfile_Mirrored_StillCutout_NotSkin()
     {
-        // The mane/fur accessory (Dangly/Trimesh, NOT a SkinNode) keeps Cutout — the body-skin
-        // carve-out must not disarm cutout on the fur cards that genuinely need it (#2507).
+        // The mane/fur accessory (Dangly/Trimesh, NOT a SkinNode) with mirrored normals keeps Cutout
+        // — the body-skin carve-out must not disarm cutout on the handbuilt-doublesided fur cards
+        // that genuinely need it (#2507 / #2588). The dire-tiger Mane/Object01/fangs_up are all
+        // mirrored-normal, so they take this path.
         Assert.Equal(MaterialMode.Cutout,
-            MeshTransparency.ClassifyMesh(1.0f, 0, AlphaProfile.Binary, isSkin: false));
+            MeshTransparency.ClassifyMesh(1.0f, 0, AlphaProfile.Binary, isSkin: false, isMirrored: true));
+    }
+
+    // ---- HasMirroredNormals (#2588) ----
+
+    [Fact]
+    public void HasMirroredNormals_HalfInverted_IsTrue()
+    {
+        // Handbuilt-doublesided: half the normals point +Z, half -Z (duplicated inverted faces).
+        var n = new[]
+        {
+            new Vector3(0, 0,  1), new Vector3(0, 0,  1), new Vector3(0, 0,  1),
+            new Vector3(0, 0, -1), new Vector3(0, 0, -1), new Vector3(0, 0, -1),
+        };
+        Assert.True(MeshTransparency.HasMirroredNormals(n));
+    }
+
+    [Fact]
+    public void HasMirroredNormals_AllSameDirection_IsFalse()
+    {
+        // An ordinary single-sided mesh: normals fan one way, no ~50/50 inversion on any axis.
+        var n = new[]
+        {
+            new Vector3(0, 0, 1), new Vector3(0.1f, 0, 1), new Vector3(-0.1f, 0, 1),
+            new Vector3(0, 0.1f, 1), new Vector3(0, -0.1f, 1),
+        };
+        Assert.False(MeshTransparency.HasMirroredNormals(n));
+    }
+
+    [Fact]
+    public void HasMirroredNormals_EmptyOrNull_IsFalse()
+    {
+        Assert.False(MeshTransparency.HasMirroredNormals(System.Array.Empty<Vector3>()));
+        Assert.False(MeshTransparency.HasMirroredNormals(null!));
     }
 
     [Fact]
