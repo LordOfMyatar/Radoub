@@ -84,4 +84,57 @@ public class EmitterAnimationGateTests
 
         Assert.True(EmitterAnimationGate.ShouldRenderAtRest(model, "fairyDust"));
     }
+
+    // ---- State-aware gating for placeable preview states (#2556) ----
+
+    // Brazier-like model: header flame 20, default 20, on 20, off 0 (the real plc_i05 shape).
+    private static MdlModel BrazierModel()
+    {
+        var model = new MdlModel { Name = "plc_i05" };
+        var root = new MdlNode { Name = "root" };
+        root.Children.Add(Emitter("fire!06", 20f));
+        model.GeometryRoot = root;
+
+        void AddStateAnim(string name, float flameBr)
+        {
+            var r = new MdlNode { Name = "root" };
+            r.Children.Add(Emitter("fire!06", flameBr));
+            model.Animations.Add(new MdlAnimation { Name = name, Length = 0.033f, GeometryRoot = r });
+        }
+        AddStateAnim("default", 20f);
+        AddStateAnim("on", 20f);
+        AddStateAnim("off", 0f);
+        return model;
+    }
+
+    [Fact]
+    public void DeactivatedState_TurnsFlameOff()
+    {
+        // Selecting Deactivated (off animation) keys fire!06 birthrate to 0 → silent.
+        Assert.False(EmitterAnimationGate.ShouldRenderForState(BrazierModel(), "fire!06", "off"));
+    }
+
+    [Fact]
+    public void ActivatedState_KeepsFlameOn()
+    {
+        Assert.True(EmitterAnimationGate.ShouldRenderForState(BrazierModel(), "fire!06", "on"));
+    }
+
+    [Fact]
+    public void DefaultState_FallsBackToDefaultAnim()
+    {
+        // Null/"default" state behaves exactly like ShouldRenderAtRest.
+        Assert.True(EmitterAnimationGate.ShouldRenderForState(BrazierModel(), "fire!06", null));
+        Assert.True(EmitterAnimationGate.ShouldRenderForState(BrazierModel(), "fire!06", "default"));
+    }
+
+    [Fact]
+    public void StateAnimMissingEmitter_FallsBackToDefault()
+    {
+        // A state whose animation doesn't carry this emitter falls through to the default-anim rule.
+        var model = BrazierModel();
+        // "open" has no emitter copy → fall back to default (20) → render.
+        model.Animations.Add(new MdlAnimation { Name = "open", Length = 0.033f, GeometryRoot = new MdlNode { Name = "root" } });
+        Assert.True(EmitterAnimationGate.ShouldRenderForState(model, "fire!06", "open"));
+    }
 }

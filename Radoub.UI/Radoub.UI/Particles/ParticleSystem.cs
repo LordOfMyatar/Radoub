@@ -57,6 +57,9 @@ public sealed class ParticleSystem
 
     public IReadOnlyList<Particle> Particles => _particles;
 
+    /// <summary>Remove all live particles (e.g. when a preview state gates this emitter off). (#2556)</summary>
+    public void Clear() => _particles.Clear();
+
     /// <summary>First live particle (test/inspection convenience).</summary>
     /// <remarks>Intended for tests/inspection only; check <see cref="LiveCount"/> first.</remarks>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when no particles are live.</exception>
