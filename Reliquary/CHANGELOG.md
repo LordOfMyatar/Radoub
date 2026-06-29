@@ -7,7 +7,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 ---
 
 ## [0.10.3-alpha] - 2026-06-28
-**Branch**: `radoub/issue-2622` | **PR**: #TBD
+**Branch**: `radoub/issue-2622` | **PR**: #2625
 
 ### Fix: Preview animation-state controls (#2595)
 

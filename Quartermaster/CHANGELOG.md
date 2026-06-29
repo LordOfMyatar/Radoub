@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 ---
 
 ## [0.2.138-alpha] - 2026-06-28
-**Branch**: `radoub/issue-2622` | **PR**: #TBD
+**Branch**: `radoub/issue-2622` | **PR**: #2625
 
 ### Sprint: Model Preview Animation Fixes (#2622)
 
