@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Radoub.UI 0.2.33-alpha] - 2026-06-30
+**Branch**: `quartermaster/issue-2620` | **PR**: #TBD
+
+### Model preview: particle blend-state hygiene (#2620)
+
+- The model preview now clears blend state defensively at frame start and restores it in a `finally` around the particle draw, so a mid-render particle failure can no longer leak alpha-blending into the next frame's opaque mesh.
+
+---
+
 ## [Dependencies] - 2026-06-30
 **Branch**: `radoub/issue-2627` | **PR**: #2639
 
