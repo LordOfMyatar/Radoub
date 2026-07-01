@@ -176,6 +176,27 @@ public static class MeshTransparency
     /// <c>hasMirroredNormals</c> (scene_build.js, MIT — behavioral reference). Used to decide that a
     /// Binary-alpha mesh is a true hard cutout (fence/foliage/fur card) rather than ordinary alpha
     /// geometry that should blend. A 40–60% positive/negative split on any well-used axis counts.
+    ///
+    /// <para>KNOWN LIMITATIONS (#2620 — corpus-confirmed, deliberately NOT fixed). A full base+CEP
+    /// scan (139,922 models; see NonPublic/Quartermaster/Research/2620-mirror-normal-corpus-scan.md)
+    /// found two classes of genuine doublesided cutout card this test misses, so they blend and can
+    /// sort-fight in the preview instead of alpha-testing:</para>
+    /// <list type="number">
+    /// <item>Absent stored normals (~4,841 meshes). The 2002 BioWare compiler omitted normals on some
+    /// meshes, so there is nothing to inspect and this returns false (e.g. <c>c_barbazu01/head_g</c>,
+    /// norm=0). The preview recomputes normals for SHADING (smoothgroup path) but that source is not
+    /// wired into this discriminator.</item>
+    /// <item>Diagonal mirror plane (~162 meshes). A card whose mirror plane is diagonal spreads the
+    /// inverted population across X/Y/Z so no single cardinal axis reaches 0.40 (e.g.
+    /// <c>sh_fence500</c>, <c>ptm_weed13c</c>).</item>
+    /// </list>
+    /// <para>Fix attempts that FAILED (verified against real geometry, do not retry blindly): a
+    /// reversed-winding face-pair test does not work — NWN duplicates the back half with SEPARATE
+    /// vertices, so neither indices nor rounded positions reverse-match. A pooled cross-axis normal
+    /// minority fraction cannot separate a doublesided card (~0.39–0.50) from a solid body
+    /// (dire-tiger body ~0.44), so it would regress solids if not for the isSkin gate, and still
+    /// yields nothing for absent-normal meshes. A correct fix needs coincident-face detection with
+    /// opposite facing — non-trivial, tracked as the remaining scope of #2620.</para>
     /// </summary>
     public static bool HasMirroredNormals(Vector3[]? normals)
     {

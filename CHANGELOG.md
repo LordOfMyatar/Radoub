@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Model preview: particle blend-state hygiene (#2620)
 
 - The model preview now clears blend state defensively at frame start and restores it in a `finally` around the particle draw, so a mid-render particle failure can no longer leak alpha-blending into the next frame's opaque mesh.
+- Documented two corpus-confirmed limits of the doublesided-cutout detector (cards with absent stored normals or a diagonal mirror plane blend instead of alpha-testing) and added a diagnostic log for the mis-route; a reliable fix needs coincident-face detection and remains open scope.
 
 ---
 
