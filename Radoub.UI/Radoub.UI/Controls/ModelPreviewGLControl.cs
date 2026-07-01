@@ -404,6 +404,11 @@ public partial class ModelPreviewGLControl : OpenGlControlBase
         _gl.Clear((uint)(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit));
         _gl.Enable(EnableCap.DepthTest);
         _gl.DepthFunc(DepthFunction.Less);  // Opaque geometry: strict Less avoids coplanar z-fighting.
+        // Defensive state reset (#2620): if a prior frame threw mid-render (e.g. the particle path
+        // after Enable(Blend)), blend/depth-write could still be set. Start every frame from a known
+        // clean state so a leaked GL state can never bleed into this frame's opaque mesh.
+        _gl.DepthMask(true);
+        _gl.Disable(EnableCap.Blend);
         _gl.Viewport(0, 0, (uint)width, (uint)height);
 
         // Check for any GL errors after basic setup
