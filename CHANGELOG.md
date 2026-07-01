@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Dependencies] - 2026-06-30
+**Branch**: `radoub/issue-2627` | **PR**: #2639
+
+### Dependabot consolidation + labeling fix (#2627)
+
+- Bumped Avalonia 11.3.17 → 11.3.18 (all packages) and Microsoft.NET.Test.Sdk 18.6.0 → 18.7.0. SkiaSharp 3.x → 4.x major deferred to its own PR.
+- Reworked `dependabot.yml` to a single root-level NuGet block labeled `radoub`, matching central package management — fixes bumps being mislabeled with arbitrary tool names.
+
+---
+
 ## [Radoub.UI 0.2.32-alpha] - 2026-06-28
 **Branch**: `quartermaster/issue-2615` | **PR**: #2616
 
