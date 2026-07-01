@@ -26,6 +26,11 @@ public partial class ModelPreviewGLControl
     private void RebuildParticleSystems(MdlModel? model)
     {
         _particleSystems.Clear();
+        // Reset per-state emitter suppression when the model changes, otherwise a stale suppression
+        // from the previous model's Deactivated state could hide a same-named emitter in the new
+        // model until a state is re-selected (#2556). Reliquary re-applies the gate on load, but
+        // clearing here keeps the control self-consistent for any host/order.
+        _stateSuppressedEmitters.Clear();
 
         if (model == null || !model.HasEmitterNodes())
             return;
