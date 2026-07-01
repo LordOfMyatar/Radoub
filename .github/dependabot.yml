@@ -1,126 +1,29 @@
 # Dependabot configuration for Radoub toolset
 # https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
 #
-# Central package management (Directory.Packages.props) is in use, but Dependabot
-# still walks each project directory to discover PackageReference items. One
-# update block per project keeps PRs scoped + labeled per tool.
+# Central package management: all NuGet versions live in the root
+# Directory.Packages.props. A per-tool block scheme mislabels PRs — Dependabot
+# opens the PR under whichever project directory it discovered the shared package
+# first, so identical bumps landed as random tool labels (e.g. an Avalonia bump
+# tagged "parley" vs "radoub"). Since every version change is repo-wide, use a
+# SINGLE nuget block rooted at the repo (where Directory.Packages.props lives),
+# labeled "radoub".
 
 version: 2
 updates:
-  # ---- Tools ----
+  # ---- NuGet (central package management: root Directory.Packages.props) ----
 
   - package-ecosystem: "nuget"
-    directory: "/Parley"
+    directory: "/"
     schedule:
       interval: "weekly"
     labels:
       - "dependencies"
-      - "parley"
+      - "radoub"
     ignore:
       # Avalonia 12.x has too many breaking changes for now — stay on 11.x.
       - dependency-name: "Avalonia*"
         update-types: ["version-update:semver-major"]
-
-  - package-ecosystem: "nuget"
-    directory: "/Manifest"
-    schedule:
-      interval: "weekly"
-    labels:
-      - "dependencies"
-      - "manifest"
-    ignore:
-      - dependency-name: "Avalonia*"
-        update-types: ["version-update:semver-major"]
-
-  - package-ecosystem: "nuget"
-    directory: "/Quartermaster"
-    schedule:
-      interval: "weekly"
-    labels:
-      - "dependencies"
-      - "quartermaster"
-    ignore:
-      - dependency-name: "Avalonia*"
-        update-types: ["version-update:semver-major"]
-
-  - package-ecosystem: "nuget"
-    directory: "/Fence"
-    schedule:
-      interval: "weekly"
-    labels:
-      - "dependencies"
-      - "fence"
-    ignore:
-      - dependency-name: "Avalonia*"
-        update-types: ["version-update:semver-major"]
-
-  - package-ecosystem: "nuget"
-    directory: "/Relique"
-    schedule:
-      interval: "weekly"
-    labels:
-      - "dependencies"
-      - "relique"
-    ignore:
-      - dependency-name: "Avalonia*"
-        update-types: ["version-update:semver-major"]
-
-  - package-ecosystem: "nuget"
-    directory: "/Trebuchet"
-    schedule:
-      interval: "weekly"
-    labels:
-      - "dependencies"
-      - "trebuchet"
-    ignore:
-      - dependency-name: "Avalonia*"
-        update-types: ["version-update:semver-major"]
-
-  # ---- Shared libraries ----
-
-  - package-ecosystem: "nuget"
-    directory: "/Radoub.Formats"
-    schedule:
-      interval: "weekly"
-    labels:
-      - "dependencies"
-      - "radoub"
-
-  - package-ecosystem: "nuget"
-    directory: "/Radoub.UI"
-    schedule:
-      interval: "weekly"
-    labels:
-      - "dependencies"
-      - "radoub"
-    ignore:
-      - dependency-name: "Avalonia*"
-        update-types: ["version-update:semver-major"]
-
-  - package-ecosystem: "nuget"
-    directory: "/Radoub.Dictionary"
-    schedule:
-      interval: "weekly"
-    labels:
-      - "dependencies"
-      - "radoub"
-
-  - package-ecosystem: "nuget"
-    directory: "/Radoub.TestUtilities"
-    schedule:
-      interval: "weekly"
-    labels:
-      - "dependencies"
-      - "radoub"
-
-  - package-ecosystem: "nuget"
-    directory: "/Radoub.IntegrationTests"
-    schedule:
-      interval: "weekly"
-    labels:
-      - "dependencies"
-      - "radoub"
-      - "tests"
 
   # ---- CI ----
 
