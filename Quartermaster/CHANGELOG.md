@@ -5,6 +5,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Trimmed to hig
 
 ---
 
+## [0.2.138-alpha] - 2026-06-28
+**Branch**: `radoub/issue-2622` | **PR**: #2625
+
+### Sprint: Model Preview Animation Fixes (#2622)
+
+- Canine creatures (e.g. blinkdog) now animate in the preview instead of rendering static at bind pose (#2552).
+- Creatures with animated DanglyNode meshes (e.g. the dire tiger mane) now show their idle pose at rest, and the binary dangly tuning fields (displacement/tightness/constraints) parse correctly. True dangly sag is a runtime physics sim, deferred (#2619).
+- New "Loop all animations" diagnostic in the appearance preview cycles every animation for coverage auditing (#2140).
+- Reliquary now surfaces placeable animation-state controls and gates emitters by state — the brazier flame turns off when Deactivated (#2595, #2556; see Reliquary CHANGELOG).
+
+---
+
 ## [0.2.137-alpha] - 2026-06-28
 **Branch**: `quartermaster/issue-2587` | **PR**: #2621
 

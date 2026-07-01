@@ -1,6 +1,8 @@
 // MDL ASCII Reader - Animation parsing
 // Partial class for animation data parsing
 
+using System.Collections.Generic;
+
 namespace Radoub.Formats.Mdl;
 
 public partial class MdlAsciiReader
@@ -8,6 +10,14 @@ public partial class MdlAsciiReader
     private MdlAnimation? ParseAnimation(string animName)
     {
         var anim = new MdlAnimation { Name = animName };
+
+        // Animation nodes form a flat list with "parent" properties (same shape as geometry).
+        // Each carries keyframe controllers (positionkey/orientationkey/scalekey). Previously the
+        // ASCII reader skipped these (SkipToEndNode), so every animation parsed with a null
+        // GeometryRoot and the preview could never build a pose — canine_a / blinkdog never
+        // animated (#2552). Reuse the geometry node machinery so the controllers land on the tree.
+        var nodesByName = new Dictionary<string, MdlNode>(System.StringComparer.OrdinalIgnoreCase);
+        var parentNames = new Dictionary<string, string>(System.StringComparer.OrdinalIgnoreCase);
 
         while (_currentLine < _lines.Length)
         {
@@ -29,6 +39,7 @@ public partial class MdlAsciiReader
             {
                 case "doneanim":
                     _currentLine++;
+                    anim.GeometryRoot = LinkNodeHierarchy(nodesByName, parentNames);
                     return anim;
 
                 case "length":
@@ -62,9 +73,20 @@ public partial class MdlAsciiReader
                     break;
 
                 case "node":
-                    // Animation nodes - simplified handling
-                    _currentLine++;
-                    SkipToEndNode();
+                    if (tokens.Length >= 3)
+                    {
+                        var (node, parentName) = ParseNodeWithParent(tokens[1], tokens[2]);
+                        nodesByName[node.Name] = node;
+                        if (!string.IsNullOrEmpty(parentName) &&
+                            !parentName.Equals("NULL", System.StringComparison.OrdinalIgnoreCase))
+                        {
+                            parentNames[node.Name] = parentName;
+                        }
+                    }
+                    else
+                    {
+                        _currentLine++;
+                    }
                     break;
 
                 default:
@@ -73,20 +95,7 @@ public partial class MdlAsciiReader
             }
         }
 
+        anim.GeometryRoot = LinkNodeHierarchy(nodesByName, parentNames);
         return anim;
-    }
-
-    private void SkipToEndNode()
-    {
-        int depth = 1;
-        while (_currentLine < _lines.Length && depth > 0)
-        {
-            var line = CurrentLine().Trim();
-            if (line.StartsWith("node ", StringComparison.OrdinalIgnoreCase))
-                depth++;
-            else if (line.Equals("endnode", StringComparison.OrdinalIgnoreCase))
-                depth--;
-            _currentLine++;
-        }
     }
 }

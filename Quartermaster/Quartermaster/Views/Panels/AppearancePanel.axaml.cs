@@ -91,6 +91,7 @@ public partial class AppearancePanel : UserControl
     private Button? _animPlayButton;
     private Slider? _animTimeSlider;
     private Slider? _animSpeedSlider;
+    private CheckBox? _loopAllAnimationsCheckBox;
 
     private CreatureDisplayService? _displayService;
     private PaletteColorService? _paletteColorService;
@@ -195,6 +196,7 @@ public partial class AppearancePanel : UserControl
         _animPlayButton = this.FindControl<Button>("AnimPlayButton");
         _animTimeSlider = this.FindControl<Slider>("AnimTimeSlider");
         _animSpeedSlider = this.FindControl<Slider>("AnimSpeedSlider");
+        _loopAllAnimationsCheckBox = this.FindControl<CheckBox>("LoopAllAnimationsCheckBox");
     }
 
     public void SetDisplayService(CreatureDisplayService displayService)
@@ -381,12 +383,16 @@ public partial class AppearancePanel : UserControl
 
         _animationComboBox.ItemsSource = items;
 
-        // Models with animated emitters (e.g. the fairy's flapping wing Dummies) need an idle
-        // animation playing or their emitters render as a static orb instead of sweeping into the
-        // intended shape. Default the dropdown to the creature idle "cpause1" and start playback so
-        // the dropdown truthfully reflects what is animating. Other models default to "(none)". (#2434)
+        // Some models look wrong at bind pose and need an idle animation playing by default:
+        //  - animated emitters (fairy wing Dummies) render as a static orb instead of sweeping (#2434);
+        //  - DanglyNode manes/cloth (dire tiger) sit flat instead of draped (#2619) — the preview has
+        //    no dangly physics, so the idle pose of their parent bones is what drapes them.
+        // In both cases default the dropdown to the creature idle "cpause1" and start playback so the
+        // dropdown truthfully reflects what is animating. Other models default to "(none)".
         int idleItemIndex = -1;
-        if (_modelPreviewGL?.HasAnimatedEmitters() == true)
+        bool wantsIdle = _modelPreviewGL?.HasAnimatedEmitters() == true
+            || Radoub.UI.Services.ModelIdlePoseHeuristic.HasAnimatedDanglyMesh(model);
+        if (wantsIdle)
             idleItemIndex = items.FindIndex(n => string.Equals(n, "cpause1", StringComparison.OrdinalIgnoreCase));
 
         if (idleItemIndex > 0)

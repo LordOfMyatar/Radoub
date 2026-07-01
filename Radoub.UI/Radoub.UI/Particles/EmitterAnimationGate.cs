@@ -23,7 +23,29 @@ public static class EmitterAnimationGate
     /// the emitter, falls back to the static-header birthrate (render unless that is ~0).
     /// </summary>
     public static bool ShouldRenderAtRest(MdlModel model, string emitterName)
+        => ShouldRenderForState(model, emitterName, stateAnimName: null);
+
+    /// <summary>
+    /// True if the named emitter should render while the preview is posed at a placeable state
+    /// (#2556). <paramref name="stateAnimName"/> is the state's MDL animation (e.g. "off" for
+    /// Deactivated, "on" for Activated; null/"default" = the resting state). If that animation
+    /// carries a copy of the emitter, its keyed birthrate is authoritative — the brazier flame
+    /// (fire!06) keys to 0 in "off", so Deactivated turns it off. Falls back to the "default"
+    /// animation and then the static header, exactly like <see cref="ShouldRenderAtRest"/>.
+    /// </summary>
+    public static bool ShouldRenderForState(MdlModel model, string emitterName, string? stateAnimName)
     {
+        // State animation first: its keyed birthrate is the authoritative emission for that state.
+        if (!string.IsNullOrEmpty(stateAnimName) &&
+            !string.Equals(stateAnimName, "default", System.StringComparison.OrdinalIgnoreCase))
+        {
+            var stateAnim = FindAnimation(model, stateAnimName!);
+            var stateEmitter = stateAnim?.GeometryRoot != null
+                ? FindEmitter(stateAnim.GeometryRoot, emitterName) : null;
+            if (stateEmitter != null)
+                return stateEmitter.BirthRate > 0f;
+        }
+
         // The at-rest pose is the "default" animation. If it carries a copy of this emitter, its
         // keyed birthrate is the authoritative at-rest emission — 0 means "off until destroyed".
         var defaultAnim = FindAnimation(model, "default");

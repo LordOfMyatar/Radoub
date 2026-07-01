@@ -249,6 +249,7 @@ void main()
         // TODO(#2395): back-to-front sort for Alpha blend (additive is order-independent).
         foreach (var (node, emitter, system) in _particleSystems)
         {
+            if (IsEmitterStateSuppressed(node.Name)) continue; // gated off by preview state (#2556)
             int count = system.LiveCount;
             if (count == 0) continue;
 

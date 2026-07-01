@@ -211,10 +211,7 @@ public partial class MdlBinaryReader
         // Parse type-specific data
         if ((flags & NodeFlagHasDangly) != 0 && mesh is MdlDanglyNode dangly)
         {
-            reader.BaseStream.Position += 12; // skip constraints array header
-            dangly.Displacement = reader.ReadSingle();
-            dangly.Tightness = reader.ReadSingle();
-            dangly.Period = reader.ReadSingle();
+            ParseDanglyNode(dangly, reader, meshHeaderStart);
         }
 
         if ((flags & NodeFlagHasAABB) != 0 && mesh is MdlAabbNode aabb)
@@ -232,6 +229,58 @@ public partial class MdlBinaryReader
         {
             ParseSkinNode(skin, reader, meshHeaderStart, vertexCount);
         }
+    }
+
+    /// <summary>
+    /// Parse danglymesh extension data (#2619). Per nwnexplorer's CNwnMdlDanglyMeshNode the fields
+    /// live at nodeOffset + 0x270 (= meshHeaderStart + 0x200), NOT immediately after the generic
+    /// mesh header where the stream cursor happens to sit — the old code read from the wrong cursor
+    /// and produced denormal garbage for Displacement/Tightness. Layout:
+    ///   0x270 m_afConstraints  CNwnArray&lt;float&gt; (ptr, count, allocated = 12 bytes)
+    ///   0x27C m_fDisplacement   float
+    ///   0x280 m_fTightness      float
+    ///   0x284 m_fPeriod         float
+    /// Children are parsed by absolute offset, so a wrong cursor here never corrupted siblings — the
+    /// only effect was bad scalar values on the dangly node itself.
+    /// </summary>
+    private void ParseDanglyNode(MdlDanglyNode dangly, BinaryReader reader, long meshHeaderStart)
+    {
+        var danglyExtStart = meshHeaderStart + 0x200;
+        if (danglyExtStart + 24 > reader.BaseStream.Length)
+        {
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.WARN,
+                $"[MDL] Dangly '{dangly.Name}': extension at 0x{danglyExtStart:X4} out of range — skipping");
+            return;
+        }
+
+        reader.BaseStream.Position = danglyExtStart;
+
+        // m_afConstraints: CNwnArray<float> { ptr, count, allocated }
+        var constraintsPtr = reader.ReadUInt32();
+        var constraintsCount = reader.ReadUInt32();
+        reader.ReadUInt32(); // allocated
+
+        dangly.Displacement = reader.ReadSingle();
+        dangly.Tightness = reader.ReadSingle();
+        dangly.Period = reader.ReadSingle();
+
+        // Constraints array lives in model data (one float per vertex; 0 = fixed, higher = free).
+        var constraintsOffset = PointerToModelOffset(constraintsPtr);
+        if (constraintsCount > 0 && constraintsCount <= int.MaxValue / sizeof(float) &&
+            constraintsOffset != uint.MaxValue)
+        {
+            var required = constraintsCount * sizeof(float);
+            if (constraintsOffset + required <= _modelData.Length)
+            {
+                var constraints = new float[constraintsCount];
+                Buffer.BlockCopy(_modelData, (int)constraintsOffset, constraints, 0, (int)required);
+                dangly.Constraints = constraints;
+            }
+        }
+
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
+            $"[MDL] Dangly '{dangly.Name}': displacement={dangly.Displacement:F4}, tightness={dangly.Tightness:F4}, " +
+            $"period={dangly.Period:F4}, constraints={dangly.Constraints.Length}");
     }
 
     /// <summary>

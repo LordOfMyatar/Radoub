@@ -176,6 +176,10 @@ public partial class MainWindow
         gl.SetActiveAnimation(anim);
         if (anim != null)
             gl.AnimationTime = anim.Length; // hold the end pose = the state's resting look
+
+        // Gate emitters by the selected state (#2556): a brazier's flame keys its birthrate to 0 in
+        // the "off" (Deactivated) animation, so it must stop streaming when Deactivated is selected.
+        gl.ApplyEmitterStateGate(PlaceableStateResolver.AnimationNameForState(state));
     }
 
     private void OnAppearanceChanged(object? sender, uint appearanceId)

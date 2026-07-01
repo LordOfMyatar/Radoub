@@ -26,6 +26,11 @@ public partial class ModelPreviewGLControl
     private void RebuildParticleSystems(MdlModel? model)
     {
         _particleSystems.Clear();
+        // Reset per-state emitter suppression when the model changes, otherwise a stale suppression
+        // from the previous model's Deactivated state could hide a same-named emitter in the new
+        // model until a state is re-selected (#2556). Reliquary re-applies the gate on load, but
+        // clearing here keeps the control self-consistent for any host/order.
+        _stateSuppressedEmitters.Clear();
 
         if (model == null || !model.HasEmitterNodes())
             return;
@@ -96,6 +101,43 @@ public partial class ModelPreviewGLControl
         }
     }
 
+    // Emitter names suppressed by the current preview state (#2556). A brazier's flame keys its
+    // birthrate to 0 in the "off" (Deactivated) animation; when a placeable state gates an emitter
+    // off we stop updating + drawing it and clear its live particles so the effect disappears.
+    private readonly HashSet<string> _stateSuppressedEmitters =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    private bool IsEmitterStateSuppressed(string? name)
+        => !string.IsNullOrEmpty(name) && _stateSuppressedEmitters.Contains(name!);
+
+    /// <summary>
+    /// Re-evaluate every particle system against a placeable preview state's animation and gate each
+    /// emitter on/off accordingly (#2556). <paramref name="stateAnimName"/> is the state's MDL
+    /// animation (e.g. "off" for Deactivated, "on" for Activated; null/"default" = resting). The
+    /// brazier flame (fire!06) keys to birthrate 0 in "off", so Deactivated turns it off; switching
+    /// back re-enables it. Systems are kept (not rebuilt) — suppressed ones are cleared and skipped.
+    /// </summary>
+    public void ApplyEmitterStateGate(string? stateAnimName)
+    {
+        if (_model == null) return;
+
+        _stateSuppressedEmitters.Clear();
+        foreach (var (node, _, system) in _particleSystems)
+        {
+            bool render = Radoub.UI.Particles.EmitterAnimationGate.ShouldRenderForState(
+                _model, node.Name, stateAnimName);
+            if (!render)
+            {
+                _stateSuppressedEmitters.Add(node.Name);
+                system.Clear(); // drop live particles so the effect disappears immediately
+            }
+        }
+
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"[Particle] state '{stateAnimName ?? "default"}' suppresses {_stateSuppressedEmitters.Count} emitter(s)");
+        RequestNextFrameRendering();
+    }
+
     /// <summary>
     /// True if the active model has any emitter node that is animated by some animation (i.e. an
     /// ancestor or the emitter itself has position/orientation keyframes). Tools use this to decide
@@ -154,6 +196,7 @@ public partial class ModelPreviewGLControl
         var pose = GetCurrentPose();
         foreach (var (node, _, system) in _particleSystems)
         {
+            if (IsEmitterStateSuppressed(node.Name)) continue; // gated off by preview state (#2556)
             var worldPos = GetEmitterWorldPosition(node, pose);
             var worldRot = GetEmitterWorldRotation(node, pose);
             system.Update(pdt, worldPos, worldRot);

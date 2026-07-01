@@ -85,6 +85,63 @@ public static class TrimeshMdlFixture
         return file;
     }
 
+    private const uint NodeFlagHasDangly = 0x00000100;
+    // Danglymesh node: trimesh flags PLUS the dangly bit. Dangly extension block sits right after
+    // the 0x200 mesh header (meshHeaderStart + 0x200), matching nwnexplorer CNwnMdlDanglyMeshNode.
+    private const uint DanglyMeshFlags = NodeFlagHasMesh | NodeFlagHasDangly;
+    private const int DanglyExtSize = 24; // CNwnArray<float> constraints (12) + displacement/tightness/period (12)
+
+    /// <summary>
+    /// Build a binary MDL whose root is a single danglymesh node carrying the given
+    /// displacement/tightness/period and a constraints float array (#2619 regression). The
+    /// constraints data is appended after the node and referenced by a model-relative pointer.
+    /// </summary>
+    public static byte[] BuildSingleDangly(float displacement, float tightness, float period, float[] constraints)
+    {
+        int danglyNodeSize = NodeHeaderSize + MeshHeaderSize + DanglyExtSize; // 0x288
+        int constraintsBytes = constraints.Length * sizeof(float);
+        // Constraints array placed immediately after the dangly node, inside model data.
+        int constraintsOffset = (int)TrimeshNodeOffset + danglyNodeSize;
+        int modelDataSize = constraintsOffset + constraintsBytes;
+        var modelData = new byte[modelDataSize];
+
+        // ---- Model / geometry header ----
+        WriteUInt32(modelData, 0x00, 0);                  // pointerBase = 0
+        WriteFixedString(modelData, 0x08, "danglytest", 64);
+        WriteUInt32(modelData, 0x48, TrimeshNodeOffset);  // root node pointer
+        WriteUInt32(modelData, 0x4C, 1);                  // node count
+
+        // ---- Dangly node header (0x70) ----
+        int n = (int)TrimeshNodeOffset;
+        WriteFixedString(modelData, n + 32, "mane", 32);  // node name
+        WriteUInt32(modelData, n + 0x6C, DanglyMeshFlags); // node flags -> dangly trimesh
+
+        // ---- Dangly extension at meshHeaderStart + 0x200 ----
+        int ext = n + NodeHeaderSize + MeshHeaderSize;
+        // m_afConstraints CNwnArray { ptr, count, allocated }. Pointer is model-relative (pointerBase=0).
+        WriteUInt32(modelData, ext + 0, (uint)constraintsOffset);
+        WriteUInt32(modelData, ext + 4, (uint)constraints.Length);
+        WriteUInt32(modelData, ext + 8, (uint)constraints.Length);
+        WriteSingle(modelData, ext + 12, displacement);
+        WriteSingle(modelData, ext + 16, tightness);
+        WriteSingle(modelData, ext + 20, period);
+
+        // ---- Constraints float data ----
+        for (int i = 0; i < constraints.Length; i++)
+            WriteSingle(modelData, constraintsOffset + i * sizeof(float), constraints[i]);
+
+        // ---- Prepend file header (12 bytes) ----
+        var file = new byte[FileHeaderSize + modelData.Length];
+        WriteUInt32(file, 0, 0);
+        WriteUInt32(file, 4, (uint)modelData.Length);
+        WriteUInt32(file, 8, 0);
+        Array.Copy(modelData, 0, file, FileHeaderSize, modelData.Length);
+        return file;
+    }
+
+    private static void WriteSingle(byte[] buf, int offset, float value) =>
+        BitConverter.GetBytes(value).CopyTo(buf, offset);
+
     private static void WriteUInt32(byte[] buf, int offset, uint value) =>
         BitConverter.GetBytes(value).CopyTo(buf, offset);
 

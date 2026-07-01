@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning via 
 
 ---
 
+## [0.10.3-alpha] - 2026-06-28
+**Branch**: `radoub/issue-2622` | **PR**: #2625
+
+### Fix: Preview animation-state controls + emitter gating (#2595, #2556)
+
+- The 3D preview surfaces the animation-state controls a placeable model actually contains (including states inherited from a supermodel), and emitters now respond to the selected state — the brazier flame turns off when Deactivated. Part of the cross-tool animation sprint (canonical entry in Quartermaster CHANGELOG, #2622).
+
+---
+
 ## [0.10.2-alpha] - 2026-06-20
 **Branch**: `quartermaster/issue-2440` | **PR**: #2525
 

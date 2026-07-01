@@ -197,11 +197,19 @@ public partial class MdlAsciiReader
         if (origUVs == null)
             return;
 
+        // Skin bone weights are parallel to the ORIGINAL vertices; unrolling changes the vertex count,
+        // so the weights must be remapped per source vertex or the renderer's
+        // "BoneWeights.Length == Vertices.Length" skinning guard fails and the creature freezes (#2552).
+        var origWeights = (mesh is MdlSkinNode skin && skin.BoneWeights.Length == origVertices.Length)
+            ? skin.BoneWeights
+            : null;
+
         // Map: (vertexIndex, tvertIndex) -> new unified index
         var indexMap = new Dictionary<(int, int), int>();
         var newVertices = new List<Vector3>();
         var newNormals = new List<Vector3>();
         var newUVs = new List<Vector2>();
+        var newWeights = origWeights != null ? new List<MdlBoneWeight>() : null;
         var newFaces = new MdlFace[mesh.Faces.Length];
 
         int GetOrCreateIndex(int vIdx, int tvIdx)
@@ -217,6 +225,7 @@ public partial class MdlAsciiReader
             if (origNormals.Length > 0)
                 newNormals.Add(vIdx < origNormals.Length ? origNormals[vIdx] : Vector3.UnitZ);
             newUVs.Add(tvIdx >= 0 && tvIdx < origUVs.Length ? origUVs[tvIdx] : Vector2.Zero);
+            newWeights?.Add(vIdx < origWeights!.Length ? origWeights[vIdx] : default);
 
             return newIdx;
         }
@@ -238,6 +247,8 @@ public partial class MdlAsciiReader
         mesh.Normals = newNormals.ToArray();
         mesh.TextureCoords = new[] { newUVs.ToArray() };
         mesh.Faces = newFaces;
+        if (newWeights != null && mesh is MdlSkinNode unrolledSkin)
+            unrolledSkin.BoneWeights = newWeights.ToArray();
 
         Logging.UnifiedLogger.LogApplication(Logging.LogLevel.TRACE,
             $"[MDL-ASCII] Unrolled mesh '{mesh.Name}': {origVertices.Length} verts + {origUVs.Length} tverts -> {newVertices.Count} unified vertices");
@@ -306,6 +317,25 @@ public partial class MdlAsciiReader
         var count = ParseInt(tokens[1]);
         var weights = new List<MdlBoneWeight>();
 
+        // ASCII MDL weights reference bones by NAME (e.g. "Wolf_ribcage 0.5 Wolf_pelvis 0.5"), not by
+        // index (#2552). Build an ordered, de-duplicated slot table of bone names and store the slot
+        // index per vertex so the renderer's name-keyed skinning (SkinMatrixBuilder) can resolve each
+        // bone in the composed hierarchy. Reading these as ints (the old code) collapsed every bone
+        // to slot 0 and left BoneNodeNames empty, disabling skinning — ASCII creatures stayed frozen.
+        var slotByName = new Dictionary<string, int>(System.StringComparer.OrdinalIgnoreCase);
+        var boneNames = new List<string>();
+
+        int SlotFor(string name)
+        {
+            if (!slotByName.TryGetValue(name, out var slot))
+            {
+                slot = boneNames.Count;
+                slotByName[name] = slot;
+                boneNames.Add(name);
+            }
+            return slot;
+        }
+
         _currentLine++;
         while (weights.Count < count && _currentLine < _lines.Length)
         {
@@ -317,20 +347,22 @@ public partial class MdlAsciiReader
             }
 
             var parts = Tokenize(line);
-            // Format: bone0 weight0 [bone1 weight1] [bone2 weight2] [bone3 weight3]
+            // Format: boneName0 weight0 [boneName1 weight1] [boneName2 weight2] [boneName3 weight3]
             var bw = new MdlBoneWeight { Bone0 = -1, Bone1 = -1, Bone2 = -1, Bone3 = -1 };
 
-            for (int i = 0; i + 1 < parts.Length; i += 2)
+            for (int i = 0; i + 1 < parts.Length && i / 2 < 4; i += 2)
             {
-                var bone = ParseInt(parts[i]);
+                var boneName = parts[i];
+                if (string.IsNullOrEmpty(boneName)) continue;
+                var slot = SlotFor(boneName);
                 var weight = ParseFloat(parts[i + 1]);
 
                 switch (i / 2)
                 {
-                    case 0: bw.Bone0 = bone; bw.Weight0 = weight; break;
-                    case 1: bw.Bone1 = bone; bw.Weight1 = weight; break;
-                    case 2: bw.Bone2 = bone; bw.Weight2 = weight; break;
-                    case 3: bw.Bone3 = bone; bw.Weight3 = weight; break;
+                    case 0: bw.Bone0 = slot; bw.Weight0 = weight; break;
+                    case 1: bw.Bone1 = slot; bw.Weight1 = weight; break;
+                    case 2: bw.Bone2 = slot; bw.Weight2 = weight; break;
+                    case 3: bw.Bone3 = slot; bw.Weight3 = weight; break;
                 }
             }
 
@@ -339,6 +371,7 @@ public partial class MdlAsciiReader
         }
 
         skin.BoneWeights = weights.ToArray();
+        skin.BoneNodeNames = boneNames.ToArray();
         _currentLine--; // Back up so main loop can advance
     }
 }
