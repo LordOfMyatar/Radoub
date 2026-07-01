@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Dependencies] - 2026-06-30
-**Branch**: `radoub/issue-2627` | **PR**: #TBD
+**Branch**: `radoub/issue-2627` | **PR**: #2639
 
 ### Dependabot consolidation + labeling fix (#2627)
 
